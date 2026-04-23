@@ -10,7 +10,7 @@ struct FGuiInputState
 
 class InputSystem : public TSingleton<InputSystem>
 {
-	friend class TSingleton<InputSystem>;
+    friend class TSingleton<InputSystem>;
 
 public:
     void Tick();

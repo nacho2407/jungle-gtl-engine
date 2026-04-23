@@ -1,4 +1,4 @@
-#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/RHI/D3D11/State/DepthStencilStateManager.h"
 
 #define SAFE_RELEASE(Obj) \
@@ -10,68 +10,68 @@
 
 void FDepthStencilStateManager::Create(ID3D11Device* InDevice)
 {
-    // Default (Reversed-Z: near=1, far=0 ??GREATER passes closer fragments)
+    // Default reversed-Z: near=1, far=0; GREATER passes closer fragments.
     D3D11_DEPTH_STENCIL_DESC Desc = {};
-    Desc.DepthEnable = TRUE;
-    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    Desc.DepthFunc = D3D11_COMPARISON_GREATER;
-    Desc.StencilEnable = FALSE;
+    Desc.DepthEnable              = TRUE;
+    Desc.DepthWriteMask           = D3D11_DEPTH_WRITE_MASK_ALL;
+    Desc.DepthFunc                = D3D11_COMPARISON_GREATER;
+    Desc.StencilEnable            = FALSE;
     InDevice->CreateDepthStencilState(&Desc, &Default);
 
     // Depth Read Only (Reversed-Z)
-    Desc = {};
-    Desc.DepthEnable = TRUE;
+    Desc                = {};
+    Desc.DepthEnable    = TRUE;
     Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    Desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
-    Desc.StencilEnable = FALSE;
+    Desc.DepthFunc      = D3D11_COMPARISON_GREATER_EQUAL;
+    Desc.StencilEnable  = FALSE;
     InDevice->CreateDepthStencilState(&Desc, &DepthReadOnly);
 
     // Stencil Write
-    Desc = {};
-    Desc.DepthEnable = TRUE;
-    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    Desc.StencilEnable = TRUE;
-    Desc.StencilReadMask = 0xFF;
-    Desc.StencilWriteMask = 0xFF;
-    Desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-    Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-    Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    Desc                              = {};
+    Desc.DepthEnable                  = TRUE;
+    Desc.DepthWriteMask               = D3D11_DEPTH_WRITE_MASK_ZERO;
+    Desc.DepthFunc                    = D3D11_COMPARISON_ALWAYS;
+    Desc.StencilEnable                = TRUE;
+    Desc.StencilReadMask              = 0xFF;
+    Desc.StencilWriteMask             = 0xFF;
+    Desc.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
+    Desc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_REPLACE;
+    Desc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
     Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-    Desc.BackFace = Desc.FrontFace;
+    Desc.BackFace                     = Desc.FrontFace;
     InDevice->CreateDepthStencilState(&Desc, &StencilWrite);
 
     // No Depth
-    Desc = {};
-    Desc.DepthEnable = FALSE;
+    Desc                = {};
+    Desc.DepthEnable    = FALSE;
     Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    Desc.StencilEnable = FALSE;
+    Desc.DepthFunc      = D3D11_COMPARISON_ALWAYS;
+    Desc.StencilEnable  = FALSE;
     InDevice->CreateDepthStencilState(&Desc, &NoDepth);
 
     // Gizmo Inside (Stencil Equal, read-only)
-    Desc = {};
-    Desc.DepthEnable = TRUE;
-    Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-    Desc.StencilEnable = TRUE;
-    Desc.StencilReadMask = 0xFF;
-    Desc.StencilWriteMask = 0x00;
-    Desc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-    Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    Desc                              = {};
+    Desc.DepthEnable                  = TRUE;
+    Desc.DepthWriteMask               = D3D11_DEPTH_WRITE_MASK_ZERO;
+    Desc.DepthFunc                    = D3D11_COMPARISON_ALWAYS;
+    Desc.StencilEnable                = TRUE;
+    Desc.StencilReadMask              = 0xFF;
+    Desc.StencilWriteMask             = 0x00;
+    Desc.FrontFace.StencilFunc        = D3D11_COMPARISON_EQUAL;
+    Desc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
+    Desc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
     Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-    Desc.BackFace = Desc.FrontFace;
+    Desc.BackFace                     = Desc.FrontFace;
     InDevice->CreateDepthStencilState(&Desc, &GizmoInside);
 
     // Gizmo Outside (Stencil Not Equal, read-only)
     Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-    Desc.BackFace = Desc.FrontFace;
+    Desc.BackFace              = Desc.FrontFace;
     InDevice->CreateDepthStencilState(&Desc, &GizmoOutside);
 
     // Stencil Mask Equal (read-only)
     Desc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-    Desc.BackFace = Desc.FrontFace;
+    Desc.BackFace              = Desc.FrontFace;
     InDevice->CreateDepthStencilState(&Desc, &StencilMaskEqual);
 }
 

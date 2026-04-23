@@ -1,10 +1,11 @@
-#include "LightCullingPass.h"
+﻿#include "LightCullingPass.h"
 
-#include "Render/Execute/Context/FrameRenderResources.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
-#include "Render/Visibility/TileBasedLightCulling.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Resources/FrameResources.h"
+#include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 
 void FLightCullingPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -51,7 +52,6 @@ void FLightCullingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     if (Context.LightCulling && Context.Resources && Context.Resources->LocalLightCount >= 0)
     {
-		//Frame Buffer �Ҵ�
         ID3D11Buffer* b0 = Context.Resources->FrameBuffer.GetBuffer();
         Context.Context->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 

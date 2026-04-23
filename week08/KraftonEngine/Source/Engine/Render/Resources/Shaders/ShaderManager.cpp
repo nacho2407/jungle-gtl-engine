@@ -2,30 +2,27 @@
 
 #include "Platform/Paths.h"
 
-#include <filesystem>
-#include <system_error>
-
 namespace
 {
-std::wstring MakeAbsoluteShaderPath(const FString& InPath)
+/*
+    외부에서 넘겨받은 단일 HLSL 파일을 기본 VS/PS 엔트리 프로그램 desc로 감쌉니다.
+    커스텀 셰이더는 레지스트리를 거치지 않으므로 최소한의 그래픽 프로그램 규칙만 적용합니다.
+*/
+FGraphicsProgramDesc MakeCustomGraphicsDesc(const FString& InPath)
 {
-    std::filesystem::path Path = FPaths::ToPath(FPaths::ToWide(InPath));
-    if (!Path.is_absolute())
-    {
-        Path = FPaths::ToPath(FPaths::RootDir()) / Path;
-    }
-
-    std::error_code EC;
-    Path = std::filesystem::weakly_canonical(Path, EC);
-    if (EC)
-    {
-        Path = Path.lexically_normal();
-    }
-
-    return Path.wstring();
+    FGraphicsProgramDesc Desc;
+    Desc.DebugName = InPath;
+    Desc.VS        = { InPath, "VS", {} };
+    Desc.PS        = FShaderStageDesc{ InPath, "PS", {} };
+    return Desc;
 }
 } // namespace
 
+// ========== 생명 주기 ==========
+
+/*
+    D3D 디바이스와 셰이더 레지스트리를 초기화한 뒤 내장 셰이더를 컴파일합니다.
+*/
 void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
     Device = InDevice;
@@ -34,12 +31,17 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
         bIsInitialized = true;
     }
 
+    ShaderRegistry.Initialize();
+
     for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
     {
         RefreshBuiltInShader(static_cast<EShaderType>(i));
     }
 }
 
+/*
+    내장 프로그램과 커스텀 프로그램의 D3D 리소스를 모두 해제하고 캐시를 비웁니다.
+*/
 void FShaderManager::Release()
 {
     for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
@@ -57,12 +59,18 @@ void FShaderManager::Release()
     }
     CustomShaderCache.clear();
 
-    Device = nullptr;
+    Device         = nullptr;
     bIsInitialized = false;
 }
 
+// ========== 핫 리로드 ==========
+
+/*
+    디버그 빌드에서 등록된 셰이더 파일 변경을 확인하고 필요한 프로그램만 다시 컴파일합니다.
+*/
 void FShaderManager::TickHotReload()
 {
+#if defined(_DEBUG)
     if (!Device)
     {
         return;
@@ -77,9 +85,16 @@ void FShaderManager::TickHotReload()
     {
         RefreshCustomShader(Pair.second, Pair.first);
     }
+#endif
 }
 
-FShader* FShaderManager::GetShader(EShaderType InType)
+// ========== 조회 ==========
+
+/*
+    셰이더 타입에 대응하는 내장 그래픽 프로그램을 반환합니다.
+    디버그 빌드에서는 조회 직전에 변경 여부를 확인합니다.
+*/
+FGraphicsProgram* FShaderManager::GetShader(EShaderType InType)
 {
     const uint32 Idx = (uint32)InType;
     if (Idx >= (uint32)EShaderType::MAX)
@@ -88,25 +103,37 @@ FShader* FShaderManager::GetShader(EShaderType InType)
     }
     if (Device)
     {
+#if defined(_DEBUG)
         RefreshBuiltInShader(InType);
+#endif
     }
     return &Shaders[Idx];
 }
 
-FShader* FShaderManager::GetCustomShader(const FString& Key)
+/*
+    정규화된 키로 캐시된 커스텀 셰이더 프로그램을 찾습니다.
+*/
+FGraphicsProgram* FShaderManager::GetCustomShader(const FString& Key)
 {
     const FString NormalizedKey = FPaths::FromPath(FPaths::ToPath(FPaths::ToWide(Key)).lexically_normal());
-    auto It = CustomShaderCache.find(NormalizedKey);
+    auto          It            = CustomShaderCache.find(NormalizedKey);
     if (It == CustomShaderCache.end())
     {
         return nullptr;
     }
 
+#if defined(_DEBUG)
     RefreshCustomShader(It->second, NormalizedKey);
+#endif
     return It->second.Shader.get();
 }
 
-FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath)
+// ========== 커스텀 프로그램 컴파일 ==========
+
+/*
+    파일 경로 하나로 구성된 커스텀 VS/PS 프로그램을 생성하거나 기존 캐시 항목을 갱신합니다.
+*/
+FGraphicsProgram* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_t* InFilePath)
 {
     Device = InDevice ? InDevice : Device;
     if (!Device || InFilePath == nullptr)
@@ -114,7 +141,7 @@ FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_
         return nullptr;
     }
 
-    const FString Key = ShaderDependencyUtils::WStringToUtf8(std::wstring(InFilePath));
+    const FString Key           = ShaderDependencyUtils::WStringToUtf8(std::wstring(InFilePath));
     const FString NormalizedKey = FPaths::FromPath(FPaths::ToPath(FPaths::ToWide(Key)).lexically_normal());
 
     auto It = CustomShaderCache.find(NormalizedKey);
@@ -125,19 +152,25 @@ FShader* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, const wchar_
     }
 
     FCustomShaderCacheEntry Entry;
-    Entry.Shader = std::make_unique<FShader>();
-    const std::wstring AbsoluteShaderPath = MakeAbsoluteShaderPath(NormalizedKey);
-    if (!Entry.Shader->Create(Device, AbsoluteShaderPath.c_str(), "VS", "PS"))
+    Entry.Shader                    = std::make_unique<FGraphicsProgram>();
+    const FGraphicsProgramDesc Desc = MakeCustomGraphicsDesc(NormalizedKey);
+    if (!Entry.Shader->Create(Device, Desc))
     {
         return nullptr;
     }
 
-    Entry.SourceFile = ShaderDependencyUtils::BuildFileDependency(NormalizedKey);
-    auto* RawPtr = Entry.Shader.get();
+    Entry.SourceFile                 = ShaderDependencyUtils::BuildFileDependency(NormalizedKey);
+    auto* RawPtr                     = Entry.Shader.get();
     CustomShaderCache[NormalizedKey] = std::move(Entry);
     return RawPtr;
 }
 
+// ========== 내장 프로그램 컴파일 ==========
+
+/*
+    레지스트리에 등록된 desc를 기준으로 내장 셰이더 프로그램을 컴파일합니다.
+    의존 파일이 바뀌지 않았으면 기존 프로그램을 그대로 유지합니다.
+*/
 void FShaderManager::RefreshBuiltInShader(EShaderType InType)
 {
     const uint32 Idx = (uint32)InType;
@@ -146,8 +179,8 @@ void FShaderManager::RefreshBuiltInShader(EShaderType InType)
         return;
     }
 
-    const FString ShaderPath = GetBuiltInShaderPath(InType);
-    if (ShaderPath.empty())
+    const FGraphicsProgramDesc* Desc = ShaderRegistry.Find(InType);
+    if (!Desc)
     {
         return;
     }
@@ -158,13 +191,17 @@ void FShaderManager::RefreshBuiltInShader(EShaderType InType)
         return;
     }
 
-    const std::wstring AbsoluteShaderPath = MakeAbsoluteShaderPath(ShaderPath);
-    if (Shaders[Idx].Create(Device, AbsoluteShaderPath.c_str(), "VS", "PS"))
+    if (Shaders[Idx].Create(Device, *Desc))
     {
-        Dependency = ShaderDependencyUtils::BuildFileDependency(ShaderPath);
+        Dependency = ShaderDependencyUtils::BuildFileDependency(Desc->VS.FilePath);
     }
 }
 
+// ========== 커스텀 프로그램 리로드 ==========
+
+/*
+    커스텀 셰이더 파일의 변경 여부를 검사하고 바뀐 경우 다시 컴파일합니다.
+*/
 bool FShaderManager::RefreshCustomShader(FCustomShaderCacheEntry& Entry, const FString& NormalizedKey)
 {
     if (!Device || !Entry.Shader)
@@ -177,51 +214,12 @@ bool FShaderManager::RefreshCustomShader(FCustomShaderCacheEntry& Entry, const F
         return true;
     }
 
-    const std::wstring AbsoluteShaderPath = MakeAbsoluteShaderPath(NormalizedKey);
-    if (Entry.Shader->Create(Device, AbsoluteShaderPath.c_str(), "VS", "PS"))
+    const FGraphicsProgramDesc Desc = MakeCustomGraphicsDesc(NormalizedKey);
+    if (Entry.Shader->Create(Device, Desc))
     {
         Entry.SourceFile = ShaderDependencyUtils::BuildFileDependency(NormalizedKey);
         return true;
     }
 
     return false;
-}
-
-FString FShaderManager::GetBuiltInShaderPath(EShaderType InType) const
-{
-    switch (InType)
-    {
-    case EShaderType::Primitive:
-        return "Shaders/Editor/Primitive.hlsl";
-    case EShaderType::Gizmo:
-        return "Shaders/Editor/Gizmo.hlsl";
-    case EShaderType::Editor:
-        return "Shaders/Editor/Editor.hlsl";
-    case EShaderType::Decal:
-        return "Shaders/Passes/Scene/DecalPass.hlsl";
-    case EShaderType::OutlinePostProcess:
-        return "Shaders/Passes/PostProcess/OutlinePostProcess.hlsl";
-    case EShaderType::SceneDepth:
-        return "Shaders/ViewModes/SceneDepth.hlsl";
-    case EShaderType::NormalView:
-        return "Shaders/ViewModes/NormalView.hlsl";
-    case EShaderType::FXAA:
-        return "Shaders/Passes/PostProcess/FXAA.hlsl";
-    case EShaderType::Font:
-        return "Shaders/Editor/ShaderFont.hlsl";
-    case EShaderType::OverlayFont:
-        return "Shaders/Editor/ShaderOverlayFont.hlsl";
-    case EShaderType::SubUV:
-        return "Shaders/Editor/ShaderSubUV.hlsl";
-    case EShaderType::Billboard:
-        return "Shaders/Editor/ShaderBillboard.hlsl";
-    case EShaderType::HeightFog:
-        return "Shaders/Passes/Scene/HeightFog.hlsl";
-    case EShaderType::DepthOnly:
-        return "Shaders/Passes/Scene/DepthOnly.hlsl";
-    case EShaderType::LightHitMap:
-        return "Shaders/Passes/PostProcess/LightHitMap.hlsl";
-    default:
-        return "";
-    }
 }

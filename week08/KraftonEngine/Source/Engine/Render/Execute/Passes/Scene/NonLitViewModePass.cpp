@@ -6,30 +6,30 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
-#include "Render/Resources/RenderResources.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
-#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
-#include "Render/Resources/Buffers/ConstantBufferPool.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Resources/Bindings/RenderCBKeys.h"
+#include "Render/Resources/Buffers/ConstantBufferCache.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 namespace
 {
 EViewModePostProcessVariant GetViewModePostProcessVariant(const FRenderPipelineContext& Context)
 {
-    if (!Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         return EViewModePostProcessVariant::None;
     }
 
-    return Context.ViewModePassRegistry->GetPostProcessVariant(Context.ActiveViewMode);
+    return Context.ViewMode.Registry->GetPostProcessVariant(Context.ViewMode.ActiveViewMode);
 }
 
 } // namespace
 
 void FNonLitViewModePass::PrepareInputs(FRenderPipelineContext& Context)
 {
-    const FViewportRenderTargets* Targets = Context.Targets;
+    const FViewportRenderTargets*     Targets = Context.Targets;
     const EViewModePostProcessVariant Variant = GetViewModePostProcessVariant(Context);
     if (Variant == EViewModePostProcessVariant::None || !Context.SceneView)
     {
@@ -52,7 +52,6 @@ void FNonLitViewModePass::PrepareInputs(FRenderPipelineContext& Context)
     default:
         break;
     }
-
 }
 
 void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
@@ -63,12 +62,12 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    if (Variant == EViewModePostProcessVariant::WorldNormal && !Context.ActiveViewSurfaces)
+    if (Variant == EViewModePostProcessVariant::WorldNormal && !Context.ViewMode.Surfaces)
     {
         return;
     }
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
+    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, Variant);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
@@ -80,14 +79,14 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
     {
     case EViewModePostProcessVariant::SceneDepth:
     {
-        FSceneDepthPConstants Constants = {};
-        Constants.Exponent = Context.SceneView->RenderOptions.Exponent;
-        Constants.NearClip = Context.SceneView->NearClip;
-        Constants.FarClip = Context.SceneView->FarClip;
-        Constants.Range = Context.SceneView->RenderOptions.Range;
-        Constants.Mode = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
+        FSceneDepthPCBData Constants = {};
+        Constants.Exponent           = Context.SceneView->RenderOptions.Exponent;
+        Constants.NearClip           = Context.SceneView->NearClip;
+        Constants.FarClip            = Context.SceneView->FarClip;
+        Constants.Range              = Context.SceneView->RenderOptions.Range;
+        Constants.Mode               = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
 
-        FConstantBuffer* CB = FConstantBufferPool::Get().GetBuffer(ERenderCBKey::SceneDepth, sizeof(FSceneDepthPConstants));
+        FConstantBuffer* CB = FConstantBufferCache::Get().GetBuffer(ERenderCBKey::SceneDepth, sizeof(FSceneDepthPCBData));
         if (CB)
         {
             CB->Update(Context.Context, &Constants, sizeof(Constants));
@@ -99,14 +98,14 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
     }
     case EViewModePostProcessVariant::WorldNormal:
     {
-        ID3D11ShaderResourceView* NormalSRV = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::ModifiedSurface1);
+        ID3D11ShaderResourceView* NormalSRV = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::ModifiedSurface1);
         if (!NormalSRV)
         {
-            NormalSRV = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::Surface1);
+            NormalSRV = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::Surface1);
         }
 
         Command.DiffuseSRV = NormalSRV;
-        Command.Blend = EBlendState::Opaque;
+        Command.Blend      = EBlendState::Opaque;
         break;
     }
     case EViewModePostProcessVariant::Outline:
@@ -137,7 +136,7 @@ void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     uint32 Start = 0;
-    uint32 End = 0;
+    uint32 End   = 0;
     Context.DrawCommandList->GetPassRange(ERenderPass::PostProcess, Start, End);
     for (uint32 Index = Start; Index < End; ++Index)
     {

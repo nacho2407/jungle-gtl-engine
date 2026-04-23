@@ -29,14 +29,14 @@ void FOcclusionCulling::RasterizeOccluder(const FBoundingBox& Box, const FMatrix
         if (Clip.W <= 0.1f)
             return;
         float InvW = 1.f / Clip.W;
-        float Nx = Clip.X * InvW;
-        float Ny = Clip.Y * InvW;
-        float Nz = Clip.Z * InvW;
-        MinX = std::min(MinX, Nx);
-        MaxX = std::max(MaxX, Nx);
-        MinY = std::min(MinY, Ny);
-        MaxY = std::max(MaxY, Ny);
-        MaxZ = std::max(MaxZ, Nz);
+        float Nx   = Clip.X * InvW;
+        float Ny   = Clip.Y * InvW;
+        float Nz   = Clip.Z * InvW;
+        MinX       = std::min(MinX, Nx);
+        MaxX       = std::max(MaxX, Nx);
+        MinY       = std::min(MinY, Ny);
+        MaxY       = std::max(MaxY, Ny);
+        MaxZ       = std::max(MaxZ, Nz);
     }
 
     // NDC → 버퍼 픽셀 좌표
@@ -44,10 +44,10 @@ void FOcclusionCulling::RasterizeOccluder(const FBoundingBox& Box, const FMatrix
     int X1 = (int)((MaxX * 0.5f + 0.5f) * BUF_W);
     int Y0 = (int)((1.0f - MaxY) * 0.5f * BUF_H);
     int Y1 = (int)((1.0f - MinY) * 0.5f * BUF_H);
-    X0 = std::clamp(X0, 0, BUF_W - 1);
-    X1 = std::clamp(X1, 0, BUF_W - 1);
-    Y0 = std::clamp(Y0, 0, BUF_H - 1);
-    Y1 = std::clamp(Y1, 0, BUF_H - 1);
+    X0     = std::clamp(X0, 0, BUF_W - 1);
+    X1     = std::clamp(X1, 0, BUF_W - 1);
+    Y0     = std::clamp(Y0, 0, BUF_H - 1);
+    Y1     = std::clamp(Y1, 0, BUF_H - 1);
 
     // for (int Y = Y0; Y <= Y1; ++Y)
     //	for (int X = X0; X <= X1; ++X)
@@ -65,7 +65,7 @@ void FOcclusionCulling::RasterizeOccluder(const FBoundingBox& Box, const FMatrix
         // 8개씩 처리 (AVX2)
         for (; X <= X1 - 7; X += 8)
         {
-            __m256 old = _mm256_loadu_ps(&DepthBuffer[RowOffset + X]);
+            __m256 old  = _mm256_loadu_ps(&DepthBuffer[RowOffset + X]);
             __m256 newv = _mm256_min_ps(old, maxZVec);
             _mm256_storeu_ps(&DepthBuffer[RowOffset + X], newv);
         }
@@ -92,24 +92,24 @@ bool FOcclusionCulling::IsOccluded(const FBoundingBox& Box, const FMatrix& ViewP
         if (Clip.W <= 0.1f)
             return false;
         float InvW = 1.f / Clip.W;
-        float Nx = Clip.X * InvW;
-        float Ny = Clip.Y * InvW;
-        float Nz = Clip.Z * InvW;
-        MinX = std::min(MinX, Nx);
-        MaxX = std::max(MaxX, Nx);
-        MinY = std::min(MinY, Ny);
-        MaxY = std::max(MaxY, Ny);
-        MinZ = std::min(MinZ, Nz);
+        float Nx   = Clip.X * InvW;
+        float Ny   = Clip.Y * InvW;
+        float Nz   = Clip.Z * InvW;
+        MinX       = std::min(MinX, Nx);
+        MaxX       = std::max(MaxX, Nx);
+        MinY       = std::min(MinY, Ny);
+        MaxY       = std::max(MaxY, Ny);
+        MinZ       = std::min(MinZ, Nz);
     }
 
     int X0 = (int)((MinX * 0.5f + 0.5f) * BUF_W);
     int X1 = (int)((MaxX * 0.5f + 0.5f) * BUF_W);
     int Y0 = (int)((1.0f - MaxY) * 0.5f * BUF_H);
     int Y1 = (int)((1.0f - MinY) * 0.5f * BUF_H);
-    X0 = std::clamp(X0, 0, BUF_W - 1);
-    X1 = std::clamp(X1, 0, BUF_W - 1);
-    Y0 = std::clamp(Y0, 0, BUF_H - 1);
-    Y1 = std::clamp(Y1, 0, BUF_H - 1);
+    X0     = std::clamp(X0, 0, BUF_W - 1);
+    X1     = std::clamp(X1, 0, BUF_W - 1);
+    Y0     = std::clamp(Y0, 0, BUF_H - 1);
+    Y1     = std::clamp(Y1, 0, BUF_H - 1);
 
     // AABB가 덮는 모든 픽셀에서 Depth Buffer보다 뒤에 있으면 가려진 것
     // const float DepthBias = 0.001f;
@@ -125,15 +125,15 @@ bool FOcclusionCulling::IsOccluded(const FBoundingBox& Box, const FMatrix& ViewP
     const float DepthBias = 0.001f;
     for (int Y = Y0; Y <= Y1; ++Y)
     {
-        int RowOffset = Y * BUF_W;
-        __m256 minZVec = _mm256_set1_ps(MinZ - DepthBias);
+        int    RowOffset = Y * BUF_W;
+        __m256 minZVec   = _mm256_set1_ps(MinZ - DepthBias);
 
         int X = X0;
         // 마지막 8개 미만 구간에서 AVX load가 행 끝을 넘지 않도록 tail은 scalar로 분리한다.
         for (; X <= X1 - 7; X += 8)
         {
             __m256 depth = _mm256_loadu_ps(&DepthBuffer[RowOffset + X]);
-            __m256 cmp = _mm256_cmp_ps(minZVec, depth, _CMP_LE_OQ);
+            __m256 cmp   = _mm256_cmp_ps(minZVec, depth, _CMP_LE_OQ);
 
             int mask = _mm256_movemask_ps(cmp);
             if (mask != 0)

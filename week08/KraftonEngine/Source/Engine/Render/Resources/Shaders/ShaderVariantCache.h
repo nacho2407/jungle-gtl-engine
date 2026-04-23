@@ -1,25 +1,28 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
-#include "Render/RHI/D3D11/Shaders/GraphicsShaderProgram.h"
+#include "Render/RHI/D3D11/Shaders/GraphicsProgram.h"
 #include "Render/Resources/Shaders/ShaderDependencyUtils.h"
 
-#include <cstdlib>
-#include <filesystem>
 #include <memory>
-#include <system_error>
 
+/*
+    뷰 모드 variant를 만들 때 추가할 셰이더 매크로입니다.
+*/
 struct FShaderMacroDefine
 {
     FString Name;
     FString Value;
 };
 
+/*
+    하나의 뷰 모드 셰이더 permutation을 식별하는 파일, 엔트리, 매크로 묶음입니다.
+*/
 struct FShaderVariantDesc
 {
-    FString FilePath;
-    FString VSEntry;
-    FString PSEntry;
+    FString                    FilePath;
+    FString                    VSEntry;
+    FString                    PSEntry;
     TArray<FShaderMacroDefine> Defines;
 
     FString BuildKey() const
@@ -35,21 +38,36 @@ struct FShaderVariantDesc
 
 using FShaderVariantFileDependency = ShaderDependencyUtils::FShaderFileDependency;
 
+/*
+    컴파일된 뷰 모드 variant 프로그램과 원본 파일 의존성을 함께 저장합니다.
+*/
 struct FShaderVariantCacheEntry
 {
-    std::unique_ptr<FShader> Shader;
-    FShaderVariantFileDependency SourceFile;
-    FShaderVariantDesc Desc;
+    std::unique_ptr<FGraphicsProgram> Shader;
+    FShaderVariantFileDependency      SourceFile;
+    FShaderVariantDesc                Desc;
 };
 
+/*
+    뷰 모드 패스 desc에서 요청한 셰이더 variant를 컴파일하고 캐시합니다.
+    디버그 빌드에서는 의존 파일 변경을 감지해 사용 중인 variant를 다시 컴파일합니다.
+*/
 class FShaderVariantCache
 {
 public:
+    // ========== 생명 주기 ==========
+
+    /*
+        variant 컴파일에 사용할 D3D 디바이스를 등록합니다.
+    */
     void Initialize(ID3D11Device* InDevice)
     {
         Device = InDevice;
     }
 
+    /*
+        캐시된 variant 프로그램을 모두 해제합니다.
+    */
     void Release()
     {
         for (auto& Pair : Cache)
@@ -64,6 +82,9 @@ public:
         Device = nullptr;
     }
 
+    /*
+        캐시된 variant의 원본 파일 변경을 검사하고 필요한 항목을 다시 컴파일합니다.
+    */
     void TickHotReload()
     {
         if (!Device)
@@ -89,7 +110,12 @@ public:
         }
     }
 
-    FShader* GetOrCreate(const FShaderVariantDesc& Desc)
+    // ========== 조회 ==========
+
+    /*
+        desc에 해당하는 variant 프로그램을 찾거나 새로 컴파일합니다.
+    */
+    FGraphicsProgram* GetOrCreate(const FShaderVariantDesc& Desc)
     {
         if (!Device)
         {
@@ -97,7 +123,7 @@ public:
         }
 
         const FString Key = Desc.BuildKey();
-        auto It = Cache.find(Key);
+        auto          It  = Cache.find(Key);
         if (It != Cache.end())
         {
             auto& Entry = It->second;
@@ -112,19 +138,24 @@ public:
         }
 
         FShaderVariantCacheEntry Entry;
-        Entry.Shader = std::make_unique<FShader>();
-        Entry.Desc = Desc;
+        Entry.Shader = std::make_unique<FGraphicsProgram>();
+        Entry.Desc   = Desc;
         if (!RecompileEntry(Desc, Entry))
         {
             return nullptr;
         }
 
-        FShader* RawShader = Entry.Shader.get();
+        FGraphicsProgram* RawShader = Entry.Shader.get();
         Cache.emplace(Key, std::move(Entry));
         return RawShader;
     }
 
 private:
+    // ========== 컴파일 ==========
+
+    /*
+        variant desc를 그래픽 프로그램 desc로 변환해 컴파일합니다.
+    */
     bool RecompileEntry(const FShaderVariantDesc& Desc, FShaderVariantCacheEntry& Entry)
     {
         if (!Device)
@@ -134,69 +165,31 @@ private:
 
         if (!Entry.Shader)
         {
-            Entry.Shader = std::make_unique<FShader>();
+            Entry.Shader = std::make_unique<FGraphicsProgram>();
         }
 
-        TArray<D3D_SHADER_MACRO> D3DDefines;
-        BuildD3DDefines(Desc.Defines, D3DDefines);
+        FGraphicsProgramDesc ProgramDesc;
+        ProgramDesc.DebugName     = Desc.BuildKey();
+        ProgramDesc.VS.FilePath   = Desc.FilePath;
+        ProgramDesc.VS.EntryPoint = Desc.VSEntry;
+        ProgramDesc.PS            = FShaderStageDesc{ Desc.FilePath, Desc.PSEntry, {} };
 
-        std::filesystem::path AbsolutePath = FPaths::ToPath(FPaths::ToWide(Desc.FilePath));
-        if (!AbsolutePath.is_absolute())
+        for (const FShaderMacroDefine& Define : Desc.Defines)
         {
-            AbsolutePath = FPaths::ToPath(FPaths::RootDir()) / AbsolutePath;
+            FShaderCompileDefine CompileDefine{ Define.Name, Define.Value };
+            ProgramDesc.VS.Defines.push_back(CompileDefine);
+            ProgramDesc.PS->Defines.push_back(CompileDefine);
         }
 
-        std::error_code EC;
-        AbsolutePath = std::filesystem::weakly_canonical(AbsolutePath, EC);
-        if (EC)
-        {
-            AbsolutePath = AbsolutePath.lexically_normal();
-        }
-
-        const bool bCompiled = Entry.Shader->Create(Device, AbsolutePath.wstring().c_str(), Desc.VSEntry.c_str(), Desc.PSEntry.c_str(), D3DDefines.empty() ? nullptr : D3DDefines.data());
-
-        ReleaseD3DDefines(D3DDefines);
-
-        if (bCompiled)
+        if (Entry.Shader->Create(Device, ProgramDesc))
         {
             Entry.SourceFile = ShaderDependencyUtils::BuildFileDependency(Desc.FilePath);
+            return true;
         }
-        return bCompiled;
-    }
-
-    void ReleaseD3DDefines(TArray<D3D_SHADER_MACRO>& InOutDefines) const
-    {
-        for (D3D_SHADER_MACRO& Macro : InOutDefines)
-        {
-            if (Macro.Name)
-            {
-                free(const_cast<char*>(Macro.Name));
-            }
-            if (Macro.Definition)
-            {
-                free(const_cast<char*>(Macro.Definition));
-            }
-        }
-        InOutDefines.clear();
-    }
-
-    void BuildD3DDefines(const TArray<FShaderMacroDefine>& InDefines, TArray<D3D_SHADER_MACRO>& OutDefines) const
-    {
-        OutDefines.clear();
-        OutDefines.reserve(InDefines.size() + 1);
-
-        for (const FShaderMacroDefine& Def : InDefines)
-        {
-            D3D_SHADER_MACRO Macro = {};
-            Macro.Name = _strdup(Def.Name.c_str());
-            Macro.Definition = _strdup(Def.Value.c_str());
-            OutDefines.push_back(Macro);
-        }
-
-        OutDefines.push_back({ nullptr, nullptr });
+        return false;
     }
 
 private:
-    ID3D11Device* Device = nullptr;
+    ID3D11Device*                           Device = nullptr;
     TMap<FString, FShaderVariantCacheEntry> Cache;
 };

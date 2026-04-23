@@ -1,4 +1,4 @@
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Editor/OverlayTextPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
@@ -18,7 +18,7 @@ void FOverlayTextPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FOverlayTextPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommandBuilder::BuildOverlayTextDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommand::BuildOverlayTextDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)
@@ -29,7 +29,7 @@ void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     uint32 Start = 0;
-    uint32 End = 0;
+    uint32 End   = 0;
     Context.DrawCommandList->GetPassRange(ERenderPass::OverlayTextWorld, Start, End);
     if (Start < End)
     {

@@ -1,7 +1,10 @@
+// Shader include: Editor/Gizmo.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 
-// b2 (PerShader0): 기즈모 전용
 cbuffer GizmoBuffer : register(b2)
 {
     float4 GizmoColorTint;
@@ -9,7 +12,7 @@ cbuffer GizmoBuffer : register(b2)
     uint bClicking;
     uint SelectedAxis;
     float HoveredAxisOpacity;
-    uint AxisMask; // 비트 0=X, 1=Y, 2=Z
+    uint AxisMask;
     uint3 _gizmoPad;
 };
 
@@ -34,7 +37,6 @@ float4 PS(PS_Input_Color input) : SV_TARGET
 {
     uint axis = GetAxisFromColor(input.color.rgb);
 
-    // AxisMask 기반 축 숨김
     if (!(AxisMask & (1u << axis)))
     {
         discard;
@@ -60,3 +62,4 @@ float4 PS(PS_Input_Color input) : SV_TARGET
 
     return saturate(outColor);
 }
+

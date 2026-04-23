@@ -11,47 +11,48 @@
 class FMemoryArchive : public FArchive
 {
 public:
-	// Save용 생성자
-	explicit FMemoryArchive(bool bInIsSaving)
-	{
-		bIsSaving = bInIsSaving;
-		bIsLoading = !bInIsSaving;
-	}
+    // Save용 생성자
+    explicit FMemoryArchive(bool bInIsSaving)
+    {
+        bIsSaving = bInIsSaving;
+        bIsLoading = !bInIsSaving;
+    }
 
-	// Load용 생성자 (외부 버퍼 참조)
-	FMemoryArchive(const TArray<uint8>& InBuffer, bool bInIsSaving)
-	{
-		bIsSaving = bInIsSaving;
-		bIsLoading = !bInIsSaving;
-		Buffer = InBuffer;
-	}
+    // Load용 생성자 (외부 버퍼 참조)
+    FMemoryArchive(const TArray<uint8>& InBuffer, bool bInIsSaving)
+    {
+        bIsSaving = bInIsSaving;
+        bIsLoading = !bInIsSaving;
+        Buffer = InBuffer;
+    }
 
-	const TArray<uint8>& GetBuffer() const { return Buffer; }
+    const TArray<uint8>& GetBuffer() const { return Buffer; }
 
-	void Serialize(void* Data, size_t Num) override
-	{
-		if (Num == 0) return;
+    void Serialize(void* Data, size_t Num) override
+    {
+        if (Num == 0)
+            return;
 
-		if (bIsSaving)
-		{
-			const size_t OldSize = Buffer.size();
-			Buffer.resize(OldSize + Num);
-			std::memcpy(Buffer.data() + OldSize, Data, Num);
-		}
-		else
-		{
-			if (Offset + Num > Buffer.size())
-			{
-				// 읽기 오버런 — 안전하게 0으로 채움
-				std::memset(Data, 0, Num);
-				return;
-			}
-			std::memcpy(Data, Buffer.data() + Offset, Num);
-			Offset += Num;
-		}
-	}
+        if (bIsSaving)
+        {
+            const size_t OldSize = Buffer.size();
+            Buffer.resize(OldSize + Num);
+            std::memcpy(Buffer.data() + OldSize, Data, Num);
+        }
+        else
+        {
+            if (Offset + Num > Buffer.size())
+            {
+                // 읽기 오버런 — 안전하게 0으로 채움
+                std::memset(Data, 0, Num);
+                return;
+            }
+            std::memcpy(Data, Buffer.data() + Offset, Num);
+            Offset += Num;
+        }
+    }
 
 private:
-	TArray<uint8> Buffer;
-	size_t Offset = 0;
+    TArray<uint8> Buffer;
+    size_t Offset = 0;
 };

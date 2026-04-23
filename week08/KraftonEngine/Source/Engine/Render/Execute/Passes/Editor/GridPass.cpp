@@ -16,7 +16,7 @@ void FGridPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FGridPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommandBuilder::BuildLineDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommand::BuildLineDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FGridPass::SubmitDrawCommands(FRenderPipelineContext& Context)

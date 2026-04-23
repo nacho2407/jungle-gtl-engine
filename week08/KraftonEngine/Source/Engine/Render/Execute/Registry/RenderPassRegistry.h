@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 
-#include "Render/Execute/Passes/Base/PassRenderState.h"
+#include "Render/Execute/Registry/RenderPassPresets.h"
 #include "Render/Execute/Passes/Base/RenderPass.h"
 
 class FDepthPrePass;
@@ -22,10 +22,6 @@ class FGizmoPass;
 class FOverlayBillboardPass;
 class FOverlayTextPass;
 
-/*
-    ������Ʈ������ �����ϴ� �н� ��� �����Դϴ�.
-    ���� ��ο� Ŀ�ǵ��� ERenderPass�ʹ� ������, ���������� �׷��� ��带 �ĺ��� �� ����մϴ�.
-*/
 enum class ERenderPassNodeType
 {
     GridPass,
@@ -46,12 +42,10 @@ enum class ERenderPassNodeType
     OverlayBillboardPass,
     GizmoPass,
     OverlayTextPass,
-	LightHitMapPass,
+    LightHitMapPass,
 };
 
-/*
-    �н� ��� Ÿ�԰� ���� �н� ��ü, �н��� �⺻ ���� ǥ�� �Բ� �����ϴ� ������Ʈ���Դϴ�.
-*/
+// Owns render pass instances and the pass execution presets used by draw submission.
 class FRenderPassRegistry
 {
 public:
@@ -61,11 +55,12 @@ public:
     void Initialize();
     void Release();
 
-    FRenderPass* FindPass(ERenderPassNodeType Type) const;
-    const FPassRenderStateDesc& GetPassStateDesc(ERenderPass Pass) const;
-    const FPassRenderStateDesc* GetPassStateDescs() const;
+    FRenderPass*                 FindPass(ERenderPassNodeType Type) const;
+    const FRenderPassPreset&     GetRenderPassPreset(ERenderPass Pass) const;
+    const FRenderPassDrawPreset& GetRenderPassDrawPreset(ERenderPass Pass) const;
+    const FRenderPassPreset*     GetRenderPassPresets() const;
 
 private:
     TMap<int32, FRenderPass*> Passes;
-    FPassRenderStateDesc PassStateDescs[(uint32)ERenderPass::MAX] = {};
+    FRenderPassPreset         RenderPassPresets[(uint32)ERenderPass::MAX] = {};
 };

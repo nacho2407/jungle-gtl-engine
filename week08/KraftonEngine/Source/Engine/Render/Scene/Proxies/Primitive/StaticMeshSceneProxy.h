@@ -31,12 +31,12 @@ private:
 
     struct FLODDrawData
     {
-        FMeshBuffer* MeshBuffer = nullptr;
-        TArray<FMeshSectionRenderData> SectionRenderData;
+        FMeshBuffer*                                     MeshBuffer = nullptr;
+        TArray<FMeshSectionRenderData>                   SectionRenderData;
         TArray<std::unique_ptr<FMaterialConstantBuffer>> OwnedMaterialCBs;
     };
 
-    FLODDrawData LODData[MAX_LOD];
+    FLODDrawData                                     LODData[MAX_LOD];
     TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
-    uint32 LODCount = 1;
+    uint32                                           LODCount = 1;
 };

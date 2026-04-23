@@ -9,40 +9,40 @@ class UWorld;
 class FSelectionManager
 {
 public:
-	void Init();
-	void Shutdown();
+    void Init();
+    void Shutdown();
 
-	void Select(AActor* Actor);
-	void SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList);
-	void ToggleSelect(AActor* Actor);
-	void Deselect(AActor* Actor);
-	void ClearSelection();
-	void Tick();
+    void Select(AActor* Actor);
+    void SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList);
+    void ToggleSelect(AActor* Actor);
+    void Deselect(AActor* Actor);
+    void ClearSelection();
+    void Tick();
 
-	bool IsSelected(AActor* Actor) const
-	{
-		return std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end();
-	}
+    bool IsSelected(AActor* Actor) const
+    {
+        return std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end();
+    }
 
-	AActor* GetPrimarySelection() const
-	{
-		return SelectedActors.empty() ? nullptr : SelectedActors.front();
-	}
+    AActor* GetPrimarySelection() const
+    {
+        return SelectedActors.empty() ? nullptr : SelectedActors.front();
+    }
 
-	const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
-	bool IsEmpty() const { return SelectedActors.empty(); }
+    const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
+    bool IsEmpty() const { return SelectedActors.empty(); }
 
-	UGizmoComponent* GetGizmo() const { return Gizmo; }
+    UGizmoComponent* GetGizmo() const { return Gizmo; }
 
-	void SetGizmoEnabled(bool bEnabled);
-	void SetWorld(UWorld* InWorld);
+    void SetGizmoEnabled(bool bEnabled);
+    void SetWorld(UWorld* InWorld);
 
 private:
-	void SyncGizmo();
-	void SetActorProxiesSelected(AActor* Actor, bool bSelected);
+    void SyncGizmo();
+    void SetActorProxiesSelected(AActor* Actor, bool bSelected);
 
-	TArray<AActor*> SelectedActors;
-	UGizmoComponent* Gizmo = nullptr;
-	UWorld* World = nullptr;
-	bool bGizmoEnabled = true;
+    TArray<AActor*> SelectedActors;
+    UGizmoComponent* Gizmo = nullptr;
+    UWorld* World = nullptr;
+    bool bGizmoEnabled = true;
 };

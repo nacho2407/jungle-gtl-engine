@@ -2,25 +2,25 @@
 
 #include "Component/TextRenderComponent.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 
 FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
     : FPrimitiveSceneProxy(InComponent)
 {
-    bPerViewportUpdate = true;
-    bShowAABB = false;
+    bPerViewportUpdate           = true;
+    bShowAABB                    = false;
     bAllowViewModeShaderOverride = false;
 }
 
 void FTextRenderSceneProxy::UpdateMesh()
 {
-    MeshBuffer = Owner ? Owner->GetMeshBuffer() : nullptr;
-    Shader = FShaderManager::Get().GetShader(EShaderType::Primitive);
-    Pass = ERenderPass::AlphaBlend;
-    Blend = EBlendState::AlphaBlend;
+    MeshBuffer   = Owner ? Owner->GetMeshBuffer() : nullptr;
+    Shader       = FShaderManager::Get().GetShader(EShaderType::Primitive);
+    Pass         = ERenderPass::AlphaBlend;
+    Blend        = EBlendState::AlphaBlend;
     DepthStencil = EDepthStencilState::DepthReadOnly;
-    Rasterizer = ERasterizerState::SolidNoCull;
+    Rasterizer   = ERasterizerState::SolidNoCull;
     bFontBatched = true;
 }
 
@@ -59,20 +59,20 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     if (TextComp->IsBillboard())
     {
         CachedTextWorldMatrix = TextComp->CalculateBillboardWorldMatrix(SceneView.CameraForward);
-        CachedTextRight = FVector(CachedTextWorldMatrix.M[1][0], CachedTextWorldMatrix.M[1][1], CachedTextWorldMatrix.M[1][2]).Normalized();
-        CachedTextUp = FVector(CachedTextWorldMatrix.M[2][0], CachedTextWorldMatrix.M[2][1], CachedTextWorldMatrix.M[2][2]).Normalized();
+        CachedTextRight       = FVector(CachedTextWorldMatrix.M[1][0], CachedTextWorldMatrix.M[1][1], CachedTextWorldMatrix.M[1][2]).Normalized();
+        CachedTextUp          = FVector(CachedTextWorldMatrix.M[2][0], CachedTextWorldMatrix.M[2][1], CachedTextWorldMatrix.M[2][2]).Normalized();
     }
     else
     {
         CachedTextWorldMatrix = TextComp->GetWorldMatrix();
-        CachedTextRight = TextComp->GetRightVector();
-        CachedTextUp = TextComp->GetUpVector();
+        CachedTextRight       = TextComp->GetRightVector();
+        CachedTextUp          = TextComp->GetUpVector();
     }
 
-    CachedText = TextComp->GetText();
+    CachedText      = TextComp->GetText();
     CachedFontScale = TextComp->GetFontSize();
 
     const FMatrix OutlineMatrix = TextComp->CalculateOutlineMatrix(CachedTextWorldMatrix);
-    PerObjectConstants = FPerObjectConstants::FromWorldMatrix(OutlineMatrix);
+    PerObjectConstants          = FPerObjectCBData::FromWorldMatrix(OutlineMatrix);
     MarkPerObjectCBDirty();
 }

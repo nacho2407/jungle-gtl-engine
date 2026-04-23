@@ -19,79 +19,79 @@
 
 class FGPUProfiler : public TSingleton<FGPUProfiler>
 {
-	friend class TSingleton<FGPUProfiler>;
+    friend class TSingleton<FGPUProfiler>;
 
 public:
-	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
-	void Shutdown();
+    void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
+    void Shutdown();
 
-	void BeginFrame();
-	void EndFrame();
+    void BeginFrame();
+    void EndFrame();
 
-	uint32 BeginTimestamp(const char* Name, const char* Category = "Default");
-	void EndTimestamp(uint32 Index);
+    uint32 BeginTimestamp(const char* Name, const char* Category = "Default");
+    void EndTimestamp(uint32 Index);
 
-	void TakeSnapshot();
-	const TArray<FStatEntry>& GetGPUSnapshot() const { return Snapshot; }
+    void TakeSnapshot();
+    const TArray<FStatEntry>& GetGPUSnapshot() const { return Snapshot; }
 
 private:
-	FGPUProfiler() = default;
-	~FGPUProfiler() = default;
+    FGPUProfiler() = default;
+    ~FGPUProfiler() = default;
 
-	static const uint32 MAX_TIMESTAMPS = 64;
-	static const uint32 FRAME_COUNT = 5;
+    static const uint32 MAX_TIMESTAMPS = 64;
+    static const uint32 FRAME_COUNT = 5;
 
-	struct FTimestampPair
-	{
-		ID3D11Query* BeginQuery = nullptr;
-		ID3D11Query* EndQuery = nullptr;
-		const char* Name = nullptr;
-		const char* Category = "Default";
-	};
+    struct FTimestampPair
+    {
+        ID3D11Query* BeginQuery = nullptr;
+        ID3D11Query* EndQuery = nullptr;
+        const char* Name = nullptr;
+        const char* Category = "Default";
+    };
 
-	struct FFrameData
-	{
-		ID3D11Query* DisjointQuery = nullptr;
-		FTimestampPair Timestamps[MAX_TIMESTAMPS];
-		uint32 UsedCount = 0;
-		bool bActive = false;	// Begin()~GetData() 사이이면 true
-	};
+    struct FFrameData
+    {
+        ID3D11Query* DisjointQuery = nullptr;
+        FTimestampPair Timestamps[MAX_TIMESTAMPS];
+        uint32 UsedCount = 0;
+        bool bActive = false; // Begin()~GetData() 사이이면 true
+    };
 
-	FFrameData Frames[FRAME_COUNT];
-	uint32 WriteIndex = 0;
+    FFrameData Frames[FRAME_COUNT];
+    uint32 WriteIndex = 0;
 
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* Context = nullptr;
-	bool bInitialized = false;
-	bool bFrameActive = false;	// 현재 프레임에서 Begin()이 호출됐는지
+    ID3D11Device* Device = nullptr;
+    ID3D11DeviceContext* Context = nullptr;
+    bool bInitialized = false;
+    bool bFrameActive = false; // 현재 프레임에서 Begin()이 호출됐는지
 
-	void CollectPreviousFrame();
+    void CollectPreviousFrame();
 
-	TMap<const char*, FStatAccum> GPUStats;
-	TArray<FStatEntry> Snapshot;
+    TMap<const char*, FStatAccum> GPUStats;
+    TArray<FStatEntry> Snapshot;
 };
 
 // --- GPU Scoped Timer (RAII) ---
 class FGPUScopedTimer
 {
 public:
-	FGPUScopedTimer(const char* InName, const char* InCategory = "Default")
-		: Index(FGPUProfiler::Get().BeginTimestamp(InName, InCategory)) {}
+    FGPUScopedTimer(const char* InName, const char* InCategory = "Default")
+        : Index(FGPUProfiler::Get().BeginTimestamp(InName, InCategory)) {}
 
-	~FGPUScopedTimer()
-	{
-		FGPUProfiler::Get().EndTimestamp(Index);
-	}
+    ~FGPUScopedTimer()
+    {
+        FGPUProfiler::Get().EndTimestamp(Index);
+    }
 
 private:
-	uint32 Index;
+    uint32 Index;
 };
 
 // --- GPU_SCOPE_STAT 매크로 ---
 #if STATS
-#define GPU_SCOPE_STAT(Name)           FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name)
-#define GPU_SCOPE_STAT_CAT(Name, Cat)  FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name, Cat)
+#define GPU_SCOPE_STAT(Name) FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name)
+#define GPU_SCOPE_STAT_CAT(Name, Cat) FGPUScopedTimer SCOPE_STAT_CONCAT(_GPUScopedTimer_, __COUNTER__)(Name, Cat)
 #else
-#define GPU_SCOPE_STAT(Name)           ((void)0)
-#define GPU_SCOPE_STAT_CAT(Name, Cat)  ((void)0)
+#define GPU_SCOPE_STAT(Name) ((void)0)
+#define GPU_SCOPE_STAT_CAT(Name, Cat) ((void)0)
 #endif

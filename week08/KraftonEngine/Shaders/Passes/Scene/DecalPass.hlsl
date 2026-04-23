@@ -1,6 +1,11 @@
-#include "../../Common/Types/CommonTypes.hlsli"
-#include "../../Common/Types/SurfaceData.hlsli"
-#include "../../Common/Types/DecalCommon.hlsli"
+﻿// Shader: DecalPass
+// Role: fullscreen decal projection into modified surface buffers.
+// Entries: VS_DecalFullscreen, PS_Decal_*.
+// Slots: b0 Frame, b2 DecalBuffer, t0 DecalTex, t10 SceneDepth, s0/s1/s2 common samplers.
+
+#include "../../Common/Surface/CommonTypes.hlsli"
+#include "../../Common/Surface/SurfaceData.hlsli"
+#include "../../Common/Material/DecalCommon.hlsli"
 
 Texture2D g_DecalTex : register(t0);
 Texture2D g_BaseColorTex : register(t1);
@@ -134,3 +139,4 @@ FDecalOutput3 PS_Decal_BlinnPhong(PS_Input_UV Input)
     Output.ModifiedSurface2 = ApplyDecalMaterialParam(Surface2, DecalSample, Alpha);
     return Output;
 }
+

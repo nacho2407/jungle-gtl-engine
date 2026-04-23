@@ -14,7 +14,7 @@ public:
 
     FPrimitiveSceneProxy* CreateSceneProxy() override;
 
-    // Property Editor 지원
+    // Property Editor 지??
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
@@ -32,9 +32,9 @@ public:
     void OnTransformDirty() override;
 
 private:
-    bool ShouldDrawDebugBox() const;
+    bool ShouldRenderDebugBox() const;
     void HandleFade(float DeltaTime);
-    void DrawDebugBox();
+    void RenderDebugBox();
 
 private:
     FMaterialSlot MaterialSlot;
@@ -45,5 +45,5 @@ private:
     float FadeOutDelay = 0;
     float FadeOutDuration = 0;
     float FadeTimer = 0;
-    float FadeOpacity = 1.0f; // 페이드 효과 사용 시 Color.A에 곱함
+    float FadeOpacity = 1.0f; // ?�이???�과 ?�용 ??Color.A??곱함
 };

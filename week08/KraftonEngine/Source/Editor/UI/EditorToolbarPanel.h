@@ -11,26 +11,26 @@ class FLevelEditorViewportClient;
 
 class FEditorToolbarPanel
 {
-  public:
+public:
     FEditorToolbarPanel() = default;
     ~FEditorToolbarPanel() = default;
 
-    void Initialize(UEditorEngine *InEditor, ID3D11Device *InDevice);
+    void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
     void Release();
 
     float GetDesiredHeight() const { return ToolbarHeight; }
 
-    void RenderPaneToolbar(FLevelViewportLayout *Layout, int32 SlotIndex, FLevelEditorViewportClient *ViewportClient);
+    void RenderPaneToolbar(FLevelViewportLayout* Layout, int32 SlotIndex, FLevelEditorViewportClient* ViewportClient);
 
-  private:
-    bool DrawIconButton(const char *Id, ID3D11ShaderResourceView *Icon, const char *FallbackLabel,
+private:
+    bool DrawIconButton(const char* Id, ID3D11ShaderResourceView* Icon, const char* FallbackLabel,
                         ImU32 TintColor) const;
     void PushPopupStyle() const;
     void PopPopupStyle() const;
 
-    UEditorEngine *Editor = nullptr;
-    ID3D11ShaderResourceView *PlayIcon = nullptr;
-    ID3D11ShaderResourceView *StopIcon = nullptr;
+    UEditorEngine* Editor = nullptr;
+    ID3D11ShaderResourceView* PlayIcon = nullptr;
+    ID3D11ShaderResourceView* StopIcon = nullptr;
 
     float ToolbarHeight = 44.0f;
     float IconSize = 18.0f;

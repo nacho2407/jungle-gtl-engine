@@ -16,7 +16,7 @@
 #include "Profiling/Stats.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Execute/Context/RenderCollectContext.h"
-#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -342,7 +342,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     // 6) Selection�� PIE ���� �������� ����ε� ? ������ ���͸� ����Ų ä�� �θ�
     //    ��ŷ(=PIE ����) / outliner / outline ������ ��� ��߳���.
     SelectionManager.ClearSelection();
-    SelectionManager.SetGizmoEnabled(false); //PIE�� ���۵Ǹ� gizmo ��Ȱ��ȭ
+    SelectionManager.SetGizmoEnabled(false); // PIE�� ���۵Ǹ� gizmo ��Ȱ��ȭ
     SelectionManager.SetWorld(PIEWorld);
 
     // �� �ڵ�� �����Ǵ� �� �Ʒ� EndPlayMap()�� ����.
@@ -407,7 +407,7 @@ void UEditorEngine::EndPlayMap()
 
     // Selection�� ������ ����� ���� ? PIE ���ʹ� �� �ı��ǹǷ� ���� ����.
     SelectionManager.ClearSelection();
-    SelectionManager.SetGizmoEnabled(true); //PIE�� ������ gizmo Ȱ��ȭ
+    SelectionManager.SetGizmoEnabled(true); // PIE�� ������ gizmo Ȱ��ȭ
     SelectionManager.SetWorld(GetWorld());
 
     // �� �ڵ�� �����Ǵ� �� ���� StartPlayInEditorSession()�� ����.
@@ -559,7 +559,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     SceneView.OcclusionCulling = &GPUOcclusion;
     SceneView.LODContext = World->PrepareLODContext();
 
-    FSceneViewModeSurfaces* ViewModeSurfaces = nullptr;
+    FViewModeSurfaces* ViewModeSurfaces = nullptr;
     if (const auto* ViewModePassRegistry = Renderer.GetViewModePassRegistry();
         ViewModePassRegistry && ViewModePassRegistry->HasConfig(ViewMode))
     {
@@ -572,8 +572,8 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
     Renderer.BeginCollect(SceneView, Scene.GetPrimitiveProxyCount());
     auto PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, &Scene);
-    PipelineContext.ActiveViewMode = ViewMode;
-    PipelineContext.ActiveViewSurfaces = ViewModeSurfaces;
+    PipelineContext.ViewMode.ActiveViewMode = ViewMode;
+    PipelineContext.ViewMode.Surfaces = ViewModeSurfaces;
 
     FRenderCollectContext CollectContext = {};
     CollectContext.SceneView = &SceneView;
@@ -616,7 +616,6 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
     {
         SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
-        PipelineContext.VisibleProxies = &Renderer.GetCollectedPrimitives().VisibleProxies;
         Renderer.BuildDrawCommands(PipelineContext);
         Renderer.RunRootPipeline(ERenderPipelineType::EditorRootPipeline, PipelineContext);
     }

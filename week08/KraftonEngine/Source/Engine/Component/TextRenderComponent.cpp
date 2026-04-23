@@ -8,7 +8,7 @@
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
@@ -79,7 +79,7 @@ void UTextRenderComponent::SetText(const FString& InText)
     }
 
     Text = InText;
-    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
     MarkWorldBoundsDirty();
 }
 
@@ -106,7 +106,7 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
     {
         ReacquireDefaultFont();
     }
-    MarkProxyDirty(EDirtyFlag::Mesh);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 void UTextRenderComponent::SetFontSize(float InSize)
@@ -117,7 +117,7 @@ void UTextRenderComponent::SetFontSize(float InSize)
     }
 
     FontSize = InSize;
-    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
     MarkWorldBoundsDirty();
 }
 
@@ -129,7 +129,7 @@ void UTextRenderComponent::SetBillboard(bool bEnable)
     }
 
     bBillboard = bEnable;
-    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
     MarkWorldBoundsDirty();
 }
 
@@ -254,16 +254,16 @@ void UTextRenderComponent::PostEditProperty(const char* PropertyName)
     if (strcmp(PropertyName, "Font") == 0)
     {
         SetFont(FontName);
-        MarkProxyDirty(EDirtyFlag::Mesh);
+        MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
     }
     else if (strcmp(PropertyName, "Text") == 0)
     {
-        MarkProxyDirty(EDirtyFlag::Transform);
+        MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
         MarkWorldBoundsDirty();
     }
     else if (strcmp(PropertyName, "Font Size") == 0 || strcmp(PropertyName, "Billboard") == 0)
     {
-        MarkProxyDirty(EDirtyFlag::Transform);
+        MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
         MarkWorldBoundsDirty();
     }
 }

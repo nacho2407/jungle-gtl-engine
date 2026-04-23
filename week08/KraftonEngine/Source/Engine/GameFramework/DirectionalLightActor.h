@@ -9,13 +9,13 @@ class UBillboardComponent;
 class ADirectionalLightActor : public AActor
 {
 public:
-	DECLARE_CLASS(ADirectionalLightActor, AActor)
-	ADirectionalLightActor();
+    DECLARE_CLASS(ADirectionalLightActor, AActor)
+    ADirectionalLightActor();
 
-	void InitDefaultComponents();
+    void InitDefaultComponents();
 
 private:
     UDirectionalLightComponent* DirectionalLightComponent = nullptr;
-	UBillboardComponent* BillboardComponent = nullptr;
-	FString DirectionalLightIconPath = FPaths::EditorRelativePath("Icons/Materials/DirectionalLightIcon.json");
+    UBillboardComponent* BillboardComponent = nullptr;
+    FString DirectionalLightIconPath = FPaths::EditorRelativePath("Icons/Materials/DirectionalLightIcon.json");
 };

@@ -1,5 +1,5 @@
-#pragma once
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+﻿#pragma once
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "PrimitiveComponent.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
@@ -7,47 +7,65 @@
 
 class FPrimitiveSceneProxy;
 
+/*
+    카메라를 향해 회전하는 스프라이트형 primitive 컴포넌트입니다.
+    에디터 아이콘, 빌보드 메시, 간단한 사각형 피킹에 사용됩니다.
+*/
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
-	DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
+    DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
-	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-	FPrimitiveSceneProxy* CreateSceneProxy() override;
+    void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+    FPrimitiveSceneProxy* CreateSceneProxy() override;
 
-	void Serialize(FArchive& Ar) override;
-	void PostDuplicate() override;
+    void Serialize(FArchive& Ar) override;
+    void PostDuplicate() override;
 
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char* PropertyName) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; MarkProxyDirty(EDirtyFlag::Transform); MarkWorldBoundsDirty(); }
-	bool IsBillboardEnabled() const { return bIsBillboard; }
+    void SetBillboardEnabled(bool bEnable)
+    {
+        bIsBillboard = bEnable;
+        MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
+        MarkWorldBoundsDirty();
+    }
+    bool IsBillboardEnabled() const { return bIsBillboard; }
 
-	// --- Material ---
-	void SetMaterial(class UMaterial* InMaterial);
-	class UMaterial* GetMaterial() const { return Material; }
+    /*
+        빌보드에 사용할 머티리얼을 설정합니다.
+    */
+    void SetMaterial(class UMaterial* InMaterial);
+    class UMaterial* GetMaterial() const { return Material; }
 
-	// --- Sprite Size (월드 공간) ---
-	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
-	float GetWidth()  const { return Width; }
-	float GetHeight() const { return Height; }
+    /*
+        월드 공간 기준 스프라이트 크기를 설정합니다.
+    */
+    void SetSpriteSize(float InWidth, float InHeight)
+    {
+        Width = InWidth;
+        Height = InHeight;
+    }
+    float GetWidth() const { return Width; }
+    float GetHeight() const { return Height; }
 
-	// 주어진 카메라 방향으로 빌보드 월드 행렬을 계산 (per-view 렌더링용)
-	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
+    /*
+        주어진 카메라 방향을 바라보는 빌보드 월드 행렬을 계산합니다.
+    */
+    FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 
-	FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
-	FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
-	void UpdateWorldAABB() const override;
-	bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
+    FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
+    FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
+    void UpdateWorldAABB() const override;
+    bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
 protected:
-	bool bIsBillboard = true;
+    bool bIsBillboard = true;
 
-	FMaterialSlot MaterialSlot;
-	UMaterial* Material = nullptr;
+    FMaterialSlot MaterialSlot;
+    UMaterial* Material = nullptr;
 
-	float Width  = 1.0f;
-	float Height = 1.0f;
+    float Width = 1.0f;
+    float Height = 1.0f;
 };
-

@@ -20,19 +20,22 @@ namespace
 {
 }
 
-#define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+#define MAT_SEPARATOR() \
+    ImGui::Spacing();   \
+    ImGui::Separator(); \
+    ImGui::Spacing();
 
 void FEditorMaterialPanel::Render(float DeltaTime)
 {
-	ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
-	ImGui::Begin("Material Editor");
+    ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
+    ImGui::Begin("Material Editor");
 
-	ImGui::End();
+    ImGui::End();
 }
 
 void FEditorMaterialPanel::ResetSelection()
 {
-	SelectedComponent = nullptr;
-	SelectedSectionIndex = -1;
-	SelectedMaterialPtr = nullptr;
+    SelectedComponent = nullptr;
+    SelectedSectionIndex = -1;
+    SelectedMaterialPtr = nullptr;
 }

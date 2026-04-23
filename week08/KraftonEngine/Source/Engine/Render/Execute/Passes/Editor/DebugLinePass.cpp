@@ -1,4 +1,4 @@
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Editor/DebugLinePass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
@@ -18,7 +18,7 @@ void FDebugLinePass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FDebugLinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
-    DrawCommandBuilder::BuildLineDrawCommand(Context, *Context.DrawCommandList);
+    DrawCommand::BuildLineDrawCommand(Context, *Context.DrawCommandList);
 }
 
 void FDebugLinePass::SubmitDrawCommands(FRenderPipelineContext& Context)

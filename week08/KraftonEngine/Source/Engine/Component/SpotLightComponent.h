@@ -13,11 +13,11 @@ public:
 
     FLightSceneProxy* CreateLightSceneProxy() override;
 
-	float GetInnerConeAngle() const { return InnerConeAngle; }
+    float GetInnerConeAngle() const { return InnerConeAngle; }
     float GetOuterConeAngle() const { return OuterConeAngle; }
 
 private:
-	// ─── UE5 Default Value ───
+    // ─── UE5 Default Value ───
     float InnerConeAngle = 0.0f;  // SpotLight 중심 빛이 최대 강도를 가지는 원뿔의 각도
     float OuterConeAngle = 44.0f; // SpotLight의 빛이 완전히 사라지는 원뿔의 각도
 };

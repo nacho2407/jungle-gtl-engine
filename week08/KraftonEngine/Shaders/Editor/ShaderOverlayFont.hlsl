@@ -1,3 +1,7 @@
+// Shader include: Editor/ShaderOverlayFont.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Geometry/VertexLayouts.hlsl"
 #include "../Common/Resources/SystemSamplers.hlsl"
 
@@ -20,3 +24,4 @@ float4 PS(PS_Input_Tex input) : SV_TARGET
 
     return float4(0.6f, 1.0f, 1.0f, col.r);
 }
+

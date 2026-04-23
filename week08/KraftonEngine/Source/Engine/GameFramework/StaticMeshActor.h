@@ -9,13 +9,13 @@ class USubUVComponent;
 class AStaticMeshActor : public AActor
 {
 public:
-	DECLARE_CLASS(AStaticMeshActor, AActor)
-	AStaticMeshActor() {}
+    DECLARE_CLASS(AStaticMeshActor, AActor)
+    AStaticMeshActor() {}
 
-	void InitDefaultComponents(const FString& UStaticMeshFileName);
+    void InitDefaultComponents(const FString& UStaticMeshFileName);
 
 private:
-	UStaticMeshComponent* StaticMeshComponent = nullptr;
-	//UTextRenderComponent* TextRenderComponent = nullptr;
-	//USubUVComponent* SubUVComponent = nullptr;
+    UStaticMeshComponent* StaticMeshComponent = nullptr;
+    // UTextRenderComponent* TextRenderComponent = nullptr;
+    // USubUVComponent* SubUVComponent = nullptr;
 };

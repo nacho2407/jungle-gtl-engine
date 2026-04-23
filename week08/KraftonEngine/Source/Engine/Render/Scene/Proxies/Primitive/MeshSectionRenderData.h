@@ -1,21 +1,21 @@
 #pragma once
 
-#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 
 class FConstantBuffer;
 struct ID3D11ShaderResourceView;
 
 struct FMeshSectionRenderData
 {
-    ID3D11ShaderResourceView* DiffuseSRV = nullptr;
-    ID3D11ShaderResourceView* NormalSRV = nullptr;
+    ID3D11ShaderResourceView* DiffuseSRV  = nullptr;
+    ID3D11ShaderResourceView* NormalSRV   = nullptr;
     ID3D11ShaderResourceView* SpecularSRV = nullptr;
-    uint32 FirstIndex = 0;
-    uint32 IndexCount = 0;
+    uint32                    FirstIndex  = 0;
+    uint32                    IndexCount  = 0;
 
-    EBlendState Blend = EBlendState::Opaque;
+    EBlendState        Blend        = EBlendState::Opaque;
     EDepthStencilState DepthStencil = EDepthStencilState::Default;
-    ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
+    ERasterizerState   Rasterizer   = ERasterizerState::SolidBackCull;
 
     FConstantBuffer* MaterialCB[2] = {};
 };

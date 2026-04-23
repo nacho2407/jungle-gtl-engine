@@ -18,7 +18,7 @@ void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
     ULightComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "AttenuationRadius", EPropertyType::Float, &AttenuationRadius, 0.0f, 10000.0f, 10.0f });
     OutProps.push_back({ "LightFalloffExponent", EPropertyType::Float, &LightFalloffExponent, 0.0f, 20.0f, 0.1f });
-	OutProps.push_back({ "UseInverseSquaredFalloff", EPropertyType::Bool, &bUseInverseSquaredFalloff});
+    OutProps.push_back({ "UseInverseSquaredFalloff", EPropertyType::Bool, &bUseInverseSquaredFalloff });
 }
 
 void UPointLightComponent::PostEditProperty(const char* PropertyName)

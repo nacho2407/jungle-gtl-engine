@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
@@ -39,7 +39,7 @@ UPrimitiveComponent::~UPrimitiveComponent()
     DestroyRenderState();
 }
 
-void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
+void UPrimitiveComponent::MarkProxyDirty(ESceneProxyDirtyFlag Flag) const
 {
     if (!SceneProxy || !Owner || !Owner->GetWorld())
         return;
@@ -53,7 +53,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
     Ar << bVisibleInEditor;
     Ar << bVisibleInGame;
     Ar << bIsEditorHelper;
-    // LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
+    // LocalExtents??硫붿떆 ?깆뿉???ш퀎?곕릺誘濡?吏곷젹???쒖쇅.
 }
 
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
@@ -131,12 +131,12 @@ bool UPrimitiveComponent::ShouldRenderInCurrentWorld() const
 
 // ============================================================
 // MarkRenderTransformDirty / MarkRenderVisibilityDirty
-//   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty
-//   호출자가 외워야 했던 시퀀스를 단일 진입점으로 통합.
+//   ?꾨줉??dirty + Octree(?≫꽣 ?⑥쐞 dirty) + PickingBVH dirty
+//   ?몄텧?먭? ?몄썙???덈뜕 ?쒗?ㅻ? ?⑥씪 吏꾩엯?먯쑝濡??듯빀.
 // ============================================================
 void UPrimitiveComponent::MarkRenderTransformDirty()
 {
-    MarkProxyDirty(EDirtyFlag::Transform);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
 
     AActor* OwnerActor = GetOwner();
     if (!OwnerActor)
@@ -151,7 +151,7 @@ void UPrimitiveComponent::MarkRenderTransformDirty()
 
 void UPrimitiveComponent::MarkRenderVisibilityDirty()
 {
-    MarkProxyDirty(EDirtyFlag::Visibility);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Visibility);
 
     AActor* OwnerActor = GetOwner();
     if (!OwnerActor)
@@ -160,7 +160,7 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
     if (!World)
         return;
 
-    // 가시성 변화는 Octree 포함 여부도 좌우하므로 액터 dirty로 반영한다.
+    // 媛?쒖꽦 蹂?붾뒗 Octree ?ы븿 ?щ???醫뚯슦?섎?濡??≫꽣 dirty濡?諛섏쁺?쒕떎.
     World->UpdateActorInOctree(OwnerActor);
     World->MarkWorldPrimitivePickingBVHDirty();
 }
@@ -176,7 +176,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
-    // 베이스 클래스의 transform 등 공통 프로퍼티 처리 보장
+    // 踰좎씠???대옒?ㅼ쓽 transform ??怨듯넻 ?꾨줈?쇳떚 泥섎━ 蹂댁옣
     USceneComponent::PostEditProperty(PropertyName);
 
     if (strcmp(PropertyName, "Visible") == 0)
@@ -199,9 +199,9 @@ FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 
 void UPrimitiveComponent::MarkWorldBoundsDirty()
 {
-    // Local bounds(shape) 자체가 바뀐 경우용 진입점.
-    // fast-path(이전 AABB를 translation만으로 재사용)는 shape가 동일하다는 가정에 의존하므로
-    // 여기서는 반드시 무력화해야 한다. 안 그러면 mesh 교체 후에도 stale AABB가 캐시된다.
+    // Local bounds(shape) ?먯껜媛 諛붾?寃쎌슦??吏꾩엯??
+    // fast-path(?댁쟾 AABB瑜?translation留뚯쑝濡??ъ궗????shape媛 ?숈씪?섎떎??媛?뺤뿉 ?섏〈?섎?濡?
+    // ?ш린?쒕뒗 諛섎뱶??臾대젰?뷀빐???쒕떎. ??洹몃윭硫?mesh 援먯껜 ?꾩뿉??stale AABB媛 罹먯떆?쒕떎.
     bWorldAABBDirty = true;
     bHasValidWorldAABB = false;
     MarkRenderTransformDirty();
@@ -224,7 +224,9 @@ void UPrimitiveComponent::UpdateWorldAABB() const
     bHasValidWorldAABB = true;
 }
 
-/* 현재 쓰이지 않는 코드입니다*/
+/*
+    현재 지원하지 않는 기본 머티리얼 폴백 지점입니다.
+*/
 bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
     FMeshDataView View = GetMeshDataView();
@@ -272,18 +274,18 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
         }
     }
 
-    // 프록시가 등록된 경우 Transform dirty 전파 (FScene DirtySet에도 등록)
-    MarkProxyDirty(EDirtyFlag::Transform);
+    // ?꾨줉?쒓? ?깅줉??寃쎌슦 Transform dirty ?꾪뙆 (FScene DirtySet?먮룄 ?깅줉)
+    MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
 }
 
-// --- 프록시 팩토리 ---
+// --- ?꾨줉???⑺넗由?---
 FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
 {
-    // 기본 PrimitiveComponent용 프록시
+    // 湲곕낯 PrimitiveComponent???꾨줉??
     return new FPrimitiveSceneProxy(this);
 }
 
-// --- 렌더 상태 관리 (UE RegisterComponent 대응) ---
+// --- ?뚮뜑 ?곹깭 愿由?(UE RegisterComponent ??? ---
 void UPrimitiveComponent::CreateRenderState()
 {
     if (!Owner || !Owner->GetWorld())
@@ -297,15 +299,15 @@ void UPrimitiveComponent::CreateRenderState()
         SceneProxy = Scene.AddPrimitive(this);
     }
 
-    // Proxy가 이미 살아 있어도 partition에서만 빠진 상태가 있을 수 있다.
-    // render visibility/frustum query는 partition 기반이므로 등록을 idempotent하게 보정한다.
+    // Proxy媛 ?대? ?댁븘 ?덉뼱??partition?먯꽌留?鍮좎쭊 ?곹깭媛 ?덉쓣 ???덈떎.
+    // render visibility/frustum query??partition 湲곕컲?대?濡??깅줉??idempotent?섍쾶 蹂댁젙?쒕떎.
     World->GetPartition().AddSinglePrimitive(this);
     World->MarkWorldPrimitivePickingBVHDirty();
 }
 
 void UPrimitiveComponent::DestroyRenderState()
 {
-    // SceneProxy가 없더라도 Octree에는 등록돼 있을 수 있으므로 partition 정리는 항상 시도한다.
+    // SceneProxy媛 ?녿뜑?쇰룄 Octree?먮뒗 ?깅줉???덉쓣 ???덉쑝誘濡?partition ?뺣━????긽 ?쒕룄?쒕떎.
     if (Owner)
     {
         if (UWorld* World = Owner->GetWorld())
@@ -315,7 +317,7 @@ void UPrimitiveComponent::DestroyRenderState()
 
             if (SceneProxy)
             {
-                // Scene.RemovePrimitive 가 VisibleProxies 캐시도 일관되게 정리한다.
+                // Scene.RemovePrimitive 媛 VisibleProxies 罹먯떆???쇨??섍쾶 ?뺣━?쒕떎.
                 World->GetScene().RemovePrimitive(SceneProxy);
             }
         }
@@ -325,15 +327,15 @@ void UPrimitiveComponent::DestroyRenderState()
 
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
-    // 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
+    // ?꾨줉???뚭눼 ???ъ깮????硫붿떆 援먯껜 ????蹂寃????ъ슜
     DestroyRenderState();
     CreateRenderState();
 }
 
 void UPrimitiveComponent::OnTransformDirty()
 {
-    // 순수 transform 변경 — local bounds(shape)는 그대로이므로 fast-path를 살린다.
-    // (basis 동일 + translation만 바뀐 경우 UpdateWorldMatrix가 이전 AABB를 평행이동만 적용)
+    // ?쒖닔 transform 蹂寃???local bounds(shape)??洹몃?濡쒖씠誘濡?fast-path瑜??대┛??
+    // (basis ?숈씪 + translation留?諛붾?寃쎌슦 UpdateWorldMatrix媛 ?댁쟾 AABB瑜??됲뻾?대룞留??곸슜)
     bWorldAABBDirty = true;
     MarkRenderTransformDirty();
 }

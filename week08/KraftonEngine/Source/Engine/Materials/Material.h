@@ -2,7 +2,6 @@
 
 #include "Object/ObjectFactory.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
 #include "MaterialCore.h"
 
 #include <memory>
@@ -33,10 +32,6 @@ private:
     uint32 MaterialInstanceID = 0;
     FMaterialTemplate* Template = nullptr;
 
-    EBlendState BlendState = EBlendState::Opaque;
-    EDepthStencilState DepthStencilState = EDepthStencilState::Default;
-    ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
-
     TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
     TMap<FString, UTexture2D*> TextureParameters;
     TMap<FString, float> LooseScalarParameters;
@@ -53,9 +48,6 @@ public:
     void Create(
         const FString& InPathFileName,
         FMaterialTemplate* InTemplate,
-        EBlendState InBlend,
-        EDepthStencilState InDepth,
-        ERasterizerState InRaster,
         TMap<FString, std::unique_ptr<FMaterialConstantBuffer>>&& InBuffers);
 
     const uint8* GetRawPtr(const FString& BufferName, uint32 Offset) const;
@@ -73,10 +65,6 @@ public:
     UTexture2D* GetDiffuseTexture() const;
     UTexture2D* GetNormalTexture() const;
     UTexture2D* GetSpecularTexture() const;
-
-    EBlendState GetBlendState() const { return BlendState; }
-    EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
-    ERasterizerState GetRasterizerState() const { return RasterizerState; }
 
     const FString& GetTexturePathFileName(const FString& TextureName) const;
     const FString& GetAssetPathFileName() const { return PathFileName; }

@@ -12,17 +12,17 @@ class UDecalComponent;
 class FDecalSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	FDecalSceneProxy(UDecalComponent* InComponent);
-	~FDecalSceneProxy() override;
+    FDecalSceneProxy(UDecalComponent* InComponent);
+    ~FDecalSceneProxy() override;
 
-	void UpdateTransform() override;
-	void UpdateMaterial() override;
-	void UpdateMesh() override;
+    void UpdateTransform() override;
+    void UpdateMaterial() override;
+    void UpdateMesh() override;
 
 private:
-	UDecalComponent* GetDecalComponent() const;
-	void UpdateDecalConstants();
+    UDecalComponent* GetDecalComponent() const;
+    void             UpdateDecalConstants();
 
-	FConstantBuffer* DecalCB;
-	class UMaterial* DecalMaterial = nullptr;
+    FConstantBuffer* DecalCB;
+    class UMaterial* DecalMaterial = nullptr;
 };

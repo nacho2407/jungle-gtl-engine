@@ -1,14 +1,10 @@
 #pragma once
 
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Base/RenderPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 
-/*
-    ȭ�� ��ü�� 1�� �׸��� fullscreen �н��� ���� ���̽� Ŭ�����Դϴ�.
-    Lighting, Fog, FXAA, Outline ���� ��ó�� �迭 �н��� �� Ŭ������ ����մϴ�.
-*/
 class FFullscreenPassBase : public FRenderPass
 {
 public:
@@ -66,7 +62,7 @@ protected:
         }
 
         uint32 Start = 0;
-        uint32 End = 0;
+        uint32 End   = 0;
         Context.DrawCommandList->GetPassRange(Pass, Start, End);
         if (Start < End)
         {

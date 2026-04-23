@@ -1,4 +1,4 @@
-#include "Render/Execute/Passes/Base/RenderPassTypes.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Editor/GizmoPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
@@ -17,7 +17,7 @@ void FGizmoPass::PrepareTargets(FRenderPipelineContext& Context)
 
 void FGizmoPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
 {
-    DrawCommandBuilder::BuildMeshDrawCommand(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
+    DrawCommand::BuildMeshDrawCommand(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
 }
 
 void FGizmoPass::SubmitDrawCommands(FRenderPipelineContext& Context)

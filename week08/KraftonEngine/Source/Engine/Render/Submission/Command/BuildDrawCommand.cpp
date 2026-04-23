@@ -1,82 +1,43 @@
 #include "Render/Submission/Command/BuildDrawCommand.h"
 
 #include "Component/TextRenderComponent.h"
-#include "Render/Execute/Passes/Scene/ShadingTypes.h"
-#include "Render/Execute/Passes/Base/PassRenderState.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
-#include "Render/Execute/Context/FrameRenderResources.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Execute/Context/ViewMode/SceneViewModeSurfaces.h"
+#include "Render/Execute/Context/ViewMode/ShadingModel.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Execute/Registry/RenderPassPresets.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Renderer.h"
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
-#include "Render/Resources/Buffers/ConstantBufferPool.h"
-#include "Render/Resources/RenderResources.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Resources/Buffers/ConstantBufferCache.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
+#include "Render/Resources/FrameResources.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Submission/Command/DrawCommand.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Resource/ResourceManager.h"
 
-
-namespace
-{
-bool TryResolveViewModeStage(ERenderPass Pass, EViewModeStage& OutStage)
-{
-    switch (Pass)
-    {
-    case ERenderPass::Opaque:
-        OutStage = EViewModeStage::Opaque;
-        return true;
-    case ERenderPass::Decal:
-        OutStage = EViewModeStage::Decal;
-        return true;
-    case ERenderPass::Lighting:
-        OutStage = EViewModeStage::Lighting;
-        return true;
-    default:
-        return false;
-    }
-}
-} // namespace
-
-void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
-    const bool bMeshValid = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();
+    const bool bMeshValid     = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();
 
     if (!bMeshValid)
     {
         return;
     }
 
-    ID3D11DeviceContext* Ctx = Context.Context;
-    FShader* Shader = Proxy.Shader;
-    const bool bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask);
+    ID3D11DeviceContext* Ctx             = Context.Context;
+    FGraphicsProgram*    Shader          = Proxy.Shader;
+    const bool           bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask);
 
     if (bIsMaskLikePass)
     {
         Shader = FShaderManager::Get().GetShader(EShaderType::DepthOnly);
-    }
-    else if (Context.ViewModePassRegistry && Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
-    {
-        EViewModeStage ViewModeStage;
-        const bool bSupportsViewModeStage = TryResolveViewModeStage(Pass, ViewModeStage);
-        const bool bRequiresViewModeSurface = (Pass == ERenderPass::Opaque || Pass == ERenderPass::Decal);
-
-        if (Proxy.bAllowViewModeShaderOverride && bSupportsViewModeStage && (!bRequiresViewModeSurface || Context.ActiveViewSurfaces))
-        {
-            if (const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, ViewModeStage))
-            {
-                if (Desc->CompiledShader)
-                {
-                    Shader = Desc->CompiledShader;
-                }
-            }
-        }
     }
 
     if (!Shader)
@@ -84,7 +45,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         return;
     }
 
-    const FPassRenderStateDesc& PassState = Context.GetPassState(Pass);
+    const FRenderPassDrawPreset& PassPreset = Context.GetRenderPassDrawPreset(Pass);
 
     FConstantBuffer* PerObjCB = Context.Renderer ? Context.Renderer->AcquirePerObjectCBForProxy(Proxy) : nullptr;
     if (!PerObjCB && Context.Resources)
@@ -94,7 +55,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
 
     if (PerObjCB && Ctx && Proxy.NeedsPerObjectCBUpload())
     {
-        PerObjCB->Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectConstants));
+        PerObjCB->Update(Ctx, &Proxy.PerObjectConstants, sizeof(FPerObjectCBData));
         Proxy.ClearPerObjectCBDirty();
     }
 
@@ -125,24 +86,23 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
         }
 
         FDrawCommand& Cmd = OutList.AddCommand();
-        Cmd.Shader = Shader;
-        Cmd.MeshBuffer = Proxy.MeshBuffer;
-        Cmd.FirstIndex = FirstIndex;
-        Cmd.IndexCount = IndexCount;
+        Cmd.Shader        = Shader;
+        Cmd.MeshBuffer    = Proxy.MeshBuffer;
+        Cmd.FirstIndex    = FirstIndex;
+        Cmd.IndexCount    = IndexCount;
 
         if (bIsMaskLikePass)
         {
-            Cmd.DepthStencil = PassState.DepthStencil;
-            Cmd.Blend = PassState.Blend;
-            Cmd.Rasterizer = PassState.Rasterizer;
+            Cmd.DepthStencil = PassPreset.DepthStencil;
+            Cmd.Blend        = PassPreset.Blend;
+            Cmd.Rasterizer   = PassPreset.Rasterizer;
         }
         else
         {
-
             const bool bUsesViewModeOpaque =
                 (Pass == ERenderPass::Opaque) &&
-                Context.ViewModePassRegistry &&
-                Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode);
+                Context.ViewMode.Registry &&
+                Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode);
 
             // Reversed-Z depth pre-pass writes the same geometry depth first.
             // Opaque must then use GREATER_EQUAL-style read-only depth or every
@@ -157,7 +117,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             }
             else
             {
-                Cmd.DepthStencil = PassState.DepthStencil;
+                Cmd.DepthStencil = PassPreset.DepthStencil;
             }
 
             if (SectionBlend != EBlendState::Opaque || Pass != ERenderPass::Opaque)
@@ -166,7 +126,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             }
             else
             {
-                Cmd.Blend = PassState.Blend;
+                Cmd.Blend = PassPreset.Blend;
             }
 
             if (SectionRasterizer != ERasterizerState::SolidBackCull)
@@ -175,7 +135,7 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
             }
             else
             {
-                Cmd.Rasterizer = PassState.Rasterizer;
+                Cmd.Rasterizer = PassPreset.Rasterizer;
             }
         }
 
@@ -183,21 +143,21 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
              Pass == ERenderPass::AlphaBlend ||
              Pass == ERenderPass::OverlayBillboard ||
              Pass == ERenderPass::OverlayTextWorld) &&
-            Context.ActiveViewMode == EViewMode::Wireframe)
+            Context.ViewMode.ActiveViewMode == EViewMode::Wireframe)
         {
             Cmd.Rasterizer = ERasterizerState::WireFrame;
         }
 
-        Cmd.Topology = PassState.Topology;
-        Cmd.PerObjectCB = PerObjCB;
+        Cmd.Topology       = PassPreset.Topology;
+        Cmd.PerObjectCB    = PerObjCB;
         Cmd.PerShaderCB[0] = bIsMaskLikePass ? nullptr : (CB0 ? CB0 : (Proxy.MaterialCB[0] ? Proxy.MaterialCB[0] : ExtraCB0));
         Cmd.PerShaderCB[1] = bIsMaskLikePass ? nullptr : (CB1 ? CB1 : (Proxy.MaterialCB[1] ? Proxy.MaterialCB[1] : ExtraCB1));
-        Cmd.LightCB = (bIsMaskLikePass || !Context.Resources) ? nullptr : &Context.Resources->GlobalLightBuffer;
-        Cmd.LocalLightSRV = (bIsMaskLikePass || !Context.Resources) ? nullptr : Context.Resources->LocalLightSRV;
-        Cmd.DiffuseSRV = bIsMaskLikePass ? nullptr : BaseSRV;
-        Cmd.NormalSRV = bIsMaskLikePass ? nullptr : InNormalSRV;
-        Cmd.SpecularSRV = bIsMaskLikePass ? nullptr : InSpecularSRV;
-        Cmd.Pass = Pass;
+        Cmd.LightCB        = (bIsMaskLikePass || !Context.Resources) ? nullptr : &Context.Resources->GlobalLightBuffer;
+        Cmd.LocalLightSRV  = (bIsMaskLikePass || !Context.Resources) ? nullptr : Context.Resources->LocalLightSRV;
+        Cmd.DiffuseSRV     = bIsMaskLikePass ? nullptr : BaseSRV;
+        Cmd.NormalSRV      = bIsMaskLikePass ? nullptr : InNormalSRV;
+        Cmd.SpecularSRV    = bIsMaskLikePass ? nullptr : InSpecularSRV;
+        Cmd.Pass           = Pass;
         const uintptr_t MaterialHash =
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[0]) >> 4) ^
             (reinterpret_cast<uintptr_t>(Cmd.PerShaderCB[1]) >> 9) ^
@@ -246,19 +206,20 @@ void DrawCommandBuilder::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy,
 }
 
 
-void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
+void DrawCommand::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    FShader* Shader = nullptr;
+    FGraphicsProgram*             Shader  = nullptr;
 
     if (Pass == ERenderPass::Lighting)
     {
-        if (!Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+        if (!Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
         {
             return;
         }
 
-        const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EViewModeStage::Lighting);
+        const FViewModePassDesc* Desc =
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Lighting);
         if (!Desc || !Desc->CompiledShader)
         {
             return;
@@ -295,20 +256,20 @@ void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPip
     if (!Shader)
         return;
 
-    const FPassRenderStateDesc& S = Context.GetPassState(Pass);
-    FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Shader;
-    Cmd.DepthStencil = S.DepthStencil;
-    Cmd.Blend = S.Blend;
-    Cmd.Rasterizer = S.Rasterizer;
-    Cmd.Topology = S.Topology;
-    Cmd.VertexCount = 3;
-    Cmd.Pass = Pass;
+    const FRenderPassDrawPreset& S   = Context.GetRenderPassDrawPreset(Pass);
+    FDrawCommand&                Cmd = OutList.AddCommand();
+    Cmd.Shader                       = Shader;
+    Cmd.DepthStencil                 = S.DepthStencil;
+    Cmd.Blend                        = S.Blend;
+    Cmd.Rasterizer                   = S.Rasterizer;
+    Cmd.Topology                     = S.Topology;
+    Cmd.VertexCount                  = 3;
+    Cmd.Pass                         = Pass;
 
-    if (Pass == ERenderPass::Lighting && Context.ActiveViewSurfaces)
+    if (Pass == ERenderPass::Lighting && Context.ViewMode.Surfaces)
     {
         // Lighting fullscreen shaders read the base color buffer from t0.
-        Cmd.DiffuseSRV = Context.ActiveViewSurfaces->GetSRV(ESceneViewModeSurfaceSlot::BaseColor);
+        Cmd.DiffuseSRV = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor);
     }
     else if (Pass == ERenderPass::FXAA && Context.SceneView)
     {
@@ -317,13 +278,13 @@ void DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPip
         Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 
-    Cmd.LightCB = (Pass == ERenderPass::Lighting && Context.Resources) ? &Context.Resources->GlobalLightBuffer : nullptr;
+    Cmd.LightCB       = (Pass == ERenderPass::Lighting && Context.Resources) ? &Context.Resources->GlobalLightBuffer : nullptr;
     Cmd.LocalLightSRV = (Pass == ERenderPass::Lighting && Context.Resources) ? Context.Resources->LocalLightSRV : nullptr;
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, ToPostProcessUserBits(PostProcessVariant));
+    Cmd.SortKey       = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, ToPostProcessUserBits(PostProcessVariant));
 }
 
 
-void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.Scene || !Context.SceneView)
     {
@@ -331,36 +292,38 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
     }
 
     FLineBatch& EditorLines = Context.Renderer->GetEditorLineBatch();
-    FLineBatch& GridLines = Context.Renderer->GetGridLineBatch();
+    FLineBatch& GridLines   = Context.Renderer->GetGridLineBatch();
     EditorLines.Clear();
     GridLines.Clear();
 
-    if (Context.OverlayData && Context.OverlayData->HasGrid())
+    const FCollectedOverlayData* OverlayData = Context.Submission.OverlayData;
+
+    if (OverlayData && OverlayData->HasGrid())
     {
         GridLines.AddWorldHelpers(
             Context.SceneView->ShowFlags,
-            Context.OverlayData->GetGridSpacing(),
-            Context.OverlayData->GetGridHalfLineCount(),
+            OverlayData->GetGridSpacing(),
+            OverlayData->GetGridHalfLineCount(),
             Context.SceneView->CameraPosition,
             Context.SceneView->CameraForward,
             Context.SceneView->bIsOrtho);
     }
 
-    if (Context.DebugLines)
+    if (OverlayData)
     {
-        for (const FSceneDebugLine& Line : *Context.DebugLines)
+        for (const FSceneDebugLine& Line : OverlayData->GetDebugLines())
         {
             EditorLines.AddLine(Line.Start, Line.End, Line.Color.ToVector4());
         }
     }
 
-    if (Context.OverlayData)
+    if (OverlayData)
     {
-        for (const FSceneDebugAABB& Box : Context.OverlayData->GetDebugAABBs())
+        for (const FSceneDebugAABB& Box : OverlayData->GetDebugAABBs())
         {
-            const FVector& Min = Box.Min;
-            const FVector& Max = Box.Max;
-            const FVector V[8] = {
+            const FVector& Min  = Box.Min;
+            const FVector& Max  = Box.Max;
+            const FVector  V[8] = {
                 FVector(Min.X, Min.Y, Min.Z),
                 FVector(Max.X, Min.Y, Min.Z),
                 FVector(Max.X, Max.Y, Min.Z),
@@ -380,9 +343,9 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
         }
     }
 
-    if (const FShader* Shader = FShaderManager::Get().GetShader(EShaderType::Editor))
+    if (const FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::Editor))
     {
-        const FPassRenderStateDesc& State = Context.GetPassState(ERenderPass::EditorLines);
+        const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::EditorLines);
 
         auto AddBatch = [&](FLineBatch& Batch, const char* DebugName)
         {
@@ -392,18 +355,18 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
             }
 
             FDrawCommand& Cmd = OutList.AddCommand();
-            Cmd.Shader = const_cast<FShader*>(Shader);
-            Cmd.DepthStencil = State.DepthStencil;
-            Cmd.Blend = State.Blend;
-            Cmd.Rasterizer = ERasterizerState::SolidNoCull;
-            Cmd.Topology = State.Topology;
-            Cmd.RawVB = Batch.GetVBBuffer();
-            Cmd.RawVBStride = Batch.GetVBStride();
-            Cmd.RawIB = Batch.GetIBBuffer();
-            Cmd.IndexCount = Batch.GetIndexCount();
-            Cmd.Pass = ERenderPass::EditorLines;
-            Cmd.DebugName = DebugName;
-            Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, nullptr);
+            Cmd.Shader        = const_cast<FGraphicsProgram*>(Shader);
+            Cmd.DepthStencil  = State.DepthStencil;
+            Cmd.Blend         = State.Blend;
+            Cmd.Rasterizer    = ERasterizerState::SolidNoCull;
+            Cmd.Topology      = State.Topology;
+            Cmd.RawVB         = Batch.GetVBBuffer();
+            Cmd.RawVBStride   = Batch.GetVBStride();
+            Cmd.RawIB         = Batch.GetIBBuffer();
+            Cmd.IndexCount    = Batch.GetIndexCount();
+            Cmd.Pass          = ERenderPass::EditorLines;
+            Cmd.DebugName     = DebugName;
+            Cmd.SortKey       = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, nullptr);
         };
 
         AddBatch(GridLines, "GridLines");
@@ -412,14 +375,15 @@ void DrawCommandBuilder::BuildLineDrawCommand(FRenderPipelineContext& Context, F
 }
 
 
-void DrawCommandBuilder::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Context.OverlayBillboardProxies)
+    const FCollectedOverlayData* OverlayData = Context.Submission.OverlayData;
+    if (!OverlayData)
     {
         return;
     }
 
-    for (FPrimitiveSceneProxy* Proxy : *Context.OverlayBillboardProxies)
+    for (FPrimitiveSceneProxy* Proxy : OverlayData->GetEditorHelperBillboards())
     {
         if (!Proxy)
         {
@@ -430,16 +394,19 @@ void DrawCommandBuilder::BuildOverlayBillboardDrawCommand(FRenderPipelineContext
     }
 }
 
-void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView)
     {
         return;
     }
 
-    if (Context.OverlayTextProxies)
+    const FCollectedOverlayData* OverlayData = Context.Submission.OverlayData;
+    const FCollectedSceneData*   SceneData   = Context.Submission.SceneData;
+
+    if (OverlayData)
     {
-        for (FPrimitiveSceneProxy* Proxy : *Context.OverlayTextProxies)
+        for (FPrimitiveSceneProxy* Proxy : OverlayData->GetEditorHelperTexts())
         {
             if (!Proxy)
             {
@@ -454,7 +421,7 @@ void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Con
         }
     }
 
-    if (!Context.OverlayTexts)
+    if (!SceneData)
     {
         return;
     }
@@ -469,7 +436,7 @@ void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Con
     FontBatch.EnsureCharInfoMap(FontRes);
     FontBatch.ClearScreen();
 
-    for (const FSceneOverlayText& Text : *Context.OverlayTexts)
+    for (const FSceneOverlayText& Text : SceneData->Primitives.OverlayTexts)
     {
         if (!Text.Text.empty())
         {
@@ -488,30 +455,30 @@ void DrawCommandBuilder::BuildOverlayTextDrawCommand(FRenderPipelineContext& Con
         return;
     }
 
-    FShader* Shader = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
+    FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::OverlayFont);
     if (!Shader)
     {
         return;
     }
 
-    const FPassRenderStateDesc& State = Context.GetPassState(ERenderPass::OverlayFont);
-    FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Shader;
-    Cmd.DepthStencil = State.DepthStencil;
-    Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
-    Cmd.Topology = State.Topology;
-    Cmd.RawVB = FontBatch.GetScreenVBBuffer();
-    Cmd.RawVBStride = FontBatch.GetScreenVBStride();
-    Cmd.RawIB = FontBatch.GetScreenIBBuffer();
-    Cmd.IndexCount = FontBatch.GetScreenIndexCount();
-    Cmd.DiffuseSRV = FontRes->SRV;
-    Cmd.Pass = ERenderPass::OverlayFont;
-    Cmd.DebugName = "OverlayText";
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayFont);
+    FDrawCommand&                Cmd   = OutList.AddCommand();
+    Cmd.Shader                         = Shader;
+    Cmd.DepthStencil                   = State.DepthStencil;
+    Cmd.Blend                          = State.Blend;
+    Cmd.Rasterizer                     = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
+    Cmd.Topology                       = State.Topology;
+    Cmd.RawVB                          = FontBatch.GetScreenVBBuffer();
+    Cmd.RawVBStride                    = FontBatch.GetScreenVBStride();
+    Cmd.RawIB                          = FontBatch.GetScreenIBBuffer();
+    Cmd.IndexCount                     = FontBatch.GetScreenIndexCount();
+    Cmd.DiffuseSRV                     = FontRes->SRV;
+    Cmd.Pass                           = ERenderPass::OverlayFont;
+    Cmd.DebugName                      = "OverlayText";
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void DrawCommandBuilder::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
     {
@@ -550,31 +517,31 @@ void DrawCommandBuilder::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& 
         return;
     }
 
-    FShader* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
+    FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
     if (!Shader)
     {
         return;
     }
 
-    const FPassRenderStateDesc& State = Context.GetPassState(ERenderPass::AlphaBlend);
-    FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Shader;
-    Cmd.DepthStencil = State.DepthStencil;
-    Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
-    Cmd.Topology = State.Topology;
-    Cmd.RawVB = FontBatch.GetWorldVBBuffer();
-    Cmd.RawVBStride = FontBatch.GetWorldVBStride();
-    Cmd.RawIB = FontBatch.GetWorldIBBuffer();
-    Cmd.FirstIndex = StartIndex;
-    Cmd.IndexCount = EndIndex - StartIndex;
-    Cmd.DiffuseSRV = FontRes->SRV;
-    Cmd.Pass = ERenderPass::AlphaBlend;
-    Cmd.DebugName = "WorldText";
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::AlphaBlend);
+    FDrawCommand&                Cmd   = OutList.AddCommand();
+    Cmd.Shader                         = Shader;
+    Cmd.DepthStencil                   = State.DepthStencil;
+    Cmd.Blend                          = State.Blend;
+    Cmd.Rasterizer                     = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
+    Cmd.Topology                       = State.Topology;
+    Cmd.RawVB                          = FontBatch.GetWorldVBBuffer();
+    Cmd.RawVBStride                    = FontBatch.GetWorldVBStride();
+    Cmd.RawIB                          = FontBatch.GetWorldIBBuffer();
+    Cmd.FirstIndex                     = StartIndex;
+    Cmd.IndexCount                     = EndIndex - StartIndex;
+    Cmd.DiffuseSRV                     = FontRes->SRV;
+    Cmd.Pass                           = ERenderPass::AlphaBlend;
+    Cmd.DebugName                      = "WorldText";
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
-void DrawCommandBuilder::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
     {
@@ -613,53 +580,53 @@ void DrawCommandBuilder::BuildOverlayWorldTextDrawCommand(const FTextRenderScene
         return;
     }
 
-    FShader* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
+    FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
     if (!Shader)
     {
         return;
     }
 
-    const FPassRenderStateDesc& State = Context.GetPassState(ERenderPass::OverlayTextWorld);
-    FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Shader;
-    Cmd.DepthStencil = State.DepthStencil;
-    Cmd.Blend = State.Blend;
-    Cmd.Rasterizer = Context.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
-    Cmd.Topology = State.Topology;
-    Cmd.RawVB = FontBatch.GetOverlayWorldVBBuffer();
-    Cmd.RawVBStride = FontBatch.GetOverlayWorldVBStride();
-    Cmd.RawIB = FontBatch.GetOverlayWorldIBBuffer();
-    Cmd.FirstIndex = StartIndex;
-    Cmd.IndexCount = EndIndex - StartIndex;
-    Cmd.DiffuseSRV = FontRes->SRV;
-    Cmd.Pass = ERenderPass::OverlayTextWorld;
-    Cmd.DebugName = "OverlayWorldText";
-    Cmd.SortKey = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayTextWorld);
+    FDrawCommand&                Cmd   = OutList.AddCommand();
+    Cmd.Shader                         = Shader;
+    Cmd.DepthStencil                   = State.DepthStencil;
+    Cmd.Blend                          = State.Blend;
+    Cmd.Rasterizer                     = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
+    Cmd.Topology                       = State.Topology;
+    Cmd.RawVB                          = FontBatch.GetOverlayWorldVBBuffer();
+    Cmd.RawVBStride                    = FontBatch.GetOverlayWorldVBStride();
+    Cmd.RawIB                          = FontBatch.GetOverlayWorldIBBuffer();
+    Cmd.FirstIndex                     = StartIndex;
+    Cmd.IndexCount                     = EndIndex - StartIndex;
+    Cmd.DiffuseSRV                     = FontRes->SRV;
+    Cmd.Pass                           = ERenderPass::OverlayTextWorld;
+    Cmd.DebugName                      = "OverlayWorldText";
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
 
 
-void DrawCommandBuilder::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommand::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Proxy.DiffuseSRV || !Context.ViewModePassRegistry || !Context.ViewModePassRegistry->HasConfig(Context.ActiveViewMode))
+    if (!Proxy.DiffuseSRV || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         return;
     }
 
-    const FRenderPipelinePassDesc* Desc = Context.ViewModePassRegistry->FindPassDesc(Context.ActiveViewMode, EViewModeStage::Decal);
+    const FViewModePassDesc* Desc = Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Decal);
     if (!Desc || !Desc->CompiledShader)
     {
         return;
     }
 
     FDrawCommand& Cmd = OutList.AddCommand();
-    Cmd.Shader = Desc->CompiledShader;
-    Cmd.DepthStencil = EDepthStencilState::NoDepth;
-    Cmd.Blend = EBlendState::Opaque;
-    Cmd.Rasterizer = ERasterizerState::SolidNoCull;
-    Cmd.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    Cmd.VertexCount = 3;
-    Cmd.DiffuseSRV = Proxy.DiffuseSRV;
-    Cmd.Pass = ERenderPass::Decal;
+    Cmd.Shader        = Desc->CompiledShader;
+    Cmd.DepthStencil  = EDepthStencilState::NoDepth;
+    Cmd.Blend         = EBlendState::Opaque;
+    Cmd.Rasterizer    = ERasterizerState::SolidNoCull;
+    Cmd.Topology      = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    Cmd.VertexCount   = 3;
+    Cmd.DiffuseSRV    = Proxy.DiffuseSRV;
+    Cmd.Pass          = ERenderPass::Decal;
 
     if (Proxy.ExtraCB.Buffer && Proxy.ExtraCB.Size > 0 && Context.Context)
     {

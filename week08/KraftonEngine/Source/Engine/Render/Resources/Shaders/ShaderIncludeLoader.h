@@ -17,7 +17,7 @@
 class FShaderIncludeLoader final : public ID3DInclude
 {
 public:
-    explicit FShaderIncludeLoader(const std::filesystem::path& InRootShaderFile,
+    explicit FShaderIncludeLoader(const std::filesystem::path&      InRootShaderFile,
                                   std::unordered_set<std::wstring>* InOutDependencies = nullptr)
         : RootShaderFile(MakeNormalizedPath(InRootShaderFile)), RootDirectory(RootShaderFile.parent_path()), Dependencies(InOutDependencies)
     {
@@ -25,10 +25,10 @@ public:
     }
 
     HRESULT Open(D3D_INCLUDE_TYPE IncludeType,
-                 LPCSTR pFileName,
-                 LPCVOID pParentData,
-                 LPCVOID* ppData,
-                 UINT* pBytes) override
+                 LPCSTR           pFileName,
+                 LPCVOID          pParentData,
+                 LPCVOID*         ppData,
+                 UINT*            pBytes) override
     {
         (void)IncludeType;
 
@@ -120,7 +120,7 @@ private:
 
         for (const std::filesystem::path& Root : SearchRoots)
         {
-            std::error_code EC;
+            std::error_code             EC;
             const std::filesystem::path Candidate = MakeNormalizedPath(Root / IncludePath);
             if (std::filesystem::exists(Candidate, EC) && !EC)
             {
@@ -133,7 +133,7 @@ private:
 
     static std::filesystem::path MakeNormalizedPath(const std::filesystem::path& InPath)
     {
-        std::error_code EC;
+        std::error_code       EC;
         std::filesystem::path Path = std::filesystem::absolute(InPath, EC);
         if (EC)
         {
@@ -160,9 +160,9 @@ private:
     }
 
 private:
-    std::filesystem::path RootShaderFile;
-    std::filesystem::path RootDirectory;
-    std::unordered_set<std::wstring>* Dependencies = nullptr;
+    std::filesystem::path                                    RootShaderFile;
+    std::filesystem::path                                    RootDirectory;
+    std::unordered_set<std::wstring>*                        Dependencies = nullptr;
     std::unordered_map<const void*, std::unique_ptr<char[]>> OwnedBuffers;
-    std::unordered_map<const void*, std::filesystem::path> BufferToDirectory;
+    std::unordered_map<const void*, std::filesystem::path>   BufferToDirectory;
 };

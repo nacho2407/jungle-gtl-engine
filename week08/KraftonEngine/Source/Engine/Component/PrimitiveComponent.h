@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -7,7 +7,7 @@
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
 #include "Render/RHI/D3D11/Buffers/VertexTypes.h"
-#include "Render/Scene/DirtyFlag.h"
+#include "Render/Scene/SceneProxyDirtyFlag.h"
 #include "GameFramework/WorldContext.h"
 
 class FPrimitiveSceneProxy;
@@ -16,6 +16,10 @@ class FMeshBuffer;
 class FOctree;
 class UMaterial;
 
+/*
+    렌더링 가능한 장면 컴포넌트의 기본 클래스입니다.
+    월드 bounds, 가시성, 머티리얼, 렌더 프록시 더티 상태를 관리합니다.
+*/
 class UPrimitiveComponent : public USceneComponent
 {
 public:
@@ -43,43 +47,84 @@ public:
     bool ShouldRenderInWorld(EWorldType WorldType) const;
     bool ShouldRenderInCurrentWorld() const;
 
-    // 월드 공간 AABB를 FBoundingBox로 반환
+    /*
+        현재 월드 공간 AABB를 반환합니다.
+    */
     FBoundingBox GetWorldBoundingBox() const;
+
+    /*
+        월드 bounds 캐시를 다시 계산하도록 표시합니다.
+    */
     void MarkWorldBoundsDirty();
 
-    // Collision
+    /*
+        컴포넌트의 월드 AABB 캐시를 갱신합니다.
+    */
     virtual void UpdateWorldAABB() const;
+
+    /*
+        컴포넌트 bounds 기준 레이 교차를 검사합니다.
+    */
     virtual bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult);
+
+    /*
+        월드 행렬을 갱신하고 필요한 경우 bounds 캐시를 함께 이동합니다.
+    */
     void UpdateWorldMatrix() const override;
 
     virtual bool SupportsOutline() const { return true; }
 
-    // For Material
+    /*
+        이 컴포넌트가 사용하는 머티리얼 슬롯 수를 반환합니다.
+    */
     virtual int32 GetNumMaterials() const { return 0; }
+
+    /*
+        지정한 슬롯의 머티리얼을 반환합니다.
+    */
     virtual UMaterial* GetMaterial(int32 ElementIndex) const { return nullptr; }
+
+    /*
+        지정한 슬롯의 머티리얼을 교체합니다.
+    */
     virtual void SetMaterial(int32 ElementIndex, class UMaterial* InMaterial) {};
 
-
-    // --- 렌더 상태 관리 ---
+    /*
+        렌더 씬에 프록시를 생성하고 등록합니다.
+    */
     void CreateRenderState() override;
+
+    /*
+        렌더 씬에서 프록시를 제거하고 소유 리소스를 정리합니다.
+    */
     void DestroyRenderState() override;
 
-    // 프록시 전체 재생성 (메시 교체 등 큰 변경 시 사용)
+    /*
+        프록시 전체를 다시 생성해야 하는 변경을 표시합니다.
+    */
     void MarkRenderStateDirty();
 
-    // 트랜스폼/AABB 변경 시 호출 — 프록시·Octree·PickingBVH·VisibleSet을 일괄 갱신.
+    /*
+        transform과 bounds 변경을 렌더 씬, octree, picking BVH에 알립니다.
+    */
     void MarkRenderTransformDirty();
 
-    // 가시성 토글 시 호출 — 위와 동일하되 Visibility dirty 플래그를 사용.
+    /*
+        가시성 변경을 렌더 씬에 알립니다.
+    */
     void MarkRenderVisibilityDirty();
 
-    // 서브클래스가 오버라이드하여 자신에 맞는 구체 프록시를 생성
+    /*
+        파생 컴포넌트가 렌더 씬에 등록할 구체 프록시를 생성합니다.
+    */
     virtual FPrimitiveSceneProxy* CreateSceneProxy();
 
     FPrimitiveSceneProxy* GetSceneProxy() const { return SceneProxy; }
 
-    // FScene의 DirtyProxies에 등록까지 수행하는 헬퍼
-    void MarkProxyDirty(EDirtyFlag Flag) const;
+    /*
+        프록시 변경 플래그를 표시하고 씬의 dirty queue에 등록합니다.
+    */
+    void MarkProxyDirty(ESceneProxyDirtyFlag Flag) const;
 
     FOctree* GetOctreeNode() const { return OctreeNode; }
     bool IsInOctreeOverflow() const { return bInOctreeOverflow; }

@@ -12,12 +12,12 @@ class UGizmoComponent;
 class FGizmoSceneProxy : public FPrimitiveSceneProxy
 {
 public:
-	FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner = false);
+    FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner = false);
 
-	void UpdateMesh() override;
-	void UpdatePerViewport(const FSceneView& SceneView) override;
+    void UpdateMesh() override;
+    void UpdatePerViewport(const FSceneView& SceneView) override;
 
 private:
-	UGizmoComponent* GetGizmoComponent() const;
-	bool bIsInner = false;
+    UGizmoComponent* GetGizmoComponent() const;
+    bool             bIsInner = false;
 };

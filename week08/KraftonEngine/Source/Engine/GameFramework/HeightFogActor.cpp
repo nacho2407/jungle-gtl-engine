@@ -12,15 +12,15 @@ AHeightFogActor::AHeightFogActor()
 
 void AHeightFogActor::InitDefaultComponents()
 {
-	FogComponent = AddComponent<UHeightFogComponent>();
-	SetRootComponent(FogComponent);
+    FogComponent = AddComponent<UHeightFogComponent>();
+    SetRootComponent(FogComponent);
 
-	BillboardComponent = AddComponent<UBillboardComponent>();
-	BillboardComponent->AttachToComponent(FogComponent);
-	
-	auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial(FPaths::EditorRelativePath("Icons/Materials/HeightFog.json"));
-	BillboardComponent->SetVisibleInEditor(true);
-	BillboardComponent->SetVisibleInGame(false);
-	BillboardComponent->SetEditorHelper(true);
-	BillboardComponent->SetMaterial(FogMaterial);
+    BillboardComponent = AddComponent<UBillboardComponent>();
+    BillboardComponent->AttachToComponent(FogComponent);
+
+    auto FogMaterial = FMaterialManager::Get().GetOrCreateMaterial(FPaths::EditorRelativePath("Icons/Materials/HeightFog.json"));
+    BillboardComponent->SetVisibleInEditor(true);
+    BillboardComponent->SetVisibleInGame(false);
+    BillboardComponent->SetEditorHelper(true);
+    BillboardComponent->SetMaterial(FogMaterial);
 }

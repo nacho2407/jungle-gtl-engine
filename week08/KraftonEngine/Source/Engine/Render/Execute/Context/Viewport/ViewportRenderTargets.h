@@ -14,15 +14,15 @@ struct FViewportRenderTargets
     ID3D11DepthStencilView* ViewportDSV = nullptr;
 
     // 최종 색상 복사본. Fog / FXAA / Outline 입력으로 사용합니다.
-    ID3D11ShaderResourceView* SceneColorCopySRV = nullptr;
-    ID3D11Texture2D* SceneColorCopyTexture = nullptr;
-    ID3D11Texture2D* ViewportRenderTexture = nullptr;
+    ID3D11ShaderResourceView* SceneColorCopySRV     = nullptr;
+    ID3D11Texture2D*          SceneColorCopyTexture = nullptr;
+    ID3D11Texture2D*          ViewportRenderTexture = nullptr;
 
     // 깊이 복사본. Decal / SceneDepth / Fog / Outline 입력으로 사용합니다.
-    ID3D11Texture2D* DepthTexture = nullptr;
-    ID3D11Texture2D* DepthCopyTexture = nullptr;
-    ID3D11ShaderResourceView* DepthCopySRV = nullptr;
-    ID3D11ShaderResourceView* StencilCopySRV = nullptr;
+    ID3D11Texture2D*          DepthTexture     = nullptr;
+    ID3D11Texture2D*          DepthCopyTexture = nullptr;
+    ID3D11ShaderResourceView* DepthCopySRV     = nullptr;
+    ID3D11ShaderResourceView* StencilCopySRV   = nullptr;
 
     void Reset();
     void SetFromViewport(const FViewport* VP);

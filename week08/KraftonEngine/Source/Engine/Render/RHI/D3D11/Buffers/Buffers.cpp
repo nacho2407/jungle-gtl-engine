@@ -10,7 +10,7 @@ namespace
 {
 void BufferDebugLog(const char* Format, ...)
 {
-    char Buffer[512] = {};
+    char    Buffer[512] = {};
     va_list Args;
     va_start(Args, Format);
     vsnprintf(Buffer, sizeof(Buffer), Format, Args);
@@ -29,9 +29,9 @@ void FMeshBuffer::Release()
 FVertexBuffer::FVertexBuffer(FVertexBuffer&& Other) noexcept
     : Buffer(Other.Buffer), VertexCount(Other.VertexCount), Stride(Other.Stride)
 {
-    Other.Buffer = nullptr;
+    Other.Buffer      = nullptr;
     Other.VertexCount = 0;
-    Other.Stride = 0;
+    Other.Stride      = 0;
 }
 
 FVertexBuffer& FVertexBuffer::operator=(FVertexBuffer&& Other) noexcept
@@ -39,12 +39,12 @@ FVertexBuffer& FVertexBuffer::operator=(FVertexBuffer&& Other) noexcept
     if (this != &Other)
     {
         Release();
-        Buffer = Other.Buffer;
-        VertexCount = Other.VertexCount;
-        Stride = Other.Stride;
-        Other.Buffer = nullptr;
+        Buffer            = Other.Buffer;
+        VertexCount       = Other.VertexCount;
+        Stride            = Other.Stride;
+        Other.Buffer      = nullptr;
         Other.VertexCount = 0;
-        Other.Stride = 0;
+        Other.Stride      = 0;
     }
     return *this;
 }
@@ -55,28 +55,28 @@ void FVertexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 In
     if (!InData || InByteWidth == 0)
     {
         VertexCount = 0;
-        Stride = InStride;
+        Stride      = InStride;
         return;
     }
 
     D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = InByteWidth;
-    Desc.Usage = D3D11_USAGE_IMMUTABLE;
-    Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    Desc.ByteWidth         = InByteWidth;
+    Desc.Usage             = D3D11_USAGE_IMMUTABLE;
+    Desc.BindFlags         = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA Data = { InData };
-    HRESULT hr = InDevice->CreateBuffer(&Desc, &Data, &Buffer);
+    HRESULT                hr   = InDevice->CreateBuffer(&Desc, &Data, &Buffer);
     if (FAILED(hr))
     {
         BufferDebugLog("[VertexBuffer] CreateBuffer failed hr=0x%08X vertexCount=%u byteWidth=%u stride=%u device=%p data=%p",
                        static_cast<unsigned>(hr), InVertexCount, InByteWidth, InStride, InDevice, InData);
         VertexCount = 0;
-        Stride = InStride;
+        Stride      = InStride;
         return;
     }
 
     VertexCount = InVertexCount;
-    Stride = InStride;
+    Stride      = InStride;
     MemoryStats::AddVertexBufferMemory(InByteWidth);
 }
 
@@ -109,7 +109,7 @@ FConstantBuffer& FConstantBuffer::operator=(FConstantBuffer&& Other) noexcept
     if (this != &Other)
     {
         Release();
-        Buffer = Other.Buffer;
+        Buffer       = Other.Buffer;
         Other.Buffer = nullptr;
     }
     return *this;
@@ -119,10 +119,10 @@ void FConstantBuffer::Create(ID3D11Device* InDevice, uint32 InByteWidth)
 {
     Release();
     D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = (InByteWidth + 0xf) & 0xfffffff0;
-    Desc.Usage = D3D11_USAGE_DYNAMIC;
-    Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    Desc.ByteWidth         = (InByteWidth + 0xf) & 0xfffffff0;
+    Desc.Usage             = D3D11_USAGE_DYNAMIC;
+    Desc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
+    Desc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
     InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
 }
 
@@ -143,7 +143,7 @@ void FConstantBuffer::Update(ID3D11DeviceContext* InDeviceContext, const void* I
     }
 
     D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    HRESULT hr = InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+    HRESULT                  hr     = InDeviceContext->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
     if (FAILED(hr))
     {
         return;
@@ -161,7 +161,7 @@ ID3D11Buffer* FConstantBuffer::GetBuffer()
 FIndexBuffer::FIndexBuffer(FIndexBuffer&& Other) noexcept
     : Buffer(Other.Buffer), IndexCount(Other.IndexCount)
 {
-    Other.Buffer = nullptr;
+    Other.Buffer     = nullptr;
     Other.IndexCount = 0;
 }
 
@@ -170,9 +170,9 @@ FIndexBuffer& FIndexBuffer::operator=(FIndexBuffer&& Other) noexcept
     if (this != &Other)
     {
         Release();
-        Buffer = Other.Buffer;
-        IndexCount = Other.IndexCount;
-        Other.Buffer = nullptr;
+        Buffer           = Other.Buffer;
+        IndexCount       = Other.IndexCount;
+        Other.Buffer     = nullptr;
         Other.IndexCount = 0;
     }
     return *this;
@@ -188,12 +188,12 @@ void FIndexBuffer::Create(ID3D11Device* InDevice, const void* InData, uint32 InI
     }
 
     D3D11_BUFFER_DESC Desc = {};
-    Desc.Usage = D3D11_USAGE_IMMUTABLE;
-    Desc.ByteWidth = InByteWidth;
-    Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    Desc.Usage             = D3D11_USAGE_IMMUTABLE;
+    Desc.ByteWidth         = InByteWidth;
+    Desc.BindFlags         = D3D11_BIND_INDEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA Data = { InData };
-    HRESULT hr = InDevice->CreateBuffer(&Desc, &Data, &Buffer);
+    HRESULT                hr   = InDevice->CreateBuffer(&Desc, &Data, &Buffer);
     if (FAILED(hr))
     {
         BufferDebugLog("[IndexBuffer] CreateBuffer failed hr=0x%08X indexCount=%u byteWidth=%u device=%p data=%p",
@@ -227,7 +227,7 @@ ID3D11Buffer* FIndexBuffer::GetBuffer() const
 void FDynamicVertexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount, uint32 InStride)
 {
     Release();
-    Stride = InStride;
+    Stride   = InStride;
     MaxCount = InMaxCount;
     if (!InDevice || MaxCount == 0 || Stride == 0)
     {
@@ -235,10 +235,10 @@ void FDynamicVertexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount, uin
     }
 
     D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = Stride * MaxCount;
-    Desc.Usage = D3D11_USAGE_DYNAMIC;
-    Desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    Desc.ByteWidth         = Stride * MaxCount;
+    Desc.Usage             = D3D11_USAGE_DYNAMIC;
+    Desc.BindFlags         = D3D11_BIND_VERTEX_BUFFER;
+    Desc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
     InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
 }
 
@@ -299,10 +299,10 @@ void FDynamicIndexBuffer::Create(ID3D11Device* InDevice, uint32 InMaxCount)
     }
 
     D3D11_BUFFER_DESC Desc = {};
-    Desc.ByteWidth = sizeof(uint32) * MaxCount;
-    Desc.Usage = D3D11_USAGE_DYNAMIC;
-    Desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    Desc.ByteWidth         = sizeof(uint32) * MaxCount;
+    Desc.Usage             = D3D11_USAGE_DYNAMIC;
+    Desc.BindFlags         = D3D11_BIND_INDEX_BUFFER;
+    Desc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
     InDevice->CreateBuffer(&Desc, nullptr, &Buffer);
 }
 

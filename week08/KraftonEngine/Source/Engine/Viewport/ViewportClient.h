@@ -8,12 +8,12 @@ class FViewport;
 class FViewportClient
 {
 public:
-	FViewportClient() = default;
-	virtual ~FViewportClient() = default;
+    FViewportClient() = default;
+    virtual ~FViewportClient() = default;
 
-	virtual void Draw(FViewport* Viewport, float DeltaTime) {}
-	virtual bool InputKey(int32 Key, bool bPressed) { return false; }
-	virtual bool InputAxis(float DeltaX, float DeltaY) { return false; }
+    virtual void Draw(FViewport* Viewport, float DeltaTime) {}
+    virtual bool InputKey(int32 Key, bool bPressed) { return false; }
+    virtual bool InputAxis(float DeltaX, float DeltaY) { return false; }
 
-	virtual FViewport* GetViewport() const { return nullptr; }
+    virtual FViewport* GetViewport() const { return nullptr; }
 };

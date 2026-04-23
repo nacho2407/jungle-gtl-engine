@@ -4,13 +4,13 @@
 class UUIDGenerator
 {
 public:
-	static uint32 GenUUID()
-	{
-		return NextUUID++;
-	}
+    static uint32 GenUUID()
+    {
+        return NextUUID++;
+    }
 
-	static void ResetUUIDGeneration(int Value) { NextUUID = Value; }
+    static void ResetUUIDGeneration(int Value) { NextUUID = Value; }
 
 private:
-	static uint32 NextUUID;
+    static uint32 NextUUID;
 };

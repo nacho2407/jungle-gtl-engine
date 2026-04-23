@@ -17,9 +17,9 @@ public:
     void UpdatePerViewport(const FSceneView& SceneView) override;
 
     FString CachedText;
-    float CachedFontScale = 1.0f;
+    float   CachedFontScale = 1.0f;
     FVector CachedTextRight = FVector(0.0f, 1.0f, 0.0f);
-    FVector CachedTextUp = FVector(0.0f, 0.0f, 1.0f);
+    FVector CachedTextUp    = FVector(0.0f, 0.0f, 1.0f);
     FMatrix CachedTextWorldMatrix;
 
 private:

@@ -1,9 +1,9 @@
 #include "Render/Execute/Passes/Scene/HeightFogPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Resources/RenderResources.h"
-#include "Render/Resources/Buffers/ConstantBufferPool.h"
 #include "Render/Resources/Bindings/RenderCBKeys.h"
+#include "Render/Resources/Buffers/ConstantBufferCache.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
@@ -33,7 +33,7 @@ void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
     if (!Context.Scene || !Context.Scene->HasFog())
         return;
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(
+    DrawCommand::BuildFullscreenDrawCommand(
         ERenderPass::PostProcess,
         Context,
         *Context.DrawCommandList,
@@ -42,19 +42,19 @@ void FHeightFogPass::BuildDrawCommands(FRenderPipelineContext& Context)
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
         return;
 
-    const FFogParams& Fog = Context.Scene->GetFogParams();
+    const FFogSceneData& Fog = Context.Scene->GetFogData();
 
-    FFogConstants Constants = {};
+    FFogCBData Constants        = {};
     Constants.InscatteringColor = Fog.InscatteringColor;
-    Constants.Density = Fog.Density;
-    Constants.HeightFalloff = Fog.HeightFalloff;
-    Constants.FogBaseHeight = Fog.FogBaseHeight;
-    Constants.StartDistance = Fog.StartDistance;
-    Constants.CutoffDistance = Fog.CutoffDistance;
-    Constants.MaxOpacity = Fog.MaxOpacity;
+    Constants.Density           = Fog.Density;
+    Constants.HeightFalloff     = Fog.HeightFalloff;
+    Constants.FogBaseHeight     = Fog.FogBaseHeight;
+    Constants.StartDistance     = Fog.StartDistance;
+    Constants.CutoffDistance    = Fog.CutoffDistance;
+    Constants.MaxOpacity        = Fog.MaxOpacity;
 
     FConstantBuffer* FogCB =
-        FConstantBufferPool::Get().GetBuffer(ERenderCBKey::Fog, sizeof(FFogConstants));
+        FConstantBufferCache::Get().GetBuffer(ERenderCBKey::Fog, sizeof(FFogCBData));
     if (!FogCB)
         return;
 
@@ -70,7 +70,7 @@ void FHeightFogPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.DrawCommandList->GetPassRange(ERenderPass::PostProcess, s, e);
         for (uint32 i = s; i < e; ++i)
         {
-            const auto& c = Context.DrawCommandList->GetCommands()[i];
+            const auto&  c        = Context.DrawCommandList->GetCommands()[i];
             const uint16 UserBits = static_cast<uint16>(c.SortKey & 0xFFFu);
             if (UserBits == ToPostProcessUserBits(EViewModePostProcessVariant::None))
                 Context.DrawCommandList->SubmitRange(i, i + 1, *Context.Device, Context.Context, *Context.StateCache);

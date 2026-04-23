@@ -12,12 +12,12 @@
 
 namespace ResourceKey
 {
-constexpr const char* Font     = "Font";
+constexpr const char* Font = "Font";
 constexpr const char* Particle = "Particle";
-constexpr const char* Texture  = "Texture";
-constexpr const char* Path     = "Path";
-constexpr const char* Columns  = "Columns";
-constexpr const char* Rows     = "Rows";
+constexpr const char* Texture = "Texture";
+constexpr const char* Path = "Path";
+constexpr const char* Columns = "Columns";
+constexpr const char* Rows = "Rows";
 } // namespace ResourceKey
 
 void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
@@ -50,11 +50,11 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             checkf(Entry.hasKey(ResourceKey::Rows), "Font entry is missing Rows");
 
             FFontResource Resource;
-            Resource.Name    = FName(Pair.first.c_str());
-            Resource.Path    = Entry[ResourceKey::Path].ToString();
+            Resource.Name = FName(Pair.first.c_str());
+            Resource.Path = Entry[ResourceKey::Path].ToString();
             Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-            Resource.Rows    = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-            Resource.SRV     = nullptr;
+            Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+            Resource.SRV = nullptr;
 
             checkf(!Resource.Path.empty(), "Font resource path is empty");
             FontResources[Pair.first] = Resource;
@@ -74,11 +74,11 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             checkf(Entry.hasKey(ResourceKey::Rows), "Particle entry is missing Rows");
 
             FParticleResource Resource;
-            Resource.Name    = FName(Pair.first.c_str());
-            Resource.Path    = Entry[ResourceKey::Path].ToString();
+            Resource.Name = FName(Pair.first.c_str());
+            Resource.Path = Entry[ResourceKey::Path].ToString();
             Resource.Columns = static_cast<uint32>(Entry[ResourceKey::Columns].ToInt());
-            Resource.Rows    = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
-            Resource.SRV     = nullptr;
+            Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
+            Resource.SRV = nullptr;
 
             checkf(!Resource.Path.empty(), "Particle resource path is empty");
             ParticleResources[Pair.first] = Resource;
@@ -96,11 +96,11 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             checkf(Entry.hasKey(ResourceKey::Path), "Texture entry is missing Path");
 
             FTextureResource Resource;
-            Resource.Name    = FName(Pair.first.c_str());
-            Resource.Path    = Entry[ResourceKey::Path].ToString();
+            Resource.Name = FName(Pair.first.c_str());
+            Resource.Path = Entry[ResourceKey::Path].ToString();
             Resource.Columns = 1;
-            Resource.Rows    = 1;
-            Resource.SRV     = nullptr;
+            Resource.Rows = 1;
+            Resource.SRV = nullptr;
 
             checkf(!Resource.Path.empty(), "Texture resource path is empty");
             TextureResources[Pair.first] = Resource;
@@ -134,8 +134,8 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
         std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Resource.Path));
 
         // 확장자에 따라 DDS / WIC 로더 분기
-        std::filesystem::path Ext    = std::filesystem::path(Resource.Path).extension();
-        FString               ExtStr = Ext.string();
+        std::filesystem::path Ext = std::filesystem::path(Resource.Path).extension();
+        FString ExtStr = Ext.string();
         for (char& c : ExtStr)
             c = static_cast<char>(::tolower(static_cast<unsigned char>(c)));
 
@@ -270,11 +270,11 @@ const FFontResource* FResourceManager::FindFont(const FName& FontName) const
 void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
     FFontResource Resource;
-    Resource.Name                      = FontName;
-    Resource.Path                      = InPath;
-    Resource.Columns                   = Columns;
-    Resource.Rows                      = Rows;
-    Resource.SRV                       = nullptr;
+    Resource.Name = FontName;
+    Resource.Path = InPath;
+    Resource.Columns = Columns;
+    Resource.Rows = Rows;
+    Resource.SRV = nullptr;
     FontResources[FontName.ToString()] = Resource;
 }
 
@@ -294,11 +294,11 @@ const FParticleResource* FResourceManager::FindParticle(const FName& ParticleNam
 void FResourceManager::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
     FParticleResource Resource;
-    Resource.Name                              = ParticleName;
-    Resource.Path                              = InPath;
-    Resource.Columns                           = Columns;
-    Resource.Rows                              = Rows;
-    Resource.SRV                               = nullptr;
+    Resource.Name = ParticleName;
+    Resource.Path = InPath;
+    Resource.Columns = Columns;
+    Resource.Rows = Rows;
+    Resource.SRV = nullptr;
     ParticleResources[ParticleName.ToString()] = Resource;
 }
 
@@ -340,11 +340,11 @@ const FTextureResource* FResourceManager::FindTexture(const FName& TextureName) 
 void FResourceManager::RegisterTexture(const FName& TextureName, const FString& InPath)
 {
     FTextureResource Resource;
-    Resource.Name                            = TextureName;
-    Resource.Path                            = InPath;
-    Resource.Columns                         = 1;
-    Resource.Rows                            = 1;
-    Resource.SRV                             = nullptr;
+    Resource.Name = TextureName;
+    Resource.Path = InPath;
+    Resource.Columns = 1;
+    Resource.Rows = 1;
+    Resource.SRV = nullptr;
     TextureResources[TextureName.ToString()] = Resource;
 }
 

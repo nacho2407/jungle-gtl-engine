@@ -1,3 +1,7 @@
+// Shader include: Materials/DecalShader.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 #include "../Common/Resources/SystemSamplers.hlsl"
@@ -44,3 +48,4 @@ float4 PS(PS_Input_Decal input) : SV_TARGET
     float4 finalColor = texColor * DecalColor;
     return float4(ApplyWireframe(finalColor.rgb), finalColor.a);
 }
+

@@ -1,0 +1,50 @@
+﻿#pragma once
+
+#include "Core/CoreTypes.h"
+#include "Render/RHI/D3D11/Common/D3D11API.h"
+#include "Render/Resources/Shaders/ShaderProgramDesc.h"
+
+#include <string>
+#include <unordered_set>
+
+struct FMaterialParameterInfo;
+
+/*
+    그래픽/컴퓨트 셰이더 프로그램이 공유하는 컴파일, 리플렉션, 파라미터 레이아웃 기반 클래스입니다.
+    실제 stage 소유권과 bind 규칙은 FGraphicsProgram과 FComputeProgram이 각각 담당합니다.
+*/
+class FShaderProgramBase
+{
+public:
+    FShaderProgramBase() = default;
+    virtual ~FShaderProgramBase() { ReleaseBase(); }
+
+    FShaderProgramBase(const FShaderProgramBase&)            = delete;
+    FShaderProgramBase& operator=(const FShaderProgramBase&) = delete;
+    FShaderProgramBase(FShaderProgramBase&& Other) noexcept;
+    FShaderProgramBase& operator=(FShaderProgramBase&& Other) noexcept;
+
+    virtual void Release()                                        = 0;
+    virtual void Bind(ID3D11DeviceContext* InDeviceContext) const = 0;
+    virtual bool IsValid() const                                  = 0;
+
+    const TMap<FString, FMaterialParameterInfo*>& GetParameterLayout() const { return ShaderParameterLayout; }
+
+protected:
+    bool CompileShaderBlob(
+        ID3DBlob**                        OutShaderBlob,
+        const FShaderStageDesc&           InDesc,
+        const char*                       InTarget,
+        std::unordered_set<std::wstring>& OutDependencies,
+        const char*                       InErrorTitle) const;
+
+    void ExtractCBufferInfo(
+        ID3DBlob*                               InShaderBlob,
+        TMap<FString, FMaterialParameterInfo*>& OutLayout) const;
+
+    void ReleaseParameterLayout();
+    void ReleaseBase();
+
+protected:
+    TMap<FString, FMaterialParameterInfo*> ShaderParameterLayout;
+};

@@ -14,33 +14,33 @@ using FOnResizedCallback = std::function<void(unsigned int, unsigned int)>;
 class FWindowsApplication
 {
 public:
-	FWindowsApplication() = default;
-	~FWindowsApplication() = default;
+    FWindowsApplication() = default;
+    ~FWindowsApplication() = default;
 
-	bool Init(HINSTANCE InHInstance);
-	void PumpMessages();
-	void Destroy();
+    bool Init(HINSTANCE InHInstance);
+    void PumpMessages();
+    void Destroy();
 
-	FWindowsWindow& GetWindow() { return Window; }
-	const FWindowsWindow& GetWindow() const { return Window; }
+    FWindowsWindow& GetWindow() { return Window; }
+    const FWindowsWindow& GetWindow() const { return Window; }
 
-	bool IsExitRequested() const { return bIsExitRequested; }
-	bool IsResizing() const { return bIsResizing; }
+    bool IsExitRequested() const { return bIsExitRequested; }
+    bool IsResizing() const { return bIsResizing; }
 
-	void SetOnSizingCallback(FOnSizingCallback InCallback) { OnSizingCallback = std::move(InCallback); }
-	void SetOnResizedCallback(FOnResizedCallback InCallback) { OnResizedCallback = std::move(InCallback); }
-
-private:
-	static LRESULT CALLBACK StaticWndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
-	LRESULT WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
+    void SetOnSizingCallback(FOnSizingCallback InCallback) { OnSizingCallback = std::move(InCallback); }
+    void SetOnResizedCallback(FOnResizedCallback InCallback) { OnResizedCallback = std::move(InCallback); }
 
 private:
-	HINSTANCE HInstance = nullptr;
-	FWindowsWindow Window;
+    static LRESULT CALLBACK StaticWndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
+    LRESULT WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
 
-	bool bIsExitRequested = false;
-	bool bIsResizing = false;
+private:
+    HINSTANCE HInstance = nullptr;
+    FWindowsWindow Window;
 
-	FOnSizingCallback OnSizingCallback;
-	FOnResizedCallback OnResizedCallback;
+    bool bIsExitRequested = false;
+    bool bIsResizing = false;
+
+    FOnSizingCallback OnSizingCallback;
+    FOnResizedCallback OnResizedCallback;
 };

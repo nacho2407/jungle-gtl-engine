@@ -1,4 +1,4 @@
-#include "LightComponent.h"
+﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Scene.h"
@@ -20,7 +20,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void ULightComponent::PostEditProperty(const char* PropertyName)
 {
     ULightComponentBase::PostEditProperty(PropertyName);
-    MarkRenderStateDirty(); // 속성 변경 시 프록시 전체 재구성
+    MarkRenderStateDirty(); // 속성 변경은 프록시 전체 재생성이 필요합니다.
 }
 
 void ULightComponent::OnTransformDirty()
@@ -71,7 +71,7 @@ void ULightComponent::MarkRenderTransformDirty()
     if (!Owner || !Owner->GetWorld())
         return;
 
-    Owner->GetWorld()->GetScene().MarkLightProxyDirty(LightSceneProxy, EDirtyFlag::Transform);
+    Owner->GetWorld()->GetScene().MarkLightProxyDirty(LightSceneProxy, ESceneProxyDirtyFlag::Transform);
 }
 
 FLightSceneProxy* ULightComponent::CreateLightSceneProxy()

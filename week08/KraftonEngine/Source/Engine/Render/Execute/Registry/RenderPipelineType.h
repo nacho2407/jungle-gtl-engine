@@ -1,14 +1,14 @@
 #pragma once
 
-// Render/Execute���� �����Ǵ� ���������� ��� �����Դϴ�.
 enum class ERenderPipelineType
 {
     DefaultRootPipeline,
     EditorRootPipeline,
     ScenePipeline,
-    LitPipeline,
-    NonLitPipeline,
-    DepthOnlyPipeline,
+    Lit,
+    Unlit,
+    WorldNormal,
+    SceneDepth,
     PostProcessPipeline,
     OverlayPipeline,
     PresentPipeline,

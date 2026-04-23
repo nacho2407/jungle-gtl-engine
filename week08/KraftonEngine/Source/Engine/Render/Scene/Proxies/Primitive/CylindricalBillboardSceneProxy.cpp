@@ -1,5 +1,5 @@
-#include "Render/Resources/Buffers/ConstantBufferLayouts.h"
-#include "Render/Execute/Context/PipelineStateTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Scene/Proxies/Primitive/CylindricalBillboardSceneProxy.h"
 
 #include "Component/CylindricalBillboardComponent.h"
@@ -25,7 +25,7 @@ void FCylindricalBillboardSceneProxy::UpdateMesh()
 void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
 {
     UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(Owner);
-    bVisible = Comp->ShouldRenderInCurrentWorld();
+    bVisible                             = Comp->ShouldRenderInCurrentWorld();
     if (!bVisible)
     {
         return;
@@ -53,7 +53,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
         return;
     }
 
-    const FVector BillboardPos = Comp->GetWorldLocation();
+    const FVector BillboardPos     = Comp->GetWorldLocation();
     const FVector BillboardForward = SceneView.CameraForward;
 
     FVector LocalAxis = Comp->GetBillboardAxis();
@@ -82,7 +82,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
     if (Forward.Dot(Forward) < 0.0001f)
     {
         const FVector TempUp = (std::abs(WorldAxis.Dot(FVector(0, 0, 1))) < 0.99f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
-        Forward = TempUp.Cross(WorldAxis).Normalized();
+        Forward              = TempUp.Cross(WorldAxis).Normalized();
     }
     else
     {
@@ -90,7 +90,7 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
     }
 
     const FVector Right = WorldAxis.Cross(Forward).Normalized();
-    const FVector Up = WorldAxis;
+    const FVector Up    = WorldAxis;
 
     FMatrix RotMatrix;
     RotMatrix.SetAxes(Right, Up, Forward);
@@ -103,6 +103,6 @@ void FCylindricalBillboardSceneProxy::UpdatePerViewport(const FSceneView& SceneV
 
     const FMatrix BillboardMatrix = FMatrix::MakeScaleMatrix(SpriteScale) * RotMatrix * FMatrix::MakeTranslationMatrix(BillboardPos);
 
-    PerObjectConstants = FPerObjectConstants::FromWorldMatrix(BillboardMatrix);
+    PerObjectConstants = FPerObjectCBData::FromWorldMatrix(BillboardMatrix);
     MarkPerObjectCBDirty();
 }

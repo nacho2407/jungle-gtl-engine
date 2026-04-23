@@ -1,4 +1,4 @@
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
@@ -6,7 +6,7 @@
 #include "Math/Quat.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
-#include "Render/Resources/Buffers/ConstantBufferPool.h"
+#include "Render/Resources/Buffers/ConstantBufferCache.h"
 #include "Collision/RayUtils.h"
 #include "Render/Scene/Proxies/Primitive/GizmoSceneProxy.h"
 #include "Render/Scene/Scene.h"
@@ -31,10 +31,10 @@ void UGizmoComponent::CreateRenderState()
     if (!Scene)
         return;
 
-    // Outer 프록시 (기본 경로)
+    // Register the outer gizmo proxy through the normal primitive path.
     SceneProxy = Scene->AddPrimitive(this);
 
-    // Inner 프록시 (별도 등록)
+    // Register the inner gizmo proxy separately for the inner pass.
     InnerProxy = new FGizmoSceneProxy(this, true);
     Scene->RegisterPrimitiveProxy(InnerProxy);
 }
@@ -147,7 +147,7 @@ bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float A
                             (DistanceVector.Y * DistanceVector.Y) +
                             (DistanceVector.Z * DistanceVector.Z);
 
-    // 기즈모 픽킹에 원기둥 크기를 반영합니다.
+    // Scale picking thickness with the current gizmo screen-space size.
     float ClickThreshold = Radius * AxisScale;
     constexpr float StemRadius = 0.06f;
     ClickThreshold = StemRadius * AxisScale;
@@ -253,10 +253,10 @@ void UGizmoComponent::RotateTarget(float DragAmount)
             return;
         USceneComponent* Root = Actor->GetRootComponent();
         const FQuat& CurQuat = Root->GetRelativeQuat();
-        // 월드 스페이스: Delta * Cur, 로컬 스페이스: Cur * Delta
+        // World space applies Delta * Current; local space applies Current * Delta.
         FQuat NewQuat = bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat);
 
-        // Euler 캐시를 기즈모 축 기준으로 직접 업데이트 (짐벌락 방지)
+        // Update the cached Euler hint directly on the edited gizmo axis.
         FRotator EulerHint = Root->GetCachedEditRotator();
         if (bIsWorldSpace)
         {
@@ -547,7 +547,7 @@ void UGizmoComponent::UpdateHoveredAxis(int Index)
             uint32 VertexIndex = MeshData->Indices[Index];
             uint32 HitAxis = MeshData->Vertices[VertexIndex].SubID;
 
-            // 마스크에 의해 숨겨진 축은 선택 불가
+            // Only allow selection for axes enabled by the current axis mask.
             if (AxisMask & (1u << HitAxis))
             {
                 SelectedAxis = HitAxis;
@@ -648,8 +648,8 @@ void UGizmoComponent::UpdateGizmoTransform()
         MarkRenderStateDirty();
     }
 
-    MarkGizmoDirty(EDirtyFlag::Transform);
-    MarkGizmoDirty(EDirtyFlag::Mesh);
+    MarkGizmoDirty(ESceneProxyDirtyFlag::Transform);
+    MarkGizmoDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 float UGizmoComponent::ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho, float OrthoWidth) const
@@ -680,7 +680,7 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
     MarkAllGizmoDirty();
 }
 
-void UGizmoComponent::MarkGizmoDirty(EDirtyFlag Flag)
+void UGizmoComponent::MarkGizmoDirty(ESceneProxyDirtyFlag Flag)
 {
     FScene* Scene = RegisteredScene;
     if (!Scene && Owner && Owner->GetWorld())
@@ -705,9 +705,9 @@ void UGizmoComponent::MarkGizmoDirty(EDirtyFlag Flag)
 
 void UGizmoComponent::MarkAllGizmoDirty()
 {
-    MarkGizmoDirty(EDirtyFlag::Transform);
-    MarkGizmoDirty(EDirtyFlag::Visibility);
-    MarkGizmoDirty(EDirtyFlag::Mesh);
+    MarkGizmoDirty(ESceneProxyDirtyFlag::Transform);
+    MarkGizmoDirty(ESceneProxyDirtyFlag::Visibility);
+    MarkGizmoDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 uint32 UGizmoComponent::ComputeAxisMask(ELevelViewportType ViewportType, EGizmoMode Mode)
@@ -737,9 +737,9 @@ uint32 UGizmoComponent::ComputeAxisMask(ELevelViewportType ViewportType, EGizmoM
         return AllAxes;
 
     if (Mode == EGizmoMode::Rotate)
-        return ViewAxis; // Rotate: 시선 축만
+        return ViewAxis; // Rotate: keep only the visible axis.
 
-    return AllAxes & ~ViewAxis; // Translate/Scale: 시선 축 제외
+    return AllAxes & ~ViewAxis; // Translate/Scale: exclude the visible axis.
 }
 
 void UGizmoComponent::Deactivate()

@@ -1,13 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Passes/Base/FullscreenPassBase.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 
-/*
-    fullscreen pass ?�에 ?�는 ?�처�?공통 베이???�래?�입?�다.
-    viewport 결과�?SceneColor/Depth 복사본으�?만들�? ?�처�??�력 SRV 바인???�리�?공통?�합?�다.
-*/
 class FPostProcessPassBase : public FFullscreenPassBase
 {
 public:
@@ -23,8 +19,8 @@ protected:
 
         if (Context.StateCache)
         {
-            Context.StateCache->RTV = nullptr;
-            Context.StateCache->DSV = nullptr;
+            Context.StateCache->RTV       = nullptr;
+            Context.StateCache->DSV       = nullptr;
             Context.StateCache->bForceAll = true;
         }
     }
@@ -105,12 +101,12 @@ protected:
 
         if (Context.StateCache)
         {
-            Context.StateCache->DiffuseSRV = nullptr;
-            Context.StateCache->NormalSRV = nullptr;
-            Context.StateCache->SpecularSRV = nullptr;
+            Context.StateCache->DiffuseSRV     = nullptr;
+            Context.StateCache->NormalSRV      = nullptr;
+            Context.StateCache->SpecularSRV    = nullptr;
             Context.StateCache->PerShaderCB[0] = nullptr;
             Context.StateCache->PerShaderCB[1] = nullptr;
-            Context.StateCache->bForceAll = true;
+            Context.StateCache->bForceAll      = true;
         }
     }
 };

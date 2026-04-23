@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
+#include "Render/Resources/Buffers/LightBufferTypes.h"
 #include "Component/LightComponent.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Execute/Context/Scene/SceneView.h"

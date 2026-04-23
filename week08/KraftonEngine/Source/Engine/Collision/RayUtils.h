@@ -11,35 +11,35 @@ class UPrimitiveComponent;
 // 컴포넌트에 종속되지 않는 순수 수학 연산
 struct FRayUtils
 {
-	// Ray vs AABB 교차 판정
-	static bool IntersectRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax, float& OutTMin, float& OutTMax);
-	static bool CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax);
+    // Ray vs AABB 교차 판정
+    static bool IntersectRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax, float& OutTMin, float& OutTMax);
+    static bool CheckRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax);
 
-	// Ray vs Triangle 교차 (Möller–Trumbore)
-	static bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir,
-		const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
+    // Ray vs Triangle 교차 (Möller–Trumbore)
+    static bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir,
+                                  const FVector& V0, const FVector& V1, const FVector& V2, float& OutT);
 
-	// 메시 삼각형들에 대한 레이캐스트
-	// Positions: 정점 위치 배열, PositionStride: 정점 구조체 바이트 크기
-	static bool RaycastTriangles(
-		const FRay& WorldRay,
-		const FMatrix& WorldMatrix,
-		const FMatrix& InverseWorldMatrix,
-		const void* PositionData,
-		uint32 PositionStride,
-		const uint32* IndexData,
-		uint32 IndexCount,
-		FHitResult& OutHitResult);
+    // 메시 삼각형들에 대한 레이캐스트
+    // Positions: 정점 위치 배열, PositionStride: 정점 구조체 바이트 크기
+    static bool RaycastTriangles(
+        const FRay& WorldRay,
+        const FMatrix& WorldMatrix,
+        const FMatrix& InverseWorldMatrix,
+        const void* PositionData,
+        uint32 PositionStride,
+        const uint32* IndexData,
+        uint32 IndexCount,
+        FHitResult& OutHitResult);
 
-	static bool RaycastTriangles(
-		const FRay& WorldRay,
-		const FMatrix& WorldMatrix,
-		const FMatrix& InverseWorldMatrix,
-		const void* PositionData,
-		uint32 PositionStride,
-		const TArray<uint32>& Indices,
-		FHitResult& OutHitResult);
+    static bool RaycastTriangles(
+        const FRay& WorldRay,
+        const FMatrix& WorldMatrix,
+        const FMatrix& InverseWorldMatrix,
+        const void* PositionData,
+        uint32 PositionStride,
+        const TArray<uint32>& Indices,
+        FHitResult& OutHitResult);
 
-	// 컴포넌트 단위 레이캐스트 (AABB 필터링 + LineTraceComponent)
-	static bool RaycastComponent(UPrimitiveComponent* Component, const FRay& Ray, FHitResult& OutHitResult);
+    // 컴포넌트 단위 레이캐스트 (AABB 필터링 + LineTraceComponent)
+    static bool RaycastComponent(UPrimitiveComponent* Component, const FRay& Ray, FHitResult& OutHitResult);
 };

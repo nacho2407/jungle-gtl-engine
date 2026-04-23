@@ -1,10 +1,13 @@
 #pragma once
 #include "CoreTypes.h"
 
-namespace common {
-	namespace constants {
-		namespace ImGui {
-			constexpr float NotificationTimer = 1.5f;
-		}
-	}
+namespace common
+{
+namespace constants
+{
+namespace ImGui
+{
+constexpr float NotificationTimer = 1.5f;
 }
+} // namespace constants
+} // namespace common

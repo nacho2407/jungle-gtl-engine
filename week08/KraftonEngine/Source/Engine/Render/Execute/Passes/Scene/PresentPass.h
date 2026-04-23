@@ -1,13 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Passes/Base/RenderPass.h"
 
 struct FRenderPipelineContext;
 class FPrimitiveSceneProxy;
 
-/*
-    ���� viewport ����� swapchain backbuffer�� �����ϴ� ������ ���� �н��Դϴ�.
-*/
 class FPresentPass : public FRenderPass
 {
 public:

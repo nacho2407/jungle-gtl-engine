@@ -2,5 +2,5 @@
 
 void FEditorPanel::Initialize(UEditorEngine* InEditorEngine)
 {
-	EditorEngine = InEditorEngine;
+    EditorEngine = InEditorEngine;
 }

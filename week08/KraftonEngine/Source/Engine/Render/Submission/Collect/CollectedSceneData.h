@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Context/RenderCollectContext.h"
-#include "Render/Scene/Proxies/Light/LightTypes.h"
+#include "Render/Resources/Buffers/LightBufferTypes.h"
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 
 class FPrimitiveSceneProxy;
@@ -20,10 +20,6 @@ struct FCollectedPrimitives
     TArray<FSceneOverlayText>     OverlayTexts;
 };
 
-/*
-    FCollectedSceneData�� Scene ���� ����� �� ����� ���� ����ü�Դϴ�.
-    Primitive�� Light�� Renderer�� ���� ��� ���� �ʰ� collector ��� �ϳ��� �����մϴ�.
-*/
 struct FCollectedSceneData
 {
     FCollectedPrimitives Primitives;

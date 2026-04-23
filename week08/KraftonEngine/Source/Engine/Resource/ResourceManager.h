@@ -13,48 +13,48 @@ struct ID3D11Device;
 
 class FResourceManager : public TSingleton<FResourceManager>
 {
-	friend class TSingleton<FResourceManager>;
+    friend class TSingleton<FResourceManager>;
 
 public:
-	// Resource.ini에서 경로/그리드 정보 로드 후 GPU 리소스 생성
-	void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
+    // Resource.ini에서 경로/그리드 정보 로드 후 GPU 리소스 생성
+    void LoadFromFile(const FString& Path, ID3D11Device* InDevice);
 
-	// GPU 리소스 로드 (Device 필요)
-	bool LoadGPUResources(ID3D11Device* Device);
+    // GPU 리소스 로드 (Device 필요)
+    bool LoadGPUResources(ID3D11Device* Device);
 
-	// 모든 GPU 리소스 해제
-	void ReleaseGPUResources();
+    // 모든 GPU 리소스 해제
+    void ReleaseGPUResources();
 
-	// --- Font ---
-	FFontResource* FindFont(const FName& FontName);
-	const FFontResource* FindFont(const FName& FontName) const;
-	void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
+    // --- Font ---
+    FFontResource* FindFont(const FName& FontName);
+    const FFontResource* FindFont(const FName& FontName) const;
+    void RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns = 16, uint32 Rows = 16);
 
-	// --- Font names ---
-	TArray<FString> GetFontNames() const;
+    // --- Font names ---
+    TArray<FString> GetFontNames() const;
 
-	// --- Particle ---
-	FParticleResource* FindParticle(const FName& ParticleName);
-	const FParticleResource* FindParticle(const FName& ParticleName) const;
-	void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
+    // --- Particle ---
+    FParticleResource* FindParticle(const FName& ParticleName);
+    const FParticleResource* FindParticle(const FName& ParticleName) const;
+    void RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns = 1, uint32 Rows = 1);
 
-	// --- Particle names ---
-	TArray<FString> GetParticleNames() const;
+    // --- Particle names ---
+    TArray<FString> GetParticleNames() const;
 
-	// --- Texture (단일 정적 이미지, 1x1 atlas) ---
-	FTextureResource* FindTexture(const FName& TextureName);
-	const FTextureResource* FindTexture(const FName& TextureName) const;
-	void RegisterTexture(const FName& TextureName, const FString& InPath);
+    // --- Texture (단일 정적 이미지, 1x1 atlas) ---
+    FTextureResource* FindTexture(const FName& TextureName);
+    const FTextureResource* FindTexture(const FName& TextureName) const;
+    void RegisterTexture(const FName& TextureName, const FString& InPath);
 
-	// --- Texture names ---
-	TArray<FString> GetTextureNames() const;
-	TArray<FString> GetEditorTextureNames() const;
+    // --- Texture names ---
+    TArray<FString> GetTextureNames() const;
+    TArray<FString> GetEditorTextureNames() const;
 
 private:
-	FResourceManager() = default;
-	~FResourceManager() { ReleaseGPUResources(); }
+    FResourceManager() = default;
+    ~FResourceManager() { ReleaseGPUResources(); }
 
-	TMap<FString, FFontResource>     FontResources;
-	TMap<FString, FParticleResource> ParticleResources;
-	TMap<FString, FTextureResource>  TextureResources;
+    TMap<FString, FFontResource> FontResources;
+    TMap<FString, FParticleResource> ParticleResources;
+    TMap<FString, FTextureResource> TextureResources;
 };

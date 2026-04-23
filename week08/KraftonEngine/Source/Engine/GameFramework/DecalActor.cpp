@@ -6,24 +6,24 @@
 IMPLEMENT_CLASS(ADecalActor, AActor)
 
 ADecalActor::ADecalActor()
-	: DecalComponent(nullptr)
+    : DecalComponent(nullptr)
 {
-	bNeedsTick = true;
-	bTickInEditor = true;
+    bNeedsTick = true;
+    bTickInEditor = true;
 }
 
 void ADecalActor::InitDefaultComponents()
 {
-	DecalComponent = AddComponent<UDecalComponent>();
-	auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
-	DecalComponent->SetMaterial(0, Material);
-	SetRootComponent(DecalComponent);
+    DecalComponent = AddComponent<UDecalComponent>();
+    auto Material = FMaterialManager::Get().GetOrCreateMaterial(DefaultDecalMaterialPath);
+    DecalComponent->SetMaterial(0, Material);
+    SetRootComponent(DecalComponent);
 
-	BillboardComponent = AddComponent<UBillboardComponent>();
-	auto DecalIcon = FMaterialManager::Get().GetOrCreateMaterial(DecalIconPath);
-	BillboardComponent->SetVisibleInEditor(true);
-	BillboardComponent->SetVisibleInGame(false);
-	BillboardComponent->SetEditorHelper(true);
-	BillboardComponent->SetMaterial(DecalIcon);
-	BillboardComponent->AttachToComponent(DecalComponent);
+    BillboardComponent = AddComponent<UBillboardComponent>();
+    auto DecalIcon = FMaterialManager::Get().GetOrCreateMaterial(DecalIconPath);
+    BillboardComponent->SetVisibleInEditor(true);
+    BillboardComponent->SetVisibleInGame(false);
+    BillboardComponent->SetEditorHelper(true);
+    BillboardComponent->SetMaterial(DecalIcon);
+    BillboardComponent->AttachToComponent(DecalComponent);
 }

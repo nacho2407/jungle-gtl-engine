@@ -3,7 +3,7 @@
 #include "Materials/MaterialManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Render/Scene/DebugDraw/DrawDebugHelpers.h"
+#include "Render/Scene/Debug/DebugRenderAPI.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
 #include "Materials/Material.h"
 #include "Serialization/Archive.h"
@@ -19,9 +19,9 @@ void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
         HandleFade(DeltaTime);
     }
 
-    if (ShouldDrawDebugBox())
+    if (ShouldRenderDebugBox())
     {
-        DrawDebugBox();
+        RenderDebugBox();
     }
 }
 
@@ -63,7 +63,7 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
     }
     if (strcmp(PropertyName, "Color") == 0)
     {
-        MarkProxyDirty(EDirtyFlag::Material);
+        MarkProxyDirty(ESceneProxyDirtyFlag::Material);
     }
 }
 
@@ -90,7 +90,7 @@ void UDecalComponent::PostDuplicate()
             SetMaterial(0, LoadedMat);
         }
     }
-    MarkProxyDirty(EDirtyFlag::Material);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Material);
 }
 
 FVector4 UDecalComponent::GetColor() const
@@ -111,7 +111,7 @@ void UDecalComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
     {
         MaterialSlot.Path = "None";
     }
-    MarkProxyDirty(EDirtyFlag::Material);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Material);
 }
 
 void UDecalComponent::OnTransformDirty()
@@ -154,10 +154,10 @@ void UDecalComponent::HandleFade(float DeltaTime)
     }
 
     FadeOpacity = Alpha;
-    MarkProxyDirty(EDirtyFlag::Material);
+    MarkProxyDirty(ESceneProxyDirtyFlag::Material);
 }
 
-bool UDecalComponent::ShouldDrawDebugBox() const
+bool UDecalComponent::ShouldRenderDebugBox() const
 {
     const AActor* OwnerActor = GetOwner();
     UWorld* World = OwnerActor ? OwnerActor->GetWorld() : nullptr;
@@ -174,7 +174,7 @@ bool UDecalComponent::ShouldDrawDebugBox() const
     return OwnerActor->IsVisible() && IsVisible() && ShouldRenderInCurrentWorld();
 }
 
-void UDecalComponent::DrawDebugBox()
+void UDecalComponent::RenderDebugBox()
 {
     const FMatrix& WorldMatrix = GetWorldMatrix();
     FVector P[8] = {
@@ -190,18 +190,5 @@ void UDecalComponent::DrawDebugBox()
 
     UWorld* World = GetOwner()->GetWorld();
 
-    DrawDebugLine(World, P[0], P[1], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[1], P[2], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[2], P[3], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[3], P[0], FColor::Green(), 0.0f);
-
-    DrawDebugLine(World, P[4], P[5], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[5], P[6], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[6], P[7], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[7], P[4], FColor::Green(), 0.0f);
-
-    DrawDebugLine(World, P[0], P[4], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[1], P[5], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[2], P[6], FColor::Green(), 0.0f);
-    DrawDebugLine(World, P[3], P[7], FColor::Green(), 0.0f);
+    ::RenderDebugBox(World, P[0], P[1], P[2], P[3], P[4], P[5], P[6], P[7], FColor::Green(), 0.0f);
 }

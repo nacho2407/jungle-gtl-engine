@@ -9,7 +9,7 @@
 
 #include <cstdio>
 
-void FEditorScenePanel::Initialize(UEditorEngine *InEditorEngine)
+void FEditorScenePanel::Initialize(UEditorEngine* InEditorEngine)
 {
     FEditorPanel::Initialize(InEditorEngine);
 }
@@ -39,15 +39,15 @@ void FEditorScenePanel::RenderActorOutliner()
 {
     SCOPE_STAT_CAT("ScenePanel::ActorOutliner", "5_UI");
 
-    UWorld *World = EditorEngine->GetWorld();
+    UWorld* World = EditorEngine->GetWorld();
     if (!World)
     {
         ImGui::TextDisabled("No active world.");
         return;
     }
 
-    FSelectionManager &Selection = EditorEngine->GetSelectionManager();
-    const TArray<AActor *> &Actors = World->GetActors();
+    FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+    const TArray<AActor*>& Actors = World->GetActors();
 
     ValidActorIndices.clear();
     ValidActorIndices.reserve(Actors.size());
@@ -68,7 +68,7 @@ void FEditorScenePanel::RenderActorOutliner()
             continue;
         }
 
-        AActor *Actor = Actors[ActorIndex];
+        AActor* Actor = Actors[ActorIndex];
         if (Actor && Selection.IsSelected(Actor))
         {
             ++SelectedCount;
@@ -99,13 +99,13 @@ void FEditorScenePanel::RenderActorOutliner()
 
     if (ImGui::Button(DeleteLabel))
     {
-        TArray<AActor *> ActorsToDelete;
+        TArray<AActor*> ActorsToDelete;
         ActorsToDelete.reserve(SelectedCount);
 
-        const TArray<AActor *> &CurrentActors = World->GetActors();
+        const TArray<AActor*>& CurrentActors = World->GetActors();
         for (int32 i = 0; i < static_cast<int32>(CurrentActors.size()); ++i)
         {
-            AActor *Actor = CurrentActors[i];
+            AActor* Actor = CurrentActors[i];
             if (Actor && Selection.IsSelected(Actor))
             {
                 ActorsToDelete.push_back(Actor);
@@ -115,7 +115,7 @@ void FEditorScenePanel::RenderActorOutliner()
         Selection.ClearSelection();
 
         World->BeginDeferredPickingBVHUpdate();
-        for (AActor *Actor : ActorsToDelete)
+        for (AActor* Actor : ActorsToDelete)
         {
             if (Actor && Actor->GetWorld() == World)
             {
@@ -146,7 +146,8 @@ void FEditorScenePanel::RenderActorOutliner()
                                        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY |
                                        ImGuiTableFlags_NoPadInnerX;
 
-    auto DrawCenteredTextInColumn = [](const char *Text) {
+    auto DrawCenteredTextInColumn = [](const char* Text)
+    {
         const float ColumnWidth = ImGui::GetColumnWidth();
         const float TextWidth = ImGui::CalcTextSize(Text).x;
         const float OffsetX = (ColumnWidth - TextWidth) * 0.5f;
@@ -158,11 +159,12 @@ void FEditorScenePanel::RenderActorOutliner()
         ImGui::TextUnformatted(Text);
     };
 
-    auto DrawCenteredCheckboxInColumn = [](const char *Id, bool *bValue) -> bool {
+    auto DrawCenteredCheckboxInColumn = [](const char* Id, bool* bValue) -> bool
+    {
         const float CheckboxSize = ImGui::GetFrameHeight();
         const float ColumnWidth = ImGui::GetColumnWidth();
 
-        const ImGuiStyle &Style = ImGui::GetStyle();
+        const ImGuiStyle& Style = ImGui::GetStyle();
         const float VisualWidth = CheckboxSize + Style.FramePadding.x * 0.5f;
         const float OffsetX = (ColumnWidth - VisualWidth) * 0.5f;
 
@@ -174,7 +176,8 @@ void FEditorScenePanel::RenderActorOutliner()
         return ImGui::Checkbox(Id, bValue);
     };
 
-    auto DrawPaddedSelectableInColumn = [](const char *Label, bool bSelected, float LeftPadding) -> bool {
+    auto DrawPaddedSelectableInColumn = [](const char* Label, bool bSelected, float LeftPadding) -> bool
+    {
         const float StartX = ImGui::GetCursorPosX();
         ImGui::SetCursorPosX(StartX + LeftPadding);
         return ImGui::Selectable(Label, bSelected);
@@ -205,7 +208,7 @@ void FEditorScenePanel::RenderActorOutliner()
                 continue;
             }
 
-            AActor *Actor = Actors[ActorIndex];
+            AActor* Actor = Actors[ActorIndex];
             if (!Actor)
             {
                 continue;

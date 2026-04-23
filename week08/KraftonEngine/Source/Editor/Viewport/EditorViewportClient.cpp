@@ -12,7 +12,7 @@
 #include "GameFramework/World.h"
 #include "Viewport/Viewport.h"
 
-UWorld *FEditorViewportClient::GetWorld() const
+UWorld* FEditorViewportClient::GetWorld() const
 {
     return GEngine ? GEngine->GetWorld() : nullptr;
 }
@@ -25,7 +25,7 @@ UWorld *FEditorViewportClient::GetWorld() const
 #include "ImGui/imgui.h"
 #include "Object/Object.h"
 
-void FEditorViewportClient::Initialize(FWindowsWindow *InWindow)
+void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     Window = InWindow;
 }
@@ -144,7 +144,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
 void FEditorViewportClient::TickEditorShortcuts()
 {
-    UEditorEngine *EditorEngine = Cast<UEditorEngine>(GEngine);
+    UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (!EditorEngine)
     {
         return;
@@ -159,22 +159,22 @@ void FEditorViewportClient::TickEditorShortcuts()
     // Ctrl+D — 선택된 액터 복제
     if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
     {
-        const TArray<AActor *> ToDuplicate = SelectionManager->GetSelectedActors();
+        const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
         if (!ToDuplicate.empty())
         {
-            TArray<AActor *> NewSelection;
-            for (AActor *Src : ToDuplicate)
+            TArray<AActor*> NewSelection;
+            for (AActor* Src : ToDuplicate)
             {
                 if (!Src)
                     continue;
-                AActor *Dup = Cast<AActor>(Src->Duplicate(nullptr));
+                AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
                 if (Dup)
                 {
                     NewSelection.push_back(Dup);
                 }
             }
             SelectionManager->ClearSelection();
-            for (AActor *Actor : NewSelection)
+            for (AActor* Actor : NewSelection)
             {
                 SelectionManager->ToggleSelect(Actor);
             }
@@ -194,7 +194,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
         return;
     }
 
-    const FCameraState &CameraState = Camera->GetCameraState();
+    const FCameraState& CameraState = Camera->GetCameraState();
     const bool bIsOrtho = CameraState.bIsOrthogonal;
 
     const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
@@ -384,7 +384,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
  *
  * \param Ray
  */
-void FEditorViewportClient::HandleDragStart(const FRay &Ray)
+void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
     if (UWorld* World = GetWorld())
     {
@@ -405,8 +405,8 @@ void FEditorViewportClient::HandleDragStart(const FRay &Ray)
     else
     {
         // 기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
-        AActor *BestActor = nullptr;
-        if (UWorld *W = GetWorld())
+        AActor* BestActor = nullptr;
+        if (UWorld* W = GetWorld())
         {
             W->RaycastPrimitives(Ray, HitResult, BestActor); // BVH 시작
         }
@@ -444,7 +444,7 @@ void FEditorViewportClient::UpdateLayoutRect()
     if (!LayoutWindow)
         return;
 
-    const FRect &PaneRect = LayoutWindow->GetRect();
+    const FRect& PaneRect = LayoutWindow->GetRect();
     ViewportFrameRect = PaneRect;
 
     const float ToolbarHeight = (PaneToolbarHeight > 0.0f) ? PaneToolbarHeight : 0.0f;

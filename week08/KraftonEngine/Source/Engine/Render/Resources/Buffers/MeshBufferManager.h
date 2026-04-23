@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveShapeTypes.h"
+#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 
@@ -18,7 +18,7 @@ public:
     void Initialize(ID3D11Device* InDevice);
     void Release();
 
-    FMeshBuffer& GetMeshBuffer(EMeshShape InShape);
+    FMeshBuffer&     GetMeshBuffer(EMeshShape InShape);
     const FMeshData& GetMeshData(EMeshShape InShape) const;
 
 private:
@@ -34,9 +34,9 @@ private:
     void CreateQuad();
     void CreateTexturedQuad();
 
-    TMap<EMeshShape, FMeshData> MeshDataMap;
+    TMap<EMeshShape, FMeshData>              MeshDataMap;
     TMap<EMeshShape, TMeshData<FVertexPNCT>> PNCTMeshDataMap;
-    TMap<EMeshShape, FMeshBuffer> MeshBufferMap;
+    TMap<EMeshShape, FMeshBuffer>            MeshBufferMap;
 
     bool bIsInitialized = false;
 };

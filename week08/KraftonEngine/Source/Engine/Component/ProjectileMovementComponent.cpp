@@ -4,44 +4,9 @@
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/ObjectFactory.h"
+#include "Render/Scene/Debug/DebugRenderAPI.h"
 #include "Render/Scene/Scene.h"
 #include "Serialization/Archive.h"
-
-#include <cmath>
-
-namespace
-{
-void AddProjectileVelocityArrow(FScene& Scene, const FVector& Start, const FVector& Velocity)
-{
-    constexpr float ProjectileArrowScale = 0.25f;
-    const FVector ScaledVelocity = Velocity * ProjectileArrowScale;
-    const float VelocityLength = ScaledVelocity.Length();
-    if (VelocityLength <= FMath::Epsilon)
-    {
-        return;
-    }
-
-    const FVector Direction = ScaledVelocity / VelocityLength;
-    const FVector End = Start + ScaledVelocity;
-    const FColor ArrowColor(135, 206, 235);
-
-    Scene.AddDebugLine(Start, End, ArrowColor);
-
-    const float HeadLength = Clamp(VelocityLength * 0.2f, 0.2f, 1.5f);
-    FVector ReferenceUp(0.0f, 0.0f, 1.0f);
-    if (std::abs(Direction.Dot(ReferenceUp)) > 0.98f)
-    {
-        ReferenceUp = FVector(0.0f, 1.0f, 0.0f);
-    }
-
-    const FVector Side = Direction.Cross(ReferenceUp).Normalized();
-    const FVector Back = Direction * HeadLength;
-    const FVector SideOffset = Side * (HeadLength * 0.45f);
-
-    Scene.AddDebugLine(End, End - Back + SideOffset, ArrowColor);
-    Scene.AddDebugLine(End, End - Back - SideOffset, ArrowColor);
-}
-} // namespace
 
 IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
 
@@ -111,7 +76,10 @@ void UProjectileMovementComponent::ContributeSelectedVisuals(FScene& Scene) cons
         return;
     }
 
-    AddProjectileVelocityArrow(Scene, SourceComponent->GetWorldLocation(), PreviewVelocity);
+    constexpr float ProjectileArrowScale = 0.25f;
+    const FVector ScaledVelocity = PreviewVelocity * ProjectileArrowScale;
+    RenderDebugArrow(Scene, SourceComponent->GetWorldLocation(), ScaledVelocity.Normalized(),
+                     ScaledVelocity.Length(), FColor(135, 206, 235));
 }
 
 void UProjectileMovementComponent::StopSimulating()

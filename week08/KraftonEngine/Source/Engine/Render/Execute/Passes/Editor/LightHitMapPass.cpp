@@ -1,9 +1,9 @@
-#include "LightHitMapPass.h"
+﻿#include "LightHitMapPass.h"
 #include "Render/Submission/Command/DrawCommand.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Visibility/TileBasedLightCulling.h"
+#include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 
 void FLightHitMapPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -14,14 +14,11 @@ void FLightHitMapPass::PrepareInputs(FRenderPipelineContext& Context)
     CopyViewportColorToSceneColor(Context);
     BindSceneColorInput(Context, true);
 
-    // LightCulling ���� ������ ���̵�
     if (Context.LightCulling)
     {
-        // ����� �� ��Ʈ�� SRV �߰�
         ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
         Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
     }
-
 }
 
 void FLightHitMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
@@ -31,15 +28,14 @@ void FLightHitMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-	const FViewportRenderTargets* Targets = Context.Targets;
+    const FViewportRenderTargets* Targets = Context.Targets;
 
-	if (!Targets || !Targets->SceneColorCopySRV || !Targets->SceneColorCopyTexture)
+    if (!Targets || !Targets->SceneColorCopySRV || !Targets->SceneColorCopyTexture)
     {
         return;
     }
 
-    DrawCommandBuilder::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::LightHitMap);
-
+    DrawCommand::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::LightHitMap);
 }
 
 void FLightHitMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
@@ -56,6 +52,6 @@ void FLightHitMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
     }
 
-	ID3D11ShaderResourceView* NullSRV = { nullptr };
+    ID3D11ShaderResourceView* NullSRV = { nullptr };
     Context.Context->PSSetShaderResources(8, 1, &NullSRV);
 }

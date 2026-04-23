@@ -16,305 +16,287 @@ IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 {
-	return new FStaticMeshSceneProxy(this);
+    return new FStaticMeshSceneProxy(this);
 }
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
-	StaticMesh = InMesh;
-	if (InMesh)
-	{
-		StaticMeshPath = InMesh->GetAssetPathFileName();
-		const TArray<FStaticMaterial>& DefaultMaterials = StaticMesh->GetStaticMaterials();
+    StaticMesh = InMesh;
+    if (InMesh)
+    {
+        StaticMeshPath = InMesh->GetAssetPathFileName();
+        const TArray<FStaticMaterial>& DefaultMaterials = StaticMesh->GetStaticMaterials();
 
-		OverrideMaterials.resize(DefaultMaterials.size());
-		MaterialSlots.resize(DefaultMaterials.size());
+        OverrideMaterials.resize(DefaultMaterials.size());
+        MaterialSlots.resize(DefaultMaterials.size());
 
-		for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
-		{
-			OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
+        for (int32 i = 0; i < (int32)DefaultMaterials.size(); ++i)
+        {
+            OverrideMaterials[i] = DefaultMaterials[i].MaterialInterface;
 
-			if (OverrideMaterials[i])
-				MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
-			else
-				MaterialSlots[i].Path = "None";
-		}
-	}
-	else
-	{
-		StaticMeshPath = "None";
-		OverrideMaterials.clear();
-		MaterialSlots.clear();
-	}
-	CacheLocalBounds();
-	MarkRenderStateDirty();
-	MarkWorldBoundsDirty();
+            if (OverrideMaterials[i])
+                MaterialSlots[i].Path = OverrideMaterials[i]->GetAssetPathFileName();
+            else
+                MaterialSlots[i].Path = "None";
+        }
+    }
+    else
+    {
+        StaticMeshPath = "None";
+        OverrideMaterials.clear();
+        MaterialSlots.clear();
+    }
+    CacheLocalBounds();
+    MarkRenderStateDirty();
+    MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::CacheLocalBounds()
 {
-	bHasValidBounds = false;
-	if (!StaticMesh) return;
-	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
-	if (!Asset || Asset->Vertices.empty()) return;
+    bHasValidBounds = false;
+    if (!StaticMesh)
+        return;
+    FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+    if (!Asset || Asset->Vertices.empty())
+        return;
 
-	// FStaticMesh에 이미 계산된 바운드가 있으면 그대로 사용
-	if (!Asset->bBoundsValid)
-	{
-		Asset->CacheBounds();
-	}
+    // Reuse cached asset bounds when available.
+    if (!Asset->bBoundsValid)
+    {
+        Asset->CacheBounds();
+    }
 
-	CachedLocalCenter = Asset->BoundsCenter;
-	CachedLocalExtent = Asset->BoundsExtent;
-	bHasValidBounds = Asset->bBoundsValid;
+    CachedLocalCenter = Asset->BoundsCenter;
+    CachedLocalExtent = Asset->BoundsExtent;
+    bHasValidBounds = Asset->bBoundsValid;
 }
 
 UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
-	return StaticMesh;
+    return StaticMesh;
 }
 
 void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 {
-	if (ElementIndex >= 0 && ElementIndex < static_cast<int32>(OverrideMaterials.size()))
-	{
-		OverrideMaterials[ElementIndex] = InMaterial;
+    if (ElementIndex >= 0 && ElementIndex < static_cast<int32>(OverrideMaterials.size()))
+    {
+        OverrideMaterials[ElementIndex] = InMaterial;
 
-		// MaterialSlots 동기화 — 씬 저장 시 경로가 올바르게 직렬화되도록
-		if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
-		{
-			MaterialSlots[ElementIndex].Path = InMaterial
-				? InMaterial->GetAssetPathFileName()
-				: "None";
-		}
+        // Keep the serialized material slot path in sync with the override.
+        if (ElementIndex < static_cast<int32>(MaterialSlots.size()))
+        {
+            MaterialSlots[ElementIndex].Path = InMaterial
+                                                   ? InMaterial->GetAssetPathFileName()
+                                                   : "None";
+        }
 
-		// 프록시에 Material dirty 전파
-		MarkProxyDirty(EDirtyFlag::Material);
-	}
+        // Propagate material dirtiness to the scene proxy.
+        MarkProxyDirty(ESceneProxyDirtyFlag::Material);
+    }
 }
 
 UMaterial* UStaticMeshComponent::GetMaterial(int32 ElementIndex) const
 {
-	if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
-	{
-		return OverrideMaterials[ElementIndex];
-	}
-	return nullptr;
+    if (ElementIndex >= 0 && ElementIndex < OverrideMaterials.size())
+    {
+        return OverrideMaterials[ElementIndex];
+    }
+    return nullptr;
 }
 
 FMeshBuffer* UStaticMeshComponent::GetMeshBuffer() const
 {
-	if (!StaticMesh) return nullptr;
-	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
-	if (!Asset || !Asset->RenderBuffer) return nullptr;
-	return Asset->RenderBuffer.get();
+    if (!StaticMesh)
+        return nullptr;
+    FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+    if (!Asset || !Asset->RenderBuffer)
+        return nullptr;
+    return Asset->RenderBuffer.get();
 }
 
 FMeshDataView UStaticMeshComponent::GetMeshDataView() const
 {
-	if (!StaticMesh) return {};
-	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
-	if (!Asset || Asset->Vertices.empty()) return {};
+    if (!StaticMesh)
+        return {};
+    FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+    if (!Asset || Asset->Vertices.empty())
+        return {};
 
-	FMeshDataView View;
-	View.VertexData  = Asset->Vertices.data();
-	View.VertexCount = (uint32)Asset->Vertices.size();
-	View.Stride      = sizeof(FVertexPNCT_T);
-	View.IndexData   = Asset->Indices.data();
-	View.IndexCount  = (uint32)Asset->Indices.size();
-	return View;
+    FMeshDataView View;
+    View.VertexData = Asset->Vertices.data();
+    View.VertexCount = (uint32)Asset->Vertices.size();
+    View.Stride = sizeof(FVertexPNCT_T);
+    View.IndexData = Asset->Indices.data();
+    View.IndexCount = (uint32)Asset->Indices.size();
+    return View;
 }
 
 void UStaticMeshComponent::UpdateWorldAABB() const
 {
-	if (!bHasValidBounds)
-	{
-		UPrimitiveComponent::UpdateWorldAABB();
-		return;
-	}
+    if (!bHasValidBounds)
+    {
+        UPrimitiveComponent::UpdateWorldAABB();
+        return;
+    }
 
-	FVector WorldCenter = CachedWorldMatrix.TransformPositionWithW(CachedLocalCenter);
+    FVector WorldCenter = CachedWorldMatrix.TransformPositionWithW(CachedLocalCenter);
 
-	float Ex = std::abs(CachedWorldMatrix.M[0][0]) * CachedLocalExtent.X
-		+ std::abs(CachedWorldMatrix.M[1][0]) * CachedLocalExtent.Y
-		+ std::abs(CachedWorldMatrix.M[2][0]) * CachedLocalExtent.Z;
-	float Ey = std::abs(CachedWorldMatrix.M[0][1]) * CachedLocalExtent.X
-		+ std::abs(CachedWorldMatrix.M[1][1]) * CachedLocalExtent.Y
-		+ std::abs(CachedWorldMatrix.M[2][1]) * CachedLocalExtent.Z;
-	float Ez = std::abs(CachedWorldMatrix.M[0][2]) * CachedLocalExtent.X
-		+ std::abs(CachedWorldMatrix.M[1][2]) * CachedLocalExtent.Y
-		+ std::abs(CachedWorldMatrix.M[2][2]) * CachedLocalExtent.Z;
+    float Ex = std::abs(CachedWorldMatrix.M[0][0]) * CachedLocalExtent.X + std::abs(CachedWorldMatrix.M[1][0]) * CachedLocalExtent.Y + std::abs(CachedWorldMatrix.M[2][0]) * CachedLocalExtent.Z;
+    float Ey = std::abs(CachedWorldMatrix.M[0][1]) * CachedLocalExtent.X + std::abs(CachedWorldMatrix.M[1][1]) * CachedLocalExtent.Y + std::abs(CachedWorldMatrix.M[2][1]) * CachedLocalExtent.Z;
+    float Ez = std::abs(CachedWorldMatrix.M[0][2]) * CachedLocalExtent.X + std::abs(CachedWorldMatrix.M[1][2]) * CachedLocalExtent.Y + std::abs(CachedWorldMatrix.M[2][2]) * CachedLocalExtent.Z;
 
-	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
-	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
-	bWorldAABBDirty = false;
-	bHasValidWorldAABB = true;
+    WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
+    WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
+    bWorldAABBDirty = false;
+    bHasValidWorldAABB = true;
 }
 
 bool UStaticMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
 {
-	const FMatrix& WorldMatrix = GetWorldMatrix();
-	const FMatrix& WorldInverse = GetWorldInverseMatrix();
-	return LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, OutHitResult);
+    const FMatrix& WorldMatrix = GetWorldMatrix();
+    const FMatrix& WorldInverse = GetWorldInverseMatrix();
+    return LineTraceStaticMeshFast(Ray, WorldMatrix, WorldInverse, OutHitResult);
 }
 
 bool UStaticMeshComponent::LineTraceStaticMeshFast(
-	const FRay& Ray,
-	const FMatrix& WorldMatrix,
-	const FMatrix& WorldInverse,
-	FHitResult& OutHitResult)
+    const FRay& Ray,
+    const FMatrix& WorldMatrix,
+    const FMatrix& WorldInverse,
+    FHitResult& OutHitResult)
 {
-	if (!StaticMesh) return false;
+    if (!StaticMesh)
+        return false;
 
-	FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
-	FVector LocalDirection = WorldInverse.TransformVector(Ray.Direction);
-	LocalDirection.Normalize();
+    FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
+    FVector LocalDirection = WorldInverse.TransformVector(Ray.Direction);
+    LocalDirection.Normalize();
 
-	// Mesh BVH만 사용하는 전용 경로입니다. 월드 BVH는 이 함수를 직접 호출해 가상 호출 비용을 피합니다.
-	if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
-	{
-		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
-		const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
-		OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
-		OutHitResult.HitComponent = this;
-		return true;
-	}
+    // Use the mesh BVH as the fast component picking path.
+    if (StaticMesh->RaycastMeshTrianglesWithBVHLocal(LocalOrigin, LocalDirection, OutHitResult))
+    {
+        const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
+        const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
+        OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+        OutHitResult.HitComponent = this;
+        return true;
+    }
 
-	// 실패하면 기존 방식하던 걸 주석 처리. 성능개선이 일단 확인됨.
-	//bool bHit = FRayUtils::RaycastTriangles(
-	//	Ray, GetWorldMatrix(),
-	//	GetWorldInverseMatrix(),
-	//	&Asset->Vertices[0].Position,
-	//	sizeof(FVertexPNCT_T),
-	//	Asset->Indices,
-	//	OutHitResult);
-
-	//if (bHit)
-	//{
-	//	OutHitResult.HitComponent = this;
-	//}
-	/*codex의 답변
-왜 빨라졌냐면, 주석 처리된 Jungle_Week5_Team3/KraftonEngine/Source/Engine/Collision/RayUtils.cpp:60의
-RaycastTriangles()는 BVH 없이 Indices를 처음부터 끝까지 3개씩 돌면서 모든 triangle에 IntersectTriangle()를 합니다.
-즉 후보 메시에 대해 매번 풀 스캔입니다.
-월드 단계에서 이미 Jungle_Week5_Team3/KraftonEngine/Source/Engine/Collision/WorldPrimitivePickingBVH.cpp:87가
-primitive AABB 기준으로 후보만 추립니다.
-그런데 AABB는 보수적이라 “박스는 맞았지만 실제 삼각형은 안 맞는” 후보가 꽤 나옵니다.
-예전 코드에서는 이런 BVH miss 후보마다 fallback 전체 triangle 스캔이 한 번 더 돌았습니다.
-즉 “안 맞은 객체”를 확인하는 비용이 너무 컸던 겁니다.
-	*/
-	return false; // bHit;
+    /*
+    BVH misses no longer fall back to a full triangle scan. The fallback was useful
+    for validation, but it is too expensive for regular component picking.
+    */
+    return false; // bHit;
 }
 
-// FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
+// Serializes material slot asset paths; actual material loading happens after duplication.
 static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 {
-	Ar << Slot.Path;
-	return Ar;
+    Ar << Slot.Path;
+    return Ar;
 }
 
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
-	UMeshComponent::Serialize(Ar);
-	Ar << StaticMeshPath;
-	Ar << MaterialSlots;
+    UMeshComponent::Serialize(Ar);
+    Ar << StaticMeshPath;
+    Ar << MaterialSlots;
 }
 
 void UStaticMeshComponent::PostDuplicate()
 {
-	UMeshComponent::PostDuplicate();
+    UMeshComponent::PostDuplicate();
 
-	// 메시 에셋 재로딩
-	if (!StaticMeshPath.empty() && StaticMeshPath != "None")
-	{
-		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
-		if (Loaded)
-		{
-			// SetStaticMesh는 MaterialSlots를 덮어쓰므로, 직렬화된 슬롯 정보를 백업·복원한다.
-			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
-			SetStaticMesh(Loaded);
+    // Load the referenced mesh asset after duplication.
+    if (!StaticMeshPath.empty() && StaticMeshPath != "None")
+    {
+        ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+        UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+        if (Loaded)
+        {
+            // Preserve serialized material slot data across SetStaticMesh.
+            TArray<FMaterialSlot> SavedSlots = MaterialSlots;
+            SetStaticMesh(Loaded);
 
-			// Override material 재로딩
-			for (int32 i = 0; i < (int32)MaterialSlots.size() && i < (int32)SavedSlots.size(); ++i)
-			{
-				MaterialSlots[i] = SavedSlots[i];
-				const FString& MatPath = MaterialSlots[i].Path;
-				if (MatPath.empty() || MatPath == "None")
-				{
-					OverrideMaterials[i] = nullptr;
-				}
-				else
-				{
-					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(MatPath);
-					OverrideMaterials[i] = LoadedMat;
-				}
-			}
-		}
-	}
+            // Reload override materials from serialized slot paths.
+            for (int32 i = 0; i < (int32)MaterialSlots.size() && i < (int32)SavedSlots.size(); ++i)
+            {
+                MaterialSlots[i] = SavedSlots[i];
+                const FString& MatPath = MaterialSlots[i].Path;
+                if (MatPath.empty() || MatPath == "None")
+                {
+                    OverrideMaterials[i] = nullptr;
+                }
+                else
+                {
+                    UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(MatPath);
+                    OverrideMaterials[i] = LoadedMat;
+                }
+            }
+        }
+    }
 
-	CacheLocalBounds();
-	MarkRenderStateDirty();
-	MarkWorldBoundsDirty();
+    CacheLocalBounds();
+    MarkRenderStateDirty();
+    MarkWorldBoundsDirty();
 }
 
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
+    UPrimitiveComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
 
-	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
-	{
-		FPropertyDescriptor Desc;
-		Desc.Name = "Element " + std::to_string(i);
-		Desc.Type = EPropertyType::MaterialSlot;
-		Desc.ValuePtr = &MaterialSlots[i];
-		OutProps.push_back(Desc);
-	}
+    for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
+    {
+        FPropertyDescriptor Desc;
+        Desc.Name = "Element " + std::to_string(i);
+        Desc.Type = EPropertyType::MaterialSlot;
+        Desc.ValuePtr = &MaterialSlots[i];
+        OutProps.push_back(Desc);
+    }
 }
 
 void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 {
-	UPrimitiveComponent::PostEditProperty(PropertyName);
+    UPrimitiveComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "Static Mesh") == 0)
-	{
-		if (StaticMeshPath.empty() || StaticMeshPath == "None")
-		{
-			StaticMesh = nullptr;
-		}
-		else
-		{
-			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
-			SetStaticMesh(Loaded);
-		}
-		CacheLocalBounds();
-		MarkWorldBoundsDirty();
-	}
+    if (strcmp(PropertyName, "Static Mesh") == 0)
+    {
+        if (StaticMeshPath.empty() || StaticMeshPath == "None")
+        {
+            StaticMesh = nullptr;
+        }
+        else
+        {
+            ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+            UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+            SetStaticMesh(Loaded);
+        }
+        CacheLocalBounds();
+        MarkWorldBoundsDirty();
+    }
 
-	if (strncmp(PropertyName, "Element ", 8) == 0)
-	{
-		// "Element 0"에서 8번째 인덱스부터 시작하는 숫자를 정수로 변환
-		int32 Index = atoi(&PropertyName[8]);
+    if (strncmp(PropertyName, "Element ", 8) == 0)
+    {
+        // Parse the numeric suffix after the 'Element ' prefix.
+        int32 Index = atoi(&PropertyName[8]);
 
-		// 인덱스 범위 유효성 검사
-		if (Index >= 0 && Index < (int32)MaterialSlots.size())
-		{
-			FString NewMatPath = MaterialSlots[Index].Path;
+        // Validate the material slot index before applying the edit.
+        if (Index >= 0 && Index < (int32)MaterialSlots.size())
+        {
+            FString NewMatPath = MaterialSlots[Index].Path;
 
-			if (NewMatPath == "None" || NewMatPath.empty())
-			{
-				SetMaterial(Index, nullptr);
-			}
-			else
-			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(NewMatPath);
-				if (LoadedMat)
-				{
-					SetMaterial(Index, LoadedMat);
-				}
-			}
-		}
-	}
+            if (NewMatPath == "None" || NewMatPath.empty())
+            {
+                SetMaterial(Index, nullptr);
+            }
+            else
+            {
+                UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(NewMatPath);
+                if (LoadedMat)
+                {
+                    SetMaterial(Index, LoadedMat);
+                }
+            }
+        }
+    }
 }

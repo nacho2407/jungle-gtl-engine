@@ -3,6 +3,6 @@
 
 struct FRay
 {
-	FVector Origin;
-	FVector Direction;
+    FVector Origin;
+    FVector Direction;
 };

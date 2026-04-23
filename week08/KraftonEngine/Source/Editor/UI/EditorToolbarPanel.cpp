@@ -17,52 +17,52 @@
 
 namespace
 {
-    template <typename T>
-    void BeginDisabledUnless(bool bEnabled, T&& Fn)
+template <typename T>
+void BeginDisabledUnless(bool bEnabled, T&& Fn)
+{
+    if (!bEnabled)
     {
-        if (!bEnabled)
-        {
-            ImGui::BeginDisabled();
-        }
-
-        Fn();
-
-        if (!bEnabled)
-        {
-            ImGui::EndDisabled();
-        }
+        ImGui::BeginDisabled();
     }
 
-    ID3D11ShaderResourceView* GPlayStartIcon = nullptr;
-    ID3D11ShaderResourceView* GPauseIcon = nullptr;
-    ID3D11ShaderResourceView* GStopIcon = nullptr;
+    Fn();
 
-    void SetFixedPopupPosBelowLastItem(float YOffset)
+    if (!bEnabled)
     {
-        const ImVec2 ItemMin = ImGui::GetItemRectMin();
-        ImGui::SetNextWindowPos(ImVec2(ItemMin.x, ItemMin.y + YOffset), ImGuiCond_Appearing);
-    }
-
-    std::wstring ResolveEditorIconPath(const std::wstring& FileName)
-    {
-        const std::filesystem::path RootCandidate = std::filesystem::path(FPaths::RootDir()) / L"Asset/Editor/Icons" / FileName;
-        if (std::filesystem::exists(RootCandidate))
-        {
-            return RootCandidate.wstring();
-        }
-
-        WCHAR Buffer[MAX_PATH] = {};
-        GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
-        const std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
-        const std::filesystem::path ExeCandidate = ExeDir / L"Asset/Editor/Icons" / FileName;
-        if (std::filesystem::exists(ExeCandidate))
-        {
-            return ExeCandidate.wstring();
-        }
-
-        return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+        ImGui::EndDisabled();
     }
 }
+
+ID3D11ShaderResourceView* GPlayStartIcon = nullptr;
+ID3D11ShaderResourceView* GPauseIcon = nullptr;
+ID3D11ShaderResourceView* GStopIcon = nullptr;
+
+void SetFixedPopupPosBelowLastItem(float YOffset)
+{
+    const ImVec2 ItemMin = ImGui::GetItemRectMin();
+    ImGui::SetNextWindowPos(ImVec2(ItemMin.x, ItemMin.y + YOffset), ImGuiCond_Appearing);
+}
+
+std::wstring ResolveEditorIconPath(const std::wstring& FileName)
+{
+    const std::filesystem::path RootCandidate = std::filesystem::path(FPaths::RootDir()) / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(RootCandidate))
+    {
+        return RootCandidate.wstring();
+    }
+
+    WCHAR Buffer[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
+    const std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
+    const std::filesystem::path ExeCandidate = ExeDir / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(ExeCandidate))
+    {
+        return ExeCandidate.wstring();
+    }
+
+    return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+}
+} // namespace
 
 void FEditorToolbarPanel::Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice)
 {
@@ -254,8 +254,8 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
     ID3D11ShaderResourceView* CurrentPlayIcon = bPlaying ? GPauseIcon : GPlayStartIcon;
 
     const uint32 PlayTint = !bPlaying
-        ? IM_COL32(70, 210, 90, 255)
-        : (bPaused ? IM_COL32(255, 230, 80, 255) : IM_COL32(255, 255, 255, 255));
+                                ? IM_COL32(70, 210, 90, 255)
+                                : (bPaused ? IM_COL32(255, 230, 80, 255) : IM_COL32(255, 255, 255, 255));
     const uint32 StopTint = bPlaying ? IM_COL32(220, 70, 70, 255) : IM_COL32(255, 255, 255, 255);
 
     if (DrawIconButton("PIE_Play", CurrentPlayIcon, bPlaying ? (bPaused ? "Resume" : "Pause") : "Play", PlayTint))
@@ -307,7 +307,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
     };
 
     OpenToolbarPopup("Layout", "LayoutPopup", [&]()
-    {
+                     {
         constexpr int32 LayoutCount = static_cast<int32>(EViewportLayout::MAX);
         constexpr int32 Columns = 4;
         constexpr float LayoutIconSize = 28.0f;
@@ -353,13 +353,12 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             }
 
             ImGui::PopID();
-        }
-    });
+        } });
 
     FViewportRenderOptions& Opts = VC->GetRenderOptions();
 
     OpenToolbarPopup("ViewOrientation", "ViewportTypePopup", [&]()
-    {
+                     {
         ImGui::SeparatorText("Perspective");
         if (ImGui::Selectable("Perspective", Opts.ViewportType == ELevelViewportType::Perspective))
         {
@@ -399,13 +398,12 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             {
                 Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
             }
-        }
-    });
+        } });
 
     if (UGizmoComponent* Gizmo = Editor->GetGizmo())
     {
         OpenToolbarPopup("Gizmo", "GizmoModePopup", [&]()
-        {
+                         {
             int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
 
             if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
@@ -421,12 +419,11 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
             {
                 Gizmo->SetScaleMode();
-            }
-        });
+            } });
     }
 
     OpenToolbarPopup("ViewMode", "ViewModePopup", [&]()
-    {
+                     {
         int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
 
         ImGui::RadioButton("Lit_Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
@@ -445,11 +442,10 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::DragFloat("Exponent", &Opts.Exponent, 0.05f, 0.1f, 10.0f, "%.2f");
             ImGui::DragFloat("Range", &Opts.Range, 0.5f, 0.1f, 1000.0f, "%.1f");
             ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
-        }
-    });
+        } });
 
     OpenToolbarPopup("Show", "ShowPopup", [&]()
-    {
+                     {
         if (ImGui::CollapsingHeader("Common Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
@@ -504,8 +500,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::RadioButton("25D Culling", &mode, 1);
 
             Opts.ShowFlags.b25DCulling = (mode == 1);
-        }
-    });
+        } });
 
     const_cast<FEditorToolbarPanel*>(this)->IconSize = PrevIconSize;
     const_cast<FEditorToolbarPanel*>(this)->ToolbarHeight = PrevToolbarHeight;

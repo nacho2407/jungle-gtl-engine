@@ -1,3 +1,7 @@
+// Shader include: Editor/Primitive.hlsl
+// Role: shared shader code or editor/material entry.
+// Slots: declared locally or in included common resources.
+
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 
@@ -23,3 +27,4 @@ float4 PS(PS_Input_Color input) : SV_TARGET
 {
     return float4(ApplyWireframe(input.color.rgb), input.color.a) * DiffuseColor;
 }
+
