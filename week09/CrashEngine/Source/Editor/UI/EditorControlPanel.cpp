@@ -90,7 +90,7 @@ void FEditorControlPanel::Render(float DeltaTime)
 
     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
     ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
-    ImGui::Begin("Jungle Control Panel");
+    ImGui::Begin("Control");
 
     // ─── Spawn ───
     ImGui::Combo("Primitive", &SelectedPrimitiveType, GetSpawnLabel, nullptr, SpawnTableSize);
