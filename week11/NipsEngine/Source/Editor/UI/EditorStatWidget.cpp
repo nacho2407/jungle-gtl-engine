@@ -1,7 +1,8 @@
-#include "Editor/UI/EditorStatWidget.h"
+﻿#include "Editor/UI/EditorStatWidget.h"
 
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Engine/Render/Resource/ShadowAtlasManager.h"
 #include "ImGui/imgui.h"
 
 #include <algorithm>
@@ -76,6 +77,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending);
 	}
 
+    ImGui::Image(FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get(), ImVec2(256, 256));
 	ImGui::End();
 #endif
 }

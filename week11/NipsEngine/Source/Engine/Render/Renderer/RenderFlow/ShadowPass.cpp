@@ -6,6 +6,7 @@
 
 bool FShadowPass::Initialize()
 {
+	
 	return true;
 }
 
@@ -27,27 +28,38 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	const FRenderBus* RenderBus = Context->RenderBus;
 	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
 
-	if (RenderBus->DirLightComp == nullptr) return false;
+	if (RenderBus->DirectionalLightShadow.LightComponent == nullptr) return false;
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
 
-	ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().ShadowDSV.Get();
-	ID3D11Texture2D* ShadowMap = FShadowAtlasManager::Get().ShadowMap.Get();
+	ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().ShadowMapAtlas.ShadowDSV.Get();
+	ID3D11Texture2D* ShadowMap = FShadowAtlasManager::Get().ShadowMapAtlas.ShadowMap.Get();
 	if (ShadowDSV == nullptr || ShadowMap == nullptr)
 	{
 		return false;
 	}
 
+	
+	int32 tileX, tileY;
+    int32 tileSize = FShadowAtlasManager::Get().GetTileSize();
 
+    if (!FShadowAtlasManager::Get().AllocateTile(tileX, tileY))
+    {
+        // atlas가 꽉 찼음
+        // shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
+    }
+    // TODO:used Tile FreeTile to mark the tile as unused, but it doesn't actually clear the tile in the shadow map atlas.
+    FShadowAtlasManager::Get().FreeTile(tileX, tileY);
+
+    D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
 	{
-        D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
         ShadowMap->GetDesc(&ShadowMapDesc);
 
         D3D11_VIEWPORT ShadowViewport = {};
-        ShadowViewport.TopLeftX = 0.0f;
-        ShadowViewport.TopLeftY = 0.0f;
-        ShadowViewport.Width = static_cast<float>(ShadowMapDesc.Width);
-        ShadowViewport.Height = static_cast<float>(ShadowMapDesc.Height);
+        ShadowViewport.TopLeftX = static_cast<float>(tileX * tileSize);
+        ShadowViewport.TopLeftY = static_cast<float>(tileY * tileSize);
+        ShadowViewport.Width = static_cast<float>(tileSize);
+        ShadowViewport.Height = static_cast<float>(tileSize);
         ShadowViewport.MinDepth = 0.0f;
         ShadowViewport.MaxDepth = 1.0f;
 
@@ -63,6 +75,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
     FShadowConstants shadowData = {};
     FMatrix CamView = RenderBus->GetView();
     FMatrix CamProj = RenderBus->GetProj();
+
 
 	for (const auto& Cmd : OpaqueCmds)
 	{
@@ -88,9 +101,21 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
 		Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
 
-		const UDirectionalLightComponent* DirLightComp = RenderBus->DirLightComp;
+		const UDirectionalLightComponent* DirLightComp = 
+			Cast<UDirectionalLightComponent>(RenderBus->DirectionalLightShadow.LightComponent);
 
 		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(RenderBus->GetView(), RenderBus->GetProj());
+
+        float atlasW = static_cast<float>(ShadowMapDesc.Width);
+        float atlasH = static_cast<float>(ShadowMapDesc.Height);
+        float tile = static_cast<float>(tileSize);
+
+        shadowData.ScaleOffset = FVector4(
+            tile / atlasW,
+            tile / atlasH,
+            (tileX * tile) / atlasW,
+            (tileY * tile) / atlasH);
+
 		ShadowBuffer->Update(DeviceContext, &shadowData, sizeof(FShadowConstants));
 
 		ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
@@ -118,7 +143,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FShadowPass::End(const FRenderPassContext* Context)
 {
-	Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+    Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 	D3D11_VIEWPORT OriginViewport = {};
 	OriginViewport.TopLeftX = 0.0f;
@@ -129,6 +154,7 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 	OriginViewport.MaxDepth = 1.0f;
 
 	Context->DeviceContext->RSSetViewports(1, &OriginViewport);
+
 	return true;
 }
 

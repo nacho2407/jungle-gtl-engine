@@ -908,7 +908,17 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		DirLightData.Intensity				= DirLight->Intensity;
 		DirLightData.Direction				= DirLight->GetForwardVector();
 		RenderBus.DirectionalLightInfo = DirLightData;
-		RenderBus.DirLightComp = DirLight;
+		//RenderBus.DirLightComp = DirLight;
+
+        FShadowLightRequest DirLightDataShadow = {};
+        DirLightDataShadow.LightComponent	= const_cast<UDirectionalLightComponent*>(DirLight);
+        DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
+        DirLightDataShadow.bCastShadows		= DirLight->bCastShadows;
+        DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
+        DirLightDataShadow.ShadowBias		= DirLight->ShadowBias;
+        DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
+        DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
+        RenderBus.DirectionalLightShadow	= DirLightDataShadow;	
 	}
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
@@ -923,7 +933,6 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.InnerAngle		= MathUtil::DegreesToRadians(SpotLight->InnerConeAngle);
 		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
         LightData.Type				= 0;
-
 		RenderBus.LightInfos.push_back(LightData);
 	}
     else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {

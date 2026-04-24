@@ -15,6 +15,7 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+#include <Component/PostProcess/Light/LightComponentBase.h>
 
 
 struct ID3D11ShaderResourceView;
@@ -37,6 +38,13 @@ enum class ERenderCommandType
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 	Decal,
 	Light,
+};
+
+enum EShadowLightType
+{
+	SLT_Directional,
+	SLT_Point,
+	SLT_Spot,
 };
 
 //PerObject
@@ -94,12 +102,24 @@ struct FLightInfo
 	float Falloff;
 
 	FVector Position;
-	float Padding1;
+    float Padding1;
+};
+
+struct FShadowLightRequest
+{
+    ULightComponentBase* LightComponent = nullptr;
+    EShadowLightType Type;
+    FVector WorldLocation;
+    bool bCastShadows = false;
+    float ShadowBias = 0.0f;
+    float ShadowSlopeBias = 0.0f;
+    float ShadowSharpen = 1.0f;
 };
 
 struct FShadowConstants
 {
 	FMatrix DirLightViewProj;
+    FVector4 ScaleOffset; // xy: Scale, zw: Offset
 };
 
 struct FUberConstants
