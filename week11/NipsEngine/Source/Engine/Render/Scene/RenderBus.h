@@ -12,6 +12,7 @@
 
 #include "Render/Common/ViewTypes.h"
 
+class UDirectionalLightComponent;
 
 class FRenderBus
 {
@@ -52,6 +53,8 @@ public:
 	FAmbientLightInfo		AmbientLightInfo;
 	FDirectionalLightInfo	DirectionalLightInfo;
 	TArray<FLightInfo>		LightInfos;
+
+	const UDirectionalLightComponent* DirLightComp = nullptr;
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];

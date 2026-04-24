@@ -974,6 +974,19 @@ struct FMatrix
 			0.f, 0.f, -NearZ / (FarZ - NearZ), 1.f);
     }
 
+	static FMatrix MakeOrthographicOffCenterLH(float Left, float Right, float Bottom, float Top,
+											float NearZ, float FarZ) noexcept
+	{
+		assert(Right != Left);
+		assert(Top != Bottom);
+		assert(FarZ != NearZ);
+		return FMatrix(
+			0.f, 0.f, 1.f / (FarZ - NearZ), 0.f,
+			2.f / (Right - Left), 0.f, 0.f, 0.f,
+			0.f, 2.f / (Top - Bottom), 0.f, 0.f,
+			-(Right + Left) / (Right - Left), -(Top + Bottom) / (Top - Bottom), -NearZ / (FarZ - NearZ), 1.f);
+	}
+
     // Left-Handed 기준 View LookAt 행렬을 생성함
     static FMatrix MakeViewLookAtLH(const FVector& Eye, const FVector& Target,
                                     const FVector& Up = FVector::UpVector) noexcept

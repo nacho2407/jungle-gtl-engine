@@ -4,6 +4,7 @@
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
 
 bool FOpaqueRenderPass::Initialize()
@@ -43,7 +44,10 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));  
        ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();  
        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
-       Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);  
+       Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+
+	   ID3D11ShaderResourceView* ShadowSRV = FShadowAtlasManager::Get().ShadowSRV.Get();
+	   Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
 
        if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
        {  

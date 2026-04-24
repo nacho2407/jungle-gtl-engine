@@ -368,6 +368,24 @@ public:
 		FVector Delta = B - A;
 		return A + Delta * t;
 	}
+
+	static FVector Min(const FVector& A, const FVector& B) noexcept
+	{
+		return {
+			std::fmin(A.X, B.X),
+			std::fmin(A.Y, B.Y),
+			std::fmin(A.Z, B.Z)
+		};
+	}
+
+	static FVector Max(const FVector& A, const FVector& B) noexcept
+	{
+		return {
+			std::fmax(A.X, B.X),
+			std::fmax(A.Y, B.Y),
+			std::fmax(A.Z, B.Z)
+		};
+	}
 };
 
 namespace std

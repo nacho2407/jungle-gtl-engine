@@ -97,6 +97,11 @@ struct FLightInfo
 	float Padding1;
 };
 
+struct FShadowConstants
+{
+	FMatrix PSMMatrix;
+};
+
 struct FUberConstants
 {
 	FAmbientLightInfo AmbientLight;
@@ -104,6 +109,8 @@ struct FUberConstants
 	uint32 LightCount;
 	uint32 DecalCount;
 	float Padding[2];
+
+	FMatrix DirectionalShadowMatrix;
 };
 
 struct FDecalInfo

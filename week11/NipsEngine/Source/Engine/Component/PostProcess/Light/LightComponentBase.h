@@ -16,4 +16,6 @@ protected:
 public:
     FColor LightColor = FColor::White();
 	float Intensity = 1.0f;
+
+	bool bCastShadows = true;
 };

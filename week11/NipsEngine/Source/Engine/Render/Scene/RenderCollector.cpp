@@ -908,6 +908,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		DirLightData.Intensity				= DirLight->Intensity;
 		DirLightData.Direction				= DirLight->GetForwardVector();
 		RenderBus.DirectionalLightInfo = DirLightData;
+		RenderBus.DirLightComp = DirLight;
 	}
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))

@@ -9,10 +9,12 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 #include "Render/Resource/ShaderHelper.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -39,6 +41,7 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
+	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
 
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
@@ -86,6 +89,8 @@ void FRenderer::CreateResources()
 {
 	Resources.PerObjectConstantBuffer.Create(Device.GetDevice(), sizeof(FPerObjectConstants));
 	Resources.FrameBuffer.Create(Device.GetDevice(), sizeof(FFrameConstants));
+
+	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
@@ -101,6 +106,7 @@ void FRenderer::CreateResources()
 
 	//	MeshManager init
 	FMeshManager::Initialize();
+	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());
@@ -129,6 +135,7 @@ void FRenderer::Release()
 
 	Resources.PerObjectConstantBuffer.Release();
 	Resources.FrameBuffer.Release();
+	Resources.ShadowBuffer.Release();
 	Resources.LightBuffer.Release();
 	Resources.LightStructuredBuffer.Release();
 	Resources.LightCulledIndexBuffer.Release();
@@ -916,6 +923,11 @@ void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus&
     lightConstantData.DirectionalLight = InRenderBus.DirectionalLightInfo;
     lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
     lightConstantData.DecalCount = (uint32)DecalConstantArray.size();
+
+	if (InRenderBus.DirLightComp)
+	{
+		lightConstantData.DirectionalShadowMatrix = InRenderBus.DirLightComp->GetPSMMatrix(InRenderBus.GetView(), InRenderBus.GetProj());
+	}
 
     Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FUberConstants));
     ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
