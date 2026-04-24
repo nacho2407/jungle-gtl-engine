@@ -23,6 +23,11 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor; 
 };
 
+cbuffer ShadowBuffer : register(b4)
+{
+    row_major matrix DirLightViewProj;
+};
+
 #define MAX_FOG_LAYER_COUNT 32
 
 struct FogLayerData

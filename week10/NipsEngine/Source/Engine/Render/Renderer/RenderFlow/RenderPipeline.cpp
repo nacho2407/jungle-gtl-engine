@@ -1,5 +1,6 @@
 ﻿#include "RenderPipeline.h"
 #include "DepthPrePass.h"
+#include "ShadowPass.h"
 #include "LightCullingPass.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
@@ -23,11 +24,11 @@ bool FRenderPipeline::Initialize()
 	LightCullingPass = std::make_shared<FLightCullingPass>();
 	LightCullingPass->Initialize();
 
+	ShadowPass = std::make_shared<FShadowPass>();
+	ShadowPass->Initialize();
+
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
-
-    DecalRenderPass = std::make_shared<FDecalRenderPass>();
-    DecalRenderPass->Initialize();
 
 	LightRenderPass = std::make_shared<FLightRenderPass>();
     LightRenderPass->Initialize();
@@ -74,8 +75,8 @@ bool FRenderPipeline::Initialize()
 	 */
 	RenderPasses.push_back(DepthPrePass);
 	RenderPasses.push_back(LightCullingPass);
+	RenderPasses.push_back(ShadowPass);
 	RenderPasses.push_back(OpaqueRenderPass);
-    //RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(LightRenderPass);
 
     RenderPasses.push_back(FogRenderPass);
@@ -121,17 +122,16 @@ void FRenderPipeline::Release()
 		LightCullingPass.reset();
 	}
 
+	if (ShadowPass) {
+		ShadowPass->Release();
+		ShadowPass.reset();
+	}
+
 	if (OpaqueRenderPass)
     {
         OpaqueRenderPass->Release();
         OpaqueRenderPass.reset();
 	}
-
-    if (DecalRenderPass)
-    {
-        DecalRenderPass->Release();
-        DecalRenderPass.reset();
-    }
 
 	if (LightRenderPass)
 	{

@@ -207,6 +207,9 @@
     <FxCompile Include="Shaders\Multipass\LightPass.hlsl">
       <Filter>Shaders\Multipass</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Shadow.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -692,6 +695,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\WindowsFileWatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1332,5 +1338,8 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
+    <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
   </ItemGroup>
 </Project>
