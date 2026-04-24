@@ -99,7 +99,7 @@ struct FLightInfo
 
 struct FShadowConstants
 {
-	FMatrix PSMMatrix;
+	FMatrix DirLightViewProj;
 };
 
 struct FUberConstants
@@ -109,8 +109,6 @@ struct FUberConstants
 	uint32 LightCount;
 	uint32 DecalCount;
 	float Padding[2];
-
-	FMatrix DirectionalShadowMatrix;
 };
 
 struct FDecalInfo

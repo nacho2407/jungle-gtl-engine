@@ -89,11 +89,11 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 		const UDirectionalLightComponent* DirLightComp = RenderBus->DirLightComp;
 
-		shadowData.PSMMatrix = DirLightComp->GetPSMMatrix(RenderBus->GetView(), RenderBus->GetProj());
+		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(RenderBus->GetView(), RenderBus->GetProj());
 		ShadowBuffer->Update(DeviceContext, &shadowData, sizeof(FShadowConstants));
 
-		ID3D11Buffer* cb2 = ShadowBuffer->GetBuffer();
-		Context->DeviceContext->VSSetConstantBuffers(2, 1, &cb2);
+		ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
+		Context->DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 
 		uint32 Offset = 0;
 		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);

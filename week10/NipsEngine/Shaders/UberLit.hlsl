@@ -144,7 +144,7 @@ float CalculateShadow(float4 worldPos)
     }
 
     float3 post = camClip.xyz / camClip.w;
-    float4 shadowCoord = mul(float4(post, 1.0f), DirectionalShadowMatrix);
+    float4 shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
