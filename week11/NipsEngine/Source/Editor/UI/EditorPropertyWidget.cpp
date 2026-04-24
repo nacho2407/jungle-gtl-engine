@@ -14,6 +14,7 @@
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/PropertyTypes.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
@@ -753,6 +754,12 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
 	{
 		RenderInterpControlPoints(InterpComp);
+	}
+
+	// TODO: 구조 변경 필요
+	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
+	{
+		ImGui::Image(FShadowAtlasManager::Get().ShadowSRV.Get(), ImVec2(256, 256));
 	}
 
 	ImGui::Separator();

@@ -42,6 +42,8 @@ Texture2D AmbientMap  : register(t2);
 Texture2D SpecularMap : register(t3);
 #endif
 
+Texture2D ShadowMap : register(t10);
+
 SamplerState SampleState : register(s0);
 
 struct VSInput
@@ -133,6 +135,41 @@ float3 GetHeatmapColor(float weight)
 }
 #endif
 
+float CalculateShadow(float4 worldPos)
+{
+    float4 camClip = mul(mul(worldPos, View), Projection);
+    if (abs(camClip.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    float3 post = camClip.xyz / camClip.w;
+    float4 shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
+    if (abs(shadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    float2 shadowUV = float2(
+        projCoords.x * 0.5f + 0.5f,
+        -projCoords.y * 0.5f + 0.5f
+    );
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
+        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    float closestDepth = ShadowMap.Sample(SampleState, shadowUV).r;
+    float currentDepth = projCoords.z;
+    const float shadowBias = 0.002f;
+
+    return (currentDepth - shadowBias > closestDepth) ? 0.0f : 1.0f;
+}
+
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
@@ -191,7 +228,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
 #endif
-    
+            
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
     
@@ -211,16 +248,18 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
+    float shadowFactor = CalculateShadow(float4(input.WorldPos, 1.0f));
+    
     float3 V = normalize(CameraPosition - input.WorldPos);
     if (IsOrthographic > 0.5f)
-    {
+    {  
         V = normalize(-float3(View[0].xyz));
     }
     
     #if LIGHTING_MODEL_LAMBERT
-        accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N);
+        accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N) * shadowFactor;
     #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
+        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * shadowFactor;
     #endif
 
     uint LightsToIterate;

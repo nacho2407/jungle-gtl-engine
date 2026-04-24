@@ -97,6 +97,11 @@ struct FLightInfo
 	float Padding1;
 };
 
+struct FShadowConstants
+{
+	FMatrix DirLightViewProj;
+};
+
 struct FUberConstants
 {
 	FAmbientLightInfo AmbientLight;
