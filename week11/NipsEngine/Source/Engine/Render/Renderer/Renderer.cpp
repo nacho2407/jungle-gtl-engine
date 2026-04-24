@@ -924,16 +924,15 @@ void FRenderer::UpdateUberBuffer(ID3D11DeviceContext* Context, const FRenderBus&
     lightConstantData.LightCount = (uint32)InRenderBus.LightInfos.size();
     lightConstantData.DecalCount = (uint32)DecalConstantArray.size();
 
-	if (InRenderBus.DirLightComp)
-	{
-		lightConstantData.DirectionalShadowMatrix = InRenderBus.DirLightComp->GetPSMMatrix(InRenderBus.GetView(), InRenderBus.GetProj());
-	}
-
     Resources.LightBuffer.Update(Context, &lightConstantData, sizeof(FUberConstants));
     ID3D11Buffer* b3 = Resources.LightBuffer.GetBuffer();
     Context->VSSetConstantBuffers(3, 1, &b3);
     Context->PSSetConstantBuffers(3, 1, &b3);
     Context->CSSetConstantBuffers(3, 1, &b3);
+
+	ID3D11Buffer* b4 = Resources.ShadowBuffer.GetBuffer();
+	Context->VSSetConstantBuffers(4, 1, &b4);
+	Context->PSSetConstantBuffers(4, 1, &b4);
 
     Resources.LightStructuredBuffer.Update(Context, InRenderBus.LightInfos.data(), (uint32)InRenderBus.LightInfos.size());
     ID3D11ShaderResourceView* SRVs[] = {
