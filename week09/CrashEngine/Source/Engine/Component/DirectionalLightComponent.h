@@ -14,8 +14,10 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
-    FLightSceneProxy* CreateLightSceneProxy() override;
+    FLightProxy* CreateLightProxy() override;
 
 protected:
     FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 기본값: 아래로 향하는 빛
 };
+
+

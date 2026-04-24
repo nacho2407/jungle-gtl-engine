@@ -23,7 +23,7 @@
 Texture2D SubUVAtlas : register(t0);
 
 // b2 (PerShader0): SubUV UV region (atlas frame offset + size)
-cbuffer SubUVRegionBuffer : register(b2)
+cbuffer SubUVRegionParams : register(b2)
 {
     float4 UVRegion; // xy = offset, zw = size
 }

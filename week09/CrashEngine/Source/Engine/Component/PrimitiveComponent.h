@@ -11,7 +11,7 @@
 #include "Render/Scene/SceneProxyDirtyFlag.h"
 #include "GameFramework/WorldContext.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FScene;
 class FMeshBuffer;
 class FOctree;
@@ -115,9 +115,9 @@ public:
     /*
         파생 컴포넌트가 렌더 씬에 등록할 구체 프록시를 생성합니다.
     */
-    virtual FPrimitiveSceneProxy* CreateSceneProxy();
+    virtual FPrimitiveProxy* CreateSceneProxy();
 
-    FPrimitiveSceneProxy* GetSceneProxy() const { return SceneProxy; }
+    FPrimitiveProxy* GetSceneProxy() const { return SceneProxy; }
 
     /*
         프록시 변경 플래그를 표시하고 씬의 dirty queue에 등록합니다.
@@ -152,8 +152,9 @@ protected:
     bool bVisibleInEditor = true;
     bool bVisibleInGame = true;
     bool bIsEditorHelper = false;
-    FPrimitiveSceneProxy* SceneProxy = nullptr;
+    FPrimitiveProxy* SceneProxy = nullptr;
 
     FOctree* OctreeNode = nullptr;
     bool bInOctreeOverflow = false;
 };
+

@@ -1,9 +1,9 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
-#include "Render/Execute/Passes/Scene/LightingPass.h"
+#include "Render/Execute/Passes/Scene/DeferredLightingPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
@@ -56,7 +56,7 @@ void BuildSurfaceSRVTable(const FRenderPipelineContext& Context, EShadingModel S
 }
 } // namespace
 
-bool FLightingPass::IsEnabled(const FRenderPipelineContext& Context) const
+bool FDeferredLightingPass::IsEnabled(const FRenderPipelineContext& Context) const
 {
     if (!Context.SceneView)
     {
@@ -92,7 +92,7 @@ static bool SupportsLightCullStats(EViewMode ViewMode)
     }
 }
 
-void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
+void FDeferredLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.ViewMode.Surfaces || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
@@ -159,12 +159,12 @@ void FLightingPass::PrepareInputs(FRenderPipelineContext& Context)
     }
 }
 
-void FLightingPass::PrepareTargets(FRenderPipelineContext& Context)
+void FDeferredLightingPass::PrepareTargets(FRenderPipelineContext& Context)
 {
     BindViewportTarget(Context);
 }
 
-void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
+void FDeferredLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     if (!Context.ViewMode.Surfaces || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
@@ -176,7 +176,7 @@ void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::Lighting, Context, *Context.DrawCommandList);
+    DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::DeferredLighting, Context, *Context.DrawCommandList);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
     {
@@ -187,7 +187,7 @@ void FLightingPass::BuildDrawCommands(FRenderPipelineContext& Context)
     Command.PerShaderCB[0] = Context.LightCulling ? Context.LightCulling->GetLightCullingParamsCBWrapper() : nullptr;
 }
 
-void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
+void FDeferredLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
     if (!Context.DrawCommandList)
@@ -200,7 +200,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.SceneView &&
         SupportsLightCullStats(Context.SceneView->ViewMode);
 
-    // ---- ⏱️ 1. 쿼리 지연 초기화 (최초 1회만 실행) ----
+    // ---- ?? 1. 쿼리 지연 초기화 (최초 1회만 실행) ----
     if (bMeasureLightCullStats && !bQueryInitialized && Context.Context)
     {
         ID3D11Device* device = nullptr;
@@ -217,17 +217,17 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             HRESULT startHr = device->CreateQuery(&queryDesc, TimestampStartQuery.GetAddressOf());
             HRESULT endHr   = device->CreateQuery(&queryDesc, TimestampEndQuery.GetAddressOf());
 
-            // 💡 1. 카운터 버퍼(UAV용) 생성 (Structured 아님!)
+            // ?? 1. 카운터 버퍼(UAV용) 생성 (Structured 아님!)
             D3D11_BUFFER_DESC bufDesc = {};
             bufDesc.ByteWidth         = 16; // 4바이트 uint가 4개 들어가는 16바이트로 넉넉하게
             bufDesc.Usage             = D3D11_USAGE_DEFAULT;
             bufDesc.BindFlags         = D3D11_BIND_UNORDERED_ACCESS;
-            bufDesc.MiscFlags         = 0; // 🚨 D3D11_RESOURCE_MISC_BUFFER_STRUCTURED 제거!
+            bufDesc.MiscFlags         = 0; // ?? D3D11_RESOURCE_MISC_BUFFER_STRUCTURED 제거!
             HRESULT counterHr         = device->CreateBuffer(&bufDesc, nullptr, EvalCounterBuffer.GetAddressOf());
 
-            // 💡 2. UAV 생성 (확실한 타입 명시!)
+            // ?? 2. UAV 생성 (확실한 타입 명시!)
             D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-            uavDesc.Format                           = DXGI_FORMAT_R32_UINT; // 🚨 UNKNOWN 대신 R32_UINT 사용
+            uavDesc.Format                           = DXGI_FORMAT_R32_UINT; // ?? UNKNOWN 대신 R32_UINT 사용
             uavDesc.ViewDimension                    = D3D11_UAV_DIMENSION_BUFFER;
             uavDesc.Buffer.NumElements               = 4;
             HRESULT uavHr                            = SUCCEEDED(counterHr)
@@ -251,13 +251,13 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
     }
 
-    // ---- ⏱️ 2. GPU 타이밍 측정 시작 ----
+    // ---- ?? 2. GPU 타이밍 측정 시작 ----
     if (bMeasureLightCullStats && bQueryInitialized)
     {
         Context.Context->Begin(DisjointQuery.Get());
         Context.Context->End(TimestampStartQuery.Get());
 
-        // 💡 [추가] UAV를 0으로 초기화
+        // ?? [추가] UAV를 0으로 초기화
         UINT clearVals[4] = { 0, 0, 0, 0 };
         Context.Context->ClearUnorderedAccessViewUint(EvalCounterUAV.Get(), clearVals); // 기존에 묶인 RTV를 가져와서 UAV와 함께 다시 묶음
         ID3D11RenderTargetView* currentRTVs[1] = { nullptr };
@@ -278,7 +278,7 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     // 진짜 조명 연산 제출
-    SubmitPassRange(Context, ERenderPass::Lighting);
+    SubmitPassRange(Context, ERenderPass::DeferredLighting);
 
     if (bMeasureLightCullStats && bQueryInitialized)
     {
@@ -323,10 +323,10 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             bHasValidGPUTime = true;
         }
 
-        // 💡 [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
+        // ?? [추가] GPU의 버퍼 값을 CPU가 읽을 수 있는 Staging 버퍼로 복사
         Context.Context->CopyResource(EvalStagingBuffer.Get(), EvalCounterBuffer.Get());
 
-        // 💡 [추가] 메모리 맵핑을 통해 값 읽어오기
+        // ?? [추가] 메모리 맵핑을 통해 값 읽어오기
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(Context.Context->Map(EvalStagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
         {
@@ -353,3 +353,6 @@ void FLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     Context.Context->PSSetShaderResources(8, 1, &nullSRV);
 }
+
+
+

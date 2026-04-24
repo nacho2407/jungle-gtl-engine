@@ -286,7 +286,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         Cache.LocalLightSRV = Cmd.LocalLightSRV;
     }
 
-    const bool bUsesPreBoundLightingInputs = (Cmd.Pass == ERenderPass::Lighting);
+    const bool bUsesPreBoundLightingInputs = (Cmd.Pass == ERenderPass::DeferredLighting);
     const bool bUsesPreBoundDecalInputs    = (Cmd.Pass == ERenderPass::Decal && Cmd.MeshBuffer == nullptr);
 
     if (bUsesPreBoundDecalInputs)
@@ -335,3 +335,4 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
 
     FDrawCallStats::Increment();
 }
+

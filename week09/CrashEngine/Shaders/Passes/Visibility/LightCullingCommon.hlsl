@@ -78,12 +78,12 @@ groupshared uint hitCount;
 // ============================================================
 // Resources
 // ============================================================
-StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
-Texture2D<float>              SceneDepth    : register(t1);
+StructuredBuffer<FLocalLight> g_LightBuffer : register(t6);
+Texture2D<float>                    SceneDepth    : register(t1);
 
-RWStructuredBuffer<uint>  PerTilePointLightIndexMaskOut : register(u1);
-RWStructuredBuffer<uint>  CulledPointLightIndexMaskOUT  : register(u2);
-RWTexture2D<float4>       DebugHitMap                   : register(u3);
+RWStructuredBuffer<uint>  PerTilePointLightIndexMaskOutput : register(u1);
+RWStructuredBuffer<uint>  CulledPointLightIndexMaskOutput  : register(u2);
+RWTexture2D<float4>       DebugHitMap                      : register(u3);
 
 // ============================================================
 // Plane / Frustum

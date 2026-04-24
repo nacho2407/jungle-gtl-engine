@@ -7,7 +7,7 @@
 #include "Mesh/StaticMesh.h"
 
 class UMaterial;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 namespace json
 {
@@ -30,7 +30,7 @@ public:
     void UpdateWorldAABB() const override;
 
     // 구체 프록시 생성 (FStaticMeshSceneProxy)
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
 
     void SetStaticMesh(UStaticMesh* InMesh);
     UStaticMesh* GetStaticMesh() const;
@@ -60,3 +60,4 @@ private:
     FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };
     bool bHasValidBounds = false;
 };
+

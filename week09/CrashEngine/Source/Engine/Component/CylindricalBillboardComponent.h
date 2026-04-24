@@ -12,7 +12,7 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
     FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
 
     void SetBillboardAxis(const FVector& Axis) { BillboardAxis = Axis; }
     FVector GetBillboardAxis() const { return BillboardAxis; }
@@ -20,3 +20,4 @@ public:
 protected:
     FVector BillboardAxis = FVector(0, 0, 1);
 };
+

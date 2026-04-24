@@ -79,13 +79,13 @@ EViewModePostProcessVariant GetViewModePostProcessVariant(const FViewModePassCon
 
 // ========== Pass Descs ==========
 
-FViewModePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel)
+FViewModePassDesc BuildViewModeDeferredOpaquePassDesc(EShadingModel ShadingModel)
 {
     FViewModePassDesc Pass      = {};
     Pass.RenderPass             = ERenderPass::Opaque;
     Pass.bFullscreenPass        = false;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/OpaquePass.hlsl";
-    Pass.ShaderVariant.VSEntry  = "VS_Opaque";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredOpaquePass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_DeferredOpaque";
 
     // ---------- Shading Permutation ----------
     switch (ShadingModel)
@@ -126,13 +126,13 @@ FViewModePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel)
 }
 
 
-FViewModePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel)
+FViewModePassDesc BuildViewModeDeferredDecalPassDesc(EShadingModel ShadingModel)
 {
     FViewModePassDesc Pass      = {};
     Pass.RenderPass             = ERenderPass::Decal;
     Pass.bFullscreenPass        = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DecalPass.hlsl";
-    Pass.ShaderVariant.VSEntry  = "VS_DecalFullscreen";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredDecalPass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_DeferredDecalFullscreen";
 
     // ---------- Decal Surface Writes ----------
     switch (ShadingModel)
@@ -166,12 +166,12 @@ FViewModePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel)
 }
 
 
-FViewModePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel)
+FViewModePassDesc BuildViewModeDeferredLightingPassDesc(EShadingModel ShadingModel)
 {
     FViewModePassDesc Pass      = {};
-    Pass.RenderPass             = ERenderPass::Lighting;
+    Pass.RenderPass             = ERenderPass::DeferredLighting;
     Pass.bFullscreenPass        = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/LightingPass.hlsl";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredLightingPass.hlsl";
     Pass.ShaderVariant.VSEntry  = "VS_Fullscreen";
     Pass.ShaderVariant.PSEntry  = "PS_UberLit";
 
@@ -206,19 +206,19 @@ void BuildViewModePasses(FViewModePassConfig& Config)
 
     if (Config.bEnableOpaque)
     {
-        Config.Passes.push_back(BuildViewModeOpaquePassDesc(Config.ShadingModel));
+        Config.Passes.push_back(BuildViewModeDeferredOpaquePassDesc(Config.ShadingModel));
     }
 
 
     if (Config.bEnableDecal)
     {
-        Config.Passes.push_back(BuildViewModeDecalPassDesc(Config.ShadingModel));
+        Config.Passes.push_back(BuildViewModeDeferredDecalPassDesc(Config.ShadingModel));
     }
 
 
     if (Config.bEnableLighting)
     {
-        Config.Passes.push_back(BuildViewModeLightingPassDesc(Config.ShadingModel));
+        Config.Passes.push_back(BuildViewModeDeferredLightingPassDesc(Config.ShadingModel));
     }
 }
 

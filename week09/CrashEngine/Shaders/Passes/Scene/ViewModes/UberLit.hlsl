@@ -28,7 +28,13 @@ Texture2D g_ModifiedBaseColorTex : register(t3);
 Texture2D g_ModifiedSurface1Tex : register(t4);
 Texture2D g_ModifiedSurface2Tex : register(t5);
 
+#ifndef ENABLE_LIGHT_EVAL_COUNTER
+#define ENABLE_LIGHT_EVAL_COUNTER 0
+#endif
+
+#if ENABLE_LIGHT_EVAL_COUNTER
 RWBuffer<uint> GlobalLightEvalCounter : register(u1);
+#endif
 
 float4 ResolveBaseColor(float2 UV)
 {
@@ -97,7 +103,9 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 {
                     float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm;
+#if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
+#endif
                 }
 
             }
@@ -144,7 +152,9 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                         Shininess,
                         SpecularStrength);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
+#if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
+#endif
                 }
 
             }

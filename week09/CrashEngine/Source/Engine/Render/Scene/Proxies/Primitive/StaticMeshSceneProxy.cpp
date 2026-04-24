@@ -1,6 +1,7 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
 #include "Mesh/StaticMesh.h"
@@ -17,17 +18,6 @@
 
 namespace
 {
-// FStaticMeshMaterialViewConstants는 카메라와 화면 출력에 필요한 상태를 다룹니다.
-struct FStaticMeshMaterialViewConstants
-{
-    FVector4 SectionColor       = MaterialSemantics::GetDefaultSectionColor();
-    FVector4 MaterialParam      = FVector4(MaterialSemantics::DefaultSpecularPower, MaterialSemantics::DefaultSpecularStrength, 0.0f, 1.0f);
-    uint32   HasBaseTexture     = 0;
-    uint32   HasNormalTexture   = 0;
-    uint32   HasSpecularTexture = 0;
-    float    Padding            = 0.0f;
-};
-
 bool SectionMaterialLess(const FMeshSectionRenderData& A, const FMeshSectionRenderData& B)
 {
     const uintptr_t ACB0 = reinterpret_cast<uintptr_t>(A.MaterialCB[0]);
@@ -124,9 +114,9 @@ std::unique_ptr<FMaterialConstantBuffer> BuildStaticMeshMaterialCB(const UMateri
     }
 
     auto Buffer = std::make_unique<FMaterialConstantBuffer>();
-    Buffer->Init(Device, sizeof(FStaticMeshMaterialViewConstants), ECBSlot::PerShader0);
+    Buffer->Init(Device, sizeof(FStaticMeshMaterialViewCBData), ECBSlot::PerShader0);
 
-    FStaticMeshMaterialViewConstants Constants;
+    FStaticMeshMaterialViewCBData Constants;
     Constants.SectionColor  = GetVector4OrDefault(Material, MaterialSemantics::SectionColorParameter, MaterialSemantics::GetDefaultSectionColor());
     Constants.MaterialParam = FVector4(
         GetScalarOrDefault(Material, MaterialSemantics::SpecularPowerParameter, MaterialSemantics::DefaultSpecularPower),
@@ -152,7 +142,7 @@ void SortSectionRenderDataByMaterial(TArray<FMeshSectionRenderData>& Draws)
 } // namespace
 
 FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
-    : FPrimitiveSceneProxy(InComponent)
+    : FPrimitiveProxy(InComponent)
 {
     bAllowViewModeShaderOverride = true;
 }
@@ -281,3 +271,4 @@ void FStaticMeshSceneProxy::RebuildSectionRenderData()
     std::swap(SectionRenderData, LODData[0].SectionRenderData);
     std::swap(ActiveOwnedMaterialCBs, LODData[0].OwnedMaterialCBs);
 }
+

@@ -6,11 +6,11 @@
 #include "Render/Scene/Scene.h"
 
 FPointLightSceneProxy::FPointLightSceneProxy(UPointLightComponent* InComponent)
-    : FLightSceneProxy(InComponent)
+    : FLightProxy(InComponent)
 {
-    LightConstants.LightType      = static_cast<uint32>(ELightType::Point);
-    LightConstants.OuterConeAngle = 180.0f;
-    LightConstants.InnerConeAngle = 180.0f;
+    LightProxyInfo.LightType      = static_cast<uint32>(ELightType::Point);
+    LightProxyInfo.OuterConeAngle = 180.0f;
+    LightProxyInfo.InnerConeAngle = 180.0f;
 }
 
 void FPointLightSceneProxy::UpdateLightConstants()
@@ -20,11 +20,11 @@ void FPointLightSceneProxy::UpdateLightConstants()
         return;
     }
 
-    FLightSceneProxy::UpdateLightConstants();
+    FLightProxy::UpdateLightConstants();
 
     UPointLightComponent* PointLight = static_cast<UPointLightComponent*>(Owner);
-    LightConstants.AttenuationRadius = PointLight->GetAttenuationRadius();
-    LightConstants.LightType         = static_cast<uint32>(ELightType::Point);
+    LightProxyInfo.AttenuationRadius = PointLight->GetAttenuationRadius();
+    LightProxyInfo.LightType         = static_cast<uint32>(ELightType::Point);
 }
 
 void FPointLightSceneProxy::UpdateTransform()
@@ -34,7 +34,7 @@ void FPointLightSceneProxy::UpdateTransform()
         return;
     }
 
-    LightConstants.Position = Owner->GetWorldLocation();
+    LightProxyInfo.Position = Owner->GetWorldLocation();
 }
 
 void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
@@ -51,3 +51,4 @@ void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 
     RenderDebugSphere(Scene, Center, Radius, 32, Color);
 }
+

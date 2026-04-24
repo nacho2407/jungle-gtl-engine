@@ -10,7 +10,7 @@
 
 IMPLEMENT_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
 
-FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
+FPrimitiveProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {
     return new FCylindricalBillboardSceneProxy(this);
 }
@@ -87,3 +87,4 @@ FMatrix UCylindricalBillboardComponent::ComputeBillboardMatrix(const FVector& Ca
 
     return FMatrix::MakeScaleMatrix(GetWorldScale()) * RotMatrix * FMatrix::MakeTranslationMatrix(BillboardPos);
 }
+

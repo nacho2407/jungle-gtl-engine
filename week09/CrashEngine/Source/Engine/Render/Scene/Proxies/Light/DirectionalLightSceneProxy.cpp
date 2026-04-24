@@ -6,7 +6,7 @@
 #include "Render/Scene/Scene.h"
 
 FDirectionalLightSceneProxy::FDirectionalLightSceneProxy(UDirectionalLightComponent* InComponent)
-    : FLightSceneProxy(InComponent)
+    : FLightProxy(InComponent)
 {
 }
 
@@ -17,8 +17,8 @@ void FDirectionalLightSceneProxy::UpdateLightConstants()
         return;
     }
 
-    FLightSceneProxy::UpdateLightConstants();
-    LightConstants.LightType = static_cast<uint32>(ELightType::Directional);
+    FLightProxy::UpdateLightConstants();
+    LightProxyInfo.LightType = static_cast<uint32>(ELightType::Directional);
 }
 
 void FDirectionalLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
@@ -35,3 +35,4 @@ void FDirectionalLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
 
     RenderDebugArrow(Scene, Origin, Direction, ArrowLength, Color);
 }
+

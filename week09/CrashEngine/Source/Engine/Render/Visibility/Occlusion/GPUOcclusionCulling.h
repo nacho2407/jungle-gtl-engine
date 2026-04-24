@@ -6,7 +6,7 @@
 #include "Math/Matrix.h"
 #include "Profiling/Stats.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 // GPU AABB layout must match the AABB struct in Shaders/Passes/Visibility/OcclusionTestPass.hlsl.
 struct FGPUOcclusionAABB
@@ -37,18 +37,18 @@ public:
 
     // Pre-gathers AABBs during collection so DispatchOcclusionTest can skip gather work.
     void BeginGatherAABB(uint32 ExpectedCount);
-    void GatherAABB(FPrimitiveSceneProxy* Proxy);
+    void GatherAABB(FPrimitiveProxy* Proxy);
     void EndGatherAABB();
 
     // Generates Hi-Z, dispatches the occlusion test, and copies results to staging.
     void DispatchOcclusionTest(
         ID3D11DeviceContext*                 Ctx,
         ID3D11ShaderResourceView*            DepthSRV,
-        const TArray<FPrimitiveSceneProxy*>& VisibleProxies,
+        const TArray<FPrimitiveProxy*>& VisibleProxies,
         const FMatrix& View, const FMatrix& Proj,
         uint32 ViewportWidth, uint32 ViewportHeight);
 
-    bool IsOccluded(const FPrimitiveSceneProxy* Proxy) const;
+    bool IsOccluded(const FPrimitiveProxy* Proxy) const;
 
     bool HasResults() const { return bHasResults; }
 
@@ -91,7 +91,7 @@ private:
     ID3D11UnorderedAccessView*          VisibilityUAV                 = nullptr;
     static constexpr uint32             STAGING_COUNT                 = 3;
     ID3D11Buffer*                       StagingBuffers[STAGING_COUNT] = {};
-    TArray<const FPrimitiveSceneProxy*> StagingProxies[STAGING_COUNT];
+    TArray<const FPrimitiveProxy*> StagingProxies[STAGING_COUNT];
     uint32                              StagingProxyCount[STAGING_COUNT] = {};
     uint32                              StagingMaxProxyId[STAGING_COUNT] = {};
     uint32                              WriteIndex                       = 0; // Current frame write slot.

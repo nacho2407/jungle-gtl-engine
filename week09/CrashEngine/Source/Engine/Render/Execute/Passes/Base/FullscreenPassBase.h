@@ -25,7 +25,7 @@ public:
         Cleanup(Context);
     }
 
-    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override
+    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override
     {
         (void)Context;
         (void)Proxy;
@@ -72,3 +72,4 @@ protected:
         }
     }
 };
+

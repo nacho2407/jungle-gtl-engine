@@ -7,9 +7,11 @@
 #include "Render/Execute/Passes/Base/RenderPass.h"
 
 class FDepthPrePass;
-class FOpaquePass;
-class FDecalPass;
-class FLightingPass;
+class FDeferredOpaquePass;
+class FForwardOpaquePass;
+class FDeferredDecalPass;
+class FForwardDecalPass;
+class FDeferredLightingPass;
 class FAdditiveDecalPass;
 class FAlphaBlendPass;
 class FHeightFogPass;
@@ -29,9 +31,11 @@ enum class ERenderPassNodeType
     GridPass,
     DepthPrePass,
     LightCullingPass,
-    OpaquePass,
-    DecalPass,
-    LightingPass,
+    DeferredOpaquePass,
+    ForwardOpaquePass,
+    DeferredDecalPass,
+    ForwardDecalPass,
+    DeferredLightingPass,
     AdditiveDecalPass,
     AlphaBlendPass,
     NonLitViewModePass,

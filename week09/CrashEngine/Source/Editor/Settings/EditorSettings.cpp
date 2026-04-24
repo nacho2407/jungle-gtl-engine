@@ -11,6 +11,7 @@ namespace Key
 // Section
 constexpr const char* Viewport = "Viewport";
 constexpr const char* Paths = "Paths";
+constexpr const char* Rendering = "Rendering";
 
 // Viewport
 constexpr const char* CameraSpeed = "CameraSpeed";
@@ -38,6 +39,7 @@ constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
 
 // Paths
 constexpr const char* DefaultSavePath = "DefaultSavePath";
+constexpr const char* RenderShadingPath = "RenderShadingPath";
 
 // Layout
 constexpr const char* Layout = "Layout";
@@ -87,6 +89,10 @@ void FEditorSettings::SaveToFile(const FString& Path) const
     JSON PathsObj = Object();
     PathsObj[Key::DefaultSavePath] = DefaultSavePath;
     Root[Key::Paths] = PathsObj;
+
+    JSON RenderingObj = Object();
+    RenderingObj[Key::RenderShadingPath] = static_cast<int32>(RenderShadingPath);
+    Root[Key::Rendering] = RenderingObj;
 
     // Layout
     JSON LayoutObj = Object();
@@ -211,6 +217,13 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 
         if (PathsObj.hasKey(Key::DefaultSavePath))
             DefaultSavePath = PathsObj[Key::DefaultSavePath].ToString();
+    }
+
+    if (Root.hasKey(Key::Rendering))
+    {
+        JSON RenderingObj = Root[Key::Rendering];
+        if (RenderingObj.hasKey(Key::RenderShadingPath))
+            RenderShadingPath = static_cast<ERenderShadingPath>(RenderingObj[Key::RenderShadingPath].ToInt());
     }
 
     // Layout

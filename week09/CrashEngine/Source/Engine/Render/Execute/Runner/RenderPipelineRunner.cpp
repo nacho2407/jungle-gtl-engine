@@ -19,12 +19,16 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
         return L"DepthPrePass";
     case ERenderPassNodeType::LightCullingPass:
         return L"LightCullingPass";
-    case ERenderPassNodeType::OpaquePass:
-        return L"OpaquePass";
-    case ERenderPassNodeType::DecalPass:
-        return L"DecalPass";
-    case ERenderPassNodeType::LightingPass:
-        return L"LightingPass";
+    case ERenderPassNodeType::DeferredOpaquePass:
+        return L"DeferredOpaquePass";
+    case ERenderPassNodeType::ForwardOpaquePass:
+        return L"ForwardOpaquePass";
+    case ERenderPassNodeType::DeferredDecalPass:
+        return L"DeferredDecalPass";
+    case ERenderPassNodeType::ForwardDecalPass:
+        return L"ForwardDecalPass";
+    case ERenderPassNodeType::DeferredLightingPass:
+        return L"DeferredLightingPass";
     case ERenderPassNodeType::AdditiveDecalPass:
         return L"AdditiveDecalPass";
     case ERenderPassNodeType::AlphaBlendPass:
@@ -68,11 +72,13 @@ bool ShouldExecutePass(const FRenderPipelineContext& Context, ERenderPassNodeTyp
     {
     case ERenderPassNodeType::DepthPrePass:
         return Registry->UsesDepthPrePass(Context.ViewMode.ActiveViewMode);
-    case ERenderPassNodeType::OpaquePass:
+    case ERenderPassNodeType::DeferredOpaquePass:
+    case ERenderPassNodeType::ForwardOpaquePass:
         return Registry->UsesOpaque(Context.ViewMode.ActiveViewMode);
-    case ERenderPassNodeType::DecalPass:
+    case ERenderPassNodeType::DeferredDecalPass:
+    case ERenderPassNodeType::ForwardDecalPass:
         return Registry->UsesDecal(Context.ViewMode.ActiveViewMode);
-    case ERenderPassNodeType::LightingPass:
+    case ERenderPassNodeType::DeferredLightingPass:
         return Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
     case ERenderPassNodeType::AdditiveDecalPass:
         return Registry->UsesAdditiveDecal(Context.ViewMode.ActiveViewMode);
@@ -98,17 +104,30 @@ bool ShouldExecutePipeline(const FRenderPipelineContext& Context, ERenderPipelin
     }
 
     const bool bUsesLighting = Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
+    const ERenderShadingPath RenderPath = Context.SceneView ? Context.SceneView->RenderPath : ERenderShadingPath::Deferred;
 
     switch (PipelineType)
     {
-    case ERenderPipelineType::LitPipeline:
-        return bUsesLighting;
-    case ERenderPipelineType::UnlitPipeline:
-        return Context.ViewMode.ActiveViewMode == EViewMode::Unlit || Context.ViewMode.ActiveViewMode == EViewMode::Wireframe;
-    case ERenderPipelineType::WorldNormalPipeline:
-        return Context.ViewMode.ActiveViewMode == EViewMode::WorldNormal;
-    case ERenderPipelineType::SceneDepthPipeline:
-        return Context.ViewMode.ActiveViewMode == EViewMode::SceneDepth;
+    case ERenderPipelineType::DeferredPipeline:
+        return RenderPath == ERenderShadingPath::Deferred;
+    case ERenderPipelineType::ForwardPipeline:
+        return RenderPath == ERenderShadingPath::Forward;
+    case ERenderPipelineType::DeferredLitPipeline:
+        return RenderPath == ERenderShadingPath::Deferred && bUsesLighting;
+    case ERenderPipelineType::DeferredUnlitPipeline:
+        return RenderPath == ERenderShadingPath::Deferred &&
+               (Context.ViewMode.ActiveViewMode == EViewMode::Unlit || Context.ViewMode.ActiveViewMode == EViewMode::Wireframe);
+    case ERenderPipelineType::DeferredWorldNormalPipeline:
+        return RenderPath == ERenderShadingPath::Deferred && Context.ViewMode.ActiveViewMode == EViewMode::WorldNormal;
+    case ERenderPipelineType::DeferredSceneDepthPipeline:
+        return RenderPath == ERenderShadingPath::Deferred && Context.ViewMode.ActiveViewMode == EViewMode::SceneDepth;
+    case ERenderPipelineType::ForwardLitPipeline:
+        return RenderPath == ERenderShadingPath::Forward && bUsesLighting;
+    case ERenderPipelineType::ForwardUnlitPipeline:
+        return RenderPath == ERenderShadingPath::Forward &&
+               (Context.ViewMode.ActiveViewMode == EViewMode::Unlit || Context.ViewMode.ActiveViewMode == EViewMode::Wireframe);
+    case ERenderPipelineType::ForwardSceneDepthPipeline:
+        return RenderPath == ERenderShadingPath::Forward && Context.ViewMode.ActiveViewMode == EViewMode::SceneDepth;
     default:
         return true;
     }

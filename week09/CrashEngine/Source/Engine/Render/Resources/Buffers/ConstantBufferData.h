@@ -63,8 +63,8 @@ struct FOutlinePostProcessCBData
     float    Padding[3]       = {};
 };
 
-// FSceneDepthPCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
-struct FSceneDepthPCBData
+// FSceneDepthCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
+struct FSceneDepthCBData
 {
     float   Exponent;
     float   NearClip;
@@ -93,4 +93,95 @@ struct FFXAACBData
     float EdgeThreshold;
     float EdgeThresholdMin;
     float _pad[2];
+};
+
+constexpr uint32 MAX_DIRECTIONAL_LIGHTS = 4;
+
+// FAmbientLightCBData는 전역 라이트 상수 버퍼에 기록되는 Ambient 라이트 데이터입니다.
+struct FAmbientLightCBData
+{
+    FVector Color;
+    float   Intensity;
+};
+
+// FDirectionalLightCBData는 전역 라이트 상수 버퍼에 기록되는 Directional 라이트 데이터입니다.
+struct FDirectionalLightCBData
+{
+    FVector Color;
+    float   Intensity;
+    FVector Direction;
+    float   Padding;
+};
+
+// FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
+struct FGlobalLightCBData
+{
+    FAmbientLightCBData     Ambient;
+    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS];
+    int32                   NumDirectionalLights;
+    int32                   NumLocalLights;
+    FVector2                Padding;
+};
+
+// FLocalLightCBData는 로컬 라이트 구조화 버퍼에 기록되는 라이트 데이터입니다.
+struct FLocalLightCBData
+{
+    FVector Color;
+    float   Intensity;
+    FVector Position;
+    float   AttenuationRadius;
+    FVector Direction;
+    float   InnerConeAngle;
+    float   OuterConeAngle;
+    float   Padding[3];
+};
+
+// FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.
+struct FLightCullingCBData
+{
+    uint32 ScreenSizeX;
+    uint32 ScreenSizeY;
+    uint32 TileSizeX;
+    uint32 TileSizeY;
+
+    uint32 Enable25DCulling;
+    float  NearZ;
+    float  FarZ;
+    float  NumLights;
+};
+
+// FDecalCBData는 데칼 패스 상수 버퍼 레이아웃입니다.
+struct FDecalCBData
+{
+    FMatrix  WorldToDecal;
+    FVector4 Color;
+};
+
+// FStaticMeshMaterialViewCBData는 정적 메시 머티리얼 뷰 상수 버퍼 레이아웃입니다.
+struct FStaticMeshMaterialViewCBData
+{
+    FVector4 SectionColor  = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+    FVector4 MaterialParam = FVector4(32.0f, 0.5f, 0.0f, 1.0f);
+    uint32   HasBaseTexture     = 0;
+    uint32   HasNormalTexture   = 0;
+    uint32   HasSpecularTexture = 0;
+    float    Padding            = 0.0f;
+};
+
+// FHiZParamsCBData는 Hi-Z 생성 compute 셰이더 상수 버퍼 레이아웃입니다.
+struct FHiZParamsCBData
+{
+    uint32 SrcWidth;
+    uint32 SrcHeight;
+    uint32 _pad[2];
+};
+
+// FOcclusionTestParamsCBData는 오클루전 테스트 compute 셰이더 상수 버퍼 레이아웃입니다.
+struct FOcclusionTestParamsCBData
+{
+    FMatrix ViewProj;
+    float   ViewportWidth;
+    float   ViewportHeight;
+    uint32  NumAABBs;
+    uint32  HiZMipCount;
 };

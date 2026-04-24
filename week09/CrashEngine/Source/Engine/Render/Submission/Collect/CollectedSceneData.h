@@ -2,24 +2,24 @@
 #pragma once
 
 #include "Render/Execute/Context/RenderCollectContext.h"
-#include "Render/Resources/Buffers/LightBufferTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 // FCollectedLights는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FCollectedLights
 {
-    FGlobalLightConstants   GlobalLights;
-    TArray<FLocalLightInfo> LocalLights;
+    FGlobalLightCBData        GlobalLights;
+    TArray<FLocalLightCBData> LocalLights;
 };
 
 // FCollectedPrimitives는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FCollectedPrimitives
 {
-    TArray<FPrimitiveSceneProxy*> VisibleProxies;
-    TArray<FPrimitiveSceneProxy*> OpaqueProxies;
-    TArray<FPrimitiveSceneProxy*> TransparentProxies;
+    TArray<FPrimitiveProxy*> VisibleProxies;
+    TArray<FPrimitiveProxy*> OpaqueProxies;
+    TArray<FPrimitiveProxy*> TransparentProxies;
     TArray<FSceneOverlayText>     OverlayTexts;
 };
 
@@ -42,5 +42,6 @@ struct FCollectOverlayContext
     int32                                  GridHalfLineCount  = 0;
     const class FOctree*                   Octree             = nullptr;
     const class FWorldPrimitivePickingBVH* WorldBVH           = nullptr;
-    const TArray<FPrimitiveSceneProxy*>*   WorldBoundsProxies = nullptr;
+    const TArray<FPrimitiveProxy*>*   WorldBoundsProxies = nullptr;
 };
+

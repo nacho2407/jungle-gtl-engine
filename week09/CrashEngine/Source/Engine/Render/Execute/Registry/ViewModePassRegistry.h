@@ -69,9 +69,9 @@ bool                        UsesViewModeHeightFog(const FViewModePassConfig* Con
 bool                        UsesViewModeFXAA(const FViewModePassConfig* Config);
 EViewModePostProcessVariant GetViewModePostProcessVariant(const FViewModePassConfig* Config);
 
-FViewModePassDesc BuildViewModeOpaquePassDesc(EShadingModel ShadingModel);
-FViewModePassDesc BuildViewModeDecalPassDesc(EShadingModel ShadingModel);
-FViewModePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel);
+FViewModePassDesc BuildViewModeDeferredOpaquePassDesc(EShadingModel ShadingModel);
+FViewModePassDesc BuildViewModeDeferredDecalPassDesc(EShadingModel ShadingModel);
+FViewModePassDesc BuildViewModeDeferredLightingPassDesc(EShadingModel ShadingModel);
 void              BuildViewModePasses(FViewModePassConfig& Config);
 void              InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewMode, FShaderVariantCache& VariantCache);
 

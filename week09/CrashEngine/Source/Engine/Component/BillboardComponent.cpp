@@ -53,7 +53,7 @@ FMatrix BuildStableBillboardMatrix(
 
 IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
 
-FPrimitiveSceneProxy* UBillboardComponent::CreateSceneProxy()
+FPrimitiveProxy* UBillboardComponent::CreateSceneProxy()
 {
     return new FBillboardSceneProxy(this);
 }
@@ -247,3 +247,4 @@ bool UBillboardComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHit
     OutHitResult.HitComponent = this;
     return true;
 }
+

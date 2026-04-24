@@ -4,8 +4,8 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/Debug/DebugPrimitiveQueue.h"
 #include "Render/Scene/Proxies/Effects/FogSceneProxy.h"
-#include "Render/Scene/Proxies/Light/LightSceneProxy.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/SceneProxyRegistry.h"
 
 class UPrimitiveComponent;
@@ -19,30 +19,30 @@ public:
     FScene() = default;
     ~FScene();
 
-    FPrimitiveSceneProxy* AddPrimitive(UPrimitiveComponent* Component);
-    void                  RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy);
-    void                  RemovePrimitive(FPrimitiveSceneProxy* Proxy);
+    FPrimitiveProxy* AddPrimitive(UPrimitiveComponent* Component);
+    void                  RegisterPrimitiveProxy(FPrimitiveProxy* Proxy);
+    void                  RemovePrimitive(FPrimitiveProxy* Proxy);
 
-    FLightSceneProxy* AddLight(ULightComponent* Component);
-    void              RegisterLightProxy(FLightSceneProxy* Proxy);
-    void              RemoveLight(FLightSceneProxy* Proxy);
+    FLightProxy* AddLight(ULightComponent* Component);
+    void              RegisterLightProxy(FLightProxy* Proxy);
+    void              RemoveLight(FLightProxy* Proxy);
 
     FFogSceneProxy* AddFog(const UHeightFogComponent* Owner, const FFogSceneData& FogData);
     void            RemoveFog(const UHeightFogComponent* Owner);
 
     void UpdateDirtyProxies();
     void UpdateDirtyLightProxies();
-    void MarkProxyDirty(FPrimitiveSceneProxy* Proxy, ESceneProxyDirtyFlag Flag);
-    void MarkLightProxyDirty(FLightSceneProxy* Proxy, ESceneProxyDirtyFlag Flag);
+    void MarkProxyDirty(FPrimitiveProxy* Proxy, ESceneProxyDirtyFlag Flag);
+    void MarkLightProxyDirty(FLightProxy* Proxy, ESceneProxyDirtyFlag Flag);
     void MarkAllPerObjectCBDirty();
     void ClearFrameData() {}
 
-    void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
-    bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
+    void SetProxySelected(FPrimitiveProxy* Proxy, bool bSelected);
+    bool IsProxySelected(const FPrimitiveProxy* Proxy) const;
 
-    const TArray<FPrimitiveSceneProxy*>& GetPrimitiveProxies() const { return PrimitiveProxyRegistry.Proxies; }
-    const TArray<FPrimitiveSceneProxy*>& GetNeverCullProxies() const { return PrimitiveProxyRegistry.NeverCullProxies; }
-    const TArray<FLightSceneProxy*>&     GetLightProxies() const { return LightProxyRegistry.Proxies; }
+    const TArray<FPrimitiveProxy*>& GetPrimitiveProxies() const { return PrimitiveProxyRegistry.Proxies; }
+    const TArray<FPrimitiveProxy*>& GetNeverCullProxies() const { return PrimitiveProxyRegistry.NeverCullProxies; }
+    const TArray<FLightProxy*>&     GetLightProxies() const { return LightProxyRegistry.Proxies; }
     const TArray<FFogSceneProxy*>&       GetFogProxies() const { return FogProxyRegistry.Proxies; }
     uint32                               GetPrimitiveProxyCount() const { return static_cast<uint32>(PrimitiveProxyRegistry.Proxies.size()); }
     uint32                               GetLightProxyCount() const { return static_cast<uint32>(LightProxyRegistry.Proxies.size()); }
@@ -55,9 +55,10 @@ public:
     const FFogSceneData& GetFogData() const;
 
 private:
-    FPrimitiveSceneProxyRegistry          PrimitiveProxyRegistry;
-    TSceneProxyRegistry<FLightSceneProxy> LightProxyRegistry;
+    FPrimitiveProxyRegistry          PrimitiveProxyRegistry;
+    TSceneProxyRegistry<FLightProxy> LightProxyRegistry;
     TSceneProxyRegistry<FFogSceneProxy>   FogProxyRegistry;
 
     FDebugPrimitiveQueue DebugPrimitiveQueue;
 };
+

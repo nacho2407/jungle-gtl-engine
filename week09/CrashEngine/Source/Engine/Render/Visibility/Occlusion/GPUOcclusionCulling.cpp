@@ -1,28 +1,10 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Profiling/Stats.h"
 
 #include <cstring>
-
-// Constant-buffer layouts matching the HLSL compute shaders.
-
-struct FHiZParamsCB
-{
-    uint32 SrcWidth;
-    uint32 SrcHeight;
-    uint32 _pad[2];
-};
-
-// FOcclusionTestParamsCB는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
-struct FOcclusionTestParamsCB
-{
-    FMatrix ViewProj;       // 64 bytes
-    float   ViewportWidth;  // 4
-    float   ViewportHeight; // 4
-    uint32  NumAABBs;       // 4
-    uint32  HiZMipCount;    // 4
-};
 
 // ================================================================
 // Helper: compile a compute shader from file
@@ -73,7 +55,7 @@ void FGPUOcclusionCulling::Initialize(ID3D11Device* InDevice)
 
     // Constant buffer large enough for the bigger of the two CB structs.
     D3D11_BUFFER_DESC cbDesc = {};
-    cbDesc.ByteWidth         = sizeof(FOcclusionTestParamsCB);
+    cbDesc.ByteWidth         = sizeof(FOcclusionTestParamsCBData);
     cbDesc.Usage             = D3D11_USAGE_DYNAMIC;
     cbDesc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
     cbDesc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
@@ -389,7 +371,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 
     // Mip 0: copy scene depth into TextureA.
     {
-        FHiZParamsCB p = {};
+        FHiZParamsCBData p = {};
         p.SrcWidth     = Width;
         p.SrcHeight    = Height;
         UpdateParamsCB(Ctx, &p, sizeof(p));
@@ -412,7 +394,7 @@ void FGPUOcclusionCulling::GenerateHiZ(
 
     for (uint32 mip = 1; mip < HiZMipCount; mip++)
     {
-        FHiZParamsCB p = {};
+        FHiZParamsCBData p = {};
         p.SrcWidth     = mW;
         p.SrcHeight    = mH;
         UpdateParamsCB(Ctx, &p, sizeof(p));
@@ -495,7 +477,7 @@ void FGPUOcclusionCulling::BeginGatherAABB(uint32 ExpectedCount)
     bPreGathered      = false;
 }
 
-void FGPUOcclusionCulling::GatherAABB(FPrimitiveSceneProxy* Proxy)
+void FGPUOcclusionCulling::GatherAABB(FPrimitiveProxy* Proxy)
 {
     if (!Proxy || Proxy->bNeverCull)
         return;
@@ -525,7 +507,7 @@ void FGPUOcclusionCulling::EndGatherAABB()
 void FGPUOcclusionCulling::DispatchOcclusionTest(
     ID3D11DeviceContext*                 Ctx,
     ID3D11ShaderResourceView*            DepthSRV,
-    const TArray<FPrimitiveSceneProxy*>& VisibleProxies,
+    const TArray<FPrimitiveProxy*>& VisibleProxies,
     const FMatrix& View, const FMatrix& Proj,
     uint32 ViewportWidth, uint32 ViewportHeight)
 {
@@ -550,7 +532,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 
             for (uint32 i = 0; i < visCount; i++)
             {
-                FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
+                FPrimitiveProxy* Proxy = VisibleProxies[i];
                 if (!Proxy || Proxy->bNeverCull)
                     continue;
 
@@ -599,7 +581,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 
     // ?? Step 2: Occlusion test dispatch ??
     {
-        FOcclusionTestParamsCB params = {};
+        FOcclusionTestParamsCBData params = {};
         params.ViewProj               = View * Proj;
         params.ViewportWidth          = static_cast<float>(ViewportWidth);
         params.ViewportHeight         = static_cast<float>(ViewportHeight);
@@ -637,7 +619,7 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 // IsOccluded: O(1) bit-array lookup by ProxyId.
 // ================================================================
 
-bool FGPUOcclusionCulling::IsOccluded(const FPrimitiveSceneProxy* Proxy) const
+bool FGPUOcclusionCulling::IsOccluded(const FPrimitiveProxy* Proxy) const
 {
     uint32 id   = Proxy->ProxyId;
     uint32 word = id >> 5;

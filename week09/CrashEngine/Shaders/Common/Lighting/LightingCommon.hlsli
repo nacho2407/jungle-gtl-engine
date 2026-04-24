@@ -32,7 +32,7 @@
 
 
 // LocalLights StructuredBuffer - t6 slot
-StructuredBuffer<FLocalLightInfo> g_LightBuffer : register(t6);
+StructuredBuffer<FLocalLight> g_LightBuffer : register(t6);
 //Lighting Masking Buffers
 StructuredBuffer<uint> PerTileLightMask : register(t7);
 Texture2D g_DebugHitMapTex : register(t8);
@@ -103,7 +103,7 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition)
 
     for (int j = 0; j < NumLocalLights; ++j)
     {
-        FLocalLightInfo LocalLight = g_LightBuffer[j];
+        FLocalLight LocalLight = g_LightBuffer[j];
         float3 LightVector = LocalLight.Position - WorldPosition;
         float Distance = length(LightVector);
         
@@ -180,7 +180,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 }
 
 FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
-    FLocalLightInfo LocalLight,
+    FLocalLight LocalLight,
     float3 N,
     float3 WorldPosition,
     float3 V,
@@ -222,7 +222,7 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
 }
 
 
-float3 LocalLightLambertTerm(FLocalLightInfo LocalLight, float3 N, float3 WorldPosition)
+float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosition)
 {
     float3 LightVector = LocalLight.Position - WorldPosition;
     float Distance = length(LightVector);

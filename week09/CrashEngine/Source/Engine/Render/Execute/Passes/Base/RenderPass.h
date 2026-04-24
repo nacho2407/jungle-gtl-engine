@@ -2,7 +2,7 @@
 #pragma once
 
 struct FRenderPipelineContext;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 // FRenderPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
 class FRenderPass
@@ -14,7 +14,7 @@ public:
     virtual void PrepareInputs(FRenderPipelineContext& Context)                                        = 0;
     virtual void PrepareTargets(FRenderPipelineContext& Context)                                       = 0;
     virtual void BuildDrawCommands(FRenderPipelineContext& Context)                                    = 0;
-    virtual void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) = 0;
+    virtual void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) = 0;
     virtual void SubmitDrawCommands(FRenderPipelineContext& Context)                                   = 0;
 
     virtual void Execute(FRenderPipelineContext& Context)
@@ -24,3 +24,4 @@ public:
         SubmitDrawCommands(Context);
     }
 };
+

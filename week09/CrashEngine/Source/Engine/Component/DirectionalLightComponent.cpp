@@ -28,7 +28,10 @@ void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
     ULightComponent::PostEditProperty(PropertyName);
 }
 
-FLightSceneProxy* UDirectionalLightComponent::CreateLightSceneProxy()
+FLightProxy* UDirectionalLightComponent::CreateLightProxy()
 {
     return new FDirectionalLightSceneProxy(this);
 }
+
+
+

@@ -10,7 +10,7 @@ class FOverlayStatSystem;
 class UEditorEngine;
 class FScene;
 class FOctree;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FWorldPrimitivePickingBVH;
 
 // FDrawCollector는 렌더 영역의 핵심 동작을 담당합니다.
@@ -25,7 +25,7 @@ public:
     void CollectDebugRender(const FScene& Scene);
     void CollectOctreeDebug(const FOctree* Node, uint32 Depth = 0);
     void CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH);
-    void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies);
+    void CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies);
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView);
@@ -33,7 +33,7 @@ public:
 
     const FCollectedSceneData&           GetCollectedSceneData() const { return CollectedSceneData; }
     const FCollectedPrimitives&          GetCollectedPrimitives() const { return CollectedSceneData.Primitives; }
-    const TArray<FPrimitiveSceneProxy*>& GetLastVisiblePrimitiveProxies() const { return CollectedSceneData.Primitives.VisibleProxies; }
+    const TArray<FPrimitiveProxy*>& GetLastVisiblePrimitiveProxies() const { return CollectedSceneData.Primitives.VisibleProxies; }
     const FCollectedLights&              GetCollectedLights() const { return CollectedSceneData.Lights; }
     const FCollectedOverlayData&         GetCollectedOverlayData() const { return CollectedOverlayData; }
 
@@ -52,10 +52,11 @@ private:
     static void CollectDebugRender(const FScene& Scene, FCollectedOverlayData& OverlayData);
     static void CollectOctreeDebug(const FOctree* Node, FCollectedOverlayData& OverlayData, uint32 Depth = 0);
     static void CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FCollectedOverlayData& OverlayData);
-    static void CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FCollectedOverlayData& OverlayData);
+    static void CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies, FCollectedOverlayData& OverlayData);
 
 private:
     // ==================== Collected Data ====================
     FCollectedSceneData   CollectedSceneData;
     FCollectedOverlayData CollectedOverlayData;
 };
+

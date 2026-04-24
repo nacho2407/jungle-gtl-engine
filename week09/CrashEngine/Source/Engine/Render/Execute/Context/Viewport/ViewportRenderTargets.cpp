@@ -5,6 +5,7 @@
 
 void FViewportRenderTargets::Reset()
 {
+    SourceViewport        = nullptr;
     ViewportRTV           = nullptr;
     ViewportDSV           = nullptr;
     SceneColorCopySRV     = nullptr;
@@ -24,6 +25,7 @@ void FViewportRenderTargets::SetFromViewport(const FViewport* VP)
         return;
     }
 
+    SourceViewport        = VP;
     ViewportRTV           = VP->GetRTV();
     ViewportDSV           = VP->GetDSV();
     SceneColorCopySRV     = VP->GetSceneColorCopySRV();

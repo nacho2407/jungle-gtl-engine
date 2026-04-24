@@ -13,7 +13,7 @@
 
 IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
 
-FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
+FPrimitiveProxy* USubUVComponent::CreateSceneProxy()
 {
     return new FSubUVSceneProxy(this);
 }
@@ -145,3 +145,4 @@ void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
         }
     }
 }
+

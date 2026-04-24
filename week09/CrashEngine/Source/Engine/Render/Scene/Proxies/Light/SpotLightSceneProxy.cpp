@@ -60,7 +60,7 @@ void AddDebugCone(FScene& Scene, const FVector& Apex, const FVector& Direction,
 FSpotLightSceneProxy::FSpotLightSceneProxy(USpotLightComponent* InComponent)
     : FPointLightSceneProxy(InComponent)
 {
-    LightConstants.LightType = static_cast<uint32>(ELightType::Spot);
+    LightProxyInfo.LightType = static_cast<uint32>(ELightType::Spot);
 }
 
 void FSpotLightSceneProxy::UpdateLightConstants()
@@ -73,14 +73,14 @@ void FSpotLightSceneProxy::UpdateLightConstants()
     FPointLightSceneProxy::UpdateLightConstants();
 
     USpotLightComponent* SpotLight = static_cast<USpotLightComponent*>(Owner);
-    LightConstants.InnerConeAngle  = SpotLight->GetInnerConeAngle();
-    LightConstants.OuterConeAngle  = SpotLight->GetOuterConeAngle();
-    LightConstants.LightType       = static_cast<uint32>(ELightType::Spot);
+    LightProxyInfo.InnerConeAngle  = SpotLight->GetInnerConeAngle();
+    LightProxyInfo.OuterConeAngle  = SpotLight->GetOuterConeAngle();
+    LightProxyInfo.LightType       = static_cast<uint32>(ELightType::Spot);
 }
 
 void FSpotLightSceneProxy::UpdateTransform()
 {
-    FLightSceneProxy::UpdateTransform();
+    FLightProxy::UpdateTransform();
 }
 
 void FSpotLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
@@ -100,3 +100,4 @@ void FSpotLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
     AddDebugCone(Scene, Apex, Direction, Length, Component->GetInnerConeAngle(), FColor(255, 255, 0));
     AddDebugCone(Scene, Apex, Direction, Length, Component->GetOuterConeAngle(), FColor(255, 140, 0));
 }
+
