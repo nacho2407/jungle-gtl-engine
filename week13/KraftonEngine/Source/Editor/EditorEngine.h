@@ -17,6 +17,7 @@ class UGizmoComponent;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FOverlayStatSystem;
+struct FPerspectiveCameraData;
 
 class UEditorEngine : public UEngine
 {
@@ -40,6 +41,16 @@ public:
 	void ResetViewport();
 	void CloseScene();
 	void NewScene();
+	bool LoadSceneWithDialog();
+	bool LoadSceneFromPath(const FString& InScenePath);
+	bool SaveScene();
+	bool SaveSceneAsWithDialog();
+	bool SaveSceneAs(const FString& InSceneName);
+	bool HasCurrentLevelFilePath() const { return !CurrentLevelFilePath.empty(); }
+	const FString& GetCurrentLevelFilePath() const { return CurrentLevelFilePath; }
+	bool IsWorldCoordSystem() const { return FEditorSettings::Get().CoordSystem == EEditorCoordSystem::World; }
+	void ToggleCoordSystem();
+	void ApplyTransformSettingsToGizmo();
 
 	// GPU Occlusion readback 스테이징 데이터 무효화 — 액터 삭제 시 dangling proxy 방지
 	void InvalidateOcclusionResults() { if (auto* P = GetRenderPipeline()) P->OnSceneCleared(); }
@@ -88,6 +99,8 @@ private:
 	void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
 	void EndPlayMap();
 	void LoadStartLevel();
+	UCameraComponent* FindSceneViewportCamera() const;
+	void RestoreViewportCamera(const FPerspectiveCameraData& CamData);
 
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
@@ -100,5 +113,6 @@ private:
 	std::optional<FPlayInEditorSessionInfo> PlayInEditorSessionInfo;
 	// 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
 	bool bRequestEndPlayMapQueued = false;
+	FString CurrentLevelFilePath;
 
 };

@@ -24,6 +24,10 @@ public:
 	void RestoreEditorWindowsAfterPIE();
 
 private:
+	void RenderMainMenuBar();
+	void RenderShortcutOverlay();
+	void HandleGlobalShortcuts();
+
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
 	FEditorConsoleWidget ConsoleWidget;
@@ -33,6 +37,7 @@ private:
 	FEditorStatWidget StatWidget;
 	FEditorContentBrowserWidget ContentBrowserWidget;
 	bool bShowWidgetList = false;
+	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;
 	bool bSavedShowWidgetList = false;

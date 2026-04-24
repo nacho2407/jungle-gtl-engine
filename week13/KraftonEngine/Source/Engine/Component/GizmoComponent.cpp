@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Math/MathUtils.h"
 #include "Math/Quat.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Render/Resource/ShaderManager.h"
@@ -84,6 +85,11 @@ void UGizmoComponent::SetHolding(bool bHold)
 	}
 
 	bIsHolding = bHold;
+	if (bHold)
+	{
+		// Restart snap accumulation for each new gizmo drag so the first step is stable.
+		ResetSnapAccumulation();
+	}
 }
 
 bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT)
@@ -179,6 +185,13 @@ bool UGizmoComponent::IntersectRayRotationHandle(const FRay& Ray, int32 Axis, fl
 
 void UGizmoComponent::HandleDrag(float DragAmount)
 {
+	// Snap is applied on the accumulated drag so mouse deltas do not jitter between steps.
+	DragAmount = ApplySnapToDragAmount(DragAmount);
+	if (DragAmount == 0.0f)
+	{
+		return;
+	}
+
 	switch (CurMode)
 	{
 	case EGizmoMode::Translate:
@@ -195,6 +208,46 @@ void UGizmoComponent::HandleDrag(float DragAmount)
 	}
 
 	UpdateGizmoTransform();
+}
+
+float UGizmoComponent::ApplySnapToDragAmount(float DragAmount)
+{
+	bool bSnapEnabled = false;
+	float SnapSize = 0.0f;
+	switch (CurMode)
+	{
+	case EGizmoMode::Translate:
+		bSnapEnabled = bTranslationSnapEnabled;
+		SnapSize = TranslationSnapSize;
+		break;
+	case EGizmoMode::Rotate:
+		bSnapEnabled = bRotationSnapEnabled;
+		SnapSize = RotationSnapSizeRadians;
+		break;
+	case EGizmoMode::Scale:
+		bSnapEnabled = bScaleSnapEnabled;
+		SnapSize = ScaleSnapSize;
+		break;
+	default:
+		break;
+	}
+
+	if (!bSnapEnabled || SnapSize <= FMath::Epsilon)
+	{
+		return DragAmount;
+	}
+
+	AccumulatedRawDragAmount += DragAmount;
+	const float SnappedTotal = std::floor((AccumulatedRawDragAmount / SnapSize) + 0.5f) * SnapSize;
+	const float DeltaToApply = SnappedTotal - LastAppliedSnappedDragAmount;
+	LastAppliedSnappedDragAmount = SnappedTotal;
+	return DeltaToApply;
+}
+
+void UGizmoComponent::ResetSnapAccumulation()
+{
+	AccumulatedRawDragAmount = 0.0f;
+	LastAppliedSnappedDragAmount = 0.0f;
 }
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
@@ -223,6 +276,17 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
+	if (!bIsWorldSpace)
+	{
+		// Local rotation must use the actor's canonical local axes; world-aligned gizmo axes cause jumps.
+		switch (SelectedAxis)
+		{
+		case 0: RotationAxis = FVector(1.0f, 0.0f, 0.0f); break;
+		case 1: RotationAxis = FVector(0.0f, 1.0f, 0.0f); break;
+		case 2: RotationAxis = FVector(0.0f, 0.0f, 1.0f); break;
+		default: break;
+		}
+	}
 	FQuat DeltaQuat = FQuat::FromAxisAngle(RotationAxis, DragAmount);
 
 	const float DeltaDeg = DragAmount * RAD_TO_DEG;
@@ -232,28 +296,23 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 			if (!Actor || !Actor->GetRootComponent()) return;
 			USceneComponent* Root = Actor->GetRootComponent();
 			const FQuat& CurQuat = Root->GetRelativeQuat();
-			// 월드 스페이스: Delta * Cur, 로컬 스페이스: Cur * Delta
-			FQuat NewQuat = bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat);
+			FQuat NewQuat = (bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat)).GetNormalized();
 
-			// Euler 캐시를 기즈모 축 기준으로 직접 업데이트 (짐벌락 방지)
-			FRotator EulerHint = Root->GetCachedEditRotator();
 			if (bIsWorldSpace)
 			{
-				switch (SelectedAxis)
-				{
-				case 0: EulerHint.Roll  += DeltaDeg; break;  // World X = Roll
-				case 1: EulerHint.Pitch += DeltaDeg; break;  // World Y = Pitch
-				case 2: EulerHint.Yaw   += DeltaDeg; break;  // World Z = Yaw
-				}
+				// World rotation is driven purely by quaternion composition.
+				Root->SetRelativeRotation(NewQuat);
+				return;
 			}
-			else
+
+			// Local rotation preserves the edited axis through the cached Euler hint.
+			FRotator EulerHint = Root->GetCachedEditRotator();
+			switch (SelectedAxis)
 			{
-				switch (SelectedAxis)
-				{
-				case 0: EulerHint.Roll  += DeltaDeg; break;  // Local X = Roll
-				case 1: EulerHint.Pitch += DeltaDeg; break;  // Local Y = Pitch
-				case 2: EulerHint.Yaw   += DeltaDeg; break;  // Local Z = Yaw
-				}
+			case 0: EulerHint.Roll += DeltaDeg; break;
+			case 1: EulerHint.Pitch += DeltaDeg; break;
+			case 2: EulerHint.Yaw += DeltaDeg; break;
+			default: break;
 			}
 			Root->SetRelativeRotationWithEulerHint(NewQuat, EulerHint);
 		};
@@ -536,6 +595,8 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
+	// Clear leftover snap state so the next drag starts from zero.
+	ResetSnapAccumulation();
 	SetHolding(false);
 	SetPressedOnHandle(false);
 }
@@ -621,6 +682,18 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 {
 	bIsWorldSpace = bWorldSpace;
 	UpdateGizmoTransform();
+}
+
+void UGizmoComponent::SetSnapSettings(bool bTranslationEnabled, float InTranslationSnapSize,
+	bool bRotationEnabled, float InRotationSnapSizeDegrees,
+	bool bScaleEnabled, float InScaleSnapSize)
+{
+	bTranslationSnapEnabled = bTranslationEnabled;
+	TranslationSnapSize = (InTranslationSnapSize > FMath::Epsilon) ? InTranslationSnapSize : 10.0f;
+	bRotationSnapEnabled = bRotationEnabled;
+	RotationSnapSizeRadians = ((InRotationSnapSizeDegrees > FMath::Epsilon) ? InRotationSnapSizeDegrees : 15.0f) * DEG_TO_RAD;
+	bScaleSnapEnabled = bScaleEnabled;
+	ScaleSnapSize = (InScaleSnapSize > FMath::Epsilon) ? InScaleSnapSize : 0.1f;
 }
 
 uint32 UGizmoComponent::ComputeAxisMask(ELevelViewportType ViewportType, EGizmoMode Mode)

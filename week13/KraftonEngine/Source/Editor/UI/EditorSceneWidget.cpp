@@ -1,10 +1,7 @@
 ﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Core/Common.h"
-#include "GameFramework/WorldContext.h"
-#include "Component/CameraComponent.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
@@ -63,22 +60,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Save Scene"))
 	{
-		// PIE 중이면 먼저 종료해 에디터 월드를 활성화한 뒤 저장.
-		EditorEngine->StopPlayInEditorImmediate();
-		FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-		if (Ctx)
-		{
-			UCameraComponent* PerspectiveCam = nullptr;
-			for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
-			{
-				if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
-				{
-					PerspectiveCam = VC->GetCamera();
-					break;
-				}
-			}
-			FSceneSaveManager::SaveSceneAsJSON(SceneName, *Ctx, PerspectiveCam);
-		}
+		EditorEngine->SaveSceneAs(SceneName);
 		SceneSaveNotificationTimer = NotificationTimer;
 		RefreshSceneFileList();
 	}
@@ -115,41 +97,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 			std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
 				/ (FPaths::ToWide(SceneFiles[SelectedSceneIndex]) + FSceneSaveManager::SceneExtension);
 			FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
-
-			EditorEngine->ClearScene();
-			FWorldContext LoadCtx;
-			FPerspectiveCameraData CamData;
-			FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
-			if (LoadCtx.World)
-			{
-				EditorEngine->GetWorldList().push_back(LoadCtx);
-				EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
-				EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
-				LoadCtx.World->WarmupPickingData(); // 씬 로드 후 메시 BVH와 월드 primitive BVH를 모두 빌드
-			}
-			EditorEngine->ResetViewport();
-
-			// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
-			if (CamData.bValid)
-			{
-				for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
-				{
-					if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective || VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
-					{
-						if (UCameraComponent* Cam = VC->GetCamera())
-						{
-							Cam->SetWorldLocation(CamData.Location);
-							Cam->SetRelativeRotation(CamData.Rotation);
-							FCameraState CS = Cam->GetCameraState();
-							CS.FOV = CamData.FOV;
-							CS.NearZ = CamData.NearClip;
-							CS.FarZ = CamData.FarClip;
-							Cam->SetCameraState(CS);
-						}
-						break;
-					}
-				}
-			}
+			EditorEngine->LoadSceneFromPath(FilePath);
 
 			SceneLoadNotificationTimer = NotificationTimer;
 		}

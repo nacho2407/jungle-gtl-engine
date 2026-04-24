@@ -63,6 +63,10 @@ public:
 	float ComputeScreenSpaceScale(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f) const;
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
+	bool IsWorldSpace() const { return bIsWorldSpace; }
+	void SetSnapSettings(bool bTranslationEnabled, float InTranslationSnapSize,
+		bool bRotationEnabled, float InRotationSnapSizeDegrees,
+		bool bScaleEnabled, float InScaleSnapSize);
 
 
 	//UActorComponent Override
@@ -83,6 +87,8 @@ private:
 
 	//Control Target Method
 	void HandleDrag(float DragAmount);
+	float ApplySnapToDragAmount(float DragAmount);
+	void ResetSnapAccumulation();
 	void TranslateTarget(float DragAmount);
 	void RotateTarget(float DragAmount);
 	void ScaleTarget(float DragAmount);
@@ -104,6 +110,14 @@ private:
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
 	bool bPressedOnHandle = false;
+	bool bTranslationSnapEnabled = false;
+	bool bRotationSnapEnabled = false;
+	bool bScaleSnapEnabled = false;
+	float TranslationSnapSize = 10.0f;
+	float RotationSnapSizeRadians = 0.261799395f;
+	float ScaleSnapSize = 0.1f;
+	float AccumulatedRawDragAmount = 0.0f;
+	float LastAppliedSnappedDragAmount = 0.0f;
 	const FMeshData* MeshData = nullptr;
 	uint32 AxisMask = 0x7; // 비트 0=X, 1=Y, 2=Z — LineTrace용 (렌더링은 Proxy가 직접 계산)
 	FPrimitiveSceneProxy* InnerProxy = nullptr;	// GizmoInner 전용 프록시
