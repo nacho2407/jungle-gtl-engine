@@ -7,12 +7,17 @@ enum class ERenderPipelineType
     DefaultRootPipeline,
     EditorRootPipeline,
     ScenePipeline,
-    LitPipeline,
-    UnlitPipeline,
-    WorldNormalPipeline,
-    SceneDepthPipeline,
+    DeferredPipeline,
+    DeferredLitPipeline,
+    DeferredUnlitPipeline,
+    DeferredWorldNormalPipeline,
+    DeferredSceneDepthPipeline,
+    ForwardPipeline,
+    ForwardLitPipeline,
+    ForwardUnlitPipeline,
+    ForwardSceneDepthPipeline,
     PostProcessPipeline,
     OverlayPipeline,
     PresentPipeline,
-    Outline
+    OutlinePipeline
 };

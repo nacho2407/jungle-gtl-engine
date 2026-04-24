@@ -53,45 +53,75 @@ void FRenderPipelineRegistry::Initialize()
     AddPipeline(
         ERenderPipelineType::ScenePipeline,
         {
-            PipelineNode(ERenderPipelineType::LitPipeline),
-            PipelineNode(ERenderPipelineType::UnlitPipeline),
-            PipelineNode(ERenderPipelineType::WorldNormalPipeline),
-            PipelineNode(ERenderPipelineType::SceneDepthPipeline),
+            PipelineNode(ERenderPipelineType::DeferredPipeline),
+            PipelineNode(ERenderPipelineType::ForwardPipeline),
             PipelineNode(ERenderPipelineType::PostProcessPipeline),
         });
 
     AddPipeline(
-        ERenderPipelineType::LitPipeline,
+        ERenderPipelineType::DeferredPipeline,
+        {
+            PipelineNode(ERenderPipelineType::DeferredLitPipeline),
+            PipelineNode(ERenderPipelineType::DeferredUnlitPipeline),
+            PipelineNode(ERenderPipelineType::DeferredWorldNormalPipeline),
+            PipelineNode(ERenderPipelineType::DeferredSceneDepthPipeline),
+        });
+
+    AddPipeline(
+        ERenderPipelineType::DeferredLitPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
             PassNode(ERenderPassNodeType::LightCullingPass),
-            PassNode(ERenderPassNodeType::OpaquePass),
-            PassNode(ERenderPassNodeType::DecalPass),
-            PassNode(ERenderPassNodeType::LightingPass),
+            PassNode(ERenderPassNodeType::DeferredOpaquePass),
+            PassNode(ERenderPassNodeType::DeferredDecalPass),
+            PassNode(ERenderPassNodeType::DeferredLightingPass),
         });
 
     AddPipeline(
-        ERenderPipelineType::UnlitPipeline,
+        ERenderPipelineType::DeferredUnlitPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
-            PassNode(ERenderPassNodeType::OpaquePass),
-            PassNode(ERenderPassNodeType::DecalPass),
+            PassNode(ERenderPassNodeType::DeferredOpaquePass),
+            PassNode(ERenderPassNodeType::DeferredDecalPass),
         });
 
     AddPipeline(
-        ERenderPipelineType::WorldNormalPipeline,
+        ERenderPipelineType::DeferredWorldNormalPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
-            PassNode(ERenderPassNodeType::OpaquePass),
-            PassNode(ERenderPassNodeType::DecalPass),
+            PassNode(ERenderPassNodeType::DeferredOpaquePass),
+            PassNode(ERenderPassNodeType::DeferredDecalPass),
             PassNode(ERenderPassNodeType::NonLitViewModePass),
         });
 
     AddPipeline(
-        ERenderPipelineType::SceneDepthPipeline,
+        ERenderPipelineType::DeferredSceneDepthPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
             PassNode(ERenderPassNodeType::NonLitViewModePass),
+        });
+
+    AddPipeline(
+        ERenderPipelineType::ForwardPipeline,
+        {
+            PipelineNode(ERenderPipelineType::ForwardLitPipeline),
+            PipelineNode(ERenderPipelineType::ForwardUnlitPipeline),
+            PipelineNode(ERenderPipelineType::ForwardSceneDepthPipeline),
+        });
+
+    AddPipeline(
+        ERenderPipelineType::ForwardLitPipeline,
+        {
+        });
+
+    AddPipeline(
+        ERenderPipelineType::ForwardUnlitPipeline,
+        {
+        });
+
+    AddPipeline(
+        ERenderPipelineType::ForwardSceneDepthPipeline,
+        {
         });
 
     // ---------- Post, Overlay, Present ----------
@@ -107,7 +137,7 @@ void FRenderPipelineRegistry::Initialize()
         {
             PassNode(ERenderPassNodeType::LightHitMapPass),
             PassNode(ERenderPassNodeType::DebugLinePass),
-            PipelineNode(ERenderPipelineType::Outline),
+            PipelineNode(ERenderPipelineType::OutlinePipeline),
             PassNode(ERenderPassNodeType::OverlayBillboardPass),
             PassNode(ERenderPassNodeType::GizmoPass),
             PassNode(ERenderPassNodeType::OverlayTextPass),
@@ -120,7 +150,7 @@ void FRenderPipelineRegistry::Initialize()
         });
 
     AddPipeline(
-        ERenderPipelineType::Outline,
+        ERenderPipelineType::OutlinePipeline,
         {
             PassNode(ERenderPassNodeType::SelectionMaskPass),
             PassNode(ERenderPassNodeType::OutlinePass),

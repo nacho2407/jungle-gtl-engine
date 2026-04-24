@@ -26,7 +26,7 @@ SamplerState LinearClampSampler : register(s0);
 #endif
 
 #if defined(NON_LIT_VIEW_SCENE_DEPTH)
-cbuffer SceneDepthCB : register(b2)
+cbuffer SceneDepthParams : register(b2)
 {
     float Exponent;
     float NearClip;

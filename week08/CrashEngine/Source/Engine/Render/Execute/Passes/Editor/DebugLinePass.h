@@ -2,7 +2,7 @@
 #pragma once
 #include "Render/Execute/Passes/Base/RenderPass.h"
 struct FRenderPipelineContext;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 // FDebugLinePass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
 class FDebugLinePass : public FRenderPass
 {
@@ -10,10 +10,11 @@ public:
     void PrepareInputs(FRenderPipelineContext& Context) override;
     void PrepareTargets(FRenderPipelineContext& Context) override;
     void BuildDrawCommands(FRenderPipelineContext& Context) override;
-    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override
+    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override
     {
         (void)Context;
         (void)Proxy;
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
+

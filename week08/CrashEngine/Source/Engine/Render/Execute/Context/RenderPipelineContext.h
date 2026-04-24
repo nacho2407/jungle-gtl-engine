@@ -1,4 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+﻿// Defines context structs passed across render pipeline execution.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -20,13 +20,13 @@ class FViewModeSurfaces;
 class FGPUOcclusionCulling;
 class FRenderer;
 struct FLODUpdateContext;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FDecalSceneProxy;
 class FDrawCommandList;
 class FTileBasedLightCulling;
 struct FDrawBindStateCache;
 
-// FViewModeExecutionContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
+// FViewModeExecutionContext groups view-mode specific execution references.
 struct FViewModeExecutionContext
 {
     const FViewModePassRegistry* Registry       = nullptr;
@@ -34,14 +34,14 @@ struct FViewModeExecutionContext
     EViewMode                    ActiveViewMode = {};
 };
 
-// FRenderSubmissionContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
+// FRenderSubmissionContext groups collected submission data for pass execution.
 struct FRenderSubmissionContext
 {
     const FCollectedSceneData*   SceneData   = nullptr;
     const FCollectedOverlayData* OverlayData = nullptr;
 };
 
-// FRenderPipelineContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
+// FRenderPipelineContext groups renderer-owned state and execution references for a pipeline run.
 struct FRenderPipelineContext
 {
     const FSceneView*             SceneView = nullptr;
@@ -69,3 +69,4 @@ struct FRenderPipelineContext
     ID3D11RenderTargetView*      GetViewportRTV() const;
     ID3D11DepthStencilView*      GetViewportDSV() const;
 };
+

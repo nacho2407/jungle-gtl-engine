@@ -1,12 +1,11 @@
 ﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
-#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "PrimitiveComponent.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 // UBillboardComponent 컴포넌트이다.
 class UBillboardComponent : public UPrimitiveComponent
@@ -15,7 +14,7 @@ public:
     DECLARE_CLASS(UBillboardComponent, UPrimitiveComponent)
 
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
 
     void Serialize(FArchive& Ar) override;
     void PostDuplicate() override;
@@ -54,8 +53,8 @@ public:
     */
     FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 
-    FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad); }
-    FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad)); }
+    FMeshBuffer* GetMeshBuffer() const override { return &FMeshBufferManager::Get().GetMeshBuffer(EPrimitiveMeshShape::Quad); }
+    FMeshDataView GetMeshDataView() const override { return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::Quad)); }
     void UpdateWorldAABB() const override;
     bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
@@ -68,3 +67,6 @@ protected:
     float Width = 1.0f;
     float Height = 1.0f;
 };
+
+
+

@@ -1,14 +1,15 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
-#include "Render/Execute/Passes/Scene/OpaquePass.h"
+#include "Render/Execute/Passes/Scene/DeferredOpaquePass.h"
+
 #include "Render/Execute/Context/RenderPipelineContext.h"
-#include "Render/Submission/Command/DrawCommandList.h"
-#include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
-void FOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
+
+void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     ID3D11ShaderResourceView* NullSRVs[6] = {};
     Context.Context->PSSetShaderResources(0, ARRAY_SIZE(NullSRVs), NullSRVs);
@@ -24,11 +25,9 @@ void FOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
         ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
         Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
 
-        // Deq
-        ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
-        Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
+        ID3D11ShaderResourceView* HitMapSRV = Context.LightCulling->GetDebugHitMapSRV();
+        Context.Context->PSSetShaderResources(8, 1, &HitMapSRV);
 
-        // b2 LightCullingParams
         ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
         Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &LightCullingParamsCB);
     }
@@ -43,7 +42,7 @@ void FOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
     }
 }
 
-void FOpaquePass::PrepareTargets(FRenderPipelineContext& Context)
+void FDeferredOpaquePass::PrepareTargets(FRenderPipelineContext& Context)
 {
     const bool bUseViewModeSurfaces =
         Context.ViewMode.Surfaces &&
@@ -56,25 +55,23 @@ void FOpaquePass::PrepareTargets(FRenderPipelineContext& Context)
         const EShadingModel ShadingModel = Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode);
         Context.ViewMode.Surfaces->ClearBaseTargets(Context.Context, ShadingModel);
         Context.ViewMode.Surfaces->BindOpaqueTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
+        return;
     }
-    else
-    {
-        ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
-        Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
-    }
+
+    ID3D11RenderTargetView* RTV = Context.GetViewportRTV();
+    Context.Context->OMSetRenderTargets(1, &RTV, Context.GetViewportDSV());
 }
 
-void FOpaquePass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FDeferredOpaquePass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy)
 {
     DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::Opaque, Context, *Context.DrawCommandList);
 }
 
-void FOpaquePass::SubmitDrawCommands(FRenderPipelineContext& Context)
+void FDeferredOpaquePass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     SubmitPassRange(Context, ERenderPass::Opaque);
 
-    ID3D11ShaderResourceView* nullSRV = {};
-    Context.Context->PSSetShaderResources(7, 1, &nullSRV);
-
-    Context.Context->PSSetShaderResources(8, 1, &nullSRV);
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context.Context->PSSetShaderResources(7, 1, &NullSRV);
+    Context.Context->PSSetShaderResources(8, 1, &NullSRV);
 }

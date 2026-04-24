@@ -1,4 +1,3 @@
-﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "TextRenderComponent.h"
 
 #include <algorithm>
@@ -9,14 +8,13 @@
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
-#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UTextRenderComponent, UPrimitiveComponent)
 
-FPrimitiveSceneProxy* UTextRenderComponent::CreateSceneProxy()
+FPrimitiveProxy* UTextRenderComponent::CreateSceneProxy()
 {
     return new FTextRenderSceneProxy(this);
 }
@@ -86,12 +84,12 @@ void UTextRenderComponent::SetText(const FString& InText)
 
 FMeshBuffer* UTextRenderComponent::GetMeshBuffer() const
 {
-    return &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::Quad);
+    return &FMeshBufferManager::Get().GetMeshBuffer(EPrimitiveMeshShape::Quad);
 }
 
 FMeshDataView UTextRenderComponent::GetMeshDataView() const
 {
-    return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EMeshShape::Quad));
+    return FMeshDataView::FromMeshData(FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::Quad));
 }
 
 void UTextRenderComponent::SetFont(const FName& InFontName)
@@ -310,3 +308,5 @@ int32 UTextRenderComponent::GetUTF8Length(const FString& Str) const
     }
     return Count;
 }
+
+

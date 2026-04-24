@@ -20,7 +20,10 @@ void USpotLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "OuterConeAngle", EPropertyType::Float, &OuterConeAngle, 0.0f, 90.0f, 1.0f });
 }
 
-FLightSceneProxy* USpotLightComponent::CreateLightSceneProxy()
+FLightProxy* USpotLightComponent::CreateLightProxy()
 {
     return new FSpotLightSceneProxy(this);
 }
+
+
+

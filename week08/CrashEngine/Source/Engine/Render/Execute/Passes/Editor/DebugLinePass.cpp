@@ -4,7 +4,7 @@
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FDebugLinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -32,3 +32,4 @@ void FDebugLinePass::SubmitDrawCommands(FRenderPipelineContext& Context)
             Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
     }
 }
+

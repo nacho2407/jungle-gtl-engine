@@ -507,6 +507,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     SceneView.SetCameraInfo(Camera);
     SceneView.SetRenderSettings(ViewMode, ShowFlags);
     SceneView.SetRenderOptions(Opts);
+    SceneView.RenderPath = FEditorSettings::Get().RenderShadingPath;
     SceneView.SetViewportInfo(VP);
     SceneView.ViewportType = Opts.ViewportType;
     SceneView.OcclusionCulling = &GPUOcclusion;

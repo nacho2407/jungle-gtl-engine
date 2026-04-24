@@ -3,10 +3,9 @@
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
-#include "Render/Scene/Proxies/Light/LightSceneProxy.h"
-#include "Render/Resources/Buffers/LightBufferTypes.h"
 #include "Component/LightComponent.h"
 #include "Render/Scene/Scene.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 
 // ==================== Public API ====================
@@ -22,8 +21,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
 
     const bool bIsEditorWorld = (World->GetWorldType() == EWorldType::Editor);
 
-    const TArray<FLightSceneProxy*>& LightProxies = Scene->GetLightProxies();
-    for (FLightSceneProxy* Proxy : LightProxies)
+    const TArray<FLightProxy*>& LightProxies = Scene->GetLightProxies();
+    for (FLightProxy* Proxy : LightProxies)
     {
         if (!Proxy || !Proxy->bAffectsWorld || !Proxy->Owner)
         {
@@ -36,7 +35,7 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
             continue;
         }
 
-        FLightConstants& LC = Proxy->LightConstants;
+        FLightProxyInfo& LC = Proxy->LightProxyInfo;
         if (LC.LightType == static_cast<uint32>(ELightType::Ambient))
         {
             CollectedSceneData.Lights.GlobalLights.Ambient.Color     = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
@@ -55,7 +54,7 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
-            FLocalLightInfo LocalLight   = {};
+            FLocalLightCBData LocalLight = {};
             LocalLight.Color             = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
             LocalLight.Intensity         = LC.Intensity;
             LocalLight.Position          = LC.Position;
@@ -74,3 +73,4 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
 
     CollectedSceneData.Lights.GlobalLights.NumLocalLights = static_cast<int32>(CollectedSceneData.Lights.LocalLights.size());
 }
+

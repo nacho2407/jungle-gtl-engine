@@ -21,7 +21,7 @@ void EnqueueDirtyProxy(TArray<ProxyT*>& DirtyList, ProxyT* Proxy)
     DirtyList.push_back(Proxy);
 }
 
-void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy)
+void RemoveSelectedProxyFast(TArray<FPrimitiveProxy*>& SelectedList, FPrimitiveProxy* Proxy)
 {
     if (!Proxy || Proxy->SelectedListIndex == UINT32_MAX)
     {
@@ -32,7 +32,7 @@ void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimi
     const uint32 LastIndex = static_cast<uint32>(SelectedList.size() - 1);
     if (Index != LastIndex)
     {
-        FPrimitiveSceneProxy* LastProxy = SelectedList.back();
+        FPrimitiveProxy* LastProxy = SelectedList.back();
         SelectedList[Index]             = LastProxy;
         LastProxy->SelectedListIndex    = Index;
     }
@@ -44,13 +44,13 @@ void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimi
 
 FScene::~FScene()
 {
-    for (FPrimitiveSceneProxy* Proxy : PrimitiveProxyRegistry.Proxies)
+    for (FPrimitiveProxy* Proxy : PrimitiveProxyRegistry.Proxies)
     {
         delete Proxy;
     }
     PrimitiveProxyRegistry.Reset();
 
-    for (FLightSceneProxy* Proxy : LightProxyRegistry.Proxies)
+    for (FLightProxy* Proxy : LightProxyRegistry.Proxies)
     {
         delete Proxy;
     }
@@ -63,7 +63,7 @@ FScene::~FScene()
     FogProxyRegistry.Reset();
 }
 
-void FScene::RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy)
+void FScene::RegisterPrimitiveProxy(FPrimitiveProxy* Proxy)
 {
     if (!Proxy)
     {
@@ -93,14 +93,14 @@ void FScene::RegisterPrimitiveProxy(FPrimitiveSceneProxy* Proxy)
     }
 }
 
-FPrimitiveSceneProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
+FPrimitiveProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
 {
     if (!Component)
     {
         return nullptr;
     }
 
-    FPrimitiveSceneProxy* Proxy = Component->CreateSceneProxy();
+    FPrimitiveProxy* Proxy = Component->CreateSceneProxy();
     if (!Proxy)
     {
         return nullptr;
@@ -110,7 +110,7 @@ FPrimitiveSceneProxy* FScene::AddPrimitive(UPrimitiveComponent* Component)
     return Proxy;
 }
 
-void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
+void FScene::RemovePrimitive(FPrimitiveProxy* Proxy)
 {
     if (!Proxy || Proxy->ProxyId == UINT32_MAX)
     {
@@ -154,10 +154,10 @@ void FScene::UpdateDirtyProxies()
 {
     SCOPE_STAT_CAT("UpdateDirtyProxies", "3_Collect");
 
-    TArray<FPrimitiveSceneProxy*> PendingDirtyProxies = std::move(PrimitiveProxyRegistry.DirtyProxies);
+    TArray<FPrimitiveProxy*> PendingDirtyProxies = std::move(PrimitiveProxyRegistry.DirtyProxies);
     PrimitiveProxyRegistry.DirtyProxies.clear();
 
-    for (FPrimitiveSceneProxy* Proxy : PendingDirtyProxies)
+    for (FPrimitiveProxy* Proxy : PendingDirtyProxies)
     {
         if (!Proxy)
         {
@@ -195,10 +195,10 @@ void FScene::UpdateDirtyProxies()
 
 void FScene::UpdateDirtyLightProxies()
 {
-    TArray<FLightSceneProxy*> Pending = std::move(LightProxyRegistry.DirtyProxies);
+    TArray<FLightProxy*> Pending = std::move(LightProxyRegistry.DirtyProxies);
     LightProxyRegistry.DirtyProxies.clear();
 
-    for (FLightSceneProxy* Proxy : Pending)
+    for (FLightProxy* Proxy : Pending)
     {
         if (!Proxy)
         {
@@ -229,7 +229,7 @@ void FScene::UpdateDirtyLightProxies()
     }
 }
 
-void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, ESceneProxyDirtyFlag Flag)
+void FScene::MarkProxyDirty(FPrimitiveProxy* Proxy, ESceneProxyDirtyFlag Flag)
 {
     if (!Proxy)
     {
@@ -240,7 +240,7 @@ void FScene::MarkProxyDirty(FPrimitiveSceneProxy* Proxy, ESceneProxyDirtyFlag Fl
     EnqueueDirtyProxy(PrimitiveProxyRegistry.DirtyProxies, Proxy);
 }
 
-void FScene::MarkLightProxyDirty(FLightSceneProxy* Proxy, ESceneProxyDirtyFlag Flag)
+void FScene::MarkLightProxyDirty(FLightProxy* Proxy, ESceneProxyDirtyFlag Flag)
 {
     if (!Proxy)
     {
@@ -253,7 +253,7 @@ void FScene::MarkLightProxyDirty(FLightSceneProxy* Proxy, ESceneProxyDirtyFlag F
 
 void FScene::MarkAllPerObjectCBDirty()
 {
-    for (FPrimitiveSceneProxy* Proxy : PrimitiveProxyRegistry.Proxies)
+    for (FPrimitiveProxy* Proxy : PrimitiveProxyRegistry.Proxies)
     {
         if (Proxy)
         {
@@ -262,7 +262,7 @@ void FScene::MarkAllPerObjectCBDirty()
     }
 }
 
-void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
+void FScene::SetProxySelected(FPrimitiveProxy* Proxy, bool bSelected)
 {
     if (!Proxy)
     {
@@ -285,19 +285,19 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
     }
 }
 
-bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
+bool FScene::IsProxySelected(const FPrimitiveProxy* Proxy) const
 {
     return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
 }
 
-FLightSceneProxy* FScene::AddLight(ULightComponent* Component)
+FLightProxy* FScene::AddLight(ULightComponent* Component)
 {
     if (!Component)
     {
         return nullptr;
     }
 
-    FLightSceneProxy* Proxy = Component->CreateLightSceneProxy();
+    FLightProxy* Proxy = Component->CreateLightProxy();
     if (!Proxy)
     {
         return nullptr;
@@ -307,7 +307,7 @@ FLightSceneProxy* FScene::AddLight(ULightComponent* Component)
     return Proxy;
 }
 
-void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
+void FScene::RegisterLightProxy(FLightProxy* Proxy)
 {
     if (!Proxy)
     {
@@ -332,7 +332,7 @@ void FScene::RegisterLightProxy(FLightSceneProxy* Proxy)
     EnqueueDirtyProxy(LightProxyRegistry.DirtyProxies, Proxy);
 }
 
-void FScene::RemoveLight(FLightSceneProxy* Proxy)
+void FScene::RemoveLight(FLightProxy* Proxy)
 {
     if (!Proxy || Proxy->ProxyId == UINT32_MAX)
     {
@@ -421,3 +421,5 @@ const FFogSceneData& FScene::GetFogData() const
     static const FFogSceneData EmptyFogData = {};
     return EmptyFogData;
 }
+
+

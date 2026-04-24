@@ -59,7 +59,7 @@ void FPresentPass::BuildDrawCommands(FRenderPipelineContext& Context)
     (void)Context;
 }
 
-void FPresentPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FPresentPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy)
 {
     (void)Context;
     (void)Proxy;
@@ -81,3 +81,4 @@ void FPresentPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     Context.Context->CopyResource(Dest, Source);
 }
+

@@ -26,7 +26,10 @@ void UAmbientLightComponent::PostEditProperty(const char* PropertyName)
     ULightComponent::PostEditProperty(PropertyName);
 }
 
-FLightSceneProxy* UAmbientLightComponent::CreateLightSceneProxy()
+FLightProxy* UAmbientLightComponent::CreateLightProxy()
 {
     return new FAmbientLightSceneProxy(this);
 }
+
+
+

@@ -54,7 +54,7 @@ void FShaderProgramRegistry::Initialize()
     Add(EShaderType::Primitive, MakeGraphicsProgramDesc("Primitive", "Shaders/Editor/Primitive.hlsl"));
     Add(EShaderType::Gizmo, MakeGraphicsProgramDesc("Gizmo", "Shaders/Editor/Gizmo.hlsl"));
     Add(EShaderType::Editor, MakeGraphicsProgramDesc("Editor", "Shaders/Editor/Editor.hlsl"));
-    Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/DecalPass.hlsl"));
+    Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/DeferredDecalPass.hlsl"));
     Add(EShaderType::OutlinePostProcess, MakeGraphicsProgramDesc("OutlinePostProcess", "Shaders/Passes/PostProcess/OutlinePostProcessPass.hlsl"));
     Add(EShaderType::FXAA, MakeGraphicsProgramDesc("FXAA", "Shaders/Passes/PostProcess/FXAAPass.hlsl"));
     Add(EShaderType::Font, MakeGraphicsProgramDesc("Font", "Shaders/Editor/ShaderFont.hlsl"));

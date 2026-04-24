@@ -4,7 +4,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 // FSceneOverlayText는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FSceneOverlayText
@@ -58,8 +58,8 @@ struct FCollectedOverlayData
     int32                                GetGridHalfLineCount() const { return Guides.Grid.HalfLineCount; }
     const TArray<FSceneDebugAABB>&       GetDebugAABBs() const { return Debug.AABBs; }
     const TArray<FSceneDebugLine>&       GetDebugLines() const { return Debug.Lines; }
-    const TArray<FPrimitiveSceneProxy*>& GetEditorHelperBillboards() const { return EditorHelpers.Billboards; }
-    const TArray<FPrimitiveSceneProxy*>& GetEditorHelperTexts() const { return EditorHelpers.Texts; }
+    const TArray<FPrimitiveProxy*>& GetEditorHelperBillboards() const { return EditorHelpers.Billboards; }
+    const TArray<FPrimitiveProxy*>& GetEditorHelperTexts() const { return EditorHelpers.Texts; }
 
     // FDebugPayload는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FDebugPayload
@@ -77,7 +77,8 @@ struct FCollectedOverlayData
     // FEditorHelperPayload는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FEditorHelperPayload
     {
-        TArray<FPrimitiveSceneProxy*> Billboards;
-        TArray<FPrimitiveSceneProxy*> Texts;
+        TArray<FPrimitiveProxy*> Billboards;
+        TArray<FPrimitiveProxy*> Texts;
     } EditorHelpers;
 };
+

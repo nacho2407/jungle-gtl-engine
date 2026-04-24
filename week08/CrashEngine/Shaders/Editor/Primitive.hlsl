@@ -19,12 +19,12 @@
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 
-cbuffer PerShader1 : register(b2)
+cbuffer PrimitiveColorParams : register(b2)
 {
     float4 DiffuseColor;
 };
 
-cbuffer PerShader2 : register(b3)
+cbuffer PrimitiveLightingParams : register(b3)
 {
     float3 lightDir;
 };

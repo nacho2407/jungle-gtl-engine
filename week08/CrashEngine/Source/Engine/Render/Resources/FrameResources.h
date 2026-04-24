@@ -4,10 +4,9 @@
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
-#include "Render/Resources/Buffers/LightBufferTypes.h"
 #include "Render/Submission/Batching/FontBatch.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 
 /*
     Shared frame-scoped GPU resources and batching state.
@@ -35,9 +34,10 @@ struct FFrameResources
     void Create(ID3D11Device* InDevice);
     void Release();
     void BindSystemSamplers(ID3D11DeviceContext* Ctx);
-    void UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights);
+    void UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightCBData>& Lights);
 
     void             EnsurePerObjectCBPoolCapacity(ID3D11Device* Device, uint32 RequiredCount);
-    FConstantBuffer* GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveSceneProxy& Proxy);
+    FConstantBuffer* GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveProxy& Proxy);
     void             EnsureTextCharInfoMap(const FFontResource* Resource);
 };
+

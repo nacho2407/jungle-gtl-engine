@@ -11,6 +11,7 @@ class FViewport;
 */
 struct FViewportRenderTargets
 {
+    const FViewport*         SourceViewport = nullptr;
     ID3D11RenderTargetView* ViewportRTV = nullptr;
     ID3D11DepthStencilView* ViewportDSV = nullptr;
 

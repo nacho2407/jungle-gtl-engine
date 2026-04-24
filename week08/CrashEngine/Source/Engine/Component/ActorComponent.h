@@ -22,9 +22,9 @@ public:
     virtual void EndPlay() {};
 
     // --- 렌더 상태 관리 (UE RegisterComponent/UnregisterComponent 대응) ---
-    // 컴포넌트 등록 시 호출 — PrimitiveComponent에서 SceneProxy 생성
+    // 컴포넌트 등록 시 호출 ? PrimitiveComponent에서 SceneProxy 생성
     virtual void CreateRenderState() {}
-    // 컴포넌트 해제 시 호출 — PrimitiveComponent에서 SceneProxy 파괴
+    // 컴포넌트 해제 시 호출 ? PrimitiveComponent에서 SceneProxy 파괴
     virtual void DestroyRenderState() {}
 
     virtual void Activate();
@@ -49,7 +49,7 @@ public:
     // 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
     virtual void PostEditProperty(const char* PropertyName);
     // 선택된 프록시의 소유 액터 컴포넌트가 디버그 시각화를 FScene에 기여
-    // FPrimitiveSceneProxy::CollectSelectedVisuals 에서 호출됨
+    // FPrimitiveProxy::CollectSelectedVisuals 에서 호출됨
     virtual void ContributeSelectedVisuals(FScene& Scene) const { (void)Scene; }
 
     FActorComponentTickFunction PrimaryComponentTick;
@@ -65,3 +65,4 @@ private:
     bool bIsActive = true;
     bool bAutoActivate = true;
 };
+

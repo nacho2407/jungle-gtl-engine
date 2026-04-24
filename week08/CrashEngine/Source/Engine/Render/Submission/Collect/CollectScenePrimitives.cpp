@@ -6,7 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 
@@ -45,14 +45,14 @@ thread_local uint64 GLOD2 = 0;
 
 namespace
 {
-bool ContainsProxy(const TArray<FPrimitiveSceneProxy*>& Proxies, const FPrimitiveSceneProxy* Target)
+bool ContainsProxy(const TArray<FPrimitiveProxy*>& Proxies, const FPrimitiveProxy* Target)
 {
     return std::find(Proxies.begin(), Proxies.end(), Target) != Proxies.end();
 }
 
-void AppendSceneRegistryFrustumProxies(FScene& Scene, const FConvexVolume& Frustum, TArray<FPrimitiveSceneProxy*>& OutProxies)
+void AppendSceneRegistryFrustumProxies(FScene& Scene, const FConvexVolume& Frustum, TArray<FPrimitiveProxy*>& OutProxies)
 {
-    for (FPrimitiveSceneProxy* Proxy : Scene.GetPrimitiveProxies())
+    for (FPrimitiveProxy* Proxy : Scene.GetPrimitiveProxies())
     {
         if (!Proxy || Proxy->bNeverCull || ContainsProxy(OutProxies, Proxy))
         {
@@ -124,7 +124,7 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
             CollectedSceneData.Primitives.VisibleProxies.reserve(ExpectedCount);
         }
 
-        for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
+        for (FPrimitiveProxy* Proxy : Scene.GetNeverCullProxies())
         {
             if (Proxy)
             {
@@ -136,7 +136,7 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
         AppendSceneRegistryFrustumProxies(Scene, SceneView.FrustumVolume, CollectedSceneData.Primitives.VisibleProxies);
     }
 
-    const TArray<FPrimitiveSceneProxy*> CandidateProxies = CollectedSceneData.Primitives.VisibleProxies;
+    const TArray<FPrimitiveProxy*> CandidateProxies = CollectedSceneData.Primitives.VisibleProxies;
     CollectedSceneData.Primitives.VisibleProxies.clear();
     CollectedSceneData.Primitives.OpaqueProxies.clear();
     CollectedSceneData.Primitives.TransparentProxies.clear();
@@ -152,7 +152,7 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
 
     DRAW_COLLECTOR_LOD_STATS_RESET();
 
-    for (FPrimitiveSceneProxy* Proxy : CandidateProxies)
+    for (FPrimitiveProxy* Proxy : CandidateProxies)
     {
         if (!Proxy)
         {
@@ -220,3 +220,4 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
         *CollectContext.CollectedPrimitives = CollectedSceneData.Primitives;
     }
 }
+

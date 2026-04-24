@@ -9,10 +9,11 @@ public:
     void PrepareInputs(FRenderPipelineContext& Context) override;
     void PrepareTargets(FRenderPipelineContext& Context) override;
     void BuildDrawCommands(FRenderPipelineContext& Context) override;
-    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy) override
+    void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override
     {
         (void)Context;
         (void)Proxy;
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
+

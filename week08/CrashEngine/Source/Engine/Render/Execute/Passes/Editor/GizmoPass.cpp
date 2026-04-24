@@ -4,7 +4,7 @@
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FGizmoPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -16,7 +16,7 @@ void FGizmoPass::PrepareTargets(FRenderPipelineContext& Context)
     BindViewportTarget(Context);
 }
 
-void FGizmoPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FGizmoPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy)
 {
     DrawCommandBuild::BuildMeshDrawCommand(Proxy, Proxy.Pass, Context, *Context.DrawCommandList);
 }
@@ -41,3 +41,4 @@ void FGizmoPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
     }
 }
+
