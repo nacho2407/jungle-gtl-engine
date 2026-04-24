@@ -59,6 +59,10 @@ struct FViewportRenderResource
     TComPtr<ID3D11DepthStencilView> DepthStencilView;
     TComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
 
+	TComPtr<ID3D11Texture2D> VSMDepthTexture;
+    TComPtr<ID3D11DepthStencilView> VSMDepthStencilView;
+    TComPtr<ID3D11ShaderResourceView> VSMDepthStencilSRV;
+
     uint32 Width = 0;
     uint32 Height = 0;
 
