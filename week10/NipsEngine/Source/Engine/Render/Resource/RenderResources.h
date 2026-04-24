@@ -34,6 +34,7 @@ enum class ESamplerType
 	EST_Point,
 	EST_Linear,
 	EST_Anisotropic,
+	EST_Shadow,
 };
 
 enum class EDepthStencilType

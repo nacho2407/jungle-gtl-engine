@@ -1637,6 +1637,17 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 		Desc.Filter = D3D11_FILTER_ANISOTROPIC;
 		Desc.MaxAnisotropy = 16;
 		break;
+	case ESamplerType::EST_Shadow:
+		Desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+		Desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+		Desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+		Desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+		Desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+		Desc.BorderColor[0] = 1.0f;
+		Desc.BorderColor[1] = 1.0f;
+		Desc.BorderColor[2] = 1.0f;
+		Desc.BorderColor[3] = 1.0f;
+		break;
 	default:
 		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		break;
