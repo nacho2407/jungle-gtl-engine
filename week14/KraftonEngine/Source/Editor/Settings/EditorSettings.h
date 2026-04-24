@@ -40,6 +40,12 @@ public:
 
 	// Transform tools
 	EEditorCoordSystem CoordSystem = EEditorCoordSystem::World;
+	bool bEnableTranslationSnap = false;
+	float TranslationSnapSize = 0.1f;
+	bool bEnableRotationSnap = false;
+	float RotationSnapSize = 15.0f;
+	bool bEnableScaleSnap = false;
+	float ScaleSnapSize = 0.1f;
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드

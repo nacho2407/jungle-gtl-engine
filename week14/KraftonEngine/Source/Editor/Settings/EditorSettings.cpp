@@ -67,6 +67,12 @@ namespace Key
 	// Transform Tools
 	constexpr const char* TransformTools = "TransformTools";
 	constexpr const char* CoordSystem = "CoordSystem";
+	constexpr const char* bEnableTranslationSnap = "bEnableTranslationSnap";
+	constexpr const char* TranslationSnapSize = "TranslationSnapSize";
+	constexpr const char* bEnableRotationSnap = "bEnableRotationSnap";
+	constexpr const char* RotationSnapSize = "RotationSnapSize";
+	constexpr const char* bEnableScaleSnap = "bEnableScaleSnap";
+	constexpr const char* ScaleSnapSize = "ScaleSnapSize";
 }
 
 void FEditorSettings::SaveToFile(const FString& Path) const
@@ -155,6 +161,12 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 
 	JSON TransformObj = Object();
 	TransformObj[Key::CoordSystem] = static_cast<int32>(CoordSystem);
+	TransformObj[Key::bEnableTranslationSnap] = bEnableTranslationSnap;
+	TransformObj[Key::TranslationSnapSize] = TranslationSnapSize;
+	TransformObj[Key::bEnableRotationSnap] = bEnableRotationSnap;
+	TransformObj[Key::RotationSnapSize] = RotationSnapSize;
+	TransformObj[Key::bEnableScaleSnap] = bEnableScaleSnap;
+	TransformObj[Key::ScaleSnapSize] = ScaleSnapSize;
 	Root[Key::TransformTools] = TransformObj;
 
 	// Ensure directory exists
@@ -339,5 +351,17 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		JSON TransformObj = Root[Key::TransformTools];
 		if (TransformObj.hasKey(Key::CoordSystem))
 			CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
+		if (TransformObj.hasKey(Key::bEnableTranslationSnap))
+			bEnableTranslationSnap = TransformObj[Key::bEnableTranslationSnap].ToBool();
+		if (TransformObj.hasKey(Key::TranslationSnapSize))
+			TranslationSnapSize = static_cast<float>(TransformObj[Key::TranslationSnapSize].ToFloat());
+		if (TransformObj.hasKey(Key::bEnableRotationSnap))
+			bEnableRotationSnap = TransformObj[Key::bEnableRotationSnap].ToBool();
+		if (TransformObj.hasKey(Key::RotationSnapSize))
+			RotationSnapSize = static_cast<float>(TransformObj[Key::RotationSnapSize].ToFloat());
+		if (TransformObj.hasKey(Key::bEnableScaleSnap))
+			bEnableScaleSnap = TransformObj[Key::bEnableScaleSnap].ToBool();
+		if (TransformObj.hasKey(Key::ScaleSnapSize))
+			ScaleSnapSize = static_cast<float>(TransformObj[Key::ScaleSnapSize].ToFloat());
 	}
 }
