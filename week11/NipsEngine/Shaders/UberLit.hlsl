@@ -45,6 +45,7 @@ Texture2D SpecularMap : register(t3);
 Texture2D ShadowMap : register(t10);
 
 SamplerState SampleState : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 struct VSInput
 {
@@ -162,12 +163,12 @@ float CalculateShadow(float4 worldPos)
     {
         return 1.0f;
     }
-
-    float closestDepth = ShadowMap.Sample(SampleState, shadowUV).r;
-    float currentDepth = projCoords.z;
+    
     const float shadowBias = 0.002f;
 
-    return (currentDepth - shadowBias > closestDepth) ? 0.0f : 1.0f;
+    float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
+
+    return shadowFactor;
 }
 
 PSOutput mainPS(PSInput input) : SV_TARGET

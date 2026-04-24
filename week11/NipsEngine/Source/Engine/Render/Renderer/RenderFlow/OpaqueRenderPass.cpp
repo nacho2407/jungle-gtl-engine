@@ -28,6 +28,9 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
+	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
+
     return true;
 }
 
@@ -68,7 +71,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
        uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
        uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
-       if (vertexCount == 0 || stride == 0)  
+       if (vertexCount == 0 || stride == 0)
        {  
            return false;  
        }  
