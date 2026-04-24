@@ -149,8 +149,8 @@ void CS_LightCulling(
             idx, lightVSPos, g_LightBuffer[idx].AttenuationRadius,
             frustum, minZ, maxZ,
             flatTileIndex,
-            PerTilePointLightIndexMaskOut,
-            CulledPointLightIndexMaskOUT
+            PerTilePointLightIndexMaskOutput,
+            CulledPointLightIndexMaskOutput
         );
     }
 

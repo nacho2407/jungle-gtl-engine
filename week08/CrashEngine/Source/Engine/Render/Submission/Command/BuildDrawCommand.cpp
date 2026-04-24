@@ -15,7 +15,7 @@
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/FrameResources.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Submission/Command/DrawCommand.h"
@@ -23,7 +23,7 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Resource/ResourceManager.h"
 
-void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
     const bool bMeshValid     = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();
@@ -40,6 +40,20 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, E
     if (bIsMaskLikePass)
     {
         Shader = FShaderManager::Get().GetShader(EShaderType::DepthOnly);
+    }
+    else if (Pass == ERenderPass::Opaque &&
+             Context.SceneView &&
+             Context.SceneView->RenderPath == ERenderShadingPath::Deferred &&
+             Proxy.bAllowViewModeShaderOverride &&
+             Context.ViewMode.Registry &&
+             Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
+    {
+        const FViewModePassDesc* Desc =
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Opaque);
+        if (Desc && Desc->CompiledShader)
+        {
+            Shader = Desc->CompiledShader;
+        }
     }
 
     if (!Shader)
@@ -213,7 +227,7 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
     const FViewportRenderTargets* Targets = Context.Targets;
     FGraphicsProgram*             Shader  = nullptr;
 
-    if (Pass == ERenderPass::Lighting)
+    if (Pass == ERenderPass::DeferredLighting)
     {
         if (!Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
         {
@@ -221,7 +235,7 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
         }
 
         const FViewModePassDesc* Desc =
-            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Lighting);
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::DeferredLighting);
         if (!Desc || !Desc->CompiledShader)
         {
             return;
@@ -268,7 +282,7 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
     Cmd.VertexCount                  = 3;
     Cmd.Pass                         = Pass;
 
-    if (Pass == ERenderPass::Lighting && Context.ViewMode.Surfaces)
+    if (Pass == ERenderPass::DeferredLighting && Context.ViewMode.Surfaces)
     {
         // Lighting fullscreen shaders read the base color buffer from t0.
         Cmd.DiffuseSRV = Context.ViewMode.Surfaces->GetSRV(EViewModeSurfaceslot::BaseColor);
@@ -280,8 +294,8 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
         Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 
-    Cmd.LightCB       = (Pass == ERenderPass::Lighting && Context.Resources) ? &Context.Resources->GlobalLightBuffer : nullptr;
-    Cmd.LocalLightSRV = (Pass == ERenderPass::Lighting && Context.Resources) ? Context.Resources->LocalLightSRV : nullptr;
+    Cmd.LightCB       = (Pass == ERenderPass::DeferredLighting && Context.Resources) ? &Context.Resources->GlobalLightBuffer : nullptr;
+    Cmd.LocalLightSRV = (Pass == ERenderPass::DeferredLighting && Context.Resources) ? Context.Resources->LocalLightSRV : nullptr;
     Cmd.SortKey       = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, ToPostProcessUserBits(PostProcessVariant));
 }
 
@@ -385,7 +399,7 @@ void DrawCommandBuild::BuildOverlayBillboardDrawCommand(FRenderPipelineContext& 
         return;
     }
 
-    for (FPrimitiveSceneProxy* Proxy : OverlayData->GetEditorHelperBillboards())
+    for (FPrimitiveProxy* Proxy : OverlayData->GetEditorHelperBillboards())
     {
         if (!Proxy)
         {
@@ -408,7 +422,7 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
 
     if (OverlayData)
     {
-        for (FPrimitiveSceneProxy* Proxy : OverlayData->GetEditorHelperTexts())
+        for (FPrimitiveProxy* Proxy : OverlayData->GetEditorHelperTexts())
         {
             if (!Proxy)
             {
@@ -607,7 +621,7 @@ void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderScenePr
 }
 
 
-void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
     if (!Proxy.DiffuseSRV || !Context.ViewMode.Registry || !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
@@ -646,3 +660,5 @@ void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, 
 
     Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
 }
+
+

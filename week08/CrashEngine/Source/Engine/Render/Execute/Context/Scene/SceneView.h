@@ -1,4 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+﻿// Defines the per-view camera and visibility state used during rendering.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -11,8 +11,8 @@
 class UCameraComponent;
 class FViewport;
 class FGPUOcclusionCulling;
-class FTileBasedLightCulling;
-// FSceneView는 카메라와 화면 출력에 필요한 상태를 다룹니다.
+
+// FSceneView bundles camera state, viewport state, and visibility helpers for one view.
 struct FSceneView
 {
     FMatrix View;
@@ -33,13 +33,13 @@ struct FSceneView
 
     FViewportRenderOptions RenderOptions;
     EViewMode              ViewMode = EViewMode::Lit_Phong;
+    ERenderShadingPath     RenderPath = ERenderShadingPath::Deferred;
     FShowFlags             ShowFlags;
     FVector                WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
-    FGPUOcclusionCulling*   OcclusionCulling = nullptr;
-    FTileBasedLightCulling* LightCulling     = nullptr;
-    FConvexVolume           FrustumVolume;
-    FLODUpdateContext       LODContext;
+    FGPUOcclusionCulling* OcclusionCulling = nullptr;
+    FConvexVolume         FrustumVolume;
+    FLODUpdateContext     LODContext;
 
     bool IsFixedOrtho() const
     {

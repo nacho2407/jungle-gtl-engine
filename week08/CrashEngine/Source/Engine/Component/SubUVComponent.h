@@ -36,7 +36,7 @@ public:
         bIsExecute = false;
     } // 처음부터 다시 재생
 
-    // Sprite Size(Width/Height)는 UBillboardComponent로 끌어올림 — 상속받아 사용.
+    // Sprite Size(Width/Height)는 UBillboardComponent로 끌어올림 ? 상속받아 사용.
 
     // --- Property / Serialization ---
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
@@ -45,7 +45,7 @@ public:
     void Serialize(FArchive& Ar) override;
     void PostDuplicate() override;
 
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
     void UpdateWorldAABB() const override;
 
 protected:
@@ -62,3 +62,4 @@ private:
     bool bLoop = true;
     bool bIsExecute = false;
 };
+

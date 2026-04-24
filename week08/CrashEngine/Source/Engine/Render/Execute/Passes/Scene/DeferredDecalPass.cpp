@@ -1,18 +1,18 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
-#include "Render/Execute/Passes/Scene/DecalPass.h"
+#include "Render/Execute/Passes/Scene/DeferredDecalPass.h"
+
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Execute/Registry/ViewModePassRegistry.h"
-#include "Render/Resources/Bindings/RenderBindingSlots.h"
-#include "Render/Submission/Command/DrawCommandList.h"
-#include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Render/Submission/Command/BuildDrawCommand.h"
+#include "Render/Submission/Command/DrawCommandList.h"
 
 namespace
 {
-bool UsesDecalPass(const FRenderPipelineContext& Context)
+bool UsesDeferredDecalPass(const FRenderPipelineContext& Context)
 {
     return !Context.ViewMode.Registry ||
            !Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode) ||
@@ -20,10 +20,10 @@ bool UsesDecalPass(const FRenderPipelineContext& Context)
 }
 } // namespace
 
-void FDecalPass::PrepareInputs(FRenderPipelineContext& Context)
+void FDeferredDecalPass::PrepareInputs(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!UsesDecalPass(Context))
+    if (!UsesDeferredDecalPass(Context))
     {
         return;
     }
@@ -60,9 +60,9 @@ void FDecalPass::PrepareInputs(FRenderPipelineContext& Context)
     }
 }
 
-void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
+void FDeferredDecalPass::PrepareTargets(FRenderPipelineContext& Context)
 {
-    if (!UsesDecalPass(Context))
+    if (!UsesDeferredDecalPass(Context))
     {
         return;
     }
@@ -130,15 +130,15 @@ void FDecalPass::PrepareTargets(FRenderPipelineContext& Context)
     Context.ViewMode.Surfaces->BindDecalTargets(Context.Context, ShadingModel, Context.GetViewportDSV());
 }
 
-void FDecalPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FDeferredDecalPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy)
 {
     DrawCommandBuild::BuildDecalDrawCommand(Proxy, Context, *Context.DrawCommandList);
 }
 
-void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
+void FDeferredDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     const FViewportRenderTargets* Targets = Context.Targets;
-    if (!Context.DrawCommandList || !UsesDecalPass(Context))
+    if (!Context.DrawCommandList || !UsesDeferredDecalPass(Context))
     {
         return;
     }
@@ -146,11 +146,12 @@ void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     const bool          bHasViewModeConfig = Context.ViewMode.Surfaces && Context.ViewMode.Registry && Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode);
     const EShadingModel ShadingModel       = bHasViewModeConfig ? Context.ViewMode.Registry->GetShadingModel(Context.ViewMode.ActiveViewMode) : EShadingModel::Unlit;
 
-    uint32 s, e;
-    Context.DrawCommandList->GetPassRange(ERenderPass::Decal, s, e);
-    if (s < e)
+    uint32 Start = 0;
+    uint32 End   = 0;
+    Context.DrawCommandList->GetPassRange(ERenderPass::Decal, Start, End);
+    if (Start < End)
     {
-        Context.DrawCommandList->SubmitRange(s, e, *Context.Device, Context.Context, *Context.StateCache);
+        Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
     }
 
     if (!Targets || !Targets->ViewportRenderTexture)
@@ -160,7 +161,7 @@ void FDecalPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     if (bHasViewModeConfig && ShadingModel == EShadingModel::Unlit)
     {
-        if (s == e && Context.ViewMode.Surfaces)
+        if (Start == End && Context.ViewMode.Surfaces)
         {
             Context.Context->OMSetRenderTargets(0, nullptr, nullptr);
             ID3D11Resource* Src = nullptr;

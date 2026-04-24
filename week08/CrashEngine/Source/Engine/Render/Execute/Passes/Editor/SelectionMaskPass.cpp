@@ -4,7 +4,7 @@
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FSelectionMaskPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -16,7 +16,7 @@ void FSelectionMaskPass::PrepareTargets(FRenderPipelineContext& Context)
     Context.Context->OMSetRenderTargets(0, nullptr, Context.GetViewportDSV());
 }
 
-void FSelectionMaskPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveSceneProxy& Proxy)
+void FSelectionMaskPass::BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy)
 {
     DrawCommandBuild::BuildMeshDrawCommand(Proxy, ERenderPass::SelectionMask, Context, *Context.DrawCommandList);
 }
@@ -25,3 +25,4 @@ void FSelectionMaskPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     SubmitPassRange(Context, ERenderPass::SelectionMask);
 }
+

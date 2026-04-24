@@ -7,7 +7,7 @@
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 #include "Render/Scene/Scene.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 
@@ -270,9 +270,9 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
     MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
 }
 
-FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
+FPrimitiveProxy* UPrimitiveComponent::CreateSceneProxy()
 {
-    return new FPrimitiveSceneProxy(this);
+    return new FPrimitiveProxy(this);
 }
 
 void UPrimitiveComponent::CreateRenderState()
@@ -330,3 +330,4 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
         UpdateWorldAABB();
     }
 }
+

@@ -10,13 +10,15 @@
 #include "Render/Execute/Passes/Editor/LightHitMapPass.h"
 #include "Render/Execute/Passes/Scene/AdditiveDecalPass.h"
 #include "Render/Execute/Passes/Scene/AlphaBlendPass.h"
-#include "Render/Execute/Passes/Scene/OpaquePass.h"
-#include "Render/Execute/Passes/Scene/DecalPass.h"
+#include "Render/Execute/Passes/Scene/DeferredOpaquePass.h"
+#include "Render/Execute/Passes/Scene/ForwardOpaquePass.h"
+#include "Render/Execute/Passes/Scene/DeferredDecalPass.h"
+#include "Render/Execute/Passes/Scene/ForwardDecalPass.h"
 #include "Render/Execute/Passes/Scene/DepthPrePass.h"
 #include "Render/Execute/Passes/Scene/FXAAPass.h"
 #include "Render/Execute/Passes/Scene/HeightFogPass.h"
 #include "Render/Execute/Passes/Scene/LightCullingPass.h"
-#include "Render/Execute/Passes/Scene/LightingPass.h"
+#include "Render/Execute/Passes/Scene/DeferredLightingPass.h"
 #include "Render/Execute/Passes/Scene/PresentPass.h"
 #include "Render/Execute/Passes/Scene/NonLitViewModePass.h"
 
@@ -36,9 +38,11 @@ void FRenderPassRegistry::Initialize()
     // ---------- Scene Passes ----------
     Passes.emplace((int32)ERenderPassNodeType::DepthPrePass, new FDepthPrePass());
     Passes.emplace((int32)ERenderPassNodeType::LightCullingPass, new FLightCullingPass());
-    Passes.emplace((int32)ERenderPassNodeType::OpaquePass, new FOpaquePass());
-    Passes.emplace((int32)ERenderPassNodeType::DecalPass, new FDecalPass());
-    Passes.emplace((int32)ERenderPassNodeType::LightingPass, new FLightingPass());
+    Passes.emplace((int32)ERenderPassNodeType::DeferredOpaquePass, new FDeferredOpaquePass());
+    Passes.emplace((int32)ERenderPassNodeType::ForwardOpaquePass, new FForwardOpaquePass());
+    Passes.emplace((int32)ERenderPassNodeType::DeferredDecalPass, new FDeferredDecalPass());
+    Passes.emplace((int32)ERenderPassNodeType::ForwardDecalPass, new FForwardDecalPass());
+    Passes.emplace((int32)ERenderPassNodeType::DeferredLightingPass, new FDeferredLightingPass());
     Passes.emplace((int32)ERenderPassNodeType::AdditiveDecalPass, new FAdditiveDecalPass());
     Passes.emplace((int32)ERenderPassNodeType::AlphaBlendPass, new FAlphaBlendPass());
     Passes.emplace((int32)ERenderPassNodeType::NonLitViewModePass, new FNonLitViewModePass());

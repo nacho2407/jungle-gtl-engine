@@ -4,7 +4,7 @@
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FOverlayTextPass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -43,3 +43,4 @@ void FOverlayTextPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.DrawCommandList->SubmitRange(Start, End, *Context.Device, Context.Context, *Context.StateCache);
     }
 }
+

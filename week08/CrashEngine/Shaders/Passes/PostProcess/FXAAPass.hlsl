@@ -20,7 +20,7 @@
 #include "../../Common/Resources/SystemResources.hlsl"
 #include "../../Common/Resources/SystemSamplers.hlsl"
 
-cbuffer FXAABuffer : register(b2)
+cbuffer FXAAParams : register(b2)
 {
     float EdgeThreshold;
     float EdgeThresholdMin;

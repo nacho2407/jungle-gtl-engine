@@ -6,7 +6,7 @@
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Engine/Collision/Octree.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -79,7 +79,7 @@ void FDrawCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH)
     CollectWorldBVHDebug(BVH, CollectedOverlayData);
 }
 
-void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies)
+void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies)
 {
     CollectWorldBoundsDebug(Proxies, CollectedOverlayData);
 }
@@ -111,7 +111,7 @@ void FDrawCollector::CollectEditorHelpers(UWorld* World, const FSceneView& Scene
                 continue;
             }
 
-            FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy();
+            FPrimitiveProxy* Proxy = Primitive->GetSceneProxy();
             if (!Proxy)
             {
                 continue;
@@ -238,9 +238,9 @@ void FDrawCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, 
     }
 }
 
-void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>& Proxies, FCollectedOverlayData& OverlayData)
+void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies, FCollectedOverlayData& OverlayData)
 {
-    for (FPrimitiveSceneProxy* Proxy : Proxies)
+    for (FPrimitiveProxy* Proxy : Proxies)
     {
         if (!Proxy || !Proxy->CachedBounds.IsValid() || !Proxy->bShowAABB || Proxy->bNeverCull || !Proxy->CachedBounds.IsValid())
         {
@@ -250,3 +250,4 @@ void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveSceneProxy*>
         OverlayData.Debug.AABBs.push_back({ Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor(255, 0, 255) });
     }
 }
+

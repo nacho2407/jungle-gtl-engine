@@ -1,5 +1,4 @@
-﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
-#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
+// 기즈모 컴포넌트의 세부 동작을 구현합니다.
 #include "GizmoComponent.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
@@ -16,7 +15,7 @@
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
 
-FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
+FPrimitiveProxy* UGizmoComponent::CreateSceneProxy()
 {
     return new FGizmoSceneProxy(this, false); // Outer
 }
@@ -64,7 +63,7 @@ void UGizmoComponent::DestroyRenderState()
 #include <cmath>
 UGizmoComponent::UGizmoComponent()
 {
-    MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
+    MeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::TransGizmo);
     LocalExtents = FVector(1.5f, 1.5f, 1.5f);
 }
 
@@ -618,15 +617,15 @@ void UGizmoComponent::UpdateGizmoTransform()
     switch (CurMode)
     {
     case EGizmoMode::Scale:
-        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::ScaleGizmo);
+        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::ScaleGizmo);
         break;
 
     case EGizmoMode::Rotate:
-        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::RotGizmo);
+        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::RotGizmo);
         break;
 
     case EGizmoMode::Translate:
-        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
+        DesiredMeshData = &FMeshBufferManager::Get().GetMeshData(EPrimitiveMeshShape::TransGizmo);
         break;
 
     default:
@@ -759,17 +758,19 @@ void UGizmoComponent::Deactivate()
 
 FMeshBuffer* UGizmoComponent::GetMeshBuffer() const
 {
-    EMeshShape Shape = EMeshShape::TransGizmo;
+    EPrimitiveMeshShape Shape = EPrimitiveMeshShape::TransGizmo;
     switch (CurMode)
     {
     case EGizmoMode::Translate:
         break;
     case EGizmoMode::Rotate:
-        Shape = EMeshShape::RotGizmo;
+        Shape = EPrimitiveMeshShape::RotGizmo;
         break;
     case EGizmoMode::Scale:
-        Shape = EMeshShape::ScaleGizmo;
+        Shape = EPrimitiveMeshShape::ScaleGizmo;
         break;
     }
     return &FMeshBufferManager::Get().GetMeshBuffer(Shape);
 }
+
+

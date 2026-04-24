@@ -1,14 +1,14 @@
 ﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Materials/MaterialCore.h"
 #include <memory>
 
 class UStaticMeshComponent;
 
 // FStaticMeshSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
-class FStaticMeshSceneProxy : public FPrimitiveSceneProxy
+class FStaticMeshSceneProxy : public FPrimitiveProxy
 {
 public:
     static constexpr uint32 MAX_LOD = 4;
@@ -37,3 +37,4 @@ private:
     TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
     uint32                                           LODCount = 1;
 };
+

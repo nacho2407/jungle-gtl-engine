@@ -8,7 +8,7 @@
 #include "Render/Resources/Bindings/RenderCBKeys.h"
 #include "Render/Resources/Buffers/ConstantBufferCache.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 
@@ -64,3 +64,4 @@ void FOutlinePass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
     }
 }
+

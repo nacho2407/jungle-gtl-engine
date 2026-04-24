@@ -14,7 +14,7 @@ public:
 
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
 
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
@@ -48,3 +48,4 @@ private:
     float FadeTimer = 0;
     float FadeOpacity = 1.0f;
 };
+

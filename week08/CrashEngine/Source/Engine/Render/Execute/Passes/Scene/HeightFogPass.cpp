@@ -7,7 +7,7 @@
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Scene/Scene.h"
@@ -78,3 +78,4 @@ void FHeightFogPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
     }
 }
+

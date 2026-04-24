@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -337,14 +337,16 @@
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredDecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPassPresets.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.cpp" />
@@ -372,14 +374,14 @@
     <ClCompile Include="Source\Engine\Render\Scene\Debug\DebugRenderAPI.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\DirectionalLightSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\LightProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Light\SpotLightSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\BillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\DecalSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\GizmoSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.cpp" />
@@ -546,14 +548,16 @@
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Editor\SelectionMaskPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AdditiveDecalPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\AlphaBlendPass.h" />
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredDecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.h" />
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightingPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.h" />
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPassPresets.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPassRegistry.h" />
@@ -566,14 +570,13 @@
     <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderMarkers.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Runner\RenderPipelineRunner.h" />
     <ClInclude Include="Source\Engine\Render\Resources\FrameResources.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Bindings\ConstantBufferBinding.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\PrimitiveMeshShape.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\Bindings\CBBindingEntry.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderBindingSlots.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\RenderCBKeys.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferCache.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Buffers\ConstantBufferData.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Buffers\LightBufferTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Buffers\MeshBufferManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resources\Meshes\PrimitiveMeshTypes.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderDependencyUtils.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderIncludeLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderManager.h" />
@@ -606,12 +609,13 @@
     <ClInclude Include="Source\Engine\Render\Scene\SceneProxyRegistry.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Debug\DebugPrimitiveQueue.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Debug\DebugRenderAPI.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Light\LightInfo.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\SceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Effects\FogSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Effects\SceneEffectProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\AmbientLightSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\DirectionalLightSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\SpotLightSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\BillboardSceneProxy.h" />
@@ -619,7 +623,7 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\DecalSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\GizmoSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\MeshSectionRenderData.h" />
-    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\PrimitiveProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h" />
@@ -821,7 +825,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DecalPass.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\DeferredDecalPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaqueCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -833,13 +843,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\LightingPass.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\DeferredLightingPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\OpaquePass.hlsl">
+    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaquePass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -914,3 +924,6 @@
     <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
 </Project>
+
+
+

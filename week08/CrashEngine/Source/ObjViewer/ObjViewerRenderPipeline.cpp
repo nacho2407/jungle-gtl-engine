@@ -1,4 +1,4 @@
-// ObjViewer 영역의 비활성화된 예제 구현입니다.
+﻿// ObjViewer 영역의 비활성화된 예제 구현입니다.
 // #include "ObjViewer/ObjViewerRenderPipeline.h"
 //
 // #include "ObjViewer/ObjViewerEngine.h"
@@ -20,10 +20,10 @@
 //
 // void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 //{
-//	// ������ũ�� RT�� 3D �� ����
+//	// 백버퍼 RT에 3D 장면을 먼저 렌더합니다.
 //	RenderPreviewViewport(Renderer);
 //
-//	// ����ü�� ����� �� ImGui �ռ� �� Present
+//	// 프레임을 시작한 뒤 ImGui를 올리고 Present합니다.
 //	Renderer.BeginFrame();
 //	Engine->RenderUI(DeltaTime);
 //	Renderer.EndFrame();
@@ -42,7 +42,7 @@
 //
 //	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
 //
-//	// ���� �������� ���� + ������ũ�� RT ���ε�
+//	// 리사이즈 요청을 반영하고 백버퍼 RT를 준비합니다.
 //	if (VP->ApplyPendingResize())
 //	{
 //		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
@@ -50,7 +50,7 @@
 //	const float ClearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
 //	VP->BeginRender(Ctx, ClearColor);
 //
-//	// Frame ����
+//	// Frame 데이터를 초기화합니다.
 //	Frame.ClearViewportResources();
 //
 //	UWorld* World = Engine->GetWorld();
@@ -79,7 +79,7 @@
 //		Renderer.ReleaseViewModeTextures();
 //	}
 //
-//	// BeginCollect �� ���� ���� �� ���� Ŀ�ǵ� �� Scene pipeline ����
+//	// BeginCollect 이후 렌더 데이터 수집과 커맨드 생성, Scene pipeline 실행을 진행합니다.
 //	Renderer.BeginCollect(Frame, Scene.GetPrimitiveProxyCount());
 //	Collector.CollectWorld(World, Frame, Renderer);
 //	Renderer.BuildDynamicCommands(Frame, &Scene);

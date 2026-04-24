@@ -4,23 +4,8 @@
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
-#include "Render/Resources/Buffers/LightBufferTypes.h"
+#include "Render/Resources/Buffers/ConstantBufferData.h"
 #include <d3d11.h>
-
-// ============================================================
-// ============================================================
-struct FLightCullingParams
-{
-    uint32 ScreenSizeX;
-    uint32 ScreenSizeY;
-    uint32 TileSizeX;
-    uint32 TileSizeY;
-
-    uint32 Enable25DCulling;
-    float  NearZ;
-    float  FarZ;
-    float  NumLights;
-};
 
 class FViewportClient;
 class FD3DDevice;
@@ -82,15 +67,15 @@ private:
     // ---- PointLight Buffer (SRV, t0) ----
     // ID3D11Buffer*              PointLightBuffer    = nullptr;
     // ID3D11ShaderResourceView*  PointLightDataSRV   = nullptr;
-    // TArray<FLocalLightInfo> Lights;
+    // TArray<FLocalLightCBData> Lights;
     uint32 LightCount = 0;
     // ---- PerTile Mask Buffer (UAV u1 / SRV for PS) ----
     ID3D11Buffer*              PerTilePointLightIndexMaskBuffer = nullptr;
-    ID3D11UnorderedAccessView* PerTilePointLightIndexMaskOutUAV = nullptr;
+    ID3D11UnorderedAccessView* PerTilePointLightIndexMaskUAV    = nullptr;
     ID3D11ShaderResourceView*  PerTilePointLightIndexMaskSRV    = nullptr;
 
     ID3D11Buffer*              CulledPointLightIndexMaskBuffer = nullptr;
-    ID3D11UnorderedAccessView* CulledPointLightIndexMaskOUTUAV = nullptr;
+    ID3D11UnorderedAccessView* CulledPointLightIndexMaskUAV    = nullptr;
 
     ID3D11Texture2D*           DebugHitMapTexture = nullptr;
     ID3D11UnorderedAccessView* DebugHitMapUAV     = nullptr;

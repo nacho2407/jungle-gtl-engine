@@ -13,7 +13,7 @@
 // FGizmoSceneProxy
 // ============================================================
 FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
-    : FPrimitiveSceneProxy(InComponent), bIsInner(bInner)
+    : FPrimitiveProxy(InComponent), bIsInner(bInner)
 {
     bPerViewportUpdate = true;
     bNeverCull         = true;
@@ -73,3 +73,4 @@ void FGizmoSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     G.HoveredAxisOpacity = 0.7f;
     G.AxisMask           = UGizmoComponent::ComputeAxisMask(SceneView.ViewportType, Gizmo->GetMode());
 }
+

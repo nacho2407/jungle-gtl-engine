@@ -7,7 +7,7 @@
 #include <memory>
 
 class UPrimitiveComponent;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FOctree;
 class AActor;
 struct FRay;
@@ -24,11 +24,11 @@ public:
     void UpdateActor(AActor* Actor);
     void AddSinglePrimitive(UPrimitiveComponent* Primitive);
 
-    // 단일 컴포넌트 제거 — overflow / octree leaf 양쪽 모두 정리한다.
+    // 단일 컴포넌트 제거 ? overflow / octree leaf 양쪽 모두 정리한다.
     void RemoveSinglePrimitive(UPrimitiveComponent* Primitive);
 
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
-    void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const;
+    void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     // void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
@@ -47,3 +47,4 @@ private:
     TArray<UPrimitiveComponent*> OverflowPrimitives;
     TArray<AActor*> DirtyActors;
 };
+

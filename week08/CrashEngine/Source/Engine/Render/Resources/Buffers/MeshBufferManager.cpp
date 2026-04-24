@@ -1,5 +1,4 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
-#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "MeshBufferManager.h"
 #include "Math/MathUtils.h"
 
@@ -34,24 +33,24 @@ void FMeshBufferManager::Release()
     bIsInitialized = false;
 }
 
-FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EMeshShape InShape)
+FMeshBuffer& FMeshBufferManager::GetMeshBuffer(EPrimitiveMeshShape InShape)
 {
     auto it = MeshBufferMap.find(InShape);
     if (it != MeshBufferMap.end())
     {
         return it->second;
     }
-    return MeshBufferMap.at(EMeshShape::Cube);
+    return MeshBufferMap.at(EPrimitiveMeshShape::Cube);
 }
 
-const FMeshData& FMeshBufferManager::GetMeshData(EMeshShape InShape) const
+const FMeshData& FMeshBufferManager::GetMeshData(EPrimitiveMeshShape InShape) const
 {
     auto it = MeshDataMap.find(InShape);
     if (it != MeshDataMap.end())
     {
         return it->second;
     }
-    return MeshDataMap.at(EMeshShape::Cube);
+    return MeshDataMap.at(EPrimitiveMeshShape::Cube);
 }
 
 void FMeshBufferManager::CreatePrimitiveMeshData()
@@ -68,7 +67,7 @@ void FMeshBufferManager::CreatePrimitiveMeshData()
 
 void FMeshBufferManager::CreateCube()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::Cube];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::Cube];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -130,7 +129,7 @@ void FMeshBufferManager::CreateCube()
 
 void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::Sphere];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::Sphere];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -172,7 +171,7 @@ void FMeshBufferManager::CreateSphere(int Slices, int Stacks)
 
 void FMeshBufferManager::CreateRotationGizmo()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::RotGizmo];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::RotGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -244,7 +243,7 @@ void FMeshBufferManager::CreateRotationGizmo()
 
 void FMeshBufferManager::CreateScaleGizmo()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::ScaleGizmo];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::ScaleGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -296,7 +295,7 @@ void FMeshBufferManager::CreateScaleGizmo()
 
 void FMeshBufferManager::CreateQuad()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::Quad];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::Quad];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -312,7 +311,7 @@ void FMeshBufferManager::CreateQuad()
 
 void FMeshBufferManager::CreateTranslationGizmo()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::TransGizmo];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::TransGizmo];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 
@@ -394,7 +393,7 @@ void FMeshBufferManager::CreateTranslationGizmo()
 
 void FMeshBufferManager::CreateTexturedQuad()
 {
-    TMeshData<FVertexPNCT>& Data     = PNCTMeshDataMap[EMeshShape::TexturedQuad];
+    TMeshData<FVertexPNCT>& Data     = PNCTMeshDataMap[EPrimitiveMeshShape::TexturedQuad];
     TArray<FVertexPNCT>&    vertices = Data.Vertices;
     TArray<uint32>&         indices  = Data.Indices;
 
@@ -412,7 +411,7 @@ void FMeshBufferManager::CreateTexturedQuad()
 
 void FMeshBufferManager::CreatePlane()
 {
-    FMeshData&       Data     = MeshDataMap[EMeshShape::Plane];
+    FMeshData&       Data     = MeshDataMap[EPrimitiveMeshShape::Plane];
     TArray<FVertex>& vertices = Data.Vertices;
     TArray<uint32>&  indices  = Data.Indices;
 

@@ -1,7 +1,7 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Scene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
@@ -10,13 +10,13 @@
 
 // ============================================================
 // ============================================================
-FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
+FPrimitiveProxy::FPrimitiveProxy(UPrimitiveComponent* InComponent)
     : Owner(InComponent)
 {
     bSupportsOutline = Owner->SupportsOutline();
 }
 
-void FPrimitiveSceneProxy::UpdateTransform()
+void FPrimitiveProxy::UpdateTransform()
 {
     PerObjectConstants = FPerObjectCBData::FromWorldMatrix(Owner->GetWorldMatrix());
     CachedWorldPos     = PerObjectConstants.Model.GetLocation();
@@ -25,11 +25,11 @@ void FPrimitiveSceneProxy::UpdateTransform()
     MarkPerObjectCBDirty();
 }
 
-void FPrimitiveSceneProxy::UpdateMaterial()
+void FPrimitiveProxy::UpdateMaterial()
 {
 }
 
-void FPrimitiveSceneProxy::UpdateVisibility()
+void FPrimitiveProxy::UpdateVisibility()
 {
     if (!Owner)
     {
@@ -50,14 +50,14 @@ void FPrimitiveSceneProxy::UpdateVisibility()
     }
 }
 
-void FPrimitiveSceneProxy::UpdateMesh()
+void FPrimitiveProxy::UpdateMesh()
 {
     MeshBuffer = Owner->GetMeshBuffer();
     Shader     = FShaderManager::Get().GetShader(EShaderType::Primitive);
     Pass       = ERenderPass::Opaque;
 }
 
-void FPrimitiveSceneProxy::CollectSelectedVisuals(FScene& Scene) const
+void FPrimitiveProxy::CollectSelectedVisuals(FScene& Scene) const
 {
     if (!Owner)
         return;
@@ -71,3 +71,4 @@ void FPrimitiveSceneProxy::CollectSelectedVisuals(FScene& Scene) const
             Comp->ContributeSelectedVisuals(Scene);
     }
 }
+

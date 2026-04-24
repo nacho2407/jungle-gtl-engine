@@ -2,7 +2,7 @@
 #pragma once
 #include "LightComponentBase.h"
 
-class FLightSceneProxy;
+class FLightProxy;
 class FScene;
 
 // ULightComponent 컴포넌트이다.
@@ -26,10 +26,12 @@ public:
     void MarkRenderTransformDirty();
 
     // ─── 서브클래스가 오버라이드하여 구체적인 프록시 생성 ───
-    virtual FLightSceneProxy* CreateLightSceneProxy();
+    virtual FLightProxy* CreateLightProxy();
 
-    FLightSceneProxy* GetLightSceneProxy() const { return LightSceneProxy; }
+    FLightProxy* GetLightProxy() const { return LightProxy; }
 
 protected:
-    FLightSceneProxy* LightSceneProxy = nullptr;
+    FLightProxy* LightProxy = nullptr;
 };
+
+

@@ -26,7 +26,7 @@ void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
     }
 }
 
-FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
+FPrimitiveProxy* UDecalComponent::CreateSceneProxy()
 {
     return new FDecalSceneProxy(this);
 }
@@ -193,3 +193,4 @@ void UDecalComponent::RenderDebugBox()
 
     ::RenderDebugBox(World, P[0], P[1], P[2], P[3], P[4], P[5], P[6], P[7], FColor::Green(), 0.0f);
 }
+

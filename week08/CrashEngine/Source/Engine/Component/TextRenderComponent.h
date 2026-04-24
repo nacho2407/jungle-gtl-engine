@@ -62,7 +62,7 @@ public:
     void SetVerticalAlignment(ETextVAlign InAlign) { VAlign = InAlign; }
     ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
 
     FMeshBuffer* GetMeshBuffer() const override;
     FMeshDataView GetMeshDataView() const override;
@@ -90,3 +90,4 @@ private:
     ETextHAlign HAlign = ETextHAlign::Center;
     ETextVAlign VAlign = ETextVAlign::Center;
 };
+

@@ -12,7 +12,7 @@
 #include "Render/Resources/Bindings/RenderCBKeys.h"
 #include "Render/Resources/Buffers/ConstantBufferCache.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 namespace
 {
@@ -80,14 +80,14 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
     {
     case EViewModePostProcessVariant::SceneDepth:
     {
-        FSceneDepthPCBData Constants = {};
-        Constants.Exponent           = Context.SceneView->RenderOptions.Exponent;
-        Constants.NearClip           = Context.SceneView->NearClip;
-        Constants.FarClip            = Context.SceneView->FarClip;
-        Constants.Range              = Context.SceneView->RenderOptions.Range;
-        Constants.Mode               = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
+        FSceneDepthCBData Constants = {};
+        Constants.Exponent          = Context.SceneView->RenderOptions.Exponent;
+        Constants.NearClip          = Context.SceneView->NearClip;
+        Constants.FarClip           = Context.SceneView->FarClip;
+        Constants.Range             = Context.SceneView->RenderOptions.Range;
+        Constants.Mode              = static_cast<uint32>(Context.SceneView->RenderOptions.SceneDepthVisMode);
 
-        FConstantBuffer* CB = FConstantBufferCache::Get().GetBuffer(ERenderCBKey::SceneDepth, sizeof(FSceneDepthPCBData));
+        FConstantBuffer* CB = FConstantBufferCache::Get().GetBuffer(ERenderCBKey::SceneDepth, sizeof(FSceneDepthCBData));
         if (CB)
         {
             CB->Update(Context.Context, &Constants, sizeof(Constants));
@@ -148,3 +148,4 @@ void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
     }
 }
+
