@@ -14,7 +14,6 @@
 #include "Editor/UI/ImGuiSetting.h"
 #include "Editor/UI/NotificationToast.h"
 
-
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
 	IMGUI_CHECKVERSION();
@@ -62,45 +61,8 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-
 	ImGuiSetting::ShowSetting();
-
-	// --- 우상단 Windows 토글 버튼 ---
-	if (!bHideEditorWindows)
-	{
-		FEditorSettings& S = FEditorSettings::Get();
-		const ImGuiViewport* VP = ImGui::GetMainViewport();
-		const float ButtonW = 80.0f;
-		const float Margin = 8.0f;
-		ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - ButtonW - Margin, VP->Pos.y + Margin));
-		ImGui::SetNextWindowSize(ImVec2(0, 0));
-		ImGui::Begin("##WidgetToggle", nullptr,
-			ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_NoDocking);
-		if (ImGui::Button("Windows", ImVec2(ButtonW, 0)))
-		{
-			bShowWidgetList = !bShowWidgetList;
-		}
-		ImGui::End();
-
-		if (bShowWidgetList)
-		{
-			ImGui::SetNextWindowPos(ImVec2(VP->Pos.x + VP->Size.x - 150.0f - Margin, VP->Pos.y + Margin + 30.0f));
-			ImGui::SetNextWindowSize(ImVec2(150.0f, 0));
-			ImGui::Begin("##WidgetList", &bShowWidgetList,
-				ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-				ImGuiWindowFlags_NoDocking);
-			ImGui::Checkbox("Console", &S.UI.bConsole);
-			ImGui::Checkbox("Control", &S.UI.bControl);
-			ImGui::Checkbox("Property", &S.UI.bProperty);
-			ImGui::Checkbox("Scene", &S.UI.bScene);
-			ImGui::Checkbox("Stat", &S.UI.bStat);
-			ImGui::Checkbox("ContentBrowser", &S.UI.bContentBrowser);
-			ImGui::End();
-		}
-	}
+	RenderMainMenuBar();
 
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
 	if (EditorEngine)
@@ -147,6 +109,8 @@ void FEditorMainPanel::Render(float DeltaTime)
 		ContentBrowserWidget.Render(DeltaTime);
 	}
 
+	RenderShortcutOverlay();
+
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
 
@@ -154,18 +118,118 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
+void FEditorMainPanel::RenderMainMenuBar()
+{
+	if (!ImGui::BeginMainMenuBar())
+	{
+		return;
+	}
+
+	FEditorSettings& Settings = FEditorSettings::Get();
+
+	if (ImGui::BeginMenu("File"))
+	{
+		if (ImGui::MenuItem("New Scene", "Ctrl+N") && EditorEngine)
+		{
+			EditorEngine->NewScene();
+		}
+		if (ImGui::MenuItem("Open Scene...", "Ctrl+O") && EditorEngine)
+		{
+			EditorEngine->LoadSceneWithDialog();
+		}
+		if (ImGui::MenuItem("Save Scene", "Ctrl+S") && EditorEngine)
+		{
+			EditorEngine->SaveScene();
+		}
+		if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S") && EditorEngine)
+		{
+			EditorEngine->SaveSceneAsWithDialog();
+		}
+
+		ImGui::Separator();
+		const char* CurrentSceneLabel = "Current: Unsaved Scene";
+		FString CurrentScenePath;
+		FString CurrentSceneText;
+		if (EditorEngine && EditorEngine->HasCurrentLevelFilePath())
+		{
+			CurrentScenePath = EditorEngine->GetCurrentLevelFilePath();
+			CurrentSceneText = FString("Current: ") + CurrentScenePath;
+			CurrentSceneLabel = CurrentSceneText.c_str();
+		}
+		ImGui::BeginDisabled();
+		ImGui::MenuItem(CurrentSceneLabel, nullptr, false, false);
+		ImGui::EndDisabled();
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::MenuItem("Windows"))
+	{
+		bShowWidgetList = true;
+		ImGui::OpenPopup("##WidgetListPopup");
+	}
+	if (ImGui::BeginPopup("##WidgetListPopup"))
+	{
+		ImGui::Checkbox("Console", &Settings.UI.bConsole);
+		ImGui::Checkbox("Control", &Settings.UI.bControl);
+		ImGui::Checkbox("Property", &Settings.UI.bProperty);
+		ImGui::Checkbox("Scene", &Settings.UI.bScene);
+		ImGui::Checkbox("Stat", &Settings.UI.bStat);
+		ImGui::Checkbox("ContentBrowser", &Settings.UI.bContentBrowser);
+		ImGui::EndPopup();
+	}
+	else
+	{
+		bShowWidgetList = false;
+	}
+
+	if (ImGui::MenuItem("Shortcut"))
+	{
+		bShowShortcutOverlay = !bShowShortcutOverlay;
+	}
+
+	ImGui::EndMainMenuBar();
+}
+
+void FEditorMainPanel::RenderShortcutOverlay()
+{
+	if (!bShowShortcutOverlay)
+	{
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(320.0f, 150.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Shortcut Help", &bShowShortcutOverlay, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::End();
+		return;
+	}
+
+	ImGui::TextUnformatted("File");
+	ImGui::Separator();
+	ImGui::TextUnformatted("Ctrl+N : New Scene");
+	ImGui::TextUnformatted("Ctrl+O : Open Scene");
+	ImGui::TextUnformatted("Ctrl+S : Save Scene");
+	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
+
+	ImGui::End();
+}
 
 void FEditorMainPanel::Update()
 {
+	HandleGlobalShortcuts();
+
 	ImGuiIO& IO = ImGui::GetIO();
 
 	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
 	bool bWantMouse = IO.WantCaptureMouse;
-	bool bWantKeyboard = IO.WantCaptureKeyboard;
+	bool bWantKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
 	if (EditorEngine && EditorEngine->IsMouseOverViewport())
 	{
 		bWantMouse = false;
-		bWantKeyboard = false;
+		if (!IO.WantTextInput && !bShowShortcutOverlay)
+		{
+			bWantKeyboard = false;
+		}
 	}
 	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
@@ -181,6 +245,47 @@ void FEditorMainPanel::Update()
 		else
 		{
 			ImmAssociateContext(hWnd, NULL);
+		}
+	}
+}
+
+void FEditorMainPanel::HandleGlobalShortcuts()
+{
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	ImGuiIO& IO = ImGui::GetIO();
+	if (IO.WantTextInput)
+	{
+		return;
+	}
+
+	InputSystem& Input = InputSystem::Get();
+	if (!Input.GetKey(VK_CONTROL))
+	{
+		return;
+	}
+
+	const bool bShift = Input.GetKey(VK_SHIFT);
+	if (Input.GetKeyDown('N'))
+	{
+		EditorEngine->NewScene();
+	}
+	else if (Input.GetKeyDown('O'))
+	{
+		EditorEngine->LoadSceneWithDialog();
+	}
+	else if (Input.GetKeyDown('S'))
+	{
+		if (bShift)
+		{
+			EditorEngine->SaveSceneAsWithDialog();
+		}
+		else
+		{
+			EditorEngine->SaveScene();
 		}
 	}
 }

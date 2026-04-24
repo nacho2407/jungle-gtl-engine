@@ -7,6 +7,12 @@
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
 
+enum class EEditorCoordSystem : uint8
+{
+	World = 0,
+	Local = 1
+};
+
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
 	friend class TSingleton<FEditorSettings>;
@@ -31,6 +37,9 @@ public:
 	float PerspCamFOV = 60.0f;
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
+
+	// Transform tools
+	EEditorCoordSystem CoordSystem = EEditorCoordSystem::World;
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드

@@ -3,17 +3,36 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
+#include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
+#include "Engine/Platform/Paths.h"
 #include <filesystem>
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
+
+namespace
+{
+FString BuildScenePathFromStem(const FString& InStem)
+{
+	std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
+		/ (FPaths::ToWide(InStem) + FSceneSaveManager::SceneExtension);
+	return FPaths::ToUtf8(ScenePath.wstring());
+}
+
+FString GetFileStem(const FString& InPath)
+{
+	const std::filesystem::path Path(FPaths::ToWide(InPath));
+	return FPaths::ToUtf8(Path.stem().wstring());
+}
+}
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
@@ -43,6 +62,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// EditorStartLevel이 설정돼 있으면 기본 월드를 교체 (EditorSceneWidget::LoadScene과 동일 플로우)
 	LoadStartLevel();
+	ApplyTransformSettingsToGizmo();
 
 	// Editor render pipeline
 	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
@@ -85,6 +105,8 @@ void UEditorEngine::Tick(float DeltaTime)
 		StartQueuedPlaySessionRequest();
 	}
 
+	ApplyTransformSettingsToGizmo();
+
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		VC->Tick(DeltaTime);
@@ -107,6 +129,28 @@ UCameraComponent* UEditorEngine::GetCamera() const
 void UEditorEngine::RenderUI(float DeltaTime)
 {
 	MainPanel.Render(DeltaTime);
+}
+
+void UEditorEngine::ToggleCoordSystem()
+{
+	FEditorSettings& Settings = FEditorSettings::Get();
+	Settings.CoordSystem = (Settings.CoordSystem == EEditorCoordSystem::World)
+		? EEditorCoordSystem::Local
+		: EEditorCoordSystem::World;
+	ApplyTransformSettingsToGizmo();
+}
+
+void UEditorEngine::ApplyTransformSettingsToGizmo()
+{
+	UGizmoComponent* Gizmo = GetGizmo();
+	if (!Gizmo)
+	{
+		return;
+	}
+
+	const FEditorSettings& Settings = FEditorSettings::Get();
+	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
+	Gizmo->SetWorldSpace(bForceLocalForScale ? false : (Settings.CoordSystem == EEditorCoordSystem::World));
 }
 
 // ─── PIE (Play In Editor) ────────────────────────────────
@@ -322,6 +366,7 @@ void UEditorEngine::NewScene()
 	SelectionManager.SetWorld(GetWorld());
 
 	ResetViewport();
+	CurrentLevelFilePath.clear();
 }
 
 void UEditorEngine::LoadStartLevel()
@@ -336,47 +381,10 @@ void UEditorEngine::LoadStartLevel()
 		/ (FPaths::ToWide(StartLevel) + FSceneSaveManager::SceneExtension);
 	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 
-	// EditorSceneWidget::LoadScene과 동일한 플로우
-	ClearScene();
-
-	FWorldContext LoadCtx;
-	FPerspectiveCameraData CamData;
-	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadCtx, CamData);
-	if (!LoadCtx.World)
+	if (!LoadSceneFromPath(FilePath))
 	{
 		// 로드 실패 시 빈 씬으로 복구
 		NewScene();
-		return;
-	}
-
-	WorldList.push_back(LoadCtx);
-	SetActiveWorld(LoadCtx.ContextHandle);
-	SelectionManager.SetWorld(LoadCtx.World);
-	LoadCtx.World->WarmupPickingData();
-
-	ResetViewport();
-
-	// ResetViewport()가 카메라를 기본값으로 초기화하므로 그 이후에 복원
-	if (CamData.bValid)
-	{
-		for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
-		{
-			if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective
-				|| VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
-			{
-				if (UCameraComponent* Cam = VC->GetCamera())
-				{
-					Cam->SetWorldLocation(CamData.Location);
-					Cam->SetRelativeRotation(CamData.Rotation);
-					FCameraState CS = Cam->GetCameraState();
-					CS.FOV = CamData.FOV;
-					CS.NearZ = CamData.NearClip;
-					CS.FarZ = CamData.FarClip;
-					Cam->SetCameraState(CS);
-				}
-				break;
-			}
-		}
 	}
 }
 
@@ -398,6 +406,150 @@ void UEditorEngine::ClearScene()
 
 	WorldList.clear();
 	ActiveWorldHandle = FName::None;
+	CurrentLevelFilePath.clear();
 
 	ViewportLayout.DestroyAllCameras();
+}
+
+UCameraComponent* UEditorEngine::FindSceneViewportCamera() const
+{
+	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
+	{
+		if (!VC)
+		{
+			continue;
+		}
+
+		if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective
+			|| VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
+		{
+			return VC->GetCamera();
+		}
+	}
+
+	return nullptr;
+}
+
+void UEditorEngine::RestoreViewportCamera(const FPerspectiveCameraData& CamData)
+{
+	if (!CamData.bValid)
+	{
+		return;
+	}
+
+	if (UCameraComponent* Camera = FindSceneViewportCamera())
+	{
+		Camera->SetWorldLocation(CamData.Location);
+		Camera->SetRelativeRotation(CamData.Rotation);
+		FCameraState CameraState = Camera->GetCameraState();
+		CameraState.FOV = CamData.FOV;
+		CameraState.NearZ = CamData.NearClip;
+		CameraState.FarZ = CamData.FarClip;
+		Camera->SetCameraState(CameraState);
+	}
+}
+
+bool UEditorEngine::SaveSceneAs(const FString& InSceneName)
+{
+	if (InSceneName.empty())
+	{
+		return false;
+	}
+
+	StopPlayInEditorImmediate();
+	FWorldContext* Context = GetWorldContextFromHandle(GetActiveWorldHandle());
+	if (!Context || !Context->World)
+	{
+		return false;
+	}
+
+	FSceneSaveManager::SaveSceneAsJSON(InSceneName, *Context, FindSceneViewportCamera());
+	CurrentLevelFilePath = BuildScenePathFromStem(InSceneName);
+	return true;
+}
+
+bool UEditorEngine::SaveScene()
+{
+	if (HasCurrentLevelFilePath())
+	{
+		return SaveSceneAs(GetFileStem(CurrentLevelFilePath));
+	}
+
+	return SaveSceneAsWithDialog();
+}
+
+bool UEditorEngine::SaveSceneAsWithDialog()
+{
+	const std::wstring InitialDir = FSceneSaveManager::GetSceneDirectory();
+	const std::wstring DefaultFile = HasCurrentLevelFilePath()
+		? std::filesystem::path(FPaths::ToWide(CurrentLevelFilePath)).filename().wstring()
+		: std::wstring(L"Untitled.Scene");
+	const FString SelectedPath = FEditorFileUtils::SaveFileDialog({
+		.Filter = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0",
+		.Title = L"Save Scene As",
+		.DefaultExtension = L"Scene",
+		.InitialDirectory = InitialDir.c_str(),
+		.DefaultFileName = DefaultFile.c_str(),
+		.OwnerWindowHandle = Window ? Window->GetHWND() : nullptr,
+		.bFileMustExist = false,
+		.bPathMustExist = true,
+		.bPromptOverwrite = true,
+		.bReturnRelativeToProjectRoot = false,
+	});
+	if (SelectedPath.empty())
+	{
+		return false;
+	}
+
+	return SaveSceneAs(GetFileStem(SelectedPath));
+}
+
+bool UEditorEngine::LoadSceneFromPath(const FString& InScenePath)
+{
+	if (InScenePath.empty())
+	{
+		return false;
+	}
+
+	StopPlayInEditorImmediate();
+	ClearScene();
+
+	FWorldContext LoadContext;
+	FPerspectiveCameraData CameraData;
+	FSceneSaveManager::LoadSceneFromJSON(InScenePath, LoadContext, CameraData);
+	if (!LoadContext.World)
+	{
+		return false;
+	}
+
+	WorldList.push_back(LoadContext);
+	SetActiveWorld(LoadContext.ContextHandle);
+	SelectionManager.SetWorld(LoadContext.World);
+	LoadContext.World->WarmupPickingData();
+	ResetViewport();
+	RestoreViewportCamera(CameraData);
+
+	CurrentLevelFilePath = InScenePath;
+	return true;
+}
+
+bool UEditorEngine::LoadSceneWithDialog()
+{
+	const std::wstring InitialDir = FSceneSaveManager::GetSceneDirectory();
+	const FString SelectedPath = FEditorFileUtils::OpenFileDialog({
+		.Filter = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0",
+		.Title = L"Load Scene",
+		.InitialDirectory = InitialDir.c_str(),
+		.OwnerWindowHandle = Window ? Window->GetHWND() : nullptr,
+		.bFileMustExist = true,
+		.bPathMustExist = true,
+		.bPromptOverwrite = false,
+		.bReturnRelativeToProjectRoot = false,
+	});
+	if (SelectedPath.empty())
+	{
+		return false;
+	}
+
+	return LoadSceneFromPath(SelectedPath);
 }

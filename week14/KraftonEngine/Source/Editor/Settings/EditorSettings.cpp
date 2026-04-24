@@ -63,6 +63,10 @@ namespace Key
 	constexpr const char* FOV = "FOV";
 	constexpr const char* NearClip = "NearClip";
 	constexpr const char* FarClip = "FarClip";
+
+	// Transform Tools
+	constexpr const char* TransformTools = "TransformTools";
+	constexpr const char* CoordSystem = "CoordSystem";
 }
 
 void FEditorSettings::SaveToFile(const FString& Path) const
@@ -148,6 +152,10 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	CamObj[Key::NearClip] = PerspCamNearClip;
 	CamObj[Key::FarClip] = PerspCamFarClip;
 	Root[Key::PerspectiveCamera] = CamObj;
+
+	JSON TransformObj = Object();
+	TransformObj[Key::CoordSystem] = static_cast<int32>(CoordSystem);
+	Root[Key::TransformTools] = TransformObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -324,5 +332,12 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			PerspCamNearClip = static_cast<float>(CamObj[Key::NearClip].ToFloat());
 		if (CamObj.hasKey(Key::FarClip))
 			PerspCamFarClip = static_cast<float>(CamObj[Key::FarClip].ToFloat());
+	}
+
+	if (Root.hasKey(Key::TransformTools))
+	{
+		JSON TransformObj = Root[Key::TransformTools];
+		if (TransformObj.hasKey(Key::CoordSystem))
+			CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
 	}
 }

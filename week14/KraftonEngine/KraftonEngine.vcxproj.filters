@@ -266,6 +266,9 @@
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorFileUtils.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -714,6 +717,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorFileUtils.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
