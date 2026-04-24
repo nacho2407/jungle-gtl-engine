@@ -11,7 +11,7 @@ void FRenderBus::Clear()
 	LightInfos.clear();
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
-	DirLightComp = nullptr;
+	DirectionalLightShadow = {};
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)

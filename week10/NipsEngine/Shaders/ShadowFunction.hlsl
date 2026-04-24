@@ -1,11 +1,14 @@
 float ComputeShadowPCF(
     float3 lightSpacePos,
+    float4 ScaleOffset,
     int kernelHalfSize,
     SamplerComparisonState shadowSampler,
     Texture2D shadowMap // float이 아니라 Texture2D<float>
 )
 {
     float2 uv = lightSpacePos.xy * float2(0.5, -0.5) + 0.5;
+    uv = ScaleOffset.xy * uv + ScaleOffset.zw;
+    
     float compareDepth = lightSpacePos.z;
     float2 shadowMapResolution;
     shadowMap.GetDimensions(shadowMapResolution.x, shadowMapResolution.y);

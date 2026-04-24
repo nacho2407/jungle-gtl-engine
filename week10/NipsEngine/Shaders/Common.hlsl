@@ -26,6 +26,7 @@ cbuffer PerObjectBuffer : register(b1)
 cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix DirLightViewProj;
+    float4 ScaleOffset;
 };
 
 #define MAX_FOG_LAYER_COUNT 32

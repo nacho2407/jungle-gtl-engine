@@ -167,7 +167,7 @@ float CalculateShadow(float4 worldPos)
     
     const float shadowBias = 0.002f;
 
-    float shadowFactor = ComputeShadowPCF(projCoords, 2, ShadowSampler, ShadowMap);
+    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap);
    // float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
 
     return shadowFactor;

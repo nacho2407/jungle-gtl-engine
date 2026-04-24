@@ -759,7 +759,7 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	// TODO: 구조 변경 필요
 	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
 	{
-		ImGui::Image(FShadowAtlasManager::Get().ShadowSRV.Get(), ImVec2(256, 256));
+        ImGui::Image(FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get(), ImVec2(256, 256), ImVec2(0, 0), ImVec2(0.125f, 0.125f));
 	}
 
 	ImGui::Separator();
