@@ -42,6 +42,8 @@ Texture2D AmbientMap  : register(t2);
 Texture2D SpecularMap : register(t3);
 #endif
 
+Texture2D ShadowMap : register(t10);
+
 SamplerState SampleState : register(s0);
 
 struct VSInput
@@ -133,6 +135,19 @@ float3 GetHeatmapColor(float weight)
 }
 #endif
 
+float CalculateShadow(float4 worldPos)
+{
+    float4 shadowCoord = mul(worldPos, DirectionalShadowMatrix);
+    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+	
+    float closestDepth = ShadowMap.Sample(SampleState, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+
+    float shadow = currentDepth - 0.005 > closestDepth ? 0.0 : 1.0;
+	
+    return shadow;
+}
+
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
@@ -191,7 +206,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     output.WorldPos = float4(input.WorldPos, 1.f);
     return output;
 #endif
-    
+            
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
     
@@ -211,9 +226,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
+    float shadowFactor = CalculateShadow(float4(input.WorldPos, 1.0f));
+    
     float3 V = normalize(CameraPosition - input.WorldPos);
     if (IsOrthographic > 0.5f)
-    {
+    {  
         V = normalize(-float3(View[0].xyz));
     }
     

@@ -36,6 +36,8 @@ cbuffer UberConstants : register(b3)
     uint LightCount;
     uint DecalCount;
     float2 Padding;
+    
+    row_major matrix DirectionalShadowMatrix;
 };
 
 StructuredBuffer<LightInfo> Lights : register(t4);
