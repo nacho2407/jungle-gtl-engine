@@ -1,4 +1,4 @@
-# 06. Render Pass Reference
+# Render Pass Reference
 
 | 구분 | 내용 |
 |---|---|
