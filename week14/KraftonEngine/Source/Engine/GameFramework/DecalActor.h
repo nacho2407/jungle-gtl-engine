@@ -4,6 +4,7 @@
 
 class UTextRenderComponent;
 class UDecalComponent;
+class UBillboardComponent;
 
 class ADecalActor : public AActor
 {
@@ -18,6 +19,7 @@ public:
 
 private:
 	UDecalComponent* DecalComponent;
+	UBillboardComponent* BillboardComponent = nullptr;
 	UTextRenderComponent* TextRenderComponent = nullptr;
 	
 	const FString DefaultDecalMaterialPath = "Asset/Materials/Editor/DefaultDecal.mat";

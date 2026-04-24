@@ -2,6 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Component/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
 #include "Render/Proxy/FScene.h"
 #include "Serialization/Archive.h"
 
@@ -79,4 +81,23 @@ void UHeightFogComponent::Serialize(FArchive& Ar)
 	Ar << FogCutoffDistance;
 	Ar << FogMaxOpacity;
 	Ar << FogInscatteringColor;
+}
+
+UBillboardComponent* UHeightFogComponent::EnsureEditorBillboard()
+{
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	UBillboardComponent* Billboard = Owner->AddComponent<UBillboardComponent>();
+	if (Billboard)
+	{
+		Billboard->SetEditorOnly(true);
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/HeightFog.mat");
+		Billboard->SetMaterial(Material);
+		Billboard->AttachToComponent(this);
+	}
+
+	return Billboard;
 }

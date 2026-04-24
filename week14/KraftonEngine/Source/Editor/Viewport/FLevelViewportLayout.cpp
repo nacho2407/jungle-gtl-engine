@@ -1398,10 +1398,11 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 	{
 		ImGui::BeginDisabled();
 	}
-	if (ImGui::MenuItem("Delete"))
-	{
-		SelectionManager->DeleteSelectedActors();
-	}
+	//스크린 우클릭 후 제거, 이 기능 꼭 있어야 할까? 그런 의문이 듭니다
+	//if (ImGui::MenuItem("Delete"))
+	//{
+	//	SelectionManager->DeleteSelectedActors();
+	//}
 	if (!bCanDelete)
 	{
 		ImGui::EndDisabled();

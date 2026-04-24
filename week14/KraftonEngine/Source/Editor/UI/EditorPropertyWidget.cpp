@@ -7,6 +7,9 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/Light/LightComponentBase.h"
+#include "Component/DecalComponent.h"
+#include "Component/HeightFogComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
 #include "Resource/ResourceManager.h"
@@ -385,6 +388,20 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 				Cast<USceneComponent>(Comp)->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
 			else
 				Cast<USceneComponent>(Comp)->AttachToComponent(Root);
+
+			// 빌보드가 필요한 컴포넌트들에 대해 빌보드 생성 보장
+			if (Comp->IsA<ULightComponentBase>())
+			{
+				Cast<ULightComponentBase>(Comp)->EnsureEditorBillboard();
+			}
+			else if (Comp->IsA<UDecalComponent>())
+			{
+				Cast<UDecalComponent>(Comp)->EnsureEditorBillboard();
+			}
+			else if (Comp->IsA<UHeightFogComponent>())
+			{
+				Cast<UHeightFogComponent>(Comp)->EnsureEditorBillboard();
+			}
 		}
 	}
 
