@@ -5,12 +5,10 @@
 
 ## 세부 문서 바로가기
 
-- [실행 구조: Execution Structure](./01_render_execution_structure.md)
-- [자원: Resources](./02_render_resources.md)
-- 규약(Convention)
-    - [Naming](./03_render_conventions_naming.md)
-    - [Structure](./04_render_conventions_structure.md)
-    - [Binding](./05_render_conventions_binding.md)
+- [실행 구조: Execution Structure](./render_execution_structure.md)
+- [자원: Resources](./render_resources.md)
+- [이름 규약: Naming Convention](./render_conventions_naming.md)
+- [바인딩 규약: Binding Convention](./render_conventions_binding.md)
 
 ## 설계 요약
 
