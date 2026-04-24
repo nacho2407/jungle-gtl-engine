@@ -2,10 +2,12 @@
 
 #include "Core/CoreTypes.h"
 #include "Editor/UI/EditorPlayToolbarWidget.h"
+#include "Engine/UI/SWindow.h"
 #include <d3d11.h>
 
 class SSplitter;
-class SWindow;
+struct FVector;
+class AActor;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FSelectionManager;
@@ -79,10 +81,39 @@ public:
 	static int32 GetSlotCount(EViewportLayout Layout);
 
 private:
+	enum class EViewportPlaceActorType : uint8
+	{
+		Cube,
+		Sphere,
+		Cylinder,
+		Decal,
+		HeightFog,
+		AmbientLight,
+		DirectionalLight,
+		PointLight,
+		SpotLight
+	};
+
+	struct FViewportContextMenuState
+	{
+		bool bTrackingRightClick[MaxViewportSlots] = {};
+		float RightClickTravelSq[MaxViewportSlots] = {};
+		FPoint RightClickPressPos[MaxViewportSlots] = {};
+		int32 PendingPopupSlot = -1;
+		int32 PendingSpawnSlot = -1;
+		FPoint PendingPopupPos = {};
+		FPoint PendingSpawnPos = {};
+	};
+
 	SSplitter* BuildSplitterTree(EViewportLayout Layout);
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
+	void RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop);
 	void RenderPaneToolbar(int32 SlotIndex);
+	void HandleViewportContextMenuInput(const FPoint& MousePos);
+	void RenderViewportPlaceActorPopup();
+	bool TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const;
+	AActor* SpawnActorFromViewportMenu(EViewportPlaceActorType Type, const FVector& Location);
 
 	// 아이콘 텍스처
 	void LoadLayoutIcons(ID3D11Device* Device);
@@ -111,6 +142,7 @@ private:
 
 	// 뷰포트 상단 Play/Stop 툴바
 	FEditorPlayToolbarWidget PlayToolbar;
+	FViewportContextMenuState ContextMenuState;
 	bool bHasSavedWorldAxisVisibility = false;
 	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
 	bool SavedGridVisibility[MaxViewportSlots] = {};

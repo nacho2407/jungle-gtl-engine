@@ -151,6 +151,11 @@ void UEditorEngine::ApplyTransformSettingsToGizmo()
 	const FEditorSettings& Settings = FEditorSettings::Get();
 	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
 	Gizmo->SetWorldSpace(bForceLocalForScale ? false : (Settings.CoordSystem == EEditorCoordSystem::World));
+	// 에디터 설정의 좌표계/스냅 값을 매 프레임 Gizmo 상태와 동기화한다.
+	Gizmo->SetSnapSettings(
+		Settings.bEnableTranslationSnap, Settings.TranslationSnapSize,
+		Settings.bEnableRotationSnap, Settings.RotationSnapSize,
+		Settings.bEnableScaleSnap, Settings.ScaleSnapSize);
 }
 
 // ─── PIE (Play In Editor) ────────────────────────────────

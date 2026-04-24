@@ -5,6 +5,14 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Input/InputSystem.h"
+#include "GameFramework/DecalActor.h"
+#include "GameFramework/HeightFogActor.h"
+#include "GameFramework/Light/AmbientLightActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
+#include "GameFramework/Light/PointLightActor.h"
+#include "GameFramework/Light/SpotLightActor.h"
+#include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
@@ -16,6 +24,138 @@
 #include "Component/GizmoComponent.h"
 
 #include "GameFramework/StaticMeshActor.h"
+
+namespace
+{
+enum class EToolbarIcon : int32
+{
+	Menu = 0,
+	AddActor,
+	Translate,
+	Rotate,
+	Scale,
+	WorldSpace,
+	LocalSpace,
+	TranslateSnap,
+	RotateSnap,
+	ScaleSnap,
+	Count
+};
+
+const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
+{
+	switch (Icon)
+	{
+	case EToolbarIcon::Menu: return L"Menu.png";
+	case EToolbarIcon::AddActor: return L"Add_Actor.png";
+	case EToolbarIcon::Translate: return L"Translate.png";
+	case EToolbarIcon::Rotate: return L"Rotate.png";
+	case EToolbarIcon::Scale: return L"Scale.png";
+	case EToolbarIcon::WorldSpace: return L"WorldSpace.png";
+	case EToolbarIcon::LocalSpace: return L"LocalSpace.png";
+	case EToolbarIcon::TranslateSnap: return L"Translate_Snap.png";
+	case EToolbarIcon::RotateSnap: return L"Rotate_Snap.png";
+	case EToolbarIcon::ScaleSnap: return L"Scale_Snap.png";
+	default: return L"";
+	}
+}
+
+ID3D11ShaderResourceView** GetToolbarIconTable()
+{
+	static ID3D11ShaderResourceView* ToolbarIcons[static_cast<int32>(EToolbarIcon::Count)] = {};
+	return ToolbarIcons;
+}
+
+bool bToolbarIconsLoaded = false;
+
+void ReleaseToolbarIcons()
+{
+	if (!bToolbarIconsLoaded)
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
+	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
+	{
+		if (ToolbarIcons[i])
+		{
+			ToolbarIcons[i]->Release();
+			ToolbarIcons[i] = nullptr;
+		}
+	}
+
+	bToolbarIconsLoaded = false;
+}
+
+void EnsureToolbarIconsLoaded(FRenderer* RendererPtr)
+{
+	if (bToolbarIconsLoaded || !RendererPtr)
+	{
+		return;
+	}
+
+	ID3D11Device* Device = RendererPtr->GetFD3DDevice().GetDevice();
+	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
+	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/ToolIcons/");
+	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
+	{
+		const std::wstring FilePath = IconDir + GetToolbarIconFileName(static_cast<EToolbarIcon>(i));
+		DirectX::CreateWICTextureFromFile(Device, FilePath.c_str(), nullptr, &ToolbarIcons[i]);
+	}
+
+	bToolbarIconsLoaded = true;
+}
+
+ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, float MaxIconSize)
+{
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	if (!IconSRV)
+	{
+		return ImVec2(FallbackSize, FallbackSize);
+	}
+
+	ID3D11Resource* Resource = nullptr;
+	IconSRV->GetResource(&Resource);
+	if (!Resource)
+	{
+		return ImVec2(FallbackSize, FallbackSize);
+	}
+
+	ImVec2 IconSize(FallbackSize, FallbackSize);
+	D3D11_RESOURCE_DIMENSION Dimension = D3D11_RESOURCE_DIMENSION_UNKNOWN;
+	Resource->GetType(&Dimension);
+	if (Dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+	{
+		ID3D11Texture2D* Texture2D = static_cast<ID3D11Texture2D*>(Resource);
+		D3D11_TEXTURE2D_DESC Desc{};
+		Texture2D->GetDesc(&Desc);
+		IconSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+	}
+	Resource->Release();
+
+	if (IconSize.x > MaxIconSize || IconSize.y > MaxIconSize)
+	{
+		const float Scale = (IconSize.x > IconSize.y) ? (MaxIconSize / IconSize.x) : (MaxIconSize / IconSize.y);
+		IconSize.x *= Scale;
+		IconSize.y *= Scale;
+	}
+
+	return IconSize;
+}
+
+bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char* FallbackLabel, float FallbackSize, float MaxIconSize)
+{
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	if (!IconSRV)
+	{
+		return ImGui::Button(FallbackLabel);
+	}
+
+	const ImVec2 IconSize = GetToolbarIconRenderSize(Icon, FallbackSize, MaxIconSize);
+	return ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(IconSRV), IconSize);
+}
+}
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -156,6 +296,7 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
+	ReleaseToolbarIcons();
 	PlayToolbar.Release();
 }
 
@@ -560,6 +701,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		const float ToolbarHeight = PlayToolbar.GetDesiredHeight();
 		ImGui::SetCursorScreenPos(ContentPos);
 		PlayToolbar.Render(ContentSize.x);
+		RenderSharedGizmoToolbar(ContentPos.x, ContentPos.y);
 
 		FRect ContentRect = {
 			ContentPos.x,
@@ -687,14 +829,167 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 					}
 				}
 			}
+
+			HandleViewportContextMenuInput(MP);
 		}
 	}
+
+	RenderViewportPlaceActorPopup();
 
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
 
 // ─── 각 뷰포트 패인 툴바 오버레이 ──────────────────────────
+
+void FLevelViewportLayout::RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop)
+{
+	if (!Editor)
+	{
+		return;
+	}
+
+	UGizmoComponent* Gizmo = Editor->GetGizmo();
+	if (!Gizmo)
+	{
+		return;
+	}
+
+	EnsureToolbarIconsLoaded(RendererPtr);
+
+	constexpr float ToolbarHeight = 28.0f;
+	constexpr float IconSize = 16.0f;
+	constexpr float ButtonPadding = (ToolbarHeight - IconSize) * 0.5f;
+	constexpr float ButtonSpacing = 4.0f;
+	constexpr float PlayStopButtonWidth = 24.0f;
+	constexpr float GroupSpacing = 12.0f;
+	constexpr float ToolbarFallbackIconSize = 14.0f;
+	constexpr float ToolbarMaxIconSize = 16.0f;
+
+	ImGui::SetCursorScreenPos(ImVec2(
+		ToolbarLeft + ButtonPadding + (PlayStopButtonWidth * 2.0f) + ButtonSpacing + GroupSpacing,
+		ToolbarTop + ButtonPadding));
+
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
+
+	auto DrawGizmoIcon = [&](const char* Id, EToolbarIcon Icon, EGizmoMode TargetMode, const char* FallbackLabel) -> bool
+	{
+		const bool bSelected = (Gizmo->GetMode() == TargetMode);
+		if (bSelected)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+		}
+		const bool bClicked = DrawToolbarIconButton(Id, Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize);
+		if (bSelected)
+		{
+			ImGui::PopStyleColor();
+		}
+		return bClicked;
+	};
+
+	// 상단 툴바에서도 Place Actor 컨텍스트 메뉴를 바로 열 수 있게 한다.
+	if (DrawToolbarIconButton("##SharedAddActorIcon", EToolbarIcon::AddActor, "Add", ToolbarFallbackIconSize, ToolbarMaxIconSize))
+	{
+		const FPoint MousePos = { ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y };
+		ContextMenuState.PendingPopupPos = MousePos;
+		ContextMenuState.PendingPopupSlot = 0;
+		ContextMenuState.PendingSpawnSlot = 0;
+		ContextMenuState.PendingSpawnPos = MousePos;
+		for (int32 i = 0; i < ActiveSlotCount; ++i)
+		{
+			if (LevelViewportClients[i] == ActiveViewportClient)
+			{
+				ContextMenuState.PendingPopupSlot = i;
+				ContextMenuState.PendingSpawnSlot = i;
+				if (ViewportWindows[i])
+				{
+					const FRect& ViewRect = ViewportWindows[i]->GetRect();
+					ContextMenuState.PendingSpawnPos = {
+						ViewRect.X + ViewRect.Width * 0.5f,
+						ViewRect.Y + ViewRect.Height * 0.5f
+					};
+				}
+				break;
+			}
+		}
+	}
+
+	ImGui::SameLine(0.0f, GroupSpacing);
+	if (DrawGizmoIcon("##SharedTranslateToolIcon", EToolbarIcon::Translate, EGizmoMode::Translate, "Translate"))
+	{
+		Gizmo->SetTranslateMode();
+	}
+	ImGui::SameLine(0.0f, ButtonSpacing);
+	if (DrawGizmoIcon("##SharedRotateToolIcon", EToolbarIcon::Rotate, EGizmoMode::Rotate, "Rotate"))
+	{
+		Gizmo->SetRotateMode();
+	}
+	ImGui::SameLine(0.0f, ButtonSpacing);
+	if (DrawGizmoIcon("##SharedScaleToolIcon", EToolbarIcon::Scale, EGizmoMode::Scale, "Scale"))
+	{
+		Gizmo->SetScaleMode();
+	}
+
+	ImGui::PopStyleColor(3);
+
+	FEditorSettings& Settings = Editor->GetSettings();
+
+	ImGui::SameLine(0.0f, GroupSpacing);
+	const bool bWorldCoord = Settings.CoordSystem == EEditorCoordSystem::World;
+	if (bWorldCoord)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+	}
+	if (DrawToolbarIconButton("##SharedCoordSystemIcon",
+		bWorldCoord ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
+		bWorldCoord ? "World" : "Local",
+		ToolbarFallbackIconSize,
+		ToolbarMaxIconSize))
+	{
+		Editor->ToggleCoordSystem();
+	}
+	if (bWorldCoord)
+	{
+		ImGui::PopStyleColor();
+	}
+
+	// 스냅 토글과 수치를 같은 자리에서 바꾸고 즉시 Gizmo 설정에 반영한다.
+	auto DrawSnapControl = [&](const char* Id, EToolbarIcon Icon, const char* FallbackLabel, bool& bEnabled, float& Value, float MinValue)
+	{
+		ImGui::SameLine(0.0f, 6.0f);
+		ImGui::PushID(Id);
+		const bool bWasEnabled = bEnabled;
+		if (bWasEnabled)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.38f, 0.58f, 0.88f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.42f, 0.72f, 1.0f));
+		}
+		if (DrawToolbarIconButton("##SnapToggle", Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize))
+		{
+			bEnabled = !bEnabled;
+		}
+		if (bWasEnabled)
+		{
+			ImGui::PopStyleColor(3);
+		}
+		ImGui::SameLine(0.0f, 2.0f);
+		ImGui::SetNextItemWidth(48.0f);
+		if (ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, "%.2f") && Value < MinValue)
+		{
+			Value = MinValue;
+		}
+		ImGui::PopID();
+	};
+
+	DrawSnapControl("TranslateSnap", EToolbarIcon::TranslateSnap, "T", Settings.bEnableTranslationSnap, Settings.TranslationSnapSize, 0.001f);
+	DrawSnapControl("RotateSnap", EToolbarIcon::RotateSnap, "R", Settings.bEnableRotationSnap, Settings.RotationSnapSize, 0.001f);
+	DrawSnapControl("ScaleSnap", EToolbarIcon::ScaleSnap, "S", Settings.bEnableScaleSnap, Settings.ScaleSnapSize, 0.001f);
+
+	Editor->ApplyTransformSettingsToGizmo();
+}
 
 void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 {
@@ -975,6 +1270,308 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 		ImGui::PopID();
 	}
 	ImGui::End();
+}
+
+void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos)
+{
+	constexpr float RightClickPopupThresholdSq = 16.0f;
+
+	for (int32 i = 0; i < ActiveSlotCount; ++i)
+	{
+		if (!ViewportWindows[i])
+		{
+			continue;
+		}
+
+		if (ImGui::IsMouseClicked(1) && ViewportWindows[i]->IsHover(MousePos))
+		{
+			ContextMenuState.bTrackingRightClick[i] = true;
+			ContextMenuState.RightClickTravelSq[i] = 0.0f;
+			ContextMenuState.RightClickPressPos[i] = MousePos;
+		}
+
+		if (!ContextMenuState.bTrackingRightClick[i])
+		{
+			continue;
+		}
+
+		const float DX = MousePos.X - ContextMenuState.RightClickPressPos[i].X;
+		const float DY = MousePos.Y - ContextMenuState.RightClickPressPos[i].Y;
+		const float TravelSq = DX * DX + DY * DY;
+		if (TravelSq > ContextMenuState.RightClickTravelSq[i])
+		{
+			ContextMenuState.RightClickTravelSq[i] = TravelSq;
+		}
+	}
+
+	if (!ImGui::IsMouseReleased(1))
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < ActiveSlotCount; ++i)
+	{
+		if (!ViewportWindows[i] || !ContextMenuState.bTrackingRightClick[i])
+		{
+			continue;
+		}
+
+		const bool bReleasedOverSameSlot = ViewportWindows[i]->IsHover(MousePos);
+		const bool bClickCandidate =
+			bReleasedOverSameSlot &&
+			ContextMenuState.RightClickTravelSq[i] <= RightClickPopupThresholdSq &&
+			!InputSystem::Get().GetRightDragging() &&
+			!InputSystem::Get().GetRightDragEnd();
+		const ImGuiIO& IO = ImGui::GetIO();
+		const bool bNoModifiers = !IO.KeyCtrl && !IO.KeyShift && !IO.KeyAlt && !IO.KeySuper;
+
+		// 카메라 우클릭 드래그와 구분하기 위해 거의 이동하지 않은 우클릭만 popup으로 본다.
+		if (bClickCandidate && bNoModifiers)
+		{
+			ContextMenuState.PendingPopupSlot = i;
+			ContextMenuState.PendingSpawnSlot = i;
+			ContextMenuState.PendingPopupPos = MousePos;
+			ContextMenuState.PendingSpawnPos = ContextMenuState.RightClickPressPos[i];
+		}
+
+		ContextMenuState.bTrackingRightClick[i] = false;
+		ContextMenuState.RightClickTravelSq[i] = 0.0f;
+	}
+}
+
+void FLevelViewportLayout::RenderViewportPlaceActorPopup()
+{
+	constexpr const char* PopupId = "##ViewportPlaceActorPopup";
+
+	if (ContextMenuState.PendingPopupSlot >= 0)
+	{
+		if (ContextMenuState.PendingPopupSlot < static_cast<int32>(LevelViewportClients.size()))
+		{
+			SetActiveViewport(LevelViewportClients[ContextMenuState.PendingPopupSlot]);
+		}
+
+		ImGui::SetNextWindowPos(ImVec2(ContextMenuState.PendingPopupPos.X, ContextMenuState.PendingPopupPos.Y));
+		ImGui::OpenPopup(PopupId);
+		ContextMenuState.PendingPopupSlot = -1;
+	}
+
+	if (!ImGui::BeginPopup(PopupId))
+	{
+		return;
+	}
+
+	if (ImGui::BeginMenu("Place Actor"))
+	{
+		// 기존 Control Panel의 spawn 기능을 뷰포트 기준 배치 메뉴로 옮긴다.
+		const FPoint SpawnPos = ContextMenuState.PendingSpawnPos;
+		const int32 SpawnSlot = ContextMenuState.PendingSpawnSlot;
+
+		auto PlaceActorMenuItem = [&](const char* Label, EViewportPlaceActorType Type)
+		{
+			if (!ImGui::MenuItem(Label))
+			{
+				return;
+			}
+
+			FVector Location(0.0f, 0.0f, 0.0f);
+			if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
+			{
+				SpawnActorFromViewportMenu(Type, Location);
+			}
+		};
+
+		PlaceActorMenuItem("Cube", EViewportPlaceActorType::Cube);
+		PlaceActorMenuItem("Sphere", EViewportPlaceActorType::Sphere);
+		PlaceActorMenuItem("Cylinder", EViewportPlaceActorType::Cylinder);
+		PlaceActorMenuItem("Decal", EViewportPlaceActorType::Decal);
+		PlaceActorMenuItem("Height Fog", EViewportPlaceActorType::HeightFog);
+		PlaceActorMenuItem("Ambient Light", EViewportPlaceActorType::AmbientLight);
+		PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
+		PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
+		PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
+
+		ImGui::EndMenu();
+	}
+
+	const bool bCanDelete = SelectionManager && !SelectionManager->IsEmpty();
+	if (!bCanDelete)
+	{
+		ImGui::BeginDisabled();
+	}
+	if (ImGui::MenuItem("Delete"))
+	{
+		SelectionManager->DeleteSelectedActors();
+	}
+	if (!bCanDelete)
+	{
+		ImGui::EndDisabled();
+	}
+
+	ImGui::EndPopup();
+}
+
+bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const
+{
+	if (SlotIndex < 0 ||
+		SlotIndex >= static_cast<int32>(LevelViewportClients.size()) ||
+		SlotIndex >= MaxViewportSlots ||
+		!ViewportWindows[SlotIndex])
+	{
+		return false;
+	}
+
+	FLevelEditorViewportClient* ViewportClient = LevelViewportClients[SlotIndex];
+	if (!ViewportClient || !ViewportClient->GetCamera())
+	{
+		return false;
+	}
+
+	const FRect& ViewRect = ViewportWindows[SlotIndex]->GetRect();
+	const float VPWidth = ViewportClient->GetViewport()
+		? static_cast<float>(ViewportClient->GetViewport()->GetWidth())
+		: ViewRect.Width;
+	const float VPHeight = ViewportClient->GetViewport()
+		? static_cast<float>(ViewportClient->GetViewport()->GetHeight())
+		: ViewRect.Height;
+	if (VPWidth <= 0.0f || VPHeight <= 0.0f)
+	{
+		return false;
+	}
+
+	const float LocalX = Clamp(ClientPos.X - ViewRect.X, 0.0f, VPWidth - 1.0f);
+	const float LocalY = Clamp(ClientPos.Y - ViewRect.Y, 0.0f, VPHeight - 1.0f);
+	// 클릭한 화면 좌표를 월드 레이로 바꿔 카메라 전방의 기본 배치 위치를 계산한다.
+	const FRay Ray = ViewportClient->GetCamera()->DeprojectScreenToWorld(LocalX, LocalY, VPWidth, VPHeight);
+	constexpr float SpawnDistanceFromCamera = 10.0f;
+	OutLocation = Ray.Origin + Ray.Direction.Normalized() * SpawnDistanceFromCamera;
+	return true;
+}
+
+AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType Type, const FVector& Location)
+{
+	if (!Editor)
+	{
+		return nullptr;
+	}
+
+	UWorld* World = Editor->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	AActor* SpawnedActor = nullptr;
+	switch (Type)
+	{
+	case EViewportPlaceActorType::Cube:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Sphere:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Cylinder:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Cylinder.obj");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Decal:
+	{
+		ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::HeightFog:
+	{
+		AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::AmbientLight:
+	{
+		AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::DirectionalLight:
+	{
+		ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			Actor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::PointLight:
+	{
+		APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::SpotLight:
+	{
+		ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (!SpawnedActor)
+	{
+		return nullptr;
+	}
+
+	// 배치 직후 월드/옥트리/선택 상태를 함께 갱신해 에디터 피드백을 즉시 맞춘다.
+	SpawnedActor->SetActorLocation(Location);
+	World->InsertActorToOctree(SpawnedActor);
+	if (SelectionManager)
+	{
+		SelectionManager->Select(SpawnedActor);
+	}
+
+	return SpawnedActor;
 }
 
 // ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
