@@ -137,15 +137,37 @@ float3 GetHeatmapColor(float weight)
 
 float CalculateShadow(float4 worldPos)
 {
-    float4 shadowCoord = mul(worldPos, DirectionalShadowMatrix);
-    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
-	
-    float closestDepth = ShadowMap.Sample(SampleState, projCoords.xy).r;
-    float currentDepth = projCoords.z;
+    float4 camClip = mul(mul(worldPos, View), Projection);
+    if (abs(camClip.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
 
-    float shadow = currentDepth - 0.005 > closestDepth ? 0.0 : 1.0;
-	
-    return shadow;
+    float3 post = camClip.xyz / camClip.w;
+    float4 shadowCoord = mul(float4(post, 1.0f), DirectionalShadowMatrix);
+    if (abs(shadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    float2 shadowUV = float2(
+        projCoords.x * 0.5f + 0.5f,
+        -projCoords.y * 0.5f + 0.5f
+    );
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
+        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+        projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    float closestDepth = ShadowMap.Sample(SampleState, shadowUV).r;
+    float currentDepth = projCoords.z;
+    const float shadowBias = 0.002f;
+
+    return (currentDepth - shadowBias > closestDepth) ? 0.0f : 1.0f;
 }
 
 PSOutput mainPS(PSInput input) : SV_TARGET
@@ -235,9 +257,9 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
     
     #if LIGHTING_MODEL_LAMBERT
-        accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N);
+        accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N) * shadowFactor;
     #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
+        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * shadowFactor;
     #endif
 
     uint LightsToIterate;
