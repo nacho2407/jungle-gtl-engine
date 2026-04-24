@@ -2,7 +2,7 @@
 setlocal
 
 set SOLUTION_DIR=%~dp0
-set PROJECT_DIR=%SOLUTION_DIR%KraftonEngine
+set PROJECT_DIR=%SOLUTION_DIR%CrashEngine
 set BUILD_OUTPUT=%PROJECT_DIR%\Bin\Demo
 set DEMO_DIR=%SOLUTION_DIR%DemoBuild
 
@@ -23,7 +23,7 @@ echo ============================================
 :: 1. MSBuild로 Demo x64 빌드
 echo.
 echo [1/3] Building Demo x64...
-msbuild "%SOLUTION_DIR%KraftonEngine.sln" /p:Configuration=Demo /p:Platform=x64 /m /v:minimal
+msbuild "%SOLUTION_DIR%CrashEngine.sln" /p:Configuration=Demo /p:Platform=x64 /m /v:minimal
 if %ERRORLEVEL% neq 0 (
     echo BUILD FAILED
     pause
@@ -41,7 +41,7 @@ echo.
 echo [3/3] Copying files...
 
 :: 실행 파일 (루트에)
-copy "%BUILD_OUTPUT%\KraftonEngine.exe" "%DEMO_DIR%\" >nul
+copy "%BUILD_OUTPUT%\CrashEngine.exe" "%DEMO_DIR%\" >nul
 
 :: ImGui 레이아웃 (도킹 설정 포함)
 if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%DEMO_DIR%\" >nul
@@ -69,7 +69,7 @@ echo  Build complete: %DEMO_DIR%
 echo ============================================
 echo.
 echo  DemoBuild/
-echo    KraftonEngine.exe
+echo    CrashEngine.exe
 echo    imgui.ini
 echo    Shaders/
 echo    Asset/
