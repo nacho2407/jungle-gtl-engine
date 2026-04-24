@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Engine/Math/Vector.h"
@@ -5,6 +6,7 @@
 
 struct FBoundingBox;
 
+// EAABBFrustumClassify는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class EAABBFrustumClassify : int
 {
     Outside,
@@ -12,6 +14,7 @@ enum class EAABBFrustumClassify : int
     Contains,
 };
 
+// FConvexVolume는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FConvexVolume
 {
 public:

@@ -1,3 +1,4 @@
+﻿// 엔진 영역의 세부 동작을 구현합니다.
 #include "TickFunction.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"

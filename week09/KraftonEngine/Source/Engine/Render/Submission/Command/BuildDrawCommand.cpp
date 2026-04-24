@@ -1,4 +1,5 @@
-﻿#include "Render/Submission/Command/BuildDrawCommand.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "Render/Submission/Command/BuildDrawCommand.h"
 
 #include "Component/TextRenderComponent.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"

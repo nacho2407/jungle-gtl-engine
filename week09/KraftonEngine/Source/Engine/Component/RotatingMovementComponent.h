@@ -1,9 +1,10 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "MovementComponent.h"
 #include "Math/Rotator.h"
 
-// 런타임 동안 UpdatedComponent를 일정 각속도로 회전시키는 이동 컴포넌트
+// URotatingMovementComponent 컴포넌트이다.
 class URotatingMovementComponent : public UMovementComponent
 {
 public:

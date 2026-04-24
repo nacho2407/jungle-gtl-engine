@@ -1,13 +1,11 @@
+﻿// 직렬화 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Archive.h"
 #include "Core/CoreTypes.h"
 #include <cstring>
 
-// 메모리 버퍼 백엔드 FArchive.
-// - Save 모드: 내부 버퍼에 append.
-// - Load 모드: 외부 버퍼 참조, 순차 read.
-// Duplicate(직렬화 왕복)용. 파일 IO 없음.
+// FMemoryArchive는 데이터 저장과 복원을 위한 직렬화 흐름을 다룹니다.
 class FMemoryArchive : public FArchive
 {
 public:

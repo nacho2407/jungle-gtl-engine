@@ -1,4 +1,5 @@
-﻿#include "LightComponent.h"
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
+#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Scene.h"

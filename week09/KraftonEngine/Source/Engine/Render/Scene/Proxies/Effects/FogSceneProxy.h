@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Math/Vector.h"
@@ -5,6 +6,7 @@
 
 class UHeightFogComponent;
 
+// FFogSceneData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FFogSceneData
 {
     float    Density           = 0.02f;
@@ -16,6 +18,7 @@ struct FFogSceneData
     FVector4 InscatteringColor = FVector4(0.45f, 0.55f, 0.65f, 1.0f);
 };
 
+// FFogSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FFogSceneProxy : public FSceneEffectProxy
 {
 public:

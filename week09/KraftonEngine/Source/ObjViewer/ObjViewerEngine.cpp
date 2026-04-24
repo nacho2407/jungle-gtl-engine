@@ -1,3 +1,4 @@
+// ObjViewer 영역의 비활성화된 예제 구현입니다.
 // #include "ObjViewer/ObjViewerEngine.h"
 //
 // #include "ObjViewer/ObjViewerRenderPipeline.h"

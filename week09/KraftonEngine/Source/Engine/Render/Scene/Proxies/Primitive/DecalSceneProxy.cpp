@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/DecalSceneProxy.h"
@@ -10,6 +11,7 @@
 
 namespace
 {
+// FDecalConstants는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FDecalConstants
 {
     FMatrix  WorldToDecal;

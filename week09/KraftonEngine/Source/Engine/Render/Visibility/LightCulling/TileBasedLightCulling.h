@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -26,9 +27,7 @@ class FD3DDevice;
 class FConstantBuffer;
 using FFrameContext = FSceneView;
 
-// ============================================================
-// FTileBasedLightCulling
-// ============================================================
+// FTileBasedLightCulling는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 class FTileBasedLightCulling
 {
 public:

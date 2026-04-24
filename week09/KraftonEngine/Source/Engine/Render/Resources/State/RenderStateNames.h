@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -5,6 +6,7 @@
 
 namespace RenderStateNames
 {
+// FEnumEntry는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FEnumEntry
 {
     const char* Str;

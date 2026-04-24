@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
@@ -7,6 +8,7 @@
 #include "Math/Vector.h"
 #include "Render/Visibility/Frustum/ConvexVolume.h"
 
+// FCameraState는 렌더 상태 값을 보관하거나 적용합니다.
 struct FCameraState
 {
     float FOV = 3.14159265358979f / 3.0f;
@@ -17,6 +19,7 @@ struct FCameraState
     bool bIsOrthogonal = false;
 };
 
+// UCameraComponent 컴포넌트이다.
 class UCameraComponent : public USceneComponent
 {
 public:

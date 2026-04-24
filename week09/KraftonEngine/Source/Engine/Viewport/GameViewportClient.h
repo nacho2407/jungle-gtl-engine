@@ -1,3 +1,4 @@
+// 뷰포트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
@@ -5,8 +6,7 @@
 
 class FViewport;
 
-// UE의 UGameViewportClient 대응 — UObject + FViewportClient 다중상속
-// 게임 런타임 뷰포트를 담당 (PIE / Standalone)
+// UGameViewportClient는 게임 월드와 실제 뷰포트 출력을 연결합니다.
 class UGameViewportClient : public UObject, public FViewportClient
 {
 public:
@@ -15,11 +15,11 @@ public:
     UGameViewportClient() = default;
     ~UGameViewportClient() override = default;
 
-    // FViewportClient overrides
+    // FViewportClient 인터페이스입니다.
     void Draw(FViewport* Viewport, float DeltaTime) override {}
     bool InputKey(int32 Key, bool bPressed) override { return false; }
 
-    // Viewport 소유
+    // 렌더링 대상 뷰포트를 설정합니다.
     void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
     FViewport* GetViewport() const override { return Viewport; }
 

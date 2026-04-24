@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -110,6 +111,7 @@ inline bool TryExtractIncludePath(const std::string& Line, std::string& OutInclu
 }
 
 template <typename TShaderT>
+// TShaderCacheEntry는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 struct TShaderCacheEntry
 {
     std::unique_ptr<TShaderT> Shader;
@@ -150,6 +152,7 @@ inline std::filesystem::path ResolveIncludePath(const std::filesystem::path& Inc
     return (Parent / IncludePath).lexically_normal();
 }
 
+// FShaderFileDependency는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 struct FShaderFileDependency
 {
     FString                               FullPath;

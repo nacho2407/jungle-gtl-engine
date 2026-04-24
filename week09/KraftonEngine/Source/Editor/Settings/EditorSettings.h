@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -7,6 +8,7 @@
 #include "Math/Rotator.h"
 #include "Render/Execute/Context/Scene/ViewTypes.h"
 
+// FEditorSettings는 에디터 영역의 핵심 동작을 담당합니다.
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
     friend class TSingleton<FEditorSettings>;
@@ -25,7 +27,6 @@ public:
     float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
     int32 SplitterCount = 0;
 
-    // Perspective Camera (slot 0) ������
     FVector PerspCamLocation = FVector(10, 0, 5);
     FRotator PerspCamRotation;
     float PerspCamFOV = 60.0f;
@@ -35,7 +36,7 @@ public:
     // File paths
     FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
 
-    // UI ���� ǥ�� ����
+    // FUIVisibility는 에디터 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FUIVisibility
     {
         bool bConsole = true;

@@ -1,7 +1,21 @@
-// Shader include: LightCullingCommon
-// Role: shared types and helpers for light culling compute shaders.
-// Slots: b2 LightCullingParams, t1 SceneDepth, t6 LocalLights, u0/u1/u2 outputs.
 
+
+/*
+    LightCullingCommon.hlsl는 컬링/가시성 계산에 쓰는 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+    - 이 파일에서 직접 선언한 슬롯: b2, t6, t1, u1, u2, u3
+*/
 
 #ifndef LIGHT_CULLING_COMMON_HLSL
 #define LIGHT_CULLING_COMMON_HLSL

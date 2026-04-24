@@ -1,4 +1,5 @@
-﻿#include "SubUVComponent.h"
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
+#include "SubUVComponent.h"
 #include "Object/ObjectFactory.h"
 
 #include <cstring>
@@ -112,7 +113,7 @@ void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
     if (!CachedParticle)
         return;
     if (!bLoop && bIsExecute)
-        return; // ?⑤컻 ?ъ깮 ?꾨즺 ???뺤?
+        return;
 
     const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
     if (TotalFrames == 0)

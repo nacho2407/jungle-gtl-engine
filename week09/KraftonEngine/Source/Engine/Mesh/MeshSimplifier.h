@@ -1,7 +1,9 @@
+﻿// 메시 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Mesh/StaticMeshAsset.h"
 
+// FSimplifiedMesh는 메시 데이터와 렌더 제출 정보를 다룹니다.
 struct FSimplifiedMesh
 {
     TArray<FVertexPNCT_T> Vertices;
@@ -9,7 +11,7 @@ struct FSimplifiedMesh
     TArray<FStaticMeshSection> Sections;
 };
 
-// Edge-collapse 기반 메시 간소화
+// FMeshSimplifier는 메시 데이터와 렌더 제출 정보를 다룹니다.
 class FMeshSimplifier
 {
 public:

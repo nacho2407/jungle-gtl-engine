@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Engine/Math/Vector.h"
@@ -36,6 +37,7 @@ inline uint32 SelectLOD(uint32 CurLOD, float DistSq)
     return LOD;
 }
 
+// FLODUpdateContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
 struct FLODUpdateContext
 {
     FVector CameraPos;

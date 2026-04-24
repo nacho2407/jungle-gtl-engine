@@ -1,4 +1,5 @@
-﻿#include "Editor/EditorEngine.h"
+﻿// 에디터 영역의 세부 동작을 구현합니다.
+#include "Editor/EditorEngine.h"
 
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -45,7 +46,6 @@ void PreloadDefaultObjAssets(ID3D11Device* Device)
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
-    // ���� ���� �ʱ�ȭ (Renderer, D3D, �̱��� ��)
     UEngine::Init(InWindow);
 
     FObjManager::ScanMeshAssets();
@@ -53,7 +53,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     FMaterialManager::Get().ScanMaterialAssets();
     PreloadDefaultObjAssets(Renderer.GetFD3DDevice().GetDevice());
 
-    // ������ ���� �ʱ�ȭ
     FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
     MainPanel.Create(Window, Renderer, this);
@@ -70,14 +69,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     SelectionManager.Init();
     SelectionManager.SetWorld(GetWorld());
 
-    // ����Ʈ ���̾ƿ� �ʱ�ȭ + ����� ���� ����
     ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
     ViewportLayout.LoadFromSettings();
 }
 
 void UEditorEngine::Shutdown()
 {
-    // ������ ���� (�������� ����)
     ViewportLayout.SaveToSettings();
     FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
     CloseScene();
@@ -85,23 +82,18 @@ void UEditorEngine::Shutdown()
     MainPanel.Release();
     GPUOcclusion.Release();
 
-    // ����Ʈ ���̾ƿ� ����
     ViewportLayout.Release();
 
-    // ���� ���� ���� (Renderer, D3D ��)
     UEngine::Shutdown();
 }
 
 void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
     UEngine::OnWindowResized(Width, Height);
-    // ������ �������� �ÿ��� ImGui �г��� ���� ũ�⸦ �����ϹǷ�
-    // FViewport RT�� SSplitter ���̾ƿ���� ���� ��������� ó����
 }
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-    // --- PIE ��û ó�� (������ ��迡�� ó���ǵ��� Tick ���ο��� �Һ�) ---
     if (bRequestEndPlayMapQueued)
     {
         bRequestEndPlayMapQueued = false;
@@ -171,14 +163,9 @@ void UEditorEngine::RenderUI(float DeltaTime)
     MainPanel.Render(DeltaTime);
 }
 
-// ������ PIE (Play In Editor) ����������������������������������������������������������������
-// UE ���� ���: Request�� ���� ����(std::optional)�� ���常 �ϰ� ��� �������� �ʴ´�.
-// ���� StartPIE�� ���� Tick ������ StartQueuedPlaySessionRequest���� �Ͼ��.
-// ������ UI �ݹ�/Ʈ����� ���� ���� �Ҿ����� Ÿ�̹��� ���ϱ� ����.
 
 void UEditorEngine::RequestPlaySession(const FRequestPlaySessionParams& InParams)
 {
-    // ���� ��û�� UE�� �����ϰ� ����� (��¥ ť �ƴ� ? ���� ����).
     PlaySessionRequest = InParams;
 }
 
@@ -256,7 +243,6 @@ void UEditorEngine::StartQueuedPlaySessionRequest()
     const FRequestPlaySessionParams Params = *PlaySessionRequest;
     PlaySessionRequest.reset();
 
-    // �̹� PIE ���̸� ���� ������ ���� �� ���� ���� (�ܼ�ȭ).
     if (PlayInEditorSessionInfo.has_value())
     {
         EndPlayMap();
@@ -272,7 +258,6 @@ void UEditorEngine::StartQueuedPlaySessionRequest()
 
 void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Params)
 {
-    // 1) ���� ������ ���带 ������ PIE ���� ���� (UE�� CreatePIEWorldByDuplication ����).
     UWorld* EditorWorld = GetWorld();
     if (!EditorWorld)
     {
@@ -284,7 +269,6 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
         return;
     }
 
-    // 2) PIE WorldContext�� WorldList�� ���.
     FWorldContext Ctx;
     Ctx.WorldType = EWorldType::PIE;
     Ctx.ContextHandle = FName("PIE");
@@ -296,7 +280,6 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     }
     WorldList.push_back(Ctx);
 
-    // 3) ���� ���� ��� (���� Ȱ�� �ڵ� ���� ? EndPlayMap���� ����).
     FLevelEditorViewportClient* PIEViewportClient = Params.DestinationViewportClient ? Params.DestinationViewportClient : ViewportLayout.GetActiveViewport();
     if (!PIEViewportClient)
     {
@@ -325,33 +308,21 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
         }
     }
 
-    // 4) ActiveWorldHandle�� PIE�� ��ȯ ? ���� GetWorld()�� PIE ���带 ��ȯ.
     SetActiveWorld(FName("PIE"));
 
-    // GPU Occlusion readback�� ProxyId ����̶� ���尡 ������ stale.
-    // ���� ������ ����� ��ȿȭ�ؾ� wrong-proxy hit ����.
     OnRenderSceneCleared();
 
-    // 5) Ȱ�� ����Ʈ ī�޶� PIE ������ ActiveCamera�� ���� ?
-    //    LOD ���� ��� ActiveCamera�� �����ϹǷ� ���� �ʿ�.
     if (UCameraComponent* VCCamera = PIEViewportClient->GetCamera())
     {
         PIEWorld->SetActiveCamera(VCCamera);
     }
 
-    // 6) Selection�� PIE ���� �������� ����ε� ? ������ ���͸� ����Ų ä�� �θ�
-    //    ��ŷ(=PIE ����) / outliner / outline ������ ��� ��߳���.
     SelectionManager.ClearSelection();
-    SelectionManager.SetGizmoEnabled(false); // PIE�� ���۵Ǹ� gizmo ��Ȱ��ȭ
+    SelectionManager.SetGizmoEnabled(false);
     SelectionManager.SetWorld(PIEWorld);
 
-    // �� �ڵ�� �����Ǵ� �� �Ʒ� EndPlayMap()�� ����.
-    // MainPanel.HideEditorWindowsForPIE(); //PIE �߿��� ������ �г��� ����.
     ViewportLayout.DisableWorldAxisForPIE();
 
-    // 7) BeginPlay Ʈ���� ? ��� ���/���ε��� ���� ���� ù Tick ������ ȣ��.
-    //    UWorld::BeginPlay�� bHasBegunPlay�� ���� �����ϹǷ� BeginPlay ����
-    //    SpawnActor�� ���� �ű� ���͵� �ڵ����� BeginPlay�ȴ�.
     PIEWorld->BeginPlay();
 }
 
@@ -362,26 +333,14 @@ void UEditorEngine::EndPlayMap()
         return;
     }
 
-    // Ȱ�� ���带 PIE ���� �� �ڵ�� ����.
     const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
     SetActiveWorld(PrevHandle);
 
-    // ������ Editor ������ VisibleProxies/ĳ�õ� ī�޶� ���¸� ���� ��ȿȭ.
-    // PIE �� Editor WorldTick�� skip�Ǿ� ĳ�ð� PIE ���� �� ���� �״�� ���� �ְ�,
-    // NeedsVisibleProxyRebuild()�� ī�޶� ��ȭ ����̶� false�� ��ȯ�ϸ� stale
-    // VisibleProxies�� �״�� ����Ǿ� dangling proxy ������ ũ���ð� �� �� �ִ�.
     //
-    // ���� Renderer::FrameResources.PerObjectCBPool�� ProxyId�� �ε��̵Ǵ� ���� �� ���� Ǯ�̶�,
-    // PIE �� PIE ���Ͻð� ��� ������ �״�� ���� ������ Editor ���Ͻ���
-    // bPerObjectCBDirty=false ���·� ���� ���ε尡 skip�Ǿ� PIE ������ transform����
-    // �����ȴ�. ��� Editor ���Ͻø� PerObjectCB dirty�� ��ŷ�� ����ε� ����.
     if (UWorld* EditorWorld = GetWorld())
     {
         EditorWorld->GetScene().MarkAllPerObjectCBDirty();
 
-        // ActiveCamera�� PIE ���� �� PIE ����� �Ű����� PIE ����� �Բ� �ı��ƴ�.
-        // Editor ������ ActiveCamera�� ������ �� dangling �����͸� ����ų �� �����Ƿ�
-        // Ȱ�� ����Ʈ�� ī�޶�� �ٽ� ���ε��� ��� frustum culling�� ���� �����Ѵ�.
         FLevelEditorViewportClient* PIEViewportClient = PlayInEditorSessionInfo->DestinationViewportClient;
         if (PIEViewportClient && PIEViewportClient->GetCamera())
         {
@@ -405,19 +364,15 @@ void UEditorEngine::EndPlayMap()
         }
     }
 
-    // Selection�� ������ ����� ���� ? PIE ���ʹ� �� �ı��ǹǷ� ���� ����.
     SelectionManager.ClearSelection();
-    SelectionManager.SetGizmoEnabled(true); // PIE�� ������ gizmo Ȱ��ȭ
+    SelectionManager.SetGizmoEnabled(true);
     SelectionManager.SetWorld(GetWorld());
 
-    // �� �ڵ�� �����Ǵ� �� ���� StartPlayInEditorSession()�� ����.
     // MainPanel.RestoreEditorWindowsAfterPIE();
     ViewportLayout.RestoreWorldAxisAfterPIE();
 
-    // PIE WorldContext ���� (DestroyWorldContext�� EndPlay + DestroyObject ����).
     DestroyWorldContext(FName("PIE"));
 
-    // PIE ������ ���Ͻð� ��� �ı������Ƿ� GPU Occlusion readback ��ȿȭ.
     OnRenderSceneCleared();
 
     for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
@@ -431,7 +386,6 @@ void UEditorEngine::EndPlayMap()
     PlayInEditorSessionInfo.reset();
 }
 
-// ������ ���� �޼��� ������������������������������������������������������������������������������������
 
 void UEditorEngine::ResetViewport()
 {
@@ -461,7 +415,6 @@ void UEditorEngine::ClearScene()
     SelectionManager.ClearSelection();
     SelectionManager.SetWorld(nullptr);
 
-    // �� ���Ͻ� �ı� �� GPU Occlusion ������¡ ������ ��ȿȭ
     OnRenderSceneCleared();
 
     for (FWorldContext& Ctx : WorldList)

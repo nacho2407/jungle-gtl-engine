@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Engine/Core/CoreTypes.h"
@@ -9,6 +10,7 @@ class AActor;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
 
+// FWorldPrimitivePickingBVH 클래스이다.
 class FWorldPrimitivePickingBVH
 {
 public:
@@ -23,6 +25,7 @@ public:
     bool IsDirty() const { return bDirty; }
 
 public:
+    // FLeaf는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FLeaf
     {
         FBoundingBox Bounds;
@@ -31,10 +34,10 @@ public:
         AActor* Owner = nullptr;
     };
 
+    // FNode는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FNode
     {
         FBoundingBox Bounds;
-        // 최대 자식 분기는 8번. 이게 효율적인가?
         int32 Children[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
         // SIMD(AVX) 최적화를 위한 자식 노드들의 AABB 데이터 (SOA 구조)
@@ -55,6 +58,7 @@ public:
         bool IsLeaf() const { return ChildCount == 0; }
     };
 
+    // alignas는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct alignas(32) FPrimitivePacket
     {
         int32 PrimitiveIndices[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };

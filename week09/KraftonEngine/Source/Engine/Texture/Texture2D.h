@@ -1,3 +1,4 @@
+﻿// 텍스처 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
@@ -12,6 +13,7 @@
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;
 
+// FTextureCacheEntry는 텍스처 리소스의 로드와 GPU 사용을 다룹니다.
 struct FTextureCacheEntry
 {
     class UTexture2D* Texture = nullptr;
@@ -20,6 +22,7 @@ struct FTextureCacheEntry
     bool bExists = false;
 };
 
+// UTexture2D는 텍스처 리소스의 로드와 GPU 사용을 다룹니다.
 class UTexture2D : public UObject
 {
 public:

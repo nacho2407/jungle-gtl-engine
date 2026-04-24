@@ -1,15 +1,16 @@
+// UI 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "UI/SWindow.h"
 
-// 분할 방향
+// ESplitOrientation은 분할 패널의 배치 방향을 정의합니다.
 enum class ESplitOrientation : uint8
 {
     Horizontal, // 좌/우
     Vertical,   // 상/하
 };
 
-// 스플리터 기반 — 두 개의 자식 창을 담아 영역을 분배하는 컨테이너
+// SSplitter는 두 UI 영역을 비율 기반으로 나누는 기본 분할 창입니다.
 class SSplitter : public SWindow
 {
 public:
@@ -28,27 +29,27 @@ public:
 
     ESplitOrientation GetOrientation() const { return Orientation; }
 
-    // 부모 Rect를 받아 자식들의 Rect를 계산 (재귀)
+    // 부모 Rect를 받아 자식들의 Rect를 계산합니다.
     virtual void ComputeLayout(const FRect& ParentRect) = 0;
 
-    // 분할 바 영역 반환 (히트 테스트/렌더용)
+    // 분할 바 영역을 반환합니다.
     const FRect& GetSplitBarRect() const { return SplitBarRect; }
 
-    // 분할 바 히트 테스트
+    // 마우스 좌표가 분할 바 위에 있는지 확인합니다.
     bool IsOverSplitBar(FPoint MousePos) const;
 
     bool IsSplitter() const override { return true; }
 
-    // 자식이 SSplitter인지 타입 체크 (dynamic_cast 대체)
+    // SWindow 포인터를 SSplitter로 안전하게 변환합니다.
     static SSplitter* AsSplitter(SWindow* InWindow);
 
-    // 재귀 유틸리티 — 트리 내 모든 SSplitter를 수집
+    // 트리 내 모든 SSplitter를 수집합니다.
     static void CollectSplitters(SSplitter* Node, TArray<SSplitter*>& OutSplitters);
 
-    // 재귀 유틸리티 — 트리에서 SSplitter 노드만 삭제 (SWindow 리프는 유지)
+    // SSplitter 트리만 정리하고 리프 SWindow는 유지합니다.
     static void DestroyTree(SSplitter* Node);
 
-    // 재귀 유틸리티 — 마우스가 올라간 분할 바의 SSplitter를 반환
+    // 마우스가 올라간 분할 바의 SSplitter를 찾습니다.
     static SSplitter* FindSplitterAtBar(SSplitter* Node, FPoint MousePos);
 
 protected:
@@ -63,7 +64,7 @@ protected:
     FRect SplitBarRect;
 };
 
-// 수평 분할 (좌/우)
+// SSplitterH는 좌우로 영역을 나누는 수평 분할 창입니다.
 class SSplitterH : public SSplitter
 {
 public:
@@ -73,7 +74,7 @@ public:
     void ComputeLayout(const FRect& ParentRect) override;
 };
 
-// 수직 분할 (상/하)
+// SSplitterV는 상하로 영역을 나누는 수직 분할 창입니다.
 class SSplitterV : public SSplitter
 {
 public:

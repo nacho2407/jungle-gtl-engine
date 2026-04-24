@@ -1,4 +1,5 @@
-﻿#include "LightHitMapPass.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "LightHitMapPass.h"
 #include "Render/Submission/Command/DrawCommand.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"

@@ -1,6 +1,8 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "BillboardComponent.h"
 
+// UCylindricalBillboardComponent 컴포넌트이다.
 class UCylindricalBillboardComponent : public UBillboardComponent
 {
 public:

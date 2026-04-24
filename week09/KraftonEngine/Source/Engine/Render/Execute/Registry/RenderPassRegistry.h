@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -22,6 +23,7 @@ class FGizmoPass;
 class FOverlayBillboardPass;
 class FOverlayTextPass;
 
+// ERenderPassNodeType는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class ERenderPassNodeType
 {
     GridPass,
@@ -45,7 +47,7 @@ enum class ERenderPassNodeType
     LightHitMapPass,
 };
 
-// Owns render pass instances and the pass execution presets used by draw submission.
+// FRenderPassRegistry는 실행 시 필요한 타입과 규칙의 매핑을 보관합니다.
 class FRenderPassRegistry
 {
 public:

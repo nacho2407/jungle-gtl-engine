@@ -1,7 +1,9 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Math/Vector.h"
 
+// FFogParams는 컴포넌트 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FFogParams
 {
     float    Density           = 0.02f;

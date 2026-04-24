@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Resources/State/RenderStateTypes.h"
@@ -6,6 +7,7 @@
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 
+// FDrawBindStateCache는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FDrawBindStateCache
 {
     bool bForceAll = true;
@@ -35,6 +37,7 @@ struct FDrawBindStateCache
     void Cleanup(ID3D11DeviceContext* Ctx);
 };
 
+// FDrawCommandList는 렌더 영역의 핵심 동작을 담당합니다.
 class FDrawCommandList
 {
 public:

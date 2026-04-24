@@ -1,4 +1,5 @@
-﻿#include "SceneSaveManager.h"
+﻿// 직렬화 영역의 세부 동작을 구현합니다.
+#include "SceneSaveManager.h"
 
 #include <iostream>
 #include <fstream>

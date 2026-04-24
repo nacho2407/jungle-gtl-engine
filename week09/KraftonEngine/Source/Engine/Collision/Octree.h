@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Math/Vector.h"
@@ -13,6 +14,7 @@ constexpr float LooseFactor = 1.3f;
 
 class FFrustum;
 
+// FOctree 클래스이다.
 class FOctree
 {
 public:

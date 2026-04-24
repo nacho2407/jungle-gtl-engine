@@ -1,13 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 
 class UDirectionalLightComponent;
 
-/*
-    방향성 광원을 렌더러용 데이터로 변환하는 프록시입니다.
-    광원 방향과 색, 세기를 갱신하고 에디터 디버그 시각화도 담당합니다.
-*/
+// FDirectionalLightSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FDirectionalLightSceneProxy : public FLightSceneProxy
 {
 public:

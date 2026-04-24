@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "PrimitiveComponent.h"
@@ -9,6 +10,7 @@ class AActor;
 class FPrimitiveSceneProxy;
 class FScene;
 
+// EGizmoMode는 컴포넌트 처리에서 사용할 선택지를 정의합니다.
 enum EGizmoMode
 {
     Translate,
@@ -17,6 +19,7 @@ enum EGizmoMode
     End
 };
 
+// UGizmoComponent 컴포넌트이다.
 class UGizmoComponent : public UPrimitiveComponent
 {
 public:

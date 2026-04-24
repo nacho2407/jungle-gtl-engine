@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Component/MovementComponent.h"
@@ -5,6 +6,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 
+// EProjectileHitBehavior는 컴포넌트 처리에서 사용할 선택지를 정의합니다.
 enum class EProjectileHitBehavior : int32
 {
     Stop = 0,
@@ -12,6 +14,7 @@ enum class EProjectileHitBehavior : int32
     Destroy = 2,
 };
 
+// UProjectileMovementComponent 컴포넌트이다.
 class UProjectileMovementComponent : public UMovementComponent
 {
 public:

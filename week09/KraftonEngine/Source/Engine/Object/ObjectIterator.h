@@ -1,11 +1,12 @@
+﻿// 오브젝트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
 
 extern TArray<UObject*> GUObjectArray;
 
-// 특정 UObject 타입 순회
 template <typename TObject>
+// TObjectIterator는 오브젝트 영역의 핵심 동작을 담당합니다.
 class TObjectIterator
 {
 public:
@@ -50,7 +51,7 @@ private:
     int32 CurrentIndex;
 };
 
-// 타입이 런타임에 결정되는 경우
+// FObjectIterator는 오브젝트 영역의 핵심 동작을 담당합니다.
 class FObjectIterator
 {
 public:

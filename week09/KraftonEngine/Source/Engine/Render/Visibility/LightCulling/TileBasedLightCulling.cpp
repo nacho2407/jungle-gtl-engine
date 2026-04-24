@@ -1,4 +1,5 @@
-﻿#include "TileBasedLightCulling.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "TileBasedLightCulling.h"
 #include "Viewport/ViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"

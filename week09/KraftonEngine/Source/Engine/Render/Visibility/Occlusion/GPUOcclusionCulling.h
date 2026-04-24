@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Core/CoreTypes.h"
@@ -14,6 +15,7 @@ struct FGPUOcclusionAABB
     float MaxX, MaxY, MaxZ, _pad1;
 };
 
+// FGPUOcclusionCulling는 렌더 영역의 핵심 동작을 담당합니다.
 class FGPUOcclusionCulling
 {
 public:

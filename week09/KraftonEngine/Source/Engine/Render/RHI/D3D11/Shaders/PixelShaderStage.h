@@ -1,7 +1,8 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 
-// Owns one D3D11 pixel shader object and tracks its bytecode memory size.
+// FPixelShaderStage는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FPixelShaderStage
 {
 public:

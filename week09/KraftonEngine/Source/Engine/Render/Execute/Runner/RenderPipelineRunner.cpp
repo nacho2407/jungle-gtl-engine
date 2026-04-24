@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Runner/RenderPipelineRunner.h"
 
 #include "Render/Execute/Context/RenderPipelineContext.h"
@@ -100,13 +101,13 @@ bool ShouldExecutePipeline(const FRenderPipelineContext& Context, ERenderPipelin
 
     switch (PipelineType)
     {
-    case ERenderPipelineType::Lit:
+    case ERenderPipelineType::LitPipeline:
         return bUsesLighting;
-    case ERenderPipelineType::Unlit:
+    case ERenderPipelineType::UnlitPipeline:
         return Context.ViewMode.ActiveViewMode == EViewMode::Unlit || Context.ViewMode.ActiveViewMode == EViewMode::Wireframe;
-    case ERenderPipelineType::WorldNormal:
+    case ERenderPipelineType::WorldNormalPipeline:
         return Context.ViewMode.ActiveViewMode == EViewMode::WorldNormal;
-    case ERenderPipelineType::SceneDepth:
+    case ERenderPipelineType::SceneDepthPipeline:
         return Context.ViewMode.ActiveViewMode == EViewMode::SceneDepth;
     default:
         return true;

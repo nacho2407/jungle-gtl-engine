@@ -1,6 +1,20 @@
-// Shader: HeightFogPass
-// Role: fullscreen height fog composition.
-// Entries: VS, PS. Slots: b2 FogBuffer, t10 SceneDepth, t11 SceneColor, s0 LinearClamp.
+
+/*
+    HeightFogPass.hlsl는 후처리 렌더 패스의 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+    - 이 파일에서 직접 선언한 슬롯: b2
+*/
 
 // Fullscreen Triangle VS (SV_VertexID) + exponential height fog PS.
 
@@ -53,12 +67,10 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     float3 rayDir = worldPos - camPos;
     float rayLength = length(rayDir);
 
-    // Effective integration length (0 when inside StartDistance ??fog naturally fades to 0)
     float effectiveLength = max(rayLength - FogStartDistance, 0.0);
     if (FogCutoffDistance > 0.0)
         effectiveLength = min(effectiveLength, FogCutoffDistance - FogStartDistance);
 
-    // Exponential height fog ??numerically stable form
     // Density at height h: FogDensity * exp(-falloff * (h - FogBaseHeight))
     // Line integral along ray, computed with exp at both endpoints separately
     // to avoid float precision loss when camera is far above FogBaseHeight.
@@ -74,7 +86,6 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     float lineIntegral;
     if (abs(dz * falloff) > 0.001)
     {
-        // Stable: exp(-falloff * endHeight) survives even when exp(-falloff * startHeight) ??0
         lineIntegral = FogDensity * (exp(-falloff * startHeight) - exp(-falloff * endHeight)) / (falloff * rayDirZ);
     }
     else

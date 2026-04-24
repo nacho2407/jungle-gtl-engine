@@ -1,11 +1,9 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "LightComponent.h"
 
-/**
- * UDirectionalLightComponent: UE5 스타일의 직사광 조명 컴포넌트입니다.
- * 태양광처럼 거리에 상관없이 모든 오브젝트에 평행한 빛을 쏩니다.
- */
+// UDirectionalLightComponent 컴포넌트이다.
 class UDirectionalLightComponent : public ULightComponent
 {
 public:

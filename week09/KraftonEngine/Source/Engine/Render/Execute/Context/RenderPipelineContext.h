@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -25,6 +26,7 @@ class FDrawCommandList;
 class FTileBasedLightCulling;
 struct FDrawBindStateCache;
 
+// FViewModeExecutionContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
 struct FViewModeExecutionContext
 {
     const FViewModePassRegistry* Registry       = nullptr;
@@ -32,12 +34,14 @@ struct FViewModeExecutionContext
     EViewMode                    ActiveViewMode = {};
 };
 
+// FRenderSubmissionContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
 struct FRenderSubmissionContext
 {
     const FCollectedSceneData*   SceneData   = nullptr;
     const FCollectedOverlayData* OverlayData = nullptr;
 };
 
+// FRenderPipelineContext는 실행 중 공유되는 상태와 참조를 묶어 전달합니다.
 struct FRenderPipelineContext
 {
     const FSceneView*             SceneView = nullptr;

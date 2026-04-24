@@ -1,3 +1,4 @@
+﻿// 메시 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
@@ -16,7 +17,7 @@ struct FLODMeshData
     std::unique_ptr<FMeshBuffer> RenderBuffer;
 };
 
-// UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
+// UStaticMesh는 메시 데이터와 렌더 제출 정보를 다룹니다.
 class UStaticMesh : public UObject
 {
 public:

@@ -1,13 +1,11 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
 #include "Render/RHI/D3D11/Shaders/VertexShaderStage.h"
 #include "Render/RHI/D3D11/Shaders/PixelShaderStage.h"
 
-/*
-    D3D11 그래픽 셰이더 프로그램입니다.
-    VS는 항상 필요하고 PS는 depth-only 같은 VS-only 패스를 위해 선택적으로 바인딩합니다.
-*/
+// FGraphicsProgram는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FGraphicsProgram : public FShaderProgramBase
 {
 public:

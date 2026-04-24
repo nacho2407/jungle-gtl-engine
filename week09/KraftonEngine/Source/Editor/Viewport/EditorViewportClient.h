@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Viewport/ViewportClient.h"
@@ -16,6 +17,7 @@ class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
 
+// EEditorViewportPlayState는 에디터 처리에서 사용할 선택지를 정의합니다.
 enum class EEditorViewportPlayState : uint8
 {
     Stopped,
@@ -23,24 +25,21 @@ enum class EEditorViewportPlayState : uint8
     Paused,
 };
 
+// FEditorViewportClient는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 class FEditorViewportClient : public FViewportClient
 {
 public:
     void Initialize(FWindowsWindow* InWindow);
     void SetOverlayStatSystem(FOverlayStatSystem* InOverlayStatSystem) { OverlayStatSystem = InOverlayStatSystem; }
-    // World�� �� �̻� �������� �ʴ´� ? GetWorld()�� GEngine->GetWorld()�� �����Ͽ�
-    // ActiveWorldHandle�� �����Ƿ� PIE ��ȯ �� �ڵ����� �ùٸ� ���带 ��ȯ�Ѵ�.
     UWorld* GetWorld() const;
     void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
     void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
     void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
     UGizmoComponent* GetGizmo() { return Gizmo; }
 
-    // ����Ʈ�� ���� �ɼ�
     FViewportRenderOptions& GetRenderOptions() { return RenderOptions; }
     const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
 
-    // ����Ʈ Ÿ�� ��ȯ (Perspective / Ortho ����)
     void SetViewportType(ELevelViewportType NewType);
     void SetViewportSize(float InWidth, float InHeight);
 
@@ -52,7 +51,6 @@ public:
 
     void Tick(float DeltaTime);
 
-    // Ȱ�� ���� ? Ȱ�� ����Ʈ�� �Է� ó��
     void SetActive(bool bInActive) { bIsActive = bInActive; }
     bool IsActive() const { return bIsActive; }
 
@@ -61,18 +59,14 @@ public:
     void SetPaneToolbarHeight(float InHeight) { PaneToolbarHeight = InHeight; }
     float GetPaneToolbarHeight() const { return PaneToolbarHeight; }
 
-    // FViewport ����
     void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
     FViewport* GetViewport() const override { return Viewport; }
 
-    // SWindow ���̾ƿ� ���� ? SSplitter ���� ���
     void SetLayoutWindow(SWindow* InWindow) { LayoutWindow = InWindow; }
     SWindow* GetLayoutWindow() const { return LayoutWindow; }
 
-    // SWindow Rect �� ViewportScreenRect ���� + FViewport �������� ��û
     void UpdateLayoutRect();
 
-    // ImDrawList�� �ڽ��� SRV�� SWindow Rect ��ġ�� ����
     void RenderViewportImage();
     void RenderViewportBorder();
 
@@ -80,7 +74,7 @@ private:
     void TickEditorShortcuts();
     void TickInput(float DeltaTime);
     void TickInteraction(float DeltaTime);
-    void HandleDragStart(const FRay& Ray); // ��ŷ ����
+    void HandleDragStart(const FRay& Ray);
 
 private:
     FViewport* Viewport = nullptr;
@@ -99,8 +93,6 @@ private:
     bool bIsActive = false;
     EEditorViewportPlayState PlayState = EEditorViewportPlayState::Stopped;
     float PaneToolbarHeight = 0.0f;
-    // ����Ʈ ���� ���� ����(���� ����)
     FRect ViewportScreenRect;
-    // ����Ʈ ������ ����(���� ���� ��ü �г�)
     FRect ViewportFrameRect;
 };

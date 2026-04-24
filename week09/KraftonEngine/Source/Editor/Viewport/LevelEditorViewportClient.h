@@ -1,10 +1,9 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Editor/Viewport/EditorViewportClient.h"
 
-// UE의 FLevelEditorViewportClient 대응
-// 레벨 편집 전용 뷰포트 (카메라 조작, 기즈모, 액터 피킹 등)
-// 현재는 FEditorViewportClient의 기존 기능을 그대로 사용
+// FLevelEditorViewportClient는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 class FLevelEditorViewportClient : public FEditorViewportClient
 {
 public:

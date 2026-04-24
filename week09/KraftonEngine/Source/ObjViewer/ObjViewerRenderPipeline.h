@@ -1,3 +1,4 @@
+// ObjViewer 영역의 비활성화된 예제 타입을 보관합니다.
 // #pragma once
 //
 // #include "Render/Submission/Collect/RenderCollector.h"

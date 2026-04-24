@@ -1,3 +1,4 @@
+﻿// 오브젝트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Profiling/MemoryStats.h"
@@ -113,6 +114,7 @@ private:
 
 extern TArray<UObject*> GUObjectArray;
 
+// UObjectManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class UObjectManager : public TSingleton<UObjectManager>
 {
     friend class TSingleton<UObjectManager>;

@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/RHI/D3D11/State/RasterizerStateManager.h"
 

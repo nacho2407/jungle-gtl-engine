@@ -1,3 +1,4 @@
+﻿// 메시 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -12,6 +13,7 @@
 #include <memory>
 #include <algorithm>
 
+// FStaticMeshSection는 메시 데이터와 렌더 제출 정보를 다룹니다.
 struct FStaticMeshSection
 {
     int32 MaterialIndex = -1; // Index into UStaticMesh's FStaticMaterial array. Cached to avoid per-frame string comparison.
@@ -26,6 +28,7 @@ struct FStaticMeshSection
     }
 };
 
+// FStaticMaterial는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 struct FStaticMaterial
 {
     // std::shared_ptr<class UMaterialInterface> MaterialInterface;

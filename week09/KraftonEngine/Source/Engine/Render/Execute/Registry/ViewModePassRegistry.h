@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -13,6 +14,7 @@ namespace ViewModePassConfigUtils
 void AddDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char* Value = "1");
 }
 
+// EViewModePostProcessVariant는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class EViewModePostProcessVariant : uint16
 {
     None        = 0,
@@ -24,6 +26,7 @@ enum class EViewModePostProcessVariant : uint16
 
 uint16 ToPostProcessUserBits(EViewModePostProcessVariant Variant);
 
+// FViewModePassDesc는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 struct FViewModePassDesc
 {
     ERenderPass        RenderPass;
@@ -72,7 +75,7 @@ FViewModePassDesc BuildViewModeLightingPassDesc(EShadingModel ShadingModel);
 void              BuildViewModePasses(FViewModePassConfig& Config);
 void              InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewMode, FShaderVariantCache& VariantCache);
 
-// Builds and caches pass/shader variant recipes for every supported editor view mode.
+// FViewModePassRegistry는 실행 시 필요한 타입과 규칙의 매핑을 보관합니다.
 class FViewModePassRegistry
 {
 public:

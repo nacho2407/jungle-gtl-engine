@@ -1,3 +1,4 @@
+﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/UI/EditorControlPanel.h"
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
@@ -29,6 +30,7 @@
 // ─────────────────────────────────────────────────────────────────
 namespace
 {
+// FSpawnEntry는 에디터 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FSpawnEntry
 {
     const char* Label;

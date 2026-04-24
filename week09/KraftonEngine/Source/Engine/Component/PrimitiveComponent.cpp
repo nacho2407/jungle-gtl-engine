@@ -1,4 +1,5 @@
-﻿#include "PrimitiveComponent.h"
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
+#include "PrimitiveComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
@@ -53,7 +54,6 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
     Ar << bVisibleInEditor;
     Ar << bVisibleInGame;
     Ar << bIsEditorHelper;
-    // LocalExtents??硫붿떆 ?깆뿉???ш퀎?곕릺誘濡?吏곷젹???쒖쇅.
 }
 
 void UPrimitiveComponent::SetVisibility(bool bNewVisible)
@@ -131,8 +131,6 @@ bool UPrimitiveComponent::ShouldRenderInCurrentWorld() const
 
 // ============================================================
 // MarkRenderTransformDirty / MarkRenderVisibilityDirty
-//   ?꾨줉??dirty + Octree(?≫꽣 ?⑥쐞 dirty) + PickingBVH dirty
-//   ?몄텧?먭? ?몄썙???덈뜕 ?쒗?ㅻ? ?⑥씪 吏꾩엯?먯쑝濡??듯빀.
 // ============================================================
 void UPrimitiveComponent::MarkRenderTransformDirty()
 {
@@ -160,7 +158,6 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
     if (!World)
         return;
 
-    // 媛?쒖꽦 蹂?붾뒗 Octree ?ы븿 ?щ???醫뚯슦?섎?濡??≫꽣 dirty濡?諛섏쁺?쒕떎.
     World->UpdateActorInOctree(OwnerActor);
     World->MarkWorldPrimitivePickingBVHDirty();
 }
@@ -176,7 +173,6 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 {
-    // 踰좎씠???대옒?ㅼ쓽 transform ??怨듯넻 ?꾨줈?쇳떚 泥섎━ 蹂댁옣
     USceneComponent::PostEditProperty(PropertyName);
 
     if (strcmp(PropertyName, "Visible") == 0)
@@ -199,9 +195,6 @@ FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
 
 void UPrimitiveComponent::MarkWorldBoundsDirty()
 {
-    // Local bounds(shape) ?먯껜媛 諛붾?寃쎌슦??吏꾩엯??
-    // fast-path(?댁쟾 AABB瑜?translation留뚯쑝濡??ъ궗????shape媛 ?숈씪?섎떎??媛?뺤뿉 ?섏〈?섎?濡?
-    // ?ш린?쒕뒗 諛섎뱶??臾대젰?뷀빐???쒕떎. ??洹몃윭硫?mesh 援먯껜 ?꾩뿉??stale AABB媛 罹먯떆?쒕떎.
     bWorldAABBDirty = true;
     bHasValidWorldAABB = false;
     MarkRenderTransformDirty();
@@ -274,18 +267,14 @@ void UPrimitiveComponent::UpdateWorldMatrix() const
         }
     }
 
-    // ?꾨줉?쒓? ?깅줉??寃쎌슦 Transform dirty ?꾪뙆 (FScene DirtySet?먮룄 ?깅줉)
     MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
 }
 
-// --- ?꾨줉???⑺넗由?---
 FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
 {
-    // 湲곕낯 PrimitiveComponent???꾨줉??
     return new FPrimitiveSceneProxy(this);
 }
 
-// --- ?뚮뜑 ?곹깭 愿由?(UE RegisterComponent ??? ---
 void UPrimitiveComponent::CreateRenderState()
 {
     if (!Owner || !Owner->GetWorld())
@@ -299,15 +288,12 @@ void UPrimitiveComponent::CreateRenderState()
         SceneProxy = Scene.AddPrimitive(this);
     }
 
-    // Proxy媛 ?대? ?댁븘 ?덉뼱??partition?먯꽌留?鍮좎쭊 ?곹깭媛 ?덉쓣 ???덈떎.
-    // render visibility/frustum query??partition 湲곕컲?대?濡??깅줉??idempotent?섍쾶 蹂댁젙?쒕떎.
     World->GetPartition().AddSinglePrimitive(this);
     World->MarkWorldPrimitivePickingBVHDirty();
 }
 
 void UPrimitiveComponent::DestroyRenderState()
 {
-    // SceneProxy媛 ?녿뜑?쇰룄 Octree?먮뒗 ?깅줉???덉쓣 ???덉쑝誘濡?partition ?뺣━????긽 ?쒕룄?쒕떎.
     if (Owner)
     {
         if (UWorld* World = Owner->GetWorld())
@@ -317,7 +303,6 @@ void UPrimitiveComponent::DestroyRenderState()
 
             if (SceneProxy)
             {
-                // Scene.RemovePrimitive 媛 VisibleProxies 罹먯떆???쇨??섍쾶 ?뺣━?쒕떎.
                 World->GetScene().RemovePrimitive(SceneProxy);
             }
         }
@@ -327,15 +312,12 @@ void UPrimitiveComponent::DestroyRenderState()
 
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
-    // ?꾨줉???뚭눼 ???ъ깮????硫붿떆 援먯껜 ????蹂寃????ъ슜
     DestroyRenderState();
     CreateRenderState();
 }
 
 void UPrimitiveComponent::OnTransformDirty()
 {
-    // ?쒖닔 transform 蹂寃???local bounds(shape)??洹몃?濡쒖씠誘濡?fast-path瑜??대┛??
-    // (basis ?숈씪 + translation留?諛붾?寃쎌슦 UpdateWorldMatrix媛 ?댁쟾 AABB瑜??됲뻾?대룞留??곸슜)
     bWorldAABBDirty = true;
     MarkRenderTransformDirty();
 }

@@ -1,3 +1,4 @@
+﻿// 직렬화 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Archive.h"
@@ -6,6 +7,7 @@
 #include <string>
 #include <iostream>
 
+// FWindowsBinWriter는 에디터 UI 표시와 입력 처리를 담당합니다.
 class FWindowsBinWriter : public FArchive
 {
 private:
@@ -37,6 +39,7 @@ public:
     }
 };
 
+// FWindowsBinReader는 에디터 UI 표시와 입력 처리를 담당합니다.
 class FWindowsBinReader : public FArchive
 {
 private:

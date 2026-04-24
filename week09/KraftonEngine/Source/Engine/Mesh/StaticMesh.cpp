@@ -1,3 +1,4 @@
+﻿// 메시 영역의 세부 동작을 구현합니다.
 #include "Mesh/StaticMesh.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"

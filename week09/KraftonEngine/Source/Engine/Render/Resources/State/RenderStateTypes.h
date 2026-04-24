@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -15,6 +16,7 @@ enum class EDepthStencilState
     MAX
 };
 
+// EBlendState는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class EBlendState
 {
     Opaque,
@@ -24,6 +26,7 @@ enum class EBlendState
     MAX
 };
 
+// ERasterizerState는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class ERasterizerState
 {
     SolidBackCull,

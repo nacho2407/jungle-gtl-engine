@@ -1,3 +1,4 @@
+﻿// 메시 영역의 세부 동작을 구현합니다.
 #include "Mesh/MeshSimplifier.h"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 
 namespace
 {
+// FQuadric는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FQuadric
 {
     double D[10] = {};
@@ -89,6 +91,7 @@ inline void VecAdd(std::vector<uint32>& V, uint32 Val)
         V.push_back(Val);
 }
 
+// FCandidate는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FCandidate
 {
     float Cost;
@@ -97,6 +100,7 @@ struct FCandidate
     uint32 Version;
 };
 
+// FCandLess는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FCandLess
 {
     bool operator()(const FCandidate& A, const FCandidate& B) const { return A.Cost > B.Cost; }
@@ -259,6 +263,7 @@ FSimplifiedMesh FMeshSimplifier::Simplify(
         // 경계 정점
         std::vector<bool> IsBnd(NV, false);
         {
+            // HE는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
             struct HE
             {
                 uint32 A, B;

@@ -1,3 +1,4 @@
+﻿// 런타임 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
@@ -14,6 +15,7 @@ class FTimer;
 class UCameraComponent;
 class UGameViewportClient;
 
+// UEngine는 런타임 영역의 핵심 동작을 담당합니다.
 class UEngine : public UObject
 {
 public:
@@ -54,7 +56,6 @@ public:
 
     FRenderer& GetRenderer() { return Renderer; }
 
-    // Game Viewport Client ? PIE/Standalone ��
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
 

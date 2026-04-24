@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
@@ -59,7 +60,6 @@ ID3D11ShaderResourceView* ResolveBillboardTextureSRV(UMaterial* Material)
 #include "Editor/UI/EditorConsolePanel.h"
 
 // ============================================================
-// UpdateMesh ? TexturedQuad + Material shader/states
 // ============================================================
 void FBillboardSceneProxy::UpdateMesh()
 {

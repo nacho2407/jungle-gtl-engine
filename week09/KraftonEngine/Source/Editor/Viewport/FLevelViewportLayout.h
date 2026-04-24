@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -35,8 +36,7 @@ enum class EViewportLayout : uint8
     MAX
 };
 
-// 뷰포트 레이아웃 관리 — SSplitter 트리와 SWindow 리프를 소유하며
-// LevelViewportClient 생성/배치/레이아웃 전환을 담당
+// FLevelViewportLayout는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 class FLevelViewportLayout
 {
 public:

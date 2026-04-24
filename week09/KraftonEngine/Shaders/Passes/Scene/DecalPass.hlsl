@@ -1,7 +1,20 @@
-// Shader: DecalPass
-// Role: fullscreen decal projection into modified surface buffers.
-// Entries: VS_DecalFullscreen, PS_Decal_*.
-// Slots: b0 Frame, b2 DecalBuffer, t0 DecalTex, t10 SceneDepth, s0/s1/s2 common samplers.
+
+/*
+    DecalPass.hlsl는 장면 렌더링 패스의 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+    - 이 파일에서 직접 선언한 슬롯: t0, t1, t2, t3, b2
+*/
 
 #include "../../Common/Surface/CommonTypes.hlsli"
 #include "../../Common/Surface/SurfaceData.hlsli"
@@ -51,6 +64,7 @@ bool SampleDecalData(float2 UV, out float4 DecalSample, out float4 BaseColor, ou
     return true;
 }
 
+// 정점 입력을 화면 공간 출력으로 변환하는 버텍스 셰이더입니다.
 PS_Input_UV VS_DecalFullscreen(uint VertexID : SV_VertexID)
 {
     return FullscreenTriangleVS(VertexID);
@@ -58,9 +72,11 @@ PS_Input_UV VS_DecalFullscreen(uint VertexID : SV_VertexID)
 
 PS_Input_UV VS(uint VertexID : SV_VertexID)
 {
+    // 정점 입력을 화면 공간 출력으로 변환하는 버텍스 셰이더입니다.
     return VS_DecalFullscreen(VertexID);
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 float4 PS_Decal_Unlit(PS_Input_UV Input) : SV_TARGET0
 {
     float4 DecalSample;
@@ -77,9 +93,11 @@ float4 PS_Decal_Unlit(PS_Input_UV Input) : SV_TARGET0
 
 float4 PS(PS_Input_UV Input) : SV_TARGET0
 {
+    // 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
     return PS_Decal_Unlit(Input);
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 float4 PS_Decal_Gouraud(PS_Input_UV Input) : SV_TARGET0
 {
     float4 DecalSample;
@@ -94,6 +112,7 @@ float4 PS_Decal_Gouraud(PS_Input_UV Input) : SV_TARGET0
     return ApplyDecalBaseColor(BaseColor, DecalSample, DecalSample.a);
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 FDecalOutput2 PS_Decal_Lambert(PS_Input_UV Input)
 {
     FDecalOutput2 Output = (FDecalOutput2)0;
@@ -116,6 +135,7 @@ FDecalOutput2 PS_Decal_Lambert(PS_Input_UV Input)
     return Output;
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 FDecalOutput3 PS_Decal_BlinnPhong(PS_Input_UV Input)
 {
     FDecalOutput3 Output = (FDecalOutput3)0;

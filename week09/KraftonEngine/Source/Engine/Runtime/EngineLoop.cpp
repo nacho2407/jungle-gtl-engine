@@ -1,3 +1,4 @@
+﻿// 런타임 영역의 세부 동작을 구현합니다.
 #include "Engine/Runtime/EngineLoop.h"
 
 #if IS_OBJ_VIEWER

@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Math/Vector.h"
@@ -11,6 +12,7 @@
 #include "Math/Vector.h"
 #include <cassert>
 
+// FVertex는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FVertex
 {
     FVector  Position;
@@ -18,6 +20,7 @@ struct FVertex
     int      SubID;
 };
 
+// FOverlayVertex는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FOverlayVertex
 {
     float X, Y;
@@ -52,6 +55,7 @@ struct FVertexPNCT_T
 };
 
 template <typename VertexType>
+// TMeshData는 메시 데이터와 렌더 제출 정보를 다룹니다.
 struct TMeshData
 {
     TArray<VertexType> Vertices;

@@ -1,16 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/Singleton.h"
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 
-/*
-    슬롯 키 기준으로 상수 버퍼를 재사용하는 캐시입니다.
-
-    이 타입은 상수 버퍼의 생성/조회/재사용만 담당합니다.
-    렌더 정책을 결정하거나 여러 시스템의 생명주기를 조정하지 않으므로
-    Manager보다는 Cache라는 이름이 더 적합합니다.
-*/
+// FConstantBufferCache는 렌더 영역의 핵심 동작을 담당합니다.
 class FConstantBufferCache : public TSingleton<FConstantBufferCache>
 {
     friend class TSingleton<FConstantBufferCache>;

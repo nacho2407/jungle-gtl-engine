@@ -1,3 +1,4 @@
+﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "SimpleJSON/json.hpp"

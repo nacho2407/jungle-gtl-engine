@@ -1,14 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 class UBillboardComponent;
 
-// ============================================================
-// FBillboardSceneProxy — UBillboardComponent 전용 프록시
-// ============================================================
-// Quad 메시 + Primitive 셰이더 캐싱.
-// bPerViewportUpdate = true (카메라 방향으로 빌보드 회전 필요).
+// FBillboardSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FBillboardSceneProxy : public FPrimitiveSceneProxy
 {
 public:

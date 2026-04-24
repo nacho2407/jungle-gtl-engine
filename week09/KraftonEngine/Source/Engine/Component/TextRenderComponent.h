@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/ResourceTypes.h"
@@ -20,10 +21,7 @@ enum class ETextVAlign : int32
     Bottom
 };
 
-/*
-    UTextRenderComponent는 월드 공간 텍스트를 렌더하는 PrimitiveComponent입니다.
-    기본은 카메라를 바라보는 billboard text이며, bBillboard=false로 월드 회전을 그대로 사용할 수 있습니다.
-*/
+// UTextRenderComponent 컴포넌트이다.
 class UTextRenderComponent : public UPrimitiveComponent
 {
 public:

@@ -1,8 +1,10 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Render/Resources/State/RenderStateTypes.h"
 
+// FBlendStateManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FBlendStateManager
 {
 public:

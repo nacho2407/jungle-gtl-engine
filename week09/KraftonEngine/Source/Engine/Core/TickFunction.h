@@ -1,3 +1,4 @@
+﻿// 엔진 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -6,6 +7,7 @@ class AActor;
 class UActorComponent;
 class UWorld;
 
+// ELevelTick는 엔진 처리에서 사용할 선택지를 정의합니다.
 enum ELevelTick : int
 {
     LEVELTICK_All,
@@ -14,6 +16,7 @@ enum ELevelTick : int
     LEVELTICK_PauseTick,
 };
 
+// ETickingGroup는 엔진 처리에서 사용할 선택지를 정의합니다.
 enum ETickingGroup : int
 {
     TG_PrePhysics,
@@ -109,6 +112,7 @@ public:
     }
 };
 
+// FTickManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FTickManager
 {
 public:
@@ -122,6 +126,7 @@ private:
     TArray<FTickFunction*> TickFunctions;
 };
 
+// FActorTickFunction는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FActorTickFunction : public FTickFunction
 {
 private:
@@ -139,6 +144,7 @@ public:
     const char* GetDebugName() const override;
 };
 
+// FActorComponentTickFunction는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FActorComponentTickFunction : public FTickFunction
 {
     UActorComponent* Target = nullptr;

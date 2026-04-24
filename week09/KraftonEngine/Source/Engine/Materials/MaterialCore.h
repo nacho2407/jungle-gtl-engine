@@ -1,3 +1,4 @@
+﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Math/Vector.h"
@@ -16,7 +17,7 @@ struct FMaterialParameterInfo
     uint32 BufferSize = 0;
 };
 
-// Owns the shader-reflected material layout shared by material instances.
+// FMaterialTemplate는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 class FMaterialTemplate
 {
 private:

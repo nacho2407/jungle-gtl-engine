@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include <d3dcommon.h>
@@ -10,10 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
-/*
-    HLSL #include를 실제 파일로 해석해 주는 D3D11 include 로더입니다.
-    include된 파일 목록도 함께 수집해서 셰이더 변경 감시에 재사용합니다.
-*/
+// FShaderIncludeLoader는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FShaderIncludeLoader final : public ID3DInclude
 {
 public:

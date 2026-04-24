@@ -1,3 +1,4 @@
+﻿// 엔진 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -48,7 +49,7 @@ struct FStatAccum
     uint32 WindowCount = 0; // 채워진 수 (최대 STAT_WINDOW_SIZE)
 };
 
-// --- Stat Manager (싱글턴) ---
+// FStatManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FStatManager : public TSingleton<FStatManager>
 {
     friend class TSingleton<FStatManager>;
@@ -68,7 +69,7 @@ private:
     LARGE_INTEGER Frequency;
 };
 
-// --- Scoped Timer (RAII) ---
+// FScopedTimer는 엔진 영역의 핵심 동작을 담당합니다.
 class FScopedTimer
 {
 public:
@@ -131,6 +132,7 @@ private:
 
 // --- LOD Distribution Counter ---
 #if STATS
+// FLODStats는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FLODStats
 {
     static uint32 LODCount[4];

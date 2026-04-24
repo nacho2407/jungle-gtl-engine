@@ -1,8 +1,10 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 
+// ELightType는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class ELightType : uint32
 {
     Ambient = 0,
@@ -11,12 +13,14 @@ enum class ELightType : uint32
     Spot,
 };
 
+// FAmbientLightInfo는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FAmbientLightInfo
 {
     FVector Color;
     float   Intensity;
 };
 
+// FDirectionalLightInfo는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FDirectionalLightInfo
 {
     FVector Color;
@@ -27,6 +31,7 @@ struct FDirectionalLightInfo
 
 #define MAX_DIRECTIONAL_LIGHTS 4
 
+// FGlobalLightConstants는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FGlobalLightConstants
 {
     FAmbientLightInfo     Ambient;
@@ -36,6 +41,7 @@ struct FGlobalLightConstants
     FVector2              Padding;
 };
 
+// FLocalLightInfo는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FLocalLightInfo
 {
     FVector Color;
@@ -48,6 +54,7 @@ struct FLocalLightInfo
     float   Padding[3];
 };
 
+// FLightConstants는 조명 계산이나 조명 제출에 필요한 데이터를 다룹니다.
 struct FLightConstants
 {
     FVector  Position;

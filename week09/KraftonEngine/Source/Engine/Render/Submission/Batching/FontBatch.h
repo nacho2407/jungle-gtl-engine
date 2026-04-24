@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -16,7 +17,7 @@ struct FCharacterInfo
     float Height;
 };
 
-// FFontBatch — 월드/스크린 텍스트 배치를 만들고 업로드한다.
+// FFontBatch는 렌더 영역의 핵심 동작을 담당합니다.
 class FFontBatch
 {
 public:

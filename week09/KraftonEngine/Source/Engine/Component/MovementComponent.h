@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Component/ActorComponent.h"
@@ -7,11 +8,7 @@ class AActor;
 
 // TODO : 해당 컴포넌트 베이스 역할을 하고 고유의 기능은 없기에 오브젝트에 부여할 수 없도록 바꿔야 합니다!
 
-/**
- * 런타임(PIE, Game mode) 동안
- * USceneComponent를 움직이는 로직들의 베이스 클래스.
- * 실제 이동 로직은 자식 클래스에서 담당합니다.
- */
+// UMovementComponent 컴포넌트이다.
 class UMovementComponent : public UActorComponent
 {
 public:

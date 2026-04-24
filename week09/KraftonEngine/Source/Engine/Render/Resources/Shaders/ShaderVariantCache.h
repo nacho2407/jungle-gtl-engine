@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -48,10 +49,7 @@ struct FShaderVariantCacheEntry
     FShaderVariantDesc                Desc;
 };
 
-/*
-    뷰 모드 패스 desc에서 요청한 셰이더 variant를 컴파일하고 캐시합니다.
-    디버그 빌드에서는 의존 파일 변경을 감지해 사용 중인 variant를 다시 컴파일합니다.
-*/
+// FShaderVariantCache는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FShaderVariantCache
 {
 public:
