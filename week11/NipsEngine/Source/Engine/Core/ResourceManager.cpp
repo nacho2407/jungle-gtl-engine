@@ -1611,6 +1611,7 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 	if (Device == nullptr)
 	{
 		Device = CachedDevice.Get();
+
 	}
 
 	auto It = SamplerStates.find(Type);

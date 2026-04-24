@@ -11,9 +11,6 @@ bool FShadowPass::Initialize()
 
 bool FShadowPass::Begin(const FRenderPassContext* Context)
 {
-
-
-
 	return true;
 }
 
@@ -41,27 +38,31 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
-	D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
-	ShadowMap->GetDesc(&ShadowMapDesc);
 
-	D3D11_VIEWPORT ShadowViewport = {};
-	ShadowViewport.TopLeftX = 0.0f;
-	ShadowViewport.TopLeftY = 0.0f;
-	ShadowViewport.Width = static_cast<float>(ShadowMapDesc.Width);
-	ShadowViewport.Height = static_cast<float>(ShadowMapDesc.Height);
-	ShadowViewport.MinDepth = 0.0f;
-	ShadowViewport.MaxDepth = 1.0f;
+	{
+        D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
+        ShadowMap->GetDesc(&ShadowMapDesc);
 
-	DeviceContext->RSSetViewports(1, &ShadowViewport);
-	DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-	DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
+        D3D11_VIEWPORT ShadowViewport = {};
+        ShadowViewport.TopLeftX = 0.0f;
+        ShadowViewport.TopLeftY = 0.0f;
+        ShadowViewport.Width = static_cast<float>(ShadowMapDesc.Width);
+        ShadowViewport.Height = static_cast<float>(ShadowMapDesc.Height);
+        ShadowViewport.MinDepth = 0.0f;
+        ShadowViewport.MaxDepth = 1.0f;
 
-	ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-	DeviceContext->OMSetDepthStencilState(DepthState, 0);
+        DeviceContext->RSSetViewports(1, &ShadowViewport);
+        DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+        DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
 
-	FShadowConstants shadowData = {};
-	FMatrix CamView = RenderBus->GetView();
-	FMatrix CamProj = RenderBus->GetProj();
+        ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+        DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
+	}
+
+    FShadowConstants shadowData = {};
+    FMatrix CamView = RenderBus->GetView();
+    FMatrix CamProj = RenderBus->GetProj();
 
 	for (const auto& Cmd : OpaqueCmds)
 	{

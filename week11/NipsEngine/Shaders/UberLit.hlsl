@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 #include "Lighting.hlsl"
-
+#include "ShadowFunction.hlsl"
 cbuffer StaticMeshBuffer : register(b2)
 {
     float3 AmbientColor;    // Ka
@@ -139,6 +139,7 @@ float3 GetHeatmapColor(float weight)
 float CalculateShadow(float4 worldPos)
 {
     float4 camClip = mul(mul(worldPos, View), Projection);
+
     if (abs(camClip.w) < 1e-5f)
     {
         return 1.0f;
@@ -166,7 +167,8 @@ float CalculateShadow(float4 worldPos)
     
     const float shadowBias = 0.002f;
 
-    float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
+    float shadowFactor = ComputeShadowPCF(projCoords, 2, ShadowSampler, ShadowMap);
+   // float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
 
     return shadowFactor;
 }

@@ -30,6 +30,8 @@ struct FRenderTargetSet
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
     ID3D11DepthStencilView*   DepthStencilView = nullptr;
     ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
+
+
 	float Width = 0.0f;
 	float Height = 0.0f;
 
