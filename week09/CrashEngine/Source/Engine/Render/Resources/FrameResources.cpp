@@ -1,19 +1,18 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Buffers/ConstantBufferData.h"
-#include "Render/Resources/Buffers/LightBufferTypes.h"
 #include "Render/Resources/FrameResources.h"
 
 #include <cstring>
 
 #include "Core/ResourceTypes.h"
 #include "Materials/MaterialManager.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FFrameResources::Create(ID3D11Device* InDevice)
 {
     FrameBuffer.Create(InDevice, sizeof(FFrameCBData));
     PerObjectConstantBuffer.Create(InDevice, sizeof(FPerObjectCBData));
-    GlobalLightBuffer.Create(InDevice, sizeof(FGlobalLightConstants));
+    GlobalLightBuffer.Create(InDevice, sizeof(FGlobalLightCBData));
     TextBatch.Create(InDevice);
 
     // s0: LinearClamp sampler for post process and UI.
@@ -103,7 +102,7 @@ void FFrameResources::Release()
     }
 }
 
-void FFrameResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightInfo>& Lights)
+void FFrameResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContext* Context, const TArray<FLocalLightCBData>& Lights)
 {
     const uint32 Count = static_cast<uint32>(Lights.size());
     LocalLightCount    = Count;
@@ -124,12 +123,12 @@ void FFrameResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContex
         const uint32 NewCapacity = Count < 8u ? 8u : Count;
 
         D3D11_BUFFER_DESC Desc   = {};
-        Desc.ByteWidth           = sizeof(FLocalLightInfo) * NewCapacity;
+        Desc.ByteWidth           = sizeof(FLocalLightCBData) * NewCapacity;
         Desc.Usage               = D3D11_USAGE_DYNAMIC;
         Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
         Desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
         Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        Desc.StructureByteStride = sizeof(FLocalLightInfo);
+        Desc.StructureByteStride = sizeof(FLocalLightCBData);
         HRESULT hr               = Device->CreateBuffer(&Desc, nullptr, &LocalLightBuffer);
         if (FAILED(hr) || LocalLightBuffer == nullptr)
         {
@@ -154,7 +153,7 @@ void FFrameResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContex
         D3D11_MAPPED_SUBRESOURCE Mapped = {};
         if (SUCCEEDED(Context->Map(LocalLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
         {
-            std::memcpy(Mapped.pData, Lights.data(), sizeof(FLocalLightInfo) * Count);
+            std::memcpy(Mapped.pData, Lights.data(), sizeof(FLocalLightCBData) * Count);
             Context->Unmap(LocalLightBuffer, 0);
         }
     }
@@ -182,7 +181,7 @@ void FFrameResources::EnsurePerObjectCBPoolCapacity(ID3D11Device* Device, uint32
     }
 }
 
-FConstantBuffer* FFrameResources::GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveSceneProxy& Proxy)
+FConstantBuffer* FFrameResources::GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveProxy& Proxy)
 {
     if (Proxy.ProxyId == UINT32_MAX)
     {
@@ -197,3 +196,4 @@ void FFrameResources::EnsureTextCharInfoMap(const FFontResource* Resource)
 {
     TextBatch.EnsureCharInfoMap(Resource);
 }
+

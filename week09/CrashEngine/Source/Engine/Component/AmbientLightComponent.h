@@ -14,5 +14,7 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
-    FLightSceneProxy* CreateLightSceneProxy() override;
+    FLightProxy* CreateLightProxy() override;
 };
+
+

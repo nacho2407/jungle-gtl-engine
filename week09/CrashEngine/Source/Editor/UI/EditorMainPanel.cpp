@@ -21,6 +21,11 @@
 
 namespace
 {
+void SaveEditorSettings()
+{
+    FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
+}
+
 std::string OpenSceneFileDialog(bool bSave)
 {
     wchar_t FileName[MAX_PATH] = L"";
@@ -184,6 +189,32 @@ void FEditorMainPanel::Render(float DeltaTime)
             {
                 SaveSceneFromEditor(EditorEngine);
             }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit"))
+        {
+            FEditorSettings& Settings = FEditorSettings::Get();
+            int32 CurrentPath = static_cast<int32>(Settings.RenderShadingPath);
+            bool bChanged = false;
+
+            if (ImGui::MenuItem("Deferred Shading", nullptr, CurrentPath == static_cast<int32>(ERenderShadingPath::Deferred)))
+            {
+                Settings.RenderShadingPath = ERenderShadingPath::Deferred;
+                bChanged = true;
+            }
+
+            if (ImGui::MenuItem("Forward Shading", nullptr, CurrentPath == static_cast<int32>(ERenderShadingPath::Forward)))
+            {
+                Settings.RenderShadingPath = ERenderShadingPath::Forward;
+                bChanged = true;
+            }
+
+            if (bChanged)
+            {
+                SaveEditorSettings();
+            }
+
             ImGui::EndMenu();
         }
 

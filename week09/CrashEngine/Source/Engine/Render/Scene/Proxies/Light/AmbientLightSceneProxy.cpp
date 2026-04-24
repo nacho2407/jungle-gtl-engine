@@ -3,7 +3,7 @@
 #include "Component/AmbientLightComponent.h"
 
 FAmbientLightSceneProxy::FAmbientLightSceneProxy(UAmbientLightComponent* InComponent)
-    : FLightSceneProxy(InComponent)
+    : FLightProxy(InComponent)
 {
 }
 
@@ -12,8 +12,8 @@ void FAmbientLightSceneProxy::UpdateLightConstants()
     if (!Owner)
         return;
 
-    FLightSceneProxy::UpdateLightConstants();
+    FLightProxy::UpdateLightConstants();
 
-    UAmbientLightComponent* AmbientLight = static_cast<UAmbientLightComponent*>(Owner);
-    LightConstants.LightType             = static_cast<uint32>(ELightType::Ambient);
+    LightProxyInfo.LightType = static_cast<uint32>(ELightType::Ambient);
 }
+

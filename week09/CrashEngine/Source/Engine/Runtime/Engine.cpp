@@ -13,6 +13,10 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
+#include "Viewport/GameViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -83,6 +87,8 @@ void UEngine::Render(float DeltaTime)
     SCOPE_STAT_CAT("UEngine::Render", "2_Render");
 
     RenderTargets.Reset();
+    FViewport* Viewport = GameViewportClient ? GameViewportClient->GetViewport() : nullptr;
+    ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
 
     UWorld* World = GetWorld();
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
@@ -94,7 +100,21 @@ void UEngine::Render(float DeltaTime)
 
         SceneView.SetCameraInfo(Camera);
         SceneView.SetRenderSettings(ViewMode, ShowFlags);
-        Renderer.ReleaseViewModeSurfaces();
+        if (Viewport && DeviceContext)
+        {
+            if (Viewport->ApplyPendingResize())
+            {
+                Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
+            }
+
+            Viewport->BeginRender(DeviceContext);
+            RenderTargets.SetFromViewport(Viewport);
+            SceneView.SetViewportInfo(Viewport);
+        }
+        else
+        {
+            Renderer.ReleaseViewModeSurfaces();
+        }
 
         Scene = &World->GetScene();
 
@@ -117,6 +137,12 @@ void UEngine::Render(float DeltaTime)
 
     {
         FRenderPipelineContext PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, Scene);
+        if (Viewport && Renderer.GetViewModePassRegistry() &&
+            Renderer.GetViewModePassRegistry()->HasConfig(SceneView.ViewMode))
+        {
+            PipelineContext.ViewMode.Surfaces =
+                Renderer.AcquireViewModeSurfaces(Viewport, Viewport->GetWidth(), Viewport->GetHeight());
+        }
         Renderer.BuildDrawCommands(PipelineContext);
         Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
     }

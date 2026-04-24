@@ -21,7 +21,7 @@
 #include "../../Common/Utils/Functions.hlsl"
 #include "../../Common/Resources/SystemResources.hlsl"
 
-cbuffer OutlinePostProcessCB : register(b2)
+cbuffer OutlinePostProcessParams : register(b2)
 {
     float4 OutlineColor;
     float OutlineThickness;

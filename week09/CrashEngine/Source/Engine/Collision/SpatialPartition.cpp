@@ -5,7 +5,7 @@
 #include "Collision/RayUtils.h"
 #include "Core/RayTypes.h"
 #include "Component/PrimitiveComponent.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "GameFramework/AActor.h"
 #include <algorithm>
 
@@ -393,7 +393,7 @@ void FSpatialPartition::QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolu
     }
 }
 
-void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const
+void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const
 {
     if (Octree)
     {
@@ -407,7 +407,7 @@ void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume
 
         if (ConvexVolume.IntersectAABB(Prim->GetWorldBoundingBox()))
         {
-            if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
+            if (FPrimitiveProxy* Proxy = Prim->GetSceneProxy())
                 if (!Proxy->bNeverCull)
                     OutProxies.push_back(Proxy);
         }
@@ -514,3 +514,4 @@ void FSpatialPartition::RemovePrimitive(UPrimitiveComponent* Primitive)
         Primitive->ClearOctreeLocation();
     }
 }
+

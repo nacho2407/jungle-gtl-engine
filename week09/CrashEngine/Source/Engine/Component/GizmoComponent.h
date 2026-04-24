@@ -7,7 +7,7 @@
 #include "Render/Execute/Context/Scene/ViewTypes.h"
 
 class AActor;
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FScene;
 
 // EGizmoMode는 컴포넌트 처리에서 사용할 선택지를 정의합니다.
@@ -75,7 +75,7 @@ public:
 
     FMeshBuffer* GetMeshBuffer() const override;
     FMeshDataView GetMeshDataView() const override { return MeshData ? FMeshDataView::FromMeshData(*MeshData) : FMeshDataView{}; }
-    FPrimitiveSceneProxy* CreateSceneProxy() override;
+    FPrimitiveProxy* CreateSceneProxy() override;
     void CreateRenderState() override;
     void DestroyRenderState() override;
 
@@ -111,6 +111,7 @@ private:
     bool bPressedOnHandle = false;
     const FMeshData* MeshData = nullptr;
     uint32 AxisMask = 0x7;                      // Bit 0=X, 1=Y, 2=Z. Rendering proxies compute the final mask.
-    FPrimitiveSceneProxy* InnerProxy = nullptr; // Proxy used by the inner gizmo pass.
+    FPrimitiveProxy* InnerProxy = nullptr; // Proxy used by the inner gizmo pass.
     FScene* RegisteredScene = nullptr;          // Scene used for direct gizmo registration.
 };
+

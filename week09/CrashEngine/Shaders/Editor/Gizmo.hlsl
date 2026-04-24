@@ -19,7 +19,7 @@
 #include "../Common/Utils/Functions.hlsl"
 #include "../Common/Geometry/VertexLayouts.hlsl"
 
-cbuffer GizmoBuffer : register(b2)
+cbuffer GizmoParams : register(b2)
 {
     float4 GizmoColorTint;
     uint bIsInnerGizmo;

@@ -75,7 +75,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     CompileCS(tile25DMacros, &LightCullingCS_25D);
 
     LightCullingParamsCBWrapper = new FConstantBuffer();
-    LightCullingParamsCBWrapper->Create(Device->GetDevice(), sizeof(FLightCullingParams));
+    LightCullingParamsCBWrapper->Create(Device->GetDevice(), sizeof(FLightCullingCBData));
     LightCullingParamsCB = LightCullingParamsCBWrapper->GetBuffer();
 }
 
@@ -105,10 +105,10 @@ void FTileBasedLightCulling::Release()
     // SafeRelease(PointLightBuffer);
 
     SafeRelease(PerTilePointLightIndexMaskSRV);
-    SafeRelease(PerTilePointLightIndexMaskOutUAV);
+    SafeRelease(PerTilePointLightIndexMaskUAV);
     SafeRelease(PerTilePointLightIndexMaskBuffer);
 
-    SafeRelease(CulledPointLightIndexMaskOUTUAV);
+    SafeRelease(CulledPointLightIndexMaskUAV);
     SafeRelease(CulledPointLightIndexMaskBuffer);
 
     SafeRelease(DebugHitMapSRV);
@@ -168,7 +168,7 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 
     // 🎯 [여기 추가!] 타일 마스크 버퍼를 매 프레임 무조건 0으로 비워줍니다!
     UINT clearMask[4] = { 0, 0, 0, 0 };
-    Context->ClearUnorderedAccessViewUint(PerTilePointLightIndexMaskOutUAV, clearMask);
+    Context->ClearUnorderedAccessViewUint(PerTilePointLightIndexMaskUAV, clearMask);
 
     ID3D11ShaderResourceView*  NullSRVs1[1] = { nullptr };
     ID3D11UnorderedAccessView* NullUAVs1[4] = { nullptr, nullptr, nullptr, nullptr };
@@ -186,8 +186,8 @@ void FTileBasedLightCulling::Dispatch(const FFrameContext& frameContext, bool bE
 
     ID3D11UnorderedAccessView* UAVs[] = {
         nullptr,
-        PerTilePointLightIndexMaskOutUAV, // u1
-        CulledPointLightIndexMaskOUTUAV,  // u2
+        PerTilePointLightIndexMaskUAV, // u1
+        CulledPointLightIndexMaskUAV,  // u2
         DebugHitMapUAV,                   // u3
     };
     Context->CSSetUnorderedAccessViews(0, 4, UAVs, nullptr);
@@ -233,9 +233,9 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
 
     // D3D11_BUFFER_DESC Desc = {};
     // Desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
-    // Desc.ByteWidth           = sizeof(FLocalLightInfo) * Lights.size();
+    // Desc.ByteWidth           = sizeof(FLocalLightCBData) * Lights.size();
     // Desc.Usage               = D3D11_USAGE_DEFAULT;
-    // Desc.StructureByteStride = sizeof(FLocalLightInfo);
+    // Desc.StructureByteStride = sizeof(FLocalLightCBData);
     // Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
     // D3D11_SUBRESOURCE_DATA InitData = {};
@@ -259,9 +259,9 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
     auto SafeRelease = [](auto*& ptr)
     { if (ptr) { ptr->Release(); ptr = nullptr; } };
     SafeRelease(PerTilePointLightIndexMaskSRV);
-    SafeRelease(PerTilePointLightIndexMaskOutUAV);
+    SafeRelease(PerTilePointLightIndexMaskUAV);
     SafeRelease(PerTilePointLightIndexMaskBuffer);
-    SafeRelease(CulledPointLightIndexMaskOUTUAV);
+    SafeRelease(CulledPointLightIndexMaskUAV);
     SafeRelease(CulledPointLightIndexMaskBuffer);
 
     auto CreateMaskBuffer = [&](
@@ -305,13 +305,13 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
     CreateMaskBuffer(
         NumTiles * NumBucketsPerTile,
         &PerTilePointLightIndexMaskBuffer,
-        &PerTilePointLightIndexMaskOutUAV,
+        &PerTilePointLightIndexMaskUAV,
         &PerTilePointLightIndexMaskSRV);
 
     CreateMaskBuffer(
         NumBucketsPerTile,
         &CulledPointLightIndexMaskBuffer,
-        &CulledPointLightIndexMaskOUTUAV,
+        &CulledPointLightIndexMaskUAV,
         nullptr);
 }
 
@@ -358,7 +358,7 @@ void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& fra
     if (!LightCullingParamsCB)
         return;
 
-    FLightCullingParams Params = {};
+    FLightCullingCBData Params = {};
     Params.ScreenSizeX         = static_cast<uint32>(frameContext.ViewportWidth);
     Params.ScreenSizeY         = static_cast<uint32>(frameContext.ViewportHeight);
     Params.TileSizeX           = TILE_SIZE;

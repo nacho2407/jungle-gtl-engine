@@ -3,7 +3,7 @@
 #include <Collision/RayUtils.h>
 #include <algorithm>
 #include "Editor/UI/EditorConsolePanel.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 namespace
 {
@@ -508,21 +508,21 @@ void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPr
 }
 
 // ================================================================
-// Proxy-direct frustum query — avoids Component→GetSceneProxy() indirection
+// Proxy-direct frustum query ? avoids Component→GetSceneProxy() indirection
 // ================================================================
 
-void FOctree::QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies) const
+void FOctree::QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const
 {
     QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
 }
 
-void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
+void FOctree::CollectAllProxies(TArray<FPrimitiveProxy*>& OutProxies) const
 {
     for (UPrimitiveComponent* Primitive : PrimitiveList)
     {
         if (Primitive)
         {
-            if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+            if (FPrimitiveProxy* Proxy = Primitive->GetSceneProxy())
                 if (!Proxy->bNeverCull)
                     OutProxies.push_back(Proxy);
         }
@@ -535,7 +535,7 @@ void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
         Children[i]->CollectAllProxies(OutProxies);
 }
 
-void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveSceneProxy*>& OutProxies, bool bParentContained) const
+void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies, bool bParentContained) const
 {
     if (bParentContained)
     {
@@ -563,7 +563,7 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 
         if (ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
         {
-            if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
+            if (FPrimitiveProxy* Proxy = Primitive->GetSceneProxy())
                 if (!Proxy->bNeverCull)
                     OutProxies.push_back(Proxy);
         }
@@ -575,3 +575,4 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
     for (int i = 0; i < 8; ++i)
         Children[i]->QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
 }
+

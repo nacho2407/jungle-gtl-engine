@@ -4,14 +4,14 @@
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 
-class FPrimitiveSceneProxy;
+class FPrimitiveProxy;
 class FTextRenderSceneProxy;
 class FDrawCommandList;
 struct FRenderPipelineContext;
 
 namespace DrawCommandBuild
 {
-void BuildMeshDrawCommand(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+void BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
 void BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant = EViewModePostProcessVariant::None);
 
@@ -24,5 +24,6 @@ void BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandLi
 void BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 void BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
-void BuildDecalDrawCommand(const FPrimitiveSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+void BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 } // namespace DrawCommandBuild
+

@@ -1,6 +1,5 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Buffers/ConstantBufferData.h"
-#include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
@@ -28,7 +27,7 @@ void FSubUVSceneProxy::UpdateMesh()
     USubUVComponent* Comp = GetSubUVComponent();
 
     // TexturedQuad (FVertexPNCT with UVs) for rendering
-    MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
+    MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EPrimitiveMeshShape::TexturedQuad);
     Shader     = FShaderManager::Get().GetShader(EShaderType::SubUV);
     Pass       = ERenderPass::AlphaBlend;
 

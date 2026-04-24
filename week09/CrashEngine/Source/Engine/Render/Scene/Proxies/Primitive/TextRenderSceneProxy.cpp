@@ -7,7 +7,7 @@
 #include "Render/Resources/Shaders/ShaderManager.h"
 
 FTextRenderSceneProxy::FTextRenderSceneProxy(UTextRenderComponent* InComponent)
-    : FPrimitiveSceneProxy(InComponent)
+    : FPrimitiveProxy(InComponent)
 {
     bPerViewportUpdate           = true;
     bShowAABB                    = false;
@@ -77,3 +77,4 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     PerObjectConstants          = FPerObjectCBData::FromWorldMatrix(OutlineMatrix);
     MarkPerObjectCBDirty();
 }
+

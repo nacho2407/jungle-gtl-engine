@@ -22,7 +22,7 @@
 #include "../../Common/Resources/SystemResources.hlsl"
 
 // b2 (PerShader0): Fog parameters
-cbuffer FogBuffer : register(b2)
+cbuffer FogParams : register(b2)
 {
     float4 FogInscatteringColor;
     float FogDensity;
@@ -61,7 +61,7 @@ float4 PS(PS_Input_UV input) : SV_TARGET
     float4 worldH = mul(clipPos, InvViewProj);
     float3 worldPos = worldH.xyz / worldH.w;
 
-    // Camera position from FrameBuffer (b0)
+    // Camera position from FrameParams (b0)
     float3 camPos = CameraWorldPos;
 
     float3 rayDir = worldPos - camPos;

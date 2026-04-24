@@ -10,12 +10,12 @@
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Texture/Texture2D.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
-FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
+FPrimitiveProxy* UStaticMeshComponent::CreateSceneProxy()
 {
     return new FStaticMeshSceneProxy(this);
 }
@@ -301,3 +301,4 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
         }
     }
 }
+

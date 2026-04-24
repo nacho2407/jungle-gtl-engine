@@ -3,7 +3,7 @@
 #include "Render/Execute/Passes/Scene/DepthPrePass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 void FDepthPrePass::PrepareInputs(FRenderPipelineContext& Context)
 {
@@ -22,3 +22,4 @@ void FDepthPrePass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     SubmitPassRange(Context, ERenderPass::DepthPre);
 }
+

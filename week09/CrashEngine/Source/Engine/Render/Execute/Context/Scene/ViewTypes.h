@@ -21,6 +21,12 @@ enum class EViewMode : int32
     Count
 };
 
+enum class ERenderShadingPath : int32
+{
+    Deferred = 0,
+    Forward  = 1,
+};
+
 // FShowFlags는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FShowFlags
 {
