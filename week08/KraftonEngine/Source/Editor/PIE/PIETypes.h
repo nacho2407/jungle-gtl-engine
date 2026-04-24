@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Component/CameraComponent.h"
@@ -30,6 +31,7 @@ struct FRequestPlaySessionParams
     FLevelEditorViewportClient* DestinationViewportClient = nullptr;
 };
 
+// FPIEViewportCameraSnapshot는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 struct FPIEViewportCameraSnapshot
 {
     // 현재는 활성 에디터 뷰포트 카메라의 임시 백업.

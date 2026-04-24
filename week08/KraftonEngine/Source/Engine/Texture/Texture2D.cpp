@@ -1,3 +1,4 @@
+﻿// 텍스처 영역의 세부 동작을 구현합니다.
 #include "Texture/Texture2D.h"
 #include "Object/ObjectFactory.h"
 #include "Editor/UI/EditorConsolePanel.h"

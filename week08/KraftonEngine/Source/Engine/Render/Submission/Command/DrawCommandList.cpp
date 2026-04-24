@@ -1,4 +1,5 @@
-﻿#include "DrawCommandList.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "DrawCommandList.h"
 
 #include <algorithm>
 #include <cstring>

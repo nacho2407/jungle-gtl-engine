@@ -1,3 +1,4 @@
+﻿// 메시 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -50,12 +51,14 @@ enum class EForwardAxis : uint8
     NegZ // +Z, -Z
 };
 
+// EWindingOrder는 메시 처리에서 사용할 선택지를 정의합니다.
 enum class EWindingOrder : uint8
 {
     CCW_to_CW, // OBJ CCW → DX CW (인덱스 [0,2,1]) — 기본값
     Keep       // 원본 유지 [0,1,2]
 };
 
+// FImportOptions는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FImportOptions
 {
     float Scale = 1.0f;

@@ -1,10 +1,11 @@
+// 뷰포트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 
 class FViewport;
 
-// UE의 FViewportClient 대응 — 뷰포트 입력/드로잉 인터페이스
+// FViewportClient는 뷰포트의 렌더링과 입력 처리를 위임받는 인터페이스입니다.
 class FViewportClient
 {
 public:

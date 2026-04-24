@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "OBB.h"
@@ -8,6 +9,7 @@
 
 struct FStaticMesh;
 
+// FMeshTriangleBVH 클래스이다.
 class FMeshTriangleBVH
 {
 public:
@@ -26,6 +28,7 @@ public:
     // void MarkDirty();
 
 private:
+    // FTriangleLeaf는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FTriangleLeaf
     {
         FBoundingBox Bounds;
@@ -33,6 +36,7 @@ private:
         int32 TriangleStartIndex = 0;
     };
 
+    // FNode는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FNode
     {
         FBoundingBox Bounds;
@@ -55,6 +59,7 @@ private:
         bool IsLeaf() const { return ChildCount == 0; }
     };
 
+    // alignas는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct alignas(32) FTrianglePacket
     {
         alignas(32) float V0X[8];

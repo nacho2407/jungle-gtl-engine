@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 #include "Render/Resources/Meshes/PrimitiveMeshTypes.h"
 #include "PrimitiveComponent.h"
 #include "Render/Resources/Buffers/MeshBufferManager.h"
@@ -7,10 +8,7 @@
 
 class FPrimitiveSceneProxy;
 
-/*
-    카메라를 향해 회전하는 스프라이트형 primitive 컴포넌트입니다.
-    에디터 아이콘, 빌보드 메시, 간단한 사각형 피킹에 사용됩니다.
-*/
+// UBillboardComponent 컴포넌트이다.
 class UBillboardComponent : public UPrimitiveComponent
 {
 public:
@@ -37,6 +35,7 @@ public:
         빌보드에 사용할 머티리얼을 설정합니다.
     */
     void SetMaterial(class UMaterial* InMaterial);
+    // UMaterial는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
     class UMaterial* GetMaterial() const { return Material; }
 
     /*

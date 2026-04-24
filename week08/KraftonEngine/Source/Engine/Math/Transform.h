@@ -1,8 +1,10 @@
+﻿// 수학 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Engine/Math/Matrix.h"
 #include "Engine/Math/Rotator.h"
 #include "Engine/Math/Quat.h"
 
+// FTransform는 수학 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FTransform
 {
     FVector Location;

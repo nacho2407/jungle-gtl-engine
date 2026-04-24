@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역의 세부 동작을 구현합니다.
 #include "Collision/WorldPrimitivePickingBVH.h"
 
 #include "Collision/RayUtils.h"
@@ -120,6 +121,7 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors, bool 
  */
 bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
+    // FTraversalEntry는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FTraversalEntry
     {
         int32 NodeIndex = -1;

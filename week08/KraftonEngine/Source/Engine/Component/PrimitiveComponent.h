@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
@@ -16,10 +17,7 @@ class FMeshBuffer;
 class FOctree;
 class UMaterial;
 
-/*
-    렌더링 가능한 장면 컴포넌트의 기본 클래스입니다.
-    월드 bounds, 가시성, 머티리얼, 렌더 프록시 더티 상태를 관리합니다.
-*/
+// UPrimitiveComponent 컴포넌트이다.
 class UPrimitiveComponent : public USceneComponent
 {
 public:

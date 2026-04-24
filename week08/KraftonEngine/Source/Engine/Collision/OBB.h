@@ -1,9 +1,11 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Core/EngineTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
+// FOBB는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FOBB
 {
     FVector Center = { 0, 0, 0 };

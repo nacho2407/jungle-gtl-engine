@@ -1,7 +1,20 @@
-// Shader: OpaquePass
-// Role: scene mesh entry shader for base surface generation.
-// Entries: VS_Opaque, PS_Opaque_Unlit, PS_Opaque_Gouraud, PS_Opaque_Lambert, PS_Opaque_BlinnPhong.
-// Slots: b0 Frame, b1 Object/Material, t0 BaseColor, t1 NormalMap, t2 SpecularMap, s1 LinearWrap.
+
+/*
+    OpaquePass.hlsl는 장면 렌더링 패스의 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+    - 이 파일에서 직접 선언한 슬롯: t0, t1, t2
+*/
 
 #include "../../Common/Surface/CommonTypes.hlsli"
 #include "../../Common/Surface/SurfaceData.hlsli"
@@ -42,6 +55,7 @@ float4 ResolveOpaqueColor(FOpaqueVSOutput Input)
     return BaseSample * GetStaticMeshSectionColorOrWhite();
 }
 
+// 정점 입력을 화면 공간 출력으로 변환하는 버텍스 셰이더입니다.
 FOpaqueVSOutput VS_Opaque(VS_Input_PNCT_T Input)
 {
     FOpaqueVSOutput Output;
@@ -61,11 +75,13 @@ FOpaqueVSOutput VS_Opaque(VS_Input_PNCT_T Input)
     return Output;
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 float4 PS_Opaque_Unlit(FOpaqueVSOutput Input) : SV_TARGET0
 {
     return EncodeBaseColor(ResolveOpaqueColor(Input));
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 FOpaqueOutput2 PS_Opaque_Gouraud(FOpaqueVSOutput Input)
 {
     FOpaqueOutput2 Output;
@@ -74,6 +90,7 @@ FOpaqueOutput2 PS_Opaque_Gouraud(FOpaqueVSOutput Input)
     return Output;
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 FOpaqueOutput2 PS_Opaque_Lambert(FOpaqueVSOutput Input)
 {
     FOpaqueOutput2 Output;
@@ -82,6 +99,7 @@ FOpaqueOutput2 PS_Opaque_Lambert(FOpaqueVSOutput Input)
     return Output;
 }
 
+// 래스터화된 픽셀의 최종 색상 또는 표면 데이터를 계산합니다.
 FOpaqueOutput3 PS_Opaque_BlinnPhong(FOpaqueVSOutput Input)
 {
     FOpaqueOutput3 Output;

@@ -1,4 +1,5 @@
-﻿#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
 
@@ -13,6 +14,7 @@ struct FHiZParamsCB
     uint32 _pad[2];
 };
 
+// FOcclusionTestParamsCB는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FOcclusionTestParamsCB
 {
     FMatrix ViewProj;       // 64 bytes

@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/Singleton.h"
@@ -21,10 +22,7 @@ struct FCustomShaderCacheEntry
     FShaderFileDependency             SourceFile;
 };
 
-/*
-    셰이더 레지스트리에 등록된 프로그램을 컴파일하고 캐시하는 관리자입니다.
-    디버그 빌드에서는 사용 시점과 틱 시점에 파일 변경을 감지해 다시 컴파일합니다.
-*/
+// FShaderManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FShaderManager : public TSingleton<FShaderManager>
 {
     friend class TSingleton<FShaderManager>;

@@ -1,9 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 
+// FPerObjectCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FPerObjectCBData
 {
     FMatrix  Model;
@@ -20,6 +22,7 @@ struct FPerObjectCBData
     }
 };
 
+// FFrameCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FFrameCBData
 {
     FMatrix View;
@@ -31,6 +34,7 @@ struct FFrameCBData
     FVector CameraWorldPos;
 };
 
+// FSubUVRegionCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FSubUVRegionCBData
 {
     float U      = 0.0f;
@@ -39,6 +43,7 @@ struct FSubUVRegionCBData
     float Height = 1.0f;
 };
 
+// FGizmoCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FGizmoCBData
 {
     FVector4 ColorTint;
@@ -50,6 +55,7 @@ struct FGizmoCBData
     uint32   _pad[3];
 };
 
+// FOutlinePostProcessCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FOutlinePostProcessCBData
 {
     FVector4 OutlineColor     = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
@@ -57,6 +63,7 @@ struct FOutlinePostProcessCBData
     float    Padding[3]       = {};
 };
 
+// FSceneDepthPCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FSceneDepthPCBData
 {
     float   Exponent;
@@ -67,6 +74,7 @@ struct FSceneDepthPCBData
     FVector _Padding;
 };
 
+// FFogCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FFogCBData
 {
     FVector4 InscatteringColor;
@@ -79,6 +87,7 @@ struct FFogCBData
     float    _pad[2];
 };
 
+// FFXAACBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FFXAACBData
 {
     float EdgeThreshold;

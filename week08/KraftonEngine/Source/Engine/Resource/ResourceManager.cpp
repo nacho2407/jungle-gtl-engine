@@ -1,3 +1,4 @@
+﻿// 엔진 영역의 세부 동작을 구현합니다.
 #include "Resource/ResourceManager.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"

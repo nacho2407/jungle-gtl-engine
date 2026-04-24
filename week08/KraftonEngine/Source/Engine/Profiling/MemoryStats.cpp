@@ -1,3 +1,4 @@
+﻿// 엔진 영역의 세부 동작을 구현합니다.
 #include "MemoryStats.h"
 
 #include <d3d11.h>

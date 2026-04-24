@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역의 세부 동작을 구현합니다.
 #include "SpatialPartition.h"
 
 #include "Collision/Octree.h"

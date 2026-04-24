@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -27,6 +28,7 @@ struct FRaySIMDContext
     __m256 ParallelZMask;
 };
 
+// FRayUtilsSIMD는 충돌, 피킹, 공간 가속 처리를 담당합니다.
 struct FRayUtilsSIMD
 {
     static FRaySIMDContext MakeRayContext(const FVector& Origin, const FVector& Direction);

@@ -1,3 +1,4 @@
+﻿// 게임 프레임워크 영역의 세부 동작을 구현합니다.
 #include "FakeLightActor.h"
 #include "AActor.h"
 #include "Component/CylindricalBillboardComponent.h"

@@ -1,4 +1,5 @@
-﻿#include "BillboardComponent.h"
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
+#include "BillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Render/Scene/Proxies/Primitive/BillboardSceneProxy.h"

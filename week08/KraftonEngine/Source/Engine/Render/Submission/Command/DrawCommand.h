@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Execute/Registry/RenderPassTypes.h"
@@ -12,6 +13,7 @@ class FConstantBuffer;
 struct ID3D11ShaderResourceView;
 struct ID3D11Buffer;
 
+// FDrawCommand는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FDrawCommand
 {
     // ===== PSO (Pipeline State Object) =====

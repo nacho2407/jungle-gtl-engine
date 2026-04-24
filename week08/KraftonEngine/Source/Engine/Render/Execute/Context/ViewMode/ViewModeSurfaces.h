@@ -1,9 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Execute/Context/ViewMode/ShadingModel.h"
 #include "Render/RHI/D3D11/Textures/SurfaceTexture.h"
 
+// EViewModeSurfaceslot는 렌더 처리에서 사용할 선택지를 정의합니다.
 enum class EViewModeSurfaceslot : uint8
 {
     BaseColor = 0,
@@ -15,6 +17,7 @@ enum class EViewModeSurfaceslot : uint8
     Count
 };
 
+// FViewModeSurfaces는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 class FViewModeSurfaces
 {
 public:

@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
@@ -6,12 +7,7 @@
 
 class UStaticMeshComponent;
 
-// ============================================================
-// FStaticMeshSceneProxy — UStaticMeshComponent 전용 프록시
-// ============================================================
-// StaticMesh의 섹션별 머티리얼, 메시 버퍼, 셰이더를 캐싱.
-// Mesh/Material dirty 시 SectionRenderData를 재구축한다.
-// LOD: 거리 기반으로 MeshBuffer + SectionRenderData를 스왑.
+// FStaticMeshSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FStaticMeshSceneProxy : public FPrimitiveSceneProxy
 {
 public:
@@ -29,6 +25,7 @@ private:
     // 모든 LOD의 SectionRenderData 재구축
     void RebuildSectionRenderData();
 
+    // FLODDrawData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FLODDrawData
     {
         FMeshBuffer*                                     MeshBuffer = nullptr;

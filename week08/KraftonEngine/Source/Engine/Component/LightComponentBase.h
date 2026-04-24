@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Component/SceneComponent.h"
@@ -5,11 +6,7 @@
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 
-/**
- * ULightComponentBase: 빛이라는 개념이 가져야 할 가장 핵심적인 데이터만 정의합니다.
- * ULightComponent: 실제 렌더링 스레드와 통신하고 화면에 그리기 위한 로직을 담당합니다.
- * 따라서 ULightComponentBase에서는 렌더링과 직접 관련 없는 조명의 속성만 정의합니다.
- */
+// ULightComponentBase 클래스이다.
 class ULightComponentBase : public USceneComponent
 {
 public:

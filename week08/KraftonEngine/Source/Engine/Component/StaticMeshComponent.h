@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Component/MeshComponent.h"
@@ -13,7 +14,7 @@ namespace json
 class JSON;
 }
 
-// UStaticMeshComponent — 월드 배치 컴포넌트
+// UStaticMeshComponent 컴포넌트이다.
 class UStaticMeshComponent : public UMeshComponent
 {
 public:

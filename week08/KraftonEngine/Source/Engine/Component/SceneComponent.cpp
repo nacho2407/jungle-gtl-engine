@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "SceneComponent.h"
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>

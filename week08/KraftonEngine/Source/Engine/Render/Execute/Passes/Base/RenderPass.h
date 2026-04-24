@@ -1,12 +1,10 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 struct FRenderPipelineContext;
 class FPrimitiveSceneProxy;
 
-/*
-    모든 렌더 패스가 공통으로 따르는 기본 인터페이스입니다.
-    입력 준비, 타깃 준비, 드로우 수집, 제출 단계를 패스별로 오버라이드합니다.
-*/
+// FRenderPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
 class FRenderPass
 {
 public:

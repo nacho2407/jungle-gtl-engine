@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -7,6 +8,7 @@
 #include "Render/Execute/Context/Scene/ViewTypes.h"
 #include "Render/Submission/Batching/BatchBuffer.h"
 
+// FLineVertex는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FLineVertex
 {
     FVector  Position;
@@ -17,6 +19,7 @@ struct FLineVertex
         : Position(InPos), Color(InColor) {}
 };
 
+// FLineBatch는 렌더 영역의 핵심 동작을 담당합니다.
 class FLineBatch
 {
 public:

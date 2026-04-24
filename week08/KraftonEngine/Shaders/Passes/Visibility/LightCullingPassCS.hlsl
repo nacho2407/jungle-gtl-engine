@@ -1,6 +1,19 @@
-// Shader: LightCullingPassCS
-// Role: tile-based local light culling compute entry.
-// Entry: CS_LightCulling. Slots: b0 Frame, b2 LightCullingParams, t1 SceneDepth, t6 LocalLights, u0/u1/u2 culling outputs.
+
+/*
+    LightCullingPassCS.hlsl는 컬링/가시성 계산에 쓰는 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+*/
 
 #include "LightCullingCommon.hlsl"
 
@@ -8,6 +21,7 @@
 // Compute Shader Entry Point
 // ============================================================
 [numthreads(TILE_SIZE, TILE_SIZE, 1)]
+// 병렬 스레드 그룹으로 실행되는 컴퓨트 셰이더입니다.
 void CS_LightCulling(
     uint3 groupID    : SV_GroupID,
     uint3 dispatchID : SV_DispatchThreadID,
@@ -116,9 +130,9 @@ void CS_LightCulling(
 
     FFrustum frustum;
     frustum.planes[0] = ComputePlane(viewCorners[0], viewCorners[2], viewCorners[6]);
-    frustum.planes[1] = ComputePlane(viewCorners[3], viewCorners[1], viewCorners[7]); // ??
-    frustum.planes[2] = ComputePlane(viewCorners[1], viewCorners[0], viewCorners[5]); // ??
-    frustum.planes[3] = ComputePlane(viewCorners[2], viewCorners[3], viewCorners[7]); // ??
+    frustum.planes[1] = ComputePlane(viewCorners[3], viewCorners[1], viewCorners[7]);
+    frustum.planes[2] = ComputePlane(viewCorners[1], viewCorners[0], viewCorners[5]);
+    frustum.planes[3] = ComputePlane(viewCorners[2], viewCorners[3], viewCorners[7]);
 
     // --------------------------------------------------------
     // 5. Light Culling

@@ -1,3 +1,4 @@
+﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/ObjectFactory.h"
@@ -9,6 +10,7 @@
 class UTexture2D;
 class FArchive;
 
+// UMaterialInterface는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 class UMaterialInterface : public UObject
 {
 public:
@@ -25,6 +27,7 @@ public:
     virtual bool GetMatrixParameter(const FString& ParamName, FMatrix& Value) const = 0;
 };
 
+// UMaterial는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 class UMaterial : public UMaterialInterface
 {
 private:
@@ -84,6 +87,7 @@ public:
     }
 };
 
+// UMaterialInstanceDynamic는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 class UMaterialInstanceDynamic : public UMaterial
 {
 public:

@@ -1,9 +1,11 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "BillboardComponent.h"
 #include "Core/ResourceTypes.h"
 #include "Object/FName.h"
 
+// USubUVComponent 컴포넌트이다.
 class USubUVComponent : public UBillboardComponent
 {
 public:

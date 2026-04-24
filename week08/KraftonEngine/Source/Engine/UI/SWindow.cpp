@@ -1,3 +1,4 @@
+// UI 영역의 세부 동작을 구현합니다.
 #include "UI/SWindow.h"
 
 bool SWindow::IsHover(FPoint coord) const

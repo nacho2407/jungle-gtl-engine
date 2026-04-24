@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
@@ -9,10 +10,7 @@
 
 struct FMaterialParameterInfo;
 
-/*
-    그래픽/컴퓨트 셰이더 프로그램이 공유하는 컴파일, 리플렉션, 파라미터 레이아웃 기반 클래스입니다.
-    실제 stage 소유권과 bind 규칙은 FGraphicsProgram과 FComputeProgram이 각각 담당합니다.
-*/
+// FShaderProgramBase는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FShaderProgramBase
 {
 public:

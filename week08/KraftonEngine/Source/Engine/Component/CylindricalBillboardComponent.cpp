@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "Component/CylindricalBillboardComponent.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"

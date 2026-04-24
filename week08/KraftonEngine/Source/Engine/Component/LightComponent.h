@@ -1,13 +1,11 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "LightComponentBase.h"
 
 class FLightSceneProxy;
 class FScene;
 
-/**
- * ULightComponentBase: 빛이라는 개념이 가져야 할 핵심적인 데이터만 정의합니다.
- * ULightComponent: 렌더 프록시를 생성하고 화면에 그리기 위한 로직을 담당합니다.
- */
+// ULightComponent 컴포넌트이다.
 class ULightComponent : public ULightComponentBase
 {
 public:

@@ -1,3 +1,4 @@
+﻿// 머티리얼 영역의 세부 동작을 구현합니다.
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>

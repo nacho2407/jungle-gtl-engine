@@ -1,13 +1,16 @@
+﻿// 입력 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include <windows.h>
 #include "Core/Singleton.h"
 
+// FGuiInputState는 렌더 상태 값을 보관하거나 적용합니다.
 struct FGuiInputState
 {
     bool bUsingMouse = false;
     bool bUsingKeyboard = false;
 };
 
+// InputSystem는 입력 영역의 핵심 동작을 담당합니다.
 class InputSystem : public TSingleton<InputSystem>
 {
     friend class TSingleton<InputSystem>;

@@ -1,3 +1,4 @@
+﻿// 메시 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -12,12 +13,14 @@ struct FStaticMaterial;
 struct FImportOptions;
 class UStaticMesh;
 
+// FMeshAssetListItem는 메시 데이터와 렌더 제출 정보를 다룹니다.
 struct FMeshAssetListItem
 {
     FString DisplayName;
     FString FullPath;
 };
 
+// FObjManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FObjManager
 {
     // path → UStaticMesh* 캐시 (소유권은 UObjectManager)

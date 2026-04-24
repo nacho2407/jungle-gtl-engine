@@ -1,3 +1,4 @@
+﻿// 메시 영역의 세부 동작을 구현합니다.
 #include "Mesh/ObjImporter.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
@@ -15,6 +16,7 @@
 const FVector FallbackColor3 = FVector(1.0f, 0.0f, 1.0f);
 const FVector4 FallbackColor4 = FVector4(1.0f, 0.0f, 1.0f, 1.0f);
 
+// FVertexKey는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FVertexKey
 {
     uint32 p, t, n;
@@ -27,6 +29,7 @@ struct FVertexKey
 namespace std
 {
 template <>
+// hash는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct hash<FVertexKey>
 {
     size_t operator()(const FVertexKey& Key) const noexcept
@@ -36,16 +39,16 @@ struct hash<FVertexKey>
 };
 } // namespace std
 
+// FStringParser는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FStringParser
 {
-    // Delimiter�� ���е� ���� ��ū�� �����ϰ�, InOutView���� �ش� ��ū�� ������ ����
     static std::string_view GetNextToken(std::string_view& InOutView, char Delimiter = ' ')
     {
         size_t DelimiterPosition = InOutView.find(Delimiter);
-        std::string_view Token = InOutView.substr(0, DelimiterPosition); // [0, DelimiterPosition) ������ ��ū ����
+        std::string_view Token = InOutView.substr(0, DelimiterPosition);
         if (DelimiterPosition != std::string_view::npos)
         {
-            InOutView.remove_prefix(DelimiterPosition + 1); // ��ū�� ������ ����
+            InOutView.remove_prefix(DelimiterPosition + 1);
         }
         else
         {
@@ -54,7 +57,6 @@ struct FStringParser
         return Token;
     }
 
-    // �ټ��� ������ �����ڷ� ����Ͽ� ���� ��ū�� �����ϰ�, InOutView���� �ش� ��ū�� ���� ���� ����
     static std::string_view GetNextWhitespaceToken(std::string_view& InOutView)
     {
         size_t Start = InOutView.find_first_not_of(" \t");
@@ -63,10 +65,10 @@ struct FStringParser
             InOutView = std::string_view();
             return std::string_view();
         }
-        InOutView.remove_prefix(Start); // ��ȿ�� ���� ���� ���� ����
+        InOutView.remove_prefix(Start);
 
         size_t End = InOutView.find_first_of(" \t");
-        std::string_view Token = InOutView.substr(0, End); // ���� ���������� ��ū ����
+        std::string_view Token = InOutView.substr(0, End);
 
         if (End != std::string_view::npos)
         {
@@ -79,13 +81,12 @@ struct FStringParser
         return Token;
     }
 
-    // InOutView�� ���� ���� �ִ� ���� ����
     static void TrimLeft(std::string_view& InOutView)
     {
         size_t Start = InOutView.find_first_not_of(" \t");
         if (Start != std::string_view::npos)
         {
-            InOutView.remove_prefix(Start); // ��ȿ�� ���� ���� ���� ����
+            InOutView.remove_prefix(Start);
         }
         else
         {
@@ -162,6 +163,7 @@ static FString ExtractMtlTexturePath(std::string_view Line)
     return TextureFileName;
 }
 
+// FRawFaceVertex는 메시 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FRawFaceVertex
 {
     int32 PosIndex = -1;
@@ -173,11 +175,9 @@ FRawFaceVertex ParseSingleFaceVertex(std::string_view FaceToken)
 {
     FRawFaceVertex Result;
 
-    // ù ��° ��ū: Position
     std::string_view PosStr = FStringParser::GetNextToken(FaceToken, '/');
     FStringParser::ParseInt(PosStr, Result.PosIndex);
 
-    // �� ��° ��ū: UV (���� ����, ������� ���� ����)
     if (!FaceToken.empty())
     {
         std::string_view UVStr = FStringParser::GetNextToken(FaceToken, '/');
@@ -187,7 +187,6 @@ FRawFaceVertex ParseSingleFaceVertex(std::string_view FaceToken)
         }
     }
 
-    // �� ��° ��ū: Normal
     if (!FaceToken.empty())
     {
         std::string_view NormalStr = FStringParser::GetNextToken(FaceToken, '/');
@@ -219,7 +218,6 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 
     std::string_view FileView(Buffer.data(), Buffer.size());
 
-    // UTF-8 BOM ��ŵ
     if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
     {
         FileView.remove_prefix(3);
@@ -232,7 +230,6 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
     {
         std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
 
-        // CRLF ����
         if (!Line.empty() && Line.back() == '\r')
         {
             Line.remove_suffix(1);
@@ -270,7 +267,6 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
         }
         else if (Prefix == "f")
         {
-            // default material section �߰� (usemtl�� ���� f�� ���� ������ ���)
             if (OutObjInfo.Sections.empty())
             {
                 FStaticMeshSection DefaultSection;
@@ -393,7 +389,6 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 
     std::string_view FileView(Buffer.data(), Buffer.size());
 
-    // UTF-8 BOM ��ŵ
     if (FileView.size() >= 3 && FileView[0] == '\xEF' && FileView[1] == '\xBB' && FileView[2] == '\xBF')
     {
         FileView.remove_prefix(3);
@@ -403,7 +398,6 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
     {
         std::string_view Line = FStringParser::GetNextToken(FileView, '\n');
 
-        // CRLF ����
         if (!Line.empty() && Line.back() == '\r')
         {
             Line.remove_suffix(1);
@@ -507,7 +501,6 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
     return true;
 }
 
-// MTL �������� ��Ƽ���� JSON ���Ϸ� ��ȯ�ϴ� �Լ�
 FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 {
     std::filesystem::path JsonFullPath;
@@ -602,22 +595,19 @@ FString FObjImporter::ConvertMtlInfoToJson(const FObjMaterialInfo* MtlInfo)
 
 FVector FObjImporter::RemapPosition(const FVector& ObjPos, EForwardAxis Axis)
 {
-    // OBJ ���� ��ǥ (Ox, Oy, Oz) �� ���� (Ex, Ey, Ez)
-    // ����: X=Forward, Y=Right, Z=Up
-    // OBJ �⺻: Y-up ��� ��ǥ��
     switch (Axis)
     {
-    case EForwardAxis::X: // OBJ +X �� Engine Forward(+X)
+    case EForwardAxis::X:
         return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
-    case EForwardAxis::NegX: // OBJ -X �� Engine Forward(+X)
+    case EForwardAxis::NegX:
         return FVector(-ObjPos.X, -ObjPos.Z, ObjPos.Y);
-    case EForwardAxis::Y: // OBJ +Y �� Engine Forward(+X)
+    case EForwardAxis::Y:
         return FVector(ObjPos.Y, ObjPos.X, ObjPos.Z);
-    case EForwardAxis::NegY: // OBJ -Y �� Engine Forward(+X) ? ����� �⺻
+    case EForwardAxis::NegY:
         return FVector(-ObjPos.Y, -ObjPos.X, ObjPos.Z);
-    case EForwardAxis::Z: // OBJ +Z �� Engine Forward(+X)
+    case EForwardAxis::Z:
         return FVector(ObjPos.Z, ObjPos.X, ObjPos.Y);
-    case EForwardAxis::NegZ: // OBJ -Z �� Engine Forward(+X) ? OBJ �⺻ (Y-up, -Z forward)
+    case EForwardAxis::NegZ:
         return FVector(-ObjPos.Z, ObjPos.X, ObjPos.Y);
     default:
         return FVector(ObjPos.X, ObjPos.Z, ObjPos.Y);
@@ -629,11 +619,9 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
     OutMesh = FStaticMesh();
     OutMaterials.clear();
 
-    // Phase 1: usemtl ���� ������ ������� FStaticMaterial �迭 �� �ε��� �� ����
     TArray<FString> OrderedMaterialSlots;
     bool bHasNoneSlot = false;
 
-    // OBJ�� Sections(usemtl) ���� ������� ���� ���� ����
     for (const FStaticMeshSection& Section : ObjInfo.Sections)
     {
         const FString& CurrentSlotName = Section.MaterialSlotName;
@@ -644,17 +632,14 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
             continue;
         }
 
-        // ������ ������ ���԰� �ߺ����� �ʴ� ��쿡�� �߰�
         if (std::find(OrderedMaterialSlots.begin(), OrderedMaterialSlots.end(), CurrentSlotName) == OrderedMaterialSlots.end())
         {
             OrderedMaterialSlots.push_back(CurrentSlotName);
         }
     }
 
-    // ������ ������� ��Ƽ���� ���� �� �ε��� ����
     for (const FString& TargetSlotName : OrderedMaterialSlots)
     {
-        // ���� �̸��� ��ġ�ϴ� �Ľ̵� ��Ƽ���� ������ ���� Ž��
         const FObjMaterialInfo* MatchedMaterial = nullptr;
         auto It = std::find_if(MtlInfos.begin(), MtlInfos.end(),
                                [&TargetSlotName](const FObjMaterialInfo& Mat)
@@ -665,24 +650,20 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         if (It != MtlInfos.end())
         {
             MatchedMaterial = &(*It);
-            // ���� ��Ƽ���� ���� �̸��� ��ġ�ϴ� ��Ƽ���� �̸��� MTL ���Ͽ��� �߰ߵ� ���, �ش� ��Ƽ���� �ε� �Ǵ� ����
             UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
 
-            // Convert() �ȿ��� ���� ���� ���� ���
-            FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial); // .json ���� ����
+            FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial);
             UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(JsonPath);
 
-            // FStaticMaterial ���� ���� �� OutMaterials�� �߰�
             FStaticMaterial NewStaticMaterial;
             NewStaticMaterial.MaterialInterface = MaterialObject;
             NewStaticMaterial.MaterialSlotName = TargetSlotName;
             OutMaterials.push_back(NewStaticMaterial);
         }
-        else // Material Slot�� MTL ���Ͽ� ���ǵǾ� ���� ���� ���
+        else
         {
             UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
 
-            // FStaticMaterial ���� ���� �� OutMaterials�� �߰�
             FStaticMaterial NewEmptyStaticMaterial;
             NewEmptyStaticMaterial.MaterialInterface = DefaultMaterial;
             NewEmptyStaticMaterial.MaterialSlotName = TargetSlotName;
@@ -690,7 +671,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         }
     }
 
-    // "None" ������ �����ߴٸ� �� �������� ��ġ
     if (bHasNoneSlot)
     {
         UMaterial* DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("None");
@@ -702,13 +682,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         OutMaterials.push_back(NewDefaultStaticMaterial);
     }
 
-    // Phase 2: ����ȭ�� ���ǵ��� ��(Face)�� ��Ƽ���� �ε��� �������� ��׷�ȭ
     TArray<TArray<uint32>> FacesPerMaterial;
     FacesPerMaterial.resize(OutMaterials.size());
 
     for (const FStaticMeshSection& RawSection : ObjInfo.Sections)
     {
-        // ������ ��Ƽ���� ���� �̸��� ��ġ�ϴ� OutMaterials �迭�� �ε��� ã��
         auto It = std::find_if(OutMaterials.begin(), OutMaterials.end(),
                                [&RawSection](const FStaticMaterial& Mat)
                                {
@@ -722,8 +700,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         }
         else
         {
-            // "None" ������ ���� ��Ī�Ǵ� ���Ե� ���� ���, �⺻ ��Ƽ����� �Ҵ�
-            MaterialIndex = OutMaterials.size() - 1; // "None" ������ �������� ��ġ�Ǿ� �ִٰ� ����
+            MaterialIndex = OutMaterials.size() - 1;
             UE_LOG("Warning: Material slot '%s' not found. Assigning to Default slot.", RawSection.MaterialSlotName.c_str());
         }
 
@@ -734,7 +711,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         }
     }
 
-    // Phase 3: ��׷�ȭ�� �� �����͸� ������� ���� ����/�ε��� ���� ����
     TMap<FVertexKey, uint32> VertexMap;
 
     for (size_t MaterialIndex = 0; MaterialIndex < OutMaterials.size(); ++MaterialIndex)
@@ -753,7 +729,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         {
             uint32 TriangleIndices[3];
 
-            // (P1 - P0) X (P2 - P0) �� ����ȭ
             FVector P0 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex]];
             FVector P1 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 1]];
             FVector P2 = ObjInfo.Positions[ObjInfo.PosIndices[FaceStartIndex + 2]];
@@ -762,7 +737,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
             FVector Edge2 = P2 - P0;
             FVector FaceNormal = Edge1.Cross(Edge2).Normalized();
 
-            // --- Tangent / Bitangent ��� ---
             FVector T(1, 0, 0), B(0, 1, 0);
             if (ObjInfo.UVIndices[FaceStartIndex] != -1)
             {
@@ -799,18 +773,14 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
 
                 if (auto It = VertexMap.find(Key); It != VertexMap.end())
                 {
-                    // �̹� ������ ������ �ִٸ� �ε��� ����
                     TriangleIndices[j] = It->second;
                 }
                 else
                 {
-                    // ���ο� ���� ����
                     FVertexPNCT_T NewVertex;
 
-                    // �� ���� + ������ ����
                     NewVertex.Position = RemapPosition(ObjInfo.Positions[Key.p], Options.ForwardAxis) * Options.Scale;
 
-                    // Normal ����
                     FVector FinalNormal;
                     if (Key.n == -1)
                     {
@@ -822,7 +792,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
                     }
                     NewVertex.Normal = FinalNormal;
 
-                    // UV ���� ó��
                     if (Key.t == -1)
                     {
                         NewVertex.UV = { 0.0f, 0.0f };
@@ -830,13 +799,11 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
                     else
                     {
                         NewVertex.UV = ObjInfo.UVs[Key.t];
-                        // UV ��ȯ (left-bottom -> left-top)
                         NewVertex.UV.V = 1.0f - NewVertex.UV.V;
                     }
 
                     NewVertex.Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-                    // Tangent ���� �� Handedness(w) ���
                     FVector WorldT = RemapPosition(T, Options.ForwardAxis).Normalized();
                     FVector WorldB = RemapPosition(B, Options.ForwardAxis).Normalized();
                     float w = (FinalNormal.Cross(WorldT).Dot(WorldB) < 0.0f) ? -1.0f : 1.0f;
@@ -850,7 +817,6 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
                 }
             }
 
-            // ���ε� ���� ó��
             OutMesh.Indices.push_back(TriangleIndices[0]);
             if (Options.WindingOrder == EWindingOrder::CCW_to_CW)
             {

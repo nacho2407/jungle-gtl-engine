@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Visibility/Occlusion/OcclusionCulling.h"
 #include "Engine/Core/EngineTypes.h"
 #include <algorithm>

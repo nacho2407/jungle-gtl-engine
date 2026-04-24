@@ -1,10 +1,11 @@
+// 뷰포트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 
 class FViewportClient;
 
-// UE의 FViewport 대응 — 오프스크린 렌더 타깃 + D3D 리소스
+// FViewport는 화면 출력용 렌더 타깃과 깊이 리소스를 관리합니다.
 class FViewport
 {
 public:

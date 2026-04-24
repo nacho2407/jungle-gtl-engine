@@ -1,13 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Scene/Proxies/Primitive/PrimitiveSceneProxy.h"
 
 class UTextRenderComponent;
 
-/*
-    FTextRenderSceneProxy는 UTextRenderComponent 전용 프록시입니다.
-    실제 글자 쿼드는 font batch로 만들고, selection mask용 outline만 quad primitive 경로를 재사용합니다.
-*/
+// FTextRenderSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FTextRenderSceneProxy : public FPrimitiveSceneProxy
 {
 public:

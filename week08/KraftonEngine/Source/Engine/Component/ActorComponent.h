@@ -1,3 +1,4 @@
+﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/Object.h"
@@ -8,6 +9,7 @@ class AActor;
 class UWorld;
 class FScene;
 
+// UActorComponent 컴포넌트이다.
 class UActorComponent : public UObject
 {
     friend struct FActorComponentTickFunction;

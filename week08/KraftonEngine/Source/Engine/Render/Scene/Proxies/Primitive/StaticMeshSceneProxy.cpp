@@ -1,4 +1,5 @@
-﻿#include "Render/Resources/State/RenderStateTypes.h"
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Scene/Proxies/Primitive/StaticMeshSceneProxy.h"
 #include "Component/StaticMeshComponent.h"
@@ -16,6 +17,7 @@
 
 namespace
 {
+// FStaticMeshMaterialViewConstants는 카메라와 화면 출력에 필요한 상태를 다룹니다.
 struct FStaticMeshMaterialViewConstants
 {
     FVector4 SectionColor       = MaterialSemantics::GetDefaultSectionColor();

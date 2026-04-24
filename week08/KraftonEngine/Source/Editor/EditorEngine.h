@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Engine/Runtime/Engine.h"
@@ -18,6 +19,7 @@ class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FOverlayStatSystem;
 
+// UEditorEngine 에디터 실행과 PIE 흐름을 관리한다.
 class UEditorEngine : public UEngine
 {
 public:

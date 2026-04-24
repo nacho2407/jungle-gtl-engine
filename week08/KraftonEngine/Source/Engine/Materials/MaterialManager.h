@@ -1,3 +1,4 @@
+﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/Singleton.h"
@@ -14,12 +15,14 @@ class FMaterialTemplate;
 class UMaterial;
 struct FMaterialConstantBuffer;
 
+// FMaterialAssetListItem는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 struct FMaterialAssetListItem
 {
     FString DisplayName;
     FString FullPath;
 };
 
+// FMaterialFileDependency는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 struct FMaterialFileDependency
 {
     FString FullPath;
@@ -28,11 +31,13 @@ struct FMaterialFileDependency
     uint64 DependencyHash = 0;
 };
 
+// FTemplateCacheEntry는 머티리얼 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FTemplateCacheEntry
 {
     FMaterialTemplate* Template = nullptr;
 };
 
+// FMaterialCacheEntry는 머티리얼 파라미터와 렌더 리소스를 다룹니다.
 struct FMaterialCacheEntry
 {
     UMaterial* Material = nullptr;
@@ -40,6 +45,7 @@ struct FMaterialCacheEntry
     std::vector<FMaterialFileDependency> TextureFiles;
 };
 
+// FMaterialManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FMaterialManager : public TSingleton<FMaterialManager>
 {
     friend class TSingleton<FMaterialManager>;

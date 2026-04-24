@@ -1,3 +1,4 @@
+﻿// 런타임 영역의 세부 동작을 구현합니다.
 #include "Engine/Runtime/WindowsApplication.h"
 #include "Engine/Runtime/resource.h"
 

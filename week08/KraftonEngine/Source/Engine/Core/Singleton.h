@@ -1,8 +1,8 @@
+﻿// 엔진 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
-// CRTP 싱글턴 베이스 클래스
-// 사용법: class FMyClass : public TSingleton<FMyClass> { friend class TSingleton<FMyClass>; ... };
 template <typename T>
+// TSingleton는 엔진 영역의 핵심 동작을 담당합니다.
 class TSingleton
 {
 public:

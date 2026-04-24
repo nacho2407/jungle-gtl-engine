@@ -1,12 +1,10 @@
-﻿#pragma once
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
 
 #include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
 #include "Render/RHI/D3D11/Shaders/ComputeShaderStage.h"
 
-/*
-    D3D11 컴퓨트 셰이더 프로그램입니다.
-    CS 하나만 소유하며 그래픽 파이프라인 상태와 독립적으로 바인딩됩니다.
-*/
+// FComputeProgram는 셰이더 컴파일 결과와 GPU 바인딩을 관리합니다.
 class FComputeProgram : public FShaderProgramBase
 {
 public:

@@ -1,3 +1,4 @@
+﻿// 엔진 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -41,6 +42,7 @@ private:
     static const uint32 MAX_TIMESTAMPS = 64;
     static const uint32 FRAME_COUNT = 5;
 
+    // FTimestampPair는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FTimestampPair
     {
         ID3D11Query* BeginQuery = nullptr;
@@ -49,6 +51,7 @@ private:
         const char* Category = "Default";
     };
 
+    // FFrameData는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FFrameData
     {
         ID3D11Query* DisjointQuery = nullptr;
@@ -71,7 +74,7 @@ private:
     TArray<FStatEntry> Snapshot;
 };
 
-// --- GPU Scoped Timer (RAII) ---
+// FGPUScopedTimer는 엔진 영역의 핵심 동작을 담당합니다.
 class FGPUScopedTimer
 {
 public:

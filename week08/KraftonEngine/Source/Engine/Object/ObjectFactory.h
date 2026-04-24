@@ -1,3 +1,4 @@
+﻿// 오브젝트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include <functional>
@@ -7,6 +8,7 @@
 #define REGISTER_FACTORY(TypeName)                                                                                   \
     namespace                                                                                                        \
     {                                                                                                                \
+    /* TypeName registers a factory for this UObject-derived type. */                                         \
     struct TypeName##_RegisterFactory                                                                                \
     {                                                                                                                \
         TypeName##_RegisterFactory()                                                                                 \
@@ -27,7 +29,7 @@
     DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_Abstract) \
     REGISTER_FACTORY(ClassName)
 
-// Different from UFactory class
+// FObjectFactory는 오브젝트 영역의 핵심 동작을 담당합니다.
 class FObjectFactory : public TSingleton<FObjectFactory>
 {
     friend class TSingleton<FObjectFactory>;

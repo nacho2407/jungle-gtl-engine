@@ -1,8 +1,10 @@
+﻿// 오브젝트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
 
+// FName는 오브젝트 영역의 핵심 동작을 담당합니다.
 class FName
 {
 public:
@@ -34,9 +36,7 @@ private:
     uint32 DisplayIndex;    // 원본 문자열의 풀 인덱스 (표시용)
 };
 
-// ============================================================
-// FNamePool — 전역 문자열 풀 (싱글턴)
-// ============================================================
+// FNamePool는 오브젝트 영역의 핵심 동작을 담당합니다.
 class FNamePool : public TSingleton<FNamePool>
 {
     friend class TSingleton<FNamePool>;

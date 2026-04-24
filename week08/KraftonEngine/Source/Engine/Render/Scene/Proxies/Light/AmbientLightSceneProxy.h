@@ -1,13 +1,11 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Scene/Proxies/Light/LightSceneProxy.h"
 
 class UAmbientLightComponent;
 
-/*
-    환경광 컴포넌트를 렌더러용 데이터로 변환하는 프록시입니다.
-    공간 위치 없이 장면 전체에 적용되는 Ambient Light 상수만 갱신합니다.
-*/
+// FAmbientLightSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FAmbientLightSceneProxy : public FLightSceneProxy
 {
 public:

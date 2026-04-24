@@ -1,9 +1,11 @@
+﻿// 오브젝트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
 
 class UObject;
 
+// EClassFlags는 오브젝트 처리에서 사용할 선택지를 정의합니다.
 enum EClassFlags : uint32
 {
     CF_None = 0,
@@ -13,6 +15,7 @@ enum EClassFlags : uint32
     CF_Abstract = 1 << 3,
 };
 
+// UClass는 오브젝트 영역의 핵심 동작을 담당합니다.
 class UClass
 {
 public:

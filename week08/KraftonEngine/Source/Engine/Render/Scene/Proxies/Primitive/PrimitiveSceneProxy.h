@@ -1,3 +1,4 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/EngineTypes.h"
@@ -16,8 +17,7 @@ class FMeshBuffer;
 class FScene;
 struct FSceneView;
 
-// ============================================================
-// ============================================================
+// FPrimitiveSceneProxy는 게임 객체를 렌더러가 사용할 제출 데이터로 변환합니다.
 class FPrimitiveSceneProxy : public FSceneProxy
 {
 public:

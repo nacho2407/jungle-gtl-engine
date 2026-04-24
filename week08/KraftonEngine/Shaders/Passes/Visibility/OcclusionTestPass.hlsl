@@ -1,8 +1,21 @@
-// Shader: OcclusionTestPass
-// Role: GPU occlusion test compute shader.
-// Entry: CSOcclusionTest. Slots: b0 params, SRV/UAV slots are pass-local.
 
-// GPU Occlusion Test ??AABB visibility against Hi-Z mip chain
+/*
+    OcclusionTestPass.hlsl는 컬링/가시성 계산에 쓰는 셰이더입니다.
+
+    바인딩 컨벤션
+    - b0: Frame 상수 버퍼
+    - b1: PerObject/Material 상수 버퍼
+    - b2: Pass/Shader 상수 버퍼
+    - b3: Material 또는 보조 상수 버퍼
+    - b4: Light 상수 버퍼
+    - t0~t5: 패스/머티리얼 SRV
+    - t6: LocalLights structured buffer
+    - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - u#: Compute/후처리용 UAV
+    - 이 파일에서 직접 선언한 슬롯: b1, t0, t1, t2, u0
+*/
+
 // Dispatched with ceil(NumAABBs / 64) groups
 
 #pragma pack_matrix(row_major)
@@ -33,6 +46,7 @@ RWStructuredBuffer<uint> VisibilityFlags : register(u0);
 static const float DEPTH_BIAS = 0.0005;
 
 [numthreads(64, 1, 1)]
+// 병렬 스레드 그룹으로 실행되는 컴퓨트 셰이더입니다.
 void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
 {
     uint idx = DTid.x;
@@ -62,7 +76,6 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         // Screen-space radius for sub-pixel check and mip selection
         float screenRadius = radius / centerClip.w * max(ViewportSize.x, ViewportSize.y) * 0.5;
 
-        // Sub-pixel sphere ??occluded
         if (screenRadius < 0.5)
         {
             VisibilityFlags[idx] = 0;
@@ -84,7 +97,6 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
                 ? HiZTextureB.Load(int3(texel, mip))
                 : HiZTextureA.Load(int3(texel, mip));
 
-            // Reversed-Z: nearest point (large depth) behind farthest occluder (small depth) ??occluded
             if (nearDepth < hiZ - DEPTH_BIAS)
             {
                 VisibilityFlags[idx] = 0;
@@ -145,21 +157,18 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
             onScreenCount++;
     }
 
-    // Behind camera or straddling near plane ??conservatively visible
     if (!anyFront || anyBehind)
     {
         VisibilityFlags[idx] = 1;
         return;
     }
 
-    // Near plane intersection ??visible (Reversed-Z: near=1, past near plane > 1)
     if (maxDepth > 1.0)
     {
         VisibilityFlags[idx] = 1;
         return;
     }
 
-    // All corners off-screen ??straddles viewport ??visible
     if (onScreenCount == 0)
     {
         VisibilityFlags[idx] = 1;
@@ -193,7 +202,6 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
     float2 screenSize = (maxUV - minUV) * ViewportSize;
     float maxDim = max(screenSize.x, screenSize.y);
 
-    // Large screen coverage ??too expensive to test, conservatively visible
     if (maxDim > ViewportSize.x * 0.75 || maxDim > ViewportSize.y * 0.75)
     {
         VisibilityFlags[idx] = 1;
@@ -234,7 +242,6 @@ void CSOcclusionTest(uint3 DTid : SV_DispatchThreadID)
         }
     }
 
-    // Reversed-Z: closest vertex behind farthest occluder ??occluded
     VisibilityFlags[idx] = (maxDepth < minHiZDepth - DEPTH_BIAS) ? 0 : 1;
 }
 

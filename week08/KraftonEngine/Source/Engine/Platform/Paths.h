@@ -1,11 +1,11 @@
+﻿// 엔진 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include <string>
 #include <filesystem>
 #include <Windows.h>
 
-// 엔진 전역 경로를 관리합니다.
-// 모든 경로는 실행 파일 기준 상대 경로이며, 한글 경로를 위해 wstring 기반입니다.
+// FPaths는 엔진 영역의 핵심 동작을 담당합니다.
 class FPaths
 {
 public:

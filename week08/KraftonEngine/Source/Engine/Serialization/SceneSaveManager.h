@@ -1,3 +1,4 @@
+﻿// 직렬화 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include <string>
@@ -35,6 +36,7 @@ struct FPerspectiveCameraData
     bool bValid = false;
 };
 
+// FSceneSaveManager는 관련 객체의 생성, 조회, 수명 관리를 담당합니다.
 class FSceneSaveManager
 {
 public:

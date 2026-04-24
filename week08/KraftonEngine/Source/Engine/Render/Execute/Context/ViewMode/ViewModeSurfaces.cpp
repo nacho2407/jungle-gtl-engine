@@ -1,3 +1,4 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 
 bool FViewModeSurfaces::Initialize(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)

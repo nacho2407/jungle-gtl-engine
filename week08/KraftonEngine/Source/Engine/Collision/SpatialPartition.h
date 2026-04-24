@@ -1,3 +1,4 @@
+﻿// 충돌/피킹 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Engine/Core/CoreTypes.h"
@@ -11,6 +12,7 @@ class FOctree;
 class AActor;
 struct FRay;
 
+// FSpatialPartition 클래스이다.
 class FSpatialPartition
 {
 public:

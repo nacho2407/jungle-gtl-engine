@@ -1,3 +1,4 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h"
@@ -12,6 +13,7 @@ struct FOverlayStatLine
     FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
 };
 
+// FOverlayStatLayout는 에디터 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FOverlayStatLayout
 {
     float StartX = 16.0f;
@@ -21,6 +23,7 @@ struct FOverlayStatLayout
     float TextScale = 2.0f;
 };
 
+// FOverlayStatSystem는 에디터 영역의 핵심 동작을 담당합니다.
 class FOverlayStatSystem
 {
 public:

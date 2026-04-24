@@ -1,3 +1,4 @@
+﻿// 직렬화 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/CoreTypes.h" // TArray가 정의된 곳
@@ -5,7 +6,7 @@
 #include <type_traits>
 #include <string>
 
-// 언리얼 엔진의 핵심 직렬화 베이스 클래스
+// FArchive는 데이터 저장과 복원을 위한 직렬화 흐름을 다룹니다.
 class FArchive
 {
 protected:

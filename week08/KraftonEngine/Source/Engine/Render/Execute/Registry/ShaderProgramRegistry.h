@@ -1,12 +1,10 @@
+﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Render/Execute/Registry/ShaderProgramTypes.h"
 #include "Render/Resources/Shaders/ShaderProgramDesc.h"
 
-/*
-    엔진 내장 그래픽스 셰이더 키를 컴파일 desc로 매핑하는 레지스트리입니다.
-    ShaderManager는 이 desc만 받아 컴파일과 캐싱을 수행합니다.
-*/
+// FShaderProgramRegistry는 실행 시 필요한 타입과 규칙의 매핑을 보관합니다.
 class FShaderProgramRegistry
 {
 public:

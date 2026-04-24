@@ -1,3 +1,4 @@
+﻿// 게임 프레임워크 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
@@ -15,6 +16,7 @@
 class UCameraComponent;
 class UPrimitiveComponent;
 
+// UWorld는 월드 실행 상태와 레벨 구성을 관리합니다.
 class UWorld : public UObject
 {
 public:
