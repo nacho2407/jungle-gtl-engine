@@ -143,7 +143,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 
-	ImGui::Begin("Jungle Property Window");
+	ImGui::Begin("Property Window");
 
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 	AActor* PrimaryActor = Selection.GetPrimarySelection();

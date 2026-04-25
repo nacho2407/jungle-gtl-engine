@@ -20,7 +20,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
 	(void)DeltaTime;
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
 
-	ImGui::Begin("Jungle Scene Manager");
+	ImGui::Begin("Scene Manager");
 
 	// 씬 파일 작업은 상단 메뉴로 옮기고, Scene Manager는 액터 목록만 유지한다.
 	RenderActorOutliner();
