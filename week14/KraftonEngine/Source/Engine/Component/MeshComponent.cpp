@@ -3,3 +3,4 @@
 #include "Object/ObjectFactory.h"
 
 IMPLEMENT_CLASS(UMeshComponent, UPrimitiveComponent)
+HIDE_FROM_COMPONENT_LIST(UMeshComponent)
