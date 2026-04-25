@@ -69,13 +69,48 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
         ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
         DeviceContext->OMSetDepthStencilState(DepthState, 0);
-
 	}
 
     FShadowConstants shadowData = {};
     FMatrix CamView = RenderBus->GetView();
     FMatrix CamProj = RenderBus->GetProj();
 
+	const UDirectionalLightComponent* DirLightComp =
+		Cast<UDirectionalLightComponent>(RenderBus->DirectionalLightShadow.LightComponent);
+
+	TArray<FBoundingBox> VisibleBounds;
+	for (const auto& Cmd : OpaqueCmds)
+	{
+		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+		{
+			continue;
+		}
+
+		if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+		{
+			continue;
+		}
+
+		VisibleBounds.push_back(Cmd.WorldAABB);
+	}
+
+	shadowData.VirtualViewProj = CamView * CamProj;
+	shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(CamView, CamProj, VisibleBounds);
+
+	float atlasW = static_cast<float>(ShadowMapDesc.Width);
+	float atlasH = static_cast<float>(ShadowMapDesc.Height);
+	float tile = static_cast<float>(tileSize);
+
+	shadowData.ScaleOffset = FVector4(
+		tile / atlasW,
+		tile / atlasH,
+		(tileX * tile) / atlasW,
+		(tileY * tile) / atlasH);
+
+	ShadowBuffer->Update(DeviceContext, &shadowData, sizeof(FShadowConstants));
+
+	ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
+	Context->DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 
 	for (const auto& Cmd : OpaqueCmds)
 	{
@@ -100,41 +135,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		Context->RenderResources->PerObjectConstantBuffer.Update(DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
 		Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-
-		const UDirectionalLightComponent* DirLightComp = 
-			Cast<UDirectionalLightComponent>(RenderBus->DirectionalLightShadow.LightComponent);
-
-		//float SlidebackDistance = 1.0f;
-		//float OriginalNear = RenderBus->GetNearPlane();
-		//float OriginalFar = RenderBus->GetFarPlane();
-		//float OriginalFOV = 90.0f;
-
-		//FVector2 ViewportSize = RenderBus->GetViewportSize();
-		//float AspectRatio = ViewportSize.X / ViewportSize.Y;
-
-		//FMatrix VirtualView = CamView;
-		//FVector BackDir = CamView.GetUnitAxis(EAxis::X);
-		//VirtualView.SetOrigin(CamView.GetOrigin() - BackDir * SlidebackDistance);
-
-		//FMatrix VirtualProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(OriginalFOV), AspectRatio, OriginalNear + SlidebackDistance, OriginalFar + SlidebackDistance);
-
-		shadowData.VirtualViewProj = CamView * CamProj;
-		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(CamView, CamProj);
-
-        float atlasW = static_cast<float>(ShadowMapDesc.Width);
-        float atlasH = static_cast<float>(ShadowMapDesc.Height);
-        float tile = static_cast<float>(tileSize);
-
-        shadowData.ScaleOffset = FVector4(
-            tile / atlasW,
-            tile / atlasH,
-            (tileX * tile) / atlasW,
-            (tileY * tile) / atlasH);
-
-		ShadowBuffer->Update(DeviceContext, &shadowData, sizeof(FShadowConstants));
-
-		ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
-		Context->DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 
 		uint32 Offset = 0;
 		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);

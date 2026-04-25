@@ -295,6 +295,8 @@ struct FRenderCommand
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
 
+	FBoundingBox WorldAABB;
+
 	union
 	{
 		FAABBConstants AABB;

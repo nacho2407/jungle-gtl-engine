@@ -3,7 +3,8 @@ float ComputeShadowPCF(
     float4 ScaleOffset,
     int kernelHalfSize,
     SamplerComparisonState shadowSampler,
-    Texture2D shadowMap // float이 아니라 Texture2D<float>
+    Texture2D shadowMap,
+    float bias
 )
 {
     float2 uv = lightSpacePos.xy * float2(0.5, -0.5) + 0.5;
@@ -24,7 +25,7 @@ float ComputeShadowPCF(
             shadow += shadowMap.SampleCmpLevelZero(
             shadowSampler,
             uv + float2(x, y) * texelSize,
-            compareDepth
+            compareDepth - bias
         );
             count++;
         }
