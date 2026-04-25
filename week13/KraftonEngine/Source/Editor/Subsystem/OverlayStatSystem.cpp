@@ -3,6 +3,8 @@
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
+#include "Engine/Profiling/ShadowStats.h"
+#include "Engine/Profiling/GPUProfiler.h"
 #include <cstdio>
 
 // バイト数を適切な単位 (B / KB / MB / GB) に変換して文字列化
@@ -51,6 +53,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 		++EstimatedLineCount;
 	}
 	if (bShowMemory)
+	{
+		EstimatedLineCount += 8;
+	}
+	if (bShowShadow)
 	{
 		EstimatedLineCount += 8;
 	}
@@ -147,6 +153,63 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 			CurrentY += Layout.LineHeight;
 		}
 	}
+
+#if STATS
+	if (bShowShadow)
+	{
+		char Buffer[128] = {};
+
+		AppendLine(OutLines, CurrentY, FString("--- Shadow ---"));
+		CurrentY += Layout.LineHeight;
+
+		// Shadow map 메모리
+		FormatBytes(Buffer, sizeof(Buffer), "Shadow Map Memory", FShadowStats::ShadowMapMemoryBytes);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// Shadow map 해상도
+		snprintf(Buffer, sizeof(Buffer), "Shadow Map Resolution : %ux%u",
+			FShadowStats::ShadowMapResolution, FShadowStats::ShadowMapResolution);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// GPU 시간 (GPUProfiler snapshot에서 "ShadowMapPass" 검색)
+		const TArray<FStatEntry>& GPUSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+		double ShadowGpuMs = 0.0;
+		for (const FStatEntry& Entry : GPUSnapshot)
+		{
+			if (Entry.Name && strcmp(Entry.Name, "ShadowMapPass") == 0)
+			{
+				ShadowGpuMs = Entry.LastTime * 1000.0;
+				break;
+			}
+		}
+		snprintf(Buffer, sizeof(Buffer), "Shadow GPU Time : %.3f ms", ShadowGpuMs);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// Shadow draw call 수
+		snprintf(Buffer, sizeof(Buffer), "Shadow Draw Calls : %u", FShadowStats::ShadowDrawCallCount);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// 라이트별 shadow caster 수
+		snprintf(Buffer, sizeof(Buffer), "Shadow Casters (Spot: %u  Point: %u  Dir: %u)",
+			FShadowStats::SpotLightCasterCount,
+			FShadowStats::PointLightCasterCount,
+			FShadowStats::DirectionalLightCasterCount);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// Shadow-casting 라이트 수
+		snprintf(Buffer, sizeof(Buffer), "Shadow Lights (Spot: %u  Point: %u  Dir: %u)",
+			FShadowStats::SpotLightShadowCount,
+			FShadowStats::PointLightShadowCount,
+			FShadowStats::DirectionalLightShadowCount);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+	}
+#endif
 }
 
 TArray<FOverlayStatLine> FOverlayStatSystem::BuildLines(const UEditorEngine& Editor) const

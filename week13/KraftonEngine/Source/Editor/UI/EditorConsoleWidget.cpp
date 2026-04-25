@@ -2,6 +2,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
+#include "Render/Types/ShadowSettings.h"
 
 #include <algorithm>
 
@@ -132,7 +133,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 
 			if (Args.size() < 2)
 			{
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat shadow | stat none\n");
 				return;
 			}
 
@@ -149,6 +150,11 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				StatSystem.ShowMemory(true);
 				AddLog("Overlay stat enabled: memory\n");
 			}
+			else if (SubCommand == "shadow")
+			{
+				StatSystem.ShowShadow(true);
+				AddLog("Overlay stat enabled: shadow\n");
+			}
 			else if (SubCommand == "none")
 			{
 				StatSystem.HideAll();
@@ -157,7 +163,70 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			else
 			{
 				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
-				AddLog("Usage: stat fps | stat memory | stat none\n");
+				AddLog("Usage: stat fps | stat memory | stat shadow | stat none\n");
+			}
+		});
+
+	RegisterCommand("shadow_resolution", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetResolution();
+				AddLog("shadow_resolution: %s\n", Cur.has_value()
+					? std::to_string(Cur.value()).c_str() : "default (2048)");
+				AddLog("Usage: shadow_resolution <size> | shadow_resolution reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetResolution();
+				AddLog("Shadow resolution override reset to default.\n");
+			}
+			else
+			{
+				uint32 Res = static_cast<uint32>(std::atoi(Args[1].c_str()));
+				if (Res < 64 || Res > 8192) { AddLog("[ERROR] Resolution must be 64~8192.\n"); return; }
+				Settings.SetResolution(Res);
+				AddLog("Shadow resolution override set to %u.\n", Res);
+			}
+		});
+
+	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Bias = Settings.GetBias();
+				auto Slope = Settings.GetSlopeBias();
+				AddLog("shadow_bias: %s  slope: %s\n",
+					Bias.has_value() ? std::to_string(Bias.value()).c_str() : "per-light",
+					Slope.has_value() ? std::to_string(Slope.value()).c_str() : "per-light");
+				AddLog("Usage: shadow_bias <bias> [slope_bias] | shadow_bias reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetBias();
+				Settings.ResetSlopeBias();
+				AddLog("Shadow bias override reset to per-light values.\n");
+			}
+			else
+			{
+				float Bias = static_cast<float>(std::atof(Args[1].c_str()));
+				Settings.SetBias(Bias);
+				AddLog("Shadow bias override set to %.6f.\n", Bias);
+
+				if (Args.size() >= 3)
+				{
+					float Slope = static_cast<float>(std::atof(Args[2].c_str()));
+					Settings.SetSlopeBias(Slope);
+					AddLog("Shadow slope bias override set to %.6f.\n", Slope);
+				}
 			}
 		});
 }

@@ -533,6 +533,9 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\ShadowStats.cpp">
+      <Filter>Source\Engine\Profiling</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
@@ -1098,6 +1101,9 @@
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h">
+      <Filter>Source\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\ShadowStats.h">
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats.h">
