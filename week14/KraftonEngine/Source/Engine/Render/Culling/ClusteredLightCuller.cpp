@@ -15,6 +15,8 @@ void FClusteredLightCuller::UpdateFrameState(const FFrameContext& Frame)
 	State.FarZ = Frame.FarClip;
 	State.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
 	State.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
+	State.bIsOrtho = Frame.bIsOrtho ? 1 : 0;
+	State.OrthoWidth = Frame.OrthoWidth;
 }
 
 void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)

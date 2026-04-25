@@ -18,15 +18,31 @@ groupshared float4 gsClusterPlanes[6];
 
 float SliceToViewDepth(uint zSlice)
 {
-    return CullState.NearZ * pow(CullState.FarZ / CullState.NearZ, (float) zSlice / CullState.ClusterZ);
+    if (CullState.bIsOrtho > 0)
+    {
+        return CullState.NearZ + (CullState.FarZ - CullState.NearZ) * ((float) zSlice / CullState.ClusterZ);
+    }
+    else
+    {
+        return CullState.NearZ * pow(CullState.FarZ / CullState.NearZ, (float) zSlice / CullState.ClusterZ);
+    }
 }
 
 float3 NDCToViewSpace(float2 ndc, float viewDepth)
 {
-    float4 clipPos = float4(ndc.x, ndc.y, 1.0f, 1.0f);
-    float4 viewPos = mul(clipPos, InvProj);
-    viewPos /= viewPos.w;
-    return viewPos.xyz / viewPos.z * viewDepth;
+    if (CullState.bIsOrtho > 0)
+    {
+        float aspect = (float) CullState.ScreenWidth / (float) CullState.ScreenHeight;
+        float orthoHeight = CullState.OrthoWidth / aspect;
+        return float3(ndc.x * CullState.OrthoWidth * 0.5f, ndc.y * orthoHeight * 0.5f, viewDepth);
+    }
+    else
+    {
+        float4 clipPos = float4(ndc.x, ndc.y, 1.0f, 1.0f);
+        float4 viewPos = mul(clipPos, InvProj);
+        viewPos /= viewPos.w;
+        return viewPos.xyz / viewPos.z * viewDepth;
+    }
 }
 
 float4 MakePlane(float3 a, float3 b, float3 c, float3 insidePoint)

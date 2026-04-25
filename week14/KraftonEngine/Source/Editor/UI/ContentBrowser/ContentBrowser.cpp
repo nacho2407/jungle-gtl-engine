@@ -1,4 +1,4 @@
-﻿#include "ContentBrowser.h"
+#include "ContentBrowser.h"
 
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -292,10 +292,7 @@ TArray<FContentItem> FEditorContentBrowserWidget::ReadDirectory(std::wstring Pat
 {
 	TArray<FContentItem> Items;
 
-	if (!std::filesystem::exists(Path))
-		return Items;
-
-	if (!std::filesystem::is_directory(Path))
+	if (!std::filesystem::exists(Path) || !std::filesystem::is_directory(Path))
 		return Items;
 
 	for (const auto& Entry : std::filesystem::directory_iterator(Path))
@@ -340,9 +337,7 @@ FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirector
 			continue;
 
 		std::wstring DirName = Entry.path().filename().wstring();
-		if (DirName == L"Bin" || DirName == L"Build" || DirName == L".git" || DirName == L".vs"
-			|| DirName == L"Source" || DirName == L"Saves" || DirName == L"Settings" || DirName == L"packages"
-			|| DirName == L"ThidyParty")
+		if (DirName == L"Bin" || DirName == L"Build" || DirName == L".git" || DirName == L".vs")
 			continue;
 
 		Node.Children.push_back(BuildDirectoryTree(Entry.path()));
