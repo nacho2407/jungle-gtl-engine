@@ -12,6 +12,7 @@ void FLightProxy::UpdateLightConstants()
     if (!Owner)
         return;
     bAffectsWorld         = Owner->AffectsWorld();
+    bCastShadow           = Owner->DoesCastShadows();
     LightProxyInfo.Position    = Owner->GetWorldLocation();
     LightProxyInfo.Direction   = Owner->GetForwardVector();
     LightProxyInfo.Intensity   = Owner->GetIntensity();

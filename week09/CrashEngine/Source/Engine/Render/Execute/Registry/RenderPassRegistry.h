@@ -30,6 +30,7 @@ enum class ERenderPassNodeType
 {
     GridPass,
     DepthPrePass,
+    ShadowMapPass,
     LightCullingPass,
     DeferredOpaquePass,
     ForwardOpaquePass,

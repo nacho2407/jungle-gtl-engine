@@ -188,7 +188,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         Cmd.Shader->Bind(Ctx);
 
-        if (Cmd.Pass == ERenderPass::DepthPre)
+        if (Cmd.Pass == ERenderPass::DepthPre || Cmd.Pass == ERenderPass::ShadowMap)
         {
             Ctx->PSSetShader(nullptr, nullptr, 0);
         }

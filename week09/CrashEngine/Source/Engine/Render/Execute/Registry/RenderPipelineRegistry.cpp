@@ -71,6 +71,7 @@ void FRenderPipelineRegistry::Initialize()
         ERenderPipelineType::DeferredLitPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
+            PassNode(ERenderPassNodeType::ShadowMapPass),   // 일단 임시로 Deffered Pipeline에만 삽입
             PassNode(ERenderPassNodeType::LightCullingPass),
             PassNode(ERenderPassNodeType::DeferredOpaquePass),
             PassNode(ERenderPassNodeType::DeferredDecalPass),

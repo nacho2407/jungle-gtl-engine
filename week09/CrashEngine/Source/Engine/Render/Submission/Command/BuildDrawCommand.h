@@ -11,7 +11,7 @@ struct FRenderPipelineContext;
 
 namespace DrawCommandBuild
 {
-void BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+void BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, uint16 UserBits = 0);
 
 void BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant = EViewModePostProcessVariant::None);
 

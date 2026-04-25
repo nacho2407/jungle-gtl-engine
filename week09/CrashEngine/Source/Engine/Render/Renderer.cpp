@@ -56,6 +56,8 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass, const FRenderPipelineCon
     {
     case ERenderPass::DepthPre:
         return ERenderPassNodeType::DepthPrePass;
+    case ERenderPass::ShadowMap:
+        return ERenderPassNodeType::ShadowMapPass;
     case ERenderPass::Opaque:
         if (Context.SceneView && Context.SceneView->RenderPath == ERenderShadingPath::Forward)
         {
@@ -465,6 +467,11 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
     // ViewMode 후처리 및 화면 공간 패스 명령 생성
     if (bHasViewModeConfig)
     {
+        if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::ShadowMapPass))
+        {
+            Pass->BuildDrawCommands(PipelineContext);
+        }
+
         if (ViewModeRegistry->UsesLightingPass(PipelineContext.ViewMode.ActiveViewMode))
         {
             if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DeferredLightingPass))

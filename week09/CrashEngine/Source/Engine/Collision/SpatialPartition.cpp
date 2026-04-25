@@ -9,6 +9,8 @@
 #include "GameFramework/AActor.h"
 #include <algorithm>
 
+#include "Sphere.h"
+
 namespace
 {
 void ExpandBoundsByBox(FBoundingBox& AccumulatedBounds, const FBoundingBox& Box)
@@ -406,6 +408,27 @@ void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume
             continue;
 
         if (ConvexVolume.IntersectAABB(Prim->GetWorldBoundingBox()))
+        {
+            if (FPrimitiveProxy* Proxy = Prim->GetSceneProxy())
+                if (!Proxy->bNeverCull)
+                    OutProxies.push_back(Proxy);
+        }
+    }
+}
+
+void FSpatialPartition::QuerySphereAllProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const
+{
+    if (Octree)
+    {
+        Octree->QuerySphereProxies(Sphere, OutProxies);
+    }
+
+    for (UPrimitiveComponent* Prim : OverflowPrimitives)
+    {
+        if (!ShouldTrackInScenePartition(Prim))
+            continue;
+
+        if (Sphere.IntersectAABB(Prim->GetWorldBoundingBox()))
         {
             if (FPrimitiveProxy* Proxy = Prim->GetSceneProxy())
                 if (!Proxy->bNeverCull)

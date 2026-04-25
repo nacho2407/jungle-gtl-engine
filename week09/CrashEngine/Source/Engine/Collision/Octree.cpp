@@ -2,6 +2,7 @@
 #include "Octree.h"
 #include <Collision/RayUtils.h>
 #include <algorithm>
+#include "Sphere.h"
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
@@ -514,6 +515,32 @@ void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPr
 void FOctree::QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const
 {
     QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
+}
+
+void FOctree::QuerySphereProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const
+{
+    if (!Sphere.IntersectAABB(LooseBounds))
+        return;
+
+    for (UPrimitiveComponent* Primitive : PrimitiveList)
+    {
+        if (Primitive && Sphere.IntersectAABB(Primitive->GetWorldBoundingBox()))
+        {
+            if (FPrimitiveProxy* Proxy = Primitive->GetSceneProxy())
+            {
+                if (!Proxy->bNeverCull)
+                    OutProxies.push_back(Proxy);
+            }
+        }
+    }
+
+    if (IsLeaf())
+        return;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        Children[i]->QuerySphereProxies(Sphere, OutProxies);
+    }
 }
 
 void FOctree::CollectAllProxies(TArray<FPrimitiveProxy*>& OutProxies) const

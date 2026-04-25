@@ -4,8 +4,11 @@
 #include "Core/CoreTypes.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
 #include "Render/Scene/Proxies/SceneProxy.h"
+#include "Engine/Math/Matrix.h"
+#include "Render/Visibility/Frustum/ConvexVolume.h"
 
 class ULightComponent;
+class FPrimitiveProxy;
 class FScene;
 
 // FLightProxy converts a light component into renderer submission data.
@@ -26,5 +29,14 @@ public:
 
     bool bVisible      = true;
     bool bAffectsWorld = true;
+
+    // --- Shadow Related ---
+    TArray<FPrimitiveProxy*> VisibleShadowCasters;
+    FConvexVolume            ShadowViewFrustum;
+    FMatrix                  LightViewProj;
+    FMatrix                  ShadowViewProjMatrices[6]; // For Point Light (Cube faces)
+    bool                     bCastShadow = false;
 };
+
+using FLightSceneProxy = FLightProxy;
 

@@ -12,6 +12,7 @@ struct FCollectedLights
 {
     FGlobalLightCBData        GlobalLights;
     TArray<FLocalLightCBData> LocalLights;
+    TArray<class FLightProxy*> VisibleLightProxies;
 };
 
 // FCollectedPrimitives는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
