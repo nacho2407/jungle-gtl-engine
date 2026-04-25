@@ -1,5 +1,3 @@
-
-
 /*
     LightCullingCommon.hlsl는 컬링/가시성 계산에 쓰는 셰이더입니다.
 
@@ -20,7 +18,7 @@
 #ifndef LIGHT_CULLING_COMMON_HLSL
 #define LIGHT_CULLING_COMMON_HLSL
 
-#include "../../Common/Resources/ConstantBuffers.hlsl"
+#include "../../Resources/ConstantBuffers.hlsl"
 
 
 // ============================================================

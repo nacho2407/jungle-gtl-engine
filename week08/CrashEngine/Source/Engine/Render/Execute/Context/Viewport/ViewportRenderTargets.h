@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include <d3d11.h>
 
@@ -11,9 +10,9 @@ class FViewport;
 */
 struct FViewportRenderTargets
 {
-    const FViewport*         SourceViewport = nullptr;
-    ID3D11RenderTargetView* ViewportRTV = nullptr;
-    ID3D11DepthStencilView* ViewportDSV = nullptr;
+    const FViewport*        SourceViewport = nullptr;
+    ID3D11RenderTargetView* ViewportRTV    = nullptr;
+    ID3D11DepthStencilView* ViewportDSV    = nullptr;
 
     // 최종 색상 복사본. Fog / FXAA / Outline 입력으로 사용합니다.
     ID3D11ShaderResourceView* SceneColorCopySRV     = nullptr;

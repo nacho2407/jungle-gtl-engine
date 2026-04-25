@@ -5,12 +5,12 @@
 | 최초 작성자 | 김연하 |
 | 최초 작성일 | 2026-04-24 |
 | 최근 수정자 | 김연하 |
-| 최근 수정일 | 2026-04-24 |
-| 버전 | 1.0 |
+| 최근 수정일 | 2026-04-25 |
+| 버전 | 1.1 |
 
 ## 1. 개요
 
-> 조립형 렌더 파이프라인 트리: 원하는 렌더 실행단위를 자유롭게 조합해 파이프라인을 만들자.
+> 조립형 렌더 파이프라인: 원하는 렌더 실행단위를 자유롭게 조합해 파이프라인을 만들자.
 
 렌더 실행 구조는 `Pass`와 `Pipeline`을 조합해 구성한다.
 
@@ -67,6 +67,7 @@ DefaultRootPipeline
    ├─ ForwardPipeline
    │  ├─ ForwardLitPipeline
    │  ├─ ForwardUnlitPipeline
+   │  ├─ ForwardWorldNormalPipeline
    │  └─ ForwardSceneDepthPipeline
    └─ PostProcessPipeline
 ```
@@ -84,6 +85,7 @@ EditorRootPipeline
 │  ├─ ForwardPipeline
 │  │  ├─ ForwardLitPipeline
 │  │  ├─ ForwardUnlitPipeline
+│  │  ├─ ForwardWorldNormalPipeline
 │  │  └─ ForwardSceneDepthPipeline
 │  └─ PostProcessPipeline
 └─ OverlayPipeline
@@ -103,24 +105,35 @@ EditorRootPipeline
 - `DeferredPipeline`
 - `ForwardPipeline`
 
-(현재 `ForwardPipeline`의 하위 파이프라인은 골격만 등록되어 있고, pass는 비어 있음)
-
 ### 5.2 ViewMode 선택
 
-선택된 렌더 경로 내부에서는 현재 `ViewMode`에 맞는 하위 파이프라인 하나만 활성화된다.
+선택된 렌더 경로 내부에서는 현재 `ViewMode`에 맞는 하위 파이프라인 하나만 활성화된다.  
+활성화 규칙은 아래와 같다. 접두어 `*_`는 Forward 혹은 Deferred를 의미한다.
 
-Deferred 경로 기준 활성화 규칙은 아래와 같다.
-- `DeferredLitPipeline`: `Lit_Gouraud`, `Lit_Lambert`, `Lit_Phong`
-- `DeferredUnlitPipeline`: `Unlit`, `Wireframe`
-- `DeferredWorldNormalPipeline`: `WorldNormal`
-- `DeferredSceneDepthPipeline`: `SceneDepth`
+- `*_LitPipeline`: `Lit_Gouraud`, `Lit_Lambert`, `Lit_Phong`
+- `*_UnlitPipeline`: `Unlit`, `Wireframe`
+- `*_WorldNormalPipeline`: `WorldNormal`
+- `*_SceneDepthPipeline`: `SceneDepth`
 
-Deferred 경로의 scene mesh pass는 `DeferredOpaquePass`를 사용한다.
-`DeferredOpaquePass`는 `FViewModeSurfaces`에 intermediate surface를 기록하고, `DeferredLightingPass`가 이를 읽어 최종 viewport color를 합성한다.
+**ViewMode별 실행 흐름**
 
-Forward 경로도 같은 기준으로 `ForwardLitPipeline`, `ForwardUnlitPipeline`, `ForwardSceneDepthPipeline` 중 하나를 고르도록 되어 있다.
-forward 경로용 opaque scene pass 이름은 `ForwardOpaquePass`로 분리되어 있다.
-다만 현재 `ForwardPipeline` 계열은 골격만 있으며 `ForwardOpaquePass`를 포함한 scene pass는 아직 등록되지 않았다.
+현재 ViewMdoe 선택 별 실행 흐름은 다음과 같다.
+
+```text
+1. DeferredLitPipeline        : DepthPre -> ShadowMap -> LightCulling -> Opaque -> Decal -> Lighting
+
+2. ForwardLitPipeline         : DepthPre -> ShadowMap -> Opaque
+
+3. *_UnlitPipeline            : DepthPre -> Opaque -> Decal
+
+4. DeferredWorldNormalPipeline: DepthPre -> Opaque -> Decal -> NonLitView
+
+5. ForwardWorldNormalPipeline : DepthPre -> Opaque
+
+6. *_SceneDepthPipeline       : DepthPre -> NonLitView
+```
+
+`ShadowMapPass`는 현재 코드 기준으로 lit pipeline 공통 pass이며, shadow casting light를 순회하면서 shadow depth map을 먼저 만든다. deferred 경로에서는 이후 `DeferredLightingPass`가 이를 참조하고, forward lit 경로에서는 `ForwardOpaquePass` 입력으로 바인딩된다.
 
 
 ## 6. 디렉토리 구조
@@ -203,13 +216,13 @@ Submission 단계에서 준비한 scene 데이터와 overlay 데이터를 실행
 | `FViewModePassConfig` | view mode별 pass 활성화 규칙 |
 | `FViewModePassDesc` | 특정 render pass에 대응하는 shader variant 정보 |
 
-### 참고: Preset / Desc / Config 용어 구분
+### 참고: Desc / Config / Preset 용어 구분
 
 | 용어 | 의미 |
 |---|---|
-| `Desc` | 어떤 대상의 구조나 정체성을 설명하는 정의 데이터 |
-| `Config` | 조건에 따라 무엇을 활성화할지 결정하는 설정 데이터 |
-| `Preset` | 실행 시 바로 적용할 수 있는 고정 사용값 묶음 |
+| `Desc` | 어떤 대상의 구조나 정체성을 설명하는 정의 값 |
+| `Config` | 조건에 따라 무엇을 활성화할지 결정하는 설정 값 |
+| `Preset` | 실행 시 바로 적용할 수 있는 고정 사용값 |
 ## 8. Deferred / Forward Pass Split
 
 - deferred scene mesh pass는 `DeferredOpaquePass`를 사용한다.
@@ -217,5 +230,7 @@ Submission 단계에서 준비한 scene 데이터와 overlay 데이터를 실행
 - `DeferredOpaquePass`는 `FViewModeSurfaces`에 intermediate surface를 기록한다.
 - `DeferredDecalPass`는 base surface를 복사한 modified surface를 갱신한다.
 - `DeferredLightingPass`는 위 intermediate surface 결과를 읽어 최종 viewport color를 합성한다.
-- forward 경로용 pass 이름은 `ForwardOpaquePass`, `ForwardDecalPass`로 분리한다.
-- 현재 `ForwardPipeline` 계열은 골격만 있으며 위 forward scene pass는 아직 child pass로 등록되지 않았다.
+- forward 경로는 별도 `ForwardDecalPass`를 두지 않고, 향후 `ForwardOpaquePass` 안에서 decal + lighting을 함께 처리한다.
+- 현재 `ForwardPipeline` 계열은 `ForwardLitPipeline`, `ForwardUnlitPipeline`, `ForwardWorldNormalPipeline`, `ForwardSceneDepthPipeline`으로 구성된다.
+- `ForwardWorldNormalPipeline`은 `ForwardOpaquePass`의 world normal shader variant가 viewport color에 직접 결과를 쓰는 direct output 경로를 사용한다.
+- 이 경로는 world normal을 intermediate texture에 한 번 쓰고 다시 fullscreen pass에서 읽는 과정을 생략해, 추가 render target write/read bandwidth 비용을 피한다.

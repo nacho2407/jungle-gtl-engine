@@ -1,9 +1,14 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/RenderPass.h"
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FDebugLinePass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render editor and debug line batches over the scene.
+    - Inputs: line batch data built from collected overlay/debug geometry.
+    - Outputs: viewport color with depth-tested line rendering.
+    - Registers: editor line draw-command convention, mainly frame constants.
+*/
 class FDebugLinePass : public FRenderPass
 {
 public:
@@ -17,4 +22,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

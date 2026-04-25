@@ -7,27 +7,6 @@
     <Filter Include="Shaders\Common">
       <UniqueIdentifier>{fb601d03-c831-c1dc-eee7-bcc14f522781}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Common\Geometry">
-      <UniqueIdentifier>{c25f5e64-0ef5-3ed8-e224-b01c7e931d9d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Common\Lighting">
-      <UniqueIdentifier>{c6aa92f8-1992-e7d6-621d-7a6d9c0891a9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Common\Material">
-      <UniqueIdentifier>{fff3ceae-cb52-aa3c-0200-5fd738b02eae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Common\Resources">
-      <UniqueIdentifier>{3426022e-fa6a-2acd-1625-8fe3719fff46}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Common\Surface">
-      <UniqueIdentifier>{622238cb-4342-d2ce-9c3d-619c5ccded29}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Common\Utils">
-      <UniqueIdentifier>{e08ef5ae-7a63-83e8-5570-d19a758e7f3d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\Editor">
-      <UniqueIdentifier>{d76ea344-59f9-6243-d4bd-b61fe063fb04}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\Passes">
       <UniqueIdentifier>{6d13e0a4-267a-510e-d86f-0831dcda684a}</UniqueIdentifier>
     </Filter>
@@ -37,11 +16,50 @@
     <Filter Include="Shaders\Passes\Scene">
       <UniqueIdentifier>{817ab8a5-ff0e-aea0-f723-a2cd429c04cd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\Passes\Scene\ViewModes">
-      <UniqueIdentifier>{1210e086-b046-1a2d-43d4-61aae235cd4a}</UniqueIdentifier>
+    <Filter Include="Shaders\Passes\Scene\Deferred">
+      <UniqueIdentifier>{8f419316-ab69-ee6d-bd3e-c1b5115ce489}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Passes\Scene\Forward">
+      <UniqueIdentifier>{ed52536f-dcf6-3b23-4ee5-ead0d1f5db16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Passes\Scene\Shared">
+      <UniqueIdentifier>{25c055b6-b053-bb0d-086e-a6171be60811}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders\Passes\Visibility">
       <UniqueIdentifier>{52e2f336-ca88-47f3-c562-a8027c5e244e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render">
+      <UniqueIdentifier>{c7f0afe4-1974-da4b-1d5a-93c8a5330840}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Editor">
+      <UniqueIdentifier>{b9111df0-011b-5a42-cb3b-ada3e423b36c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene">
+      <UniqueIdentifier>{b3941d3d-7535-6fe0-f7e0-2d7e985e641a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene\Decal">
+      <UniqueIdentifier>{15a25320-584c-9760-4790-605918df0fb0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene\Lighting">
+      <UniqueIdentifier>{bd2e4190-1e07-8541-c134-d7f7b4d9fca1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene\Material">
+      <UniqueIdentifier>{a89c3acd-f598-5d53-d968-4edacada4a32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene\Shared">
+      <UniqueIdentifier>{9cd70964-eec0-4c9e-ea3a-b6c084723796}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Render\Scene\ViewModes">
+      <UniqueIdentifier>{887115a1-3ced-5bd9-2c2a-6819de18adde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Resources">
+      <UniqueIdentifier>{ba384c7e-7800-3902-a9bc-32c823999572}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Surface">
+      <UniqueIdentifier>{856cac56-fa4d-53c7-8189-bdf9694ee613}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Utils">
+      <UniqueIdentifier>{ece90177-db27-df3d-6b60-63e68fb70f9c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{95bf5967-9c87-e787-5b15-1571dc721bf5}</UniqueIdentifier>
@@ -255,68 +273,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Common\Geometry\VertexLayouts.hlsl">
-      <Filter>Shaders\Common\Geometry</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Lighting\LightingBlinnPhong.hlsli">
-      <Filter>Shaders\Common\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Lighting\LightingCommon.hlsli">
-      <Filter>Shaders\Common\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Lighting\LightingGouraud.hlsli">
-      <Filter>Shaders\Common\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Lighting\LightingLambert.hlsli">
-      <Filter>Shaders\Common\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Lighting\LightingUnlit.hlsli">
-      <Filter>Shaders\Common\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Material\DecalCommon.hlsli">
-      <Filter>Shaders\Common\Material</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Material\StaticMeshMaterialCommon.hlsli">
-      <Filter>Shaders\Common\Material</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Resources\ConstantBuffers.hlsl">
-      <Filter>Shaders\Common\Resources</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Resources\SystemResources.hlsl">
-      <Filter>Shaders\Common\Resources</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Resources\SystemSamplers.hlsl">
-      <Filter>Shaders\Common\Resources</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Surface\CommonTypes.hlsli">
-      <Filter>Shaders\Common\Surface</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Surface\SurfaceData.hlsli">
-      <Filter>Shaders\Common\Surface</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Common\Utils\Functions.hlsl">
-      <Filter>Shaders\Common\Utils</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\Editor.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\Primitive.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\ShaderBillboard.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\ShaderFont.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\ShaderOverlayFont.hlsl">
-      <Filter>Shaders\Editor</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor\ShaderSubUV.hlsl">
-      <Filter>Shaders\Editor</Filter>
+    <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
+      <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\FXAAPass.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
@@ -330,26 +288,20 @@
     <FxCompile Include="Shaders\Passes\PostProcess\OutlinePostProcessPass.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredDecalPass.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
+    <FxCompile Include="Shaders\Passes\Scene\Deferred\DeferredDecalPS.hlsl">
+      <Filter>Shaders\Passes\Scene\Deferred</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredLightingPass.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
+    <FxCompile Include="Shaders\Passes\Scene\Deferred\DeferredLightingPS.hlsl">
+      <Filter>Shaders\Passes\Scene\Deferred</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaqueCommon.hlsli">
-      <Filter>Shaders\Passes\Scene</Filter>
+    <FxCompile Include="Shaders\Passes\Scene\Deferred\DeferredOpaquePass.hlsl">
+      <Filter>Shaders\Passes\Scene\Deferred</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaquePass.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
+    <FxCompile Include="Shaders\Passes\Scene\Forward\ForwardOpaquePass.hlsl">
+      <Filter>Shaders\Passes\Scene\Forward</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DepthOnlyPass.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\ViewModes\NonLitViewModePass.hlsl">
-      <Filter>Shaders\Passes\Scene\ViewModes</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\ViewModes\UberLit.hlsl">
-      <Filter>Shaders\Passes\Scene\ViewModes</Filter>
+    <FxCompile Include="Shaders\Passes\Scene\Shared\DepthOnlyPass.hlsl">
+      <Filter>Shaders\Passes\Scene\Shared</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Visibility\ClusterBinningPassCS.hlsl">
       <Filter>Shaders\Passes\Visibility</Filter>
@@ -371,6 +323,102 @@
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Visibility\OcclusionTestPass.hlsl">
       <Filter>Shaders\Passes\Visibility</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\Editor.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\Gizmo.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\Primitive.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\ShaderBillboard.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\ShaderFont.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\ShaderOverlayFont.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\ShaderSubUV.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Decal\DecalApply.hlsli">
+      <Filter>Shaders\Render\Scene\Decal</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Decal\DecalSampling.hlsli">
+      <Filter>Shaders\Render\Scene\Decal</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Decal\DecalTypes.hlsli">
+      <Filter>Shaders\Render\Scene\Decal</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\BRDF.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\DirectLighting.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\LightTypes.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\LightingCommon.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Material\MaterialSampling.hlsli">
+      <Filter>Shaders\Render\Scene\Material</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Material\MaterialTypes.hlsli">
+      <Filter>Shaders\Render\Scene\Material</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Material\StaticMeshMaterial.hlsli">
+      <Filter>Shaders\Render\Scene\Material</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Shared\FullscreenPassTypes.hlsli">
+      <Filter>Shaders\Render\Scene\Shared</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Shared\OpaquePassTypes.hlsli">
+      <Filter>Shaders\Render\Scene\Shared</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Shared\ViewModeCommon.hlsli">
+      <Filter>Shaders\Render\Scene\Shared</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\ViewModes\NonLitViewMode.hlsl">
+      <Filter>Shaders\Render\Scene\ViewModes</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\ViewModes\UberLit.hlsl">
+      <Filter>Shaders\Render\Scene\ViewModes</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Resources\BindingSlots.hlsli">
+      <Filter>Shaders\Resources</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Resources\ConstantBuffers.hlsl">
+      <Filter>Shaders\Resources</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Resources\SystemResources.hlsl">
+      <Filter>Shaders\Resources</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Resources\SystemSamplers.hlsl">
+      <Filter>Shaders\Resources</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Surface\GBufferPacking.hlsli">
+      <Filter>Shaders\Surface</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Surface\SurfacePacking.hlsli">
+      <Filter>Shaders\Surface</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Surface\SurfaceTypes.hlsli">
+      <Filter>Shaders\Surface</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Utils\Color.hlsli">
+      <Filter>Shaders\Utils</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Utils\Functions.hlsl">
+      <Filter>Shaders\Utils</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Utils\Math.hlsli">
+      <Filter>Shaders\Utils</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -678,9 +726,6 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp">
-      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
@@ -1314,9 +1359,6 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h">
-      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">

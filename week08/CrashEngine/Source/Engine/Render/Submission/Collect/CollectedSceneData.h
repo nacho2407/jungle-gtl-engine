@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Context/RenderCollectContext.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
@@ -18,10 +17,10 @@ struct FCollectedLights
 // FCollectedPrimitives는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FCollectedPrimitives
 {
-    TArray<FPrimitiveProxy*> VisibleProxies;
-    TArray<FPrimitiveProxy*> OpaqueProxies;
-    TArray<FPrimitiveProxy*> TransparentProxies;
-    TArray<FSceneOverlayText>     OverlayTexts;
+    TArray<FPrimitiveProxy*>  VisibleProxies;
+    TArray<FPrimitiveProxy*>  OpaqueProxies;
+    TArray<FPrimitiveProxy*>  TransparentProxies;
+    TArray<FSceneOverlayText> OverlayTexts;
 };
 
 // FCollectedSceneData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
@@ -43,6 +42,5 @@ struct FCollectOverlayContext
     int32                                  GridHalfLineCount  = 0;
     const class FOctree*                   Octree             = nullptr;
     const class FWorldPrimitivePickingBVH* WorldBVH           = nullptr;
-    const TArray<FPrimitiveProxy*>*   WorldBoundsProxies = nullptr;
+    const TArray<FPrimitiveProxy*>*        WorldBoundsProxies = nullptr;
 };
-

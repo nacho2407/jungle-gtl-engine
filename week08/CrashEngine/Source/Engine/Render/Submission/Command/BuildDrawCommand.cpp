@@ -42,13 +42,12 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
     }
     else if (Pass == ERenderPass::Opaque &&
              Context.SceneView &&
-             Context.SceneView->RenderPath == ERenderShadingPath::Deferred &&
              Proxy.bAllowViewModeShaderOverride &&
              Context.ViewMode.Registry &&
              Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         const FViewModePassDesc* Desc =
-            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Opaque);
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Opaque, Context.SceneView->RenderPath);
         if (Desc && Desc->CompiledShader)
         {
             Shader = Desc->CompiledShader;
@@ -239,7 +238,7 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
         }
 
         const FViewModePassDesc* Desc =
-            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::DeferredLighting);
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::DeferredLighting, ERenderShadingPath::Deferred);
         if (!Desc || !Desc->CompiledShader)
         {
             return;
@@ -632,7 +631,7 @@ void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRend
         return;
     }
 
-    const FViewModePassDesc* Desc = Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Decal);
+    const FViewModePassDesc* Desc = Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Decal, ERenderShadingPath::Deferred);
     if (!Desc || !Desc->CompiledShader)
     {
         return;

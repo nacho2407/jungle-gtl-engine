@@ -65,10 +65,6 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass, const FRenderPipelineCon
         }
         return ERenderPassNodeType::DeferredOpaquePass;
     case ERenderPass::Decal:
-        if (Context.SceneView && Context.SceneView->RenderPath == ERenderShadingPath::Forward)
-        {
-            return ERenderPassNodeType::ForwardDecalPass;
-        }
         return ERenderPassNodeType::DeferredDecalPass;
     case ERenderPass::DeferredLighting:
         return ERenderPassNodeType::DeferredLightingPass;
@@ -406,13 +402,12 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         {
             FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
-            if (bHasViewModeConfig && bUsesDecal)
+            const bool bDeferredPath =
+                !PipelineContext.SceneView || PipelineContext.SceneView->RenderPath != ERenderShadingPath::Forward;
+
+            if (bHasViewModeConfig && bUsesDecal && bDeferredPath)
             {
-                const ERenderPassNodeType DecalPassType =
-                    (PipelineContext.SceneView && PipelineContext.SceneView->RenderPath == ERenderShadingPath::Forward)
-                        ? ERenderPassNodeType::ForwardDecalPass
-                        : ERenderPassNodeType::DeferredDecalPass;
-                if (FRenderPass* Pass = PassRegistry.FindPass(DecalPassType))
+                if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::DeferredDecalPass))
                 {
                     Pass->BuildDrawCommands(PipelineContext, *DecalProxy);
                 }
@@ -712,6 +707,12 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawBindStateCac
     Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullSRV);
+    Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullSRV);
+    Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullSRV);
+    for (uint32 ShadowSlot = 20; ShadowSlot < 25; ++ShadowSlot)
+    {
+        Context->PSSetShaderResources(ShadowSlot, 1, &NullSRV);
+    }
 
     Cache.Cleanup(Context);
     DrawCommandList.Reset();

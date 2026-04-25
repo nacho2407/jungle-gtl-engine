@@ -71,7 +71,7 @@ void FRenderPipelineRegistry::Initialize()
         ERenderPipelineType::DeferredLitPipeline,
         {
             PassNode(ERenderPassNodeType::DepthPrePass),
-            PassNode(ERenderPassNodeType::ShadowMapPass),   // 일단 임시로 Deffered Pipeline에만 삽입
+            PassNode(ERenderPassNodeType::ShadowMapPass),
             PassNode(ERenderPassNodeType::LightCullingPass),
             PassNode(ERenderPassNodeType::DeferredOpaquePass),
             PassNode(ERenderPassNodeType::DeferredDecalPass),
@@ -107,22 +107,37 @@ void FRenderPipelineRegistry::Initialize()
         {
             PipelineNode(ERenderPipelineType::ForwardLitPipeline),
             PipelineNode(ERenderPipelineType::ForwardUnlitPipeline),
+            PipelineNode(ERenderPipelineType::ForwardWorldNormalPipeline),
             PipelineNode(ERenderPipelineType::ForwardSceneDepthPipeline),
         });
 
     AddPipeline(
         ERenderPipelineType::ForwardLitPipeline,
         {
+            PassNode(ERenderPassNodeType::DepthPrePass),
+            PassNode(ERenderPassNodeType::ShadowMapPass),
+            PassNode(ERenderPassNodeType::ForwardOpaquePass),
         });
 
     AddPipeline(
         ERenderPipelineType::ForwardUnlitPipeline,
         {
+            PassNode(ERenderPassNodeType::DepthPrePass),
+            PassNode(ERenderPassNodeType::ForwardOpaquePass),
+        });
+
+    AddPipeline(
+        ERenderPipelineType::ForwardWorldNormalPipeline,
+        {
+            PassNode(ERenderPassNodeType::DepthPrePass),
+            PassNode(ERenderPassNodeType::ForwardOpaquePass),
         });
 
     AddPipeline(
         ERenderPipelineType::ForwardSceneDepthPipeline,
         {
+            PassNode(ERenderPassNodeType::DepthPrePass),
+            PassNode(ERenderPassNodeType::NonLitViewModePass),
         });
 
     // ---------- Post, Overlay, Present ----------

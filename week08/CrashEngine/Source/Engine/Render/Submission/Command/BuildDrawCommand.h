@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
@@ -26,4 +25,3 @@ void BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRende
 
 void BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 } // namespace DrawCommandBuild
-

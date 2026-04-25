@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -160,8 +159,8 @@ struct FDecalCBData
 // FStaticMeshMaterialViewCBData는 정적 메시 머티리얼 뷰 상수 버퍼 레이아웃입니다.
 struct FStaticMeshMaterialViewCBData
 {
-    FVector4 SectionColor  = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-    FVector4 MaterialParam = FVector4(32.0f, 0.5f, 0.0f, 1.0f);
+    FVector4 SectionColor       = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+    FVector4 MaterialParam      = FVector4(32.0f, 0.5f, 0.0f, 1.0f);
     uint32   HasBaseTexture     = 0;
     uint32   HasNormalTexture   = 0;
     uint32   HasSpecularTexture = 0;

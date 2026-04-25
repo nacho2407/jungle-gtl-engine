@@ -4,6 +4,7 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 
 void FLightHitMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -18,7 +19,7 @@ void FLightHitMapPass::PrepareInputs(FRenderPipelineContext& Context)
     if (Context.LightCulling)
     {
         ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
-        Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &HipMapSRV);
     }
 }
 
@@ -54,5 +55,5 @@ void FLightHitMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     ID3D11ShaderResourceView* NullSRV = { nullptr };
-    Context.Context->PSSetShaderResources(8, 1, &NullSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullSRV);
 }

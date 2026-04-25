@@ -1,8 +1,13 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/RenderPass.h"
 
-// FOverlayBillboardPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render editor helper billboards after scene rendering.
+    - Inputs: collected billboard primitive proxies and billboard material data.
+    - Outputs: viewport color/depth with overlay billboard geometry.
+    - Registers: mesh draw-command convention, typically b0/b1 plus PS t0 material texture.
+*/
 class FOverlayBillboardPass : public FRenderPass
 {
 public:
@@ -16,4 +21,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

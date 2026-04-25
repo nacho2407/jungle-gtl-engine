@@ -19,11 +19,13 @@ constexpr uint32 Light      = 4; // b4: 전역 조명 상수
 // Shader Resource register slots (t#)
 namespace ESystemTexSlot
 {
-constexpr uint32 LocalLights = 6;  // t6: local light buffer
-constexpr uint32 ShadowMap   = 9;  // t9: shadow map texture (cube or array)
-constexpr uint32 SceneDepth  = 10; // t10: scene depth copy
-constexpr uint32 SceneColor  = 11; // t11: scene color copy
-constexpr uint32 Stencil     = 13; // t13: stencil copy
+constexpr uint32 LocalLights   = 6;  // t6: local light buffer
+constexpr uint32 LightTileMask = 7;  // t7: per-tile light culling mask
+constexpr uint32 DebugHitMap   = 8;  // t8: debug light-hit visualization
+constexpr uint32 ShadowMap     = 9;  // t9: shadow map texture (cube or array)
+constexpr uint32 SceneDepth    = 10; // t10: scene depth copy
+constexpr uint32 SceneColor    = 11; // t11: scene color copy
+constexpr uint32 Stencil       = 13; // t13: stencil copy
 } // namespace ESystemTexSlot
 
 // Sampler register slots (s#)

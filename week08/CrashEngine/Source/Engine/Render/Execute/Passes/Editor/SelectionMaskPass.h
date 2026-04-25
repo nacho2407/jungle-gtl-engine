@@ -1,9 +1,14 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/MeshPassBase.h"
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FSelectionMaskPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render selected primitives into depth/stencil selection mask.
+    - Inputs: selected primitive proxies and per-object transforms.
+    - Outputs: viewport DSV mask for later outline composition.
+    - Registers: depth-only style mesh convention using frame/per-object constants.
+*/
 class FSelectionMaskPass : public FMeshPassBase
 {
 public:
@@ -13,4 +18,3 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override;
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-
