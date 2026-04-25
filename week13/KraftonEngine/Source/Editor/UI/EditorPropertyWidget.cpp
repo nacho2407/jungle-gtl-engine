@@ -684,6 +684,47 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 		bActorSelected = false;
 	}
 
+	// 컴포넌트 트리에서 간단하게 드래그 앤 드랍으로 부모-자식 관계 변경 가능하도록 지원
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::SetDragDropPayload("SCENE_COMPONENT_REPARENT", &Comp, sizeof(USceneComponent*));
+		ImGui::Text("Reparent %s", Name.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_COMPONENT_REPARENT"))
+		{
+			USceneComponent* DraggedComp = *(USceneComponent**)payload->Data;
+			if (DraggedComp && DraggedComp != Comp)
+			{
+				// Circular dependency check: Ensure Comp is not a child of DraggedComp
+				bool bIsChildOfDragged = false;
+				USceneComponent* Check = Comp;
+				while (Check)
+				{
+					if (Check == DraggedComp)
+					{
+						bIsChildOfDragged = true;
+						break;
+					}
+					Check = Check->GetParent();
+				}
+
+				if (!bIsChildOfDragged)
+				{
+					DraggedComp->SetParent(Comp);
+					if (EditorEngine && EditorEngine->GetGizmo())
+					{
+						EditorEngine->GetGizmo()->UpdateGizmoTransform();
+					}
+				}
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
 	if (bOpen)
 	{
 		for (USceneComponent* Child : Children)
