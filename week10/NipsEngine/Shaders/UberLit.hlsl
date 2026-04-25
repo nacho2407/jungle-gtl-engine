@@ -276,21 +276,23 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     for (uint i = 0; i < LightsToIterate; i++)
     {
     #if CULLING_MODEL_CLUSTERED
-        LightInfo light = Lights[CulledIndexBuffer[clusterData.x + i]];
+        uint lightIndex = CulledIndexBuffer[clusterData.x + i];
     #elif CULLING_MODEL_TILED
-        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+        uint lightIndex = CulledIndexBuffer[tileData.x + i];
     #else 
-        LightInfo light = Lights[i];
+        uint lightIndex = i;
     #endif
+        LightInfo light = Lights[lightIndex]; 
+        float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap);
     
     #if LIGHTING_MODEL_LAMBERT
-        accumulatedLight += light.Type == 0 ?
+        accumulatedLight += (light.Type == 0 ?
             CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
-            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz);
+            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)) * lightShadowFactor;
     #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += light.Type == 0 ?
+        accumulatedLight += (light.Type == 0 ?
             CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)) * lightShadowFactor;
     #endif
     }
 #endif

@@ -92,6 +92,8 @@ void FRenderer::CreateResources()
 
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
+    Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
+    Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 64);
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
@@ -137,6 +139,8 @@ void FRenderer::Release()
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
 	Resources.LightBuffer.Release();
+	Resources.LightShadowIndexBuffer.Release();
+	Resources.AtlasShadowBuffer.Release();
 	Resources.LightStructuredBuffer.Release();
 	Resources.LightCulledIndexBuffer.Release();
 	Resources.LightTileBuffer.Release();

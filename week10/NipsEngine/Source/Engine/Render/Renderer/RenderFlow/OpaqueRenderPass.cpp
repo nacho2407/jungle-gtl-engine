@@ -31,6 +31,12 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
 	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
 
+	ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+		Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+		Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+	};
+	Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+
     return true;
 }
 

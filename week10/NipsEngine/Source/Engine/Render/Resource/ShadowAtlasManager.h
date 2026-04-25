@@ -81,7 +81,6 @@ struct FShadowAtlas
 
 	// TODO: 타일의 크기가 정해져 있음, 이를 나중에 동적으로 조절할 수 있도록 개선해야 함
 	// TODO: Tile 관리 방식 개선 필요. 현재는 간단히 bool 배열로 관리하지만, 더 효율적인 자료구조로 변경 고려 (예: 비트맵, 큐 등)
-    bool TileUsed[64] = {};
 
 	void Initialize(ID3D11Device* Device)
     {

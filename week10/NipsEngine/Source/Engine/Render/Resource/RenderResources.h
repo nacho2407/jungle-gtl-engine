@@ -15,6 +15,8 @@ struct FRenderResources
 
 	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)		
 	FConstantBuffer ShadowBuffer;                   // b4
+    FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)
+    FStructuredBuffer AtlasShadowBuffer;           // t15 (FShadowAtlasConstants)
 
 	// Compute Shader에서는 UAV로 바인딩하기 때문에 Slot이 달라질 수 있습니다.
     FStructuredBuffer DecalStructuredBuffer;        // t8 (FDecalInfo)
