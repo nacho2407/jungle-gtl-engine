@@ -1636,6 +1636,11 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	return SpawnedActor;
 }
 
+AActor* FLevelViewportLayout::SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location)
+{
+	return SpawnActorFromViewportMenu(Type, Location);
+}
+
 // ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
 
 void FLevelViewportLayout::SaveToSettings()

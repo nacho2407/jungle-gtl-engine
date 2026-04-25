@@ -17,6 +17,7 @@ class UGizmoComponent;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FOverlayStatSystem;
+class AActor;
 struct FPerspectiveCameraData;
 
 class UEditorEngine : public UEngine
@@ -71,6 +72,10 @@ public:
 	bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }
 
 	void RenderViewportUI(float DeltaTime) { ViewportLayout.RenderViewportUI(DeltaTime); }
+	AActor* SpawnPlaceActor(FLevelViewportLayout::EViewportPlaceActorType Type, const FVector& Location)
+	{
+		return ViewportLayout.SpawnPlaceActor(Type, Location);
+	}
 
 	bool IsMouseOverViewport() const { return ViewportLayout.IsMouseOverViewport(); }
 
