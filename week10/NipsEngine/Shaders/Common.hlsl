@@ -1,7 +1,9 @@
 /* Constant Buffers */
-
 #define TILE_SIZE 16
 #define NUM_SLICE 24
+
+#define MAX_ATLAS_SHADOW_COUNT 64
+#define INVALID_SHADOW_INDEX -1
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -25,8 +27,25 @@ cbuffer PerObjectBuffer : register(b1)
 
 cbuffer ShadowBuffer : register(b4)
 {
-    row_major matrix DirLightViewProj;
+    row_major matrix VirtualViewProj;
+    row_major matrix ShadowViewProj;
+    float4 ScaleOffset;
 };
+
+struct FAtlasShadowData
+{
+    row_major float4x4 ShadowViewProj;
+    float4 ScaleOffset; // xy = scale, zw = offset
+    float ShadowBias;
+    float ShadowStrength;
+    float ShadowSoftness;
+    uint ShadowType;
+};
+
+#ifndef CS_SHADER
+StructuredBuffer<uint> LightShadowIndices : register(t14);
+StructuredBuffer<FAtlasShadowData> AtlasShadowDatas : register(t15);
+#endif
 
 #define MAX_FOG_LAYER_COUNT 32
 

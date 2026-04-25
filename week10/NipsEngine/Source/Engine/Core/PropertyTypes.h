@@ -24,6 +24,18 @@ enum class EPropertyType : uint8_t
 	Color,
 
 	Material, // TODO: 수정필요
+	SRV,
+};
+
+// SRV 정보
+struct FSRVDisplayInfo
+{
+    float ImageWidth  = 256.f;
+    float ImageHeight = 256.f;
+    float UV0X = 0.f;
+    float UV0Y = 0.f;
+    float UV1X = 1.f;
+    float UV1Y = 1.f;
 };
 
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
@@ -41,6 +53,9 @@ struct FPropertyDescriptor
 	// Enum Metadata
 	const char** EnumNames  = nullptr;
 	uint32		 EnumCount  = 0;
+
+    // 타입별 추가 메타데이터 일단 SRV 정보를 저장하기 위해서 사용
+    void* ExtraData = nullptr;
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.

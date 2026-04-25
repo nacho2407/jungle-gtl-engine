@@ -54,7 +54,7 @@ public:
 	FDirectionalLightInfo	DirectionalLightInfo;
 	TArray<FLightInfo>		LightInfos;
 
-	const UDirectionalLightComponent* DirLightComp = nullptr;
+	TArray<FShadowLightRequest> ShadowLightRequests;
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];

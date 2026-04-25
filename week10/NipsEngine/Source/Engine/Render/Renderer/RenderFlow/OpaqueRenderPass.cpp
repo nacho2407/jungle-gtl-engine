@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
+#include "Component/PostProcess/Light/LightComponent.h"
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -42,6 +43,12 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 
 
+	ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+		Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+		Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+	};
+	Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+
     return true;
 }
 
@@ -60,7 +67,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-	   ID3D11ShaderResourceView* ShadowSRV = FShadowAtlasManager::Get().ShadowSRV.Get();
+	   ID3D11ShaderResourceView *ShadowSRV = FShadowAtlasManager::Get().GetSRV();
 	   Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
 
        if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
@@ -108,6 +115,34 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
+
+	   // ShadowMap Permutation Key 조합
+       for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
+       {
+           if (!Request.bCastShadows || !Request.LightComponent) continue;
+           ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+           if (!LightComp) continue;
+           switch (LightComp->GetShadowMapType())
+           {
+		   case EShadowMap::BASIC:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowBasic;
+			   break;
+		   }
+		   case EShadowMap::PSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
+			   break;
+		   }
+		   case EShadowMap::CSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+			   break;
+		   }
+           default: break;
+           }
+           break;
+       }
 
        if (Cmd.Material)
        {

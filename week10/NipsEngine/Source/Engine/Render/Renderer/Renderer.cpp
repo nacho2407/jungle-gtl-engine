@@ -6,6 +6,7 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Common/ShadowTypes.h"
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
@@ -46,6 +47,7 @@ void FRenderer::Create(HWND hWindow)
 
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
+    #define SAHDOWMAP(x) static_cast<uint32>(EShadowMap::x)
 
 	static const uint32 UberLitPermutations[] =
 	{
@@ -75,8 +77,11 @@ void FRenderer::Create(HWND hWindow)
 	{
 		for (uint32 CullBit : { 0u, FEAT(ClusterCull), FEAT(TileCull) })
 		{
-			uint32 CullKey = Key | CullBit;
-            FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
+			for (uint32 ShadowMap : { 0u, FEAT(ShadowBasic), FEAT(ShadowPSM), FEAT(ShadowCSM)})
+			{
+				uint32 CullKey = Key | CullBit | ShadowMap;
+				FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
+			}
 		}
 	}
 
@@ -84,6 +89,14 @@ void FRenderer::Create(HWND hWindow)
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Tiled).data(), "LightCullingCS_Tiled");
+
+	// Uber ShadowMap
+	for (uint32 ShadowMapIdx = 0; ShadowMapIdx < static_cast<uint32>(EShadowMap::MAX); ++ShadowMapIdx)
+	{
+		FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS",
+			FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowMapIdx)).data(), ShadowMapIdx);
+	}
+
 }
 
 void FRenderer::CreateResources()
@@ -93,6 +106,8 @@ void FRenderer::CreateResources()
 
 	Resources.ShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowConstants));
 	Resources.LightBuffer.Create(Device.GetDevice(), sizeof(FUberConstants));
+    Resources.LightShadowIndexBuffer.Create(Device.GetDevice(), sizeof(uint32), 1024);
+    Resources.AtlasShadowBuffer.Create(Device.GetDevice(), sizeof(FShadowAtlasConstants), 64);
 
 	// Tile을 나누는 기준에 따라서 ByteWidth 설정 수정이 필요합니다.
 	Resources.LightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightInfo), 1024);
@@ -139,6 +154,8 @@ void FRenderer::Release()
 	Resources.FrameBuffer.Release();
 	Resources.ShadowBuffer.Release();
 	Resources.LightBuffer.Release();
+	Resources.LightShadowIndexBuffer.Release();
+	Resources.AtlasShadowBuffer.Release();
 	Resources.LightStructuredBuffer.Release();
 	Resources.LightCulledIndexBuffer.Release();
 	Resources.LightTileBuffer.Release();
