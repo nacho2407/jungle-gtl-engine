@@ -63,8 +63,9 @@ private:
 	//Command Dispatch System
 	using CommandFn = std::function<void(const TArray<FString>& args)>;
 	TMap<FString, CommandFn> Commands;
+	TMap<FString, FString> CommandHelp;
 
-	void RegisterCommand(const FString& Name, CommandFn Fn);
+	void RegisterCommand(const FString& Name, CommandFn Fn, const FString& Help = "");
 	void ExecCommand(const char* CommandLine);
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
 };

@@ -49,6 +49,9 @@ public:
 	bool SaveSceneAs(const FString& InSceneName);
 	bool HasCurrentLevelFilePath() const { return !CurrentLevelFilePath.empty(); }
 	const FString& GetCurrentLevelFilePath() const { return CurrentLevelFilePath; }
+	void RefreshContentBrowser() { MainPanel.RefreshContentBrowser(); }
+	void SetContentBrowserIconSize(float Size) { MainPanel.SetContentBrowserIconSize(Size); }
+	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
 	bool IsWorldCoordSystem() const { return FEditorSettings::Get().CoordSystem == EEditorCoordSystem::World; }
 	void ToggleCoordSystem();
 	void ApplyTransformSettingsToGizmo();

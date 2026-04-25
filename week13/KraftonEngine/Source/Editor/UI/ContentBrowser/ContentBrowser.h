@@ -20,6 +20,8 @@ public:
 	void Render(float DeltaTime) override;
 	void Refresh();
 	void SaveToSettings() const;
+	void SetIconSize(float Size);
+	float GetIconSize() const { return BrowserContext.ContentSize.x; }
 
 private:
 	void LoadFromSettings();
