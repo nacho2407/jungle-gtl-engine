@@ -92,4 +92,5 @@ void FSamplerStateManager::BindSystemSamplers(ID3D11DeviceContext* Ctx)
 		ShadowComparisonSampler, ShadowLinearSampler
 	};
 	Ctx->PSSetSamplers(0, 5, Samplers);
+	Ctx->VSSetSamplers(0, 5, Samplers);
 }
