@@ -42,6 +42,7 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
 	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
+    FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
 
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)

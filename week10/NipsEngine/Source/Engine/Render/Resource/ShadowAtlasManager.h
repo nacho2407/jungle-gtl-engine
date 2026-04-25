@@ -20,11 +20,11 @@ public:
 	
 	
 	TComPtr<ID3D11Texture2D> VarianceRTVShadowMap;          // 텍스처
-    TComPtr<ID3D11Texture2D> VarianceDepthShadowMap;	 // DSV용 깊이 테스트 
-
     TComPtr<ID3D11RenderTargetView> VarianceShadowRTV;   // 쓰기용 (Shadow Pass)
     TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV; // 읽기용 (Lighting Pass)
-    TComPtr<ID3D11DepthStencilView> VarianceShadowDSV;   // 깊이 테스트용 (별도)
 
+	// TComPtr<ID3D11Texture2D> VarianceDepthShadowMap;	 // DSV용 깊이 테스트
+    // TComPtr<ID3D11DepthStencilView> VarianceShadowDSV;   // 깊이 테스트용 (별도)
 
+	float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 };
