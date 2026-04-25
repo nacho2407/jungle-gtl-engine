@@ -3,7 +3,7 @@
   "ShaderPath": "Shaders/UI/Billboard.hlsl",
   "RenderPass": "AlphaBlend",
   "Textures": {
-    "DiffuseTexture": "Asset/Editor/Icons/DirectionalLight_64x.png"
+    "DiffuseTexture": "Asset/Editor/Icons/S_DirectionalLight_256x.png"
   },
   "Origin": "Editor"
 }
