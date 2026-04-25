@@ -39,7 +39,6 @@ AActor::~AActor()
 UActorComponent* AActor::AddComponentByClass(UClass* Class)
 {
 	if (!Class) return nullptr;
-	if (Class->HasAnyClassFlags(CF_Abstract)) return nullptr;
 
 	UObject* Obj = FObjectFactory::Get().Create(Class->GetName(), this);
 	if (!Obj) return nullptr;

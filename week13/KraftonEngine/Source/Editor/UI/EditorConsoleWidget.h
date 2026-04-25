@@ -42,6 +42,10 @@ public:
 	virtual void Shutdown();
 
 	void Clear();
+	void RenderDrawerToolbar();
+	void RenderLogContents(float Height = 0.0f);
+	void RenderInputLine(const char* Label = "Input", float Width = 0.0f, bool bFocusInput = false);
+	const char* GetLatestLogMessage() const;
 	static void ClearHistory()
 	{
 		for (int32 i = 0; i < History.Size; i++) free(History[i]);

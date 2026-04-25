@@ -21,6 +21,8 @@ public:
 	// Transform 변경 시 FogBaseHeight 갱신
 	void OnTransformDirty() override;
 
+	class UBillboardComponent* EnsureEditorBillboard();
+
 private:
 	void PushToScene();
 

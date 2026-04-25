@@ -55,6 +55,9 @@ namespace Key
 	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
 	constexpr const char* ShowSceneManager = "ShowSceneManager";
 	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
+	constexpr const char* ShowContentBrowser = "ShowContentBrowser";
+	constexpr const char* ShowImGuiSettings = "ShowImGuiSettings";
+	constexpr const char* ShowEditorDebug = "ShowEditorDebug";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -63,6 +66,16 @@ namespace Key
 	constexpr const char* FOV = "FOV";
 	constexpr const char* NearClip = "NearClip";
 	constexpr const char* FarClip = "FarClip";
+
+	// Transform Tools
+	constexpr const char* TransformTools = "TransformTools";
+	constexpr const char* CoordSystem = "CoordSystem";
+	constexpr const char* bEnableTranslationSnap = "bEnableTranslationSnap";
+	constexpr const char* TranslationSnapSize = "TranslationSnapSize";
+	constexpr const char* bEnableRotationSnap = "bEnableRotationSnap";
+	constexpr const char* RotationSnapSize = "RotationSnapSize";
+	constexpr const char* bEnableScaleSnap = "bEnableScaleSnap";
+	constexpr const char* ScaleSnapSize = "ScaleSnapSize";
 }
 
 void FEditorSettings::SaveToFile(const FString& Path) const
@@ -138,6 +151,9 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
 	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
 	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
+	WidgetsObj[Key::ShowContentBrowser] = UI.bContentBrowser;
+	WidgetsObj[Key::ShowImGuiSettings] = UI.bImGUISettings;
+	WidgetsObj[Key::ShowEditorDebug] = UI.bEditorDebug;
 	Root[Key::UIWidgets] = WidgetsObj;
 
 	// Perspective Camera
@@ -148,6 +164,16 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	CamObj[Key::NearClip] = PerspCamNearClip;
 	CamObj[Key::FarClip] = PerspCamFarClip;
 	Root[Key::PerspectiveCamera] = CamObj;
+
+	JSON TransformObj = Object();
+	TransformObj[Key::CoordSystem] = static_cast<int32>(CoordSystem);
+	TransformObj[Key::bEnableTranslationSnap] = bEnableTranslationSnap;
+	TransformObj[Key::TranslationSnapSize] = TranslationSnapSize;
+	TransformObj[Key::bEnableRotationSnap] = bEnableRotationSnap;
+	TransformObj[Key::RotationSnapSize] = RotationSnapSize;
+	TransformObj[Key::bEnableScaleSnap] = bEnableScaleSnap;
+	TransformObj[Key::ScaleSnapSize] = ScaleSnapSize;
+	Root[Key::TransformTools] = TransformObj;
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -295,6 +321,9 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
 		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
 		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();
+		if (W.hasKey(Key::ShowContentBrowser)) UI.bContentBrowser = W[Key::ShowContentBrowser].ToBool();
+		if (W.hasKey(Key::ShowImGuiSettings))  UI.bImGUISettings = W[Key::ShowImGuiSettings].ToBool();
+		if (W.hasKey(Key::ShowEditorDebug))    UI.bEditorDebug = W[Key::ShowEditorDebug].ToBool();
 	}
 
 	// Perspective Camera
@@ -324,5 +353,24 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			PerspCamNearClip = static_cast<float>(CamObj[Key::NearClip].ToFloat());
 		if (CamObj.hasKey(Key::FarClip))
 			PerspCamFarClip = static_cast<float>(CamObj[Key::FarClip].ToFloat());
+	}
+
+	if (Root.hasKey(Key::TransformTools))
+	{
+		JSON TransformObj = Root[Key::TransformTools];
+		if (TransformObj.hasKey(Key::CoordSystem))
+			CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
+		if (TransformObj.hasKey(Key::bEnableTranslationSnap))
+			bEnableTranslationSnap = TransformObj[Key::bEnableTranslationSnap].ToBool();
+		if (TransformObj.hasKey(Key::TranslationSnapSize))
+			TranslationSnapSize = static_cast<float>(TransformObj[Key::TranslationSnapSize].ToFloat());
+		if (TransformObj.hasKey(Key::bEnableRotationSnap))
+			bEnableRotationSnap = TransformObj[Key::bEnableRotationSnap].ToBool();
+		if (TransformObj.hasKey(Key::RotationSnapSize))
+			RotationSnapSize = static_cast<float>(TransformObj[Key::RotationSnapSize].ToFloat());
+		if (TransformObj.hasKey(Key::bEnableScaleSnap))
+			bEnableScaleSnap = TransformObj[Key::bEnableScaleSnap].ToBool();
+		if (TransformObj.hasKey(Key::ScaleSnapSize))
+			ScaleSnapSize = static_cast<float>(TransformObj[Key::ScaleSnapSize].ToFloat());
 	}
 }

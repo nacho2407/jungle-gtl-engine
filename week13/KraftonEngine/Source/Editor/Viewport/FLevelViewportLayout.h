@@ -2,10 +2,12 @@
 
 #include "Core/CoreTypes.h"
 #include "Editor/UI/EditorPlayToolbarWidget.h"
+#include "Engine/UI/SWindow.h"
 #include <d3d11.h>
 
 class SSplitter;
-class SWindow;
+struct FVector;
+class AActor;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FSelectionManager;
@@ -68,6 +70,21 @@ public:
 	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
 	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
 
+	enum class EViewportPlaceActorType : uint8
+	{
+		Cube,
+		Sphere,
+		Cylinder,
+		Decal,
+		HeightFog,
+		AmbientLight,
+		DirectionalLight,
+		PointLight,
+		SpotLight
+	};
+
+	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);
+
 	void SetActiveViewport(FLevelEditorViewportClient* InClient);
 	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
 
@@ -79,10 +96,40 @@ public:
 	static int32 GetSlotCount(EViewportLayout Layout);
 
 private:
+	struct FViewportContextMenuState
+	{
+		bool bTrackingRightClick[MaxViewportSlots] = {};
+		float RightClickTravelSq[MaxViewportSlots] = {};
+		FPoint RightClickPressPos[MaxViewportSlots] = {};
+		int32 PendingPopupSlot = -1;
+		int32 PendingSpawnSlot = -1;
+		FPoint PendingPopupPos = {};
+		FPoint PendingSpawnPos = {};
+	};
+
+	enum class EViewportLayoutTransition : uint8
+	{
+		None,
+		SplitToOnePane,
+		OnePaneToSplit
+	};
+
 	SSplitter* BuildSplitterTree(EViewportLayout Layout);
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
+	int32 GetActiveViewportSlotIndex() const;
+	void BeginSplitToOnePaneTransition(int32 SlotIndex);
+	void BeginOnePaneToSplitTransition(EViewportLayout TargetLayout);
+	void FinishLayoutTransition(bool bSnapToEnd);
+	bool UpdateLayoutTransition(float DeltaTime);
+	bool ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate);
+	bool SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const;
+	void RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop);
 	void RenderPaneToolbar(int32 SlotIndex);
+	void HandleViewportContextMenuInput(const FPoint& MousePos);
+	void RenderViewportPlaceActorPopup();
+	bool TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const;
+	AActor* SpawnActorFromViewportMenu(EViewportPlaceActorType Type, const FVector& Location);
 
 	// 아이콘 텍스처
 	void LoadLayoutIcons(ID3D11Device* Device);
@@ -105,12 +152,19 @@ private:
 
 	SSplitter* DraggingSplitter = nullptr;
 	bool bMouseOverViewport = false;
+	EViewportLayoutTransition LayoutTransition = EViewportLayoutTransition::None;
+	EViewportLayout TransitionTargetLayout = EViewportLayout::OnePane;
+	int32 TransitionSourceSlot = 0;
+	float TransitionRestoreRatios[3] = { 0.5f, 0.5f, 0.5f };
+	int32 TransitionRestoreRatioCount = 0;
+	bool bSuppressLayoutTransitionAnimation = false;
 
 	// 레이아웃 아이콘 SRV (EViewportLayout::MAX 개)
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int>(EViewportLayout::MAX)] = {};
 
 	// 뷰포트 상단 Play/Stop 툴바
 	FEditorPlayToolbarWidget PlayToolbar;
+	FViewportContextMenuState ContextMenuState;
 	bool bHasSavedWorldAxisVisibility = false;
 	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
 	bool SavedGridVisibility[MaxViewportSlots] = {};

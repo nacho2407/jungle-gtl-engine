@@ -26,4 +26,5 @@ private:
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;
 	bool bActorSelected = true; // true: Actor details, false: Component details
+	bool bShowEditorOnlyComponents = false;
 };

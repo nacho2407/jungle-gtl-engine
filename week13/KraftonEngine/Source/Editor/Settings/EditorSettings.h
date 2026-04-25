@@ -7,6 +7,12 @@
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
 
+enum class EEditorCoordSystem : uint8
+{
+	World = 0,
+	Local = 1
+};
+
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
 	friend class TSingleton<FEditorSettings>;
@@ -32,6 +38,15 @@ public:
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
 
+	// Transform tools
+	EEditorCoordSystem CoordSystem = EEditorCoordSystem::World;
+	bool bEnableTranslationSnap = false;
+	float TranslationSnapSize = 0.1f;
+	bool bEnableRotationSnap = false;
+	float RotationSnapSize = 15.0f;
+	bool bEnableScaleSnap = false;
+	float ScaleSnapSize = 0.1f;
+
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드
 	FString ContentBrowserPath; // 비어있으면 프로젝트 루트
@@ -45,6 +60,8 @@ public:
 		bool bScene = true;
 		bool bStat = false;
 		bool bContentBrowser = true;
+		bool bImGUISettings = false;
+		bool bEditorDebug = false;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;

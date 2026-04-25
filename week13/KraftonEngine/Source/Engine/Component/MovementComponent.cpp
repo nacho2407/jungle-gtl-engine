@@ -6,7 +6,8 @@
 #include "Serialization/Archive.h"
 
 // Base movement logic only; concrete movement types should be added instead.
-IMPLEMENT_ABSTRACT_CLASS(UMovementComponent, UActorComponent)
+IMPLEMENT_CLASS(UMovementComponent, UActorComponent)
+HIDE_FROM_COMPONENT_LIST(UMovementComponent)
 
 void UMovementComponent::BeginPlay()
 {

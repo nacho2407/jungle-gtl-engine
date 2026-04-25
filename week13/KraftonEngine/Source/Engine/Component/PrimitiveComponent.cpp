@@ -33,6 +33,7 @@ namespace
 }
 
 IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
+HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {

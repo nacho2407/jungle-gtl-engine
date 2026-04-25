@@ -7,13 +7,8 @@ IMPLEMENT_CLASS(ASpotLightActor, AActor)
 
 void ASpotLightActor::InitDefaultComponents()
 {
-	BillboardComponent = AddComponent<UBillboardComponent>();
-	BillboardComponent->SetEditorOnly(true);
-	SetRootComponent(BillboardComponent);
-
-	auto LightMaterial = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/SpotLight.mat");
-	BillboardComponent->SetMaterial(LightMaterial);
-
 	LightComponent = AddComponent<USpotLightComponent>();
-	LightComponent->AttachToComponent(BillboardComponent);
+	SetRootComponent(LightComponent);
+
+	BillboardComponent = LightComponent->EnsureEditorBillboard();
 }

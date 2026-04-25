@@ -7,6 +7,7 @@ public:
 	DECLARE_CLASS(UAmbientLightComponent, ULightComponent)
 	UAmbientLightComponent();
 
+	virtual ELightComponentType GetLightType() const override { return ELightComponentType::Ambient; }
 	virtual void PushToScene() override;
 	virtual void DestroyFromScene() override;
 };
