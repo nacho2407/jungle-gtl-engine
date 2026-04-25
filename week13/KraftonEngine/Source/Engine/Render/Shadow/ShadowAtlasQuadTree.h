@@ -2,19 +2,8 @@
 #include "Math/Vector.h"
 #include "Core/ClassTypes.h"
 
-class UCameraComponent;
-
 // Exclusive to spotlights
 struct FLightInfo;
-
-//enum EShadowMapMaxTileCount : uint8 {
-//	Size64		= 64,
-//	Size128		= 32,
-//	Size256		= 16,
-//	Size512		= 8,
-//	Size1024	= 4,
-//	Size2048	= 2,
-//};
 
 struct Node {
 	// Dimensions
@@ -56,7 +45,6 @@ private:
 
 	// Ranks the importance of the input light source based on its properties.
 	float EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
-
 
 private:
 	TArray<Node> Nodes;
