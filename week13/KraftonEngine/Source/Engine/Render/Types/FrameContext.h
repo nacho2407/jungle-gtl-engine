@@ -4,7 +4,7 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
-#include "Render/Pipeline/LODContext.h"
+#include "Render/Types/LODContext.h"
 #include "Render/Culling/ConvexVolume.h"
 
 #include <d3d11.h>

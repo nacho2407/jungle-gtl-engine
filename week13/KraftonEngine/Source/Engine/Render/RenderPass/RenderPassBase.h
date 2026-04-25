@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Render/Pipeline/PassRenderStateTable.h"
+#include "Render/RenderPass/PassRenderStateTable.h"
 
 class FD3DDevice;
 class FDrawCommandList;

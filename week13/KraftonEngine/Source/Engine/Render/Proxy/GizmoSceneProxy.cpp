@@ -1,7 +1,7 @@
 ﻿#include "Render/Proxy/GizmoSceneProxy.h"
 #include "Component/GizmoComponent.h"
 #include "Render/Shader/ShaderManager.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 #include "Materials/Material.h"
 #include "Object/ObjectFactory.h"
 

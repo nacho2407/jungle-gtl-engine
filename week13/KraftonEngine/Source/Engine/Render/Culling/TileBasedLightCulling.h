@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Render/Pipeline/ForwardLightData.h"
-#include "Engine/Render/Pipeline/FrameContext.h"
+#include "Engine/Render/Types/ForwardLightData.h"
+#include "Engine/Render/Types/FrameContext.h"
 
 struct FTileCullingResource;
 

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Render/Resource/Buffer.h"
-#include "Render/Pipeline/RenderConstants.h"
-#include "Render/Pipeline/ForwardLightData.h"
+#include "Render/Types/RenderConstants.h"
+#include "Render/Types/ForwardLightData.h"
 
 #include "Render/RenderState/RasterizerStateManager.h"
 #include "Render/RenderState/DepthStencilStateManager.h"

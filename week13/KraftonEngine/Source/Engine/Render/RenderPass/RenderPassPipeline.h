@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Render/RenderPass/RenderPassBase.h"
-#include "Render/Pipeline/PassRenderStateTable.h"
+#include "Render/RenderPass/PassRenderStateTable.h"
 #include <memory>
 
 /*

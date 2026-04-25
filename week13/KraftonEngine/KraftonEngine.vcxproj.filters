@@ -109,6 +109,9 @@
     <Filter Include="Source\Engine\Render\Pipeline">
       <UniqueIdentifier>{5ac9b005-2a76-d0b0-3f77-2b89ae10bb53}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Command">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Proxy">
       <UniqueIdentifier>{29fc5be6-2892-6e33-da8a-420028aade0e}</UniqueIdentifier>
     </Filter>
@@ -118,11 +121,11 @@
     <Filter Include="Source\Engine\Render\RenderState">
       <UniqueIdentifier>{c2d9eab8-0b3e-d2ca-86d8-43ac66a07d87}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Shader">
-      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f23456789012}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render\Resource">
       <UniqueIdentifier>{f7c09818-7a72-3a04-d6dd-8e5897cf81bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Shader">
+      <UniqueIdentifier>{d6c35911-061e-d10a-e2dc-4d2a8ddb24d9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Types">
       <UniqueIdentifier>{5c8a6ef8-769c-e1cf-6594-03b5821e5f57}</UniqueIdentifier>
@@ -548,17 +551,17 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp">
+      <Filter>Source\Engine\Render\Command</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandList.cpp">
+      <Filter>Source\Engine\Render\Command</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Render\RenderPass\PassRenderStateTable.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
@@ -1106,35 +1109,35 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h">
+      <Filter>Source\Engine\Render\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandBuilder.h">
+      <Filter>Source\Engine\Render\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandList.h">
+      <Filter>Source\Engine\Render\Command</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\ForwardLightData.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Types\ForwardLightData.h">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Types\FrameContext.h">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Types\LODContext.h">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\RenderPass\PassRenderStateTable.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h">
+      <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>

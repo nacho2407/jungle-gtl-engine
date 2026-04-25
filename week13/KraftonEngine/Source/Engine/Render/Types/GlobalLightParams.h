@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Render/Pipeline/ForwardLightData.h"
+#include "Render/Types/ForwardLightData.h"
 struct LightBaseParams
 {
 	float Intensity; //4

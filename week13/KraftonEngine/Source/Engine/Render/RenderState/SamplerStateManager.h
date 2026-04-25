@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Pipeline/RenderConstants.h"
+#include "Render/Types/RenderConstants.h"
 
 class FSamplerStateManager
 {

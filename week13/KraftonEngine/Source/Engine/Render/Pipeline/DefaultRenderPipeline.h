@@ -1,7 +1,7 @@
 #pragma once
 #include "IRenderPipeline.h"
 #include "Render/Pipeline/RenderCollector.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 
 class UEngine;
 

@@ -1,7 +1,7 @@
 ﻿#include "Render/Proxy/CylindricalBillboardSceneProxy.h"
 #include "Component/CylindricalBillboardComponent.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
