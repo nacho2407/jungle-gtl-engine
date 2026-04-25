@@ -1,6 +1,8 @@
 ﻿#include "ShadowAtlasQuadTree.h"
 #include "Render/Types/ForwardLightData.h"
 
+#include <algorithm>
+
 // Public functions
 void FShadowAtlasQuadTree::Init(float InAtlasSize, float InMinShadowMapResolution) {
 	if (InMinShadowMapResolution <= 0.f || InAtlasSize <= 0.f) {
@@ -19,10 +21,9 @@ void FShadowAtlasQuadTree::Init(float InAtlasSize, float InMinShadowMapResolutio
 	Nodes.push_back(RootNode);
 }
 
-FAtlasRegion FShadowAtlasQuadTree::Add(const FLightInfo& InLightInfo) {
+FAtlasRegion FShadowAtlasQuadTree::Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
 	if (Nodes.empty()) return { 0, 0, 0, false };
-
-	uint32 RequestedSize = static_cast<uint32>(EvaluateResolution(InLightInfo));
+	float RequestedSize = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
 	return AllocateNode(0, RequestedSize);
 }
 
@@ -113,22 +114,33 @@ bool FShadowAtlasQuadTree::Split(int32 Idx) {
 	return true;
 }
 
-float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo) const {
-	FVector4 Color = InLightInfo.Color;
-	float    Intensity = InLightInfo.Intensity;
-	float    Radius = InLightInfo.AttenuationRadius;
-	float    Falloff = InLightInfo.FalloffExponent;
+float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
+	FVector4 Color		 = InLightInfo.Color;
+	float   r_sphere;
+	FVector c_sphere;
 
-	// Spotlight evaluation
-	float Score = 0.f;
-	Score += Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f; // Luminance
-	Score *= Intensity;
-	Score *= Radius;
-	Score += pow(Falloff, 2.f);
+	// If outer angle is less than 60 degrees
+	if (InLightInfo.OuterConeCos >= 0.5) {
+		r_sphere = InLightInfo.AttenuationRadius / (2 * InLightInfo.OuterConeCos);
+		c_sphere = InLightInfo.Position + InLightInfo.Direction * r_sphere;
+	} else {
+		r_sphere = InLightInfo.AttenuationRadius;
+		c_sphere = InLightInfo.Position;
+	}
 
-	uint32 res = 64;
-	if (Score > 50.f)  res = 128;
-	if (Score > 200.f) res = 256;
-	if (Score > 800.f) res = 512;
-	return res;
+	auto z_view = (c_sphere - CameraPos).Dot(Forward);
+	auto r_ndc = (r_sphere / z_view) / tanf(FOV / 2.f);
+	auto r_pixel = r_ndc * H / 2.f;
+	auto A_screen = 3.1415925f * r_pixel * r_pixel;
+
+	return sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity;
 }
+
+//// Spotlight evaluation
+//float Score = 0.f;
+//Score += Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f; // Luminance
+//Score *= InLightInfo.Intensity;
+//Score *= InLightInfo.AttenuationRadius;
+//Score += pow(InLightInfo.FalloffExponent, 2.f);
+
+//return Score;

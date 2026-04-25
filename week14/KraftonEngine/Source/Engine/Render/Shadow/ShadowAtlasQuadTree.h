@@ -7,13 +7,13 @@ class UCameraComponent;
 // Exclusive to spotlights
 struct FLightInfo;
 
-//enum class EShadowMapSizeUpperBound : uint8 {
+//enum EShadowMapMaxTileCount : uint8 {
 //	Size64		= 64,
-//	Size128		= 128,
-//	Size256		= 256,
-//	Size512		= 512,
-//	Size1024	= 1024,
-//	Size2048	= 2048
+//	Size128		= 32,
+//	Size256		= 16,
+//	Size512		= 8,
+//	Size1024	= 4,
+//	Size2048	= 2,
 //};
 
 struct Node {
@@ -22,9 +22,9 @@ struct Node {
 	float			Resolution;
 
 	// Data
-	bool			bOccupied = false;	// True if and only if this node is allocated to a shadow map by whole
-	bool			bSplit = false;  // True if and only if this node has been split into a subtree
-	int32			Children[4] = { -1, -1, -1, -1 };		// indices into Nodes[], -1 = no child
+	bool			bOccupied	= false;				// True if and only if this node is allocated to a shadow map by whole
+	bool			bSplit		= false;				// True if and only if this node has been split into a subtree
+	int32			Children[4] = { -1, -1, -1, -1 };	// indices into Nodes[], -1 = no child
 };
 
 struct FAtlasRegion { uint32 X, Y, Size; bool bValid; };
@@ -36,7 +36,7 @@ public:
 	void Init(float InAtlasSize, float inMinShadowMapResolution);
 
 	// Try allocating the uv region for the input light source
-	FAtlasRegion Add(const FLightInfo& InLightInfo);
+	FAtlasRegion Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
 
 	// Called every frame to reset the atlas.
 	void Reset();
@@ -55,7 +55,7 @@ private:
 	bool  Split(int32 Idx);
 
 	// Ranks the importance of the input light source based on its properties.
-	float EvaluateResolution(const FLightInfo& InLightInfo) const;
+	float EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
 
 
 private:
