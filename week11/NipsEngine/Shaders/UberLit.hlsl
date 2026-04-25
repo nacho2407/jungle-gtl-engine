@@ -140,7 +140,12 @@ float CalculateShadow(float4 worldPos)
 {
     float3 projCoords = { 0.f, 0.f, 0.f };
     float4 shadowCoord = { 0.f, 0.f, 0.f, 1.f};
-#ifdef SHADOW_MAP_PSM
+#ifdef SHADOW_MAP_BASIC
+    shadowCoord = mul(worldPos, DirLightViewProj);
+
+//TODO : CSM
+#elif SHADOW_MAP_CSM    
+#elif SHADOW_MAP_PSM
     float4 camClip = mul(mul(worldPos, View), Projection);
 
     if (abs(camClip.w) < 1e-5f)
@@ -176,9 +181,10 @@ float CalculateShadow(float4 worldPos)
     
     
     float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap);
-    // const float shadowBias = 0.002f;
-    // float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
+    //const float shadowBias = 0.002f;
+    //float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z + shadowBias);
 
+    
     return shadowFactor;
 }
 

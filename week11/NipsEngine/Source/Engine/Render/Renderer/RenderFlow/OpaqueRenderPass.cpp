@@ -6,6 +6,7 @@
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
+#include "Component/PostProcess/Light/LightComponent.h"
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -30,6 +31,10 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
 	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
+
+	// ShadowBuffer(b4)를 PS에 바인딩 — CalculateShadow가 PS에서 DirLightViewProj/ScaleOffset을 읽음
+	ID3D11Buffer* ShadowCB = Context->RenderResources->ShadowBuffer.GetBuffer();
+	Context->DeviceContext->PSSetConstantBuffers(4, 1, &ShadowCB);
 
     return true;
 }
@@ -97,6 +102,34 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
+
+	   // ShadowMap Permutation Key 조합
+       for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
+       {
+           if (!Request.bCastShadows || !Request.LightComponent) continue;
+           ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+           if (!LightComp) continue;
+           switch (LightComp->GetShadowMapType())
+           {
+		   case EShadowMap::BASIC:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowBasic;
+			   break;
+		   }
+		   case EShadowMap::PSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
+			   break;
+		   }
+		   case EShadowMap::CSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+			   break;
+		   }
+           default: break;
+           }
+           break;
+       }
 
        if (Cmd.Material)
        {

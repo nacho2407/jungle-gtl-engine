@@ -23,7 +23,7 @@ FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix&
 	default:
 		break;
 	}
-	return FMatrix();
+	return OutMatrix;
 }
 
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -127,6 +127,64 @@ FMatrix ULightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, 
 
 FMatrix ULightComponent::ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
 {
+	FMatrix ViewProj = CamView * CamProj;
+	const FMatrix ViewProjInverse = ViewProj.GetInverse();
 
-	return FMatrix();
+	// NDC 박스를 월드로 보내서 절두체 생성
+	FVector PostCorners[8] =
+	{
+		FVector(-1, -1, 0),
+		FVector(1, -1, 0),
+		FVector(-1, 1, 0),
+		FVector(1, 1, 0),
+		FVector(-1, -1, 1),
+		FVector(1, -1, 1),
+		FVector(-1, 1, 1),
+		FVector(1, 1, 1)
+	};
+
+	FVector Center = { 0.f, 0.f, 0.f };
+	for (int i = 0; i < 8; ++i)
+	{
+		PostCorners[i] = ViewProjInverse.TransformPosition(PostCorners[i]);
+		Center += (PostCorners[i]);
+	}
+	Center /= 8.f;
+	
+	// 광원 뷰 행렬 
+	FVector LightDir = GetForwardVector().GetSafeNormal();
+	FVector Ref;
+
+	// Z-Up (0,0,1)
+	if (std::abs(FVector::DotProduct(LightDir, FVector(0, 0, 1))) < 0.9f)
+	{
+		Ref = FVector(0.f, 0.f, 1.f); 
+	}
+	else
+	{
+		Ref = FVector(0.f, 1.f, 0.f); // 광원이 거의 수직일 때 폴백
+	}
+
+	FVector Right = FVector::CrossProduct(Ref, LightDir).GetSafeNormal();
+	FVector Up = FVector::CrossProduct(LightDir, Right).GetSafeNormal();
+	FMatrix LightView = FMatrix::MakeViewLookAtLH(Center - LightDir * 100.f, Center, Up);
+
+	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// 광원 기준 View 프러스텀으로 이동하여 투영 행렬 생성
+	for (int i = 0; i < 8; ++i)
+	{
+		FVector4 VertexLightView = FVector4(PostCorners[i], 1.0f) * LightView;
+		FVector Tmp = { VertexLightView.X, VertexLightView.Y, VertexLightView.Z } ;
+
+		Min = FVector::Min(Min, Tmp);
+		Max = FVector::Max(Max, Tmp);
+	}
+
+
+	FMatrix LightProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X, Max.X);
+	FMatrix Result = LightView * LightProj;
+
+	return Result;
 }

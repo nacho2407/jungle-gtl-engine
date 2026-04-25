@@ -7,16 +7,16 @@ struct VSInput
 
 float4 ShadowVS(VSInput input) : SV_POSITION
 {
-    matrix viewProj = mul(View, Projection);
-    
     float4 worldPos = mul(float4(input.Position, 1.0f), Model);
     
-    float4 camClip = mul(worldPos, viewProj);
-    float3 post = camClip.xyz / camClip.w;
-    float4 shadowPos = float4(post, 1.f);
+    float4 post = worldPos;
 #ifdef SHADOW_MAP_PSM
-    shadowPos = mul(float4(post, 1.0f), DirLightViewProj);
+    matrix viewProj = mul(View, Projection);
+    float4 camClip = mul(worldPos, viewProj);
+    post = camClip
 #endif
+    
+    float4 shadowPos = mul(post, DirLightViewProj);
     return shadowPos;
 }
 
