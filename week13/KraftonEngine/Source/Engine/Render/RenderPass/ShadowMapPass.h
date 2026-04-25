@@ -28,10 +28,13 @@ public:
 	// 유효한 shadow가 있는지
 	bool HasValidShadow() const { return bHasValidShadow; }
 
+
 private:
 	void EnsureShadowMap(ID3D11Device* Device, uint32 Size);
 	void ReleaseShadowMap();
 
+
+private:
 	// Shadow map GPU 리소스
 	ID3D11Texture2D*          ShadowTexture = nullptr;
 	ID3D11DepthStencilView*   ShadowDSV     = nullptr;
