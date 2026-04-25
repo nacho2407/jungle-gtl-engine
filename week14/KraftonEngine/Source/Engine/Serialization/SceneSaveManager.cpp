@@ -12,6 +12,9 @@
 #include "Component/ActorComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/DecalComponent.h"
+#include "Component/HeightFogComponent.h"
+#include "Component/Light/LightComponentBase.h"
 #include "GameFramework/StaticMeshActor.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
@@ -59,6 +62,49 @@ namespace SceneKeys
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
 	static constexpr const char* Properties = "Properties";
 	static constexpr const char* Children = "Children";
+	static constexpr const char* HiddenInComponentTree = "bHiddenInComponentTree";
+}
+
+static void SerializeComponentEditorMetadata(json::JSON& Node, const UActorComponent* Comp)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	if (Comp->IsHiddenInComponentTree())
+	{
+		Node[SceneKeys::HiddenInComponentTree] = true;
+	}
+}
+
+static void DeserializeComponentEditorMetadata(UActorComponent* Comp, json::JSON& Node)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	if (Node.hasKey(SceneKeys::HiddenInComponentTree))
+	{
+		Comp->SetHiddenInComponentTree(Node[SceneKeys::HiddenInComponentTree].ToBool());
+	}
+}
+
+static void EnsureEditorBillboardMetadata(UActorComponent* Comp)
+{
+	if (ULightComponentBase* LightComponent = Cast<ULightComponentBase>(Comp))
+	{
+		LightComponent->EnsureEditorBillboard();
+	}
+	else if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(Comp))
+	{
+		DecalComponent->EnsureEditorBillboard();
+	}
+	else if (UHeightFogComponent* HeightFogComponent = Cast<UHeightFogComponent>(Comp))
+	{
+		HeightFogComponent->EnsureEditorBillboard();
+	}
 }
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -218,6 +264,7 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 		JSON c = json::Object();
 		c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
 		c[SceneKeys::Properties] = SerializeProperties(Comp);
+		SerializeComponentEditorMetadata(c, Comp);
 		NonScene.append(c);
 	}
 	a[SceneKeys::NonSceneComponents] = NonScene;
@@ -231,6 +278,7 @@ json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
 	JSON c = json::Object();
 	c[SceneKeys::ClassName] = Comp->GetClass()->GetName();
 	c[SceneKeys::Properties] = SerializeProperties(Comp);
+	SerializeComponentEditorMetadata(c, Comp);
 
 	JSON Children = json::Array();
 	for (USceneComponent* Child : Comp->GetChildren()) {
@@ -532,6 +580,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 						JSON& PropsJSON = CompJSON[SceneKeys::Properties];
 						DeserializeProperties(Comp, PropsJSON);
 					}
+					DeserializeComponentEditorMetadata(Comp, CompJSON);
 				}
 			}
 
@@ -560,6 +609,7 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 		json::JSON& PropsJSON = Node[SceneKeys::Properties];
 		DeserializeProperties(Comp, PropsJSON);
 	}
+	DeserializeComponentEditorMetadata(Comp, Node);
 	Comp->MarkTransformDirty();
 
 	// Restore children recursively
@@ -571,6 +621,8 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 			}
 		}
 	}
+
+	EnsureEditorBillboardMetadata(Comp);
 
 	return Comp;
 }
@@ -584,6 +636,7 @@ void FSceneSaveManager::DeserializeSceneComponentIntoExisting(USceneComponent* E
 		JSON& PropsJSON = Node[SceneKeys::Properties];
 		DeserializeProperties(Existing, PropsJSON);
 	}
+	DeserializeComponentEditorMetadata(Existing, Node);
 
 	// Children: merge into existing children by order; create new children if missing
 	if (Node.hasKey(SceneKeys::Children)) {
@@ -602,6 +655,8 @@ void FSceneSaveManager::DeserializeSceneComponentIntoExisting(USceneComponent* E
 			idx++;
 		}
 	}
+
+	EnsureEditorBillboardMetadata(Existing);
 }
 
 void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON)

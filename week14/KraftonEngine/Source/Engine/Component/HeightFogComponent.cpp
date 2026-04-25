@@ -2,6 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Component/BillboardComponent.h"
+#include "Materials/MaterialManager.h"
 #include "Render/Proxy/FScene.h"
 #include "Serialization/Archive.h"
 
@@ -79,4 +81,38 @@ void UHeightFogComponent::Serialize(FArchive& Ar)
 	Ar << FogCutoffDistance;
 	Ar << FogMaxOpacity;
 	Ar << FogInscatteringColor;
+}
+
+UBillboardComponent* UHeightFogComponent::EnsureEditorBillboard()
+{
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	for (USceneComponent* Child : GetChildren())
+	{
+		UBillboardComponent* Billboard = Cast<UBillboardComponent>(Child);
+		if (Billboard && Billboard->IsEditorOnlyComponent())
+		{
+			// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+			Billboard->SetAbsoluteScale(true);
+			Billboard->SetHiddenInComponentTree(true);
+			return Billboard;
+		}
+	}
+
+	UBillboardComponent* Billboard = Owner->AddComponent<UBillboardComponent>();
+	if (Billboard)
+	{
+		Billboard->AttachToComponent(this);
+		// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+		Billboard->SetAbsoluteScale(true);
+		Billboard->SetEditorOnlyComponent(true);
+		Billboard->SetHiddenInComponentTree(true);
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/HeightFog.mat");
+		Billboard->SetMaterial(Material);
+	}
+
+	return Billboard;
 }

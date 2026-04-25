@@ -4,6 +4,7 @@
 #include "GameFramework/AActor.h"
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
+HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
 void UActorComponent::BeginPlay()
 {
@@ -61,6 +62,7 @@ void UActorComponent::Serialize(FArchive& Ar)
 	Ar << bEditorOnly;
 	Ar << bIsActive;
 	Ar << bAutoActivate;
+	Ar << bHiddenInComponentTree;
 }
 
 void UActorComponent::SetEditorOnly(bool bInEditorOnly)

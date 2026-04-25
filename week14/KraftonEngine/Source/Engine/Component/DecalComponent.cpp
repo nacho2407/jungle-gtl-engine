@@ -1,5 +1,5 @@
 ﻿#include "DecalComponent.h"
-
+#include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 #include "Collision/OBB.h"
 #include "Component/StaticMeshComponent.h"
@@ -246,4 +246,38 @@ void UDecalComponent::DrawDebugBox()
 	DrawDebugLine(World, P[1], P[5], FColor::Green(), 0.0f);
 	DrawDebugLine(World, P[2], P[6], FColor::Green(), 0.0f);
 	DrawDebugLine(World, P[3], P[7], FColor::Green(), 0.0f);
+}
+
+UBillboardComponent* UDecalComponent::EnsureEditorBillboard()
+{
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	for (USceneComponent* Child : GetChildren())
+	{
+		UBillboardComponent* Billboard = Cast<UBillboardComponent>(Child);
+		if (Billboard && Billboard->IsEditorOnlyComponent())
+		{
+			// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+			Billboard->SetAbsoluteScale(true);
+			Billboard->SetHiddenInComponentTree(true);
+			return Billboard;
+		}
+	}
+
+	UBillboardComponent* Billboard = Owner->AddComponent<UBillboardComponent>();
+	if (Billboard)
+	{
+		Billboard->AttachToComponent(this);
+		// 에디터 아이콘 빌보드는 부모 스케일과 컴포넌트 트리 기본 표시에서 분리한다.
+		Billboard->SetAbsoluteScale(true);
+		Billboard->SetEditorOnlyComponent(true);
+		Billboard->SetHiddenInComponentTree(true);
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/DefaultDecal.mat");
+		Billboard->SetMaterial(Material);
+	}
+
+	return Billboard;
 }

@@ -183,27 +183,36 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 		return;
 	}
 
-	if (ImGui::SmallButton("Clear")) { Clear(); }
-
+	RenderDrawerToolbar();
+	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+	RenderLogContents(-FooterHeight);
 	ImGui::Separator();
+	RenderInputLine("Input");
 
-	//// Options menu
-	if (ImGui::BeginPopup("Options"))
+	ImGui::End();
+}
+
+void FEditorConsoleWidget::RenderDrawerToolbar()
+{
+	if (ImGui::BeginPopup("ConsoleOptions"))
 	{
 		ImGui::Checkbox("Auto-scroll", &ConsoleDevice.AutoScroll);
 		ImGui::EndPopup();
 	}
 
-	// Options, Filter
-	ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_Tooltip);
-	if (ImGui::Button("Options"))
-		ImGui::OpenPopup("Options");
+	if (ImGui::SmallButton("Clear")) { Clear(); }
 	ImGui::SameLine();
-	Filter.Draw("Filter (\"incl,-excl\") (\"error\")", 180);
-	ImGui::Separator();
+	if (ImGui::SmallButton("Options"))
+	{
+		ImGui::OpenPopup("ConsoleOptions");
+	}
+	ImGui::SameLine();
+	Filter.Draw("Filter (\"incl,-excl\")", 180.0f);
+}
 
-	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar)) {
+void FEditorConsoleWidget::RenderLogContents(float Height)
+{
+	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, Height), false, ImGuiWindowFlags_HorizontalScrollbar)) {
 		for (int32 i = 0; i < ConsoleDevice.GetMessageCount(); ++i) {
 			char* Item = ConsoleDevice.GetMessageAt(i);
 			if (!Filter.PassFilter(Item)) continue;
@@ -238,26 +247,48 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 		ConsoleDevice.ScrollToBottom = false;
 	}
 	ImGui::EndChild();
-	ImGui::Separator();
+}
 
-	// Input line
+void FEditorConsoleWidget::RenderInputLine(const char* Label, float Width, bool bFocusInput)
+{
+	if (bFocusInput)
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
+
+	if (Width > 0.0f)
+	{
+		ImGui::PushItemWidth(Width);
+	}
+
+	// 콘솔 전환 키는 명령어 문자로 입력되지 않도록 필터링한다.
 	bool bReclaimFocus = false;
 	ImGuiInputTextFlags Flags = ImGuiInputTextFlags_EnterReturnsTrue
 		| ImGuiInputTextFlags_EscapeClearsAll
 		| ImGuiInputTextFlags_CallbackHistory
-		| ImGuiInputTextFlags_CallbackCompletion;
-	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), Flags, &TextEditCallback, this)) {
+		| ImGuiInputTextFlags_CallbackCompletion
+		| ImGuiInputTextFlags_CallbackCharFilter;
+	if (ImGui::InputText(Label, InputBuf, sizeof(InputBuf), Flags, &TextEditCallback, this)) {
 		ExecCommand(InputBuf);
 		strcpy_s(InputBuf, "");
 		bReclaimFocus = true;
+	}
+
+	if (Width > 0.0f)
+	{
+		ImGui::PopItemWidth();
 	}
 
 	ImGui::SetItemDefaultFocus();
 	if (bReclaimFocus) {
 		ImGui::SetKeyboardFocusHere(-1);
 	}
+}
 
-	ImGui::End();
+const char* FEditorConsoleWidget::GetLatestLogMessage() const
+{
+	const int32 MessageCount = ConsoleDevice.GetMessageCount();
+	return MessageCount > 0 ? ConsoleDevice.GetMessageAt(MessageCount - 1) : "";
 }
 
 void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn) {
@@ -287,6 +318,13 @@ void FEditorConsoleWidget::ExecCommand(const char* CommandLine) {
 // History & Tab-Completion Callback____________________________________________________________
 int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data) {
 	FEditorConsoleWidget* Console = (FEditorConsoleWidget*)Data->UserData;
+
+	if (Data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter) {
+		if (Data->EventChar == '`' || Data->EventChar == '~') {
+			return 1;
+		}
+		return 0;
+	}
 
 	if (Data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
 		const int32 PrevPos = Console->HistoryPos;

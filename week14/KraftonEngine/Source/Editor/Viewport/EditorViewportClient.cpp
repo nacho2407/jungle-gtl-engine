@@ -153,26 +153,52 @@ void FEditorViewportClient::TickEditorShortcuts()
 		EditorEngine->RequestEndPlayMap();
 	}
 
-	// Ctrl+D — 선택된 액터 복제
+	const FGuiInputState& GuiInput = InputSystem::Get().GetGuiInputState();
+	const bool bAllowKeyboardInput = !GuiInput.bUsingKeyboard && !ImGui::GetIO().WantTextInput;
+	if (!bAllowKeyboardInput)
+	{
+		return;
+	}
+
+	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
+	{
+		SelectionManager->DeleteSelectedActors();
+		return;
+	}
+
+	if (!InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('X'))
+	{
+		EditorEngine->ToggleCoordSystem();
+		return;
+	}
+
 	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
 	{
 		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
 		if (!ToDuplicate.empty())
 		{
+			const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
 			TArray<AActor*> NewSelection;
+			int32 DuplicateIndex = 0;
 			for (AActor* Src : ToDuplicate)
 			{
 				if (!Src) continue;
 				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
 				if (Dup)
 				{
+					Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
 					NewSelection.push_back(Dup);
+					++DuplicateIndex;
 				}
 			}
 			SelectionManager->ClearSelection();
 			for (AActor* Actor : NewSelection)
 			{
 				SelectionManager->ToggleSelect(Actor);
+			}
+			if (EditorEngine->GetGizmo())
+			{
+				EditorEngine->GetGizmo()->UpdateGizmoTransform();
 			}
 		}
 	}
@@ -190,6 +216,9 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		return;
 	}
 
+	InputSystem& Input = InputSystem::Get();
+	const bool bCtrlHeld = Input.GetKey(VK_CONTROL);
+
 	const FCameraState& CameraState = Camera->GetCameraState();
 	const bool bIsOrtho = CameraState.bIsOrthogonal;
 
@@ -203,17 +232,17 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		FVector LocalMove = FVector(0, 0, 0);
 		float WorldVerticalMove = 0.0f;
 
-		if (InputSystem::Get().GetKey('W'))
+		if (!bCtrlHeld && Input.GetKey('W'))
 			LocalMove.X += CameraSpeed;
-		if (InputSystem::Get().GetKey('A'))
+		if (!bCtrlHeld && Input.GetKey('A'))
 			LocalMove.Y -= CameraSpeed;
-		if (InputSystem::Get().GetKey('S'))
+		if (!bCtrlHeld && Input.GetKey('S'))
 			LocalMove.X -= CameraSpeed;
-		if (InputSystem::Get().GetKey('D'))
+		if (!bCtrlHeld && Input.GetKey('D'))
 			LocalMove.Y += CameraSpeed;
-		if (InputSystem::Get().GetKey('Q'))
+		if (!bCtrlHeld && Input.GetKey('Q'))
 			WorldVerticalMove -= CameraSpeed;
-		if (InputSystem::Get().GetKey('E'))
+		if (!bCtrlHeld && Input.GetKey('E'))
 			WorldVerticalMove += CameraSpeed;
 
 		LocalMove *= DeltaTime;
@@ -224,10 +253,10 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 
 		//pan 패닝
-		if (InputSystem::Get().GetKey(VK_MBUTTON))
+		if (Input.GetKey(VK_MBUTTON))
 		{
-			float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-			float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+			float DeltaX = static_cast<float>(Input.MouseDeltaX());
+			float DeltaY = static_cast<float>(Input.MouseDeltaY());
 			Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.05f , DeltaY * PanMouseScale * 0.05f));
 		}
 
@@ -236,23 +265,23 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 		const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
 		const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
-		if (InputSystem::Get().GetKey(VK_UP))
+		if (Input.GetKey(VK_UP))
 			Rotation.Z -= AngleVelocity;
-		if (InputSystem::Get().GetKey(VK_LEFT))
+		if (Input.GetKey(VK_LEFT))
 			Rotation.Y -= AngleVelocity;
-		if (InputSystem::Get().GetKey(VK_DOWN))
+		if (Input.GetKey(VK_DOWN))
 			Rotation.Z += AngleVelocity;
-		if (InputSystem::Get().GetKey(VK_RIGHT))
+		if (Input.GetKey(VK_RIGHT))
 			Rotation.Y += AngleVelocity;
 
 		// ── Perspective: 마우스 우클릭 → 회전 ──
 		FVector MouseRotation = FVector(0, 0, 0);
 		float MouseRotationSpeed = 0.15f * RotateSensitivity;
 
-		if (InputSystem::Get().GetKey(VK_RBUTTON))
+		if (Input.GetKey(VK_RBUTTON))
 		{
-			float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-			float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+			float DeltaX = static_cast<float>(Input.MouseDeltaX());
+			float DeltaY = static_cast<float>(Input.MouseDeltaY());
 
 			MouseRotation.Y += DeltaX * MouseRotationSpeed;
 			MouseRotation.Z += DeltaY * MouseRotationSpeed;
@@ -264,10 +293,10 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	else
 	{
 		// ── Orthographic: 마우스 우클릭 드래그 → 평행이동 (Pan) ──
-		if (InputSystem::Get().GetKey(VK_RBUTTON))
+		if (Input.GetKey(VK_RBUTTON))
 		{
-			float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-			float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+			float DeltaX = static_cast<float>(Input.MouseDeltaX());
+			float DeltaY = static_cast<float>(Input.MouseDeltaY());
 
 			// OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례)
 			float PanScale = CameraState.OrthoWidth * 0.002f * MoveSensitivity;
@@ -277,8 +306,14 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 	}
 
-	if (InputSystem::Get().GetKeyUp(VK_SPACE))
+	if (Input.GetKeyUp(VK_SPACE))
+	{
 		Gizmo->SetNextMode();
+		if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
+		{
+			EditorEngine->ApplyTransformSettingsToGizmo();
+		}
+	}
 }
 
 void FEditorViewportClient::TickInteraction(float DeltaTime)

@@ -5,6 +5,14 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Input/InputSystem.h"
+#include "GameFramework/DecalActor.h"
+#include "GameFramework/HeightFogActor.h"
+#include "GameFramework/Light/AmbientLightActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
+#include "GameFramework/Light/PointLightActor.h"
+#include "GameFramework/Light/SpotLightActor.h"
+#include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
 #include "UI/SSplitter.h"
@@ -16,6 +24,144 @@
 #include "Component/GizmoComponent.h"
 
 #include "GameFramework/StaticMeshActor.h"
+
+#include <algorithm>
+
+namespace
+{
+enum class EToolbarIcon : int32
+{
+	Menu = 0,
+	Setting,
+	AddActor,
+	Translate,
+	Rotate,
+	Scale,
+	WorldSpace,
+	LocalSpace,
+	TranslateSnap,
+	RotateSnap,
+	ScaleSnap,
+	ShowFlag,
+	Count
+};
+
+const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
+{
+	switch (Icon)
+	{
+	case EToolbarIcon::Menu: return L"Menu.png";
+	case EToolbarIcon::Setting: return L"Setting.png";
+	case EToolbarIcon::AddActor: return L"Add_Actor.png";
+	case EToolbarIcon::Translate: return L"Translate.png";
+	case EToolbarIcon::Rotate: return L"Rotate.png";
+	case EToolbarIcon::Scale: return L"Scale.png";
+	case EToolbarIcon::WorldSpace: return L"WorldSpace.png";
+	case EToolbarIcon::LocalSpace: return L"LocalSpace.png";
+	case EToolbarIcon::TranslateSnap: return L"Translate_Snap.png";
+	case EToolbarIcon::RotateSnap: return L"Rotate_Snap.png";
+	case EToolbarIcon::ScaleSnap: return L"Scale_Snap.png";
+	case EToolbarIcon::ShowFlag: return L"Show_Flag.png";
+	default: return L"";
+	}
+}
+
+ID3D11ShaderResourceView** GetToolbarIconTable()
+{
+	static ID3D11ShaderResourceView* ToolbarIcons[static_cast<int32>(EToolbarIcon::Count)] = {};
+	return ToolbarIcons;
+}
+
+bool bToolbarIconsLoaded = false;
+
+void ReleaseToolbarIcons()
+{
+	if (!bToolbarIconsLoaded)
+	{
+		return;
+	}
+
+	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
+	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
+	{
+		if (ToolbarIcons[i])
+		{
+			ToolbarIcons[i]->Release();
+			ToolbarIcons[i] = nullptr;
+		}
+	}
+
+	bToolbarIconsLoaded = false;
+}
+
+void EnsureToolbarIconsLoaded(FRenderer* RendererPtr)
+{
+	if (bToolbarIconsLoaded || !RendererPtr)
+	{
+		return;
+	}
+
+	ID3D11Device* Device = RendererPtr->GetFD3DDevice().GetDevice();
+	ID3D11ShaderResourceView** ToolbarIcons = GetToolbarIconTable();
+	const std::wstring IconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/ToolIcons/");
+	for (int32 i = 0; i < static_cast<int32>(EToolbarIcon::Count); ++i)
+	{
+		const std::wstring FilePath = IconDir + GetToolbarIconFileName(static_cast<EToolbarIcon>(i));
+		DirectX::CreateWICTextureFromFile(Device, FilePath.c_str(), nullptr, &ToolbarIcons[i]);
+	}
+
+	bToolbarIconsLoaded = true;
+}
+
+ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, float MaxIconSize)
+{
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	if (!IconSRV)
+	{
+		return ImVec2(FallbackSize, FallbackSize);
+	}
+
+	ID3D11Resource* Resource = nullptr;
+	IconSRV->GetResource(&Resource);
+	if (!Resource)
+	{
+		return ImVec2(FallbackSize, FallbackSize);
+	}
+
+	ImVec2 IconSize(FallbackSize, FallbackSize);
+	D3D11_RESOURCE_DIMENSION Dimension = D3D11_RESOURCE_DIMENSION_UNKNOWN;
+	Resource->GetType(&Dimension);
+	if (Dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+	{
+		ID3D11Texture2D* Texture2D = static_cast<ID3D11Texture2D*>(Resource);
+		D3D11_TEXTURE2D_DESC Desc{};
+		Texture2D->GetDesc(&Desc);
+		IconSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+	}
+	Resource->Release();
+
+	if (IconSize.x > MaxIconSize || IconSize.y > MaxIconSize)
+	{
+		const float Scale = (IconSize.x > IconSize.y) ? (MaxIconSize / IconSize.x) : (MaxIconSize / IconSize.y);
+		IconSize.x *= Scale;
+		IconSize.y *= Scale;
+	}
+
+	return IconSize;
+}
+
+bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char* FallbackLabel, float FallbackSize, float MaxIconSize)
+{
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconTable()[static_cast<int32>(Icon)];
+	if (!IconSRV)
+	{
+		return ImGui::Button(FallbackLabel);
+	}
+
+	const ImVec2 IconSize = GetToolbarIconRenderSize(Icon, FallbackSize, MaxIconSize);
+	return ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(IconSRV), IconSize);
+}
+}
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
 
@@ -156,6 +302,7 @@ void FLevelViewportLayout::Release()
 	LevelViewportClients.clear();
 
 	ReleaseLayoutIcons();
+	ReleaseToolbarIcons();
 	PlayToolbar.Release();
 }
 
@@ -471,11 +618,218 @@ SSplitter* FLevelViewportLayout::BuildSplitterTree(EViewportLayout Layout)
 	}
 }
 
+int32 FLevelViewportLayout::GetActiveViewportSlotIndex() const
+{
+	for (int32 i = 0; i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		if (LevelViewportClients[i] == ActiveViewportClient)
+		{
+			return i;
+		}
+	}
+	return 0;
+}
+
+bool FLevelViewportLayout::SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const
+{
+	if (!Node || !TargetWindow)
+	{
+		return false;
+	}
+
+	if (Node == TargetWindow)
+	{
+		return true;
+	}
+
+	SSplitter* Splitter = SSplitter::AsSplitter(Node);
+	return Splitter &&
+		(SubtreeContainsWindow(Splitter->GetSideLT(), TargetWindow) ||
+			SubtreeContainsWindow(Splitter->GetSideRB(), TargetWindow));
+}
+
+bool FLevelViewportLayout::ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate)
+{
+	if (!Node || !TargetWindow)
+	{
+		return false;
+	}
+
+	const bool bTargetInLT = SubtreeContainsWindow(Node->GetSideLT(), TargetWindow);
+	const bool bTargetInRB = SubtreeContainsWindow(Node->GetSideRB(), TargetWindow);
+	if (!bTargetInLT && !bTargetInRB)
+	{
+		return false;
+	}
+
+	Node->SetTargetRatio(bTargetInLT ? 1.0f : 0.0f, bAnimate);
+	if (SSplitter* Child = SSplitter::AsSplitter(bTargetInLT ? Node->GetSideLT() : Node->GetSideRB()))
+	{
+		ConfigureCollapseToSlot(Child, TargetWindow, bAnimate);
+	}
+
+	return true;
+}
+
+void FLevelViewportLayout::BeginSplitToOnePaneTransition(int32 SlotIndex)
+{
+	FinishLayoutTransition(true);
+
+	if (!RootSplitter || SlotIndex < 0 || SlotIndex >= static_cast<int32>(LevelViewportClients.size()) || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+	{
+		bSuppressLayoutTransitionAnimation = true;
+		SetLayout(EViewportLayout::OnePane);
+		bSuppressLayoutTransitionAnimation = false;
+		return;
+	}
+
+	TransitionSourceSlot = SlotIndex;
+	TransitionTargetLayout = EViewportLayout::OnePane;
+	TransitionRestoreRatioCount = 0;
+
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	TransitionRestoreRatioCount = (std::min)(static_cast<int32>(Splitters.size()), 3);
+	for (int32 i = 0; i < TransitionRestoreRatioCount; ++i)
+	{
+		TransitionRestoreRatios[i] = Splitters[i]->GetRatio();
+	}
+
+	LayoutTransition = EViewportLayoutTransition::SplitToOnePane;
+	DraggingSplitter = nullptr;
+	if (!ConfigureCollapseToSlot(RootSplitter, ViewportWindows[SlotIndex], true))
+	{
+		FinishLayoutTransition(true);
+	}
+}
+
+void FLevelViewportLayout::BeginOnePaneToSplitTransition(EViewportLayout TargetLayout)
+{
+	FinishLayoutTransition(true);
+	if (TargetLayout == EViewportLayout::OnePane)
+	{
+		return;
+	}
+
+	TransitionSourceSlot = 0;
+	TransitionTargetLayout = TargetLayout;
+
+	bSuppressLayoutTransitionAnimation = true;
+	SetLayout(TargetLayout);
+	bSuppressLayoutTransitionAnimation = false;
+
+	if (!RootSplitter || !ViewportWindows[0])
+	{
+		return;
+	}
+
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	const int32 RestoreCount = (std::min)(static_cast<int32>(Splitters.size()), 3);
+	float TargetRatios[3] = { 0.5f, 0.5f, 0.5f };
+	for (int32 i = 0; i < RestoreCount; ++i)
+	{
+		TargetRatios[i] = (i < TransitionRestoreRatioCount) ? TransitionRestoreRatios[i] : Splitters[i]->GetRatio();
+	}
+
+	ConfigureCollapseToSlot(RootSplitter, ViewportWindows[0], false);
+	for (int32 i = 0; i < RestoreCount; ++i)
+	{
+		Splitters[i]->SetTargetRatio(TargetRatios[i], true);
+	}
+
+	LayoutTransition = EViewportLayoutTransition::OnePaneToSplit;
+	DraggingSplitter = nullptr;
+}
+
+void FLevelViewportLayout::FinishLayoutTransition(bool bSnapToEnd)
+{
+	if (LayoutTransition == EViewportLayoutTransition::None)
+	{
+		return;
+	}
+
+	const EViewportLayoutTransition FinishedTransition = LayoutTransition;
+	LayoutTransition = EViewportLayoutTransition::None;
+	DraggingSplitter = nullptr;
+
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> Splitters;
+		SSplitter::CollectSplitters(RootSplitter, Splitters);
+		for (SSplitter* Splitter : Splitters)
+		{
+			if (Splitter)
+			{
+				Splitter->StopAnimation(bSnapToEnd);
+			}
+		}
+	}
+
+	if (FinishedTransition == EViewportLayoutTransition::SplitToOnePane)
+	{
+		bSuppressLayoutTransitionAnimation = true;
+		SetLayout(EViewportLayout::OnePane);
+		bSuppressLayoutTransitionAnimation = false;
+	}
+}
+
+bool FLevelViewportLayout::UpdateLayoutTransition(float DeltaTime)
+{
+	if (LayoutTransition == EViewportLayoutTransition::None || !RootSplitter)
+	{
+		return false;
+	}
+
+	bool bAnyAnimating = false;
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	for (SSplitter* Splitter : Splitters)
+	{
+		if (Splitter && Splitter->UpdateAnimation(DeltaTime))
+		{
+			bAnyAnimating = true;
+		}
+	}
+
+	if (!bAnyAnimating)
+	{
+		FinishLayoutTransition(false);
+		return false;
+	}
+
+	return true;
+}
+
 // ─── 레이아웃 전환 ──────────────────────────────────────────
 
 void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 {
 	if (NewLayout == CurrentLayout) return;
+
+	if (!bSuppressLayoutTransitionAnimation)
+	{
+		if (LayoutTransition != EViewportLayoutTransition::None)
+		{
+			FinishLayoutTransition(true);
+			if (NewLayout == CurrentLayout)
+			{
+				return;
+			}
+		}
+
+		if (CurrentLayout != EViewportLayout::OnePane && NewLayout == EViewportLayout::OnePane)
+		{
+			BeginSplitToOnePaneTransition(GetActiveViewportSlotIndex());
+			return;
+		}
+
+		if (CurrentLayout == EViewportLayout::OnePane && NewLayout != EViewportLayout::OnePane)
+		{
+			BeginOnePaneToSplitTransition(NewLayout);
+			return;
+		}
+	}
 
 	bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
 
@@ -527,8 +881,8 @@ void FLevelViewportLayout::ToggleViewportSplit()
 
 void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 {
-	(void)DeltaTime;
 	bMouseOverViewport = false;
+	UpdateLayoutTransition(DeltaTime);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_None);
@@ -560,12 +914,22 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		const float ToolbarHeight = PlayToolbar.GetDesiredHeight();
 		ImGui::SetCursorScreenPos(ContentPos);
 		PlayToolbar.Render(ContentSize.x);
+		RenderSharedGizmoToolbar(ContentPos.x, ContentPos.y);
 
 		FRect ContentRect = {
 			ContentPos.x,
 			ContentPos.y + ToolbarHeight,
 			ContentSize.x,
 			ContentSize.y - ToolbarHeight
+		};
+		auto IsSlotVisibleEnough = [&](int32 SlotIndex) -> bool
+		{
+			if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+			{
+				return false;
+			}
+			const FRect& R = ViewportWindows[SlotIndex]->GetRect();
+			return R.Width > 1.0f && R.Height > 1.0f;
 		};
 
 		// SSplitter 레이아웃 계산
@@ -581,7 +945,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		// 각 ViewportClient에 Rect 반영 + 이미지 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			if (i < static_cast<int32>(LevelViewportClients.size()))
+			if (i < static_cast<int32>(LevelViewportClients.size()) && IsSlotVisibleEnough(i))
 			{
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
 				VC->UpdateLayoutRect();
@@ -592,7 +956,13 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		// 각 뷰포트 패인 상단에 툴바 오버레이 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			RenderPaneToolbar(i);
+			const bool bShowPaneToolbar =
+				IsSlotVisibleEnough(i) &&
+				(LayoutTransition == EViewportLayoutTransition::None || i == TransitionSourceSlot);
+			if (bShowPaneToolbar)
+			{
+				RenderPaneToolbar(i);
+			}
 		}
 
 		// 분할 바 렌더 (재귀 수집)
@@ -623,7 +993,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			// 마우스가 어떤 슬롯 위에 있는지
 			for (int32 i = 0; i < ActiveSlotCount; ++i)
 			{
-				if (ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
+				if (IsSlotVisibleEnough(i) && ViewportWindows[i]->IsHover(MP))
 				{
 					bMouseOverViewport = true;
 					break;
@@ -631,7 +1001,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			}
 
 			// 분할 바 드래그
-			if (RootSplitter)
+			if (RootSplitter && LayoutTransition == EViewportLayoutTransition::None)
 			{
 				if (ImGui::IsMouseClicked(0))
 				{
@@ -679,7 +1049,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				for (int32 i = 0; i < ActiveSlotCount; ++i)
 				{
 					if (i < static_cast<int32>(LevelViewportClients.size()) &&
-						ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
+						IsSlotVisibleEnough(i) && ViewportWindows[i]->IsHover(MP))
 					{
 						if (LevelViewportClients[i] != ActiveViewportClient)
 							SetActiveViewport(LevelViewportClients[i]);
@@ -687,8 +1057,12 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 					}
 				}
 			}
+
+			HandleViewportContextMenuInput(MP);
 		}
 	}
+
+	RenderViewportPlaceActorPopup();
 
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -696,12 +1070,165 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
 // ─── 각 뷰포트 패인 툴바 오버레이 ──────────────────────────
 
+void FLevelViewportLayout::RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop)
+{
+	if (!Editor)
+	{
+		return;
+	}
+
+	UGizmoComponent* Gizmo = Editor->GetGizmo();
+	if (!Gizmo)
+	{
+		return;
+	}
+
+	EnsureToolbarIconsLoaded(RendererPtr);
+
+	constexpr float ToolbarHeight = 28.0f;
+	constexpr float IconSize = 16.0f;
+	constexpr float ButtonPadding = (ToolbarHeight - IconSize) * 0.5f;
+	constexpr float ButtonSpacing = 4.0f;
+	constexpr float PlayStopButtonWidth = 24.0f;
+	constexpr float GroupSpacing = 12.0f;
+	constexpr float ToolbarFallbackIconSize = 14.0f;
+	constexpr float ToolbarMaxIconSize = 16.0f;
+
+	ImGui::SetCursorScreenPos(ImVec2(
+		ToolbarLeft + ButtonPadding + (PlayStopButtonWidth * 2.0f) + ButtonSpacing + GroupSpacing,
+		ToolbarTop + ButtonPadding));
+
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
+
+	auto DrawGizmoIcon = [&](const char* Id, EToolbarIcon Icon, EGizmoMode TargetMode, const char* FallbackLabel) -> bool
+	{
+		const bool bSelected = (Gizmo->GetMode() == TargetMode);
+		if (bSelected)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+		}
+		const bool bClicked = DrawToolbarIconButton(Id, Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize);
+		if (bSelected)
+		{
+			ImGui::PopStyleColor();
+		}
+		return bClicked;
+	};
+
+	// 상단 툴바에서도 Place Actor 컨텍스트 메뉴를 바로 열 수 있게 한다.
+	if (DrawToolbarIconButton("##SharedAddActorIcon", EToolbarIcon::AddActor, "Add", ToolbarFallbackIconSize, ToolbarMaxIconSize))
+	{
+		const FPoint MousePos = { ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y };
+		ContextMenuState.PendingPopupPos = MousePos;
+		ContextMenuState.PendingPopupSlot = 0;
+		ContextMenuState.PendingSpawnSlot = 0;
+		ContextMenuState.PendingSpawnPos = MousePos;
+		for (int32 i = 0; i < ActiveSlotCount; ++i)
+		{
+			if (LevelViewportClients[i] == ActiveViewportClient)
+			{
+				ContextMenuState.PendingPopupSlot = i;
+				ContextMenuState.PendingSpawnSlot = i;
+				if (ViewportWindows[i])
+				{
+					const FRect& ViewRect = ViewportWindows[i]->GetRect();
+					ContextMenuState.PendingSpawnPos = {
+						ViewRect.X + ViewRect.Width * 0.5f,
+						ViewRect.Y + ViewRect.Height * 0.5f
+					};
+				}
+				break;
+			}
+		}
+	}
+
+	ImGui::SameLine(0.0f, GroupSpacing);
+	if (DrawGizmoIcon("##SharedTranslateToolIcon", EToolbarIcon::Translate, EGizmoMode::Translate, "Translate"))
+	{
+		Gizmo->SetTranslateMode();
+	}
+	ImGui::SameLine(0.0f, ButtonSpacing);
+	if (DrawGizmoIcon("##SharedRotateToolIcon", EToolbarIcon::Rotate, EGizmoMode::Rotate, "Rotate"))
+	{
+		Gizmo->SetRotateMode();
+	}
+	ImGui::SameLine(0.0f, ButtonSpacing);
+	if (DrawGizmoIcon("##SharedScaleToolIcon", EToolbarIcon::Scale, EGizmoMode::Scale, "Scale"))
+	{
+		Gizmo->SetScaleMode();
+	}
+
+	ImGui::PopStyleColor(3);
+
+	FEditorSettings& Settings = Editor->GetSettings();
+
+	ImGui::SameLine(0.0f, GroupSpacing);
+	const bool bWorldCoord = Settings.CoordSystem == EEditorCoordSystem::World;
+	if (bWorldCoord)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+	}
+	if (DrawToolbarIconButton("##SharedCoordSystemIcon",
+		bWorldCoord ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
+		bWorldCoord ? "World" : "Local",
+		ToolbarFallbackIconSize,
+		ToolbarMaxIconSize))
+	{
+		Editor->ToggleCoordSystem();
+	}
+	if (bWorldCoord)
+	{
+		ImGui::PopStyleColor();
+	}
+
+	// 스냅 토글과 수치를 같은 자리에서 바꾸고 즉시 Gizmo 설정에 반영한다.
+	auto DrawSnapControl = [&](const char* Id, EToolbarIcon Icon, const char* FallbackLabel, bool& bEnabled, float& Value, float MinValue)
+	{
+		ImGui::SameLine(0.0f, 6.0f);
+		ImGui::PushID(Id);
+		const bool bWasEnabled = bEnabled;
+		if (bWasEnabled)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.38f, 0.58f, 0.88f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.42f, 0.72f, 1.0f));
+		}
+		if (DrawToolbarIconButton("##SnapToggle", Icon, FallbackLabel, ToolbarFallbackIconSize, ToolbarMaxIconSize))
+		{
+			bEnabled = !bEnabled;
+		}
+		if (bWasEnabled)
+		{
+			ImGui::PopStyleColor(3);
+		}
+		ImGui::SameLine(0.0f, 2.0f);
+		ImGui::SetNextItemWidth(48.0f);
+		if (ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, "%.2f") && Value < MinValue)
+		{
+			Value = MinValue;
+		}
+		ImGui::PopID();
+	};
+
+	DrawSnapControl("TranslateSnap", EToolbarIcon::TranslateSnap, "T", Settings.bEnableTranslationSnap, Settings.TranslationSnapSize, 0.001f);
+	DrawSnapControl("RotateSnap", EToolbarIcon::RotateSnap, "R", Settings.bEnableRotationSnap, Settings.RotationSnapSize, 0.001f);
+	DrawSnapControl("ScaleSnap", EToolbarIcon::ScaleSnap, "S", Settings.bEnableScaleSnap, Settings.ScaleSnapSize, 0.001f);
+
+	Editor->ApplyTransformSettingsToGizmo();
+}
+
 void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 {
 	if (SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex]) return;
 
 	const FRect& PaneRect = ViewportWindows[SlotIndex]->GetRect();
 	if (PaneRect.Width <= 0 || PaneRect.Height <= 0) return;
+
+	EnsureToolbarIconsLoaded(RendererPtr);
+	constexpr float PaneToolbarFallbackIconSize = 14.0f;
+	constexpr float PaneToolbarMaxIconSize = 16.0f;
 
 	// 패인 상단에 오버레이 윈도우
 	char OverlayID[64];
@@ -725,9 +1252,9 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 		// Layout 드롭다운
 		char PopupID[64];
-		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
+		//snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
 
-		if (ImGui::Button("Layout"))
+		if (DrawToolbarIconButton("##Layout", EToolbarIcon::Menu, "Layout", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 		{
 			ImGui::OpenPopup(PopupID);
 		}
@@ -840,35 +1367,35 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::EndPopup();
 			}
 
-			// ── Gizmo Mode 팝업 ──
-			UGizmoComponent* Gizmo = Editor->GetGizmo();
-			if (Gizmo)
-			{
-				ImGui::SameLine();
+			// ── Gizmo Mode 팝업 -> 아이콘으로 대체 ──
+			//UGizmoComponent* Gizmo = Editor->GetGizmo();
+			//if (Gizmo)
+			//{
+			//	ImGui::SameLine();
 
-				static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
-				const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
+			//	static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
+			//	const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
 
-				char GizmoPopupID[64];
-				snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
+			//	char GizmoPopupID[64];
+			//	snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
 
-				if (ImGui::Button(CurrentModeName))
-				{
-					ImGui::OpenPopup(GizmoPopupID);
-				}
+			//	if (ImGui::Button(CurrentModeName))
+			//	{
+			//		ImGui::OpenPopup(GizmoPopupID);
+			//	}
 
-				if (ImGui::BeginPopup(GizmoPopupID))
-				{
-					int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-					if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
-						Gizmo->SetTranslateMode();
-					if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
-						Gizmo->SetRotateMode();
-					if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
-						Gizmo->SetScaleMode();
-					ImGui::EndPopup();
-				}
-			}
+			//	if (ImGui::BeginPopup(GizmoPopupID))
+			//	{
+			//		int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
+			//		if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
+			//			Gizmo->SetTranslateMode();
+			//		if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
+			//			Gizmo->SetRotateMode();
+			//		if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
+			//			Gizmo->SetScaleMode();
+			//		ImGui::EndPopup();
+			//	}
+			//}
 
 			// ── View Mode 팝업 ──
 			ImGui::SameLine();
@@ -879,26 +1406,53 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			char ViewModePopupID[64];
 			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
 
-			if (ImGui::Button(CurrentViewModeName))
+			if (DrawToolbarIconButton("##ViewModeIcon", EToolbarIcon::ShowFlag, CurrentViewModeName, PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 			{
 				ImGui::OpenPopup(ViewModePopupID);
 			}
 
 			if (ImGui::BeginPopup(ViewModePopupID))
 			{
+				ImGui::Text("View Mode");
 				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
-				ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
-				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
-				ImGui::SameLine();
-				ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
-				ImGui::SameLine();
-				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-				ImGui::Separator();
-				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
-				ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
-				ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+
+				if (ImGui::BeginTable("ViewModeTable", 3, ImGuiTableFlags_SizingStretchSame))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+
+					ImGui::EndTable();
+				}
+
 				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 				ImGui::EndPopup();
 			}
@@ -909,7 +1463,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			char SettingsPopupID[64];
 			snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
 
-			if (ImGui::Button("Settings"))
+			if (DrawToolbarIconButton("##SettingsIcon", EToolbarIcon::Setting, "Settings", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 			{
 				ImGui::OpenPopup(SettingsPopupID);
 			}
@@ -918,55 +1472,83 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			{
 				// Show Flags
 				ImGui::Text("Show");
-				ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
-				ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
-				ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
-				ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
-				ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
-				ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
-				ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
-				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
-				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+				if (ImGui::BeginTable("ShowFlagsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Visualize2.5D", &Opts.ShowFlags.bVisualize25DCulling);
+
+					ImGui::EndTable();
+				}
 
 				ImGui::Separator();
 
-				// Grid Settings
-				ImGui::Text("Grid");
-				ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
-				ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
+				if (ImGui::CollapsingHeader("Viewport Utility Settings (Grid , Camera , SceneDepth , FXAA)"))
+				{
+					// Grid Settings
+					ImGui::Text("Grid");
+					ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
+					ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
+
+					ImGui::Separator();
+
+					// Camera Sensitivity
+					ImGui::Text("Camera");
+					ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+					ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+
+					ImGui::Separator();
+
+					// SceneDepth Settings
+					ImGui::Text("SceneDepth");
+					ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
+					ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
+
+					ImGui::Text("FXAA");
+					ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+					ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+				}
 
 				ImGui::Separator();
-
-				// Camera Sensitivity
-				ImGui::Text("Camera");
-				ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-				ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-
-				ImGui::Separator();
-
-				// SceneDepth Settings
-				ImGui::Text("SceneDepth");
-				ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
-				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
-
-				// FXAA Settings
-				ImGui::Text("FXAA");
-				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 				// Light Culling Setting
-				ImGui::Text("Light Culling");
-				int32 CullingMode = static_cast<int32>(Opts.LightCullingMode);
-				ImGui::RadioButton("Off", &CullingMode, static_cast<int32>(ELightCullingMode::Off));
-				ImGui::SameLine();
-				ImGui::RadioButton("Tile", &CullingMode, static_cast<int32>(ELightCullingMode::Tile));
-				ImGui::SameLine();
-				ImGui::RadioButton("Cluster", &CullingMode, static_cast<int32>(ELightCullingMode::Cluster));
-				Opts.LightCullingMode = static_cast<ELightCullingMode>(CullingMode);
-				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
-				ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
-				ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
+				if (ImGui::CollapsingHeader("Light Culling Settings"))
+				{
+					int32 CullingMode = static_cast<int32>(Opts.LightCullingMode);
+					ImGui::RadioButton("Off", &CullingMode, static_cast<int32>(ELightCullingMode::Off));
+					ImGui::SameLine();
+					ImGui::RadioButton("Tile", &CullingMode, static_cast<int32>(ELightCullingMode::Tile));
+					ImGui::SameLine();
+					ImGui::RadioButton("Cluster", &CullingMode, static_cast<int32>(ELightCullingMode::Cluster));
+					Opts.LightCullingMode = static_cast<ELightCullingMode>(CullingMode);
+					ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
+					ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
+					ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
+				}
 
 				ImGui::EndPopup();
 			}
@@ -975,6 +1557,328 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 		ImGui::PopID();
 	}
 	ImGui::End();
+}
+
+void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos)
+{
+	if (LayoutTransition != EViewportLayoutTransition::None)
+	{
+		return;
+	}
+
+	constexpr float RightClickPopupThresholdSq = 16.0f;
+	auto IsSlotVisibleEnough = [&](int32 SlotIndex) -> bool
+	{
+		if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+		{
+			return false;
+		}
+		const FRect& R = ViewportWindows[SlotIndex]->GetRect();
+		return R.Width > 1.0f && R.Height > 1.0f;
+	};
+
+	for (int32 i = 0; i < ActiveSlotCount; ++i)
+	{
+		if (!IsSlotVisibleEnough(i))
+		{
+			continue;
+		}
+
+		if (ImGui::IsMouseClicked(1) && ViewportWindows[i]->IsHover(MousePos))
+		{
+			ContextMenuState.bTrackingRightClick[i] = true;
+			ContextMenuState.RightClickTravelSq[i] = 0.0f;
+			ContextMenuState.RightClickPressPos[i] = MousePos;
+		}
+
+		if (!ContextMenuState.bTrackingRightClick[i])
+		{
+			continue;
+		}
+
+		const float DX = MousePos.X - ContextMenuState.RightClickPressPos[i].X;
+		const float DY = MousePos.Y - ContextMenuState.RightClickPressPos[i].Y;
+		const float TravelSq = DX * DX + DY * DY;
+		if (TravelSq > ContextMenuState.RightClickTravelSq[i])
+		{
+			ContextMenuState.RightClickTravelSq[i] = TravelSq;
+		}
+	}
+
+	if (!ImGui::IsMouseReleased(1))
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < ActiveSlotCount; ++i)
+	{
+		if (!IsSlotVisibleEnough(i) || !ContextMenuState.bTrackingRightClick[i])
+		{
+			continue;
+		}
+
+		const bool bReleasedOverSameSlot = ViewportWindows[i]->IsHover(MousePos);
+		const bool bClickCandidate =
+			bReleasedOverSameSlot &&
+			ContextMenuState.RightClickTravelSq[i] <= RightClickPopupThresholdSq &&
+			!InputSystem::Get().GetRightDragging() &&
+			!InputSystem::Get().GetRightDragEnd();
+		const ImGuiIO& IO = ImGui::GetIO();
+		const bool bNoModifiers = !IO.KeyCtrl && !IO.KeyShift && !IO.KeyAlt && !IO.KeySuper;
+
+		// 카메라 우클릭 드래그와 구분하기 위해 거의 이동하지 않은 우클릭만 popup으로 본다.
+		if (bClickCandidate && bNoModifiers)
+		{
+			ContextMenuState.PendingPopupSlot = i;
+			ContextMenuState.PendingSpawnSlot = i;
+			ContextMenuState.PendingPopupPos = MousePos;
+			ContextMenuState.PendingSpawnPos = ContextMenuState.RightClickPressPos[i];
+		}
+
+		ContextMenuState.bTrackingRightClick[i] = false;
+		ContextMenuState.RightClickTravelSq[i] = 0.0f;
+	}
+}
+
+void FLevelViewportLayout::RenderViewportPlaceActorPopup()
+{
+	constexpr const char* PopupId = "##ViewportPlaceActorPopup";
+
+	if (ContextMenuState.PendingPopupSlot >= 0)
+	{
+		if (ContextMenuState.PendingPopupSlot < static_cast<int32>(LevelViewportClients.size()))
+		{
+			SetActiveViewport(LevelViewportClients[ContextMenuState.PendingPopupSlot]);
+		}
+
+		ImGui::SetNextWindowPos(ImVec2(ContextMenuState.PendingPopupPos.X, ContextMenuState.PendingPopupPos.Y));
+		ImGui::OpenPopup(PopupId);
+		ContextMenuState.PendingPopupSlot = -1;
+	}
+
+	if (!ImGui::BeginPopup(PopupId))
+	{
+		return;
+	}
+
+	if (ImGui::BeginMenu("Place Actor"))
+	{
+		// 기존 Control Panel의 spawn 기능을 뷰포트 기준 배치 메뉴로 옮긴다.
+		const FPoint SpawnPos = ContextMenuState.PendingSpawnPos;
+		const int32 SpawnSlot = ContextMenuState.PendingSpawnSlot;
+
+		auto PlaceActorMenuItem = [&](const char* Label, EViewportPlaceActorType Type)
+		{
+			if (!ImGui::MenuItem(Label))
+			{
+				return;
+			}
+
+			FVector Location(0.0f, 0.0f, 0.0f);
+			if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
+			{
+				SpawnActorFromViewportMenu(Type, Location);
+			}
+		};
+
+		PlaceActorMenuItem("Cube", EViewportPlaceActorType::Cube);
+		PlaceActorMenuItem("Sphere", EViewportPlaceActorType::Sphere);
+		PlaceActorMenuItem("Cylinder", EViewportPlaceActorType::Cylinder);
+		PlaceActorMenuItem("Decal", EViewportPlaceActorType::Decal);
+		PlaceActorMenuItem("Height Fog", EViewportPlaceActorType::HeightFog);
+		PlaceActorMenuItem("Ambient Light", EViewportPlaceActorType::AmbientLight);
+		PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
+		PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
+		PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
+
+		ImGui::EndMenu();
+	}
+
+	const bool bCanDelete = SelectionManager && !SelectionManager->IsEmpty();
+	if (!bCanDelete)
+	{
+		ImGui::BeginDisabled();
+	}
+	//스크린 우클릭 후 제거, 이 기능 꼭 있어야 할까? 그런 의문이 듭니다
+	//if (ImGui::MenuItem("Delete"))
+	//{
+	//	SelectionManager->DeleteSelectedActors();
+	//}
+	if (!bCanDelete)
+	{
+		ImGui::EndDisabled();
+	}
+
+	ImGui::EndPopup();
+}
+
+bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const
+{
+	if (SlotIndex < 0 ||
+		SlotIndex >= static_cast<int32>(LevelViewportClients.size()) ||
+		SlotIndex >= MaxViewportSlots ||
+		!ViewportWindows[SlotIndex])
+	{
+		return false;
+	}
+
+	FLevelEditorViewportClient* ViewportClient = LevelViewportClients[SlotIndex];
+	if (!ViewportClient || !ViewportClient->GetCamera())
+	{
+		return false;
+	}
+
+	const FRect& ViewRect = ViewportWindows[SlotIndex]->GetRect();
+	const float VPWidth = ViewportClient->GetViewport()
+		? static_cast<float>(ViewportClient->GetViewport()->GetWidth())
+		: ViewRect.Width;
+	const float VPHeight = ViewportClient->GetViewport()
+		? static_cast<float>(ViewportClient->GetViewport()->GetHeight())
+		: ViewRect.Height;
+	if (VPWidth <= 0.0f || VPHeight <= 0.0f)
+	{
+		return false;
+	}
+
+	const float LocalX = Clamp(ClientPos.X - ViewRect.X, 0.0f, VPWidth - 1.0f);
+	const float LocalY = Clamp(ClientPos.Y - ViewRect.Y, 0.0f, VPHeight - 1.0f);
+	// 클릭한 화면 좌표를 월드 레이로 바꿔 카메라 전방의 기본 배치 위치를 계산한다.
+	const FRay Ray = ViewportClient->GetCamera()->DeprojectScreenToWorld(LocalX, LocalY, VPWidth, VPHeight);
+	constexpr float SpawnDistanceFromCamera = 10.0f;
+	OutLocation = Ray.Origin + Ray.Direction.Normalized() * SpawnDistanceFromCamera;
+	return true;
+}
+
+AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType Type, const FVector& Location)
+{
+	if (!Editor)
+	{
+		return nullptr;
+	}
+
+	UWorld* World = Editor->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	AActor* SpawnedActor = nullptr;
+	switch (Type)
+	{
+	case EViewportPlaceActorType::Cube:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Cube.OBJ");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Sphere:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Sphere.OBJ");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Cylinder:
+	{
+		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/BasicShape/Cylinder.obj");
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Decal:
+	{
+		ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::HeightFog:
+	{
+		AHeightFogActor* Actor = World->SpawnActor<AHeightFogActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::AmbientLight:
+	{
+		AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::DirectionalLight:
+	{
+		ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			Actor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::PointLight:
+	{
+		APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::SpotLight:
+	{
+		ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (!SpawnedActor)
+	{
+		return nullptr;
+	}
+
+	// 배치 직후 월드/옥트리/선택 상태를 함께 갱신해 에디터 피드백을 즉시 맞춘다.
+	SpawnedActor->SetActorLocation(Location);
+	World->InsertActorToOctree(SpawnedActor);
+	if (SelectionManager)
+	{
+		SelectionManager->Select(SpawnedActor);
+	}
+
+	return SpawnedActor;
+}
+
+AActor* FLevelViewportLayout::SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location)
+{
+	return SpawnActorFromViewportMenu(Type, Location);
 }
 
 // ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
@@ -992,7 +1896,16 @@ void FLevelViewportLayout::SaveToSettings()
 	}
 
 	// Splitter 비율 저장
-	if (RootSplitter)
+	if (LayoutTransition != EViewportLayoutTransition::None && TransitionRestoreRatioCount > 0)
+	{
+		S.SplitterCount = TransitionRestoreRatioCount;
+		if (S.SplitterCount > 3) S.SplitterCount = 3;
+		for (int32 i = 0; i < S.SplitterCount; ++i)
+		{
+			S.SplitterRatios[i] = TransitionRestoreRatios[i];
+		}
+	}
+	else if (RootSplitter)
 	{
 		TArray<SSplitter*> AllSplitters;
 		SSplitter::CollectSplitters(RootSplitter, AllSplitters);

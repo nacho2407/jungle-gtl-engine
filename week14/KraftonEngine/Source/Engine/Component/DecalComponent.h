@@ -40,6 +40,8 @@ public:
 
 	const TArray<UStaticMeshComponent*>& GetReceivers() const { return Receivers; }
 
+	class UBillboardComponent* EnsureEditorBillboard();
+
 private:
 	void HandleFade(float DeltaTime);
 	void UpdateReceivers();

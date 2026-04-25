@@ -3,10 +3,18 @@
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
+#include "Component/ActorComponent.h"
+#include "Component/BillboardComponent.h"
+#include "Component/MeshComponent.h"
+#include "Component/MovementComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/Light/LightComponentBase.h"
+#include "Component/DecalComponent.h"
+#include "Component/HeightFogComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
 #include "Resource/ResourceManager.h"
@@ -19,11 +27,68 @@
 
 #include <Windows.h>
 #include <commdlg.h>
+#include <algorithm>
+#include <array>
+#include <cfloat>
+#include <cstring>
 #include <filesystem>
 
 #include "Materials/MaterialManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+namespace
+{
+	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
+	{
+		if (!Component)
+		{
+			return true;
+		}
+
+		return Component->IsHiddenInComponentTree()
+			&& !(bShowEditorOnlyComponents && Component->IsEditorOnlyComponent());
+	}
+
+	struct FComponentClassGroup
+	{
+		const char* Label = nullptr;
+		UClass* AnchorClass = nullptr;
+		TArray<UClass*> Classes;
+	};
+
+	void AddComponentClassGroup(TArray<FComponentClassGroup>& Groups, const char* Label, UClass* AnchorClass)
+	{
+		FComponentClassGroup Group;
+		Group.Label = Label;
+		Group.AnchorClass = AnchorClass;
+		Groups.push_back(Group);
+	}
+
+	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
+	{
+		if (!ComponentClass)
+		{
+			return nullptr;
+		}
+
+		// UTextRenderComponent는 C++ 상속은 Billboard지만 RTTI 등록 부모가 Primitive라서 명시적으로 묶는다.
+		if (ComponentClass == UTextRenderComponent::StaticClass())
+		{
+			return UBillboardComponent::StaticClass();
+		}
+
+		for (const FComponentClassGroup& Group : Groups)
+		{
+			if (Group.AnchorClass && ComponentClass->IsA(Group.AnchorClass))
+			{
+				return Group.AnchorClass;
+			}
+		}
+
+		return nullptr;
+	}
+}
 
 static FString RemoveExtension(const FString& Path)
 {
@@ -178,6 +243,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	// ========== 고정 영역: Component Tree ==========
 	SEPARATOR();
+	ImGui::Checkbox("Show Editor Only", &bShowEditorOnlyComponents);
+	ImGui::Separator();
 	RenderComponentTree(PrimaryActor);
 
 	// ========== 스크롤 영역: Details ==========
@@ -334,57 +401,212 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
 	ImGui::Text("Components");
 
+	if (SelectedComponent && ShouldHideInComponentTree(SelectedComponent, bShowEditorOnlyComponents))
+	{
+		SelectedComponent = nullptr;
+		bActorSelected = true;
+	}
+
 	// Get All Component Classes
 	TArray<UClass*>& AllClasses = UClass::GetAllClasses();
 
 	TArray<UClass*> ComponentClasses;
 	for (UClass* Cls : AllClasses)
 	{
-		if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_Abstract))
+		if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_HiddenInComponentList))
 			ComponentClasses.push_back(Cls);
 	}
 
-	static int SelectedIndex = 0;
+	std::sort(ComponentClasses.begin(), ComponentClasses.end(),
+		[](const UClass* A, const UClass* B)
+		{
+			return strcmp(A->GetName(), B->GetName()) < 0;
+		});
+
+	//아래 클래스들로 컴포넌트 리스트를 분류합니다.
+	TArray<FComponentClassGroup> ComponentGroups;
+	AddComponentClassGroup(ComponentGroups, "ULightComponentBase", ULightComponentBase::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "UMovementComponent", UMovementComponent::StaticClass());
+	//AddComponentClassGroup(ComponentGroups, "UBillboardComponent", UBillboardComponent::StaticClass());
+	//AddComponentClassGroup(ComponentGroups, "UMeshComponent", UMeshComponent::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "UPrimitiveComponent", UPrimitiveComponent::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "USceneComponent", USceneComponent::StaticClass());
+	//AddComponentClassGroup(ComponentGroups, "UActorComponent", UActorComponent::StaticClass());
+
+	TArray<UClass*> OtherClasses;
+	for (UClass* Cls : ComponentClasses)
+	{
+		UClass* AnchorClass = FindComponentClassGroupAnchor(Cls, ComponentGroups);
+		if (!AnchorClass)
+		{
+			OtherClasses.push_back(Cls);
+			continue;
+		}
+
+		for (FComponentClassGroup& Group : ComponentGroups)
+		{
+			if (Group.AnchorClass == AnchorClass)
+			{
+				Group.Classes.push_back(Cls);
+				break;
+			}
+		}
+	}
+
+	for (FComponentClassGroup& Group : ComponentGroups)
+	{
+		std::sort(Group.Classes.begin(), Group.Classes.end(),
+			[](const UClass* A, const UClass* B)
+			{
+				return strcmp(A->GetName(), B->GetName()) < 0;
+			});
+	}
+	std::sort(OtherClasses.begin(), OtherClasses.end(),
+		[](const UClass* A, const UClass* B)
+		{
+			return strcmp(A->GetName(), B->GetName()) < 0;
+		});
+
+	static UClass* SelectedClass = nullptr;
+	auto IsCurrentSelectionValid = [&]()
+	{
+		for (UClass* Cls : ComponentClasses)
+		{
+			if (Cls == SelectedClass)
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
 	if (ComponentClasses.empty())
 	{
-		SelectedIndex = 0;
+		SelectedClass = nullptr;
 	}
-	else if (SelectedIndex >= static_cast<int>(ComponentClasses.size()))
+	else if (!IsCurrentSelectionValid())
 	{
-		SelectedIndex = static_cast<int>(ComponentClasses.size()) - 1;
+		SelectedClass = ComponentClasses.front();
 	}
-	const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->GetName();
+	const char* Preview = SelectedClass ? SelectedClass->GetName() : "None";
 
-	if (ImGui::BeginCombo("Component Class", Preview))
+	const ImGuiStyle& Style = ImGui::GetStyle();
+	const float ComboWidth = ImGui::GetContentRegionAvail().x;
+	const float ComboHeight = ImGui::GetFrameHeight();
+	const ImVec2 ComboButtonSize(ComboWidth, ComboHeight);
+	if (ImGui::InvisibleButton("##ComponentClassButton", ComboButtonSize))
 	{
-		for (int i = 0; i < (int)ComponentClasses.size(); ++i)
+		ImGui::OpenPopup("##ComponentClassPopup");
+	}
+
+	const ImVec2 ComboMin = ImGui::GetItemRectMin();
+	const ImVec2 ComboMax = ImGui::GetItemRectMax();
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bPopupOpen = ImGui::IsPopupOpen("##ComponentClassPopup");
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 FrameColor = ImGui::GetColorU32((bHovered || bPopupOpen) ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
+	const ImU32 BorderColor = ImGui::GetColorU32(ImGuiCol_Border);
+	const ImU32 TextColor = ImGui::GetColorU32(ImGuiCol_Text);
+	const float ArrowWidth = ComboHeight;
+	const ImVec2 ArrowMin(ComboMax.x - ArrowWidth, ComboMin.y);
+	const ImVec2 ArrowMax(ComboMax.x, ComboMax.y);
+	const float Rounding = Style.FrameRounding;
+
+	DrawList->AddRectFilled(ComboMin, ComboMax, FrameColor, Rounding);
+	DrawList->AddRect(ComboMin, ComboMax, BorderColor, Rounding);
+	DrawList->AddLine(ImVec2(ArrowMin.x, ArrowMin.y), ImVec2(ArrowMin.x, ArrowMax.y), BorderColor);
+
+	const float ArrowCenterX = (ArrowMin.x + ArrowMax.x) * 0.5f;
+	const float ArrowCenterY = (ArrowMin.y + ArrowMax.y) * 0.5f;
+	DrawList->AddTriangleFilled(
+		ImVec2(ArrowCenterX - 4.0f, ArrowCenterY - 2.0f),
+		ImVec2(ArrowCenterX + 4.0f, ArrowCenterY - 2.0f),
+		ImVec2(ArrowCenterX, ArrowCenterY + 3.0f),
+		TextColor);
+
+	const ImVec2 TextMin(ComboMin.x + Style.FramePadding.x, ComboMin.y + Style.FramePadding.y);
+	const ImVec2 TextMax(ArrowMin.x - Style.FramePadding.x, ComboMax.y - Style.FramePadding.y);
+	DrawList->PushClipRect(TextMin, TextMax, true);
+	DrawList->AddText(TextMin, TextColor, Preview);
+	DrawList->PopClipRect();
+
+	ImGui::SetNextWindowPos(ComboMin, ImGuiCond_Appearing, ImVec2(1.0f, 0.0f));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(220.0f, 320.0f), ImVec2(FLT_MAX, 520.0f));
+	if (ImGui::BeginPopup("##ComponentClassPopup"))
+	{
+		auto RenderClassItem = [&](UClass* Cls)
 		{
-			bool bSelected = (SelectedIndex == i);
-			if (ImGui::Selectable(ComponentClasses[i]->GetName(), bSelected))
-				SelectedIndex = i;
+			bool bSelected = (SelectedClass == Cls);
+			if (ImGui::Selectable(Cls->GetName(), bSelected))
+			{
+				SelectedClass = Cls;
+				ImGui::CloseCurrentPopup();
+			}
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
+		};
+
+		for (const FComponentClassGroup& Group : ComponentGroups)
+		{
+			if (Group.Classes.empty())
+			{
+				continue;
+			}
+
+			FString SeparatorLabel = "----";
+			SeparatorLabel += Group.Label;
+			SeparatorLabel += "----";
+			ImGui::TextDisabled("%s", SeparatorLabel.c_str());
+
+			for (UClass* Cls : Group.Classes)
+			{
+				RenderClassItem(Cls);
+			}
 		}
-		ImGui::EndCombo();
+
+		if (!OtherClasses.empty())
+		{
+			ImGui::TextDisabled("----Other----");
+			for (UClass* Cls : OtherClasses)
+			{
+				RenderClassItem(Cls);
+			}
+		}
+		ImGui::EndPopup();
 	}
 
 	USceneComponent* Root = Actor->GetRootComponent();
 
 	// Add Component
-	if (!ComponentClasses.empty() && ImGui::Button("Add"))
+	if (SelectedClass && ImGui::Button("Add"))
 	{
-		UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
+		UActorComponent* Comp = Actor->AddComponentByClass(SelectedClass);
 		if (!Comp)
 		{
 			return;
 		}
 
-		if (ComponentClasses[SelectedIndex]->IsA(USceneComponent::StaticClass()))
+		if (SelectedClass->IsA(USceneComponent::StaticClass()))
 		{
 			if (SelectedComponent != nullptr && SelectedComponent->GetClass()->IsA(USceneComponent::StaticClass()))
 				Cast<USceneComponent>(Comp)->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
 			else
 				Cast<USceneComponent>(Comp)->AttachToComponent(Root);
+
+			// 빌보드가 필요한 컴포넌트들에 대해 빌보드 생성 보장
+			if (Comp->IsA<ULightComponentBase>())
+			{
+				Cast<ULightComponentBase>(Comp)->EnsureEditorBillboard();
+			}
+			else if (Comp->IsA<UDecalComponent>())
+			{
+				Cast<UDecalComponent>(Comp)->EnsureEditorBillboard();
+			}
+			else if (Comp->IsA<UHeightFogComponent>())
+			{
+				Cast<UHeightFogComponent>(Comp)->EnsureEditorBillboard();
+			}
 		}
 	}
 
@@ -400,6 +622,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	{
 		if (!Comp) continue;
 		if (Comp->IsA<USceneComponent>()) continue;
+		if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) continue;
 
 		FString Name = Comp->GetFName().ToString();
 		const FString TypeName = Comp->GetClass()->GetName();
@@ -425,15 +648,24 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 {
 	if (!Comp) return;
+	if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) return;
 
 	FString Name = Comp->GetFName().ToString();
 	if (Name.empty()) Name = Comp->GetClass()->GetName();
 
 	const auto& Children = Comp->GetChildren();
-	bool bHasChildren = !Children.empty();
+	bool bHasVisibleChildren = false;
+	for (USceneComponent* Child : Children)
+	{
+		if (Child && !ShouldHideInComponentTree(Child, bShowEditorOnlyComponents))
+		{
+			bHasVisibleChildren = true;
+			break;
+		}
+	}
 
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-	if (!bHasChildren)
+	if (!bHasVisibleChildren)
 		Flags |= ImGuiTreeNodeFlags_Leaf;
 	if (!bActorSelected && SelectedComponent == Comp)
 		Flags |= ImGuiTreeNodeFlags_Selected;

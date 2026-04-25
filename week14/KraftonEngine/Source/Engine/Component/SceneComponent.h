@@ -36,6 +36,8 @@ public:
 	virtual void SetRelativeRotation(const FQuat& NewRotation);
 	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
 	virtual void SetRelativeScale(const FVector& NewScale);
+	void SetAbsoluteScale(bool bInAbsoluteScale) { bAbsoluteScale = bInAbsoluteScale; MarkTransformDirty(); }
+	bool IsAbsoluteScale() const { return bAbsoluteScale; }
 
 	// 누적 회전용 — Quat 합성으로 적용해 짐벌락/Euler 라운드트립 손실을 회피한다.
 	// 매 프레임 누적이 필요한 코드는 GetRelativeRotation()→+delta→Set 패턴 대신 이걸 써야 한다.
@@ -71,6 +73,7 @@ protected:
 	USceneComponent* ParentComponent = nullptr;
 	TArray<USceneComponent*> ChildComponents;
 
+	bool bAbsoluteScale = false;
 
 	mutable bool bTransformDirty = true;
 

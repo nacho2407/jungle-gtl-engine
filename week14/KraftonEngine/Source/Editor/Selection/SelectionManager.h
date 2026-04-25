@@ -17,6 +17,7 @@ public:
 	void ToggleSelect(AActor* Actor);
 	void Deselect(AActor* Actor);
 	void ClearSelection();
+	int32 DeleteSelectedActors();
 	void Tick();
 
 	bool IsSelected(AActor* Actor) const

@@ -1,6 +1,14 @@
 ﻿#pragma once
 #include "Component/SceneComponent.h"
 
+enum class ELightComponentType : uint8
+{
+	Ambient,
+	Directional,
+	Point,
+	Spot,
+	Unknown
+};
 
 class ULightComponentBase : public USceneComponent
 {
@@ -22,6 +30,9 @@ public:
 	float GetIntensity() const { return Intensity; }
 	FVector4 GetLightColor() const { return LightColor; }
 	bool IsVisible() const { return bVisible; }
+
+	virtual ELightComponentType GetLightType() const { return ELightComponentType::Unknown; }
+	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:
 	float Intensity = 1.f;;

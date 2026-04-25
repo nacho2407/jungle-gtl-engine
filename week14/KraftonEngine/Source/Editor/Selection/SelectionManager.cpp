@@ -157,6 +157,34 @@ void FSelectionManager::ClearSelection()
 	SyncGizmo();
 }
 
+int32 FSelectionManager::DeleteSelectedActors()
+{
+	if (!World || SelectedActors.empty())
+	{
+		return 0;
+	}
+
+	TArray<AActor*> ActorsToDelete = SelectedActors;
+	const int32 DeletedCount = static_cast<int32>(ActorsToDelete.size());
+
+	// 파괴 전에 선택/기즈모 참조를 먼저 끊어 dangling target을 방지한다.
+	ClearSelection();
+
+	World->BeginDeferredPickingBVHUpdate();
+	for (AActor* Actor : ActorsToDelete)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		World->DestroyActor(Actor);
+	}
+	World->EndDeferredPickingBVHUpdate();
+
+	return DeletedCount;
+}
+
 void FSelectionManager::Tick()
 {
 	if (!Gizmo || !bGizmoEnabled)
