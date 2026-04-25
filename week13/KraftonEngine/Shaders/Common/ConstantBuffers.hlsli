@@ -27,26 +27,36 @@ cbuffer PerObjectBuffer : register(b1)
 // 시스템 샘플러 (s0~s4)
 #include "Common/SystemSamplers.hlsli"
 
-// b5: Shadow 행렬 + 파라미터
-#define MAX_SHADOW_CASCADES 4
+// b5: Shadow CB — CSM 행렬 + 공통 파라미터
+// Per-light 데이터는 StructuredBuffer (t24, t25)로 분리
+#define MAX_SHADOW_CASCADES     4
+#define MAX_SHADOW_SPOT_LIGHTS  64
+#define MAX_SHADOW_POINT_LIGHTS 16
 
 cbuffer ShadowBuffer : register(b5)
 {
-    float4x4 ShadowLightViewProj[MAX_SHADOW_CASCADES]; // Directional/CSM
-    float4x4 ShadowPointLightViewProj[6];              // Point cubemap 6면
-    float4x4 ShadowSpotLightViewProj;                  // Spot
+    // Directional CSM
+    float4x4 CSMViewProj[MAX_SHADOW_CASCADES]; // 256B
+    float4   CascadeSplits;                    //  16B
 
-    float4   CascadeSplits;                            // CSM cascade 분할 거리
-    float4   ShadowAtlasScaleBias;                     // Atlas UV transform
+    // 공통 파라미터
+    float    ShadowBias;                       //   4B
+    float    ShadowSlopeBias;                  //   4B
+    float    ShadowSharpen;                    //   4B
+    uint     ShadowFilterMode;                 //   4B  (0=Hard, 1=PCF, 2=VSM)
 
-    float    ShadowBias;
-    float    ShadowSlopeBias;
-    float    ShadowSharpen;
-    uint     ShadowMapResolution;
-
-    uint     NumCascades;
-    uint     ShadowFilterMode;                         // 0=Hard, 1=PCF, 2=VSM
-    float2   _shadowPad;
+    uint     NumCSMCascades;                   //   4B
+    uint     NumShadowSpotLights;              //   4B
+    uint     NumShadowPointLights;             //   4B
+    uint     CSMResolution;                    //   4B
 };
+
+// ── Shadow 텍스처 바인딩 ──
+// t21: Directional CSM (4 cascades)
+Texture2DArray    ShadowMapCSM       : register(t21);
+// t22: Spot Light Atlas (page = slice, 내부 UV rect packing)
+Texture2DArray    ShadowMapSpotAtlas : register(t22);
+// t23: Point Light CubeMap Array (추후 atlas 전환 예정)
+TextureCubeArray  ShadowMapPointCube : register(t23);
 
 #endif // CONSTANT_BUFFERS_HLSL

@@ -113,4 +113,33 @@ StructuredBuffer<uint> TileLightIndices : register(t9);
 StructuredBuffer<uint2> TileLightGrid : register(t10);
 StructuredBuffer<uint> g_ClusterLightIndices : register(t11);
 StructuredBuffer<uint2> g_ClusterLightGrid : register(t12);
+
+// =============================================================================
+// Per-light Shadow 구조체 — C++ FSpotShadowDataGPU / FPointShadowDataGPU 와 1:1 대응
+// StructuredBuffer로 바인딩 (CB 64KB 제한 회피)
+// =============================================================================
+
+// Spot Light: ViewProj + atlas UV rect + page(slice) index  (96B)
+struct FSpotShadowData
+{
+    float4x4 ViewProj;          // 64B
+    float4   AtlasScaleBias;    // 16B  (xy=scale, zw=bias)
+    uint     PageIndex;         //  4B  (Texture2DArray slice)
+    float3   _pad;              // 12B  → 합계 96B
+};
+
+// Point Light: 6면 ViewProj + near/far + cubemap array index  (416B, 32B aligned)
+struct FPointShadowData
+{
+    float4x4 FaceViewProj[6];   // 384B
+    float    NearZ;             //   4B
+    float    FarZ;              //   4B
+    uint     CubeArrayIndex;    //   4B  (TextureCubeArray index)
+    float    _pad[5];           //  20B  → 합계 416B
+};
+
+// ── Per-light Shadow StructuredBuffers (t24, t25) ──
+StructuredBuffer<FSpotShadowData>  SpotShadowDatas  : register(t24);
+StructuredBuffer<FPointShadowData> PointShadowDatas : register(t25);
+
 #endif // FORWARD_LIGHT_DATA_HLSLI
