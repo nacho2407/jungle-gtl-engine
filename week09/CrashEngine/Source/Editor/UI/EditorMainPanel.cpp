@@ -346,8 +346,8 @@ void FEditorMainPanel::Update()
         bWantMouse = false;
         bWantKeyboard = false;
     }
-    InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-    InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+
+    InputSystem::Get().SetGuiCaptureState(bWantMouse, bWantKeyboard);
 
     if (Window)
     {
