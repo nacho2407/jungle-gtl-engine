@@ -179,7 +179,7 @@ float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
     return World.xyz / max(World.w, 0.0001f);
 }
 
-float4 ComputeLambertLighting(float4 BaseColor, float3 Normal)
+float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosition)
 {
     float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
@@ -187,7 +187,9 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal)
     for (int i = 0; i < NumDirectionalLights; ++i)
     {
         float3 L = normalize(Directional[i].Direction);
-        TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity;
+        float Diffuse = saturate(dot(N, -L));
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition);
+        TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
     return float4(BaseColor.rgb * saturate(TotalLight), BaseColor.a);

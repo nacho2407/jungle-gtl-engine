@@ -83,7 +83,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
 
-    FinalColor = ComputeLambertLighting(BaseColor, Normal);
+    FinalColor = ComputeLambertLighting(BaseColor, Normal, WorldPos);
 
     uint2 PixelCoord = uint2(Input.position.xy);
     uint2 TileCoord = PixelCoord / TileSize;
