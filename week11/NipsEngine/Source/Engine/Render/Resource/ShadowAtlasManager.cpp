@@ -38,7 +38,7 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 
 void FShadowAtlasManager::VSMInitialize(ID3D11Device* InDevice)
 {
-    if (Device == nullptr)
+    if (InDevice == nullptr)
         return;
 	
 	Device = InDevice;
@@ -54,12 +54,12 @@ D3D11_TEXTURE2D_DESC texDesc = {};
     // RTV용 텍스처
     texDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
     texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
 	Device.Get()->CreateTexture2D(&texDesc, nullptr, &VarianceRTVShadowMap);
-    // DSV용 텍스처 - Format과 BindFlags만 바꿔서 재사용
-    texDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    Device->CreateTexture2D(&texDesc, nullptr, &VarianceDepthShadowMap);
+
+    //// DSV용 텍스처 - Format과 BindFlags만 바꿔서 재사용
+    //texDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    //texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    //Device->CreateTexture2D(&texDesc, nullptr, &VarianceDepthShadowMap);
 
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -75,10 +75,13 @@ D3D11_TEXTURE2D_DESC texDesc = {};
     srvDesc.Texture2D.MostDetailedMip = 0;
     Device.Get()->CreateShaderResourceView(VarianceRTVShadowMap.Get(), &srvDesc, &VarianceShadowSRV);
 
-	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-    dsvDesc.Texture2D.MipSlice = 0;
-    Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
+
+
+
+	//D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+ //   dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+ //   dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+ //   dsvDesc.Texture2D.MipSlice = 0;
+ //   Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
 
 }

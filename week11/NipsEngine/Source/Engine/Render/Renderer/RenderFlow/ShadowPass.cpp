@@ -53,7 +53,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
         DeviceContext->RSSetViewports(1, &ShadowViewport);
         DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
         DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-
+                              
         ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
         DeviceContext->OMSetDepthStencilState(DepthState, 0);
 
