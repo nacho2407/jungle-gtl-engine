@@ -960,7 +960,16 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.Radius			= PointLight->AttenuationRadius;
 		LightData.Falloff			= PointLight->LightFalloffExponent;
         LightData.Type				= 1;
-
 		RenderBus.LightInfos.push_back(LightData);
+
+		FShadowLightRequest PointLightDataShadow = {};
+		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
+		PointLightDataShadow.Type = EShadowLightType::SLT_Point;
+		PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
+		PointLightDataShadow.ShadowBias = PointLight->ShadowBias;
+		PointLightDataShadow.ShadowSlopeBias = PointLight->ShadowSlopeBias;
+		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
+		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
 	}
 }

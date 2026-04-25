@@ -58,6 +58,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
+	ShadowShader->Bind(Context->DeviceContext);
+
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
 	const FRenderBus* RenderBus = Context->RenderBus;
@@ -83,6 +85,10 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	FMatrix CamProj = RenderBus->GetProj();
 
 	TArray<FBoundingBox> VisibleBounds;
+	for (const auto& Cmd : OpaqueCmds)
+	{
+		VisibleBounds.push_back(Cmd.WorldAABB);
+	}
 
 	TArray<uint32> LightShadowIndices(RenderBus->LightInfos.size(), InvalidShadowIndex);
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
@@ -91,7 +97,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	float atlasW = static_cast<float>(ShadowMapDesc.Width);
 	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
-	bool bHasDirectionalShadow = false;
+	bool bHasDirectionalShadow = true;
 
 	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
 	{
@@ -202,6 +208,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
 		atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
 		ShadowAtlasConstants.push_back(atlasConstants);
+
+		if (Request.Type == EShadowLightType::SLT_Directional)
+		{
+			DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
+			DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
+			DirectionalShadowData.ScaleOffset = atlasConstants.ScaleOffset;
+			bHasDirectionalShadow = true;
+		}
 	}
 
 	if (!LightShadowIndices.empty())
