@@ -92,9 +92,6 @@ private:
 	void EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
 	void ReleaseResources();
 
-	void PreSpotlightAtlas();
-	void DrawSpotLightAtlas();
-
 private:
 	FShadowMapResources Resources;
 
@@ -105,9 +102,5 @@ private:
 	FMatrix LightViewProj;
 	bool bHasValidShadow = false;
 
-	// Spotlight fields (legacy — FShadowMapResources로 이관 예정)
-	ID3D11Texture2D*			SpotLightTexture	= nullptr;
-	ID3D11DepthStencilView*		SpotLightDSV		= nullptr;
-	ID3D11ShaderResourceView*	SpotLightSRV		= nullptr;
 	FShadowAtlasQuadTree SpotLightAtlas; // Spot Light용 Shadow Atlas 관리
 };
