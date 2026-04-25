@@ -112,7 +112,7 @@ struct FMatrix
     static FMatrix MakeRotationZ(float Angle);
 
     static FMatrix MakeLookAt(const FVector& Eye, const FVector& Target, const FVector& Up);
-    static FMatrix MakePerspective(float FOV, float Aspect, float NearZ, float FarZ);
+    static FMatrix MakePerspective(float FOVrad, float Aspect, float NearZ, float FarZ);
     static FMatrix MakeOrthographic(float Width, float Height, float NearZ, float FarZ);
 
     static FMatrix GetCancelRotationMatrix(const FMatrix& InMatrix);

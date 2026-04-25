@@ -29,6 +29,7 @@ public:
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView);
     void CollectShadowCasters(UWorld* World, const FSceneView* SceneView);
+    void UpdateShadowDataInCBs();
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
 
     const FCollectedSceneData&      GetCollectedSceneData() const { return CollectedSceneData; }

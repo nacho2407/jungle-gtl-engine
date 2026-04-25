@@ -416,9 +416,9 @@ FMatrix FMatrix::MakeLookAt(const FVector& Eye, const FVector& Target, const FVe
     return Result;
 }
 
-FMatrix FMatrix::MakePerspective(float FOV, float AspectRatio, float NearZ, float FarZ)
+FMatrix FMatrix::MakePerspective(float FOVrad, float AspectRatio, float NearZ, float FarZ)
 {
-    float Cot = 1.0f / tanf(FOV * 0.5f);
+    float Cot = 1.0f / tanf(FOVrad * 0.5f);
     float Denom = NearZ - FarZ;
     
     // Reversed-Z perspective: near→1, far→0

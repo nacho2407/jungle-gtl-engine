@@ -35,6 +35,7 @@ public:
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
     FMatrix                  ShadowViewProjMatrices[6]; // For Point Light (Cube faces)
+    int32                    ShadowMapIndex = -1;
     bool                     bCastShadow = false;
 };
 

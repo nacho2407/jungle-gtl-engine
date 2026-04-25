@@ -10,6 +10,7 @@
     - t0~t5: 텍스처/머티리얼 SRV
     - t6: LocalLights structured buffer
     - t10: SceneDepth, t11: SceneColor, t13: Stencil
+    - t20~24: Shadow map
     - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
     - u#: Compute/후처리용 UAV
     - 이 파일에서 직접 선언하는 추가 리소스: t0, t1, t2, t3, t4, t5, u1
@@ -26,13 +27,6 @@ Texture2D g_Surface2Tex : register(t2);
 Texture2D g_ModifiedBaseColorTex : register(t3);
 Texture2D g_ModifiedSurface1Tex : register(t4);
 Texture2D g_ModifiedSurface2Tex : register(t5);
-
-// t20 ~ t24: Shadow Maps (Placeholder for RenderDoc verification)
-TextureCube g_ShadowMap0 : register(t20);
-TextureCube g_ShadowMap1 : register(t21);
-TextureCube g_ShadowMap2 : register(t22);
-TextureCube g_ShadowMap3 : register(t23);
-TextureCube g_ShadowMap4 : register(t24);
 
 #ifndef ENABLE_LIGHT_EVAL_COUNTER
 #define ENABLE_LIGHT_EVAL_COUNTER 0
@@ -73,15 +67,6 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float2 UV = Input.uv;
     float4 BaseColor = ResolveBaseColor(UV);
     float4 FinalColor = BaseColor;
-    
-    // 임시코드: 셰이더 컴파일 최적화로 바인딩 목록에서 제거되는 것 방지
-    // RenderDoc에서 텍스쳐 전달되는 것 확인용
-    // float dummy = g_ShadowMap0.Sample(PointClampSampler, float3(0,0,0)).r +
-    //               g_ShadowMap1.Sample(PointClampSampler, float3(0,0,0)).r +
-    //               g_ShadowMap2.Sample(PointClampSampler, float3(0,0,0)).r +
-    //               g_ShadowMap3.Sample(PointClampSampler, float3(0,0,0)).r +
-    //               g_ShadowMap4.Sample(PointClampSampler, float3(0,0,0)).r;
-    // return dummy * 0.000001f;
     
 #if defined(LIGHTING_MODEL_GOURAUD)
     float4 GouraudLighting = ResolveSurface1(UV);
