@@ -136,46 +136,117 @@ float3 GetHeatmapColor(float weight)
 }
 #endif
 
+float GetCascadeSplitFarValue(uint CascadeIndex)
+{
+    return (CascadeIndex == 0) ? CascadeSplitFar.x :
+           (CascadeIndex == 1) ? CascadeSplitFar.y :
+           (CascadeIndex == 2) ? CascadeSplitFar.z :
+                                 CascadeSplitFar.w;
+}
+
+float GetCameraDepthForCSM(float3 WorldPos)
+{
+    float4 ViewPos = mul(float4(WorldPos, 1.0f), View);
+    return ViewPos.x;
+}
+
+uint SelectDirectionalCascade(float CameraDepth)
+{
+    for (uint i = 0; i < DirectionalCascadeCount; ++i)
+    {
+        if (CameraDepth <= GetCascadeSplitFarValue(i))
+        {
+            return i;
+        }
+    }
+
+    return MAX_DIRECTIONAL_CASCADE_COUNT;
+}
+
 float CalculateShadow(float4 worldPos)
 {
+#ifdef SHADOW_MAP_CSM
+      if (DirectionalCascadeCount == 0)
+      {
+          return 1.0f;
+      }
+
+      float CameraDepth = GetCameraDepthForCSM(worldPos.xyz);
+      uint CascadeIndex = SelectDirectionalCascade(CameraDepth);
+
+      if (CascadeIndex >= MAX_DIRECTIONAL_CASCADE_COUNT)
+      {
+          return 1.0f;
+      }
+
+      float4 shadowCoord = mul(worldPos, CascadeViewProj[CascadeIndex]);
+
+      if (abs(shadowCoord.w) < 1e-5f)
+      {
+          return 1.0f;
+      }
+
+      float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+      float2 shadowUV = float2(
+          projCoords.x * 0.5f + 0.5f,
+          -projCoords.y * 0.5f + 0.5f
+      );
+
+      if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
+          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+          projCoords.z < 0.0f || projCoords.z > 1.0f)
+      {
+          return 1.0f;
+      }
+
+      const float shadowBias = 0.005f;
+      return ComputeShadowPCF(
+          projCoords,
+          CascadeScaleOffset[CascadeIndex],
+          2,
+          ShadowSampler,
+          ShadowMap,
+          shadowBias);
+
+#else
     float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
 
 #ifdef SHADOW_MAP_PSM
-    float4 camClip = mul(worldPos, VirtualViewProj);
+      float4 camClip = mul(worldPos, VirtualViewProj);
 
-    if (abs(camClip.w) < 1e-5f)
-    {
-        return 1.0f;
-    }
+      if (abs(camClip.w) < 1e-5f)
+      {
+          return 1.0f;
+      }
 
-    float3 post = camClip.xyz / camClip.w;
-    shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
+      float3 post = camClip.xyz / camClip.w;
+      shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
 #else
     shadowCoord = mul(worldPos, DirLightViewProj);
 #endif
-    
+
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
     }
+
     float3 projCoords = shadowCoord.xyz / shadowCoord.w;
     float2 shadowUV = float2(
-        projCoords.x * 0.5f + 0.5f,
-        -projCoords.y * 0.5f + 0.5f
-    );
+          projCoords.x * 0.5f + 0.5f,
+          -projCoords.y * 0.5f + 0.5f
+      );
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
-        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
-        projCoords.z < 0.0f || projCoords.z > 1.0f)
+          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+          projCoords.z < 0.0f || projCoords.z > 1.0f)
     {
         return 1.0f;
     }
 
     const float shadowBias = 0.005f;
-    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
-    return shadowFactor;
+    return ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
+#endif
 }
-
 
 
 PSOutput mainPS(PSInput input) : SV_TARGET

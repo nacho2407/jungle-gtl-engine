@@ -5,8 +5,25 @@
 #include "Component/PostProcess/Light/LightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace
 {
+	constexpr uint32 CascadeCount = 4;
+
+	void SetCascadeSplitFar(FVector4& OutValue, uint32 CascadeIndex, float SplitFar)
+	{
+		switch (CascadeIndex)
+		{
+		case 0: OutValue.X = SplitFar; break;
+		case 1: OutValue.Y = SplitFar; break;
+		case 2: OutValue.Z = SplitFar; break;
+		case 3: OutValue.W = SplitFar; break;
+		default: break;
+		}
+	}
+
 	const ULightComponent* GetSupportedShadowLight(const FShadowLightRequest& Request)
 	{
 		if (!Request.bCastShadows)
@@ -21,6 +38,72 @@ namespace
 		}
 
 		return Cast<ULightComponent>(Request.LightComponent);
+	}
+}
+
+void FShadowPass::RenderShadowDepth(
+	const FRenderPassContext* Context,
+	FConstantBuffer* ShadowBuffer,
+	UShader* ShadowShader,
+	const TArray<FRenderCommand>& OpaqueCmds,
+	ID3D11DepthStencilView* ShadowDSV,
+	const D3D11_VIEWPORT& ShadowViewport,
+	uint32 ShadowKey,
+	const FShadowConstants& ShadowData)
+{
+	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+
+	DeviceContext->RSSetViewports(1, &ShadowViewport);
+	DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
+
+	ID3D11DepthStencilState* DepthState =
+		FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+	DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
+	ShadowBuffer->Update(DeviceContext, &ShadowData, sizeof(FShadowConstants));
+	ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
+	DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
+	DeviceContext->PSSetConstantBuffers(4, 1, &cb4);
+	ShadowShader->Bind(DeviceContext, ShadowKey);
+
+	for (const auto& Cmd : OpaqueCmds)
+	{
+		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+		{
+			continue;
+		}
+		if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid())
+		{
+			continue;
+		}
+
+		ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+		uint32 VertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
+		uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+		if (!VertexBuffer || VertexCount == 0 || Stride == 0)
+		{
+			continue;
+		}
+
+		Context->RenderResources->PerObjectConstantBuffer.Update(
+			DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
+		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
+		DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
+
+		uint32 Offset = 0;
+		DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+		CheckOverrideViewMode(Context);
+
+		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+		if (IndexBuffer != nullptr)
+		{
+			DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
+		}
+		else
+		{
+			DeviceContext->Draw(VertexCount, 0);
+		}
 	}
 }
 
@@ -105,6 +188,80 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			continue;
 		}
 
+		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
+
+		if (Request.Type == EShadowLightType::SLT_Directional &&
+			LightComp->GetShadowMapType() == EShadowMap::CSM)
+		{
+			DirectionalShadowData.VirtualViewProj = CamView * CamProj;
+			DirectionalShadowData.DirectionalCascadeCount = 0;
+
+			FCascadeSplit CascadeSplits[4] = {};
+
+			// MaxDistance 하드 코딩
+			BuildLogCascadeSplit(
+				RenderBus->GetNearPlane(),
+				RenderBus->GetFarPlane(),
+				500.f,
+				CascadeSplits);
+
+			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
+			{
+				FShadowAtlasTile ShadowTile;
+				if (!ShadowAtlasManager.AllocateTile(ShadowTile))
+				{
+					break;
+				}
+
+				D3D11_VIEWPORT ShadowViewport = {};
+				ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.PixelX);
+				ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.PixelY);
+				ShadowViewport.Width = static_cast<float>(ShadowTile.Width);
+				ShadowViewport.Height = static_cast<float>(ShadowTile.Height);
+				ShadowViewport.MinDepth = 0.0f;
+				ShadowViewport.MaxDepth = 1.0f;
+
+				const FMatrix CascadeMatrix = LightComp->GetLightViewProj(
+					CamView,
+					CamProj,
+					CascadeSplits[CascadeIndex].SplitNearRatio,
+					CascadeSplits[CascadeIndex].SplitFarRatio,
+					&VisibleBounds);
+
+				FShadowConstants ShadowData = {};
+				ShadowData.VirtualViewProj = CamView * CamProj;
+				ShadowData.DirLightViewProj = CascadeMatrix;
+				ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
+
+				RenderShadowDepth(
+					Context,
+					ShadowBuffer,
+					ShadowShader,
+					OpaqueCmds,
+					ShadowDSV,
+					ShadowViewport,
+					ShadowKey,
+					ShadowData);
+
+				DirectionalShadowData.CascadeViewProj[CascadeIndex] = CascadeMatrix;
+				DirectionalShadowData.CascadeScaleOffset[CascadeIndex] = ShadowTile.ScaleOffset;
+				::SetCascadeSplitFar(
+					DirectionalShadowData.CascadeSplitFar,
+					CascadeIndex,
+					CascadeSplits[CascadeIndex].FarDistance);
+				DirectionalShadowData.DirectionalCascadeCount = CascadeIndex + 1;
+
+				if (!bHasDirectionalShadow)
+				{
+					DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
+					DirectionalShadowData.ScaleOffset = ShadowData.ScaleOffset;
+					bHasDirectionalShadow = true;
+				}
+			}
+
+			continue;
+		}
+
 		FShadowAtlasTile ShadowTile;
 		if (!FShadowAtlasManager::Get().AllocateTile(ShadowTile))
 		{
@@ -121,66 +278,25 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		ShadowViewport.MinDepth = 0.0f;
 		ShadowViewport.MaxDepth = 1.0f;
 
-		DeviceContext->RSSetViewports(1, &ShadowViewport);
-		DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-
-		ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-		DeviceContext->OMSetDepthStencilState(DepthState, 0);
-
-		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
 		FShadowConstants ShadowData = {};
-		ShadowData.VirtualViewProj = RenderBus->GetView() * RenderBus->GetProj();
+		ShadowData.VirtualViewProj = CamView * CamProj;
+
 		ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
-			RenderBus->GetView(),
-			RenderBus->GetProj(),
+			CamView,
+			CamProj,
 			&VisibleBounds);
+
 		ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
 
-		ShadowBuffer->Update(DeviceContext, &ShadowData, sizeof(FShadowConstants));
-		ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
-		DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
-		DeviceContext->PSSetConstantBuffers(4, 1, &cb4);
-		ShadowShader->Bind(DeviceContext, ShadowKey);
-
-		for (const auto& Cmd : OpaqueCmds)
-		{
-			if (Cmd.Type == ERenderCommandType::PostProcessOutline)
-			{
-				continue;
-			}
-			if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid())
-			{
-				continue;
-			}
-
-			ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-			uint32 VertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-			uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-			if (!VertexBuffer || VertexCount == 0 || Stride == 0)
-			{
-				continue;
-			}
-
-			Context->RenderResources->PerObjectConstantBuffer.Update(
-				DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-			ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-			DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-
-			uint32 Offset = 0;
-			DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-			CheckOverrideViewMode(Context);
-
-			ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-			if (IndexBuffer != nullptr)
-			{
-				Context->DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-				Context->DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-			}
-			else
-			{
-				Context->DeviceContext->Draw(VertexCount, 0);
-			}
-		}
+		RenderShadowDepth(
+			Context,
+			ShadowBuffer,
+			ShadowShader,
+			OpaqueCmds,
+			ShadowDSV,
+			ShadowViewport,
+			ShadowKey,
+			ShadowData);
 
 		uint32 ShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
 		if (Request.LightIndex != InvalidShadowIndex && Request.LightIndex < LightShadowIndices.size())
@@ -246,6 +362,33 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 	Context->DeviceContext->RSSetViewports(1, &OriginViewport);
 
 	return true;
+}
+
+void FShadowPass::BuildLogCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, FCascadeSplit OutSplit[4])
+{
+	float Distance[CascadeCount + 1] = {};
+
+	float SplitDistributionNear = std::max(CamNear, 1.0f);
+	float ShadowFar = std::max(std::min(CamFar, MaxShadowDistance), SplitDistributionNear);
+
+	Distance[0] = CamNear;
+	for (uint32 i = 1; i < CascadeCount; ++i)
+	{
+		const float P = static_cast<float>(i) / static_cast<float>(CascadeCount);
+		Distance[i] = SplitDistributionNear * std::pow(ShadowFar / SplitDistributionNear, P);
+	}
+	Distance[CascadeCount] = ShadowFar;
+
+	const float CameraRange = std::max(CamFar - CamNear, 0.001f);
+	const float InvCameraRange = 1.0f / CameraRange;
+
+	for (uint32 i = 0; i < CascadeCount; ++i)
+	{
+		OutSplit[i].NearDistance = Distance[i];
+		OutSplit[i].FarDistance = Distance[i + 1];
+		OutSplit[i].SplitNearRatio = std::clamp((Distance[i] - CamNear) * InvCameraRange, 0.0f, 1.0f);
+		OutSplit[i].SplitFarRatio = std::clamp((Distance[i + 1] - CamNear) * InvCameraRange, 0.0f, 1.0f);
+	}
 }
 
 bool FShadowPass::Release()
