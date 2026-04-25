@@ -1,5 +1,5 @@
 ﻿#include "GPUOcclusionCulling.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Profiling/Stats.h"
 

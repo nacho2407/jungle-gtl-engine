@@ -3,7 +3,7 @@
 #include <fstream>
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Pipeline/Renderer.h"

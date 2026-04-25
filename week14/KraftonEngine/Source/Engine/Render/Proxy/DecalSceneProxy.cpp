@@ -2,7 +2,7 @@
 
 #include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"

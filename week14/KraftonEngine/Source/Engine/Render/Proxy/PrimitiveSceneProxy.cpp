@@ -1,7 +1,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Materials/Material.h"
 #include "Object/ObjectFactory.h"
 
