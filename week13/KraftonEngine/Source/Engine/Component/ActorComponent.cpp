@@ -4,6 +4,7 @@
 #include "GameFramework/AActor.h"
 
 IMPLEMENT_CLASS(UActorComponent, UObject)
+HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
 void UActorComponent::BeginPlay()
 {

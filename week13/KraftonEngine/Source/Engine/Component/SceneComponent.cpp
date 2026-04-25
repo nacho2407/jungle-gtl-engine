@@ -4,6 +4,7 @@
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(USceneComponent, UActorComponent)
+HIDE_FROM_COMPONENT_LIST(USceneComponent)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 {

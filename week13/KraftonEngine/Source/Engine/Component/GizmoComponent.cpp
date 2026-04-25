@@ -12,6 +12,7 @@
 #include <cfloat>
 
 IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
+HIDE_FROM_COMPONENT_LIST(UGizmoComponent)
 
 FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 {

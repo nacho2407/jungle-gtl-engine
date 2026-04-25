@@ -10,7 +10,7 @@ enum EClassFlags : uint32
 	CF_Actor     = 1 << 0,
 	CF_Component = 1 << 1,
 	CF_Camera    = 1 << 2,
-	CF_Abstract  = 1 << 3,
+	CF_HiddenInComponentList = 1 << 3,
 };
 
 class UClass
@@ -24,6 +24,7 @@ public:
 	UClass*      GetSuperClass() const { return SuperClass; }
 	size_t       GetSize()       const { return Size; }
 	uint32       GetClassFlags() const { return ClassFlags; }
+	void        AddClassFlags(uint32 Flags) { ClassFlags |= Flags; }
 
 	bool IsA(const UClass* Other) const
 	{

@@ -5,7 +5,8 @@
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
 
-IMPLEMENT_ABSTRACT_CLASS(ULightComponentBase, USceneComponent)
+IMPLEMENT_CLASS(ULightComponentBase, USceneComponent)
+HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
 
 void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {

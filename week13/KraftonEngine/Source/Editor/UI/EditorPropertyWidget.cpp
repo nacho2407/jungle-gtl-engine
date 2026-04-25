@@ -413,7 +413,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 	TArray<UClass*> ComponentClasses;
 	for (UClass* Cls : AllClasses)
 	{
-		if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_Abstract))
+		if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_HiddenInComponentList))
 			ComponentClasses.push_back(Cls);
 	}
 

@@ -22,9 +22,16 @@ TypeName##_RegisterFactory G##TypeName##_RegisterFactory;}
     DEFINE_CLASS(ClassName, ParentClass)                               \
     REGISTER_FACTORY(ClassName)
 
-#define IMPLEMENT_ABSTRACT_CLASS(ClassName, ParentClass)               \
-    DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_Abstract)       \
-    REGISTER_FACTORY(ClassName)
+// Add Component 목록에서만 숨길 때 사용한다. 클래스 RTTI/팩토리 등록은 IMPLEMENT_CLASS가 담당한다.
+#define HIDE_FROM_COMPONENT_LIST(ClassName)                            \
+namespace {                                                            \
+    struct ClassName##_HideFromComponentList {                         \
+        ClassName##_HideFromComponentList() {                          \
+            ClassName::StaticClass()->AddClassFlags(CF_HiddenInComponentList); \
+        }                                                              \
+    };                                                                 \
+    ClassName##_HideFromComponentList G##ClassName##_HideFromComponentList; \
+}
 
 // Different from UFactory class
 class FObjectFactory : public TSingleton<FObjectFactory>
@@ -37,14 +44,6 @@ public:
 	}
 
 	UObject* Create(const std::string& TypeName, UObject* InOuter = nullptr) {
-		for (UClass* Cls : UClass::GetAllClasses())
-		{
-			if (Cls && TypeName == Cls->GetName() && Cls->HasAnyClassFlags(CF_Abstract))
-			{
-				return nullptr;
-			}
-		}
-
 		auto Spawner = Registry.find(TypeName);	// Do NOT use array accessor [] here. it will insert a new key if not found.
 		return (Spawner != Registry.end()) ? Spawner->second(InOuter) : nullptr;
 	}
