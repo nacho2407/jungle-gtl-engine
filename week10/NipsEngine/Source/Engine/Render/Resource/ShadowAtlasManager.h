@@ -5,7 +5,11 @@
 #include "Core/CoreMinimal.h"
 #include <d3d11.h>
 
-const uint32 ShadowAtlasResolution2D = 8192;
+static constexpr uint32 ShadowAtlasResolution2D = 8192;
+static constexpr int CUBE_FACE_COUNT = 6;
+static constexpr int MAX_SHADOW_CUBES = 32;
+static constexpr uint32 SHADOW_CUBE_SIZE = 512;
+
 
 struct FShadowAtlasTile
 {
@@ -65,6 +69,58 @@ struct FShadowAtlasAllocator
             bUsed = false;
         }
     }
+};
+
+struct FShadowAtlasCube
+{
+    TComPtr<ID3D11Texture2D> CubeShadowMap;
+    TComPtr<ID3D11ShaderResourceView> CubeSRV;
+
+    TComPtr<ID3D11DepthStencilView> CubeDSV[MAX_SHADOW_CUBES][CUBE_FACE_COUNT] = {};
+
+    void Initialize(ID3D11Device* Device)
+    {
+        if (Device == nullptr)
+            return;
+        // Cube Shadow Map Texture 생성
+        D3D11_TEXTURE2D_DESC CubeShadowDesc = {};
+        CubeShadowDesc.Width = SHADOW_CUBE_SIZE;
+        CubeShadowDesc.Height = SHADOW_CUBE_SIZE;
+        CubeShadowDesc.MipLevels = 1;
+        CubeShadowDesc.ArraySize = 6; // Cube Map은 6개의 면으로 구성
+        CubeShadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+        CubeShadowDesc.SampleDesc.Count = 1;
+        CubeShadowDesc.Usage = D3D11_USAGE_DEFAULT;
+        CubeShadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+        CubeShadowDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+        HRESULT hr = Device->CreateTexture2D(&CubeShadowDesc, nullptr, CubeShadowMap.ReleaseAndGetAddressOf());
+
+        for (int CubeIndex = 0; CubeIndex < MAX_SHADOW_CUBES; ++CubeIndex)
+        {
+            for (int FaceIndex = 0; FaceIndex < CUBE_FACE_COUNT; ++FaceIndex)
+            {
+                // 각 면에 대한 DSV 생성
+                D3D11_DEPTH_STENCIL_VIEW_DESC DsvDesc = {};
+                DsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+                DsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;                       // Cube Map은 Texture2DArray로 처리
+                DsvDesc.Texture2DArray.ArraySize = 1;                                             // 각 DSV는 하나의 면만 참조
+                DsvDesc.Texture2DArray.FirstArraySlice = FaceIndex + CubeIndex * CUBE_FACE_COUNT; // 각 면에 대한 슬라이스 계산
+                DsvDesc.Texture2DArray.MipSlice = 0;
+                hr = Device->CreateDepthStencilView(CubeShadowMap.Get(), &DsvDesc, CubeDSV[CubeIndex][FaceIndex].ReleaseAndGetAddressOf());
+            }
+        }
+
+        // Shader Resource View(SRV) 생성
+        D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+        SrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE; // Cube Map은 TextureCube로 처리
+        SrvDesc.TextureCube.MostDetailedMip = 0;
+        SrvDesc.TextureCube.MipLevels = 1;
+        hr = Device->CreateShaderResourceView(CubeShadowMap.Get(), &SrvDesc, CubeSRV.ReleaseAndGetAddressOf());
+    }
+
+    bool IsValid() const { return CubeShadowMap != nullptr && CubeDSV != nullptr && CubeSRV != nullptr; }
 };
 
 struct FShadowAtlas
@@ -174,6 +230,10 @@ public:
     bool FreeTile(const int32& TileIndex);
     void ClearTiles() { ShadowAllocator.FreeAllTiles(); }
 
+    bool AllocateTileCube(uint32& OutCubeIndex);
+    bool FreeTileCube(const int32& CubeIndex);
+    void ClearTilesCube() {}
+
 	uint32 GetTileSize() const { return ShadowAllocator.TileSize; }
     int32 GetAtlasWidth() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountX; }
     int32 GetAtlasHeight() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountY; }
@@ -187,4 +247,6 @@ private:
 
 	FShadowAtlas ShadowMapAtlas;
     FShadowAtlasAllocator ShadowAllocator;
+
+	FShadowAtlasCube ShadowCubeMapArray;
 };
