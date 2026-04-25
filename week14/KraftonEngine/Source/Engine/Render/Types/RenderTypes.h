@@ -35,6 +35,7 @@ enum class ERenderPass : uint32
 {
 	PreDepth,		// Depth-only 프리패스 (color write 없음, Early-Z용)
 	LightCulling,	// 라이트 컬링 CS 디스패치 (Tile/Cluster)
+	ShadowMap,		// 라이트별 Shadow Depth 렌더링
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
 	AdditiveDecal,	// Additive 빌보드 등
@@ -54,6 +55,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 	static const char* Names[] = {
 		"RenderPass::PreDepth",
 		"RenderPass::LightCulling",
+		"RenderPass::ShadowMap",
 		"RenderPass::Opaque",
 		"RenderPass::Decal",
 		"RenderPass::AdditiveDecal",
@@ -76,6 +78,7 @@ namespace RenderStateStrings
 	{
 		{ "PreDepth",      (int)ERenderPass::PreDepth },
 		{ "LightCulling",  (int)ERenderPass::LightCulling },
+		{ "ShadowMap",     (int)ERenderPass::ShadowMap },
 		{ "Opaque",        (int)ERenderPass::Opaque },
 		{ "Decal",         (int)ERenderPass::Decal },
 		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },

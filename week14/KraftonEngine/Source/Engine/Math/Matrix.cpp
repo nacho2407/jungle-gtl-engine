@@ -533,6 +533,54 @@ FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
 	return ret;
 }
 
+// ============================================================
+// View/Projection 행렬 (Reversed-Z, Row-Major LH)
+// ============================================================
+
+FMatrix FMatrix::MakeViewMatrix(const FVector& Right, const FVector& Up, const FVector& Forward, const FVector& Eye)
+{
+	return FMatrix(
+		Right.X,       Up.X,          Forward.X,     0.0f,
+		Right.Y,       Up.Y,          Forward.Y,     0.0f,
+		Right.Z,       Up.Z,          Forward.Z,     0.0f,
+		-Eye.Dot(Right), -Eye.Dot(Up), -Eye.Dot(Forward), 1.0f
+	);
+}
+
+FMatrix FMatrix::LookAtLH(const FVector& Eye, const FVector& Target, const FVector& UpHint)
+{
+	FVector F = (Target - Eye).Normalized();
+	FVector R = UpHint.Cross(F).Normalized();
+	FVector U = F.Cross(R);
+
+	return MakeViewMatrix(R, U, F, Eye);
+}
+
+FMatrix FMatrix::PerspectiveFovLH(float FovY, float Aspect, float NearZ, float FarZ)
+{
+	float Cot = 1.0f / tanf(FovY * 0.5f);
+	// Reversed-Z: near→1, far→0 (엔진 컨벤션과 동일)
+	float Denom = NearZ - FarZ;
+	return FMatrix(
+		Cot / Aspect,  0.0f,  0.0f,                     0.0f,
+		0.0f,          Cot,   0.0f,                     0.0f,
+		0.0f,          0.0f,  NearZ / Denom,            1.0f,
+		0.0f,          0.0f,  -(FarZ * NearZ) / Denom,  0.0f
+	);
+}
+
+FMatrix FMatrix::OrthoLH(float Width, float Height, float NearZ, float FarZ)
+{
+	// Reversed-Z: near→1, far→0 (엔진 컨벤션과 동일)
+	float Denom = NearZ - FarZ;
+	return FMatrix(
+		2.0f / Width,  0.0f,           0.0f,            0.0f,
+		0.0f,          2.0f / Height,  0.0f,            0.0f,
+		0.0f,          0.0f,           1.0f / Denom,    0.0f,
+		0.0f,          0.0f,           -FarZ / Denom,   1.0f
+	);
+}
+
 FQuat FMatrix::ToQuat() const
 {
 	return FQuat::FromMatrix(*this);

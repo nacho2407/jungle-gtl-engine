@@ -8,47 +8,18 @@ HIDE_FROM_COMPONENT_LIST(UCameraComponent)
 FMatrix UCameraComponent::GetViewMatrix() const
 {
 	UpdateWorldMatrix();
-
-	auto F = GetForwardVector();
-	auto R = GetRightVector();
-	auto U = GetUpVector();
-	auto E = GetWorldLocation();
-
-	return FMatrix(
-		R.X, U.X, F.X, 0,
-		R.Y, U.Y, F.Y, 0,
-		R.Z, U.Z, F.Z, 0,
-		-E.Dot(R), -E.Dot(U), -E.Dot(F), 1
-	);
+	return FMatrix::MakeViewMatrix(GetRightVector(), GetUpVector(), GetForwardVector(), GetWorldLocation());
 }
 
 FMatrix UCameraComponent::GetProjectionMatrix() const
 {
-	float Cot = 1.0f / tanf(CameraState.FOV * 0.5f);
-	float N = CameraState.NearZ;
-	float F = CameraState.FarZ;
-
 	if (!CameraState.bIsOrthogonal) {
-		// Reversed-Z perspective: near→1, far→0
-		float Denom = N - F;
-		return FMatrix(
-			Cot / CameraState.AspectRatio, 0, 0, 0,
-			0, Cot, 0, 0,
-			0, 0, N / Denom, 1,
-			0, 0, -(F * N) / Denom, 0
-		);
+		return FMatrix::PerspectiveFovLH(CameraState.FOV, CameraState.AspectRatio, CameraState.NearZ, CameraState.FarZ);
 	}
 	else {
-		// Reversed-Z orthographic: near→1, far→0
 		float HalfW = CameraState.OrthoWidth * 0.5f;
 		float HalfH = HalfW / CameraState.AspectRatio;
-		float Denom = N - F;
-		return FMatrix(
-			1.0f / HalfW, 0, 0, 0,
-			0, 1.0f / HalfH, 0, 0,
-			0, 0, 1.0f / Denom, 0,
-			0, 0, -F / Denom, 1
-		);
+		return FMatrix::OrthoLH(HalfW * 2.0f, HalfH * 2.0f, CameraState.NearZ, CameraState.FarZ);
 	}
 }
 
