@@ -6,7 +6,8 @@
 DEFINE_CLASS(ULightComponent, ULightComponentBase)
 REGISTER_FACTORY(ULightComponent)
 
-FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
+FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+	const TArray<FBoundingBox>& VisibleObjectsBounds) const
 {
 	FVector LightDir = GetForwardVector().GetSafeNormal();
 	FMatrix CamViewProj = CamView * CamProj;
@@ -27,6 +28,19 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 			);
 		};
 
+	TArray<FVector> RelevantPoints;
+	for (const FBoundingBox& Box : VisibleObjectsBounds)
+	{
+		FVector Corners[8];
+		Box.GetVertices(Corners);
+
+		for (int i = 0; i < 8; ++i)
+		{
+			FVector PostPoint = ToPost(Corners[i]);
+			RelevantPoints.push_back(PostPoint);
+		}
+	}
+
 	FVector PostCorners[8] =
 	{
 		FVector(-1, -1, 0),
@@ -38,6 +52,14 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 		FVector(-1, 1, 1),
 		FVector(1, 1, 1)
 	};
+
+	if (RelevantPoints.empty())
+	{
+		for (int i = 0; i < 8; ++i)
+		{
+			RelevantPoints.push_back(PostCorners[i]);
+		}
+	}
 
 	FVector Center = FVector::ZeroVector;
 	for (const FVector& C : PostCorners)
@@ -61,7 +83,7 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 		LightDirPost = FVector(1, 0, 0);
 	}
 
-	FVector Eye = Center - LightDirPost * 2.0f;
+	FVector Eye = Center - LightDirPost * 1.5f;
 	FVector RefA = FVector(0, 1, 0);
 	FVector RefB = FVector(0, 0, 1);
 	FVector Ref = (std::abs(FVector::DotProduct(LightDirPost, RefA)) < 0.9f) ? RefA : RefB;
@@ -72,7 +94,7 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
 	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (const FVector& C : PostCorners)
+	for (const FVector& C : RelevantPoints)
 	{
 		FVector4 V = FVector4(C, 1.0f) * LightNDCView;
 		FVector P(V.X, V.Y, V.Z);
@@ -81,7 +103,7 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 		Max = FVector::Max(Max, P);
 	}
 
-	FMatrix LightNDCProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X, Max.X);
+	FMatrix LightNDCProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X - 1.0f, Max.X + 1.0f);
 
 	FMatrix Result = LightNDCView * LightNDCProj;
 
