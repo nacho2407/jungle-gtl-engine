@@ -135,12 +135,3 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FV
 
 	return sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity;
 }
-
-//// Spotlight evaluation
-//float Score = 0.f;
-//Score += Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f; // Luminance
-//Score *= InLightInfo.Intensity;
-//Score *= InLightInfo.AttenuationRadius;
-//Score += pow(InLightInfo.FalloffExponent, 2.f);
-
-//return Score;
