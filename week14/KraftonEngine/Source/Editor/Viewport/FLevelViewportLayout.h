@@ -70,17 +70,6 @@ public:
 	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
 	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
 
-	void SetActiveViewport(FLevelEditorViewportClient* InClient);
-	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
-
-	void ResetViewport(UWorld* InWorld);
-	void DestroyAllCameras();
-	void DisableWorldAxisForPIE();
-	void RestoreWorldAxisAfterPIE();
-
-	static int32 GetSlotCount(EViewportLayout Layout);
-
-private:
 	enum class EViewportPlaceActorType : uint8
 	{
 		Cube,
@@ -94,6 +83,19 @@ private:
 		SpotLight
 	};
 
+	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);
+
+	void SetActiveViewport(FLevelEditorViewportClient* InClient);
+	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
+
+	void ResetViewport(UWorld* InWorld);
+	void DestroyAllCameras();
+	void DisableWorldAxisForPIE();
+	void RestoreWorldAxisAfterPIE();
+
+	static int32 GetSlotCount(EViewportLayout Layout);
+
+private:
 	struct FViewportContextMenuState
 	{
 		bool bTrackingRightClick[MaxViewportSlots] = {};
