@@ -23,14 +23,23 @@ public:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void Serialize(FArchive& Ar) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	void SetUpdatedComponent(USceneComponent* NewUpdatedComponent);
-	USceneComponent* GetUpdatedComponent() const { return UpdatedComponent; }
-	bool HasValidUpdatedComponent() const { return UpdatedComponent != nullptr; }
+	USceneComponent* GetUpdatedComponent() const;
+	bool HasValidUpdatedComponent() const { return GetUpdatedComponent() != nullptr; }
+	const FString& GetUpdatedComponentPath() const { return UpdatedComponentPath; }
+	FString GetUpdatedComponentDisplayName() const;
+	TArray<USceneComponent*> GetOwnerSceneComponents() const;
+	bool ResolveUpdatedComponent();
+	FString BuildUpdatedComponentPath(const USceneComponent* TargetComponent) const;
+	void ClearUpdatedComponentIfMatches(const USceneComponent* RemovedComponent);
 
 protected:
 	void TryAutoRegisterUpdatedComponent();
+	USceneComponent* FindUpdatedComponentByPath(const FString& InPath) const;
 
 	USceneComponent* UpdatedComponent = nullptr; // 움직일 대상
 	bool bAutoRegisterUpdatedComponent = true;
+	FString UpdatedComponentPath;
 };
