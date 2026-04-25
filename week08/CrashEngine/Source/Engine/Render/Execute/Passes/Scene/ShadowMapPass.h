@@ -4,6 +4,8 @@
 class FShadowMapPass : public FMeshPassBase
 {
 public:
+    static constexpr uint32 MAX_SHADOW_MAPS = 5;
+
     ~FShadowMapPass() override;
 
     void PrepareInputs(FRenderPipelineContext& Context) override;
@@ -12,12 +14,21 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override;
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 
+    ID3D11ShaderResourceView* GetShadowSRV(uint32 Index) const 
+    { 
+        return (Index < MAX_SHADOW_MAPS) ? ShadowResources[Index].SRV : nullptr; 
+    }
+
 private:
     void EnsureShadowMapResources(ID3D11Device* Device);
 
-    ID3D11Texture2D*          ShadowDepthTexture = nullptr;
-    ID3D11DepthStencilView*   ShadowDSVs[6]      = {};           // For each face
-    ID3D11ShaderResourceView* ShadowSRV          = nullptr;
+    struct FShadowResource
+    {
+        ID3D11Texture2D*          Texture = nullptr;
+        ID3D11DepthStencilView*   DSVs[6] = {};
+        ID3D11ShaderResourceView* SRV     = nullptr;
+    };
 
-    uint32 ShadowMapSize = 2048;
+    FShadowResource ShadowResources[MAX_SHADOW_MAPS];
+    uint32          ShadowMapSize = 2048;
 };

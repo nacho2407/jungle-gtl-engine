@@ -20,6 +20,7 @@ constexpr uint32 Light      = 4; // b4: 전역 조명 상수
 namespace ESystemTexSlot
 {
 constexpr uint32 LocalLights = 6;  // t6: local light buffer
+constexpr uint32 ShadowMap   = 9;  // t9: shadow map texture (cube or array)
 constexpr uint32 SceneDepth  = 10; // t10: scene depth copy
 constexpr uint32 SceneColor  = 11; // t11: scene color copy
 constexpr uint32 Stencil     = 13; // t13: stencil copy
