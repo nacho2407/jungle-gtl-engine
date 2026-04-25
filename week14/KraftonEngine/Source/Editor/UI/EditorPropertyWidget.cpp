@@ -861,6 +861,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::Vec4:
 				case EPropertyType::Color4:         Size = sizeof(float) * 4; break;
 				case EPropertyType::String:
+				case EPropertyType::SceneComponentRef:
 				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
@@ -961,6 +962,62 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		{
 			*Val = Buf;
 			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::SceneComponentRef:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		UMovementComponent* MovementComp = SelectedComponent ? Cast<UMovementComponent>(SelectedComponent) : nullptr;
+		FString Preview = MovementComp ? MovementComp->GetUpdatedComponentDisplayName() : FString("None");
+
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview.c_str()))
+		{
+			bool bSelectedAuto = Val->empty();
+			if (ImGui::Selectable("Auto (Root)", bSelectedAuto))
+			{
+				Val->clear();
+				bChanged = true;
+			}
+			if (bSelectedAuto)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			if (MovementComp)
+			{
+				for (USceneComponent* Candidate : MovementComp->GetOwnerSceneComponents())
+				{
+					if (!Candidate)
+					{
+						continue;
+					}
+
+					FString CandidatePath = MovementComp->BuildUpdatedComponentPath(Candidate);
+					FString CandidateName = Candidate->GetFName().ToString();
+					if (CandidateName.empty())
+					{
+						CandidateName = Candidate->GetClass()->GetName();
+					}
+					if (!CandidatePath.empty())
+					{
+						CandidateName += " (" + CandidatePath + ")";
+					}
+
+					bool bSelected = (*Val == CandidatePath);
+					if (ImGui::Selectable(CandidateName.c_str(), bSelected))
+					{
+						*Val = CandidatePath;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+			}
+
+			ImGui::EndCombo();
 		}
 		break;
 	}

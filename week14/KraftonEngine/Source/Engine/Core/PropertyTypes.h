@@ -16,6 +16,7 @@ enum class EPropertyType : uint8_t
 	Rotator,	// FRotator (Pitch, Yaw, Roll)
 	String,
 	Name,		  // FName — 문자열 풀 기반 이름 (리소스 키 등)
+	SceneComponentRef, // Owner actor 내부 USceneComponent 참조
 	Color4,	   // FVector4 RGBA — ImGui::ColorEdit4 위젯
 	StaticMeshRef, // UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로

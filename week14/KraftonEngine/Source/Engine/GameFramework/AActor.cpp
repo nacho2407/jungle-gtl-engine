@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/MovementComponent.h"
 #include "Math/Rotator.h"
 #include "GameFramework/Level.h"
 #include "GameFramework/World.h"
@@ -75,6 +76,19 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 void AActor::RemoveComponent(UActorComponent* Component)
 {
 	if (!Component) return;
+
+	USceneComponent* RemovedSceneComponent = Cast<USceneComponent>(Component);
+	if (RemovedSceneComponent)
+	{
+		for (UActorComponent* ExistingComponent : OwnedComponents)
+		{
+			UMovementComponent* MovementComponent = Cast<UMovementComponent>(ExistingComponent);
+			if (MovementComponent && ExistingComponent != Component)
+			{
+				MovementComponent->ClearUpdatedComponentIfMatches(RemovedSceneComponent);
+			}
+		}
+	}
 
 	Component->PrimaryComponentTick.UnRegisterTickFunction();
 
