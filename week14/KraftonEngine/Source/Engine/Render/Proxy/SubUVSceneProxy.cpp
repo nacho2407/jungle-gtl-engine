@@ -1,6 +1,6 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Component/SubUVComponent.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Materials/Material.h"
 

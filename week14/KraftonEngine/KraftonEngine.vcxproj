@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -340,10 +340,10 @@
     <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp" />
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandList.cpp" />
+    <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\PassRenderStateTable.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
@@ -528,16 +528,16 @@
     <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommand.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\DrawCommandList.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\ForwardLightData.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandList.h" />
+    <ClInclude Include="Source\Engine\Render\Types\ForwardLightData.h" />
+    <ClInclude Include="Source\Engine\Render\Types\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h" />
+    <ClInclude Include="Source\Engine\Render\Types\LODContext.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\PassRenderStateTable.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
+    <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h" />

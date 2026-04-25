@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 #include "Engine/Collision/Octree.h"
 
 class AActor;

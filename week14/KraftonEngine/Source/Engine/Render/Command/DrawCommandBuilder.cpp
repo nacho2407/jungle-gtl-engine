@@ -6,8 +6,8 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Render/Proxy/FScene.h"
-#include "Render/Pipeline/RenderConstants.h"
-#include "Render/Pipeline/PassRenderStateTable.h"
+#include "Render/Types/RenderConstants.h"
+#include "Render/RenderPass/PassRenderStateTable.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
 

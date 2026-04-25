@@ -2,7 +2,7 @@
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 #include "Render/Resource/RenderResources.h"
 
 REGISTER_RENDER_PASS(FLightCullingPass)

@@ -4,9 +4,9 @@
 #include "Render/Device/D3DDevice.h"
 
 REGISTER_RENDER_PASS(FOpaquePass)
-#include "Render/Pipeline/FrameContext.h"
-#include "Render/Pipeline/RenderConstants.h"
-#include "Render/Pipeline/DrawCommandList.h"
+#include "Render/Types/FrameContext.h"
+#include "Render/Types/RenderConstants.h"
+#include "Render/Command/DrawCommandList.h"
 
 FOpaquePass::FOpaquePass()
 {

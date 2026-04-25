@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Engine/Math/Vector.h"
-#include "Engine/Render/Pipeline/ForwardLightData.h"
+#include "Engine/Render/Types/ForwardLightData.h"
 #include <cstring>
 
 struct FFrameContext;

@@ -7,7 +7,7 @@
 #include "Render/Types/RenderStateTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/MaterialTextureSlot.h"
-#include "Render/Pipeline/RenderConstants.h"
+#include "Render/Types/RenderConstants.h"
 #include <memory>
 
 class UTexture2D;

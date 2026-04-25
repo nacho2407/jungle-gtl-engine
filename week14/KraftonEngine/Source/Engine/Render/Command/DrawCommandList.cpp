@@ -5,7 +5,7 @@
 #include "Render/Shader/Shader.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Device/D3DDevice.h"
-#include "Render/Pipeline/RenderConstants.h"
+#include "Render/Types/RenderConstants.h"
 #include "Profiling/Stats.h"
 
 // ============================================================

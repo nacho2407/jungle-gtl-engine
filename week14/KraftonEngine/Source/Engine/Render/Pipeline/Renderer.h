@@ -6,8 +6,8 @@
 
 #include "Render/Types/RenderTypes.h"
 
-#include "Render/Pipeline/FrameContext.h"
-#include "Render/Pipeline/DrawCommandBuilder.h"
+#include "Render/Types/FrameContext.h"
+#include "Render/Command/DrawCommandBuilder.h"
 #include "Render/RenderPass/RenderPassPipeline.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"

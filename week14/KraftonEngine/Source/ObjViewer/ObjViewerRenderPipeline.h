@@ -2,7 +2,7 @@
 
 #include "Render/Pipeline/IRenderPipeline.h"
 #include "Render/Pipeline/RenderCollector.h"
-#include "Render/Pipeline/FrameContext.h"
+#include "Render/Types/FrameContext.h"
 
 class UObjViewerEngine;
 class FViewport;
