@@ -545,10 +545,10 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp">
+    <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
+    <ClCompile Include="Source\Engine\Render\Pipeline\RenderPass.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
@@ -1067,10 +1067,10 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h">
+    <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
+    <ClInclude Include="Source\Engine\Render\Pipeline\RenderPass.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">

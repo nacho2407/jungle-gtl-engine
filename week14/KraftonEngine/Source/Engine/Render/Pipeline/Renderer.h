@@ -9,11 +9,13 @@
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandBuilder.h"
 #include "Render/Pipeline/PassRenderStateTable.h"
-#include "Render/Pipeline/PassEventBuilder.h"
+#include "Render/Pipeline/RenderPass.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Culling/TileBasedLightCulling.h"
 #include "Render/Culling/ClusteredLightCuller.h"
+
+#include <memory>
 
 class FScene;
 
@@ -50,6 +52,9 @@ public:
 	void UnbindClusterCullingResources();
 
 private:
+	// 패스 객체 초기화 + 상태 테이블 빌드
+	void InitializePasses();
+
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(FStateCache& Cache);
 
@@ -59,8 +64,10 @@ private:
 	FSystemResources Resources;
 	FDrawCommandBuilder Builder;
 	FPassRenderStateTable PassRenderStateTable;
-	FPassEventBuilder PassEventBuilder;
-	
+
+	// 패스 객체 배열 — 실행 순서 = 배열 순서
+	TArray<std::unique_ptr<FRenderPassBase>> Passes;
+
 	FTileBasedLightCulling TileBasedCulling;
 	FClusteredLightCuller ClusteredLightCuller;
 };
