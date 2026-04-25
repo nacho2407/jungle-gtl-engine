@@ -32,6 +32,11 @@ public:
 	// 에디터 전용 컴포넌트: PIE/Game 월드에서 렌더링 비활성화
 	void SetEditorOnly(bool bInEditorOnly);
 	bool IsEditorOnly() const { return bEditorOnly; }
+	bool IsEditorOnlyComponent() const { return IsEditorOnly(); }
+	void SetEditorOnlyComponent(bool bInEditorOnly) { SetEditorOnly(bInEditorOnly); }
+
+	bool IsHiddenInComponentTree() const { return bHiddenInComponentTree; }
+	void SetHiddenInComponentTree(bool bHidden) { bHiddenInComponentTree = bHidden; }
 
 	void SetActive(bool bNewActive);
 	inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
@@ -67,4 +72,5 @@ private:
 	bool bEditorOnly = false;
 	bool bIsActive = true;
 	bool bAutoActivate = true;
+	bool bHiddenInComponentTree = false;
 };

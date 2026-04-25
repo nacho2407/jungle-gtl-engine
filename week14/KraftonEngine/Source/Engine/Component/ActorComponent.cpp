@@ -61,6 +61,7 @@ void UActorComponent::Serialize(FArchive& Ar)
 	Ar << bEditorOnly;
 	Ar << bIsActive;
 	Ar << bAutoActivate;
+	Ar << bHiddenInComponentTree;
 }
 
 void UActorComponent::SetEditorOnly(bool bInEditorOnly)
