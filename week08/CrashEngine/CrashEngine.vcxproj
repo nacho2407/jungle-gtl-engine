@@ -262,6 +262,7 @@
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Sphere.cpp" />
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp" />
@@ -322,6 +323,7 @@
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ShadowMapPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Context\Scene\SceneView.cpp" />
@@ -390,6 +392,7 @@
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectOverlay.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectSceneLights.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectShadowCasters.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp" />
@@ -448,6 +451,7 @@
     <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
+    <ClInclude Include="Source\Engine\Collision\Sphere.h" />
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h" />
@@ -526,6 +530,7 @@
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ShadowMapPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Context\RenderCollectContext.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Context\RenderPipelineContext.h" />

@@ -6,6 +6,8 @@
 #include "Render/Visibility/Frustum/ConvexVolume.h"
 #include <memory>
 
+#include "Sphere.h"
+
 class UPrimitiveComponent;
 class FPrimitiveProxy;
 class FOctree;
@@ -29,6 +31,7 @@ public:
 
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const;
+    void QuerySphereAllProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     // void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 

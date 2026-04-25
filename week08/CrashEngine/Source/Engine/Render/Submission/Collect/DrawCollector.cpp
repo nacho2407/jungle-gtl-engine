@@ -30,4 +30,5 @@ void FDrawCollector::ResetCollectedLights(FCollectedLights& OutLights)
 {
     OutLights.GlobalLights = {};
     OutLights.LocalLights.clear();
+    OutLights.VisibleLightProxies.clear();
 }

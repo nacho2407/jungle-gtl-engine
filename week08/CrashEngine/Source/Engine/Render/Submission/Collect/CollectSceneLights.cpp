@@ -35,6 +35,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
             continue;
         }
 
+        CollectedSceneData.Lights.VisibleLightProxies.push_back(Proxy);
+
         FLightProxyInfo& LC = Proxy->LightProxyInfo;
         if (LC.LightType == static_cast<uint32>(ELightType::Ambient))
         {
