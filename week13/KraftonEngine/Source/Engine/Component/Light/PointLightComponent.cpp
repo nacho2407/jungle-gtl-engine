@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/MathUtils.h"
+#include "Render/Types/LightFrustumUtils.h"
 
 namespace
 {
@@ -70,6 +71,22 @@ void UPointLightComponent::Serialize(FArchive& Ar)
 	ULightComponent::Serialize(Ar);
 	Ar << AttenuationRadius;
 	Ar << LightFalloffExponent;
+}
+
+bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+{
+	FPointLightParams Params;
+	Params.Position = GetWorldLocation();
+	Params.AttenuationRadius = AttenuationRadius;
+
+	FLightFrustumUtils::FPointLightFaceViewProj Faces[6];
+	FLightFrustumUtils::BuildPointLightFaceViewProj(Params, Faces);
+
+	int32 Idx = (FaceIndex >= 0 && FaceIndex <= 5) ? FaceIndex : 0;
+	OutResult.View = Faces[Idx].View;
+	OutResult.Proj = Faces[Idx].Proj;
+	OutResult.bIsOrtho = false;
+	return true;
 }
 
 void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

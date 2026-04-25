@@ -1,5 +1,7 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Render/Types/GlobalLightParams.h"
+#include "Render/Types/LightFrustumUtils.h"
+#include "Component/CameraComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Engine/Serialization/Archive.h"
@@ -58,6 +60,21 @@ void UDirectionalLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 {
 	FVector WorldPos = GetWorldLocation();
 	AddDirectionalLightArrow(Scene, WorldPos, GetForwardVector());
+}
+
+bool UDirectionalLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+{
+	if (!Camera) return false;
+
+	FGlobalDirectionalLightParams Params;
+	Params.Direction = GetForwardVector();
+
+	auto VP = FLightFrustumUtils::BuildDirectionalLightViewProj(
+		Params, Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+	OutResult.View = VP.View;
+	OutResult.Proj = VP.Proj;
+	OutResult.bIsOrtho = true;
+	return true;
 }
 
 void UDirectionalLightComponent::PushToScene()

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Component/SceneComponent.h"
+#include "Math/Matrix.h"
 
 enum class ELightComponentType : uint8
 {
@@ -9,6 +10,15 @@ enum class ELightComponentType : uint8
 	Spot,
 	Unknown
 };
+
+struct FLightViewProjResult
+{
+	FMatrix View;
+	FMatrix Proj;
+	bool bIsOrtho = false;
+};
+
+class UCameraComponent;
 
 class ULightComponentBase : public USceneComponent
 {
@@ -33,6 +43,7 @@ public:
 	bool CastShadows() const { return bCastShadows; }
 
 	virtual ELightComponentType GetLightType() const { return ELightComponentType::Unknown; }
+	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const { return false; }
 	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:

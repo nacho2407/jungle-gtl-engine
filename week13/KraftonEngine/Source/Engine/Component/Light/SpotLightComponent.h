@@ -11,6 +11,9 @@ public:
 	virtual void DestroyFromScene() override;
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const override;
+
+	float GetOuterConeAngle() const { return OuterConeAngle; }
 
 protected:
 	float InnerConeAngle = 20.0f;	// Inner Cone Angle in degrees
