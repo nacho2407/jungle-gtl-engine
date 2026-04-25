@@ -950,7 +950,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.ShadowBias	= SpotLight->ShadowBias;
 		ShadowRequest.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
 		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
-		RenderBus.ShadowRequests.push_back(ShadowRequest);
+		RenderBus.ShadowLightRequests.push_back(ShadowRequest);
 	}
     else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};

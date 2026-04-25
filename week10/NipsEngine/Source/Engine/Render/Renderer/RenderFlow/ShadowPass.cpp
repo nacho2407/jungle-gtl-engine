@@ -1,4 +1,4 @@
-#include "ShadowPass.h"
+ï»¿#include "ShadowPass.h"
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShadowAtlasManager.h"
@@ -31,22 +31,22 @@ bool FShadowPass::Initialize()
 
 bool FShadowPass::Begin(const FRenderPassContext* Context)
 {
-    FShadowAtlasManager::Get().ClearTiles();
-    ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
-    Context->DeviceContext->PSSetShaderResources(10, 1, NullSRV);
+	FShadowAtlasManager::Get().ClearTiles();
+	ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
+	Context->DeviceContext->PSSetShaderResources(10, 1, NullSRV);
 
-    // Shadow Atlas¿¡ ¾²±â
+	// Shadow Atlasì— ì“°ê¸°
 
-    ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().GetDSV();
-    if (ShadowDSV != nullptr)
-    {
-        Context->DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-        Context->DeviceContext->ClearDepthStencilView(
-            ShadowDSV,
-            D3D11_CLEAR_DEPTH,
-            1.0f,
-            0);
-    }
+	ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().GetDSV();
+	if (ShadowDSV != nullptr)
+	{
+		Context->DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
+		Context->DeviceContext->ClearDepthStencilView(
+			ShadowDSV,
+			D3D11_CLEAR_DEPTH,
+			1.0f,
+			0);
+	}
 	return true;
 }
 
@@ -76,44 +76,31 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
-    D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
-	ShadowMap->GetDesc(&ShadowMapDesc);
+	D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
+	ShadowAtlasManager.GetAtlas()->GetDesc(&ShadowMapDesc);
 
-    FMatrix CamView = RenderBus->GetView();
-    FMatrix CamProj = RenderBus->GetProj();
+	FMatrix CamView = RenderBus->GetView();
+	FMatrix CamProj = RenderBus->GetProj();
 
 	TArray<FBoundingBox> VisibleBounds;
-	for (const auto& Cmd : OpaqueCmds)
-	{
-		if (!Request.bCastShadows || !Request.LightComponent)
-		{
-			continue;
-		}
-
-		ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
-		if (!LightComp)
-		{
-			continue;
-		}
-
-		if (Request.Type != EShadowLightType::SLT_Directional)
-		{
-			continue;
-		}
 
 	TArray<uint32> LightShadowIndices(RenderBus->LightInfos.size(), InvalidShadowIndex);
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
-	ShadowAtlasConstants.reserve(RenderBus->ShadowRequests.size());
+	ShadowAtlasConstants.reserve(RenderBus->ShadowLightRequests.size());
 
 	float atlasW = static_cast<float>(ShadowMapDesc.Width);
 	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
 	bool bHasDirectionalShadow = false;
 
-	for (const FShadowLightRequest& Request : RenderBus->ShadowRequests)
+	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
 	{
 		const ULightComponent* LightComp = GetSupportedShadowLight(Request);
 		if (LightComp == nullptr)
+		{
+			continue;
+		}
+		if (!Request.bCastShadows || !Request.LightComponent)
 		{
 			continue;
 		}
@@ -121,8 +108,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		FShadowAtlasTile ShadowTile;
 		if (!FShadowAtlasManager::Get().AllocateTile(ShadowTile))
 		{
-			// atlas°¡ ²Ë Ã¡À½
-			// shadow ÇØ»óµµ ³·Ãß±â, ÇØ´ç light shadow skip, atlas resize µî Ã³¸® ÇÊ¿ä
+			// atlasê°€ ê½‰ ì°¼ìŒ
+			// shadow í•´ìƒë„ ë‚®ì¶”ê¸°, í•´ë‹¹ light shadow skip, atlas resize ë“± ì²˜ë¦¬ í•„ìš”
 			continue;
 		}
 
@@ -139,12 +126,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 		ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
 		DeviceContext->OMSetDepthStencilState(DepthState, 0);
-
-	shadowData.ScaleOffset = FVector4(
-		tile / atlasW,
-		tile / atlasH,
-		(ShadowTile.TileX * tile) / atlasW,
-		(ShadowTile.TileY * tile) / atlasH);
 
 		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
 		FShadowConstants ShadowData = {};
@@ -210,7 +191,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		float tile = static_cast<float>(ShadowTile.Width);
 
 		FShadowAtlasConstants atlasConstants = {};
-		atlasConstants.ShadowViewProjMatrix = shadowData.DirLightViewProj;
+		atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
 		atlasConstants.ScaleOffset = FVector4(
 			tile / atlasW,
 			tile / atlasH,
