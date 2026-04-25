@@ -24,6 +24,9 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor;
 };
 
+// 시스템 샘플러 (s0~s4)
+#include "SystemSamplers.hlsli"
+
 // b5: Shadow 행렬 + 파라미터
 #define MAX_SHADOW_CASCADES 4
 
