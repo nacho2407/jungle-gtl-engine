@@ -2,7 +2,7 @@
 
 #include "Engine/Core/CoreTypes.h"
 #include "Engine/Core/EngineTypes.h"
-#include "Engine/Render/Culling/ConvexVolume.h"
+#include "Engine/Collision/ConvexVolume.h"
 #include <memory>
 
 class UPrimitiveComponent;

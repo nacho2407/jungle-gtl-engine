@@ -4,7 +4,7 @@
 #include "GameFramework/World.h"
 #include "Component/BillboardComponent.h"
 #include "Materials/MaterialManager.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Scene/FScene.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(UHeightFogComponent, USceneComponent)
