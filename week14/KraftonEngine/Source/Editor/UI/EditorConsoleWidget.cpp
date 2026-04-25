@@ -229,6 +229,59 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				}
 			}
 		});
+
+	RegisterCommand("shadow_filter", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Mode = Settings.GetFilterMode();
+				const char* Name = "default (Hard)";
+				if (Mode.has_value())
+				{
+					switch (Mode.value())
+					{
+					case EShadowFilterMode::Hard: Name = "Hard"; break;
+					case EShadowFilterMode::PCF:  Name = "PCF";  break;
+					case EShadowFilterMode::VSM:  Name = "VSM";  break;
+					}
+				}
+				AddLog("shadow_filter: %s\n", Name);
+				AddLog("Usage: shadow_filter Hard|PCF|VSM | shadow_filter reset\n");
+				return;
+			}
+
+			FString Arg = Args[1];
+			// 대소문자 무관 비교
+			std::transform(Arg.begin(), Arg.end(), Arg.begin(), ::tolower);
+
+			if (Arg == "reset")
+			{
+				Settings.ResetFilterMode();
+				AddLog("Shadow filter mode reset to default (Hard).\n");
+			}
+			else if (Arg == "hard")
+			{
+				Settings.SetFilterMode(EShadowFilterMode::Hard);
+				AddLog("Shadow filter mode set to Hard.\n");
+			}
+			else if (Arg == "pcf")
+			{
+				Settings.SetFilterMode(EShadowFilterMode::PCF);
+				AddLog("Shadow filter mode set to PCF.\n");
+			}
+			else if (Arg == "vsm")
+			{
+				Settings.SetFilterMode(EShadowFilterMode::VSM);
+				AddLog("Shadow filter mode set to VSM.\n");
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown filter mode: '%s'\n", Args[1].c_str());
+				AddLog("Usage: shadow_filter Hard|PCF|VSM | shadow_filter reset\n");
+			}
+		});
 }
 
 void FEditorConsoleWidget::Shutdown()

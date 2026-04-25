@@ -4,6 +4,14 @@
 #include "Core/Singleton.h"
 #include <optional>
 
+// Shadow Filter Mode — HLSL ShadowFilterMode (b5)와 1:1 대응
+enum class EShadowFilterMode : uint32
+{
+	Hard = 0,
+	PCF  = 1,
+	VSM  = 2,
+};
+
 /*
 	FShadowSettings — Shadow 시스템 글로벌 설정.
 	콘솔 커맨드 등에서 런타임 오버라이드를 저장하며,
@@ -30,26 +38,36 @@ public:
 	void ResetSlopeBias() { ShadowSlopeBias.reset(); }
 	std::optional<float> GetSlopeBias() const { return ShadowSlopeBias; }
 
+	// --- Filter Mode ---
+	void SetFilterMode(EShadowFilterMode Mode) { FilterMode = Mode; }
+	void ResetFilterMode() { FilterMode.reset(); }
+	std::optional<EShadowFilterMode> GetFilterMode() const { return FilterMode; }
+
 	// 모든 오버라이드 해제
 	void ResetAll()
 	{
 		Resolution.reset();
 		ShadowBias.reset();
 		ShadowSlopeBias.reset();
+		FilterMode.reset();
 	}
 
 	// 기본값 상수
 	static constexpr uint32 kDefaultResolution = 2048;
 	static constexpr float  kDefaultBias = 0.005f;
 	static constexpr float  kDefaultSlopeBias = 1.0f;
+	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
 
 	// 오버라이드 또는 기본값 반환 (편의 함수)
-	uint32 GetEffectiveResolution() const { return Resolution.value_or(kDefaultResolution); }
-	float  GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
-	float  GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
+	uint32            GetEffectiveResolution() const { return Resolution.value_or(kDefaultResolution); }
+	float             GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
+	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
+	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
+	uint32            GetEffectiveFilterModeU32() const { return static_cast<uint32>(GetEffectiveFilterMode()); }
 
 private:
 	std::optional<uint32> Resolution;
 	std::optional<float>  ShadowBias;
 	std::optional<float>  ShadowSlopeBias;
+	std::optional<EShadowFilterMode> FilterMode;
 };
