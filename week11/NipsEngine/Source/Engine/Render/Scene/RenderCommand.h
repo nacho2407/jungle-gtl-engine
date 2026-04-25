@@ -47,6 +47,8 @@ enum EShadowLightType
 	SLT_Spot,
 };
 
+constexpr uint32 InvalidShadowIndex = static_cast<uint32>(-1);
+
 //PerObject
 struct FPerObjectConstants
 {
@@ -107,6 +109,7 @@ struct FLightInfo
 
 struct FShadowLightRequest
 {
+	uint32 LightIndex = InvalidShadowIndex;
     ULightComponentBase* LightComponent = nullptr;
     EShadowLightType Type;
     FVector WorldLocation;
@@ -116,19 +119,23 @@ struct FShadowLightRequest
     float ShadowSharpen = 1.0f;
 };
 
-struct FAtlasShadowData
-{
-    uint32 LightIndex = 0;
-    EShadowLightType Type;
-    FMatrix ViewProj;
-    FVector4 AtlasScaleOffset;
-};
-
 struct FShadowConstants
 {
 	FMatrix	VirtualViewProj;
 	FMatrix DirLightViewProj;
     FVector4 ScaleOffset; // xy: Scale, zw: Offset
+};
+
+struct FShadowAtlasConstants
+{
+    FMatrix ShadowViewProjMatrix;	// 64
+
+    FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
+
+    float ShadowBias;				// 4
+    float ShadowStrength;			// 4
+    float ShadowSoftness;			// 4
+    uint32 ShadowType;				// 4
 };
 
 struct FUberConstants
