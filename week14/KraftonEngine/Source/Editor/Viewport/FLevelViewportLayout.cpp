@@ -1481,6 +1481,10 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
 					ImGui::Checkbox("Visualize2.5D", &Opts.ShowFlags.bVisualize25DCulling);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Shadows", &Opts.ShowFlags.bShadows);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Shadow Frustum", &Opts.ShowFlags.bShowShadowFrustum);
 
 					ImGui::EndTable();
 				}

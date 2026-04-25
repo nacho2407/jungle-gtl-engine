@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 
 class UWorld;
 
@@ -58,6 +59,12 @@ void DrawDebugPoint(UWorld* World,
 	const FColor& Color = FColor::White(),
 	float Duration = 0.0f);
 
+// ViewProj 행렬로 frustum 와이어프레임 그리기 (NDC 8꼭짓점 → 12에지)
+void DrawDebugFrustum(UWorld* World,
+	const FMatrix& ViewProj,
+	const FColor& Color = FColor::White(),
+	float Duration = 0.0f);
+
 #else
 
 inline void DrawDebugLine(UWorld*, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
@@ -66,5 +73,6 @@ inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&
 inline void DrawDebugBox(UWorld*, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FVector&, const FColor & = FColor::White(), float = 0.0f) {}
 inline void DrawDebugSphere(UWorld*, const FVector&, float, int32 = 16, const FColor & = FColor::White(), float = 0.0f) {}
 inline void DrawDebugPoint(UWorld*, const FVector&, float = 0.1f, const FColor & = FColor::White(), float = 0.0f) {}
+inline void DrawDebugFrustum(UWorld*, const FMatrix&, const FColor & = FColor::White(), float = 0.0f) {}
 
 #endif

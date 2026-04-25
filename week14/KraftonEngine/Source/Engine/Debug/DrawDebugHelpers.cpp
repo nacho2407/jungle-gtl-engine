@@ -83,4 +83,25 @@ void DrawDebugPoint(UWorld* World,
 		Position - FVector(0, 0, Size), Position + FVector(0, 0, Size), Color, Duration);
 }
 
+void DrawDebugFrustum(UWorld* World,
+	const FMatrix& ViewProj,
+	const FColor& Color, float Duration)
+{
+	if (!World) return;
+
+	FMatrix InvVP = ViewProj.GetInverse();
+
+	// NDC 8꼭짓점 (Reversed-Z: near=1, far=0)
+	static const FVector NDC[8] = {
+		FVector(-1, -1, 1), FVector( 1, -1, 1), FVector( 1,  1, 1), FVector(-1,  1, 1), // near
+		FVector(-1, -1, 0), FVector( 1, -1, 0), FVector( 1,  1, 0), FVector(-1,  1, 0), // far
+	};
+
+	FVector W[8];
+	for (int i = 0; i < 8; ++i)
+		W[i] = InvVP.TransformPositionWithW(NDC[i]);
+
+	DrawDebugBox(World, W[0], W[1], W[2], W[3], W[4], W[5], W[6], W[7], Color, Duration);
+}
+
 #endif // _DEBUG
