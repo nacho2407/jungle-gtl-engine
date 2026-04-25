@@ -13,8 +13,10 @@ float4 ShadowVS(VSInput input) : SV_POSITION
     
     float4 camClip = mul(worldPos, viewProj);
     float3 post = camClip.xyz / camClip.w;
-    
-    float4 shadowPos = mul(float4(post, 1.0f), DirLightViewProj);
+    float4 shadowPos = float4(post, 1.f);
+#ifdef SHADOW_MAP_PSM
+    shadowPos = mul(float4(post, 1.0f), DirLightViewProj);
+#endif
     return shadowPos;
 }
 

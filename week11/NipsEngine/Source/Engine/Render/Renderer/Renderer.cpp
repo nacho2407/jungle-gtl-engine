@@ -6,6 +6,7 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Render/Common/RenderTypes.h"
+#include "Render/Common/ShadowTypes.h"
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
@@ -41,10 +42,10 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
-	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
 
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
+    #define SAHDOWMAP(x) static_cast<uint32>(EShadowMap::x)
 
 	static const uint32 UberLitPermutations[] =
 	{
@@ -74,8 +75,11 @@ void FRenderer::Create(HWND hWindow)
 	{
 		for (uint32 CullBit : { 0u, FEAT(ClusterCull), FEAT(TileCull) })
 		{
-			uint32 CullKey = Key | CullBit;
-            FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
+			for (uint32 ShadowMap : { SAHDOWMAP(BASIC), SAHDOWMAP(PSM), SAHDOWMAP(CSM)})
+			{
+				uint32 CullKey = Key | CullBit | ShadowMap;
+				FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
+			}
 		}
 	}
 
@@ -83,6 +87,14 @@ void FRenderer::Create(HWND hWindow)
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Tiled).data(), "LightCullingCS_Tiled");
+
+	// Uber ShadowMap
+	for (uint32 ShadowMapIdx = 0; ShadowMapIdx < static_cast<uint32>(EShadowMap::MAX); ++ShadowMapIdx)
+	{
+		FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS",
+			FShaderHelper::BuildShadowMapMacros(static_cast<EShadowMap>(ShadowMapIdx)).data(), ShadowMapIdx);
+	}
+
 }
 
 void FRenderer::CreateResources()

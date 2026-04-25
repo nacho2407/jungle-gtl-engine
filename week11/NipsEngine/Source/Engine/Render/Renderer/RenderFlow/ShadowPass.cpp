@@ -2,7 +2,7 @@
 
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShadowAtlasManager.h"
-#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/LightComponent.h"
 
 bool FShadowPass::Initialize()
 {
@@ -28,116 +28,122 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	const FRenderBus* RenderBus = Context->RenderBus;
 	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
 
-	if (RenderBus->DirectionalLightShadow.LightComponent == nullptr) return false;
-
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
+	FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
 
-	ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().ShadowMapAtlas.ShadowDSV.Get();
-	ID3D11Texture2D* ShadowMap = FShadowAtlasManager::Get().ShadowMapAtlas.ShadowMap.Get();
+	if (RenderBus->ShadowLightRequests.empty())
+	{
+		return true;
+	}
+
+	ID3D11DepthStencilView* ShadowDSV = ShadowAtlasManager.ShadowMapAtlas.ShadowDSV.Get();
+	ID3D11Texture2D* ShadowMap = ShadowAtlasManager.ShadowMapAtlas.ShadowMap.Get();
 	if (ShadowDSV == nullptr || ShadowMap == nullptr)
 	{
 		return false;
 	}
 
-	
-	int32 tileX, tileY;
-    int32 tileSize = FShadowAtlasManager::Get().GetTileSize();
+	D3D11_TEXTURE2D_DESC Desc = {};
+	ShadowMap->GetDesc(&Desc);
 
-    if (!FShadowAtlasManager::Get().AllocateTile(tileX, tileY))
-    {
-        // atlas가 꽉 찼음
-        // shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
-    }
-    // TODO:used Tile FreeTile to mark the tile as unused, but it doesn't actually clear the tile in the shadow map atlas.
-    FShadowAtlasManager::Get().FreeTile(tileX, tileY);
+	const int32 TileSize = static_cast<int32>(ShadowAtlasManager.GetTileSize());
+	const float AtlasW = static_cast<float>(Desc.Width);
+	const float AtlasH = static_cast<float>(Desc.Height);
+	const float TileSizeF = static_cast<float>(TileSize);
 
-    D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
+	ID3D11DepthStencilState* DepthState =
+		FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+
+	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
 	{
-        ShadowMap->GetDesc(&ShadowMapDesc);
-
-        D3D11_VIEWPORT ShadowViewport = {};
-        ShadowViewport.TopLeftX = static_cast<float>(tileX * tileSize);
-        ShadowViewport.TopLeftY = static_cast<float>(tileY * tileSize);
-        ShadowViewport.Width = static_cast<float>(tileSize);
-        ShadowViewport.Height = static_cast<float>(tileSize);
-        ShadowViewport.MinDepth = 0.0f;
-        ShadowViewport.MaxDepth = 1.0f;
-
-        DeviceContext->RSSetViewports(1, &ShadowViewport);
-        DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-        DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-
-        ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-        DeviceContext->OMSetDepthStencilState(DepthState, 0);
-
-	}
-
-    FShadowConstants shadowData = {};
-    FMatrix CamView = RenderBus->GetView();
-    FMatrix CamProj = RenderBus->GetProj();
-
-
-	for (const auto& Cmd : OpaqueCmds)
-	{
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+		if (!Request.bCastShadows || !Request.LightComponent)
 		{
 			continue;
 		}
 
-		if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+		ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+		if (!LightComp)
 		{
 			continue;
 		}
 
-		ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-		uint32 VertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-		uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-		if (VertexBuffer == nullptr || VertexCount == 0 || Stride == 0)
+		int32 TileX, TileY;
+		if (!ShadowAtlasManager.AllocateTile(TileX, TileY))
 		{
 			continue;
 		}
+		ShadowAtlasManager.FreeTile(TileX, TileY); // TODO: 생명주기 연동
 
-		Context->RenderResources->PerObjectConstantBuffer.Update(DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-		Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
+		// 타일 뷰포트
+		D3D11_VIEWPORT VP = {};
+		VP.TopLeftX = static_cast<float>(TileX * TileSize);
+		VP.TopLeftY = static_cast<float>(TileY * TileSize);
+		VP.Width = TileSizeF;
+		VP.Height = TileSizeF;
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		DeviceContext->RSSetViewports(1, &VP);
+		DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+		DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
+		DeviceContext->OMSetDepthStencilState(DepthState, 0);
 
-		const UDirectionalLightComponent* DirLightComp = 
-			Cast<UDirectionalLightComponent>(RenderBus->DirectionalLightShadow.LightComponent);
+		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
+		FShadowConstants ShadowData = {};
+		switch (Request.Type)
+		{
+		case EShadowLightType::SLT_Directional:
+		{
+			ShadowData.DirLightViewProj = LightComp->GetLightViewProj(RenderBus->GetView(), RenderBus->GetProj());
+			break;
+		}
 
-		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(RenderBus->GetView(), RenderBus->GetProj());
+		// TODO : POINT 와 SpotLight 
+		default:
+			break;
+		}
 
-        float atlasW = static_cast<float>(ShadowMapDesc.Width);
-        float atlasH = static_cast<float>(ShadowMapDesc.Height);
-        float tile = static_cast<float>(tileSize);
+		ShadowData.ScaleOffset = FVector4(
+			TileSizeF / AtlasW, TileSizeF / AtlasH,
+			(TileX * TileSizeF) / AtlasW, (TileY * TileSizeF) / AtlasH);
 
-        shadowData.ScaleOffset = FVector4(
-            tile / atlasW,
-            tile / atlasH,
-            (tileX * tile) / atlasW,
-            (tileY * tile) / atlasH);
-
-		ShadowBuffer->Update(DeviceContext, &shadowData, sizeof(FShadowConstants));
-
+		// 상수 버퍼 & 셰이더는 라이트당 1회
+		ShadowBuffer->Update(DeviceContext, &ShadowData, sizeof(FShadowConstants));
 		ID3D11Buffer* cb4 = ShadowBuffer->GetBuffer();
-		Context->DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
+		DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
+		ShadowShader->Bind(DeviceContext, ShadowKey);
 
-		uint32 Offset = 0;
-		Context->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-		ShadowShader->Bind(DeviceContext);
-		CheckOverrideViewMode(Context);
+		// 메시 별 순회
+		for (const auto& Cmd : OpaqueCmds)
+		{
+			if (Cmd.Type == ERenderCommandType::PostProcessOutline) continue;
+			if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid())      continue;
 
-		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-		if (IndexBuffer != nullptr)
-		{
-			Context->DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			Context->DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-		}
-		else
-		{
-			Context->DeviceContext->Draw(VertexCount, 0);
+			ID3D11Buffer* VB = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+			uint32        VCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
+			uint32        Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+			if (!VB || VCount == 0 || Stride == 0) continue;
+
+			Context->RenderResources->PerObjectConstantBuffer.Update(
+				DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
+			ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
+			DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
+
+			uint32 Offset = 0;
+			DeviceContext->IASetVertexBuffers(0, 1, &VB, &Stride, &Offset);
+			CheckOverrideViewMode(Context);
+
+			ID3D11Buffer* IB = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+			if (IB)
+			{
+				DeviceContext->IASetIndexBuffer(IB, DXGI_FORMAT_R32_UINT, 0);
+				DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
+			}
+			else
+			{
+				DeviceContext->Draw(VCount, 0);
+			}
 		}
 	}
-
 	return true;
 }
 
