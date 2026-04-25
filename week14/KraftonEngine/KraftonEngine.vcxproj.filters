@@ -112,6 +112,9 @@
     <Filter Include="Source\Engine\Render\Proxy">
       <UniqueIdentifier>{29fc5be6-2892-6e33-da8a-420028aade0e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\RenderPass">
+      <UniqueIdentifier>{3504742f-0df4-b673-e936-9c953baf72bd}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Resource">
       <UniqueIdentifier>{f7c09818-7a72-3a04-d6dd-8e5897cf81bc}</UniqueIdentifier>
     </Filter>
@@ -548,9 +551,6 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\RenderPass.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
@@ -586,6 +586,42 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\OpaquePass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\OverlayFontPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\PostProcessPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\PreDepthPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
@@ -1070,9 +1106,6 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\RenderPass.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -1114,6 +1147,45 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\OpaquePass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\OverlayFontPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\PostProcessPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\PreDepthPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassBase.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>

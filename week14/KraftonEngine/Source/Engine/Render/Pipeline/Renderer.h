@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /*
 	실제 렌더링을 담당하는 Class 입니다. (Rendering 최상위 클래스)
@@ -8,14 +8,11 @@
 
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/DrawCommandBuilder.h"
-#include "Render/Pipeline/PassRenderStateTable.h"
-#include "Render/Pipeline/RenderPass.h"
+#include "Render/RenderPass/RenderPassPipeline.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Culling/TileBasedLightCulling.h"
 #include "Render/Culling/ClusteredLightCuller.h"
-
-#include <memory>
 
 class FScene;
 
@@ -51,10 +48,10 @@ public:
 	void BindClusterCullingResources();
 	void UnbindClusterCullingResources();
 
-private:
-	// 패스 객체 초기화 + 상태 테이블 빌드
-	void InitializePasses();
+	// 패스 파이프라인 접근 (타입별 패스 조회 등)
+	FRenderPassPipeline& GetPipeline() { return Pipeline; }
 
+private:
 	// 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 	void CleanupPassState(FStateCache& Cache);
 
@@ -63,10 +60,7 @@ private:
 
 	FSystemResources Resources;
 	FDrawCommandBuilder Builder;
-	FPassRenderStateTable PassRenderStateTable;
-
-	// 패스 객체 배열 — 실행 순서 = 배열 순서
-	TArray<std::unique_ptr<FRenderPassBase>> Passes;
+	FRenderPassPipeline Pipeline;
 
 	FTileBasedLightCulling TileBasedCulling;
 	FClusteredLightCuller ClusteredLightCuller;
