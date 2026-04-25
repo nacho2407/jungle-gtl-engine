@@ -9,6 +9,7 @@ void FRenderBus::Clear()
 	}
 
 	LightInfos.clear();
+    ShadowRequests.clear();
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
 	DirectionalLightShadow = {};

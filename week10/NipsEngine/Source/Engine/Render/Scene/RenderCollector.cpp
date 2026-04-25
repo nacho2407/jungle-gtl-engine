@@ -919,6 +919,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
         RenderBus.DirectionalLightShadow	= DirLightDataShadow;	
+		RenderBus.ShadowRequests.push_back(DirLightDataShadow);
 	}
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
