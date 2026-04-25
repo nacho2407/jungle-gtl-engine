@@ -22,6 +22,18 @@ public:
 	// DrawCommandBuilder용 상태 테이블
 	const FPassRenderStateTable& GetStateTable() const { return StateTable; }
 
+	// 타입으로 패스 검색 (에디터 디버그 등에서 사용)
+	template<typename T>
+	T* FindPass() const
+	{
+		for (const auto& Pass : Passes)
+		{
+			if (T* Found = dynamic_cast<T*>(Pass.get()))
+				return Found;
+		}
+		return nullptr;
+	}
+
 private:
 	TArray<std::unique_ptr<FRenderPassBase>> Passes;
 	FPassRenderStateTable StateTable;

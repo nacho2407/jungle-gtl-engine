@@ -140,13 +140,13 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 		DC->RSSetViewports(1, &ShadowVP);
 
 		// b0에 Light View/Proj 업로드
-		FFrameConstants LightFrameCB = {};
-		LightFrameCB.View       = LightView;
-		LightFrameCB.Projection = LightProj;
-		LightFrameCB.InvProj    = LightProj.GetInverse();
-		LightFrameCB.InvViewProj = LightViewProj.GetInverse();
-
-		Ctx.Resources.FrameBuffer.Update(DC, &LightFrameCB, sizeof(FFrameConstants));
+		//FFrameConstants LightFrameCB = {};
+		//LightFrameCB.View       = LightView;
+		//LightFrameCB.Projection = LightProj;
+		//LightFrameCB.InvProj    = LightProj.GetInverse();
+		//LightFrameCB.InvViewProj = LightViewProj.GetInverse();
+		//
+		//Ctx.Resources.FrameBuffer.Update(DC, &LightFrameCB, sizeof(FFrameConstants));
 
 		// 렌더 상태: depth write + no color (PreDepth와 동일)
 		Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::Default);
