@@ -1,7 +1,7 @@
 #include "Engine/Render/Culling/TileBasedLightCulling.h"
 #include "Engine/Render/Resource/RenderResources.h"
 #include "Render/Shader/ShaderManager.h"
-#include "Render/DebugDraw/DrawDebugHelpers.h"
+#include "Debug/DrawDebugHelpers.h"
 #include "GameFramework/World.h"
 
 // ════════════════════════════════════════════════════════════════

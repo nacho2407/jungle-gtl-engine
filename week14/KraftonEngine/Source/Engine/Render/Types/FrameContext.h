@@ -5,7 +5,7 @@
 #include "Math/Vector.h"
 #include "Render/Types/ViewTypes.h"
 #include "Render/Types/LODContext.h"
-#include "Render/Culling/ConvexVolume.h"
+#include "Collision/ConvexVolume.h"
 
 #include <d3d11.h>
 

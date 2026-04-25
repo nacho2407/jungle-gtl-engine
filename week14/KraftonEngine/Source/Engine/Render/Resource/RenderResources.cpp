@@ -3,7 +3,7 @@
 #include "Materials/MaterialManager.h"
 #include "Render/Types/ForwardLightData.h"
 #include "Render/Types/FrameContext.h"
-#include "Render/Proxy/FScene.h"
+#include "Render/Scene/FScene.h"
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
 #include "GameFramework/World.h"

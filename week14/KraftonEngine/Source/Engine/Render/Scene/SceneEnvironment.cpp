@@ -1,4 +1,4 @@
-#include "Render/Proxy/SceneEnvironment.h"
+#include "Render/Scene/SceneEnvironment.h"
 #include <algorithm>
 
 // ============================================================

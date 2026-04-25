@@ -2,8 +2,8 @@
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Render/Proxy/SceneEnvironment.h"
-#include "Render/DebugDraw/DebugDrawQueue.h"
+#include "Render/Scene/SceneEnvironment.h"
+#include "Debug/DebugDrawQueue.h"
 
 class AActor;
 class UPrimitiveComponent;

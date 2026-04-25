@@ -6,7 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
-#include "Render/DebugDraw/DrawDebugHelpers.h"
+#include "Debug/DrawDebugHelpers.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Mesh/ObjManager.h"

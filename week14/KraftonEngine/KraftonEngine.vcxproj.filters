@@ -97,13 +97,13 @@
     <Filter Include="Source\Engine\Render\Culling">
       <UniqueIdentifier>{58ae316b-ca35-389a-0e2c-f4e351055701}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\DebugDraw">
+    <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{fbaf9556-a185-1b47-fe85-a96d26d4db43}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Device">
       <UniqueIdentifier>{1c6ca01a-80a0-7c1a-448e-3662768a07e8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Helper">
+    <Filter Include="Source\Engine\Render\Geometry">
       <UniqueIdentifier>{3554ce5a-fc6e-fa4d-7be9-bdc90d177118}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\Pipeline">
@@ -114,6 +114,9 @@
     </Filter>
     <Filter Include="Source\Engine\Render\Proxy">
       <UniqueIdentifier>{29fc5be6-2892-6e33-da8a-420028aade0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Scene">
+      <UniqueIdentifier>{d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f90}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Render\RenderPass">
       <UniqueIdentifier>{3504742f-0df4-b673-e936-9c953baf72bd}</UniqueIdentifier>
@@ -524,8 +527,8 @@
     <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Culling\ConvexVolume.cpp">
-      <Filter>Source\Engine\Render\Culling</Filter>
+    <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp">
+      <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
@@ -533,20 +536,20 @@
     <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.cpp">
-      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp">
+      <Filter>Source\Engine\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.cpp">
-      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp">
+      <Filter>Source\Engine\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Helper\FontGeometry.cpp">
-      <Filter>Source\Engine\Render\Helper</Filter>
+    <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Helper\LineGeometry.cpp">
-      <Filter>Source\Engine\Render\Helper</Filter>
+    <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
@@ -578,8 +581,8 @@
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Proxy\FScene.cpp">
-      <Filter>Source\Engine\Render\Proxy</Filter>
+    <ClCompile Include="Source\Engine\Render\Scene\FScene.cpp">
+      <Filter>Source\Engine\Render\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
@@ -587,8 +590,8 @@
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Proxy\SceneEnvironment.cpp">
-      <Filter>Source\Engine\Render\Proxy</Filter>
+    <ClCompile Include="Source\Engine\Render\Scene\SceneEnvironment.cpp">
+      <Filter>Source\Engine\Render\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
@@ -1082,8 +1085,8 @@
     <ClInclude Include="Source\Engine\Render\Culling\ClusteredLightCuller.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Culling\ConvexVolume.h">
-      <Filter>Source\Engine\Render\Culling</Filter>
+    <ClInclude Include="Source\Engine\Collision\ConvexVolume.h">
+      <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h">
       <Filter>Source\Engine\Render\Culling</Filter>
@@ -1091,20 +1094,20 @@
     <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h">
       <Filter>Source\Engine\Render\Culling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\DebugDraw\DebugDrawQueue.h">
-      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h">
+      <Filter>Source\Engine\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\DebugDraw\DrawDebugHelpers.h">
-      <Filter>Source\Engine\Render\DebugDraw</Filter>
+    <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h">
+      <Filter>Source\Engine\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Helper\FontGeometry.h">
-      <Filter>Source\Engine\Render\Helper</Filter>
+    <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Helper\LineGeometry.h">
-      <Filter>Source\Engine\Render\Helper</Filter>
+    <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
@@ -1154,8 +1157,8 @@
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Proxy\FScene.h">
-      <Filter>Source\Engine\Render\Proxy</Filter>
+    <ClInclude Include="Source\Engine\Render\Scene\FScene.h">
+      <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
@@ -1163,8 +1166,8 @@
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Proxy\SceneEnvironment.h">
-      <Filter>Source\Engine\Render\Proxy</Filter>
+    <ClInclude Include="Source\Engine\Render\Scene\SceneEnvironment.h">
+      <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>

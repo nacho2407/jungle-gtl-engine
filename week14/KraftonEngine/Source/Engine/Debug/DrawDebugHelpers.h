@@ -12,7 +12,6 @@ class UWorld;
 // Duration == 0: 1프레임만 표시
 // Duration > 0 : 지정 시간(초) 동안 표시
 //
-// _DEBUG 빌드에서만 동작, Release/Demo에서는 no-op
 // ============================================================
 
 #define DEBUG_DRAW_ENABLED 1

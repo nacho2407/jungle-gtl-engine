@@ -1,4 +1,4 @@
-#include "Render/DebugDraw/DebugDrawQueue.h"
+#include "Debug/DebugDrawQueue.h"
 #include <cmath>
 
 void FDebugDrawQueue::AddLine(const FVector& Start, const FVector& End,
