@@ -1,102 +1,49 @@
-﻿// 입력 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
+
 #include <windows.h>
+
 #include "Core/Singleton.h"
 
-// FGuiInputState는 렌더 상태 값을 보관하거나 적용합니다.
+#include "InputTypes.h"
+
+// TODO: 역할 상 ViewportInputRouter에 있는 편이 맞기 때문에 Milestone 2에서 ViewportInputRouter로 옮길 예정
 struct FGuiInputState
 {
     bool bUsingMouse = false;
     bool bUsingKeyboard = false;
 };
 
-// InputSystem는 입력 영역의 핵심 동작을 담당합니다.
 class InputSystem : public TSingleton<InputSystem>
 {
-    friend class TSingleton<InputSystem>;
-
 public:
+    // TODO: 마찬가지로 Milestone 2에서 ViewportInputRouter로 옮길 예정
+    const FGuiInputState& GetGuiInputState() const { return GuiState; }
+    void SetGuiCaptureState(bool bMouse, bool bKeyboard);
+
+    void Initialize(HWND InHWnd) { OwnerHWnd = InHWnd; }
+
     void Tick();
 
-    // Keyboard
-    bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
-    bool GetKey(int VK) const { return CurrentStates[VK]; }
-    bool GetKeyUp(int VK) const { return !CurrentStates[VK] && PrevStates[VK]; }
+    const FInputSnapshot& GetSnapshot() const { return CurrentSnapshot; }
 
-    // Mouse position
-    POINT GetMousePos() const { return MousePos; }
-    int MouseDeltaX() const { return MousePos.x - PrevMousePos.x; }
-    int MouseDeltaY() const { return MousePos.y - PrevMousePos.y; }
-    bool MouseMoved() const { return MouseDeltaX() != 0 || MouseDeltaY() != 0; }
-
-    // Left drag
-    bool IsDraggingLeft() const { return GetKey(VK_LBUTTON) && MouseMoved(); }
-    bool GetLeftDragStart() const { return bLeftDragJustStarted; }
-    bool GetLeftDragging() const { return bLeftDragging; }
-    bool GetLeftDragEnd() const { return bLeftDragJustEnded; }
-    POINT GetLeftDragVector() const;
-    float GetLeftDragDistance() const;
-
-    // Right drag
-    bool IsDraggingRight() const { return GetKey(VK_RBUTTON) && MouseMoved(); }
-    bool GetRightDragStart() const { return bRightDragJustStarted; }
-    bool GetRightDragging() const { return bRightDragging; }
-    bool GetRightDragEnd() const { return bRightDragJustEnded; }
-    POINT GetRightDragVector() const;
-    float GetRightDragDistance() const;
-
-    // Scrolling
-    void AddScrollDelta(int Delta) { ScrollDelta += Delta; }
-    int GetScrollDelta() const { return PrevScrollDelta; }
-    bool ScrolledUp() const { return PrevScrollDelta > 0; }
-    bool ScrolledDown() const { return PrevScrollDelta < 0; }
-    float GetScrollNotches() const { return PrevScrollDelta / (float)WHEEL_DELTA; }
-
-    // Window focus
-    void SetOwnerWindow(HWND InHWnd) { OwnerHWnd = InHWnd; }
-
-    // GUI state
-    FGuiInputState& GetGuiInputState() { return GuiState; }
-    const FGuiInputState& GetGuiInputState() const { return GuiState; }
+    void AddScrollDelta(int Delta);
 
 private:
-    bool CurrentStates[256] = { false };
-    bool PrevStates[256] = { false };
+    void SampleKeyboard();
+    void SampleMouse();
+    void SampleWheel();
+    void UpdateModifiers();
+    void ClearInputOnFocusLost();
 
-    // Mouse members
-    POINT MousePos = { 0, 0 };
-    POINT PrevMousePos = { 0, 0 };
-
-    bool bLeftDragCandidate = false;
-    bool bRightDragCandidate = false;
-    bool bLeftDragging = false;
-    bool bRightDragging = false;
-
-    bool bLeftDragJustStarted = false;
-    bool bRightDragJustStarted = false;
-    bool bLeftDragJustEnded = false;
-    bool bRightDragJustEnded = false;
-
-    // Drag origin
-    POINT LeftDragStartPos = { 0, 0 };
-    POINT LeftMouseDownPos = { 0, 0 };
-    POINT RightDragStartPos = { 0, 0 };
-    POINT RightMouseDownPos = { 0, 0 };
-
-    // Scrolling
-    int ScrollDelta = 0;
-    int PrevScrollDelta = 0;
-
-    // Window handle for focus check
+private:
     HWND OwnerHWnd = nullptr;
 
-    // GUI InputState
+    FInputSnapshot CurrentSnapshot{};
+    FInputSnapshot PreviousSnapshot{};
     FGuiInputState GuiState{};
 
-    static constexpr int DRAG_THRESHOLD = 5;
+    int PendingWheelDelta = 0;
 
-    // Internal drag threshold helper — unified Left/Right logic
-    void FilterDragThreshold(
-        bool& bCandidate, bool& bDragging, bool& bJustStarted,
-        const POINT& MouseDownPos, POINT& DragStartPos);
+	// 초기 프레임 / 포커스 복귀 / 입력 모드 전환 직후 등 비정상적인 큰 delta를 방지하기 위한 플래그
+	bool bHasMouseSample = false;
 };

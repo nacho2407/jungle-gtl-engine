@@ -346,8 +346,8 @@
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\DeferredOpaquePass.hlsl">
-        <Filter>Shaders\Passes\Scene</Filter>
-      </FxCompile>
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\ViewModes\NonLitViewModePass.hlsl">
       <Filter>Shaders\Passes\Scene\ViewModes</Filter>
     </FxCompile>
@@ -690,11 +690,11 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.cpp">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClCompile>
-      <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClCompile>
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
@@ -1317,11 +1317,11 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.h">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClInclude>
-      <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClInclude>
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
@@ -1667,11 +1667,9 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Input\InputTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
   </ItemGroup>
 </Project>
-
-
-

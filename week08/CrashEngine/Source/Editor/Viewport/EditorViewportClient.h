@@ -1,13 +1,19 @@
 ﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
-#include "Viewport/ViewportClient.h"
-#include "Render/Execute/Context/Scene/ViewTypes.h"
-
-#include "UI/SWindow.h"
 #include <string>
+
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+
+#include "Input/InputTypes.h"
+
+#include "UI/SWindow.h"
+
+#include "Viewport/ViewportClient.h"
+
+#include "Render/Execute/Context/Scene/ViewTypes.h"
+
 class UWorld;
 class UCameraComponent;
 class UGizmoComponent;

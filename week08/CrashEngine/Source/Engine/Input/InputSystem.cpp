@@ -1,133 +1,105 @@
-﻿// 입력 영역의 세부 동작을 구현합니다.
-#include "Engine/Input/InputSystem.h"
-#include <cmath>
+﻿#include "InputSystem.h"
+
+void InputSystem::SetGuiCaptureState(bool bMouse, bool bKeyboard)
+{
+    GuiState.bUsingMouse = bMouse;
+    GuiState.bUsingKeyboard = bKeyboard;
+}
 
 void InputSystem::Tick()
 {
-    // 윈도우 포커스가 없으면 모든 입력 상태 해제
+    PreviousSnapshot = CurrentSnapshot;
+    CurrentSnapshot = {};
+
+	// 에디터 창이 포커스된 상태가 아닐 때
     if (OwnerHWnd && GetForegroundWindow() != OwnerHWnd)
     {
-        for (int i = 0; i < 256; ++i)
-        {
-            PrevStates[i] = CurrentStates[i];
-            CurrentStates[i] = false;
-        }
-        bLeftDragJustStarted = false;
-        bRightDragJustStarted = false;
-        bLeftDragJustEnded = bLeftDragging;
-        bRightDragJustEnded = bRightDragging;
-        bLeftDragging = false;
-        bRightDragging = false;
-        bLeftDragCandidate = false;
-        bRightDragCandidate = false;
-        PrevScrollDelta = ScrollDelta;
-        ScrollDelta = 0;
-        // 마우스 위치 동기화 (복귀 시 델타 점프 방지)
-        GetCursorPos(&MousePos);
-        PrevMousePos = MousePos;
+        ClearInputOnFocusLost();
         return;
     }
 
-    for (int i = 0; i < 256; ++i)
-    {
-        PrevStates[i] = CurrentStates[i];
-        CurrentStates[i] = (GetAsyncKeyState(i) & 0x8000) != 0;
-    }
+    SampleKeyboard();
+    SampleMouse();
+    SampleWheel();
+    UpdateModifiers();
+}
 
-    bLeftDragJustStarted = false;
-    bRightDragJustStarted = false;
-    bLeftDragJustEnded = false;
-    bRightDragJustEnded = false;
+void InputSystem::AddScrollDelta(int Delta)
+{
+    PendingWheelDelta += Delta;
+}
 
-    PrevScrollDelta = ScrollDelta;
-    ScrollDelta = 0;
+void InputSystem::SampleKeyboard()
+{
+    for (int VK = 0; VK < 256; VK++)
+	{
+        const bool bWasDown = PreviousSnapshot.KeyDown[VK];
+        const bool bIsDown = (GetAsyncKeyState(VK) & 0x8000) != 0;
 
-    PrevMousePos = MousePos;
-    GetCursorPos(&MousePos);
-
-    if (GetKeyDown(VK_LBUTTON))
-    {
-        bLeftDragCandidate = true;
-        LeftMouseDownPos = MousePos;
-    }
-    if (GetKeyDown(VK_RBUTTON))
-    {
-        bRightDragCandidate = true;
-        RightMouseDownPos = MousePos;
-    }
-
-    // Left drag
-    if (!bLeftDragging && IsDraggingLeft())
-    {
-        FilterDragThreshold(bLeftDragCandidate, bLeftDragging, bLeftDragJustStarted,
-                            LeftMouseDownPos, LeftDragStartPos);
-    }
-    else if (GetKeyUp(VK_LBUTTON))
-    {
-        if (bLeftDragging)
-            bLeftDragJustEnded = true;
-        bLeftDragging = false;
-        bLeftDragCandidate = false;
-    }
-
-    // Right drag
-    if (!bRightDragging && IsDraggingRight())
-    {
-        FilterDragThreshold(bRightDragCandidate, bRightDragging, bRightDragJustStarted,
-                            RightMouseDownPos, RightDragStartPos);
-    }
-    else if (GetKeyUp(VK_RBUTTON))
-    {
-        if (bRightDragging)
-            bRightDragJustEnded = true;
-        bRightDragging = false;
-        bRightDragCandidate = false;
+        CurrentSnapshot.KeyDown[VK] = bIsDown;
+        CurrentSnapshot.KeyPressed[VK] = bIsDown && !bWasDown;
+        CurrentSnapshot.KeyReleased[VK] = !bIsDown && bWasDown;
     }
 }
 
-void InputSystem::FilterDragThreshold(
-    bool& bCandidate, bool& bDragging, bool& bJustStarted,
-    const POINT& MouseDownPos, POINT& DragStartPos)
+void InputSystem::SampleMouse()
 {
-    if (bCandidate && !bDragging)
+    POINT CurrentPos = { 0, 0 };
+    GetCursorPos(&CurrentPos);
+
+    CurrentSnapshot.MouseScreenPos = CurrentPos;
+
+    if (!bHasMouseSample)
     {
-        int DX = MousePos.x - MouseDownPos.x;
-        int DY = MousePos.y - MouseDownPos.y;
-        int DistSq = DX * DX + DY * DY;
-
-        if (DistSq >= DRAG_THRESHOLD * DRAG_THRESHOLD)
-        {
-            bJustStarted = true;
-            bDragging = true;
-            DragStartPos = MouseDownPos;
-        }
+        CurrentSnapshot.PrevMouseScreenPos = CurrentPos;
+        CurrentSnapshot.MouseDelta = { 0, 0 };
+        bHasMouseSample = true;
     }
+	else
+    {
+        CurrentSnapshot.PrevMouseScreenPos = PreviousSnapshot.MouseScreenPos;
+        CurrentSnapshot.MouseDelta.x = CurrentPos.x - PreviousSnapshot.MouseScreenPos.x;
+        CurrentSnapshot.MouseDelta.y = CurrentPos.y - PreviousSnapshot.MouseScreenPos.y;
+	}
 }
 
-POINT InputSystem::GetLeftDragVector() const
+void InputSystem::SampleWheel()
 {
-    POINT V;
-    V.x = MousePos.x - LeftDragStartPos.x;
-    V.y = MousePos.y - LeftDragStartPos.y;
-    return V;
+    CurrentSnapshot.WheelDelta = PendingWheelDelta;
+    CurrentSnapshot.WheelNotches = static_cast<float>(PendingWheelDelta) / static_cast<float>(WHEEL_DELTA);
+
+    PendingWheelDelta = 0;
 }
 
-POINT InputSystem::GetRightDragVector() const
+void InputSystem::UpdateModifiers()
 {
-    POINT V;
-    V.x = MousePos.x - RightDragStartPos.x;
-    V.y = MousePos.y - RightDragStartPos.y;
-    return V;
+    CurrentSnapshot.Modifiers.bCtrl = CurrentSnapshot.KeyDown[VK_CONTROL];
+    CurrentSnapshot.Modifiers.bAlt = CurrentSnapshot.KeyDown[VK_MENU];
+    CurrentSnapshot.Modifiers.bShift = CurrentSnapshot.KeyDown[VK_SHIFT];
 }
 
-float InputSystem::GetLeftDragDistance() const
+void InputSystem::ClearInputOnFocusLost()
 {
-    POINT V = GetLeftDragVector();
-    return std::sqrt((float)(V.x * V.x + V.y * V.y));
-}
+    for (int VK = 0; VK < 256; VK++)
+    {
+        const bool bWasDown = PreviousSnapshot.KeyDown[VK];
 
-float InputSystem::GetRightDragDistance() const
-{
-    POINT V = GetRightDragVector();
-    return std::sqrt((float)(V.x * V.x + V.y * V.y));
+        CurrentSnapshot.KeyDown[VK] = false;
+        CurrentSnapshot.KeyPressed[VK] = false;
+        CurrentSnapshot.KeyReleased[VK] = bWasDown;
+    }
+
+    POINT CurrentPos = { 0, 0 };
+    GetCursorPos(&CurrentPos);
+
+    CurrentSnapshot.MouseScreenPos = CurrentPos;
+    CurrentSnapshot.PrevMouseScreenPos = CurrentPos;
+    CurrentSnapshot.MouseDelta = { 0, 0 };
+
+    CurrentSnapshot.WheelDelta = 0;
+    CurrentSnapshot.WheelNotches = 0.0f;
+
+    PendingWheelDelta = 0;
+
+    bHasMouseSample = true;
 }
