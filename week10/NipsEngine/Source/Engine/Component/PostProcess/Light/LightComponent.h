@@ -8,7 +8,7 @@ public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
 	ULightComponent() = default;
 
-	FMatrix GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
+	FMatrix GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj, const TArray<FBoundingBox>& VisibleObjectsBounds) const;
 	
 protected:
 	~ULightComponent() = default;

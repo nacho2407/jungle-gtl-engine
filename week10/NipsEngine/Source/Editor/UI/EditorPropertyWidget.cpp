@@ -760,6 +760,13 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
 	{
         ImGui::Image(FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get(), ImVec2(256, 256), ImVec2(0, 0), ImVec2(0.125f, 0.125f));
+		
+		if (ImGui::Button("Override camera with light's perspective"))
+		{
+			FViewportCamera* Camera = GEngine->GetWorld()->GetActiveCamera();
+			Camera->SetLocation(LightComp->GetWorldLocation());
+			Camera->SetRotation(LightComp->GetRelativeQuat());
+		}
 	}
 
 	ImGui::Separator();

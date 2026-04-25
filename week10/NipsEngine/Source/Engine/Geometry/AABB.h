@@ -38,6 +38,17 @@ struct FAABB
             DirectX::XMVectorSubtract(Max.ToXMVector(), Min.ToXMVector()), 0.5f);
         return FVector(Extent);
     }
+	inline void GetVertices(FVector OutVertices[8]) const
+	{
+		OutVertices[0] = Min;
+		OutVertices[1] = FVector(Min.X, Min.Y, Max.Z);
+		OutVertices[2] = FVector(Min.X, Max.Y, Min.Z);
+		OutVertices[3] = FVector(Min.X, Max.Y, Max.Z);
+		OutVertices[4] = FVector(Max.X, Min.Y, Min.Z);
+		OutVertices[5] = FVector(Max.X, Min.Y, Max.Z);
+		OutVertices[6] = FVector(Max.X, Max.Y, Min.Z);
+		OutVertices[7] = Max;
+	}
 
     bool         IntersectRay(const FRay& Ray, float& OutT) const;
     bool         IntersectRay(const FRay& Ray, float& OutTMin, float& OutTMax) const;
