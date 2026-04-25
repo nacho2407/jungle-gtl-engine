@@ -2,6 +2,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
+#include "Debug/DrawDebugHelpers.h"
+#include "Render/Types/LightFrustumUtils.h"
 #include <algorithm>
 
 void FScene::EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
@@ -309,4 +311,32 @@ void FScene::SetGrid(float Spacing, int32 HalfLineCount)
 	Grid.bEnabled = true;
 }
 
+// ============================================================
+// SubmitShadowFrustumDebug — 가시 Light의 frustum 와이어프레임을 DebugDrawQueue에 제출
+// ============================================================
+void FScene::SubmitShadowFrustumDebug(UWorld* World)
+{
+	if (!World) return;
 
+	const FSceneEnvironment& Env = GetEnvironment();
+
+	// Spot Light frustum — 노란색
+	for (uint32 i = 0; i < Env.GetNumSpotLights(); ++i)
+	{
+		const FSpotLightParams& Light = Env.GetSpotLight(i);
+		if (!Light.bVisible) continue;
+		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Light);
+		DrawDebugFrustum(World, VP.ViewProj, FColor::Yellow(), 0.0f);
+	}
+
+	// Point Light frustum — 시안 (6면)
+	for (uint32 i = 0; i < Env.GetNumPointLights(); ++i)
+	{
+		const FPointLightParams& Light = Env.GetPointLight(i);
+		if (!Light.bVisible) continue;
+		FLightFrustumUtils::FPointLightFaceViewProj Faces[6];
+		FLightFrustumUtils::BuildPointLightFaceViewProj(Light, Faces);
+		for (int f = 0; f < 6; ++f)
+			DrawDebugFrustum(World, Faces[f].ViewProj, FColor(0, 255, 255), 0.0f);
+	}
+}

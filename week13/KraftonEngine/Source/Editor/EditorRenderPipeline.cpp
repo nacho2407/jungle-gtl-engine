@@ -172,6 +172,11 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
 	}
 
+	if (Frame.RenderOptions.ShowFlags.bShowShadowFrustum)
+	{
+		Scene.SubmitShadowFrustumDebug(World);
+	}
+
 	{
 		SCOPE_STAT_CAT("CollectDebugDraw", "3_Collect");
 		Collector.CollectDebugDraw(Frame, Scene);

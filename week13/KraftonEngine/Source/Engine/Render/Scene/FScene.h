@@ -7,6 +7,7 @@
 
 class AActor;
 class UPrimitiveComponent;
+class UWorld;
 
 // ============================================================
 // FScene — FPrimitiveSceneProxy의 소유자 겸 변경 추적 컨테이너
@@ -68,6 +69,9 @@ public:
 	// --- DebugDraw (Duration 기반 디버그 라인) ---
 	FDebugDrawQueue& GetDebugDrawQueue() { return DebugDrawQueue; }
 	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
+
+	// --- Shadow frustum 디버그 라인 제출 ---
+	void SubmitShadowFrustumDebug(UWorld* World);
 
 	// --- 환경 데이터 (Fog, Light) ---
 	FSceneEnvironment& GetEnvironment() { return Environment; }

@@ -37,6 +37,8 @@ struct FShowFlags
 	bool bFXAA = false;
 	bool bViewLightCulling = false;
 	bool bVisualize25DCulling = false;
+	bool bShadows = true;
+	bool bShowShadowFrustum = false;
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)
