@@ -75,7 +75,7 @@ void FRenderer::Create(HWND hWindow)
 	{
 		for (uint32 CullBit : { 0u, FEAT(ClusterCull), FEAT(TileCull) })
 		{
-			for (uint32 ShadowMap : { 0u, FEAT(ShadowBasic), FEAT(ShadowPSM), FEAT(ShadowCSM)})
+			for (uint32 ShadowMap : { 0u, FEAT(ShadowCSM), FEAT(ShadowPSM)})
 			{
 				uint32 CullKey = Key | CullBit | ShadowMap;
 				FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);

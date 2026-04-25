@@ -5,6 +5,7 @@
 
 #define MAX_ATLAS_SHADOW_COUNT 64
 #define INVALID_SHADOW_INDEX -1
+#define MAX_DIRECTIONAL_CASCADE_COUNT 4
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -29,8 +30,18 @@ cbuffer PerObjectBuffer : register(b1)
 cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix VirtualViewProj;
+
+    // 기존 directional / PSM 경로 호환용
     row_major matrix DirLightViewProj;
     float4 ScaleOffset;
+
+    // directional CSM lighting 경로용
+    row_major matrix CascadeViewProj[MAX_DIRECTIONAL_CASCADE_COUNT];
+    float4 CascadeScaleOffset[MAX_DIRECTIONAL_CASCADE_COUNT];
+
+    float4 CascadeSplitFar;
+    uint DirectionalCascadeCount;
+    float3 ShadowBufferPadding;
 };
 
 struct FAtlasShadowData

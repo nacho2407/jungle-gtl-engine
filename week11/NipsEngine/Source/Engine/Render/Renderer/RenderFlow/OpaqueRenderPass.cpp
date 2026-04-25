@@ -113,19 +113,15 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            if (!LightComp) continue;
            switch (LightComp->GetShadowMapType())
            {
-		   case EShadowMap::BASIC:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowBasic;
-			   break;
-		   }
-		   case EShadowMap::PSM:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
-			   break;
-		   }
 		   case EShadowMap::CSM:
 		   {
 			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+			   break;
+		   }
+
+		   case EShadowMap::PSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
 			   break;
 		   }
            default: break;

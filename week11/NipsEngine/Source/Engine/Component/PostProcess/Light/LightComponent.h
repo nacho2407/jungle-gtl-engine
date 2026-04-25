@@ -12,6 +12,10 @@ public:
 
 	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
+	
+	/* Cascade ShadowMap 전용 */
+	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
+		float SplitNearT, float SplitFarT, const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
@@ -22,7 +26,9 @@ public:
 private:
 	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const;
-	FMatrix ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
+
+	FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+		float SplitNearT, float SplitFarT) const;
 protected:
 	~ULightComponent() = default;
 
@@ -33,5 +39,5 @@ public:
 	float ShadowSharpen = 0.5f;
 
 private:
-	EShadowMap eShadowMapType = EShadowMap::BASIC;
+	EShadowMap eShadowMapType = EShadowMap::CSM;
 };
