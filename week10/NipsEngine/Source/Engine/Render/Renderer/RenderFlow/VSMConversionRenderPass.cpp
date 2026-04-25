@@ -14,29 +14,32 @@ bool FVSMConversionRenderPass::Release()
 
 bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
 {
-
-
     ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
-    // VSMConversionRenderPass::Begin() 에 추가
-    D3D11_BLEND_DESC BlendDesc = {};
-    BlendDesc.RenderTarget[0].BlendEnable = FALSE; // Blend 완전히 끔
-    BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    ID3D11BlendState* BlendState = nullptr;
-    Context->Device->CreateBlendState(&BlendDesc, &BlendState);
-    DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
-    BlendState->Release();
+	// state 
+	{
+        // VSMConversionRenderPass::Begin() 에 추가
+        D3D11_BLEND_DESC BlendDesc = {};
+        BlendDesc.RenderTarget[0].BlendEnable = FALSE; // Blend 완전히 끔
+        BlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	// DepthStencil 비활성화 State 생성 및 적용
-    D3D11_DEPTH_STENCIL_DESC DSDesc = {};
-    DSDesc.DepthEnable = FALSE;                          // Depth Test 끔
-    DSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Depth Write 끔
-    DSDesc.StencilEnable = FALSE;
+        ID3D11BlendState* BlendState = nullptr;
+        Context->Device->CreateBlendState(&BlendDesc, &BlendState);
+        DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+        BlendState->Release();
 
-    ID3D11DepthStencilState* DSState = nullptr;
-    Context->Device->CreateDepthStencilState(&DSDesc, &DSState);
-    DeviceContext->OMSetDepthStencilState(DSState, 0);
 
+        // DepthStencil 비활성화 State 생성 및 적용
+        D3D11_DEPTH_STENCIL_DESC DSDesc = {};
+        DSDesc.DepthEnable = FALSE;                          // Depth Test 끔
+        DSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Depth Write 끔
+        DSDesc.StencilEnable = FALSE;
+
+        ID3D11DepthStencilState* DSState = nullptr;
+        Context->Device->CreateDepthStencilState(&DSDesc, &DSState);
+        DeviceContext->OMSetDepthStencilState(DSState, 0);
+
+	}
     // FVSMConversionRenderPass Begin에서
     ID3D11SamplerState* PointSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Point);
     Context->DeviceContext->PSSetSamplers(2, 1, &PointSampler);
@@ -57,8 +60,6 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
     Context->DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
 	ID3D11Texture2D* VSMTexture = FShadowAtlasManager::Get().VarianceRTVShadowMap.Get();
     D3D11_TEXTURE2D_DESC VSMDesc = {};
     VSMTexture->GetDesc(&VSMDesc);
