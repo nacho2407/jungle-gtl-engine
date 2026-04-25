@@ -41,11 +41,95 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 	// 에디터 콘솔을 로그 출력 디바이스로 등록
 	FLogManager::Get().AddOutputDevice(&ConsoleDevice);
 
+	RegisterCommand("help", [this](const TArray<FString>& Args)
+		{
+			if (Args.size() >= 2)
+			{
+				auto It = CommandHelp.find(Args[1]);
+				if (It != CommandHelp.end() && !It->second.empty())
+				{
+					AddLog("%s\n", It->second.c_str());
+				}
+				else if (Commands.find(Args[1]) != Commands.end())
+				{
+					AddLog("%s: no detailed help available.\n", Args[1].c_str());
+				}
+				else
+				{
+					AddLog("[ERROR] Unknown command: '%s'\n", Args[1].c_str());
+				}
+				return;
+			}
+
+			AddLog("Available commands:\n");
+			for (const auto& Pair : Commands)
+			{
+				const FString& Name = Pair.first;
+				const auto HelpIt = CommandHelp.find(Name);
+				if (HelpIt != CommandHelp.end() && !HelpIt->second.empty())
+				{
+					AddLog("  %s - %s\n", Name.c_str(), HelpIt->second.c_str());
+				}
+				else
+				{
+					AddLog("  %s\n", Name.c_str());
+				}
+			}
+			AddLog("Use: help <command>\n");
+		}, "Lists console commands. Usage: help [command]");
+
 	RegisterCommand("clear", [this](const TArray<FString>& Args)
 		{
 			(void)Args;
 			Clear();
-		});
+		}, "Clears the console log. Usage: clear");
+
+	auto ContentBrowserCommand = [this](const TArray<FString>& Args)
+		{
+			if (!EditorEngine)
+			{
+				AddLog("[ERROR] EditorEngine is null.\n");
+				return;
+			}
+
+			if (Args.size() < 2)
+			{
+				AddLog("Usage: content_browser refresh | content_browser icon_size <20-100>\n");
+				return;
+			}
+
+			if (Args[1] == "refresh")
+			{
+				EditorEngine->RefreshContentBrowser();
+				AddLog("Content browser refreshed.\n");
+			}
+			else if (Args[1] == "icon_size")
+			{
+				if (Args.size() < 3)
+				{
+					AddLog("content_browser icon_size: %.0f\n", EditorEngine->GetContentBrowserIconSize());
+					AddLog("Usage: content_browser icon_size <20-100>\n");
+					return;
+				}
+
+				const float Size = static_cast<float>(std::atof(Args[2].c_str()));
+				if (Size < 20.0f || Size > 100.0f)
+				{
+					AddLog("[ERROR] Icon size must be 20~100.\n");
+					return;
+				}
+
+				EditorEngine->SetContentBrowserIconSize(Size);
+				AddLog("Content browser icon size set to %.0f.\n", Size);
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown content_browser subcommand: '%s'\n", Args[1].c_str());
+				AddLog("Usage: content_browser refresh | content_browser icon_size <20-100>\n");
+			}
+		};
+	RegisterCommand("content_browser", ContentBrowserCommand, "Controls Content Browser. Usage: content_browser refresh | content_browser icon_size <20-100>");
+	RegisterCommand("cb", ContentBrowserCommand, "Alias for content_browser. Usage: cb refresh | cb icon_size <20-100>");
 
 	RegisterCommand("obj", [this](const TArray<FString>& Args)
 		{
@@ -121,7 +205,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				AddLog("[ERROR] Unknown obj subcommand: '%s'\n", Args[1].c_str());
 				AddLog("Usage: obj list [ClassName]\n");
 			}
-		});
+		}, "Object diagnostics. Usage: obj list [ClassName]");
 
 	RegisterCommand("stat", [this](const TArray<FString>& Args)
 		{
@@ -165,7 +249,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
 				AddLog("Usage: stat fps | stat memory | stat shadow | stat none\n");
 			}
-		});
+		}, "Toggles overlay stats. Usage: stat fps | stat memory | stat shadow | stat none");
 
 	RegisterCommand("shadow_resolution", [this](const TArray<FString>& Args)
 		{
@@ -192,7 +276,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				Settings.SetResolution(Res);
 				AddLog("Shadow resolution override set to %u.\n", Res);
 			}
-		});
+		}, "Overrides shadow map resolution. Usage: shadow_resolution <size> | shadow_resolution reset");
 
 	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
 		{
@@ -228,7 +312,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 					AddLog("Shadow slope bias override set to %.6f.\n", Slope);
 				}
 			}
-		});
+		}, "Overrides shadow bias. Usage: shadow_bias <bias> [slope_bias] | shadow_bias reset");
 
 	RegisterCommand("shadow_filter", [this](const TArray<FString>& Args)
 		{
@@ -281,7 +365,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				AddLog("[ERROR] Unknown filter mode: '%s'\n", Args[1].c_str());
 				AddLog("Usage: shadow_filter Hard|PCF|VSM | shadow_filter reset\n");
 			}
-		});
+		}, "Overrides shadow filter mode. Usage: shadow_filter Hard|PCF|VSM | shadow_filter reset");
 }
 
 void FEditorConsoleWidget::Shutdown()
@@ -413,8 +497,9 @@ const char* FEditorConsoleWidget::GetLatestLogMessage() const
 	return MessageCount > 0 ? ConsoleDevice.GetMessageAt(MessageCount - 1) : "";
 }
 
-void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn) {
+void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn, const FString& Help) {
 	Commands[Name] = Fn;
+	CommandHelp[Name] = Help;
 }
 
 void FEditorConsoleWidget::ExecCommand(const char* CommandLine) {

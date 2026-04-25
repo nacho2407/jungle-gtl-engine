@@ -25,6 +25,9 @@ public:
 	void SaveToSettings() const;
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
+	void RefreshContentBrowser() { ContentBrowserWidget.Refresh(); }
+	void SetContentBrowserIconSize(float Size) { ContentBrowserWidget.SetIconSize(Size); }
+	float GetContentBrowserIconSize() const { return ContentBrowserWidget.GetIconSize(); }
 
 private:
 	void RenderMainMenuBar();

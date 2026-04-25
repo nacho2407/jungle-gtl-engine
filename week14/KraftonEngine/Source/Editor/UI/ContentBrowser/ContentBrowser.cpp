@@ -1,9 +1,11 @@
-#include "ContentBrowser.h"
+﻿#include "ContentBrowser.h"
 
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "WICTextureLoader.h"
 #include "Resource/ResourceManager.h"
+
+#include <algorithm>
 
 namespace
 {
@@ -104,19 +106,19 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		return;
 	}
 
-	if (ImGui::Button("Refresh") || BrowserContext.bIsNeedRefresh)
-		Refresh();
+	//if (ImGui::Button("Refresh") || BrowserContext.bIsNeedRefresh)
+	//	Refresh();
 
 	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
 	if(BrowserContext.SelectedElement)
 		PathText += L"/" + BrowserContext.SelectedElement->GetFileName();
 
-	ImGui::Text(FPaths::ToUtf8(PathText).c_str());
+	//ImGui::Text(FPaths::ToUtf8(PathText).c_str());
 
 	ImGui::SameLine();
 	int size = static_cast<int>(BrowserContext.ContentSize.x);
-	ImGui::SliderInt("##slider", &size, 20, 100);
+	//ImGui::SliderInt("##slider", &size, 20, 100);
 	BrowserContext.ContentSize = ImVec2(static_cast<float>(size), static_cast<float>(size));
 
 	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
@@ -156,6 +158,12 @@ void FEditorContentBrowserWidget::Refresh()
 	RefreshContent();
 
 	BrowserContext.bIsNeedRefresh = false;
+}
+
+void FEditorContentBrowserWidget::SetIconSize(float Size)
+{
+	const float ClampedSize = (std::max)(20.0f, (std::min)(Size, 100.0f));
+	BrowserContext.ContentSize = ImVec2(ClampedSize, ClampedSize);
 }
 
 void FEditorContentBrowserWidget::LoadFromSettings()
