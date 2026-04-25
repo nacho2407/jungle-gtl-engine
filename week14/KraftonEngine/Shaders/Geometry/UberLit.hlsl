@@ -94,8 +94,8 @@ UberVS_Output VS(VS_Input_PNCTT input)
     }
 
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse = AccumulateDiffuse(output.worldPos, N, output.position);
-    output.litSpecular = AccumulateSpecular(output.worldPos, N, V, g_DefaultShininess, output.position);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
 
 #endif
 
