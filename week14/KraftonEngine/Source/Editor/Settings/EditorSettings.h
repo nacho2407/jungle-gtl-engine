@@ -62,6 +62,7 @@ public:
 		bool bContentBrowser = true;
 		bool bImGUISettings = false;
 		bool bEditorDebug = false;
+		bool bShadowMapDebug = false;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;
