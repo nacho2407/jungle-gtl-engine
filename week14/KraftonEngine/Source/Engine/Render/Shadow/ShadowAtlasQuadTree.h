@@ -44,6 +44,7 @@ public:
 	// Hard clear including the root node
 	void Clear();
 
+	// Accessor
 	float GetAtlasSize() const { return AtlasSize; }
 
 private:
@@ -58,8 +59,7 @@ private:
 
 
 private:
-	TArray<Node>	  Nodes;
-
-	float AtlasSize = 4096.f;
-	float MinShadowMapResolution = 64.f;
+	TArray<Node> Nodes;
+	float		 AtlasSize				= 4096.f;
+	float		 MinShadowMapResolution = 64.f;
 };
