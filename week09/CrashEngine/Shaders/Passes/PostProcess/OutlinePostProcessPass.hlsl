@@ -1,4 +1,3 @@
-
 /*
     OutlinePostProcessPass.hlsl는 후처리 렌더 패스의 셰이더입니다.
 
@@ -16,10 +15,15 @@
     - 이 파일에서 직접 선언한 슬롯: b2
 */
 
+/*
+    Available preprocessor defines:
+    - none
+*/
+
 // Fullscreen Triangle VS + stencil-based outline PS.
 
-#include "../../Common/Utils/Functions.hlsl"
-#include "../../Common/Resources/SystemResources.hlsl"
+#include "../../Utils/Functions.hlsl"
+#include "../../Resources/SystemResources.hlsl"
 
 cbuffer OutlinePostProcessParams : register(b2)
 {

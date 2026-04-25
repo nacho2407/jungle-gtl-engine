@@ -1,0 +1,18 @@
+#ifndef BINDING_SLOTS_HLSLI
+#define BINDING_SLOTS_HLSLI
+
+#define REGISTER_T(slot) register(t##slot)
+#define REGISTER_S(slot) register(s##slot)
+
+#define SLOT_TEX_LOCAL_LIGHTS    6
+#define SLOT_TEX_LIGHT_TILE_MASK 7
+#define SLOT_TEX_DEBUG_HIT_MAP   8
+#define SLOT_SAMPLER_LINEAR_CLAMP 0
+#define SLOT_SAMPLER_LINEAR_WRAP  1
+#define SLOT_SAMPLER_POINT_CLAMP  2
+
+#define SLOT_TEX_SCENE_DEPTH 10
+#define SLOT_TEX_SCENE_COLOR 11
+#define SLOT_TEX_STENCIL     13
+
+#endif

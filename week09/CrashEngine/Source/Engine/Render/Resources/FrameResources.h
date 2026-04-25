@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
@@ -40,4 +39,3 @@ struct FFrameResources
     FConstantBuffer* GetPerObjectCBForProxy(ID3D11Device* Device, const FPrimitiveProxy& Proxy);
     void             EnsureTextCharInfoMap(const FFontResource* Resource);
 };
-

@@ -1,9 +1,17 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
+
 #include "Render/Execute/Passes/Base/RenderPass.h"
+
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FLightCullingPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+
+/*
+    Pass Summary
+    - Role: dispatch tile-based local light culling on compute.
+    - Inputs: readable depth SRV, local-light structured buffer, frame constants.
+    - Outputs: internal light-culling UAV resources such as tile masks and debug hit map.
+    - Registers: CS b0 Frame, CS t1 DepthCopy, CS t6 LocalLights, UAVs are owned by FTileBasedLightCulling.
+*/
 class FLightCullingPass : public FRenderPass
 {
 public:
@@ -13,4 +21,3 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override {}
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

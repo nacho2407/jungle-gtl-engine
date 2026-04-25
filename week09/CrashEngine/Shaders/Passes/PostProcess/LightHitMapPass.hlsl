@@ -1,4 +1,3 @@
-
 /*
     LightHitMapPass.hlsl는 후처리 렌더 패스의 셰이더입니다.
 
@@ -16,14 +15,20 @@
     - 이 파일에서 직접 선언한 슬롯: t10, t8
 */
 
+/*
+    Available preprocessor defines:
+    - none
+*/
+
 // Fullscreen Triangle VS + light-hit debug PS.
 
-#include "../../Common/Utils/Functions.hlsl"
-#include "../../Common/Resources/SystemResources.hlsl"
-#include "../../Common/Resources/SystemSamplers.hlsl"
+#include "../../Utils/Functions.hlsl"
+#include "../../Resources/BindingSlots.hlsli"
+#include "../../Resources/SystemResources.hlsl"
+#include "../../Resources/SystemSamplers.hlsl"
 
 //Texture2D<float>  SceneDepth  : register(t10);  // SystemResources.hlsl
-Texture2D g_DebugHitMapTex : register(t8);
+Texture2D g_DebugHitMapTex : REGISTER_T(SLOT_TEX_DEBUG_HIT_MAP);
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {

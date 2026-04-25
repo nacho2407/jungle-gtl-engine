@@ -17,6 +17,8 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
         return L"GridPass";
     case ERenderPassNodeType::DepthPrePass:
         return L"DepthPrePass";
+    case ERenderPassNodeType::ShadowMapPass:
+        return L"ShadowMapPass";
     case ERenderPassNodeType::LightCullingPass:
         return L"LightCullingPass";
     case ERenderPassNodeType::DeferredOpaquePass:
@@ -25,8 +27,6 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
         return L"ForwardOpaquePass";
     case ERenderPassNodeType::DeferredDecalPass:
         return L"DeferredDecalPass";
-    case ERenderPassNodeType::ForwardDecalPass:
-        return L"ForwardDecalPass";
     case ERenderPassNodeType::DeferredLightingPass:
         return L"DeferredLightingPass";
     case ERenderPassNodeType::AdditiveDecalPass:
@@ -76,7 +76,6 @@ bool ShouldExecutePass(const FRenderPipelineContext& Context, ERenderPassNodeTyp
     case ERenderPassNodeType::ForwardOpaquePass:
         return Registry->UsesOpaque(Context.ViewMode.ActiveViewMode);
     case ERenderPassNodeType::DeferredDecalPass:
-    case ERenderPassNodeType::ForwardDecalPass:
         return Registry->UsesDecal(Context.ViewMode.ActiveViewMode);
     case ERenderPassNodeType::DeferredLightingPass:
         return Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
@@ -126,6 +125,8 @@ bool ShouldExecutePipeline(const FRenderPipelineContext& Context, ERenderPipelin
     case ERenderPipelineType::ForwardUnlitPipeline:
         return RenderPath == ERenderShadingPath::Forward &&
                (Context.ViewMode.ActiveViewMode == EViewMode::Unlit || Context.ViewMode.ActiveViewMode == EViewMode::Wireframe);
+    case ERenderPipelineType::ForwardWorldNormalPipeline:
+        return RenderPath == ERenderShadingPath::Forward && Context.ViewMode.ActiveViewMode == EViewMode::WorldNormal;
     case ERenderPipelineType::ForwardSceneDepthPipeline:
         return RenderPath == ERenderShadingPath::Forward && Context.ViewMode.ActiveViewMode == EViewMode::SceneDepth;
     default:

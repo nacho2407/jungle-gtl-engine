@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Core/CoreTypes.h"
 // FConstantBuffer는 GPU 버퍼 리소스의 생성과 바인딩을 관리합니다.

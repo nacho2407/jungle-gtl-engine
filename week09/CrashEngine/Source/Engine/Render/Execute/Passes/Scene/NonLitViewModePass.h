@@ -1,12 +1,17 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Passes/Base/PostProcessPassBase.h"
 
 class FPrimitiveProxy;
 struct FRenderPipelineContext;
 
-// FNonLitViewModePass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: visualize non-lit view modes such as scene depth and world normal.
+    - Inputs: depth copy or normal surface SRV plus optional scene-depth constants.
+    - Outputs: viewport color.
+    - Registers: PS t0 NormalSurface for world normal, PS t10 SceneDepth for depth view, PS b2 SceneDepthParams when needed.
+*/
 class FNonLitViewModePass : public FPostProcessPassBase
 {
 public:
@@ -19,4 +24,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

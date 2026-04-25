@@ -29,7 +29,6 @@
 - `DeferredDecalPass`
 - `DeferredLightingPass`
 - `ForwardOpaquePass`
-- `ForwardDecalPass`
 - `ForwardLightingPass`
 - `FXAAPass`
 - `PresentPass`

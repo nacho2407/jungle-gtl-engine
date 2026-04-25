@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Materials/MaterialCore.h"
@@ -37,4 +36,3 @@ private:
     TArray<std::unique_ptr<FMaterialConstantBuffer>> ActiveOwnedMaterialCBs;
     uint32                                           LODCount = 1;
 };
-

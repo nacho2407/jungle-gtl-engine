@@ -126,10 +126,10 @@ void FDeferredLightingPass::PrepareInputs(FRenderPipelineContext& Context)
     if (Context.LightCulling)
     {
         ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
-        Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &TileMaskSRV);
 
         ID3D11ShaderResourceView* HipMapSRV = Context.LightCulling->GetDebugHitMapSRV();
-        Context.Context->PSSetShaderResources(8, 1, &HipMapSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &HipMapSRV);
 
         // b2 LightCullingParams
         ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
@@ -365,9 +365,8 @@ void FDeferredLightingPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     }
 
     ID3D11ShaderResourceView* nullSRV = {};
-    Context.Context->PSSetShaderResources(7, 1, &nullSRV);
-
-    Context.Context->PSSetShaderResources(8, 1, &nullSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &nullSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &nullSRV);
 }
 
 

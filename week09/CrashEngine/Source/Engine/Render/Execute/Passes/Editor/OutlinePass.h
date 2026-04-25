@@ -1,9 +1,16 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/PostProcessPassBase.h"
+
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FOutlinePass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+
+/*
+    Pass Summary
+    - Role: draw selection outline as a fullscreen post-process.
+    - Inputs: stencil copy from SelectionMaskPass and outline constant buffer.
+    - Outputs: viewport color with selected-object outline.
+    - Registers: PS b2 Outline parameters, PS t13 Stencil.
+*/
 class FOutlinePass : public FPostProcessPassBase
 {
 public:
@@ -16,4 +23,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

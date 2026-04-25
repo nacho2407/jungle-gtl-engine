@@ -11,7 +11,6 @@ void AddDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char
 }
 
 } // namespace ViewModePassConfigUtils
-  // namespace ViewModePassConfigUtils
 
 // ========== Config Queries ==========
 
@@ -83,8 +82,9 @@ FViewModePassDesc BuildViewModeDeferredOpaquePassDesc(EShadingModel ShadingModel
 {
     FViewModePassDesc Pass      = {};
     Pass.RenderPass             = ERenderPass::Opaque;
+    Pass.ShadingPath            = ERenderShadingPath::Deferred;
     Pass.bFullscreenPass        = false;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredOpaquePass.hlsl";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/Deferred/DeferredOpaquePass.hlsl";
     Pass.ShaderVariant.VSEntry  = "VS_DeferredOpaque";
 
     // ---------- Shading Permutation ----------
@@ -92,35 +92,78 @@ FViewModePassDesc BuildViewModeDeferredOpaquePassDesc(EShadingModel ShadingModel
     {
     case EShadingModel::Gouraud:
         Pass.ShaderVariant.PSEntry = "PS_Opaque_Gouraud";
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_GOURAUD");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_GOURAUD");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_GOURAUD_L");
         break;
     case EShadingModel::Lambert:
         Pass.ShaderVariant.PSEntry = "PS_Opaque_Lambert";
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_LAMBERT");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
         break;
     case EShadingModel::BlinnPhong:
         Pass.ShaderVariant.PSEntry = "PS_Opaque_BlinnPhong";
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_BLINNPHONG");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_BLINNPHONG");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_MATERIAL_PARAM");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
         break;
     case EShadingModel::WorldNormal:
         Pass.ShaderVariant.PSEntry = "PS_Opaque_Lambert";
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_LAMBERT");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "OUTPUT_NORMAL");
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
         break;
     case EShadingModel::Unlit:
     default:
         Pass.ShaderVariant.PSEntry = "PS_Opaque_Unlit";
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "SHADING_MODEL_UNLIT");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_UNLIT");
         break;
     }
 
+
+    return Pass;
+}
+
+FViewModePassDesc BuildViewModeForwardOpaquePassDesc(EShadingModel ShadingModel)
+{
+    FViewModePassDesc Pass      = {};
+    Pass.RenderPass             = ERenderPass::Opaque;
+    Pass.ShadingPath            = ERenderShadingPath::Forward;
+    Pass.bFullscreenPass        = false;
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/Forward/ForwardOpaquePass.hlsl";
+    Pass.ShaderVariant.VSEntry  = "VS_ForwardOpaque";
+
+    switch (ShadingModel)
+    {
+    case EShadingModel::Gouraud:
+        Pass.ShaderVariant.PSEntry = "PS_Forward_Gouraud";
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_GOURAUD");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "FORWARD_ENABLE_LIGHTING");
+        break;
+    case EShadingModel::Lambert:
+        Pass.ShaderVariant.PSEntry = "PS_Forward_Lambert";
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "FORWARD_ENABLE_LIGHTING");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
+        break;
+    case EShadingModel::BlinnPhong:
+        Pass.ShaderVariant.PSEntry = "PS_Forward_BlinnPhong";
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_BLINNPHONG");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "FORWARD_ENABLE_LIGHTING");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
+        break;
+    case EShadingModel::WorldNormal:
+        Pass.ShaderVariant.PSEntry = "PS_Forward_WorldNormal";
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_WORLDNORMAL");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "USE_NORMAL_MAP");
+        break;
+    case EShadingModel::Unlit:
+    default:
+        Pass.ShaderVariant.PSEntry = "PS_Forward_Unlit";
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_UNLIT");
+        break;
+    }
 
     return Pass;
 }
@@ -130,8 +173,9 @@ FViewModePassDesc BuildViewModeDeferredDecalPassDesc(EShadingModel ShadingModel)
 {
     FViewModePassDesc Pass      = {};
     Pass.RenderPass             = ERenderPass::Decal;
+    Pass.ShadingPath            = ERenderShadingPath::Deferred;
     Pass.bFullscreenPass        = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredDecalPass.hlsl";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/Deferred/DeferredDecalPS.hlsl";
     Pass.ShaderVariant.VSEntry  = "VS_DeferredDecalFullscreen";
 
     // ---------- Decal Surface Writes ----------
@@ -170,8 +214,9 @@ FViewModePassDesc BuildViewModeDeferredLightingPassDesc(EShadingModel ShadingMod
 {
     FViewModePassDesc Pass      = {};
     Pass.RenderPass             = ERenderPass::DeferredLighting;
+    Pass.ShadingPath            = ERenderShadingPath::Deferred;
     Pass.bFullscreenPass        = true;
-    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/DeferredLightingPass.hlsl";
+    Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/Deferred/DeferredLightingPS.hlsl";
     Pass.ShaderVariant.VSEntry  = "VS_Fullscreen";
     Pass.ShaderVariant.PSEntry  = "PS_UberLit";
 
@@ -186,7 +231,7 @@ FViewModePassDesc BuildViewModeDeferredLightingPassDesc(EShadingModel ShadingMod
         ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_LAMBERT");
         break;
     case EShadingModel::BlinnPhong:
-        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_PHONG");
+        ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "LIGHTING_MODEL_BLINNPHONG");
         break;
     case EShadingModel::Unlit:
     default:
@@ -207,6 +252,7 @@ void BuildViewModePasses(FViewModePassConfig& Config)
     if (Config.bEnableOpaque)
     {
         Config.Passes.push_back(BuildViewModeDeferredOpaquePassDesc(Config.ShadingModel));
+        Config.Passes.push_back(BuildViewModeForwardOpaquePassDesc(Config.ShadingModel));
     }
 
 
@@ -430,7 +476,7 @@ void FViewModePassRegistry::RefreshCompiledShaders(FViewModePassConfig& Config) 
     }
 }
 
-const FViewModePassDesc* FViewModePassRegistry::FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass) const
+const FViewModePassDesc* FViewModePassRegistry::FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass, ERenderShadingPath ShadingPath) const
 {
     const FViewModePassConfig* Config = GetConfig(ViewMode);
     if (!Config)
@@ -440,7 +486,7 @@ const FViewModePassDesc* FViewModePassRegistry::FindPassDesc(EViewMode ViewMode,
 
     for (const FViewModePassDesc& Pass : Config->Passes)
     {
-        if (Pass.RenderPass == RenderPass)
+        if (Pass.RenderPass == RenderPass && Pass.ShadingPath == ShadingPath)
         {
             return &Pass;
         }

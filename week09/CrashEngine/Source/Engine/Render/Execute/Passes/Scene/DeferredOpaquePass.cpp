@@ -23,10 +23,10 @@ void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
     if (Context.LightCulling)
     {
         ID3D11ShaderResourceView* TileMaskSRV = Context.LightCulling->GetPerTileMaskSRV();
-        Context.Context->PSSetShaderResources(7, 1, &TileMaskSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &TileMaskSRV);
 
         ID3D11ShaderResourceView* HitMapSRV = Context.LightCulling->GetDebugHitMapSRV();
-        Context.Context->PSSetShaderResources(8, 1, &HitMapSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &HitMapSRV);
 
         ID3D11Buffer* LightCullingParamsCB = Context.LightCulling->GetLightCullingParamsCB();
         Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &LightCullingParamsCB);
@@ -72,6 +72,6 @@ void FDeferredOpaquePass::SubmitDrawCommands(FRenderPipelineContext& Context)
     SubmitPassRange(Context, ERenderPass::Opaque);
 
     ID3D11ShaderResourceView* NullSRV = nullptr;
-    Context.Context->PSSetShaderResources(7, 1, &NullSRV);
-    Context.Context->PSSetShaderResources(8, 1, &NullSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullSRV);
+    Context.Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullSRV);
 }

@@ -1,9 +1,17 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
+
 #include "Render/Execute/Passes/Base/MeshPassBase.h"
+
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FDepthPrePass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+
+/*
+    Pass Summary
+    - Role: write scene depth/stencil before later geometry or fullscreen passes.
+    - Inputs: opaque mesh draw commands and per-object transforms.
+    - Outputs: viewport depth/stencil only.
+    - Registers: VS b0 Frame, VS b1 PerObject. PS resources are explicitly cleared.
+*/
 class FDepthPrePass : public FMeshPassBase
 {
 public:
@@ -17,4 +25,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

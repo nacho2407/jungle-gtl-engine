@@ -48,6 +48,8 @@ void FDrawBindStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 
     ID3D11ShaderResourceView* NullLocalLightSRV = nullptr;
     Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullLocalLightSRV);
+    Ctx->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullLocalLightSRV);
+    Ctx->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullLocalLightSRV);
     LocalLightSRV = nullptr;
 }
 

@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -7,10 +6,9 @@
 #include "Render/Execute/Passes/Base/RenderPass.h"
 
 class FDepthPrePass;
-class FDeferredOpaquePass;
 class FForwardOpaquePass;
+class FDeferredOpaquePass;
 class FDeferredDecalPass;
-class FForwardDecalPass;
 class FDeferredLightingPass;
 class FAdditiveDecalPass;
 class FAlphaBlendPass;
@@ -35,7 +33,6 @@ enum class ERenderPassNodeType
     DeferredOpaquePass,
     ForwardOpaquePass,
     DeferredDecalPass,
-    ForwardDecalPass,
     DeferredLightingPass,
     AdditiveDecalPass,
     AlphaBlendPass,
