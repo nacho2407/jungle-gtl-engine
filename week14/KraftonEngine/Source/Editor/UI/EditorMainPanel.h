@@ -26,7 +26,10 @@ public:
 private:
 	void RenderMainMenuBar();
 	void RenderShortcutOverlay();
+	void RenderConsoleDrawer(float DeltaTime);
+	void RenderFooterOverlay(float DeltaTime);
 	void HandleGlobalShortcuts();
+	void ToggleConsoleDrawer(bool bFocusInput);
 
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
@@ -41,5 +44,11 @@ private:
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;
 	bool bSavedShowWidgetList = false;
+	bool bConsoleDrawerVisible = false;
+	bool bBringConsoleDrawerToFrontNextFrame = false;
+	bool bFocusConsoleInputNextFrame = false;
+	bool bFocusConsoleButtonNextFrame = false;
+	int32 ConsoleBacktickCycleState = 0;
+	float ConsoleDrawerAnim = 0.0f;
 	FEditorSettings::FUIVisibility SavedUIVisibility{};
 };
