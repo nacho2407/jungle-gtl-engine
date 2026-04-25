@@ -40,8 +40,18 @@ float3 GetHeatmapColor(float value)
 uint DepthToClusterSlice(float viewDepth)
 {
     float safeDepth = clamp(viewDepth, CullState.NearZ, CullState.FarZ);
-    float logDepth = log(safeDepth / CullState.NearZ) / log(CullState.FarZ / CullState.NearZ);
-    return min((uint) floor(logDepth * CullState.ClusterZ), CullState.ClusterZ - 1);
+    float slice;
+    
+    if (CullState.bIsOrtho > 0)
+    {
+        slice = (safeDepth - CullState.NearZ) / (CullState.FarZ - CullState.NearZ);
+    }
+    else
+    {
+        slice = log(safeDepth / CullState.NearZ) / log(CullState.FarZ / CullState.NearZ);
+    }
+    
+    return min((uint) floor(slice * CullState.ClusterZ), CullState.ClusterZ - 1);
 }
 
 uint ComputeClusterIndex(float4 screenPos, float3 worldPos)

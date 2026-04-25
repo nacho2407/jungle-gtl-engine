@@ -80,6 +80,10 @@ struct FClusterCullingState
     uint ScreenWidth;
     uint ScreenHeight;
     uint MaxLightsPerCluster;
+
+    uint bIsOrtho;
+    float OrthoWidth;
+    float2 _pad;
 };
 
 // =============================================================================
