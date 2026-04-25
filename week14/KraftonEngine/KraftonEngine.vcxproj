@@ -332,6 +332,7 @@
     <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
     <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Profiling\MemoryStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\ShadowStats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Stats.cpp" />
     <ClCompile Include="Source\Engine\Profiling\Timer.cpp" />
     <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp" />
@@ -523,6 +524,7 @@
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\MemoryStats.h" />
     <ClInclude Include="Source\Engine\Profiling\PlatformTime.h" />
+    <ClInclude Include="Source\Engine\Profiling\ShadowStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Timer.h" />
     <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h" />

@@ -13,6 +13,8 @@
 #include "Render/Types/LightFrustumUtils.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
+#include "Profiling/ShadowStats.h"
+#include "Render/Types/ShadowSettings.h"
 
 REGISTER_RENDER_PASS(FShadowMapPass)
 
@@ -71,6 +73,10 @@ void FShadowMapPass::EnsureShadowMap(ID3D11Device* Device, uint32 Size)
 
 	hr = Device->CreateShaderResourceView(ShadowTexture, &SRVDesc, &ShadowSRV);
 	if (FAILED(hr)) return;
+
+	// R32_FLOAT = 4 bytes per texel
+	SHADOW_STATS_SET_MEMORY(static_cast<uint64>(Size) * Size * 4);
+	SHADOW_STATS_SET_RESOLUTION(Size);
 }
 
 void FShadowMapPass::ReleaseShadowMap()
@@ -95,12 +101,14 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 	SCOPE_STAT_CAT("ShadowMapPass", "4_ExecutePass");
 	GPU_SCOPE_STAT("ShadowMapPass");
+	SHADOW_STATS_RESET();
 
 	ID3D11Device* Dev = Ctx.Device.GetDevice();
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
 	// Shadow map 리소스 확보
-	EnsureShadowMap(Dev, kDefaultShadowMapSize);
+	const uint32 MapSize = FShadowSettings::Get().GetEffectiveResolution();
+	EnsureShadowMap(Dev, MapSize);
 	if (!ShadowDSV) { bHasValidShadow = false; return; }
 
 	// PerObject CB 생성 (한 번만)
@@ -154,6 +162,8 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 		Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidBackCull);
 		DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+		SHADOW_STATS_ADD_SHADOW_LIGHT(SpotLight);
+
 		// 프록시 순회 — frustum culling + depth-only 렌더링
 		FShader* LastShader = nullptr;
 
@@ -200,7 +210,9 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 			{
 				if (Section.IndexCount == 0) continue;
 				DC->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+				SHADOW_STATS_ADD_DRAW_CALL();
 			}
+			SHADOW_STATS_ADD_CASTER(SpotLight, 1);
 		}
 
 		bHasValidShadow = true;

@@ -45,5 +45,4 @@ private:
 	FMatrix LightViewProj;
 	bool bHasValidShadow = false;
 
-	static constexpr uint32 kDefaultShadowMapSize = 2048;
 };
