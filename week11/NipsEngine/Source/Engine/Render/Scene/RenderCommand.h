@@ -15,7 +15,7 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
-#include <Component/PostProcess/Light/LightComponentBase.h>
+#include "Component/PostProcess/Light/LightComponent.h"
 
 
 struct ID3D11ShaderResourceView;
