@@ -3,6 +3,8 @@
 
 SamplerState LinearClampSampler : register(s0);
 SamplerState LinearWrapSampler  : register(s1);
-SamplerState PointClampSampler  : register(s2);
+SamplerState           PointClampSampler  : register(s2);
+SamplerComparisonState ShadowSampler      : register(s3);
 
 #endif
+

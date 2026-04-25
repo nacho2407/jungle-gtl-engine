@@ -104,36 +104,43 @@ struct FAmbientLightCBData
 };
 
 // FDirectionalLightCBData는 전역 라이트 상수 버퍼에 기록되는 Directional 라이트 데이터입니다.
-struct FDirectionalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FDirectionalLightCBData
 {
-    FVector Color;
-    float   Intensity;
-    FVector Direction;
-    float   Padding;
-};
+    FVector  Color;          // 12B
+    float    Intensity;      // 4B
+    FVector  Direction;      // 12B
+    int32    ShadowMapIndex; // 4B
+    FMatrix  ShadowViewProj; // 64B
+}; // Total: 96B
 
 // FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
-struct FGlobalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FGlobalLightCBData
 {
-    FAmbientLightCBData     Ambient;
-    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS];
-    int32                   NumDirectionalLights;
-    int32                   NumLocalLights;
-    FVector2                Padding;
-};
+    FAmbientLightCBData     Ambient;                       // 16B
+    float                   _Padding0[2];                  // 16B
+    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 96B * 4 = 384B
+    int32                   NumDirectionalLights;          // 4B
+    int32                   NumLocalLights;                // 4B
+    float                   _Padding1[6];                  // 24B
+}; // Total: 448B
 
 // FLocalLightCBData는 로컬 라이트 구조화 버퍼에 기록되는 라이트 데이터입니다.
-struct FLocalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FLocalLightCBData
 {
-    FVector Color;
-    float   Intensity;
-    FVector Position;
-    float   AttenuationRadius;
-    FVector Direction;
-    float   InnerConeAngle;
-    float   OuterConeAngle;
-    float   Padding[3];
-};
+    FVector  Color;             // 12B
+    float    Intensity;         // 4B
+    FVector  Position;          // 12B
+    float    AttenuationRadius; // 4B
+    FVector  Direction;         // 12B
+    float    InnerConeAngle;    // 4B
+    float    OuterConeAngle;    // 4B
+    int32    ShadowMapIndex;    // 4B
+    float    _PaddingLocal[2];  // 8B
+    FMatrix  ShadowViewProj;    // 64B
+}; // Total: 128B
 
 // FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.
 struct FLightCullingCBData

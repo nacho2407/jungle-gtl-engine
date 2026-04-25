@@ -14,6 +14,18 @@ void FForwardOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
     const FViewModePassRegistry* Registry = Context.ViewMode.Registry;
     const bool bUsesLighting = Registry && Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
 
+    if (bUsesLighting && Context.Resources)
+    {
+        // Bind Light Resources to both VS and PS (Forward VS uses them for Gouraud)
+        ID3D11Buffer* GlobalLightBuffer = Context.Resources->GlobalLightBuffer.GetBuffer();
+        Context.Context->VSSetConstantBuffers(ECBSlot::Light, 1, &GlobalLightBuffer);
+        Context.Context->PSSetConstantBuffers(ECBSlot::Light, 1, &GlobalLightBuffer);
+
+        ID3D11ShaderResourceView* LocalLightsSRV = Context.Resources->LocalLightSRV;
+        Context.Context->VSSetShaderResources(ESystemTexSlot::LocalLights, 1, &LocalLightsSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &LocalLightsSRV);
+    }
+
     if (bUsesLighting && Context.Renderer)
     {
         if (FRenderPass* Pass = Context.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
@@ -22,6 +34,7 @@ void FForwardOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
             for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS; ++i)
             {
                 ID3D11ShaderResourceView* ShadowSRV = ShadowPass->GetShadowSRV(i);
+                Context.Context->VSSetShaderResources(20 + i, 1, &ShadowSRV);
                 Context.Context->PSSetShaderResources(20 + i, 1, &ShadowSRV);
             }
         }
@@ -54,6 +67,7 @@ void FForwardOpaquePass::Cleanup(FRenderPipelineContext& Context)
     ID3D11ShaderResourceView* NullSRV = nullptr;
     for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS; ++i)
     {
+        Context.Context->VSSetShaderResources(20 + i, 1, &NullSRV);
         Context.Context->PSSetShaderResources(20 + i, 1, &NullSRV);
     }
 }

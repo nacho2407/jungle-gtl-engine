@@ -21,6 +21,7 @@ struct FFrameResources
     ID3D11SamplerState* LinearClampSampler = nullptr;
     ID3D11SamplerState* LinearWrapSampler  = nullptr;
     ID3D11SamplerState* PointClampSampler  = nullptr;
+    ID3D11SamplerState* ShadowSampler      = nullptr;
 
     ID3D11Buffer*             LocalLightBuffer   = nullptr;
     ID3D11ShaderResourceView* LocalLightSRV      = nullptr;

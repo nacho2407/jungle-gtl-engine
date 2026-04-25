@@ -2,6 +2,7 @@
 #include "GameFramework/World.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Collision/SpatialPartition.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
 
 void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* SceneView)
 {
@@ -10,12 +11,21 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
         return;
     }
 
+    uint32 ShadowMapCount = 0;
+
     for (FLightProxy* Light : CollectedSceneData.Lights.VisibleLightProxies)
     {
-        if (!Light || !Light->bCastShadow)
+        if (!Light) continue;
+
+        // Reset
+        Light->ShadowMapIndex = -1;
+
+        if (!Light->bCastShadow || ShadowMapCount >= 5 /* FShadowMapPass::MAX_SHADOW_MAPS */)
         {
             continue;
         }
+
+        Light->ShadowMapIndex = static_cast<int32>(ShadowMapCount++);
 
         // Clear previous frame results
         Light->VisibleShadowCasters.clear();
@@ -44,68 +54,31 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
                 Right.Z, Up.Z, LightDir.Z, 0,
                 -LightPos.Dot(Right), -LightPos.Dot(Up), -LightPos.Dot(LightDir), 1);
 
-            float HalfW = 1000.0f; // Fixed coverage for now
-            float HalfH = 1000.0f;
-            float N = 0.1f;
-            float F = 2000.0f;
-            float Denom = N - F;
-
-            // Reversed-Z orthographic
-            LightProj = FMatrix(
-                1.0f / HalfW, 0, 0, 0,
-                0, 1.0f / HalfH, 0, 0,
-                0, 0, 1.0f / Denom, 0,
-                0, 0, -F / Denom, 1);
+            // 임시로 고정 범위
+            LightProj = FMatrix::MakeOrthographic(100.0f, 100.0f, 0.1f, 2000.0f);
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
             FVector LightPos = LC.Position;
             FVector LightDir = LC.Direction.Normalized();
             
-            // Standard LookAt calculation
             FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
             FVector Right = LightDir.Cross(Up).Normalized();
             Up = Right.Cross(LightDir).Normalized();
 
-            // Row-major View Matrix
             LightView = FMatrix(
                 Right.X, Up.X, LightDir.X, 0,
                 Right.Y, Up.Y, LightDir.Y, 0,
                 Right.Z, Up.Z, LightDir.Z, 0,
                 -LightPos.Dot(Right), -LightPos.Dot(Up), -LightPos.Dot(LightDir), 1);
 
-            // OuterConeAngle is stored in degrees (UE-style), convert to radians for tanf.
-            float HalfFOV = LC.OuterConeAngle * (FMath::Pi / 180.0f); 
-            float Cot = 1.0f / tanf(HalfFOV);
-            float Aspect = 1.0f;
-            float N = 1.0f; // Increased near plane slightly for stability
-            float F = LC.AttenuationRadius;
-            if (F <= N) F = N + 100.0f;
-            float Denom = N - F;
-
-            // Reversed-Z perspective (N -> 1, F -> 0)
-            LightProj = FMatrix(
-                Cot / Aspect, 0, 0, 0,
-                0, Cot, 0, 0,
-                0, 0, N / Denom, 1,
-                0, 0, -(F * N) / Denom, 0);
+            float FOV = LC.OuterConeAngle * 2 * (FMath::Pi / 180.0f);
+            LightProj = FMatrix::MakePerspective(FOV, 1.0f, 1.0f, LC.AttenuationRadius);
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Point))
         {
-            FVector LightPos = LC.Position;
-            float N = 1.0f;
-            float F = LC.AttenuationRadius;
-            if (F <= N) F = N + 100.0f;
-            float Denom = N - F;
+            FMatrix LightProjCube = FMatrix::MakePerspective(0.5f * FMath::Pi, 1.0f, 1.0f, LC.AttenuationRadius);
 
-            // 90 deg FOV, aspect 1.0
-            FMatrix LightProjCube = FMatrix(
-                1.0f, 0, 0, 0,
-                0, 1.0f, 0, 0,
-                0, 0, N / Denom, 1,
-                0, 0, -(F * N) / Denom, 0);
-
-            // D3D Cube Map Directions
             struct FFaceDir { FVector Forward; FVector Up; };
             FFaceDir Faces[6] = {
                 { {  1,  0,  0 }, {  0,  1,  0 } }, // +X
@@ -116,6 +89,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
                 { {  0,  0, -1 }, {  0,  1,  0 } }  // -Z
             };
 
+            FVector LightPos = LC.Position;
             for (int i = 0; i < 6; ++i)
             {
                 FVector Forward = Faces[i].Forward;
@@ -130,23 +104,17 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
 
                 Light->ShadowViewProjMatrices[i] = LightViewCube * LightProjCube;
             }
-
-            // Use +Z as the primary for frustum update (though we use sphere for culling)
-            Light->LightViewProj = Light->ShadowViewProjMatrices[4]; 
+            
+            Light->LightViewProj = Light->ShadowViewProjMatrices[0]; 
             Light->ShadowViewFrustum.UpdateFromMatrix(Light->LightViewProj);
 
-            // 2. Perform Culling using Sphere Query
-            World->GetPartition().QuerySphereAllProxies({ LC.Position, LC.AttenuationRadius }, Light->VisibleShadowCasters);
+            World->GetPartition().QuerySphereAllProxies({LC.Position, LC.AttenuationRadius}, Light->VisibleShadowCasters);
             continue; 
         }
 
         Light->LightViewProj = LightView * LightProj;
         Light->ShadowViewFrustum.UpdateFromMatrix(Light->LightViewProj);
 
-        // 2. Perform Culling using BVH (Frustum Query for Directional/Spot)
         World->GetPartition().QueryFrustumAllProxies(Light->ShadowViewFrustum, Light->VisibleShadowCasters);
-
-        // 3. Filter for shadow casters (if needed, e.g. bCastShadow on primitive)
-        // For now, assume all visible proxies cast shadows.
     }
 }

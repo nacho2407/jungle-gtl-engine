@@ -44,19 +44,21 @@ struct FDirectionalLight
     float3 Color; // 12B
     float Intensity; // 4B
     float3 Direction; // 12B
-    float Padding; // 4B
-};
+    int ShadowMapIndex; // 4B
+    float4x4 ShadowViewProj; // 64B
+}; // Total: 96B
 
 #define MAX_DIRECTIONAL_LIGHTS 4
 
 cbuffer GlobalLightParams : register(b4)
 {
     FAmbientLight Ambient; // 16B
-    FDirectionalLight Directional[MAX_DIRECTIONAL_LIGHTS]; // 128B
-    int NumDirectionalLights;  // 4B
-    int NumLocalLights;        // 4B
-    float2 Padding;            // 8B
-}
+    float2 _Padding0;
+    FDirectionalLight Directional[MAX_DIRECTIONAL_LIGHTS]; // 384B
+    int NumDirectionalLights; // 4B
+    int NumLocalLights; // 4B
+    float2 _Padding1; // 8B
+}; // Total: 448B
 
 struct FLocalLight
 {
@@ -65,10 +67,11 @@ struct FLocalLight
     float3 Position; // 12B
     float AttenuationRadius; // 4B
     float3 Direction; // 12B
-    float InnerConeAngle;
-    float OuterConeAngle;
-    float3 Padding; // 12B
-    // total: 64B
-};
+    float InnerConeAngle; // 4B
+    float OuterConeAngle; // 4B
+    int ShadowMapIndex; // 4B
+    float2 _PaddingLocal; // 8B
+    float4x4 ShadowViewProj; // 64B
+}; // Total: 128B
 
 #endif // CONSTANT_BUFFERS_HLSL

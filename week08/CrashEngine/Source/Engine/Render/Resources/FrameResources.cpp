@@ -1,4 +1,4 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/FrameResources.h"
 
@@ -52,6 +52,19 @@ void FFrameResources::Create(ID3D11Device* InDevice)
         InDevice->CreateSamplerState(&desc, &PointClampSampler);
     }
 
+    // s3: ShadowSampler for shadow mapping (hardware PCF).
+    {
+        D3D11_SAMPLER_DESC desc = {};
+        desc.Filter             = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        desc.AddressU           = D3D11_TEXTURE_ADDRESS_CLAMP;
+        desc.AddressV           = D3D11_TEXTURE_ADDRESS_CLAMP;
+        desc.AddressW           = D3D11_TEXTURE_ADDRESS_CLAMP;
+        desc.ComparisonFunc     = D3D11_COMPARISON_GREATER_EQUAL; // Reversed-Z
+        desc.MinLOD             = 0;
+        desc.MaxLOD             = D3D11_FLOAT32_MAX;
+        InDevice->CreateSamplerState(&desc, &ShadowSampler);
+    }
+
     FMaterialManager::Get().Initialize(InDevice);
 }
 
@@ -99,6 +112,12 @@ void FFrameResources::Release()
     {
         PointClampSampler->Release();
         PointClampSampler = nullptr;
+    }
+
+    if (ShadowSampler)
+    {
+        ShadowSampler->Release();
+        ShadowSampler = nullptr;
     }
 }
 
@@ -161,8 +180,8 @@ void FFrameResources::UpdateLocalLights(ID3D11Device* Device, ID3D11DeviceContex
 
 void FFrameResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
 {
-    ID3D11SamplerState* Samplers[3] = { LinearClampSampler, LinearWrapSampler, PointClampSampler };
-    Ctx->PSSetSamplers(0, 3, Samplers);
+    ID3D11SamplerState* Samplers[4] = { LinearClampSampler, LinearWrapSampler, PointClampSampler, ShadowSampler };
+    Ctx->PSSetSamplers(0, 4, Samplers);
 }
 
 void FFrameResources::EnsurePerObjectCBPoolCapacity(ID3D11Device* Device, uint32 RequiredCount)
@@ -196,4 +215,3 @@ void FFrameResources::EnsureTextCharInfoMap(const FFontResource* Resource)
 {
     TextBatch.EnsureCharInfoMap(Resource);
 }
-

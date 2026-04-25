@@ -10,7 +10,8 @@
     - t0~t5: 패스/머티리얼 SRV
     - t6: LocalLights structured buffer
     - t10: SceneDepth, t11: SceneColor, t13: Stencil
-    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
+    - t20~24: ShadowMap
+    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp, s3: Shadow
     - u#: Compute/후처리용 UAV
 */
 
@@ -39,9 +40,6 @@
 #ifndef FORWARD_ENABLE_DECAL
 #define FORWARD_ENABLE_DECAL 0
 #endif
-
-// Forward decals are intended to be folded into this opaque pass.
-// The renderer-side decal binding path is not wired yet, so the flag is a placeholder for now.
 
 #ifndef FORWARD_ENABLE_LIGHTING
 #define FORWARD_ENABLE_LIGHTING 1
@@ -151,6 +149,14 @@ FSceneColorOutput PS_Forward_Lambert(FForward_Opaque_VSOutput Input)
 
 #if FORWARD_ENABLE_LIGHTING
     Output.SceneColor = ComputeLambertLighting(BaseColor, Surface.WorldNormal);
+    
+    // Add Local Lights
+    for (int j = 0; j < NumLocalLights; ++j)
+    {
+        float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[j], Surface.WorldNormal, Input.worldPos);
+        Output.SceneColor.rgb += BaseColor.rgb * LocalTerm;
+    }
+    Output.SceneColor.rgb = saturate(Output.SceneColor.rgb);
 #else
     Output.SceneColor = BaseColor;
 #endif
@@ -174,6 +180,20 @@ FSceneColorOutput PS_Forward_BlinnPhong(FForward_Opaque_VSOutput Input)
         float4(Surface.Roughness, Surface.Specular, 0.0f, 1.0f),
         Input.worldPos,
         ViewDir);
+
+    // Add Local Lights
+    for (int j = 0; j < NumLocalLights; ++j)
+    {
+        FLocalBlinnPhongTerm LocalTerm = LocalLightBlinnPhongTerm(
+            g_LightBuffer[j],
+            Surface.WorldNormal,
+            Input.worldPos,
+            ViewDir,
+            Surface.Roughness,
+            Surface.Specular);
+        Output.SceneColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
+    }
+    Output.SceneColor.rgb = saturate(Output.SceneColor.rgb);
 #else
     Output.SceneColor = BaseColor;
 #endif
