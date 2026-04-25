@@ -62,10 +62,14 @@ struct FLightInfo
 	float    InnerConeCos;            //  4B  | offset 60  (cos(innerAngle), C++에서 미리 계산)
 
 	float    OuterConeCos;            //  4B  | offset 64  (cos(outerAngle))
-	float    _pad1[3];               // 12B  | offset 68  → 합계 80B (16B 정렬)
+	uint32   ShadowMapIndex;         //  4B  | offset 68  (Atlas 또는 array index)
+	uint32   bCastShadow;            //  4B  | offset 72  (0 or 1)
+	float    _pad1;                   //  4B  | offset 76
+
+	FVector4 ShadowAtlasScaleBias;   // 16B  | offset 80  (Atlas UV transform)
 };
 static_assert(sizeof(FLightInfo) % 16 == 0, "FLightInfo must be 16-byte aligned for StructuredBuffer");
-static_assert(sizeof(FLightInfo) == 80, "FLightInfo size mismatch with HLSL");
+static_assert(sizeof(FLightInfo) == 96, "FLightInfo size mismatch with HLSL");
 
 // =============================================================================
 // Lighting Constant Buffer (b3) — Ambient + Directional + 메타데이터

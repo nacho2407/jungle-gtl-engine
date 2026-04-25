@@ -3,8 +3,9 @@
 struct LightBaseParams
 {
 	float Intensity; //4
-	FVector4 LightColor; //16 
+	FVector4 LightColor; //16
 	bool bVisible; // 4
+	bool bCastShadows = false;
 };
 struct FGlobalAmbientLightParams : public LightBaseParams
 {
@@ -38,6 +39,9 @@ struct FPointLightParams : public LightBaseParams
 		Info.InnerConeCos = 0.f;
 		Info.OuterConeCos = 0.f;
 		Info.LightType = LightType;
+		Info.bCastShadow = bCastShadows ? 1u : 0u;
+		Info.ShadowMapIndex = 0;
+		Info.ShadowAtlasScaleBias = FVector4(0.0f, 0.0f, 1.0f, 1.0f);
 		return Info;
 	}
 };

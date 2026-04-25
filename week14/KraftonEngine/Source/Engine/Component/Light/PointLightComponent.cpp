@@ -52,6 +52,7 @@ void UPointLightComponent::PushToScene()
 	Params.LightFalloffExponent = LightFalloffExponent;
 	Params.LightType = ELightType::Point;
 	Params.Position = GetWorldLocation();
+	Params.bCastShadows = bCastShadows;
 
 	World->GetScene().GetEnvironment().AddPointLight(this, Params);
 }

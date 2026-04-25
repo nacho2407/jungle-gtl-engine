@@ -30,6 +30,7 @@ public:
 	float GetIntensity() const { return Intensity; }
 	FVector4 GetLightColor() const { return LightColor; }
 	bool IsVisible() const { return bVisible; }
+	bool CastShadows() const { return bCastShadows; }
 
 	virtual ELightComponentType GetLightType() const { return ELightComponentType::Unknown; }
 	class UBillboardComponent* EnsureEditorBillboard();
@@ -38,4 +39,5 @@ protected:
 	float Intensity = 1.f;;
 	FVector4 LightColor = { 1.0f,1.0f,1.0f,1.0f };
 	bool bVisible = true;
+	bool bCastShadows = false;
 };

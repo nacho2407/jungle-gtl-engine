@@ -71,6 +71,7 @@ void UDirectionalLightComponent::PushToScene()
 	Params.Intensity = Intensity;
 	Params.LightColor = LightColor;
 	Params.bVisible = bVisible;
+	Params.bCastShadows = bCastShadows;
 
 	World->GetScene().GetEnvironment().AddGlobalDirectionalLight(this, Params);
 }

@@ -24,6 +24,7 @@ namespace ECBSlot
 	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
 	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
 	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
+	constexpr uint32 Shadow = 5;     // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
@@ -86,6 +87,32 @@ struct FPerObjectConstants
 		return Result;
 	}
 };
+
+// =============================================================================
+// Shadow CB (b5) — Shadow 행렬 + 파라미터
+// HLSL ConstantBuffers.hlsli ShadowBuffer와 1:1 대응
+// =============================================================================
+static constexpr uint32 MAX_SHADOW_CASCADES = 4;
+
+struct FShadowCBData
+{
+	FMatrix  LightViewProj[MAX_SHADOW_CASCADES]; // 256B | offset   0  (Directional/CSM)
+	FMatrix  PointLightViewProj[6];              // 384B | offset 256  (Point cubemap 6면)
+	FMatrix  SpotLightViewProj;                  //  64B | offset 640  (Spot)
+
+	FVector4 CascadeSplits;                      //  16B | offset 704  (CSM cascade 분할 거리)
+	FVector4 AtlasScaleBias;                     //  16B | offset 720  (Atlas UV transform)
+
+	float    ShadowBias;                         //   4B | offset 736
+	float    ShadowSlopeBias;                    //   4B | offset 740
+	float    ShadowSharpen;                      //   4B | offset 744
+	uint32   ShadowMapResolution;                //   4B | offset 748
+
+	uint32   NumCascades;                        //   4B | offset 752
+	uint32   ShadowFilterMode;                   //   4B | offset 756  (0=Hard, 1=PCF, 2=VSM)
+	float    _pad[2];                            //   8B | offset 760 → 합계 768B
+};
+static_assert(sizeof(FShadowCBData) % 16 == 0, "FShadowCBData must be 16-byte aligned");
 
 struct FFrameConstants
 {

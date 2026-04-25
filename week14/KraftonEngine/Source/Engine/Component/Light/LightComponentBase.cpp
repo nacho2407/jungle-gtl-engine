@@ -14,6 +14,7 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Intensity",EPropertyType::Float,&Intensity,0.0f,50.f,0.05f });
 	OutProps.push_back({ "Color",EPropertyType::Color4,&LightColor });
 	OutProps.push_back({ "Visible",EPropertyType::Bool,&bVisible });
+	OutProps.push_back({ "Cast Shadows",EPropertyType::Bool,&bCastShadows });
 }
 
 void ULightComponentBase::Serialize(FArchive& Ar)
@@ -22,6 +23,7 @@ void ULightComponentBase::Serialize(FArchive& Ar)
 	Ar << Intensity;
 	Ar << LightColor;
 	Ar << bVisible;
+	Ar << bCastShadows;
 }
 
 UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()
