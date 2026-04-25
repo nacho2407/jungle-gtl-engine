@@ -7,35 +7,48 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 	ShadowMapAtlas.Initialize(InDevice);
 }
 
-bool FShadowAtlasManager::AllocateTile(int32& OutTileX, int32& OutTileY)
+bool FShadowAtlasManager::AllocateTile(FShadowAtlasTile& OutTile)
 {
-    for (int Y = 0; Y < ShadowMapAtlas.TileCountY; ++Y)
+    const int32 TileSize = GetTileSize();
+
+	int32 TileX, TileY;
+
+    if (ShadowAllocator.AllocateTile(TileX, TileY))
     {
-        for (int X = 0; X < ShadowMapAtlas.TileCountX; ++X	)
-        {
-            int Index = Y * ShadowMapAtlas.TileCountX + X;
-            if (!ShadowMapAtlas.TileUsed[Index])
-            {
-                ShadowMapAtlas.TileUsed[Index] = true;
-                OutTileX = X;
-                OutTileY = Y;
-                return true;
-            }
-        }
+        OutTile.TileIndex = TileY * ShadowAllocator.TileCountX + TileX;
+
+        OutTile.TileX = TileX;
+        OutTile.TileY = TileY;
+
+        OutTile.PixelX = TileX * TileSize;
+        OutTile.PixelY = TileY * TileSize;
+
+        OutTile.Width = TileSize;
+        OutTile.Height = TileSize;
+
+        const float AtlasW = static_cast<float>(GetAtlasWidth());
+        const float AtlasH = static_cast<float>(GetAtlasHeight());
+        const float Tile = static_cast<float>(TileSize);
+
+        OutTile.ScaleOffset = FVector4(
+            Tile / AtlasW,
+            Tile / AtlasH,
+            static_cast<float>(OutTile.PixelX) / AtlasW,
+            static_cast<float>(OutTile.PixelY) / AtlasH);
+
+        return true;
     }
-    return false;
+	return false;
 }
 
-bool FShadowAtlasManager::FreeTile(int32 X, int32 Y)
+bool FShadowAtlasManager::FreeTile(const int32& TileIndex)
 {
-    int tileX = X / ShadowMapAtlas.TileSize;
-    int tileY = Y / ShadowMapAtlas.TileSize;
-
-    if (tileX < 0 || tileX >= ShadowMapAtlas.TileCountX || tileY < 0 || tileY >= ShadowMapAtlas.TileCountY)
+	if (TileIndex >= 0 && TileIndex < ShadowAllocator.TileCountX * ShadowAllocator.TileCountY)
 	{
-		return false;
-	}
-	int Index = tileY * ShadowMapAtlas.TileCountX + tileX;
-	ShadowMapAtlas.TileUsed[Index] = false;
-    return true;
+		int32 TileX = TileIndex % ShadowAllocator.TileCountX;
+		int32 TileY = TileIndex / ShadowAllocator.TileCountX;
+		ShadowAllocator.FreeTile(TileX, TileY);
+		return true;
+    }
+    return false;
 }

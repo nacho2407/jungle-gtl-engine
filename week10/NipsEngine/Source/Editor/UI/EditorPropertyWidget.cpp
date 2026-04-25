@@ -755,6 +755,19 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		RenderInterpControlPoints(InterpComp);
 	}
 
+	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
+	{
+		if (ImGui::Button("Override camera with light's perspective"))
+		{
+			UWorld* World = GEngine ? GEngine->GetWorld() : nullptr;
+			FViewportCamera* Camera = World ? World->GetActiveCamera() : nullptr;
+			if (Camera)
+			{
+				Camera->SetLocation(LightComp->GetWorldLocation());
+				Camera->SetRotation(LightComp->GetRelativeQuat());
+			}
+		}
+	}
 	ImGui::Separator();
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신

@@ -54,8 +54,6 @@ public:
 	FDirectionalLightInfo	DirectionalLightInfo;
 	TArray<FLightInfo>		LightInfos;
 
-	//const UDirectionalLightComponent* DirLightComp = nullptr;
-    //FShadowLightRequest DirectionalLightShadow;
 	TArray<FShadowLightRequest> ShadowLightRequests;
 
 private:

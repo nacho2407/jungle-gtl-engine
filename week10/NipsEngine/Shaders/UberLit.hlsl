@@ -138,15 +138,10 @@ float3 GetHeatmapColor(float weight)
 
 float CalculateShadow(float4 worldPos)
 {
-    float3 projCoords = { 0.f, 0.f, 0.f };
-    float4 shadowCoord = { 0.f, 0.f, 0.f, 1.f};
-#ifdef SHADOW_MAP_BASIC
-    shadowCoord = mul(worldPos, DirLightViewProj);
+    float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
 
-//TODO : CSM
-#elif SHADOW_MAP_CSM    
-#elif SHADOW_MAP_PSM
-    float4 camClip = mul(mul(worldPos, View), Projection);
+#ifdef SHADOW_MAP_PSM
+    float4 camClip = mul(worldPos, VirtualViewProj);
 
     if (abs(camClip.w) < 1e-5f)
     {
@@ -163,28 +158,21 @@ float CalculateShadow(float4 worldPos)
     {
         return 1.0f;
     }
-    
-    projCoords = shadowCoord.xyz / shadowCoord.w;
+    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
     float2 shadowUV = float2(
         projCoords.x * 0.5f + 0.5f,
         -projCoords.y * 0.5f + 0.5f
     );
-    
-    // TODO : 넘어가는 영역에 대한 처리도 해야함
-    // Far 평면 넘어가는 처리도 추가적으로 해야함
+
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
         shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
         projCoords.z < 0.0f || projCoords.z > 1.0f)
     {
         return 1.0f;
     }
-    
-    
-    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap);
-    //const float shadowBias = 0.002f;
-    //float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z + shadowBias);
 
-    
+    const float shadowBias = 0.005f;
+    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
     return shadowFactor;
 }
 

@@ -25,6 +25,7 @@ cbuffer PerObjectBuffer : register(b1)
 
 cbuffer ShadowBuffer : register(b4)
 {
+    row_major matrix VirtualViewProj;
     row_major matrix DirLightViewProj;
     float4 ScaleOffset;
 };

@@ -1,29 +1,15 @@
 {
   "ClassName" : "UWorld",
   "Name" : "Default",
-  "NextUUID" : 474,
+  "NextUUID" : 491,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-3.821004, 2.022700, 3.052098],
+    "Location" : [-1.779112, 1.609049, 1.554760],
     "NearClip" : 0.100000,
-    "Rotation" : [18.829334, 31.759678, -32.937073]
+    "Rotation" : [19.937916, 21.660528, -44.501862]
   },
   "Primitives" : {
-    "461" : {
-      "Editor Only" : false,
-      "Enable Cull" : true,
-      "Enable Tick" : true,
-      "Location" : [0.000000, 0.000000, -1.348523],
-      "Materials" : ["DicePaper"],
-      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
-      "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [10.000000, 10.000000, 1.000000],
-      "Scroll U" : 0.000000,
-      "Scroll V" : 0.000000,
-      "Type" : "UStaticMeshComponent",
-      "Visible" : true
-    },
     "465" : {
       "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
       "Editor Only" : false,
@@ -54,7 +40,7 @@
       "Editor Only" : false,
       "Enable Cull" : true,
       "Enable Tick" : true,
-      "Location" : [0.000000, 0.000000, -0.290846],
+      "Location" : [0.000000, 0.000000, -0.242589],
       "Materials" : ["眼睛", "眼白", "脖子", "脸", "头发", "表情", "皮肤", "衣服", "裤子", "背饰", "裙子", "鞋子", "手套"],
       "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -89,6 +75,20 @@
       "Visible" : true,
       "Width" : 1.000000,
       "bLoop" : true
+    },
+    "489" : {
+      "Editor Only" : false,
+      "Enable Cull" : true,
+      "Enable Tick" : true,
+      "Location" : [0.939700, 0.000000, -1.689195],
+      "Materials" : ["DicePaper"],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [3.896928, 2.522370, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "UStaticMeshComponent",
+      "Visible" : true
     }
   },
   "Version" : 4,

@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "LightComponentBase.h"
 #include "Render/Common/ShadowTypes.h"
+#include "Core/EngineTypes.h"
 
 class UMaterialInterface;
 
@@ -9,18 +10,19 @@ public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
 	ULightComponent() = default;
 
-	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj) const;
+	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
+		const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 public:
-	const EShadowMap	 GetShadowMapType() const { return eShadowMapType; };
-	void				 SetShadowMapType(EShadowMap eType) { eShadowMapType = eType; }
+	EShadowMap GetShadowMapType() const { return eShadowMapType; }
+	void SetShadowMapType(EShadowMap InType) { eShadowMapType = InType; }
 
 private:
-	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
+	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+		const TArray<FBoundingBox>* VisibleObjectsBounds) const;
 	FMatrix ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
-
 protected:
 	~ULightComponent() = default;
 
@@ -31,5 +33,5 @@ public:
 	float ShadowSharpen = 0.5f;
 
 private:
-	EShadowMap eShadowMapType = { EShadowMap::BASIC } ;
+	EShadowMap eShadowMapType = EShadowMap::BASIC;
 };

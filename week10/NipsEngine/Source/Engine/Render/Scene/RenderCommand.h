@@ -116,8 +116,17 @@ struct FShadowLightRequest
     float ShadowSharpen = 1.0f;
 };
 
+struct FAtlasShadowData
+{
+    uint32 LightIndex = 0;
+    EShadowLightType Type;
+    FMatrix ViewProj;
+    FVector4 AtlasScaleOffset;
+};
+
 struct FShadowConstants
 {
+	FMatrix	VirtualViewProj;
 	FMatrix DirLightViewProj;
     FVector4 ScaleOffset; // xy: Scale, zw: Offset
 };
@@ -293,6 +302,8 @@ struct FRenderCommand
 	UMaterialInterface* Material = nullptr;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
+
+	FBoundingBox WorldAABB;
 
 	union
 	{
