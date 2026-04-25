@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Engine/Render/Resource/RenderResources.h"
 #include "Engine/Render/Pipeline/ForwardLightData.h"
 #include "Engine/Render/Pipeline/FrameContext.h"
+
+struct FTileCullingResource;
 
 class FComputeShader;
 

@@ -50,8 +50,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 #endif
 
 	// 이전 프레임 시각화 데이터 readback + 디버그 라인 제출
-	Renderer.GetTileBaseCulling().SubmitVisualizationDebugLines(
-		Renderer.GetFD3DDevice().GetDeviceContext(), Editor->GetWorld());
+	Renderer.SubmitCullingDebugLines(Editor->GetWorld());
 
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{

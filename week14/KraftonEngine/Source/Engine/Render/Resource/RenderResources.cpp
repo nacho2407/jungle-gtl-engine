@@ -6,6 +6,7 @@
 #include "Render/Proxy/FScene.h"
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
+#include "GameFramework/World.h"
 
 void FTileCullingResource::Create(ID3D11Device* Dev, uint32 InTileCountX, uint32 InTileCountY)
 {
@@ -122,7 +123,7 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	Ctx->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 }
 
-void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame, const FClusterCullingState* ClusterState)
+void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame)
 {
 	ID3D11Device* Dev = Device.GetDevice();
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
@@ -170,10 +171,9 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 	GlobalLightingData.LightCullingMode = static_cast<uint32>(Frame.RenderOptions.LightCullingMode);
 	GlobalLightingData.VisualizeLightCulling = Frame.RenderOptions.ViewMode == EViewMode::LightCulling ? 1u : 0u;
 	GlobalLightingData.HeatMapMax = Frame.RenderOptions.HeatMapMax;
-	if (ClusterState)
-	{
-		GlobalLightingData.ClusterCullingState = *ClusterState;
-	}
+
+	ClusteredLightCuller.UpdateFrameState(Frame);
+	GlobalLightingData.ClusterCullingState = ClusteredLightCuller.GetCullingState();
 
 	// 이전 프레임 타일 컬링 결과에서 타일 수 읽기 (1-frame latent)
 	GlobalLightingData.NumTilesX = TileCullingResource.TileCountX;
@@ -255,4 +255,57 @@ void FSystemResources::UnbindSystemTextures(FD3DDevice& Device)
 	Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
 	Ctx->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
 	Ctx->PSSetShaderResources(ESystemTexSlot::CullingHeatmap, 1, &nullSRV);
+}
+
+// ============================================================
+// Light Culling Facade
+// ============================================================
+
+void FSystemResources::DispatchTileCulling(ID3D11DeviceContext* DC, const FFrameContext& Frame)
+{
+	TileBasedCulling.Dispatch(
+		DC, Frame,
+		FrameBuffer.GetBuffer(),
+		TileCullingResource,
+		ForwardLights.LightBufferSRV,
+		LastNumLights,
+		static_cast<uint32>(Frame.ViewportWidth),
+		static_cast<uint32>(Frame.ViewportHeight));
+}
+
+void FSystemResources::DispatchClusterCulling(FD3DDevice& Device)
+{
+	if (!ClusteredLightCuller.IsInitialized()) return;
+
+	UnbindTileCullingBuffers(Device);
+	UnbindClusterCullingResources(Device);
+
+	ClusteredLightCuller.DispatchLightCullingCS(ForwardLights.LightBufferSRV);
+
+	BindClusterCullingResources(Device);
+}
+
+void FSystemResources::BindClusterCullingResources(FD3DDevice& Device)
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	ID3D11ShaderResourceView* LightIndexList = ClusteredLightCuller.GetLightIndexListSRV();
+	ID3D11ShaderResourceView* LightGridList  = ClusteredLightCuller.GetLightGridSRV();
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
+}
+
+void FSystemResources::UnbindClusterCullingResources(FD3DDevice& Device)
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+	ID3D11ShaderResourceView* NullSRVs[2] = {};
+	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+	Ctx->CSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+}
+
+void FSystemResources::SubmitCullingDebugLines(ID3D11DeviceContext* DC, UWorld* World)
+{
+	TileBasedCulling.SubmitVisualizationDebugLines(DC, World);
 }

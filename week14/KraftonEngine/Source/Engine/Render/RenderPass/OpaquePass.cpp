@@ -7,7 +7,7 @@ REGISTER_RENDER_PASS(FOpaquePass)
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/DrawCommandList.h"
-#include "Render/Pipeline/Renderer.h"
+#include "Render/Resource/RenderResources.h"
 
 FOpaquePass::FOpaquePass()
 {
@@ -46,29 +46,19 @@ void FOpaquePass::BeginPass(const FPassContext& Ctx)
 	}
 
 	// --- Light Culling Dispatch ---
-	if (Frame.RenderOptions.LightCullingMode != ELightCullingMode::Off && Ctx.Renderer)
+	if (Frame.RenderOptions.LightCullingMode != ELightCullingMode::Off)
 	{
 		DC->OMSetRenderTargets(0, nullptr, nullptr);
 
 		if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
 		{
-			Ctx.Renderer->UnbindClusterCullingResources();
-			Ctx.Renderer->UnbindTileCullingResources();
-
-			Ctx.Renderer->GetTileBaseCulling().Dispatch(
-				DC,
-				Frame,
-				Ctx.Renderer->GetFrameBuffer(),
-				Ctx.Renderer->GetTileCullingResource(),
-				Ctx.Renderer->GetLightBufferSRV(),
-				Ctx.Renderer->GetNumLights(),
-				static_cast<uint32>(Frame.ViewportWidth),
-				static_cast<uint32>(Frame.ViewportHeight)
-			);
+			Ctx.Resources.UnbindClusterCullingResources(Ctx.Device);
+			Ctx.Resources.UnbindTileCullingBuffers(Ctx.Device);
+			Ctx.Resources.DispatchTileCulling(DC, Frame);
 		}
 		else if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Cluster)
 		{
-			Ctx.Renderer->DispatchClusterCullingResources();
+			Ctx.Resources.DispatchClusterCulling(Ctx.Device);
 		}
 
 		if (Frame.NormalRTV)
@@ -84,7 +74,7 @@ void FOpaquePass::BeginPass(const FPassContext& Ctx)
 
 		if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
 		{
-			Ctx.Renderer->BindTileCullingResources();
+			Ctx.Resources.BindTileCullingBuffers(Ctx.Device);
 		}
 
 		Cache.bForceAll = true;

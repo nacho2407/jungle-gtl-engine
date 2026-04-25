@@ -4,6 +4,8 @@
 #include "Engine/Render/Pipeline/ForwardLightData.h"
 #include <cstring>
 
+struct FFrameContext;
+
 class FComputeShader;
 
 struct FAABB
@@ -21,6 +23,9 @@ public:
 	void DispatchViewSpaceAABB();
 	void DispatchLightCullingCS(ID3D11ShaderResourceView* LightInfos);
 	bool IsInitialized() const { return bIsInitialized; }
+
+	// 프레임 파라미터로 CullingState 갱신
+	void UpdateFrameState(const FFrameContext& Frame);
 
 	template<typename T>
 	void InitializeBuffer(

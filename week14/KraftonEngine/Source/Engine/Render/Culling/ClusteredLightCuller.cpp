@@ -1,5 +1,6 @@
 #include "ClusteredLightCuller.h"
 #include "Render/Pipeline/RenderConstants.h"
+#include "Render/Pipeline/FrameContext.h"
 #include "Render/Resource/ShaderManager.h"
 
 namespace
@@ -8,6 +9,14 @@ namespace
 	constexpr uint32 ClusterCullingThreadGroupSizeY = 3;
 	constexpr uint32 ClusterCullingThreadGroupSizeZ = 4;
 }
+void FClusteredLightCuller::UpdateFrameState(const FFrameContext& Frame)
+{
+	State.NearZ = Frame.NearClip;
+	State.FarZ = Frame.FarClip;
+	State.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
+	State.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
+}
+
 void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)
 {
 	Device = InDevice;
