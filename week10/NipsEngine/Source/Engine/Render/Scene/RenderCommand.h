@@ -110,7 +110,7 @@ struct FShadowLightRequest
     ULightComponentBase* LightComponent = nullptr;
     EShadowLightType Type;
     FVector WorldLocation;
-    bool bCastShadows = false;
+    bool bCastShadows = true;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowSharpen = 1.0f;

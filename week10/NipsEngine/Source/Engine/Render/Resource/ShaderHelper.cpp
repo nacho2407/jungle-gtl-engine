@@ -2,7 +2,7 @@
 
 TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey)
 {
-	constexpr uint32 FeatureMask   = 0x1FFF;
+	constexpr uint32 FeatureMask   = 0xFFFF;
 	constexpr uint32 LightingMask  = 0x700;
 
 	EShaderFeature Features =
