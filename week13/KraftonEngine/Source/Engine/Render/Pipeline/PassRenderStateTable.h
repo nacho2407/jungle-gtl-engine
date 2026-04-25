@@ -23,7 +23,11 @@ struct FPassRenderState
 class FPassRenderStateTable
 {
 public:
-	void Initialize();
+	// 패스 객체로부터 상태를 설정
+	void Set(ERenderPass Pass, const FPassRenderState& State)
+	{
+		States[(uint32)Pass] = State;
+	}
 
 	// 패스별 원본 렌더 상태 조회
 	const FPassRenderState& Get(ERenderPass Pass) const

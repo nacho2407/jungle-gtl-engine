@@ -24,12 +24,37 @@ void FRenderer::Create(HWND hWindow)
 	TileBasedCulling.Initialize(Device.GetDevice());
 	ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
 
-	PassRenderStateTable.Initialize();
+	InitializePasses();
 
 	Builder.Create(Device.GetDevice(), Device.GetDeviceContext(), &PassRenderStateTable);
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
+}
+
+// ============================================================
+// InitializePasses — 패스 객체 생성 + 상태 테이블 빌드
+// ============================================================
+void FRenderer::InitializePasses()
+{
+	Passes.push_back(std::make_unique<FPreDepthPass>());
+	Passes.push_back(std::make_unique<FOpaquePass>());
+	Passes.push_back(std::make_unique<FDecalPass>());
+	Passes.push_back(std::make_unique<FAdditiveDecalPass>());
+	Passes.push_back(std::make_unique<FAlphaBlendPass>());
+	Passes.push_back(std::make_unique<FSelectionMaskPass>());
+	Passes.push_back(std::make_unique<FEditorLinesPass>());
+	Passes.push_back(std::make_unique<FPostProcessPass>());
+	Passes.push_back(std::make_unique<FFXAAPass>());
+	Passes.push_back(std::make_unique<FGizmoOuterPass>());
+	Passes.push_back(std::make_unique<FGizmoInnerPass>());
+	Passes.push_back(std::make_unique<FOverlayFontPass>());
+
+	// 패스 객체로부터 상태 테이블 빌드
+	for (const auto& Pass : Passes)
+	{
+		PassRenderStateTable.Set(Pass->GetPassType(), Pass->GetRenderState());
+	}
 }
 
 void FRenderer::Release()
@@ -90,35 +115,25 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	Cache.RTV = Frame.ViewportRTV;
 	Cache.DSV = Frame.ViewportDSV;
 
-	// ── Pre/Post 패스 이벤트 등록 ──
-	TArray<FPassEvent> PrePassEvents;
-	TArray<FPassEvent> PostPassEvents;
-	PassEventBuilder.Build(Device, Frame, Cache, this, PrePassEvents, PostPassEvents);
+	FPassContext PassCtx{ Device, Frame, Cache, this };
 
 	// ── 패스 루프 ──
-	for (uint32 i = 0; i < (uint32)ERenderPass::MAX; ++i)
+	for (const auto& Pass : Passes)
 	{
-		ERenderPass CurPass = static_cast<ERenderPass>(i);
-
-		for (auto& PrePassEvent : PrePassEvents)
-		{
-			PrePassEvent.TryExecute(CurPass);
-		}
+		Pass->BeginPass(PassCtx);
 
 		uint32 Start, End;
-		CommandList.GetPassRange(CurPass, Start, End);
-		if (Start >= End) continue;
-
-		const char* PassName = GetRenderPassName(CurPass);
-		SCOPE_STAT_CAT(PassName, "4_ExecutePass");
-		GPU_SCOPE_STAT(PassName);
-
-		CommandList.SubmitRange(Start, End, Device, Resources, Cache);
-
-		for (auto& PostPassEvent : PostPassEvents)
+		CommandList.GetPassRange(Pass->GetPassType(), Start, End);
+		if (Start < End)
 		{
-			PostPassEvent.TryExecute(CurPass);
+			const char* PassName = GetRenderPassName(Pass->GetPassType());
+			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
+			GPU_SCOPE_STAT(PassName);
+
+			CommandList.SubmitRange(Start, End, Device, Resources, Cache);
 		}
+
+		Pass->EndPass(PassCtx);
 	}
 
 	CleanupPassState(Cache);
