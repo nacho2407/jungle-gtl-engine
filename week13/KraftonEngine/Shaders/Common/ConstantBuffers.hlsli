@@ -25,7 +25,7 @@ cbuffer PerObjectBuffer : register(b1)
 };
 
 // 시스템 샘플러 (s0~s4)
-#include "SystemSamplers.hlsli"
+#include "Common/SystemSamplers.hlsli"
 
 // b5: Shadow 행렬 + 파라미터
 #define MAX_SHADOW_CASCADES 4
