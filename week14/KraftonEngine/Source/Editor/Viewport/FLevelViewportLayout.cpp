@@ -871,6 +871,10 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 
 void FLevelViewportLayout::ToggleViewportSplit()
 {
+	if(LayoutTransition != EViewportLayoutTransition::None)
+	{
+		return;
+	}
 	if (CurrentLayout == EViewportLayout::OnePane)
 		SetLayout(EViewportLayout::FourPanes2x2);
 	else
@@ -1250,14 +1254,18 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 	{
 		ImGui::PushID(SlotIndex);
 
+		const bool bIsTransitioning = (LayoutTransition != EViewportLayoutTransition::None);
+
 		// Layout 드롭다운
 		char PopupID[64];
-		//snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
+		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
 
+		//if (bIsTransitioning) ImGui::BeginDisabled();
 		if (DrawToolbarIconButton("##Layout", EToolbarIcon::Menu, "Layout", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 		{
 			ImGui::OpenPopup(PopupID);
 		}
+		//if (bIsTransitioning) ImGui::EndDisabled();
 
 		if (ImGui::BeginPopup(PopupID))
 		{
@@ -1314,6 +1322,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			? static_cast<int32>(EViewportLayout::FourPanes2x2)
 			: static_cast<int32>(EViewportLayout::OnePane);
 
+		//if (bIsTransitioning) ImGui::BeginDisabled();
 		if (LayoutIcons[ToggleIdx])
 		{
 			if (ImGui::ImageButton("##toggle", (ImTextureID)LayoutIcons[ToggleIdx], ImVec2(ToggleIconSize, ToggleIconSize)))
@@ -1329,6 +1338,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ToggleViewportSplit();
 			}
 		}
+		//if (bIsTransitioning) ImGui::EndDisabled();
 
 		// ViewportType + Settings 팝업
 		if (SlotIndex < static_cast<int32>(LevelViewportClients.size()))
@@ -1366,36 +1376,6 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				}
 				ImGui::EndPopup();
 			}
-
-			// ── Gizmo Mode 팝업 -> 아이콘으로 대체 ──
-			//UGizmoComponent* Gizmo = Editor->GetGizmo();
-			//if (Gizmo)
-			//{
-			//	ImGui::SameLine();
-
-			//	static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
-			//	const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
-
-			//	char GizmoPopupID[64];
-			//	snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
-
-			//	if (ImGui::Button(CurrentModeName))
-			//	{
-			//		ImGui::OpenPopup(GizmoPopupID);
-			//	}
-
-			//	if (ImGui::BeginPopup(GizmoPopupID))
-			//	{
-			//		int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-			//		if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
-			//			Gizmo->SetTranslateMode();
-			//		if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
-			//			Gizmo->SetRotateMode();
-			//		if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
-			//			Gizmo->SetScaleMode();
-			//		ImGui::EndPopup();
-			//	}
-			//}
 
 			// ── View Mode 팝업 ──
 			ImGui::SameLine();
