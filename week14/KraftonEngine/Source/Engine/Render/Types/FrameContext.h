@@ -31,7 +31,8 @@ struct FFrameContext
 	float NearClip = 0.1f;
 	float FarClip = 1000.0f;
 
-	bool  bIsOrtho   = false;
+	bool  bIsOrtho     = false;
+	bool  bIsLightView = false;
 	float OrthoWidth = 10.0f;
 
 	// Viewport

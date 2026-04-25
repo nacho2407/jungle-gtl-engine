@@ -166,6 +166,7 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 		}
 	}
 
+	Frame.bIsLightView = VC->IsViewingFromLight();
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
