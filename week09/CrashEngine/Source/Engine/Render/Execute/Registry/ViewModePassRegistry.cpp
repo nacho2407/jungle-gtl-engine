@@ -133,6 +133,7 @@ FViewModePassDesc BuildViewModeForwardOpaquePassDesc(EShadingModel ShadingModel)
     Pass.bFullscreenPass        = false;
     Pass.ShaderVariant.FilePath = "Shaders/Passes/Scene/Forward/ForwardOpaquePass.hlsl";
     Pass.ShaderVariant.VSEntry  = "VS_ForwardOpaque";
+    ViewModePassConfigUtils::AddDefine(Pass.ShaderVariant.Defines, "FORWARD_ENABLE_DECAL");
 
     switch (ShadingModel)
     {

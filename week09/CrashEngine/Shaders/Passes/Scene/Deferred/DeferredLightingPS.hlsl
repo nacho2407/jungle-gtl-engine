@@ -82,8 +82,13 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
 #elif defined(LIGHTING_MODEL_LAMBERT)
     float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
+    float3 TotalLight = ComputeLambertGlobalLight(Normal);
+    float3 TotalLocalLight = 0.0f;
 
-    FinalColor = ComputeLambertLighting(BaseColor, Normal, WorldPos);
+    // Deferred는 global light를 먼저 구한 뒤, 아래 타일 light 목록에서
+    // local light만 추가로 누적합니다. 마지막에 BaseColor를 한 번만 곱해서
+    // forward의 Lambert 수식과 같은 형태를 유지합니다.
+    FinalColor = BaseColor;
 
     uint2 PixelCoord = uint2(Input.position.xy);
     uint2 TileCoord = PixelCoord / TileSize;
@@ -102,8 +107,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 int GlobalPointLightIndex = Bucket * 32 + bit;
                 if (GlobalPointLightIndex < NumLocalLights)
                 {
-                    float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
-                    FinalColor.rgb += BaseColor.rgb * LocalTerm;
+                    TotalLocalLight += LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
 #if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
 #endif
@@ -111,18 +115,23 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
             }
         }
     }
-    FinalColor.rgb = saturate(FinalColor.rgb);
+    FinalColor.rgb = BaseColor.rgb * saturate(TotalLight + TotalLocalLight);
 
 #elif defined(LIGHTING_MODEL_BLINNPHONG)
     float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(UV));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
     float3 ViewDir = normalize(CameraWorldPos - WorldPos);
+    FLocalBlinnPhongTerm TotalLight = ComputeBlinnPhongGlobalLight(Normal, MaterialParam, ViewDir);
+    FLocalBlinnPhongTerm TotalLocalLight = (FLocalBlinnPhongTerm)0;
 
     float Shininess = max(MaterialParam.x, 1.0f);
     float SpecularStrength = max(MaterialParam.y, 0.0f);
 
-    FinalColor = ComputeBlinnPhongLighting(BaseColor, Normal, MaterialParam, WorldPos, ViewDir);
+    // Deferred는 global light를 먼저 구한 뒤, 아래 타일 light 목록에서
+    // local light를 diffuse/specular로 분리해 누적합니다.
+    // 마지막 합성도 forward와 같은 형태로 맞춰 경로 간 밝기 차이를 줄입니다.
+    FinalColor = BaseColor;
 
     uint2 PixelCoord = uint2(Input.position.xy);
     uint2 TileCoord = PixelCoord / TileSize;
@@ -148,7 +157,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                         ViewDir,
                         Shininess,
                         SpecularStrength);
-                    FinalColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
+                    TotalLocalLight.Diffuse += LocalTerm.Diffuse;
+                    TotalLocalLight.Specular += LocalTerm.Specular;
 #if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
 #endif
@@ -156,7 +166,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
             }
         }
     }
-    FinalColor.rgb = saturate(FinalColor.rgb);
+    FinalColor.rgb = BaseColor.rgb * saturate(TotalLight.Diffuse + TotalLocalLight.Diffuse)
+        + (TotalLight.Specular + TotalLocalLight.Specular) * 0.2f;
 
 #elif defined(LIGHTING_MODEL_WORLDNORMAL)
     float3 Normal = DecodeNormal(ResolveSurface1(UV));

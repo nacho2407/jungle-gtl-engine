@@ -1,10 +1,12 @@
 ﻿// 충돌/피킹 영역의 세부 동작을 구현합니다.
 #include "Octree.h"
-#include <Collision/RayUtils.h>
+
 #include <algorithm>
-#include "Sphere.h"
+
 #include "Editor/UI/EditorConsolePanel.h"
+#include "Math/Intersection.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Sphere.h"
 
 namespace
 {
@@ -388,13 +390,13 @@ void FOctree::QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent
 
 void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
-    if (!FRayUtils::CheckRayAABB(Ray, LooseBounds.Min, LooseBounds.Max))
+    if (!FMath::CheckRayAABB(Ray, LooseBounds))
         return;
 
     for (UPrimitiveComponent* Primitive : PrimitiveList)
     {
         const FBoundingBox& box = Primitive->GetWorldBoundingBox();
-        if (Primitive && FRayUtils::CheckRayAABB(Ray, box.Min, box.Max))
+        if (Primitive && FMath::CheckRayAABB(Ray, box))
         {
             OutPrimitives.push_back(Primitive);
         }

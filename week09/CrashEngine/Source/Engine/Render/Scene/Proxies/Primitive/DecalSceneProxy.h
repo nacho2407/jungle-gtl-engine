@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Collision/OBB.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 class UDecalComponent;
@@ -14,6 +15,8 @@ public:
     void UpdateTransform() override;
     void UpdateMaterial() override;
     void UpdateMesh() override;
+    const FOBB& GetDecalOBB() const { return CachedDecalOBB; }
+    const FDecalCBData* GetDecalConstants() const;
 
 private:
     UDecalComponent* GetDecalComponent() const;
@@ -21,4 +24,5 @@ private:
 
     FConstantBuffer* DecalCB;
     class UMaterial* DecalMaterial = nullptr;
+    FOBB CachedDecalOBB;
 };

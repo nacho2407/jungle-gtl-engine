@@ -24,4 +24,12 @@ struct FDecalSurfaceData
     float4 Surface2;
 };
 
+struct FForwardDecalData
+{
+    float4x4 WorldToDecal;
+    float4 Color;
+    uint TextureIndex;
+    float3 Padding;
+};
+
 #endif

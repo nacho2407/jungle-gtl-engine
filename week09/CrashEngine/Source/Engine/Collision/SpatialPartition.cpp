@@ -2,14 +2,14 @@
 #include "SpatialPartition.h"
 
 #include "Collision/Octree.h"
-#include "Collision/RayUtils.h"
 #include "Core/RayTypes.h"
 #include "Component/PrimitiveComponent.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "GameFramework/AActor.h"
-#include <algorithm>
-
+#include "Math/Intersection.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Sphere.h"
+
+#include <algorithm>
 
 namespace
 {
@@ -450,7 +450,7 @@ void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveC
             continue;
 
         const FBoundingBox Box = Prim->GetWorldBoundingBox();
-        if (FRayUtils::CheckRayAABB(Ray, Box.Min, Box.Max))
+        if (FMath::CheckRayAABB(Ray, Box))
         {
             OutPrimitives.push_back(Prim);
         }

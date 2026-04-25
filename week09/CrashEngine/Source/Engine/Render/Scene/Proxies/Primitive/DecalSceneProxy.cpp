@@ -38,6 +38,16 @@ UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
     return static_cast<UDecalComponent*>(Owner);
 }
 
+const FDecalCBData* FDecalSceneProxy::GetDecalConstants() const
+{
+    if (!ExtraCB.Buffer || ExtraCB.Size < sizeof(FDecalCBData))
+    {
+        return nullptr;
+    }
+
+    return &ExtraCB.As<FDecalCBData>();
+}
+
 void FDecalSceneProxy::UpdateDecalConstants()
 {
     UDecalComponent* DecalComp = GetDecalComponent();
@@ -54,6 +64,10 @@ void FDecalSceneProxy::UpdateDecalConstants()
 void FDecalSceneProxy::UpdateTransform()
 {
     FPrimitiveProxy::UpdateTransform();
+    if (UDecalComponent* DecalComp = GetDecalComponent())
+    {
+        CachedDecalOBB = DecalComp->GetWorldOBB();
+    }
     UpdateDecalConstants();
 }
 

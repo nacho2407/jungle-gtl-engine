@@ -14,6 +14,7 @@ constexpr uint32 PerObject  = 1; // b1: object 단위 상수
 constexpr uint32 PerShader0 = 2; // b2: pass/material 추가 상수
 constexpr uint32 PerShader1 = 3; // b3: pass/material 추가 상수
 constexpr uint32 Light      = 4; // b4: 전역 조명 상수
+constexpr uint32 PerShader2 = 5; // b5: 추가 pass 입력 상수
 } // namespace ECBSlot
 
 // Shader Resource register slots (t#)
@@ -25,7 +26,10 @@ constexpr uint32 DebugHitMap   = 8;  // t8: debug light-hit visualization
 constexpr uint32 ShadowMap     = 9;  // t9: shadow map texture (cube or array)
 constexpr uint32 SceneDepth    = 10; // t10: scene depth copy
 constexpr uint32 SceneColor    = 11; // t11: scene color copy
+constexpr uint32 ForwardDecalData      = 12; // t12: forward decal metadata buffer
 constexpr uint32 Stencil       = 13; // t13: stencil copy
+constexpr uint32 ForwardDecalIndexList = 14; // t14: per-object decal index buffer
+constexpr uint32 ForwardDecalTextureBase = 32; // t32+: forward decal texture array
 } // namespace ESystemTexSlot
 
 // Sampler register slots (s#)
