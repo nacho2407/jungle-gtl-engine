@@ -63,6 +63,7 @@ void USpotLightComponent::PushToScene()
 	Params.LightFalloffExponent = LightFalloffExponent;
 	Params.LightType = ELightType::Spot;
 	Params.Position = GetWorldLocation();
+	Params.bCastShadows = bCastShadows;
 	Params.Direction = GetForwardVector();
 	Params.InnerConeCos = std::cos(ClampedInnerAngle * FMath::DegToRad);
 	Params.OuterConeCos = std::cos(ClampedOuterAngle * FMath::DegToRad);

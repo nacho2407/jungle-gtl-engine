@@ -24,4 +24,26 @@ cbuffer PerObjectBuffer : register(b1)
     float4 PrimitiveColor;
 };
 
+// b5: Shadow 행렬 + 파라미터
+#define MAX_SHADOW_CASCADES 4
+
+cbuffer ShadowBuffer : register(b5)
+{
+    float4x4 ShadowLightViewProj[MAX_SHADOW_CASCADES]; // Directional/CSM
+    float4x4 ShadowPointLightViewProj[6];              // Point cubemap 6면
+    float4x4 ShadowSpotLightViewProj;                  // Spot
+
+    float4   CascadeSplits;                            // CSM cascade 분할 거리
+    float4   ShadowAtlasScaleBias;                     // Atlas UV transform
+
+    float    ShadowBias;
+    float    ShadowSlopeBias;
+    float    ShadowSharpen;
+    uint     ShadowMapResolution;
+
+    uint     NumCascades;
+    uint     ShadowFilterMode;                         // 0=Hard, 1=PCF, 2=VSM
+    float2   _shadowPad;
+};
+
 #endif // CONSTANT_BUFFERS_HLSL

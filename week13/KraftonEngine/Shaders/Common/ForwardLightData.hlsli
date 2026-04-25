@@ -63,7 +63,11 @@ struct FLightInfo
     float InnerConeCos; //  4B  (Spot 전용)
 
     float OuterConeCos; //  4B  (Spot 전용)
-    float3 _pad1; // 12B → 합계 80B
+    uint ShadowMapIndex; //  4B  (Atlas/array index)
+    uint bCastShadow; //  4B  (0 or 1)
+    float _pad1; //  4B
+
+    float4 ShadowAtlasScaleBias; // 16B  (Atlas UV transform) → 합계 96B
 };
 struct FClusterCullingState
 {
