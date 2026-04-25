@@ -90,7 +90,7 @@ void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectC
 {
     CollectScenePrimitives(World, CollectContext);
     CollectSceneLights(World, CollectContext.Scene, CollectContext.SceneView);
-    CollectShadowCasters(World);
+    CollectShadowCasters(World, CollectContext.SceneView);
 
     if (World && CollectContext.SceneView)
     {
