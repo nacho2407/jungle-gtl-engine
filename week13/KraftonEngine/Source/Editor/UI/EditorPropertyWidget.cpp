@@ -425,12 +425,12 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	//아래 클래스들로 컴포넌트 리스트를 분류합니다.
 	TArray<FComponentClassGroup> ComponentGroups;
-	AddComponentClassGroup(ComponentGroups, "ULightComponentBase", ULightComponentBase::StaticClass());
-	AddComponentClassGroup(ComponentGroups, "UMovementComponent", UMovementComponent::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "Light", ULightComponentBase::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "Movement", UMovementComponent::StaticClass());
 	//AddComponentClassGroup(ComponentGroups, "UBillboardComponent", UBillboardComponent::StaticClass());
 	//AddComponentClassGroup(ComponentGroups, "UMeshComponent", UMeshComponent::StaticClass());
-	AddComponentClassGroup(ComponentGroups, "UPrimitiveComponent", UPrimitiveComponent::StaticClass());
-	AddComponentClassGroup(ComponentGroups, "USceneComponent", USceneComponent::StaticClass());
+	AddComponentClassGroup(ComponentGroups, "Primitive", UPrimitiveComponent::StaticClass());
+	//AddComponentClassGroup(ComponentGroups, "USceneComponent", USceneComponent::StaticClass());
 	//AddComponentClassGroup(ComponentGroups, "UActorComponent", UActorComponent::StaticClass());
 
 	TArray<UClass*> OtherClasses;

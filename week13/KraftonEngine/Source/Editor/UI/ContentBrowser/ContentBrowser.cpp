@@ -300,9 +300,16 @@ TArray<FContentItem> FEditorContentBrowserWidget::ReadDirectory(std::wstring Pat
 
 	for (const auto& Entry : std::filesystem::directory_iterator(Path))
 	{
+		std::wstring Name = Entry.path().filename().wstring();
+		if (Entry.is_directory())
+		{
+			if (Name == L"Bin" || Name == L"Build" || Name == L".git" || Name == L".vs")
+				continue;
+		}
+
 		FContentItem Item;
 		Item.Path = Entry.path();
-		Item.Name = Entry.path().filename().wstring();
+		Item.Name = Name;
 		Item.bIsDirectory = Entry.is_directory();
 
 		Items.push_back(Item);
@@ -330,6 +337,12 @@ FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirector
 	for (const auto& Entry : std::filesystem::directory_iterator(DirPath))
 	{
 		if (!Entry.is_directory())
+			continue;
+
+		std::wstring DirName = Entry.path().filename().wstring();
+		if (DirName == L"Bin" || DirName == L"Build" || DirName == L".git" || DirName == L".vs"
+			|| DirName == L"Source" || DirName == L"Saves" || DirName == L"Settings" || DirName == L"packages"
+			|| DirName == L"ThidyParty")
 			continue;
 
 		Node.Children.push_back(BuildDirectoryTree(Entry.path()));
