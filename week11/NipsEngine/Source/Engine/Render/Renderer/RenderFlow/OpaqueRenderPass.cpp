@@ -32,9 +32,11 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
 	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
 
-	// ShadowBuffer(b4)를 PS에 바인딩 — CalculateShadow가 PS에서 DirLightViewProj/ScaleOffset을 읽음
-	ID3D11Buffer* ShadowCB = Context->RenderResources->ShadowBuffer.GetBuffer();
-	Context->DeviceContext->PSSetConstantBuffers(4, 1, &ShadowCB);
+	ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+		Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+		Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+	};
+	Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
 
     return true;
 }

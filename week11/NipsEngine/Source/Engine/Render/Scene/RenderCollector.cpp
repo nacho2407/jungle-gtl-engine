@@ -913,6 +913,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		//RenderBus.DirLightComp = DirLight;
 
         FShadowLightRequest DirLightDataShadow = {};
+		DirLightDataShadow.LightIndex		= InvalidShadowIndex;
         DirLightDataShadow.LightComponent	= const_cast<UDirectionalLightComponent*>(DirLight);
         DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
         DirLightDataShadow.bCastShadows		= DirLight->bCastShadows;
@@ -927,6 +928,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
 	{
+		const uint32 LightIndex = static_cast<uint32>(RenderBus.LightInfos.size());
         FLightInfo LightData		= {};
 		LightData.Color				= Color;
 		LightData.Intensity			= SpotLight->Intensity;
@@ -938,6 +940,17 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
         LightData.Type				= 0;
 		RenderBus.LightInfos.push_back(LightData);
+
+		FShadowLightRequest ShadowRequest = {};
+		ShadowRequest.LightIndex		= LightIndex;
+		ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
+		ShadowRequest.Type			= EShadowLightType::SLT_Spot;
+		ShadowRequest.bCastShadows	= SpotLight->bCastShadows;
+		ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
+		ShadowRequest.ShadowBias	= SpotLight->ShadowBias;
+		ShadowRequest.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
+		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
+		RenderBus.ShadowRequests.push_back(ShadowRequest);
 	}
     else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};
