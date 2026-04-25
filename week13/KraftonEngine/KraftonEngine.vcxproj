@@ -367,6 +367,7 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\PreDepthPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassBase.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp" />
