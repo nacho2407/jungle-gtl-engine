@@ -9,12 +9,17 @@ public:
 	DECLARE_CLASS(ULightComponent, ULightComponentBase)
 	ULightComponent() = default;
 
-	FMatrix GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
+	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj) const;
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 public:
-	const EShadowMapType GetShadowMapType() const { return eShadowMapType; };
-	void				 SetShadowMapType(EShadowMapType eType) { eShadowMapType = eType; }
+	const EShadowMap	 GetShadowMapType() const { return eShadowMapType; };
+	void				 SetShadowMapType(EShadowMap eType) { eShadowMapType = eType; }
+
+private:
+	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
+	FMatrix ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const;
 
 protected:
 	~ULightComponent() = default;
@@ -26,5 +31,5 @@ public:
 	float ShadowSharpen = 0.5f;
 
 private:
-	EShadowMapType eShadowMapType = { EShadowMapType::BASIC } ;
+	EShadowMap eShadowMapType = { EShadowMap::BASIC } ;
 };

@@ -2,7 +2,7 @@
 #include "Core/CoreTypes.h"
 
 // ShadowMap Method
-enum class EShadowMapType : uint32
+enum class EShadowMap : uint32
 {
 	BASIC,
 	PSM,

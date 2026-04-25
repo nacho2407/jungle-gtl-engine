@@ -26,6 +26,9 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	if (!!(Features & EShaderFeature::HasAlphaMask))   AddMacro("HAS_ALPHA_MASK", "1");
 	if (!!(Features & EShaderFeature::ClusterCull))    AddMacro("CULLING_MODEL_CLUSTERED", "1");
 	if (!!(Features & EShaderFeature::TileCull))       AddMacro("CULLING_MODEL_TILED", "1");
+	if (!!(Features & EShaderFeature::ShadowBasic))    AddMacro("SHADOW_MAP_BASIC", "1");
+	if (!!(Features & EShaderFeature::ShadowPSM))      AddMacro("SHADOW_MAP_PSM", "1");
+	if (!!(Features & EShaderFeature::ShadowCSM))      AddMacro("SHADOW_MAP_CSM", "1");
 
 	switch (LightingModel)
 	{
@@ -48,6 +51,26 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildLightCullingCSMacros(ELightCullMode
 		Macros.push_back({ "CULLING_MODEL_CLUSTERED", "1" });
 	else if (Mode == ELightCullMode::Tiled)
 		Macros.push_back({ "CULLING_MODEL_TILED", "1" });
+	Macros.push_back({ nullptr, nullptr });
+	return Macros;
+}
+
+TArray<D3D_SHADER_MACRO> FShaderHelper::BuildShadowMapMacros(EShadowMap Map)
+{
+	TArray<D3D_SHADER_MACRO> Macros;
+	if (Map == EShadowMap::BASIC)
+	{
+		Macros.push_back({ "SHADOW_MAP_BASIC", "1" });
+	}
+	else if (Map == EShadowMap::PSM)
+	{
+		Macros.push_back({ "SHADOW_MAP_PSM", "1" });
+	}
+	else if (Map == EShadowMap::CSM)
+	{
+		Macros.push_back({ "SHADOW_MAP_CSM", "1" });
+	}
+
 	Macros.push_back({ nullptr, nullptr });
 	return Macros;
 }

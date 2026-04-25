@@ -6,6 +6,26 @@
 DEFINE_CLASS(ULightComponent, ULightComponentBase)
 REGISTER_FACTORY(ULightComponent)
 
+FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj) const
+{
+	FMatrix OutMatrix = FMatrix::Identity;
+
+	switch (eShadowMapType)
+	{
+	case EShadowMap::BASIC:
+		OutMatrix = ComputeBasicShadowMatrix(CamView, CamProj);
+		break;
+	case EShadowMap::PSM:
+		OutMatrix = ComputePerspectiveShadowMatrix(CamView, CamProj);
+		break;
+	case EShadowMap::CSM:
+		break;
+	default:
+		break;
+	}
+	return FMatrix();
+}
+
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponentBase::GetEditableProperties(OutProps);
@@ -23,7 +43,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "ShadowMap", EPropertyType::SRV, Atlas.ShadowSRV.Get(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
 }
 
-FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
+FMatrix ULightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
 {
 	FVector LightDir = GetForwardVector().GetSafeNormal();
 	FMatrix CamViewProj = CamView * CamProj;
@@ -103,4 +123,10 @@ FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& Cam
 	FMatrix Result = LightNDCView * LightNDCProj;
 
 	return Result;
+}
+
+FMatrix ULightComponent::ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
+{
+
+	return FMatrix();
 }

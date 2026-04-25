@@ -918,7 +918,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.ShadowBias		= DirLight->ShadowBias;
         DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
-        RenderBus.DirectionalLightShadow	= DirLightDataShadow;	
+
+		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
 	}
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
@@ -934,6 +935,17 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
         LightData.Type				= 0;
 		RenderBus.LightInfos.push_back(LightData);
+
+		FShadowLightRequest SpotLightDataShadow = {};
+		SpotLightDataShadow.LightComponent = const_cast<USpotlightComponent*>(SpotLight);
+		SpotLightDataShadow.Type = EShadowLightType::SLT_Directional;
+		SpotLightDataShadow.bCastShadows = SpotLight->bCastShadows;
+		SpotLightDataShadow.WorldLocation = SpotLight->GetWorldLocation();
+		SpotLightDataShadow.ShadowBias = SpotLight->ShadowBias;
+		SpotLightDataShadow.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
+		SpotLightDataShadow.ShadowSharpen = SpotLight->ShadowSharpen;
+
+		RenderBus.ShadowLightRequests.push_back(SpotLightDataShadow);
 	}
     else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};
@@ -945,5 +957,16 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         LightData.Type				= 1;
 
 		RenderBus.LightInfos.push_back(LightData);
+
+		FShadowLightRequest PointLightDataShadow = {};
+		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
+		PointLightDataShadow.Type = EShadowLightType::SLT_Directional;
+		PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
+		PointLightDataShadow.ShadowBias = PointLight->ShadowBias;
+		PointLightDataShadow.ShadowSlopeBias = PointLight->ShadowSlopeBias;
+		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
+
+		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
 	}
 }
