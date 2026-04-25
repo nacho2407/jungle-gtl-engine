@@ -63,6 +63,12 @@ bool FLightRenderPass::Begin(const FRenderPassContext* Context)
 
     Context->DeviceContext->PSSetShaderResources(0, 4, srvs);
 
+    ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+        Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+        Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+    };
+    Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+
     UShader* LightPassShader = FResourceManager::Get().GetShader("Shaders/Multipass/LightPass.hlsl");
     LightPassShader->Bind(Context->DeviceContext);
 
@@ -90,5 +96,7 @@ bool FLightRenderPass::End(const FRenderPassContext* Context)
     // SRV 해제 => RTV 와 SRV 가 동시에 쓰이지 않게 방지
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
     Context->DeviceContext->PSSetShaderResources(0, 5, nullSRVs);
+    ID3D11ShaderResourceView* nullShadowSRVs[] = { nullptr, nullptr };
+    Context->DeviceContext->PSSetShaderResources(14, 2, nullShadowSRVs);
     return true;
 }
