@@ -39,6 +39,7 @@ enum class EToolbarIcon : int32
 	TranslateSnap,
 	RotateSnap,
 	ScaleSnap,
+	ShowFlag,
 	Count
 };
 
@@ -56,6 +57,7 @@ const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
 	case EToolbarIcon::TranslateSnap: return L"Translate_Snap.png";
 	case EToolbarIcon::RotateSnap: return L"Rotate_Snap.png";
 	case EToolbarIcon::ScaleSnap: return L"Scale_Snap.png";
+	case EToolbarIcon::ShowFlag: return L"Show_Flag.png";
 	default: return L"";
 	}
 }
@@ -998,6 +1000,10 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 	const FRect& PaneRect = ViewportWindows[SlotIndex]->GetRect();
 	if (PaneRect.Width <= 0 || PaneRect.Height <= 0) return;
 
+	EnsureToolbarIconsLoaded(RendererPtr);
+	constexpr float PaneToolbarFallbackIconSize = 14.0f;
+	constexpr float PaneToolbarMaxIconSize = 16.0f;
+
 	// 패인 상단에 오버레이 윈도우
 	char OverlayID[64];
 	snprintf(OverlayID, sizeof(OverlayID), "##PaneToolbar_%d", SlotIndex);
@@ -1135,35 +1141,35 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				ImGui::EndPopup();
 			}
 
-			// ── Gizmo Mode 팝업 ──
-			UGizmoComponent* Gizmo = Editor->GetGizmo();
-			if (Gizmo)
-			{
-				ImGui::SameLine();
+			// ── Gizmo Mode 팝업 -> 아이콘으로 대체 ──
+			//UGizmoComponent* Gizmo = Editor->GetGizmo();
+			//if (Gizmo)
+			//{
+			//	ImGui::SameLine();
 
-				static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
-				const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
+			//	static const char* GizmoModeNames[] = { "Translate", "Rotate", "Scale" };
+			//	const char* CurrentModeName = GizmoModeNames[static_cast<int32>(Gizmo->GetMode())];
 
-				char GizmoPopupID[64];
-				snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
+			//	char GizmoPopupID[64];
+			//	snprintf(GizmoPopupID, sizeof(GizmoPopupID), "GizmoModePopup_%d", SlotIndex);
 
-				if (ImGui::Button(CurrentModeName))
-				{
-					ImGui::OpenPopup(GizmoPopupID);
-				}
+			//	if (ImGui::Button(CurrentModeName))
+			//	{
+			//		ImGui::OpenPopup(GizmoPopupID);
+			//	}
 
-				if (ImGui::BeginPopup(GizmoPopupID))
-				{
-					int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-					if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
-						Gizmo->SetTranslateMode();
-					if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
-						Gizmo->SetRotateMode();
-					if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
-						Gizmo->SetScaleMode();
-					ImGui::EndPopup();
-				}
-			}
+			//	if (ImGui::BeginPopup(GizmoPopupID))
+			//	{
+			//		int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
+			//		if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
+			//			Gizmo->SetTranslateMode();
+			//		if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
+			//			Gizmo->SetRotateMode();
+			//		if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
+			//			Gizmo->SetScaleMode();
+			//		ImGui::EndPopup();
+			//	}
+			//}
 
 			// ── View Mode 팝업 ──
 			ImGui::SameLine();
@@ -1174,26 +1180,53 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			char ViewModePopupID[64];
 			snprintf(ViewModePopupID, sizeof(ViewModePopupID), "ViewModePopup_%d", SlotIndex);
 
-			if (ImGui::Button(CurrentViewModeName))
+			if (DrawToolbarIconButton("##ViewModeIcon", EToolbarIcon::ShowFlag, CurrentViewModeName, PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 			{
 				ImGui::OpenPopup(ViewModePopupID);
 			}
 
 			if (ImGui::BeginPopup(ViewModePopupID))
 			{
+				ImGui::Text("View Mode");
 				int32 CurrentMode = static_cast<int32>(Opts.ViewMode);
-				ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
-				ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
-				ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
-				ImGui::SameLine();
-				ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
-				ImGui::SameLine();
-				ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
-				ImGui::Separator();
-				ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
-				ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
-				ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
-				ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+
+				if (ImGui::BeginTable("ViewModeTable", 3, ImGuiTableFlags_SizingStretchSame))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Toon", &CurrentMode, static_cast<int32>(EViewMode::Lit_Toon));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("SceneDepth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+					ImGui::TableNextColumn();
+					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+
+					ImGui::EndTable();
+				}
+
 				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
 				ImGui::EndPopup();
 			}
@@ -1204,7 +1237,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			char SettingsPopupID[64];
 			snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
 
-			if (ImGui::Button("Settings"))
+			if (DrawToolbarIconButton("##SettingsIcon", EToolbarIcon::Menu, "Settings", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 			{
 				ImGui::OpenPopup(SettingsPopupID);
 			}
@@ -1213,55 +1246,83 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			{
 				// Show Flags
 				ImGui::Text("Show");
-				ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
-				ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
-				ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
-				ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
-				ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
-				ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
-				ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
-				ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
-				ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
-				ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+				if (ImGui::BeginTable("ShowFlagsTable", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("BillboardText", &Opts.ShowFlags.bBillboardText);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("World Axis", &Opts.ShowFlags.bWorldAxis);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Gizmo", &Opts.ShowFlags.bGizmo);
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Bounding Volume", &Opts.ShowFlags.bBoundingVolume);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Debug Draw", &Opts.ShowFlags.bDebugDraw);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Octree", &Opts.ShowFlags.bOctree);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("FXAA", &Opts.ShowFlags.bFXAA);
+
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Visualize2.5D", &Opts.ShowFlags.bVisualize25DCulling);
+
+					ImGui::EndTable();
+				}
 
 				ImGui::Separator();
 
-				// Grid Settings
-				ImGui::Text("Grid");
-				ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
-				ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
+				if (ImGui::CollapsingHeader("Viewport Utility Settings (Grid , Camera , SceneDepth , FXAA)"))
+				{
+					// Grid Settings
+					ImGui::Text("Grid");
+					ImGui::SliderFloat("Spacing", &Opts.GridSpacing, 0.1f, 10.0f, "%.1f");
+					ImGui::SliderInt("Half Line Count", &Opts.GridHalfLineCount, 10, 500);
+
+					ImGui::Separator();
+
+					// Camera Sensitivity
+					ImGui::Text("Camera");
+					ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
+					ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
+
+					ImGui::Separator();
+
+					// SceneDepth Settings
+					ImGui::Text("SceneDepth");
+					ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
+					ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
+
+					ImGui::Text("FXAA");
+					ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
+					ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+				}
 
 				ImGui::Separator();
-
-				// Camera Sensitivity
-				ImGui::Text("Camera");
-				ImGui::SliderFloat("Move Sensitivity", &Opts.CameraMoveSensitivity, 0.1f, 5.0f, "%.1f");
-				ImGui::SliderFloat("Rotate Sensitivity", &Opts.CameraRotateSensitivity, 0.1f, 5.0f, "%.1f");
-
-				ImGui::Separator();
-
-				// SceneDepth Settings
-				ImGui::Text("SceneDepth");
-				ImGui::SliderFloat("Exponent", &Opts.Exponent, 1.0f, 512.0f, "%.0f");
-				ImGui::Combo("Mode", &Opts.SceneDepthVisMode, "Power\0Linear\0");
-
-				// FXAA Settings
-				ImGui::Text("FXAA");
-				ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
-				ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
 
 				// Light Culling Setting
-				ImGui::Text("Light Culling");
-				int32 CullingMode = static_cast<int32>(Opts.LightCullingMode);
-				ImGui::RadioButton("Off", &CullingMode, static_cast<int32>(ELightCullingMode::Off));
-				ImGui::SameLine();
-				ImGui::RadioButton("Tile", &CullingMode, static_cast<int32>(ELightCullingMode::Tile));
-				ImGui::SameLine();
-				ImGui::RadioButton("Cluster", &CullingMode, static_cast<int32>(ELightCullingMode::Cluster));
-				Opts.LightCullingMode = static_cast<ELightCullingMode>(CullingMode);
-				ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
-				ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
-				ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
+				if (ImGui::CollapsingHeader("Light Culling Settings"))
+				{
+					int32 CullingMode = static_cast<int32>(Opts.LightCullingMode);
+					ImGui::RadioButton("Off", &CullingMode, static_cast<int32>(ELightCullingMode::Off));
+					ImGui::SameLine();
+					ImGui::RadioButton("Tile", &CullingMode, static_cast<int32>(ELightCullingMode::Tile));
+					ImGui::SameLine();
+					ImGui::RadioButton("Cluster", &CullingMode, static_cast<int32>(ELightCullingMode::Cluster));
+					Opts.LightCullingMode = static_cast<ELightCullingMode>(CullingMode);
+					ImGui::SliderFloat("HeatMapMax", &Opts.HeatMapMax, 1.0f, 100.0f, "%.0f");
+					ImGui::Checkbox("Enable2.5DCulling", &Opts.Enable25DCulling);
+					ImGui::Checkbox("Visualize2.5DCulling", &Opts.ShowFlags.bVisualize25DCulling);
+				}
 
 				ImGui::EndPopup();
 			}
