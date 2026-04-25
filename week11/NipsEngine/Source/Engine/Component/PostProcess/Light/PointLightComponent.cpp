@@ -22,3 +22,9 @@ void UPointLightComponent::Serialize(FArchive& Ar)
 	Ar << "AttenuationRadius" << AttenuationRadius;
 	Ar << "LightFalloffExponent" << LightFalloffExponent;
 }
+
+FMatrix UPointLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+	const TArray<FBoundingBox>* VisibleObjectsBounds) const
+{
+	return FMatrix::Identity;
+}

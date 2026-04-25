@@ -1,13 +1,13 @@
 {
   "ClassName" : "UWorld",
   "Name" : "Default",
-  "NextUUID" : 491,
+  "NextUUID" : 511,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-1.779112, 1.609049, 1.554760],
+    "Location" : [-1.886902, 4.921327, 1.531766],
     "NearClip" : 0.100000,
-    "Rotation" : [19.937916, 21.660528, -44.501862]
+    "Rotation" : [13.518435, 5.461243, -68.403351]
   },
   "Primitives" : {
     "465" : {
@@ -40,7 +40,7 @@
       "Editor Only" : false,
       "Enable Cull" : true,
       "Enable Tick" : true,
-      "Location" : [0.000000, 0.000000, -0.242589],
+      "Location" : [0.000000, -0.630402, -0.242589],
       "Materials" : ["眼睛", "眼白", "脖子", "脸", "头发", "表情", "皮肤", "衣服", "裤子", "背饰", "裙子", "鞋子", "手套"],
       "ObjStaticMeshAsset" : "Asset/Mesh/Lumine/LumineModel.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -56,7 +56,7 @@
       "Enable Tick" : true,
       "Intensity" : 1.000000,
       "Location" : [-1.427876, 0.000000, 0.629459],
-      "Rotation" : [-0.000000, 40.960754, -0.000000],
+      "Rotation" : [-28.748322, 30.534445, 47.196926],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "UDirectionalLightComponent"
     },
@@ -84,7 +84,35 @@
       "Materials" : ["DicePaper"],
       "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
       "Rotation" : [0.000000, 0.000000, 0.000000],
-      "Scale" : [3.896928, 2.522370, 1.000000],
+      "Scale" : [3.301251, 4.061351, 1.000000],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "UStaticMeshComponent",
+      "Visible" : true
+    },
+    "506" : {
+      "Editor Only" : false,
+      "Enable Cull" : true,
+      "Enable Tick" : true,
+      "Location" : [0.000000, 1.648626, 0.000000],
+      "Materials" : ["DicePaper"],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [0.218705, 0.283069, 0.395444],
+      "Scroll U" : 0.000000,
+      "Scroll V" : 0.000000,
+      "Type" : "UStaticMeshComponent",
+      "Visible" : true
+    },
+    "509" : {
+      "Editor Only" : false,
+      "Enable Cull" : true,
+      "Enable Tick" : true,
+      "Location" : [1.241076, 0.000000, 0.000000],
+      "Materials" : ["DicePaper"],
+      "ObjStaticMeshAsset" : "Asset/Mesh/Dice/Dice.obj",
+      "Rotation" : [0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 2.286783, 0.547553],
       "Scroll U" : 0.000000,
       "Scroll V" : 0.000000,
       "Type" : "UStaticMeshComponent",

@@ -1,5 +1,4 @@
 /* Constant Buffers */
-
 #define TILE_SIZE 16
 #define NUM_SLICE 24
 
@@ -29,7 +28,7 @@ cbuffer PerObjectBuffer : register(b1)
 cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix VirtualViewProj;
-    row_major matrix DirLightViewProj;
+    row_major matrix ShadowViewProj;
     float4 ScaleOffset;
 };
 
