@@ -68,7 +68,7 @@ struct FViewportRenderOptions
 	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
 
 	// Scene Depth 전용 설정
-	int32 SceneDepthVisMode = 1;
+	int32 SceneDepthVisMode = 0;
 	float Exponent = 128.0f;
 	float Range = 1000.0f;
 
