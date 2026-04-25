@@ -1,6 +1,7 @@
 #include "Common.hlsl"
 #include "Lighting.hlsl"
 #include "ShadowFunction.hlsl"
+
 cbuffer StaticMeshBuffer : register(b2)
 {
     float3 AmbientColor;    // Ka
@@ -161,7 +162,10 @@ Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
 
 float CalculateShadow(float4 worldPos)
 {
-    float4 camClip = mul(mul(worldPos, View), Projection);
+    float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
+
+#ifdef SHADOW_MAP_PSM
+    float4 camClip = mul(worldPos, VirtualViewProj);
 
     if (abs(camClip.w) < 1e-5f)
     {
@@ -169,12 +173,15 @@ float CalculateShadow(float4 worldPos)
     }
 
     float3 post = camClip.xyz / camClip.w;
-    float4 shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
+    shadowCoord = mul(float4(post, 1.0f), ShadowViewProj);
+#else
+    shadowCoord = mul(worldPos, ShadowViewProj);
+#endif
+    
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
     }
-
     float3 projCoords = shadowCoord.xyz / shadowCoord.w;
     float2 shadowUV = float2(
         projCoords.x * 0.5f + 0.5f,
@@ -187,12 +194,9 @@ float CalculateShadow(float4 worldPos)
     {
         return 1.0f;
     }
-    
-    const float shadowBias = 0.002f;
 
-    float shadowFactor = ComputeShadowPCF(projCoords, 2, ShadowSampler, ShadowMap);
-   // float shadowFactor = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, projCoords.z - shadowBias);
-
+    const float shadowBias = 0.005f;
+    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
     return shadowFactor;
 }
 
@@ -301,20 +305,25 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     {
     #if CULLING_MODEL_CLUSTERED
         LightInfo light = Lights[CulledIndexBuffer[clusterData.x + i]];
+        uint lightIndex = CulledIndexBuffer[clusterData.x + i];
     #elif CULLING_MODEL_TILED
         LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+        uint lightIndex = CulledIndexBuffer[tileData.x + i];
     #else 
-        LightInfo light = Lights[i];
+        uint lightIndex = i;
+        LightInfo light = Lights[lightIndex];
     #endif
+        
+        float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap);
     
     #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
-            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz);
+            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz) * lightShadowFactor
+            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz) * lightShadowFactor;
     #elif LIGHTING_MODEL_PHONG
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * lightShadowFactor
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * lightShadowFactor;
     #endif
     }
 #endif

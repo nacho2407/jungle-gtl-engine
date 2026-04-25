@@ -1,89 +1,149 @@
 ﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
-
-#include "UI/EditorConsoleWidget.h"
+#include "Core/PropertyTypes.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 
 DEFINE_CLASS(ULightComponent, ULightComponentBase)
 REGISTER_FACTORY(ULightComponent)
 
-FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
+FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
+	const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {
-	FVector LightDir = GetForwardVector().GetSafeNormal();
-	FMatrix CamViewProj = CamView * CamProj;
-
-	auto ToPost = [&](const FVector& P)
-		{
-			FVector4 Clip = FVector4(P, 1.0f) * CamViewProj;
-
-			if (MathUtil::Abs(Clip.W) < MathUtil::Epsilon)
-			{
-				return FVector::ZeroVector;
-			}
-
-			return FVector(
-				Clip.X / Clip.W,
-				Clip.Y / Clip.W,
-				Clip.Z / Clip.W
-			);
-		};
-
-	FVector PostCorners[8] =
+	switch (eShadowMapType)
 	{
-		FVector(-1, -1, 0),
-		FVector(1, -1, 0),
-		FVector(-1, 1, 0),
-		FVector(1, 1, 0),
-		FVector(-1, -1, 1),
-		FVector(1, -1, 1),
-		FVector(-1, 1, 1),
-		FVector(1, 1, 1)
+	case EShadowMap::BASIC:
+		return ComputeBasicShadowMatrix(CamView, CamProj);
+	case EShadowMap::PSM:
+		return ComputePerspectiveShadowMatrix(CamView, CamProj, VisibleObjectsBounds);
+	case EShadowMap::CSM:
+	default:
+		return ComputeBasicShadowMatrix(CamView, CamProj);
+	}
+}
+
+void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	ULightComponentBase::GetEditableProperties(OutProps);
+
+	static const char* ShadowMapTypeNames[] = { "Basic", "PSM", "CSM" };
+	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 3 });
+
+	FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
+	const float AtlasW = static_cast<float>(AtlasManager.GetAtlasWidth());
+	const float AtlasH = static_cast<float>(AtlasManager.GetAtlasHeight());
+	const float TileSize = static_cast<float>(AtlasManager.GetTileSize());
+
+	static FSRVDisplayInfo ShadowMapDisplay;
+	ShadowMapDisplay = {
+		256.f,
+		256.f,
+		0.f,
+		0.f,
+		AtlasW > 0.0f ? TileSize / AtlasW : 1.0f,
+		AtlasH > 0.0f ? TileSize / AtlasH : 1.0f
 	};
 
-	FVector Center = FVector::ZeroVector;
-	for (const FVector& C : PostCorners)
-	{
-		Center += C;
-	}
-	Center /= 8.0f;
+	OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
+}
 
-	const float Delta = 0.1f;
+FMatrix ULightComponent::ComputeBasicShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
+{
+	//FMatrix ViewProj = CamView * CamProj;
+	//const FMatrix ViewProjInverse = ViewProj.GetInverse();
 
-	const FMatrix CamWorld = CamView.GetInverse();
-	const FVector CameraWorldPos = CamWorld.GetOrigin();
-	const FVector SampleWorldPos = CameraWorldPos + CamWorld.GetForwardVector() * 3.0f;
+	//// NDC 박스를 월드로 보내서 절두체 생성
+	//FVector PostCorners[8] =
+	//{
+	//	FVector(-1, -1, 0),
+	//	FVector(1, -1, 0),
+	//	FVector(-1, 1, 0),
+	//	FVector(1, 1, 0),
+	//	FVector(-1, -1, 1),
+	//	FVector(1, -1, 1),
+	//	FVector(-1, 1, 1),
+	//	FVector(1, 1, 1)
+	//};
 
-	FVector Post0 = ToPost(SampleWorldPos);
-	FVector Post1 = ToPost(SampleWorldPos + LightDir * Delta);
+	//FVector Center = { 0.f, 0.f, 0.f };
+	//for (int i = 0; i < 8; ++i)
+	//{
+	//	PostCorners[i] = ViewProjInverse.TransformPosition(PostCorners[i]);
+	//	Center += (PostCorners[i]);
+	//}
+	//Center /= 8.f;
+	//
+	//// 광원 뷰 행렬 
+	//FVector LightDir = GetForwardVector().GetSafeNormal();
+	//FVector Ref;
 
-	FVector LightDirPost = (Post1 - Post0).GetSafeNormal();
-	if (LightDirPost.IsNearlyZero())
-	{
-		LightDirPost = FVector(1, 0, 0);
-	}
+	//// Z-Up (0,0,1)
+	//if (std::abs(FVector::DotProduct(LightDir, FVector(0, 0, 1))) < 0.9f)
+	//{
+	//	Ref = FVector(0.f, 0.f, 1.f); 
+	//}
+	//else
+	//{
+	//	Ref = FVector(0.f, 1.f, 0.f); // 광원이 거의 수직일 때 폴백
+	//}
 
-	FVector Eye = Center - LightDirPost * 2.0f;
-	FVector RefA = FVector(0, 1, 0);
-	FVector RefB = FVector(0, 0, 1);
-	FVector Ref = (std::abs(FVector::DotProduct(LightDirPost, RefA)) < 0.9f) ? RefA : RefB;
-	FVector Right = FVector::CrossProduct(Ref, LightDirPost).GetSafeNormal();
-	FVector Up = FVector::CrossProduct(LightDirPost, Right).GetSafeNormal();
-	FMatrix LightNDCView = FMatrix::MakeViewLookAtLH(Eye, Center, Up);
+	//FVector Right = FVector::CrossProduct(Ref, LightDir).GetSafeNormal();
+	//FVector Up = FVector::CrossProduct(LightDir, Right).GetSafeNormal();
+	//FMatrix LightView = FMatrix::MakeViewLookAtLH(Center - LightDir * 100.f, Center, Up);
 
-	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
-	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	//FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+	//FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (const FVector& C : PostCorners)
-	{
-		FVector4 V = FVector4(C, 1.0f) * LightNDCView;
-		FVector P(V.X, V.Y, V.Z);
+	//// 광원 기준 View 프러스텀으로 이동하여 투영 행렬 생성
+	//for (int i = 0; i < 8; ++i)
+	//{
+	//	FVector4 VertexLightView = FVector4(PostCorners[i], 1.0f) * LightView;
+	//	FVector Tmp = { VertexLightView.X, VertexLightView.Y, VertexLightView.Z } ;
 
-		Min = FVector::Min(Min, P);
-		Max = FVector::Max(Max, P);
-	}
+	//	Min = FVector::Min(Min, Tmp);
+	//	Max = FVector::Max(Max, Tmp);
+	//}
 
-	FMatrix LightNDCProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X, Max.X);
 
-	FMatrix Result = LightNDCView * LightNDCProj;
+	//FMatrix LightProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X, Max.X);
+	//FMatrix Result = LightView * LightProj;
 
-	return Result;
+	//return Result;
+
+
+	const float FollowDist = 20.0f; // 카메라 앞쪽으로 얼마를 볼지
+	const float HalfSizeY = 25.0f; // light-space Y 반폭
+	const float HalfSizeZ = 25.0f; // light-space Z 반높이
+	const float ShadowBack = 40.0f; // focus 뒤쪽으로 포함할 깊이
+	const float ShadowFront = 60.0f; // focus 앞쪽으로 포함할 깊이
+
+	FMatrix CamWorld = CamView.GetInverse();
+	FVector CamPos = CamWorld.GetOrigin();
+	FVector CamFwd = CamWorld.GetForwardVector().GetSafeNormal();
+
+	FVector Focus = CamPos + CamFwd * FollowDist;
+
+	FVector LightDir = GetForwardVector().GetSafeNormal();
+	FVector Ref = (std::abs(FVector::DotProduct(LightDir, FVector(0, 0, 1))) < 0.9f)
+		? FVector(0, 0, 1)
+		: FVector(0, 1, 0);
+
+	FVector Right = FVector::CrossProduct(Ref, LightDir).GetSafeNormal();
+	FVector Up = FVector::CrossProduct(LightDir, Right).GetSafeNormal();
+
+	// 라이트는 focus 뒤쪽에서 focus를 바라보게 둠
+	FVector Eye = Focus - LightDir * ShadowBack;
+	FMatrix LightView = FMatrix::MakeViewLookAtLH(Eye, Focus, Up);
+
+	// 현재 엔진 규약상 LightView 후
+	// X = depth, Y = horizontal, Z = vertical 로 보면 됨
+	FVector4 FocusLS4 = FVector4(Focus, 1.0f) * LightView;
+	FVector FocusLS(FocusLS4.X, FocusLS4.Y, FocusLS4.Z);
+
+	FMatrix LightProj = FMatrix::MakeOrthographicOffCenterLH(
+		FocusLS.Y - HalfSizeY, FocusLS.Y + HalfSizeY,
+		FocusLS.Z - HalfSizeZ, FocusLS.Z + HalfSizeZ,
+		0.0f,
+		ShadowBack + ShadowFront
+	);
+	return LightView * LightProj;
 }

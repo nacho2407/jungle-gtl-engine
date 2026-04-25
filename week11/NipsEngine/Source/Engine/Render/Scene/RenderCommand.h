@@ -15,6 +15,7 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+#include "Component/PostProcess/Light/LightComponent.h"
 
 
 struct ID3D11ShaderResourceView;
@@ -38,6 +39,15 @@ enum class ERenderCommandType
 	Decal,
 	Light,
 };
+
+enum EShadowLightType
+{
+	SLT_Directional,
+	SLT_Point,
+	SLT_Spot,
+};
+
+constexpr uint32 InvalidShadowIndex = static_cast<uint32>(-1);
 
 //PerObject
 struct FPerObjectConstants
@@ -94,12 +104,38 @@ struct FLightInfo
 	float Falloff;
 
 	FVector Position;
-	float Padding1;
+    float Padding1;
+};
+
+struct FShadowLightRequest
+{
+	uint32 LightIndex = InvalidShadowIndex;
+    ULightComponentBase* LightComponent = nullptr;
+    EShadowLightType Type;
+    FVector WorldLocation;
+    bool bCastShadows = true;
+    float ShadowBias = 0.0f;
+    float ShadowSlopeBias = 0.0f;
+    float ShadowSharpen = 1.0f;
 };
 
 struct FShadowConstants
 {
+	FMatrix	VirtualViewProj;
 	FMatrix DirLightViewProj;
+    FVector4 ScaleOffset; // xy: Scale, zw: Offset
+};
+
+struct FShadowAtlasConstants
+{
+    FMatrix ShadowViewProjMatrix;	// 64
+
+    FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
+
+    float ShadowBias;				// 4
+    float ShadowStrength;			// 4
+    float ShadowSoftness;			// 4
+    uint32 ShadowType;				// 4
 };
 
 struct FUberConstants
@@ -273,6 +309,8 @@ struct FRenderCommand
 	UMaterialInterface* Material = nullptr;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
+
+	FBoundingBox WorldAABB;
 
 	union
 	{

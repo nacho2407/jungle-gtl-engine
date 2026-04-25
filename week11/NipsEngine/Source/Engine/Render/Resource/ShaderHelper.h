@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Core/Containers/Array.h"
 #include "Render/Common/ViewTypes.h"
+#include "Render/Common/ShadowTypes.h"
 #include <d3d11.h>
 
 enum class EShaderFeature : uint32
@@ -13,8 +14,13 @@ enum class EShaderFeature : uint32
 	HasSpecularMap	= 1 << 2,
 	HasEmissiveMap	= 1 << 3,
 	HasAlphaMask	= 1 << 4,
+	
 	ClusterCull		= 1 << 11,
 	TileCull		= 1 << 12,
+
+	ShadowBasic		= 1 << 13,
+	ShadowPSM		= 1 << 14,
+	ShadowCSM		= 1 << 15,
 };
 
 enum class ELightingModel : uint32
@@ -26,11 +32,13 @@ enum class ELightingModel : uint32
 	Heatmap		= 4 << 8,
 };
 
+
 class FShaderHelper
 {
 public:
 	static TArray<D3D_SHADER_MACRO> BuildUberLitMacros(uint32 PermutationKey);
 	static TArray<D3D_SHADER_MACRO> BuildLightCullingCSMacros(ELightCullMode Mode);
+	static TArray<D3D_SHADER_MACRO> BuildShadowMapMacros(EShadowMap Map);
 };
 
 inline EShaderFeature operator&(EShaderFeature a, EShaderFeature b)
