@@ -38,7 +38,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
-
 	{
         D3D11_TEXTURE2D_DESC ShadowMapDesc = {};
         ShadowMap->GetDesc(&ShadowMapDesc);
