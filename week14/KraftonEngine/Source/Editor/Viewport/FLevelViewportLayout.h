@@ -107,9 +107,23 @@ private:
 		FPoint PendingSpawnPos = {};
 	};
 
+	enum class EViewportLayoutTransition : uint8
+	{
+		None,
+		SplitToOnePane,
+		OnePaneToSplit
+	};
+
 	SSplitter* BuildSplitterTree(EViewportLayout Layout);
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
+	int32 GetActiveViewportSlotIndex() const;
+	void BeginSplitToOnePaneTransition(int32 SlotIndex);
+	void BeginOnePaneToSplitTransition(EViewportLayout TargetLayout);
+	void FinishLayoutTransition(bool bSnapToEnd);
+	bool UpdateLayoutTransition(float DeltaTime);
+	bool ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate);
+	bool SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const;
 	void RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop);
 	void RenderPaneToolbar(int32 SlotIndex);
 	void HandleViewportContextMenuInput(const FPoint& MousePos);
@@ -138,6 +152,12 @@ private:
 
 	SSplitter* DraggingSplitter = nullptr;
 	bool bMouseOverViewport = false;
+	EViewportLayoutTransition LayoutTransition = EViewportLayoutTransition::None;
+	EViewportLayout TransitionTargetLayout = EViewportLayout::OnePane;
+	int32 TransitionSourceSlot = 0;
+	float TransitionRestoreRatios[3] = { 0.5f, 0.5f, 0.5f };
+	int32 TransitionRestoreRatioCount = 0;
+	bool bSuppressLayoutTransitionAnimation = false;
 
 	// 레이아웃 아이콘 SRV (EViewportLayout::MAX 개)
 	ID3D11ShaderResourceView* LayoutIcons[static_cast<int>(EViewportLayout::MAX)] = {};
