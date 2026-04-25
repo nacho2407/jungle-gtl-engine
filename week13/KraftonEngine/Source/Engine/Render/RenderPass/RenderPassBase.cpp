@@ -6,16 +6,15 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 
-void FRenderPassBase::Execute(const FPassContext& Ctx, FDrawCommandList& CmdList,
-                               FD3DDevice& Device, FSystemResources& Resources)
+void FRenderPassBase::Execute(const FPassContext& Ctx)
 {
 	uint32 Start, End;
-	CmdList.GetPassRange(PassType, Start, End);
+	Ctx.CommandList.GetPassRange(PassType, Start, End);
 	if (Start >= End) return;
 
 	const char* PassName = GetRenderPassName(PassType);
 	SCOPE_STAT_CAT(PassName, "4_ExecutePass");
 	GPU_SCOPE_STAT(PassName);
 
-	CmdList.SubmitRange(Start, End, Device, Resources, Ctx.Cache);
+	Ctx.CommandList.SubmitRange(Start, End, Ctx.Device, Ctx.Resources, Ctx.Cache);
 }

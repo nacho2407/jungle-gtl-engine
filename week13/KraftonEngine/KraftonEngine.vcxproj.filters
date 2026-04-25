@@ -548,6 +548,9 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
@@ -618,6 +621,15 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\PreDepthPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassBase.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassPipeline.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp">
@@ -1103,6 +1115,9 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h">
+      <Filter>Source\Engine\Render\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -1182,6 +1197,12 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassBase.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassPipeline.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h">
