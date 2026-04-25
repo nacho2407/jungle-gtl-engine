@@ -343,7 +343,6 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -364,6 +363,7 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\OpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\OverlayFontPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\PostProcessPass.cpp" />
@@ -535,7 +535,6 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
@@ -558,6 +557,7 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\OpaquePass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\OverlayFontPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\PostProcessPass.h" />

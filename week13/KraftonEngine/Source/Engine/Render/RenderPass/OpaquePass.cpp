@@ -7,7 +7,6 @@ REGISTER_RENDER_PASS(FOpaquePass)
 #include "Render/Pipeline/FrameContext.h"
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/DrawCommandList.h"
-#include "Render/Resource/RenderResources.h"
 
 FOpaquePass::FOpaquePass()
 {
@@ -22,63 +21,19 @@ void FOpaquePass::BeginPass(const FPassContext& Ctx)
 	const FFrameContext& Frame = Ctx.Frame;
 	FStateCache& Cache = Ctx.Cache;
 
-	// --- Depth Copy + MRT 설정 ---
-	if (Frame.DepthTexture && Frame.DepthCopyTexture)
+	// MRT 설정 (NormalRTV, CullingHeatmapRTV)
+	if (Frame.NormalRTV)
 	{
-		DC->OMSetRenderTargets(0, nullptr, nullptr);
-		DC->CopyResource(Frame.DepthCopyTexture, Frame.DepthTexture);
-
-		if (Frame.NormalRTV)
-		{
-			ID3D11RenderTargetView* RTVs[3] = { Cache.RTV, Frame.NormalRTV, Frame.CullingHeatmapRTV };
-			uint32 NumRTs = Frame.CullingHeatmapRTV ? 3 : 2;
-			DC->OMSetRenderTargets(NumRTs, RTVs, Cache.DSV);
-		}
-		else
-		{
-			DC->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-		}
-
-		ID3D11ShaderResourceView* depthSRV = Frame.DepthCopySRV;
-		DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &depthSRV);
-
-		Cache.bForceAll = true;
+		ID3D11RenderTargetView* RTVs[3] = { Cache.RTV, Frame.NormalRTV, Frame.CullingHeatmapRTV };
+		uint32 NumRTs = Frame.CullingHeatmapRTV ? 3 : 2;
+		DC->OMSetRenderTargets(NumRTs, RTVs, Cache.DSV);
+	}
+	else
+	{
+		DC->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
 	}
 
-	// --- Light Culling Dispatch ---
-	if (Frame.RenderOptions.LightCullingMode != ELightCullingMode::Off)
-	{
-		DC->OMSetRenderTargets(0, nullptr, nullptr);
-
-		if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
-		{
-			Ctx.Resources.UnbindClusterCullingResources(Ctx.Device);
-			Ctx.Resources.UnbindTileCullingBuffers(Ctx.Device);
-			Ctx.Resources.DispatchTileCulling(DC, Frame);
-		}
-		else if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Cluster)
-		{
-			Ctx.Resources.DispatchClusterCulling(Ctx.Device);
-		}
-
-		if (Frame.NormalRTV)
-		{
-			ID3D11RenderTargetView* RTVs[3] = { Cache.RTV, Frame.NormalRTV, Frame.CullingHeatmapRTV };
-			uint32 NumRTs = Frame.CullingHeatmapRTV ? 3 : 2;
-			DC->OMSetRenderTargets(NumRTs, RTVs, Cache.DSV);
-		}
-		else
-		{
-			DC->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
-		}
-
-		if (Frame.RenderOptions.LightCullingMode == ELightCullingMode::Tile)
-		{
-			Ctx.Resources.BindTileCullingBuffers(Ctx.Device);
-		}
-
-		Cache.bForceAll = true;
-	}
+	Cache.bForceAll = true;
 }
 
 void FOpaquePass::EndPass(const FPassContext& Ctx)
