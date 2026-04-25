@@ -123,6 +123,10 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 		FConvexVolume LightFrustum = FLightFrustumUtils::BuildSpotLightFrustum(Light);
 
+		// 이전 프레임에서 t21에 바인딩된 SRV 해제 (DSV와 동일 리소스 → R/W hazard 방지)
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMap, 1, &nullSRV);
+
 		// Shadow DSV 클리어 + 바인딩
 		DC->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 0.0f, 0); // Reversed-Z: far=0
 		DC->OMSetRenderTargets(0, nullptr, ShadowDSV);
@@ -214,14 +218,12 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
+	// 메인 RT/DSV 복원 (ShadowDSV를 output에서 해제해야 SRV 바인딩 가능)
+	DC->OMSetRenderTargets(1, &Ctx.Cache.RTV, Ctx.Cache.DSV);
+	Ctx.Cache.bForceAll = true;
+
 	// 카메라 View/Proj를 b0에 복원
 	Ctx.Resources.UpdateFrameBuffer(Ctx.Device, Ctx.Frame);
-
-	// Shadow Map SRV를 t21에 바인딩 (Opaque 셰이더에서 참조 가능)
-	if (ShadowSRV)
-	{
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMap, 1, &ShadowSRV);
-	}
 
 	// 메인 뷰포트 복원
 	D3D11_VIEWPORT MainVP = {};
@@ -231,7 +233,9 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 	MainVP.MaxDepth = 1.0f;
 	DC->RSSetViewports(1, &MainVP);
 
-	// 메인 RT/DSV 복원
-	DC->OMSetRenderTargets(1, &Ctx.Cache.RTV, Ctx.Cache.DSV);
-	Ctx.Cache.bForceAll = true;
+	// Shadow Map SRV를 t21에 바인딩 (ShadowDSV가 output에서 해제된 후)
+	if (ShadowSRV)
+	{
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMap, 1, &ShadowSRV);
+	}
 }
