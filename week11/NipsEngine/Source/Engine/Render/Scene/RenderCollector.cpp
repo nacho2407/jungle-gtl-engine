@@ -546,6 +546,8 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.Material = Material;
 
+			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
+
 			//if (Material)
 			//{
 			//	Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
