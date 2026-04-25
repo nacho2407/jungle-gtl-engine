@@ -107,6 +107,7 @@ void FRenderer::CreateResources()
 	//	MeshManager init
 	FMeshManager::Initialize();
 	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
+    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());
