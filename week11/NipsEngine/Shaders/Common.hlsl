@@ -1,4 +1,7 @@
 /* Constant Buffers */
+#ifndef COMMON_H
+#define COMMON_H
+
 #define TILE_SIZE 16
 #define NUM_SLICE 24
 
@@ -107,3 +110,5 @@ float LinearizeDepth(float d)
         return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
     }
 }
+
+#endif
