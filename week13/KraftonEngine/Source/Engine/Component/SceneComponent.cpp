@@ -18,6 +18,33 @@ static void NotifyOctreeTransformChanged(USceneComponent* Comp)
     World->UpdateActorInOctree(OwnerActor);
 }
 
+static FVector GetSafeNormalizedAxis(const FVector& Axis, const FVector& Fallback)
+{
+	const float Length = Axis.Length();
+	if (Length <= 1.0e-6f)
+	{
+		return Fallback;
+	}
+
+	return Axis / Length;
+}
+
+static FMatrix GetRotationTranslationWithoutScale(const FMatrix& Matrix)
+{
+	FVector XAxis = GetSafeNormalizedAxis(FVector(Matrix.M[0][0], Matrix.M[0][1], Matrix.M[0][2]), FVector(1.0f, 0.0f, 0.0f));
+	FVector YAxis = GetSafeNormalizedAxis(FVector(Matrix.M[1][0], Matrix.M[1][1], Matrix.M[1][2]), FVector(0.0f, 1.0f, 0.0f));
+	FVector ZAxis = GetSafeNormalizedAxis(FVector(Matrix.M[2][0], Matrix.M[2][1], Matrix.M[2][2]), FVector(0.0f, 0.0f, 1.0f));
+
+	FMatrix Result = FMatrix::Identity;
+	Result.M[0][0] = XAxis.X; Result.M[0][1] = XAxis.Y; Result.M[0][2] = XAxis.Z;
+	Result.M[1][0] = YAxis.X; Result.M[1][1] = YAxis.Y; Result.M[1][2] = YAxis.Z;
+	Result.M[2][0] = ZAxis.X; Result.M[2][1] = ZAxis.Y; Result.M[2][2] = ZAxis.Z;
+	Result.M[3][0] = Matrix.M[3][0];
+	Result.M[3][1] = Matrix.M[3][1];
+	Result.M[3][2] = Matrix.M[3][2];
+	return Result;
+}
+
 void USceneComponent::AttachToComponent(USceneComponent* InParent)
 {
 	if (!InParent || InParent == this) return;
@@ -182,7 +209,15 @@ void USceneComponent::UpdateWorldMatrix() const
 
 	if (ParentComponent != nullptr)
 	{
-		CachedWorldMatrix = RelativeMatrix * ParentComponent->GetWorldMatrix();
+		if (bAbsoluteScale)
+		{
+			// 에디터 아이콘 빌보드는 부모 스케일과 분리해 화면상 크기 변화를 막는다.
+			CachedWorldMatrix = RelativeMatrix * GetRotationTranslationWithoutScale(ParentComponent->GetWorldMatrix());
+		}
+		else
+		{
+			CachedWorldMatrix = RelativeMatrix * ParentComponent->GetWorldMatrix();
+		}
 	}
 	else
 	{
