@@ -36,6 +36,59 @@ float ComputeShadowPCF(
     return shadow / count;
 }
 
+// ---------------------------------------------------------------------------
+// VSM (Variance Shadow Map) - Chebyshev 상한 기반 그림자 계산
+//
+// VSM RTV에는 float2(depth, depth*depth) 가 기록되어 있음
+//   M1 = moments.r  = E[x]   (평균 깊이)
+//   M2 = moments.g  = E[x²]  (평균 제곱 깊이)
+//
+// 분산: Var = M2 - M1²
+//   - Var가 클수록 해당 텍셀 안에 깊이 변화가 많다 (경계부)
+//   - Var가 작을수록 균일한 표면
+//
+// Chebyshev 상한: P(occluder >= t) <= Var / (Var + (t - M1)²)
+//   - t  : 현재 픽셀의 light-space depth
+//   - 반환값이 클수록 "lit일 가능성이 높다"
+//
+// t <= M1 이면 현재 픽셀이 평균 occluder보다 가까움 → 완전 lit (1.0)
+// t >  M1 이면 Chebyshev 값으로 부드러운 그림자 계산
+// ---------------------------------------------------------------------------
+float ComputeShadowVSM(
+    float3      lightSpacePos,   // projCoords (NDC xyz, z는 현재 픽셀 depth)
+    float4      ScaleOffset,     // 아틀라스 ScaleOffset (단일 조명이면 (1,1,0,0))
+    Texture2D   vsmMap,          // VSM RTV 결과 텍스처 (float2: moment1, moment2)
+    SamplerState vsmSampler,     // 비교 없는 일반 sampler (Linear 권장)
+    float       minVariance      // light bleeding 방지용 최소 분산값 (예: 0.00001)
+)
+{
+    // 1. UV 변환 (NDC → [0,1] → 아틀라스 적용)
+    float2 uv = lightSpacePos.xy * float2(0.5f, -0.5f) + 0.5f;
+    uv = ScaleOffset.xy * uv + ScaleOffset.zw;
+
+    // 2. Moment 샘플링
+    float2 moments = vsmMap.Sample(vsmSampler, uv).rg;
+    float M1 = moments.r; // E[x]
+    float M2 = moments.g; // E[x²]
+
+    float t = lightSpacePos.z; // 현재 픽셀의 light-space depth
+
+    // 3. 완전 lit 판정: 수신점이 평균 occluder보다 가깝거나 같으면 그림자 없음
+    if (t <= M1)
+        return 1.0f;
+
+    // 4. 분산 계산: Var = E[x²] - E[x]²
+    //    minVariance로 clamp해서 수치 불안정 및 light bleeding 완화
+    float variance = max(M2 - M1 * M1, minVariance);
+
+    // 5. Chebyshev 상한: p_max = Var / (Var + (t - M1)²)
+    float delta    = t - M1;
+    float pMax     = variance / (variance + delta * delta);
+
+    return pMax;
+}
+
+
 float ComputeShadowAtlas(
     uint lightIndex,
     float4 worldPos,

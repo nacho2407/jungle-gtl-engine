@@ -16,9 +16,6 @@ bool FOpaqueRenderPass::Initialize()
 bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 {
 
-
-
-
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
     ID3D11RenderTargetView* RTVs[3] = { 
 		RenderTargets->SceneColorRTV, 
@@ -48,6 +45,9 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 		Context->RenderResources->AtlasShadowBuffer.GetSRV(),
 	};
 	Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+
+	//ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().VarianceShadowSRV.Get();
+ //   Context->DeviceContext->PSSetShaderResources(16, 1, &VSMSRV);
 
     return true;
 }
@@ -184,6 +184,8 @@ bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 	//ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
 	//Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
 	//Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    Context->DeviceContext->PSSetShaderResources(16, 1, &nullSRV);
     return true;
 }
 

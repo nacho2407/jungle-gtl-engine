@@ -137,25 +137,9 @@ float3 GetHeatmapColor(float weight)
 }
 #endif
 
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
+
+
+Texture2D VSMMap : register(t11); // 상단 선언부에 추가
 
 
 
@@ -197,6 +181,7 @@ float CalculateShadow(float4 worldPos)
 
     const float shadowBias = 0.005f;
     float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
+    //float shadowFactor = ComputeShadowVSM(projCoords, ScaleOffset, VSMMap, SampleState , 0.0001);
     return shadowFactor;
 }
 
@@ -352,20 +337,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         output.Color = float4(WireframeRGB, 1.f);
     }
  
-    
-    
-    // output.Color 직전에 추가
-    /*
-    float4 camClip = mul(mul(float4(input.WorldPos, 1.0f), View), Projection);
-    float3 post = camClip.xyz / camClip.w;
-    float4 shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
-    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
-    float2 debugUV = float2(projCoords.x * 0.5f + 0.5f, -projCoords.y * 0.5f + 0.5f);
-
-    float2 vsmValue = VSMDebugMap.Sample(SampleState, float2(0.5, 0.5));
-    output.Color = float4(vsmValue.r, vsmValue.r, vsmValue.r, 1);
-    return output;*/
-    
+   
       
     return output;
 }
