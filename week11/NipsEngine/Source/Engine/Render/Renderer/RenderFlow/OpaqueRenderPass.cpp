@@ -49,7 +49,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-	   ID3D11ShaderResourceView* ShadowSRV = FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get();
+	   ID3D11ShaderResourceView *ShadowSRV = FShadowAtlasManager::Get().GetSRV();
 	   Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
 
        if (Cmd.Type == ERenderCommandType::PostProcessOutline)  

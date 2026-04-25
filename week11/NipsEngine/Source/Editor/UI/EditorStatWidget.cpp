@@ -77,7 +77,7 @@ void FEditorStatWidget::Render(float DeltaTime)
 		RenderStatTable("GPUStatTable", GPUSource, GPUSortColumn, bGPUSortDescending);
 	}
 
-    ImGui::Image(FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get(), ImVec2(256, 256));
+    ImGui::Image(FShadowAtlasManager::Get().GetSRV(), ImVec2(256, 256));
 	ImGui::End();
 #endif
 }

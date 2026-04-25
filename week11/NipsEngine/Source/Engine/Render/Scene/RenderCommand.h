@@ -116,6 +116,14 @@ struct FShadowLightRequest
     float ShadowSharpen = 1.0f;
 };
 
+struct FAtlasShadowData
+{
+    uint32 LightIndex = 0;
+    EShadowLightType Type;
+    FMatrix ViewProj;
+    FVector4 AtlasScaleOffset;
+};
+
 struct FShadowConstants
 {
 	FMatrix DirLightViewProj;
