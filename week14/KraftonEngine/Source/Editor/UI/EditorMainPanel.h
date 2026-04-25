@@ -45,7 +45,6 @@ private:
 	FEditorContentBrowserWidget ContentBrowserWidget;
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
-	bool bShowEditorDebugPanel = false;
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;
 	bool bSavedShowWidgetList = false;

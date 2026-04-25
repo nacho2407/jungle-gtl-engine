@@ -96,7 +96,6 @@ void FEditorMainPanel::Render(float DeltaTime)
 	ImGui::NewFrame();
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-	ImGuiSetting::ShowSetting();
 	RenderMainMenuBar();
 
 	// 뷰포트 렌더링은 EditorEngine이 담당 (SSplitter 레이아웃 + ImGui::Image)
@@ -107,6 +106,11 @@ void FEditorMainPanel::Render(float DeltaTime)
 	}
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
+
+	if (!bHideEditorWindows && Settings.UI.bImGUISettings)
+	{
+		ImGuiSetting::ShowSetting();
+	}
 
 	if (!bHideEditorWindows && Settings.UI.bControl)
 	{
@@ -210,8 +214,9 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Scene", &Settings.UI.bScene);
 		ImGui::Checkbox("Stat", &Settings.UI.bStat);
 		ImGui::Checkbox("ContentBrowser", &Settings.UI.bContentBrowser);
+		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Separator();
-		ImGui::Checkbox("Editor Debug", &bShowEditorDebugPanel);
+		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}
 	else
@@ -255,13 +260,14 @@ void FEditorMainPanel::RenderShortcutOverlay()
 
 void FEditorMainPanel::RenderEditorDebugPanel()
 {
-	if (!bShowEditorDebugPanel || !EditorEngine)
+	FEditorSettings& Settings = FEditorSettings::Get();
+	if (!Settings.UI.bEditorDebug || !EditorEngine)
 	{
 		return;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(520.0f, 320.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Editor Debug", &bShowEditorDebugPanel))
+	if (!ImGui::Begin("Editor Debug", &Settings.UI.bEditorDebug))
 	{
 		ImGui::End();
 		return;
@@ -757,6 +763,8 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	Settings.UI.bScene = false;
 	Settings.UI.bStat = false;
 	Settings.UI.bContentBrowser = false;
+	Settings.UI.bImGUISettings = false;
+	Settings.UI.bEditorDebug = false;
 }
 
 void FEditorMainPanel::RestoreEditorWindowsAfterPIE()

@@ -55,6 +55,9 @@ namespace Key
 	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
 	constexpr const char* ShowSceneManager = "ShowSceneManager";
 	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
+	constexpr const char* ShowContentBrowser = "ShowContentBrowser";
+	constexpr const char* ShowImGuiSettings = "ShowImGuiSettings";
+	constexpr const char* ShowEditorDebug = "ShowEditorDebug";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -148,6 +151,9 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
 	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
 	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
+	WidgetsObj[Key::ShowContentBrowser] = UI.bContentBrowser;
+	WidgetsObj[Key::ShowImGuiSettings] = UI.bImGUISettings;
+	WidgetsObj[Key::ShowEditorDebug] = UI.bEditorDebug;
 	Root[Key::UIWidgets] = WidgetsObj;
 
 	// Perspective Camera
@@ -315,6 +321,9 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
 		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
 		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();
+		if (W.hasKey(Key::ShowContentBrowser)) UI.bContentBrowser = W[Key::ShowContentBrowser].ToBool();
+		if (W.hasKey(Key::ShowImGuiSettings))  UI.bImGUISettings = W[Key::ShowImGuiSettings].ToBool();
+		if (W.hasKey(Key::ShowEditorDebug))    UI.bEditorDebug = W[Key::ShowEditorDebug].ToBool();
 	}
 
 	// Perspective Camera
