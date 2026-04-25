@@ -60,6 +60,8 @@ public:
 		bool bScene = true;
 		bool bStat = false;
 		bool bContentBrowser = true;
+		bool bImGUISettings = false;
+		bool bEditorDebug = false;
 	} UI;
 
 	void SaveToFile(const FString& Path) const;
