@@ -29,25 +29,13 @@ FMatrix UCameraComponent::GetProjectionMatrix() const
 
     if (!CameraState.bIsOrthogonal)
     {
-        // Reversed-Z perspective: near→1, far→0
-        float Denom = N - F;
-        return FMatrix(
-            Cot / CameraState.AspectRatio, 0, 0, 0,
-            0, Cot, 0, 0,
-            0, 0, N / Denom, 1,
-            0, 0, -(F * N) / Denom, 0);
+        return FMatrix::MakePerspective(CameraState.FOV, CameraState.AspectRatio, N, F);
     }
     else
     {
-        // Reversed-Z orthographic: near→1, far→0
-        float HalfW = CameraState.OrthoWidth * 0.5f;
-        float HalfH = HalfW / CameraState.AspectRatio;
-        float Denom = N - F;
-        return FMatrix(
-            1.0f / HalfW, 0, 0, 0,
-            0, 1.0f / HalfH, 0, 0,
-            0, 0, 1.0f / Denom, 0,
-            0, 0, -F / Denom, 1);
+        float Width = CameraState.OrthoWidth;
+        float Height = Width / CameraState.AspectRatio;
+        return FMatrix::MakeOrthographic(Width, Height, N, F);
     }
 }
 

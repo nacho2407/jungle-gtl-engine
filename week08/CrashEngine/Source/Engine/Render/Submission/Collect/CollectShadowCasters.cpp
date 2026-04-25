@@ -1,13 +1,11 @@
 #include "Render/Submission/Collect/DrawCollector.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
-#include "Render/Scene/Scene.h"
 #include "Collision/SpatialPartition.h"
 
-void FDrawCollector::CollectShadowCasters(UWorld* World)
+void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* SceneView)
 {
-    if (!World)
+    if (!World || !SceneView)
     {
         return;
     }

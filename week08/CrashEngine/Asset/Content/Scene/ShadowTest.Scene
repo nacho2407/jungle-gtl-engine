@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "15",
+      "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -42,7 +42,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "18",
+      "PrimitiveKey" : "15",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -82,7 +82,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "21",
+      "PrimitiveKey" : "18",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -134,7 +134,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 24",
+              "Text" : "UUID : 21",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -187,7 +187,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 30",
+              "Text" : "UUID : 27",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -241,9 +241,9 @@
               "Font Size" : 1.000000,
               "Is Editor Helper" : true,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 37",
+              "Text" : "UUID : 33",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -259,7 +259,7 @@
               "Material" : {
                 "Path" : "Asset/Editor/Icons/Materials/SpotLightIcon.json"
               },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Visible" : true,
               "Visible In Editor" : true,
@@ -277,7 +277,7 @@
           "LightFalloffExponent" : 8.000000,
           "Location" : [0.000000, -1.173886, 0.589188],
           "OuterConeAngle" : 44.000000,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "UseInverseSquaredFalloff" : true,
           "bAffectsWorld" : true,
@@ -294,26 +294,26 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-11.441347, -4.593490, 9.860812],
+    "Location" : [2.176312, -0.491513, 1.721456],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 29.399851, 10.919797]
+    "Rotation" : [0.000000, 13.859923, -44.519974]
   },
   "Primitives" : {
-    "15" : {
+    "12" : {
       "Location" : [0.000000, 0.000000, -1.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 10.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "18" : {
+    "15" : {
       "Location" : [3.660555, -1.982667, 1.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "21" : {
+    "18" : {
       "Location" : [-6.109001, 5.378220, 1.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
