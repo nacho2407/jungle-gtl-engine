@@ -138,7 +138,7 @@ float3 GetHeatmapColor(float weight)
 
 float CalculateShadow(float4 worldPos)
 {
-    float4 camClip = mul(mul(worldPos, View), Projection);
+    float4 camClip = mul(worldPos, VirtualViewProj);
 
     if (abs(camClip.w) < 1e-5f)
     {

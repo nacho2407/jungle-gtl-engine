@@ -118,6 +118,7 @@ struct FShadowLightRequest
 
 struct FShadowConstants
 {
+	FMatrix	VirtualViewProj;
 	FMatrix DirLightViewProj;
     FVector4 ScaleOffset; // xy: Scale, zw: Offset
 };
