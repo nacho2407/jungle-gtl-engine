@@ -33,15 +33,16 @@ void FEditorWorldController::Tick(float InDeltaTime)
     DeltaTime = InDeltaTime;
     if (!Camera)
         return;
-    if (!bTargetLocationInitialized)
-    {
-        TargetLocation = Camera->GetLocation();
-        bTargetLocationInitialized = true;
-    }
-    constexpr float LocationLerpSpeed = 12.0f;
-    const FVector   CurrentLocation = Camera->GetLocation();
-    const float     LerpAlpha = MathUtil::Clamp(DeltaTime * LocationLerpSpeed, 0.0f, 1.0f);
-    Camera->SetLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
+    //if (!bTargetLocationInitialized)
+    //{
+    //    TargetLocation = Camera->GetLocation();
+    //    bTargetLocationInitialized = true;
+    //}
+    //constexpr float LocationLerpSpeed = 12.0f;
+    //const FVector   CurrentLocation = Camera->GetLocation();
+    //const float     LerpAlpha = MathUtil::Clamp(DeltaTime * LocationLerpSpeed, 0.0f, 1.0f);
+    //Camera->SetLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
+	TargetLocation = Camera->GetLocation();
 }
 
 // X/Y parameters for mouse events are viewport-local pixel coordinates.
@@ -282,6 +283,7 @@ void FEditorWorldController::OnKeyDown(int VK)
     case 'Q': Move += FVector(0, 0, 1)           * -MoveSpeed * DeltaTime; break;
     }
     TargetLocation += Move;
+	Camera->SetLocation(TargetLocation);
 
     // Arrow key rotation
     constexpr float AngleVelocity = 60.f;
