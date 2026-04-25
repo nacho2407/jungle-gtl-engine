@@ -1,10 +1,27 @@
 ﻿#include "LightComponent.h"
 #include "Object/ObjectFactory.h"
-
-#include "UI/EditorConsoleWidget.h"
+#include "Core/PropertyTypes.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 
 DEFINE_CLASS(ULightComponent, ULightComponentBase)
 REGISTER_FACTORY(ULightComponent)
+
+void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	ULightComponentBase::GetEditableProperties(OutProps);
+
+	static const char* ShadowMapTypeNames[] = { "Basic", "PSM", "CSM" };
+	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 3 });
+
+	const FShadowAtlas& Atlas = FShadowAtlasManager::Get().ShadowMapAtlas;
+	float InvX = 1.f / static_cast<float>(Atlas.TileCountX);
+	float InvY = 1.f / static_cast<float>(Atlas.TileCountY);
+
+	static FSRVDisplayInfo ShadowMapDisplay;
+	ShadowMapDisplay = { 256.f, 256.f, 0.f, 0.f, InvX, InvY };
+
+	OutProps.push_back({ "ShadowMap", EPropertyType::SRV, Atlas.ShadowSRV.Get(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
+}
 
 FMatrix ULightComponent::GetPSMMatrix(const FMatrix& CamView, const FMatrix& CamProj) const
 {

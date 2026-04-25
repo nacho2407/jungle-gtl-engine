@@ -1341,5 +1341,8 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
+    <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
