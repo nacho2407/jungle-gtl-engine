@@ -1,8 +1,11 @@
 #include "Render/Execute/Passes/Scene/DeferredOpaquePass.h"
 
+#include "ShadowMapPass.h"
+#include "Render/Renderer.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
+#include "Render/Resources/FrameResources.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
@@ -19,6 +22,34 @@ void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
     Context.Context->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSystemSRV);
     Context.Context->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &NullSystemSRV);
     Context.Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullSystemSRV);
+
+    const FViewModePassRegistry* Registry = Context.ViewMode.Registry;
+    const bool bUsesLighting = Registry && Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
+
+    if (bUsesLighting && Context.Resources)
+    {
+        ID3D11Buffer* GlobalLightBuffer = Context.Resources->GlobalLightBuffer.GetBuffer();
+        Context.Context->VSSetConstantBuffers(ECBSlot::Light, 1, &GlobalLightBuffer);
+        Context.Context->PSSetConstantBuffers(ECBSlot::Light, 1, &GlobalLightBuffer);
+
+        ID3D11ShaderResourceView* LocalLightsSRV = Context.Resources->LocalLightSRV;
+        Context.Context->VSSetShaderResources(ESystemTexSlot::LocalLights, 1, &LocalLightsSRV);
+        Context.Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &LocalLightsSRV);
+    }
+
+    if (bUsesLighting && Context.Renderer)
+    {
+        if (FRenderPass* Pass = Context.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+        {
+            FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+            for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS; ++i)
+            {
+                ID3D11ShaderResourceView* ShadowSRV = ShadowPass->GetShadowSRV(i);
+                Context.Context->VSSetShaderResources(20 + i, 1, &ShadowSRV);
+                Context.Context->PSSetShaderResources(20 + i, 1, &ShadowSRV);
+            }
+        }
+    }
 
     if (Context.LightCulling)
     {

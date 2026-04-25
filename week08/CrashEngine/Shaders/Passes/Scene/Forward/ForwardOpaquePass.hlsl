@@ -148,7 +148,7 @@ FSceneColorOutput PS_Forward_Lambert(FForward_Opaque_VSOutput Input)
     float4 BaseColor = float4(Surface.BaseColor, Surface.Opacity);
 
 #if FORWARD_ENABLE_LIGHTING
-    Output.SceneColor = ComputeLambertLighting(BaseColor, Surface.WorldNormal);
+    Output.SceneColor = ComputeLambertLighting(BaseColor, Surface.WorldNormal, Input.worldPos);
     
     // Add Local Lights
     for (int j = 0; j < NumLocalLights; ++j)

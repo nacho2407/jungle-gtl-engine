@@ -161,10 +161,10 @@
           }],
         "ClassName" : "UDirectionalLightComponent",
         "Properties" : {
-          "Intensity" : 2.500000,
+          "Intensity" : 1.000000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "Location" : [0.000000, -15.979769, 8.366568],
-          "Rotation" : [50.000000, 90.000000, 0.000000],
+          "Location" : [-6.524245, -3.935364, 5.062817],
+          "Rotation" : [-6.565659, 76.586853, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "bAffectsWorld" : true,
           "bCastShadows" : true,
@@ -215,10 +215,10 @@
         "ClassName" : "UPointLightComponent",
         "Properties" : {
           "AttenuationRadius" : 10.000000,
-          "Intensity" : 2.500000,
+          "Intensity" : 6.200000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "LightFalloffExponent" : 8.000000,
-          "Location" : [0.000000, 0.000000, 1.487333],
+          "Location" : [1.573103, 0.000000, 3.827758],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "UseInverseSquaredFalloff" : true,
@@ -275,9 +275,9 @@
           "Intensity" : 2.500000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "LightFalloffExponent" : 8.000000,
-          "Location" : [0.000000, -1.173886, 0.589188],
+          "Location" : [5.097430, -1.173886, 4.194526],
           "OuterConeAngle" : 44.000000,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [121.234100, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "UseInverseSquaredFalloff" : true,
           "bAffectsWorld" : true,
@@ -294,9 +294,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [2.176312, -0.491513, 1.721456],
+    "Location" : [3.908407, 13.085692, 15.958221],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 13.859923, -44.519974]
+    "Rotation" : [0.000000, 40.319778, -104.999718]
   },
   "Primitives" : {
     "12" : {
