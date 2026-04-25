@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorControlWidget.h"
+﻿#include "Editor/UI/EditorControlWidget.h"
 #include "Editor/EditorEngine.h"
 #include "ImGui/imgui.h"
 #include "Component/CameraComponent.h"
@@ -14,7 +14,7 @@ void FEditorControlWidget::Render(float DeltaTime)
 	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
 	ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
 
-	if (!ImGui::Begin("Jungle Control Panel"))
+	if (!ImGui::Begin("Control Panel"))
 	{
 		ImGui::End();
 		return;
