@@ -66,8 +66,9 @@ namespace ESamplerSlot
 {
 	constexpr uint32 LinearClamp = 0; // s0: PostProcess, UI, 기본
 	constexpr uint32 LinearWrap = 1; // s1: 메시 텍스처, 데칼
-	constexpr uint32 PointClamp = 2; // s2: 폰트, 깊이/스텐실 정밀 읽기
-	// s3-s4: 셰이더별 커스텀 용도
+	constexpr uint32 PointClamp = 2;      // s2: 폰트, 깊이/스텐실 정밀 읽기
+	constexpr uint32 ShadowComparison = 3; // s3: Shadow PCF (Comparison sampler)
+	constexpr uint32 ShadowLinear = 4;     // s4: VSM Shadow (Linear sampler)
 }
 
 //PerObject
