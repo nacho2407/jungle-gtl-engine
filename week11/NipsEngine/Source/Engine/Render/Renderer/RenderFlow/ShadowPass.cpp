@@ -202,7 +202,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			BuildLogCascadeSplit(
 				RenderBus->GetNearPlane(),
 				RenderBus->GetFarPlane(),
-				500.f,
+				50.f,
 				CascadeSplits);
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
