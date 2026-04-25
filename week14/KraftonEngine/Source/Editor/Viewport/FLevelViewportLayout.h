@@ -59,7 +59,7 @@ public:
 	EViewportLayout GetLayout() const { return CurrentLayout; }
 
 	// 편의용 토글 (OnePane ↔ FourPanes2x2)
-	void ToggleViewportSplit();
+	void ToggleViewportSplit(int32 SourceSlotIndex = -1);
 	bool IsSplitViewport() const { return CurrentLayout != EViewportLayout::OnePane; }
 
 	// ImGui "Viewport" 창에 레이아웃 계산 + 렌더
@@ -69,6 +69,7 @@ public:
 
 	const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return AllViewportClients; }
 	const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return LevelViewportClients; }
+	bool ShouldRenderViewportClient(const FLevelEditorViewportClient* ViewportClient) const;
 
 	enum class EViewportPlaceActorType : uint8
 	{
@@ -118,6 +119,8 @@ private:
 	void EnsureViewportSlots(int32 RequiredCount);
 	void ShrinkViewportSlots(int32 RequiredCount);
 	int32 GetActiveViewportSlotIndex() const;
+	void SwapViewportSlots(int32 SlotA, int32 SlotB);
+	void RestoreMaximizedViewportToOriginalSlot();
 	void BeginSplitToOnePaneTransition(int32 SlotIndex);
 	void BeginOnePaneToSplitTransition(EViewportLayout TargetLayout);
 	void FinishLayoutTransition(bool bSnapToEnd);
@@ -155,6 +158,8 @@ private:
 	EViewportLayoutTransition LayoutTransition = EViewportLayoutTransition::None;
 	EViewportLayout TransitionTargetLayout = EViewportLayout::OnePane;
 	int32 TransitionSourceSlot = 0;
+	EViewportLayout LastSplitLayout = EViewportLayout::FourPanes2x2;
+	int32 MaximizedOriginalSlotIndex = 0;
 	float TransitionRestoreRatios[3] = { 0.5f, 0.5f, 0.5f };
 	int32 TransitionRestoreRatioCount = 0;
 	bool bSuppressLayoutTransitionAnimation = false;

@@ -631,6 +631,63 @@ int32 FLevelViewportLayout::GetActiveViewportSlotIndex() const
 	return 0;
 }
 
+bool FLevelViewportLayout::ShouldRenderViewportClient(const FLevelEditorViewportClient* ViewportClient) const
+{
+	if (!ViewportClient)
+	{
+		return false;
+	}
+
+	for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		if (LevelViewportClients[i] == ViewportClient)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FLevelViewportLayout::SwapViewportSlots(int32 SlotA, int32 SlotB)
+{
+	if (SlotA == SlotB)
+	{
+		return;
+	}
+
+	if (SlotA < 0 || SlotB < 0 ||
+		SlotA >= MaxViewportSlots || SlotB >= MaxViewportSlots ||
+		SlotA >= static_cast<int32>(LevelViewportClients.size()) ||
+		SlotB >= static_cast<int32>(LevelViewportClients.size()))
+	{
+		return;
+	}
+
+	std::swap(LevelViewportClients[SlotA], LevelViewportClients[SlotB]);
+	std::swap(ViewportWindows[SlotA], ViewportWindows[SlotB]);
+
+	if (LevelViewportClients[SlotA])
+	{
+		LevelViewportClients[SlotA]->SetLayoutWindow(ViewportWindows[SlotA]);
+	}
+	if (LevelViewportClients[SlotB])
+	{
+		LevelViewportClients[SlotB]->SetLayoutWindow(ViewportWindows[SlotB]);
+	}
+}
+
+void FLevelViewportLayout::RestoreMaximizedViewportToOriginalSlot()
+{
+	if (MaximizedOriginalSlotIndex <= 0)
+	{
+		return;
+	}
+
+	SwapViewportSlots(0, MaximizedOriginalSlotIndex);
+	MaximizedOriginalSlotIndex = 0;
+}
+
 bool FLevelViewportLayout::SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const
 {
 	if (!Node || !TargetWindow)
@@ -678,15 +735,19 @@ void FLevelViewportLayout::BeginSplitToOnePaneTransition(int32 SlotIndex)
 
 	if (!RootSplitter || SlotIndex < 0 || SlotIndex >= static_cast<int32>(LevelViewportClients.size()) || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
 	{
+		MaximizedOriginalSlotIndex = 0;
 		bSuppressLayoutTransitionAnimation = true;
 		SetLayout(EViewportLayout::OnePane);
 		bSuppressLayoutTransitionAnimation = false;
 		return;
 	}
 
+	LastSplitLayout = CurrentLayout;
+	MaximizedOriginalSlotIndex = SlotIndex;
 	TransitionSourceSlot = SlotIndex;
 	TransitionTargetLayout = EViewportLayout::OnePane;
 	TransitionRestoreRatioCount = 0;
+	SetActiveViewport(LevelViewportClients[SlotIndex]);
 
 	TArray<SSplitter*> Splitters;
 	SSplitter::CollectSplitters(RootSplitter, Splitters);
@@ -712,14 +773,19 @@ void FLevelViewportLayout::BeginOnePaneToSplitTransition(EViewportLayout TargetL
 		return;
 	}
 
-	TransitionSourceSlot = 0;
 	TransitionTargetLayout = TargetLayout;
+	const int32 TargetSlotCount = GetSlotCount(TargetLayout);
+	const int32 ExpandSourceSlot =
+		(MaximizedOriginalSlotIndex >= 0 && MaximizedOriginalSlotIndex < TargetSlotCount)
+		? MaximizedOriginalSlotIndex
+		: 0;
+	TransitionSourceSlot = ExpandSourceSlot;
 
 	bSuppressLayoutTransitionAnimation = true;
 	SetLayout(TargetLayout);
 	bSuppressLayoutTransitionAnimation = false;
 
-	if (!RootSplitter || !ViewportWindows[0])
+	if (!RootSplitter || !ViewportWindows[ExpandSourceSlot])
 	{
 		return;
 	}
@@ -733,7 +799,7 @@ void FLevelViewportLayout::BeginOnePaneToSplitTransition(EViewportLayout TargetL
 		TargetRatios[i] = (i < TransitionRestoreRatioCount) ? TransitionRestoreRatios[i] : Splitters[i]->GetRatio();
 	}
 
-	ConfigureCollapseToSlot(RootSplitter, ViewportWindows[0], false);
+	ConfigureCollapseToSlot(RootSplitter, ViewportWindows[ExpandSourceSlot], false);
 	for (int32 i = 0; i < RestoreCount; ++i)
 	{
 		Splitters[i]->SetTargetRatio(TargetRatios[i], true);
@@ -832,7 +898,8 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 		}
 	}
 
-	bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
+	const bool bLeavingOnePane = (CurrentLayout == EViewportLayout::OnePane && NewLayout != EViewportLayout::OnePane);
+	const bool bEnteringOnePane = (CurrentLayout != EViewportLayout::OnePane && NewLayout == EViewportLayout::OnePane);
 
 	// 기존 트리 해제
 	SSplitter::DestroyTree(RootSplitter);
@@ -845,8 +912,23 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 	// 슬롯 수 조정
 	if (RequiredSlots > OldSlotCount)
 		EnsureViewportSlots(RequiredSlots);
-	else if (RequiredSlots < OldSlotCount)
+	else if (RequiredSlots < OldSlotCount && NewLayout != EViewportLayout::OnePane)
 		ShrinkViewportSlots(RequiredSlots);
+
+	if (bEnteringOnePane)
+	{
+		if (MaximizedOriginalSlotIndex < 0 ||
+			MaximizedOriginalSlotIndex >= static_cast<int32>(LevelViewportClients.size()) ||
+			MaximizedOriginalSlotIndex >= MaxViewportSlots)
+		{
+			MaximizedOriginalSlotIndex = 0;
+		}
+		SwapViewportSlots(0, MaximizedOriginalSlotIndex);
+	}
+	else if (bLeavingOnePane)
+	{
+		RestoreMaximizedViewportToOriginalSlot();
+	}
 
 	// 분할 전환 시 새로 추가된 슬롯에 Top, Front, Right 순으로 기본 설정
 	if (NewLayout != EViewportLayout::OnePane)
@@ -857,7 +939,7 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 			ELevelViewportType::Right
 		};
 		// 기존 슬롯(또는 슬롯 0)은 유지, 새로 생긴 슬롯에만 적용
-		int32 StartIdx = bWasOnePane ? 1 : OldSlotCount;
+		int32 StartIdx = OldSlotCount;
 		for (int32 i = StartIdx; i < RequiredSlots && (i - 1) < 3; ++i)
 		{
 			LevelViewportClients[i]->SetViewportType(DefaultTypes[i - 1]);
@@ -868,18 +950,36 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 	RootSplitter = BuildSplitterTree(NewLayout);
 	ActiveSlotCount = RequiredSlots;
 	CurrentLayout = NewLayout;
+	if (CurrentLayout != EViewportLayout::OnePane)
+	{
+		LastSplitLayout = CurrentLayout;
+	}
 }
 
-void FLevelViewportLayout::ToggleViewportSplit()
+void FLevelViewportLayout::ToggleViewportSplit(int32 SourceSlotIndex)
 {
-	if(LayoutTransition != EViewportLayoutTransition::None)
+	if (LayoutTransition != EViewportLayoutTransition::None)
 	{
 		return;
 	}
 	if (CurrentLayout == EViewportLayout::OnePane)
-		SetLayout(EViewportLayout::FourPanes2x2);
+	{
+		const EViewportLayout TargetLayout = (LastSplitLayout != EViewportLayout::OnePane)
+			? LastSplitLayout
+			: EViewportLayout::FourPanes2x2;
+		SetLayout(TargetLayout);
+	}
 	else
+	{
+		const int32 SlotIndex =
+			(SourceSlotIndex >= 0 &&
+				SourceSlotIndex < static_cast<int32>(LevelViewportClients.size()) &&
+				SourceSlotIndex < MaxViewportSlots)
+			? SourceSlotIndex
+			: GetActiveViewportSlotIndex();
+		SetActiveViewport(LevelViewportClients[SlotIndex]);
 		SetLayout(EViewportLayout::OnePane);
+	}
 }
 
 // ─── Viewport UI 렌더링 ─────────────────────────────────────
@@ -1328,7 +1428,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 		{
 			if (ImGui::ImageButton("##toggle", (ImTextureID)LayoutIcons[ToggleIdx], ImVec2(ToggleIconSize, ToggleIconSize)))
 			{
-				ToggleViewportSplit();
+				ToggleViewportSplit(SlotIndex);
 			}
 		}
 		else
@@ -1336,7 +1436,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			const char* ToggleLabel = (CurrentLayout == EViewportLayout::OnePane) ? "Split" : "Merge";
 			if (ImGui::Button(ToggleLabel))
 			{
-				ToggleViewportSplit();
+				ToggleViewportSplit(SlotIndex);
 			}
 		}
 		//if (bIsTransitioning) ImGui::EndDisabled();

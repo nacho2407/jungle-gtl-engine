@@ -60,6 +60,11 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
+		if (!Editor->ShouldRenderViewportClient(ViewportClient))
+		{
+			continue;
+		}
+
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
 		RenderViewport(ViewportClient, Renderer);
 	}
