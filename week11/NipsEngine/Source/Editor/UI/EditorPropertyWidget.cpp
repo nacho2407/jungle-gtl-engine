@@ -14,7 +14,6 @@
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
-#include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/PropertyTypes.h"
 #include "Math/Color.h"
 #include "Core/ResourceManager.h"
@@ -756,12 +755,6 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		RenderInterpControlPoints(InterpComp);
 	}
 
-	// TODO: 구조 변경 필요
-	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
-	{
-        ImGui::Image(FShadowAtlasManager::Get().ShadowMapAtlas.ShadowSRV.Get(), ImVec2(256, 256), ImVec2(0, 0), ImVec2(0.125f, 0.125f));
-	}
-
 	ImGui::Separator();
 
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
@@ -1002,6 +995,26 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		break;
 	}
+	case EPropertyType::SRV:
+	{
+		ID3D11ShaderResourceView* SRV = static_cast<ID3D11ShaderResourceView*>(Prop.ValuePtr);
+		if (SRV)
+		{
+			const FSRVDisplayInfo* Info = static_cast<const FSRVDisplayInfo*>(Prop.ExtraData);
+			if (Info)
+			{
+				ImGui::Image(SRV,
+					ImVec2(Info->ImageWidth, Info->ImageHeight),
+					ImVec2(Info->UV0X, Info->UV0Y),
+					ImVec2(Info->UV1X, Info->UV1Y));
+			}
+			else
+			{
+				ImGui::Image(SRV, ImVec2(256, 256));
+			}
+		}
+		break;
+	}
 	}
 
 	if (bChanged && SelectedComponent)
@@ -1024,6 +1037,7 @@ void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent
 	if (ImGui::Button("Stop",     ImVec2(HalfWidth, 0))) Comp->ResetAndHalt();
 	if (ImGui::Button("Reset",    ImVec2(-1,        0))) Comp->Reset();
 }
+
 
 void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp)
 {
