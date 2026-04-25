@@ -21,8 +21,12 @@ public:
 	SWindow* GetSideLT() const { return SideLT; }
 	SWindow* GetSideRB() const { return SideRB; }
 
-	void SetRatio(float InRatio) { Ratio = InRatio; }
+	void SetRatio(float InRatio);
 	float GetRatio() const { return Ratio; }
+	void SetTargetRatio(float InRatio, bool bAnimate = true);
+	bool UpdateAnimation(float DeltaTime);
+	bool IsAnimating() const { return bIsAnimating; }
+	void StopAnimation(bool bSnapToTarget);
 
 	float GetSplitBarSize() const { return SplitBarSize; }
 
@@ -58,6 +62,8 @@ protected:
 	ESplitOrientation Orientation = ESplitOrientation::Horizontal;
 
 	float Ratio = 0.5f;
+	float TargetRatio = 0.5f;
+	bool bIsAnimating = false;
 	float SplitBarSize = 4.0f;
 
 	FRect SplitBarRect;

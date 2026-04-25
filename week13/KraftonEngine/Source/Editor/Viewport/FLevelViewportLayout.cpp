@@ -25,11 +25,14 @@
 
 #include "GameFramework/StaticMeshActor.h"
 
+#include <algorithm>
+
 namespace
 {
 enum class EToolbarIcon : int32
 {
 	Menu = 0,
+	Setting,
 	AddActor,
 	Translate,
 	Rotate,
@@ -48,6 +51,7 @@ const wchar_t* GetToolbarIconFileName(EToolbarIcon Icon)
 	switch (Icon)
 	{
 	case EToolbarIcon::Menu: return L"Menu.png";
+	case EToolbarIcon::Setting: return L"Setting.png";
 	case EToolbarIcon::AddActor: return L"Add_Actor.png";
 	case EToolbarIcon::Translate: return L"Translate.png";
 	case EToolbarIcon::Rotate: return L"Rotate.png";
@@ -614,11 +618,218 @@ SSplitter* FLevelViewportLayout::BuildSplitterTree(EViewportLayout Layout)
 	}
 }
 
+int32 FLevelViewportLayout::GetActiveViewportSlotIndex() const
+{
+	for (int32 i = 0; i < static_cast<int32>(LevelViewportClients.size()); ++i)
+	{
+		if (LevelViewportClients[i] == ActiveViewportClient)
+		{
+			return i;
+		}
+	}
+	return 0;
+}
+
+bool FLevelViewportLayout::SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const
+{
+	if (!Node || !TargetWindow)
+	{
+		return false;
+	}
+
+	if (Node == TargetWindow)
+	{
+		return true;
+	}
+
+	SSplitter* Splitter = SSplitter::AsSplitter(Node);
+	return Splitter &&
+		(SubtreeContainsWindow(Splitter->GetSideLT(), TargetWindow) ||
+			SubtreeContainsWindow(Splitter->GetSideRB(), TargetWindow));
+}
+
+bool FLevelViewportLayout::ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate)
+{
+	if (!Node || !TargetWindow)
+	{
+		return false;
+	}
+
+	const bool bTargetInLT = SubtreeContainsWindow(Node->GetSideLT(), TargetWindow);
+	const bool bTargetInRB = SubtreeContainsWindow(Node->GetSideRB(), TargetWindow);
+	if (!bTargetInLT && !bTargetInRB)
+	{
+		return false;
+	}
+
+	Node->SetTargetRatio(bTargetInLT ? 1.0f : 0.0f, bAnimate);
+	if (SSplitter* Child = SSplitter::AsSplitter(bTargetInLT ? Node->GetSideLT() : Node->GetSideRB()))
+	{
+		ConfigureCollapseToSlot(Child, TargetWindow, bAnimate);
+	}
+
+	return true;
+}
+
+void FLevelViewportLayout::BeginSplitToOnePaneTransition(int32 SlotIndex)
+{
+	FinishLayoutTransition(true);
+
+	if (!RootSplitter || SlotIndex < 0 || SlotIndex >= static_cast<int32>(LevelViewportClients.size()) || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+	{
+		bSuppressLayoutTransitionAnimation = true;
+		SetLayout(EViewportLayout::OnePane);
+		bSuppressLayoutTransitionAnimation = false;
+		return;
+	}
+
+	TransitionSourceSlot = SlotIndex;
+	TransitionTargetLayout = EViewportLayout::OnePane;
+	TransitionRestoreRatioCount = 0;
+
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	TransitionRestoreRatioCount = (std::min)(static_cast<int32>(Splitters.size()), 3);
+	for (int32 i = 0; i < TransitionRestoreRatioCount; ++i)
+	{
+		TransitionRestoreRatios[i] = Splitters[i]->GetRatio();
+	}
+
+	LayoutTransition = EViewportLayoutTransition::SplitToOnePane;
+	DraggingSplitter = nullptr;
+	if (!ConfigureCollapseToSlot(RootSplitter, ViewportWindows[SlotIndex], true))
+	{
+		FinishLayoutTransition(true);
+	}
+}
+
+void FLevelViewportLayout::BeginOnePaneToSplitTransition(EViewportLayout TargetLayout)
+{
+	FinishLayoutTransition(true);
+	if (TargetLayout == EViewportLayout::OnePane)
+	{
+		return;
+	}
+
+	TransitionSourceSlot = 0;
+	TransitionTargetLayout = TargetLayout;
+
+	bSuppressLayoutTransitionAnimation = true;
+	SetLayout(TargetLayout);
+	bSuppressLayoutTransitionAnimation = false;
+
+	if (!RootSplitter || !ViewportWindows[0])
+	{
+		return;
+	}
+
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	const int32 RestoreCount = (std::min)(static_cast<int32>(Splitters.size()), 3);
+	float TargetRatios[3] = { 0.5f, 0.5f, 0.5f };
+	for (int32 i = 0; i < RestoreCount; ++i)
+	{
+		TargetRatios[i] = (i < TransitionRestoreRatioCount) ? TransitionRestoreRatios[i] : Splitters[i]->GetRatio();
+	}
+
+	ConfigureCollapseToSlot(RootSplitter, ViewportWindows[0], false);
+	for (int32 i = 0; i < RestoreCount; ++i)
+	{
+		Splitters[i]->SetTargetRatio(TargetRatios[i], true);
+	}
+
+	LayoutTransition = EViewportLayoutTransition::OnePaneToSplit;
+	DraggingSplitter = nullptr;
+}
+
+void FLevelViewportLayout::FinishLayoutTransition(bool bSnapToEnd)
+{
+	if (LayoutTransition == EViewportLayoutTransition::None)
+	{
+		return;
+	}
+
+	const EViewportLayoutTransition FinishedTransition = LayoutTransition;
+	LayoutTransition = EViewportLayoutTransition::None;
+	DraggingSplitter = nullptr;
+
+	if (RootSplitter)
+	{
+		TArray<SSplitter*> Splitters;
+		SSplitter::CollectSplitters(RootSplitter, Splitters);
+		for (SSplitter* Splitter : Splitters)
+		{
+			if (Splitter)
+			{
+				Splitter->StopAnimation(bSnapToEnd);
+			}
+		}
+	}
+
+	if (FinishedTransition == EViewportLayoutTransition::SplitToOnePane)
+	{
+		bSuppressLayoutTransitionAnimation = true;
+		SetLayout(EViewportLayout::OnePane);
+		bSuppressLayoutTransitionAnimation = false;
+	}
+}
+
+bool FLevelViewportLayout::UpdateLayoutTransition(float DeltaTime)
+{
+	if (LayoutTransition == EViewportLayoutTransition::None || !RootSplitter)
+	{
+		return false;
+	}
+
+	bool bAnyAnimating = false;
+	TArray<SSplitter*> Splitters;
+	SSplitter::CollectSplitters(RootSplitter, Splitters);
+	for (SSplitter* Splitter : Splitters)
+	{
+		if (Splitter && Splitter->UpdateAnimation(DeltaTime))
+		{
+			bAnyAnimating = true;
+		}
+	}
+
+	if (!bAnyAnimating)
+	{
+		FinishLayoutTransition(false);
+		return false;
+	}
+
+	return true;
+}
+
 // ─── 레이아웃 전환 ──────────────────────────────────────────
 
 void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 {
 	if (NewLayout == CurrentLayout) return;
+
+	if (!bSuppressLayoutTransitionAnimation)
+	{
+		if (LayoutTransition != EViewportLayoutTransition::None)
+		{
+			FinishLayoutTransition(true);
+			if (NewLayout == CurrentLayout)
+			{
+				return;
+			}
+		}
+
+		if (CurrentLayout != EViewportLayout::OnePane && NewLayout == EViewportLayout::OnePane)
+		{
+			BeginSplitToOnePaneTransition(GetActiveViewportSlotIndex());
+			return;
+		}
+
+		if (CurrentLayout == EViewportLayout::OnePane && NewLayout != EViewportLayout::OnePane)
+		{
+			BeginOnePaneToSplitTransition(NewLayout);
+			return;
+		}
+	}
 
 	bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
 
@@ -670,8 +881,8 @@ void FLevelViewportLayout::ToggleViewportSplit()
 
 void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 {
-	(void)DeltaTime;
 	bMouseOverViewport = false;
+	UpdateLayoutTransition(DeltaTime);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_None);
@@ -711,6 +922,15 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			ContentSize.x,
 			ContentSize.y - ToolbarHeight
 		};
+		auto IsSlotVisibleEnough = [&](int32 SlotIndex) -> bool
+		{
+			if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+			{
+				return false;
+			}
+			const FRect& R = ViewportWindows[SlotIndex]->GetRect();
+			return R.Width > 1.0f && R.Height > 1.0f;
+		};
 
 		// SSplitter 레이아웃 계산
 		if (RootSplitter)
@@ -725,7 +945,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		// 각 ViewportClient에 Rect 반영 + 이미지 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			if (i < static_cast<int32>(LevelViewportClients.size()))
+			if (i < static_cast<int32>(LevelViewportClients.size()) && IsSlotVisibleEnough(i))
 			{
 				FLevelEditorViewportClient* VC = LevelViewportClients[i];
 				VC->UpdateLayoutRect();
@@ -736,7 +956,13 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		// 각 뷰포트 패인 상단에 툴바 오버레이 렌더
 		for (int32 i = 0; i < ActiveSlotCount; ++i)
 		{
-			RenderPaneToolbar(i);
+			const bool bShowPaneToolbar =
+				IsSlotVisibleEnough(i) &&
+				(LayoutTransition == EViewportLayoutTransition::None || i == TransitionSourceSlot);
+			if (bShowPaneToolbar)
+			{
+				RenderPaneToolbar(i);
+			}
 		}
 
 		// 분할 바 렌더 (재귀 수집)
@@ -767,7 +993,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			// 마우스가 어떤 슬롯 위에 있는지
 			for (int32 i = 0; i < ActiveSlotCount; ++i)
 			{
-				if (ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
+				if (IsSlotVisibleEnough(i) && ViewportWindows[i]->IsHover(MP))
 				{
 					bMouseOverViewport = true;
 					break;
@@ -775,7 +1001,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			}
 
 			// 분할 바 드래그
-			if (RootSplitter)
+			if (RootSplitter && LayoutTransition == EViewportLayoutTransition::None)
 			{
 				if (ImGui::IsMouseClicked(0))
 				{
@@ -823,7 +1049,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				for (int32 i = 0; i < ActiveSlotCount; ++i)
 				{
 					if (i < static_cast<int32>(LevelViewportClients.size()) &&
-						ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
+						IsSlotVisibleEnough(i) && ViewportWindows[i]->IsHover(MP))
 					{
 						if (LevelViewportClients[i] != ActiveViewportClient)
 							SetActiveViewport(LevelViewportClients[i]);
@@ -1026,9 +1252,9 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 		// Layout 드롭다운
 		char PopupID[64];
-		snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
+		//snprintf(PopupID, sizeof(PopupID), "LayoutPopup_%d", SlotIndex);
 
-		if (ImGui::Button("Layout"))
+		if (DrawToolbarIconButton("##Layout", EToolbarIcon::Menu, "Layout", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 		{
 			ImGui::OpenPopup(PopupID);
 		}
@@ -1237,7 +1463,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 			char SettingsPopupID[64];
 			snprintf(SettingsPopupID, sizeof(SettingsPopupID), "SettingsPopup_%d", SlotIndex);
 
-			if (DrawToolbarIconButton("##SettingsIcon", EToolbarIcon::Menu, "Settings", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
+			if (DrawToolbarIconButton("##SettingsIcon", EToolbarIcon::Setting, "Settings", PaneToolbarFallbackIconSize, PaneToolbarMaxIconSize))
 			{
 				ImGui::OpenPopup(SettingsPopupID);
 			}
@@ -1335,11 +1561,25 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 
 void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos)
 {
+	if (LayoutTransition != EViewportLayoutTransition::None)
+	{
+		return;
+	}
+
 	constexpr float RightClickPopupThresholdSq = 16.0f;
+	auto IsSlotVisibleEnough = [&](int32 SlotIndex) -> bool
+	{
+		if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+		{
+			return false;
+		}
+		const FRect& R = ViewportWindows[SlotIndex]->GetRect();
+		return R.Width > 1.0f && R.Height > 1.0f;
+	};
 
 	for (int32 i = 0; i < ActiveSlotCount; ++i)
 	{
-		if (!ViewportWindows[i])
+		if (!IsSlotVisibleEnough(i))
 		{
 			continue;
 		}
@@ -1372,7 +1612,7 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 
 	for (int32 i = 0; i < ActiveSlotCount; ++i)
 	{
-		if (!ViewportWindows[i] || !ContextMenuState.bTrackingRightClick[i])
+		if (!IsSlotVisibleEnough(i) || !ContextMenuState.bTrackingRightClick[i])
 		{
 			continue;
 		}
@@ -1656,7 +1896,16 @@ void FLevelViewportLayout::SaveToSettings()
 	}
 
 	// Splitter 비율 저장
-	if (RootSplitter)
+	if (LayoutTransition != EViewportLayoutTransition::None && TransitionRestoreRatioCount > 0)
+	{
+		S.SplitterCount = TransitionRestoreRatioCount;
+		if (S.SplitterCount > 3) S.SplitterCount = 3;
+		for (int32 i = 0; i < S.SplitterCount; ++i)
+		{
+			S.SplitterRatios[i] = TransitionRestoreRatios[i];
+		}
+	}
+	else if (RootSplitter)
 	{
 		TArray<SSplitter*> AllSplitters;
 		SSplitter::CollectSplitters(RootSplitter, AllSplitters);
