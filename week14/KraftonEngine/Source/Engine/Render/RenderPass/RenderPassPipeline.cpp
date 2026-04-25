@@ -2,10 +2,6 @@
 
 #include "Render/RenderPass/RenderPassRegistry.h"
 #include "Render/Pipeline/DrawCommandList.h"
-#include "Render/Device/D3DDevice.h"
-#include "Render/Resource/RenderResources.h"
-#include "Profiling/Stats.h"
-#include "Profiling/GPUProfiler.h"
 
 void FRenderPassPipeline::Initialize()
 {
@@ -24,18 +20,7 @@ void FRenderPassPipeline::Execute(const FPassContext& Ctx, FDrawCommandList& Cmd
 	for (const auto& Pass : Passes)
 	{
 		Pass->BeginPass(Ctx);
-
-		uint32 Start, End;
-		CmdList.GetPassRange(Pass->GetPassType(), Start, End);
-		if (Start < End)
-		{
-			const char* PassName = GetRenderPassName(Pass->GetPassType());
-			SCOPE_STAT_CAT(PassName, "4_ExecutePass");
-			GPU_SCOPE_STAT(PassName);
-
-			CmdList.SubmitRange(Start, End, Device, Resources, Ctx.Cache);
-		}
-
+		Pass->Execute(Ctx, CmdList, Device, Resources);
 		Pass->EndPass(Ctx);
 	}
 }

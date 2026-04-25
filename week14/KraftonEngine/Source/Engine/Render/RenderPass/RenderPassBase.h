@@ -3,6 +3,7 @@
 #include "Render/Pipeline/PassRenderStateTable.h"
 
 class FD3DDevice;
+class FDrawCommandList;
 class FRenderer;
 struct FFrameContext;
 struct FStateCache;
@@ -39,6 +40,11 @@ public:
 	// 패스 전후 GPU 상태 전환 (RT 바인딩, 리소스 복사 등)
 	virtual void BeginPass(const FPassContext& Ctx) {}
 	virtual void EndPass(const FPassContext& Ctx) {}
+
+	// 패스 실행 — 기본 구현: DrawCommandList에서 패스 범위를 가져와 Submit.
+	// ShadowDepth(Cubemap 6면, CSM cascade) 등 커스텀 렌더링이 필요한 패스는 override.
+	virtual void Execute(const FPassContext& Ctx, FDrawCommandList& CmdList,
+	                     FD3DDevice& Device, FSystemResources& Resources);
 
 protected:
 	ERenderPass      PassType = ERenderPass::Opaque;
