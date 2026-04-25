@@ -184,9 +184,6 @@
     <Filter Include="Source\Engine\Render\Scene\Debug">
       <UniqueIdentifier>{ff0031d2-b2f5-301d-e651-397bcd0b4d78}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Render\Scene\Light">
-      <UniqueIdentifier>{525f56bd-adbc-eb41-aa2c-858cc638191b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Render\Scene\Proxies">
       <UniqueIdentifier>{013cb5c8-3dc7-ac99-423b-f9a96b81e458}</UniqueIdentifier>
     </Filter>
@@ -336,18 +333,18 @@
     <FxCompile Include="Shaders\Passes\Scene\DeferredDecalPass.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\DeferredLightingPass.hlsl">
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\DeferredOpaqueCommon.hlsli">
+      <Filter>Shaders\Passes\Scene</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaquePass.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\DepthOnlyPass.hlsl">
       <Filter>Shaders\Passes\Scene</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredLightingPass.hlsl">
-      <Filter>Shaders\Passes\Scene</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Passes\Scene\DeferredOpaquePass.hlsl">
-        <Filter>Shaders\Passes\Scene</Filter>
-      </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\ViewModes\NonLitViewModePass.hlsl">
       <Filter>Shaders\Passes\Scene\ViewModes</Filter>
     </FxCompile>
@@ -438,6 +435,9 @@
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\Sphere.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
@@ -668,7 +668,10 @@
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredDecalPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.cpp">
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.cpp">
@@ -677,25 +680,25 @@
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.cpp">
-      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.cpp">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClCompile>
-      <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ShadowMapPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Registry\RenderPassPresets.cpp">
@@ -822,6 +825,9 @@
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp">
+      <Filter>Source\Engine\Render\Submission\Collect</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectShadowCasters.cpp">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp">
@@ -990,6 +996,9 @@
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\Sphere.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
@@ -1295,7 +1304,10 @@
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredDecalPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.h">
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.h">
@@ -1304,25 +1316,25 @@
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardDecalPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredLightingPass.h">
-      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\NonLitViewModePass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.h">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClInclude>
-      <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">
-        <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
-      </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\PresentPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ShadowMapPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Registry\RenderPassPresets.h">
@@ -1356,9 +1368,6 @@
       <Filter>Source\Engine\Render\Execute\Runner</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\FrameResources.h">
-      <Filter>Source\Engine\Render\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\PrimitiveMeshShape.h">
       <Filter>Source\Engine\Render\Resources</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\Bindings\CBBindingEntry.h">
@@ -1475,9 +1484,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\Debug\DebugRenderAPI.h">
       <Filter>Source\Engine\Render\Scene\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Scene\Light\LightInfo.h">
-      <Filter>Source\Engine\Render\Scene\Light</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\SceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies</Filter>
     </ClInclude>
@@ -1494,6 +1500,9 @@
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightProxy.h">
+      <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\LightProxyInfo.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Light</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Light\PointLightSceneProxy.h">
@@ -1672,6 +1681,3 @@
     <ResourceCompile Include="CrashEngine.rc" />
   </ItemGroup>
 </Project>
-
-
-

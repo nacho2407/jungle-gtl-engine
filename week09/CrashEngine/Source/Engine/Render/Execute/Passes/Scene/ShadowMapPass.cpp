@@ -8,12 +8,15 @@
 
 FShadowMapPass::~FShadowMapPass()
 {
-    if (ShadowDepthTexture) ShadowDepthTexture->Release();
-    for (int i = 0; i < 6; ++i)
+    for (uint32 i = 0; i < MAX_SHADOW_MAPS; ++i)
     {
-        if (ShadowDSVs[i]) ShadowDSVs[i]->Release();
+        if (ShadowResources[i].Texture) ShadowResources[i].Texture->Release();
+        for (int f = 0; f < 6; ++f)
+        {
+            if (ShadowResources[i].DSVs[f]) ShadowResources[i].DSVs[f]->Release();
+        }
+        if (ShadowResources[i].SRV) ShadowResources[i].SRV->Release();
     }
-    if (ShadowSRV) ShadowSRV->Release();
 }
 
 void FShadowMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -33,15 +36,21 @@ void FShadowMapPass::PrepareTargets(FRenderPipelineContext& Context)
 void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     auto& VisibleLights = Context.Submission.SceneData->Lights.VisibleLightProxies;
+    uint32 ShadowLightCount = 0;
     for (uint32 i = 0; i < (uint32)VisibleLights.size(); ++i)
     {
         FLightProxy* Light = VisibleLights[i];
         if (!Light || !Light->bCastShadow) continue;
 
+        // Only generate commands for the first MAX_SHADOW_MAPS lights
+        if (ShadowLightCount >= MAX_SHADOW_MAPS) break;
+
         for (FPrimitiveProxy* Proxy : Light->VisibleShadowCasters)
         {
-            DrawCommandBuild::BuildMeshDrawCommand(*Proxy, ERenderPass::ShadowMap, Context, *Context.DrawCommandList, static_cast<uint16>(i));
+            // UserBits stores the shadow map index (0~4)
+            DrawCommandBuild::BuildMeshDrawCommand(*Proxy, ERenderPass::ShadowMap, Context, *Context.DrawCommandList, static_cast<uint16>(ShadowLightCount));
         }
+        ShadowLightCount++;
     }
 }
 
@@ -53,7 +62,7 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context, const FP
 
 void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
-    if (!Context.DrawCommandList || !ShadowDepthTexture) return;
+    if (!Context.DrawCommandList) return;
 
     uint32 GlobalStart = 0;
     uint32 GlobalEnd = 0;
@@ -81,54 +90,61 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     TArray<FDrawCommand>& Commands = Context.DrawCommandList->GetCommands();
 
     uint32 CurrentIdx = GlobalStart;
+    uint32 ShadowLightIndex = 0;
+
     for (uint32 i = 0; i < (uint32)VisibleLights.size(); ++i)
     {
         FLightProxy* Light = VisibleLights[i];
-        
-        // Find range for this light using UserBits
+        if (!Light || !Light->bCastShadow) continue;
+        if (ShadowLightIndex >= MAX_SHADOW_MAPS) break;
+
+        FShadowResource& Res = ShadowResources[ShadowLightIndex];
+        if (!Res.Texture) { ShadowLightIndex++; continue; }
+
+        // Find range for this specific shadow map index
         uint32 LightStart = CurrentIdx;
-        while (CurrentIdx < GlobalEnd && (Commands[CurrentIdx].SortKey & 0xFFF) == i)
+        while (CurrentIdx < GlobalEnd && (Commands[CurrentIdx].SortKey & 0xFFF) == ShadowLightIndex)
         {
             CurrentIdx++;
         }
         uint32 LightEnd = CurrentIdx;
 
-        if (LightStart >= LightEnd) continue;
-        if (!Light->bCastShadow) continue;
-
-        FLightProxyInfo& LC = Light->LightProxyInfo;
-
-        if (LC.LightType == static_cast<uint32>(ELightType::Point))
+        if (LightStart < LightEnd)
         {
-            // For Point Light, render to 6 faces of the cubemap
-            for (int Face = 0; Face < 6; ++Face)
+            FLightProxyInfo& LC = Light->LightProxyInfo;
+
+            if (LC.LightType == static_cast<uint32>(ELightType::Point))
             {
-                Context.Context->OMSetRenderTargets(0, nullptr, ShadowDSVs[Face]);
-                Context.Context->ClearDepthStencilView(ShadowDSVs[Face], D3D11_CLEAR_DEPTH, 0.0f, 0); // Reversed-Z
+                for (int Face = 0; Face < 6; ++Face)
+                {
+                    Context.Context->OMSetRenderTargets(0, nullptr, Res.DSVs[Face]);
+                    Context.Context->ClearDepthStencilView(Res.DSVs[Face], D3D11_CLEAR_DEPTH, 0.0f, 0);
+
+                    FFrameCBData ShadowFrameData = {};
+                    ShadowFrameData.View = FMatrix::Identity;
+                    ShadowFrameData.Projection = Light->ShadowViewProjMatrices[Face];
+                    ShadowFrameData.InvViewProj = Light->ShadowViewProjMatrices[Face].GetInverse();
+                    Context.Resources->FrameBuffer.Update(Context.Context, &ShadowFrameData, sizeof(FFrameCBData));
+
+                    Context.DrawCommandList->SubmitRange(LightStart, LightEnd, *Context.Device, Context.Context, *Context.StateCache);
+                }
+            }
+            else
+            {
+                Context.Context->OMSetRenderTargets(0, nullptr, Res.DSVs[0]);
+                Context.Context->ClearDepthStencilView(Res.DSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
 
                 FFrameCBData ShadowFrameData = {};
                 ShadowFrameData.View = FMatrix::Identity;
-                ShadowFrameData.Projection = Light->ShadowViewProjMatrices[Face];
-                ShadowFrameData.InvViewProj = Light->ShadowViewProjMatrices[Face].GetInverse();
+                ShadowFrameData.Projection = Light->LightViewProj;
+                ShadowFrameData.InvViewProj = Light->LightViewProj.GetInverse();
                 Context.Resources->FrameBuffer.Update(Context.Context, &ShadowFrameData, sizeof(FFrameCBData));
 
                 Context.DrawCommandList->SubmitRange(LightStart, LightEnd, *Context.Device, Context.Context, *Context.StateCache);
             }
         }
-        else
-        {
-            // Directional or Spot: Render to slice 0
-            Context.Context->OMSetRenderTargets(0, nullptr, ShadowDSVs[0]);
-            Context.Context->ClearDepthStencilView(ShadowDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
 
-            FFrameCBData ShadowFrameData = {};
-            ShadowFrameData.View = FMatrix::Identity;
-            ShadowFrameData.Projection = Light->LightViewProj;
-            ShadowFrameData.InvViewProj = Light->LightViewProj.GetInverse();
-            Context.Resources->FrameBuffer.Update(Context.Context, &ShadowFrameData, sizeof(FFrameCBData));
-
-            Context.DrawCommandList->SubmitRange(LightStart, LightEnd, *Context.Device, Context.Context, *Context.StateCache);
-        }
+        ShadowLightIndex++;
     }
 
     // Restore state
@@ -137,7 +153,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     if (SavedRTV) SavedRTV->Release();
     if (SavedDSV) SavedDSV->Release();
 
-    // Restore Frame Constants for main view
+    // Restore Frame Constants
     if (Context.SceneView)
     {
         FFrameCBData MainFrameData = {};
@@ -147,46 +163,45 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         MainFrameData.CameraWorldPos = Context.SceneView->CameraPosition;
         MainFrameData.bIsWireframe = (Context.SceneView->ViewMode == EViewMode::Wireframe);
         MainFrameData.WireframeColor = Context.SceneView->WireframeColor;
-        
         Context.Resources->FrameBuffer.Update(Context.Context, &MainFrameData, sizeof(FFrameCBData));
     }
 }
 
 void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
 {
-    if (ShadowDepthTexture) return;
+    if (ShadowResources[0].Texture) return;
 
-    // Create a Texture2DArray with 6 slices for Cubemap support
-    D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width = ShadowMapSize;
-    texDesc.Height = ShadowMapSize;
-    texDesc.MipLevels = 1;
-    texDesc.ArraySize = 6; // 6 faces
-    texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-    texDesc.SampleDesc.Count = 1;
-    texDesc.Usage = D3D11_USAGE_DEFAULT;
-    texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
-    Device->CreateTexture2D(&texDesc, nullptr, &ShadowDepthTexture);
-
-    // Create DSVs for each face (slice)
-    for (int i = 0; i < 6; ++i)
+    for (uint32 i = 0; i < MAX_SHADOW_MAPS; ++i)
     {
-        D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-        dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-        dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-        dsvDesc.Texture2DArray.FirstArraySlice = i;
-        dsvDesc.Texture2DArray.ArraySize = 1;
-        dsvDesc.Texture2DArray.MipSlice = 0;
-        Device->CreateDepthStencilView(ShadowDepthTexture, &dsvDesc, &ShadowDSVs[i]);
+        D3D11_TEXTURE2D_DESC texDesc = {};
+        texDesc.Width = ShadowMapSize;
+        texDesc.Height = ShadowMapSize;
+        texDesc.MipLevels = 1;
+        texDesc.ArraySize = 6;
+        texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+        texDesc.SampleDesc.Count = 1;
+        texDesc.Usage = D3D11_USAGE_DEFAULT;
+        texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+        texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+        Device->CreateTexture2D(&texDesc, nullptr, &ShadowResources[i].Texture);
+
+        for (int f = 0; f < 6; ++f)
+        {
+            D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+            dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+            dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc.Texture2DArray.FirstArraySlice = f;
+            dsvDesc.Texture2DArray.ArraySize = 1;
+            dsvDesc.Texture2DArray.MipSlice = 0;
+            Device->CreateDepthStencilView(ShadowResources[i].Texture, &dsvDesc, &ShadowResources[i].DSVs[f]);
+        }
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+        srvDesc.TextureCube.MipLevels = 1;
+        srvDesc.TextureCube.MostDetailedMip = 0;
+        Device->CreateShaderResourceView(ShadowResources[i].Texture, &srvDesc, &ShadowResources[i].SRV);
     }
-    
-    // Create Cube SRV
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-    srvDesc.TextureCube.MipLevels = 1;
-    srvDesc.TextureCube.MostDetailedMip = 0;
-    Device->CreateShaderResourceView(ShadowDepthTexture, &srvDesc, &ShadowSRV);
 }

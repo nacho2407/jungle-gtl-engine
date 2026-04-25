@@ -1,6 +1,8 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Passes/Scene/DeferredLightingPass.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
+#include "Render/Execute/Registry/RenderPassRegistry.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
@@ -12,6 +14,7 @@
 #include "Render/Resources/FrameResources.h"
 #include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 #include "Profiling/Stats.h"
+#include "Render/Renderer.h"
 
 namespace
 {
@@ -146,6 +149,19 @@ void FDeferredLightingPass::PrepareInputs(FRenderPipelineContext& Context)
 
         ID3D11ShaderResourceView* LocalLightsSRV = Context.Resources->LocalLightSRV;
         Context.Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &LocalLightsSRV);
+    }
+
+    if (Context.Renderer)
+    {
+        if (FRenderPass* Pass = Context.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+        {
+            FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+            for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS; ++i)
+            {
+                ID3D11ShaderResourceView* ShadowSRV = ShadowPass->GetShadowSRV(i);
+                Context.Context->PSSetShaderResources(20 + i, 1, &ShadowSRV);
+            }
+        }
     }
 
     if (Context.StateCache)
