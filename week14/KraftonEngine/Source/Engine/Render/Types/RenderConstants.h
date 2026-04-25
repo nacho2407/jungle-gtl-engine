@@ -53,13 +53,20 @@ namespace ELightCullingSRVSlot
 // HLSL 시스템 텍스처 슬롯 — Renderer가 패스 단위로 바인딩 (프레임 공통)
 namespace ESystemTexSlot
 {
-	constexpr uint32 SceneDepth = 16; // t16: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor = 17; // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
-	constexpr uint32 GBufferNormal = 18; // t18: GBuffer World Normal (R16G16B16A16_FLOAT)
-	constexpr uint32 Stencil     = 19; // t19: CopyResource된 Stencil (X24_G8_UINT)
-	constexpr uint32 CullingHeatmap = 20; // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
-	constexpr uint32 ShadowMap = 21;      // t21: Shadow Map Depth (R32_FLOAT)
-	constexpr uint32 SpotLightAtlas = 22; // t22: Spotlight atlas (R32_FLOAT)
+	constexpr uint32 SceneDepth = 16;          // t16: CopyResource된 Depth (R24_UNORM)
+	constexpr uint32 SceneColor = 17;          // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	constexpr uint32 GBufferNormal = 18;       // t18: GBuffer World Normal (R16G16B16A16_FLOAT)
+	constexpr uint32 Stencil     = 19;         // t19: CopyResource된 Stencil (X24_G8_UINT)
+	constexpr uint32 CullingHeatmap = 20;      // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
+	constexpr uint32 ShadowMapCSM       = 21;  // t21: Directional CSM Texture2DArray (4 cascades)
+	constexpr uint32 ShadowMapSpotAtlas = 22;  // t22: Spot Atlas Texture2DArray (multi-page)
+	constexpr uint32 ShadowMapPointCube = 23;  // t23: Point TextureCubeArray
+	constexpr uint32 SpotShadowDatas    = 24;  // t24: StructuredBuffer<FSpotShadowDataGPU>
+	constexpr uint32 PointShadowDatas   = 25;  // t25: StructuredBuffer<FPointShadowDataGPU>
+
+	// 하위 호환용 별칭
+	constexpr uint32 ShadowMap = ShadowMapCSM;
+	constexpr uint32 SpotLightAtlas = ShadowMapSpotAtlas;
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
@@ -91,28 +98,62 @@ struct FPerObjectConstants
 };
 
 // =============================================================================
-// Shadow CB (b5) — Shadow 행렬 + 파라미터
-// HLSL ConstantBuffers.hlsli ShadowBuffer와 1:1 대응
+// Shadow 상수
 // =============================================================================
-static constexpr uint32 MAX_SHADOW_CASCADES = 4;
+static constexpr uint32 MAX_SHADOW_CASCADES      = 4;
+static constexpr uint32 MAX_SHADOW_SPOT_LIGHTS   = 64;
+static constexpr uint32 MAX_SHADOW_POINT_LIGHTS  = 16;
 
+// =============================================================================
+// Per-light Shadow GPU 구조체 — StructuredBuffer용 (t24, t25)
+// HLSL ForwardLightData.hlsli 와 1:1 대응
+// =============================================================================
+
+// Spot Light: ViewProj + atlas 내 UV rect + page index
+struct FSpotShadowDataGPU
+{
+	FMatrix  ViewProj;           // 64B | offset  0
+	FVector4 AtlasScaleBias;     // 16B | offset 64  (xy=scale, zw=bias)
+	uint32   PageIndex;          //  4B | offset 80  (Texture2DArray slice)
+	float    _pad[3];            // 12B | offset 84  → 합계 96B
+};
+static_assert(sizeof(FSpotShadowDataGPU) == 96, "FSpotShadowDataGPU size mismatch with HLSL");
+static_assert(sizeof(FSpotShadowDataGPU) % 16 == 0);
+
+// Point Light: 6면 ViewProj + cubemap array index
+// FMatrix가 __m256 포함 → 32B alignment → 컴파일러가 구조체 끝을 32B 경계로 패딩
+struct FPointShadowDataGPU
+{
+	FMatrix  FaceViewProj[6];    // 384B | offset  0
+	float    NearZ;              //   4B | offset 384
+	float    FarZ;               //   4B | offset 388
+	uint32   CubeArrayIndex;     //   4B | offset 392  (TextureCubeArray index)
+	float    _pad[5];            //  20B | offset 396  → 합계 416B (32B aligned)
+};
+static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);
+static_assert(sizeof(FPointShadowDataGPU) % 32 == 0, "FPointShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");
+
+// =============================================================================
+// Shadow CB (b5) — CSM 행렬 + 공통 파라미터
+// HLSL ConstantBuffers.hlsli ShadowBuffer와 1:1 대응
+// Per-light 데이터는 StructuredBuffer (t24, t25)로 분리
+// =============================================================================
 struct FShadowCBData
 {
-	FMatrix  LightViewProj[MAX_SHADOW_CASCADES]; // 256B | offset   0  (Directional/CSM)
-	FMatrix  PointLightViewProj[6];              // 384B | offset 256  (Point cubemap 6면)
-	FMatrix  SpotLightViewProj;                  //  64B | offset 640  (Spot)
+	// Directional CSM
+	FMatrix  CSMViewProj[MAX_SHADOW_CASCADES];   // 256B | offset   0
+	FVector4 CascadeSplits;                      //  16B | offset 256  (cascade 분할 거리)
 
-	FVector4 CascadeSplits;                      //  16B | offset 704  (CSM cascade 분할 거리)
-	FVector4 AtlasScaleBias;                     //  16B | offset 720  (Atlas UV transform)
+	// 공통 파라미터
+	float    ShadowBias;                         //   4B | offset 272
+	float    ShadowSlopeBias;                    //   4B | offset 276
+	float    ShadowSharpen;                      //   4B | offset 280
+	uint32   ShadowFilterMode;                   //   4B | offset 284  (0=Hard, 1=PCF, 2=VSM)
 
-	float    ShadowBias;                         //   4B | offset 736
-	float    ShadowSlopeBias;                    //   4B | offset 740
-	float    ShadowSharpen;                      //   4B | offset 744
-	uint32   ShadowMapResolution;                //   4B | offset 748
-
-	uint32   NumCascades;                        //   4B | offset 752
-	uint32   ShadowFilterMode;                   //   4B | offset 756  (0=Hard, 1=PCF, 2=VSM)
-	float    _pad[2];                            //   8B | offset 760 → 합계 768B
+	uint32   NumCSMCascades;                     //   4B | offset 288
+	uint32   NumShadowSpotLights;                //   4B | offset 292
+	uint32   NumShadowPointLights;               //   4B | offset 296
+	uint32   CSMResolution;                      //   4B | offset 300  → 합계 304B, 16B 정렬 OK
 };
 static_assert(sizeof(FShadowCBData) % 16 == 0, "FShadowCBData must be 16-byte aligned");
 
