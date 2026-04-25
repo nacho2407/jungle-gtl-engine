@@ -7,6 +7,8 @@
 #include "Render/Resource/DepthStencilStateManager.h"
 #include "Render/Resource/BlendStateManager.h"
 #include "Render/Resource/SamplerStateManager.h"
+#include "Render/Culling/TileBasedLightCulling.h"
+#include "Render/Culling/ClusteredLightCuller.h"
 
 /*
 	시스템 레벨 GPU 리소스를 관리하는 구조체입니다.
@@ -103,6 +105,10 @@ struct FSystemResources
 	FTileCullingResource TileCullingResource;	// t9/t10 — 타일 컬링 결과 버퍼
 	uint32 LastNumLights = 0;					// Dispatch용 총 라이트 수 캐시
 
+	// --- Light Culling ---
+	FTileBasedLightCulling TileBasedCulling;
+	FClusteredLightCuller  ClusteredLightCuller;
+
 	// --- Render State Managers ---
 	FRasterizerStateManager RasterizerStateManager;
 	FDepthStencilStateManager DepthStencilStateManager;
@@ -124,7 +130,7 @@ struct FSystemResources
 	void UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext& Frame);
 
 	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
-	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame, const FClusterCullingState* ClusterState = nullptr);
+	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame);
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
 	void BindSystemSamplers(FD3DDevice& Device);
@@ -135,4 +141,11 @@ struct FSystemResources
 
 	// 시스템 텍스처 슬롯 언바인딩 (t16-t19)
 	void UnbindSystemTextures(FD3DDevice& Device);
+
+	// --- Light Culling Dispatch/Bind ---
+	void DispatchTileCulling(ID3D11DeviceContext* DC, const FFrameContext& Frame);
+	void DispatchClusterCulling(FD3DDevice& Device);
+	void BindClusterCullingResources(FD3DDevice& Device);
+	void UnbindClusterCullingResources(FD3DDevice& Device);
+	void SubmitCullingDebugLines(ID3D11DeviceContext* DC, class UWorld* World);
 };

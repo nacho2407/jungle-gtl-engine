@@ -11,8 +11,6 @@
 #include "Render/RenderPass/RenderPassPipeline.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Resource/RenderResources.h"
-#include "Render/Culling/TileBasedLightCulling.h"
-#include "Render/Culling/ClusteredLightCuller.h"
 
 class FScene;
 
@@ -35,18 +33,11 @@ public:
 	// 뷰포트 리사이즈 후 렌더 상태 캐시 초기화
 	void ResetRenderStateCache() { Resources.ResetRenderStateCache(); }
 
-	// TileBasedLightCulling Dispatch에 필요한 리소스 접근자
-	ID3D11Buffer*             GetFrameBuffer()         { return Resources.FrameBuffer.GetBuffer(); }
-	ID3D11ShaderResourceView* GetLightBufferSRV()      { return Resources.ForwardLights.LightBufferSRV; }
-	FTileCullingResource&     GetTileCullingResource() { return Resources.TileCullingResource; }
-	uint32                    GetNumLights()    const  { return Resources.LastNumLights; }
-	FTileBasedLightCulling&   GetTileBaseCulling()     { return TileBasedCulling; }
+	// 시스템 리소스 접근 (패스에서 Culling 등 직접 접근)
+	FSystemResources& GetResources() { return Resources; }
 
-	void BindTileCullingResources() { Resources.BindTileCullingBuffers(Device); }
-	void UnbindTileCullingResources() { Resources.UnbindTileCullingBuffers(Device); }
-	void DispatchClusterCullingResources();
-	void BindClusterCullingResources();
-	void UnbindClusterCullingResources();
+	// 이전 프레임 컬링 시각화 디버그 라인 제출
+	void SubmitCullingDebugLines(class UWorld* World);
 
 	// 패스 파이프라인 접근 (타입별 패스 조회 등)
 	FRenderPassPipeline& GetPipeline() { return Pipeline; }
@@ -61,7 +52,4 @@ private:
 	FSystemResources Resources;
 	FDrawCommandBuilder Builder;
 	FRenderPassPipeline Pipeline;
-
-	FTileBasedLightCulling TileBasedCulling;
-	FClusteredLightCuller ClusteredLightCuller;
 };

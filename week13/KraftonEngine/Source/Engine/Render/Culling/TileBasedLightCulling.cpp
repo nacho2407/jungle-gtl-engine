@@ -1,4 +1,5 @@
 #include "Engine/Render/Culling/TileBasedLightCulling.h"
+#include "Engine/Render/Resource/RenderResources.h"
 #include "Render/Resource/ShaderManager.h"
 #include "Render/DebugDraw/DrawDebugHelpers.h"
 #include "GameFramework/World.h"

@@ -4,6 +4,7 @@
 #include "Render/Resource/ShaderManager.h"
 #include "Core/Log.h"
 #include "Render/Proxy/FScene.h"
+#include "GameFramework/World.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Materials/MaterialManager.h"
@@ -20,9 +21,8 @@ void FRenderer::Create(HWND hWindow)
 
 	FShaderManager::Get().Initialize(Device.GetDevice());
 	Resources.Create(Device.GetDevice());
-
-	TileBasedCulling.Initialize(Device.GetDevice());
-	ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
+	Resources.TileBasedCulling.Initialize(Device.GetDevice());
+	Resources.ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
 
 	Pipeline.Initialize();
 
@@ -38,9 +38,9 @@ void FRenderer::Release()
 
 	Builder.Release();
 
+	Resources.TileBasedCulling.Release();
+	Resources.ClusteredLightCuller.Release();
 	Resources.Release();
-	TileBasedCulling.Release();
-	ClusteredLightCuller.Release();
 	FShaderManager::Get().Release();
 	FMaterialManager::Get().Release();
 	Device.Release();
@@ -66,14 +66,7 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	}
 	{
 		SCOPE_STAT_CAT("UpdateLightBuffer", "4_ExecutePass");
-
-		FClusterCullingState& ClusterState = ClusteredLightCuller.GetCullingState();
-		ClusterState.NearZ = Frame.NearClip;
-		ClusterState.FarZ = Frame.FarClip;
-		ClusterState.ScreenWidth = static_cast<uint32>(Frame.ViewportWidth);
-		ClusterState.ScreenHeight = static_cast<uint32>(Frame.ViewportHeight);
-
-		Resources.UpdateLightBuffer(Device, Scene, Frame, &ClusterState);
+		Resources.UpdateLightBuffer(Device, Scene, Frame);
 	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
@@ -103,52 +96,15 @@ void FRenderer::CleanupPassState(FStateCache& Cache)
 {
 	Resources.UnbindSystemTextures(Device);
 	Resources.UnbindTileCullingBuffers(Device);
-	UnbindClusterCullingResources();
+	Resources.UnbindClusterCullingResources(Device);
 
 	Cache.Cleanup(Device.GetDeviceContext());
 	Builder.GetCommandList().Reset();
 }
 
-void FRenderer::DispatchClusterCullingResources()
+void FRenderer::SubmitCullingDebugLines(UWorld* World)
 {
-	if (!ClusteredLightCuller.IsInitialized())
-	{
-		return;
-	}
-
-	Resources.UnbindTileCullingBuffers(Device);
-	UnbindClusterCullingResources();
-
-	/*{
-		GPU_SCOPE_STAT_CAT("ClutserCulling AABB Creation", "AABBCreation");
-		ClusteredLightCuller.DispatchViewSpaceAABB();
-	}*/
-	{
-		GPU_SCOPE_STAT_CAT("Cluster Culling Dispatch", "Culling Dispatch");
-		ClusteredLightCuller.DispatchLightCullingCS(Resources.ForwardLights.LightBufferSRV);
-	}
-
-	BindClusterCullingResources();
-}
-
-void FRenderer::BindClusterCullingResources()
-{
-	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
-	ID3D11ShaderResourceView* LightIndexList = ClusteredLightCuller.GetLightIndexListSRV();
-	ID3D11ShaderResourceView* LightGridList = ClusteredLightCuller.GetLightGridSRV();
-	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
-	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
-	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 1, &LightIndexList);
-	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightGrid, 1, &LightGridList);
-}
-
-void FRenderer::UnbindClusterCullingResources()
-{
-	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
-	ID3D11ShaderResourceView* NullSRVs[2] = {};
-	Ctx->VSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
-	Ctx->PSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
-	Ctx->CSSetShaderResources(ELightTexSlot::ClusterLightIndexList, 2, NullSRVs);
+	Resources.SubmitCullingDebugLines(Device.GetDeviceContext(), World);
 }
 
 //	Present the rendered frame to the screen. 반드시 Render 이후에 호출되어야 함.
