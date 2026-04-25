@@ -1,0 +1,237 @@
+﻿#include "ShadowMapPass.h"
+#include "RenderPassRegistry.h"
+
+#include "Render/Device/D3DDevice.h"
+#include "Render/Types/FrameContext.h"
+#include "Render/Types/RenderConstants.h"
+#include "Render/Resource/RenderResources.h"
+#include "Render/Command/DrawCommandList.h"
+#include "Render/Scene/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Shader/Shader.h"
+#include "Render/Resource/Buffer.h"
+#include "Render/Types/LightFrustumUtils.h"
+#include "Profiling/Stats.h"
+#include "Profiling/GPUProfiler.h"
+
+REGISTER_RENDER_PASS(FShadowMapPass)
+
+FShadowMapPass::FShadowMapPass()
+{
+	PassType = ERenderPass::ShadowMap;
+	// 커스텀 Execute — RenderState는 사용하지 않음 (직접 세팅)
+}
+
+FShadowMapPass::~FShadowMapPass()
+{
+	ReleaseShadowMap();
+	ShadowPerObjectCB.Release();
+}
+
+// ============================================================
+// Shadow Map Texture 생성/관리
+// ============================================================
+
+void FShadowMapPass::EnsureShadowMap(ID3D11Device* Device, uint32 Size)
+{
+	if (ShadowMapSize == Size && ShadowTexture) return;
+
+	ReleaseShadowMap();
+	ShadowMapSize = Size;
+
+	// R32_TYPELESS → DSV는 D32_FLOAT, SRV는 R32_FLOAT
+	D3D11_TEXTURE2D_DESC TexDesc = {};
+	TexDesc.Width  = Size;
+	TexDesc.Height = Size;
+	TexDesc.MipLevels = 1;
+	TexDesc.ArraySize = 1;
+	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	TexDesc.SampleDesc.Count = 1;
+	TexDesc.Usage  = D3D11_USAGE_DEFAULT;
+	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &ShadowTexture);
+	if (FAILED(hr)) return;
+
+	// DSV
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+	DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DSVDesc.Texture2D.MipSlice = 0;
+
+	hr = Device->CreateDepthStencilView(ShadowTexture, &DSVDesc, &ShadowDSV);
+	if (FAILED(hr)) return;
+
+	// SRV
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+	SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SRVDesc.Texture2D.MipLevels = 1;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+
+	hr = Device->CreateShaderResourceView(ShadowTexture, &SRVDesc, &ShadowSRV);
+	if (FAILED(hr)) return;
+}
+
+void FShadowMapPass::ReleaseShadowMap()
+{
+	if (ShadowSRV)     { ShadowSRV->Release();     ShadowSRV = nullptr; }
+	if (ShadowDSV)     { ShadowDSV->Release();     ShadowDSV = nullptr; }
+	if (ShadowTexture) { ShadowTexture->Release(); ShadowTexture = nullptr; }
+	ShadowMapSize = 0;
+}
+
+// ============================================================
+// Execute — 라이트별 Shadow Depth 렌더링
+// ============================================================
+
+void FShadowMapPass::Execute(const FPassContext& Ctx)
+{
+	if (!Ctx.Scene) return;
+
+	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
+	const uint32 NumSpots = Env.GetNumSpotLights();
+	if (NumSpots == 0) { bHasValidShadow = false; return; }
+
+	SCOPE_STAT_CAT("ShadowMapPass", "4_ExecutePass");
+	GPU_SCOPE_STAT("ShadowMapPass");
+
+	ID3D11Device* Dev = Ctx.Device.GetDevice();
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	// Shadow map 리소스 확보
+	EnsureShadowMap(Dev, kDefaultShadowMapSize);
+	if (!ShadowDSV) { bHasValidShadow = false; return; }
+
+	// PerObject CB 생성 (한 번만)
+	if (!ShadowPerObjectCB.GetBuffer())
+		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants));
+
+	// --- 첫 번째 visible Spot Light로 shadow 렌더링 ---
+	bHasValidShadow = false;
+
+	for (uint32 li = 0; li < NumSpots; ++li)
+	{
+		const FSpotLightParams& Light = Env.GetSpotLight(li);
+		if (!Light.bVisible) continue;
+
+		// Light ViewProj + Frustum (유틸리티 사용)
+		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Light);
+		FMatrix LightView = VP.View;
+		FMatrix LightProj = VP.Proj;
+		LightViewProj = VP.ViewProj;
+
+		FConvexVolume LightFrustum = FLightFrustumUtils::BuildSpotLightFrustum(Light);
+
+		// Shadow DSV 클리어 + 바인딩
+		DC->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 0.0f, 0); // Reversed-Z: far=0
+		DC->OMSetRenderTargets(0, nullptr, ShadowDSV);
+
+		// Shadow map 뷰포트
+		D3D11_VIEWPORT ShadowVP = {};
+		ShadowVP.Width    = static_cast<float>(ShadowMapSize);
+		ShadowVP.Height   = static_cast<float>(ShadowMapSize);
+		ShadowVP.MinDepth = 0.0f;
+		ShadowVP.MaxDepth = 1.0f;
+		DC->RSSetViewports(1, &ShadowVP);
+
+		// b0에 Light View/Proj 업로드
+		FFrameConstants LightFrameCB = {};
+		LightFrameCB.View       = LightView;
+		LightFrameCB.Projection = LightProj;
+		LightFrameCB.InvProj    = LightProj.GetInverse();
+		LightFrameCB.InvViewProj = LightViewProj.GetInverse();
+
+		Ctx.Resources.FrameBuffer.Update(DC, &LightFrameCB, sizeof(FFrameConstants));
+
+		// 렌더 상태: depth write + no color (PreDepth와 동일)
+		Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::Default);
+		Ctx.Resources.SetBlendState(Ctx.Device, EBlendState::NoColor);
+		Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidBackCull);
+		DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		// 프록시 순회 — frustum culling + depth-only 렌더링
+		FShader* LastShader = nullptr;
+
+		for (FPrimitiveSceneProxy* Proxy : Ctx.Scene->GetAllProxies())
+		{
+			if (!Proxy || !Proxy->IsVisible()) continue;
+			if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
+			if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;
+
+			// Light frustum culling
+			if (!LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
+
+			FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
+			if (!Mesh || !Mesh->IsValid()) continue;
+
+			FShader* ProxyShader = Proxy->GetShader();
+			if (!ProxyShader) continue;
+
+			// VS + InputLayout 바인딩 (PS는 즉시 해제)
+			if (ProxyShader != LastShader)
+			{
+				ProxyShader->Bind(DC);
+				DC->PSSetShader(nullptr, nullptr, 0);
+				LastShader = ProxyShader;
+			}
+
+			// PerObject CB (b1) — Model 행렬 업로드
+			ShadowPerObjectCB.Update(DC, &Proxy->GetPerObjectConstants(), sizeof(FPerObjectConstants));
+			ID3D11Buffer* b1 = ShadowPerObjectCB.GetBuffer();
+			DC->VSSetConstantBuffers(ECBSlot::PerObject, 1, &b1);
+
+			// VB/IB 바인딩
+			ID3D11Buffer* VB = Mesh->GetVertexBuffer().GetBuffer();
+			uint32 VBStride = Mesh->GetVertexBuffer().GetStride();
+			uint32 Offset = 0;
+			DC->IASetVertexBuffers(0, 1, &VB, &VBStride, &Offset);
+
+			ID3D11Buffer* IB = Mesh->GetIndexBuffer().GetBuffer();
+			if (IB)
+				DC->IASetIndexBuffer(IB, DXGI_FORMAT_R32_UINT, 0);
+
+			// 섹션별 드로우
+			for (const FMeshSectionDraw& Section : Proxy->GetSectionDraws())
+			{
+				if (Section.IndexCount == 0) continue;
+				DC->DrawIndexed(Section.IndexCount, Section.FirstIndex, 0);
+			}
+		}
+
+		bHasValidShadow = true;
+		break; // v1: 첫 번째 visible spot light만
+	}
+}
+
+// ============================================================
+// EndPass — 카메라 View/Proj 복원 + 메인 RT 복원
+// ============================================================
+
+void FShadowMapPass::EndPass(const FPassContext& Ctx)
+{
+	if (!bHasValidShadow) return;
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	// 카메라 View/Proj를 b0에 복원
+	Ctx.Resources.UpdateFrameBuffer(Ctx.Device, Ctx.Frame);
+
+	// Shadow Map SRV를 t21에 바인딩 (Opaque 셰이더에서 참조 가능)
+	if (ShadowSRV)
+	{
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMap, 1, &ShadowSRV);
+	}
+
+	// 메인 뷰포트 복원
+	D3D11_VIEWPORT MainVP = {};
+	MainVP.Width    = Ctx.Frame.ViewportWidth;
+	MainVP.Height   = Ctx.Frame.ViewportHeight;
+	MainVP.MinDepth = 0.0f;
+	MainVP.MaxDepth = 1.0f;
+	DC->RSSetViewports(1, &MainVP);
+
+	// 메인 RT/DSV 복원
+	DC->OMSetRenderTargets(1, &Ctx.Cache.RTV, Ctx.Cache.DSV);
+	Ctx.Cache.bForceAll = true;
+}

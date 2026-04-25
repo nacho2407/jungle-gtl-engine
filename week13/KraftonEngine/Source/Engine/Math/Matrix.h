@@ -93,6 +93,13 @@ struct FMatrix {
 	static FMatrix MakeRotationZ(float Angle);
 
 	static FMatrix GetCancelRotationMatrix(const FMatrix& InMatrix);
+
+	// View/Projection 행렬 생성 (Reversed-Z, Row-Major LH)
+	// MakeViewMatrix: 직교 기저 + 위치로 뷰 행렬 구성 (CameraComponent, LookAtLH 공용)
+	static FMatrix MakeViewMatrix(const FVector& Right, const FVector& Up, const FVector& Forward, const FVector& Eye);
+	static FMatrix LookAtLH(const FVector& Eye, const FVector& Target, const FVector& Up);
+	static FMatrix PerspectiveFovLH(float FovY, float Aspect, float NearZ, float FarZ);
+	static FMatrix OrthoLH(float Width, float Height, float NearZ, float FarZ);
 	void Print() const;
 
 	FVector TransformVector(const FVector& vector) const;

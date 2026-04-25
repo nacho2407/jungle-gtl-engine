@@ -5,13 +5,14 @@
 class FD3DDevice;
 class FDrawCommandList;
 class FRenderer;
+class FScene;
 struct FFrameContext;
 struct FStateCache;
 struct FSystemResources;
 
 /*
 	FPassContext — 렌더패스에 전달되는 컨텍스트 번들.
-	Device, Frame, Cache, Resources, CommandList, Renderer 참조를 한 번에 전달합니다.
+	Device, Frame, Cache, Resources, CommandList, Renderer, Scene 참조를 한 번에 전달합니다.
 */
 struct FPassContext
 {
@@ -21,6 +22,7 @@ struct FPassContext
 	FSystemResources&    Resources;
 	FDrawCommandList&    CommandList;
 	FRenderer*           Renderer;
+	FScene*              Scene = nullptr;
 };
 
 /*
