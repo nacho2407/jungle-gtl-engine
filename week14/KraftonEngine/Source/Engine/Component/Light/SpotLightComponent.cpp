@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Math/MathUtils.h"
+#include "Render/Types/LightFrustumUtils.h"
 #include <cmath>
 
 IMPLEMENT_CLASS(USpotLightComponent, UPointLightComponent)
@@ -86,6 +87,22 @@ void USpotLightComponent::Serialize(FArchive& Ar)
 	UPointLightComponent::Serialize(Ar);
 	Ar << InnerConeAngle;
 	Ar << OuterConeAngle;
+}
+
+bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+{
+	FSpotLightParams Params;
+	Params.Position = GetWorldLocation();
+	Params.Direction = GetForwardVector();
+	Params.AttenuationRadius = AttenuationRadius;
+	float ClampedOuter = FMath::Clamp(OuterConeAngle, 0.0f, 89.0f);
+	Params.OuterConeCos = cosf(ClampedOuter * FMath::DegToRad);
+
+	auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Params);
+	OutResult.View = VP.View;
+	OutResult.Proj = VP.Proj;
+	OutResult.bIsOrtho = false;
+	return true;
 }
 
 void USpotLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

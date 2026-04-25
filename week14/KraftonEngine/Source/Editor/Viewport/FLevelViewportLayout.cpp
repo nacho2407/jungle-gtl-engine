@@ -22,6 +22,7 @@
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Component/Light/LightComponentBase.h"
 
 #include "GameFramework/StaticMeshActor.h"
 
@@ -1535,6 +1536,58 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 				}
 
 				ImGui::EndPopup();
+			}
+			// ── View Light / Reset Camera 버튼 ──
+			ImGui::SameLine();
+
+			if (VC->IsViewingFromLight())
+			{
+				if (ImGui::Button("Reset Camera"))
+				{
+					VC->ClearLightViewOverride();
+				}
+
+				// PointLight face selector (0~5: +X,-X,+Y,-Y,+Z,-Z)
+				ULightComponentBase* ActiveLight = VC->GetLightViewOverride();
+				if (ActiveLight && ActiveLight->GetLightType() == ELightComponentType::Point)
+				{
+					ImGui::SameLine();
+					static const char* FaceNames[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+					int32 FaceIdx = VC->GetPointLightFaceIndex();
+					ImGui::SetNextItemWidth(50.0f);
+					if (ImGui::Combo("##Face", &FaceIdx, FaceNames, 6))
+					{
+						VC->SetPointLightFaceIndex(FaceIdx);
+					}
+				}
+			}
+			else
+			{
+				ULightComponentBase* FoundLight = nullptr;
+				if (SelectionManager)
+				{
+					if (AActor* Selected = SelectionManager->GetPrimarySelection())
+					{
+						for (UActorComponent* Comp : Selected->GetComponents())
+						{
+							if (ULightComponentBase* LC = Cast<ULightComponentBase>(Comp))
+							{
+								if (LC->GetLightType() != ELightComponentType::Ambient)
+								{
+									FoundLight = LC;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if (!FoundLight) ImGui::BeginDisabled();
+				if (ImGui::Button("View Light"))
+				{
+					VC->SetLightViewOverride(FoundLight);
+				}
+				if (!FoundLight) ImGui::EndDisabled();
 			}
 		} // SlotIndex guard
 

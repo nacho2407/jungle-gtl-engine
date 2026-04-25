@@ -24,6 +24,7 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Editor/EditorEngine.h"
 #include "GameFramework/AActor.h"
 #include "ImGui/imgui.h"
+#include "Component/Light/LightComponentBase.h"
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -204,12 +205,30 @@ void FEditorViewportClient::TickEditorShortcuts()
 	}
 }
 
+void FEditorViewportClient::SetLightViewOverride(ULightComponentBase* Light)
+{
+	LightViewOverride = Light;
+	PointLightFaceIndex = 0;
+
+	if (Light && SelectionManager)
+	{
+		SelectionManager->ClearSelection();
+	}
+}
+
+void FEditorViewportClient::ClearLightViewOverride()
+{
+	LightViewOverride = nullptr;
+}
+
 void FEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (!Camera)
 	{
 		return;
 	}
+
+	if (IsViewingFromLight()) return;
 
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard == true)
 	{

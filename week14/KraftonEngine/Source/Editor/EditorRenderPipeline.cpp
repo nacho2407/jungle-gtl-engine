@@ -9,6 +9,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
+#include "Component/Light/LightComponentBase.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -25,6 +26,11 @@ void FEditorRenderPipeline::OnSceneCleared()
 	for (auto& [VC, Occlusion] : GPUOcclusionMap)
 	{
 		Occlusion->InvalidateResults();
+	}
+
+	for (FLevelEditorViewportClient* VC : Editor->GetLevelViewportClients())
+	{
+		VC->ClearLightViewOverride();
 	}
 }
 
@@ -136,6 +142,30 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 {
 	Frame.ClearViewportResources();
 	Frame.SetCameraInfo(Camera);
+
+	// Light View Override — 라이트 시점으로 View/Proj 교체
+	if (VC->IsViewingFromLight())
+	{
+		ULightComponentBase* Light = VC->GetLightViewOverride();
+		if (!Light || !Light->GetOwner())
+		{
+			VC->ClearLightViewOverride();
+		}
+		else
+		{
+			FLightViewProjResult LVP;
+			if (Light->GetLightViewProj(LVP, Camera, VC->GetPointLightFaceIndex()))
+			{
+				Frame.View = LVP.View;
+				Frame.Proj = LVP.Proj;
+				Frame.bIsOrtho = LVP.bIsOrtho;
+				Frame.CameraPosition = Light->GetWorldLocation();
+				Frame.CameraForward = Light->GetForwardVector();
+				Frame.FrustumVolume.UpdateFromMatrix(Frame.View * Frame.Proj);
+			}
+		}
+	}
+
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);

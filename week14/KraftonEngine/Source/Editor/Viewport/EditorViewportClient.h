@@ -11,6 +11,7 @@
 class UWorld;
 class UCameraComponent;
 class UGizmoComponent;
+class ULightComponentBase;
 class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
@@ -70,6 +71,16 @@ public:
 	// ImDrawList에 자신의 SRV를 SWindow Rect 위치에 렌더 (활성 테두리 포함)
 	void RenderViewportImage(bool bIsActiveViewport);
 
+	// Light View Override — 라이트 시점으로 카메라 오버라이드
+	void SetLightViewOverride(ULightComponentBase* Light);
+	void ClearLightViewOverride();
+	bool IsViewingFromLight() const { return LightViewOverride != nullptr; }
+	ULightComponentBase* GetLightViewOverride() const { return LightViewOverride; }
+
+	// PointLight face index (0~5: +X,-X,+Y,-Y,+Z,-Z)
+	int32 GetPointLightFaceIndex() const { return PointLightFaceIndex; }
+	void SetPointLightFaceIndex(int32 Index) { PointLightFaceIndex = (Index < 0) ? 0 : (Index > 5) ? 5 : Index; }
+
 private:
 	void TickEditorShortcuts();
 	void TickInput(float DeltaTime);
@@ -86,6 +97,8 @@ private:
 	const FEditorSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
 	FViewportRenderOptions RenderOptions;
+	ULightComponentBase* LightViewOverride = nullptr;
+	int32 PointLightFaceIndex = 0;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;
