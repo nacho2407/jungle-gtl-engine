@@ -104,7 +104,22 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		const UDirectionalLightComponent* DirLightComp = 
 			Cast<UDirectionalLightComponent>(RenderBus->DirectionalLightShadow.LightComponent);
 
-		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(RenderBus->GetView(), RenderBus->GetProj());
+		//float SlidebackDistance = 1.0f;
+		//float OriginalNear = RenderBus->GetNearPlane();
+		//float OriginalFar = RenderBus->GetFarPlane();
+		//float OriginalFOV = 90.0f;
+
+		//FVector2 ViewportSize = RenderBus->GetViewportSize();
+		//float AspectRatio = ViewportSize.X / ViewportSize.Y;
+
+		//FMatrix VirtualView = CamView;
+		//FVector BackDir = CamView.GetUnitAxis(EAxis::X);
+		//VirtualView.SetOrigin(CamView.GetOrigin() - BackDir * SlidebackDistance);
+
+		//FMatrix VirtualProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(OriginalFOV), AspectRatio, OriginalNear + SlidebackDistance, OriginalFar + SlidebackDistance);
+
+		shadowData.VirtualViewProj = CamView * CamProj;
+		shadowData.DirLightViewProj = DirLightComp->GetPSMMatrix(CamView, CamProj);
 
         float atlasW = static_cast<float>(ShadowMapDesc.Width);
         float atlasH = static_cast<float>(ShadowMapDesc.Height);
