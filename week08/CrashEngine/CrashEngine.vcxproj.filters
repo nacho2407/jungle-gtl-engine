@@ -470,7 +470,10 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\MeshTriangleBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\Octree.cpp">
@@ -488,7 +491,7 @@
     <ClCompile Include="Source\Engine\Collision\Sphere.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
@@ -1025,7 +1028,13 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\MeshTriangleBVH.h">
+    <ClInclude Include="Source\Engine\Collision\BVH\BVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\OBB.h">
@@ -1046,7 +1055,7 @@
     <ClInclude Include="Source\Engine\Collision\Sphere.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
@@ -1204,6 +1213,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialSemantics.h">
       <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Math\Intersection.h">
+      <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\MathUtils.h">
       <Filter>Source\Engine\Math</Filter>

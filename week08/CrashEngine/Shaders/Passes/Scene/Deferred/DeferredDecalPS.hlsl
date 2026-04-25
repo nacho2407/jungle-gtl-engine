@@ -52,15 +52,7 @@ bool SampleDeferredDecalData(float2 UV, out float4 DecalSample, out float4 BaseC
     }
 
     float3 WorldPosition = ReconstructPositionFromDepth(UV, Depth, InvViewProj);
-    float3 LocalPosition = mul(float4(WorldPosition, 1.0f), DecalWorldToLocal).xyz;
-    if (!IsInsideDecalBounds(LocalPosition))
-    {
-        return false;
-    }
-
-    float2 DecalUV = ProjectDecalUV(LocalPosition);
-    DecalSample = g_DecalTex.Sample(LinearWrapSampler, DecalUV) * DecalColor;
-    if (DecalSample.a <= 0.001f)
+    if (!SampleProjectedDecalColor(g_DecalTex, LinearWrapSampler, WorldPosition, DecalWorldToLocal, DecalColor, DecalSample))
     {
         return false;
     }

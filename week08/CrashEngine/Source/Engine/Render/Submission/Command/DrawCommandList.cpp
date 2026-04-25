@@ -253,6 +253,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         if (RawCB)
         {
             Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
+            Ctx->PSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
         }
         Cache.PerObjectCB = Cmd.PerObjectCB;
     }

@@ -14,6 +14,7 @@ class FOctree;
 class AActor;
 struct FRay;
 
+// TODO: SpatialPartition이 octree와 BVH 둘 다 감싸는 상위 인터페이스로 확장
 // FSpatialPartition 클래스이다.
 class FSpatialPartition
 {

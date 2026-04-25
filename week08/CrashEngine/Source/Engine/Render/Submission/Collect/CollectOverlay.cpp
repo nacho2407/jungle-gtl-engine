@@ -1,7 +1,7 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Submission/Collect/DrawCollector.h"
 
-#include "Collision/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/WorldPrimitivePickingBVH.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Engine/Collision/Octree.h"

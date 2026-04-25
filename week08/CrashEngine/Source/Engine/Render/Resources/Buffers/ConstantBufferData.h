@@ -10,6 +10,9 @@ struct FPerObjectCBData
     FMatrix  Model;
     FMatrix  NormalMatrix;
     FVector4 Color;
+    uint32   DecalIndexOffset = 0;
+    uint32   DecalCount       = 0;
+    float    PerObjectPadding[2] = {};
 
     static FPerObjectCBData FromWorldMatrix(const FMatrix& WorldMatrix)
     {
@@ -161,6 +164,23 @@ struct FDecalCBData
 {
     FMatrix  WorldToDecal;
     FVector4 Color;
+};
+
+// FForwardDecalCBData는 forward opaque pass가 읽는 전역 decal 입력입니다.
+struct FForwardDecalCBData
+{
+    FMatrix  WorldToDecal;
+    FVector4 Color;
+    uint32   bEnabled = 0;
+    float    Padding[3] = {};
+};
+
+struct FForwardDecalGPUData
+{
+    FMatrix  WorldToDecal;
+    FVector4 Color;
+    uint32   TextureIndex = 0;
+    float    Padding[3] = {};
 };
 
 // FStaticMeshMaterialViewCBData는 정적 메시 머티리얼 뷰 상수 버퍼 레이아웃입니다.

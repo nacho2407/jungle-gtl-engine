@@ -37,4 +37,25 @@ float2 ProjectDecalUV(float3 LocalPosition)
     return float2(LocalPosition.y + 0.5f, 0.5f - LocalPosition.z);
 }
 
+bool SampleProjectedDecalColor(
+    Texture2D DecalTexture,
+    SamplerState DecalSampler,
+    float3 WorldPosition,
+    float4x4 WorldToDecal,
+    float4 DecalColor,
+    out float4 OutDecalSample)
+{
+    OutDecalSample = 0.0f;
+
+    float3 LocalPosition = mul(float4(WorldPosition, 1.0f), WorldToDecal).xyz;
+    if (!IsInsideDecalBounds(LocalPosition))
+    {
+        return false;
+    }
+
+    float2 DecalUV = ProjectDecalUV(LocalPosition);
+    OutDecalSample = DecalTexture.Sample(DecalSampler, DecalUV) * DecalColor;
+    return OutDecalSample.a > 0.001f;
+}
+
 #endif

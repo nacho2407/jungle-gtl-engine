@@ -20,7 +20,7 @@
 float4 ApplyDecalBaseColor(float4 BaseColor, float4 DecalColor, float Alpha)
 {
     float3 Tinted = BaseColor.rgb * lerp(float3(1.0f, 1.0f, 1.0f), DecalColor.rgb, Alpha);
-    return float4(Tinted, Alpha);
+    return float4(Tinted, BaseColor.a);
 }
 
 float3 ApplyDecalNormal(float3 BaseNormal, float4 DecalColor, float Alpha)

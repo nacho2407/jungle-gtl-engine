@@ -31,6 +31,9 @@ cbuffer PerObjectParams : register(b1)
     float4x4 Model;
     float4x4 NormalMatrix;
     float4 PrimitiveColor;
+    uint PrimitiveDecalIndexOffset;
+    uint PrimitiveDecalCount;
+    float2 PrimitivePerObjectPadding;
 };
 
 struct FAmbientLight
