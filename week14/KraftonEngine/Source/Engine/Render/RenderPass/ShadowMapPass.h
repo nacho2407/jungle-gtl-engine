@@ -4,6 +4,8 @@
 #include "Render/Resource/Buffer.h"
 #include "Math/Matrix.h"
 
+#include "Render/Shadow/ShadowAtlasQuadTree.h"
+
 /*
 	FShadowMapPass — 라이트별 Shadow Depth 렌더링 패스.
 	LightCulling(1)과 Opaque(2) 사이에 실행되며,
@@ -16,6 +18,7 @@ public:
 	FShadowMapPass();
 	~FShadowMapPass();
 
+	void BeginPass(const FPassContext& Ctx) override;
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
@@ -33,6 +36,8 @@ private:
 	void EnsureShadowMap(ID3D11Device* Device, uint32 Size);
 	void ReleaseShadowMap();
 
+	void PreSpotlightAtlas();
+	void DrawSpotLightAtlas();
 
 private:
 	// Shadow map GPU 리소스
@@ -48,4 +53,9 @@ private:
 	FMatrix LightViewProj;
 	bool bHasValidShadow = false;
 
+	// Spotlight fields
+	ID3D11Texture2D*			SpotLightTexture	= nullptr;
+	ID3D11DepthStencilView*		SpotLightDSV		= nullptr;
+	ID3D11ShaderResourceView*	SpotLightSRV		= nullptr;
+	FShadowAtlasQuadTree SpotLightAtlas; // Spot Light용 Shadow Atlas 관리
 };

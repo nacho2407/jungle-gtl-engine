@@ -20,6 +20,7 @@ REGISTER_RENDER_PASS(FShadowMapPass)
 
 FShadowMapPass::FShadowMapPass()
 {
+	SpotLightAtlas.Init(4096.f, 64.f);
 	PassType = ERenderPass::ShadowMap;
 	// 커스텀 Execute — RenderState는 사용하지 않음 (직접 세팅)
 }
@@ -85,6 +86,10 @@ void FShadowMapPass::ReleaseShadowMap()
 	if (ShadowDSV)     { ShadowDSV->Release();     ShadowDSV = nullptr; }
 	if (ShadowTexture) { ShadowTexture->Release(); ShadowTexture = nullptr; }
 	ShadowMapSize = 0;
+}
+
+void FShadowMapPass::BeginPass(const FPassContext& Ctx) {
+
 }
 
 // ============================================================
