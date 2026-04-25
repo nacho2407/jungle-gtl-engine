@@ -6,7 +6,7 @@
 #include "Resource/ResourceManager.h"
 #include "Object/ObjectFactory.h"
 #include "Render/Resource/MeshBufferManager.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
 #include "Serialization/Archive.h"
 

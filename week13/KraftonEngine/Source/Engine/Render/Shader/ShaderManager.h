@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Singleton.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Shader/Shader.h"
 #include "Core/CoreTypes.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include <memory>

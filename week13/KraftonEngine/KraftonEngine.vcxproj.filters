@@ -115,6 +115,12 @@
     <Filter Include="Source\Engine\Render\RenderPass">
       <UniqueIdentifier>{3504742f-0df4-b673-e936-9c953baf72bd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\RenderState">
+      <UniqueIdentifier>{c2d9eab8-0b3e-d2ca-86d8-43ac66a07d87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Render\Shader">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f23456789012}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Resource">
       <UniqueIdentifier>{f7c09818-7a72-3a04-d6dd-8e5897cf81bc}</UniqueIdentifier>
     </Filter>
@@ -638,32 +644,32 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClCompile Include="Source\Engine\Render\RenderState\BlendStateManager.cpp">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderState\DepthStencilStateManager.cpp">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderState\RasterizerStateManager.cpp">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderState\SamplerStateManager.cpp">
+      <Filter>Source\Engine\Render\RenderState</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\RasterizerStateManager.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\SamplerStateManager.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp">
+      <Filter>Source\Engine\Render\Shader</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Resource\ShaderManager.cpp">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp">
+      <Filter>Source\Engine\Render\Shader</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp">
       <Filter>Source\Engine\Resource</Filter>
@@ -1214,35 +1220,35 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClInclude Include="Source\Engine\Render\RenderState\BlendStateManager.h">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderState\DepthStencilStateManager.h">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderState\RasterizerStateManager.h">
+      <Filter>Source\Engine\Render\RenderState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderState\SamplerStateManager.h">
+      <Filter>Source\Engine\Render\RenderState</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\RasterizerStateManager.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\SamplerStateManager.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClInclude Include="Source\Engine\Render\Shader\Shader.h">
+      <Filter>Source\Engine\Render\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h">
+      <Filter>Source\Engine\Render\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderInclude.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h">
-      <Filter>Source\Engine\Render\Resource</Filter>
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h">
+      <Filter>Source\Engine\Render\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
       <Filter>Source\Engine\Render\Types</Filter>

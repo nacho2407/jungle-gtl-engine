@@ -1,6 +1,6 @@
 #include "Materials/Material.h"
 #include "Serialization/Archive.h"
-#include "Render/Resource/Shader.h"
+#include "Render/Shader/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"

@@ -6,7 +6,7 @@
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Texture/Texture2D.h"
 #include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"

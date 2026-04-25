@@ -3,10 +3,10 @@
 #include "Render/Pipeline/RenderConstants.h"
 #include "Render/Pipeline/ForwardLightData.h"
 
-#include "Render/Resource/RasterizerStateManager.h"
-#include "Render/Resource/DepthStencilStateManager.h"
-#include "Render/Resource/BlendStateManager.h"
-#include "Render/Resource/SamplerStateManager.h"
+#include "Render/RenderState/RasterizerStateManager.h"
+#include "Render/RenderState/DepthStencilStateManager.h"
+#include "Render/RenderState/BlendStateManager.h"
+#include "Render/RenderState/SamplerStateManager.h"
 #include "Render/Culling/TileBasedLightCulling.h"
 #include "Render/Culling/ClusteredLightCuller.h"
 

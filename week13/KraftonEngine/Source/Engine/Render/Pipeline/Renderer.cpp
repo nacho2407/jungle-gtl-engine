@@ -1,7 +1,7 @@
 ﻿#include "Renderer.h"
 
 #include "Render/Types/RenderTypes.h"
-#include "Render/Resource/ShaderManager.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Core/Log.h"
 #include "Render/Proxy/FScene.h"
 #include "GameFramework/World.h"

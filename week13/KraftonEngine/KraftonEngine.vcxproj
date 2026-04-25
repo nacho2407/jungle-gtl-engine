@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -372,15 +372,15 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\BlendStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\DepthStencilStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\RasterizerStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\SamplerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\RasterizerStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\SamplerStateManager.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -566,16 +566,16 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassPipeline.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\BlendStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\DepthStencilStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\RasterizerStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\SamplerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\RasterizerStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\SamplerStateManager.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderInclude.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderManager.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h" />
