@@ -152,9 +152,7 @@ void FShadowMapPass::ReleaseResources()
 	Resources.PointShadowDataCapacity = 0;
 }
 
-void FShadowMapPass::BeginPass(const FPassContext& Ctx) {
-
-}
+void FShadowMapPass::BeginPass(const FPassContext& Ctx) {}
 
 // ============================================================
 // Execute — 라이트별 Shadow Depth 렌더링
