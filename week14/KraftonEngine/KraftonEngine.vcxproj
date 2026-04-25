@@ -342,6 +342,7 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -366,10 +367,10 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\OverlayFontPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\PreDepthPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassBase.cpp" />
-    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\DepthStencilStateManager.cpp" />
@@ -532,6 +533,7 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\FrameContext.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderConstants.h" />
@@ -559,9 +561,9 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\PreDepthPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassBase.h" />
-    <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h" />
-    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h" />
     <ClInclude Include="Source\Engine\Render\Resource\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\DepthStencilStateManager.h" />

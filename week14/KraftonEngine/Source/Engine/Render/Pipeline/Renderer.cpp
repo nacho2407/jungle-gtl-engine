@@ -90,8 +90,8 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	Cache.RTV = Frame.ViewportRTV;
 	Cache.DSV = Frame.ViewportDSV;
 
-	FPassContext PassCtx{ Device, Frame, Cache, this };
-	Pipeline.Execute(PassCtx, CommandList, Device, Resources);
+	FPassContext PassCtx{ Device, Frame, Cache, Resources, CommandList, this };
+	Pipeline.Execute(PassCtx);
 
 	CleanupPassState(Cache);
 }

@@ -1,7 +1,6 @@
 ﻿#include "RenderPassPipeline.h"
 
 #include "Render/RenderPass/RenderPassRegistry.h"
-#include "Render/Pipeline/DrawCommandList.h"
 
 void FRenderPassPipeline::Initialize()
 {
@@ -14,13 +13,12 @@ void FRenderPassPipeline::Initialize()
 	}
 }
 
-void FRenderPassPipeline::Execute(const FPassContext& Ctx, FDrawCommandList& CmdList,
-                                   FD3DDevice& Device, FSystemResources& Resources)
+void FRenderPassPipeline::Execute(const FPassContext& Ctx)
 {
 	for (const auto& Pass : Passes)
 	{
 		Pass->BeginPass(Ctx);
-		Pass->Execute(Ctx, CmdList, Device, Resources);
+		Pass->Execute(Ctx);
 		Pass->EndPass(Ctx);
 	}
 }

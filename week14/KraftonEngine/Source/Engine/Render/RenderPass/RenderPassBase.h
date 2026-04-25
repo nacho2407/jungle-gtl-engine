@@ -10,14 +10,16 @@ struct FStateCache;
 struct FSystemResources;
 
 /*
-	FPassContext — BeginPass/EndPass에 전달되는 컨텍스트 번들.
-	Device, Frame, Cache, Renderer 참조를 한 번에 전달합니다.
+	FPassContext — 렌더패스에 전달되는 컨텍스트 번들.
+	Device, Frame, Cache, Resources, CommandList, Renderer 참조를 한 번에 전달합니다.
 */
 struct FPassContext
 {
 	FD3DDevice&          Device;
 	const FFrameContext&  Frame;
 	FStateCache&         Cache;
+	FSystemResources&    Resources;
+	FDrawCommandList&    CommandList;
 	FRenderer*           Renderer;
 };
 
@@ -43,8 +45,7 @@ public:
 
 	// 패스 실행 — 기본 구현: DrawCommandList에서 패스 범위를 가져와 Submit.
 	// ShadowDepth(Cubemap 6면, CSM cascade) 등 커스텀 렌더링이 필요한 패스는 override.
-	virtual void Execute(const FPassContext& Ctx, FDrawCommandList& CmdList,
-	                     FD3DDevice& Device, FSystemResources& Resources);
+	virtual void Execute(const FPassContext& Ctx);
 
 protected:
 	ERenderPass      PassType = ERenderPass::Opaque;
