@@ -130,6 +130,9 @@
     <Filter Include="Source\Engine\Render\Shader">
       <UniqueIdentifier>{d6c35911-061e-d10a-e2dc-4d2a8ddb24d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Shadow">
+      <UniqueIdentifier>{501fd60b-68c2-defd-aae9-3ad93645e778}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Types">
       <UniqueIdentifier>{5c8a6ef8-769c-e1cf-6594-03b5821e5f57}</UniqueIdentifier>
     </Filter>
@@ -676,6 +679,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp">
       <Filter>Source\Engine\Render\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp">
+      <Filter>Source\Engine\Render\Shadow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp">
       <Filter>Source\Engine\Render\Types</Filter>
@@ -1249,6 +1255,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h">
       <Filter>Source\Engine\Render\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.h">
+      <Filter>Source\Engine\Render\Shadow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h">
       <Filter>Source\Engine\Render\Types</Filter>
