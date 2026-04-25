@@ -551,9 +551,6 @@
     <ClCompile Include="Source\Engine\Render\Pipeline\FrameContext.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Pipeline\PassEventBuilder.cpp">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\PassRenderStateTable.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
@@ -612,6 +609,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\LightCullingPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\OpaquePass.cpp">
@@ -1121,9 +1121,6 @@
     <ClInclude Include="Source\Engine\Render\Pipeline\LODContext.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Pipeline\PassEventBuilder.h">
-      <Filter>Source\Engine\Render\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\PassRenderStateTable.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -1188,6 +1185,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\LightCullingPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\OpaquePass.h">
