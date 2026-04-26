@@ -97,11 +97,12 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	float atlasW = static_cast<float>(ShadowMapDesc.Width);
 	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
-	bool bHasDirectionalShadow = true;
+	bool bHasDirectionalShadow = false;
 
 	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
 	{
 		const ULightComponent* LightComp = GetSupportedShadowLight(Request);
+
 		if (LightComp == nullptr)
 		{
 			continue;
@@ -128,9 +129,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		ShadowViewport.MaxDepth = 1.0f;
 
         DeviceContext->RSSetViewports(1, &ShadowViewport);
-        DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-        DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-                              
+
+		// Debug용으로 라이트 컴포넌트에 타일 오프셋 정보 전달 (실제 렌더링에는 사용되지 않음)
+        {
+            ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+            MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
+            MutableLight->bHasDebugShadowAtlasTile = true;
+        }
+
         ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
         DeviceContext->OMSetDepthStencilState(DepthState, 0);
 

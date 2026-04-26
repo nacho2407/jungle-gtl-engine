@@ -6,7 +6,7 @@
 #define NUM_SLICE 24
 
 #define MAX_ATLAS_SHADOW_COUNT 64
-#define INVALID_SHADOW_INDEX -1
+#define INVALID_SHADOW_INDEX 0xFFFFFFFFu
 
 cbuffer FrameBuffer : register(b0)
 {

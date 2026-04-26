@@ -33,15 +33,20 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	const float AtlasH = static_cast<float>(AtlasManager.GetAtlasHeight());
 	const float TileSize = static_cast<float>(AtlasManager.GetTileSize());
 
+    const FVector4& SO = bHasDebugShadowAtlasTile
+                             ? DebugShadowAtlasScaleOffset
+                             : FVector4(1, 1, 0, 0);
+
+
 	static FSRVDisplayInfo ShadowMapDisplay;
-	ShadowMapDisplay = {
-		256.f,
-		256.f,
-		0.f,
-		0.f,
-		AtlasW > 0.0f ? TileSize / AtlasW : 1.0f,
-		AtlasH > 0.0f ? TileSize / AtlasH : 1.0f
-	};
+    ShadowMapDisplay = {
+        256.f,
+        256.f, 
+		SO.Z,
+        SO.W,
+        SO.Z + SO.X,
+        SO.W + SO.Y
+    };
 
 	OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
 }
