@@ -2,16 +2,23 @@
 // ShadowDepth.hlsl — Shadow Depth Pass VS / PS
 // =============================================================================
 // DrawShadowCasters 전용 셰이더.
-// b0(FrameBuffer)에 Light ViewProj, b1(PerObjectBuffer)에 Model이 바인딩된 상태.
+// b1(PerObjectBuffer)에 Model, b2(PerShader0)에 LightViewProj가 바인딩된 상태.
 //
 // Hard/PCF: PS=null (depth-only) — C++ 측에서 PSSetShader(nullptr)
 // VSM:      PS가 depth moment(z, z^2)를 RTV에 기록
 // =============================================================================
 
-#include "Common/Functions.hlsli"
+#include "Common/ConstantBuffers.hlsli"
+#include "Common/VertexLayouts.hlsli"
+
+// b2: Light ViewProj — Shadow depth pass 전용
+cbuffer ShadowLightBuffer : register(b2)
+{
+    float4x4 LightViewProj;
+};
 
 // =============================================================================
-// Vertex Shader — position-only transform (Model * LightView * LightProj)
+// Vertex Shader — position-only transform (Model * LightViewProj)
 // =============================================================================
 // InputLayout은 VS_Input_PNCTT(StaticMesh)와 호환.
 // Normal/Color/TexCoord/Tangent는 무시하고 Position만 사용.
@@ -19,7 +26,8 @@ PS_Input_Shadow VS(VS_Input_PNCTT input)
 {
     PS_Input_Shadow output;
 
-    float4 clipPos  = ApplyMVP(input.position);
+    float4 worldPos = mul(float4(input.position, 1.0f), Model);
+    float4 clipPos  = mul(worldPos, LightViewProj);
 
     output.position = clipPos;
     output.depth    = clipPos.z / clipPos.w; // [0,1] normalized depth

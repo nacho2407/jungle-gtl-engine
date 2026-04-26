@@ -2,6 +2,7 @@
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Shader/ShaderManager.h"
+#include "Render/RenderPass/ShadowMapPass.h"
 #include "Core/Log.h"
 #include "Render/Scene/FScene.h"
 #include "GameFramework/World.h"
@@ -96,19 +97,12 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 // 카메라 독립적인 shadow map을 굽고 SRV/CB를 바인딩합니다.
 // 이후 각 뷰포트의 Render() → FShadowMapPass는 BeginPass에서 skip.
 
-void FRenderer::RenderGlobalShadows(FScene& Scene)
+void FRenderer::RenderGlobalShadows(FScene& Scene, FSpatialPartition* Partition)
 {
-	// TODO: 글로벌 shadow 구현
-	// 1. EnsureResources (CSM/SpotAtlas/PointCube)
-	// 2. Directional → 고정 ortho ViewProj로 cascade 렌더링
-	// 3. Spot → Atlas에 각 라이트 depth 렌더링
-	// 4. Point → CubeMap 6면 depth 렌더링
-	// 5. SRV 바인딩 (t21~t25) + Shadow CB (b5) 업데이트
-	//
-	// 사용 가능한 리소스:
-	//   Device              — FD3DDevice (Device/DeviceContext)
-	//   Resources           — FSystemResources (ShadowResources, ShadowConstantBuffer)
-	//   Scene               — FScene (Environment, Proxies)
+	auto* ShadowPass = Pipeline.FindPass<FShadowMapPass>();
+	if (!ShadowPass) return;
+
+	ShadowPass->RenderGlobal(Device, Resources, Scene, Partition);
 }
 
 // ============================================================

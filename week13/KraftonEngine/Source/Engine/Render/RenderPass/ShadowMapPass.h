@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/RenderPass/RenderPassBase.h"
 #include "Render/Resource/Buffer.h"
@@ -12,6 +12,7 @@
 struct FShadowMapResources;
 class FSceneEnvironment;
 class FPrimitiveSceneProxy;
+class FSpatialPartition;
 
 /*
 	FShadowMapPass — 라이트 타입별 Shadow Depth 렌더링 패스.
@@ -31,31 +32,48 @@ public:
 	FShadowMapPass();
 	~FShadowMapPass();
 
+	// ── PSM 패스 인터페이스 (per-viewport, Directional 전용) ──
 	bool BeginPass(const FPassContext& Ctx) override;
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
+	// ── Global Shadow (뷰포트 루프 전 1회, Spot/Point 전용) ──
+	void RenderGlobal(FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FSpatialPartition* Partition = nullptr);
+
 private:
 	// ── 라이트 타입별 Shadow 렌더링 (팀원별 담당) ──
 	void RenderDirectionalShadows(const FPassContext& Ctx, FShadowMapResources& Res);
-	void RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res);
-	void RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res);
+	void RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition);
+	void RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition);
 
 	// ── 공용: frustum culling + depth-only draw ──
-	// ViewProj로 frustum을 만들고, 해당 frustum 안의 프록시를 depth-only 렌더링.
-	// DSV/RTV, Viewport는 호출자가 이미 바인딩한 상태에서 호출.
-	// VSM일 때는 PS가 moment 출력, Hard/PCF일 때는 PS=null.
+	void DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, const FConvexVolume& LightFrustum, FSpatialPartition* Partition = nullptr);
+
+	// PSM용 래퍼 (기존 호출부 호환)
 	void DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum);
 
 	// ── 리소스 Ensure: FilterMode에 따라 depth-only / VSM moment 리소스 분기 ──
 	void EnsureResources(const FPassContext& Ctx);
 
 	// ── Shadow CB (b5) 업데이트 ──
+	void UpdateShadowCB(ID3D11DeviceContext* DC, FSystemResources& Resources, FShadowMapResources& Res);
 	void UpdateShadowCB(const FPassContext& Ctx);
+
+	// ── 공용 렌더 상태 세팅 ──
+	void SetupShadowRenderState(FD3DDevice& Device, FSystemResources& Resources, ID3D11DeviceContext* DC);
+
+	// ── SRV 바인딩 ──
+	void BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources& Res);
+
+	// ── b2 (PerShader0)에 LightViewProj 업로드 ──
+	void UploadLightViewProj(ID3D11DeviceContext* DC, const FMatrix& LightViewProj);
 
 private:
 	// Shadow 렌더링용 PerObject CB (b1) — Pass 전용 (light ViewProj 기준 Model 기록)
 	FConstantBuffer ShadowPerObjectCB;
+
+	// Light ViewProj CB (b2) — ShadowDepth 셰이더의 ShadowLightBuffer
+	FConstantBuffer ShadowLightCB;
 
 	// 이번 프레임 캐시
 	EShadowFilterMode CurrentFilterMode = EShadowFilterMode::Hard;

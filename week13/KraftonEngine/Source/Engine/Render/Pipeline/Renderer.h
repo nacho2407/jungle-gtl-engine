@@ -26,7 +26,7 @@ public:
 	void EndFrame();
 
 	// Non-PSM: 뷰포트 루프 전 전체 1회 shadow bake
-	void RenderGlobalShadows(FScene& Scene);
+	void RenderGlobalShadows(FScene& Scene, class FSpatialPartition* Partition = nullptr);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 

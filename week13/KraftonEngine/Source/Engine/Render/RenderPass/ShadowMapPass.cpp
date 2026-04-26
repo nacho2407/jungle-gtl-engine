@@ -16,6 +16,7 @@
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/ShadowStats.h"
 #include "Editor/Settings/ProjectSettings.h"
+#include "Collision/SpatialPartition.h"
 #include <d3d11.h>
 
 REGISTER_RENDER_PASS(FShadowMapPass)
@@ -33,20 +34,15 @@ FShadowMapPass::FShadowMapPass()
 FShadowMapPass::~FShadowMapPass()
 {
 	ShadowPerObjectCB.Release();
+	ShadowLightCB.Release();
 }
 
 // ============================================================
-// BeginPass — SRV 언바인딩, 리소스 Ensure, 공용 렌더 상태
+// SetupShadowRenderState — SRV 언바인딩 + 공용 렌더 상태 (PSM / Global 공용)
 // ============================================================
 
-bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
+void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources& Resources, ID3D11DeviceContext* DC)
 {
-	const auto& Shadow = FProjectSettings::Get().Shadow;
-	if (!Shadow.bEnabled || !Shadow.bPSM)
-		return false;
-
-	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-
 	// 이전 프레임 Shadow SRV 언바인딩 (DSV/RTV와 동일 리소스 → R/W hazard 방지)
 	ID3D11ShaderResourceView* nullSRVs[5] = {};
 	DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 3, nullSRVs);       // t21~t23
@@ -55,35 +51,42 @@ bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 	// FilterMode 결정
 	CurrentFilterMode = FShadowSettings::Get().GetEffectiveFilterMode();
 
-	// 리소스 Ensure (FilterMode에 따라 depth-only / VSM 분기)
-	EnsureResources(Ctx);
-
-	// PerObject CB 생성 (한 번만)
-	ID3D11Device* Dev = Ctx.Device.GetDevice();
+	// CB 생성 (한 번만)
+	ID3D11Device* Dev = Device.GetDevice();
 	if (!ShadowPerObjectCB.GetBuffer())
 		ShadowPerObjectCB.Create(Dev, sizeof(FPerObjectConstants));
+	if (!ShadowLightCB.GetBuffer())
+		ShadowLightCB.Create(Dev, sizeof(FMatrix));
 
 	// 공용 렌더 상태 세팅
-	Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::Default);
-	Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidBackCull);
+	Resources.SetDepthStencilState(Device, EDepthStencilState::Default);
+	Resources.SetRasterizerState(Device, ERasterizerState::SolidBackCull);
 	DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	if (CurrentFilterMode == EShadowFilterMode::VSM)
-	{
-		// VSM: color + depth 기록
-		Ctx.Resources.SetBlendState(Ctx.Device, EBlendState::Opaque);
-	}
+		Resources.SetBlendState(Device, EBlendState::Opaque);
 	else
-	{
-		// Hard/PCF: depth-only (PS 없음)
-		Ctx.Resources.SetBlendState(Ctx.Device, EBlendState::NoColor);
-	}
+		Resources.SetBlendState(Device, EBlendState::NoColor);
 
 	// Shadow CB 캐시 초기화
 	ShadowCBCache = {};
 	ShadowCBCache.ShadowBias      = FShadowSettings::Get().GetEffectiveBias();
 	ShadowCBCache.ShadowSlopeBias = FShadowSettings::Get().GetEffectiveSlopeBias();
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
+}
+
+// ============================================================
+// BeginPass — PSM 전용 (per-viewport Directional)
+// ============================================================
+
+bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
+{
+	const auto& Shadow = FProjectSettings::Get().Shadow;
+	if (!Shadow.bEnabled || !Shadow.bPSM)
+		return false;
+
+	SetupShadowRenderState(Ctx.Device, Ctx.Resources, Ctx.Device.GetDeviceContext());
+	EnsureResources(Ctx);
 	return true;
 }
 
@@ -101,14 +104,43 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
 
+	// PSM 모드: Directional만 처리 (Spot/Point는 Global에서 처리)
 	RenderDirectionalShadows(Ctx, ShadowRes);
-	RenderSpotShadows(Ctx, ShadowRes);
-	RenderPointShadows(Ctx, ShadowRes);
 }
 
 // ============================================================
 // EndPass — 메인 RT 복원, Shadow SRV 바인딩, Shadow CB 업데이트
 // ============================================================
+
+// ============================================================
+// BindShadowSRVs — Shadow SRV 바인딩 (PSM / Global 공용)
+// ============================================================
+
+void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources& Res)
+{
+	if (Res.CSMSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
+	if (Res.SpotAtlasSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
+	if (Res.PointCubeSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+
+	if (Res.SpotShadowDataSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.SpotShadowDataSRV);
+	if (Res.PointShadowDataSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.PointShadowDataSRV);
+}
+
+// ============================================================
+// UploadLightViewProj — b2 (PerShader0)에 LightViewProj 업로드
+// ============================================================
+
+void FShadowMapPass::UploadLightViewProj(ID3D11DeviceContext* DC, const FMatrix& LightViewProj)
+{
+	ShadowLightCB.Update(DC, &LightViewProj, sizeof(FMatrix));
+	ID3D11Buffer* b2 = ShadowLightCB.GetBuffer();
+	DC->VSSetConstantBuffers(ECBSlot::PerShader0, 1, &b2);
+}
 
 void FShadowMapPass::EndPass(const FPassContext& Ctx)
 {
@@ -130,21 +162,7 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 	MainVP.MaxDepth = 1.0f;
 	DC->RSSetViewports(1, &MainVP);
 
-	// Shadow SRV 바인딩 (t21~t23)
-	if (ShadowRes.CSMSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &ShadowRes.CSMSRV);
-	if (ShadowRes.SpotAtlasSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &ShadowRes.SpotAtlasSRV);
-	if (ShadowRes.PointCubeSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &ShadowRes.PointCubeSRV);
-
-	// Per-light StructuredBuffer SRV 바인딩 (t24, t25)
-	if (ShadowRes.SpotShadowDataSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &ShadowRes.SpotShadowDataSRV);
-	if (ShadowRes.PointShadowDataSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &ShadowRes.PointShadowDataSRV);
-
-	// Shadow CB (b5) 업데이트
+	BindShadowSRVs(DC, ShadowRes);
 	UpdateShadowCB(Ctx);
 }
 
@@ -176,18 +194,18 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 // UpdateShadowCB — Shadow CB (b5) 데이터 조립 + GPU 업로드
 // ============================================================
 
+void FShadowMapPass::UpdateShadowCB(ID3D11DeviceContext* DC, FSystemResources& Resources, FShadowMapResources& Res)
+{
+	ShadowCBCache.CSMResolution = Res.CSMResolution;
+
+	Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
+	ID3D11Buffer* b5 = Resources.ShadowConstantBuffer.GetBuffer();
+	DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
+}
+
 void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 {
-	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
-
-	ShadowCBCache.CSMResolution = Res.CSMResolution;
-	ShadowCBCache.NumShadowSpotLights  = 0; // TODO: Execute에서 채운 값
-	ShadowCBCache.NumShadowPointLights = 0; // TODO: Execute에서 채운 값
-
-	Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
-	ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
-	DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
+	UpdateShadowCB(Ctx.Device.GetDeviceContext(), Ctx.Resources, Ctx.Resources.ShadowResources);
 }
 
 // ============================================================
@@ -196,10 +214,8 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 // 호출 전: DSV(또는 RTV+DSV), Viewport가 이미 바인딩된 상태.
 // VSM 모드에서는 moment PS가 바인딩된 상태.
 
-void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
+void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, const FConvexVolume& LightFrustum, FSpatialPartition* Partition)
 {
-	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-
 	// ShadowDepth 전용 셰이더 바인딩 (VS + InputLayout + PS)
 	FShader* ShadowShader = FShaderManager::Get().GetOrCreate(EShaderPath::ShadowDepth);
 	if (!ShadowShader || !ShadowShader->IsValid()) return;
@@ -210,14 +226,28 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 	if (CurrentFilterMode != EShadowFilterMode::VSM)
 		DC->PSSetShader(nullptr, nullptr, 0);
 
-	for (FPrimitiveSceneProxy* Proxy : Ctx.Scene->GetAllProxies())
+	// Octree broad-phase → 후보 프록시만 순회
+	TArray<FPrimitiveSceneProxy*> BroadPhaseProxies;
+	const TArray<FPrimitiveSceneProxy*>* ProxyList = nullptr;
+
+	if (Partition)
+	{
+		Partition->QueryFrustumAllProxies(LightFrustum, BroadPhaseProxies);
+		ProxyList = &BroadPhaseProxies;
+	}
+	else
+	{
+		ProxyList = &Scene.GetAllProxies();
+	}
+
+	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
 		if (!Proxy || !Proxy->IsVisible()) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;
 
-		// Light frustum culling
-		if (!LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
+		// Octree가 없으면 per-proxy frustum culling fallback
+		if (!Partition && !LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
 
 		FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
 		if (!Mesh || !Mesh->IsValid()) continue;
@@ -245,6 +275,11 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 			SHADOW_STATS_ADD_DRAW_CALL();
 		}
 	}
+}
+
+void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
+{
+	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, LightFrustum);
 }
 
 // ============================================================
@@ -275,54 +310,115 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 }
 
 // ============================================================
-// RenderSpotShadows — Spot Light Atlas 렌더링
+// RenderSpotShadows — 1 texture per spotlight (Atlas 우회 테스트용)
 // ============================================================
-// 담당: 팀원 B
-// Env에서 shadow-casting SpotLight를 순회하며
-// Atlas의 할당된 영역에 depth 렌더링.
+// Texture2DArray의 slice를 1 spot = 1 slice로 사용.
+// Atlas quadtree 완성 후 교체 예정.
 
-void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res)
+void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
 {
-	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
+	const FSceneEnvironment& Env = Scene.GetEnvironment();
 	const uint32 NumSpots = Env.GetNumSpotLights();
 	if (NumSpots == 0) return;
 
-	// TODO: 팀원 B 구현
-	// 1. shadow-casting spot lights 카운트 → EnsureSpotAtlas 호출
-	// 2. SpotLightAtlas에서 각 라이트별 rect 할당
-	// 3. for each shadow spot:
-	//      ViewProj = FLightFrustumUtils::BuildSpotLightViewProj(light)
-	//      Set viewport to atlas rect on the correct page
-	//      DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[page])  // VSM: RTV + DSV
-	//      DrawShadowCasters(Ctx, spotFrustum)
-	//      SpotShadowDataGPU[i] = { ViewProj, atlasScaleBias, pageIndex }
-	// 4. Upload SpotShadowDataGPU → Res.SpotShadowDataBuffer
-	// 5. ShadowCBCache.NumShadowSpotLights = count
+	// shadow-casting spot 수 카운트
+	uint32 ShadowSpotCount = 0;
+	for (uint32 i = 0; i < NumSpots; ++i)
+	{
+		if (Env.GetSpotLight(i).bCastShadows)
+			++ShadowSpotCount;
+	}
+	if (ShadowSpotCount == 0) return;
+
+	ShadowSpotCount = (ShadowSpotCount > MAX_SHADOW_SPOT_LIGHTS)
+		? MAX_SHADOW_SPOT_LIGHTS : ShadowSpotCount;
+
+	// 1 spot = 1 slice → SpotAtlas를 slice 배열로 사용
+	const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
+	Res.EnsureSpotAtlas(Device.GetDevice(), Resolution, ShadowSpotCount);
+	if (!Res.IsSpotValid()) return;
+
+	// per-light GPU 데이터 준비
+	TArray<FSpotShadowDataGPU> SpotGPUData;
+	SpotGPUData.resize(ShadowSpotCount);
+
+	D3D11_VIEWPORT ShadowVP = {};
+	ShadowVP.Width    = static_cast<float>(Resolution);
+	ShadowVP.Height   = static_cast<float>(Resolution);
+	ShadowVP.MinDepth = 0.0f;
+	ShadowVP.MaxDepth = 1.0f;
+
+	uint32 ShadowIdx = 0;
+	for (uint32 i = 0; i < NumSpots && ShadowIdx < ShadowSpotCount; ++i)
+	{
+		const FSpotLightParams& Light = Env.GetSpotLight(i);
+		if (!Light.bCastShadows) continue;
+
+		// ViewProj 계산
+		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Light);
+		FConvexVolume LightFrustum;
+		LightFrustum.UpdateFromMatrix(VP.ViewProj);
+
+		// b2에 LightViewProj 업로드
+		UploadLightViewProj(DC, VP.ViewProj);
+
+		// DSV 바인딩 (slice = ShadowIdx)
+		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 1.0f, 0);
+		DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[ShadowIdx]);
+		DC->RSSetViewports(1, &ShadowVP);
+
+		// depth 렌더링
+		DrawShadowCasters(DC, Scene, LightFrustum, Partition);
+
+		// GPU 데이터 기록 — 1:1 slice, UV = 전체 (atlas 안 쓰므로)
+		SpotGPUData[ShadowIdx].ViewProj        = VP.ViewProj;
+		SpotGPUData[ShadowIdx].AtlasScaleBias  = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
+		SpotGPUData[ShadowIdx].PageIndex        = ShadowIdx;
+
+		++ShadowIdx;
+	}
+
+	// StructuredBuffer 업로드
+	if (ShadowIdx > 0 && Res.SpotShadowDataBuffer)
+	{
+		D3D11_MAPPED_SUBRESOURCE Mapped = {};
+		if (SUCCEEDED(DC->Map(Res.SpotShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+		{
+			memcpy(Mapped.pData, SpotGPUData.data(), sizeof(FSpotShadowDataGPU) * ShadowIdx);
+			DC->Unmap(Res.SpotShadowDataBuffer, 0);
+		}
+	}
+
+	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
 }
 
 // ============================================================
-// RenderPointShadows — Point Light CubeMap 렌더링
+// RenderPointShadows — Point Light CubeMap 렌더링 (TODO)
 // ============================================================
-// 담당: 팀원 C
-// Env에서 shadow-casting PointLight를 순회하며
-// CubeMap 6면에 depth 렌더링.
 
-void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
+void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
 {
-	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
-	const uint32 NumPoints = Env.GetNumPointLights();
-	if (NumPoints == 0) return;
+	// TODO: Point Light shadow 구현
+	ShadowCBCache.NumShadowPointLights = 0;
+}
 
-	// TODO: 팀원 C 구현
-	// 1. shadow-casting point lights 카운트 → EnsurePointCube 호출
-	// 2. for each shadow point:
-	//      for face = 0..5:
-	//        ViewProj = FLightFrustumUtils::BuildPointLightFaceViewProj(light, face)
-	//        DC->OMSetRenderTargets(0, nullptr, Res.PointCubeDSVs[cubeIdx*6+face])
-	//        SetViewport(Res.PointCubeResolution)
-	//        DrawShadowCasters(Ctx, faceFrustum)
-	//        PointShadowDataGPU[i].FaceViewProj[face] = viewProj
-	//      PointShadowDataGPU[i].NearZ/FarZ/CubeArrayIndex = ...
-	// 3. Upload PointShadowDataGPU → Res.PointShadowDataBuffer
-	// 4. ShadowCBCache.NumShadowPointLights = count
+// ============================================================
+// RenderGlobal — 뷰포트 루프 전 1회 Spot/Point shadow bake
+// ============================================================
+
+void FShadowMapPass::RenderGlobal(FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FSpatialPartition* Partition)
+{
+	ID3D11DeviceContext* DC = Device.GetDeviceContext();
+
+	SetupShadowRenderState(Device, Resources, DC);
+
+	FShadowMapResources& Res = Resources.ShadowResources;
+
+	// Spot/Point shadow 렌더링
+	RenderSpotShadows(DC, Device, Resources, Scene, Res, Partition);
+	RenderPointShadows(DC, Device, Scene, Res, Partition);
+
+	// SRV 바인딩 + Shadow CB 업데이트
+	BindShadowSRVs(DC, Res);
+	UpdateShadowCB(DC, Resources, Res);
 }
