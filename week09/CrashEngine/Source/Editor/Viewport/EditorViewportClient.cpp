@@ -138,12 +138,14 @@ void FEditorViewportClient::Tick(float DeltaTime)
     if (!bIsActive)
         return;
 
-    TickEditorShortcuts();
-    TickInput(DeltaTime);
-    TickInteraction(DeltaTime);
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+
+    TickEditorShortcuts(Input);
+    TickInput(Input, DeltaTime);
+    TickInteraction(Input, DeltaTime);
 }
 
-void FEditorViewportClient::TickEditorShortcuts()
+void FEditorViewportClient::TickEditorShortcuts(const FInputSnapshot& Input)
 {
     UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (!EditorEngine)
@@ -152,13 +154,13 @@ void FEditorViewportClient::TickEditorShortcuts()
     }
 
     // PIE 중 ESC로 종료 (UE 동작과 동일)
-    if (EditorEngine->IsPlayingInEditor() && InputSystem::Get().GetKeyDown(VK_ESCAPE))
+    if (EditorEngine->IsPlayingInEditor() && Input.KeyPressed[VK_ESCAPE])
     {
         EditorEngine->RequestEndPlayMap();
     }
 
     // Ctrl+D — 선택된 액터 복제
-    if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
+    if (SelectionManager && Input.KeyDown[VK_CONTROL] && Input.KeyPressed['D'])
     {
         const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
         if (!ToDuplicate.empty())
@@ -183,7 +185,7 @@ void FEditorViewportClient::TickEditorShortcuts()
     }
 }
 
-void FEditorViewportClient::TickInput(float DeltaTime)
+void FEditorViewportClient::TickInput(const FInputSnapshot& Input, float DeltaTime)
 {
     if (!Camera)
     {
@@ -208,17 +210,17 @@ void FEditorViewportClient::TickInput(float DeltaTime)
         FVector LocalMove = FVector(0, 0, 0);
         float WorldVerticalMove = 0.0f;
 
-        if (InputSystem::Get().GetKey('W'))
+        if (Input.KeyDown['W'])
             LocalMove.X += CameraSpeed;
-        if (InputSystem::Get().GetKey('A'))
+        if (Input.KeyDown['A'])
             LocalMove.Y -= CameraSpeed;
-        if (InputSystem::Get().GetKey('S'))
+        if (Input.KeyDown['S'])
             LocalMove.X -= CameraSpeed;
-        if (InputSystem::Get().GetKey('D'))
+        if (Input.KeyDown['D'])
             LocalMove.Y += CameraSpeed;
-        if (InputSystem::Get().GetKey('Q'))
+        if (Input.KeyDown['Q'])
             WorldVerticalMove -= CameraSpeed;
-        if (InputSystem::Get().GetKey('E'))
+        if (Input.KeyDown['E'])
             WorldVerticalMove += CameraSpeed;
 
         LocalMove *= DeltaTime;
@@ -229,10 +231,10 @@ void FEditorViewportClient::TickInput(float DeltaTime)
         }
 
         // pan 패닝
-        if (InputSystem::Get().GetKey(VK_MBUTTON))
+        if (Input.KeyDown[VK_MBUTTON])
         {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+            float DeltaX = static_cast<float>(Input.MouseDelta.x);
+            float DeltaY = static_cast<float>(Input.MouseDelta.y);
             Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.05f, DeltaY * PanMouseScale * 0.05f));
         }
 
@@ -241,23 +243,23 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
         const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
         const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
-        if (InputSystem::Get().GetKey(VK_UP))
+        if (Input.KeyDown[VK_UP])
             Rotation.Z -= AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_LEFT))
+        if (Input.KeyDown[VK_LEFT])
             Rotation.Y -= AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_DOWN))
+        if (Input.KeyDown[VK_DOWN])
             Rotation.Z += AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_RIGHT))
+        if (Input.KeyDown[VK_RIGHT])
             Rotation.Y += AngleVelocity;
 
         // ── Perspective: 마우스 우클릭 → 회전 ──
         FVector MouseRotation = FVector(0, 0, 0);
         float MouseRotationSpeed = 0.15f * RotateSensitivity;
 
-        if (InputSystem::Get().GetKey(VK_RBUTTON))
+        if (Input.KeyDown[VK_RBUTTON])
         {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+            float DeltaX = static_cast<float>(Input.MouseDelta.x);
+            float DeltaY = static_cast<float>(Input.MouseDelta.y);
 
             MouseRotation.Y += DeltaX * MouseRotationSpeed;
             MouseRotation.Z += DeltaY * MouseRotationSpeed;
@@ -269,10 +271,10 @@ void FEditorViewportClient::TickInput(float DeltaTime)
     else
     {
         // ── Orthographic: 마우스 우클릭 드래그 → 평행이동 (Pan) ──
-        if (InputSystem::Get().GetKey(VK_RBUTTON))
+        if (Input.KeyDown[VK_RBUTTON])
         {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
+            float DeltaX = static_cast<float>(Input.MouseDelta.x);
+            float DeltaY = static_cast<float>(Input.MouseDelta.y);
 
             // OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례)
             float PanScale = CameraState.OrthoWidth * 0.002f * MoveSensitivity;
@@ -282,11 +284,11 @@ void FEditorViewportClient::TickInput(float DeltaTime)
         }
     }
 
-    if (InputSystem::Get().GetKeyUp(VK_SPACE))
+    if (Input.KeyReleased[VK_SPACE])
         Gizmo->SetNextMode();
 }
 
-void FEditorViewportClient::TickInteraction(float DeltaTime)
+void FEditorViewportClient::TickInteraction(const FInputSnapshot& Input, float DeltaTime)
 {
     (void)DeltaTime;
 
@@ -316,7 +318,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
     const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
 
-    float ScrollNotches = InputSystem::Get().GetScrollNotches();
+    float ScrollNotches = Input.WheelNotches;
     if (ScrollNotches != 0.0f)
     {
         if (Camera->IsOrthogonal())
@@ -333,7 +335,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
     // 마우스 좌표를 뷰포트 슬롯 로컬 좌표로 변환
     // (ImGui screen space = 윈도우 클라이언트 좌표)
-    POINT MousePoint = InputSystem::Get().GetMousePos();
+    POINT MousePoint = Input.MouseScreenPos;
     MousePoint = Window->ScreenToClientPoint(MousePoint);
 
     float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
@@ -352,11 +354,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
     // 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
     FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
-    if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
+    const bool bLeftPressed = Input.KeyPressed[VK_LBUTTON];
+    const bool bLeftDown = Input.KeyDown[VK_LBUTTON];
+    const bool bLeftReleased = Input.KeyReleased[VK_LBUTTON];
+    const bool bMouseMoved = Input.MouseDelta.x != 0 || Input.MouseDelta.y != 0;
+    const bool bLeftDragging = bLeftDown && bMouseMoved;
+
+    if (bLeftPressed)
     {
         HandleDragStart(Ray);
     }
-    else if (InputSystem::Get().GetLeftDragging())
+    else if (bLeftDragging)
     {
         //	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
         if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
@@ -369,14 +377,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
             Gizmo->UpdateDrag(Ray);
         }
     }
-    else if (InputSystem::Get().GetLeftDragEnd())
+    else if (bLeftReleased)
     {
-        Gizmo->DragEnd();
-    }
-    else if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
-    {
-        // 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
-        Gizmo->SetPressedOnHandle(false);
+        if (Gizmo->IsHolding())
+        {
+            Gizmo->DragEnd();
+        }
+        else
+        {
+            // 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
+            Gizmo->SetPressedOnHandle(false);
+        }
     }
 }
 
@@ -526,4 +537,23 @@ void FEditorViewportClient::RenderViewportBorder()
         0.0f,
         0,
         BorderThickness);
+}
+
+// TODO: 일단은 빈 함수로 두고 InputRouter가 붙은 후 Tick 계열 입력 함수들을 정리하면서 내용 채우기
+bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
+{
+    (void) Event;
+	return false;
+}
+
+bool FEditorViewportClient::InputAxis(const FViewportAxisEvent& Event)
+{
+    (void) Event;
+	return false;
+}
+
+bool FEditorViewportClient::InputPointer(const FViewportPointerEvent& Event)
+{
+    (void)Event;
+    return false;
 }

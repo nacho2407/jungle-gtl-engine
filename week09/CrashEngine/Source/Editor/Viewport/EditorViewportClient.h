@@ -76,10 +76,14 @@ public:
     void RenderViewportImage();
     void RenderViewportBorder();
 
+	bool InputKey(const FViewportKeyEvent& Event) override;
+    bool InputAxis(const FViewportAxisEvent& Event) override;
+    bool InputPointer(const FViewportPointerEvent& Event) override;
+
 private:
-    void TickEditorShortcuts();
-    void TickInput(float DeltaTime);
-    void TickInteraction(float DeltaTime);
+    void TickEditorShortcuts(const FInputSnapshot& Input);
+    void TickInput(const FInputSnapshot& Input, float DeltaTime);
+    void TickInteraction(const FInputSnapshot& Input, float DeltaTime);
     void HandleDragStart(const FRay& Ray);
 
 private:
