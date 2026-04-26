@@ -5,8 +5,8 @@
 | 최초 작성자 | 김연하 |
 | 최초 작성일 | 2026-04-24 |
 | 최근 수정자 | 김연하 |
-| 최근 수정일 | 2026-04-24 |
-| 버전 | 1.0 |
+| 최근 수정일 | 2026-04-25 |
+| 버전 | 1.1 |
 
 ## 1. 개요
 
@@ -111,6 +111,7 @@ viewport 크기 및 유효성에 종속되는 runtime GPU 리소스다.
 | `SceneColorCopySRV` | color 복사본 SRV |
 | `DepthCopySRV` | depth 복사본 SRV |
 | `StencilCopySRV` | stencil 복사본 SRV |
+| `ShadowMap Texture/SRV/DSV` | `ShadowMapPass`가 관리하는 shadow cube depth 리소스 |
 
 ### 2.5 ViewMode Intermediate Runtime Resources
 
@@ -136,6 +137,8 @@ viewport 크기 및 유효성에 종속되는 runtime GPU 리소스다.
 | shader cache | 셰이더 재사용 |
 | state cache | 상태 객체 재사용 |
 | registry | 실행 구조 및 선택 규칙 재사용 |
+
+`ShadowMapPass`는 내부적으로 최대 5개의 shadow cube map 리소스를 유지한다. 각 shadow resource는 depth texture 1개, cube face별 DSV 6개, lighting 단계에서 읽기 위한 SRV 1개로 구성된다.
 
 ## 3. Constant Buffer Payload
 

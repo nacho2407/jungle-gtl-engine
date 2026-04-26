@@ -1,9 +1,14 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/MeshPassBase.h"
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FGizmoPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render transform gizmo meshes for editor interaction.
+    - Inputs: gizmo primitive proxies and gizmo per-shader constants.
+    - Outputs: viewport color/depth for inner and outer gizmo layers.
+    - Registers: mesh pass convention plus gizmo constants on b2.
+*/
 class FGizmoPass : public FMeshPassBase
 {
 public:
@@ -13,4 +18,3 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override;
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

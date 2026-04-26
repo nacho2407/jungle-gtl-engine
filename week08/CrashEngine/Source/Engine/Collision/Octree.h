@@ -4,6 +4,7 @@
 #include "Engine/Math/Vector.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Visibility/Frustum/ConvexVolume.h"
+#include "Sphere.h"
 #include <memory>
 
 class FPrimitiveProxy;
@@ -11,8 +12,6 @@ class FPrimitiveProxy;
 constexpr int32 MAX_DEPTH = 6;
 constexpr int32 MAX_SIZE = 20;
 constexpr float LooseFactor = 1.3f;
-
-class FFrustum;
 
 // FOctree 클래스이다.
 class FOctree
@@ -46,6 +45,7 @@ public:
     void QueryFrustum(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     // Direct proxy output ? skips Component→GetSceneProxy() indirection
     void QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const;
+    void QuerySphereProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const;
     void QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 
     void Reset(const FBoundingBox& InBounds, uint32 InDepth = 0);

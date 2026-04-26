@@ -1,9 +1,12 @@
 ﻿// 충돌/피킹 영역의 세부 동작을 구현합니다.
 #include "Octree.h"
-#include <Collision/RayUtils.h>
+
 #include <algorithm>
+
 #include "Editor/UI/EditorConsolePanel.h"
+#include "Math/Intersection.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Sphere.h"
 
 namespace
 {
@@ -387,13 +390,13 @@ void FOctree::QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent
 
 void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
-    if (!FRayUtils::CheckRayAABB(Ray, LooseBounds.Min, LooseBounds.Max))
+    if (!FMath::CheckRayAABB(Ray, LooseBounds))
         return;
 
     for (UPrimitiveComponent* Primitive : PrimitiveList)
     {
         const FBoundingBox& box = Primitive->GetWorldBoundingBox();
-        if (Primitive && FRayUtils::CheckRayAABB(Ray, box.Min, box.Max))
+        if (Primitive && FMath::CheckRayAABB(Ray, box))
         {
             OutPrimitives.push_back(Primitive);
         }
@@ -514,6 +517,32 @@ void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPr
 void FOctree::QueryFrustumProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const
 {
     QueryFrustumProxiesInternal(ConvexVolume, OutProxies, false);
+}
+
+void FOctree::QuerySphereProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const
+{
+    if (!Sphere.IntersectAABB(LooseBounds))
+        return;
+
+    for (UPrimitiveComponent* Primitive : PrimitiveList)
+    {
+        if (Primitive && Sphere.IntersectAABB(Primitive->GetWorldBoundingBox()))
+        {
+            if (FPrimitiveProxy* Proxy = Primitive->GetSceneProxy())
+            {
+                if (!Proxy->bNeverCull)
+                    OutProxies.push_back(Proxy);
+            }
+        }
+    }
+
+    if (IsLeaf())
+        return;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        Children[i]->QuerySphereProxies(Sphere, OutProxies);
+    }
 }
 
 void FOctree::CollectAllProxies(TArray<FPrimitiveProxy*>& OutProxies) const

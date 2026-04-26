@@ -1,9 +1,17 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
+
 #include "Render/Execute/Passes/Base/PostProcessPassBase.h"
+
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FHeightFogPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+
+/*
+    Pass Summary
+    - Role: apply height fog over the current scene color.
+    - Inputs: scene-color copy, depth copy, fog scene constants.
+    - Outputs: viewport color.
+    - Registers: PS t10 SceneDepth, PS t11 SceneColor, PS b2 FogParams.
+*/
 class FHeightFogPass : public FPostProcessPassBase
 {
 public:
@@ -16,4 +24,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

@@ -1,11 +1,16 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Passes/Base/FullscreenPassBase.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 
-// FPostProcessPassBase는 렌더 영역의 핵심 동작을 담당합니다.
+/*
+    Pass Summary
+    - Role: helper base for fullscreen post-process passes.
+    - Inputs: scene-color/depth/stencil copy resources from viewport targets.
+    - Outputs: viewport RTV through fullscreen compositing.
+    - Registers: helper methods bind PS t0, t10, t11, t13 as needed by derived passes.
+*/
 class FPostProcessPassBase : public FFullscreenPassBase
 {
 public:

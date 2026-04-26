@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
@@ -53,11 +52,11 @@ struct FCollectedOverlayData
         EditorHelpers.Texts.clear();
     }
 
-    bool                                 HasGrid() const { return Guides.Grid.bEnabled; }
-    float                                GetGridSpacing() const { return Guides.Grid.Spacing; }
-    int32                                GetGridHalfLineCount() const { return Guides.Grid.HalfLineCount; }
-    const TArray<FSceneDebugAABB>&       GetDebugAABBs() const { return Debug.AABBs; }
-    const TArray<FSceneDebugLine>&       GetDebugLines() const { return Debug.Lines; }
+    bool                            HasGrid() const { return Guides.Grid.bEnabled; }
+    float                           GetGridSpacing() const { return Guides.Grid.Spacing; }
+    int32                           GetGridHalfLineCount() const { return Guides.Grid.HalfLineCount; }
+    const TArray<FSceneDebugAABB>&  GetDebugAABBs() const { return Debug.AABBs; }
+    const TArray<FSceneDebugLine>&  GetDebugLines() const { return Debug.Lines; }
     const TArray<FPrimitiveProxy*>& GetEditorHelperBillboards() const { return EditorHelpers.Billboards; }
     const TArray<FPrimitiveProxy*>& GetEditorHelperTexts() const { return EditorHelpers.Texts; }
 
@@ -81,4 +80,3 @@ struct FCollectedOverlayData
         TArray<FPrimitiveProxy*> Texts;
     } EditorHelpers;
 };
-

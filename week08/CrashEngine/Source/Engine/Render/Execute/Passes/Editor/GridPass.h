@@ -1,10 +1,15 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/RenderPass.h"
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
 
-// FGridPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render editor world grid helper lines.
+    - Inputs: generated grid line batch from overlay collection.
+    - Outputs: viewport color/depth with grid overlay.
+    - Registers: editor line shader convention, primarily frame constants.
+*/
 class FGridPass : public FRenderPass
 {
 public:
@@ -18,4 +23,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

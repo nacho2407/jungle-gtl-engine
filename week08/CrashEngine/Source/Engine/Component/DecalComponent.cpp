@@ -101,6 +101,12 @@ FVector4 UDecalComponent::GetColor() const
     return OutColor;
 }
 
+FOBB UDecalComponent::GetWorldOBB() const
+{
+    EnsureWorldOBBUpdated();
+    return WorldOBB;
+}
+
 void UDecalComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 {
     Material = InMaterial;
@@ -118,6 +124,7 @@ void UDecalComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)
 void UDecalComponent::OnTransformDirty()
 {
     UPrimitiveComponent::OnTransformDirty();
+    bWorldOBBDirty = true;
 }
 
 void UDecalComponent::HandleFade(float DeltaTime)
@@ -156,6 +163,21 @@ void UDecalComponent::HandleFade(float DeltaTime)
 
     FadeOpacity = Alpha;
     MarkProxyDirty(ESceneProxyDirtyFlag::Material);
+}
+
+void UDecalComponent::UpdateWorldOBB() const
+{
+    WorldOBB.UpdateAsOBB(GetWorldMatrix());
+    bWorldOBBDirty = false;
+}
+
+void UDecalComponent::EnsureWorldOBBUpdated() const
+{
+    GetWorldMatrix();
+    if (bWorldOBBDirty)
+    {
+        UpdateWorldOBB();
+    }
 }
 
 bool UDecalComponent::ShouldRenderDebugBox() const

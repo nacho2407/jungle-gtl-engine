@@ -1,12 +1,19 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Base/RenderPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 
-// FMeshPassBase는 메시 데이터와 렌더 제출 정보를 다룹니다.
+/*
+    Pass Summary
+    - Role: shared base for mesh-driven passes that submit draw-command ranges.
+    - Inputs: mesh draw commands, viewport RTV/DSV, per-pass render state.
+    - Outputs: viewport or pass-specific mesh targets selected by derived classes.
+    - Registers: common mesh convention via DrawCommandList.
+      VS/PS b0 Frame, VS b1 PerObject, VS/PS b2-b3 PerShader, VS/PS b4 Light,
+      PS t0-t2 material textures, PS t6 local lights.
+*/
 class FMeshPassBase : public FRenderPass
 {
 public:

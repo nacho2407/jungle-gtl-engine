@@ -1,11 +1,16 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/PostProcessPassBase.h"
 
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
 
-// FLightHitMapPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: overlay the light-culling debug hit map on top of scene color.
+    - Inputs: scene-color copy and debug hit-map SRV from tile light culling.
+    - Outputs: viewport color with light-hit visualization.
+    - Registers: PS t0 SceneColorCopy when prebound, PS t8 DebugHitMap, PS t11 SceneColor.
+*/
 class FLightHitMapPass : public FPostProcessPassBase
 {
 public:
@@ -18,4 +23,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

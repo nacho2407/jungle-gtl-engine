@@ -5,8 +5,8 @@
 | 최초 작성자 | 김연하 |
 | 최초 작성일 | 2026-04-24 |
 | 최근 수정자 | 김연하 |
-| 최근 수정일 | 2026-04-24 |
-| 버전 | 1.0 |
+| 최근 수정일 | 2026-04-25 |
+| 버전 | 1.1 |
 
 ## 1. Slot 분류
 
@@ -39,6 +39,9 @@ C++ 기준 슬롯 정의는 `Render/Resources/Bindings/RenderBindingSlots.h`에 
 | Slot | 이름 | 의미 |
 |---|---|---|
 | `t6` | `ESystemTexSlot::LocalLights` | local light buffer SRV |
+| `t7` | `ESystemTexSlot::LightTileMask` | per-tile light culling mask |
+| `t8` | `ESystemTexSlot::DebugHitMap` | light culling debug hit map |
+| `t9` | `ESystemTexSlot::ShadowMap` | shadow map system slot 예약값 |
 | `t10` | `ESystemTexSlot::SceneDepth` | depth copy SRV |
 | `t11` | `ESystemTexSlot::SceneColor` | scene color copy SRV |
 | `t13` | `ESystemTexSlot::Stencil` | stencil copy SRV |
@@ -55,6 +58,8 @@ C++ 기준 슬롯 정의는 `Render/Resources/Bindings/RenderBindingSlots.h`에 
 | `t5` | modified surface2 |
 | `t7` | per-tile light mask |
 | `t8` | light hit map debug SRV |
+
+현재 shadow map은 시스템 슬롯 상수에 `t9`가 정의되어 있지만, 실제 deferred lighting shader(`UberLit.hlsl`)는 shadow cube map 5개를 `t20 ~ t24`에 바인딩해 사용한다. 문서상 대표 슬롯은 둘 다 함께 관리한다.
 
 ## 5. Sampler Slot 규약
 

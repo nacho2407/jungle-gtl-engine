@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"
@@ -29,13 +28,15 @@ public:
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView);
+    void CollectShadowCasters(UWorld* World, const FSceneView* SceneView);
+    void UpdateShadowDataInCBs();
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
 
-    const FCollectedSceneData&           GetCollectedSceneData() const { return CollectedSceneData; }
-    const FCollectedPrimitives&          GetCollectedPrimitives() const { return CollectedSceneData.Primitives; }
+    const FCollectedSceneData&      GetCollectedSceneData() const { return CollectedSceneData; }
+    const FCollectedPrimitives&     GetCollectedPrimitives() const { return CollectedSceneData.Primitives; }
     const TArray<FPrimitiveProxy*>& GetLastVisiblePrimitiveProxies() const { return CollectedSceneData.Primitives.VisibleProxies; }
-    const FCollectedLights&              GetCollectedLights() const { return CollectedSceneData.Lights; }
-    const FCollectedOverlayData&         GetCollectedOverlayData() const { return CollectedOverlayData; }
+    const FCollectedLights&         GetCollectedLights() const { return CollectedSceneData.Lights; }
+    const FCollectedOverlayData&    GetCollectedOverlayData() const { return CollectedOverlayData; }
 
 private:
     // ==================== Reset Helpers ====================
@@ -59,4 +60,3 @@ private:
     FCollectedSceneData   CollectedSceneData;
     FCollectedOverlayData CollectedOverlayData;
 };
-

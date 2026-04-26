@@ -3,7 +3,7 @@
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
-#include "Collision/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/WorldContext.h"
 #include "GameFramework/Level.h"

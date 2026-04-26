@@ -6,12 +6,15 @@
 #include "Render/Visibility/Frustum/ConvexVolume.h"
 #include <memory>
 
+#include "Sphere.h"
+
 class UPrimitiveComponent;
 class FPrimitiveProxy;
 class FOctree;
 class AActor;
 struct FRay;
 
+// TODO: SpatialPartition이 octree와 BVH 둘 다 감싸는 상위 인터페이스로 확장
 // FSpatialPartition 클래스이다.
 class FSpatialPartition
 {
@@ -29,6 +32,7 @@ public:
 
     void QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolume, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     void QueryFrustumAllProxies(const FConvexVolume& ConvexVolume, TArray<FPrimitiveProxy*>& OutProxies) const;
+    void QuerySphereAllProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const;
     void QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const;
     // void QueryAABB(const FBoundingBox& Box, TArray<UPrimitiveComponent*>& OutPrimitives) const;
 

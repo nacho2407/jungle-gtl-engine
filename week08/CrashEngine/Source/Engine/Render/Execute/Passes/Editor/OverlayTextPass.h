@@ -1,9 +1,14 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 #include "Render/Execute/Passes/Base/RenderPass.h"
 struct FRenderPipelineContext;
 class FPrimitiveProxy;
-// FOverlayTextPass는 렌더 파이프라인의 한 실행 단계를 담당합니다.
+/*
+    Pass Summary
+    - Role: render world-space and screen-space editor text overlays.
+    - Inputs: collected overlay text, font atlases, text batches.
+    - Outputs: viewport color with blended text quads.
+    - Registers: text draw-command convention, mainly b0 Frame and PS t0 font atlas.
+*/
 class FOverlayTextPass : public FRenderPass
 {
 public:
@@ -17,4 +22,3 @@ public:
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 };
-

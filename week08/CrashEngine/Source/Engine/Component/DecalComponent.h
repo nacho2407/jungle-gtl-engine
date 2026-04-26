@@ -1,5 +1,6 @@
 ﻿// 컴포넌트 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
+#include "Collision/OBB.h"
 #include "PrimitiveComponent.h"
 #include "Core/ResourceTypes.h"
 
@@ -29,6 +30,7 @@ public:
     // --- Material ---
     void SetMaterial(int32 ElementIndex, UMaterial* InMaterial) override;
     UMaterial* GetMaterial(int32 ElementIndex) const override { return Material; }
+    FOBB GetWorldOBB() const;
 
     void OnTransformDirty() override;
 
@@ -36,6 +38,8 @@ private:
     bool ShouldRenderDebugBox() const;
     void HandleFade(float DeltaTime);
     void RenderDebugBox();
+    void UpdateWorldOBB() const;
+    void EnsureWorldOBBUpdated() const;
 
 private:
     FMaterialSlot MaterialSlot;
@@ -47,5 +51,7 @@ private:
     float FadeOutDuration = 0;
     float FadeTimer = 0;
     float FadeOpacity = 1.0f;
+    mutable FOBB WorldOBB;
+    mutable bool bWorldOBBDirty = true;
 };
 

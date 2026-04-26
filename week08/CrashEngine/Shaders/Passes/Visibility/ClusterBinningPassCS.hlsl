@@ -1,4 +1,3 @@
-
 /*
     ClusterBinningPassCS.hlsl는 컬링/가시성 계산에 쓰는 셰이더입니다.
 
@@ -16,7 +15,7 @@
     - 이 파일에서 직접 선언한 슬롯: u0
 */
 
-#include "../../Common/Resources/ConstantBuffers.hlsl"
+#include "../../Resources/ConstantBuffers.hlsl"
 
 RWStructuredBuffer<uint> g_ClusterBins : register(u0);
 

@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Core/CoreTypes.h"
@@ -42,8 +41,8 @@ public:
 
     // Generates Hi-Z, dispatches the occlusion test, and copies results to staging.
     void DispatchOcclusionTest(
-        ID3D11DeviceContext*                 Ctx,
-        ID3D11ShaderResourceView*            DepthSRV,
+        ID3D11DeviceContext*            Ctx,
+        ID3D11ShaderResourceView*       DepthSRV,
         const TArray<FPrimitiveProxy*>& VisibleProxies,
         const FMatrix& View, const FMatrix& Proj,
         uint32 ViewportWidth, uint32 ViewportHeight);
@@ -87,15 +86,15 @@ private:
     uint32                    AABBBufferCapacity = 0;
 
     // Visibility RWStructuredBuffer (UAV) + double-buffered staging readback
-    ID3D11Buffer*                       VisibilityBuffer              = nullptr;
-    ID3D11UnorderedAccessView*          VisibilityUAV                 = nullptr;
-    static constexpr uint32             STAGING_COUNT                 = 3;
-    ID3D11Buffer*                       StagingBuffers[STAGING_COUNT] = {};
+    ID3D11Buffer*                  VisibilityBuffer              = nullptr;
+    ID3D11UnorderedAccessView*     VisibilityUAV                 = nullptr;
+    static constexpr uint32        STAGING_COUNT                 = 3;
+    ID3D11Buffer*                  StagingBuffers[STAGING_COUNT] = {};
     TArray<const FPrimitiveProxy*> StagingProxies[STAGING_COUNT];
-    uint32                              StagingProxyCount[STAGING_COUNT] = {};
-    uint32                              StagingMaxProxyId[STAGING_COUNT] = {};
-    uint32                              WriteIndex                       = 0; // Current frame write slot.
-    uint32                              VisibilityBufferCapacity         = 0;
+    uint32                         StagingProxyCount[STAGING_COUNT] = {};
+    uint32                         StagingMaxProxyId[STAGING_COUNT] = {};
+    uint32                         WriteIndex                       = 0; // Current frame write slot.
+    uint32                         VisibilityBufferCapacity         = 0;
 
     // Constant buffer (shared between HiZ and OcclusionTest passes)
     ID3D11Buffer* ParamsCB = nullptr;

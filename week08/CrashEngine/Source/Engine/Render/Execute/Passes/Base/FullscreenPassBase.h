@@ -1,12 +1,18 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Execute/Passes/Base/RenderPass.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 
-// FFullscreenPassBase는 렌더 영역의 핵심 동작을 담당합니다.
+/*
+    Pass Summary
+    - Role: shared base for fullscreen passes that submit fullscreen draw ranges.
+    - Inputs: fullscreen draw commands, viewport RTV/DSV, pass constants and SRVs.
+    - Outputs: viewport or pass-specific fullscreen targets.
+    - Registers: common fullscreen convention via DrawCommandList.
+      VS/PS b0 Frame, optional PS b2-b3 PerShader, optional PS t0+ SRVs.
+*/
 class FFullscreenPassBase : public FRenderPass
 {
 public:
@@ -56,6 +62,8 @@ protected:
         }
     }
 
+    // 지정한 Render Pass에 속한 draw command 구간만 DrawCommandList에서 찾아 제출한다.
+    // command를 새로 생성하지 않으며, 이미 Build 단계에서 만들어진 [Start, End) 범위의 command를 실제 draw call로 실행한다.
     void SubmitPassRange(FRenderPipelineContext& Context, ERenderPass Pass) const
     {
         if (!Context.DrawCommandList)
@@ -72,4 +80,3 @@ protected:
         }
     }
 };
-

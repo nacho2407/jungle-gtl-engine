@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 
@@ -16,4 +15,3 @@ public:
     void UpdateTransform() override;
     void VisualizeLightsInEditor(FScene& Scene) const override;
 };
-

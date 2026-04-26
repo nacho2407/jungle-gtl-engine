@@ -19,11 +19,10 @@
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Submission/Command/DrawCommand.h"
-#include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Resource/ResourceManager.h"
 
-void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
     const bool bMeshValid     = bHasMeshBuffer && Proxy.MeshBuffer->IsValid();
@@ -35,7 +34,7 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
 
     ID3D11DeviceContext* Ctx             = Context.Context;
     FGraphicsProgram*    Shader          = Proxy.Shader;
-    const bool           bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask);
+    const bool           bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask || Pass == ERenderPass::ShadowMap);
 
     if (bIsMaskLikePass)
     {
@@ -43,13 +42,12 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
     }
     else if (Pass == ERenderPass::Opaque &&
              Context.SceneView &&
-             Context.SceneView->RenderPath == ERenderShadingPath::Deferred &&
              Proxy.bAllowViewModeShaderOverride &&
              Context.ViewMode.Registry &&
              Context.ViewMode.Registry->HasConfig(Context.ViewMode.ActiveViewMode))
     {
         const FViewModePassDesc* Desc =
-            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Opaque);
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Opaque, Context.SceneView->RenderPath);
         if (Desc && Desc->CompiledShader)
         {
             Shader = Desc->CompiledShader;
@@ -180,12 +178,17 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
             (reinterpret_cast<uintptr_t>(Cmd.DiffuseSRV) >> 14) ^
             (reinterpret_cast<uintptr_t>(Cmd.NormalSRV) >> 19) ^
             (reinterpret_cast<uintptr_t>(Cmd.SpecularSRV) >> 24);
+
+        // 수동 정렬이 필요한 경우 (e.g. Light 별 섀도 맵 렌더링) UserBits 사용하여 정렬.
+        // 아니라면 Material 별로 정렬
+        const uint16 AdditionalSortKey = (UserBits != 0) ? UserBits : static_cast<uint16>(MaterialHash & 0x0FFFu);
+
         Cmd.SortKey = FDrawCommand::BuildSortKey(
             Pass,
             Cmd.Shader,
             Proxy.MeshBuffer,
             Cmd.DiffuseSRV,
-            static_cast<uint16>(MaterialHash & 0x0FFFu));
+            AdditionalSortKey);
     };
 
     if (!Proxy.SectionRenderData.empty())
@@ -235,7 +238,7 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
         }
 
         const FViewModePassDesc* Desc =
-            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::DeferredLighting);
+            Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::DeferredLighting, ERenderShadingPath::Deferred);
         if (!Desc || !Desc->CompiledShader)
         {
             return;
@@ -628,7 +631,7 @@ void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRend
         return;
     }
 
-    const FViewModePassDesc* Desc = Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Decal);
+    const FViewModePassDesc* Desc = Context.ViewMode.Registry->FindPassDesc(Context.ViewMode.ActiveViewMode, ERenderPass::Decal, ERenderShadingPath::Deferred);
     if (!Desc || !Desc->CompiledShader)
     {
         return;
