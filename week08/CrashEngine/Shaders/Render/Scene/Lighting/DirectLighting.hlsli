@@ -36,6 +36,9 @@ cbuffer LightCullingParams : register(b2)
     float NumLights;
 }
 
+static const float kShadowBias = 0.002f; // 일단 하드코딩된 bias로 따라갔음
+static const float2 kShadowTexelSize = float2(1.0f / 2048.0f, 1.0f / 2048.0f); // 가변적으로 바뀌어야됨
+
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
@@ -76,6 +79,61 @@ float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos)
     }
 
     return ShadowFactor;
+}
+
+float SampleSpotShadowCmp(int ShadowIndex, float3 ShadowPosNDC)
+{
+    if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
+
+    float2 UVNorm = ShadowPosNDC.xy * 2.0f - 1.0f;
+    float3 SampleDir = float3(1.0f, -UVNorm.y, -UVNorm.x);
+    float CompareDepth = ShadowPosNDC.z - kShadowBias;
+
+    float ShadowFactor = 1.0f;
+    [branch]
+    switch (ShadowIndex)
+    {
+    case 0: ShadowFactor = g_ShadowMap0.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 1: ShadowFactor = g_ShadowMap1.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 2: ShadowFactor = g_ShadowMap2.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 3: ShadowFactor = g_ShadowMap3.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 4: ShadowFactor = g_ShadowMap4.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    }
+
+    return ShadowFactor;
+}
+
+float OffsetLookupSpotPCF(int ShadowIndex, float3 ShadowPosNDC, float2 Offset)
+{
+    float3 OffsetShadowPos = ShadowPosNDC;
+    OffsetShadowPos.xy += Offset * kShadowTexelSize;
+
+    if (OffsetShadowPos.x < 0.0f || OffsetShadowPos.x > 1.0f ||
+        OffsetShadowPos.y < 0.0f || OffsetShadowPos.y > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    return SampleSpotShadowCmp(ShadowIndex, OffsetShadowPos);
+}
+
+float PCF_NvidiaOptimizedSpot(int ShadowIndex, float3 ShadowPosNDC, float4 PixelPos)
+{
+    float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
+    Offset.y += Offset.x;
+
+    if (Offset.y > 1.1f)
+    {
+        Offset.y = 0.0f;
+    }
+
+    float ShadowCoeff = 0.0f;
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, ShadowPosNDC, Offset + float2(-1.5f, 0.5f));
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, ShadowPosNDC, Offset + float2(0.5f, 0.5f));
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, ShadowPosNDC, Offset + float2(-1.5f, -1.5f));
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, ShadowPosNDC, Offset + float2(0.5f, -1.5f));
+
+    return ShadowCoeff * 0.25f;
 }
 
 float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, float Radius)
@@ -155,7 +213,8 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
     float3 WorldPosition,
     float3 V,
     float Shininess,
-    float SpecularStrength)
+    float SpecularStrength,
+    float4 PixelPos)
 {
     FLocalBlinnPhongTerm Out;
     Out.Diffuse = 0;
@@ -177,14 +236,32 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
     Attenuation *= Attenuation;
 
     float Shadow = 1.0f;
-    if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
+    const bool bIsSpotLight = LocalLight.OuterConeAngle < 179.5f;
+    if (bIsSpotLight)
     {
         float3 SpotDir = normalize(LocalLight.Direction);
         Attenuation *= smoothstep(
             cos(radians(LocalLight.OuterConeAngle)),
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
-        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition);
+
+        float4 ShadowPos = mul(float4(WorldPosition, 1.0f), LocalLight.ShadowViewProj);
+        ShadowPos.xyz /= ShadowPos.w;
+
+        if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
+            ShadowPos.y < -1.0f || ShadowPos.y > 1.0f ||
+            ShadowPos.z < 0.0f || ShadowPos.z > 1.0f)
+        {
+            Shadow = 1.0f;
+        }
+        else
+        {
+            float3 ShadowPosNDC = 0.0f;
+            ShadowPosNDC.xy = ShadowPos.xy * 0.5f + 0.5f;
+            ShadowPosNDC.y = 1.0f - ShadowPosNDC.y;
+            ShadowPosNDC.z = ShadowPos.z;
+            Shadow = PCF_NvidiaOptimizedSpot(LocalLight.ShadowMapIndex, ShadowPosNDC, PixelPos);
+        }
     }
     else
     {
@@ -263,7 +340,7 @@ float4 ComputeLambertLightingGlobalOnly(float4 BaseColor, float3 Normal)
     return float4(BaseColor.rgb * saturate(ComputeLambertGlobalLight(Normal)), BaseColor.a);
 }
 
-float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 WorldPosition, float3 ViewDirection)
+float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 WorldPosition, float3 ViewDirection, float4 PixelPos)
 {
     float3 N = normalize(Normal);
     float3 TotalDiffuse = GetAmbientLightColor();
@@ -295,7 +372,8 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
             WorldPosition,
             ViewDirection,
             Shininess,
-            SpecularStrength);
+            SpecularStrength,
+            PixelPos);
         TotalDiffuse += LocalTerm.Diffuse;
         TotalSpecular += LocalTerm.Specular;
     }
@@ -336,3 +414,5 @@ float4 ComputeBlinnPhongLightingGlobalOnly(float4 BaseColor, float3 Normal, floa
 }
 
 #endif
+
+

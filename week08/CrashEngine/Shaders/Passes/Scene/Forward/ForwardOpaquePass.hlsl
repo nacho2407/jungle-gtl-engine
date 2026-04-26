@@ -246,7 +246,8 @@ FSceneColorOutput PS_Forward_BlinnPhong(FForward_Opaque_VSOutput Input)
         Surface.WorldNormal,
         float4(Surface.Roughness, Surface.Specular, 0.0f, 1.0f),
         Input.worldPos,
-        ViewDir);
+        ViewDir,
+        Input.position);
 #else
     Output.SceneColor = BaseColor;
 #endif
