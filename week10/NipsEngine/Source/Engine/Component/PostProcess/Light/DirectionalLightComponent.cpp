@@ -13,10 +13,6 @@ void UDirectionalLightComponent::PostDuplicate(UObject* Original)
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Float, &ShadowResolutionScale });
-	OutProps.push_back({ "Shadow Bias", EPropertyType::Float, &ShadowBias });
-	OutProps.push_back({ "Shadow Slope Bias", EPropertyType::Float, &ShadowSlopeBias });
-	OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
 }
 
 FMatrix UDirectionalLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
