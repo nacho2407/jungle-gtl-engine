@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Scene/Debug/DebugPrimitiveQueue.h"
@@ -20,12 +19,12 @@ public:
     ~FScene();
 
     FPrimitiveProxy* AddPrimitive(UPrimitiveComponent* Component);
-    void                  RegisterPrimitiveProxy(FPrimitiveProxy* Proxy);
-    void                  RemovePrimitive(FPrimitiveProxy* Proxy);
+    void             RegisterPrimitiveProxy(FPrimitiveProxy* Proxy);
+    void             RemovePrimitive(FPrimitiveProxy* Proxy);
 
     FLightProxy* AddLight(ULightComponent* Component);
-    void              RegisterLightProxy(FLightProxy* Proxy);
-    void              RemoveLight(FLightProxy* Proxy);
+    void         RegisterLightProxy(FLightProxy* Proxy);
+    void         RemoveLight(FLightProxy* Proxy);
 
     FFogSceneProxy* AddFog(const UHeightFogComponent* Owner, const FFogSceneData& FogData);
     void            RemoveFog(const UHeightFogComponent* Owner);
@@ -43,22 +42,21 @@ public:
     const TArray<FPrimitiveProxy*>& GetPrimitiveProxies() const { return PrimitiveProxyRegistry.Proxies; }
     const TArray<FPrimitiveProxy*>& GetNeverCullProxies() const { return PrimitiveProxyRegistry.NeverCullProxies; }
     const TArray<FLightProxy*>&     GetLightProxies() const { return LightProxyRegistry.Proxies; }
-    const TArray<FFogSceneProxy*>&       GetFogProxies() const { return FogProxyRegistry.Proxies; }
-    uint32                               GetPrimitiveProxyCount() const { return static_cast<uint32>(PrimitiveProxyRegistry.Proxies.size()); }
-    uint32                               GetLightProxyCount() const { return static_cast<uint32>(LightProxyRegistry.Proxies.size()); }
-    uint32                               GetProxyCount() const { return GetPrimitiveProxyCount() + GetLightProxyCount(); }
+    const TArray<FFogSceneProxy*>&  GetFogProxies() const { return FogProxyRegistry.Proxies; }
+    uint32                          GetPrimitiveProxyCount() const { return static_cast<uint32>(PrimitiveProxyRegistry.Proxies.size()); }
+    uint32                          GetLightProxyCount() const { return static_cast<uint32>(LightProxyRegistry.Proxies.size()); }
+    uint32                          GetProxyCount() const { return GetPrimitiveProxyCount() + GetLightProxyCount(); }
 
     FDebugPrimitiveQueue&       GetDebugPrimitiveQueue() { return DebugPrimitiveQueue; }
     const FDebugPrimitiveQueue& GetDebugPrimitiveQueue() const { return DebugPrimitiveQueue; }
 
-    bool              HasFog() const;
+    bool                 HasFog() const;
     const FFogSceneData& GetFogData() const;
 
 private:
-    FPrimitiveProxyRegistry          PrimitiveProxyRegistry;
-    TSceneProxyRegistry<FLightProxy> LightProxyRegistry;
-    TSceneProxyRegistry<FFogSceneProxy>   FogProxyRegistry;
+    FPrimitiveProxyRegistry             PrimitiveProxyRegistry;
+    TSceneProxyRegistry<FLightProxy>    LightProxyRegistry;
+    TSceneProxyRegistry<FFogSceneProxy> FogProxyRegistry;
 
     FDebugPrimitiveQueue DebugPrimitiveQueue;
 };
-

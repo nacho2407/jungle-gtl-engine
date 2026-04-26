@@ -111,6 +111,10 @@ struct FMatrix
     static FMatrix MakeRotationY(float Angle);
     static FMatrix MakeRotationZ(float Angle);
 
+    static FMatrix MakeLookAt(const FVector& Eye, const FVector& Target, const FVector& Up);
+    static FMatrix MakePerspective(float FOVrad, float Aspect, float NearZ, float FarZ);
+    static FMatrix MakeOrthographic(float Width, float Height, float NearZ, float FarZ);
+
     static FMatrix GetCancelRotationMatrix(const FMatrix& InMatrix);
     void Print() const;
 
@@ -128,3 +132,4 @@ struct FMatrix
 };
 
 FVector operator*(const FVector& vector, const FMatrix& matrix);
+FVector4 operator*(const FVector4& vector, const FMatrix& matrix);

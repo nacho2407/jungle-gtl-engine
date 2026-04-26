@@ -51,25 +51,25 @@ void FShaderProgramRegistry::Initialize()
         Desc = {};
     }
 
-    Add(EShaderType::Primitive, MakeGraphicsProgramDesc("Primitive", "Shaders/Editor/Primitive.hlsl"));
-    Add(EShaderType::Gizmo, MakeGraphicsProgramDesc("Gizmo", "Shaders/Editor/Gizmo.hlsl"));
-    Add(EShaderType::Editor, MakeGraphicsProgramDesc("Editor", "Shaders/Editor/Editor.hlsl"));
-    Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/DeferredDecalPass.hlsl"));
+    Add(EShaderType::Primitive, MakeGraphicsProgramDesc("Primitive", "Shaders/Render/Editor/Primitive.hlsl"));
+    Add(EShaderType::Gizmo, MakeGraphicsProgramDesc("Gizmo", "Shaders/Render/Editor/Gizmo.hlsl"));
+    Add(EShaderType::Editor, MakeGraphicsProgramDesc("Editor", "Shaders/Render/Editor/Editor.hlsl"));
+    Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/Deferred/DeferredDecalPS.hlsl"));
     Add(EShaderType::OutlinePostProcess, MakeGraphicsProgramDesc("OutlinePostProcess", "Shaders/Passes/PostProcess/OutlinePostProcessPass.hlsl"));
     Add(EShaderType::FXAA, MakeGraphicsProgramDesc("FXAA", "Shaders/Passes/PostProcess/FXAAPass.hlsl"));
-    Add(EShaderType::Font, MakeGraphicsProgramDesc("Font", "Shaders/Editor/ShaderFont.hlsl"));
-    Add(EShaderType::OverlayFont, MakeGraphicsProgramDesc("OverlayFont", "Shaders/Editor/ShaderOverlayFont.hlsl"));
-    Add(EShaderType::SubUV, MakeGraphicsProgramDesc("SubUV", "Shaders/Editor/ShaderSubUV.hlsl"));
-    Add(EShaderType::Billboard, MakeGraphicsProgramDesc("Billboard", "Shaders/Editor/ShaderBillboard.hlsl"));
+    Add(EShaderType::Font, MakeGraphicsProgramDesc("Font", "Shaders/Render/Editor/ShaderFont.hlsl"));
+    Add(EShaderType::OverlayFont, MakeGraphicsProgramDesc("OverlayFont", "Shaders/Render/Editor/ShaderOverlayFont.hlsl"));
+    Add(EShaderType::SubUV, MakeGraphicsProgramDesc("SubUV", "Shaders/Render/Editor/ShaderSubUV.hlsl"));
+    Add(EShaderType::Billboard, MakeGraphicsProgramDesc("Billboard", "Shaders/Render/Editor/ShaderBillboard.hlsl"));
     Add(EShaderType::HeightFog, MakeGraphicsProgramDesc("HeightFog", "Shaders/Passes/PostProcess/HeightFogPass.hlsl"));
-    Add(EShaderType::DepthOnly, MakeGraphicsProgramDesc("DepthOnly", "Shaders/Passes/Scene/DepthOnlyPass.hlsl"));
+    Add(EShaderType::DepthOnly, MakeGraphicsProgramDesc("DepthOnly", "Shaders/Passes/Scene/Shared/DepthOnlyPass.hlsl"));
     Add(EShaderType::LightHitMap, MakeGraphicsProgramDesc("LightHitMap", "Shaders/Passes/PostProcess/LightHitMapPass.hlsl"));
 
-    FGraphicsProgramDesc SceneDepth = MakeGraphicsProgramDesc("SceneDepth", "Shaders/Passes/Scene/ViewModes/NonLitViewModePass.hlsl");
+    FGraphicsProgramDesc SceneDepth = MakeGraphicsProgramDesc("SceneDepth", "Shaders/Render/Scene/ViewModes/NonLitViewMode.hlsl");
     AddDefine(SceneDepth, "NON_LIT_VIEW_SCENE_DEPTH", "1");
     Add(EShaderType::SceneDepth, SceneDepth);
 
-    FGraphicsProgramDesc NormalView = MakeGraphicsProgramDesc("NormalView", "Shaders/Passes/Scene/ViewModes/NonLitViewModePass.hlsl");
+    FGraphicsProgramDesc NormalView = MakeGraphicsProgramDesc("NormalView", "Shaders/Render/Scene/ViewModes/NonLitViewMode.hlsl");
     AddDefine(NormalView, "NON_LIT_VIEW_WORLD_NORMAL", "1");
     Add(EShaderType::NormalView, NormalView);
 }

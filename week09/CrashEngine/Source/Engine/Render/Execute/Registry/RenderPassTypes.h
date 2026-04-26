@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -11,6 +10,7 @@ enum class ERenderPass : uint32
 {
     Grid,
     DepthPre,
+    ShadowMap,
     Opaque,
     Decal,
     DeferredLighting,
@@ -33,6 +33,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
     static const char* Names[] = {
         "RenderPass::Grid",
         "RenderPass::DepthPre",
+        "RenderPass::ShadowMap",
         "RenderPass::Opaque",
         "RenderPass::Decal",
         "RenderPass::DeferredLighting",

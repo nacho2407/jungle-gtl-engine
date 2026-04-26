@@ -2,11 +2,13 @@
 #include "SpatialPartition.h"
 
 #include "Collision/Octree.h"
-#include "Collision/RayUtils.h"
 #include "Core/RayTypes.h"
 #include "Component/PrimitiveComponent.h"
-#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "GameFramework/AActor.h"
+#include "Math/Intersection.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Sphere.h"
+
 #include <algorithm>
 
 namespace
@@ -414,6 +416,27 @@ void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume
     }
 }
 
+void FSpatialPartition::QuerySphereAllProxies(FSphere Sphere, TArray<FPrimitiveProxy*>& OutProxies) const
+{
+    if (Octree)
+    {
+        Octree->QuerySphereProxies(Sphere, OutProxies);
+    }
+
+    for (UPrimitiveComponent* Prim : OverflowPrimitives)
+    {
+        if (!ShouldTrackInScenePartition(Prim))
+            continue;
+
+        if (Sphere.IntersectAABB(Prim->GetWorldBoundingBox()))
+        {
+            if (FPrimitiveProxy* Proxy = Prim->GetSceneProxy())
+                if (!Proxy->bNeverCull)
+                    OutProxies.push_back(Proxy);
+        }
+    }
+}
+
 void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
     if (Octree)
@@ -427,7 +450,7 @@ void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveC
             continue;
 
         const FBoundingBox Box = Prim->GetWorldBoundingBox();
-        if (FRayUtils::CheckRayAABB(Ray, Box.Min, Box.Max))
+        if (FMath::CheckRayAABB(Ray, Box))
         {
             OutPrimitives.push_back(Prim);
         }

@@ -399,6 +399,48 @@ FMatrix FMatrix::MakeRotationZ(float Angle)
     return ret;
 }
 
+FMatrix FMatrix::MakeLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
+{
+    FVector ZAxis = (Target - Eye).Normalized();
+    FVector XAxis = Up.Cross(ZAxis).Normalized();
+    FVector YAxis = ZAxis.Cross(XAxis).Normalized();
+
+    FMatrix Result = FMatrix::Identity;
+    Result.M[0][0] = XAxis.X; Result.M[0][1] = YAxis.X; Result.M[0][2] = ZAxis.X;
+    Result.M[1][0] = XAxis.Y; Result.M[1][1] = YAxis.Y; Result.M[1][2] = ZAxis.Y;
+    Result.M[2][0] = XAxis.Z; Result.M[2][1] = YAxis.Z; Result.M[2][2] = ZAxis.Z;
+    Result.M[3][0] = -XAxis.Dot(Eye);
+    Result.M[3][1] = -YAxis.Dot(Eye);
+    Result.M[3][2] = -ZAxis.Dot(Eye);
+
+    return Result;
+}
+
+FMatrix FMatrix::MakePerspective(float FOVrad, float AspectRatio, float NearZ, float FarZ)
+{
+    float Cot = 1.0f / tanf(FOVrad * 0.5f);
+    float Denom = NearZ - FarZ;
+    
+    // Reversed-Z perspective: near→1, far→0
+    return FMatrix(
+        Cot / AspectRatio, 0, 0, 0,
+        0, Cot, 0, 0,
+        0, 0, NearZ / Denom, 1,
+        0, 0, -(FarZ * NearZ) / Denom, 0);
+}
+
+FMatrix FMatrix::MakeOrthographic(float Width, float Height, float NearZ, float FarZ)
+{
+    float Denom = NearZ - FarZ;
+    
+    // Reversed-Z orthographic: near→1, far→0
+    return FMatrix(
+        2.0f / Width, 0, 0, 0,
+        0, 2.0f / Height, 0, 0,
+        0, 0, 1.0f / Denom, 0,
+        0, 0, -FarZ / Denom, 1);
+}
+
 FMatrix FMatrix::GetCancelRotationMatrix(const FMatrix& InMatrix)
 {
     FMatrix ret = FMatrix::Identity;
@@ -426,6 +468,17 @@ FVector operator*(const FVector& vector, const FMatrix& matrix)
     ret.Z = vector.X * matrix.M[0][2] + vector.Y * matrix.M[1][2] + vector.Z * matrix.M[2][2] + matrix.M[3][2];
     return ret;
 }
+
+FVector4 operator*(const FVector4& vector, const FMatrix& matrix)
+{
+    FVector4 ret{};
+    ret.X = vector.X * matrix.M[0][0] + vector.Y * matrix.M[1][0] + vector.Z * matrix.M[2][0] + matrix.M[3][0];
+    ret.Y = vector.X * matrix.M[0][1] + vector.Y * matrix.M[1][1] + vector.Z * matrix.M[2][1] + matrix.M[3][1];
+    ret.Z = vector.X * matrix.M[0][2] + vector.Y * matrix.M[1][2] + vector.Z * matrix.M[2][2] + matrix.M[3][2];
+    ret.W = vector.X * matrix.M[0][3] + vector.Y * matrix.M[1][3] + vector.Z * matrix.M[2][3] + matrix.M[3][3];
+    return ret;
+}
+
 
 void FMatrix::Print() const
 {

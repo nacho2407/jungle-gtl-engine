@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -30,6 +29,7 @@ uint16 ToPostProcessUserBits(EViewModePostProcessVariant Variant);
 struct FViewModePassDesc
 {
     ERenderPass        RenderPass;
+    ERenderShadingPath ShadingPath = ERenderShadingPath::Deferred;
     FShaderVariantDesc ShaderVariant;
     FGraphicsProgram*  CompiledShader  = nullptr;
     bool               bFullscreenPass = false;
@@ -70,6 +70,7 @@ bool                        UsesViewModeFXAA(const FViewModePassConfig* Config);
 EViewModePostProcessVariant GetViewModePostProcessVariant(const FViewModePassConfig* Config);
 
 FViewModePassDesc BuildViewModeDeferredOpaquePassDesc(EShadingModel ShadingModel);
+FViewModePassDesc BuildViewModeForwardOpaquePassDesc(EShadingModel ShadingModel);
 FViewModePassDesc BuildViewModeDeferredDecalPassDesc(EShadingModel ShadingModel);
 FViewModePassDesc BuildViewModeDeferredLightingPassDesc(EShadingModel ShadingModel);
 void              BuildViewModePasses(FViewModePassConfig& Config);
@@ -96,7 +97,7 @@ public:
     bool                        UsesHeightFog(EViewMode ViewMode) const;
     bool                        UsesFXAA(EViewMode ViewMode) const;
     EViewModePostProcessVariant GetPostProcessVariant(EViewMode ViewMode) const;
-    const FViewModePassDesc*    FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass) const;
+    const FViewModePassDesc*    FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass, ERenderShadingPath ShadingPath = ERenderShadingPath::Deferred) const;
 
 private:
     void RefreshCompiledShaders(FViewModePassConfig& Config) const;

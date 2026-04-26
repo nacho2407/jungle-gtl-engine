@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -11,6 +10,9 @@ struct FPerObjectCBData
     FMatrix  Model;
     FMatrix  NormalMatrix;
     FVector4 Color;
+    uint32   DecalIndexOffset = 0;
+    uint32   DecalCount       = 0;
+    float    PerObjectPadding[2] = {};
 
     static FPerObjectCBData FromWorldMatrix(const FMatrix& WorldMatrix)
     {
@@ -105,36 +107,43 @@ struct FAmbientLightCBData
 };
 
 // FDirectionalLightCBData는 전역 라이트 상수 버퍼에 기록되는 Directional 라이트 데이터입니다.
-struct FDirectionalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FDirectionalLightCBData
 {
-    FVector Color;
-    float   Intensity;
-    FVector Direction;
-    float   Padding;
-};
+    FVector  Color;          // 12B
+    float    Intensity;      // 4B
+    FVector  Direction;      // 12B
+    int32    ShadowMapIndex; // 4B
+    FMatrix  ShadowViewProj; // 64B
+}; // Total: 96B
 
 // FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
-struct FGlobalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FGlobalLightCBData
 {
-    FAmbientLightCBData     Ambient;
-    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS];
-    int32                   NumDirectionalLights;
-    int32                   NumLocalLights;
-    FVector2                Padding;
-};
+    FAmbientLightCBData     Ambient;                       // 16B
+    float                   _Padding0[2];                  // 16B
+    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 96B * 4 = 384B
+    int32                   NumDirectionalLights;          // 4B
+    int32                   NumLocalLights;                // 4B
+    float                   _Padding1[6];                  // 24B
+}; // Total: 448B
 
 // FLocalLightCBData는 로컬 라이트 구조화 버퍼에 기록되는 라이트 데이터입니다.
-struct FLocalLightCBData
+// Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
+struct alignas(32) FLocalLightCBData
 {
-    FVector Color;
-    float   Intensity;
-    FVector Position;
-    float   AttenuationRadius;
-    FVector Direction;
-    float   InnerConeAngle;
-    float   OuterConeAngle;
-    float   Padding[3];
-};
+    FVector  Color;             // 12B
+    float    Intensity;         // 4B
+    FVector  Position;          // 12B
+    float    AttenuationRadius; // 4B
+    FVector  Direction;         // 12B
+    float    InnerConeAngle;    // 4B
+    float    OuterConeAngle;    // 4B
+    int32    ShadowMapIndex;    // 4B
+    float    _PaddingLocal[2];  // 8B
+    FMatrix  ShadowViewProj;    // 64B
+}; // Total: 128B
 
 // FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.
 struct FLightCullingCBData
@@ -157,11 +166,28 @@ struct FDecalCBData
     FVector4 Color;
 };
 
+// FForwardDecalCBData는 forward opaque pass가 읽는 전역 decal 입력입니다.
+struct FForwardDecalCBData
+{
+    FMatrix  WorldToDecal;
+    FVector4 Color;
+    uint32   bEnabled = 0;
+    float    Padding[3] = {};
+};
+
+struct FForwardDecalGPUData
+{
+    FMatrix  WorldToDecal;
+    FVector4 Color;
+    uint32   TextureIndex = 0;
+    float    Padding[3] = {};
+};
+
 // FStaticMeshMaterialViewCBData는 정적 메시 머티리얼 뷰 상수 버퍼 레이아웃입니다.
 struct FStaticMeshMaterialViewCBData
 {
-    FVector4 SectionColor  = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-    FVector4 MaterialParam = FVector4(32.0f, 0.5f, 0.0f, 1.0f);
+    FVector4 SectionColor       = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+    FVector4 MaterialParam      = FVector4(32.0f, 0.5f, 0.0f, 1.0f);
     uint32   HasBaseTexture     = 0;
     uint32   HasNormalTexture   = 0;
     uint32   HasSpecularTexture = 0;

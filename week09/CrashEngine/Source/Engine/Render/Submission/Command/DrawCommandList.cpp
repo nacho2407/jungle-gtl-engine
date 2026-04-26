@@ -48,6 +48,8 @@ void FDrawBindStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 
     ID3D11ShaderResourceView* NullLocalLightSRV = nullptr;
     Ctx->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullLocalLightSRV);
+    Ctx->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullLocalLightSRV);
+    Ctx->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullLocalLightSRV);
     LocalLightSRV = nullptr;
 }
 
@@ -188,7 +190,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         Cmd.Shader->Bind(Ctx);
 
-        if (Cmd.Pass == ERenderPass::DepthPre)
+        if (Cmd.Pass == ERenderPass::DepthPre || Cmd.Pass == ERenderPass::ShadowMap)
         {
             Ctx->PSSetShader(nullptr, nullptr, 0);
         }
@@ -251,6 +253,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         if (RawCB)
         {
             Ctx->VSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
+            Ctx->PSSetConstantBuffers(ECBSlot::PerObject, 1, &RawCB);
         }
         Cache.PerObjectCB = Cmd.PerObjectCB;
     }

@@ -1,5 +1,4 @@
-﻿// 렌더 영역에서 공유되는 타입과 인터페이스를 정의합니다.
-#pragma once
+﻿#pragma once
 
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 
@@ -16,4 +15,3 @@ public:
     // 환경광은 공간 속성이 없으므로 Transform 갱신이 필요 없다.
     void UpdateTransform() override {}
 };
-
