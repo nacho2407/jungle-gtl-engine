@@ -199,10 +199,10 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			FCascadeSplit CascadeSplits[4] = {};
 
 			// MaxDistance 하드 코딩
-			BuildLogCascadeSplit(
+			BuildPracticalCascadeSplit(
 				RenderBus->GetNearPlane(),
 				RenderBus->GetFarPlane(),
-				50.f,
+				100.f, 0.75f,
 				CascadeSplits);
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
@@ -364,19 +364,23 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 	return true;
 }
 
-void FShadowPass::BuildLogCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, FCascadeSplit OutSplit[4])
+void FShadowPass::BuildPracticalCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, float Lambda, FCascadeSplit OutSplit[4])
 {
 	float Distance[CascadeCount + 1] = {};
 
-	float SplitDistributionNear = std::max(CamNear, 1.0f);
-	float ShadowFar = std::max(std::min(CamFar, MaxShadowDistance), SplitDistributionNear);
+	float ShadowNear = std::max(CamNear, 1.0f);
+	float ShadowFar = std::min(CamFar, MaxShadowDistance);
 
-	Distance[0] = CamNear;
+	Distance[0] = ShadowNear;
 	for (uint32 i = 1; i < CascadeCount; ++i)
 	{
 		const float P = static_cast<float>(i) / static_cast<float>(CascadeCount);
-		Distance[i] = SplitDistributionNear * std::pow(ShadowFar / SplitDistributionNear, P);
+		float LogSplit = ShadowNear* std::pow(ShadowFar / ShadowNear, P);
+		float LinearSplit = ShadowNear + (ShadowFar - ShadowNear) * P;
+
+		Distance[i] = std::lerp(LogSplit, LinearSplit, Lambda);
 	}
+
 	Distance[CascadeCount] = ShadowFar;
 
 	const float CameraRange = std::max(CamFar - CamNear, 0.001f);
