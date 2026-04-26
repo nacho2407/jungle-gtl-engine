@@ -281,6 +281,12 @@ float CalcRimMask(float3 N, float3 V)
 }
 #endif
 
+float CalcDirectionalShadow(float3 worldPos)
+{
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    return CalcDirectionalShadowFactor(worldPos, viewDepth);
+}
+
 float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
