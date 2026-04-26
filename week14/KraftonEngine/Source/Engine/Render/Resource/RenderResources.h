@@ -10,11 +10,64 @@
 #include "Render/Culling/TileBasedLightCulling.h"
 #include "Render/Culling/ClusteredLightCuller.h"
 
+#include <d3d11.h>
+
+/*
+	FShadowMapResources — Shadow 텍스처 GPU 리소스 통합 관리.
+
+	t21: Directional CSM     — Texture2DArray (MAX_SHADOW_CASCADES slices)
+	t22: Spot Light Atlas    — Texture2DArray (page 단위, 동적 slice 수)
+	t23: Point Light CubeMap — TextureCubeArray (동적 cube 수)
+	t24: StructuredBuffer<FSpotShadowDataGPU>  (per-spot 행렬 + atlas rect)
+	t25: StructuredBuffer<FPointShadowDataGPU> (per-point 6면 행렬)
+*/
+struct FShadowMapResources
+{
+	// ── Directional CSM (t21) ──
+	ID3D11Texture2D*          CSMTexture  = nullptr;
+	ID3D11DepthStencilView*   CSMDSV[MAX_SHADOW_CASCADES] = {};
+	ID3D11ShaderResourceView* CSMSRV      = nullptr;              // 전체 array SRV (셰이더용)
+	ID3D11ShaderResourceView* CSMSliceSRV[MAX_SHADOW_CASCADES] = {}; // per-cascade SRV (ImGui 디버그용)
+	uint32 CSMResolution = 2048;
+
+	// ── Spot Light Atlas (t22) ──
+	ID3D11Texture2D*          SpotAtlasTexture = nullptr;
+	ID3D11DepthStencilView**  SpotAtlasDSVs    = nullptr;
+	ID3D11ShaderResourceView* SpotAtlasSRV     = nullptr;
+	uint32 SpotAtlasResolution = 4096;
+	uint32 SpotAtlasPageCount  = 0;
+
+	// ── Point Light CubeMap (t23) ──
+	ID3D11Texture2D*          PointCubeTexture = nullptr;
+	ID3D11DepthStencilView**  PointCubeDSVs    = nullptr;
+	ID3D11ShaderResourceView* PointCubeSRV     = nullptr;
+	uint32 PointCubeResolution = 1024;
+	uint32 PointCubeCount      = 0;
+
+	// ── Per-light StructuredBuffers (t24, t25) ──
+	ID3D11Buffer*             SpotShadowDataBuffer  = nullptr;
+	ID3D11ShaderResourceView* SpotShadowDataSRV     = nullptr;
+	uint32                    SpotShadowDataCapacity = 0;
+
+	ID3D11Buffer*             PointShadowDataBuffer = nullptr;
+	ID3D11ShaderResourceView* PointShadowDataSRV    = nullptr;
+	uint32                    PointShadowDataCapacity = 0;
+
+	bool IsCSMValid()   const { return CSMTexture != nullptr; }
+	bool IsSpotValid()  const { return SpotAtlasTexture != nullptr && SpotAtlasPageCount > 0; }
+	bool IsPointValid() const { return PointCubeTexture != nullptr && PointCubeCount > 0; }
+
+	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
+	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
+	void EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+	void Release();
+};
+
 /*
 	시스템 레벨 GPU 리소스를 관리하는 구조체입니다.
 	프레임 공용 CB (Frame, Lighting), 라이트 StructuredBuffer,
 	렌더 상태 오브젝트(DSS/Blend/Rasterizer/Sampler),
-	시스템 텍스처 언바인딩(t16-t19)을 소유합니다.
+	시스템 텍스처 언바인딩(t16-t19), Shadow 텍스처(t21-t25)를 소유합니다.
 	셰이더별 CB(Gizmo, PostProcess 등)는 각 소유자(Proxy, Builder)가 직접 관리합니다.
 */
 
@@ -108,6 +161,9 @@ struct FSystemResources
 	// --- Light Culling ---
 	FTileBasedLightCulling TileBasedCulling;
 	FClusteredLightCuller  ClusteredLightCuller;
+
+	// --- Shadow Resources (t21-t25) ---
+	FShadowMapResources ShadowResources;
 
 	// --- Render State Managers ---
 	FRasterizerStateManager RasterizerStateManager;
