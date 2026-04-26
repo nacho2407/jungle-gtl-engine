@@ -10,6 +10,7 @@
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
 #include "Component/Light/LightComponentBase.h"
+#include "Editor/Settings/ProjectSettings.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -57,6 +58,14 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	// 이전 프레임 시각화 데이터 readback + 디버그 라인 제출
 	Renderer.SubmitCullingDebugLines(Editor->GetWorld());
+
+	// Non-PSM: 전체 1회 shadow bake (뷰포트 루프 전)
+	const auto& Shadow = FProjectSettings::Get().Shadow;
+	if (Shadow.bEnabled && !Shadow.bPSM)
+	{
+		SCOPE_STAT_CAT("GlobalShadows", "4_ExecutePass");
+		Renderer.RenderGlobalShadows(Editor->GetWorld()->GetScene());
+	}
 
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
@@ -109,8 +118,9 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	BuildFrame(VC, Camera, VP, World);
 	CollectCommands(VC, World, Renderer);
 
-	// GPU 정렬 + 제출
 	FScene& Scene = World->GetScene();
+
+	// GPU 정렬 + 제출
 	{
 		SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
 		Renderer.Render(Frame, Scene);
@@ -229,3 +239,4 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 		Builder.BuildDynamicCommands(Frame, &Scene);
 	}
 }
+

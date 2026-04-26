@@ -90,6 +90,28 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 }
 
 // ============================================================
+// RenderGlobalShadows — Non-PSM 전체 1회 shadow bake
+// ============================================================
+// PSM OFF 시 뷰포트 루프 전에 1회 호출.
+// 카메라 독립적인 shadow map을 굽고 SRV/CB를 바인딩합니다.
+// 이후 각 뷰포트의 Render() → FShadowMapPass는 BeginPass에서 skip.
+
+void FRenderer::RenderGlobalShadows(FScene& Scene)
+{
+	// TODO: 글로벌 shadow 구현
+	// 1. EnsureResources (CSM/SpotAtlas/PointCube)
+	// 2. Directional → 고정 ortho ViewProj로 cascade 렌더링
+	// 3. Spot → Atlas에 각 라이트 depth 렌더링
+	// 4. Point → CubeMap 6면 depth 렌더링
+	// 5. SRV 바인딩 (t21~t25) + Shadow CB (b5) 업데이트
+	//
+	// 사용 가능한 리소스:
+	//   Device              — FD3DDevice (Device/DeviceContext)
+	//   Resources           — FSystemResources (ShadowResources, ShadowConstantBuffer)
+	//   Scene               — FScene (Environment, Proxies)
+}
+
+// ============================================================
 // CleanupPassState — 패스 루프 종료 후 시스템 텍스처 언바인딩 + 캐시 정리
 // ============================================================
 void FRenderer::CleanupPassState(FStateCache& Cache)

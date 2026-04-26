@@ -12,9 +12,15 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 {
 	friend class TSingleton<FProjectSettings>;
 
+	// --- Shadow ---
+	struct FShadowOption
+	{
+		bool bEnabled = true;
+		bool bPSM = false;		// Perspective Shadow Maps (per-viewport, 카메라 연동)
+	};
+
 public:
-	// --- Rendering ---
-	bool bShadows = true;
+	FShadowOption Shadow;
 
 	// --- 직렬화 ---
 	void SaveToFile(const FString& Path) const;
