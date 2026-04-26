@@ -44,6 +44,10 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 
 		ImGui::Text("Resolution: %u x %u", SR.CSMResolution, SR.CSMResolution);
+		ImGui::Text("C%d range: %.3f - %.3f",
+			CSMCascadeIndex,
+			SR.CSMDebugCascadeNear.Data[CSMCascadeIndex],
+			SR.CSMDebugCascadeFar.Data[CSMCascadeIndex]);
 
 		// Cascade 선택 버튼
 		for (int32 i = 0; i < (int32)MAX_SHADOW_CASCADES; ++i)
