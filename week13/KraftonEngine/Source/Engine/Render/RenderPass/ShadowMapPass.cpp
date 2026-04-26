@@ -40,7 +40,8 @@ FShadowMapPass::~FShadowMapPass()
 
 bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 {
-	if (!FProjectSettings::Get().bShadows)
+	const auto& Shadow = FProjectSettings::Get().Shadow;
+	if (!Shadow.bEnabled || !Shadow.bPSM)
 		return false;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();

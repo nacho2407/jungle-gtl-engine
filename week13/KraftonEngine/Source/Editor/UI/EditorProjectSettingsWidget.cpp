@@ -15,9 +15,13 @@ void EditorProjectSettingsWidget::Render()
 
 	FProjectSettings& PS = FProjectSettings::Get();
 
-	if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+	if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Checkbox("Shadows", &PS.bShadows);
+		ImGui::Checkbox("Shadows", &PS.Shadow.bEnabled);
+		if (PS.Shadow.bEnabled)
+		{
+			ImGui::Checkbox("Perspective Shadow Maps (PSM)", &PS.Shadow.bPSM);
+		}
 	}
 
 	ImGui::End();

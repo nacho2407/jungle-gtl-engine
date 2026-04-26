@@ -6,8 +6,9 @@
 
 namespace PSKey
 {
-	constexpr const char* Rendering = "Rendering";
+	constexpr const char* Shadow = "Shadow";
 	constexpr const char* bShadows = "bShadows";
+	constexpr const char* bPSM = "bPSM";
 }
 
 void FProjectSettings::SaveToFile(const FString& Path) const
@@ -16,9 +17,10 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 
 	JSON Root = Object();
 
-	JSON RenderObj = Object();
-	RenderObj[PSKey::bShadows] = bShadows;
-	Root[PSKey::Rendering] = RenderObj;
+	JSON ShadowObj = Object();
+	ShadowObj[PSKey::bShadows] = Shadow.bEnabled;
+	ShadowObj[PSKey::bPSM] = Shadow.bPSM;
+	Root[PSKey::Shadow] = ShadowObj;
 
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
 	if (FilePath.has_parent_path())
@@ -42,10 +44,12 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 
 	JSON Root = JSON::Load(Content);
 
-	if (Root.hasKey(PSKey::Rendering))
+	if (Root.hasKey(PSKey::Shadow))
 	{
-		JSON R = Root[PSKey::Rendering];
-		if (R.hasKey(PSKey::bShadows))
-			bShadows = R[PSKey::bShadows].ToBool();
+		JSON S = Root[PSKey::Shadow];
+		if (S.hasKey(PSKey::bShadows))
+			Shadow.bEnabled = S[PSKey::bShadows].ToBool();
+		if (S.hasKey(PSKey::bPSM))
+			Shadow.bPSM = S[PSKey::bPSM].ToBool();
 	}
 }
