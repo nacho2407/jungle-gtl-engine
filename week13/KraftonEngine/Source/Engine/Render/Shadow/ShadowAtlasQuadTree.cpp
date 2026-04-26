@@ -74,7 +74,8 @@ void FShadowAtlasQuadTree::Clear() {
 FAtlasRegion FShadowAtlasQuadTree::AllocateNode(int32 NodeIdx, uint32 RequestedSize) {
 	if (NodeIdx < 0
 		|| NodeIdx >= Nodes.size()
-		|| Nodes[NodeIdx].bOccupied) {
+		|| Nodes[NodeIdx].bOccupied
+		|| RequestedSize == 0) {
 		// Invalid Node index
 		return { 0, 0, 0, false };
 	}
@@ -137,13 +138,14 @@ bool FShadowAtlasQuadTree::Split(int32 Idx) {
 			break;
 		}
 		Nodes.push_back(NewNode);
-		Nodes[Idx].Children[i] = Nodes.size() - 1;
+		Nodes[Idx].Children[i] = (int32)(Nodes.size() - 1);
 	}
 	Nodes[Idx].bSplit = true;
 	return true;
 }
 
 float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
+	if (InLightInfo.bCastShadow == false) return 0.f;
 	FVector4 Color		 = InLightInfo.Color;
 	float   r_sphere;
 	FVector c_sphere;
