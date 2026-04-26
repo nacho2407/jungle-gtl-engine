@@ -1,4 +1,4 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -263,6 +263,50 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
+
+	// Test용 single cascade 렌더링(카메라 veiw frstum 전체를 하나의 cascade로 처리)
+	//direction light의 방향
+	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+	
+	//활성화된 에디터 카메라의 view, proj
+	FMatrix CameraView = Ctx.Frame.View;
+	FMatrix CameraProj = Ctx.Frame.Proj;
+	
+	//카메라의 frustum 전체를 덮을 수 있는 directional light의 viewproj 계산
+	FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP 
+		= FLightFrustumUtils::BuildDirectionalLightViewProj(DirectionalParams, CameraView, CameraProj);
+	
+	//frustum 생성
+	FConvexVolume LightFrustum;
+	LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
+	
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	for(int32 i = 0; i < 1; ++i)
+	{
+		// Shadow depth를 그릴 때 VS가 참조하는 b0(FrameBuffer)를
+		// 카메라 View/Proj가 아니라 directional light View/Proj로 교체합니다.
+		FFrameContext ShadowFrame = Ctx.Frame;
+		ShadowFrame.View = DirectionalVP.View;
+		ShadowFrame.Proj = DirectionalVP.Proj;
+		Ctx.Resources.UpdateFrameBuffer(Ctx.Device, ShadowFrame);
+
+		//reverse-Z
+		DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+
+		D3D11_VIEWPORT ShadowVP = {};
+		ShadowVP.Width = static_cast<float>(Res.CSMResolution);
+		ShadowVP.Height = static_cast<float>(Res.CSMResolution);
+		ShadowVP.MinDepth = 0.0f;
+		ShadowVP.MaxDepth = 1.0f;
+		
+		DC->RSSetViewports(1, &ShadowVP);
+		DrawShadowCasters(Ctx, LightFrustum);
+
+		ShadowCBCache.CSMViewProj[0] = DirectionalVP.ViewProj;
+		ShadowCBCache.NumCSMCascades = 1;
+	}
 
 	// TODO: 팀원 A 구현
 	// 1. Env.GetGlobalDirectionalLightParams()에서 Direction 획득

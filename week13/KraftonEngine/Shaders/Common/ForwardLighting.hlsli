@@ -248,12 +248,40 @@ float CalcRimMask(float3 N, float3 V)
 }
 #endif
 
+float CalcDirectionalShadow(float3 worldPos)
+{
+    // ShadowMapPass가 실행되지 않았거나 directional cascade가 준비되지 않은 경우.
+    if (NumCSMCascades == 0)
+        return 1.0f;
+
+    // World -> Clip
+    float4 clipSpacePos = mul(float4(worldPos, 1.0f), CSMViewProj[0]);
+    float3 ndcPos = clipSpacePos.xyz / clipSpacePos.w;
+    
+    //NDC -> Texture UV
+    float2 uv = ndcPos.xy * float2(0.5f, -0.5f) + 0.5f;
+    float currentDepth = ndcPos.z;
+    
+    //shadow map의 범위를 벗어났으면 무조건 그림자 없음
+    if (uv.x < 0.0f || uv.x > 1.0f || uv.y < 0.0f || uv.y > 1.0f
+        || currentDepth < 0.f || currentDepth > 1.0f)
+        return 1.0f;
+    
+    //shadow map에서 빛과 가장 가까운 depth를 읽어옴
+    float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, float3(uv, 0.f), 0).r;
+    
+    // Reversed-Z: 값이 클수록 light에 더 가깝습니다.
+    // Bias는 receiver를 light 쪽으로 살짝 당겨 self-shadow acne를 줄입니다.
+    return (currentDepth + ShadowBias) < shadowMapDepth ? 0.0f : 1.0f;
+}
+
 float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
     result += CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
+    float ShadowFactor = CalcDirectionalShadow(worldPos);
     result += CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                     DirectionalLight.Intensity, N);
+                                     DirectionalLight.Intensity, N) * ShadowFactor;
     AccumulatePointSpotDiffuse(worldPos, N, screenPos, result);
     return result;
 }
@@ -261,8 +289,9 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
+    float shadowFactor = CalcDirectionalShadow(worldPos);
     result += CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                      DirectionalLight.Intensity, N, V, shininess);
+                                      DirectionalLight.Intensity, N, V, shininess) * shadowFactor;
     AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result);
     return result;
 }
