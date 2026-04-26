@@ -1,4 +1,4 @@
-#include "EditorRenderPipeline.h"
+﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
@@ -230,13 +230,14 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	{
 		SCOPE_STAT_CAT("CollectDebug", "3_Collect");
 		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
-		Collector.CollectDebugDraw(Frame, Scene);
 
 		if (Flags.bShowShadowFrustum)
 			Scene.SubmitShadowFrustumDebug(World);
 
 		if (Flags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
+
+		Collector.CollectDebugDraw(Frame, Scene);
 	}
 
 	// ── 3. UI: 오버레이 텍스트 ──
