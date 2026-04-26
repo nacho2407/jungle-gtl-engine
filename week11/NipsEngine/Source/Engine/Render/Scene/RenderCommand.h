@@ -110,7 +110,7 @@ struct FLightInfo
 struct FShadowLightRequest
 {
 	uint32 LightIndex = InvalidShadowIndex;
-    ULightComponentBase* LightComponent = nullptr;
+    ULightComponent* LightComponent = nullptr;
     EShadowLightType Type;
     FVector WorldLocation;
     bool bCastShadows = true;

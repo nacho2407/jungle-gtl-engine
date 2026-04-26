@@ -922,7 +922,6 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
 
-		RenderBus.ShadowLightRequests.clear();
 		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
 	}
 

@@ -10,7 +10,6 @@ static constexpr int CUBE_FACE_COUNT = 6;
 static constexpr int MAX_SHADOW_CUBES = 32;
 static constexpr uint32 SHADOW_CUBE_SIZE = 512;
 
-
 struct FShadowAtlasTile
 {
     int32 TileIndex = -1;
@@ -29,6 +28,9 @@ struct FShadowAtlasTile
 
 struct FShadowAtlasAllocator
 {
+    uint32 AtlasSizeTier[4] = { 2048, 1024, 512, 256};
+    uint32 currentTier = 0;
+
 	int32 TileSize = 1024;
 	int32 TileCountX = 8;
 	int32 TileCountY = 8;
