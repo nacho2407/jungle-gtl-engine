@@ -15,7 +15,7 @@ FOpaquePass::FOpaquePass()
 	                ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 }
 
-void FOpaquePass::BeginPass(const FPassContext& Ctx)
+bool FOpaquePass::BeginPass(const FPassContext& Ctx)
 {
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	const FFrameContext& Frame = Ctx.Frame;
@@ -34,6 +34,7 @@ void FOpaquePass::BeginPass(const FPassContext& Ctx)
 	}
 
 	Cache.bForceAll = true;
+	return true;
 }
 
 void FOpaquePass::EndPass(const FPassContext& Ctx)

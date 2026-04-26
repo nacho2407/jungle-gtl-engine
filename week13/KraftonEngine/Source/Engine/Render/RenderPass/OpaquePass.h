@@ -6,6 +6,6 @@ class FOpaquePass final : public FRenderPassBase
 {
 public:
 	FOpaquePass();
-	void BeginPass(const FPassContext& Ctx) override;
+	bool BeginPass(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 };

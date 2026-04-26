@@ -6,5 +6,5 @@ class FPostProcessPass final : public FRenderPassBase
 {
 public:
 	FPostProcessPass();
-	void BeginPass(const FPassContext& Ctx) override;
+	bool BeginPass(const FPassContext& Ctx) override;
 };

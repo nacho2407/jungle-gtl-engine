@@ -31,7 +31,7 @@ public:
 	FShadowMapPass();
 	~FShadowMapPass();
 
-	void BeginPass(const FPassContext& Ctx) override;
+	bool BeginPass(const FPassContext& Ctx) override;
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
