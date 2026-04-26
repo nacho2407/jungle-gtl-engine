@@ -64,7 +64,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	if (Shadow.bEnabled && !Shadow.bPSM)
 	{
 		SCOPE_STAT_CAT("GlobalShadows", "4_ExecutePass");
-		Renderer.RenderGlobalShadows(Editor->GetWorld()->GetScene(), &Editor->GetWorld()->GetPartition());
+		// Renderer.RenderGlobalShadows(Editor->GetWorld()->GetScene(), &Editor->GetWorld()->GetPartition());
 	}
 
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())

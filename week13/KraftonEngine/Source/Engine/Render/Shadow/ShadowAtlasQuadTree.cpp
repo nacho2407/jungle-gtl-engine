@@ -3,6 +3,31 @@
 
 #include <algorithm>
 
+namespace {
+	uint32 NextPowerOfTwo(uint32 v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+		return v;
+	}
+
+	uint32 RoundToNearestPowerOfTwo(uint32 Value)
+	{
+		if (Value <= 1)
+			return 1;
+
+		uint32 Upper = NextPowerOfTwo(Value);
+		uint32 Lower = Upper >> 1;
+
+		return (Value - Lower < Upper - Value) ? Lower : Upper;
+	}
+}
+
 // Public functions
 void FShadowAtlasQuadTree::Init(float InAtlasSize, float InMinShadowMapResolution) {
 	if (InMinShadowMapResolution <= 0.f || InAtlasSize <= 0.f) {
@@ -133,5 +158,8 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FV
 	auto r_pixel = r_ndc * H / 2.f;
 	auto A_screen = 3.1415925f * r_pixel * r_pixel;
 
-	return sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity;
+	float desired_res = sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity;
+	desired_res = desired_res > AtlasSize ? AtlasSize : desired_res;
+	desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
+	return desired_res;
 }
