@@ -19,7 +19,7 @@ class FLightCullingPass;
 class FDepthPrePass;
 class FShadowPass;
 class FBaseRenderPass;
-
+class FVSMConversionRenderPass;
 class FRenderPipeline
 {
 public:
@@ -34,6 +34,7 @@ private:
 	std::shared_ptr<FLightCullingPass> LightCullingPass;
 	std::shared_ptr<FShadowPass> ShadowPass;
 	std::shared_ptr<FOpaqueRenderPass> OpaqueRenderPass;
+    std::shared_ptr<FVSMConversionRenderPass> VSMConversionRenderPass;
     std::shared_ptr<FLightRenderPass> LightRenderPass;
     std::shared_ptr<FFogRenderPass> FogRenderPass;
     std::shared_ptr<FFXAARenderPass> FXAARenderPass;

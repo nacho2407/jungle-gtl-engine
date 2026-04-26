@@ -58,6 +58,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
+	ShadowShader->Bind(Context->DeviceContext);
+
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
 	const FRenderBus* RenderBus = Context->RenderBus;
@@ -83,6 +85,10 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	FMatrix CamProj = RenderBus->GetProj();
 
 	TArray<FBoundingBox> VisibleBounds;
+	for (const auto& Cmd : OpaqueCmds)
+	{
+		VisibleBounds.push_back(Cmd.WorldAABB);
+	}
 
 	TArray<uint32> LightShadowIndices(RenderBus->LightInfos.size(), InvalidShadowIndex);
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
@@ -91,7 +97,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	float atlasW = static_cast<float>(ShadowMapDesc.Width);
 	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
-	bool bHasDirectionalShadow = false;
+	bool bHasDirectionalShadow = true;
 
 	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
 	{
@@ -121,11 +127,12 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		ShadowViewport.MinDepth = 0.0f;
 		ShadowViewport.MaxDepth = 1.0f;
 
-		DeviceContext->RSSetViewports(1, &ShadowViewport);
-		DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-
-		ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-		DeviceContext->OMSetDepthStencilState(DepthState, 0);
+        DeviceContext->RSSetViewports(1, &ShadowViewport);
+        DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+        DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
+                              
+        ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+        DeviceContext->OMSetDepthStencilState(DepthState, 0);
 
 		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
 		FShadowConstants ShadowData = {};
@@ -202,6 +209,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
 		atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
 		ShadowAtlasConstants.push_back(atlasConstants);
+
+		if (Request.Type == EShadowLightType::SLT_Directional)
+		{
+			DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
+			DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
+			DirectionalShadowData.ScaleOffset = atlasConstants.ScaleOffset;
+			bHasDirectionalShadow = true;
+		}
 	}
 
 	if (!LightShadowIndices.empty())

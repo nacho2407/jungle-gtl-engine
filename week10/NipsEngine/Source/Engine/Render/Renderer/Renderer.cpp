@@ -42,6 +42,8 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
+	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
+    FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
 
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
@@ -121,6 +123,7 @@ void FRenderer::CreateResources()
 	//	MeshManager init
 	FMeshManager::Initialize();
 	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
+    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());

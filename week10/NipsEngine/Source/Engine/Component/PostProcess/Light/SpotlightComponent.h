@@ -11,6 +11,10 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+protected:
+	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
+
 public:
     float InnerConeAngle = 10.f;
     float OuterConeAngle = 15.f;

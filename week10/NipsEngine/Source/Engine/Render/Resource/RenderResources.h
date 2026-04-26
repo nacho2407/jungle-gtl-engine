@@ -21,9 +21,9 @@ struct FRenderResources
 	// Compute Shader에서는 UAV로 바인딩하기 때문에 Slot이 달라질 수 있습니다.
     FStructuredBuffer DecalStructuredBuffer;        // t8 (FDecalInfo)
 													// t9 DecalTextures
-	FStructuredBuffer LightStructuredBuffer;		// t10 (FLightInfo)
-	FStructuredBuffer LightCulledIndexBuffer;		// t11 (LightCulledIndex) (uint)
-	FStructuredBuffer LightTileBuffer;				// t12 (LightTile) (uint2) 
+	FStructuredBuffer LightStructuredBuffer;		// t4 (FLightInfo)
+	FStructuredBuffer LightCulledIndexBuffer;		// t5 (LightCulledIndex) (uint)
+	FStructuredBuffer LightTileBuffer;				// t6 (LightTile) (uint2) 
 	FStructuredBuffer MPLightStructuredBuffer;		// t13 Light (Multipass)
 
     FConstantBuffer LightPassConstantBuffer;		// b7

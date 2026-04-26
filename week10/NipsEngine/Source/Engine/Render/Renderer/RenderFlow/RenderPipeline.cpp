@@ -15,6 +15,7 @@
 #include "EditorRenderPass.h"
 #include "DepthLessRenderPass.h"
 #include "PostProcessOutlineRenderPass.h"
+#include "VSMConversionRenderPass.h";
 
 bool FRenderPipeline::Initialize()
 {
@@ -63,6 +64,9 @@ bool FRenderPipeline::Initialize()
     PostProcessOutlineRenderPass = std::make_shared<FPostProcessOutlineRenderPass>();
     PostProcessOutlineRenderPass->Initialize();
 
+	VSMConversionRenderPass = std::make_shared<FVSMConversionRenderPass>();
+    VSMConversionRenderPass->Initialize();
+
 	LightRenderPass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
@@ -76,6 +80,7 @@ bool FRenderPipeline::Initialize()
 	RenderPasses.push_back(DepthPrePass);
 	RenderPasses.push_back(LightCullingPass);
 	RenderPasses.push_back(ShadowPass);
+    RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
 	RenderPasses.push_back(OpaqueRenderPass);
     RenderPasses.push_back(LightRenderPass);
 
@@ -198,4 +203,10 @@ void FRenderPipeline::Release()
         PostProcessOutlineRenderPass->Release();
         PostProcessOutlineRenderPass.reset();
     }
+
+	if (VSMConversionRenderPass)
+	{
+        VSMConversionRenderPass->Release();
+        VSMConversionRenderPass.reset();
+	}
 }
