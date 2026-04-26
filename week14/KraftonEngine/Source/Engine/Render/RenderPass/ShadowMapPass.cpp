@@ -559,14 +559,97 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
 }
 
-// ============================================================
-// RenderPointShadows — Point Light CubeMap 렌더링 (TODO)
-// ============================================================
-
 void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
 {
-	// TODO: Point Light shadow 구현
-	ShadowCBCache.NumShadowPointLights = 0;
+	auto& SceneEnvironment = Scene.GetEnvironment();
+	const uint32 NumPointLights = SceneEnvironment.GetNumPointLights();
+
+	uint32 ShadowPointLightCount = 0;
+	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights; ++PointLightIndex)
+	{
+		if (SceneEnvironment.GetPointLight(PointLightIndex).bCastShadows)
+		{
+			++ShadowPointLightCount;
+		}
+	}
+
+	if (ShadowPointLightCount == 0)
+	{
+		ShadowCBCache.NumShadowPointLights = 0;
+		return;
+	}
+
+	// Clamped to MAX_SHADOW_POINT_LIGHTS
+	if (ShadowPointLightCount > MAX_SHADOW_POINT_LIGHTS)
+	{
+		ShadowPointLightCount = MAX_SHADOW_POINT_LIGHTS;
+	}
+
+	const uint32 ShadowResolution = FShadowSettings::Get().GetEffectiveResolution();
+	Res.EnsurePointCube(Device.GetDevice(), ShadowResolution, ShadowPointLightCount);
+	if (!Res.IsPointValid() || !Res.PointCubeDSVs || !Res.PointShadowDataBuffer)
+	{
+		ShadowCBCache.NumShadowPointLights = 0;
+		return;
+	}
+
+	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
+	PointLightShadowGPUData.resize(ShadowPointLightCount);
+
+	D3D11_VIEWPORT ShadowViewport = {};
+	ShadowViewport.Width    = static_cast<float>(ShadowResolution);
+	ShadowViewport.Height   = static_cast<float>(ShadowResolution);
+	ShadowViewport.MinDepth = 0.0f;
+	ShadowViewport.MaxDepth = 1.0f;
+
+	constexpr float ShadowNearZ = 0.1f;
+	uint32 ShadowPointLightIndex = 0;
+	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights && ShadowPointLightIndex < ShadowPointLightCount; ++PointLightIndex)
+	{
+		const FPointLightParams &Light = SceneEnvironment.GetPointLight(PointLightIndex);
+		if (!Light.bCastShadows)
+		{
+			continue;
+		}
+
+		FPointShadowDataGPU &ShadowData = PointLightShadowGPUData[ShadowPointLightIndex];
+		ShadowData.NearZ = ShadowNearZ;
+		ShadowData.FarZ = Light.AttenuationRadius;
+		ShadowData.CubeArrayIndex = ShadowPointLightIndex;
+
+		for (uint32 CubeFaceIndex = 0; CubeFaceIndex < 6; ++CubeFaceIndex)
+		{
+			const auto FaceViewProjection = FLightFrustumUtils::BuildPointLightFaceViewProj(Light, CubeFaceIndex, ShadowNearZ);
+			ShadowData.FaceViewProj[CubeFaceIndex] = FaceViewProjection.ViewProj;
+
+			FConvexVolume LightFrustum;
+			LightFrustum.UpdateFromMatrix(FaceViewProjection.ViewProj);
+
+			UploadLightViewProj(DC, FaceViewProjection.ViewProj);
+
+			uint32 DSVFaceIndex = ShadowPointLightIndex * 6 + CubeFaceIndex;
+			ID3D11DepthStencilView *FaceDepthStencilView = Res.PointCubeDSVs[DSVFaceIndex];
+			DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
+			DC->RSSetViewports(1, &ShadowViewport);
+
+			DrawShadowCasters(DC, Scene, LightFrustum, Partition);
+		}
+
+		++ShadowPointLightIndex;
+	}
+
+	if (ShadowPointLightIndex > 0 && Res.PointShadowDataBuffer)
+	{
+		D3D11_MAPPED_SUBRESOURCE MappedPointShadowData = {};
+		if (SUCCEEDED(DC->Map(Res.PointShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedPointShadowData)))
+		{
+			memcpy(MappedPointShadowData.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowPointLightIndex);
+			DC->Unmap(Res.PointShadowDataBuffer, 0);
+		}
+	}
+
+	ShadowCBCache.NumShadowPointLights = ShadowPointLightIndex;
 }
 
 // ============================================================
