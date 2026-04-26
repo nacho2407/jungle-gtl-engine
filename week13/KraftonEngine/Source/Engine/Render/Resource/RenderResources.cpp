@@ -75,6 +75,7 @@ void FSystemResources::Create(ID3D11Device* InDevice)
 {
 	FrameBuffer.Create(InDevice, sizeof(FFrameConstants));
 	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData));
+	ShadowConstantBuffer.Create(InDevice, sizeof(FShadowCBData));
 	ForwardLights.Create(InDevice, 32);
 
 	RasterizerStateManager.Create(InDevice);
@@ -225,6 +226,7 @@ void FSystemResources::Release()
 
 	FrameBuffer.Release();
 	LightingConstantBuffer.Release();
+	ShadowConstantBuffer.Release();
 	ForwardLights.Release();
 	TileCullingResource.Release();
 }
@@ -380,12 +382,13 @@ void FSystemResources::ResetRenderStateCache()
 void FSystemResources::UnbindSystemTextures(FD3DDevice& Device)
 {
 	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Ctx->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::GBufferNormal, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &nullSRV);
-	Ctx->PSSetShaderResources(ESystemTexSlot::CullingHeatmap, 1, &nullSRV);
+	ID3D11ShaderResourceView* nullSRVs[5] = {};
+
+	// t16~t20: Scene Depth/Color/Normal/Stencil/Heatmap
+	Ctx->PSSetShaderResources(ESystemTexSlot::SceneDepth, 5, nullSRVs);
+
+	// t21~t25: Shadow (CSM/SpotAtlas/PointCube/SpotData/PointData)
+	Ctx->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 5, nullSRVs);
 }
 
 // ============================================================
