@@ -164,6 +164,15 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 
 	// 기존 리소스 해제
 	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
+	if (SpotAtlasSliceSRVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+		{
+			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
+		}
+		delete[] SpotAtlasSliceSRVs;
+		SpotAtlasSliceSRVs = nullptr;
+	}
 	if (SpotAtlasDSVs)
 	{
 		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
@@ -220,6 +229,21 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 
 	Device->CreateShaderResourceView(SpotAtlasTexture, &SRVDesc, &SpotAtlasSRV);
 
+	// Per-slice SRV (ImGui 디버그용)
+	SpotAtlasSliceSRVs = new ID3D11ShaderResourceView*[PageCount]();
+	for (uint32 i = 0; i < PageCount; ++i)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
+		SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		SliceSRVDesc.Texture2DArray.MipLevels = 1;
+		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
+		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
+		SliceSRVDesc.Texture2DArray.ArraySize = 1;
+
+		Device->CreateShaderResourceView(SpotAtlasTexture, &SliceSRVDesc, &SpotAtlasSliceSRVs[i]);
+	}
+
 	// StructuredBuffer<FSpotShadowDataGPU> — per-light 행렬 데이터
 	SpotShadowDataCapacity = PageCount;
 
@@ -260,6 +284,15 @@ void FShadowMapResources::Release()
 
 	// Spot Atlas
 	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
+	if (SpotAtlasSliceSRVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+		{
+			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
+		}
+		delete[] SpotAtlasSliceSRVs;
+		SpotAtlasSliceSRVs = nullptr;
+	}
 	if (SpotAtlasDSVs)
 	{
 		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)

@@ -31,9 +31,10 @@ struct FShadowMapResources
 	uint32 CSMResolution = 2048;
 
 	// ── Spot Light Atlas (t22) ──
-	ID3D11Texture2D*          SpotAtlasTexture = nullptr;
-	ID3D11DepthStencilView**  SpotAtlasDSVs    = nullptr;
-	ID3D11ShaderResourceView* SpotAtlasSRV     = nullptr;
+	ID3D11Texture2D*           SpotAtlasTexture   = nullptr;
+	ID3D11DepthStencilView**   SpotAtlasDSVs      = nullptr;
+	ID3D11ShaderResourceView*  SpotAtlasSRV       = nullptr;
+	ID3D11ShaderResourceView** SpotAtlasSliceSRVs = nullptr;  // per-slice SRV (ImGui 디버그용)
 	uint32 SpotAtlasResolution = 4096;
 	uint32 SpotAtlasPageCount  = 0;
 
