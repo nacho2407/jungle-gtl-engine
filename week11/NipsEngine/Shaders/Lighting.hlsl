@@ -1,3 +1,6 @@
+#ifndef LIGHTING_H
+#define LIGHTING_H
+
 struct LightInfo
 {
     float3 Color;
@@ -144,3 +147,5 @@ float3 CalcSpotlightBlinnPhong(LightInfo light, float3 albedo, float3 normal, fl
     float spotAttenuation = saturate((theta - light.OuterAngle) / epsilon);
     return CalcPointBlinnPhong(light, albedo, normal, worldPos, surfaceToCamera, shininess) * spotAttenuation;
 }
+
+#endif
