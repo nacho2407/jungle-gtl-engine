@@ -48,7 +48,7 @@ class UWorld;
 class FOverlayStatSystem;
 class UEditorEngine;
 class FOctree;
-class FWorldPrimitivePickingBVH;
+class FScenePrimitiveBVH;
 
 // FRenderer owns shared render subsystems and drives collection, command building, and pass execution.
 class FRenderer
@@ -81,15 +81,15 @@ public:
     // ==================== Debug Geometry Collection ====================
 
     void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
-    void CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene);
+    void CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH, FScene& Scene);
     void CollectWorldBoundsDebug(const TArray<class FPrimitiveProxy*>& Proxies, FScene& Scene);
 
     // ==================== Collected Data Accessors ====================
 
-    const FCollectedSceneData&                 GetCollectedSceneData() const { return DrawCollector.GetCollectedSceneData(); }
-    const FCollectedPrimitives&                GetCollectedPrimitives() const { return DrawCollector.GetCollectedPrimitives(); }
+    const FCollectedSceneData&            GetCollectedSceneData() const { return DrawCollector.GetCollectedSceneData(); }
+    const FCollectedPrimitives&           GetCollectedPrimitives() const { return DrawCollector.GetCollectedPrimitives(); }
     const TArray<class FPrimitiveProxy*>& GetLastVisiblePrimitiveProxies() const { return DrawCollector.GetLastVisiblePrimitiveProxies(); }
-    const FCollectedLights&                    GetCollectedLights() const { return DrawCollector.GetCollectedLights(); }
+    const FCollectedLights&               GetCollectedLights() const { return DrawCollector.GetCollectedLights(); }
 
     // ==================== Draw Command Build ====================
 
@@ -180,4 +180,3 @@ private:
     FDrawBindStateCache SubmitStateCache;
     const FScene*       ActiveScene = nullptr;
 };
-

@@ -3,12 +3,14 @@
 
 #include "Viewport/ViewportClient.h"
 #include "Render/Execute/Context/Scene/ViewTypes.h"
+#include "Math/Rotator.h"
 
 #include "UI/SWindow.h"
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 class UWorld;
+class AActor;
 class UCameraComponent;
 class UGizmoComponent;
 class FEditorSettings;
@@ -50,6 +52,18 @@ public:
     UCameraComponent* GetCamera() const { return Camera; }
 
     void Tick(float DeltaTime);
+    void PilotSelectedActor(AActor* Actor);
+    void StopPilotingActor();
+    void UpdateViewFromPilotedActor();
+    void ApplyViewToPilotedActor();
+
+    bool IsPilotingActor() const { return bIsPilotingActor && PilotedActor != nullptr; }
+    AActor* GetPilotedActor() const { return PilotedActor; }
+    FString GetActorDisplayName(const AActor* Actor) const;
+    FString GetPilotedActorDisplayName() const;
+    FString GetPilotOverlayText() const;
+    FString GetPilotHintText() const;
+    AActor* PickActorAtScreenPoint(float ScreenX, float ScreenY) const;
 
     void SetActive(bool bInActive) { bIsActive = bInActive; }
     bool IsActive() const { return bIsActive; }
@@ -91,6 +105,11 @@ private:
     float WindowHeight = 1080.f;
 
     bool bIsActive = false;
+    AActor* PilotedActor = nullptr;
+    bool bIsPilotingActor = false;
+    FVector SavedViewLocation = FVector(0.0f, 0.0f, 0.0f);
+    FRotator SavedViewRotation;
+    ELevelViewportType SavedViewportType = ELevelViewportType::Perspective;
     EEditorViewportPlayState PlayState = EEditorViewportPlayState::Stopped;
     float PaneToolbarHeight = 0.0f;
     FRect ViewportScreenRect;

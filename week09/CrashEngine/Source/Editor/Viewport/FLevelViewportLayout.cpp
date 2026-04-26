@@ -15,6 +15,7 @@
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "GameFramework/AActor.h"
 #include <cfloat>
 #include <filesystem>
 
@@ -92,6 +93,18 @@ std::wstring ResolveEditorIconPath(const std::wstring& FileName)
     }
 
     return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+}
+
+void PushViewportContextPopupStyle()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+}
+
+void PopViewportContextPopupStyle()
+{
+    ImGui::PopStyleVar(3);
 }
 
 // ─── 아이콘 로드/해제 ────────────────────────────────────────
@@ -737,56 +750,173 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
                     if (i < static_cast<int32>(LevelViewportClients.size()) &&
                         ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
                     {
-                        if (LevelViewportClients[i] != ActiveViewportClient)
-                            SetActiveViewport(LevelViewportClients[i]);
+                        FLevelEditorViewportClient* HoveredViewportClient = LevelViewportClients[i];
+                        if (HoveredViewportClient != ActiveViewportClient)
+                        {
+                            SetActiveViewport(HoveredViewportClient);
+                        }
+
+                        if (ImGui::IsMouseClicked(1))
+                        {
+                            PendingPilotContextViewport = HoveredViewportClient;
+                            PendingPilotContextActor = HoveredViewportClient->PickActorAtScreenPoint(MousePos.x, MousePos.y);
+                            if (PendingPilotContextActor || HoveredViewportClient->IsPilotingActor())
+                            {
+                                ImGui::OpenPopup("ViewportPilotContextMenu");
+                            }
+                        }
                         break;
                     }
                 }
             }
         }
 
-        // Stat 오버레이는 ImGui 텍스트로 직접 출력합니다.
-        const FOverlayStatSystem& OverlaySystem = Editor->GetOverlayStatSystem();
-        TArray<FOverlayStatLine> OverlayLines;
-        OverlaySystem.BuildLines(*Editor, OverlayLines);
-        if (!OverlayLines.empty())
+        PushViewportContextPopupStyle();
+        const bool bPilotPopupOpened = ImGui::BeginPopup("ViewportPilotContextMenu");
+        PopViewportContextPopupStyle();
+        if (bPilotPopupOpened)
         {
-            const float OverlayPadding = 12.0f;
-            const float OverlayTextScale = OverlaySystem.GetLayout().TextScale;
-            const float OverlayFontSize = ImGui::GetFontSize() * OverlayTextScale;
-            const float OverlayLineHeight = ImGui::GetTextLineHeightWithSpacing() * OverlayTextScale;
-            ImFont* OverlayFont = ImGui::GetFont();
-            FRect OverlayAnchorRect = ContentRect;
-            for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+            if (PendingPilotContextActor && PendingPilotContextViewport)
             {
-                if (LevelViewportClients[i] == ActiveViewportClient && ViewportWindows[i])
+                FString PilotActorLabel = "Pilot \"" + PendingPilotContextViewport->GetActorDisplayName(PendingPilotContextActor) + "\"";
+                if (ImGui::Selectable(PilotActorLabel.c_str(), false))
                 {
-                    OverlayAnchorRect = ViewportWindows[i]->GetRect();
-                    break;
+                    if (SelectionManager)
+                    {
+                        SelectionManager->Select(PendingPilotContextActor);
+                    }
+                    PendingPilotContextViewport->PilotSelectedActor(PendingPilotContextActor);
+                    ImGui::CloseCurrentPopup();
                 }
             }
 
-            ImVec2 OverlayMin(
-                OverlayAnchorRect.X + OverlayPadding,
-                OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + OverlayPadding);
-            float OverlayWidth = 0.0f;
-            for (const FOverlayStatLine& Line : OverlayLines)
+            const bool bCanStopPiloting = PendingPilotContextViewport && PendingPilotContextViewport->IsPilotingActor();
+            if (bCanStopPiloting)
             {
-                ImVec2 TextSize = OverlayFont->CalcTextSizeA(OverlayFontSize, FLT_MAX, 0.0f, Line.Text.c_str());
-                OverlayWidth = (OverlayWidth > TextSize.x) ? OverlayWidth : TextSize.x;
+                if (PendingPilotContextActor)
+                {
+                    ImGui::Separator();
+                }
+
+                if (ImGui::Selectable("Stop Piloting Actor", false))
+                {
+                    PendingPilotContextViewport->StopPilotingActor();
+                    ImGui::CloseCurrentPopup();
+                }
             }
-            const float OverlayHeight = OverlayPadding * 2.0f + static_cast<float>(OverlayLines.size()) * OverlayLineHeight;
-            ImDrawList* OverlayDrawList = ImGui::GetWindowDrawList();
-            OverlayDrawList->AddRectFilled(
-                OverlayMin,
-                ImVec2(OverlayMin.x + OverlayWidth + OverlayPadding * 2.0f, OverlayMin.y + OverlayHeight),
-                IM_COL32(0, 0, 0, 120),
-                6.0f);
-            ImVec2 TextPos(OverlayMin.x + OverlayPadding, OverlayMin.y + OverlayPadding - 1.0f);
-            for (const FOverlayStatLine& Line : OverlayLines)
+
+            ImGui::EndPopup();
+        }
+        else
+        {
+            PendingPilotContextActor = nullptr;
+            PendingPilotContextViewport = nullptr;
+        }
+
+        // Stat 오버레이는 중앙 카드, Pilot 오버레이는 좌상단 소형 배지로 분리합니다.
+        const FOverlayStatSystem& OverlaySystem = Editor->GetOverlayStatSystem();
+        TArray<FOverlayStatLine> StatLines;
+        OverlaySystem.BuildLines(*Editor, StatLines);
+
+        FRect OverlayAnchorRect = ContentRect;
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            if (LevelViewportClients[i] == ActiveViewportClient && ViewportWindows[i])
             {
-                OverlayDrawList->AddText(OverlayFont, OverlayFontSize, TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
-                TextPos.y += OverlayLineHeight;
+                OverlayAnchorRect = ViewportWindows[i]->GetRect();
+                break;
+            }
+        }
+
+        ImDrawList* OverlayDrawList = ImGui::GetWindowDrawList();
+        ImFont* OverlayFont = ImGui::GetFont();
+
+        if (!StatLines.empty())
+        {
+            const float StatPadding = 18.0f;
+            const float StatTextScale = OverlaySystem.GetLayout().TextScale * 0.75f;
+            const float StatFontSize = ImGui::GetFontSize() * StatTextScale;
+            const float StatLineHeight = ImGui::GetTextLineHeightWithSpacing() * StatTextScale;
+
+            float StatWidth = 0.0f;
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                ImVec2 TextSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Text.c_str());
+                StatWidth = (StatWidth > TextSize.x) ? StatWidth : TextSize.x;
+            }
+
+            const float StatHeight = StatPadding * 2.0f + static_cast<float>(StatLines.size()) * StatLineHeight;
+            const float BoxWidth = StatWidth + StatPadding * 2.0f;
+            const ImVec2 BoxMin(
+                OverlayAnchorRect.X + (OverlayAnchorRect.Width - BoxWidth) * 0.5f,
+                OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + (OverlayAnchorRect.Height - Toolbar.GetDesiredHeight() - StatHeight) * 0.5f);
+
+            OverlayDrawList->AddRectFilled(
+                BoxMin,
+                ImVec2(BoxMin.x + BoxWidth, BoxMin.y + StatHeight),
+                IM_COL32(10, 10, 10, 170),
+                8.0f);
+            OverlayDrawList->AddRect(
+                BoxMin,
+                ImVec2(BoxMin.x + BoxWidth, BoxMin.y + StatHeight),
+                IM_COL32(255, 255, 255, 36),
+                8.0f);
+
+            ImVec2 TextPos(BoxMin.x + StatPadding, BoxMin.y + StatPadding - 1.0f);
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                OverlayDrawList->AddText(OverlayFont, StatFontSize, TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
+                TextPos.y += StatLineHeight;
+            }
+        }
+
+        if (ActiveViewportClient && ActiveViewportClient->IsPilotingActor())
+        {
+            TArray<FString> PilotLines;
+
+            const FString PilotOverlayText = ActiveViewportClient->GetPilotOverlayText();
+            if (!PilotOverlayText.empty())
+            {
+                PilotLines.push_back(PilotOverlayText);
+            }
+
+            const FString PilotHintText = ActiveViewportClient->GetPilotHintText();
+            if (!PilotHintText.empty())
+            {
+                PilotLines.push_back(PilotHintText);
+            }
+
+            if (!PilotLines.empty())
+            {
+                const float PilotPadding = 10.0f;
+                const float PilotFontSize = ImGui::GetFontSize() * 0.95f;
+                const float PilotLineHeight = ImGui::GetTextLineHeightWithSpacing() * 0.95f;
+                const float MaxPilotTextWidth = OverlayAnchorRect.Width * 0.45f;
+                float PilotWidth = 0.0f;
+
+                for (const FString& Line : PilotLines)
+                {
+                    ImVec2 TextSize = OverlayFont->CalcTextSizeA(PilotFontSize, MaxPilotTextWidth, 0.0f, Line.c_str());
+                    PilotWidth = (PilotWidth > TextSize.x) ? PilotWidth : TextSize.x;
+                }
+
+                const float PilotHeight = PilotPadding * 2.0f + static_cast<float>(PilotLines.size()) * PilotLineHeight;
+                const ImVec2 PilotMin(
+                    OverlayAnchorRect.X + 12.0f,
+                    OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + 12.0f);
+
+                OverlayDrawList->AddRectFilled(
+                    PilotMin,
+                    ImVec2(PilotMin.x + PilotWidth + PilotPadding * 2.0f, PilotMin.y + PilotHeight),
+                    IM_COL32(0, 0, 0, 140),
+                    6.0f);
+
+                ImVec2 PilotTextPos(PilotMin.x + PilotPadding, PilotMin.y + PilotPadding - 1.0f);
+                for (const FString& Line : PilotLines)
+                {
+                    OverlayDrawList->AddText(OverlayFont, PilotFontSize, PilotTextPos, IM_COL32(255, 255, 255, 255), Line.c_str());
+                    PilotTextPos.y += PilotLineHeight;
+                }
             }
         }
     }

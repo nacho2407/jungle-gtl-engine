@@ -286,10 +286,10 @@ void FRenderer::CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 De
     DrawCollector.CollectOctreeDebug(Node, Depth);
 }
 
-void FRenderer::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FScene& Scene)
+void FRenderer::CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH, FScene& Scene)
 {
     (void)Scene;
-    DrawCollector.CollectWorldBVHDebug(BVH);
+    DrawCollector.CollectScenePrimitiveBVHDebug(BVH);
 }
 
 void FRenderer::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies, FScene& Scene)

@@ -3,7 +3,8 @@
 #include "Object/Object.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
-#include "Collision/BVH/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/EditorPickingBVH.h"
+#include "Collision/BVH/ScenePrimitiveBVH.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/WorldContext.h"
 #include "GameFramework/Level.h"
@@ -34,15 +35,15 @@ public:
     T* SpawnActor();
     void DestroyActor(AActor* Actor);
     void AddActor(AActor* Actor);
-    void MarkWorldPrimitivePickingBVHDirty();
-    void BuildWorldPrimitivePickingBVHNow() const;
-    const FWorldPrimitivePickingBVH& GetWorldPrimitivePickingBVH() const { return WorldPrimitivePickingBVH; }
-    void BuildWorldPrimitiveVisibleBVHNow() const;
-    const FWorldPrimitivePickingBVH& GetWorldPrimitiveVisibleBVH() const { return WorldPrimitiveVisibleBVH; }
+    void MarkEditorPickingAndScenePrimitiveBVHsDirty();
+    void BuildEditorPickingBVHNow() const;
+    const FEditorPickingBVH& GetEditorPickingBVH() const { return EditorPickingBVH; }
+    void BuildScenePrimitiveBVHNow() const;
+    const FScenePrimitiveBVH& GetScenePrimitiveBVH() const { return ScenePrimitiveBVH; }
     void BeginDeferredPickingBVHUpdate();
     void EndDeferredPickingBVHUpdate();
     void WarmupPickingData() const;
-    bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+    bool RaycastEditorPicking(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
     const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
@@ -80,8 +81,8 @@ private:
     UCameraComponent* LastLODUpdateCamera = nullptr;
     bool bHasBegunPlay = false;
     bool bHasLastFullLODUpdateCameraPos = false;
-    mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
-    mutable FWorldPrimitivePickingBVH WorldPrimitiveVisibleBVH;
+    mutable FEditorPickingBVH EditorPickingBVH;
+    mutable FScenePrimitiveBVH ScenePrimitiveBVH;
     int32 DeferredPickingBVHUpdateDepth = 0;
     bool bDeferredPickingBVHDirty = false;
     uint32 VisibleProxyBuildFrame = 0;

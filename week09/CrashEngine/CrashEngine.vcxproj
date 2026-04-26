@@ -264,7 +264,9 @@
     <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
     <ClCompile Include="Source\Engine\Collision\Sphere.cpp" />
-    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\EditorHelperBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\EditorPickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
@@ -447,6 +449,7 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
     <ClInclude Include="Source\Engine\Collision\BVH\BVH.h" />
     <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h" />
     <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h" />
     <ClInclude Include="Source\Engine\Collision\OBB.h" />
     <ClInclude Include="Source\Engine\Collision\Octree.h" />
@@ -454,7 +457,8 @@
     <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
     <ClInclude Include="Source\Engine\Collision\Sphere.h" />
-    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorPickingBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />

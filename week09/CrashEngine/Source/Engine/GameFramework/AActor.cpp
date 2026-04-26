@@ -194,7 +194,7 @@ void AActor::MarkPickingDirty()
 {
     if (UWorld* World = GetWorld())
     {
-        World->MarkWorldPrimitivePickingBVHDirty();
+        World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
     }
 }
 
