@@ -25,10 +25,10 @@ struct FShadowAtlasTile
 
 struct FShadowAtlasAllocator
 {
-	int32 TileSize = 1024;
-	int32 TileCountX = 8;
-	int32 TileCountY = 8;
-	bool TileUsed[64] = {};
+	int32 TileSize = 2048;
+	int32 TileCountX = 4;
+	int32 TileCountY = 4;
+	bool TileUsed[16] = {};
 
 	bool AllocateTile(int32& OutTileX, int32& OutTileY)
 	{

@@ -29,7 +29,7 @@ protected:
 	bool End(const FRenderPassContext* Context) override;
 
 private:
-	void BuildLogCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, FCascadeSplit OutSplit[4]);
+	void BuildPracticalCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, float Lambda, FCascadeSplit OutSplit[4]);
 	void RenderShadowDepth(
 		const FRenderPassContext* Context,
 		FConstantBuffer* ShadowBuffer,
