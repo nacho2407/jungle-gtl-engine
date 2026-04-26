@@ -7,6 +7,7 @@
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
 #include "Editor/UI/EditorShadowMapDebugWidget.h"
+#include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Math/Vector.h"
 
@@ -48,6 +49,7 @@ private:
 	FEditorStatWidget StatWidget;
 	FEditorContentBrowserWidget ContentBrowserWidget;
 	EditorShadowMapDebugWidget ShadowMapDebugWidget;
+	EditorProjectSettingsWidget ProjectSettingsWidget;
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;

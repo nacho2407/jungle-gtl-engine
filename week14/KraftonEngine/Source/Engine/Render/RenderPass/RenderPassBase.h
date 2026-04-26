@@ -42,7 +42,7 @@ public:
 	const FPassRenderState& GetRenderState() const { return RenderState; }
 
 	// 패스 전후 GPU 상태 전환 (RT 바인딩, 리소스 복사 등)
-	virtual void BeginPass(const FPassContext& Ctx) {}
+	virtual bool BeginPass(const FPassContext& Ctx) { return true; }
 	virtual void EndPass(const FPassContext& Ctx) {}
 
 	// 패스 실행 — 기본 구현: DrawCommandList에서 패스 범위를 가져와 Submit.

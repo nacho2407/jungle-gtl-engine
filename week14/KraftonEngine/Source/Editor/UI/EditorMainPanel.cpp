@@ -148,6 +148,8 @@ void FEditorMainPanel::Render(float DeltaTime)
 		ShadowMapDebugWidget.Render(DeltaTime);
 	}
 
+	ProjectSettingsWidget.Render();
+
 	if (!bHideEditorWindows)
 	{
 		RenderEditorDebugPanel();
@@ -229,6 +231,11 @@ void FEditorMainPanel::RenderMainMenuBar()
 	else
 	{
 		bShowWidgetList = false;
+	}
+
+	if (ImGui::MenuItem("Project Settings"))
+	{
+		ProjectSettingsWidget.bOpen = true;
 	}
 
 	if (ImGui::MenuItem("Shortcut"))

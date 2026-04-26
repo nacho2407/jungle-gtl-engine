@@ -245,6 +245,7 @@
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Settings\ProjectSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
@@ -253,6 +254,7 @@
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorShadowMapDebugWidget.cpp" />
@@ -417,6 +419,7 @@
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\ProjectSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
@@ -425,6 +428,7 @@
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorMaterialInspector.h" />
     <ClInclude Include="Source\Editor\UI\EditorPlayToolbarWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorProjectSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorShadowMapDebugWidget.h" />
@@ -590,6 +594,7 @@
     <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\ShadowSettings.h" />
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />

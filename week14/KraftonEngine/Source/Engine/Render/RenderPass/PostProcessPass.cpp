@@ -15,11 +15,11 @@ FPostProcessPass::FPostProcessPass()
 	                ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
-void FPostProcessPass::BeginPass(const FPassContext& Ctx)
+bool FPostProcessPass::BeginPass(const FPassContext& Ctx)
 {
 	const FFrameContext& Frame = Ctx.Frame;
 	if (!Frame.DepthTexture || !Frame.DepthCopyTexture || !Frame.StencilCopySRV)
-		return;
+		return false;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	FStateCache& Cache = Ctx.Cache;
@@ -32,4 +32,5 @@ void FPostProcessPass::BeginPass(const FPassContext& Ctx)
 	DC->PSSetShaderResources(ESystemTexSlot::Stencil, 1, &stencilSRV);
 
 	Cache.bForceAll = true;
+	return true;
 }

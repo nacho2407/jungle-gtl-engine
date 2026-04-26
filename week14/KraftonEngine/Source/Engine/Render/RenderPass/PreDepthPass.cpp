@@ -15,11 +15,12 @@ FPreDepthPass::FPreDepthPass()
 	                ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 }
 
-void FPreDepthPass::BeginPass(const FPassContext& Ctx)
+bool FPreDepthPass::BeginPass(const FPassContext& Ctx)
 {
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	DC->OMSetRenderTargets(0, nullptr, Ctx.Cache.DSV);
 	Ctx.Cache.bForceAll = true;
+	return true;
 }
 
 void FPreDepthPass::EndPass(const FPassContext& Ctx)

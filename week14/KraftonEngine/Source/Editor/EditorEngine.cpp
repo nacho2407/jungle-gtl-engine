@@ -10,6 +10,7 @@
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
+#include "Editor/Settings/ProjectSettings.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
@@ -44,6 +45,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
+	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
 	MainPanel.Create(Window, Renderer, this);
 
@@ -73,6 +75,7 @@ void UEditorEngine::Shutdown()
 	// 에디터 해제 (엔진보다 먼저)
 	ViewportLayout.SaveToSettings();
 	MainPanel.SaveToSettings();
+	FProjectSettings::Get().SaveToFile(FProjectSettings::GetDefaultPath());
 	FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 	CloseScene();
 	SelectionManager.Shutdown();

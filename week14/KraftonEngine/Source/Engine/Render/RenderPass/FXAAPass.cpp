@@ -15,11 +15,11 @@ FFXAAPass::FFXAAPass()
 	                ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
-void FFXAAPass::BeginPass(const FPassContext& Ctx)
+bool FFXAAPass::BeginPass(const FPassContext& Ctx)
 {
 	const FFrameContext& Frame = Ctx.Frame;
 	if (!Frame.SceneColorCopyTexture || !Frame.ViewportRenderTexture)
-		return;
+		return false;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	FStateCache& Cache = Ctx.Cache;
@@ -31,4 +31,5 @@ void FFXAAPass::BeginPass(const FPassContext& Ctx)
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &sceneColorSRV);
 
 	Cache.bForceAll = true;
+	return true;
 }

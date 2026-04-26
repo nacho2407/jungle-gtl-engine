@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Settings/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
@@ -1583,7 +1584,7 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::TableNextColumn();
 					ImGui::Checkbox("Visualize2.5D", &Opts.ShowFlags.bVisualize25DCulling);
 					ImGui::TableNextColumn();
-					ImGui::Checkbox("Shadows", &Opts.ShowFlags.bShadows);
+					ImGui::Checkbox("Shadows", &FProjectSettings::Get().bShadows);
 					ImGui::TableNextColumn();
 					ImGui::Checkbox("Shadow Frustum", &Opts.ShowFlags.bShowShadowFrustum);
 

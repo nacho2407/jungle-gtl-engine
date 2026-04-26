@@ -14,6 +14,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/ShadowStats.h"
+#include "Editor/Settings/ProjectSettings.h"
 #include <d3d11.h>
 
 REGISTER_RENDER_PASS(FShadowMapPass)
@@ -37,8 +38,11 @@ FShadowMapPass::~FShadowMapPass()
 // BeginPass — SRV 언바인딩, 리소스 Ensure, 공용 렌더 상태
 // ============================================================
 
-void FShadowMapPass::BeginPass(const FPassContext& Ctx)
+bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 {
+	if (!FProjectSettings::Get().bShadows)
+		return false;
+
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
 	// 이전 프레임 Shadow SRV 언바인딩 (DSV/RTV와 동일 리소스 → R/W hazard 방지)
@@ -78,6 +82,7 @@ void FShadowMapPass::BeginPass(const FPassContext& Ctx)
 	ShadowCBCache.ShadowBias      = FShadowSettings::Get().GetEffectiveBias();
 	ShadowCBCache.ShadowSlopeBias = FShadowSettings::Get().GetEffectiveSlopeBias();
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
+	return true;
 }
 
 // ============================================================

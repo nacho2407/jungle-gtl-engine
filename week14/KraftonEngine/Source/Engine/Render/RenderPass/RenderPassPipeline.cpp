@@ -17,7 +17,8 @@ void FRenderPassPipeline::Execute(const FPassContext& Ctx)
 {
 	for (const auto& Pass : Passes)
 	{
-		Pass->BeginPass(Ctx);
+		if (!Pass->BeginPass(Ctx))
+			continue;
 		Pass->Execute(Ctx);
 		Pass->EndPass(Ctx);
 	}
