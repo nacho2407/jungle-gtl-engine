@@ -30,7 +30,7 @@ PS_Input_Shadow VS(VS_Input_PNCTT input)
     float4 clipPos  = mul(worldPos, LightViewProj);
 
     output.position = clipPos;
-    output.depth    = clipPos.z / clipPos.w; // [0,1] normalized depth
+    output.depth    = clipPos.z / clipPos.w; // Reversed-Z: near=1, far=0
 
     return output;
 }

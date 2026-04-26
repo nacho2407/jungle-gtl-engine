@@ -91,8 +91,16 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			ImGui::RadioButton(label, &SpotPageIndex, i);
 		}
 
-		// TODO: per-page slice SRV 생성 후 여기서 프리뷰
-		ImGui::TextDisabled("Page %d preview (TODO: per-page SRV)", SpotPageIndex);
+		// 선택된 slice 프리뷰
+		if (SpotPageIndex >= 0 && SpotPageIndex < (int32)SR.SpotAtlasPageCount && SR.SpotAtlasSliceSRVs && SR.SpotAtlasSliceSRVs[SpotPageIndex])
+		{
+			ImGui::Image(
+				(ImTextureID)SR.SpotAtlasSliceSRVs[SpotPageIndex],
+				ImVec2(PreviewSize, PreviewSize),
+				ImVec2(0, 0), ImVec2(1, 1),
+				ImVec4(1, 1, 1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1)
+			);
+		}
 	}
 	// ════════════════════════════════════════
 	// Point CubeMap (t23)

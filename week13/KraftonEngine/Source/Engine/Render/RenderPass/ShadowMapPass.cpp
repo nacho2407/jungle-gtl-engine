@@ -58,7 +58,10 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	if (!ShadowLightCB.GetBuffer())
 		ShadowLightCB.Create(Dev, sizeof(FMatrix));
 
-	// 공용 렌더 상태 세팅
+	// ImGui 등 외부 코드가 D3D state를 직접 변경할 수 있으므로 캐시 무효화
+	Resources.ResetRenderStateCache();
+
+	// 공용 렌더 상태 세팅 (Reversed-Z: GREATER_EQUAL — 엔진 컨벤션 통일)
 	Resources.SetDepthStencilState(Device, EDepthStencilState::Default);
 	Resources.SetRasterizerState(Device, ERasterizerState::SolidBackCull);
 	DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -363,7 +366,7 @@ void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Devi
 		UploadLightViewProj(DC, VP.ViewProj);
 
 		// DSV 바인딩 (slice = ShadowIdx)
-		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 1.0f, 0);
+		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
 		DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[ShadowIdx]);
 		DC->RSSetViewports(1, &ShadowVP);
 
@@ -417,6 +420,9 @@ void FShadowMapPass::RenderGlobal(FD3DDevice& Device, FSystemResources& Resource
 	// Spot/Point shadow 렌더링
 	RenderSpotShadows(DC, Device, Resources, Scene, Res, Partition);
 	RenderPointShadows(DC, Device, Scene, Res, Partition);
+
+	// Shadow depth 렌더링 종료 — DSV 언바인딩 (SRV 바인딩 전 R/W hazard 방지)
+	DC->OMSetRenderTargets(0, nullptr, nullptr);
 
 	// SRV 바인딩 + Shadow CB 업데이트
 	BindShadowSRVs(DC, Res);
