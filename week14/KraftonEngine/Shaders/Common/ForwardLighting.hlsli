@@ -2,6 +2,7 @@
 #define FORWARD_LIGHTING_HLSLI
 
 #include "Common/ForwardLightData.hlsli"
+#include "Common/ShadowSampling.hlsli"
 
 float CalcAttenuation(float dist, float radius, float falloff)
 {
@@ -82,7 +83,16 @@ float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
         spotFactor = smoothstep(light.OuterConeCos, light.InnerConeCos, cosAngle);
     }
 
-    return light.Color.rgb * light.Intensity * NdotL * atten * spotFactor;
+    float shadow = 1.0f;
+    if (light.bCastShadow)
+    {
+        if (light.LightType == LIGHT_TYPE_SPOT)
+            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos);
+        else if (light.LightType == LIGHT_TYPE_POINT)
+            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position);
+    }
+
+    return light.Color.rgb * light.Intensity * NdotL * atten * spotFactor * shadow;
 }
 
 float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, float shininess)
@@ -98,9 +108,18 @@ float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, 
         spotFactor = smoothstep(light.OuterConeCos, light.InnerConeCos, cosAngle);
     }
 
+    float shadow = 1.0f;
+    if (light.bCastShadow)
+    {
+        if (light.LightType == LIGHT_TYPE_SPOT)
+            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos);
+        else if (light.LightType == LIGHT_TYPE_POINT)
+            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position);
+    }
+
     float3 H = normalize(L + V);
     float NdotH = saturate(dot(N, H));
-    return light.Color.rgb * light.Intensity * pow(NdotH, max(shininess, 1.0f)) * atten * spotFactor;
+    return light.Color.rgb * light.Intensity * pow(NdotH, max(shininess, 1.0f)) * atten * spotFactor * shadow;
 }
 
 void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result)
@@ -200,7 +219,16 @@ float3 CalcToonPointSpotDiffuse(FLightInfo light, float3 worldPos, float3 N)
         spotFactor = smoothstep(light.OuterConeCos, light.InnerConeCos, cosAngle);
     }
 
-    return light.Color.rgb * light.Intensity * atten * spotFactor * band;
+    float shadow = 1.0f;
+    if (light.bCastShadow)
+    {
+        if (light.LightType == LIGHT_TYPE_SPOT)
+            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos);
+        else if (light.LightType == LIGHT_TYPE_POINT)
+            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position);
+    }
+
+    return light.Color.rgb * light.Intensity * atten * spotFactor * band * shadow;
 }
 
 void AccumulateToonPointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result)
@@ -236,7 +264,12 @@ void AccumulateToonPointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos,
 float3 AccumulateToonDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity) * 0.15f;
-    result += CalcToonDirectionalDiffuse(N);
+
+    float3 toonDir = CalcToonDirectionalDiffuse(N);
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    toonDir *= CalcDirectionalShadowFactor(worldPos, viewDepth);
+    result += toonDir;
+
     AccumulateToonPointSpotDiffuse(worldPos, N, screenPos, result);
     return result;
 }
@@ -252,8 +285,13 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
     result += CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
-    result += CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                     DirectionalLight.Intensity, N);
+
+    float3 dirDiffuse = CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
+                                               DirectionalLight.Intensity, N);
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth);
+    result += dirDiffuse;
+
     AccumulatePointSpotDiffuse(worldPos, N, screenPos, result);
     return result;
 }
@@ -261,8 +299,13 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
 float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos)
 {
     float3 result = float3(0, 0, 0);
-    result += CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                      DirectionalLight.Intensity, N, V, shininess);
+
+    float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
+                                             DirectionalLight.Intensity, N, V, shininess);
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth);
+    result += dirSpec;
+
     AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result);
     return result;
 }

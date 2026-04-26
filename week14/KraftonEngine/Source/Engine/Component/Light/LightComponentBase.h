@@ -47,8 +47,8 @@ public:
 	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:
-	float Intensity = 1.f;;
+	float Intensity = 1.f;
 	FVector4 LightColor = { 1.0f,1.0f,1.0f,1.0f };
 	bool bVisible = true;
-	bool bCastShadows = false;
+	bool bCastShadows = true;
 };

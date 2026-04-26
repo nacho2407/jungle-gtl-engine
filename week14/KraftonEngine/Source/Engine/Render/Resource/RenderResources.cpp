@@ -404,13 +404,25 @@ void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene
 
 	TArray<FLightInfo> Infos;
 	Infos.reserve(NumPointLights + NumSpotLights);
+
+	// Point lights — ShadowMapIndex 순차 할당 (shadow-casting만)
+	uint32 PointShadowIdx = 0;
 	for (uint32 i = 0; i < NumPointLights; ++i)
 	{
-		Infos.emplace_back(Env.GetPointLight(i).ToLightInfo());
+		FLightInfo Info = Env.GetPointLight(i).ToLightInfo();
+		if (Info.bCastShadow)
+			Info.ShadowMapIndex = PointShadowIdx++;
+		Infos.emplace_back(Info);
 	}
+
+	// Spot lights — ShadowMapIndex 순차 할당 (RenderSpotShadows와 동일 순서)
+	uint32 SpotShadowIdx = 0;
 	for (uint32 i = 0; i < NumSpotLights; ++i)
 	{
-		Infos.emplace_back(Env.GetSpotLight(i).ToLightInfo());
+		FLightInfo Info = Env.GetSpotLight(i).ToLightInfo();
+		if (Info.bCastShadow)
+			Info.ShadowMapIndex = SpotShadowIdx++;
+		Infos.emplace_back(Info);
 	}
 
 	LastNumLights = static_cast<uint32>(Infos.size());
