@@ -334,9 +334,11 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World)
 	{
 		const FPointLightParams& Light = Env.GetPointLight(i);
 		if (!Light.bVisible) continue;
-		FLightFrustumUtils::FPointLightFaceViewProj Faces[6];
-		FLightFrustumUtils::BuildPointLightFaceViewProj(Light, Faces);
-		for (int f = 0; f < 6; ++f)
-			DrawDebugFrustum(World, Faces[f].ViewProj, FColor(0, 255, 255), 0.0f);
+
+		for (int FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			auto FaceViewProj = FLightFrustumUtils::BuildPointLightFaceViewProj(Light, FaceIndex);
+			DrawDebugFrustum(World, FaceViewProj.ViewProj, FColor(0, 255, 255), 0.0f);
+		}
 	}
 }

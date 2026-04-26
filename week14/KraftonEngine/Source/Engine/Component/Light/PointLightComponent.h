@@ -11,7 +11,7 @@ public:
 	virtual void DestroyFromScene() override;
 	virtual void Serialize(FArchive& Ar) override;
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const override;
+	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const override;
 
 	float GetAttenuationRadius() const { return AttenuationRadius; }
 
