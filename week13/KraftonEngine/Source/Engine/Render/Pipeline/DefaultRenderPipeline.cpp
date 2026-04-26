@@ -35,14 +35,16 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Scene->ClearFrameData();
 
 		Builder.BeginCollect(Frame, Scene->GetProxyCount());
-		Collector.CollectWorld(World, Frame, Builder);
+		FCollectOutput Output;
+		Collector.Collect(World, Frame, Output);
 		Collector.CollectDebugDraw(Frame, *Scene);
-		Builder.BuildDynamicCommands(Frame, Scene);
+		Builder.BuildCommands(Frame, Scene, Output);
 	}
 	else
 	{
 		Builder.BeginCollect(Frame);
-		Builder.BuildDynamicCommands(Frame, nullptr);
+		FCollectOutput EmptyOutput;
+		Builder.BuildCommands(Frame, nullptr, EmptyOutput);
 	}
 
 	Renderer.BeginFrame();

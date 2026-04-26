@@ -3,13 +3,19 @@
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/FogParams.h"
+#include "Render/Types/LODContext.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Proxy/TextRenderSceneProxy.h"
+#include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
+#include "Render/Pipeline/RenderCollector.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+
+// UpdateProxyLOD defined in RenderCollector.cpp (shared)
+extern void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx);
 
 // ============================================================
 // Create / Release
@@ -263,6 +269,86 @@ void FDrawCommandBuilder::AddWorldText(const FTextRenderSceneProxy* TextProxy, c
 		TextProxy->CachedBillboardMatrix.GetScale(),
 		TextProxy->CachedFontScale
 	);
+}
+
+// ============================================================
+// BuildCommands — 프록시 커맨드 + 동적 커맨드 일괄 생성
+// ============================================================
+void FDrawCommandBuilder::BuildCommands(const FFrameContext& Frame, FScene* Scene, const FCollectOutput& Output)
+{
+	if (Scene)
+		BuildProxyCommands(Frame, *Scene, Output);
+
+	BuildDynamicCommands(Frame, Scene);
+}
+
+// ============================================================
+// BuildProxyCommands — RenderableProxies → DrawCommand
+// ============================================================
+void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output)
+{
+	const bool bShowBoundingVolume = Frame.RenderOptions.ShowFlags.bBoundingVolume;
+
+	for (FPrimitiveSceneProxy* Proxy : Output.RenderableProxies)
+	{
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::FontBatched))
+		{
+			const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+			if (!TextProxy->CachedText.empty())
+				AddWorldText(TextProxy, Frame);
+		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
+			BuildDecalCommands(Proxy, Frame, Output);
+		else
+			BuildMeshCommands(Proxy);
+
+		if (Proxy->IsSelected())
+			BuildSelectionCommands(Proxy, bShowBoundingVolume, Scene);
+	}
+}
+
+// ============================================================
+// BuildDecalCommands — Decal → Receiver 순회 + 커맨드 생성
+// ============================================================
+void FDrawCommandBuilder::BuildDecalCommands(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output)
+{
+	FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
+
+	for (FPrimitiveSceneProxy* ReceiverProxy : DecalProxy->GetReceiverProxies())
+	{
+		if (!ReceiverProxy || Output.VisibleProxySet.find(ReceiverProxy) == Output.VisibleProxySet.end())
+			continue;
+
+		UpdateProxyLOD(ReceiverProxy, Frame.LODContext);
+
+		if (ReceiverProxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
+			ReceiverProxy->UpdatePerViewport(Frame);
+
+		BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
+	}
+}
+
+// ============================================================
+// BuildMeshCommands — 일반 메시 (PreDepth + 메인 패스)
+// ============================================================
+void FDrawCommandBuilder::BuildMeshCommands(const FPrimitiveSceneProxy* Proxy)
+{
+	if (Proxy->GetRenderPass() == ERenderPass::Opaque)
+		BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
+
+	BuildCommandForProxy(*Proxy, Proxy->GetRenderPass());
+}
+
+// ============================================================
+// BuildSelectionCommands — 아웃라인 + AABB
+// ============================================================
+void FDrawCommandBuilder::BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene)
+{
+	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::SupportsOutline))
+		BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
+
+	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
+		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
 }
 
 // ============================================================

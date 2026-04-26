@@ -9,6 +9,7 @@
 class FPassRenderStateTable;
 class FTextRenderSceneProxy;
 class FScene;
+struct FCollectOutput;
 
 /*
 	FDrawCommandBuilder — Collect 페이즈에서 Proxy/Scene 데이터를 FDrawCommand로 변환합니다.
@@ -30,14 +31,23 @@ public:
 	// Font proxy → FontGeometry 배칭
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
 
-	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
-	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
+	// FCollectOutput → 프록시 커맨드 + 동적 커맨드 일괄 생성
+	void BuildCommands(const FFrameContext& Frame, FScene* Scene, const FCollectOutput& Output);
 
 	// 결과 접근
 	FDrawCommandList& GetCommandList() { return DrawCommandList; }
 	bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
 
 private:
+	// BuildCommands 서브 메서드
+	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
+	void BuildDecalCommands(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
+	void BuildMeshCommands(const FPrimitiveSceneProxy* Proxy);
+	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
+
+	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
+	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
+
 	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);
 	void BuildDynamicDrawCommands(const FFrameContext& Frame, const FScene* Scene);
 
