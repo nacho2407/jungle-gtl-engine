@@ -143,9 +143,9 @@ public:
 	void Initialize(ID3D11Device* InDevice);
 	void Release();
 
-	FShader* GetOrCreate(const FShaderKey& Key);
-	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines);
-	FShader* GetOrCreate(const FString& Path) { return GetOrCreate(FShaderKey(Path)); }
+	FShader* GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
+	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
+	FShader* GetOrCreate(const FString& Path, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification) { return GetOrCreate(FShaderKey(Path), ErrorMode); }
 	FShader* FindOrCreate(const FString& Path);
 
 	// Compute Shader — 캐시 기반. 호출자는 포인터만 보관, FShaderManager가 소유 + 핫 리로드.

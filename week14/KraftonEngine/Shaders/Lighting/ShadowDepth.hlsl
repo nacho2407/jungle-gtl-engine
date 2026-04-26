@@ -8,29 +8,18 @@
 // VSM:      PS가 depth moment(z, z^2)를 RTV에 기록
 // =============================================================================
 
-#include "Common/ConstantBuffers.hlsli"
-#include "Common/VertexLayouts.hlsli"
-
-// =============================================================================
-// VS -> PS 인터페이스
-// =============================================================================
-struct ShadowVS_Output
-{
-    float4 position : SV_POSITION;
-    float  depth    : TEXCOORD0;    // VSM용 linear depth
-};
+#include "Common/Functions.hlsli"
 
 // =============================================================================
 // Vertex Shader — position-only transform (Model * LightView * LightProj)
 // =============================================================================
 // InputLayout은 VS_Input_PNCTT(StaticMesh)와 호환.
 // Normal/Color/TexCoord/Tangent는 무시하고 Position만 사용.
-ShadowVS_Output VS(VS_Input_PNCTT input)
+PS_Input_Shadow VS(VS_Input_PNCTT input)
 {
-    ShadowVS_Output output;
+    PS_Input_Shadow output;
 
-    float4 worldPos = mul(float4(input.position, 1.0f), Model);
-    float4 clipPos  = mul(mul(worldPos, View), Projection);
+    float4 clipPos  = ApplyMVP(input.position);
 
     output.position = clipPos;
     output.depth    = clipPos.z / clipPos.w; // [0,1] normalized depth
@@ -42,7 +31,7 @@ ShadowVS_Output VS(VS_Input_PNCTT input)
 // Pixel Shader — VSM moment 출력 (Hard/PCF 모드에서는 바인딩하지 않음)
 // =============================================================================
 // RTV format: R32G32_FLOAT — (moment1, moment2) = (depth, depth^2)
-float2 PS(ShadowVS_Output input) : SV_TARGET
+float2 PS(PS_Input_Shadow input) : SV_TARGET
 {
     float d  = input.depth;
     float dx = ddx(d);

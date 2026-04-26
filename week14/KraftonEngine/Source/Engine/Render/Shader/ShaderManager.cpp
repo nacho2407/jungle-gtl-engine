@@ -28,28 +28,31 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	if (bIsInitialized) return;
 	CachedDevice = InDevice;
 
-	// 단순 셰이더 (매크로 없음)
-	GetOrCreate(EShaderPath::Primitive);
-	GetOrCreate(EShaderPath::Gizmo);
-	GetOrCreate(EShaderPath::Editor);
-	GetOrCreate(EShaderPath::Decal);
-	GetOrCreate(EShaderPath::Outline);
-	GetOrCreate(EShaderPath::SceneDepth);
-	GetOrCreate(EShaderPath::SceneNormal);
-	GetOrCreate(EShaderPath::FXAA);
-	GetOrCreate(EShaderPath::Font);
-	GetOrCreate(EShaderPath::OverlayFont);
-	GetOrCreate(EShaderPath::SubUV);
-	GetOrCreate(EShaderPath::Billboard);
-	GetOrCreate(EShaderPath::HeightFog);
+	// 단순 셰이더 (매크로 없음) — 첫 시작이므로 MessageBox로 에러 표시
+	constexpr EShaderErrorMode StartupError = EShaderErrorMode::MessageBox;
+
+	GetOrCreate(EShaderPath::Primitive, StartupError);
+	GetOrCreate(EShaderPath::Gizmo, StartupError);
+	GetOrCreate(EShaderPath::Editor, StartupError);
+	GetOrCreate(EShaderPath::Decal, StartupError);
+	GetOrCreate(EShaderPath::Outline, StartupError);
+	GetOrCreate(EShaderPath::SceneDepth, StartupError);
+	GetOrCreate(EShaderPath::SceneNormal, StartupError);
+	GetOrCreate(EShaderPath::FXAA, StartupError);
+	GetOrCreate(EShaderPath::Font, StartupError);
+	GetOrCreate(EShaderPath::OverlayFont, StartupError);
+	GetOrCreate(EShaderPath::SubUV, StartupError);
+	GetOrCreate(EShaderPath::Billboard, StartupError);
+	GetOrCreate(EShaderPath::HeightFog, StartupError);
+	GetOrCreate(EShaderPath::ShadowDepth, StartupError);
 
 	// UberLit 기본은 Phong + Cluster Culling으로 컴파일한다.
-	GetOrCreate(EShaderPath::UberLit);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),   EUberLitDefines::Unlit);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud), EUberLitDefines::Gouraud);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert), EUberLitDefines::Lambert);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),   EUberLitDefines::Phong);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Toon),    EUberLitDefines::Toon);
+	GetOrCreate(EShaderPath::UberLit, StartupError);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Unlit),   EUberLitDefines::Unlit,   StartupError);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud), EUberLitDefines::Gouraud, StartupError);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert), EUberLitDefines::Lambert, StartupError);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),   EUberLitDefines::Phong,   StartupError);
+	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Toon),    EUberLitDefines::Toon,    StartupError);
 
 	// include 역매핑 구축
 	RebuildIncludeDependents();
@@ -89,7 +92,7 @@ void FShaderManager::Release()
 // ============================================================
 // GetOrCreate — 캐시 히트 시 반환, 미스 시 컴파일
 // ============================================================
-FShader* FShaderManager::GetOrCreate(const FShaderKey& Key)
+FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode ErrorMode)
 {
 	auto It = ShaderCache.find(Key);
 	if (It != ShaderCache.end())
@@ -108,7 +111,7 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key)
 	{
 		const bool bIsUberLit = (Key.Path == EShaderPath::UberLit);
 		const D3D_SHADER_MACRO* Defines = bIsUberLit ? EUberLitDefines::Default : nullptr;
-		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes);
+		CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes, ErrorMode);
 		CacheEntry.StoredDefines = CopyDefines(Defines);
 	}
 	else
@@ -125,7 +128,7 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key)
 // ============================================================
 // PreCompile — 매크로 포함 셰이더 사전 컴파일
 // ============================================================
-FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines)
+FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode)
 {
 	auto It = ShaderCache.find(Key);
 	if (It != ShaderCache.end())
@@ -138,7 +141,7 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 	FShaderCacheEntry CacheEntry;
 	CacheEntry.Shader = std::make_unique<FShader>();
 	std::wstring WidePath = FPaths::ToWide(Key.Path);
-	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes);
+	CacheEntry.Shader->Create(CachedDevice, WidePath.c_str(), "VS", "PS", Defines, &CacheEntry.Includes, ErrorMode);
 	CacheEntry.StoredDefines = CopyDefines(Defines);
 
 	auto* RawPtr = CacheEntry.Shader.get();
