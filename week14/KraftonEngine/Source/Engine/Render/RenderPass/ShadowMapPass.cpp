@@ -301,17 +301,84 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
 
-	// TODO: 팀원 A 구현
-	// 1. Env.GetGlobalDirectionalLightParams()에서 Direction 획득
-	// 2. cascade별 ViewProj 계산 (카메라 frustum 분할 기반)
-	// 3. for (i = 0..MAX_SHADOW_CASCADES-1):
-	//      DC->ClearDepthStencilView(Res.CSMDSV[i], ...)
-	//      DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i])  // VSM: RTV + DSV
-	//      SetViewport(Res.CSMResolution)
-	//      DrawShadowCasters(Ctx, cascadeFrustum)
-	//      ShadowCBCache.CSMViewProj[i] = cascadeViewProj
-	// 4. ShadowCBCache.NumCSMCascades = 실제 사용 cascade 수
-	// 5. ShadowCBCache.CascadeSplits = split distances
+	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
+
+	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+
+	FMatrix CameraView = Ctx.Frame.View;
+	FMatrix CameraProj = Ctx.Frame.Proj;
+
+	const float CameraNearZ = Ctx.Frame.NearClip;
+	const float CameraFarZ = Ctx.Frame.FarClip;
+
+	//CSM에서 실제로 shadow를 생성하는 최대 길이.
+	//FarClip 전체를 쓰면 C0도 지나치게 넓어져 근거리 품질이 낮아짐.
+	const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
+	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+
+	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
+	FLightFrustumUtils::ComputeCascadeRanges(
+		CameraNearZ,
+		ShadowFarZ,
+		NumCascades,
+		0.85f,
+		CascadeRanges
+	);
+
+	ShadowCBCache.CascadeSplits = FVector4(
+		CascadeRanges[0].FarZ,
+		CascadeRanges[1].FarZ,
+		CascadeRanges[2].FarZ,
+		CascadeRanges[3].FarZ
+	);
+	//ImGui 디버그용
+	Res.CSMDebugCascadeNear = FVector4(
+		CascadeRanges[0].NearZ,
+		CascadeRanges[1].NearZ,
+		CascadeRanges[2].NearZ,
+		CascadeRanges[3].NearZ
+	);
+	Res.CSMDebugCascadeFar = ShadowCBCache.CascadeSplits;
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	for(int32 i = 0; i < NumCascades; ++i)
+	{
+		const float CascadeNearZ = CascadeRanges[i].NearZ;
+		const float CascadeFarZ = CascadeRanges[i].FarZ;
+
+		//그걸로 빛 기준 view proj 생성
+		FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP
+			= FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
+				DirectionalParams, CameraView, CameraProj,
+				CameraNearZ,CameraFarZ,
+				CascadeNearZ, CascadeFarZ);
+		
+		//frustum 생성
+		FConvexVolume LightFrustum;
+		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
+
+		UploadLightViewProj(DC, DirectionalVP.ViewProj);
+
+		//reverse-Z
+		DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+
+		D3D11_VIEWPORT ShadowVP = {};
+		ShadowVP.TopLeftX = 0.0f;
+		ShadowVP.TopLeftY = 0.0f;
+		ShadowVP.Width = static_cast<float>(Res.CSMResolution);
+		ShadowVP.Height = static_cast<float>(Res.CSMResolution);
+		ShadowVP.MinDepth = 0.0f;
+		ShadowVP.MaxDepth = 1.0f;
+		
+		DC->RSSetViewports(1, &ShadowVP);
+
+		DrawShadowCasters(Ctx, LightFrustum);
+
+		ShadowCBCache.CSMViewProj[i] = DirectionalVP.ViewProj;
+	}
+	ShadowCBCache.NumCSMCascades = NumCascades;
 }
 
 // ============================================================

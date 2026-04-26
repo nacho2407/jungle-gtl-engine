@@ -29,6 +29,8 @@ struct FShadowMapResources
 	ID3D11ShaderResourceView* CSMSRV      = nullptr;              // 전체 array SRV (셰이더용)
 	ID3D11ShaderResourceView* CSMSliceSRV[MAX_SHADOW_CASCADES] = {}; // per-cascade SRV (ImGui 디버그용)
 	uint32 CSMResolution = 2048;
+	FVector4 CSMDebugCascadeNear = {};
+	FVector4 CSMDebugCascadeFar = {};
 
 	// ── Spot Light Atlas (t22) ──
 	ID3D11Texture2D*           SpotAtlasTexture   = nullptr;
