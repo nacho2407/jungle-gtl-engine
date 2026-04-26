@@ -168,17 +168,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\ClusterConstructCS.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Lighting\ClusterConstructCS.hlsl">
+      <Filter>Shaders\Lighting</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ClusterHeatMap.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Lighting\ClusterHeatMap.hlsl">
+      <Filter>Shaders\Lighting</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\LightCullingCS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UberLit.hlsl">
-      <Filter>Shaders</Filter>
+    <FxCompile Include="Shaders\Lighting\LightCullingCS.hlsl">
+      <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
