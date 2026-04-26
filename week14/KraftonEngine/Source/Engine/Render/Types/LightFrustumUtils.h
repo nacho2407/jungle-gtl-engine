@@ -128,10 +128,13 @@ namespace FLightFrustumUtils
 
 	// CameraView/CameraProj로 카메라 frustum 8개 꼭짓점을 구하고,
 	// Light 방향의 직교 투영으로 감싸는 행렬을 생성.
-	inline FDirectionalLightViewProj BuildDirectionalLightViewProj(
-		const FGlobalDirectionalLightParams& Light,
-		const FMatrix& CameraView,
-		const FMatrix& CameraProj)
+		inline FDirectionalLightViewProj BuildDirectionalLightViewProj(
+			const FGlobalDirectionalLightParams& Light,
+			const FMatrix& CameraView,
+			const FMatrix& CameraProj,
+			// CSM이 아닌 single shadow map에서 카메라 far clip 전체를 감싸면 ortho 범위가 너무 커져
+			// shadow texel 밀도가 낮아집니다. 우선 카메라 주변 일정 거리만 덮습니다.
+			float ShadowDistance = 100.0f)
 	{
 		FDirectionalLightViewProj Result;
 
@@ -147,6 +150,21 @@ namespace FLightFrustumUtils
 		FVector WorldCorners[8];
 		for (int i = 0; i < 8; ++i)
 			WorldCorners[i] = InvVP.TransformPositionWithW(NDCCorners[i]);
+
+		if (ShadowDistance > 0.0f)
+		{
+			FMatrix InvView = CameraView.GetInverseFast();
+			FVector CameraPos = InvView.TransformPositionWithW(FVector(0.0f, 0.0f, 0.0f));
+			for (int i = 4; i < 8; ++i)
+			{
+				FVector ToCorner = WorldCorners[i] - CameraPos;
+				float Dist = ToCorner.Length();
+				if (Dist > ShadowDistance && Dist > 0.001f)
+				{
+					WorldCorners[i] = CameraPos + ToCorner * (ShadowDistance / Dist);
+				}
+			}
+		}
 
 		// Frustum 중심
 		FVector Center(0, 0, 0);
