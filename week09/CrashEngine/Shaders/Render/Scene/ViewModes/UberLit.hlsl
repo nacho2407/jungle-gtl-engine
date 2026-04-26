@@ -140,7 +140,8 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                         WorldPos,
                         ViewDir,
                         Shininess,
-                        SpecularStrength);
+                        SpecularStrength,
+                        Input.position);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm.Diffuse + LocalTerm.Specular;
 #if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
