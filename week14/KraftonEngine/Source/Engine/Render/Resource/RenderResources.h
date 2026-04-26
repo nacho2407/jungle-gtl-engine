@@ -162,8 +162,9 @@ struct FSystemResources
 	FTileBasedLightCulling TileBasedCulling;
 	FClusteredLightCuller  ClusteredLightCuller;
 
-	// --- Shadow Resources (t21-t25) ---
-	FShadowMapResources ShadowResources;
+	// --- Shadow ---
+	FShadowMapResources ShadowResources;			// t21-t25 텍스처/SRV/StructuredBuffer
+	FConstantBuffer ShadowConstantBuffer;			// b5 — ECBSlot::Shadow
 
 	// --- Render State Managers ---
 	FRasterizerStateManager RasterizerStateManager;
