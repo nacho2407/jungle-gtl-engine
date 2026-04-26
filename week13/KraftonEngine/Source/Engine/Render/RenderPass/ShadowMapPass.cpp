@@ -264,26 +264,50 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
 
+	constexpr int32 NumCascades = 4;
+
 	// Test용 single cascade 렌더링(카메라 veiw frstum 전체를 하나의 cascade로 처리)
 	//direction light의 방향
 	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
-	
+
 	//활성화된 에디터 카메라의 view, proj
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
+
+	const float CameraNearZ = Ctx.Frame.NearClip;
+	const float CameraFarZ = Ctx.Frame.FarClip;
 	
-	//카메라의 frustum 전체를 덮을 수 있는 directional light의 viewproj 계산
-	FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP 
-		= FLightFrustumUtils::BuildDirectionalLightViewProj(DirectionalParams, CameraView, CameraProj);
-	
-	//frustum 생성
-	FConvexVolume LightFrustum;
-	LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
-	
+	//CSM에서 실제로 shadow를 생성하는 최대 길이, 일단은 카메라와 일치시킴
+	const float ShadowDistance = CameraFarZ; // 100.0f;
+	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+
+	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
+	FLightFrustumUtils::ComputeCascadeRanges(
+		CameraNearZ,
+		ShadowFarZ,
+		NumCascades,
+		0.5f,
+		CascadeRanges
+	);
+
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
-	for(int32 i = 0; i < 1; ++i)
+	for(int32 i = 0; i < NumCascades; ++i)
 	{
+		const float CascadeNearZ = CascadeRanges[i].NearZ;
+		const float CascadeFarZ = CascadeRanges[i].FarZ;
+
+		//그걸로 빛 기준 view proj 생성
+		FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP
+			= FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
+				DirectionalParams, CameraView, CameraProj,
+				CameraNearZ,CameraFarZ,
+				CascadeNearZ, CascadeFarZ);
+		
+		//frustum 생성
+		FConvexVolume LightFrustum;
+		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
+
 		// Shadow depth를 그릴 때 VS가 참조하는 b0(FrameBuffer)를
 		// 카메라 View/Proj가 아니라 directional light View/Proj로 교체합니다.
 		FFrameContext ShadowFrame = Ctx.Frame;
@@ -296,29 +320,20 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 		DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
 
 		D3D11_VIEWPORT ShadowVP = {};
+		ShadowVP.TopLeftX = 0.0f;
+		ShadowVP.TopLeftY = 0.0f;
 		ShadowVP.Width = static_cast<float>(Res.CSMResolution);
 		ShadowVP.Height = static_cast<float>(Res.CSMResolution);
 		ShadowVP.MinDepth = 0.0f;
 		ShadowVP.MaxDepth = 1.0f;
 		
 		DC->RSSetViewports(1, &ShadowVP);
+
 		DrawShadowCasters(Ctx, LightFrustum);
 
-		ShadowCBCache.CSMViewProj[0] = DirectionalVP.ViewProj;
-		ShadowCBCache.NumCSMCascades = 1;
+		ShadowCBCache.CSMViewProj[i] = DirectionalVP.ViewProj;
 	}
-
-	// TODO: 팀원 A 구현
-	// 1. Env.GetGlobalDirectionalLightParams()에서 Direction 획득
-	// 2. cascade별 ViewProj 계산 (카메라 frustum 분할 기반)
-	// 3. for (i = 0..MAX_SHADOW_CASCADES-1):
-	//      DC->ClearDepthStencilView(Res.CSMDSV[i], ...)
-	//      DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i])  // VSM: RTV + DSV
-	//      SetViewport(Res.CSMResolution)
-	//      DrawShadowCasters(Ctx, cascadeFrustum)
-	//      ShadowCBCache.CSMViewProj[i] = cascadeViewProj
-	// 4. ShadowCBCache.NumCSMCascades = 실제 사용 cascade 수
-	// 5. ShadowCBCache.CascadeSplits = split distances
+	ShadowCBCache.NumCSMCascades = NumCascades;
 }
 
 // ============================================================
