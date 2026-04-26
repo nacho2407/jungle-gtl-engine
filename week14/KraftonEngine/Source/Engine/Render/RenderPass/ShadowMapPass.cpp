@@ -111,6 +111,7 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 	RenderDirectionalShadows(Ctx, ShadowRes);
 
 	RenderSpotShadows(Ctx, ShadowRes);
+	RenderPointShadows(Ctx, ShadowRes);
 }
 
 // ============================================================
@@ -559,10 +560,12 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
 }
 
-void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
+void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
-	auto& SceneEnvironment = Scene.GetEnvironment();
+	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
 	const uint32 NumPointLights = SceneEnvironment.GetNumPointLights();
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
 	uint32 ShadowPointLightCount = 0;
 	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights; ++PointLightIndex)
@@ -586,7 +589,7 @@ void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Dev
 	}
 
 	const uint32 ShadowResolution = FShadowSettings::Get().GetEffectiveResolution();
-	Res.EnsurePointCube(Device.GetDevice(), ShadowResolution, ShadowPointLightCount);
+	Res.EnsurePointCube(Ctx.Device.GetDevice(), ShadowResolution, ShadowPointLightCount);
 	if (!Res.IsPointValid() || !Res.PointCubeDSVs || !Res.PointShadowDataBuffer)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
@@ -633,7 +636,7 @@ void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Dev
 			DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
 			DC->RSSetViewports(1, &ShadowViewport);
 
-			DrawShadowCasters(DC, Scene, LightFrustum, Partition);
+			DrawShadowCasters(Ctx, LightFrustum);
 		}
 
 		++ShadowPointLightIndex;
@@ -666,7 +669,6 @@ void FShadowMapPass::RenderGlobal(FD3DDevice& Device, FSystemResources& Resource
 
 	// Spot/Point shadow 렌더링
 	RenderSpotShadows(DC, Device, Resources, Scene, Res, Partition);
-	RenderPointShadows(DC, Device, Scene, Res, Partition);
 
 	// Shadow depth 렌더링 종료 — DSV 언바인딩 (SRV 바인딩 전 R/W hazard 방지)
 	DC->OMSetRenderTargets(0, nullptr, nullptr);
