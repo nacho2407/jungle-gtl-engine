@@ -5,7 +5,7 @@ struct LightBaseParams
 	float Intensity; //4
 	FVector4 LightColor; //16
 	bool bVisible; // 4
-	bool bCastShadows = false;
+	bool bCastShadows = true;
 };
 struct FGlobalAmbientLightParams : public LightBaseParams
 {

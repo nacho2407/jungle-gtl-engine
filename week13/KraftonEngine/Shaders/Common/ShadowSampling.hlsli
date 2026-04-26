@@ -15,7 +15,8 @@
 // ── Hard Shadow (1-tap comparison) ──────────────────────────────
 float SampleShadowHard(Texture2DArray shadowMap, float3 uvw, float compareDepth)
 {
-    // ShadowComparisonSampler (s3): D3D11_COMPARISON_LESS_EQUAL
+    // ShadowComparisonSampler (s3): D3D11_COMPARISON_GREATER_EQUAL (Reversed-Z)
+    // compareDepth >= texel → lit (1.0), compareDepth < texel → shadow (0.0)
     return shadowMap.SampleCmpLevelZero(ShadowComparisonSampler, uvw, compareDepth);
 }
 
@@ -58,18 +59,19 @@ float SampleShadowPCF5x5(Texture2DArray shadowMap, float3 uvw, float compareDept
 }
 
 // ── VSM (Variance Shadow Map) ───────────────────────────────────
-// moments = (E[z], E[z^2])
+// moments = (E[z], E[z^2])   — Reversed-Z: near=1, far=0
 float ComputeVSMFactor(float2 moments, float fragDepth)
 {
-    // 그림자 영역 밖이면 완전히 밝음
-    if (fragDepth <= moments.x)
+    // Reversed-Z: 가까울수록 depth가 크다
+    // fragDepth >= moments.x → 빛에 더 가까움 → lit
+    if (fragDepth >= moments.x)
         return 1.0f;
 
     // Chebyshev 부등식
     float variance = moments.y - (moments.x * moments.x);
     variance = max(variance, 0.00002f); // numerical stability
 
-    float d = fragDepth - moments.x;
+    float d = moments.x - fragDepth; // Reversed-Z: occluder가 더 큰 값
     float pMax = variance / (variance + d * d);
 
     // Light bleeding 감소 — 낮은 확률값을 0으로 클램프
@@ -125,8 +127,8 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth)
         fragDepth < 0.0f  || fragDepth > 1.0f)
         return 1.0f;
 
-    // bias 적용
-    fragDepth -= ShadowBias;
+    // bias 적용 (Reversed-Z: 가까울수록 큰 값 → bias를 더해야 acne 방지)
+    fragDepth += ShadowBias;
 
     float3 uvw = float3(shadowUV, (float)cascade);
     float texelSize = 1.0f / (float)CSMResolution;
@@ -158,7 +160,7 @@ float CalcSpotShadowFactor(uint lightIndex, float3 worldPos)
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
 
     float2 shadowUV = projCoords.xy * float2(0.5f, -0.5f) + 0.5f;
-    float  fragDepth = projCoords.z - ShadowBias;
+    float  fragDepth = projCoords.z + ShadowBias; // Reversed-Z: bias를 더해야 acne 방지
 
     // Atlas UV 변환 (scale + bias)
     shadowUV = shadowUV * sd.AtlasScaleBias.xy + sd.AtlasScaleBias.zw;
@@ -198,7 +200,7 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
         face = (L.z > 0.0f) ? 4 : 5; // +Z, -Z
 
     float4 lightSpacePos = mul(float4(worldPos, 1.0f), pd.FaceViewProj[face]);
-    float fragDepth = (lightSpacePos.z / lightSpacePos.w) - ShadowBias;
+    float fragDepth = (lightSpacePos.z / lightSpacePos.w) + ShadowBias; // Reversed-Z
 
     // TextureCubeArray 샘플링 — 방향 벡터 + array index
     float4 cubeCoord = float4(L, (float)pd.CubeArrayIndex);
