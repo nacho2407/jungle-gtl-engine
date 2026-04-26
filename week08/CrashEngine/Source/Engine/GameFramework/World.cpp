@@ -53,7 +53,7 @@ void UWorld::DestroyActor(AActor* Actor)
     // Remove from actor list
     PersistentLevel->RemoveActor(Actor);
 
-    MarkWorldPrimitivePickingBVHDirty();
+    MarkEditorPickingAndScenePrimitiveBVHsDirty();
     Partition.RemoveActor(Actor);
 
     // Mark for garbage collection
@@ -84,7 +84,7 @@ void UWorld::AddActor(AActor* Actor)
     }
 
     InsertActorToOctree(Actor);
-    MarkWorldPrimitivePickingBVHDirty();
+    MarkEditorPickingAndScenePrimitiveBVHsDirty();
 
     // PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
     if (bHasBegunPlay && !Actor->HasActorBegunPlay())
@@ -93,7 +93,7 @@ void UWorld::AddActor(AActor* Actor)
     }
 }
 
-void UWorld::MarkWorldPrimitivePickingBVHDirty()
+void UWorld::MarkEditorPickingAndScenePrimitiveBVHsDirty()
 {
     if (DeferredPickingBVHUpdateDepth > 0)
     {
@@ -101,18 +101,18 @@ void UWorld::MarkWorldPrimitivePickingBVHDirty()
         return;
     }
 
-    WorldPrimitivePickingBVH.MarkDirty();
-    WorldPrimitiveVisibleBVH.MarkDirty();
+    EditorPickingBVH.MarkDirty();
+    ScenePrimitiveBVH.MarkDirty();
 }
 
-void UWorld::BuildWorldPrimitivePickingBVHNow() const
+void UWorld::BuildEditorPickingBVHNow() const
 {
-    WorldPrimitivePickingBVH.BuildNow(GetActors(), true);
+    EditorPickingBVH.BuildNow(GetActors());
 }
 
-void UWorld::BuildWorldPrimitiveVisibleBVHNow() const
+void UWorld::BuildScenePrimitiveBVHNow() const
 {
-    WorldPrimitiveVisibleBVH.BuildNow(GetActors(), false);
+    ScenePrimitiveBVH.BuildNow(GetActors());
 }
 
 void UWorld::BeginDeferredPickingBVHUpdate()
@@ -131,7 +131,8 @@ void UWorld::EndDeferredPickingBVHUpdate()
     if (DeferredPickingBVHUpdateDepth == 0 && bDeferredPickingBVHDirty)
     {
         bDeferredPickingBVHDirty = false;
-        BuildWorldPrimitivePickingBVHNow();
+        BuildEditorPickingBVHNow();
+        BuildScenePrimitiveBVHNow();
     }
 }
 
@@ -159,10 +160,11 @@ void UWorld::WarmupPickingData() const
         }
     }
 
-    BuildWorldPrimitivePickingBVHNow();
+    BuildEditorPickingBVHNow();
+    BuildScenePrimitiveBVHNow();
 }
 
-bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
+bool UWorld::RaycastEditorPicking(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
     if (WorldType == EWorldType::PIE)
     {
@@ -171,9 +173,8 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
         return false;
     }
 
-    // 혹시라도 BVH 트리가 업데이트 되지 않았다면 업데이트
-    WorldPrimitivePickingBVH.EnsureBuilt(GetActors(), true);
-    return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
+    EditorPickingBVH.EnsureBuilt(GetActors());
+    return EditorPickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
 
@@ -273,7 +274,7 @@ void UWorld::EndPlay()
     Partition.Reset(FBoundingBox());
 
     PersistentLevel->Clear();
-    MarkWorldPrimitivePickingBVHDirty();
+    MarkEditorPickingAndScenePrimitiveBVHsDirty();
 
     // PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음
     UObjectManager::Get().DestroyObject(PersistentLevel);

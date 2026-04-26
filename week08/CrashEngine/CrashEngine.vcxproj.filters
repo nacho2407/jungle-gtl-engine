@@ -491,7 +491,13 @@
     <ClCompile Include="Source\Engine\Collision\Sphere.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp">
+    <ClCompile Include="Source\Engine\Collision\BVH\EditorHelperBVH.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\BVH\EditorPickingBVH.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
@@ -1034,6 +1040,9 @@
     <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
@@ -1055,7 +1064,10 @@
     <ClInclude Include="Source\Engine\Collision\Sphere.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h">
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorPickingBVH.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">

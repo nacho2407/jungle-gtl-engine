@@ -489,7 +489,20 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     GPUOcclusion.ReadbackResults(Ctx);
 
     const FViewportRenderOptions& Opts = VC->GetRenderOptions();
-    const FShowFlags& ShowFlags = Opts.ShowFlags;
+    FShowFlags EffectiveShowFlags = Opts.ShowFlags;
+    if (VC->IsPilotingActor())
+    {
+        EffectiveShowFlags.bGizmo = false;
+        EffectiveShowFlags.bBillboardText = false;
+        EffectiveShowFlags.bGrid = false;
+        EffectiveShowFlags.bWorldAxis = false;
+        EffectiveShowFlags.bSceneBVH = false;
+        EffectiveShowFlags.bSceneOctree = false;
+        EffectiveShowFlags.bWorldBound = false;
+        EffectiveShowFlags.bLightDebugLines = false;
+        EffectiveShowFlags.bLightHitMap = false;
+    }
+    const FShowFlags& ShowFlags = EffectiveShowFlags;
     EViewMode ViewMode = Opts.ViewMode;
 
     if (VP->ApplyPendingResize())
@@ -505,7 +518,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     Scene.ClearFrameData();
 
     SceneView.SetCameraInfo(Camera);
-    SceneView.SetRenderSettings(ViewMode, ShowFlags);
+    SceneView.SetRenderSettings(ViewMode, EffectiveShowFlags);
     SceneView.SetRenderOptions(Opts);
     SceneView.RenderPath = FEditorSettings::Get().RenderShadingPath;
     SceneView.SetViewportInfo(VP);
@@ -555,8 +568,8 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
 
             if (ShowFlags.bSceneBVH)
             {
-                World->BuildWorldPrimitiveVisibleBVHNow();
-                Renderer.CollectWorldBVHDebug(World->GetWorldPrimitiveVisibleBVH(), Scene);
+                World->BuildScenePrimitiveBVHNow();
+                Renderer.CollectScenePrimitiveBVHDebug(World->GetScenePrimitiveBVH(), Scene);
             }
 
             if (ShowFlags.bWorldBound)
