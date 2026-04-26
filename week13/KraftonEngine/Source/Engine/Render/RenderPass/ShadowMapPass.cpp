@@ -264,21 +264,19 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
 
-	constexpr int32 NumCascades = 4;
+	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 
-	// Test용 single cascade 렌더링(카메라 veiw frstum 전체를 하나의 cascade로 처리)
-	//direction light의 방향
 	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
 
-	//활성화된 에디터 카메라의 view, proj
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
 
 	const float CameraNearZ = Ctx.Frame.NearClip;
 	const float CameraFarZ = Ctx.Frame.FarClip;
-	
-	//CSM에서 실제로 shadow를 생성하는 최대 길이, 일단은 카메라와 일치시킴
-	const float ShadowDistance = CameraFarZ; // 100.0f;
+
+	//CSM에서 실제로 shadow를 생성하는 최대 길이.
+	//FarClip 전체를 쓰면 C0도 지나치게 넓어져 근거리 품질이 낮아짐.
+	const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 
 	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
@@ -286,9 +284,24 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 		CameraNearZ,
 		ShadowFarZ,
 		NumCascades,
-		0.5f,
+		0.85f,
 		CascadeRanges
 	);
+
+	ShadowCBCache.CascadeSplits = FVector4(
+		CascadeRanges[0].FarZ,
+		CascadeRanges[1].FarZ,
+		CascadeRanges[2].FarZ,
+		CascadeRanges[3].FarZ
+	);
+	//ImGui 디버그용
+	Res.CSMDebugCascadeNear = FVector4(
+		CascadeRanges[0].NearZ,
+		CascadeRanges[1].NearZ,
+		CascadeRanges[2].NearZ,
+		CascadeRanges[3].NearZ
+	);
+	Res.CSMDebugCascadeFar = ShadowCBCache.CascadeSplits;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 

@@ -254,8 +254,25 @@ float CalcDirectionalShadow(float3 worldPos)
     if (NumCSMCascades == 0)
         return 1.0f;
 
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    uint cascadeIndex = NumCSMCascades - 1;
+    
+    //컴파일 타임 때 분기 제거
+    [unroll]
+    for (uint i = 0; i < MAX_SHADOW_CASCADES; ++i)
+    {
+        if (i >= NumCSMCascades)
+            break;
+
+        if (viewDepth <= CascadeSplits[i])
+        {
+            cascadeIndex = i;
+            break;
+        }
+    }
+
     // World -> Clip
-    float4 clipSpacePos = mul(float4(worldPos, 1.0f), CSMViewProj[0]);
+    float4 clipSpacePos = mul(float4(worldPos, 1.0f), CSMViewProj[cascadeIndex]);
     float3 ndcPos = clipSpacePos.xyz / clipSpacePos.w;
     
     //NDC -> Texture UV
@@ -268,7 +285,7 @@ float CalcDirectionalShadow(float3 worldPos)
         return 1.0f;
     
     //shadow map에서 빛과 가장 가까운 depth를 읽어옴
-    float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, float3(uv, 0.f), 0).r;
+    float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, float3(uv, (float)cascadeIndex), 0).r;
     
     // Reversed-Z: 값이 클수록 light에 더 가깝습니다.
     // Bias는 receiver를 light 쪽으로 살짝 당겨 self-shadow acne를 줄입니다.
