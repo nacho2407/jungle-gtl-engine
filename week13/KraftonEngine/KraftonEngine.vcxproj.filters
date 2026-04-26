@@ -192,6 +192,9 @@
     <FxCompile Include="Shaders\Common\Functions.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowSampling.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\SystemResources.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -220,6 +223,9 @@
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Lighting\OcclusionTest.hlsl">
+      <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ShadowDepth.hlsl">
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Lighting\TileLightCulling.hlsl">

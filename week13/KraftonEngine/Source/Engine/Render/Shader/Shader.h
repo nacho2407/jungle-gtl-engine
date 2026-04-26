@@ -3,6 +3,13 @@
 
 struct FMaterialParameterInfo;
 
+// 셰이더 컴파일 실패 시 에러 처리 방식
+enum class EShaderErrorMode
+{
+	Notification,  // 핫 리로드: 에디터 알림만 (기본)
+	MessageBox,    // 첫 시작: MessageBox로 즉시 알림
+};
+
 // ============================================================
 // FComputeShader — ID3D11ComputeShader* 래퍼 (FShaderManager가 소유)
 // ============================================================
@@ -58,7 +65,8 @@ public:
 	FShader& operator=(FShader&& Other) noexcept;
 
 	void Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-		const D3D_SHADER_MACRO* InDefines = nullptr, TArray<FString>* OutIncludes = nullptr);
+		const D3D_SHADER_MACRO* InDefines = nullptr, TArray<FString>* OutIncludes = nullptr,
+		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	void Release();
 
 	void Bind(ID3D11DeviceContext* InDeviceContext) const;

@@ -90,7 +90,7 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 }
 
 void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const char* InVSEntryPoint, const char* InPSEntryPoint,
-	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes)
+	const D3D_SHADER_MACRO* InDefines, TArray<FString>* OutIncludes, EShaderErrorMode ErrorMode)
 {
 	Release();
 
@@ -108,7 +108,10 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		{
 			const char* Msg = (const char*)errorBlob->GetBufferPointer();
 			UE_LOG("[Shader] VS Compile Error: %s", Msg);
-			FNotificationManager::Get().AddNotification("VS Compile Error (see log)", ENotificationType::Error, 5.0f);
+			if (ErrorMode == EShaderErrorMode::MessageBox)
+				MessageBoxA(nullptr, Msg, "VS Compile Error", MB_OK | MB_ICONERROR);
+			else
+				FNotificationManager::Get().AddNotification("VS Compile Error (see log)", ENotificationType::Error, 5.0f);
 			errorBlob->Release();
 		}
 		return;
@@ -122,7 +125,10 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 		{
 			const char* Msg = (const char*)errorBlob->GetBufferPointer();
 			UE_LOG("[Shader] PS Compile Error: %s", Msg);
-			FNotificationManager::Get().AddNotification("PS Compile Error (see log)", ENotificationType::Error, 5.0f);
+			if (ErrorMode == EShaderErrorMode::MessageBox)
+				MessageBoxA(nullptr, Msg, "PS Compile Error", MB_OK | MB_ICONERROR);
+			else
+				FNotificationManager::Get().AddNotification("PS Compile Error (see log)", ENotificationType::Error, 5.0f);
 			errorBlob->Release();
 		}
 		vertexShaderCSO->Release();

@@ -102,4 +102,11 @@ struct PS_Input_Decal
     float4 color : COLOR;
 };
 
+// SV_POSITION + Depth (ShadowDepth)
+struct PS_Input_Shadow
+{
+    float4 position : SV_POSITION;
+    float  depth    : TEXCOORD0;    // VSM용 normalized depth
+};
+
 #endif // VERTEX_LAYOUTS_HLSL
