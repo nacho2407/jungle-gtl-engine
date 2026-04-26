@@ -104,13 +104,14 @@ void UEditorEngine::Tick(float DeltaTime)
         StartQueuedPlaySessionRequest();
     }
 
+    InputSystem::Get().Tick();
+
     for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
     {
         VC->Tick(DeltaTime);
     }
 
     MainPanel.Update();
-    InputSystem::Get().Tick();
 
     const bool bPIEPaused = IsPausedInEditor();
     const bool bHasPIEWorld = IsPlayingInEditor();

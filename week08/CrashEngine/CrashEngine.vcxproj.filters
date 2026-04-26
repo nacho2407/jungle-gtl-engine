@@ -91,6 +91,9 @@
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{c9473e67-01af-08d9-c000-4f3a61330e70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Collision\BVH">
+      <UniqueIdentifier>{f73aa7eb-50b8-4ad2-9b93-1c7b73834807}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{9b83a0eb-f993-371d-6d99-fd85ab0e2245}</UniqueIdentifier>
     </Filter>
@@ -471,10 +474,10 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
@@ -492,7 +495,7 @@
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -1029,13 +1032,13 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\BVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\OBB.h">
       <Filter>Source\Engine\Collision</Filter>
@@ -1056,7 +1059,7 @@
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
@@ -1730,7 +1733,9 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Input\InputTypes.h" />
+    <ClInclude Include="Source\Engine\Input\InputTypes.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
