@@ -6,6 +6,7 @@
 #include "Collision/ConvexVolume.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/FrameContext.h"
+#include <numbers>
 
 /*
 	FLightFrustumUtils — 라이트 타입별 View/Projection 행렬 및 FConvexVolume 생성 유틸리티.
@@ -66,55 +67,50 @@ namespace FLightFrustumUtils
 	};
 
 	// 큐브맵 6개 face 방향 (+X, -X, +Y, -Y, +Z, -Z)
-	inline void BuildPointLightFaceViewProj(
+	inline FPointLightFaceViewProj BuildPointLightFaceViewProj(
 		const FPointLightParams& Light,
-		FPointLightFaceViewProj OutFaces[6],
+		const uint32 FaceIndex,
 		float NearZ = 0.1f)
 	{
-		static const FVector FaceDirs[6] = {
-			FVector( 1,  0,  0),  // +X
-			FVector(-1,  0,  0),  // -X
-			FVector( 0,  1,  0),  // +Y
-			FVector( 0, -1,  0),  // -Y
-			FVector( 0,  0,  1),  // +Z
-			FVector( 0,  0, -1),  // -Z
-		};
-		static const FVector FaceUps[6] = {
-			FVector(0, 0, 1),  // +X
-			FVector(0, 0, 1),  // -X
-			FVector(0, 0, 1),  // +Y
-			FVector(0, 0, 1),  // -Y
-			FVector(0, 1, 0),  // +Z (up = +Y to avoid parallel)
-			FVector(0, 1, 0),  // -Z
+		static const TStaticArray<FVector, 6> FaceDirections = {
+			FVector(1.0f , 0.0f, 0.0f),
+			FVector(-1.0f, 0.0f, 0.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+			FVector(0.0f, -1.0f, 0.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, -1.0f),
 		};
 
-		// 90° FOV, 1:1 aspect
-		FMatrix Proj = FMatrix::PerspectiveFovLH(
-			3.14159265358979f * 0.5f, 1.0f, NearZ, Light.AttenuationRadius
+		static const TStaticArray<FVector, 6> FaceUps = {
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+		};
+
+		FPointLightFaceViewProj Result;
+
+		Result.View = FMatrix::LookAtLH(
+			Light.Position,
+			Light.Position + FaceDirections[FaceIndex],
+			FaceUps[FaceIndex]);
+		Result.Proj = FMatrix::PerspectiveFovLH(
+			std::numbers::pi_v<float> * 0.5f, 1.0f, NearZ, Light.AttenuationRadius
 		);
-
-		for (int i = 0; i < 6; ++i)
-		{
-			OutFaces[i].View = FMatrix::LookAtLH(
-				Light.Position,
-				Light.Position + FaceDirs[i],
-				FaceUps[i]
-			);
-			OutFaces[i].Proj = Proj;
-			OutFaces[i].ViewProj = OutFaces[i].View * Proj;
-		}
+		Result.ViewProj = Result.View * Result.Proj;
+		return Result;
 	}
 
-	inline void BuildPointLightFaceFrustums(
+	inline FConvexVolume BuildPointLightFaceFrustums(
 		const FPointLightParams& Light,
-		FConvexVolume OutFrustums[6],
+		const uint32 FaceIndex,
 		float NearZ = 0.1f)
 	{
-		FPointLightFaceViewProj Faces[6];
-		BuildPointLightFaceViewProj(Light, Faces, NearZ);
-
-		for (int i = 0; i < 6; ++i)
-			OutFrustums[i].UpdateFromMatrix(Faces[i].ViewProj);
+		FConvexVolume Volume;
+		Volume.UpdateFromMatrix(BuildPointLightFaceViewProj(Light, FaceIndex, NearZ).ViewProj);
+		return Volume;
 	}
 
 	// ============================================================

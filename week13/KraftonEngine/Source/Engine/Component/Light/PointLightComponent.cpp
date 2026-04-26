@@ -73,18 +73,16 @@ void UPointLightComponent::Serialize(FArchive& Ar)
 	Ar << LightFalloffExponent;
 }
 
+// TODO: Camera Parameter의 존재 이유?
 bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
 {
 	FPointLightParams Params;
 	Params.Position = GetWorldLocation();
 	Params.AttenuationRadius = AttenuationRadius;
 
-	FLightFrustumUtils::FPointLightFaceViewProj Faces[6];
-	FLightFrustumUtils::BuildPointLightFaceViewProj(Params, Faces);
-
-	int32 Idx = (FaceIndex >= 0 && FaceIndex <= 5) ? FaceIndex : 0;
-	OutResult.View = Faces[Idx].View;
-	OutResult.Proj = Faces[Idx].Proj;
+	auto VP = FLightFrustumUtils::BuildPointLightFaceViewProj(Params, FaceIndex);
+	OutResult.View = VP.View;
+	OutResult.Proj = VP.Proj;
 	OutResult.bIsOrtho = false;
 	return true;
 }
