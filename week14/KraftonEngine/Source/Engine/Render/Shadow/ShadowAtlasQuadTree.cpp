@@ -52,6 +52,10 @@ FAtlasRegion FShadowAtlasQuadTree::Add(const FLightInfo& InLightInfo, FVector Ca
 	return AllocateNode(0, RequestedSize);
 }
 
+void FShadowAtlasQuadTree::AddToBatch(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
+	Batch.push_back({InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H)});
+}
+
 void FShadowAtlasQuadTree::Reset() {
 	if (!Nodes.empty()) {
 		Nodes.resize(1);
@@ -164,4 +168,30 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FV
 	desired_res = desired_res > AtlasSize ? AtlasSize : desired_res;
 	desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
 	return desired_res;
+}
+
+void FShadowAtlasQuadTree::SortBatch() {
+	// Largest resolution first, descending
+	std::sort(Batch.begin(), Batch.end(), [](const auto& A, const auto& B) {
+		return A.second > B.second;
+	});
+}
+
+TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
+	const int32 N = static_cast<int32>(Batch.size());
+	
+	// Results are written back at original indices.
+	TArray<int32> Order(N);
+	for (int32 i = 0; i < N; ++i) Order[i] = i;
+	std::sort(Order.begin(), Order.end(), [&](int32 A, int32 B) {
+		return Batch[A].second > Batch[B].second;
+	});
+
+	TArray<FAtlasRegion> Results(N, { 0, 0, 0, false });
+	for (int32 OrigIdx : Order) {
+		Results[OrigIdx] = AllocateNode(0, static_cast<uint32>(Batch[OrigIdx].second));
+	}
+
+	Batch.clear();
+	return Results;
 }
