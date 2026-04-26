@@ -81,6 +81,8 @@ namespace EShaderPath
 	inline constexpr const char* OverlayFont = "Shaders/UI/OverlayFont.hlsl";
 	inline constexpr const char* SubUV = "Shaders/UI/SubUV.hlsl";
 	inline constexpr const char* Billboard = "Shaders/UI/Billboard.hlsl";
+
+	inline constexpr const char* ShadowDepth = "Shaders/Lighting/ShadowDepth.hlsl";
 }
 
 namespace EUberLitDefines
