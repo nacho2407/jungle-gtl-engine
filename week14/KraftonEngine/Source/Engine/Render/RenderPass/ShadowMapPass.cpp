@@ -9,6 +9,7 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Shader/Shader.h"
+#include "Render/Shader/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Profiling/Stats.h"
@@ -198,7 +199,16 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
 {
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-	FShader* LastShader = nullptr;
+
+	// ShadowDepth 전용 셰이더 바인딩 (VS + InputLayout + PS)
+	FShader* ShadowShader = FShaderManager::Get().GetOrCreate(EShaderPath::ShadowDepth);
+	if (!ShadowShader || !ShadowShader->IsValid()) return;
+
+	ShadowShader->Bind(DC);
+
+	// Hard/PCF: depth-only (PS 불필요)
+	if (CurrentFilterMode != EShadowFilterMode::VSM)
+		DC->PSSetShader(nullptr, nullptr, 0);
 
 	for (FPrimitiveSceneProxy* Proxy : Ctx.Scene->GetAllProxies())
 	{
@@ -211,19 +221,6 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 
 		FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
 		if (!Mesh || !Mesh->IsValid()) continue;
-
-		FShader* ProxyShader = Proxy->GetShader();
-		if (!ProxyShader) continue;
-
-		// VS + InputLayout 바인딩
-		if (ProxyShader != LastShader)
-		{
-			ProxyShader->Bind(DC);
-			if (CurrentFilterMode != EShadowFilterMode::VSM)
-				DC->PSSetShader(nullptr, nullptr, 0);
-			// TODO: VSM 모드 시 moment PS 바인딩
-			LastShader = ProxyShader;
-		}
 
 		// PerObject CB (b1) — Model 행렬 업로드
 		ShadowPerObjectCB.Update(DC, &Proxy->GetPerObjectConstants(), sizeof(FPerObjectConstants));
