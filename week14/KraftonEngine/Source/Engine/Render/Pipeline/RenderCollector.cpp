@@ -10,44 +10,57 @@
 #include "Render/Culling/GPUOcclusionCulling.h"
 #include "Debug/DebugDrawQueue.h"
 #include "Render/Types/LODContext.h"
-#include "Render/Command/DrawCommandBuilder.h"
-#include "Render/Proxy/DecalSceneProxy.h"
-#include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Render/Proxy/TextRenderSceneProxy.h"
+#include "Render/Scene/FScene.h"
 
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
-void FRenderCollector::CollectWorld(UWorld* World, const FFrameContext& Frame, FDrawCommandBuilder& Builder)
+// ============================================================
+// UpdateProxyLOD — LOD 갱신 공통 헬퍼 (Collector + Builder 공유)
+// ============================================================
+void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx)
+{
+	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->GetProxyId(), Proxy->GetLastLODUpdateFrame()))
+		return;
+
+	const FVector& Pos = Proxy->GetCachedWorldPos();
+	const float dx = LODCtx.CameraPos.X - Pos.X;
+	const float dy = LODCtx.CameraPos.Y - Pos.Y;
+	const float dz = LODCtx.CameraPos.Z - Pos.Z;
+	Proxy->UpdateLOD(SelectLOD(Proxy->GetCurrentLOD(), dx * dx + dy * dy + dz * dz));
+	Proxy->SetLastLODUpdateFrame(LODCtx.LODUpdateFrame);
+}
+
+void FRenderCollector::Collect(UWorld* World, const FFrameContext& Frame, FCollectOutput& Output)
 {
 	if (!World) return;
 
 	FScene& Scene = World->GetScene();
 	Scene.UpdateDirtyProxies();
 
-	LastVisibleProxies.clear();
+	Output.FrustumVisibleProxies.clear();
 	{
 		SCOPE_STAT_CAT("FrustumCulling", "3_Collect");
 		const uint32 ExpectedCount = Scene.GetProxyCount()
 			+ static_cast<uint32>(Scene.GetNeverCullProxies().size());
-		if (LastVisibleProxies.capacity() < ExpectedCount)
+		if (Output.FrustumVisibleProxies.capacity() < ExpectedCount)
 		{
-			LastVisibleProxies.reserve(ExpectedCount);
+			Output.FrustumVisibleProxies.reserve(ExpectedCount);
 		}
 
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 		{
 			if (Proxy)
 			{
-				LastVisibleProxies.push_back(Proxy);
+				Output.FrustumVisibleProxies.push_back(Proxy);
 			}
 		}
 
-		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, LastVisibleProxies);
+		World->GetPartition().QueryFrustumAllProxies(Frame.FrustumVolume, Output.FrustumVisibleProxies);
 	}
 
-	CollectVisibleProxies(LastVisibleProxies, Frame, Scene, Builder);
+	FilterVisibleProxies(Frame, Scene, Output);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene)
@@ -105,122 +118,32 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 }
 
 // ============================================================
-// UpdateProxyLOD — LOD 갱신 공통 헬퍼 (메인 루프 + Decal Receiver 중복 제거)
+// FilterVisibleProxies — visibility/occlusion 필터 → RenderableProxies
 // ============================================================
-static void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx)
-{
-	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->GetProxyId(), Proxy->GetLastLODUpdateFrame()))
-		return;
-
-	const FVector& Pos = Proxy->GetCachedWorldPos();
-	const float dx = LODCtx.CameraPos.X - Pos.X;
-	const float dy = LODCtx.CameraPos.Y - Pos.Y;
-	const float dz = LODCtx.CameraPos.Z - Pos.Z;
-	Proxy->UpdateLOD(SelectLOD(Proxy->GetCurrentLOD(), dx * dx + dy * dy + dz * dz));
-	Proxy->SetLastLODUpdateFrame(LODCtx.LODUpdateFrame);
-}
-
-// ============================================================
-// CollectFontProxy — Font 배칭 경로
-// ============================================================
-void FRenderCollector::CollectFontProxy(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, FDrawCommandBuilder& Builder)
-{
-	const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
-	if (!TextProxy->CachedText.empty())
-	{
-		Builder.AddWorldText(TextProxy, Frame);
-	}
-}
-
-// ============================================================
-// CollectDecalProxy — Decal → Receiver 순회 + 커맨드 생성
-// ============================================================
-void FRenderCollector::CollectDecalProxy(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame,
-	const TSet<FPrimitiveSceneProxy*>& VisibleSet, FDrawCommandBuilder& Builder)
-{
-	FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
-
-	for (FPrimitiveSceneProxy* ReceiverProxy : DecalProxy->GetReceiverProxies())
-	{
-		if (!ReceiverProxy || VisibleSet.find(ReceiverProxy) == VisibleSet.end())
-			continue;
-
-		UpdateProxyLOD(ReceiverProxy, Frame.LODContext);
-
-		if (ReceiverProxy->HasProxyFlag(EPrimitiveProxyFlags::PerViewportUpdate))
-			ReceiverProxy->UpdatePerViewport(Frame);
-
-		Builder.BuildDecalCommandForReceiver(*ReceiverProxy, *DecalProxy);
-	}
-}
-
-// ============================================================
-// CollectMeshProxy — 일반 메시 (PreDepth + 메인 패스)
-// ============================================================
-void FRenderCollector::CollectMeshProxy(const FPrimitiveSceneProxy* Proxy, FDrawCommandBuilder& Builder)
-{
-	if (Proxy->GetRenderPass() == ERenderPass::Opaque)
-		Builder.BuildCommandForProxy(*Proxy, ERenderPass::PreDepth);
-
-	Builder.BuildCommandForProxy(*Proxy, Proxy->GetRenderPass());
-}
-
-// ============================================================
-// CollectSelectionVisuals — 아웃라인 + AABB
-// ============================================================
-void FRenderCollector::CollectSelectionVisuals(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume,
-	FScene& Scene, FDrawCommandBuilder& Builder)
-{
-	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::SupportsOutline))
-		Builder.BuildCommandForProxy(*Proxy, ERenderPass::SelectionMask);
-
-	if (bShowBoundingVolume && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
-		Scene.AddDebugAABB(Proxy->GetCachedBounds().Min, Proxy->GetCachedBounds().Max, FColor::White());
-}
-
-// ============================================================
-// CollectSelectedActorVisuals — Actor 단위 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
-// ============================================================
-void FRenderCollector::CollectSelectedActorVisuals(FScene& Scene)
-{
-	for (AActor* Actor : Scene.GetSelectedActors())
-	{
-		if (!Actor) continue;
-		for (UActorComponent* Comp : Actor->GetComponents())
-		{
-			if (Comp)
-				Comp->ContributeSelectedVisuals(Scene);
-		}
-	}
-}
-
-// ============================================================
-// Visible 프록시 수집 — 오케스트레이터
-// ============================================================
-void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>& Proxies, const FFrameContext& Frame, FScene& Scene, FDrawCommandBuilder& Builder)
+void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& Scene, FCollectOutput& Output)
 {
 	if (!Frame.RenderOptions.ShowFlags.bPrimitives) return;
 
-	const bool bShowBoundingVolume = Frame.RenderOptions.ShowFlags.bBoundingVolume;
 	SCOPE_STAT_CAT("CollectVisibleProxy", "3_Collect");
 
-	TSet<FPrimitiveSceneProxy*> VisibleProxySet;
-	VisibleProxySet.reserve(Proxies.size());
-	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	Output.VisibleProxySet.reserve(Output.FrustumVisibleProxies.size());
+	for (FPrimitiveSceneProxy* Proxy : Output.FrustumVisibleProxies)
 	{
 		if (Proxy)
-			VisibleProxySet.insert(Proxy);
+			Output.VisibleProxySet.insert(Proxy);
 	}
 
 	const FGPUOcclusionCulling* Occlusion = Frame.OcclusionCulling;
 	FGPUOcclusionCulling* OcclusionMut = Frame.OcclusionCulling;
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
-		OcclusionMut->BeginGatherAABB(static_cast<uint32>(Proxies.size()));
+		OcclusionMut->BeginGatherAABB(static_cast<uint32>(Output.FrustumVisibleProxies.size()));
 
 	LOD_STATS_RESET();
 
-	for (FPrimitiveSceneProxy* Proxy : Proxies)
+	Output.RenderableProxies.reserve(Output.FrustumVisibleProxies.size());
+
+	for (FPrimitiveSceneProxy* Proxy : Output.FrustumVisibleProxies)
 	{
 		// Light View에서는 EditorOnly 프록시(빌보드 아이콘 등) 제외
 		if (Frame.bIsLightView && Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly))
@@ -241,17 +164,7 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 		if (Occlusion && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull) && Occlusion->IsOccluded(Proxy))
 			continue;
 
-		// 프록시 타입별 분기 (Owner 타입캐스팅 대신 flags 사용)
-		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::FontBatched))
-			CollectFontProxy(Proxy, Frame, Builder);
-		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
-			CollectDecalProxy(Proxy, Frame, VisibleProxySet, Builder);
-		else
-			CollectMeshProxy(Proxy, Builder);
-
-		// 선택된 프록시 시각화 (아웃라인 + AABB)
-		if (Proxy->IsSelected())
-			CollectSelectionVisuals(Proxy, bShowBoundingVolume, Scene, Builder);
+		Output.RenderableProxies.push_back(Proxy);
 	}
 
 	// 선택된 Actor의 컴포넌트 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
@@ -259,4 +172,20 @@ void FRenderCollector::CollectVisibleProxies(const TArray<FPrimitiveSceneProxy*>
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();
+}
+
+// ============================================================
+// CollectSelectedActorVisuals — Actor 단위 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
+// ============================================================
+void FRenderCollector::CollectSelectedActorVisuals(FScene& Scene)
+{
+	for (AActor* Actor : Scene.GetSelectedActors())
+	{
+		if (!Actor) continue;
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (Comp)
+				Comp->ContributeSelectedVisuals(Scene);
+		}
+	}
 }

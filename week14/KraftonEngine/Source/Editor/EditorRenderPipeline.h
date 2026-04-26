@@ -26,7 +26,7 @@ private:
 	// RenderViewport 내부 단계
 	void PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx);
 	void BuildFrame(FLevelEditorViewportClient* VC, UCameraComponent* Camera, FViewport* VP, UWorld* World);
-	void CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer);
+	void CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer, FCollectOutput& Output);
 
 	// 뷰포트별 GPUOcclusion 인스턴스 (lazy init)
 	FGPUOcclusionCulling& GetOcclusionForViewport(FLevelEditorViewportClient* VC);
