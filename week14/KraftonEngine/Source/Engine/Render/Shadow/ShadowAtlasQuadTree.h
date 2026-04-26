@@ -27,6 +27,9 @@ public:
 	// Try allocating the uv region for the input light source
 	FAtlasRegion Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
 
+	// For non-camera dependent addition
+	FAtlasRegion Add(const FLightInfo& InLightInfo);
+
 	// Called every frame to reset the atlas.
 	void Reset();
 
@@ -45,6 +48,9 @@ private:
 
 	// Ranks the importance of the input light source based on its properties.
 	float EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
+
+	// Non-camera dependent version
+	float EvaluateResolution(const FLightInfo& InLightInfo);
 
 private:
 	TArray<Node> Nodes;
