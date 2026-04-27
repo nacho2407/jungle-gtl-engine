@@ -1,12 +1,15 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/FrameResources.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
+#include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
 #include "Render/Renderer.h"
 #include "Component/LightComponent.h"
 
 #include <algorithm>
+#include <cstring>
 
 FShadowMapPass::~FShadowMapPass()
 {
@@ -35,11 +38,14 @@ void FShadowMapPass::ReleaseShadowMapResources()
         {
             if (ShadowResourcesCube[i].DSVCubes[f]) ShadowResourcesCube[i].DSVCubes[f]->Release();
             if (ShadowResourcesCube[i].MomentRTVCubes[f]) ShadowResourcesCube[i].MomentRTVCubes[f]->Release();
+            if (ShadowResourcesCube[i].MomentFaceSRVs[f]) ShadowResourcesCube[i].MomentFaceSRVs[f]->Release();
             if (ShadowResourcesCube[i].PreviewSRVs[f]) ShadowResourcesCube[i].PreviewSRVs[f]->Release();
         }
         if (ShadowResourcesCube[i].SRVCube) ShadowResourcesCube[i].SRVCube->Release();
         ShadowResourcesCube[i] = {};
     }
+
+    ReleaseMomentBlurResources();
 }
 
 ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(uint32 Index, bool bIsCube, uint32 Face, ID3D11DeviceContext* Context)
@@ -68,6 +74,314 @@ void FShadowMapPass::SetShadowMapSize(uint32 InShadowMapSize)
 
     ShadowMapSize = ClampedSize;
     ReleaseShadowMapResources();
+}
+
+void FShadowMapPass::EnsureMomentBlurResources(ID3D11Device* Device)
+{
+    if (Device == nullptr)
+    {
+        return;
+    }
+
+    if (MomentBlurVS == nullptr || MomentBlurPSHorizontal == nullptr || MomentBlurPSVertical == nullptr)
+    {
+        FShaderStageDesc BlurVSDesc = {};
+        BlurVSDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
+        BlurVSDesc.EntryPoint       = "VS";
+
+        FShaderStageDesc BlurPSHorizontalDesc = {};
+        BlurPSHorizontalDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
+        BlurPSHorizontalDesc.EntryPoint       = "PS_Horizontal";
+
+        FShaderStageDesc BlurPSVerticalDesc = {};
+        BlurPSVerticalDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
+        BlurPSVerticalDesc.EntryPoint       = "PS_Vertical";
+
+        ID3DBlob* VsBlob           = nullptr;
+        ID3DBlob* PsHorizontalBlob = nullptr;
+        ID3DBlob* PsVerticalBlob   = nullptr;
+
+        const bool bCompiledVS = FShaderProgramBase::CompileShaderBlobStandalone(
+            &VsBlob, BlurVSDesc, "vs_5_0", "Shadow Moment Blur VS Compile Error");
+        const bool bCompiledH = FShaderProgramBase::CompileShaderBlobStandalone(
+            &PsHorizontalBlob, BlurPSHorizontalDesc, "ps_5_0", "Shadow Moment Blur Horizontal PS Compile Error");
+        const bool bCompiledV = FShaderProgramBase::CompileShaderBlobStandalone(
+            &PsVerticalBlob, BlurPSVerticalDesc, "ps_5_0", "Shadow Moment Blur Vertical PS Compile Error");
+        if (!bCompiledVS || !bCompiledH || !bCompiledV)
+        {
+            if (VsBlob) VsBlob->Release();
+            if (PsHorizontalBlob) PsHorizontalBlob->Release();
+            if (PsVerticalBlob) PsVerticalBlob->Release();
+            return;
+        }
+
+        const HRESULT HrVS = Device->CreateVertexShader(VsBlob->GetBufferPointer(), VsBlob->GetBufferSize(), nullptr, &MomentBlurVS);
+        const HRESULT HrH = Device->CreatePixelShader(PsHorizontalBlob->GetBufferPointer(), PsHorizontalBlob->GetBufferSize(), nullptr, &MomentBlurPSHorizontal);
+        const HRESULT HrV = Device->CreatePixelShader(PsVerticalBlob->GetBufferPointer(), PsVerticalBlob->GetBufferSize(), nullptr, &MomentBlurPSVertical);
+
+        VsBlob->Release();
+        PsHorizontalBlob->Release();
+        PsVerticalBlob->Release();
+
+        if (FAILED(HrVS) || FAILED(HrH) || FAILED(HrV))
+        {
+            ReleaseMomentBlurResources();
+            return;
+        }
+    }
+
+    if (MomentBlurCB == nullptr)
+    {
+        D3D11_BUFFER_DESC CbDesc = {};
+        CbDesc.ByteWidth         = sizeof(FMomentBlurCBData);
+        CbDesc.Usage             = D3D11_USAGE_DYNAMIC;
+        CbDesc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
+        CbDesc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
+        if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &MomentBlurCB)))
+        {
+            return;
+        }
+    }
+
+    if (MomentBlurTemp2D && MomentBlurTempSize == ShadowMapSize)
+    {
+        return;
+    }
+
+    if (MomentBlurTempSRV)
+    {
+        MomentBlurTempSRV->Release();
+        MomentBlurTempSRV = nullptr;
+    }
+    if (MomentBlurTempRTV)
+    {
+        MomentBlurTempRTV->Release();
+        MomentBlurTempRTV = nullptr;
+    }
+    if (MomentBlurTemp2D)
+    {
+        MomentBlurTemp2D->Release();
+        MomentBlurTemp2D = nullptr;
+    }
+    MomentBlurTempSize = 0;
+
+    D3D11_TEXTURE2D_DESC TempDesc = {};
+    TempDesc.Width                = ShadowMapSize;
+    TempDesc.Height               = ShadowMapSize;
+    TempDesc.MipLevels            = 1;
+    TempDesc.ArraySize            = 1;
+    TempDesc.Format               = DXGI_FORMAT_R32G32_FLOAT;
+    TempDesc.SampleDesc.Count     = 1;
+    TempDesc.Usage                = D3D11_USAGE_DEFAULT;
+    TempDesc.BindFlags            = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    if (FAILED(Device->CreateTexture2D(&TempDesc, nullptr, &MomentBlurTemp2D)))
+    {
+        ReleaseMomentBlurResources();
+        return;
+    }
+    if (FAILED(Device->CreateRenderTargetView(MomentBlurTemp2D, nullptr, &MomentBlurTempRTV)))
+    {
+        ReleaseMomentBlurResources();
+        return;
+    }
+    if (FAILED(Device->CreateShaderResourceView(MomentBlurTemp2D, nullptr, &MomentBlurTempSRV)))
+    {
+        ReleaseMomentBlurResources();
+        return;
+    }
+
+    MomentBlurTempSize = ShadowMapSize;
+}
+
+void FShadowMapPass::ReleaseMomentBlurResources()
+{
+    if (MomentBlurTempSRV)
+    {
+        MomentBlurTempSRV->Release();
+        MomentBlurTempSRV = nullptr;
+    }
+    if (MomentBlurTempRTV)
+    {
+        MomentBlurTempRTV->Release();
+        MomentBlurTempRTV = nullptr;
+    }
+    if (MomentBlurTemp2D)
+    {
+        MomentBlurTemp2D->Release();
+        MomentBlurTemp2D = nullptr;
+    }
+    if (MomentBlurCB)
+    {
+        MomentBlurCB->Release();
+        MomentBlurCB = nullptr;
+    }
+    if (MomentBlurPSVertical)
+    {
+        MomentBlurPSVertical->Release();
+        MomentBlurPSVertical = nullptr;
+    }
+    if (MomentBlurPSHorizontal)
+    {
+        MomentBlurPSHorizontal->Release();
+        MomentBlurPSHorizontal = nullptr;
+    }
+    if (MomentBlurVS)
+    {
+        MomentBlurVS->Release();
+        MomentBlurVS = nullptr;
+    }
+
+    MomentBlurTempSize = 0;
+}
+
+void FShadowMapPass::BlurMomentTexture2D(FRenderPipelineContext& Context, FShadowResource2D& Resource)
+{
+    if (GetShadowFilterMethod() != EShadowFilterMethod::VSM)
+    {
+        return;
+    }
+
+    if (!Resource.MomentRTV2D || !Resource.MomentSRV2D)
+    {
+        return;
+    }
+    if (!Context.Device)
+    {
+        return;
+    }
+
+    EnsureMomentBlurResources(Context.Device ? Context.Device->GetDevice() : nullptr);
+    if (!MomentBlurVS || !MomentBlurPSHorizontal || !MomentBlurPSVertical || !MomentBlurCB || !MomentBlurTempRTV || !MomentBlurTempSRV)
+    {
+        return;
+    }
+
+    ID3D11DeviceContext* Ctx = Context.Context;
+    if (!Ctx)
+    {
+        return;
+    }
+
+    FMomentBlurCBData BlurCBData = {};
+    BlurCBData.TexelSizeX        = 1.0f / static_cast<float>(std::max(1u, ShadowMapSize));
+    BlurCBData.TexelSizeY        = 1.0f / static_cast<float>(std::max(1u, ShadowMapSize));
+
+    D3D11_MAPPED_SUBRESOURCE Mapped = {};
+    if (SUCCEEDED(Ctx->Map(MomentBlurCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+    {
+        std::memcpy(Mapped.pData, &BlurCBData, sizeof(BlurCBData));
+        Ctx->Unmap(MomentBlurCB, 0);
+    }
+
+    Context.Device->SetDepthStencilState(EDepthStencilState::NoDepth);
+    Context.Device->SetBlendState(EBlendState::Opaque);
+    Context.Device->SetRasterizerState(ERasterizerState::SolidNoCull);
+
+    Ctx->IASetInputLayout(nullptr);
+    Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Ctx->VSSetShader(MomentBlurVS, nullptr, 0);
+    Ctx->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &MomentBlurCB);
+
+	Ctx->OMSetRenderTargets(1, &MomentBlurTempRTV, nullptr);
+
+	ID3D11ShaderResourceView* SourceSRV = Resource.MomentSRV2D;
+    Ctx->PSSetShader(MomentBlurPSHorizontal, nullptr, 0);
+    Ctx->PSSetShaderResources(0, 1, &SourceSRV);
+    Ctx->Draw(3, 0);
+
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Ctx->PSSetShaderResources(0, 1, &NullSRV);
+
+	Ctx->OMSetRenderTargets(1, &Resource.MomentRTV2D, nullptr);
+
+	SourceSRV = MomentBlurTempSRV;
+    Ctx->PSSetShader(MomentBlurPSVertical, nullptr, 0);
+    Ctx->PSSetShaderResources(0, 1, &SourceSRV);
+    Ctx->Draw(3, 0);
+
+    Ctx->PSSetShaderResources(0, 1, &NullSRV);
+    if (Context.StateCache)
+    {
+        Context.StateCache->Reset();
+    }
+}
+
+void FShadowMapPass::BlurMomentTextureCube(FRenderPipelineContext& Context, FShadowResourceCube& Resource)
+{
+    if (GetShadowFilterMethod() != EShadowFilterMethod::VSM)
+    {
+        return;
+    }
+
+    if (!Context.Device)
+    {
+        return;
+    }
+
+    EnsureMomentBlurResources(Context.Device ? Context.Device->GetDevice() : nullptr);
+    if (!MomentBlurVS || !MomentBlurPSHorizontal || !MomentBlurPSVertical || !MomentBlurCB || !MomentBlurTempRTV || !MomentBlurTempSRV)
+    {
+        return;
+    }
+
+    ID3D11DeviceContext* Ctx = Context.Context;
+    if (!Ctx)
+    {
+        return;
+    }
+
+    FMomentBlurCBData BlurCBData = {};
+    BlurCBData.TexelSizeX        = 1.0f / static_cast<float>(std::max(1u, ShadowMapSize));
+    BlurCBData.TexelSizeY        = 1.0f / static_cast<float>(std::max(1u, ShadowMapSize));
+
+    D3D11_MAPPED_SUBRESOURCE Mapped = {};
+    if (SUCCEEDED(Ctx->Map(MomentBlurCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+    {
+        std::memcpy(Mapped.pData, &BlurCBData, sizeof(BlurCBData));
+        Ctx->Unmap(MomentBlurCB, 0);
+    }
+
+    Context.Device->SetDepthStencilState(EDepthStencilState::NoDepth);
+    Context.Device->SetBlendState(EBlendState::Opaque);
+    Context.Device->SetRasterizerState(ERasterizerState::SolidNoCull);
+
+    Ctx->IASetInputLayout(nullptr);
+    Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Ctx->VSSetShader(MomentBlurVS, nullptr, 0);
+    Ctx->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &MomentBlurCB);
+
+    for (int Face = 0; Face < 6; ++Face)
+    {
+        if (!Resource.MomentRTVCubes[Face] || !Resource.MomentFaceSRVs[Face])
+        {
+            continue;
+        }
+
+        Ctx->OMSetRenderTargets(1, &MomentBlurTempRTV, nullptr);
+
+        ID3D11ShaderResourceView* SourceSRV = Resource.MomentFaceSRVs[Face];
+        Ctx->PSSetShader(MomentBlurPSHorizontal, nullptr, 0);
+        Ctx->PSSetShaderResources(0, 1, &SourceSRV);
+        Ctx->Draw(3, 0);
+
+        ID3D11ShaderResourceView* NullSRV = nullptr;
+        Ctx->PSSetShaderResources(0, 1, &NullSRV);
+
+		Ctx->OMSetRenderTargets(1, &Resource.MomentRTVCubes[Face], nullptr);
+
+        SourceSRV = MomentBlurTempSRV;
+        Ctx->PSSetShader(MomentBlurPSVertical, nullptr, 0);
+        Ctx->PSSetShaderResources(0, 1, &SourceSRV);
+        Ctx->Draw(3, 0);
+
+        Ctx->PSSetShaderResources(0, 1, &NullSRV);
+    }
+
+    if (Context.StateCache)
+    {
+        Context.StateCache->Reset();
+    }
 }
 
 void FShadowMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -257,6 +571,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
 					if (Res.MomentSRVCube)
                     {
+                        BlurMomentTextureCube(Context, Res);
+
                         ID3D11RenderTargetView* NullRTVs[1] = { nullptr };
                         Context.Context->OMSetRenderTargets(1, NullRTVs, nullptr);
                         Context.Context->GenerateMips(Res.MomentSRVCube);
@@ -281,6 +597,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
 					if (Res.MomentSRV2D)
                     {
+                        BlurMomentTexture2D(Context, Res);
+
                         ID3D11RenderTargetView* NullRTVs[1] = { nullptr };
                         Context.Context->OMSetRenderTargets(1, NullRTVs, nullptr);
                         Context.Context->GenerateMips(Res.MomentSRV2D);
@@ -437,6 +755,18 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         momentSrvDesc.TextureCube.MipLevels = static_cast<UINT>(-1);
         momentSrvDesc.TextureCube.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResourcesCube[i].MomentTextureCube, &momentSrvDesc, &ShadowResourcesCube[i].MomentSRVCube);
+
+        for (int f = 0; f < 6; ++f)
+        {
+            D3D11_SHADER_RESOURCE_VIEW_DESC momentFaceSrvDesc = {};
+            momentFaceSrvDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+            momentFaceSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+            momentFaceSrvDesc.Texture2DArray.MostDetailedMip = 0;
+            momentFaceSrvDesc.Texture2DArray.MipLevels = 1;
+            momentFaceSrvDesc.Texture2DArray.FirstArraySlice = f;
+            momentFaceSrvDesc.Texture2DArray.ArraySize = 1;
+            Device->CreateShaderResourceView(ShadowResourcesCube[i].MomentTextureCube, &momentFaceSrvDesc, &ShadowResourcesCube[i].MomentFaceSRVs[f]);
+        }
 
         for (int f = 0; f < 6; ++f)
         {
