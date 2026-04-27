@@ -3,6 +3,7 @@
 #include "Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/RenderPass/ShadowMapPass.h"
 #include "ImGui/imgui.h"
 
 static const char* FaceNames[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
@@ -95,15 +96,67 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			ImGui::RadioButton(label, &SpotPageIndex, i);
 		}
 
+		// Depth brightness: reversed-Z atlas tends to be near-black without a boost
+		ImGui::SetNextItemWidth(180.0f);
+		ImGui::SliderFloat("Brightness", &SpotDepthBrightness, 0.1f, 8.0f, "%.2fx");
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Reset")) SpotDepthBrightness = 1.0f;
+
+		ImGui::Checkbox("Show Regions", &bShowSpotRegions);
+
 		// 선택된 slice 프리뷰
 		if (SpotPageIndex >= 0 && SpotPageIndex < (int32)SR.SpotAtlasPageCount && SR.SpotAtlasSliceSRVs && SR.SpotAtlasSliceSRVs[SpotPageIndex])
 		{
+			float B = SpotDepthBrightness;
 			ImGui::Image(
 				(ImTextureID)SR.SpotAtlasSliceSRVs[SpotPageIndex],
 				ImVec2(PreviewSize, PreviewSize),
 				ImVec2(0, 0), ImVec2(1, 1),
-				ImVec4(1, 1, 1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1)
+				ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
 			);
+
+			// Colored per-light region overlay
+			if (bShowSpotRegions)
+			{
+				FShadowMapPass* ShadowPass = Renderer.GetPipeline().FindPass<FShadowMapPass>();
+				if (ShadowPass)
+				{
+					const TArray<FAtlasRegion>& Regions = ShadowPass->GetLastSpotAtlasRegions();
+
+					ImVec2 ImageMin = ImGui::GetItemRectMin();
+					float  Scale    = PreviewSize / static_cast<float>(SR.SpotAtlasResolution);
+
+					static const ImU32 RegionColors[] = {
+						IM_COL32(255,  80,  80, 220),
+						IM_COL32( 80, 220,  80, 220),
+						IM_COL32( 80, 140, 255, 220),
+						IM_COL32(255, 220,  50, 220),
+						IM_COL32(255, 130,  30, 220),
+						IM_COL32(200,  80, 255, 220),
+						IM_COL32( 50, 230, 230, 220),
+						IM_COL32(255,  80, 180, 220),
+					};
+					constexpr int32 NumColors = (int32)(sizeof(RegionColors) / sizeof(RegionColors[0]));
+
+					ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+					for (int32 i = 0; i < (int32)Regions.size(); ++i)
+					{
+						const FAtlasRegion& R = Regions[i];
+						if (!R.bValid) continue;
+
+						ImU32  Col     = RegionColors[i % NumColors];
+						ImVec2 RMin    = ImVec2(ImageMin.x + R.X          * Scale, ImageMin.y + R.Y          * Scale);
+						ImVec2 RMax    = ImVec2(ImageMin.x + (R.X + R.Size) * Scale, ImageMin.y + (R.Y + R.Size) * Scale);
+
+						DrawList->AddRect(RMin, RMax, Col, 0.0f, 0, 2.0f);
+
+						char Lbl[16];
+						snprintf(Lbl, sizeof(Lbl), "L%d (%upx)", i, R.Size);
+						DrawList->AddText(ImVec2(RMin.x + 4.0f, RMin.y + 4.0f), Col, Lbl);
+					}
+				}
+			}
 		}
 	}
 	// ════════════════════════════════════════

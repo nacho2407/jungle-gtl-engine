@@ -37,6 +37,9 @@ public:
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
+	// 마지막 프레임의 Spot Atlas 할당 결과 (에디터 디버그용)
+	const TArray<FAtlasRegion>& GetLastSpotAtlasRegions() const { return SpotAtlasRegion; }
+
 private:
 	// ── 라이트 타입별 Shadow 렌더링 ──
 	void RenderDirectionalShadows(const FPassContext& Ctx, FShadowMapResources& Res);
@@ -74,6 +77,7 @@ private:
 	FShadowCBData     ShadowCBCache = {};
 
 	FShadowAtlasQuadTree SpotLightAtlas;
+	TArray<FAtlasRegion> SpotAtlasRegion;
 
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;
