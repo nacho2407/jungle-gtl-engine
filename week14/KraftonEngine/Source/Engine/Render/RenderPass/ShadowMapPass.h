@@ -8,6 +8,7 @@
 
 #include "Render/Resource/RenderResources.h"
 #include "Render/Shadow/ShadowAtlasQuadTree.h"
+#include "Render/Shadow/AtlasQuadTreePoint.h"
 
 struct FShadowMapResources;
 class FSceneEnvironment;
@@ -78,6 +79,9 @@ private:
 
 	FShadowAtlasQuadTree SpotLightAtlas;
 	TArray<FAtlasRegion> SpotAtlasRegion;
+
+	FAtlasQuadTreePoint  PointLightAtlas;
+	TArray<FAtlasRegion> PointAtlasRegion;
 
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;

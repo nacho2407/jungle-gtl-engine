@@ -28,6 +28,7 @@ REGISTER_RENDER_PASS(FShadowMapPass)
 FShadowMapPass::FShadowMapPass()
 {
 	SpotLightAtlas.Init(4096.f, 64.f);
+	PointLightAtlas.Init(4096.f, 64.f);
 	PassType = ERenderPass::ShadowMap;
 }
 
@@ -155,9 +156,9 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 		if (ShadowRes.SpotAtlasPageCount > 0)
 			TotalBytes += static_cast<uint64>(ShadowRes.SpotAtlasResolution) * ShadowRes.SpotAtlasResolution * ShadowRes.SpotAtlasPageCount * BPP;
 
-		// Point Light: Resolution^2 * 6 faces * count
-		if (ShadowRes.PointLightShadowTextureCount > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.PointLightShadowTextureResolution) * ShadowRes.PointLightShadowTextureResolution * 6 * ShadowRes.PointLightShadowTextureCount * BPP;
+		// Point Atlas: AtlasSize^2
+		if (ShadowRes.PointAtlasResolution > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.PointAtlasResolution) * ShadowRes.PointAtlasResolution * BPP;
 
 		SHADOW_STATS_SET_MEMORY(TotalBytes);
 	}
@@ -184,8 +185,8 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 
 		if (Res.PointVSMSRV)
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointVSMSRV);
-		else if (Res.PointLightShadowSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointLightShadowSRV);
+		else if (Res.PointAtlasSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointAtlasSRV);
 	}
 	else
 	{
@@ -194,8 +195,8 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
 		if (Res.SpotAtlasSRV)
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
-		if (Res.PointLightShadowSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointLightShadowSRV);
+		if (Res.PointAtlasSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointAtlasSRV);
 	}
 
 	if (Res.SpotShadowDataSRV)
@@ -246,7 +247,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
 	}
 
-	// ── Point Cube — shadow-casting point 수 기반 ──
+	// ── Point Atlas — shadow-casting point 수 기반 ──
 	uint32 ShadowPointCount = 0;
 	const uint32 NumPoints = Env.GetNumPointLights();
 	for (uint32 i = 0; i < NumPoints; ++i)
@@ -256,8 +257,9 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 
 	if (ShadowPointCount > 0)
 	{
-		Res.EnsurePointLightTexture(Dev, Resolution, ShadowPointCount);
-		if (bVSM) Res.EnsurePointCube_VSM(Dev, Resolution, ShadowPointCount);
+		const uint32 PointAtlasSize = static_cast<uint32>(PointLightAtlas.GetAtlasSize());
+		Res.EnsurePointAtlas(Dev, PointAtlasSize, ShadowPointCount);
+		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize);
 	}
 }
 
@@ -559,24 +561,20 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 }
 
 // ============================================================
-// RenderPointShadows — Point Light Cube Shadow 렌더링
+// RenderPointShadows — Point Light Atlas Shadow 렌더링
 // ============================================================
 
 void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
+	PointLightAtlas.Reset();
+
 	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
 	const uint32 NumPointLights = SceneEnvironment.GetNumPointLights();
 
-	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-
 	uint32 ShadowedPointLightCount = 0;
-	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights; ++PointLightIndex)
-	{
-		if (SceneEnvironment.GetPointLight(PointLightIndex).bCastShadows)
-		{
+	for (uint32 i = 0; i < NumPointLights; ++i)
+		if (SceneEnvironment.GetPointLight(i).bCastShadows)
 			++ShadowedPointLightCount;
-		}
-	}
 
 	if (ShadowedPointLightCount == 0)
 	{
@@ -585,92 +583,130 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	}
 
 	if (ShadowedPointLightCount > MAX_SHADOW_POINT_LIGHTS)
-	{
 		ShadowedPointLightCount = MAX_SHADOW_POINT_LIGHTS;
-	}
 
-	if (!Res.IsPointLightValid() || !Res.PointLightShadowDSVs || !Res.PointLightShadowDataBuffer)
+	if (!Res.IsPointLightValid() || !Res.PointLightShadowDataBuffer)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
 		return;
 	}
 
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+
+	// 아틀라스 배치: 라이트당 6개 엔트리 (face별 하나씩)
+	auto& Frame = Ctx.Frame;
+	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
+
+	uint32 BatchedLights = 0;
+	for (uint32 i = 0; i < NumPointLights && BatchedLights < ShadowedPointLightCount; ++i)
+	{
+		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(i);
+		if (!PointLight.bCastShadows) continue;
+
+		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			FPointLightParams FaceParams = PointLight;
+			FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
+			PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+		}
+		++BatchedLights;
+	}
+
+	PointAtlasRegion = PointLightAtlas.CommitBatch();
+
+	// 아틀라스 전체를 한 번만 클리어
+	if (bVSM && Res.IsPointVSMValid())
+	{
+		float clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+		DC->ClearRenderTargetView(Res.PointVSMRTV, clearColor);
+		DC->ClearDepthStencilView(Res.PointVSMDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+	}
+	else
+	{
+		DC->ClearDepthStencilView(Res.PointAtlasDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+	}
 
 	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
 	PointLightShadowGPUData.resize(ShadowedPointLightCount);
 
-	const uint32 ShadowResolution = Res.PointLightShadowTextureResolution;
-	D3D11_VIEWPORT ShadowViewport = {};
-	ShadowViewport.Width    = static_cast<float>(ShadowResolution);
-	ShadowViewport.Height   = static_cast<float>(ShadowResolution);
-	ShadowViewport.MinDepth = 0.0f;
-	ShadowViewport.MaxDepth = 1.0f;
+	D3D11_VIEWPORT ShadowVP = {};
+	ShadowVP.MinDepth = 0.0f;
+	ShadowVP.MaxDepth = 1.0f;
 
 	constexpr float ShadowNearZ = 0.1f;
-	uint32 ShadowedPointLightIndex = 0;
-	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights && ShadowedPointLightIndex < ShadowedPointLightCount; ++PointLightIndex)
-	{
-		const FPointLightParams &PointLight = SceneEnvironment.GetPointLight(PointLightIndex);
-		if (!PointLight.bCastShadows)
-		{
-			continue;
-		}
+	const float AtlasF = static_cast<float>(Res.PointAtlasResolution);
 
-		FPointShadowDataGPU &ShadowData = PointLightShadowGPUData[ShadowedPointLightIndex];
+	uint32 ShadowedLightIndex = 0;
+	for (uint32 i = 0; i < NumPointLights && ShadowedLightIndex < ShadowedPointLightCount; ++i)
+	{
+		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(i);
+		if (!PointLight.bCastShadows) continue;
+
+		FPointShadowDataGPU& ShadowData = PointLightShadowGPUData[ShadowedLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
-		ShadowData.FarZ = PointLight.AttenuationRadius;
-		ShadowData.ArrayIndex = ShadowedPointLightIndex;
+		ShadowData.FarZ  = PointLight.AttenuationRadius;
 
 		const auto& Settings = FShadowSettings::Get();
 		ShadowData.ShadowBias      = Settings.GetBias().value_or(PointLight.ShadowBias);
 		ShadowData.ShadowSharpen   = Settings.GetSharpen().value_or(PointLight.ShadowSharpen);
 		ShadowData.ShadowSlopeBias = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
 
-		for (uint32 CubeFaceIndex = 0; CubeFaceIndex < 6; ++CubeFaceIndex)
+		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
-			const auto FaceViewProjection = FLightFrustumUtils::BuildPointLightFaceViewProj(PointLight, CubeFaceIndex, ShadowNearZ);
-			ShadowData.FaceViewProj[CubeFaceIndex] = FaceViewProjection.ViewProj;
+			const uint32 AtlasIdx = ShadowedLightIndex * 6 + FaceIndex;
+			const FAtlasRegion& Region = PointAtlasRegion[AtlasIdx];
+
+			const auto FaceVP = FLightFrustumUtils::BuildPointLightFaceViewProj(PointLight, FaceIndex, ShadowNearZ);
+			ShadowData.FaceViewProj[FaceIndex] = FaceVP.ViewProj;
+
+			if (!Region.bValid)
+			{
+				ShadowData.FaceAtlasScaleBias[FaceIndex] = FVector4(0.f, 0.f, 0.f, 0.f);
+				continue;
+			}
+
+			ShadowData.FaceAtlasScaleBias[FaceIndex] = FVector4(
+				static_cast<float>(Region.Size) / AtlasF,
+				static_cast<float>(Region.Size) / AtlasF,
+				static_cast<float>(Region.X)    / AtlasF,
+				static_cast<float>(Region.Y)    / AtlasF
+			);
 
 			FConvexVolume LightFrustum;
-			LightFrustum.UpdateFromMatrix(FaceViewProjection.ViewProj);
+			LightFrustum.UpdateFromMatrix(FaceVP.ViewProj);
+			UploadLightViewProj(DC, FaceVP.ViewProj);
 
-			UploadLightViewProj(DC, FaceViewProjection.ViewProj);
+			ShadowVP.TopLeftX = static_cast<float>(Region.X);
+			ShadowVP.TopLeftY = static_cast<float>(Region.Y);
+			ShadowVP.Width    = static_cast<float>(Region.Size);
+			ShadowVP.Height   = static_cast<float>(Region.Size);
 
-			uint32 DSVFaceIndex = ShadowedPointLightIndex * 6 + CubeFaceIndex;
 			if (bVSM && Res.IsPointVSMValid())
-			{
-				float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
-				DC->ClearRenderTargetView(Res.PointVSMRTVs[DSVFaceIndex], clearColor);
-				DC->ClearDepthStencilView(Res.PointVSMDSVs[DSVFaceIndex], D3D11_CLEAR_DEPTH, 0.0f, 0);
-				DC->OMSetRenderTargets(1, &Res.PointVSMRTVs[DSVFaceIndex], Res.PointVSMDSVs[DSVFaceIndex]);
-			}
+				DC->OMSetRenderTargets(1, &Res.PointVSMRTV, Res.PointVSMDSV);
 			else
-			{
-				ID3D11DepthStencilView *FaceDepthStencilView = Res.PointLightShadowDSVs[DSVFaceIndex];
-				DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
-				DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
-			}
-			DC->RSSetViewports(1, &ShadowViewport);
+				DC->OMSetRenderTargets(0, nullptr, Res.PointAtlasDSV);
+
+			DC->RSSetViewports(1, &ShadowVP);
 
 			DrawShadowCasters(Ctx, LightFrustum);
 			SHADOW_STATS_ADD_CASTER(PointLight, LastDrawCasterCount);
 		}
 
-		++ShadowedPointLightIndex;
+		++ShadowedLightIndex;
 	}
 
-	if (ShadowedPointLightIndex > 0 && Res.PointLightShadowDataBuffer)
+	if (ShadowedLightIndex > 0 && Res.PointLightShadowDataBuffer)
 	{
-		D3D11_MAPPED_SUBRESOURCE MappedPointShadowData = {};
-		if (SUCCEEDED(DC->Map(Res.PointLightShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedPointShadowData)))
+		D3D11_MAPPED_SUBRESOURCE Mapped = {};
+		if (SUCCEEDED(DC->Map(Res.PointLightShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 		{
-			memcpy(MappedPointShadowData.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedPointLightIndex);
+			memcpy(Mapped.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedLightIndex);
 			DC->Unmap(Res.PointLightShadowDataBuffer, 0);
 		}
 	}
 
-	ShadowCBCache.NumShadowPointLights = ShadowedPointLightIndex;
-	for (uint32 p = 0; p < ShadowedPointLightIndex; ++p)
+	ShadowCBCache.NumShadowPointLights = ShadowedLightIndex;
+	for (uint32 p = 0; p < ShadowedLightIndex; ++p)
 		SHADOW_STATS_ADD_SHADOW_LIGHT(PointLight);
 }
