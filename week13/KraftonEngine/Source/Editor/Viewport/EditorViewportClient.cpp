@@ -454,23 +454,25 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 			W->RaycastPrimitives(Ray, HitResult, BestActor); //BVH 시작
 		}
 
-		//멀티픽킹은 성능을 위해 일단 비활성화
-		//bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
-
 		if (BestActor == nullptr)
 		{
-				SelectionManager->ClearSelection();
+			SelectionManager->ClearSelection();
 		}
 		else
 		{
-				// if (bCtrlHeld)
-				// {
-				// 	SelectionManager->ToggleSelect(BestActor);
-				// }
-				// else
+			// (1)번 방안: 이미 선택된 액터라면 클릭된 세부 컴포넌트로 기즈모 이동 (Step-in)
+			if (SelectionManager->GetPrimarySelection() == BestActor)
+			{
+				if (HitResult.HitComponent)
 				{
-					SelectionManager->Select(BestActor);
+					SelectionManager->SelectComponent(HitResult.HitComponent);
 				}
+			}
+			else
+			{
+				// 새로운 선택이면 기본 액터 단위 선택
+				SelectionManager->Select(BestActor);
+			}
 		}
 	}
 
