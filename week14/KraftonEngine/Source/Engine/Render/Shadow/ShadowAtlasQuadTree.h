@@ -54,11 +54,11 @@ private:
 	// Non-camera dependent version
 	//float EvaluateResolution(const FLightInfo& InLightInfo);
 
-	void SortBatch();
-
 private:
 	TArray<std::pair<FLightInfo, float>> Batch;
 	TArray<Node> Nodes;
 	float		 AtlasSize				= 4096.f;
 	float		 MinShadowMapResolution = 64.f;
+
+	float		 RemainingSpace			= 4096.f;
 };

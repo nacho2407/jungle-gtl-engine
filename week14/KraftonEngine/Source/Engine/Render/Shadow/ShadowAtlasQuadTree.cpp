@@ -75,7 +75,7 @@ FAtlasRegion FShadowAtlasQuadTree::AllocateNode(int32 NodeIdx, uint32 RequestedS
 	if (NodeIdx < 0
 		|| NodeIdx >= Nodes.size()
 		|| Nodes[NodeIdx].bOccupied
-		|| RequestedSize == 0) {
+		|| RequestedSize < (uint32)MinShadowMapResolution) {
 		// Invalid Node index
 		return { 0, 0, 0, false };
 	}
@@ -83,6 +83,8 @@ FAtlasRegion FShadowAtlasQuadTree::AllocateNode(int32 NodeIdx, uint32 RequestedS
 	Node node = Nodes[NodeIdx];
 	if (node.bSplit) {
 		for (int32 SubIdx : node.Children) {
+			if (Nodes[SubIdx].bOccupied) continue;
+
 			// Greedily allocate the first child node that can fit the requested size
 			FAtlasRegion AllocatedRegion = AllocateNode(SubIdx, RequestedSize);
 			if (AllocatedRegion.bValid) {
@@ -170,13 +172,6 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FV
 	desired_res = desired_res > AtlasSize ? AtlasSize : desired_res;
 	desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
 	return desired_res;
-}
-
-void FShadowAtlasQuadTree::SortBatch() {
-	// Largest resolution first, descending
-	std::sort(Batch.begin(), Batch.end(), [](const auto& A, const auto& B) {
-		return A.second > B.second;
-	});
 }
 
 TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
