@@ -1,4 +1,4 @@
-﻿#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>

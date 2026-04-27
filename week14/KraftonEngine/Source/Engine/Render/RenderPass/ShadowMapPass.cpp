@@ -15,7 +15,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/ShadowStats.h"
-#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 #include "Collision/SpatialPartition.h"
 #include <d3d11.h>
 
