@@ -138,6 +138,28 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 
 	BindShadowSRVs(DC, ShadowRes);
 	UpdateShadowCB(Ctx);
+
+	// ── Shadow Stats: 해상도 + 메모리 ──
+	SHADOW_STATS_SET_RESOLUTION(ShadowRes.CSMResolution);
+
+	// Shadow map 텍스처 메모리 추정 (depth = 4B/pixel, VSM moment = 8B/pixel)
+	{
+		const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4; // depth + (moment if VSM)
+		uint64 TotalBytes = 0;
+
+		// CSM: Resolution^2 * cascades
+		TotalBytes += static_cast<uint64>(ShadowRes.CSMResolution) * ShadowRes.CSMResolution * MAX_SHADOW_CASCADES * BPP;
+
+		// Spot Atlas: AtlasResolution^2 * pages
+		if (ShadowRes.SpotAtlasPageCount > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.SpotAtlasResolution) * ShadowRes.SpotAtlasResolution * ShadowRes.SpotAtlasPageCount * BPP;
+
+		// Point Light: Resolution^2 * 6 faces * count
+		if (ShadowRes.PointLightShadowTextureCount > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.PointLightShadowTextureResolution) * ShadowRes.PointLightShadowTextureResolution * 6 * ShadowRes.PointLightShadowTextureCount * BPP;
+
+		SHADOW_STATS_SET_MEMORY(TotalBytes);
+	}
 }
 
 // ============================================================
@@ -281,6 +303,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 		ProxyList = &Scene.GetAllProxies();
 	}
 
+	LastDrawCasterCount = 0;
 	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
 		if (!Proxy || !Proxy->IsVisible()) continue;
@@ -293,6 +316,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 		FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
 		if (!Mesh || !Mesh->IsValid()) continue;
 
+		++LastDrawCasterCount;
 		ShadowPerObjectCB.Update(DC, &Proxy->GetPerObjectConstants(), sizeof(FPerObjectConstants));
 		ID3D11Buffer* b1 = ShadowPerObjectCB.GetBuffer();
 		DC->VSSetConstantBuffers(ECBSlot::PerObject, 1, &b1);
@@ -404,10 +428,12 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 		DC->RSSetViewports(1, &ShadowVP);
 		DrawShadowCasters(Ctx, LightFrustum);
+		SHADOW_STATS_ADD_CASTER(DirectionalLight, LastDrawCasterCount);
 
 		ShadowCBCache.CSMViewProj[i] = DirectionalVP.ViewProj;
 	}
 	ShadowCBCache.NumCSMCascades = NumCascades;
+	SHADOW_STATS_ADD_SHADOW_LIGHT(DirectionalLight);
 }
 
 // ============================================================
@@ -496,6 +522,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		DC->RSSetViewports(1, &ShadowVP);
 
 		DrawShadowCasters(Ctx, LightFrustum);
+		SHADOW_STATS_ADD_CASTER(SpotLight, LastDrawCasterCount);
 
 		float AtlasF = static_cast<float>(Resolution);
 		FVector4 AtlasScaleBias = FVector4(static_cast<float>(AtlasRegion.Size) / AtlasF,
@@ -526,6 +553,8 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	}
 
 	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
+	for (uint32 s = 0; s < ShadowIdx; ++s)
+		SHADOW_STATS_ADD_SHADOW_LIGHT(SpotLight);
 }
 
 // ============================================================
@@ -624,6 +653,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			DC->RSSetViewports(1, &ShadowViewport);
 
 			DrawShadowCasters(Ctx, LightFrustum);
+			SHADOW_STATS_ADD_CASTER(PointLight, LastDrawCasterCount);
 		}
 
 		++ShadowedPointLightIndex;
@@ -640,4 +670,6 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	}
 
 	ShadowCBCache.NumShadowPointLights = ShadowedPointLightIndex;
+	for (uint32 p = 0; p < ShadowedPointLightIndex; ++p)
+		SHADOW_STATS_ADD_SHADOW_LIGHT(PointLight);
 }
