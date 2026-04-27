@@ -169,24 +169,7 @@ UberPS_Output PS(UberVS_Output input)
 #endif
 
     // Culling Heatmap → SV_TARGET2
-    {
-        uint LightCount = NumActivePointLights + NumActiveSpotLights;
-        if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
-        {
-            uint2 tileCoord = min(uint2(input.position.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
-            uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
-            LightCount = TileLightGrid[tileIdx].y;
-        }
-        else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
-        {
-            uint clusterIdx = ComputeClusterIndex(input.position, input.worldPos);
-            LightCount = g_ClusterLightGrid[clusterIdx].y;
-        }
-
-        float MaxCount = HeatMapMax;
-        float ratio = saturate((float) LightCount / MaxCount);
-        output.Culling = float4(GetHeatmapColor(ratio), 1.0f);
-    }
+    output.Culling = ComputeCullingHeatmap(input.position, input.worldPos);
 
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
@@ -200,14 +183,6 @@ UberPS_Output PS(UberVS_Output input)
 
     output.Color = float4(finalColor, baseColor.a);
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
-
-#if !defined(LIGHTING_MODEL_UNLIT)
-    // LightCulling view mode shows the heatmap as the final color.
-    if (VisualizeLightCulling)
-    {
-        output.Color = output.Culling;
-    }
-#endif
 
     return output;
 }
