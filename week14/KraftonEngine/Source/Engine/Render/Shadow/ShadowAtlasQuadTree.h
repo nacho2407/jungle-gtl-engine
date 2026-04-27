@@ -27,8 +27,10 @@ public:
 	// Try allocating the uv region for the input light source
 	FAtlasRegion Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
 
-	// For non-camera dependent addition
-	FAtlasRegion Add(const FLightInfo& InLightInfo);
+	void AddToBatch(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
+
+	// Sorts the pending batch by evaluated resolution, then allocates all entries into the atlas.
+	TArray<FAtlasRegion> CommitBatch();
 
 	// Called every frame to reset the atlas.
 	void Reset();
@@ -50,9 +52,12 @@ private:
 	float EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
 
 	// Non-camera dependent version
-	float EvaluateResolution(const FLightInfo& InLightInfo);
+	//float EvaluateResolution(const FLightInfo& InLightInfo);
+
+	void SortBatch();
 
 private:
+	TArray<std::pair<FLightInfo, float>> Batch;
 	TArray<Node> Nodes;
 	float		 AtlasSize				= 4096.f;
 	float		 MinShadowMapResolution = 64.f;
