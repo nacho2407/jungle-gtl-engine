@@ -1,5 +1,6 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
 
 namespace ViewModePassConfigUtils
 {
@@ -11,6 +12,36 @@ void AddDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char
 }
 
 } // namespace ViewModePassConfigUtils
+
+namespace
+{
+void UpsertShaderDefine(TArray<FShaderMacroDefine>& Defines, const char* Name, const char* Value)
+{
+    for (FShaderMacroDefine& Define : Defines)
+    {
+        if (Define.Name == Name)
+        {
+            Define.Value = Value;
+            return;
+        }
+    }
+
+    Defines.push_back({ Name, Value });
+}
+
+void ApplyShadowFilterDefine(FViewModePassDesc& Pass)
+{
+    if (Pass.RenderPass != ERenderPass::Opaque && Pass.RenderPass != ERenderPass::DeferredLighting)
+    {
+        return;
+    }
+
+    UpsertShaderDefine(
+        Pass.ShaderVariant.Defines,
+        "SHADOW_FILTER_METHOD",
+        GetShadowFilterMethodDefineValue(GetShadowFilterMethod()));
+}
+} // namespace
 
 // ========== Config Queries ==========
 
@@ -354,6 +385,7 @@ void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewM
     // ---------- Initial Shader Compile ----------
     for (FViewModePassDesc& Pass : Config.Passes)
     {
+        ApplyShadowFilterDefine(Pass);
         Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     }
 }
@@ -473,6 +505,7 @@ void FViewModePassRegistry::RefreshCompiledShaders(FViewModePassConfig& Config) 
 {
     for (FViewModePassDesc& Pass : Config.Passes)
     {
+        ApplyShadowFilterDefine(Pass);
         Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     }
 }

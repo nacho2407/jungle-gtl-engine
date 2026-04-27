@@ -20,15 +20,21 @@ void FShadowMapPass::ReleaseShadowMapResources()
         if (ShadowResources2D[i].Texture2D) ShadowResources2D[i].Texture2D->Release();
         if (ShadowResources2D[i].DSV2D) ShadowResources2D[i].DSV2D->Release();
         if (ShadowResources2D[i].SRV2D) ShadowResources2D[i].SRV2D->Release();
+        if (ShadowResources2D[i].MomentTexture2D) ShadowResources2D[i].MomentTexture2D->Release();
+        if (ShadowResources2D[i].MomentRTV2D) ShadowResources2D[i].MomentRTV2D->Release();
+        if (ShadowResources2D[i].MomentSRV2D) ShadowResources2D[i].MomentSRV2D->Release();
         if (ShadowResources2D[i].PreviewSRV) ShadowResources2D[i].PreviewSRV->Release();
         ShadowResources2D[i] = {};
     }
     for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMapsCubeCount; i++)
     {
         if (ShadowResourcesCube[i].TextureCube) ShadowResourcesCube[i].TextureCube->Release();
+        if (ShadowResourcesCube[i].MomentTextureCube) ShadowResourcesCube[i].MomentTextureCube->Release();
+        if (ShadowResourcesCube[i].MomentSRVCube) ShadowResourcesCube[i].MomentSRVCube->Release();
         for (int f = 0; f < 6; ++f)
         {
             if (ShadowResourcesCube[i].DSVCubes[f]) ShadowResourcesCube[i].DSVCubes[f]->Release();
+            if (ShadowResourcesCube[i].MomentRTVCubes[f]) ShadowResourcesCube[i].MomentRTVCubes[f]->Release();
             if (ShadowResourcesCube[i].PreviewSRVs[f]) ShadowResourcesCube[i].PreviewSRVs[f]->Release();
         }
         if (ShadowResourcesCube[i].SRVCube) ShadowResourcesCube[i].SRVCube->Release();
@@ -168,6 +174,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             for (int Face = 0; Face < 6; ++Face)
             {
                 Context.Context->ClearDepthStencilView(Res.DSVCubes[Face], D3D11_CLEAR_DEPTH, 0.0f, 0);
+                if (Res.MomentRTVCubes[Face])
+                {
+                    const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                    Context.Context->ClearRenderTargetView(Res.MomentRTVCubes[Face], ClearColor);
+                }
             }
             ClearedShadowCube[ShadowIdx] = true;
             return;
@@ -185,6 +196,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         }
 
         Context.Context->ClearDepthStencilView(Res.DSV2D, D3D11_CLEAR_DEPTH, 0.0f, 0);
+        if (Res.MomentRTV2D)
+        {
+            const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+            Context.Context->ClearRenderTargetView(Res.MomentRTV2D, ClearColor);
+        }
         ClearedShadow2D[ShadowIdx] = true;
     };
 
@@ -227,7 +243,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 {
                     for (int Face = 0; Face < 6; ++Face)
                     {
-                        Context.Context->OMSetRenderTargets(0, nullptr, Res.DSVCubes[Face]);
+                        ID3D11RenderTargetView* RTVs[] = { Res.MomentRTVCubes[Face] };
+                        Context.Context->OMSetRenderTargets(1, RTVs, Res.DSVCubes[Face]);
 
                         FFrameCBData ShadowFrameData = {};
                         ShadowFrameData.View = FMatrix::Identity;
@@ -237,6 +254,13 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
                         Context.DrawCommandList->SubmitRange(LightStart, LightEnd, *Context.Device, Context.Context, *Context.StateCache);
                     }
+
+					if (Res.MomentSRVCube)
+                    {
+                        ID3D11RenderTargetView* NullRTVs[1] = { nullptr };
+                        Context.Context->OMSetRenderTargets(1, NullRTVs, nullptr);
+                        Context.Context->GenerateMips(Res.MomentSRVCube);
+                    }
                 }
             }
             else
@@ -244,7 +268,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 FShadowResource2D& Res = ShadowResources2D[ShadowIdx];
                 if (Res.Texture2D)
                 {
-                    Context.Context->OMSetRenderTargets(0, nullptr, Res.DSV2D);
+                    ID3D11RenderTargetView* RTVs[] = { Res.MomentRTV2D };
+                    Context.Context->OMSetRenderTargets(1, RTVs, Res.DSV2D);
 
                     FFrameCBData ShadowFrameData = {};
                     ShadowFrameData.View = FMatrix::Identity;
@@ -253,6 +278,13 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                     Context.Resources->FrameBuffer.Update(Context.Context, &ShadowFrameData, sizeof(FFrameCBData));
 
                     Context.DrawCommandList->SubmitRange(LightStart, LightEnd, *Context.Device, Context.Context, *Context.StateCache);
+
+					if (Res.MomentSRV2D)
+                    {
+                        ID3D11RenderTargetView* NullRTVs[1] = { nullptr };
+                        Context.Context->OMSetRenderTargets(1, NullRTVs, nullptr);
+                        Context.Context->GenerateMips(Res.MomentSRV2D);
+                    }
                 }
             }
         }
@@ -317,6 +349,27 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         srvDesc.Texture2D.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResources2D[i].Texture2D, &srvDesc, &ShadowResources2D[i].SRV2D);
 
+        D3D11_TEXTURE2D_DESC momentDesc = {};
+        momentDesc.Width = ShadowMapSize;
+        momentDesc.Height = ShadowMapSize;
+        momentDesc.MipLevels = 0;
+        momentDesc.ArraySize = 1;
+        momentDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        momentDesc.SampleDesc.Count = 1;
+        momentDesc.Usage = D3D11_USAGE_DEFAULT;
+        momentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        momentDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+
+        Device->CreateTexture2D(&momentDesc, nullptr, &ShadowResources2D[i].MomentTexture2D);
+        Device->CreateRenderTargetView(ShadowResources2D[i].MomentTexture2D, nullptr, &ShadowResources2D[i].MomentRTV2D);
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC momentSrvDesc = {};
+        momentSrvDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        momentSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        momentSrvDesc.Texture2D.MipLevels = static_cast<UINT>(-1);
+        momentSrvDesc.Texture2D.MostDetailedMip = 0;
+        Device->CreateShaderResourceView(ShadowResources2D[i].MomentTexture2D, &momentSrvDesc, &ShadowResources2D[i].MomentSRV2D);
+
         // Preview SRV (identical to SRV2D for now)
         Device->CreateShaderResourceView(ShadowResources2D[i].Texture2D, &srvDesc, &ShadowResources2D[i].PreviewSRV);
     }
@@ -354,6 +407,36 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         srvDesc.TextureCube.MipLevels = 1;
         srvDesc.TextureCube.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResourcesCube[i].TextureCube, &srvDesc, &ShadowResourcesCube[i].SRVCube);
+
+        D3D11_TEXTURE2D_DESC momentDesc = {};
+        momentDesc.Width = ShadowMapSize;
+        momentDesc.Height = ShadowMapSize;
+        momentDesc.MipLevels = 0;
+        momentDesc.ArraySize = 6;
+        momentDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        momentDesc.SampleDesc.Count = 1;
+        momentDesc.Usage = D3D11_USAGE_DEFAULT;
+        momentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        momentDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE | D3D11_RESOURCE_MISC_GENERATE_MIPS;
+        Device->CreateTexture2D(&momentDesc, nullptr, &ShadowResourcesCube[i].MomentTextureCube);
+
+        for (int f = 0; f < 6; ++f)
+        {
+            D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+            rtvDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+            rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+            rtvDesc.Texture2DArray.MipSlice = 0;
+            rtvDesc.Texture2DArray.FirstArraySlice = f;
+            rtvDesc.Texture2DArray.ArraySize = 1;
+            Device->CreateRenderTargetView(ShadowResourcesCube[i].MomentTextureCube, &rtvDesc, &ShadowResourcesCube[i].MomentRTVCubes[f]);
+        }
+
+        D3D11_SHADER_RESOURCE_VIEW_DESC momentSrvDesc = {};
+        momentSrvDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        momentSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+        momentSrvDesc.TextureCube.MipLevels = static_cast<UINT>(-1);
+        momentSrvDesc.TextureCube.MostDetailedMip = 0;
+        Device->CreateShaderResourceView(ShadowResourcesCube[i].MomentTextureCube, &momentSrvDesc, &ShadowResourcesCube[i].MomentSRVCube);
 
         for (int f = 0; f < 6; ++f)
         {
