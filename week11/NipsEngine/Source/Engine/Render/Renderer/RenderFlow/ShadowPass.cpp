@@ -203,7 +203,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			BuildPracticalCascadeSplit(
 				RenderBus->GetNearPlane(),
 				RenderBus->GetFarPlane(),
-				100.f, 0.15f,
+				300.f, 0.15f,
 				CascadeSplits);
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
@@ -378,7 +378,7 @@ void FShadowPass::BuildPracticalCascadeSplit(float CamNear, float CamFar, float 
 	for (uint32 i = 1; i < CascadeCount; ++i)
 	{
 		const float P = static_cast<float>(i) / static_cast<float>(CascadeCount);
-		float LogSplit = ShadowNear* std::pow(ShadowFar / ShadowNear, P);
+		float LogSplit = ShadowNear * std::pow(ShadowFar / ShadowNear, P);
 		float LinearSplit = ShadowNear + (ShadowFar - ShadowNear) * P;
 
 		Distance[i] = std::lerp(LogSplit, LinearSplit, Lambda);
