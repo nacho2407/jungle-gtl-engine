@@ -56,13 +56,48 @@ struct FShadowMapResources
 	ID3D11ShaderResourceView* PointShadowDataSRV    = nullptr;
 	uint32                    PointShadowDataCapacity = 0;
 
+	// ── VSM Moment Textures (FilterMode == VSM 일 때 사용) ──
+	// CSM VSM
+	ID3D11Texture2D*          CSMVSMTexture = nullptr;        // R32G32_FLOAT
+	ID3D11RenderTargetView*   CSMVSMRTV[MAX_SHADOW_CASCADES] = {};
+	ID3D11ShaderResourceView* CSMVSMSRV = nullptr;
+	ID3D11ShaderResourceView* CSMVSMSliceSRV[MAX_SHADOW_CASCADES] = {};
+
+	// CSM Depth (VSM 모드 전용 — depth test만 수행, SRV 불필요)
+	ID3D11Texture2D*          CSMVSMDepthTexture = nullptr;   // D32_FLOAT
+	ID3D11DepthStencilView*   CSMVSMDSV[MAX_SHADOW_CASCADES] = {};
+
+	// Spot VSM
+	ID3D11Texture2D*          SpotVSMTexture = nullptr;
+	ID3D11RenderTargetView**  SpotVSMRTVs = nullptr;
+	ID3D11ShaderResourceView* SpotVSMSRV = nullptr;
+	ID3D11Texture2D*          SpotVSMDepthTexture = nullptr;
+	ID3D11DepthStencilView**  SpotVSMDSVs = nullptr;
+
+	// Point VSM
+	ID3D11Texture2D*          PointVSMTexture = nullptr;
+	ID3D11RenderTargetView**  PointVSMRTVs = nullptr;
+	ID3D11ShaderResourceView* PointVSMSRV = nullptr;
+	ID3D11Texture2D*          PointVSMDepthTexture = nullptr;
+	ID3D11DepthStencilView**  PointVSMDSVs = nullptr;
+
 	bool IsCSMValid()   const { return CSMTexture != nullptr; }
 	bool IsSpotValid()  const { return SpotAtlasTexture != nullptr && SpotAtlasPageCount > 0; }
 	bool IsPointValid() const { return PointCubeTexture != nullptr && PointCubeCount > 0; }
 
+	bool IsCSMVSMValid()   const { return CSMVSMTexture != nullptr; }
+	bool IsSpotVSMValid()  const { return SpotVSMTexture != nullptr; }
+	bool IsPointVSMValid() const { return PointVSMTexture != nullptr; }
+
 	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
 	void EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+
+	void EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution);
+	void EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
+	void EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+
+	void ReleaseVSM();
 	void Release();
 };
 

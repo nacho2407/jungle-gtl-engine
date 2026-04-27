@@ -10,7 +10,7 @@
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
-#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"

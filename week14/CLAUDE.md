@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DirectX 11 3D scene editor engine built with C++ and ImGui. Actor/Component architecture with WYSIWYG editing, raycasting object selection, multi-scene management, and JSON serialization. Includes a standalone OBJ mesh viewer mode (`ObjViewDebug` build) for previewing static meshes.
+DirectX 11 3D scene editor engine built with C++ and ImGui. Actor/Component architecture with WYSIWYG editing, raycasting object selection, multi-scene management, and JSON serialization. Features forward rendering with shadow mapping (CSM for directional lights, cube-map shadows for point lights, atlas-based shadows for spot lights), clustered/tiled light culling, GPU occlusion culling, and FXAA post-processing. Includes a standalone OBJ mesh viewer mode (`ObjViewDebug` build) for previewing static meshes.
 
 ## Build Commands
 
@@ -44,15 +44,33 @@ Custom runtime type information using `DECLARE_CLASS` / `DEFINE_CLASS` macros th
 
 ### Rendering Pipeline
 
-Multi-pass command buffer pattern: `RenderCollector` (scene traversal → `FRenderCommand`) → `RenderBus` (per-pass queuing) → `Renderer` (GPU submission via `FPassRenderState` lookup tables).
+Proxy-based render architecture: Components create SceneProxy objects (`PrimitiveSceneProxy`, `StaticMeshSceneProxy`, etc.) that live on the render side. The pipeline is driven by `IRenderPipeline` / `DefaultRenderPipeline`.
 
-Render pass order: Opaque → Font → SubUV → Translucent → StencilMask → Outline → Editor → Grid → DepthLess.
+Key stages:
+1. `RenderCollector` — scene traversal, builds `DrawCommand` list via `DrawCommandBuilder`
+2. `RenderPassPipeline` — orchestrates registered render passes in order
+3. Individual `RenderPassBase` subclasses — execute GPU submission (OpaquePass, PreDepthPass, DecalPass, AlphaBlendPass, SelectionMaskPass, EditorLinesPass, GizmoInnerPass/GizmoOuterPass, OverlayFontPass, PostProcessPass, FXAAPass, LightCullingPass)
 
-Adding a new render pass = one entry in the `FPassRenderState` table. Batchers (Line, Font, SubUV) own their shaders and are flushed by the Renderer.
+Adding a new render pass = subclass `RenderPassBase` and register in `RenderPassRegistry`. State management via `PassRenderStateTable`, `BlendStateManager`, `RasterizerStateManager`, `SamplerStateManager`.
+
+### Lighting & Shadows
+
+- Light types: Ambient, Directional, Point, Spot (each with dedicated Component and Actor)
+- Light culling: Tiled (`TileBasedLightCulling`) and Clustered (`ClusteredLightCuller`) with compute shaders (`TileLightCulling.hlsl`, `ClusterConstructCS.hlsl`, `LightCullingCS.hlsl`)
+- Shadow mapping: `ShadowAtlasQuadTree` for atlas allocation, `ShadowDepth.hlsl` for depth rendering, `ShadowSampling.hlsli` for PCF sampling
+- Cascaded Shadow Maps (CSM) for directional lights
+- Point light shadows (cube-map based)
+- Shadow options configured via `ProjectSettings` (`Settings/ProjectSettings.ini`)
+
+### Culling
+
+- GPU Occlusion Culling (`GPUOcclusionCulling`) with Hi-Z buffer (`HiZGenerate.hlsl`, `OcclusionTest.hlsl`)
+- Octree spatial partitioning (`Octree.cpp`, `SpatialPartition.cpp`) for broad-phase shadow caster culling
+- BVH for ray picking (`MeshTriangleBVH`, `WorldPrimitivePickingBVH`)
 
 ### Editor
 
-`UEditorEngine` extends `UEngine`. Viewport supports ray-triangle picking, stencil-based selection outline, and gizmo transform manipulation. UI is entirely ImGui-based with docking widgets (Scene hierarchy, Property editor, Viewport overlay, Console, Stats).
+`UEditorEngine` extends `UEngine` with `EditorRenderPipeline`. Viewport supports ray-triangle picking, stencil-based selection outline, and gizmo transform manipulation. UI is entirely ImGui-based with docking widgets (Scene hierarchy, Property editor, Content Browser, Material Inspector, Viewport overlay, Play toolbar, Console, Stats). Notification toast system for shader hot-reload errors. PIE (Play-In-Editor) support.
 
 ### OBJ Viewer
 
@@ -60,24 +78,70 @@ Standalone mesh preview mode (`Source/ObjViewer/`). `UObjViewerEngine` subclasse
 
 ### Serialization
 
-`.Scene` files are JSON. `FSceneSaveManager` handles read/write of actor hierarchy, components, transforms, camera state. Editor settings persist to `Settings/editor.ini`.
+`.Scene` files are JSON. `FSceneSaveManager` handles read/write of actor hierarchy, components, transforms, camera state. Editor settings persist to `Settings/editor.ini`. Project-wide settings in `Settings/ProjectSettings.ini`.
 
 ## Code Conventions
 
 - C++20 (x64), C++17 (Win32/x86)
 - UTF-8 BOM for C++/H files, tab indentation (size 4)
-- UTF-8 (no BOM) for HLSL shaders
+- UTF-8 (no BOM) for HLSL shaders (`.hlsl` for shader files, `.hlsli` for include headers)
 - Include paths root at: `Source/Engine`, `Source`, `Source/Editor`, `Source/ObjViewer`, `ThirdParty`, `ThirdParty/ImGui`
 - Headers use relative paths from these roots: `#include "Engine/Core/InputSystem.h"`
 - Naming: `F` prefix for structs/data types (FVector, FName), `U` for UObject derivatives, `A` for Actors, `E` for enums
-- HLSL shaders in `KraftonEngine/Shaders/` are compiled at runtime
+- HLSL shaders in `KraftonEngine/Shaders/` are compiled at runtime with hot-reload support
 
 ## Key Source Layout
 
-- `KraftonEngine/Source/Engine/` — core engine (Object, Math, Render, GameFramework, Component, Serialization, Core, Runtime, Collision, Input, Materials, Mesh, Platform, Profiling, Resource, Texture, UI, Viewport)
-- `KraftonEngine/Source/Editor/` — editor layer (UI widgets, viewport, selection, settings)
-- `KraftonEngine/Source/ObjViewer/` — standalone mesh viewer (ObjViewerEngine, Panel, RenderPipeline, ViewportClient)
-- `KraftonEngine/Shaders/` — HLSL files (StaticMesh, Primitive, Gizmo, Editor, Outline, SubUV, Font, HiZGenerate/Visualize, OcclusionTest, ...) + `Common/` (`ConstantBuffers.hlsl`, `Functions.hlsl`, `VertexLayouts.hlsl`)
+- `KraftonEngine/Source/Engine/` — core engine
+  - `Collision/` — Octree, BVH, ray utilities (SIMD), OBB, spatial partitioning
+  - `Component/` — PrimitiveComponent, StaticMeshComponent, Billboard, SubUV, Text, Pendulum/Projectile movement
+  - `Component/Light/` — LightComponentBase, Directional, Point, Spot, Ambient light components
+  - `Core/` — EngineTypes, Log, Notification, Singleton, TickFunction
+  - `Debug/` — DebugDrawQueue, DrawDebugHelpers
+  - `GameFramework/` — Level, WorldContext, Actor types (StaticMesh, HeightFog, Light actors)
+  - `Input/` — InputSystem
+  - `Materials/` — MaterialManager
+  - `Math/` — Vector, Quat, Rotator, Transform, MathUtils
+  - `Mesh/` — ObjImporter, ObjManager, StaticMesh, StaticMeshAsset, MeshSimplifier
+  - `Object/` — UObject, FName, ObjectIterator, UUIDGenerator
+  - `Platform/` — ConsoleHelper
+  - `Profiling/` — performance instrumentation
+  - `Render/` — rendering subsystem
+    - `Command/` — DrawCommand, DrawCommandList, DrawCommandBuilder
+    - `Culling/` — GPUOcclusionCulling, TileBasedLightCulling, ClusteredLightCuller
+    - `Device/` — D3DDevice (DX11 device wrapper)
+    - `Geometry/` — FontGeometry, LineGeometry
+    - `Pipeline/` — IRenderPipeline, DefaultRenderPipeline, RenderCollector
+    - `Proxy/` — PrimitiveSceneProxy, StaticMeshSceneProxy, Billboard/Decal/Gizmo/SubUV/TextRender proxies
+    - `RenderPass/` — OpaquePass, PreDepthPass, DecalPass, AlphaBlendPass, FXAAPass, PostProcessPass, SelectionMaskPass, EditorLinesPass, GizmoInner/OuterPass, OverlayFontPass, LightCullingPass, RenderPassRegistry, RenderPassPipeline
+    - `RenderState/` — BlendStateManager, RasterizerStateManager, SamplerStateManager, PassRenderStateTable
+    - `Resource/` — Buffer, MeshBufferManager
+    - `Scene/` — FScene, SceneEnvironment
+    - `Shader/` — Shader, ShaderInclude
+    - `Shadow/` — ShadowAtlasQuadTree
+    - `Types/` — FrameContext, RenderTypes, RenderConstants, ViewTypes, VertexTypes, FogParams, ForwardLightData, ShadowSettings, MaterialTextureSlot, LODContext
+  - `Resource/` — resource management
+  - `Runtime/` — Engine, EngineLoop, Launch, WindowsApplication, WindowsWindow
+  - `Serialization/` — scene save/load
+  - `Texture/` — texture loading/management
+  - `UI/` — UI utilities
+  - `Viewport/` — viewport management
+- `KraftonEngine/Source/Editor/` — editor layer
+  - `EditorEngine`, `EditorRenderPipeline`
+  - `PIE/` — Play-In-Editor
+  - `Selection/` — actor selection
+  - `Settings/` — ProjectSettings, editor settings
+  - `Subsystem/` — editor subsystems
+  - `UI/` — ImGui widgets (Viewport, Stat, PlayToolbar, MaterialInspector, ContentBrowser, DragSource, NotificationToast, ImGuiSetting)
+  - `Viewport/` — LevelEditorViewportClient
+- `KraftonEngine/Source/ObjViewer/` — standalone mesh viewer
+- `KraftonEngine/Shaders/` — HLSL shader files
+  - `Common/` — shared includes (`ConstantBuffers.hlsli`, `Functions.hlsli`, `VertexLayouts.hlsli`, `ForwardLighting.hlsli`, `ForwardLightData.hlsli`, `ShadowSampling.hlsli`, `SystemResources.hlsli`, `SystemSamplers.hlsli`)
+  - `Editor/` — Editor.hlsl, Gizmo.hlsl
+  - `Geometry/` — Primitive.hlsl, Decal.hlsl, UberLit.hlsl
+  - `Lighting/` — HiZGenerate.hlsl, OcclusionTest.hlsl, TileLightCulling.hlsl, ShadowDepth.hlsl, ClusterConstructCS.hlsl, LightCullingCS.hlsl, ClusterHeatMap.hlsl
+  - `PostProcess/` — FXAA.hlsl, HeightFog.hlsl, Outline.hlsl, SceneDepth.hlsl, SceneNormal.hlsl, NormalView.hlsl, LightCulling.hlsl
+  - `UI/` — Billboard.hlsl, Font.hlsl, OverlayFont.hlsl, SubUV.hlsl
 - `KraftonEngine/ThirdParty/` — ImGui and SimpleJSON (vendored)
 - `KraftonEngine/Asset/` — font atlas, particle textures, default scene, MeshCache (prebuilt .bin meshes), StaticMesh
 - `KraftonEngine/Data/` — mesh source files (.obj, .mtl, textures) organized by model name
