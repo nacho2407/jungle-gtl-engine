@@ -123,7 +123,7 @@ void FRenderer::CreateResources()
 	//	MeshManager init
 	FMeshManager::Initialize();
 	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
-    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가
+    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가 -> ShadowAtlas의 Resource로 사용하도록 이 호출 삭제해주면 됨
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());

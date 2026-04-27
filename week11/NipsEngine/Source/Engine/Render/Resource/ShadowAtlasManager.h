@@ -79,9 +79,17 @@ struct FShadowAtlas
     TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV;
     TComPtr<ID3D11UnorderedAccessView> VarianceShadowUAV;
 
+	// Blur 처리에 필요한 임시 Texture ,SRV , UAV 
+	TComPtr<ID3D11Texture2D> BlurIntermediateTexture;       // 8192x8192, R32G32_FLOAT
+    TComPtr<ID3D11ShaderResourceView> BlurIntermediateSRV;  // Vertical CS 읽기
+    TComPtr<ID3D11UnorderedAccessView> BlurIntermediateUAV; // Horizontal CS 출력
+
+
 	// TODO: 타일의 크기가 정해져 있음, 이를 나중에 동적으로 조절할 수 있도록 개선해야 함
 	// TODO: Tile 관리 방식 개선 필요. 현재는 간단히 bool 배열로 관리하지만, 더 효율적인 자료구조로 변경 고려 (예: 비트맵, 큐 등)
-
+	
+	// ShadowMap, VSM에 사용하고자 하는 Resource를 하나로 통일해야함
+	// ShadowManager의 ShadowMapAtlas의 자원을 모두 사용하도록 통일할 것.
 	void Initialize(ID3D11Device* Device)
     {
         if (Device == nullptr)
@@ -158,6 +166,43 @@ struct FShadowAtlas
         VarianceUAVDesc.Texture2D.MipSlice = 0;
 
         hr = Device->CreateUnorderedAccessView(VarianceShadowTexture.Get(), &VarianceUAVDesc, VarianceShadowUAV.ReleaseAndGetAddressOf());
+
+
+		// Blur Intermediate Texture 생성 (가로 blur 임시 저장용)
+        D3D11_TEXTURE2D_DESC BlurIntermediateDesc = {};
+        BlurIntermediateDesc.Width = ShadowAtlasResolution2D;
+        BlurIntermediateDesc.Height = ShadowAtlasResolution2D;
+        BlurIntermediateDesc.MipLevels = 1;
+        BlurIntermediateDesc.ArraySize = 1;
+        BlurIntermediateDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        BlurIntermediateDesc.SampleDesc.Count = 1;
+        BlurIntermediateDesc.SampleDesc.Quality = 0;
+        BlurIntermediateDesc.Usage = D3D11_USAGE_DEFAULT;
+        BlurIntermediateDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+        BlurIntermediateDesc.CPUAccessFlags = 0;
+        BlurIntermediateDesc.MiscFlags = 0;
+
+        hr = Device->CreateTexture2D(&BlurIntermediateDesc, nullptr, BlurIntermediateTexture.ReleaseAndGetAddressOf());
+
+        // Blur Intermediate SRV 생성 (Vertical CS에서 읽기)
+        D3D11_SHADER_RESOURCE_VIEW_DESC BlurSRVDesc = {};
+        BlurSRVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        BlurSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        BlurSRVDesc.Texture2D.MostDetailedMip = 0;
+        BlurSRVDesc.Texture2D.MipLevels = 1;
+
+        hr = Device->CreateShaderResourceView(BlurIntermediateTexture.Get(), &BlurSRVDesc, BlurIntermediateSRV.ReleaseAndGetAddressOf());
+
+        // Blur Intermediate UAV 생성 (Horizontal CS에서 쓰기)
+        D3D11_UNORDERED_ACCESS_VIEW_DESC BlurUAVDesc = {};
+        BlurUAVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+        BlurUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+        BlurUAVDesc.Texture2D.MipSlice = 0;
+
+        hr = Device->CreateUnorderedAccessView(BlurIntermediateTexture.Get(), &BlurUAVDesc, BlurIntermediateUAV.ReleaseAndGetAddressOf());
+
+
+
 	}
 
     bool IsValid() const { return ShadowMapAtlas != nullptr && ShadowDSV != nullptr && ShadowSRV != nullptr; }
@@ -181,6 +226,19 @@ public:
     int32 GetAtlasWidth() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountX; }
     int32 GetAtlasHeight() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountY; }
 
+	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
+	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
+	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
+	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
+	// OpaquePass, BlurPass에서 꺼내 쓸 getter
+
+	ID3D11RenderTargetView* GetVarianceRTV() const { return ShadowMapAtlas.VarianceShadowRTV.Get(); }
+    ID3D11ShaderResourceView* GetVarianceSRV() const { return ShadowMapAtlas.VarianceShadowSRV.Get(); }
+    ID3D11UnorderedAccessView* GetVarianceUAV() const { return ShadowMapAtlas.VarianceShadowUAV.Get(); }
+    ID3D11ShaderResourceView* GetBlurSRV() const { return ShadowMapAtlas.BlurIntermediateSRV.Get(); }
+    ID3D11UnorderedAccessView* GetBlurUAV() const { return ShadowMapAtlas.BlurIntermediateUAV.Get(); }
+
+
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
     ID3D11Texture2D* GetAtlas() const { return ShadowMapAtlas.ShadowMapAtlas.Get(); }
@@ -195,7 +253,7 @@ public:
     TComPtr<ID3D11RenderTargetView> VarianceShadowRTV;   // 쓰기용 (Shadow Pass)
     TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV; // 읽기용 (Lighting Pass)
 
-		float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+	float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 
 private:
 

@@ -16,7 +16,7 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
 {
     ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
-	// state 
+	// VSM 기록에 영향을 주는 blend state 초기화.
 	{
         // VSMConversionRenderPass::Begin() 에 추가
         D3D11_BLEND_DESC BlendDesc = {};
@@ -73,7 +73,6 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
         ShadowViewport.MaxDepth = 1.0f;
 
         DeviceContext->RSSetViewports(1, &ShadowViewport);
-
 
     return true;
 }
