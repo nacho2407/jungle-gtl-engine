@@ -197,7 +197,7 @@ void FLineGeometry::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpaci
 
 	if (ShowFlags.bWorldAxis && bShowAxis0 && bShowAxis1)
 	{
-		const float AxisLen = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
+		const float AxisLen = std::max(BaseGridExtent, Spacing * 10.0f);
 		AddLine(
 			MakeGridPoint(A0, A1, N, 0.0f, 0.0f, -AxisLen),
 			MakeGridPoint(A0, A1, N, 0.0f, 0.0f, AxisLen),
