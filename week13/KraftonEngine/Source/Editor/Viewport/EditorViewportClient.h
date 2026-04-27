@@ -8,6 +8,8 @@
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+#include "imgui.h"
+
 class UWorld;
 class UCameraComponent;
 class UGizmoComponent;
@@ -106,4 +108,9 @@ private:
 	bool bIsActive = false;
 	// 뷰포트 슬롯의 스크린 좌표 (ImGui screen space = 윈도우 클라이언트 좌표)
 	FRect ViewportScreenRect;
+
+	// Marquee Selection (영역 드래그 선택)
+	bool bIsMarqueeSelecting = false;
+	ImVec2 MarqueeStartPos;
+	ImVec2 MarqueeCurrentPos;
 };
