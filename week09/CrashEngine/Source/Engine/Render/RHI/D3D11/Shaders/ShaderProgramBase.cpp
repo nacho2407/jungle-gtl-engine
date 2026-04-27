@@ -109,6 +109,16 @@ bool FShaderProgramBase::CompileShaderBlob(
     std::unordered_set<std::wstring>& OutDependencies,
     const char*                       InErrorTitle) const
 {
+    return CompileShaderBlobStandalone(OutShaderBlob, InDesc, InTarget, InErrorTitle, &OutDependencies);
+}
+
+bool FShaderProgramBase::CompileShaderBlobStandalone(
+    ID3DBlob**                        OutShaderBlob,
+    const FShaderStageDesc&           InDesc,
+    const char*                       InTarget,
+    const char*                       InErrorTitle,
+    std::unordered_set<std::wstring>* OutDependencies)
+{
     if (OutShaderBlob == nullptr || InDesc.FilePath.empty() || InDesc.EntryPoint.empty() || InTarget == nullptr)
     {
         return false;
@@ -127,7 +137,7 @@ bool FShaderProgramBase::CompileShaderBlob(
     CompileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-    FShaderIncludeLoader IncludeLoader(std::filesystem::path(AbsolutePath), &OutDependencies);
+    FShaderIncludeLoader IncludeLoader(std::filesystem::path(AbsolutePath), OutDependencies);
     const HRESULT        Hr = D3DCompileFromFile(
         AbsolutePath.c_str(),
         D3DDefines.data(),
@@ -145,7 +155,7 @@ bool FShaderProgramBase::CompileShaderBlob(
     {
         if (ErrorBlob)
         {
-            MessageBoxA(nullptr, static_cast<const char*>(ErrorBlob->GetBufferPointer()), InErrorTitle, MB_OK | MB_ICONERROR);
+            MessageBoxA(nullptr, static_cast<const char*>(ErrorBlob->GetBufferPointer()), InErrorTitle ? InErrorTitle : "Shader Compile Error", MB_OK | MB_ICONERROR);
             ErrorBlob->Release();
         }
         return false;
