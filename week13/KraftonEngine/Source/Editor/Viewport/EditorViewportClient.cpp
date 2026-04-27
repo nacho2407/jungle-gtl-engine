@@ -11,6 +11,7 @@
 #include "Viewport/Viewport.h"
 #include "GameFramework/World.h"
 #include "Engine/Runtime/Engine.h"
+#include "Math/Vector.h"
 
 UWorld* FEditorViewportClient::GetWorld() const
 {
@@ -135,6 +136,31 @@ void FEditorViewportClient::Tick(float DeltaTime)
 {
 	if (!bIsActive) return;
 
+	// Camera Focus Animation Update
+	if (bIsFocusAnimating && Camera)
+	{
+		FocusAnimTimer += DeltaTime;
+		float Alpha = FocusAnimTimer / FocusAnimDuration;
+		if (Alpha >= 1.0f)
+		{
+			Alpha = 1.0f;
+			bIsFocusAnimating = false;
+		}
+
+		// SmoothStep curve for better feel
+		float SmoothAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
+
+		FVector NewLoc = FocusStartLoc * (1.0f - SmoothAlpha) + FocusEndLoc * SmoothAlpha;
+		
+		// Rotation Interpolation (Slerp-like for Rotators)
+		FQuat StartQuat = FocusStartRot.ToQuaternion();
+		FQuat EndQuat = FocusEndRot.ToQuaternion();
+		FQuat BlendedQuat = FQuat::Slerp(StartQuat, EndQuat, SmoothAlpha);
+		
+		Camera->SetWorldLocation(NewLoc);
+		Camera->SetRelativeRotation(FRotator::FromQuaternion(BlendedQuat));
+	}
+
 	TickEditorShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
@@ -171,6 +197,40 @@ void FEditorViewportClient::TickEditorShortcuts()
 	{
 		EditorEngine->ToggleCoordSystem();
 		return;
+	}
+
+	if (SelectionManager && InputSystem::Get().GetKeyDown('F'))
+	{
+		AActor* Selected = SelectionManager->GetPrimarySelection();
+		if (Selected && Camera)
+		{
+			FVector TargetLoc = Selected->GetActorLocation();
+			FVector CameraForward = Camera->GetForwardVector();
+			
+			// 1. 현재 상태 백업
+			FVector OriginalLoc = Camera->GetWorldLocation();
+			FRotator OriginalRot = Camera->GetRelativeRotation();
+
+			// 2. 목표 좌표 계산 (5m 거리)
+			float FocusDistance = 5.0f;
+			FVector NewCameraLoc = TargetLoc - CameraForward * FocusDistance;
+			
+			// 3. 임시로 이동하여 정확한 목표 회전값 추출
+			Camera->SetWorldLocation(NewCameraLoc);
+			Camera->LookAt(TargetLoc);
+			FRotator TargetRot = Camera->GetRelativeRotation();
+
+			// 4. 카메라 복구 및 애니메이션 설정
+			Camera->SetWorldLocation(OriginalLoc);
+			Camera->SetRelativeRotation(OriginalRot);
+
+			bIsFocusAnimating = true;
+			FocusAnimTimer = 0.0f;
+			FocusStartLoc = OriginalLoc;
+			FocusStartRot = OriginalRot;
+			FocusEndLoc = NewCameraLoc;
+			FocusEndRot = TargetRot;
+		}
 	}
 
 	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
@@ -404,8 +464,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		if (Input.GetKey(VK_CONTROL) && Input.GetKey(VK_MENU)) // Ctrl + Alt
 		{
 			bIsMarqueeSelecting = true;
-			MarqueeStartPos = MousePos;
-			MarqueeCurrentPos = MousePos;
+			MarqueeStartPos = FVector(MousePos.x, MousePos.y,0);
+			MarqueeCurrentPos = FVector(MousePos.x, MousePos.y, 0);
 		}
 		else
 		{
@@ -416,7 +476,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	{
 		if (bIsMarqueeSelecting)
 		{
-			MarqueeCurrentPos = MousePos;
+			MarqueeCurrentPos = FVector(MousePos.x, MousePos.y, 0);
 		}
 		else
 		{
@@ -439,10 +499,10 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			// Marquee Selection 종료 및 선택 로직 수행
 			bIsMarqueeSelecting = false;
 
-			float MinX = (std::min)(MarqueeStartPos.x, MarqueeCurrentPos.x);
-			float MaxX = (std::max)(MarqueeStartPos.x, MarqueeCurrentPos.x);
-			float MinY = (std::min)(MarqueeStartPos.y, MarqueeCurrentPos.y);
-			float MaxY = (std::max)(MarqueeStartPos.y, MarqueeCurrentPos.y);
+			float MinX = (std::min)(MarqueeStartPos.X, MarqueeCurrentPos.X);
+			float MaxX = (std::max)(MarqueeStartPos.X, MarqueeCurrentPos.X);
+			float MinY = (std::min)(MarqueeStartPos.Y, MarqueeCurrentPos.Y);
+			float MaxY = (std::max)(MarqueeStartPos.Y, MarqueeCurrentPos.Y);
 
 			// 사각형 크기가 너무 작으면 일반 클릭으로 간주하거나 무시
 			if (std::abs(MaxX - MinX) > 2.0f || std::abs(MaxY - MinY) > 2.0f)
@@ -598,8 +658,8 @@ void FEditorViewportClient::RenderViewportImage(bool bIsActiveViewport)
 	{
 		ImDrawList* ForegroundDrawList = ImGui::GetForegroundDrawList();
 
-		ImVec2 RectMin((std::min)(MarqueeStartPos.x, MarqueeCurrentPos.x), std::min(MarqueeStartPos.y, MarqueeCurrentPos.y));
-		ImVec2 RectMax((std::max)(MarqueeStartPos.x, MarqueeCurrentPos.x), std::max(MarqueeStartPos.y, MarqueeCurrentPos.y));
+		ImVec2 RectMin((std::min)(MarqueeStartPos.X, MarqueeCurrentPos.X), (std::min)(MarqueeStartPos.Y, MarqueeCurrentPos.Y));
+		ImVec2 RectMax((std::max)(MarqueeStartPos.X, MarqueeCurrentPos.X), (std::max)(MarqueeStartPos.Y, MarqueeCurrentPos.Y));
 
 		ForegroundDrawList->AddRectFilled(RectMin, RectMax, IM_COL32(0, 0, 0, 0)); // 투명 채우기
 		ForegroundDrawList->AddRect(RectMin, RectMax, IM_COL32(255, 255, 255, 255), 0.0f, 0, 5.0f); // 하얀색 테두리
