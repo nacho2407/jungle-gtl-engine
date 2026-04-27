@@ -245,16 +245,36 @@ void FSelectionManager::SetGizmoEnabled(bool bEnabled)
 
 void FSelectionManager::SelectComponent(USceneComponent* Component)
 {
-	if (SelectedComponent == Component)
+	if (!Component)
 	{
 		return;
 	}
 
-	SelectedComponent = Component;
-
-	if (Component)
+	// [버그 수정] 에디터 전용 컴포넌트(광원 아이콘 등)는 개별 조작 대상이 아니므로,
+	// 부모 컴포넌트로 리다이렉트하여 함께 움직이도록 합니다.
+	USceneComponent* Target = Component;
+	if (Component->IsEditorOnlyComponent())
 	{
-		AActor* Owner = Component->GetOwner();
+		if (Component->GetParent())
+		{
+			Target = Component->GetParent();
+		}
+		else
+		{
+			Target = Component->GetOwner()->GetRootComponent();
+		}
+	}
+
+	if (SelectedComponent == Target)
+	{
+		return;
+	}
+
+	SelectedComponent = Target;
+
+	if (Target)
+	{
+		AActor* Owner = Target->GetOwner();
 		if (Owner && !IsSelected(Owner))
 		{
 			Select(Owner);
