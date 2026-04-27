@@ -23,6 +23,9 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/DirectionalLightActor.h"
+#include "GameFramework/PointLightActor.h"
+#include "GameFramework/SpotLightActor.h"
 #include "ImGui/imgui.h"
 #include "Object/Object.h"
 
@@ -138,11 +141,196 @@ void FEditorViewportClient::Tick(float DeltaTime)
     if (!bIsActive)
         return;
 
-    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+	const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
 
+	// TODO: Milestone 1의 임시 디스패치
+	for (int32 VK = 0; VK < 256; ++VK)
+    {
+        if (Input.KeyPressed[VK])
+        {
+            FViewportKeyEvent Event{};
+            Event.Key = VK;
+            Event.Event = EInputEvent::Pressed;
+            Event.Modifiers = Input.Modifiers;
+            InputKey(Event);
+        }
+
+        if (Input.KeyReleased[VK])
+        {
+            FViewportKeyEvent Event{};
+            Event.Key = VK;
+            Event.Event = EInputEvent::Released;
+            Event.Modifiers = Input.Modifiers;
+            InputKey(Event);
+        }
+    }
+
+    UpdateViewFromPilotedActor();
     TickEditorShortcuts(Input);
     TickInput(Input, DeltaTime);
     TickInteraction(Input, DeltaTime);
+    ApplyViewToPilotedActor();
+}
+
+void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
+{
+    if (!Actor || !Camera)
+    {
+        return;
+    }
+
+    if (!bIsPilotingActor)
+    {
+        SavedViewLocation = Camera->GetWorldLocation();
+        SavedViewRotation = Camera->GetRelativeRotation();
+        SavedViewportType = RenderOptions.ViewportType;
+    }
+
+    PilotedActor = Actor;
+    bIsPilotingActor = true;
+
+    if (RenderOptions.ViewportType != ELevelViewportType::Perspective)
+    {
+        SetViewportType(ELevelViewportType::Perspective);
+    }
+
+    UpdateViewFromPilotedActor();
+
+    if (SelectionManager)
+    {
+        SelectionManager->Select(Actor);
+    }
+}
+
+void FEditorViewportClient::StopPilotingActor()
+{
+    if (!bIsPilotingActor)
+    {
+        return;
+    }
+
+    PilotedActor = nullptr;
+    bIsPilotingActor = false;
+
+    if (Camera)
+    {
+        SetViewportType(SavedViewportType);
+        Camera->SetWorldLocation(SavedViewLocation);
+        Camera->SetRelativeRotation(SavedViewRotation);
+    }
+}
+
+void FEditorViewportClient::UpdateViewFromPilotedActor()
+{
+    if (!bIsPilotingActor || !PilotedActor || !Camera)
+    {
+        return;
+    }
+
+    Camera->SetWorldLocation(PilotedActor->GetActorLocation());
+    Camera->SetRelativeRotation(PilotedActor->GetActorRotation());
+}
+
+void FEditorViewportClient::ApplyViewToPilotedActor()
+{
+    if (!bIsPilotingActor || !PilotedActor || !Camera)
+    {
+        return;
+    }
+
+    PilotedActor->SetActorLocation(Camera->GetWorldLocation());
+    PilotedActor->SetActorRotation(Camera->GetRelativeRotation());
+}
+
+FString FEditorViewportClient::GetActorDisplayName(const AActor* Actor) const
+{
+    if (!Actor)
+    {
+        return FString();
+    }
+
+    FString ActorName = Actor->GetFName().ToString();
+    if (!ActorName.empty())
+    {
+        return ActorName;
+    }
+
+    return Actor->GetClass() ? FString(Actor->GetClass()->GetName()) : FString("Actor");
+}
+
+FString FEditorViewportClient::GetPilotedActorDisplayName() const
+{
+    return GetActorDisplayName(PilotedActor);
+}
+
+FString FEditorViewportClient::GetPilotOverlayText() const
+{
+    if (!IsPilotingActor())
+    {
+        return FString();
+    }
+
+    return "[ Pilot Active: " + GetPilotedActorDisplayName() + " ]";
+}
+
+FString FEditorViewportClient::GetPilotHintText() const
+{
+    if (!IsPilotingActor() || !PilotedActor)
+    {
+        return FString();
+    }
+
+    if (PilotedActor->IsA<ASpotLightActor>())
+    {
+        return "Moving and rotating the viewport edits the light position and direction.";
+    }
+
+    if (PilotedActor->IsA<ADirectionalLightActor>())
+    {
+        return "Rotation controls light direction.";
+    }
+
+    if (PilotedActor->IsA<APointLightActor>())
+    {
+        return "Position changes the light origin; rotation has no lighting effect.";
+    }
+
+    return FString();
+}
+
+AActor* FEditorViewportClient::PickActorAtScreenPoint(float ScreenX, float ScreenY) const
+{
+    if (!Camera || !Viewport)
+    {
+        return nullptr;
+    }
+
+    const UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    const float LocalMouseX = ScreenX - ViewportScreenRect.X;
+    const float LocalMouseY = ScreenY - ViewportScreenRect.Y;
+    if (LocalMouseX < 0.0f || LocalMouseY < 0.0f ||
+        LocalMouseX > ViewportScreenRect.Width || LocalMouseY > ViewportScreenRect.Height)
+    {
+        return nullptr;
+    }
+
+    const float VPWidth = static_cast<float>(Viewport->GetWidth());
+    const float VPHeight = static_cast<float>(Viewport->GetHeight());
+    if (VPWidth <= 0.0f || VPHeight <= 0.0f)
+    {
+        return nullptr;
+    }
+
+    const FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
+    FHitResult HitResult{};
+    AActor* BestActor = nullptr;
+    const_cast<UWorld*>(World)->RaycastEditorPicking(Ray, HitResult, BestActor);
+    return BestActor;
 }
 
 void FEditorViewportClient::TickEditorShortcuts(const FInputSnapshot& Input)
@@ -178,7 +366,7 @@ void FEditorViewportClient::TickEditorShortcuts(const FInputSnapshot& Input)
             }
             SelectionManager->ClearSelection();
             for (AActor* Actor : NewSelection)
-            {
+            {    
                 SelectionManager->ToggleSelect(Actor);
             }
         }
@@ -283,9 +471,6 @@ void FEditorViewportClient::TickInput(const FInputSnapshot& Input, float DeltaTi
             Camera->MoveLocal(FVector(0, -DeltaX * PanScale, DeltaY * PanScale));
         }
     }
-
-    if (Input.KeyReleased[VK_SPACE])
-        Gizmo->SetNextMode();
 }
 
 void FEditorViewportClient::TickInteraction(const FInputSnapshot& Input, float DeltaTime)
@@ -420,7 +605,7 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
         AActor* BestActor = nullptr;
         if (UWorld* W = GetWorld())
         {
-            W->RaycastPrimitives(Ray, HitResult, BestActor); // BVH 시작
+            W->RaycastEditorPicking(Ray, HitResult, BestActor); // editor picking BVH
         }
 
         // 멀티픽킹은 성능을 위해 일단 비활성화
@@ -542,7 +727,17 @@ void FEditorViewportClient::RenderViewportBorder()
 // TODO: 일단은 빈 함수로 두고 InputRouter가 붙은 후 Tick 계열 입력 함수들을 정리하면서 내용 채우기
 bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
 {
-    (void) Event;
+	if (!Gizmo)
+	{
+		return false;
+	}
+
+	if (Event.Key == VK_SPACE && Event.Event == EInputEvent::Released)
+	{
+		Gizmo->SetNextMode();
+		return true;
+	}
+
 	return false;
 }
 

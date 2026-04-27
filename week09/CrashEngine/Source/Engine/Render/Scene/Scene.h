@@ -56,7 +56,7 @@ public:
 private:
     FPrimitiveProxyRegistry             PrimitiveProxyRegistry;
     TSceneProxyRegistry<FLightProxy>    LightProxyRegistry;
-    TSceneProxyRegistry<FFogSceneProxy> FogProxyRegistry;
+    TSceneProxyRegistry<FFogSceneProxy> FogProxyRegistry; // TODO: FSceneEffectProxy로 변경=
 
     FDebugPrimitiveQueue DebugPrimitiveQueue;
 };
