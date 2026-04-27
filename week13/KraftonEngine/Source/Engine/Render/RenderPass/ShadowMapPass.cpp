@@ -437,7 +437,7 @@ void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Devi
 
 	// 1 spot = 1 slice → SpotAtlas를 slice 배열로 사용
 	//const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
-	const uint32 Resolution = SpotLightAtlas.GetAtlasSize();
+	const uint32 Resolution = (uint32)SpotLightAtlas.GetAtlasSize();
 	Res.EnsureSpotAtlas(Device.GetDevice(), Resolution, ShadowSpotCount);
 	if (!Res.IsSpotValid()) return;
 
@@ -530,8 +530,8 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		? MAX_SHADOW_SPOT_LIGHTS : ShadowSpotCount;
 
 	// 1 spot = 1 slice → SpotAtlas를 slice 배열로 사용
-	const uint32 Resolution = SpotLightAtlas.GetAtlasSize();
-	Res.EnsureSpotAtlas(Ctx.Device.GetDevice(), Resolution, 1);
+	const uint32 Resolution = (uint32)SpotLightAtlas.GetAtlasSize();
+	Res.EnsureSpotAtlas(Ctx.Device.GetDevice(), Resolution, ShadowSpotCount);
 	if (!Res.IsSpotValid()) return;
 
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
@@ -560,22 +560,27 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	uint32 ShadowIdx = 0;
 	auto& Frame = Ctx.Frame;
 	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
-	for (uint32 i = 0; i < NumSpots && ShadowIdx < ShadowSpotCount; ++i)
-	{
-		const FSpotLightParams& Light = Env.GetSpotLight(i);
-		if (!Light.bCastShadows) continue;
 
-		FAtlasRegion AtlasRegion = SpotLightAtlas.Add(Light.ToLightInfo(), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+	for (uint32 i = 0; i < NumSpots; ++i) {
+		const FSpotLightParams& Light = Env.GetSpotLight(i);
+		SpotLightAtlas.AddToBatch(Light.ToLightInfo(), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+	}
+	TArray<FAtlasRegion> AtlasRegions = SpotLightAtlas.CommitBatch();
+
+	for (uint32 i = 0; i < AtlasRegions.size(); ++i)
+	{
+		if (ShadowIdx >= ShadowSpotCount) break;
+		FAtlasRegion AtlasRegion = AtlasRegions[i];
 		if (!AtlasRegion.bValid) continue;
 
 		// Shadow Viewport COmputation
-		ShadowVP.TopLeftX = AtlasRegion.X;
-		ShadowVP.TopLeftY = AtlasRegion.Y;
-		ShadowVP.Width    = AtlasRegion.Size;
-		ShadowVP.Height   = AtlasRegion.Size;
+		ShadowVP.TopLeftX = static_cast<float>(AtlasRegion.X);
+		ShadowVP.TopLeftY = static_cast<float>(AtlasRegion.Y);
+		ShadowVP.Width    = static_cast<float>(AtlasRegion.Size);
+		ShadowVP.Height   = static_cast<float>(AtlasRegion.Size);
 
 		// ViewProj 계산
-		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Light);
+		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Env.GetSpotLight(i));
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(VP.ViewProj);
 
