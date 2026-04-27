@@ -111,6 +111,7 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 	RenderDirectionalShadows(Ctx, ShadowRes);
 
 	RenderSpotShadows(Ctx, ShadowRes);
+	RenderPointShadows(Ctx, ShadowRes);
 }
 
 // ============================================================
@@ -301,17 +302,84 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
 
-	// TODO: 팀원 A 구현
-	// 1. Env.GetGlobalDirectionalLightParams()에서 Direction 획득
-	// 2. cascade별 ViewProj 계산 (카메라 frustum 분할 기반)
-	// 3. for (i = 0..MAX_SHADOW_CASCADES-1):
-	//      DC->ClearDepthStencilView(Res.CSMDSV[i], ...)
-	//      DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i])  // VSM: RTV + DSV
-	//      SetViewport(Res.CSMResolution)
-	//      DrawShadowCasters(Ctx, cascadeFrustum)
-	//      ShadowCBCache.CSMViewProj[i] = cascadeViewProj
-	// 4. ShadowCBCache.NumCSMCascades = 실제 사용 cascade 수
-	// 5. ShadowCBCache.CascadeSplits = split distances
+	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
+
+	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+
+	FMatrix CameraView = Ctx.Frame.View;
+	FMatrix CameraProj = Ctx.Frame.Proj;
+
+	const float CameraNearZ = Ctx.Frame.NearClip;
+	const float CameraFarZ = Ctx.Frame.FarClip;
+
+	//CSM에서 실제로 shadow를 생성하는 최대 길이.
+	//FarClip 전체를 쓰면 C0도 지나치게 넓어져 근거리 품질이 낮아짐.
+	const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
+	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+
+	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
+	FLightFrustumUtils::ComputeCascadeRanges(
+		CameraNearZ,
+		ShadowFarZ,
+		NumCascades,
+		0.85f,
+		CascadeRanges
+	);
+
+	ShadowCBCache.CascadeSplits = FVector4(
+		CascadeRanges[0].FarZ,
+		CascadeRanges[1].FarZ,
+		CascadeRanges[2].FarZ,
+		CascadeRanges[3].FarZ
+	);
+	//ImGui 디버그용
+	Res.CSMDebugCascadeNear = FVector4(
+		CascadeRanges[0].NearZ,
+		CascadeRanges[1].NearZ,
+		CascadeRanges[2].NearZ,
+		CascadeRanges[3].NearZ
+	);
+	Res.CSMDebugCascadeFar = ShadowCBCache.CascadeSplits;
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	for(int32 i = 0; i < NumCascades; ++i)
+	{
+		const float CascadeNearZ = CascadeRanges[i].NearZ;
+		const float CascadeFarZ = CascadeRanges[i].FarZ;
+
+		//그걸로 빛 기준 view proj 생성
+		FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP
+			= FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
+				DirectionalParams, CameraView, CameraProj,
+				CameraNearZ,CameraFarZ,
+				CascadeNearZ, CascadeFarZ);
+		
+		//frustum 생성
+		FConvexVolume LightFrustum;
+		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
+
+		UploadLightViewProj(DC, DirectionalVP.ViewProj);
+
+		//reverse-Z
+		DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+
+		D3D11_VIEWPORT ShadowVP = {};
+		ShadowVP.TopLeftX = 0.0f;
+		ShadowVP.TopLeftY = 0.0f;
+		ShadowVP.Width = static_cast<float>(Res.CSMResolution);
+		ShadowVP.Height = static_cast<float>(Res.CSMResolution);
+		ShadowVP.MinDepth = 0.0f;
+		ShadowVP.MaxDepth = 1.0f;
+		
+		DC->RSSetViewports(1, &ShadowVP);
+
+		DrawShadowCasters(Ctx, LightFrustum);
+
+		ShadowCBCache.CSMViewProj[i] = DirectionalVP.ViewProj;
+	}
+	ShadowCBCache.NumCSMCascades = NumCascades;
 }
 
 // ============================================================
@@ -497,14 +565,99 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
 }
 
-// ============================================================
-// RenderPointShadows — Point Light CubeMap 렌더링 (TODO)
-// ============================================================
-
-void FShadowMapPass::RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
+void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
-	// TODO: Point Light shadow 구현
-	ShadowCBCache.NumShadowPointLights = 0;
+	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
+	const uint32 NumPointLights = SceneEnvironment.GetNumPointLights();
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	uint32 ShadowPointLightCount = 0;
+	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights; ++PointLightIndex)
+	{
+		if (SceneEnvironment.GetPointLight(PointLightIndex).bCastShadows)
+		{
+			++ShadowPointLightCount;
+		}
+	}
+
+	if (ShadowPointLightCount == 0)
+	{
+		ShadowCBCache.NumShadowPointLights = 0;
+		return;
+	}
+
+	// Clamped to MAX_SHADOW_POINT_LIGHTS
+	if (ShadowPointLightCount > MAX_SHADOW_POINT_LIGHTS)
+	{
+		ShadowPointLightCount = MAX_SHADOW_POINT_LIGHTS;
+	}
+
+	const uint32 ShadowResolution = FShadowSettings::Get().GetEffectiveResolution();
+	Res.EnsurePointCube(Ctx.Device.GetDevice(), ShadowResolution, ShadowPointLightCount);
+	if (!Res.IsPointValid() || !Res.PointCubeDSVs || !Res.PointShadowDataBuffer)
+	{
+		ShadowCBCache.NumShadowPointLights = 0;
+		return;
+	}
+
+	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
+	PointLightShadowGPUData.resize(ShadowPointLightCount);
+
+	D3D11_VIEWPORT ShadowViewport = {};
+	ShadowViewport.Width    = static_cast<float>(ShadowResolution);
+	ShadowViewport.Height   = static_cast<float>(ShadowResolution);
+	ShadowViewport.MinDepth = 0.0f;
+	ShadowViewport.MaxDepth = 1.0f;
+
+	constexpr float ShadowNearZ = 0.1f;
+	uint32 ShadowPointLightIndex = 0;
+	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights && ShadowPointLightIndex < ShadowPointLightCount; ++PointLightIndex)
+	{
+		const FPointLightParams &Light = SceneEnvironment.GetPointLight(PointLightIndex);
+		if (!Light.bCastShadows)
+		{
+			continue;
+		}
+
+		FPointShadowDataGPU &ShadowData = PointLightShadowGPUData[ShadowPointLightIndex];
+		ShadowData.NearZ = ShadowNearZ;
+		ShadowData.FarZ = Light.AttenuationRadius;
+		ShadowData.CubeArrayIndex = ShadowPointLightIndex;
+
+		for (uint32 CubeFaceIndex = 0; CubeFaceIndex < 6; ++CubeFaceIndex)
+		{
+			const auto FaceViewProjection = FLightFrustumUtils::BuildPointLightFaceViewProj(Light, CubeFaceIndex, ShadowNearZ);
+			ShadowData.FaceViewProj[CubeFaceIndex] = FaceViewProjection.ViewProj;
+
+			FConvexVolume LightFrustum;
+			LightFrustum.UpdateFromMatrix(FaceViewProjection.ViewProj);
+
+			UploadLightViewProj(DC, FaceViewProjection.ViewProj);
+
+			uint32 DSVFaceIndex = ShadowPointLightIndex * 6 + CubeFaceIndex;
+			ID3D11DepthStencilView *FaceDepthStencilView = Res.PointCubeDSVs[DSVFaceIndex];
+			DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
+			DC->RSSetViewports(1, &ShadowViewport);
+
+			DrawShadowCasters(Ctx, LightFrustum);
+		}
+
+		++ShadowPointLightIndex;
+	}
+
+	if (ShadowPointLightIndex > 0 && Res.PointShadowDataBuffer)
+	{
+		D3D11_MAPPED_SUBRESOURCE MappedPointShadowData = {};
+		if (SUCCEEDED(DC->Map(Res.PointShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedPointShadowData)))
+		{
+			memcpy(MappedPointShadowData.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowPointLightIndex);
+			DC->Unmap(Res.PointShadowDataBuffer, 0);
+		}
+	}
+
+	ShadowCBCache.NumShadowPointLights = ShadowPointLightIndex;
 }
 
 // ============================================================
@@ -521,7 +674,6 @@ void FShadowMapPass::RenderGlobal(FD3DDevice& Device, FSystemResources& Resource
 
 	// Spot/Point shadow 렌더링
 	RenderSpotShadows(DC, Device, Resources, Scene, Res, Partition);
-	RenderPointShadows(DC, Device, Scene, Res, Partition);
 
 	// Shadow depth 렌더링 종료 — DSV 언바인딩 (SRV 바인딩 전 R/W hazard 방지)
 	DC->OMSetRenderTargets(0, nullptr, nullptr);

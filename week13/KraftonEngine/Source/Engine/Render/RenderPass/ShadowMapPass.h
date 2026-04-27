@@ -45,7 +45,7 @@ private:
 	void RenderDirectionalShadows(const FPassContext& Ctx, FShadowMapResources& Res);
 	void RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition);
 	void RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res);
-	void RenderPointShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition);
+	void RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res);
 
 	// ── 공용: frustum culling + depth-only draw ──
 	void DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, const FConvexVolume& LightFrustum, FSpatialPartition* Partition = nullptr);

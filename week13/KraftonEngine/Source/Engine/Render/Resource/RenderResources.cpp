@@ -267,8 +267,121 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 
 void FShadowMapResources::EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount)
 {
-	// TODO: Point CubeMap TextureCubeArray 생성
-	(void)Device; (void)Resolution; (void)CubeCount;
+	if (PointCubeResolution == Resolution && PointCubeCount == CubeCount && PointCubeTexture)
+		return;
+
+	// 기존 리소스 해제
+	if (PointCubeSRV)
+	{
+		PointCubeSRV->Release();
+		PointCubeSRV = nullptr;
+	}
+
+	if (PointCubeDSVs)
+	{
+		for (uint32 i = 0; i < PointCubeCount; ++i)
+		{
+			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+			{
+				if (PointCubeDSVs[i * 6 + FaceIndex])
+				{
+					PointCubeDSVs[i * 6 + FaceIndex]->Release();
+				}
+			}
+		}
+		delete[] PointCubeDSVs;
+		PointCubeDSVs = nullptr;
+	}
+
+	if (PointCubeTexture)
+	{
+		PointCubeTexture->Release();
+		PointCubeTexture = nullptr;
+	}
+	if (PointShadowDataSRV)
+	{
+		PointShadowDataSRV->Release();
+		PointShadowDataSRV = nullptr;
+	}
+	if (PointShadowDataBuffer)
+	{
+		PointShadowDataBuffer->Release();
+		PointShadowDataBuffer = nullptr;
+	}
+
+	PointShadowDataCapacity = 0;
+	PointCubeCount = 0;
+
+	if (CubeCount == 0)
+	{
+		return;
+	}
+
+	PointCubeResolution = Resolution;
+
+	D3D11_TEXTURE2D_DESC TexDesc = {};
+	TexDesc.Width = Resolution;
+	TexDesc.Height = Resolution;
+	TexDesc.MipLevels = 1;
+	// TODO: ArraySize 0으로 만들어보기
+	TexDesc.ArraySize = CubeCount * 6;
+	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	TexDesc.SampleDesc.Count = 1;
+	TexDesc.Usage = D3D11_USAGE_DEFAULT;
+	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	TexDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &PointCubeTexture);
+	if (FAILED(hr)) return;
+
+	PointCubeCount = CubeCount;
+	PointCubeDSVs = new ID3D11DepthStencilView *[CubeCount * 6]();
+	for (uint32 CubeIndex = 0; CubeIndex < CubeCount; ++CubeIndex)
+	{
+		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			uint32 CubeFaceIndex = CubeIndex * 6 + FaceIndex;
+
+			D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+			DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+			DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+			DSVDesc.Texture2DArray.MipSlice = 0;
+			DSVDesc.Texture2DArray.FirstArraySlice = CubeFaceIndex;
+			DSVDesc.Texture2DArray.ArraySize = 1;
+
+			Device->CreateDepthStencilView(PointCubeTexture, &DSVDesc, &PointCubeDSVs[CubeFaceIndex]);
+		}
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+	SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+	SRVDesc.TextureCubeArray.MostDetailedMip = 0;
+	SRVDesc.TextureCubeArray.MipLevels = 1;
+	SRVDesc.TextureCubeArray.First2DArrayFace = 0;
+	SRVDesc.TextureCubeArray.NumCubes = CubeCount;
+
+	Device->CreateShaderResourceView(PointCubeTexture, &SRVDesc, &PointCubeSRV);
+
+	PointShadowDataCapacity = CubeCount;
+
+	// StructuredBuffer<FPointShadowDataGPU>
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.ByteWidth = sizeof(FPointShadowDataGPU) * CubeCount;
+	BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	BufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	BufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
+
+	Device->CreateBuffer(&BufferDesc, nullptr, &PointShadowDataBuffer);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC BufferSRVDesc = {};
+	BufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+	BufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	BufferSRVDesc.Buffer.NumElements = CubeCount;
+
+	Device->CreateShaderResourceView(PointShadowDataBuffer, &BufferSRVDesc, &PointShadowDataSRV);
 }
 
 void FShadowMapResources::Release()
