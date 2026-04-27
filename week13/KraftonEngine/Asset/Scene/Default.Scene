@@ -7,6 +7,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Cast Shadow" : true,
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/Material.mat"
           },
@@ -28,6 +29,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Cast Shadow" : true,
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
@@ -49,10 +51,11 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Cast Shadow" : true,
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
-          "Location" : [-1.321529, 2.017730, 1.294595],
+          "Location" : [-1.321529, 2.017730, 0.534665],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Data/BasicShape/Cylinder.obj",
@@ -70,10 +73,11 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
+          "Cast Shadow" : true,
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
-          "Location" : [-2.350486, -6.328375, 1.160947],
+          "Location" : [-2.350486, -13.646970, 0.492935],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Data/BasicShape/Cube.OBJ",
@@ -91,6 +95,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Properties" : {
+              "Cast Shadow" : true,
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
@@ -113,10 +118,10 @@
           "Location" : [-0.135615, -0.898725, 4.039026],
           "Rotation" : [45.000000, -45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.005000,
+          "Shadow Bias" : 0.000000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.670000,
-          "Shadow Slope Bias" : 0.005000,
+          "Shadow Slope Bias" : 0.000000,
           "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
@@ -131,6 +136,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Properties" : {
+              "Cast Shadow" : true,
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
@@ -171,6 +177,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Properties" : {
+              "Cast Shadow" : true,
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
@@ -195,10 +202,10 @@
           "Location" : [-3.664403, -7.024590, 0.832804],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.005000,
+          "Shadow Bias" : 0.000000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.670000,
-          "Shadow Slope Bias" : 0.005000,
+          "Shadow Slope Bias" : 0.000000,
           "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
@@ -213,6 +220,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Properties" : {
+              "Cast Shadow" : true,
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
@@ -235,14 +243,14 @@
           "InnerConeAngle" : 22.400000,
           "Intensity" : 12.000000,
           "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.473364, 1.714143, 3.195414],
+          "Location" : [-3.473364, 1.780516, 3.195414],
           "OuterConeAngle" : 41.500000,
           "Rotation" : [27.600815, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.005000,
+          "Shadow Bias" : 0.000000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.005000,
+          "Shadow Slope Bias" : 0.000000,
           "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
@@ -257,9 +265,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-9.779271, -4.594505, 10.090346],
+    "Location" : [-2.597765, -0.755989, 1.875691],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 48.316582, -27.745174]
+    "Rotation" : [0.000000, 18.766098, 44.253933]
   },
   "Primitives" : {
     "74" : {
@@ -277,14 +285,14 @@
       "Type" : "StaticMeshComp"
     },
     "83" : {
-      "Location" : [-1.321529, 2.017730, 1.294595],
+      "Location" : [-1.321529, 2.017730, 0.534665],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cylinder.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
     "86" : {
-      "Location" : [-2.350486, -6.328375, 1.160947],
+      "Location" : [-2.350486, -13.646970, 0.492935],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
