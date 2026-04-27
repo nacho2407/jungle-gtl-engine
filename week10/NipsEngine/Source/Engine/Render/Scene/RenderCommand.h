@@ -120,12 +120,36 @@ struct FShadowLightRequest
     float ShadowSharpen = 1.0f;
 };
 
+constexpr uint32 MaxDirectionalCascadeCount = 4;
+
 struct FShadowConstants
 {
-	FMatrix	VirtualViewProj;
+	FMatrix VirtualViewProj;
+
+	// 기존 directional / PSM 경로 호환용 단일 matrix 정보
 	FMatrix DirLightViewProj;
-    FVector4 ScaleOffset; // xy: Scale, zw: Offset
+	FVector4 ScaleOffset; // xy = scale, zw = offset
+
+	// directional CSM lighting 경로용
+	FMatrix  CascadeViewProj[MaxDirectionalCascadeCount];
+	FVector4 CascadeScaleOffset[MaxDirectionalCascadeCount]; // xy = scale, zw = offset
+
+	FVector4 CascadeSplitFar; // x,y,z,w 에 각각 비율이 아닌 카메라와의 거리를 넣어뒀음
+	uint32   DirectionalCascadeCount = 0;
+	float    Padding[3] = { 0.0f, 0.0f, 0.0f };
 };
+
+inline void SetCascadeSplitFar(FVector4& OutValue, uint32 CascadeIndex, float SplitFar)
+{
+	switch (CascadeIndex)
+	{
+	case 0: OutValue.X = SplitFar; break;
+	case 1: OutValue.Y = SplitFar; break;
+	case 2: OutValue.Z = SplitFar; break;
+	case 3: OutValue.W = SplitFar; break;
+	default: break;
+	}
+}
 
 struct FShadowAtlasConstants
 {

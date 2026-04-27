@@ -207,6 +207,7 @@
     <FxCompile Include="Shaders\Multipass\LightPass.hlsl">
       <Filter>Shaders\Multipass</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\ShadowFunction.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
