@@ -27,13 +27,12 @@ public:
 
 	FVector GetVectorForAxis(int32 Axis) const;
 	void RenderGizmo() {}
-	void SetTarget(AActor* NewTarget);
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
 	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
-	inline bool HasTarget() const { return TargetActor != nullptr; }
-	inline AActor* GetTarget() const { return TargetActor; }
+	inline bool HasTarget() const { return TargetComponent != nullptr; }
+	inline USceneComponent* GetTarget() const { return TargetComponent; }
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
@@ -81,6 +80,10 @@ public:
 	// Actor 없이 독립 생성된 Gizmo용 — 외부에서 Scene을 직접 지정
 	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
 
+	// Target 지원
+	void SetTarget(USceneComponent* NewTarget);
+	void SetTarget(AActor* NewTargetActor);
+
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT);
 	bool IntersectRayRotationHandle(const FRay& Ray, int32 Axis, float& OutRayT) const;
@@ -97,7 +100,7 @@ private:
 	void UpdateAngularDrag(const FRay& Ray);
 
 private:
-	AActor* TargetActor = nullptr;
+	USceneComponent* TargetComponent = nullptr;
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;

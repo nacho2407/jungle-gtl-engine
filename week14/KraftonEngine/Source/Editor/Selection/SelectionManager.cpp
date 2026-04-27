@@ -2,6 +2,7 @@
 #include "Object/Object.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
@@ -44,7 +45,7 @@ void FSelectionManager::Shutdown()
 
 void FSelectionManager::Select(AActor* Actor)
 {
-	if (SelectedActors.size() == 1 && SelectedActors.front() == Actor)
+	if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && (!Actor || SelectedComponent == Actor->GetRootComponent()))
 	{
 		return;
 	}
@@ -54,10 +55,13 @@ void FSelectionManager::Select(AActor* Actor)
 		SetActorProxiesSelected(Prev, false);
 
 	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
 	if (Actor)
 	{
 		SelectedActors.push_back(Actor);
 		SetActorProxiesSelected(Actor, true);
+		SelectedComponent = Actor->GetRootComponent();
 	}
 	SyncGizmo();
 }
@@ -103,6 +107,8 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 		SetActorProxiesSelected(Prev, false);
 
 	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
 	for (int32 i = Lo; i <= Hi; ++i)
 	{
 		if (ActorList[i])
@@ -111,6 +117,12 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 			SetActorProxiesSelected(ActorList[i], true);
 		}
 	}
+
+	if (!SelectedActors.empty())
+	{
+		SelectedComponent = SelectedActors.front()->GetRootComponent();
+	}
+
 	SyncGizmo();
 }
 
@@ -123,11 +135,19 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
 	{
 		SetActorProxiesSelected(Actor, false);
 		SelectedActors.erase(It);
+		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
+		{
+			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
+		}
 	}
 	else
 	{
 		SelectedActors.push_back(Actor);
 		SetActorProxiesSelected(Actor, true);
+		if (SelectedActors.size() == 1)
+		{
+			SelectedComponent = Actor->GetRootComponent();
+		}
 	}
 	SyncGizmo();
 }
@@ -139,13 +159,17 @@ void FSelectionManager::Deselect(AActor* Actor)
 	{
 		SetActorProxiesSelected(Actor, false);
 		SelectedActors.erase(It);
+		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
+		{
+			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
+		}
 	}
 	SyncGizmo();
 }
 
 void FSelectionManager::ClearSelection()
 {
-	if (SelectedActors.empty())
+	if (SelectedActors.empty() && SelectedComponent == nullptr)
 	{
 		return;
 	}
@@ -154,6 +178,7 @@ void FSelectionManager::ClearSelection()
 		SetActorProxiesSelected(Actor, false);
 
 	SelectedActors.clear();
+	SelectedComponent = nullptr;
 	SyncGizmo();
 }
 
@@ -192,7 +217,7 @@ void FSelectionManager::Tick()
 		return;
 	}
 
-	AActor* Primary = GetPrimarySelection();
+	USceneComponent* Primary = SelectedComponent;
 	if (!Primary)
 	{
 		return;
@@ -215,6 +240,27 @@ void FSelectionManager::SetGizmoEnabled(bool bEnabled)
 	}
 
 	bGizmoEnabled = bEnabled;
+	SyncGizmo();
+}
+
+void FSelectionManager::SelectComponent(USceneComponent* Component)
+{
+	if (SelectedComponent == Component)
+	{
+		return;
+	}
+
+	SelectedComponent = Component;
+
+	if (Component)
+	{
+		AActor* Owner = Component->GetOwner();
+		if (Owner && !IsSelected(Owner))
+		{
+			Select(Owner);
+		}
+	}
+
 	SyncGizmo();
 }
 
@@ -242,7 +288,7 @@ void FSelectionManager::SyncGizmo()
 		return;
 	}
 
-	AActor* Primary = GetPrimarySelection();
+	USceneComponent* Primary = SelectedComponent;
 	if (Primary)
 	{
 		Gizmo->SetTarget(Primary);
@@ -254,3 +300,4 @@ void FSelectionManager::SyncGizmo()
 		Gizmo->Deactivate();
 	}
 }
+
