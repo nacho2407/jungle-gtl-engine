@@ -930,9 +930,13 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     ImGui::SeparatorText("Shadow Map Preview");
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
+    const float MaxWidth = ImGui::GetContentRegionAvail().x;
+    const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
+
     if (LightProxy->ShadowMapIndex < 0)
     {
         ImGui::TextDisabled("No shadow map assigned this frame.");
+        ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
         return;
     }
 
@@ -993,11 +997,9 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     if (!PreviewSRV)
     {
         ImGui::TextDisabled("Shadow preview is unavailable.");
+        ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
         return;
     }
-
-    const float MaxWidth = ImGui::GetContentRegionAvail().x;
-    const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
 
     const ImVec2 PreviewMin = ImGui::GetCursorScreenPos();
     const ImVec2 PreviewMax = ImVec2(PreviewMin.x + PreviewSize, PreviewMin.y + PreviewSize);
