@@ -33,17 +33,21 @@ public:
 
     const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
     bool IsEmpty() const { return SelectedActors.empty(); }
+    bool IsSelectionBlocked(AActor* Actor) const;
 
     UGizmoComponent* GetGizmo() const { return Gizmo; }
 
     void SetGizmoEnabled(bool bEnabled);
     void SetWorld(UWorld* InWorld);
+    void AddSelectionBlock(AActor* Actor);
+    void RemoveSelectionBlock(AActor* Actor);
 
 private:
     void SyncGizmo();
     void SetActorProxiesSelected(AActor* Actor, bool bSelected);
 
     TArray<AActor*> SelectedActors;
+    TArray<AActor*> SelectionBlockedActors;
     UGizmoComponent* Gizmo = nullptr;
     UWorld* World = nullptr;
     bool bGizmoEnabled = true;

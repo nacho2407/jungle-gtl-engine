@@ -16,8 +16,17 @@ public:
 
     FLightProxy* CreateLightProxy() override;
 
+    int32 GetCascadeCount() const { return CascadeCount; }
+    float GetDynamicShadowDistance() const { return DynamicShadowDistance; }
+    float GetCascadeDistribution() const { return CascadeDistribution; }
+
 protected:
     FVector Direction = FVector(0.0f, 0.0f, -1.0f); // 기본값: 아래로 향하는 빛
+    
+    // TODO: Cascade 구현
+    int32 CascadeCount = 4;
+    float DynamicShadowDistance = 2000.0f;
+    float CascadeDistribution = 1.0f;
 };
 
 
