@@ -52,7 +52,6 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Gouraud), EUberLitDefines::Gouraud, StartupError);
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Lambert), EUberLitDefines::Lambert, StartupError);
 	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Phong),   EUberLitDefines::Phong,   StartupError);
-	PreCompile(FShaderKey(EShaderPath::UberLit, EUberLitDefines::Toon),    EUberLitDefines::Toon,    StartupError);
 
 	// include 역매핑 구축
 	RebuildIncludeDependents();

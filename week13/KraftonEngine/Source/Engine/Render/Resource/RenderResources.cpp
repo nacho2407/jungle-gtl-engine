@@ -265,78 +265,77 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	Device->CreateShaderResourceView(SpotShadowDataBuffer, &SBSRVDesc, &SpotShadowDataSRV);
 }
 
-void FShadowMapResources::EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount)
+void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 Resolution, uint32 PointLightCount)
 {
-	if (PointCubeResolution == Resolution && PointCubeCount == CubeCount && PointCubeTexture)
-		return;
+	// if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == CubeCount && PointLightShadowTexture)
+	// 	return;
+	// 매 프레임 재생성
 
 	// 기존 리소스 해제
-	if (PointCubeSRV)
+	if (PointLightShadowSRV)
 	{
-		PointCubeSRV->Release();
-		PointCubeSRV = nullptr;
+		PointLightShadowSRV->Release();
+		PointLightShadowSRV = nullptr;
 	}
 
-	if (PointCubeDSVs)
+	if (PointLightShadowDSVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount; ++i)
 		{
 			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 			{
-				if (PointCubeDSVs[i * 6 + FaceIndex])
+				if (PointLightShadowDSVs[i * 6 + FaceIndex])
 				{
-					PointCubeDSVs[i * 6 + FaceIndex]->Release();
+					PointLightShadowDSVs[i * 6 + FaceIndex]->Release();
 				}
 			}
 		}
-		delete[] PointCubeDSVs;
-		PointCubeDSVs = nullptr;
+		delete[] PointLightShadowDSVs;
+		PointLightShadowDSVs = nullptr;
 	}
 
-	if (PointCubeTexture)
+	if (PointLightShadowTexture)
 	{
-		PointCubeTexture->Release();
-		PointCubeTexture = nullptr;
+		PointLightShadowTexture->Release();
+		PointLightShadowTexture = nullptr;
 	}
-	if (PointShadowDataSRV)
-	{
-		PointShadowDataSRV->Release();
-		PointShadowDataSRV = nullptr;
-	}
-	if (PointShadowDataBuffer)
-	{
-		PointShadowDataBuffer->Release();
-		PointShadowDataBuffer = nullptr;
-	}
+	PointLightShadowTextureCount = 0;
 
-	PointShadowDataCapacity = 0;
-	PointCubeCount = 0;
+	if (PointLightShadowDataSRV)
+	{
+		PointLightShadowDataSRV->Release();
+		PointLightShadowDataSRV = nullptr;
+	}
+	if (PointLightShadowDataBuffer)
+	{
+		PointLightShadowDataBuffer->Release();
+		PointLightShadowDataBuffer = nullptr;
+	}
+	PointLightShadowDataCapacity = 0;
 
-	if (CubeCount == 0)
+	if (PointLightCount == 0)
 	{
 		return;
 	}
 
-	PointCubeResolution = Resolution;
+	PointLightShadowTextureResolution = Resolution;
 
 	D3D11_TEXTURE2D_DESC TexDesc = {};
 	TexDesc.Width = Resolution;
 	TexDesc.Height = Resolution;
 	TexDesc.MipLevels = 1;
-	// TODO: ArraySize 0으로 만들어보기
-	TexDesc.ArraySize = CubeCount * 6;
+	TexDesc.ArraySize = PointLightCount * 6;
 	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	TexDesc.SampleDesc.Count = 1;
 	TexDesc.Usage = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	TexDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
-	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &PointCubeTexture);
-	if (FAILED(hr)) return;
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &PointLightShadowTexture);
+	if (FAILED(hr)) assert(false);
 
-	PointCubeCount = CubeCount;
-	PointCubeDSVs = new ID3D11DepthStencilView *[CubeCount * 6]();
-	for (uint32 CubeIndex = 0; CubeIndex < CubeCount; ++CubeIndex)
+	PointLightShadowTextureCount = PointLightCount;
+	PointLightShadowDSVs = new ID3D11DepthStencilView *[PointLightCount * 6]();
+	for (uint32 CubeIndex = 0; CubeIndex < PointLightCount; ++CubeIndex)
 	{
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
@@ -349,39 +348,40 @@ void FShadowMapResources::EnsurePointCube(ID3D11Device* Device, uint32 Resolutio
 			DSVDesc.Texture2DArray.FirstArraySlice = CubeFaceIndex;
 			DSVDesc.Texture2DArray.ArraySize = 1;
 
-			Device->CreateDepthStencilView(PointCubeTexture, &DSVDesc, &PointCubeDSVs[CubeFaceIndex]);
+			Device->CreateDepthStencilView(PointLightShadowTexture, &DSVDesc, &PointLightShadowDSVs[CubeFaceIndex]);
 		}
 	}
 
+	// TODO: Imgui 띄우려면 SRV를 여러개 생성
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-	SRVDesc.TextureCubeArray.MostDetailedMip = 0;
-	SRVDesc.TextureCubeArray.MipLevels = 1;
-	SRVDesc.TextureCubeArray.First2DArrayFace = 0;
-	SRVDesc.TextureCubeArray.NumCubes = CubeCount;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+	SRVDesc.Texture2DArray.MostDetailedMip = 0;
+	SRVDesc.Texture2DArray.MipLevels = 1;
+	SRVDesc.Texture2DArray.FirstArraySlice = 0;
+	SRVDesc.Texture2DArray.ArraySize = PointLightCount * 6;
 
-	Device->CreateShaderResourceView(PointCubeTexture, &SRVDesc, &PointCubeSRV);
+	Device->CreateShaderResourceView(PointLightShadowTexture, &SRVDesc, &PointLightShadowSRV);
 
-	PointShadowDataCapacity = CubeCount;
+	PointLightShadowDataCapacity = PointLightCount;
 
 	// StructuredBuffer<FPointShadowDataGPU>
 	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.ByteWidth = sizeof(FPointShadowDataGPU) * CubeCount;
+	BufferDesc.ByteWidth = sizeof(FPointShadowDataGPU) * PointLightCount;
 	BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	BufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	BufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
 
-	Device->CreateBuffer(&BufferDesc, nullptr, &PointShadowDataBuffer);
+	Device->CreateBuffer(&BufferDesc, nullptr, &PointLightShadowDataBuffer);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC BufferSRVDesc = {};
 	BufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	BufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	BufferSRVDesc.Buffer.NumElements = CubeCount;
+	BufferSRVDesc.Buffer.NumElements = PointLightCount;
 
-	Device->CreateShaderResourceView(PointShadowDataBuffer, &BufferSRVDesc, &PointShadowDataSRV);
+	Device->CreateShaderResourceView(PointLightShadowDataBuffer, &BufferSRVDesc, &PointLightShadowDataSRV);
 }
 
 // ============================================================
@@ -567,21 +567,21 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resol
 
 void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount)
 {
-	if (PointCubeResolution == Resolution && PointCubeCount == CubeCount && PointVSMTexture)
+	if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == CubeCount && PointVSMTexture)
 		return;
 
 	// 기존 Point VSM 리소스 해제
 	if (PointVSMSRV) { PointVSMSRV->Release(); PointVSMSRV = nullptr; }
 	if (PointVSMRTVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount * 6; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
 			if (PointVSMRTVs[i]) PointVSMRTVs[i]->Release();
 		delete[] PointVSMRTVs;
 		PointVSMRTVs = nullptr;
 	}
 	if (PointVSMDSVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount * 6; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
 			if (PointVSMDSVs[i]) PointVSMDSVs[i]->Release();
 		delete[] PointVSMDSVs;
 		PointVSMDSVs = nullptr;
@@ -693,14 +693,14 @@ void FShadowMapResources::ReleaseVSM()
 	if (PointVSMSRV) { PointVSMSRV->Release(); PointVSMSRV = nullptr; }
 	if (PointVSMRTVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount * 6; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
 			if (PointVSMRTVs[i]) PointVSMRTVs[i]->Release();
 		delete[] PointVSMRTVs;
 		PointVSMRTVs = nullptr;
 	}
 	if (PointVSMDSVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount * 6; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
 			if (PointVSMDSVs[i]) PointVSMDSVs[i]->Release();
 		delete[] PointVSMDSVs;
 		PointVSMDSVs = nullptr;
@@ -745,28 +745,27 @@ void FShadowMapResources::Release()
 	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
 	SpotAtlasPageCount = 0;
 
-	// Point Cube
-	if (PointCubeSRV) { PointCubeSRV->Release(); PointCubeSRV = nullptr; }
-	if (PointCubeDSVs)
+	if (PointLightShadowSRV) { PointLightShadowSRV->Release(); PointLightShadowSRV = nullptr; }
+	if (PointLightShadowDSVs)
 	{
-		for (uint32 i = 0; i < PointCubeCount * 6; ++i)
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
 		{
-			if (PointCubeDSVs[i]) PointCubeDSVs[i]->Release();
+			if (PointLightShadowDSVs[i]) PointLightShadowDSVs[i]->Release();
 		}
-		delete[] PointCubeDSVs;
-		PointCubeDSVs = nullptr;
+		delete[] PointLightShadowDSVs;
+		PointLightShadowDSVs = nullptr;
 	}
-	if (PointCubeTexture) { PointCubeTexture->Release(); PointCubeTexture = nullptr; }
-	PointCubeCount = 0;
+	if (PointLightShadowTexture) { PointLightShadowTexture->Release(); PointLightShadowTexture = nullptr; }
+	PointLightShadowTextureCount = 0;
 
 	// StructuredBuffers
 	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }
 	if (SpotShadowDataBuffer) { SpotShadowDataBuffer->Release(); SpotShadowDataBuffer = nullptr; }
 	SpotShadowDataCapacity = 0;
 
-	if (PointShadowDataSRV)    { PointShadowDataSRV->Release();    PointShadowDataSRV = nullptr; }
-	if (PointShadowDataBuffer) { PointShadowDataBuffer->Release(); PointShadowDataBuffer = nullptr; }
-	PointShadowDataCapacity = 0;
+	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV = nullptr; }
+	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
+	PointLightShadowDataCapacity = 0;
 }
 
 void FSystemResources::Release()
