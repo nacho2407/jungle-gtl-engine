@@ -1,0 +1,221 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "62",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 10",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "65",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 13",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 3.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "APointLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 68",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/PointLightIcon.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Properties" : {
+          "AttenuationRadius" : 10.000000,
+          "Intensity" : 2.500000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "LightFalloffExponent" : 8.000000,
+          "Location" : [0.000000, 0.000000, 6.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "UseInverseSquaredFalloff" : true,
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAmbientLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 73",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/AmbientLightIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UAmbientLightComponent",
+        "Properties" : {
+          "Intensity" : 0.250000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 7.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "bAffectsWorld" : true,
+          "bCastShadows" : true,
+          "bTickEnable" : false
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "PCFFilterPointLight",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [1.744745, 7.090786, 5.794969],
+    "NearClip" : 0.100000,
+    "Rotation" : [-0.000000, 11.445038, -107.760406]
+  },
+  "Primitives" : {
+    "62" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [10.000000, 10.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "65" : {
+      "Location" : [0.000000, 0.000000, 3.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

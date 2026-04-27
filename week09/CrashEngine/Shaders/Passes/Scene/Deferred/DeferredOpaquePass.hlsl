@@ -106,7 +106,7 @@ FDeferred_Opaque_VSOutput VS_DeferredOpaque(VS_Input_PNCT_T Input)
     Output.texcoord         = Input.texcoord;
 
     float3 WorldPos        = mul(float4(Input.position, 1.0f), Model).xyz;
-    float3 GouraudLighting = ComputeGouraudLightingColor(Output.worldNormal, WorldPos);
+    float3 GouraudLighting = ComputeGouraudLightingColor(Output.worldNormal, WorldPos, Output.position);
     Output.gouraud         = float4(GouraudLighting, 1.0f);
     return Output;
 }

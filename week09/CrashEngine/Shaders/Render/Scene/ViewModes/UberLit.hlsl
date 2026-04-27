@@ -95,7 +95,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
                 int GlobalPointLightIndex = Bucket * 32 + bit;
                 if (GlobalPointLightIndex < NumLocalLights)
                 {
-                    float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos);
+                    float3 LocalTerm = LocalLightLambertTerm(g_LightBuffer[GlobalPointLightIndex], Normal, WorldPos, Input.position);
                     FinalColor.rgb += BaseColor.rgb * LocalTerm;
 #if ENABLE_LIGHT_EVAL_COUNTER
                     InterlockedAdd(GlobalLightEvalCounter[0], 1);
