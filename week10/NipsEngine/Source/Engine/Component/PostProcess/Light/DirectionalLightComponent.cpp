@@ -4,12 +4,6 @@
 DEFINE_CLASS(UDirectionalLightComponent, ULightComponent)
 REGISTER_FACTORY(UDirectionalLightComponent)
 
-void UDirectionalLightComponent::PostDuplicate(UObject* Original)
-{
-    ULightComponentBase::PostDuplicate(Original);
-    UDirectionalLightComponent* Orig = Cast<UDirectionalLightComponent>(Original);
-}
-
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponent::GetEditableProperties(OutProps);
@@ -18,104 +12,84 @@ void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescripto
 FMatrix UDirectionalLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {
-	FVector LightDir = GetForwardVector().GetSafeNormal();
-	FMatrix CamViewProj = CamView * CamProj;
+	FVector PostCubeCenter = FVector(0.0f, 0.0f, 0.5f);
+	float PostCubeRadius = FVector(1.0f, 1.0f, 0.5f).Size();
 
-	auto ToPost = [&](const FVector& P)
-		{
-			FVector4 Clip = FVector4(P, 1.0f) * CamViewProj;
+	FMatrix LightView;
+	FMatrix LightProj;
 
-			float InvW = (MathUtil::Abs(Clip.W) > MathUtil::Epsilon) ? (1.0f / Clip.W) : 1.0f;
+	FVector WorldLightDir = -GetForwardVector().GetSafeNormal();
 
-			return FVector(
-				Clip.X * InvW,
-				Clip.Y * InvW,
-				Clip.Z * InvW
-			);
-		};
+	FVector EyeLightDir = CamView.TransformVector(WorldLightDir);
+	FVector4 PostLightDir4 = CamProj.TransformVector4(FVector4(EyeLightDir, 0.0f), CamProj);
 
-	FVector CombinedCenterWorld(0, 0, 0);
-	TArray<FVector> RelevantPoints;
+	bool bLightBehindOfEye = PostLightDir4.W < 0.0f;
+	bool bOrthogonal = MathUtil::Abs(PostLightDir4.W) <= 0.1f;
 
-	FVector PostCorners[8] =
+	if (bOrthogonal)
 	{
-		FVector(-1, -1, 0),
-		FVector(1, -1, 0),
-		FVector(-1, 1, 0),
-		FVector(1, 1, 0),
-		FVector(-1, -1, 1),
-		FVector(1, -1, 1),
-		FVector(-1, 1, 1),
-		FVector(1, 1, 1)
-	};
+		FVector PostLightDir = FVector(PostLightDir4.X, PostLightDir4.Y, PostLightDir4.Z).GetSafeNormal();
+		FVector PostLightPos = PostCubeCenter + PostLightDir * 2.0f * PostCubeRadius;
+		float DistToCenter = PostLightPos.Size();
 
-	if (VisibleObjectsBounds == nullptr)
-	{
-		for (int i = 0; i < 8; ++i)
+		float PostNear = DistToCenter - PostCubeRadius;
+		float PostFar = DistToCenter + PostCubeRadius;
+
+		FVector UpVector = FVector(0, 1, 0);
+		if (MathUtil::Abs(FVector::DotProduct((PostCubeCenter - PostLightPos).GetSafeNormal(), UpVector)) > 0.99f)
 		{
-			RelevantPoints.push_back(PostCorners[i]);
+			UpVector = FVector(0, 0, 1);
 		}
-		CombinedCenterWorld = FVector::ZeroVector;
+
+		LightView = FMatrix::MakeViewLookAtLH(PostLightPos, PostCubeCenter, (PostLightPos + UpVector));
+		LightProj = FMatrix::MakeOrthographicLH(PostCubeRadius * 2.0f, PostCubeRadius * 2.0f, PostNear, PostFar);
 	}
 	else
 	{
-		FBoundingBox TotalBox;
-		for (const auto& Box : *VisibleObjectsBounds)
+		float WRecip = 1.0f / PostLightDir4.W;
+		FVector PostLightPos;
+		PostLightPos.X = PostLightDir4.X * WRecip;
+		PostLightPos.Y = PostLightDir4.Y * WRecip;
+		PostLightPos.Z = PostLightDir4.Z * WRecip;
+
+		FVector PostLookAtVec = (PostCubeCenter - PostLightPos);
+		float PostDistLookAtVec = std::max(PostLookAtVec.Size(), 0.001f);
+		PostLookAtVec /= PostDistLookAtVec;
+
+		if (bLightBehindOfEye)
 		{
-			TotalBox.Merge(Box);
-			FVector Corners[8];
-			Box.GetVertices(Corners);
+			FVector ToBSphereDirection = PostCubeCenter - PostLightPos;
+			const float DistToBSphere = ToBSphereDirection.Size();
+			ToBSphereDirection = ToBSphereDirection.GetSafeNormal();
 
-			for (int i = 0; i < 8; ++i)
-			{
-				RelevantPoints.push_back(ToPost(Corners[i]));
-			}
+			float PostNear = DistToBSphere - PostCubeRadius;
+			float PostFov = 2.0f * atanf(PostCubeRadius / DistToBSphere);
+
+			PostNear = std::max(0.1f, PostNear);
+			float PostFar = PostNear;
+			PostNear = -PostNear;
+
+			LightProj = FMatrix::MakePerspectiveFovLH(PostFov, 1.0f, PostNear, PostFar);
 		}
-		CombinedCenterWorld = TotalBox.GetCenter();
+		else
+		{
+			float PostFov = 2.0f * atanf(PostCubeRadius / PostDistLookAtVec);
+			float PostAspect = 1.0f;
+
+			float PostNear = std::max(0.1f, PostDistLookAtVec - PostCubeRadius);
+			float PostFar = PostDistLookAtVec + PostCubeRadius;
+			LightProj = FMatrix::MakePerspectiveFovLH(PostFov, PostAspect, PostNear, PostFar);
+		}
+
+		FVector UpVector = FVector(0, 1, 0);
+		if (fabsf(FVector::DotProduct(PostLookAtVec, (PostLightPos + UpVector))) > 0.99f)
+		{
+			UpVector = FVector(0, 0, 1);
+		}
+
+		LightView = FMatrix::MakeViewLookAtLH(PostLightPos, PostCubeCenter, (PostLightPos + UpVector));
 	}
 
-	FVector Center = FVector::ZeroVector;
-	for (const FVector& C : PostCorners)
-	{
-		Center += C;
-	}
-	Center /= 8.0f;
-
-	const float Delta = 1.0f;
-
-	FVector NearCenterWorld = FVector::ZeroVector;
-
-	FVector Post0 = ToPost(NearCenterWorld);
-	FVector Post1 = ToPost(NearCenterWorld + LightDir * Delta);
-
-	FVector LightDirPost = (Post1 - Post0).GetSafeNormal();
-	if (LightDirPost.IsNearlyZero())
-	{
-		LightDirPost = FVector(1, 0, 0);
-	}
-
-	FVector Eye = Center - LightDirPost * 100.0f;
-	FVector RefA = FVector(0, 1, 0);
-	FVector RefB = FVector(0, 0, 1);
-	FVector Ref = (std::abs(FVector::DotProduct(LightDirPost, RefA)) < 0.9f) ? RefA : RefB;
-	FVector Right = FVector::CrossProduct(Ref, LightDirPost).GetSafeNormal();
-	FVector Up = FVector::CrossProduct(LightDirPost, Right).GetSafeNormal();
-	FMatrix LightNDCView = FMatrix::MakeViewLookAtLH(Eye, Center, Up);
-
-	FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
-	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-	for (const FVector& C : RelevantPoints)
-	{
-		FVector4 V = FVector4(C, 1.0f) * LightNDCView;
-		FVector P(V.X, V.Y, V.Z);
-
-		Min = FVector::Min(Min, P);
-		Max = FVector::Max(Max, P);
-	}
-
-	FMatrix LightNDCProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X - 1.0f, Max.X + 1.0f);
-
-	return LightNDCView * LightNDCProj;;
+	return LightView * LightProj;
 }
 

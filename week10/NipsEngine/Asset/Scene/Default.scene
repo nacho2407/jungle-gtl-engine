@@ -1,16 +1,17 @@
 {
   "ClassName" : "UWorld",
   "Name" : "Default",
-  "NextUUID" : 511,
+  "NextUUID" : 551,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-1.886902, 4.921327, 1.531766],
+    "Location" : [-6.843609, 5.749399, 3.292804],
     "NearClip" : 0.100000,
-    "Rotation" : [13.518435, 5.461243, -68.403351]
+    "Rotation" : [11.578473, 11.424332, -45.967560]
   },
   "Primitives" : {
     "465" : {
+      "CastShadows" : false,
       "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
       "Editor Only" : false,
       "Enable Tick" : true,
@@ -18,6 +19,11 @@
       "Location" : [0.000000, 0.000000, -2.258959],
       "Rotation" : [0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
+      "ShadowBias" : 0.000000,
+      "ShadowMapType" : 0,
+      "ShadowResolutionScale" : 0,
+      "ShadowSharpen" : 0.000000,
+      "ShadowSlopeBias" : 0.000000,
       "Type" : "UAmbientLightComponent"
     },
     "466" : {
@@ -51,13 +57,19 @@
       "Visible" : true
     },
     "472" : {
+      "CastShadows" : true,
       "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
       "Editor Only" : false,
       "Enable Tick" : true,
       "Intensity" : 1.000000,
-      "Location" : [-1.427876, 0.000000, 0.629459],
+      "Location" : [-2.993768, 0.000000, 0.629459],
       "Rotation" : [-28.748322, 30.534445, 47.196926],
       "Scale" : [1.000000, 1.000000, 1.000000],
+      "ShadowBias" : 0.000000,
+      "ShadowMapType" : 1,
+      "ShadowResolutionScale" : 2048,
+      "ShadowSharpen" : 0.000000,
+      "ShadowSlopeBias" : 0.000000,
       "Type" : "UDirectionalLightComponent"
     },
     "473" : {
