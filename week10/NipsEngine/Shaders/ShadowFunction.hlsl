@@ -1,3 +1,8 @@
+#ifndef SHADOW_FUNCTION_H
+#define SHADOW_FUNCTION_H
+
+#include "Common.hlsl"
+
 float ComputeShadowPCF(
     float3 lightSpacePos,
     float4 ScaleOffset,
@@ -77,5 +82,7 @@ float ComputeShadowAtlas(
         return 1.0f;
     }
 
-    return ComputeShadowPCF(projCoords, shadowData.ScaleOffset, 2, shadowSampler, shadowMap, shadowData.ShadowBias);
+    return ComputeShadowPCF(projCoords, shadowData.ScaleOffset, shadowData.ShadowSoftness, shadowSampler, shadowMap, shadowData.ShadowBias);
 }
+
+#endif

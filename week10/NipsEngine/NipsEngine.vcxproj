@@ -289,6 +289,7 @@
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
@@ -491,6 +492,7 @@
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />

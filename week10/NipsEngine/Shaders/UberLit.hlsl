@@ -2,7 +2,6 @@
 #include "Lighting.hlsl"
 #include "ShadowFunction.hlsl"
 
-
 cbuffer StaticMeshBuffer : register(b2)
 {
     float3 AmbientColor; // Ka
@@ -230,6 +229,29 @@ float CalculateShadow(float4 worldPos)
 #endif
 
 #ifdef SHADOW_MAP_PSM
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+
+
+
+
 float CalculateShadow(float4 worldPos)
 {
     float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
@@ -241,8 +263,11 @@ float CalculateShadow(float4 worldPos)
     }
 
     float3 post = camClip.xyz / camClip.w;
-    shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
-
+    shadowCoord = mul(float4(post, 1.0f), ShadowViewProj);
+#else
+    shadowCoord = mul(worldPos, ShadowViewProj);
+#endif
+    
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
@@ -261,12 +286,13 @@ float CalculateShadow(float4 worldPos)
         return 1.0f;
     }
 
-    const float shadowBias = 0.005f;
-    return ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
+    const float shadowBias = 0.00f;
+    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
+    return shadowFactor;
 }
 #endif
 
-PSOutput mainPS(PSInput input): SV_TARGET
+PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
     
@@ -344,7 +370,6 @@ PSOutput mainPS(PSInput input): SV_TARGET
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
-    
     float shadowFactor = CalculateShadow(float4(input.WorldPos, 1.0f));
     
     float3 V = normalize(CameraPosition - input.WorldPos);
@@ -415,6 +440,21 @@ PSOutput mainPS(PSInput input): SV_TARGET
     {
         output.Color = float4(WireframeRGB, 1.f);
     }
+ 
     
+    
+    // output.Color 직전에 추가
+    /*
+    float4 camClip = mul(mul(float4(input.WorldPos, 1.0f), View), Projection);
+    float3 post = camClip.xyz / camClip.w;
+    float4 shadowCoord = mul(float4(post, 1.0f), DirLightViewProj);
+    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    float2 debugUV = float2(projCoords.x * 0.5f + 0.5f, -projCoords.y * 0.5f + 0.5f);
+
+    float2 vsmValue = VSMDebugMap.Sample(SampleState, float2(0.5, 0.5));
+    output.Color = float4(vsmValue.r, vsmValue.r, vsmValue.r, 1);
+    return output;*/
+    
+      
     return output;
 }

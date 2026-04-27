@@ -1,9 +1,11 @@
 root = true
 
 [*.{cpp,h}]
+end_of_line = crlf
 charset = utf-8-bom
 indent_style = tab
 indent_size = 4
 
 [*.{hlsl,usf,ush}]
+end_of_line = crlf
 charset = utf-8
