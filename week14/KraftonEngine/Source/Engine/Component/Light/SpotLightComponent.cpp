@@ -72,6 +72,7 @@ void USpotLightComponent::PushToScene()
 	Params.InnerConeCos = std::cos(ClampedInnerAngle * FMath::DegToRad);
 	Params.OuterConeCos = std::cos(ClampedOuterAngle * FMath::DegToRad);
 	Params.ShadowResolutionScale = ShadowResolutionScale;
+	Params.PCFScale = PCFScale;
 
 	World->GetScene().GetEnvironment().AddSpotLight(this, Params);
 }

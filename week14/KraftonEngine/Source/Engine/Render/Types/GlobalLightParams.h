@@ -57,6 +57,7 @@ struct FSpotLightParams : public FPointLightParams
 	float InnerConeCos;
 	float OuterConeCos;
 	float ShadowResolutionScale = 1;
+	uint8 PCFScale = 0;
 
 	virtual FLightInfo ToLightInfo() const override
 	{

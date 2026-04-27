@@ -1,4 +1,4 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -524,6 +524,8 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		DrawShadowCasters(Ctx, LightFrustum);
 		SHADOW_STATS_ADD_CASTER(SpotLight, LastDrawCasterCount);
 
+		
+		uint8 PCFScale = Env.GetSpotLight(i).PCFScale;
 		float AtlasF = static_cast<float>(Resolution);
 		FVector4 AtlasScaleBias = FVector4(static_cast<float>(AtlasRegion.Size) / AtlasF,
 										   static_cast<float>(AtlasRegion.Size) / AtlasF,
