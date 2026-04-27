@@ -88,12 +88,12 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         if (!Light || !Light->bCastShadow || Light->ShadowMapIndex < 0) continue;
 
         FLightProxyInfo& LC = Light->LightProxyInfo;
-        uint16 SortKey = static_cast<uint16>(Light->ShadowMapIndex);
+        uint16 SortKey = static_cast<uint16>(Light->ShadowMapIndex & 0x7F);
         
-        // Use 11th bit to distinguish Cube (Point) light shadow commands
+        // Use 8th bit to distinguish Cube (Point) light shadow commands (UserBits is 8-bit)
         if (LC.LightType == static_cast<uint32>(ELightType::Point))
         {
-            SortKey |= 0x800;
+            SortKey |= 0x80;
         }
 
         for (FPrimitiveProxy* Proxy : Light->VisibleShadowCasters)
@@ -140,21 +140,21 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
     uint32 CurrentIdx = GlobalStart;
 
-    // We iterate through commands which are sorted by SortKey (LightType | ShadowMapIndex)
+    // We iterate through commands which are sorted by SortKey (Pass | UserBits | Shader | Mesh | Material)
     while (CurrentIdx < GlobalEnd)
     {
-        uint16 SortKey = Commands[CurrentIdx].SortKey & 0xFFF;
+        uint8 UserBits = static_cast<uint8>((Commands[CurrentIdx].SortKey >> 52) & 0xFF);
         uint32 LightStart = CurrentIdx;
-        while (CurrentIdx < GlobalEnd && (Commands[CurrentIdx].SortKey & 0xFFF) == SortKey)
+        while (CurrentIdx < GlobalEnd && (static_cast<uint8>((Commands[CurrentIdx].SortKey >> 52) & 0xFF)) == UserBits)
         {
             CurrentIdx++;
         }
         uint32 LightEnd = CurrentIdx;
 
-        // Find the light proxy that matches this SortKey
+        // Find the light proxy that matches this UserBits
         FLightProxy* TargetLight = nullptr;
-        bool bIsCube = (SortKey & 0x800) != 0;
-        int32 ShadowIdx = SortKey & 0x7FF;
+        bool bIsCube = (UserBits & 0x80) != 0;
+        int32 ShadowIdx = UserBits & 0x7F;
 
         for (FLightProxy* Light : VisibleLights)
         {

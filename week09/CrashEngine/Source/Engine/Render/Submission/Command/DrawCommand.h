@@ -50,23 +50,25 @@ struct FDrawCommand
     ERenderPass Pass      = ERenderPass::Opaque;
     const char* DebugName = nullptr;
 
-    // Pass(4bit) | ShaderHash(16bit) | MeshHash(16bit) | SRVHash(16bit) | UserBits(12bit)
-    static uint64 BuildSortKey(ERenderPass InPass, const FGraphicsProgram* InShader,
-                               const FMeshBuffer* InMeshBuffer, const ID3D11ShaderResourceView* InSRV,
-                               uint16 UserBits = 0)
+    // Pass(4bit) | UserBits(8bit) | ShaderHash(16bit) | MeshHash(16bit) | MaterialHash(20bit)
+    static uint64 BuildSortKey(ERenderPass InPass,
+                               uint8 InUserBits,
+                               const FGraphicsProgram* InShader,
+                               const FMeshBuffer* InMeshBuffer,
+                               uint32 InMaterialHash)
     {
-        auto PtrHash16 = [](const void* Ptr) -> uint16
+        auto PtrHash16 = [](const void* Ptr) -> uint64
         {
             uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
-            return static_cast<uint16>((Val >> 4) ^ (Val >> 20));
+            return static_cast<uint64>((Val >> 4) ^ (Val >> 20)) & 0xFFFFu;
         };
 
         uint64 Key = 0;
-        Key |= (static_cast<uint64>(InPass) & 0xF) << 60;            // [63:60] Pass
-        Key |= (static_cast<uint64>(PtrHash16(InShader))) << 44;     // [59:44] Shader
-        Key |= (static_cast<uint64>(PtrHash16(InMeshBuffer))) << 28; // [43:28] MeshBuffer
-        Key |= (static_cast<uint64>(PtrHash16(InSRV))) << 12;        // [27:12] SRV
-        Key |= (static_cast<uint64>(UserBits) & 0xFFF);              // [11:0]  User
+        Key |= (static_cast<uint64>(InPass) & 0xFu) << 60;             // [63:60] Pass
+        Key |= (static_cast<uint64>(InUserBits) & 0xFFu) << 52;        // [59:52] UserBits
+        Key |= PtrHash16(InShader) << 36;                              // [51:36] Shader
+        Key |= PtrHash16(InMeshBuffer) << 20;                          // [35:20] MeshBuffer
+        Key |= (static_cast<uint64>(InMaterialHash) & 0xFFFFFu);       // [19:0]  Material
         return Key;
     }
 };
