@@ -141,27 +141,31 @@ void FEditorViewportClient::Tick(float DeltaTime)
     if (!bIsActive)
         return;
 
+    // TODO: Milestone 1의 임시 디스패치
 	const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    const FGuiInputState& GuiInputState = InputSystem::Get().GetGuiInputState();
 
-	// TODO: Milestone 1의 임시 디스패치
-	for (int32 VK = 0; VK < 256; ++VK)
+    if (!GuiInputState.bUsingKeyboard)
     {
-        if (Input.KeyPressed[VK])
+        for (int32 VK = 0; VK < 256; ++VK)
         {
-            FViewportKeyEvent Event{};
-            Event.Key = VK;
-            Event.Event = EInputEvent::Pressed;
-            Event.Modifiers = Input.Modifiers;
-            InputKey(Event);
-        }
+            if (Input.KeyPressed[VK])
+            {
+                FViewportKeyEvent Event{};
+                Event.Key = VK;
+                Event.Type = EKeyEventType::Pressed;
+                Event.Modifiers = Input.Modifiers;
+                InputKey(Event);
+            }
 
-        if (Input.KeyReleased[VK])
-        {
-            FViewportKeyEvent Event{};
-            Event.Key = VK;
-            Event.Event = EInputEvent::Released;
-            Event.Modifiers = Input.Modifiers;
-            InputKey(Event);
+            if (Input.KeyReleased[VK])
+            {
+                FViewportKeyEvent Event{};
+                Event.Key = VK;
+                Event.Type = EKeyEventType::Released;
+                Event.Modifiers = Input.Modifiers;
+                InputKey(Event);
+            }
         }
     }
 
@@ -539,6 +543,7 @@ void FEditorViewportClient::TickInteraction(const FInputSnapshot& Input, float D
     // 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
     FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
+	// TODO: 드래그 입력 처리는 Milestone 2에서 ViewportInputRouter쪽에 둘 예정이기 때문에 현재는 임시로 EditorViewportClient에서 처리
     const bool bLeftPressed = Input.KeyPressed[VK_LBUTTON];
     const bool bLeftDown = Input.KeyDown[VK_LBUTTON];
     const bool bLeftReleased = Input.KeyReleased[VK_LBUTTON];
@@ -732,7 +737,7 @@ bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
 		return false;
 	}
 
-	if (Event.Key == VK_SPACE && Event.Event == EInputEvent::Released)
+	if (Event.Key == VK_SPACE && Event.Type == EKeyEventType::Released)
 	{
 		Gizmo->SetNextMode();
 		return true;

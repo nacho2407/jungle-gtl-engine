@@ -1,16 +1,20 @@
 ﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+
 #pragma once
 
+#include <optional>
+
+#include "Engine/Input/ViewportInputRouter.h"
+#include "Engine/Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 #include "Engine/Runtime/Engine.h"
 
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
-#include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIETypes.h"
-#include <optional>
+
 #if STATS
 #endif
 
@@ -96,11 +100,6 @@ public:
     }
 
 private:
-    // Tick 내에서 호출 — 큐에 요청이 있으면 StartPlayInEditorSession 실행
-    void StartQueuedPlaySessionRequest();
-    void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
-    void EndPlayMap();
-
     FSelectionManager SelectionManager;
     FEditorMainPanel MainPanel;
     FLevelViewportLayout ViewportLayout;
@@ -113,4 +112,12 @@ private:
     // 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
     bool bRequestEndPlayMapQueued = false;
     FGPUOcclusionCulling GPUOcclusion;
+
+	FViewportInputRouter ViewportInputRouter;
+
+private:
+    // Tick 내에서 호출 — 큐에 요청이 있으면 StartPlayInEditorSession 실행
+    void StartQueuedPlaySessionRequest();
+    void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
+    void EndPlayMap();
 };

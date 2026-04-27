@@ -48,6 +48,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
     UEngine::Init(InWindow);
 
+	ViewportInputRouter.SetOwnerWindow(InWindow->GetHWND());
+
     FObjManager::ScanMeshAssets();
     FObjManager::ScanObjSourceFiles();
     FMaterialManager::Get().ScanMaterialAssets();
@@ -104,14 +106,15 @@ void UEditorEngine::Tick(float DeltaTime)
         StartQueuedPlaySessionRequest();
     }
 
-    InputSystem::Get().Tick();
+    MainPanel.Update();
+
+	const bool bWindowFocused = Window && Window->IsForeground();
+    InputSystem::Get().Tick(bWindowFocused);
 
     for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
     {
         VC->Tick(DeltaTime);
     }
-
-    MainPanel.Update();
 
     const bool bPIEPaused = IsPausedInEditor();
     const bool bHasPIEWorld = IsPlayingInEditor();

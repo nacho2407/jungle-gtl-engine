@@ -46,7 +46,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
     FNamePool::Get();
     FObjectFactory::Get();
 
-    InputSystem::Get().Initialize(Window->GetHWND());
     Renderer.Create(Window->GetHWND());
 
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
