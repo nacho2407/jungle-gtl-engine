@@ -223,7 +223,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
 			{
 				FShadowAtlasTile ShadowTile;
-				if (!ShadowAtlasManager.AllocateTile(ShadowTile))
+				if (!ShadowAtlasManager.AllocateTile(Request.ShadowResolution, ShadowTile))
 				{
 					break;
 				}
@@ -313,9 +313,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
         ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
         DeviceContext->OMSetDepthStencilState(DepthState, 0);
-
-		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
-		FShadowConstants ShadowData = {};
 
 		FBoundingBox VisibleBoundingBox;
 
