@@ -268,7 +268,8 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
 	ImGui::Separator();
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
-	ImGui::TextUnformatted("Crtl + LMB : Multi Picking");
+	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");
+	ImGui::TextUnformatted("Ctrl + Alt + LMB Drag : Area Selection");
 
 	ImGui::End();
 }
