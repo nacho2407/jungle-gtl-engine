@@ -60,5 +60,5 @@ private:
 	float		 AtlasSize				= 4096.f;
 	float		 MinShadowMapResolution = 64.f;
 
-	float		 RemainingSpace			= 4096.f;
+	float		 RemainingSpace			= 4096.f * 4096.f;
 };
