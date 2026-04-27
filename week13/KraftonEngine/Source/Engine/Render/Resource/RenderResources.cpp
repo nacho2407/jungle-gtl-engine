@@ -188,14 +188,14 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	SpotShadowDataCapacity = 0;
 
 	SpotAtlasResolution = Resolution;
-	SpotAtlasPageCount  = PageCount;
+	SpotAtlasPageCount  = 1;
 
 	// Texture2DArray: 1 slice = 1 spot light
 	D3D11_TEXTURE2D_DESC TexDesc = {};
 	TexDesc.Width  = Resolution;
 	TexDesc.Height = Resolution;
 	TexDesc.MipLevels = 1;
-	TexDesc.ArraySize = PageCount;
+	TexDesc.ArraySize = 1;
 	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 	TexDesc.SampleDesc.Count = 1;
 	TexDesc.Usage  = D3D11_USAGE_DEFAULT;
@@ -205,8 +205,8 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	if (FAILED(hr)) return;
 
 	// Per-slice DSV
-	SpotAtlasDSVs = new ID3D11DepthStencilView*[PageCount]();
-	for (uint32 i = 0; i < PageCount; ++i)
+	SpotAtlasDSVs = new ID3D11DepthStencilView*[1]();
+	for (uint32 i = 0; i < 1; ++i)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -225,13 +225,13 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	SRVDesc.Texture2DArray.MipLevels = 1;
 	SRVDesc.Texture2DArray.MostDetailedMip = 0;
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
-	SRVDesc.Texture2DArray.ArraySize = PageCount;
+	SRVDesc.Texture2DArray.ArraySize = 1;
 
 	Device->CreateShaderResourceView(SpotAtlasTexture, &SRVDesc, &SpotAtlasSRV);
 
 	// Per-slice SRV (ImGui 디버그용)
-	SpotAtlasSliceSRVs = new ID3D11ShaderResourceView*[PageCount]();
-	for (uint32 i = 0; i < PageCount; ++i)
+	SpotAtlasSliceSRVs = new ID3D11ShaderResourceView*[1]();
+	for (uint32 i = 0; i < 1; ++i)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
 		SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;

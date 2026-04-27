@@ -191,7 +191,8 @@ TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
 
 	TArray<FAtlasRegion> Results(N, { 0, 0, 0, false });
 	for (int32 OrigIdx : Order) {
-		Results[OrigIdx] = AllocateNode(0, static_cast<uint32>(Batch[OrigIdx].second));
+		FAtlasRegion AtlasRegion = AllocateNode(0, static_cast<uint32>(Batch[OrigIdx].second));
+		Results[OrigIdx] = AtlasRegion;
 	}
 
 	Batch.clear();

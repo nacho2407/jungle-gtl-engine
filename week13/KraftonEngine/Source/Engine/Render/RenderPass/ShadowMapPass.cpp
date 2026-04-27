@@ -421,7 +421,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 	// 1 spot = 1 slice → SpotAtlas를 slice 배열로 사용
 	const uint32 Resolution = (uint32)SpotLightAtlas.GetAtlasSize();
-	Res.EnsureSpotAtlas(Ctx.Device.GetDevice(), Resolution, 1);
+	Res.EnsureSpotAtlas(Ctx.Device.GetDevice(), Resolution, ShadowSpotCount);
 	if (!Res.IsSpotValid()) return;
 	DC->ClearDepthStencilView(Res.SpotAtlasDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
 
