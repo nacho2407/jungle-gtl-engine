@@ -19,6 +19,34 @@
 #define SHADOW_ESM_EXPONENT 80.0f
 #endif
 
+// Pixel shaders use implicit derivatives so generated moment mips are selected
+// by the sampler. Vertex shaders cannot use derivative-based sampling.
+#ifndef SHADOW_MOMENT_MIP_BIAS
+#define SHADOW_MOMENT_MIP_BIAS 0.0f
+#endif
+
+#ifndef SHADOW_MOMENT_MAX_MIP_LEVEL
+#define SHADOW_MOMENT_MAX_MIP_LEVEL 1.0f
+#endif
+
+#ifndef SHADOW_MOMENT_VERTEX_LOD
+#ifdef SHADOW_MOMENT_MIP_LEVEL
+#define SHADOW_MOMENT_VERTEX_LOD SHADOW_MOMENT_MIP_LEVEL
+#else
+#define SHADOW_MOMENT_VERTEX_LOD 0.0f
+#endif
+#endif
+
+#if defined(SHADER_STAGE_PIXEL)
+#define SHADOW_MOMENT_LOD_2D(Texture, UV) clamp(Texture.CalculateLevelOfDetail(LinearClampSampler, UV) + SHADOW_MOMENT_MIP_BIAS, 0.0f, SHADOW_MOMENT_MAX_MIP_LEVEL)
+#define SHADOW_MOMENT_LOD_CUBE(Texture, Dir) clamp(Texture.CalculateLevelOfDetail(LinearClampSampler, Dir) + SHADOW_MOMENT_MIP_BIAS, 0.0f, SHADOW_MOMENT_MAX_MIP_LEVEL)
+#define SAMPLE_SHADOW_MOMENT_2D(Texture, UV) Texture.SampleLevel(LinearClampSampler, UV, SHADOW_MOMENT_LOD_2D(Texture, UV)).rg
+#define SAMPLE_SHADOW_MOMENT_CUBE(Texture, Dir) Texture.SampleLevel(LinearClampSampler, Dir, SHADOW_MOMENT_LOD_CUBE(Texture, Dir)).rg
+#else
+#define SAMPLE_SHADOW_MOMENT_2D(Texture, UV) Texture.SampleLevel(LinearClampSampler, UV, SHADOW_MOMENT_VERTEX_LOD).rg
+#define SAMPLE_SHADOW_MOMENT_CUBE(Texture, Dir) Texture.SampleLevel(LinearClampSampler, Dir, SHADOW_MOMENT_VERTEX_LOD).rg
+#endif
+
 Texture2D g_ShadowMap2D0 : register(t20);
 Texture2D g_ShadowMap2D1 : register(t21);
 Texture2D g_ShadowMap2D2 : register(t22);
@@ -75,11 +103,11 @@ float2 SampleSpotShadowMoment(int ShadowIndex, float2 ShadowUV)
     [branch]
     switch (ShadowIndex)
     {
-    case 0: Moments = g_ShadowMoment2D0.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
-    case 1: Moments = g_ShadowMoment2D1.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
-    case 2: Moments = g_ShadowMoment2D2.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
-    case 3: Moments = g_ShadowMoment2D3.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
-    case 4: Moments = g_ShadowMoment2D4.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    case 0: Moments = SAMPLE_SHADOW_MOMENT_2D(g_ShadowMoment2D0, ShadowUV); break;
+    case 1: Moments = SAMPLE_SHADOW_MOMENT_2D(g_ShadowMoment2D1, ShadowUV); break;
+    case 2: Moments = SAMPLE_SHADOW_MOMENT_2D(g_ShadowMoment2D2, ShadowUV); break;
+    case 3: Moments = SAMPLE_SHADOW_MOMENT_2D(g_ShadowMoment2D3, ShadowUV); break;
+    case 4: Moments = SAMPLE_SHADOW_MOMENT_2D(g_ShadowMoment2D4, ShadowUV); break;
     }
 
     return Moments;
@@ -143,11 +171,11 @@ float2 SamplePointShadowMoment(int ShadowIndex, float3 SampleDir)
     [branch]
     switch (ShadowIndex)
     {
-    case 0: Moments = g_ShadowMomentCube0.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
-    case 1: Moments = g_ShadowMomentCube1.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
-    case 2: Moments = g_ShadowMomentCube2.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
-    case 3: Moments = g_ShadowMomentCube3.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
-    case 4: Moments = g_ShadowMomentCube4.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    case 0: Moments = SAMPLE_SHADOW_MOMENT_CUBE(g_ShadowMomentCube0, SampleDir); break;
+    case 1: Moments = SAMPLE_SHADOW_MOMENT_CUBE(g_ShadowMomentCube1, SampleDir); break;
+    case 2: Moments = SAMPLE_SHADOW_MOMENT_CUBE(g_ShadowMomentCube2, SampleDir); break;
+    case 3: Moments = SAMPLE_SHADOW_MOMENT_CUBE(g_ShadowMomentCube3, SampleDir); break;
+    case 4: Moments = SAMPLE_SHADOW_MOMENT_CUBE(g_ShadowMomentCube4, SampleDir); break;
     }
 
     return Moments;
@@ -185,16 +213,17 @@ float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareD
 
 float ComputeVSMVisibility(float2 Moments, float CompareDepth)
 {
+    const float ReceiverDepth = saturate(CompareDepth);
     float Mean = Moments.x;
     float Variance = max(Moments.y - Mean * Mean, 1e-5f);
 
     // Reversed-Z: larger depth is closer to the light, so GREATER_EQUAL means lit.
-    if (CompareDepth >= Mean)
+    if (ReceiverDepth >= Mean)
     {
         return 1.0f;
     }
 
-    float Delta = Mean - CompareDepth;
+    float Delta = Mean - ReceiverDepth;
     float PMax = Variance / (Variance + Delta * Delta);
     return saturate(PMax);
 }

@@ -12,6 +12,13 @@ namespace
 constexpr const char* GVertexShaderTarget = "vs_5_0";
 constexpr const char* GPixelShaderTarget  = "ps_5_0";
 
+FShaderStageDesc MakeStageDescWithDefine(const FShaderStageDesc& InDesc, const char* DefineName)
+{
+    FShaderStageDesc Desc = InDesc;
+    Desc.Defines.push_back({ DefineName, "1" });
+    return Desc;
+}
+
 /*
     D3D shader signature mask를 input layout DXGI_FORMAT으로 변환합니다.
     현재 엔진 vertex format에서 사용하는 float/int/uint 컴포넌트 조합을 처리합니다.
@@ -205,7 +212,8 @@ bool FGraphicsProgram::CompileVertexShader(
     ID3D11VertexShader**              OutVS,
     std::unordered_set<std::wstring>& OutDependencies) const
 {
-    if (!CompileShaderBlob(OutVSBlob, InDesc, GVertexShaderTarget, OutDependencies, "Vertex Shader Compile Error"))
+    const FShaderStageDesc StageDesc = MakeStageDescWithDefine(InDesc, "SHADER_STAGE_VERTEX");
+    if (!CompileShaderBlob(OutVSBlob, StageDesc, GVertexShaderTarget, OutDependencies, "Vertex Shader Compile Error"))
     {
         return false;
     }
@@ -231,7 +239,8 @@ bool FGraphicsProgram::CompilePixelShader(
     ID3D11PixelShader**               OutPS,
     std::unordered_set<std::wstring>& OutDependencies) const
 {
-    if (!CompileShaderBlob(OutPSBlob, InDesc, GPixelShaderTarget, OutDependencies, "Pixel Shader Compile Error"))
+    const FShaderStageDesc StageDesc = MakeStageDescWithDefine(InDesc, "SHADER_STAGE_PIXEL");
+    if (!CompileShaderBlob(OutPSBlob, StageDesc, GPixelShaderTarget, OutDependencies, "Pixel Shader Compile Error"))
     {
         return false;
     }
