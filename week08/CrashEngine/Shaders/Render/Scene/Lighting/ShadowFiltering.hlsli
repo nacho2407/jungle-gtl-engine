@@ -27,7 +27,15 @@ TextureCube g_ShadowMapCube2 : register(t27);
 TextureCube g_ShadowMapCube3 : register(t28);
 TextureCube g_ShadowMapCube4 : register(t29);
 
-static const float2 kShadowTexelSize = float2(1.0f / 2048.0f, 1.0f / 2048.0f);
+float2 ResolveShadowTexelSize(float2 ShadowTexelSize)
+{
+    if (ShadowTexelSize.x > 0.0f && ShadowTexelSize.y > 0.0f)
+    {
+        return ShadowTexelSize;
+    }
+
+    return float2(1.0f / 2048.0f, 1.0f / 2048.0f);
+}
 
 float SampleSpotShadowCmp(int ShadowIndex, float2 ShadowUV, float CompareDepth)
 {
@@ -45,14 +53,14 @@ float SampleSpotShadowCmp(int ShadowIndex, float2 ShadowUV, float CompareDepth)
     return ShadowFactor;
 }
 
-float OffsetLookupSpotPCF(int ShadowIndex, float2 BaseNDC, float CompareDepth, float2 Offset)
+float OffsetLookupSpotPCF(int ShadowIndex, float2 BaseNDC, float CompareDepth, float2 Offset, float2 ShadowTexelSize)
 {
     float2 BaseUV = BaseNDC * 0.5f + 0.5f;
     BaseUV.y = 1.0f - BaseUV.y;
 
     float2 OffsetUV = BaseUV;
-    OffsetUV.x += Offset.x * kShadowTexelSize.x;
-    OffsetUV.y += Offset.y * kShadowTexelSize.y;
+    OffsetUV.x += Offset.x * ShadowTexelSize.x;
+    OffsetUV.y += Offset.y * ShadowTexelSize.y;
 
     if (OffsetUV.x < 0.0f || OffsetUV.x > 1.0f || OffsetUV.y < 0.0f || OffsetUV.y > 1.0f)
     {
@@ -62,7 +70,7 @@ float OffsetLookupSpotPCF(int ShadowIndex, float2 BaseNDC, float CompareDepth, f
     return SampleSpotShadowCmp(ShadowIndex, OffsetUV, CompareDepth);
 }
 
-float PCF_NvidiaOptimizedSpot(int ShadowIndex, float2 BaseNDC, float CompareDepth, float4 PixelPos)
+float PCF_NvidiaOptimizedSpot(int ShadowIndex, float2 BaseNDC, float CompareDepth, float4 PixelPos, float2 ShadowTexelSize)
 {
     float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
     Offset.y += Offset.x;
@@ -73,10 +81,10 @@ float PCF_NvidiaOptimizedSpot(int ShadowIndex, float2 BaseNDC, float CompareDept
     }
 
     float ShadowCoeff = 0.0f;
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, 0.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, 0.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, -1.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, -1.5f));
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, 0.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, 0.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, -1.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, -1.5f), ShadowTexelSize);
 
     return ShadowCoeff * 0.25f;
 }
@@ -99,15 +107,15 @@ float SamplePointShadowCmp(int ShadowIndex, float3 SampleDir, float CompareDepth
     return ShadowFactor;
 }
 
-float OffsetLookupPointPCF(int ShadowIndex, float3 SampleDir, float3 Tangent, float3 Bitangent, float CompareDepth, float2 Offset)
+float OffsetLookupPointPCF(int ShadowIndex, float3 SampleDir, float3 Tangent, float3 Bitangent, float CompareDepth, float2 Offset, float2 ShadowTexelSize)
 {
-    float2 OffsetUV = Offset * kShadowTexelSize * 2.0f;
+    float2 OffsetUV = Offset * ShadowTexelSize * 2.0f;
     float3 OffsetDir = normalize(SampleDir + Tangent * OffsetUV.x + Bitangent * OffsetUV.y);
 
     return SamplePointShadowCmp(ShadowIndex, OffsetDir, CompareDepth);
 }
 
-float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareDepth, float4 PixelPos)
+float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareDepth, float4 PixelPos, float2 ShadowTexelSize)
 {
     float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
     Offset.y += Offset.x;
@@ -121,26 +129,27 @@ float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareD
     float3 Bitangent = cross(SampleDir, Tangent);
 
     float ShadowCoeff = 0.0f;
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, 0.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, 0.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, -1.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, -1.5f));
+    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, 0.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, 0.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, -1.5f), ShadowTexelSize);
+    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, -1.5f), ShadowTexelSize);
 
     return ShadowCoeff * 0.25f;
 }
 
-float FilterSpotShadow(int ShadowIndex, float2 ShadowVector, float CompareDepth, float4 PixelPos)
+float FilterSpotShadow(int ShadowIndex, float2 ShadowVector, float CompareDepth, float4 PixelPos, float2 ShadowTexelSize)
 {
     float2 BaseNDC = ShadowVector;
+    float2 ResolvedShadowTexelSize = ResolveShadowTexelSize(ShadowTexelSize);
 
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
     // TODO: add VSM implementation.
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCSS
     // TODO: add PCSS implementation.
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #else
     float2 BaseUV = BaseNDC * 0.5f + 0.5f;
     BaseUV.y = 1.0f - BaseUV.y;
@@ -148,18 +157,19 @@ float FilterSpotShadow(int ShadowIndex, float2 ShadowVector, float CompareDepth,
 #endif
 }
 
-float FilterPointShadow(int ShadowIndex, float3 ShadowVector, float CompareDepth, float4 PixelPos)
+float FilterPointShadow(int ShadowIndex, float3 ShadowVector, float CompareDepth, float4 PixelPos, float2 ShadowTexelSize)
 {
     float3 SampleDir = ShadowVector;
+    float2 ResolvedShadowTexelSize = ResolveShadowTexelSize(ShadowTexelSize);
 
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
     // TODO: add VSM implementation.
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCSS
     // TODO: add PCSS implementation.
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos);
+    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #else
     return SamplePointShadowCmp(ShadowIndex, SampleDir, CompareDepth);
 #endif
