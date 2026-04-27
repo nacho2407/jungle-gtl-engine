@@ -343,6 +343,19 @@ namespace FLightFrustumUtils
 		}
 	}
 
+	/**
+	 * @brief Directional Light의 CSM cascade 하나에 대한 Light View/Projection 행렬을 생성한다.
+	 *
+	 * @param Light          Directional Light 정보. 주로 빛의 방향을 사용한다.
+	 * @param CameraView     현재 카메라의 View 행렬.
+	 * @param CameraProj     현재 카메라의 Projection 행렬.
+	 * @param CameraNearZ    카메라 전체 near clip 거리.
+	 * @param CameraFarZ     카메라 전체 far clip 거리.
+	 * @param CascadeNearZ   현재 cascade가 담당하는 near 거리.
+	 * @param CascadeFarZ    현재 cascade가 담당하는 far 거리.
+	 *
+	 * @return 현재 cascade용 directional light View/Projection 정보.
+	 */
 	inline FDirectionalLightViewProj BuildDirectionalLightCascadeViewProj(
 		const FGlobalDirectionalLightParams& Light,
 		const FMatrix& CameraView,
@@ -354,6 +367,12 @@ namespace FLightFrustumUtils
 	{
 		FDirectionalLightViewProj Result;
 
+		// ------------------------------------------------------------
+		// 1. 현재 cascade에 해당하는 카메라 절두체의 8개 코너를 월드 공간에서 구한다.
+		//
+		// 여기서 얻는 WorldCorners[8]은
+		// "카메라가 보는 공간 중 현재 cascade가 담당하는 잘린 절두체"의 월드 좌표다.
+		// ------------------------------------------------------------
 		FVector WorldCorners[8];
 		ComputeCascadeWorldCorners(
 			CameraView, CameraProj,
@@ -361,6 +380,12 @@ namespace FLightFrustumUtils
 			CascadeNearZ, CascadeFarZ,
 			WorldCorners);
 
+		// ------------------------------------------------------------
+		// 2. cascade 절두체의 중심점을 구한다.
+		//
+		// 이 중심점은 directional light의 shadow camera가
+		// 대략 어디를 바라봐야 하는지 정하는 기준점으로 사용된다.
+		// ------------------------------------------------------------
 		FVector Center(0, 0, 0);
 		for (int i = 0; i < 8; ++i)
 		{
@@ -368,14 +393,43 @@ namespace FLightFrustumUtils
 		}
 		Center = Center * (1.0f / 8.0f);
 
+		// ------------------------------------------------------------
+		// 3. directional light의 방향과 view matrix용 Up 벡터를 구한다.
+		//
+		// SafeUpVector는 LightDir과 평행하지 않은 안정적인 Up 벡터를 고르는 함수다.
+		// LookAt 행렬을 만들 때 forward와 up이 거의 평행하면 행렬이 불안정해지기 때문이다.
+		// ------------------------------------------------------------
 		FVector LightDir = Light.Direction.Normalized();
 		FVector Up = SafeUpVector(LightDir);
 
+		// ------------------------------------------------------------
+		// 4. 임시 light view matrix를 만든다.
+		//
+		// 여기서는 cascade 중심점에서 LightDir의 반대 방향으로 100만큼 떨어진 곳에
+		// 가상의 light camera를 놓고, Center를 바라보게 한다.
+		//
+		// LookAtLH(Eye, Target, Up)이므로,
+		// Eye    = Center - LightDir * 100
+		// Target = Center
+		// 이면 view의 +Z 방향이 LightDir과 같아진다.
+		// ------------------------------------------------------------
 		Result.View = FMatrix::LookAtLH(Center - LightDir * 100.0f, Center, Up);
 
+		// 5. light space에서 cascade 코너들을 감싸는 AABB를 구하기 위한 초기값.
 		float MinX = FLT_MAX, MinY = FLT_MAX, MinZ = FLT_MAX;
 		float MaxX = -FLT_MAX, MaxY = -FLT_MAX, MaxZ = -FLT_MAX;
 
+		// ------------------------------------------------------------
+		// 6. 월드 공간의 cascade 코너 8개를 light space로 변환한다.
+		//
+		// 변환된 좌표 LS의 의미:
+		// - LS.X : 빛 기준 오른쪽/왼쪽 방향 위치
+		// - LS.Y : 빛 기준 위/아래 방향 위치
+		// - LS.Z : 빛이 바라보는 방향으로의 깊이
+		//
+		// 이 8개 점의 min/max를 구하면,
+		// 현재 cascade 절두체를 빛의 시점에서 감싸는 박스를 얻을 수 있다.
+		// ------------------------------------------------------------
 		for (int i = 0; i < 8; ++i)
 		{
 			FVector LS = Result.View.TransformPositionWithW(WorldCorners[i]);
@@ -388,31 +442,86 @@ namespace FLightFrustumUtils
 			MaxZ = (std::max)(MaxZ, LS.Z);
 		}
 
+		// ------------------------------------------------------------
+		// 7. light space에서 cascade를 감싸는 orthographic 영역의 크기를 구한다.
+		//
+		// Width, Height는 shadow map을 찍을 orthographic projection의 가로/세로 크기다.
+		//
+		// 가까운 cascade는 보통 Width/Height가 작고,
+		// 먼 cascade는 더 넓은 영역을 포함하므로 Width/Height가 커진다.
+		// shadow map 해상도가 같다면 먼 cascade일수록 texel 하나가 담당하는 월드 공간이 커진다.
+		// ------------------------------------------------------------
 		float Width = MaxX - MinX;
 		float Height = MaxY - MinY;
 
+		// ------------------------------------------------------------
+		// 8. light space에서 cascade 박스의 XY 중심을 구한다.
+		//
+		// 이 중심을 기준으로 shadow camera를 다시 정렬하면,
+		// orthographic projection의 중앙에 cascade 영역이 오게 된다.
+		// ------------------------------------------------------------
 		float CenterX = (MinX + MaxX) * 0.5f;
 		float CenterY = (MinY + MaxY) * 0.5f;
 
+		// ------------------------------------------------------------
+		// 9. Z 방향 깊이 범위를 고정 크기로 잡는다.
+		//
+		// MinZ ~ MaxZ만 딱 쓰면 cascade 절두체 자체는 감쌀 수 있지만,
+		// 그림자를 드리우는 caster가 cascade 바깥쪽, 특히 빛 방향 앞쪽에 있을 수 있다.
+		//
+		// 그래서 CSMShadowDepthLength라는 고정된 깊이 범위를 사용해서
+		// receiver 주변의 충분한 앞뒤 공간을 shadow map에 포함시키려는 것이다.
+		//
+		// ReceiverCenterZ는 현재 cascade receiver 영역의 중심 깊이다.
+		// PaddedMinZ는 고정 깊이 범위의 시작점이다.
+		// ------------------------------------------------------------
 		const float ReceiverCenterZ = (MinZ + MaxZ) * 0.5f;
 		const float PaddedDepthRange = CSMShadowDepthLength;
 		const float PaddedMinZ = ReceiverCenterZ - PaddedDepthRange * 0.5f;
 
+		// 10. 현재 임시 light view의 역행렬을 구한다.
 		FMatrix InvLightView = Result.View.GetInverseFast();
 
+		// ------------------------------------------------------------
+		// 11. 최종 shadow camera의 월드 공간 위치를 계산한다.
+		//
+		// LSCenter는 light space에서의 최종 shadow camera 위치다.
+		//
+		// X, Y는 cascade 박스의 중심에 맞춘다.
+		// Z는 PaddedMinZ로 둔다.
+		//
+		// 즉, 최종 light camera를
+		// "cascade를 XY 중앙에 두고, Z 방향으로는 충분히 앞쪽에서 시작하는 위치"에 놓는다.
+		// ------------------------------------------------------------
 		FVector LSCenter(CenterX, CenterY, PaddedMinZ);
 		FVector WSCenter = InvLightView.TransformPositionWithW(LSCenter);
 
+		// ------------------------------------------------------------
+		// 12. 최종 light view matrix를 다시 만든다.
+		//
+		// Target = WSCenter + LightDir 이므로,
+		// 최종 shadow camera는 LightDir 방향을 바라본다.
+		//
+		// 이 view matrix가 실제 shadow map을 렌더링할 때 사용되는 light view다.
+		// ------------------------------------------------------------
 		Result.View = FMatrix::LookAtLH(
 			WSCenter,
 			WSCenter + LightDir,
 			Up
 		);
 
+		// ------------------------------------------------------------
+		// 13. orthographic projection 파라미터를 저장한다.
+		//
+		// 여기서는 light camera의 위치 자체를 PaddedMinZ에 맞췄기 때문에,
+		// NearZ는 0부터 시작하고 FarZ는 PaddedDepthRange가 된다.
+		// ------------------------------------------------------------
 		Result.OrthoWidth = Width;
 		Result.OrthoHeight = Height;
 		Result.NearZ = 0.0f;
 		Result.FarZ = PaddedDepthRange;
+
+		// 14. 최종 orthographic projection matrix를 만든다.
 		Result.Proj = FMatrix::OrthoLH(
 			Width,
 			Height,
