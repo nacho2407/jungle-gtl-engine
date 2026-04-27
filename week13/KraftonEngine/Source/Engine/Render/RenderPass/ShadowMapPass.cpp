@@ -63,7 +63,7 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 
 	// 공용 렌더 상태 세팅 (Reversed-Z: GREATER_EQUAL — 엔진 컨벤션 통일)
 	Resources.SetDepthStencilState(Device, EDepthStencilState::Default);
-	Resources.SetRasterizerState(Device, ERasterizerState::SolidBackCull);
+	Resources.SetRasterizerState(Device, ERasterizerState::SolidFrontCull);
 	DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	if (CurrentFilterMode == EShadowFilterMode::VSM)
@@ -122,6 +122,7 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
 
 	// 메인 RT/DSV 복원
+	Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidBackCull);
 	DC->OMSetRenderTargets(1, &Ctx.Cache.RTV, Ctx.Cache.DSV);
 	Ctx.Cache.bForceAll = true;
 
@@ -242,7 +243,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	{
 		const uint32 SpotRes = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
 		Res.EnsureSpotAtlas(Dev, SpotRes, ShadowSpotCount);
-		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, ShadowSpotCount);
+		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
 	}
 
 	// ── Point Cube — shadow-casting point 수 기반 ──
