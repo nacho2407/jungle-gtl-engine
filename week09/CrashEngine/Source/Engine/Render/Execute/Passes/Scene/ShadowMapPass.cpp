@@ -139,6 +139,54 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     TArray<FDrawCommand>& Commands = Context.DrawCommandList->GetCommands();
 
     uint32 CurrentIdx = GlobalStart;
+    bool ClearedShadow2D[ESystemTexSlot::MaxShadowMaps2DCount] = {};
+    bool ClearedShadowCube[ESystemTexSlot::MaxShadowMapsCubeCount] = {};
+
+    auto ClearShadowForLight = [&](FLightProxy* Light)
+    {
+        if (!Light || !Light->bCastShadow || Light->ShadowMapIndex < 0)
+        {
+            return;
+        }
+
+        const bool bLightIsCube = (Light->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point));
+        const uint32 ShadowIdx = static_cast<uint32>(Light->ShadowMapIndex);
+
+        if (bLightIsCube)
+        {
+            if (ShadowIdx >= ESystemTexSlot::MaxShadowMapsCubeCount || ClearedShadowCube[ShadowIdx])
+            {
+                return;
+            }
+
+            FShadowResourceCube& Res = ShadowResourcesCube[ShadowIdx];
+            if (!Res.TextureCube)
+            {
+                return;
+            }
+
+            for (int Face = 0; Face < 6; ++Face)
+            {
+                Context.Context->ClearDepthStencilView(Res.DSVCubes[Face], D3D11_CLEAR_DEPTH, 0.0f, 0);
+            }
+            ClearedShadowCube[ShadowIdx] = true;
+            return;
+        }
+
+        if (ShadowIdx >= ESystemTexSlot::MaxShadowMaps2DCount || ClearedShadow2D[ShadowIdx])
+        {
+            return;
+        }
+
+        FShadowResource2D& Res = ShadowResources2D[ShadowIdx];
+        if (!Res.Texture2D)
+        {
+            return;
+        }
+
+        Context.Context->ClearDepthStencilView(Res.DSV2D, D3D11_CLEAR_DEPTH, 0.0f, 0);
+        ClearedShadow2D[ShadowIdx] = true;
+    };
 
     // We iterate through commands which are sorted by SortKey (Pass | UserBits | Shader | Mesh | Material)
     while (CurrentIdx < GlobalEnd)
@@ -170,6 +218,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
         if (TargetLight)
         {
+            ClearShadowForLight(TargetLight);
+
             if (bIsCube)
             {
                 FShadowResourceCube& Res = ShadowResourcesCube[ShadowIdx];
@@ -178,7 +228,6 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                     for (int Face = 0; Face < 6; ++Face)
                     {
                         Context.Context->OMSetRenderTargets(0, nullptr, Res.DSVCubes[Face]);
-                        Context.Context->ClearDepthStencilView(Res.DSVCubes[Face], D3D11_CLEAR_DEPTH, 0.0f, 0);
 
                         FFrameCBData ShadowFrameData = {};
                         ShadowFrameData.View = FMatrix::Identity;
@@ -196,7 +245,6 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 if (Res.Texture2D)
                 {
                     Context.Context->OMSetRenderTargets(0, nullptr, Res.DSV2D);
-                    Context.Context->ClearDepthStencilView(Res.DSV2D, D3D11_CLEAR_DEPTH, 0.0f, 0);
 
                     FFrameCBData ShadowFrameData = {};
                     ShadowFrameData.View = FMatrix::Identity;
@@ -208,6 +256,13 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 }
             }
         }
+    }
+
+    // If a shadow-casting light has no draw command in this frame, clear its map so stale
+    // depth from previous frames does not leak into current lighting.
+    for (FLightProxy* Light : VisibleLights)
+    {
+        ClearShadowForLight(Light);
     }
 
     // Restore state
