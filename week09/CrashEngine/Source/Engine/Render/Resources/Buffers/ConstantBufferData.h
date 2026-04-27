@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
@@ -110,24 +110,27 @@ struct FAmbientLightCBData
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
 struct alignas(32) FDirectionalLightCBData
 {
-    FVector  Color;          // 12B
-    float    Intensity;      // 4B
-    FVector  Direction;      // 12B
-    int32    ShadowMapIndex; // 4B
-    FMatrix  ShadowViewProj; // 64B
-}; // Total: 96B
+    FVector  Color;             // 12B
+    float    Intensity;         // 4B
+    FVector  Direction;         // 12B
+    int32    ShadowMapIndex;    // 4B
+    FMatrix  ShadowViewProj;    // 64B
+    float    ShadowBias;        // 4B
+    float    ShadowSlopeBias;   // 4B
+    float    ShadowNormalBias;  // 4B
+    float    _Padding[5];       // 20B
+}; // Total: 128B
 
 // FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
 struct alignas(32) FGlobalLightCBData
 {
     FAmbientLightCBData     Ambient;                       // 16B
-    float                   _Padding0[2];                  // 16B
-    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 96B * 4 = 384B
     int32                   NumDirectionalLights;          // 4B
     int32                   NumLocalLights;                // 4B
-    float                   _Padding1[6];                  // 24B
-}; // Total: 448B
+    float                   _Padding0[2];                  // 8B
+    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 128B * 4 = 512B
+}; // Total: 576B
 
 // FLocalLightCBData는 로컬 라이트 구조화 버퍼에 기록되는 라이트 데이터입니다.
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
@@ -142,9 +145,13 @@ struct alignas(32) FLocalLightCBData
     float    InnerConeAngle;    // 4B
     float    OuterConeAngle;    // 4B
     int32    ShadowMapIndex;    // 4B
-    float    _PaddingLocal;     // 4B
+    float    _Pad0;             // 4B
     FMatrix  ShadowViewProj;    // 64B
-}; // Total: 128B
+    float    ShadowBias;        // 4B
+    float    ShadowSlopeBias;   // 4B
+    float    ShadowNormalBias;  // 4B
+    float    _Padding[5];       // 20B
+}; // Total: 160B
 
 // FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.
 struct FLightCullingCBData
