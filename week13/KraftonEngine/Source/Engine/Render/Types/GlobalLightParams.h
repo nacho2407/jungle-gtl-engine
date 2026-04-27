@@ -28,7 +28,6 @@ struct FPointLightParams : public LightBaseParams
 	float AttenuationRadius;
 	float LightFalloffExponent;
 	uint32 LightType;
-	uint8 PCFScale = 0;
 
 	virtual FLightInfo ToLightInfo() const
 	{
