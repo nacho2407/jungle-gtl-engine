@@ -25,9 +25,6 @@ public:
 	void Render(const FFrameContext& Frame, FScene& Scene);
 	void EndFrame();
 
-	// Non-PSM: 뷰포트 루프 전 전체 1회 shadow bake
-	void RenderGlobalShadows(FScene& Scene, class FSpatialPartition* Partition = nullptr);
-
 	FD3DDevice& GetFD3DDevice() { return Device; }
 
 	// Collect 페이즈에서 커맨드 빌드를 담당하는 Builder
