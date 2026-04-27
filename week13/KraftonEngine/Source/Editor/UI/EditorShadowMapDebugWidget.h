@@ -18,6 +18,10 @@ private:
 	// Spot Atlas: 선택된 page index
 	int32 SpotPageIndex = 0;
 
+	// Spot Atlas: 디버그 표시 옵션
+	float SpotDepthBrightness = 1.0f;
+	bool  bShowSpotRegions    = true;
+
 	// Point Cube: 선택된 cube index + face index
 	int32 PointCubeIndex = 0;
 	int32 PointFaceIndex = 0;
