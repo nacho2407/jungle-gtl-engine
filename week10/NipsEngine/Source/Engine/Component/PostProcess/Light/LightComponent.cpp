@@ -21,6 +21,14 @@ FMatrix ULightComponent::GetLightViewProj(const FMatrix& CamView, const FMatrix&
 	}
 }
 
+void ULightComponent::PostDuplicate(UObject* Original)
+{
+	ULightComponentBase::PostDuplicate(Original);
+	ULightComponent* Orig = Cast<ULightComponent>(Original);
+
+	eShadowMapType = Orig->eShadowMapType;
+}
+
 void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponentBase::GetEditableProperties(OutProps);
