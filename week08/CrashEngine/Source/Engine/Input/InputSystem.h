@@ -6,23 +6,10 @@
 
 #include "InputTypes.h"
 
-// TODO: 역할 상 ViewportInputRouter에 있는 편이 맞기 때문에 Milestone 2에서 ViewportInputRouter로 옮길 예정
-struct FGuiInputState
-{
-    bool bUsingMouse = false;
-    bool bUsingKeyboard = false;
-};
-
 class InputSystem : public TSingleton<InputSystem>
 {
 public:
-    // TODO: 마찬가지로 Milestone 2에서 ViewportInputRouter로 옮길 예정
-    const FGuiInputState& GetGuiInputState() const { return GuiState; }
-    void SetGuiCaptureState(bool bMouse, bool bKeyboard);
-
-    void Initialize(HWND InHWnd) { OwnerHWnd = InHWnd; }
-
-    void Tick();
+    void Tick(bool IsWindowFocused);
 
     const FInputSnapshot& GetSnapshot() const { return CurrentSnapshot; }
 
@@ -36,11 +23,8 @@ private:
     void ClearInputOnFocusLost();
 
 private:
-    HWND OwnerHWnd = nullptr;
-
     FInputSnapshot CurrentSnapshot{};
     FInputSnapshot PreviousSnapshot{};
-    FGuiInputState GuiState{};
 
     int PendingWheelDelta = 0;
 

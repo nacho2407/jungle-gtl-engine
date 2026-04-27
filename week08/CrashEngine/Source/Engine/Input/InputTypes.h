@@ -4,7 +4,7 @@
 
 #include "Core/CoreTypes.h"
 
-enum class EInputEvent : uint8
+enum class EKeyEventType : uint8
 {
     Pressed,
     Released,
@@ -19,6 +19,14 @@ enum class EPointerButton : uint8
     Middle,
     X1, // 마우스 옆에 있는 뒤로가기 버튼
     X2  // 마우스 옆에 있는 앞으로가기 버튼
+};
+
+enum class EPointerEventType : uint8
+{
+	Pressed,
+	Released,
+	Moved,
+	Wheel
 };
 
 struct FInputModifiers
@@ -56,18 +64,25 @@ struct FInputSnapshot
 struct FViewportKeyEvent
 {
     int32 Key = 0;
-    EInputEvent Event = EInputEvent::Pressed;
+    EKeyEventType Type = EKeyEventType::Pressed;
     FInputModifiers Modifiers;
 };
 
 enum class EInputAxis : uint8
 {
+    None,
+
     MouseX,
     MouseY,
     MouseWheel,
-    MoveForward,
-    MoveRight,
-    MoveUp
+
+	// TODO: Milestone 3에서 Gamepad 입력을 추가하면서 추가될 예정
+    //GamepadLeftX,
+    //GamepadLeftY,
+    //GamepadRightX,
+    //GamepadRightY,
+    //GamepadLeftTrigger,
+    //GamepadRightTrigger
 };
 
 /**
@@ -75,24 +90,24 @@ enum class EInputAxis : uint8
  */
 struct FViewportAxisEvent
 {
-    EInputAxis Axis = EInputAxis::MouseX;
+    EInputAxis Axis = EInputAxis::None;
     float Value = 0.0f;
     float DeltaTime = 0.0f;
+
+	// TODO: 마찬가지로 Milestone 3에서 Gamepad 입력이 추가되면, 이 구분 축도 추가될 예정
+	//int32 ContollerId = 0;
+
     FInputModifiers Modifiers;
 };
 
 struct FViewportPointerEvent
 {
     EPointerButton Button = EPointerButton::None;
-    EInputEvent Event = EInputEvent::Pressed;
+    EPointerEventType Type = EPointerEventType::Pressed;
 
     POINT ScreenPos = { 0, 0 };
     POINT ClientPos = { 0, 0 };
     POINT LocalPos = { 0, 0 };
-    POINT ScreenDelta = { 0, 0 };
-    POINT LocalDelta = { 0, 0 };
 
-    int WheelDelta = 0;
-    float WheelNotches = 0.0f;
     FInputModifiers Modifiers;
 };

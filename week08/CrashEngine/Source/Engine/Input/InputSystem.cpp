@@ -1,22 +1,15 @@
 ﻿#include "InputSystem.h"
 
-void InputSystem::SetGuiCaptureState(bool bMouse, bool bKeyboard)
+void InputSystem::Tick(bool IsWindowFocused)
 {
-    GuiState.bUsingMouse = bMouse;
-    GuiState.bUsingKeyboard = bKeyboard;
-}
+	if (!IsWindowFocused)
+	{
+		ClearInputOnFocusLost();
+		return;
+    }
 
-void InputSystem::Tick()
-{
     PreviousSnapshot = CurrentSnapshot;
     CurrentSnapshot = {};
-
-	// 에디터 창이 포커스된 상태가 아닐 때
-    if (OwnerHWnd && GetForegroundWindow() != OwnerHWnd)
-    {
-        ClearInputOnFocusLost();
-        return;
-    }
 
     SampleKeyboard();
     SampleMouse();
