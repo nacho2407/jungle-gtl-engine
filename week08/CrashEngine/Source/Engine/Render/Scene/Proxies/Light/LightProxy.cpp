@@ -19,10 +19,14 @@ void FLightProxy::UpdateLightConstants()
     ShadowBias            = Owner->GetShadowBias();
     ShadowSlopeBias       = Owner->GetShadowSlopeBias();
     ShadowNormalBias      = Owner->GetShadowNormalBias();
+    
     LightProxyInfo.Position    = Owner->GetWorldLocation();
     LightProxyInfo.Direction   = Owner->GetForwardVector();
     LightProxyInfo.Intensity   = Owner->GetIntensity();
     LightProxyInfo.LightColor  = Owner->GetLightColor();
+    LightProxyInfo.ShadowBias  = ShadowBias;
+    LightProxyInfo.ShadowSlopeBias = ShadowSlopeBias;
+    LightProxyInfo.ShadowNormalBias = ShadowNormalBias;
 
     if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Owner))
     {

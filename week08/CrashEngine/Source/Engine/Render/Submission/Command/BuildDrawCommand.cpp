@@ -14,6 +14,7 @@
 #include "Render/Resources/Buffers/ConstantBufferCache.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/FrameResources.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
 #include "Render/Resources/Shaders/ShaderManager.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Proxies/Primitive/TextRenderSceneProxy.h"
@@ -36,7 +37,23 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
     FGraphicsProgram*    Shader          = Proxy.Shader;
     const bool           bIsMaskLikePass = (Pass == ERenderPass::DepthPre || Pass == ERenderPass::SelectionMask || Pass == ERenderPass::ShadowMap);
 
-    if (bIsMaskLikePass)
+    if (Pass == ERenderPass::ShadowMap)
+    {
+        const EShadowFilterMethod ShadowFilterMethod = GetShadowFilterMethod();
+        if (ShadowFilterMethod == EShadowFilterMethod::ESM)
+        {
+            Shader = FShaderManager::Get().GetShader(EShaderType::ShadowEncodeESM);
+        }
+        else if (ShadowFilterMethod == EShadowFilterMethod::VSM)
+        {
+            Shader = FShaderManager::Get().GetShader(EShaderType::ShadowEncodeVSM);
+        }
+        else
+        {
+            Shader = FShaderManager::Get().GetShader(EShaderType::DepthOnly);
+        }
+    }
+    else if (bIsMaskLikePass)
     {
         Shader = FShaderManager::Get().GetShader(EShaderType::DepthOnly);
     }

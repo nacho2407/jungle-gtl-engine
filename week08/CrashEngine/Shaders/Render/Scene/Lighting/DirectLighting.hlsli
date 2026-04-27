@@ -9,6 +9,7 @@
 #include "../../../Resources/SystemSamplers.hlsl"
 #include "LightTypes.hlsli"
 #include "BRDF.hlsli"
+#include "ShadowFiltering.hlsli"
 
 #define TILE_SIZE                       4
 #define NUM_SLICES                      32
@@ -18,18 +19,6 @@
 StructuredBuffer<FLocalLight> g_LightBuffer : register(t6);
 StructuredBuffer<uint> PerTileLightMask : REGISTER_T(SLOT_TEX_LIGHT_TILE_MASK);
 Texture2D g_DebugHitMapTex : REGISTER_T(SLOT_TEX_DEBUG_HIT_MAP);
-
-Texture2D g_ShadowMap2D0 : register(t20);
-Texture2D g_ShadowMap2D1 : register(t21);
-Texture2D g_ShadowMap2D2 : register(t22);
-Texture2D g_ShadowMap2D3 : register(t23);
-Texture2D g_ShadowMap2D4 : register(t24);
-
-TextureCube g_ShadowMapCube0 : register(t25);
-TextureCube g_ShadowMapCube1 : register(t26);
-TextureCube g_ShadowMapCube2 : register(t27);
-TextureCube g_ShadowMapCube3 : register(t28);
-TextureCube g_ShadowMapCube4 : register(t29);
 
 cbuffer LightCullingParams : register(b2)
 {
@@ -42,119 +31,26 @@ cbuffer LightCullingParams : register(b2)
     float NumLights;
 }
 
-static const float kShadowBias = 0.002f;
-static const float2 kShadowTexelSize = float2(1.0f / 2048.0f, 1.0f / 2048.0f);
-
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
 }
 
-float SampleSpotShadowCmp(int ShadowIndex, float2 ShadowUV, float CompareDepth)
+float2 GetDirectionalShadowTexelSize()
 {
-    float ShadowFactor = 1.0f;
-    [branch]
-    switch (ShadowIndex)
-    {
-    case 0: ShadowFactor = g_ShadowMap2D0.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
-    case 1: ShadowFactor = g_ShadowMap2D1.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
-    case 2: ShadowFactor = g_ShadowMap2D2.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
-    case 3: ShadowFactor = g_ShadowMap2D3.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
-    case 4: ShadowFactor = g_ShadowMap2D4.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
-    }
-
-    return ShadowFactor;
-}
-
-float OffsetLookupSpotPCF(int ShadowIndex, float2 BaseNDC, float CompareDepth, float2 Offset)
-{
-    float2 BaseUV = BaseNDC * 0.5f + 0.5f;
-    BaseUV.y = 1.0f - BaseUV.y;
-
-    float2 OffsetUV = BaseUV;
-    OffsetUV.x += Offset.x * kShadowTexelSize.x;
-    OffsetUV.y += Offset.y * kShadowTexelSize.y;
-
-    if (OffsetUV.x < 0.0f || OffsetUV.x > 1.0f || OffsetUV.y < 0.0f || OffsetUV.y > 1.0f)
-    {
-        return 1.0f;
-    }
-
-    return SampleSpotShadowCmp(ShadowIndex, OffsetUV, CompareDepth);
-}
-
-float PCF_NvidiaOptimizedSpot(int ShadowIndex, float2 BaseNDC, float CompareDepth, float4 PixelPos)
-{
-    float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
-    Offset.y += Offset.x;
-
-    if (Offset.y > 1.1f)
-    {
-        Offset.y = 0.0f;
-    }
-
-    float ShadowCoeff = 0.0f;
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, 0.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, 0.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(-1.5f, -1.5f));
-    ShadowCoeff += OffsetLookupSpotPCF(ShadowIndex, BaseNDC, CompareDepth, Offset + float2(0.5f, -1.5f));
-
-    return ShadowCoeff * 0.25f;
-}
-
-float SamplePointShadowCmp(int ShadowIndex, float3 SampleDir, float CompareDepth)
-{
-    float ShadowFactor = 1.0f;
-    [branch]
-    switch (ShadowIndex)
-    {
-    case 0: ShadowFactor = g_ShadowMapCube0.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 1: ShadowFactor = g_ShadowMapCube1.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 2: ShadowFactor = g_ShadowMapCube2.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 3: ShadowFactor = g_ShadowMapCube3.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 4: ShadowFactor = g_ShadowMapCube4.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    }
-
-    return ShadowFactor;
-}
-
-float OffsetLookupPointPCF(int ShadowIndex, float3 SampleDir, float3 Tangent, float3 Bitangent, float CompareDepth, float2 Offset)
-{
-    float2 OffsetUV = Offset * kShadowTexelSize * 2.0f;
-    float3 OffsetDir = normalize(SampleDir + Tangent * OffsetUV.x + Bitangent * OffsetUV.y);
-
-    return SamplePointShadowCmp(ShadowIndex, OffsetDir, CompareDepth);
-}
-
-float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareDepth, float4 PixelPos)
-{
-    float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
-    Offset.y += Offset.x;
-    if (Offset.y > 1.1f)
-    {
-        Offset.y = 0.0f;
-    }
-
-    float3 Up = (abs(SampleDir.z) < 0.999f) ? float3(0.0f, 0.0f, 1.0f) : float3(0.0f, 1.0f, 0.0f);
-    float3 Tangent = normalize(cross(Up, SampleDir));
-    float3 Bitangent = cross(SampleDir, Tangent);
-
-    float ShadowCoeff = 0.0f;
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, 0.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, 0.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(-1.5f, -1.5f));
-    ShadowCoeff += OffsetLookupPointPCF(ShadowIndex, SampleDir, Tangent, Bitangent, CompareDepth, Offset + float2(0.5f, -1.5f));
-
-    return ShadowCoeff * 0.25f;
+    return float2(1.0f / 2048.0f, 1.0f / 2048.0f);
 }
 
 // Get Shadow Factor from single Texture (Directional or Spot light)
-float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos, float4 PixelPos)
+float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float4 PixelPos, float2 ShadowTexelSize)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5)
         return 1.0f;
 
-    float4 ShadowPos = mul(float4(WorldPos, 1.0f), ShadowViewProj);
+    // Apply Normal Bias: Push world position along normal to reduce shadow acne
+    float3 BiasedWorldPos = WorldPos + Normal * NormalBias;
+    
+    float4 ShadowPos = mul(float4(BiasedWorldPos, 1.0f), ShadowViewProj);
     ShadowPos.xyz /= ShadowPos.w;
 
     if (abs(ShadowPos.x) > 1.0f || abs(ShadowPos.y) > 1.0f ||
@@ -163,18 +59,26 @@ float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos,
         return 1.0f;
     }
 
-    float2 BaseNDC = ShadowPos.xy;
-    float CompareDepth = ShadowPos.z + kShadowBias;
+    float2 ShadowVector = ShadowPos.xy;
 
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos);
+    // Apply slope-scaled depth bias to reduce shadow acne at grazing angles.
+    float CosTheta = saturate(dot(Normal, -LightDir));
+    float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
+    float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
+    float CompareDepth = ShadowPos.z + TotalBias;
+
+    return FilterSpotShadow(ShadowIndex, ShadowVector, CompareDepth, PixelPos, ShadowTexelSize);
 }
 
 // Get Shadow Factor from Cubemap (Point light)
-float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, float Radius, float4 PixelPos)
+float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, float3 Normal, float Radius, float Bias, float NormalBias, float4 PixelPos, float2 ShadowTexelSize)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
 
-    float3 L = WorldPos - LightPos;
+    // Normal bias for point light
+    float3 BiasedWorldPos = WorldPos + Normal * NormalBias;
+
+    float3 L = BiasedWorldPos - LightPos;
     if (dot(L, L) <= 1e-6f) return 1.0f;
 
     float ZView = max(abs(L.x), max(abs(L.y), abs(L.z)));
@@ -186,10 +90,9 @@ float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, fl
 
     float PostProjDepth = N / (N - F) - (F * N / (N - F)) / ZView;
 
-    float Bias = 0.005f;
     float CompareDepth = PostProjDepth + Bias;
-    float3 SampleDir = normalize(L);
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos);
+    float3 ShadowVector = normalize(L);
+    return FilterPointShadow(ShadowIndex, ShadowVector, CompareDepth, PixelPos, ShadowTexelSize);
 }
 
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
@@ -218,7 +121,7 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
     float Shadow = 1.0f;
     if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
     {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius, PixelPos);
+        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, N, LocalLight.AttenuationRadius, LocalLight.ShadowBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
     }
     else                            // Spot light
     {
@@ -227,7 +130,7 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             cos(radians(LocalLight.OuterConeAngle)),
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
-        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, PixelPos);
+        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, N, LocalLight.Direction, LocalLight.ShadowBias, LocalLight.ShadowSlopeBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
     }
 
     return Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation * Shadow;
@@ -264,7 +167,7 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
     float Shadow = 1.0f;
     if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
     {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius, PixelPos);
+        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, N, LocalLight.AttenuationRadius, LocalLight.ShadowBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
     }
     else                            // Spot light
     {
@@ -274,7 +177,7 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
 
-        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, PixelPos);
+        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, N, LocalLight.Direction, LocalLight.ShadowBias, LocalLight.ShadowSlopeBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
@@ -297,7 +200,7 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, PixelPos);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -318,7 +221,7 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, PixelPos);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -340,7 +243,7 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
     {
         if (i >= NumDirectionalLights) break;
         float3 L = normalize(Directional[i].Direction);
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, pixelPos);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, pixelPos, GetDirectionalShadowTexelSize());
         TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -370,7 +273,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, PixelPos);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
 
         TotalDiffuse += Diffuse * LightColor * Shadow;
         TotalSpecular += Specular * LightColor * Shadow;
@@ -414,7 +317,7 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, PixelPos);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
 
         Out.Diffuse += Diffuse * LightColor * Shadow;
         Out.Specular += Specular * LightColor * Shadow;
