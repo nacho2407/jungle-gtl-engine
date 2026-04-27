@@ -18,7 +18,6 @@ private:
 	// Spot Atlas: 선택된 page index
 	int32 SpotPageIndex = 0;
 
-	// Point Cube: 선택된 cube index + face index
-	int32 PointCubeIndex = 0;
+	int32 PointLightIndex = 0;
 	int32 PointFaceIndex = 0;
 };
