@@ -178,17 +178,16 @@ void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERende
             (reinterpret_cast<uintptr_t>(Cmd.DiffuseSRV) >> 14) ^
             (reinterpret_cast<uintptr_t>(Cmd.NormalSRV) >> 19) ^
             (reinterpret_cast<uintptr_t>(Cmd.SpecularSRV) >> 24);
-
-        // 수동 정렬이 필요한 경우 (e.g. Light 별 섀도 맵 렌더링) UserBits 사용하여 정렬.
-        // 아니라면 Material 별로 정렬
-        const uint16 AdditionalSortKey = (UserBits != 0) ? UserBits : static_cast<uint16>(MaterialHash & 0x0FFFu);
+        
+        const uint8 FinalUserBits = static_cast<uint8>(UserBits & 0xFFu);
+        const uint32 FinalMaterialHash = static_cast<uint32>(MaterialHash & 0xFFFFFu);
 
         Cmd.SortKey = FDrawCommand::BuildSortKey(
             Pass,
+            FinalUserBits,
             Cmd.Shader,
             Proxy.MeshBuffer,
-            Cmd.DiffuseSRV,
-            AdditionalSortKey);
+            FinalMaterialHash);
     };
 
     if (!Proxy.SectionRenderData.empty())
@@ -297,9 +296,15 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
         Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
     Cmd.LightCB       = (Pass == ERenderPass::DeferredLighting && Context.Resources) ? &Context.Resources->GlobalLightBuffer : nullptr;
     Cmd.LocalLightSRV = (Pass == ERenderPass::DeferredLighting && Context.Resources) ? Context.Resources->LocalLightSRV : nullptr;
-    Cmd.SortKey       = FDrawCommand::BuildSortKey(Pass, Shader, nullptr, Cmd.DiffuseSRV, ToPostProcessUserBits(PostProcessVariant));
+    Cmd.SortKey       = FDrawCommand::BuildSortKey(Pass, static_cast<uint8>(ToPostProcessUserBits(PostProcessVariant)), Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 
@@ -385,7 +390,7 @@ void DrawCommandBuild::BuildLineDrawCommand(FRenderPipelineContext& Context, FDr
             Cmd.IndexCount    = Batch.GetIndexCount();
             Cmd.Pass          = ERenderPass::EditorLines;
             Cmd.DebugName     = DebugName;
-            Cmd.SortKey       = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, nullptr);
+            Cmd.SortKey       = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, 0);
         };
 
         AddBatch(GridLines, "GridLines");
@@ -480,6 +485,12 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
         return;
     }
 
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
     const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayFont);
     FDrawCommand&                Cmd   = OutList.AddCommand();
     Cmd.Shader                         = Shader;
@@ -494,7 +505,7 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
     Cmd.DiffuseSRV                     = FontRes->SRV;
     Cmd.Pass                           = ERenderPass::OverlayFont;
     Cmd.DebugName                      = "OverlayText";
-    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
@@ -542,6 +553,12 @@ void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Pr
         return;
     }
 
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
     const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::AlphaBlend);
     FDrawCommand&                Cmd   = OutList.AddCommand();
     Cmd.Shader                         = Shader;
@@ -557,7 +574,7 @@ void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Pr
     Cmd.DiffuseSRV                     = FontRes->SRV;
     Cmd.Pass                           = ERenderPass::AlphaBlend;
     Cmd.DebugName                      = "WorldText";
-    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
@@ -605,6 +622,12 @@ void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderScenePr
         return;
     }
 
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
     const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayTextWorld);
     FDrawCommand&                Cmd   = OutList.AddCommand();
     Cmd.Shader                         = Shader;
@@ -620,7 +643,7 @@ void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderScenePr
     Cmd.DiffuseSRV                     = FontRes->SRV;
     Cmd.Pass                           = ERenderPass::OverlayTextWorld;
     Cmd.DebugName                      = "OverlayWorldText";
-    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 
@@ -661,7 +684,13 @@ void DrawCommandBuild::BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRend
         }
     }
 
-    Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, Cmd.Shader, nullptr, Cmd.DiffuseSRV);
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
+    Cmd.SortKey = FDrawCommand::BuildSortKey(ERenderPass::Decal, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 
