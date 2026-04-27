@@ -65,6 +65,9 @@ void USpotLightComponent::PushToScene()
 	Params.LightType = ELightType::Spot;
 	Params.Position = GetWorldLocation();
 	Params.bCastShadows = bCastShadows;
+	Params.ShadowBias = ShadowBias;
+	Params.ShadowSlopeBias = ShadowSlopeBias;
+	Params.ShadowSharpen = ShadowSharpen;
 	Params.Direction = GetForwardVector();
 	Params.InnerConeCos = std::cos(ClampedInnerAngle * FMath::DegToRad);
 	Params.OuterConeCos = std::cos(ClampedOuterAngle * FMath::DegToRad);

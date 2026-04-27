@@ -89,6 +89,9 @@ void UDirectionalLightComponent::PushToScene()
 	Params.LightColor = LightColor;
 	Params.bVisible = bVisible;
 	Params.bCastShadows = bCastShadows;
+	Params.ShadowBias = ShadowBias;
+	Params.ShadowSlopeBias = ShadowSlopeBias;
+	Params.ShadowSharpen = ShadowSharpen;
 
 	World->GetScene().GetEnvironment().AddGlobalDirectionalLight(this, Params);
 }

@@ -17,6 +17,6 @@ public:
 protected:
 	float ShadowResolutionScale = 1.0f;
 	float ShadowBias = 0.005f;
-	float ShadowSlopeBias = 1.0f;
-	float ShadowSharpen = 0.0f;
+	float ShadowSlopeBias = 0.005f;
+	float ShadowSharpen = 0.67f;
 };

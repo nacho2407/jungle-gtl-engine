@@ -7,63 +7,43 @@
 // 의존: ConstantBuffers.hlsli (ShadowBuffer b5, ShadowMapCSM t21, samplers s3/s4)
 //       ForwardLightData.hlsli (SpotShadowDatas t24, PointShadowDatas t25)
 //
-// 사용법:
-//   #include "Common/ShadowSampling.hlsli"
-//   float shadow = CalcDirectionalShadowFactor(worldPos, viewDepth);
+// ShadowSharpen 매핑:
+//   PCF: halfSize = round((1 - sharpen) * 3)  →  0=7×7, 0.33=5×5, 0.67=3×3, 1.0=1×1
+//   VSM: light bleeding cutoff = lerp(0.1, 0.6, sharpen)
 // =============================================================================
 
-// ── Hard Shadow (1-tap comparison) ──────────────────────────────
-// SampleLevel + 수동 비교: R32G32_FLOAT(VSM)와 R32_FLOAT(depth) 모두 호환
-float SampleShadowHard(Texture2DArray shadowMap, float3 uvw, float compareDepth)
+// ── PCF 커널 반경 계산 ─────────────────────────────────────────
+// sharpen 0.0 → halfSize 3 (7×7, 49 taps)
+// sharpen 1.0 → halfSize 0 (1×1, hard shadow)
+int ComputePCFHalfSize(float sharpen)
 {
-    // Reversed-Z: compareDepth >= texel → lit (1.0)
-    float shadowMapDepth = shadowMap.SampleLevel(PointClampSampler, uvw, 0).r;
-    return (compareDepth >= shadowMapDepth) ? 1.0f : 0.0f;
+    return (int)round((1.0f - saturate(sharpen)) * 3.0f);
 }
 
-// ── PCF 3x3 (9-tap) ────────────────────────────────────────────
-float SampleShadowPCF3x3(Texture2DArray shadowMap, float3 uvw, float compareDepth, float texelSize)
+// ── Dynamic PCF (Texture2DArray) ───────────────────────────────
+float SampleShadowPCF(Texture2DArray shadowMap, float3 uvw, float compareDepth, float texelSize, int halfSize)
 {
     float shadow = 0.0f;
+    float count  = 0.0f;
 
-    [unroll]
-    for (int y = -1; y <= 1; ++y)
+    for (int y = -halfSize; y <= halfSize; ++y)
     {
-        [unroll]
-        for (int x = -1; x <= 1; ++x)
+        for (int x = -halfSize; x <= halfSize; ++x)
         {
             float3 offset = float3(float(x) * texelSize, float(y) * texelSize, 0.0f);
             float depth = shadowMap.SampleLevel(PointClampSampler, uvw + offset, 0).r;
             shadow += (compareDepth >= depth) ? 1.0f : 0.0f;
+            count += 1.0f;
         }
     }
 
-    return shadow / 9.0f;
-}
-
-// ── PCF 5x5 (25-tap, 고품질) ───────────────────────────────────
-float SampleShadowPCF5x5(Texture2DArray shadowMap, float3 uvw, float compareDepth, float texelSize)
-{
-    float shadow = 0.0f;
-
-    [unroll]
-    for (int y = -2; y <= 2; ++y)
-    {
-        [unroll]
-        for (int x = -2; x <= 2; ++x)
-        {
-            float3 offset = float3(float(x) * texelSize, float(y) * texelSize, 0.0f);
-            float depth = shadowMap.SampleLevel(PointClampSampler, uvw + offset, 0).r;
-            shadow += (compareDepth >= depth) ? 1.0f : 0.0f;
-        }
-    }
-
-    return shadow / 25.0f;
+    return shadow / count;
 }
 
 // ── VSM (Variance Shadow Map) ───────────────────────────────────
 // moments = (E[z], E[z^2])   — Reversed-Z: near=1, far=0
-float ComputeVSMFactor(float2 moments, float fragDepth)
+// sharpen: light bleeding cutoff 강도 (0=soft, 1=sharp)
+float ComputeVSMFactor(float2 moments, float fragDepth, float sharpen)
 {
     // Reversed-Z: 가까울수록 depth가 크다
     // fragDepth >= moments.x → 빛에 더 가까움 → lit
@@ -77,18 +57,18 @@ float ComputeVSMFactor(float2 moments, float fragDepth)
     float d = moments.x - fragDepth; // Reversed-Z: occluder가 더 큰 값
     float pMax = variance / (variance + d * d);
 
-    // Light bleeding 감소 — 낮은 확률값을 0으로 클램프
-    float minAmount = 0.3f;
+    // Light bleeding 감소 — sharpen이 클수록 공격적으로 cutoff
+    float minAmount = lerp(0.1f, 0.6f, saturate(sharpen));
     pMax = saturate((pMax - minAmount) / (1.0f - minAmount));
 
     return pMax;
 }
 
-float SampleShadowVSM(Texture2DArray shadowMap, float3 uvw, float fragDepth)
+float SampleShadowVSM(Texture2DArray shadowMap, float3 uvw, float fragDepth, float sharpen)
 {
     // ShadowLinearSampler (s4): bilinear filtering
     float2 moments = shadowMap.SampleLevel(ShadowLinearSampler, uvw, 0).rg;
-    return ComputeVSMFactor(moments, fragDepth);
+    return ComputeVSMFactor(moments, fragDepth, sharpen);
 }
 
 // ── Cascade 선택 ────────────────────────────────────────────────
@@ -108,7 +88,7 @@ uint SelectCascade(float viewDepth)
 // ── Directional Light Shadow Factor (통합) ──────────────────────
 // worldPos:  월드 좌표
 // viewDepth: 카메라 뷰 공간 깊이 (abs(viewPos.z))
-float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth)
+float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
 {
     if (NumCSMCascades == 0)
         return 1.0f;
@@ -130,13 +110,14 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth)
         fragDepth < 0.0f  || fragDepth > 1.0f)
         return 1.0f;
 
-    // bias 적용 (Reversed-Z: 가까울수록 큰 값 → bias를 더해야 acne 방지)
-    fragDepth += ShadowBias;
+    // slope bias: 경사면일수록 bias 증가 (Normal Offset 방식)
+    float slope = 1.0f - saturate(dot(N, -DirectionalLight.Direction));
+    fragDepth += ShadowBias + ShadowSlopeBias * slope;
 
     float3 uvw = float3(shadowUV, (float)cascade);
     float texelSize = 1.0f / (float)CSMResolution;
 
-    // FilterMode 분기
+    // FilterMode 분기 — ShadowSharpen은 b5 (Directional per-light)
     if (ShadowFilterMode == 0) // Hard
     {
         float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, uvw, 0).r;
@@ -144,16 +125,17 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth)
     }
     else if (ShadowFilterMode == 1) // PCF
     {
-        return SampleShadowPCF3x3(ShadowMapCSM, uvw, fragDepth, texelSize);
+        int halfSize = ComputePCFHalfSize(ShadowSharpen);
+        return SampleShadowPCF(ShadowMapCSM, uvw, fragDepth, texelSize, halfSize);
     }
     else // VSM
     {
-        return SampleShadowVSM(ShadowMapCSM, uvw, fragDepth);
+        return SampleShadowVSM(ShadowMapCSM, uvw, fragDepth, ShadowSharpen);
     }
 }
 
 // ── Spot Light Shadow Factor ────────────────────────────────────
-float CalcSpotShadowFactor(uint lightIndex, float3 worldPos)
+float CalcSpotShadowFactor(uint lightIndex, float3 worldPos, float3 N, float3 lightDir)
 {
     if (NumShadowSpotLights == 0)
         return 1.0f;
@@ -164,7 +146,8 @@ float CalcSpotShadowFactor(uint lightIndex, float3 worldPos)
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
 
     float2 shadowUV = projCoords.xy * float2(0.5f, -0.5f) + 0.5f;
-    float  fragDepth = projCoords.z + ShadowBias; // Reversed-Z: bias를 더해야 acne 방지
+    float  slope = 1.0f - saturate(dot(N, lightDir));
+    float  fragDepth = projCoords.z + sd.ShadowBias + sd.ShadowSlopeBias * slope;
 
     // Atlas UV 변환 (scale + bias)
     shadowUV = shadowUV * sd.AtlasScaleBias.xy + sd.AtlasScaleBias.zw;
@@ -176,15 +159,23 @@ float CalcSpotShadowFactor(uint lightIndex, float3 worldPos)
     float texelSize = 1.0f / 4096.0f; // atlas resolution
 
     if (ShadowFilterMode == 0)
-        return SampleShadowHard(ShadowMapSpotAtlas, uvw, fragDepth);
-    else if (ShadowFilterMode == 1)
-        return SampleShadowPCF3x3(ShadowMapSpotAtlas, uvw, fragDepth, texelSize);
-    else
-        return SampleShadowVSM(ShadowMapSpotAtlas, uvw, fragDepth);
+    {
+        float shadowMapDepth = ShadowMapSpotAtlas.SampleLevel(PointClampSampler, uvw, 0).r;
+        return (fragDepth >= shadowMapDepth) ? 1.0f : 0.0f;
+    }
+    else if (ShadowFilterMode == 1) // PCF
+    {
+        int halfSize = ComputePCFHalfSize(sd.ShadowSharpen);
+        return SampleShadowPCF(ShadowMapSpotAtlas, uvw, fragDepth, texelSize, halfSize);
+    }
+    else // VSM
+    {
+        return SampleShadowVSM(ShadowMapSpotAtlas, uvw, fragDepth, sd.ShadowSharpen);
+    }
 }
 
 // ── Point Light Shadow Factor ───────────────────────────────────
-float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
+float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos, float3 N)
 {
     if (NumShadowPointLights == 0)
         return 1.0f;
@@ -203,19 +194,22 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
     else
         face = (L.z > 0.0f) ? 4 : 5; // +Z, -Z
 
+    float3 lightDir = normalize(L);
+    float slope = 1.0f - saturate(dot(N, -lightDir));
+
     float4 lightSpacePos = mul(float4(worldPos, 1.0f), pointLightData.FaceViewProj[face]);
     float3 ndc = lightSpacePos.xyz / lightSpacePos.w;
 
     float2 projUV = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
-    float  fragDepth = ndc.z + ShadowBias;
+    float  fragDepth = ndc.z + pointLightData.ShadowBias + pointLightData.ShadowSlopeBias * slope;
     float3 sampleCoord = float3(projUV, (float)(pointLightData.ArrayIndex * 6 + face));
 
     if (ShadowFilterMode == 2) // VSM
     {
         float2 moments = ShadowMapPointLightTextureArray.SampleLevel(ShadowLinearSampler, sampleCoord, 0).rg;
-        return ComputeVSMFactor(moments, fragDepth);
+        return ComputeVSMFactor(moments, fragDepth, pointLightData.ShadowSharpen);
     }
-    else // Hard or PCF — 수동 비교
+    else // Hard or PCF — Texture2DArray per-face, 1-tap 비교
     {
         float depth = ShadowMapPointLightTextureArray.SampleLevel(PointClampSampler, sampleCoord, 0).r;
         return (fragDepth >= depth) ? 1.0f : 0.0f;

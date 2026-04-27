@@ -39,7 +39,7 @@ cbuffer ShadowBuffer : register(b5)
     float4x4 CSMViewProj[MAX_SHADOW_CASCADES]; // 256B
     float4   CascadeSplits;                    //  16B
 
-    // 공통 파라미터
+    // CSM(Directional) 파라미터 — Spot/Point는 per-light StructuredBuffer(t24,t25) 참조
     float    ShadowBias;                       //   4B
     float    ShadowSlopeBias;                  //   4B
     float    ShadowSharpen;                    //   4B
