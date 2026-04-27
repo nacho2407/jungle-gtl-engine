@@ -320,6 +320,30 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 	return true;
 }
 
+void FShadowPass::DrawShadowCaster(const FRenderPassContext* Context, const ULightComponent* Light)
+{
+    
+}
+
+void FShadowPass::DrawShadowCubeCaster(const FRenderPassContext* Context, const ULightComponent* Light)
+{
+    FShadowAtlasManager& Shadow = FShadowAtlasManager::Get();
+    int32 ShadowCubeIndex;
+    if (Shadow.AllocateTileCube(ShadowCubeIndex)) return;
+
+    for (uint32 Face = 0; Face < 6; ++Face)
+    {
+        ID3D11DepthStencilView* DSV =
+            Shadow.GetCubeDSV(ShadowCubeIndex, Face);
+
+        Context->DeviceContext->OMSetRenderTargets(0, nullptr, DSV);
+        Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+        // face별 ViewProj 세팅 후 shadow caster 렌더링
+
+    }
+}
+
 bool FShadowPass::Release()
 {
 	return true;

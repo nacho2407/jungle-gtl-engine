@@ -82,7 +82,7 @@ float ComputeShadowAtlas(
         return 1.0f;
     }
 
-    return ComputeShadowPCF(projCoords, shadowData.ScaleOffset, 2, shadowSampler, shadowMap, shadowData.ShadowBias);
+    return ComputeShadowPCF(projCoords, shadowData.ScaleOffset, shadowData.ShadowSoftness, shadowSampler, shadowMap, shadowData.ShadowBias);
 }
 
 #endif
