@@ -13,6 +13,7 @@ public:
 	FMatrix GetLightViewProj(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
+	void PostDuplicate(UObject* Original) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	
 	void Serialize(FArchive& Ar) override;
