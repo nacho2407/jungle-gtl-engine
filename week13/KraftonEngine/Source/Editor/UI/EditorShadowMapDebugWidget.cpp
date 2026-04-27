@@ -111,21 +111,21 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	// ════════════════════════════════════════
 	else if (SelectedTab == 2)
 	{
-		if (!SR.IsPointValid())
+		if (!SR.IsPointLightValid())
 		{
 			ImGui::TextDisabled("Point CubeMap: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Resolution: %u x %u, Cubes: %u", SR.PointCubeResolution, SR.PointCubeResolution, SR.PointCubeCount);
+		ImGui::Text("Resolution: %u x %u, Cubes: %u", SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureCount);
 
 		// Cube 선택
-		if (PointCubeIndex >= (int32)SR.PointCubeCount)
+		if (PointCubeIndex >= (int32)SR.PointLightShadowTextureCount)
 			PointCubeIndex = 0;
 
 		ImGui::SetNextItemWidth(100.0f);
-		ImGui::SliderInt("Cube", &PointCubeIndex, 0, (int32)SR.PointCubeCount - 1);
+		ImGui::SliderInt("Cube", &PointCubeIndex, 0, (int32)SR.PointLightShadowTextureCount - 1);
 
 		// Face 선택 (6방향)
 		for (int32 i = 0; i < 6; ++i)

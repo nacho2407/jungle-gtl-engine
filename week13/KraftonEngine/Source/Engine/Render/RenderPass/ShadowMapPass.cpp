@@ -160,9 +160,9 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
 
 		if (Res.PointVSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointVSMSRV);
-		else if (Res.PointCubeSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointVSMSRV);
+		else if (Res.PointLightShadowSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointLightShadowSRV);
 	}
 	else
 	{
@@ -171,14 +171,14 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
 		if (Res.SpotAtlasSRV)
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
-		if (Res.PointCubeSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+		if (Res.PointLightShadowSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointLightShadowSRV);
 	}
 
 	if (Res.SpotShadowDataSRV)
 		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.SpotShadowDataSRV);
-	if (Res.PointShadowDataSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.PointShadowDataSRV);
+	if (Res.PointLightShadowDataSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.PointLightShadowDataSRV);
 }
 
 // ============================================================
@@ -233,7 +233,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 
 	if (ShadowPointCount > 0)
 	{
-		Res.EnsurePointCube(Dev, Resolution, ShadowPointCount);
+		Res.EnsurePointLightTexture(Dev, Resolution, ShadowPointCount);
 		if (bVSM) Res.EnsurePointCube_VSM(Dev, Resolution, ShadowPointCount);
 	}
 }
@@ -526,23 +526,27 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
-	uint32 ShadowPointLightCount = 0;
+	uint32 ShadowedPointLightCount = 0;
 	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights; ++PointLightIndex)
 	{
 		if (SceneEnvironment.GetPointLight(PointLightIndex).bCastShadows)
-			++ShadowPointLightCount;
+		{
+			++ShadowedPointLightCount;
+		}
 	}
 
-	if (ShadowPointLightCount == 0)
+	if (ShadowedPointLightCount == 0)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
 		return;
 	}
 
-	if (ShadowPointLightCount > MAX_SHADOW_POINT_LIGHTS)
-		ShadowPointLightCount = MAX_SHADOW_POINT_LIGHTS;
+	if (ShadowedPointLightCount > MAX_SHADOW_POINT_LIGHTS)
+	{
+		ShadowedPointLightCount = MAX_SHADOW_POINT_LIGHTS;
+	}
 
-	if (!Res.IsPointValid() || !Res.PointCubeDSVs || !Res.PointShadowDataBuffer)
+	if (!Res.IsPointLightValid() || !Res.PointLightShadowDSVs || !Res.PointLightShadowDataBuffer)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
 		return;
@@ -551,9 +555,9 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 
 	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
-	PointLightShadowGPUData.resize(ShadowPointLightCount);
+	PointLightShadowGPUData.resize(ShadowedPointLightCount);
 
-	const uint32 ShadowResolution = FShadowSettings::Get().GetEffectiveResolution();
+	const uint32 ShadowResolution = Res.PointLightShadowTextureResolution;
 	D3D11_VIEWPORT ShadowViewport = {};
 	ShadowViewport.Width    = static_cast<float>(ShadowResolution);
 	ShadowViewport.Height   = static_cast<float>(ShadowResolution);
@@ -561,21 +565,23 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	ShadowViewport.MaxDepth = 1.0f;
 
 	constexpr float ShadowNearZ = 0.1f;
-	uint32 ShadowPointLightIndex = 0;
-	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights && ShadowPointLightIndex < ShadowPointLightCount; ++PointLightIndex)
+	uint32 ShadowedPointLightIndex = 0;
+	for (uint32 PointLightIndex = 0; PointLightIndex < NumPointLights && ShadowedPointLightIndex < ShadowedPointLightCount; ++PointLightIndex)
 	{
-		const FPointLightParams &Light = SceneEnvironment.GetPointLight(PointLightIndex);
-		if (!Light.bCastShadows)
+		const FPointLightParams &PointLight = SceneEnvironment.GetPointLight(PointLightIndex);
+		if (!PointLight.bCastShadows)
+		{
 			continue;
+		}
 
-		FPointShadowDataGPU &ShadowData = PointLightShadowGPUData[ShadowPointLightIndex];
+		FPointShadowDataGPU &ShadowData = PointLightShadowGPUData[ShadowedPointLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
-		ShadowData.FarZ = Light.AttenuationRadius;
-		ShadowData.CubeArrayIndex = ShadowPointLightIndex;
+		ShadowData.FarZ = PointLight.AttenuationRadius;
+		ShadowData.ArrayIndex = ShadowedPointLightIndex;
 
 		for (uint32 CubeFaceIndex = 0; CubeFaceIndex < 6; ++CubeFaceIndex)
 		{
-			const auto FaceViewProjection = FLightFrustumUtils::BuildPointLightFaceViewProj(Light, CubeFaceIndex, ShadowNearZ);
+			const auto FaceViewProjection = FLightFrustumUtils::BuildPointLightFaceViewProj(PointLight, CubeFaceIndex, ShadowNearZ);
 			ShadowData.FaceViewProj[CubeFaceIndex] = FaceViewProjection.ViewProj;
 
 			FConvexVolume LightFrustum;
@@ -583,7 +589,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 
 			UploadLightViewProj(DC, FaceViewProjection.ViewProj);
 
-			uint32 DSVFaceIndex = ShadowPointLightIndex * 6 + CubeFaceIndex;
+			uint32 DSVFaceIndex = ShadowedPointLightIndex * 6 + CubeFaceIndex;
 			if (bVSM && Res.IsPointVSMValid())
 			{
 				float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
@@ -593,7 +599,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			}
 			else
 			{
-				ID3D11DepthStencilView *FaceDepthStencilView = Res.PointCubeDSVs[DSVFaceIndex];
+				ID3D11DepthStencilView *FaceDepthStencilView = Res.PointLightShadowDSVs[DSVFaceIndex];
 				DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
 				DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
 			}
@@ -602,18 +608,18 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			DrawShadowCasters(Ctx, LightFrustum);
 		}
 
-		++ShadowPointLightIndex;
+		++ShadowedPointLightIndex;
 	}
 
-	if (ShadowPointLightIndex > 0 && Res.PointShadowDataBuffer)
+	if (ShadowedPointLightIndex > 0 && Res.PointLightShadowDataBuffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE MappedPointShadowData = {};
-		if (SUCCEEDED(DC->Map(Res.PointShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedPointShadowData)))
+		if (SUCCEEDED(DC->Map(Res.PointLightShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedPointShadowData)))
 		{
-			memcpy(MappedPointShadowData.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowPointLightIndex);
-			DC->Unmap(Res.PointShadowDataBuffer, 0);
+			memcpy(MappedPointShadowData.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedPointLightIndex);
+			DC->Unmap(Res.PointLightShadowDataBuffer, 0);
 		}
 	}
 
-	ShadowCBCache.NumShadowPointLights = ShadowPointLightIndex;
+	ShadowCBCache.NumShadowPointLights = ShadowedPointLightIndex;
 }
