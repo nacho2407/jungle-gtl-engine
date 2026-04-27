@@ -67,6 +67,27 @@ uint ComputeClusterIndex(float4 screenPos, float3 worldPos)
         + tileX;
 }
 
+// Culling 모드(Tile/Cluster/None)에 따라 현재 픽셀의 라이트 수를 조회하고 heatmap 색상 반환
+float4 ComputeCullingHeatmap(float4 screenPos, float3 worldPos)
+{
+    uint LightCount = NumActivePointLights + NumActiveSpotLights;
+
+    if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
+    {
+        uint2 tileCoord = min(uint2(screenPos.xy) / TILE_SIZE, uint2(NumTilesX - 1, NumTilesY - 1));
+        uint tileIdx = tileCoord.y * NumTilesX + tileCoord.x;
+        LightCount = TileLightGrid[tileIdx].y;
+    }
+    else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
+    {
+        uint clusterIdx = ComputeClusterIndex(screenPos, worldPos);
+        LightCount = g_ClusterLightGrid[clusterIdx].y;
+    }
+
+    float ratio = saturate((float)LightCount / HeatMapMax);
+    return float4(GetHeatmapColor(ratio), 1.0f);
+}
+
 float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
 {
     float3 L = light.Position - worldPos;
