@@ -78,4 +78,7 @@ private:
 
 	FShadowAtlasQuadTree SpotLightAtlas;
 	TArray<FAtlasRegion> SpotAtlasRegion;
+
+	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
+	uint32 LastDrawCasterCount = 0;
 };
