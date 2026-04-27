@@ -45,6 +45,7 @@ void FRenderer::Create(HWND hWindow)
 	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
     FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
 
+
 	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
 	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
     #define SAHDOWMAP(x) static_cast<uint32>(EShadowMap::x)
@@ -90,6 +91,17 @@ void FRenderer::Create(HWND hWindow)
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Tiled).data(), "LightCullingCS_Tiled");
 
+    {
+        auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Horizontal);
+        FResourceManager::Get().LoadComputeShader(
+            "Shaders/VSMBlurCS.hlsl", "main", Macros.data(), "VSMBlur_H");
+    }
+    {
+        auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Vertical);
+        FResourceManager::Get().LoadComputeShader(
+            "Shaders/VSMBlurCS.hlsl", "main", Macros.data(), "VSMBlur_V");
+    }
+
 	// Uber ShadowMap
 	for (uint32 ShadowMapIdx = 0; ShadowMapIdx < static_cast<uint32>(EShadowMap::MAX); ++ShadowMapIdx)
 	{
@@ -123,7 +135,7 @@ void FRenderer::CreateResources()
 	//	MeshManager init
 	FMeshManager::Initialize();
 	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
-    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가 -> ShadowAtlas의 Resource로 사용하도록 이 호출 삭제해주면 됨
+    //FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가 -> ShadowAtlas의 Resource로 사용하도록 이 호출 삭제해주면 됨
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());

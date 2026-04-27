@@ -231,7 +231,7 @@ public:
 	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
 	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
 	// OpaquePass, BlurPass에서 꺼내 쓸 getter
-
+    ID3D11Texture2D* GetVarianceTexture2D() const { return ShadowMapAtlas.VarianceShadowTexture.Get(); }
 	ID3D11RenderTargetView* GetVarianceRTV() const { return ShadowMapAtlas.VarianceShadowRTV.Get(); }
     ID3D11ShaderResourceView* GetVarianceSRV() const { return ShadowMapAtlas.VarianceShadowSRV.Get(); }
     ID3D11UnorderedAccessView* GetVarianceUAV() const { return ShadowMapAtlas.VarianceShadowUAV.Get(); }
@@ -249,9 +249,9 @@ public:
     TComPtr<ID3D11ShaderResourceView> ShadowSRV;
 
 
-    TComPtr<ID3D11Texture2D> VarianceRTVShadowMap;       // 텍스처
-    TComPtr<ID3D11RenderTargetView> VarianceShadowRTV;   // 쓰기용 (Shadow Pass)
-    TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV; // 읽기용 (Lighting Pass)
+    //TComPtr<ID3D11Texture2D> VarianceRTVShadowMap;       // 텍스처
+    //TComPtr<ID3D11RenderTargetView> VarianceShadowRTV;   // 쓰기용 (Shadow Pass)
+    //TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV; // 읽기용 (Lighting Pass)
 
 	float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 

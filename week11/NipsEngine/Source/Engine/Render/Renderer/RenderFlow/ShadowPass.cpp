@@ -242,7 +242,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		Context->DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 		Context->DeviceContext->PSSetConstantBuffers(4, 1, &cb4);
 	}
-
+	
 	return true;
 }
 
