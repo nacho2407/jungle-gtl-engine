@@ -2,9 +2,11 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
+#include "Math/MathUtils.h"
 #include "Collision/ConvexVolume.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/FrameContext.h"
+#include <numbers>
 
 /*
 	FLightFrustumUtils — 라이트 타입별 View/Projection 행렬 및 FConvexVolume 생성 유틸리티.
@@ -65,59 +67,54 @@ namespace FLightFrustumUtils
 	};
 
 	// 큐브맵 6개 face 방향 (+X, -X, +Y, -Y, +Z, -Z)
-	inline void BuildPointLightFaceViewProj(
+	inline FPointLightFaceViewProj BuildPointLightFaceViewProj(
 		const FPointLightParams& Light,
-		FPointLightFaceViewProj OutFaces[6],
+		const uint32 FaceIndex,
 		float NearZ = 0.1f)
 	{
-		static const FVector FaceDirs[6] = {
-			FVector( 1,  0,  0),  // +X
-			FVector(-1,  0,  0),  // -X
-			FVector( 0,  1,  0),  // +Y
-			FVector( 0, -1,  0),  // -Y
-			FVector( 0,  0,  1),  // +Z
-			FVector( 0,  0, -1),  // -Z
-		};
-		static const FVector FaceUps[6] = {
-			FVector(0, 0, 1),  // +X
-			FVector(0, 0, 1),  // -X
-			FVector(0, 0, 1),  // +Y
-			FVector(0, 0, 1),  // -Y
-			FVector(0, 1, 0),  // +Z (up = +Y to avoid parallel)
-			FVector(0, 1, 0),  // -Z
+		static const TStaticArray<FVector, 6> FaceDirections = {
+			FVector(1.0f , 0.0f, 0.0f),
+			FVector(-1.0f, 0.0f, 0.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+			FVector(0.0f, -1.0f, 0.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, -1.0f),
 		};
 
-		// 90° FOV, 1:1 aspect
-		FMatrix Proj = FMatrix::PerspectiveFovLH(
-			3.14159265358979f * 0.5f, 1.0f, NearZ, Light.AttenuationRadius
+		static const TStaticArray<FVector, 6> FaceUps = {
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 0.0f, 1.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+			FVector(0.0f, 1.0f, 0.0f),
+		};
+
+		FPointLightFaceViewProj Result;
+
+		Result.View = FMatrix::LookAtLH(
+			Light.Position,
+			Light.Position + FaceDirections[FaceIndex],
+			FaceUps[FaceIndex]);
+		Result.Proj = FMatrix::PerspectiveFovLH(
+			std::numbers::pi_v<float> * 0.5f, 1.0f, NearZ, Light.AttenuationRadius
 		);
-
-		for (int i = 0; i < 6; ++i)
-		{
-			OutFaces[i].View = FMatrix::LookAtLH(
-				Light.Position,
-				Light.Position + FaceDirs[i],
-				FaceUps[i]
-			);
-			OutFaces[i].Proj = Proj;
-			OutFaces[i].ViewProj = OutFaces[i].View * Proj;
-		}
+		Result.ViewProj = Result.View * Result.Proj;
+		return Result;
 	}
 
-	inline void BuildPointLightFaceFrustums(
+	inline FConvexVolume BuildPointLightFaceFrustums(
 		const FPointLightParams& Light,
-		FConvexVolume OutFrustums[6],
+		const uint32 FaceIndex,
 		float NearZ = 0.1f)
 	{
-		FPointLightFaceViewProj Faces[6];
-		BuildPointLightFaceViewProj(Light, Faces, NearZ);
-
-		for (int i = 0; i < 6; ++i)
-			OutFrustums[i].UpdateFromMatrix(Faces[i].ViewProj);
+		FConvexVolume Volume;
+		Volume.UpdateFromMatrix(BuildPointLightFaceViewProj(Light, FaceIndex, NearZ).ViewProj);
+		return Volume;
 	}
 
 	// ============================================================
-	// Directional Light — 카메라 frustum 기반 orthographic shadow
+	// Directional Light(1) — 카메라 frustum 기반 orthographic shadow
 	// ============================================================
 	struct FDirectionalLightViewProj
 	{
@@ -128,10 +125,14 @@ namespace FLightFrustumUtils
 
 	// CameraView/CameraProj로 카메라 frustum 8개 꼭짓점을 구하고,
 	// Light 방향의 직교 투영으로 감싸는 행렬을 생성.
-	inline FDirectionalLightViewProj BuildDirectionalLightViewProj(
-		const FGlobalDirectionalLightParams& Light,
-		const FMatrix& CameraView,
-		const FMatrix& CameraProj)
+		inline FDirectionalLightViewProj BuildDirectionalLightViewProj(
+			const FGlobalDirectionalLightParams& Light,
+			const FMatrix& CameraView,
+			const FMatrix& CameraProj
+			// CSM이 아닌 single shadow map에서 카메라 far clip 전체를 감싸면 ortho 범위가 너무 커져
+			// shadow texel 밀도가 낮아집니다. 우선 카메라 주변 일정 거리만 덮습니다.
+			//float ShadowDistance = 100.0f
+			)
 	{
 		FDirectionalLightViewProj Result;
 
@@ -147,6 +148,21 @@ namespace FLightFrustumUtils
 		FVector WorldCorners[8];
 		for (int i = 0; i < 8; ++i)
 			WorldCorners[i] = InvVP.TransformPositionWithW(NDCCorners[i]);
+
+		//if (ShadowDistance > 0.0f)
+		//{
+		//	FMatrix InvView = CameraView.GetInverseFast();
+		//	FVector CameraPos = InvView.TransformPositionWithW(FVector(0.0f, 0.0f, 0.0f));
+		//	for (int i = 4; i < 8; ++i)
+		//	{
+		//		FVector ToCorner = WorldCorners[i] - CameraPos;
+		//		float Dist = ToCorner.Length();
+		//		if (Dist > ShadowDistance && Dist > 0.001f)
+		//		{
+		//			WorldCorners[i] = CameraPos + ToCorner * (ShadowDistance / Dist);
+		//		}
+		//	}
+		//}
 
 		// Frustum 중심
 		FVector Center(0, 0, 0);
@@ -208,6 +224,160 @@ namespace FLightFrustumUtils
 		);
 		return Volume;
 	}
+
+	// ============================================================
+	// Directional Light(2) — 카메라 frustum 기반 Cascaded Shadow Map
+	// ============================================================
+
+	struct FCascadeRange
+	{
+		float NearZ;
+		float FarZ;
+	};
+
+	inline void ComputeCascadeRanges(
+		float NearZ,
+		float FarZ,
+		int32 NumCascades,
+		float Lambda,
+		FCascadeRange* OutRanges)
+	{
+		Lambda = Clamp(Lambda, 0.0f, 1.0f);
+
+		float Prev = NearZ;
+
+		for (int32 i = 0; i < NumCascades; ++i)
+		{
+			float P = static_cast<float>(i + 1) / static_cast<float>(NumCascades);
+
+			float LogSplit = NearZ * powf(FarZ / NearZ, P);
+			float LinSplit = NearZ + (FarZ - NearZ) * P;
+			float Split = LinSplit * (1.0f - Lambda) + LogSplit * Lambda;
+
+			OutRanges[i].NearZ = Prev;
+			OutRanges[i].FarZ = Split;
+
+			Prev = Split;
+		}
+
+		OutRanges[NumCascades - 1].FarZ = FarZ;
+	}
+
+	inline void ComputeCascadeWorldCorners(
+		const FMatrix& CameraView,
+		const FMatrix& CameraProj,
+		float CameraNearZ,
+		float CameraFarZ,
+		float CascadeNearZ,
+		float CascadeFarZ,
+		FVector (&OutCorners)[8])
+	{
+		FMatrix InvVP = (CameraView * CameraProj).GetInverse();
+
+		static const FVector NDCCorners[8] = {
+			FVector(-1, -1, 1), FVector(1, -1, 1), FVector(1,  1, 1), FVector(-1,  1, 1),
+			FVector(-1, -1, 0), FVector(1, -1, 0), FVector(1,  1, 0), FVector(-1,  1, 0),
+		};
+
+		FVector FullCorners[8];
+		for (int i = 0; i < 8; ++i)
+		{
+			FullCorners[i] = InvVP.TransformPositionWithW(NDCCorners[i]);
+		}
+
+		float NearT = (CascadeNearZ - CameraNearZ) / (CameraFarZ - CameraNearZ);
+		float FarT = (CascadeFarZ - CameraNearZ) / (CameraFarZ - CameraNearZ);
+
+		NearT = Clamp(NearT, 0.0f, 1.0f);
+		FarT = Clamp(FarT, 0.0f, 1.0f);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			const FVector& FullNear = FullCorners[i];
+			const FVector& FullFar = FullCorners[i + 4];
+
+			OutCorners[i] = FullNear + (FullFar - FullNear) * NearT;
+			OutCorners[i + 4] = FullNear + (FullFar - FullNear) * FarT;
+		}
+	}
+
+	inline FDirectionalLightViewProj BuildDirectionalLightCascadeViewProj(
+		const FGlobalDirectionalLightParams& Light,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProj,
+		float CameraNearZ,
+		float CameraFarZ,
+		float CascadeNearZ,
+		float CascadeFarZ)
+	{
+		FDirectionalLightViewProj Result;
+
+		FVector WorldCorners[8];
+		ComputeCascadeWorldCorners(
+			CameraView, CameraProj,
+			CameraNearZ, CameraFarZ,
+			CascadeNearZ, CascadeFarZ,
+			WorldCorners);
+
+		FVector Center(0, 0, 0);
+		for (int i = 0; i < 8; ++i)
+		{
+			Center = Center + WorldCorners[i];
+		}
+		Center = Center * (1.0f / 8.0f);
+
+		FVector LightDir = Light.Direction.Normalized();
+		FVector Up = SafeUpVector(LightDir);
+
+		Result.View = FMatrix::LookAtLH(Center - LightDir * 100.0f, Center, Up);
+
+		float MinX = FLT_MAX, MinY = FLT_MAX, MinZ = FLT_MAX;
+		float MaxX = -FLT_MAX, MaxY = -FLT_MAX, MaxZ = -FLT_MAX;
+
+		for (int i = 0; i < 8; ++i)
+		{
+			FVector LS = Result.View.TransformPositionWithW(WorldCorners[i]);
+
+			MinX = (std::min)(MinX, LS.X);
+			MaxX = (std::max)(MaxX, LS.X);
+			MinY = (std::min)(MinY, LS.Y);
+			MaxY = (std::max)(MaxY, LS.Y);
+			MinZ = (std::min)(MinZ, LS.Z);
+			MaxZ = (std::max)(MaxZ, LS.Z);
+		}
+
+		float Width = MaxX - MinX;
+		float Height = MaxY - MinY;
+
+		float CenterX = (MinX + MaxX) * 0.5f;
+		float CenterY = (MinY + MaxY) * 0.5f;
+
+		FMatrix InvLightView = Result.View.GetInverseFast();
+
+		FVector LSCenter(CenterX, CenterY, MinZ);
+		FVector WSCenter = InvLightView.TransformPositionWithW(LSCenter);
+
+		float DepthRange = MaxZ - MinZ;
+
+		Result.View = FMatrix::LookAtLH(
+			WSCenter - LightDir * DepthRange,
+			WSCenter,
+			Up
+		);
+
+		const float DepthPadding = 100.0f;
+
+		Result.Proj = FMatrix::OrthoLH(
+			Width,
+			Height,
+			0.0f,
+			DepthRange + DepthPadding
+		);
+
+		Result.ViewProj = Result.View * Result.Proj;
+		return Result;
+	}
+
 
 	// ============================================================
 	// Ambient Light — frustum 없음 (전방향 균일 조명)

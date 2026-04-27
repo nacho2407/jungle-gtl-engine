@@ -314,11 +314,78 @@ void FScene::SetGrid(float Spacing, int32 HalfLineCount)
 // ============================================================
 // SubmitShadowFrustumDebug — 가시 Light의 frustum 와이어프레임을 DebugDrawQueue에 제출
 // ============================================================
-void FScene::SubmitShadowFrustumDebug(UWorld* World)
+void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 {
 	if (!World) return;
 
 	const FSceneEnvironment& Env = GetEnvironment();
+
+	// Directional Light CSM — cascade별 camera slice + light-space ortho frustum
+	if (Env.HasGlobalDirectionalLight())
+	{
+		static const FColor CascadeColors[MAX_SHADOW_CASCADES] = {
+			FColor(255,   0,   0),
+			FColor(255, 165,   0),
+			FColor(  0, 255,   0),
+			FColor(  0, 255, 255),
+		};
+
+		constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
+		const FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+
+		const float CameraNearZ = Frame.NearClip;
+		const float CameraFarZ = Frame.FarClip;
+		const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
+		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+
+		FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
+		FLightFrustumUtils::ComputeCascadeRanges(
+			CameraNearZ,
+			ShadowFarZ,
+			NumCascades,
+			0.85f,
+			CascadeRanges
+		);
+
+		for (int32 CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
+		{
+			const FColor& Color = CascadeColors[CascadeIndex];
+			const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
+			const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
+
+			FVector CascadeCorners[8];
+			FLightFrustumUtils::ComputeCascadeWorldCorners(
+				Frame.View,
+				Frame.Proj,
+				CameraNearZ,
+				CameraFarZ,
+				CascadeNearZ,
+				CascadeFarZ,
+				CascadeCorners
+			);
+
+			DrawDebugBox(
+				World,
+				CascadeCorners[0], CascadeCorners[1], CascadeCorners[2], CascadeCorners[3],
+				CascadeCorners[4], CascadeCorners[5], CascadeCorners[6], CascadeCorners[7],
+				Color,
+				0.0f
+			);
+
+			const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
+				FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
+					DirectionalParams,
+					Frame.View,
+					Frame.Proj,
+					CameraNearZ,
+					CameraFarZ,
+					CascadeNearZ,
+					CascadeFarZ
+				);
+
+			DrawDebugFrustum(World, DirectionalVP.ViewProj, Color, 0.0f);
+		}
+	}
 
 	// Spot Light frustum — 노란색
 	for (uint32 i = 0; i < Env.GetNumSpotLights(); ++i)
@@ -334,9 +401,11 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World)
 	{
 		const FPointLightParams& Light = Env.GetPointLight(i);
 		if (!Light.bVisible) continue;
-		FLightFrustumUtils::FPointLightFaceViewProj Faces[6];
-		FLightFrustumUtils::BuildPointLightFaceViewProj(Light, Faces);
-		for (int f = 0; f < 6; ++f)
-			DrawDebugFrustum(World, Faces[f].ViewProj, FColor(0, 255, 255), 0.0f);
+
+		for (int FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			auto FaceViewProj = FLightFrustumUtils::BuildPointLightFaceViewProj(Light, FaceIndex);
+			DrawDebugFrustum(World, FaceViewProj.ViewProj, FColor(0, 255, 255), 0.0f);
+		}
 	}
 }

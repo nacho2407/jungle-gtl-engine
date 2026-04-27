@@ -136,7 +136,8 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth)
     // FilterMode 분기
     if (ShadowFilterMode == 0) // Hard
     {
-        return SampleShadowHard(ShadowMapCSM, uvw, fragDepth);
+        float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, uvw, 0).r;
+        return fragDepth < shadowMapDepth ? 0.0f : 1.0f;
     }
     else if (ShadowFilterMode == 1) // PCF
     {
