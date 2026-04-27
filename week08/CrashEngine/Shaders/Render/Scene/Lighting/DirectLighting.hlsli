@@ -1,4 +1,4 @@
-﻿/*
+/*
     DirectLighting.hlsli: scene direct lighting helpers.
 */
 
