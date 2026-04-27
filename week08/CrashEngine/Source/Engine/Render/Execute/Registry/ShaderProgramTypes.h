@@ -18,6 +18,8 @@ enum class EShaderType : uint32
     Billboard,
     HeightFog,
     DepthOnly,
+    ShadowEncodeVSM,
+    ShadowEncodeESM,
     SceneDepth,
     NormalView,
     FXAA,

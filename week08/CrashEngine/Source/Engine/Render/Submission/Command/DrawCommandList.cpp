@@ -6,6 +6,7 @@
 
 #include "Profiling/Stats.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
 #include "Render/RHI/D3D11/Shaders/GraphicsProgram.h"
 
 /*
@@ -190,7 +191,9 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
     {
         Cmd.Shader->Bind(Ctx);
 
-        if (Cmd.Pass == ERenderPass::DepthPre || Cmd.Pass == ERenderPass::ShadowMap)
+        const bool bDisablePSForDepthPre = (Cmd.Pass == ERenderPass::DepthPre);
+        const bool bDisablePSForShadowPCF = (Cmd.Pass == ERenderPass::ShadowMap && GetShadowFilterMethod() == EShadowFilterMethod::PCF);
+        if (bDisablePSForDepthPre || bDisablePSForShadowPCF)
         {
             Ctx->PSSetShader(nullptr, nullptr, 0);
         }

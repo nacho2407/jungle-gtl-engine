@@ -9,10 +9,14 @@
 
 #define SHADOW_FILTER_METHOD_PCF 0
 #define SHADOW_FILTER_METHOD_VSM 1
-#define SHADOW_FILTER_METHOD_PCSS 2
+#define SHADOW_FILTER_METHOD_ESM 2
 
 #ifndef SHADOW_FILTER_METHOD
 #define SHADOW_FILTER_METHOD SHADOW_FILTER_METHOD_PCF
+#endif
+
+#ifndef SHADOW_ESM_EXPONENT
+#define SHADOW_ESM_EXPONENT 80.0f
 #endif
 
 Texture2D g_ShadowMap2D0 : register(t20);
@@ -26,6 +30,18 @@ TextureCube g_ShadowMapCube1 : register(t26);
 TextureCube g_ShadowMapCube2 : register(t27);
 TextureCube g_ShadowMapCube3 : register(t28);
 TextureCube g_ShadowMapCube4 : register(t29);
+
+Texture2D<float2> g_ShadowMoment2D0 : register(t48);
+Texture2D<float2> g_ShadowMoment2D1 : register(t49);
+Texture2D<float2> g_ShadowMoment2D2 : register(t50);
+Texture2D<float2> g_ShadowMoment2D3 : register(t51);
+Texture2D<float2> g_ShadowMoment2D4 : register(t52);
+
+TextureCube<float2> g_ShadowMomentCube0 : register(t53);
+TextureCube<float2> g_ShadowMomentCube1 : register(t54);
+TextureCube<float2> g_ShadowMomentCube2 : register(t55);
+TextureCube<float2> g_ShadowMomentCube3 : register(t56);
+TextureCube<float2> g_ShadowMomentCube4 : register(t57);
 
 float2 ResolveShadowTexelSize(float2 ShadowTexelSize)
 {
@@ -51,6 +67,22 @@ float SampleSpotShadowCmp(int ShadowIndex, float2 ShadowUV, float CompareDepth)
     }
 
     return ShadowFactor;
+}
+
+float2 SampleSpotShadowMoment(int ShadowIndex, float2 ShadowUV)
+{
+    float2 Moments = float2(0.0f, 0.0f);
+    [branch]
+    switch (ShadowIndex)
+    {
+    case 0: Moments = g_ShadowMoment2D0.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    case 1: Moments = g_ShadowMoment2D1.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    case 2: Moments = g_ShadowMoment2D2.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    case 3: Moments = g_ShadowMoment2D3.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    case 4: Moments = g_ShadowMoment2D4.SampleLevel(LinearClampSampler, ShadowUV, 0.0f).rg; break;
+    }
+
+    return Moments;
 }
 
 float OffsetLookupSpotPCF(int ShadowIndex, float2 BaseNDC, float CompareDepth, float2 Offset, float2 ShadowTexelSize)
@@ -89,8 +121,6 @@ float PCF_NvidiaOptimizedSpot(int ShadowIndex, float2 BaseNDC, float CompareDept
     return ShadowCoeff * 0.25f;
 }
 
-
-
 float SamplePointShadowCmp(int ShadowIndex, float3 SampleDir, float CompareDepth)
 {
     float ShadowFactor = 1.0f;
@@ -105,6 +135,22 @@ float SamplePointShadowCmp(int ShadowIndex, float3 SampleDir, float CompareDepth
     }
 
     return ShadowFactor;
+}
+
+float2 SamplePointShadowMoment(int ShadowIndex, float3 SampleDir)
+{
+    float2 Moments = float2(0.0f, 0.0f);
+    [branch]
+    switch (ShadowIndex)
+    {
+    case 0: Moments = g_ShadowMomentCube0.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    case 1: Moments = g_ShadowMomentCube1.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    case 2: Moments = g_ShadowMomentCube2.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    case 3: Moments = g_ShadowMomentCube3.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    case 4: Moments = g_ShadowMomentCube4.SampleLevel(LinearClampSampler, SampleDir, 0.0f).rg; break;
+    }
+
+    return Moments;
 }
 
 float OffsetLookupPointPCF(int ShadowIndex, float3 SampleDir, float3 Tangent, float3 Bitangent, float CompareDepth, float2 Offset, float2 ShadowTexelSize)
@@ -137,23 +183,71 @@ float PCF_NvidiaOptimizedPoint(int ShadowIndex, float3 SampleDir, float CompareD
     return ShadowCoeff * 0.25f;
 }
 
+float ComputeVSMVisibility(float2 Moments, float CompareDepth)
+{
+    float Mean = Moments.x;
+    float Variance = max(Moments.y - Mean * Mean, 1e-5f);
+    float Delta = CompareDepth - Mean;
+    float PMax = Variance / (Variance + Delta * Delta);
+    float Lit = (CompareDepth <= Mean) ? 1.0f : PMax;
+    return saturate(Lit);
+}
+
+float ComputeESMVisibility(float EncodedMoment, float CompareDepth)
+{
+    float Receiver = exp(-SHADOW_ESM_EXPONENT * CompareDepth);
+    return saturate(Receiver / max(EncodedMoment, 1e-5f));
+}
+
+float FilterSpotShadowVSM(int ShadowIndex, float2 BaseNDC, float CompareDepth)
+{
+    float2 BaseUV = BaseNDC * 0.5f + 0.5f;
+    BaseUV.y = 1.0f - BaseUV.y;
+
+    if (BaseUV.x < 0.0f || BaseUV.x > 1.0f || BaseUV.y < 0.0f || BaseUV.y > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    return ComputeVSMVisibility(SampleSpotShadowMoment(ShadowIndex, BaseUV), CompareDepth);
+}
+
+float FilterPointShadowVSM(int ShadowIndex, float3 SampleDir, float CompareDepth)
+{
+    return ComputeVSMVisibility(SamplePointShadowMoment(ShadowIndex, SampleDir), CompareDepth);
+}
+
+float FilterSpotShadowESM(int ShadowIndex, float2 BaseNDC, float CompareDepth)
+{
+    float2 BaseUV = BaseNDC * 0.5f + 0.5f;
+    BaseUV.y = 1.0f - BaseUV.y;
+
+    if (BaseUV.x < 0.0f || BaseUV.x > 1.0f || BaseUV.y < 0.0f || BaseUV.y > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    const float EncodedMoment = SampleSpotShadowMoment(ShadowIndex, BaseUV).x;
+    return ComputeESMVisibility(EncodedMoment, CompareDepth);
+}
+
+float FilterPointShadowESM(int ShadowIndex, float3 SampleDir, float CompareDepth)
+{
+    const float EncodedMoment = SamplePointShadowMoment(ShadowIndex, SampleDir).x;
+    return ComputeESMVisibility(EncodedMoment, CompareDepth);
+}
+
 float FilterSpotShadow(int ShadowIndex, float2 ShadowVector, float CompareDepth, float4 PixelPos, float2 ShadowTexelSize)
 {
     float2 BaseNDC = ShadowVector;
     float2 ResolvedShadowTexelSize = ResolveShadowTexelSize(ShadowTexelSize);
 
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
-#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
-    // TODO: add VSM implementation.
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
-#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCSS
-    // TODO: add PCSS implementation.
-    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
+#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
+    return FilterSpotShadowVSM(ShadowIndex, BaseNDC, CompareDepth);
+#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
+    return FilterSpotShadowESM(ShadowIndex, BaseNDC, CompareDepth);
 #else
-    float2 BaseUV = BaseNDC * 0.5f + 0.5f;
-    BaseUV.y = 1.0f - BaseUV.y;
-    return SampleSpotShadowCmp(ShadowIndex, BaseUV, CompareDepth);
+    return PCF_NvidiaOptimizedSpot(ShadowIndex, BaseNDC, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #endif
 }
 
@@ -162,16 +256,12 @@ float FilterPointShadow(int ShadowIndex, float3 ShadowVector, float CompareDepth
     float3 SampleDir = ShadowVector;
     float2 ResolvedShadowTexelSize = ResolveShadowTexelSize(ShadowTexelSize);
 
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
-#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
-    // TODO: add VSM implementation.
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
-#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCSS
-    // TODO: add PCSS implementation.
-    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
+#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
+    return FilterPointShadowVSM(ShadowIndex, SampleDir, CompareDepth);
+#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
+    return FilterPointShadowESM(ShadowIndex, SampleDir, CompareDepth);
 #else
-    return SamplePointShadowCmp(ShadowIndex, SampleDir, CompareDepth);
+    return PCF_NvidiaOptimizedPoint(ShadowIndex, SampleDir, CompareDepth, PixelPos, ResolvedShadowTexelSize);
 #endif
 }
 

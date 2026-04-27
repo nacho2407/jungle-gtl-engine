@@ -22,6 +22,14 @@ public:
     { 
         return (Index < ESystemTexSlot::MaxShadowMapsCubeCount) ? ShadowResourcesCube[Index].SRVCube : nullptr; 
     }
+    ID3D11ShaderResourceView* GetMomentSRV2D(uint32 Index) const
+    {
+        return (Index < ESystemTexSlot::MaxShadowMaps2DCount) ? ShadowResources2D[Index].MomentSRV2D : nullptr;
+    }
+    ID3D11ShaderResourceView* GetMomentSRVCube(uint32 Index) const
+    {
+        return (Index < ESystemTexSlot::MaxShadowMapsCubeCount) ? ShadowResourcesCube[Index].MomentSRVCube : nullptr;
+    }
     ID3D11ShaderResourceView* GetShadowPreviewSRV(uint32 Index, bool bIsCube, uint32 Face, ID3D11DeviceContext* Context);
     uint32 GetShadowMapSize() const { return ShadowMapSize; }
     void SetShadowMapSize(uint32 InShadowMapSize);
@@ -32,18 +40,30 @@ private:
 
     struct FShadowResource2D
     {
+        // 일반적인 Shadow Map용
         ID3D11Texture2D*          Texture2D   = nullptr;
         ID3D11DepthStencilView*   DSV2D       = nullptr;
         ID3D11ShaderResourceView* SRV2D       = nullptr;
         ID3D11ShaderResourceView* PreviewSRV  = nullptr;
+
+		// VSM용
+		ID3D11Texture2D*          MomentTexture2D = nullptr;
+        ID3D11RenderTargetView*   MomentRTV2D     = nullptr;
+        ID3D11ShaderResourceView* MomentSRV2D     = nullptr;
     };
     FShadowResource2D ShadowResources2D[ESystemTexSlot::MaxShadowMaps2DCount];
     struct FShadowResourceCube
     {
+        // 일반적인 Shadow Map용
         ID3D11Texture2D*          TextureCube = nullptr;
         ID3D11DepthStencilView*   DSVCubes[6] = {};
         ID3D11ShaderResourceView* SRVCube     = nullptr;
         ID3D11ShaderResourceView* PreviewSRVs[6] = {};
+
+		// VSM용
+		ID3D11Texture2D*          MomentTextureCube = nullptr;
+        ID3D11RenderTargetView*   MomentRTVCubes[6] = {};
+        ID3D11ShaderResourceView* MomentSRVCube     = nullptr;
     };
     FShadowResourceCube ShadowResourcesCube[ESystemTexSlot::MaxShadowMapsCubeCount];
     
