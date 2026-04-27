@@ -265,149 +265,68 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	Device->CreateShaderResourceView(SpotShadowDataBuffer, &SBSRVDesc, &SpotShadowDataSRV);
 }
 
-void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 Resolution, uint32 PointLightCount)
+void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSize, uint32 MaxLights)
 {
-	if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == PointLightCount && PointLightShadowTexture)
+	if (PointAtlasResolution == AtlasSize && PointLightShadowDataCapacity == MaxLights && PointAtlasTexture)
 		return;
-	// 매 프레임 재생성
 
-	// 기존 리소스 해제
-	if (PointLightShadowSRV)
-	{
-		PointLightShadowSRV->Release();
-		PointLightShadowSRV = nullptr;
-	}
+	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
+	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
+	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
+	PointAtlasResolution = 0;
 
-	if (PointLightSliceSRVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-		{
-			if (PointLightSliceSRVs[i]) PointLightSliceSRVs[i]->Release();
-		}
-		delete[] PointLightSliceSRVs;
-		PointLightSliceSRVs = nullptr;
-	}
-
-	if (PointLightShadowDSVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount; ++i)
-		{
-			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-			{
-				if (PointLightShadowDSVs[i * 6 + FaceIndex])
-				{
-					PointLightShadowDSVs[i * 6 + FaceIndex]->Release();
-				}
-			}
-		}
-		delete[] PointLightShadowDSVs;
-		PointLightShadowDSVs = nullptr;
-	}
-
-	if (PointLightShadowTexture)
-	{
-		PointLightShadowTexture->Release();
-		PointLightShadowTexture = nullptr;
-	}
-	PointLightShadowTextureCount = 0;
-
-	if (PointLightShadowDataSRV)
-	{
-		PointLightShadowDataSRV->Release();
-		PointLightShadowDataSRV = nullptr;
-	}
-	if (PointLightShadowDataBuffer)
-	{
-		PointLightShadowDataBuffer->Release();
-		PointLightShadowDataBuffer = nullptr;
-	}
+	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV    = nullptr; }
+	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
 	PointLightShadowDataCapacity = 0;
 
-	if (PointLightCount == 0)
-	{
+	if (AtlasSize == 0 || MaxLights == 0)
 		return;
-	}
 
-	PointLightShadowTextureResolution = Resolution;
+	PointAtlasResolution = AtlasSize;
 
+	// Texture2D atlas (R32_TYPELESS — depth + SRV)
 	D3D11_TEXTURE2D_DESC TexDesc = {};
-	TexDesc.Width = Resolution;
-	TexDesc.Height = Resolution;
-	TexDesc.MipLevels = 1;
-	TexDesc.ArraySize = PointLightCount * 6;
-	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	TexDesc.Width            = AtlasSize;
+	TexDesc.Height           = AtlasSize;
+	TexDesc.MipLevels        = 1;
+	TexDesc.ArraySize        = 1;
+	TexDesc.Format           = DXGI_FORMAT_R32_TYPELESS;
 	TexDesc.SampleDesc.Count = 1;
-	TexDesc.Usage = D3D11_USAGE_DEFAULT;
-	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	TexDesc.Usage            = D3D11_USAGE_DEFAULT;
+	TexDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &PointLightShadowTexture);
-	if (FAILED(hr)) assert(false);
+	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &PointAtlasTexture))) { assert(false); return; }
 
-	PointLightShadowTextureCount = PointLightCount;
-	PointLightShadowDSVs = new ID3D11DepthStencilView *[PointLightCount * 6]();
-	for (uint32 PointLightIndex = 0; PointLightIndex < PointLightCount; ++PointLightIndex)
-	{
-		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-		{
-			uint32 SliceIndex = PointLightIndex * 6 + FaceIndex;
-
-			D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
-			DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
-			DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-			DSVDesc.Texture2DArray.MipSlice = 0;
-			DSVDesc.Texture2DArray.FirstArraySlice = SliceIndex;
-			DSVDesc.Texture2DArray.ArraySize = 1;
-
-			Device->CreateDepthStencilView(PointLightShadowTexture, &DSVDesc, &PointLightShadowDSVs[SliceIndex]);
-		}
-	}
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+	DSVDesc.Format             = DXGI_FORMAT_D32_FLOAT;
+	DSVDesc.ViewDimension      = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DSVDesc.Texture2D.MipSlice = 0;
+	Device->CreateDepthStencilView(PointAtlasTexture, &DSVDesc, &PointAtlasDSV);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	SRVDesc.Texture2DArray.MostDetailedMip = 0;
-	SRVDesc.Texture2DArray.MipLevels = 1;
-	SRVDesc.Texture2DArray.FirstArraySlice = 0;
-	SRVDesc.Texture2DArray.ArraySize = PointLightCount * 6;
-
-	Device->CreateShaderResourceView(PointLightShadowTexture, &SRVDesc, &PointLightShadowSRV);
-
-	PointLightSliceSRVs = new ID3D11ShaderResourceView*[PointLightCount * 6]();
-	for (uint32 PointLightIndex = 0; PointLightIndex < PointLightCount; ++PointLightIndex)
-	{
-		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
-		{
-			uint32 Slot = PointLightIndex * 6 + FaceIndex;
-			D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
-			SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-			SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-			SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
-			SliceSRVDesc.Texture2DArray.MipLevels = 1;
-			SliceSRVDesc.Texture2DArray.FirstArraySlice = Slot;
-			SliceSRVDesc.Texture2DArray.ArraySize = 1;
-			Device->CreateShaderResourceView(PointLightShadowTexture, &SliceSRVDesc, &PointLightSliceSRVs[Slot]);
-		}
-	}
-
-	PointLightShadowDataCapacity = PointLightCount;
+	SRVDesc.Format                    = DXGI_FORMAT_R32_FLOAT;
+	SRVDesc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+	SRVDesc.Texture2D.MipLevels       = 1;
+	Device->CreateShaderResourceView(PointAtlasTexture, &SRVDesc, &PointAtlasSRV);
 
 	// StructuredBuffer<FPointShadowDataGPU>
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.ByteWidth = sizeof(FPointShadowDataGPU) * PointLightCount;
-	BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	BufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	BufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
+	PointLightShadowDataCapacity = MaxLights;
 
+	D3D11_BUFFER_DESC BufferDesc = {};
+	BufferDesc.ByteWidth           = sizeof(FPointShadowDataGPU) * MaxLights;
+	BufferDesc.Usage               = D3D11_USAGE_DYNAMIC;
+	BufferDesc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
+	BufferDesc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
+	BufferDesc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
 	Device->CreateBuffer(&BufferDesc, nullptr, &PointLightShadowDataBuffer);
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC BufferSRVDesc = {};
-	BufferSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	BufferSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	BufferSRVDesc.Buffer.NumElements = PointLightCount;
-
-	Device->CreateShaderResourceView(PointLightShadowDataBuffer, &BufferSRVDesc, &PointLightShadowDataSRV);
+	D3D11_SHADER_RESOURCE_VIEW_DESC BufSRVDesc = {};
+	BufSRVDesc.Format             = DXGI_FORMAT_UNKNOWN;
+	BufSRVDesc.ViewDimension      = D3D11_SRV_DIMENSION_BUFFER;
+	BufSRVDesc.Buffer.NumElements = MaxLights;
+	Device->CreateShaderResourceView(PointLightShadowDataBuffer, &BufSRVDesc, &PointLightShadowDataSRV);
 }
 
 // ============================================================
@@ -591,94 +510,64 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resol
 	Device->CreateShaderResourceView(SpotVSMTexture, &SRVDesc, &SpotVSMSRV);
 }
 
-void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount)
+void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize)
 {
-	if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == CubeCount && PointVSMTexture)
+	if (PointAtlasResolution == AtlasSize && PointVSMTexture)
 		return;
 
-	// 기존 Point VSM 리소스 해제
-	if (PointVSMSRV) { PointVSMSRV->Release(); PointVSMSRV = nullptr; }
-	if (PointVSMRTVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-			if (PointVSMRTVs[i]) PointVSMRTVs[i]->Release();
-		delete[] PointVSMRTVs;
-		PointVSMRTVs = nullptr;
-	}
-	if (PointVSMDSVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-			if (PointVSMDSVs[i]) PointVSMDSVs[i]->Release();
-		delete[] PointVSMDSVs;
-		PointVSMDSVs = nullptr;
-	}
-	if (PointVSMTexture) { PointVSMTexture->Release(); PointVSMTexture = nullptr; }
+	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
+	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
+	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
+	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
 	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
 
-	if (CubeCount == 0) return;
+	if (AtlasSize == 0) return;
 
-	// Moment Texture: R32G32_FLOAT, Texture2DArray
+	// Moment atlas: R32G32_FLOAT Texture2D
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
-	MomentDesc.Width  = Resolution;
-	MomentDesc.Height = Resolution;
-	MomentDesc.MipLevels = 1;
-	MomentDesc.ArraySize = CubeCount * 6;
-	MomentDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+	MomentDesc.Width            = AtlasSize;
+	MomentDesc.Height           = AtlasSize;
+	MomentDesc.MipLevels        = 1;
+	MomentDesc.ArraySize        = 1;
+	MomentDesc.Format           = DXGI_FORMAT_R32G32_FLOAT;
 	MomentDesc.SampleDesc.Count = 1;
-	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
-	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	MomentDesc.MiscFlags = 0;
-
+	MomentDesc.Usage            = D3D11_USAGE_DEFAULT;
+	MomentDesc.BindFlags        = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &PointVSMTexture))) return;
 
-	// Depth Texture: D32_FLOAT, TextureCubeArray
+	// Depth atlas: D32_FLOAT Texture2D
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
-	DepthDesc.Width  = Resolution;
-	DepthDesc.Height = Resolution;
-	DepthDesc.MipLevels = 1;
-	DepthDesc.ArraySize = CubeCount * 6;
-	DepthDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	DepthDesc.Width            = AtlasSize;
+	DepthDesc.Height           = AtlasSize;
+	DepthDesc.MipLevels        = 1;
+	DepthDesc.ArraySize        = 1;
+	DepthDesc.Format           = DXGI_FORMAT_D32_FLOAT;
 	DepthDesc.SampleDesc.Count = 1;
-	DepthDesc.Usage  = D3D11_USAGE_DEFAULT;
-	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
+	DepthDesc.Usage            = D3D11_USAGE_DEFAULT;
+	DepthDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL;
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &PointVSMDepthTexture)))
 	{
 		PointVSMTexture->Release(); PointVSMTexture = nullptr;
 		return;
 	}
 
-	// Per-face RTV + DSV
-	const uint32 TotalFaces = CubeCount * 6;
-	PointVSMRTVs = new ID3D11RenderTargetView*[TotalFaces]();
-	PointVSMDSVs = new ID3D11DepthStencilView*[TotalFaces]();
-	for (uint32 i = 0; i < TotalFaces; ++i)
-	{
-		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
-		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-		RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-		RTVDesc.Texture2DArray.MipSlice = 0;
-		RTVDesc.Texture2DArray.FirstArraySlice = i;
-		RTVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateRenderTargetView(PointVSMTexture, &RTVDesc, &PointVSMRTVs[i]);
+	D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+	RTVDesc.Format             = DXGI_FORMAT_R32G32_FLOAT;
+	RTVDesc.ViewDimension      = D3D11_RTV_DIMENSION_TEXTURE2D;
+	RTVDesc.Texture2D.MipSlice = 0;
+	Device->CreateRenderTargetView(PointVSMTexture, &RTVDesc, &PointVSMRTV);
 
-		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
-		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		DSVDesc.Texture2DArray.MipSlice = 0;
-		DSVDesc.Texture2DArray.FirstArraySlice = i;
-		DSVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateDepthStencilView(PointVSMDepthTexture, &DSVDesc, &PointVSMDSVs[i]);
-	}
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+	DSVDesc.Format             = DXGI_FORMAT_D32_FLOAT;
+	DSVDesc.ViewDimension      = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DSVDesc.Texture2D.MipSlice = 0;
+	Device->CreateDepthStencilView(PointVSMDepthTexture, &DSVDesc, &PointVSMDSV);
 
-	// SRV — Texture2DArray (matches hard/PCF path binding)
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	SRVDesc.Texture2DArray.MostDetailedMip = 0;
-	SRVDesc.Texture2DArray.MipLevels = 1;
-	SRVDesc.Texture2DArray.FirstArraySlice = 0;
-	SRVDesc.Texture2DArray.ArraySize = CubeCount * 6;
+	SRVDesc.Format                    = DXGI_FORMAT_R32G32_FLOAT;
+	SRVDesc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+	SRVDesc.Texture2D.MipLevels       = 1;
 	Device->CreateShaderResourceView(PointVSMTexture, &SRVDesc, &PointVSMSRV);
 }
 
@@ -714,23 +603,11 @@ void FShadowMapResources::ReleaseVSM()
 	if (SpotVSMTexture) { SpotVSMTexture->Release(); SpotVSMTexture = nullptr; }
 	if (SpotVSMDepthTexture) { SpotVSMDepthTexture->Release(); SpotVSMDepthTexture = nullptr; }
 
-	// Point VSM
-	if (PointVSMSRV) { PointVSMSRV->Release(); PointVSMSRV = nullptr; }
-	if (PointVSMRTVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-			if (PointVSMRTVs[i]) PointVSMRTVs[i]->Release();
-		delete[] PointVSMRTVs;
-		PointVSMRTVs = nullptr;
-	}
-	if (PointVSMDSVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-			if (PointVSMDSVs[i]) PointVSMDSVs[i]->Release();
-		delete[] PointVSMDSVs;
-		PointVSMDSVs = nullptr;
-	}
-	if (PointVSMTexture) { PointVSMTexture->Release(); PointVSMTexture = nullptr; }
+	// Point VSM Atlas
+	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
+	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
+	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
+	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
 	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
 }
 
@@ -770,27 +647,10 @@ void FShadowMapResources::Release()
 	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
 	SpotAtlasPageCount = 0;
 
-	if (PointLightShadowSRV) { PointLightShadowSRV->Release(); PointLightShadowSRV = nullptr; }
-	if (PointLightSliceSRVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-		{
-			if (PointLightSliceSRVs[i]) PointLightSliceSRVs[i]->Release();
-		}
-		delete[] PointLightSliceSRVs;
-		PointLightSliceSRVs = nullptr;
-	}
-	if (PointLightShadowDSVs)
-	{
-		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
-		{
-			if (PointLightShadowDSVs[i]) PointLightShadowDSVs[i]->Release();
-		}
-		delete[] PointLightShadowDSVs;
-		PointLightShadowDSVs = nullptr;
-	}
-	if (PointLightShadowTexture) { PointLightShadowTexture->Release(); PointLightShadowTexture = nullptr; }
-	PointLightShadowTextureCount = 0;
+	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
+	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
+	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
+	PointAtlasResolution = 0;
 
 	// StructuredBuffers
 	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }

@@ -56,7 +56,7 @@ cbuffer ShadowBuffer : register(b5)
 Texture2DArray    ShadowMapCSM       : register(t21);
 // t22: Spot Light Atlas (page = slice, 내부 UV rect packing)
 Texture2DArray    ShadowMapSpotAtlas : register(t22);
-// t23
-Texture2DArray  ShadowMapPointLightTextureArray : register(t23);
+// t23: Point Light Atlas (Texture2D, viewport-packed faces)
+Texture2D  ShadowMapPointLightAtlas : register(t23);
 
 #endif // CONSTANT_BUFFERS_HLSL

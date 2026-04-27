@@ -122,18 +122,18 @@ struct FSpotShadowDataGPU
 static_assert(sizeof(FSpotShadowDataGPU) == 96, "FSpotShadowDataGPU size mismatch with HLSL");
 static_assert(sizeof(FSpotShadowDataGPU) % 16 == 0);
 
-// Point Light: 6면 ViewProj + cubemap array index
+// Point Light: 6면 ViewProj + per-face atlas UV rect
 // FMatrix가 __m256 포함 → 32B alignment → 컴파일러가 구조체 끝을 32B 경계로 패딩
 struct FPointShadowDataGPU
 {
-	FMatrix  FaceViewProj[6];    // 384B | offset  0
-	float    NearZ;              //   4B | offset 384
-	float    FarZ;               //   4B | offset 388
-	uint32   ArrayIndex;         //   4B | offset 392  (Texture2DArray first slice = ArrayIndex * 6)
-	float    ShadowBias;         //   4B | offset 396
-	float    ShadowSharpen;      //   4B | offset 400
-	float    ShadowSlopeBias;    //   4B | offset 404
-	float    _pad[2];            //   8B | offset 408  → 합계 416B (32B aligned)
+	FMatrix  FaceViewProj[6];          // 384B | offset   0
+	FVector4 FaceAtlasScaleBias[6];    //  96B | offset 384  (xy=scale, zw=bias, one per face)
+	float    NearZ;                    //   4B | offset 480
+	float    FarZ;                     //   4B | offset 484
+	float    ShadowBias;               //   4B | offset 488
+	float    ShadowSharpen;            //   4B | offset 492
+	float    ShadowSlopeBias;          //   4B | offset 496
+	float    _pad[3];                  //  12B | offset 500  → 합계 512B (32B aligned)
 };
 static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);
 static_assert(sizeof(FPointShadowDataGPU) % 32 == 0, "FPointShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");

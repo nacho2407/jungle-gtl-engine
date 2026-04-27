@@ -17,9 +17,9 @@
 
 	t21: Directional CSM     — Texture2DArray (MAX_SHADOW_CASCADES slices)
 	t22: Spot Light Atlas    — Texture2DArray (page 단위, 동적 slice 수)
-	t23: Point Light CubeMap — TextureCubeArray (동적 cube 수)
+	t23: Point Light Atlas   — Texture2D (viewport-packed cube faces)
 	t24: StructuredBuffer<FSpotShadowDataGPU>  (per-spot 행렬 + atlas rect)
-	t25: StructuredBuffer<FPointShadowDataGPU> (per-point 6면 행렬)
+	t25: StructuredBuffer<FPointShadowDataGPU> (per-point 6면 행렬 + atlas rect)
 */
 struct FShadowMapResources
 {
@@ -40,13 +40,11 @@ struct FShadowMapResources
 	uint32 SpotAtlasResolution = 4096;
 	uint32 SpotAtlasPageCount  = 0;
 
-	// ── Point Light CubeMap (t23) ──
-	ID3D11Texture2D*          PointLightShadowTexture = nullptr;
-	ID3D11DepthStencilView**  PointLightShadowDSVs    = nullptr;
-	ID3D11ShaderResourceView* PointLightShadowSRV     = nullptr;
-	ID3D11ShaderResourceView** PointLightSliceSRVs    = nullptr;  // [PointIndex*6 + FaceIndex] — ImGui 디버그용
-	uint32 PointLightShadowTextureResolution = 1024;
-	uint32 PointLightShadowTextureCount      = 0;
+	// ── Point Light Atlas (t23) ──
+	ID3D11Texture2D*          PointAtlasTexture   = nullptr;
+	ID3D11DepthStencilView*   PointAtlasDSV       = nullptr;
+	ID3D11ShaderResourceView* PointAtlasSRV       = nullptr;
+	uint32                    PointAtlasResolution = 0;
 
 	// ── Per-light StructuredBuffers (t24, t25) ──
 	ID3D11Buffer*             SpotShadowDataBuffer  = nullptr;
@@ -75,28 +73,28 @@ struct FShadowMapResources
 	ID3D11Texture2D*          SpotVSMDepthTexture = nullptr;
 	ID3D11DepthStencilView**  SpotVSMDSVs = nullptr;
 
-	// Point VSM
-	ID3D11Texture2D*          PointVSMTexture = nullptr;
-	ID3D11RenderTargetView**  PointVSMRTVs = nullptr;
-	ID3D11ShaderResourceView* PointVSMSRV = nullptr;
+	// Point VSM Atlas
+	ID3D11Texture2D*          PointVSMTexture      = nullptr;
+	ID3D11RenderTargetView*   PointVSMRTV          = nullptr;
+	ID3D11ShaderResourceView* PointVSMSRV          = nullptr;
 	ID3D11Texture2D*          PointVSMDepthTexture = nullptr;
-	ID3D11DepthStencilView**  PointVSMDSVs = nullptr;
+	ID3D11DepthStencilView*   PointVSMDSV          = nullptr;
 
-	bool IsCSMValid()   const { return CSMTexture != nullptr; }
-	bool IsSpotValid()  const { return SpotAtlasTexture != nullptr && SpotAtlasPageCount > 0; }
-	bool IsPointLightValid() const { return PointLightShadowTexture != nullptr && PointLightShadowTextureCount > 0; }
+	bool IsCSMValid()        const { return CSMTexture    != nullptr; }
+	bool IsSpotValid()       const { return SpotAtlasTexture != nullptr && SpotAtlasPageCount > 0; }
+	bool IsPointLightValid() const { return PointAtlasTexture != nullptr; }
 
-	bool IsCSMVSMValid()   const { return CSMVSMTexture != nullptr; }
-	bool IsSpotVSMValid()  const { return SpotVSMTexture != nullptr; }
+	bool IsCSMVSMValid()   const { return CSMVSMTexture  != nullptr; }
+	bool IsSpotVSMValid()  const { return SpotVSMTexture  != nullptr; }
 	bool IsPointVSMValid() const { return PointVSMTexture != nullptr; }
 
 	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
-	void EnsurePointLightTexture(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+	void EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSize, uint32 MaxLights);
 
 	void EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
-	void EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+	void EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize);
 
 	void ReleaseVSM();
 	void Release();

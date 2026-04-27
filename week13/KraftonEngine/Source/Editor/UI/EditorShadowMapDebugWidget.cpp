@@ -160,40 +160,32 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 	}
 	// ════════════════════════════════════════
-	// Point (t23)
+	// Point Atlas (t23)
 	// ════════════════════════════════════════
 	else if (SelectedTab == 2)
 	{
 		if (!SR.IsPointLightValid())
 		{
-			ImGui::TextDisabled("Point: not allocated");
+			ImGui::TextDisabled("Point Atlas: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Resolution: %u x %u, Lights: %u", SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureCount);
+		ImGui::Text("Atlas: %u x %u", SR.PointAtlasResolution, SR.PointAtlasResolution);
 
-		if (PointLightIndex >= (int32)SR.PointLightShadowTextureCount)
-			PointLightIndex = 0;
+		ImGui::SetNextItemWidth(180.0f);
+		ImGui::SliderFloat("Brightness##pt", &PointDepthBrightness, 0.1f, 8.0f, "%.2fx");
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Reset##pt")) PointDepthBrightness = 1.0f;
 
-		ImGui::SetNextItemWidth(100.0f);
-		ImGui::SliderInt("Light", &PointLightIndex, 0, (int32)SR.PointLightShadowTextureCount - 1);
-
-		// Face 선택 (6방향)
-		for (int32 i = 0; i < 6; ++i)
+		if (SR.PointAtlasSRV)
 		{
-			if (i > 0) ImGui::SameLine();
-			ImGui::RadioButton(FaceNames[i], &PointFaceIndex, i);
-		}
-
-		int32 Slot = PointLightIndex * 6 + PointFaceIndex;
-		if (SR.PointLightSliceSRVs && SR.PointLightSliceSRVs[Slot])
-		{
+			float B = PointDepthBrightness;
 			ImGui::Image(
-				(ImTextureID)SR.PointLightSliceSRVs[Slot],
+				(ImTextureID)SR.PointAtlasSRV,
 				ImVec2(PreviewSize, PreviewSize),
 				ImVec2(0, 0), ImVec2(1, 1),
-				ImVec4(1, 1, 1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1)
+				ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
 			);
 		}
 	}
