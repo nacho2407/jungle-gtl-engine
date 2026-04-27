@@ -1,5 +1,5 @@
 ﻿#include "ShadowAtlasQuadTree.h"
-#include "Render/Types/ForwardLightData.h"
+#include "Render/Types/GlobalLightParams.h"
 
 #include <algorithm>
 
@@ -48,13 +48,13 @@ void FShadowAtlasQuadTree::Init(float InAtlasSize, float InMinShadowMapResolutio
 }
 
 // Unused for now
-FAtlasRegion FShadowAtlasQuadTree::Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
+FAtlasRegion FShadowAtlasQuadTree::Add(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
 	if (Nodes.empty()) return { 0, 0, 0, false };
 	float RequestedSize = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
 	return AllocateNode(0, RequestedSize);
 }
 
-void FShadowAtlasQuadTree::AddToBatch(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
+void FShadowAtlasQuadTree::AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
 	Batch.push_back({InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H)});
 }
 
@@ -156,9 +156,10 @@ bool FShadowAtlasQuadTree::Split(int32 Idx) {
 	return true;
 }
 
-float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
-	if (InLightInfo.bCastShadow == false) return 0.f;
-	FVector4 Color		 = InLightInfo.Color;
+float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
+	if (InLightInfo.bCastShadows == false) return 0.f;
+
+	FVector4 Color		 = InLightInfo.LightColor;
 	float   r_sphere;
 	FVector c_sphere;
 
@@ -179,7 +180,7 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FLightInfo& InLightInfo, FV
 	auto A_screen = 3.1415925f * r_pixel * r_pixel;
 
 	float desired_res = sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity;
-	desired_res = desired_res > AtlasSize ? AtlasSize : desired_res;
+	//desired_res = desired_res > AtlasSize ? AtlasSize : desired_res;
 	desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
 	return desired_res;
 }
