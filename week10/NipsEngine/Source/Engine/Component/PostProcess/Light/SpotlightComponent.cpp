@@ -31,7 +31,7 @@ FMatrix USpotlightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamVi
 	auto ToPost = [&](const FVector& P)
 		{
 			FVector4 Clip = FVector4(P, 1.0f) * CamViewProj;
-			if (MathUtil::Abs(Clip.W) < MathUtil::Epsilon)
+			if (Clip.W < MathUtil::Epsilon)
 			{
 				return FVector::ZeroVector;
 			}
