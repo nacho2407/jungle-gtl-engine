@@ -92,7 +92,6 @@ namespace EUberLitDefines
 	inline const D3D_SHADER_MACRO Gouraud[] = { {"LIGHTING_MODEL_GOURAUD", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Lambert[] = { {"LIGHTING_MODEL_LAMBERT", "1"}, {nullptr, nullptr} };
 	inline const D3D_SHADER_MACRO Phong[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
-	inline const D3D_SHADER_MACRO Toon[] = { {"LIGHTING_MODEL_TOON", "1"}, {nullptr, nullptr} };
 }
 
 // 셰이더별 저장된 매크로 정보 (핫 리로드 시 재컴파일에 사용)
