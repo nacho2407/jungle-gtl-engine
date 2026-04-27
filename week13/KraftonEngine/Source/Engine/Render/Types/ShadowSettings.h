@@ -28,6 +28,11 @@ public:
 	void ResetResolution() { Resolution.reset(); }
 	std::optional<uint32> GetResolution() const { return Resolution; }
 
+	// --- Directional Shadow Distance ---
+	void SetShadowDistance(float Distance) { ShadowDistance = Distance; }
+	void ResetShadowDistance() { ShadowDistance.reset(); }
+	std::optional<float> GetShadowDistance() const { return ShadowDistance; }
+
 	// --- Bias ---
 	void SetBias(float Bias) { ShadowBias = Bias; }
 	void ResetBias() { ShadowBias.reset(); }
@@ -52,6 +57,7 @@ public:
 	void ResetAll()
 	{
 		Resolution.reset();
+		ShadowDistance.reset();
 		ShadowBias.reset();
 		ShadowSlopeBias.reset();
 		ShadowSharpen.reset();
@@ -60,12 +66,14 @@ public:
 
 	// 기본값 상수
 	static constexpr uint32 kDefaultResolution = 2048;
+	static constexpr float  kDefaultShadowDistance = 300.0f;
 	static constexpr float  kDefaultBias = 0.005f;
 	static constexpr float  kDefaultSlopeBias = 0.005f;
 	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
 
 	// 오버라이드 또는 기본값 반환 (편의 함수)
 	uint32            GetEffectiveResolution() const { return Resolution.value_or(kDefaultResolution); }
+	float             GetEffectiveShadowDistance() const { return ShadowDistance.value_or(kDefaultShadowDistance); }
 	float             GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
@@ -73,6 +81,7 @@ public:
 
 private:
 	std::optional<uint32> Resolution;
+	std::optional<float>  ShadowDistance;
 	std::optional<float>  ShadowBias;
 	std::optional<float>  ShadowSlopeBias;
 	std::optional<float>  ShadowSharpen;

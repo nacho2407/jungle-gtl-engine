@@ -4,6 +4,7 @@
 #include "Profiling/Stats.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "Render/Types/LightFrustumUtils.h"
+#include "Render/Types/ShadowSettings.h"
 #include <algorithm>
 
 void FScene::EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
@@ -339,7 +340,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 
 		const float CameraNearZ = Frame.NearClip;
 		const float CameraFarZ = Frame.FarClip;
-		const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
+		const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
 		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 
 		FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];

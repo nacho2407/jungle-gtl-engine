@@ -374,7 +374,7 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const float CameraNearZ = Ctx.Frame.NearClip;
 	const float CameraFarZ = Ctx.Frame.FarClip;
 
-	const float ShadowDistance = (CameraFarZ < 300.0f) ? CameraFarZ : 300.0f;
+	const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 
 	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
