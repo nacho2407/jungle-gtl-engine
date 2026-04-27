@@ -4,19 +4,19 @@
 
 cbuffer StaticMeshBuffer : register(b2)
 {
-    float3 AmbientColor;    // Ka
+    float3 AmbientColor; // Ka
     float padding0;
     
-    float3 DiffuseColor;    // Kd
+    float3 DiffuseColor; // Kd
     float padding1;
     
-    float3 SpecularColor;   // Ks
+    float3 SpecularColor; // Ks
     float Shininess; // Ns    
     
     float2 ScrollUV;
     float2 padding2;
     
-    float3 EmissiveColor;    // emissive glow color; non-zero means emissive
+    float3 EmissiveColor; // emissive glow color; non-zero means emissive
     float padding3;
 };
 
@@ -45,24 +45,44 @@ Texture2D SpecularMap : register(t3);
 
 Texture2D ShadowMap : register(t10);
 
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+////////////////////////////////////// debugging
+
 SamplerState SampleState : register(s0);
 SamplerComparisonState ShadowSampler : register(s1);
 
 struct VSInput
 {
     float3 Position : POSITION;
-    float4 Color    : COLOR;
-    float3 Normal   : NORMAL;
-    float2 UV       : TEXCOORD;
-    float4 Tangent  : TANGENT;
+    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD;
+    float4 Tangent : TANGENT;
 };
 
 struct PSInput
 {
-    float4 ClipPos      : SV_POSITION;
-    float3 WorldPos     : TEXCOORD0;
-    float3 WorldNormal  : TEXCOORD1;
-    float2 UV           : TEXCOORD2;
+    float4 ClipPos : SV_POSITION;
+    float3 WorldPos : TEXCOORD0;
+    float3 WorldNormal : TEXCOORD1;
+    float2 UV : TEXCOORD2;
 #if LIGHTING_MODEL_GOURAUD
     float3 LitColor     : TEXCOORD3;
 #elif HAS_NORMAL_MAP
@@ -72,8 +92,8 @@ struct PSInput
 
 struct PSOutput
 {
-    float4 Color    : SV_TARGET0;
-    float4 Normal   : SV_TARGET1;
+    float4 Color : SV_TARGET0;
+    float4 Normal : SV_TARGET1;
     float4 WorldPos : SV_TARGET2;
 };
 
@@ -137,34 +157,101 @@ float3 GetHeatmapColor(float weight)
 }
 #endif
 
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
+float GetCascadeSplitFarValue(uint CascadeIndex)
+{
+    return (CascadeIndex == 0) ? CascadeSplitFar.x :
+           (CascadeIndex == 1) ? CascadeSplitFar.y :
+           (CascadeIndex == 2) ? CascadeSplitFar.z :
+                                 CascadeSplitFar.w;
+}
 
+float GetCameraDepthForCSM(float3 WorldPos)
+{
+    float4 ViewPos = mul(float4(WorldPos, 1.0f), View);
+    return ViewPos.x;
+}
 
+uint SelectDirectionalCascade(float CameraDepth)
+{
+    for (uint i = 0; i < DirectionalCascadeCount; ++i)
+    {
+        if (CameraDepth <= GetCascadeSplitFarValue(i))
+        {
+            return i;
+        }
+    }
 
+    return MAX_DIRECTIONAL_CASCADE_COUNT;
+}
 
+float3 ComputeShadowCoordCascade(float4 worldPos, int CascadeIndex)
+{
+    float4 shadowCoord = mul(worldPos, CascadeViewProj[CascadeIndex]);
+
+    if (abs(shadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    return shadowCoord.xyz / shadowCoord.w;
+}
+#ifdef SHADOW_MAP_CSM
+float CalculateShadow(float4 worldPos)
+{
+    if (DirectionalCascadeCount == 0)
+    {
+        return 1.0f;
+    }
+
+    float CameraDepth = GetCameraDepthForCSM(worldPos.xyz);
+    uint CascadeIndex = SelectDirectionalCascade(CameraDepth);
+
+    if (CascadeIndex >= MAX_DIRECTIONAL_CASCADE_COUNT)
+    {
+        return 1.0f;
+    }
+
+    const float BlendAreaRatio = 0.1f;
+    float CascadeFar  = GetCascadeSplitFarValue(CascadeIndex);
+    float CascadeNear = (CascadeIndex == 0) ? 0.0f : GetCascadeSplitFarValue(CascadeIndex - 1);
+    float BlendWidth  = (CascadeFar - CascadeNear) * BlendAreaRatio;
+
+    float BlendFactor = saturate((CameraDepth - (CascadeFar - BlendWidth)) / BlendWidth);
+
+    float3 projCoords = ComputeShadowCoordCascade(worldPos, CascadeIndex);
+    
+    float2 shadowUV = float2(
+          projCoords.x * 0.5f + 0.5f,
+          -projCoords.y * 0.5f + 0.5f
+      );
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
+          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+          projCoords.z < 0.0f || projCoords.z > 1.0f)
+    {
+        return 1.0f;
+    }
+
+    const float shadowBias = 0.005f;
+    float ShadowFactor = ComputeShadowPCF(projCoords, CascadeScaleOffset[CascadeIndex], 2, ShadowSampler, ShadowMap, shadowBias);
+    
+    // 마지막 인덱스 제외하고 블렌드
+    if (CascadeIndex < MAX_DIRECTIONAL_CASCADE_COUNT - 1)
+    {
+        int NextCascade = CascadeIndex + 1;
+        float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
+        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, CascadeScaleOffset[NextCascade], 2, ShadowSampler, ShadowMap, shadowBias);
+        ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
+    }
+    
+    return ShadowFactor;
+}
+#endif
+
+#ifdef SHADOW_MAP_PSM
 float CalculateShadow(float4 worldPos)
 {
     float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
-
-#ifdef SHADOW_MAP_PSM
     float4 camClip = mul(worldPos, VirtualViewProj);
 
     if (abs(camClip.w) < 1e-5f)
@@ -174,23 +261,21 @@ float CalculateShadow(float4 worldPos)
 
     float3 post = camClip.xyz / camClip.w;
     shadowCoord = mul(float4(post, 1.0f), ShadowViewProj);
-#else
-    shadowCoord = mul(worldPos, ShadowViewProj);
-#endif
     
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
     }
+
     float3 projCoords = shadowCoord.xyz / shadowCoord.w;
     float2 shadowUV = float2(
-        projCoords.x * 0.5f + 0.5f,
-        -projCoords.y * 0.5f + 0.5f
-    );
+          projCoords.x * 0.5f + 0.5f,
+          -projCoords.y * 0.5f + 0.5f
+      );
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
-        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
-        projCoords.z < 0.0f || projCoords.z > 1.0f)
+          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+          projCoords.z < 0.0f || projCoords.z > 1.0f)
     {
         return 1.0f;
     }
@@ -199,16 +284,17 @@ float CalculateShadow(float4 worldPos)
     float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
     return shadowFactor;
 }
+#endif
 
 PSOutput mainPS(PSInput input) : SV_TARGET
 {
     PSOutput output;
     
     float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
-    #if HAS_DIFFUSE_MAP
+#if HAS_DIFFUSE_MAP
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
-    #endif
+#endif
     
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     
@@ -229,7 +315,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     float3 accumulatedLight = float3(1, 1, 1);
     
 #if LIGHT_HEATMAP
-    #if CULLING_MODEL_CLUSTERED
+#if CULLING_MODEL_CLUSTERED
         uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
@@ -238,12 +324,12 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
         uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
         float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 기준
-    #elif CULLING_MODEL_TILED
+#elif CULLING_MODEL_TILED
         uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
         float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 기준
-    #endif
+#endif
     float3 heatmapColor = GetHeatmapColor(weight);
     
     // 타일 경계선 시각화 (선택 사항: 타일의 가장자리 1픽셀을 어둡게 처리)
@@ -263,18 +349,18 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     accumulatedLight = input.LitColor;
     
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_PHONG
-    #if CULLING_MODEL_CLUSTERED
+#if CULLING_MODEL_CLUSTERED
         uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
         float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
         uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
         uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-    #elif CULLING_MODEL_TILED
+#elif CULLING_MODEL_TILED
         uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
         uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
         uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-    #endif
+#endif
 
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
@@ -286,45 +372,42 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         V = normalize(-float3(View[0].xyz));
     }
     
-    #if LIGHTING_MODEL_LAMBERT
+#if LIGHTING_MODEL_LAMBERT
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N) * shadowFactor;
-    #elif LIGHTING_MODEL_PHONG
+#elif LIGHTING_MODEL_PHONG
         accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * shadowFactor;
-    #endif
+#endif
 
     uint LightsToIterate;
-    #if CULLING_MODEL_CLUSTERED
+#if CULLING_MODEL_CLUSTERED
         LightsToIterate = clusterData.y;
-    #elif CULLING_MODEL_TILED
+#elif CULLING_MODEL_TILED
         LightsToIterate = tileData.y;
-    #else
+#else
         LightsToIterate = LightCount;
-    #endif 
+#endif 
     
     for (uint i = 0; i < LightsToIterate; i++)
     {
-    #if CULLING_MODEL_CLUSTERED
-        LightInfo light = Lights[CulledIndexBuffer[clusterData.x + i]];
+#if CULLING_MODEL_CLUSTERED
         uint lightIndex = CulledIndexBuffer[clusterData.x + i];
-    #elif CULLING_MODEL_TILED
-        LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
+#elif CULLING_MODEL_TILED
         uint lightIndex = CulledIndexBuffer[tileData.x + i];
-    #else 
+#else 
         uint lightIndex = i;
-        LightInfo light = Lights[lightIndex];
-    #endif
-        
+#endif
+        LightInfo light = Lights[lightIndex]; 
         float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap);
     
-    #if LIGHTING_MODEL_LAMBERT
-        accumulatedLight += light.Type == 0 ?
-            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz) * lightShadowFactor
-            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz) * lightShadowFactor;
-    #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * lightShadowFactor
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * lightShadowFactor;
-    #endif
+#if LIGHTING_MODEL_LAMBERT
+        accumulatedLight += (light.Type == 0 ?
+            CalcSpotlightLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)
+            : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)) * lightShadowFactor;
+#elif LIGHTING_MODEL_PHONG
+        accumulatedLight += (light.Type == 0 ?
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)) * lightShadowFactor;
+#endif
     }
 #endif
     
