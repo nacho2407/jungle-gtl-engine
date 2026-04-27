@@ -38,9 +38,7 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightIn
 	auto r_pixel = r_ndc * H / 2.f;
 	auto A_screen = 3.1415925f * r_pixel * r_pixel;
 
-	float desired_res = sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity * InLightInfo.ShadowResolutionScale;
-	desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
-	return desired_res;
+	return sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity * InLightInfo.ShadowResolutionScale;
 }
 
 TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
@@ -55,7 +53,8 @@ TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
 
 	TArray<FAtlasRegion> Results(N, { 0, 0, 0, false });
 	for (int32 OrigIdx : Order) {
-		FAtlasRegion AtlasRegion = AllocateNode(0, static_cast<uint32>(Batch[OrigIdx].second));
+		auto desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(Batch[OrigIdx].second)));
+		FAtlasRegion AtlasRegion = AllocateNode(0, desired_res);
 		Results[OrigIdx] = AtlasRegion;
 	}
 
