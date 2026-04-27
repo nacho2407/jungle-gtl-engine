@@ -229,6 +229,11 @@ namespace FLightFrustumUtils
 	// Directional Light(2) — 카메라 frustum 기반 Cascaded Shadow Map
 	// ============================================================
 
+	// Receiver cascade slice 밖에 있지만 해당 slice에 그림자를 드리우는 caster를
+	// 포함하기 위한 light-direction depth padding. Ortho width/height는 유지되므로
+	// shadow map의 X/Y texel density는 바뀌지 않는다.
+	inline constexpr float CSMCasterDepthPadding = 1000.0f;
+
 	struct FCascadeRange
 	{
 		float NearZ;
@@ -365,13 +370,11 @@ namespace FLightFrustumUtils
 			Up
 		);
 
-		const float DepthPadding = 100.0f;
-
 		Result.Proj = FMatrix::OrthoLH(
 			Width,
 			Height,
 			0.0f,
-			DepthRange + DepthPadding
+			DepthRange + CSMCasterDepthPadding
 		);
 
 		Result.ViewProj = Result.View * Result.Proj;

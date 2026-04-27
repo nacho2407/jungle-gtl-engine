@@ -353,6 +353,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 			const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
 			const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
 
+			// Camera frustum의 cascade slice를 world-space 8개 코너로 계산하여 와이어박스 그리기
 			FVector CascadeCorners[8];
 			FLightFrustumUtils::ComputeCascadeWorldCorners(
 				Frame.View,
@@ -372,6 +373,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				0.0f
 			);
 
+			// 같은 slice를 light-space ortho frustum으로 변환한 뒤 와이어프레임으로 그리기
 			const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
 				FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
 					DirectionalParams,
