@@ -187,10 +187,16 @@ float ComputeVSMVisibility(float2 Moments, float CompareDepth)
 {
     float Mean = Moments.x;
     float Variance = max(Moments.y - Mean * Mean, 1e-5f);
-    float Delta = CompareDepth - Mean;
+
+    // Reversed-Z: larger depth is closer to the light, so GREATER_EQUAL means lit.
+    if (CompareDepth >= Mean)
+    {
+        return 1.0f;
+    }
+
+    float Delta = Mean - CompareDepth;
     float PMax = Variance / (Variance + Delta * Delta);
-    float Lit = (CompareDepth <= Mean) ? 1.0f : PMax;
-    return saturate(Lit);
+    return saturate(PMax);
 }
 
 float ComputeESMVisibility(float EncodedMoment, float CompareDepth)

@@ -147,6 +147,8 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     uint32 CurrentIdx = GlobalStart;
     bool ClearedShadow2D[ESystemTexSlot::MaxShadowMaps2DCount] = {};
     bool ClearedShadowCube[ESystemTexSlot::MaxShadowMapsCubeCount] = {};
+    // Reversed-Z uses 0.0 as far/max-distance depth, so empty moment texels match the depth clear.
+    const float ClearMomentColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     auto ClearShadowForLight = [&](FLightProxy* Light)
     {
@@ -176,8 +178,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 Context.Context->ClearDepthStencilView(Res.DSVCubes[Face], D3D11_CLEAR_DEPTH, 0.0f, 0);
                 if (Res.MomentRTVCubes[Face])
                 {
-                    const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                    Context.Context->ClearRenderTargetView(Res.MomentRTVCubes[Face], ClearColor);
+                    Context.Context->ClearRenderTargetView(Res.MomentRTVCubes[Face], ClearMomentColor);
                 }
             }
             ClearedShadowCube[ShadowIdx] = true;
@@ -198,8 +199,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.Context->ClearDepthStencilView(Res.DSV2D, D3D11_CLEAR_DEPTH, 0.0f, 0);
         if (Res.MomentRTV2D)
         {
-            const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-            Context.Context->ClearRenderTargetView(Res.MomentRTV2D, ClearColor);
+            Context.Context->ClearRenderTargetView(Res.MomentRTV2D, ClearMomentColor);
         }
         ClearedShadow2D[ShadowIdx] = true;
     };
