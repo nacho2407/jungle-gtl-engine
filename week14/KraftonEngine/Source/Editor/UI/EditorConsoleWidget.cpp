@@ -251,15 +251,17 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			}
 		}, "Toggles overlay stats. Usage: stat fps | stat memory | stat shadow | stat none");
 
-	RegisterCommand("shadow_resolution", [this](const TArray<FString>& Args)
+	RegisterCommand("CMS_resolution", [this](const TArray<FString>& Args)
 		{
 			FShadowSettings& Settings = FShadowSettings::Get();
 
 			if (Args.size() < 2)
 			{
 				auto Cur = Settings.GetResolution();
-				AddLog("shadow_resolution: %s\n", Cur.has_value()
-					? std::to_string(Cur.value()).c_str() : "default (2048)");
+				if (Cur.has_value())
+					AddLog("CMS_shadow_resolution: %u\n", Cur.value());
+				else
+					AddLog("CMS_shadow_resolution: default (%u)\n", FShadowSettings::kDefaultResolution);
 				AddLog("Usage: shadow_resolution <size> | shadow_resolution reset\n");
 				return;
 			}
@@ -267,16 +269,45 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			if (Args[1] == "reset")
 			{
 				Settings.ResetResolution();
-				AddLog("Shadow resolution override reset to default.\n");
+				AddLog("CMS_Shadow resolution override reset to default.\n");
 			}
 			else
 			{
 				uint32 Res = static_cast<uint32>(std::atoi(Args[1].c_str()));
 				if (Res < 64 || Res > 8192) { AddLog("[ERROR] Resolution must be 64~8192.\n"); return; }
 				Settings.SetResolution(Res);
-				AddLog("Shadow resolution override set to %u.\n", Res);
+				AddLog("CMS_Shadow resolution override set to %u.\n", Res);
 			}
 		}, "Overrides shadow map resolution. Usage: shadow_resolution <size> | shadow_resolution reset");
+
+	RegisterCommand("CMS_distance", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetShadowDistance();
+				if (Cur.has_value())
+					AddLog("CMS_shadow_distance: %.3f\n", Cur.value());
+				else
+					AddLog("CMS_shadow_distance: default (%.3f)\n", FShadowSettings::kDefaultShadowDistance);
+				AddLog("Usage: shadow_distance <distance> | shadow_distance reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetShadowDistance();
+				AddLog("CMS_Shadow distance override reset to default.\n");
+			}
+			else
+			{
+				float Distance = static_cast<float>(std::atof(Args[1].c_str()));
+				if (Distance <= 0.0f) { AddLog("[ERROR] Shadow distance must be greater than 0.\n"); return; }
+				Settings.SetShadowDistance(Distance);
+				AddLog("CMS_Shadow distance override set to %.3f.\n", Distance);
+			}
+		}, "Overrides directional shadow distance. Usage: shadow_distance <distance> | shadow_distance reset");
 
 	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
 		{
