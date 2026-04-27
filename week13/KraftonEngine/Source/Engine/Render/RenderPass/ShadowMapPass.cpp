@@ -1,4 +1,4 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -456,7 +456,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 	for (uint32 i = 0; i < NumSpots; ++i) {
 		const FSpotLightParams& Light = Env.GetSpotLight(i);
-		SpotLightAtlas.AddToBatch(Light.ToLightInfo(), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+		SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
 	}
 	TArray<FAtlasRegion> AtlasRegions = SpotLightAtlas.CommitBatch();
 
