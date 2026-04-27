@@ -26,6 +26,15 @@ void USpotlightComponent::Serialize(FArchive& Ar)
 FMatrix USpotlightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 	const TArray<FBoundingBox>* VisibleObjectsBounds) const
 {
+	FVector CamDir = FVector(CamView[0][0], CamView[1][0], CamView[2][0]) * -1.0f;
+	FVector LightDir = GetForwardVector().GetSafeNormal();
+
+	float Dot = MathUtil::Abs(FVector::DotProduct(CamDir, LightDir));
+	if (Dot < 0.1f)
+	{
+		return ComputeBasicShadowMatrix(CamView, CamProj);
+	}
+
 	FMatrix CamViewProj = CamView * CamProj;
 
 	auto ToPost = [&](const FVector& P)
@@ -97,7 +106,7 @@ FMatrix USpotlightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamVi
 		Max = FVector::Max(Max, P);
 	}
 
-	FMatrix LightProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X - 1.0f, Max.X + 1.0f);
+	FMatrix LightProj = FMatrix::MakeOrthographicOffCenterLH(Min.Y, Max.Y, Min.Z, Max.Z, Min.X - 1.0f, Max.X);
 
 	return LightView * LightProj;
 }

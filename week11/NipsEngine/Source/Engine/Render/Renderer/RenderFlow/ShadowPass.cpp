@@ -150,11 +150,58 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
 		FShadowConstants ShadowData = {};
-		ShadowData.VirtualViewProj = RenderBus->GetView() * RenderBus->GetProj();
-		ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
-			RenderBus->GetView(),
-			RenderBus->GetProj(),
-			&VisibleBounds);
+
+		FBoundingBox VisibleBoundingBox;
+
+		for (const auto& Box : VisibleBounds)
+		{
+			VisibleBoundingBox.Merge(Box);
+		}
+
+		float Slideback = 1.0f;
+
+		float Near = RenderBus->GetNearPlane();
+		float MinZ = FLT_MAX;
+		FVector Corners[8];
+		VisibleBoundingBox.GetVertices(Corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			auto ToBB = Corners[i] - RenderBus->GetCameraPosition();
+			float X = FVector::DotProduct(ToBB, RenderBus->GetCameraForward());
+
+			MinZ = std::min(X, MinZ);
+		}
+
+		if (MinZ < FLT_MAX && MinZ > Near)
+		{
+			Near = MinZ;
+		}
+
+		if (LightComp->GetShadowMapType() == EShadowMap::PSM)
+		{
+			FVector PrevCameraUp = RenderBus->GetCameraUp();
+			FVector VirtualCamPos = RenderBus->GetCameraPosition() - RenderBus->GetCameraForward() * Slideback;
+			FVector VirtualCamTarget = RenderBus->GetCameraPosition() + RenderBus->GetCameraForward() * Slideback;
+			FVector VirtualCamUp = VirtualCamPos + PrevCameraUp;
+
+			FMatrix VirtualView = FMatrix::MakeViewLookAtLH(VirtualCamPos, VirtualCamTarget, VirtualCamUp);
+			FMatrix VirtualProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(90.0f), 1.0f, Near + Slideback, RenderBus->GetFarPlane());
+
+			ShadowData.VirtualViewProj = VirtualView * VirtualProj;
+			ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
+				VirtualView,
+				VirtualProj,
+				&VisibleBounds);
+		}
+		else
+		{
+			ShadowData.VirtualViewProj = CamView * CamProj;
+			ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
+				CamView,
+				CamProj,
+				&VisibleBounds);
+		}
+
 		ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
 
 		ShadowBuffer->Update(DeviceContext, &ShadowData, sizeof(FShadowConstants));
