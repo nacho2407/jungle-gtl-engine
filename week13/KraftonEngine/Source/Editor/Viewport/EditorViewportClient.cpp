@@ -454,24 +454,36 @@ void FEditorViewportClient::HandleDragStart(const FRay& Ray)
 			W->RaycastPrimitives(Ray, HitResult, BestActor); //BVH 시작
 		}
 
+		bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+
 		if (BestActor == nullptr)
 		{
-			SelectionManager->ClearSelection();
+			if (!bCtrlHeld)
+			{
+				SelectionManager->ClearSelection();
+			}
 		}
 		else
 		{
-			// (1)번 방안: 이미 선택된 액터라면 클릭된 세부 컴포넌트로 기즈모 이동 (Step-in)
-			if (SelectionManager->GetPrimarySelection() == BestActor)
+			if (bCtrlHeld)
 			{
-				if (HitResult.HitComponent)
-				{
-					SelectionManager->SelectComponent(HitResult.HitComponent);
-				}
+				// 컨트롤 키가 눌려있으면 다중 선택 토글
+				SelectionManager->ToggleSelect(BestActor);
 			}
 			else
 			{
-				// 새로운 선택이면 기본 액터 단위 선택
-				SelectionManager->Select(BestActor);
+				if (SelectionManager->GetPrimarySelection() == BestActor)
+				{
+					if (HitResult.HitComponent)
+					{
+						SelectionManager->SelectComponent(HitResult.HitComponent);
+					}
+				}
+				else
+				{
+					// 새로운 선택이면 기본 액터 단위 선택
+					SelectionManager->Select(BestActor);
+				}
 			}
 		}
 	}
