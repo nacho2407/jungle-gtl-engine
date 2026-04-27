@@ -5,6 +5,7 @@
 #include "Component/PostProcess/Light/LightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 
+#include <algorithm>
 namespace
 {
 	const ULightComponent* GetSupportedShadowLight(const FShadowLightRequest& Request)
@@ -94,12 +95,19 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
 	ShadowAtlasConstants.reserve(RenderBus->ShadowLightRequests.size());
 
-	float atlasW = static_cast<float>(ShadowMapDesc.Width);
-	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
 	bool bHasDirectionalShadow = false;
 
-	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
+	TArray<FShadowLightRequest> SortedRequests = RenderBus->ShadowLightRequests;
+    std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
+              { 
+			  if(A.Type != B.Type)
+			  {
+				  return A.Type > B.Type;
+			  }
+			  return A.ShadowResolution > B.ShadowResolution; });
+
+	for (const FShadowLightRequest& Request : SortedRequests)
 	{
 		const ULightComponent* LightComp = GetSupportedShadowLight(Request);
 
@@ -113,7 +121,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		}
 
 		FShadowAtlasTile ShadowTile;
-		if (!FShadowAtlasManager::Get().AllocateTile(ShadowTile))
+		if (!FShadowAtlasManager::Get().AllocateTile(Request.ShadowResolution, ShadowTile))
 		{
 			// atlas가 꽉 찼음
 			// shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
@@ -205,11 +213,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 		FShadowAtlasConstants atlasConstants = {};
 		atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
-		atlasConstants.ScaleOffset = FVector4(
-			tile / atlasW,
-			tile / atlasH,
-			(ShadowTile.TileX * tile) / atlasW,
-			(ShadowTile.TileY * tile) / atlasH);
+		atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
 		atlasConstants.ShadowBias = Request.ShadowBias;
 		atlasConstants.ShadowStrength = 1.0f;
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;

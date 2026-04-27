@@ -28,47 +28,106 @@ struct FShadowAtlasTile
 
 struct FShadowAtlasAllocator
 {
-    uint32 AtlasSizeTier[4] = { 2048, 1024, 512, 256};
-    uint32 currentTier = 0;
+public:
+    static constexpr int32 AtlasSize = 8192;
+    static constexpr int32 GridSize = 256;
+    static constexpr int32 GridCount = AtlasSize / GridSize; // 32
 
-	int32 TileSize = 1024;
-	int32 TileCountX = 8;
-	int32 TileCountY = 8;
-	bool TileUsed[64] = {};
+    static constexpr int32 AtlasSizeTier[4] = { 256, 512, 1024, 2048 };
+    static constexpr int32 TierCount = sizeof(AtlasSizeTier) / sizeof(AtlasSizeTier[0]);
 
-	bool AllocateTile(int32& OutTileX, int32& OutTileY)
+private:
+    bool Used[GridCount][GridCount] = {};
+
+public:
+    void Reset()
+    {
+        memset(Used, 0, sizeof(Used));
+    }
+
+    int32 QuantizeShadowSize(const int32 RequestTileSize) const
+    {
+        if (RequestTileSize <= 0)
+        {
+            return AtlasSizeTier[0];
+        }
+
+        for (int32 i = 0; i < TierCount; ++i)
+        {
+            if (RequestTileSize <= AtlasSizeTier[i])
+            {
+                return AtlasSizeTier[i];
+            }
+        }
+
+        return AtlasSizeTier[TierCount - 1];
+    }
+
+	bool CanAllocate(int32 StartX, int32 StartY, int32 TileGridCount) const
 	{
-		for (int32 Y = 0; Y < TileCountY; ++Y)
+		for (int32 y = 0; y < TileGridCount; ++y)
 		{
-			for (int32 X = 0; X < TileCountX; ++X)
+			for (int32 x = 0; x < TileGridCount; ++x)
 			{
-				int32 Index = Y * TileCountX + X;
-				if (!TileUsed[Index])
-				{
-					TileUsed[Index] = true;
-					OutTileX = X;
-					OutTileY = Y;
-					return true;
+                if (Used[StartY + y][StartX + x])
+                {
+					return false;
 				}
 			}
 		}
-		return false; // No free tile found
-	}
+		return true;
+    }
+
+	void MarkUsed(int32 StartX, int32 StartY, int32 TileGridCount)
+	{
+		for (int32 y = 0; y < TileGridCount; ++y)
+		{
+			for (int32 x = 0; x < TileGridCount; ++x)
+			{
+				Used[StartY + y][StartX + x] = true;
+			}
+		}
+    }
+
+	bool AllocateTiled(int32& RequestTileSize, int32& OutTileX, int32& OutTileY)
+	{
+        RequestTileSize = QuantizeShadowSize(RequestTileSize);
+
+        const int32 LocalTileSize = RequestTileSize;
+        const int32 LocalGridCount = LocalTileSize / GridSize;
+
+		for (int32 y = 0; y <= GridCount - LocalGridCount; ++y)
+		{
+            for (int32 x = 0; x <= GridCount - LocalGridCount; ++x)
+            {
+				if (CanAllocate(x, y, LocalGridCount)) {
+					MarkUsed(x, y, LocalGridCount);
+					OutTileX = x;
+					OutTileY = y;
+                    return true;
+				}
+            }
+        }
+
+        return false;
+    }
 
 	void FreeTile(int32 TileX, int32 TileY)
 	{
-		if (TileX >= 0 && TileX < TileCountX && TileY >= 0 && TileY < TileCountY)
+        if (TileX >= 0 && TileX < GridCount && TileY >= 0 && TileY < GridCount)
 		{
-			int32 Index = TileY * TileCountX + TileX;
-			TileUsed[Index] = false;
+            Used[TileY][TileX] = false;
 		}
     }
 
     void FreeAllTiles()
     {
-        for (bool& bUsed : TileUsed)
+        for (int32 Y = 0; Y < GridCount; ++Y)
         {
-            bUsed = false;
+            for (int32 X = 0; X < GridCount; ++X)
+            {
+                Used[Y][X] = false;
+            }
         }
     }
 };
@@ -228,20 +287,14 @@ class FShadowAtlasManager : public TSingleton<FShadowAtlasManager>
 public:
 	void Initialize(ID3D11Device* InDevice);
     void VSMInitialize(ID3D11Device* Device);
-	
-	
 
-    bool AllocateTile(FShadowAtlasTile& OutTile);
+    bool AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile);
     bool FreeTile(const int32& TileIndex);
     void ClearTiles() { ShadowAllocator.FreeAllTiles(); }
 
     bool AllocateTileCube(uint32& OutCubeIndex);
     bool FreeTileCube(const int32& CubeIndex);
     void ClearTilesCube() {}
-
-	uint32 GetTileSize() const { return ShadowAllocator.TileSize; }
-    int32 GetAtlasWidth() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountX; }
-    int32 GetAtlasHeight() const { return ShadowAllocator.TileSize * ShadowAllocator.TileCountY; }
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
@@ -260,8 +313,6 @@ public:
 		float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 
 private:
-
-
 	// TComPtr<ID3D11Texture2D> VarianceDepthShadowMap;	 // DSV용 깊이 테스트
     // TComPtr<ID3D11DepthStencilView> VarianceShadowDSV;   // 깊이 테스트용 (별도)
 
