@@ -45,8 +45,14 @@ void FSelectionManager::Shutdown()
 
 void FSelectionManager::Select(AActor* Actor)
 {
+    if (Actor && IsSelectionBlocked(Actor))
+    {
+        return;
+    }
+
     if (SelectedActors.size() == 1 && SelectedActors.front() == Actor)
     {
+        SyncGizmo();
         return;
     }
 
@@ -65,7 +71,7 @@ void FSelectionManager::Select(AActor* Actor)
 
 void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList)
 {
-    if (!ClickedActor)
+    if (!ClickedActor || IsSelectionBlocked(ClickedActor))
         return;
 
     // Find index of clicked actor
@@ -114,6 +120,11 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
     {
         if (ActorList[i])
         {
+            if (IsSelectionBlocked(ActorList[i]))
+            {
+                continue;
+            }
+
             SelectedActors.push_back(ActorList[i]);
             SetActorProxiesSelected(ActorList[i], true);
         }
@@ -123,7 +134,7 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 
 void FSelectionManager::ToggleSelect(AActor* Actor)
 {
-    if (!Actor)
+    if (!Actor || IsSelectionBlocked(Actor))
         return;
 
     auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
@@ -196,6 +207,36 @@ void FSelectionManager::SetGizmoEnabled(bool bEnabled)
 
     bGizmoEnabled = bEnabled;
     SyncGizmo();
+}
+
+bool FSelectionManager::IsSelectionBlocked(AActor* Actor) const
+{
+    return Actor && std::find(SelectionBlockedActors.begin(), SelectionBlockedActors.end(), Actor) != SelectionBlockedActors.end();
+}
+
+void FSelectionManager::AddSelectionBlock(AActor* Actor)
+{
+    if (!Actor || IsSelectionBlocked(Actor))
+    {
+        return;
+    }
+
+    SelectionBlockedActors.push_back(Actor);
+    Deselect(Actor);
+}
+
+void FSelectionManager::RemoveSelectionBlock(AActor* Actor)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+    auto It = std::find(SelectionBlockedActors.begin(), SelectionBlockedActors.end(), Actor);
+    if (It != SelectionBlockedActors.end())
+    {
+        SelectionBlockedActors.erase(It);
+    }
 }
 
 void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)

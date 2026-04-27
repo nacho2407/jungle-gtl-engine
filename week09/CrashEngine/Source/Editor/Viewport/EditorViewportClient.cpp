@@ -190,8 +190,18 @@ void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
         SavedViewportType = RenderOptions.ViewportType;
     }
 
+    if (SelectionManager && PilotedActor && PilotedActor != Actor)
+    {
+        SelectionManager->RemoveSelectionBlock(PilotedActor);
+    }
+
     PilotedActor = Actor;
     bIsPilotingActor = true;
+
+    if (SelectionManager)
+    {
+        SelectionManager->AddSelectionBlock(PilotedActor);
+    }
 
     if (RenderOptions.ViewportType != ELevelViewportType::Perspective)
     {
@@ -199,11 +209,6 @@ void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
     }
 
     UpdateViewFromPilotedActor();
-
-    if (SelectionManager)
-    {
-        SelectionManager->Select(Actor);
-    }
 }
 
 void FEditorViewportClient::StopPilotingActor()
@@ -211,6 +216,11 @@ void FEditorViewportClient::StopPilotingActor()
     if (!bIsPilotingActor)
     {
         return;
+    }
+
+    if (SelectionManager && PilotedActor)
+    {
+        SelectionManager->RemoveSelectionBlock(PilotedActor);
     }
 
     PilotedActor = nullptr;

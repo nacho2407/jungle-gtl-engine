@@ -79,7 +79,7 @@ FForward_Opaque_VSOutput VS_ForwardOpaque(VS_Input_PNCT_T Input)
     Output.worldTangent.w   = Input.tangent.w;
     Output.color            = Input.color;
     Output.texcoord         = Input.texcoord;
-    Output.gouraud          = float4(ComputeGouraudLightingColor(Output.worldNormal, Output.worldPos), 1.0f);
+    Output.gouraud          = float4(ComputeGouraudLightingColor(Output.worldNormal, Output.worldPos, Output.position), 1.0f);
     return Output;
 }
 
@@ -223,7 +223,7 @@ FSceneColorOutput PS_Forward_Lambert(FForward_Opaque_VSOutput Input)
     float4 BaseColor = float4(Surface.BaseColor, Surface.Opacity);
 
 #if FORWARD_ENABLE_LIGHTING
-    Output.SceneColor = ComputeLambertLighting(BaseColor, Surface.WorldNormal, Input.worldPos);
+    Output.SceneColor = ComputeLambertLighting(BaseColor, Surface.WorldNormal, Input.worldPos, Input.position);
 #else
     Output.SceneColor = BaseColor;
 #endif

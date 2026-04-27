@@ -781,10 +781,6 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
                 FString PilotActorLabel = "Pilot \"" + PendingPilotContextViewport->GetActorDisplayName(PendingPilotContextActor) + "\"";
                 if (ImGui::Selectable(PilotActorLabel.c_str(), false))
                 {
-                    if (SelectionManager)
-                    {
-                        SelectionManager->Select(PendingPilotContextActor);
-                    }
                     PendingPilotContextViewport->PilotSelectedActor(PendingPilotContextActor);
                     ImGui::CloseCurrentPopup();
                 }

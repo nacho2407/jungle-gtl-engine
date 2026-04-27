@@ -51,6 +51,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].Color     = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].Intensity = LC.Intensity;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].Direction = LC.Direction;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowMapIndex = Proxy->ShadowMapIndex;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowViewProj = Proxy->LightViewProj;
                 CollectedSceneData.Lights.GlobalLights.NumDirectionalLights++;
             }
         }
@@ -65,6 +67,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
             LocalLight.Direction         = LC.Direction;
             LocalLight.InnerConeAngle    = LC.InnerConeAngle;
             LocalLight.OuterConeAngle    = LC.OuterConeAngle;
+            LocalLight.ShadowMapIndex    = Proxy->ShadowMapIndex;
+            LocalLight.ShadowViewProj    = Proxy->LightViewProj;
             CollectedSceneData.Lights.LocalLights.push_back(LocalLight);
         }
 

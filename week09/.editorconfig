@@ -5,5 +5,5 @@ charset = utf-8-bom
 indent_style = tab
 indent_size = 4
 
-[*.{hlsl,usf,ush}]
+[*.{hlsl,hlsli,usf,ush}]
 charset = utf-8

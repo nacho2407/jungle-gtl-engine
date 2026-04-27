@@ -37,6 +37,14 @@ public:
     FMatrix                  ShadowViewProjMatrices[6]; // For Point Light (Cube faces)
     int32                    ShadowMapIndex = -1;
     bool                     bCastShadow = false;
+
+    // TODO: 쉐도우 연산시 반영 필요
+    float                    ShadowBias = 0.005f;
+    float                    ShadowSlopeBias = 0.5f;
+    float                    ShadowNormalBias = 1.0f;
+    int32                    CascadeCount = 1;
+    float                    DynamicShadowDistance = 2000.0f;
+    float                    CascadeDistribution = 1.0f;
 };
 
 using FLightSceneProxy = FLightProxy;
