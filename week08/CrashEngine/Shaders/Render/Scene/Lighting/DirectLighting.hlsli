@@ -19,11 +19,17 @@ StructuredBuffer<FLocalLight> g_LightBuffer : register(t6);
 StructuredBuffer<uint> PerTileLightMask : REGISTER_T(SLOT_TEX_LIGHT_TILE_MASK);
 Texture2D g_DebugHitMapTex : REGISTER_T(SLOT_TEX_DEBUG_HIT_MAP);
 
-TextureCube g_ShadowMap0 : register(t20);
-TextureCube g_ShadowMap1 : register(t21);
-TextureCube g_ShadowMap2 : register(t22);
-TextureCube g_ShadowMap3 : register(t23);
-TextureCube g_ShadowMap4 : register(t24);
+Texture2D g_ShadowMap2D0 : register(t20);
+Texture2D g_ShadowMap2D1 : register(t21);
+Texture2D g_ShadowMap2D2 : register(t22);
+Texture2D g_ShadowMap2D3 : register(t23);
+Texture2D g_ShadowMap2D4 : register(t24);
+
+TextureCube g_ShadowMapCube0 : register(t25);
+TextureCube g_ShadowMapCube1 : register(t26);
+TextureCube g_ShadowMapCube2 : register(t27);
+TextureCube g_ShadowMapCube3 : register(t28);
+TextureCube g_ShadowMapCube4 : register(t29);
 
 cbuffer LightCullingParams : register(b2)
 {
@@ -44,7 +50,7 @@ float3 GetAmbientLightColor()
     return Ambient.Color * Ambient.Intensity;
 }
 
-// Get Shadow Factor from single Texture (Directional or Spot light)
+// Get Shadow Factor from single Texture2D (Directional or Spot light)
 float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
@@ -62,21 +68,17 @@ float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos)
     float2 ShadowUV = ShadowPos.xy * 0.5f + 0.5f;
     ShadowUV.y = 1.0f - ShadowUV.y;
 
-    float2 UVNorm = ShadowUV * 2.0f - 1.0f;
-    float3 SampleDir = float3(1.0f, -UVNorm.y, -UVNorm.x);
-
-    float Bias = 0.002f;
-    float CompareDepth = ShadowPos.z + Bias;
+    float CompareDepth = ShadowPos.z + kShadowBias;
 
     float ShadowFactor = 1.0f;
     [branch]
     switch (ShadowIndex)
     {
-    case 0: ShadowFactor = g_ShadowMap0.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 1: ShadowFactor = g_ShadowMap1.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 2: ShadowFactor = g_ShadowMap2.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 3: ShadowFactor = g_ShadowMap3.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 4: ShadowFactor = g_ShadowMap4.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 0: ShadowFactor = g_ShadowMap2D0.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 1: ShadowFactor = g_ShadowMap2D1.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 2: ShadowFactor = g_ShadowMap2D2.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 3: ShadowFactor = g_ShadowMap2D3.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 4: ShadowFactor = g_ShadowMap2D4.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
     }
 
     return ShadowFactor;
@@ -86,19 +88,18 @@ float SampleSpotShadowCmp(int ShadowIndex, float3 ShadowPosNDC)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
 
-    float2 UVNorm = ShadowPosNDC.xy * 2.0f - 1.0f;
-    float3 SampleDir = float3(1.0f, -UVNorm.y, -UVNorm.x);
+    float2 ShadowUV = ShadowPosNDC.xy;
     float CompareDepth = ShadowPosNDC.z - kShadowBias;
 
     float ShadowFactor = 1.0f;
     [branch]
     switch (ShadowIndex)
     {
-    case 0: ShadowFactor = g_ShadowMap0.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 1: ShadowFactor = g_ShadowMap1.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 2: ShadowFactor = g_ShadowMap2.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 3: ShadowFactor = g_ShadowMap3.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
-    case 4: ShadowFactor = g_ShadowMap4.SampleCmpLevelZero(ShadowSampler, SampleDir, CompareDepth); break;
+    case 0: ShadowFactor = g_ShadowMap2D0.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 1: ShadowFactor = g_ShadowMap2D1.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 2: ShadowFactor = g_ShadowMap2D2.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 3: ShadowFactor = g_ShadowMap2D3.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
+    case 4: ShadowFactor = g_ShadowMap2D4.SampleCmpLevelZero(ShadowSampler, ShadowUV, CompareDepth); break;
     }
 
     return ShadowFactor;
@@ -151,18 +152,17 @@ float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, fl
 
     float PostProjDepth = N / (N - F) - (F * N / (N - F)) / ZView;
 
-    float Bias = 0.005f;
-    float CompareDepth = PostProjDepth + Bias;
+    float CompareDepth = PostProjDepth + kShadowBias;
 
     float ShadowFactor = 1.0f;
     [branch]
     switch (ShadowIndex)
     {
-    case 0: ShadowFactor = g_ShadowMap0.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
-    case 1: ShadowFactor = g_ShadowMap1.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
-    case 2: ShadowFactor = g_ShadowMap2.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
-    case 3: ShadowFactor = g_ShadowMap3.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
-    case 4: ShadowFactor = g_ShadowMap4.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
+    case 0: ShadowFactor = g_ShadowMapCube0.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
+    case 1: ShadowFactor = g_ShadowMapCube1.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
+    case 2: ShadowFactor = g_ShadowMapCube2.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
+    case 3: ShadowFactor = g_ShadowMapCube3.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
+    case 4: ShadowFactor = g_ShadowMapCube4.SampleCmpLevelZero(ShadowSampler, L, CompareDepth); break;
     }
 
     return ShadowFactor;
