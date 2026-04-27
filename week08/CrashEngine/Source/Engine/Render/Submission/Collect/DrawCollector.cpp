@@ -31,6 +31,9 @@ void FDrawCollector::UpdateShadowDataInCBs()
             {
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowMapIndex = Proxy->ShadowMapIndex;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowViewProj = Proxy->LightViewProj;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowBias = LC.ShadowBias;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowNormalBias = LC.ShadowNormalBias;
                 DirIdx++;
             }
         }
@@ -40,6 +43,9 @@ void FDrawCollector::UpdateShadowDataInCBs()
             {
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowMapIndex = Proxy->ShadowMapIndex;
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj = Proxy->LightViewProj;
+                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowBias = LC.ShadowBias;
+                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
+                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowNormalBias = LC.ShadowNormalBias;
                 LocalIdx++;
             }
         }
