@@ -67,7 +67,18 @@
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "URotatingMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Pivot Translation" : [0.000000, 0.000000, 0.000000],
+            "Rotation In Local Space" : true,
+            "Rotation Rate" : [0.000000, 90.000000, 0.000000],
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "86",
       "RootComponent" : {
         "Children" : [],
@@ -77,7 +88,7 @@
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
-          "Location" : [-2.350486, -13.646970, 0.492935],
+          "Location" : [-2.350486, -8.914331, 0.492935],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Data/BasicShape/Cube.OBJ",
@@ -89,7 +100,20 @@
       "bVisible" : true
     }, {
       "ClassName" : "ADirectionalLightActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "UPendulumMovementComponent",
+          "Properties" : {
+            "Amplitude (deg)" : 30.000000,
+            "Angle Offset (deg)" : 0.000000,
+            "Auto Register Updated" : true,
+            "Frequency (Hz)" : 0.500000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -171,7 +195,20 @@
       "bVisible" : true
     }, {
       "ClassName" : "APointLightActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "UPendulumMovementComponent",
+          "Properties" : {
+            "Amplitude (deg)" : 30.000000,
+            "Angle Offset (deg)" : 0.000000,
+            "Auto Register Updated" : true,
+            "Frequency (Hz)" : 0.500000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -191,15 +228,53 @@
               "bTickEnable" : true
             },
             "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UBillboardComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Height" : 1.000000,
+                  "Location" : [0.000000, 0.000000, 0.000000],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Editor/PointLight.mat"
+                  },
+                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Visible" : true,
+                  "Width" : 1.000000,
+                  "bEditorOnly" : true,
+                  "bTickEnable" : true
+                },
+                "bHiddenInComponentTree" : true
+              }],
+            "ClassName" : "UPointLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 5.000000,
+              "Cast Shadows" : true,
+              "Color" : [0.255265, 0.902954, 0.255265, 1.000000],
+              "Intensity" : 1.000000,
+              "LightFalloffExponent" : 1.000000,
+              "Location" : [0.000000, 0.000000, -1.805698],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shadow Bias" : 0.005000,
+              "Shadow Resolution Scale" : 1.000000,
+              "Shadow Sharpen" : 0.670000,
+              "Shadow Slope Bias" : 0.005000,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
           }],
         "ClassName" : "UPointLightComponent",
         "Properties" : {
-          "AttenuationRadius" : 5.000000,
+          "AttenuationRadius" : 3.000000,
           "Cast Shadows" : true,
           "Color" : [0.000000, 1.000000, 1.000000, 1.000000],
           "Intensity" : 38.200001,
           "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.664403, -7.024590, 0.832804],
+          "Location" : [-3.664403, -7.024590, 2.657142],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.000000,
@@ -214,7 +289,20 @@
       "bVisible" : true
     }, {
       "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "UPendulumMovementComponent",
+          "Properties" : {
+            "Amplitude (deg)" : 30.000000,
+            "Angle Offset (deg)" : 0.000000,
+            "Auto Register Updated" : true,
+            "Frequency (Hz)" : 0.500000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -257,321 +345,6 @@
         }
       },
       "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.373364, 1.880516, 3.295414],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.273364, 1.980516, 3.395414],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.173364, 2.080516, 3.495414],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.073364, 2.180516, 3.595414],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-2.973365, 2.280516, 3.695414],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-2.873365, 2.380516, 3.795413],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "ASpotLightActor",
-      "NonSceneComponents" : [],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Height" : 1.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Materials/Editor/SpotLight.mat"
-              },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Width" : 1.000000,
-              "bEditorOnly" : true,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }],
-        "ClassName" : "USpotLightComponent",
-        "Properties" : {
-          "AttenuationRadius" : 6.000000,
-          "Cast Shadows" : true,
-          "Color" : [1.000000, 0.000000, 1.000000, 1.000000],
-          "InnerConeAngle" : 22.400000,
-          "Intensity" : 12.000000,
-          "LightFalloffExponent" : 1.000000,
-          "Location" : [-2.773365, 2.480516, 3.895413],
-          "OuterConeAngle" : 41.500000,
-          "Rotation" : [27.600813, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : 0.000000,
-          "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.000000,
-          "Shadow Slope Bias" : 0.000000,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Default",
@@ -580,9 +353,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-10.004878, 4.158713, 6.990098],
+    "Location" : [-12.956043, -3.956298, 7.813244],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 32.415798, -53.246136]
+    "Rotation" : [0.000000, 22.366817, -10.496198]
   },
   "Primitives" : {
     "74" : {
@@ -607,7 +380,7 @@
       "Type" : "StaticMeshComp"
     },
     "86" : {
-      "Location" : [-2.350486, -13.646970, 0.492935],
+      "Location" : [-2.350486, -8.914331, 0.492935],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
