@@ -1,6 +1,7 @@
 ﻿#include "Shader.h"
 
 #include "Core/ResourceManager.h"
+#include "Core/Paths.h"
 #include "Render/Resource/ShaderCompiler.h"
 
 DEFINE_CLASS(UShader, UObject)
@@ -58,6 +59,86 @@ static void ReleasePermutationMap(TMap<uint32, FShader>& Permutations)
 		Pair.second.Release();
 	}
 	Permutations.clear();
+}
+
+static bool BuildFallbackPermutationDesc(const FString& FilePath, uint32 PermutationKey, FShaderPermutationDesc& OutDesc)
+{
+	const FString NormalizedUberLitPath = FPaths::Normalize("Shaders/UberLit.hlsl");
+	if (FilePath != NormalizedUberLitPath)
+	{
+		return false;
+	}
+
+	OutDesc.VSEntryPoint = "mainVS";
+	OutDesc.PSEntryPoint = "mainPS";
+	OutDesc.PermutationKey = PermutationKey;
+
+	TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+	for (const D3D_SHADER_MACRO& Macro : Macros)
+	{
+		if (!Macro.Name)
+		{
+			break;
+		}
+		OutDesc.Defines.push_back({ Macro.Name, Macro.Definition ? Macro.Definition : "" });
+	}
+
+	return true;
+}
+
+static bool CompileShaderPermutation(
+	UShader& ShaderOwner,
+	ID3D11Device* Device,
+	const FShaderPermutationDesc& Desc,
+	FShader& OutShader,
+	TMap<FString, uint32>& OutTextureBindSlots,
+	TMap<FString, FShaderVariableInfo>& OutShaderVariables,
+	uint32& OutCBufferSize)
+{
+	if (!Device)
+	{
+		return false;
+	}
+
+	TComPtr<ID3DBlob> VSBlob;
+	TComPtr<ID3DBlob> PSBlob;
+
+	TArray<D3D_SHADER_MACRO> Macros = BuildShaderMacros(Desc.Defines);
+
+	FShaderCompileResult VSResult = FShaderCompiler::CompileFromFile(
+		ShaderOwner.FilePath, Desc.VSEntryPoint, "vs_5_0", Macros.data(), Desc.PermutationKey);
+	if (!VSResult.bSuccess)
+	{
+		UE_LOG("Failed to compile vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		return false;
+	}
+	VSBlob = VSResult.Blob;
+
+	FShaderCompileResult PSResult = FShaderCompiler::CompileFromFile(
+		ShaderOwner.FilePath, Desc.PSEntryPoint, "ps_5_0", Macros.data(), Desc.PermutationKey);
+	if (!PSResult.bSuccess)
+	{
+		UE_LOG("Failed to compile pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		return false;
+	}
+	PSBlob = PSResult.Blob;
+
+	if (FAILED(Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &OutShader.VS)))
+	{
+		UE_LOG("Failed to create vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		return false;
+	}
+
+	if (FAILED(Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &OutShader.PS)))
+	{
+		UE_LOG("Failed to create pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		OutShader.Release();
+		return false;
+	}
+
+	ShaderOwner.ReflectShader(VSBlob.Get(), Device, OutShader, OutTextureBindSlots, OutShaderVariables, OutCBufferSize);
+	ShaderOwner.ReflectShader(PSBlob.Get(), Device, OutShader, OutTextureBindSlots, OutShaderVariables, OutCBufferSize);
+	return true;
 }
 
 void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target,
@@ -185,6 +266,43 @@ void UShader::ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader&
 	Reflector->Release();
 }
 
+bool UShader::EnsurePermutation(ID3D11Device* Device, uint32 PermutationKey)
+{
+	if (HasPermutation(PermutationKey))
+	{
+		return true;
+	}
+
+	FShaderPermutationDesc Desc;
+	auto DescIt = PermutationDescs.find(PermutationKey);
+	if (DescIt != PermutationDescs.end())
+	{
+		Desc = DescIt->second;
+	}
+	else if (!BuildFallbackPermutationDesc(FilePath, PermutationKey, Desc))
+	{
+		return false;
+	}
+
+	FShader NewShader;
+	TMap<FString, uint32> NewTextureBindSlots = TextureBindSlots;
+	TMap<FString, FShaderVariableInfo> NewShaderVariables = ShaderVariables;
+	uint32 NewCBufferSize = CBufferSize;
+
+	if (!CompileShaderPermutation(*this, Device, Desc, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize))
+	{
+		return false;
+	}
+
+	PermutationDescs[PermutationKey] = Desc;
+	AddPermutation(PermutationKey, NewShader);
+	TextureBindSlots = std::move(NewTextureBindSlots);
+	ShaderVariables = std::move(NewShaderVariables);
+	CBufferSize = NewCBufferSize;
+
+	return true;
+}
+
 void UShader::Reload(ID3D11Device* Device)
 {
 	if (!Device) return;
@@ -198,48 +316,11 @@ void UShader::Reload(ID3D11Device* Device)
 	for (const auto& [Key, Desc] : PermutationDescs)
 	{
 		FShader NewShader;
-		TComPtr<ID3DBlob> VSBlob;
-		TComPtr<ID3DBlob> PSBlob;
-
-		TArray<D3D_SHADER_MACRO> Macros = BuildShaderMacros(Desc.Defines);
-
-		FShaderCompileResult VSResult = FShaderCompiler::CompileFromFile(FilePath, Desc.VSEntryPoint, "vs_5_0",
-			Macros.data(), Desc.PermutationKey);
-		if (!VSResult.bSuccess)
+		if (!CompileShaderPermutation(*this, Device, Desc, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize))
 		{
-			UE_LOG("Failed to compile vertex shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
 			ReleasePermutationMap(NewPermutations);
 			return;
 		}
-		VSBlob = VSResult.Blob;
-
-		FShaderCompileResult PSResult = FShaderCompiler::CompileFromFile(FilePath, Desc.PSEntryPoint, "ps_5_0",
-			Macros.data(), Desc.PermutationKey);
-		if (!PSResult.bSuccess)
-		{
-			UE_LOG("Failed to compile pixel shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
-			ReleasePermutationMap(NewPermutations);
-			return;
-		}
-		PSBlob = PSResult.Blob;
-
-		if (FAILED(Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &NewShader.VS)))
-		{
-			UE_LOG("Failed to create vertex shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
-			ReleasePermutationMap(NewPermutations);
-			return;
-		}
-
-		if (FAILED(Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &NewShader.PS)))
-		{
-			UE_LOG("Failed to create pixel shader: %s key=%u\n", FilePath.c_str(), Desc.PermutationKey);
-			NewShader.Release();
-			ReleasePermutationMap(NewPermutations);
-			return;
-		}
-
-		ReflectShader(VSBlob.Get(), Device, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize);
-		ReflectShader(PSBlob.Get(), Device, NewShader, NewTextureBindSlots, NewShaderVariables, NewCBufferSize);
 
 		if (CBufferSize > 0)
 		{
