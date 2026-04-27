@@ -682,6 +682,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	{
 		SelectedComponent = Comp;
 		bActorSelected = false;
+		EditorEngine->GetSelectionManager().SelectComponent(Comp);
 	}
 
 	// 컴포넌트 트리에서 간단하게 드래그 앤 드랍으로 부모-자식 관계 변경 가능하도록 지원
