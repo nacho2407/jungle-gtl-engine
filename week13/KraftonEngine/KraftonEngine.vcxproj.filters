@@ -168,15 +168,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Lighting\ClusterConstructCS.hlsl">
-      <Filter>Shaders\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Lighting\ClusterHeatMap.hlsl">
-      <Filter>Shaders\Lighting</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Lighting\LightCullingCS.hlsl">
-      <Filter>Shaders\Lighting</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -216,7 +207,16 @@
     <FxCompile Include="Shaders\Geometry\UberLit.hlsl">
       <Filter>Shaders\Geometry</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ClusterConstructCS.hlsl">
+      <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ClusterHeatMap.hlsl">
+      <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Lighting\HiZGenerate.hlsl">
+      <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\LightCullingCS.hlsl">
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Lighting\OcclusionTest.hlsl">
@@ -273,9 +273,6 @@
       <Filter>Source\Editor\Selection</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
-      <Filter>Source\Editor\Settings</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Settings\ProjectSettings.cpp">
       <Filter>Source\Editor\Settings</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
@@ -441,6 +438,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Notification.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
@@ -791,9 +791,6 @@
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
       <Filter>Source\Editor\Settings</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Settings\ProjectSettings.h">
-      <Filter>Source\Editor\Settings</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
@@ -981,6 +978,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Notification.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ProjectSettings.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h">
