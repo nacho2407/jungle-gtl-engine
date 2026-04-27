@@ -60,7 +60,7 @@ namespace ESystemTexSlot
 	constexpr uint32 CullingHeatmap = 20;      // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
 	constexpr uint32 ShadowMapCSM       = 21;  // t21: Directional CSM Texture2DArray (4 cascades)
 	constexpr uint32 ShadowMapSpotAtlas = 22;  // t22: Spot Atlas Texture2DArray (multi-page)
-	constexpr uint32 ShadowMapPointCube = 23;  // t23: Point TextureCubeArray
+	constexpr uint32 ShadowMapPointLightTextureArray = 23;  // t23: Point Light
 	constexpr uint32 SpotShadowDatas    = 24;  // t24: StructuredBuffer<FSpotShadowDataGPU>
 	constexpr uint32 PointShadowDatas   = 25;  // t25: StructuredBuffer<FPointShadowDataGPU>
 
@@ -127,7 +127,7 @@ struct FPointShadowDataGPU
 	FMatrix  FaceViewProj[6];    // 384B | offset  0
 	float    NearZ;              //   4B | offset 384
 	float    FarZ;               //   4B | offset 388
-	uint32   CubeArrayIndex;     //   4B | offset 392  (TextureCubeArray index)
+	uint32   ArrayIndex;         //   4B | offset 392
 	float    _pad[5];            //  20B | offset 396  → 합계 416B (32B aligned)
 };
 static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);

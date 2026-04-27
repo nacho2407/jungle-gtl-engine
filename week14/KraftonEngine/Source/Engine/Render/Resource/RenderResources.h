@@ -41,20 +41,20 @@ struct FShadowMapResources
 	uint32 SpotAtlasPageCount  = 0;
 
 	// ── Point Light CubeMap (t23) ──
-	ID3D11Texture2D*          PointCubeTexture = nullptr;
-	ID3D11DepthStencilView**  PointCubeDSVs    = nullptr;
-	ID3D11ShaderResourceView* PointCubeSRV     = nullptr;
-	uint32 PointCubeResolution = 1024;
-	uint32 PointCubeCount      = 0;
+	ID3D11Texture2D*          PointLightShadowTexture = nullptr;
+	ID3D11DepthStencilView**  PointLightShadowDSVs    = nullptr;
+	ID3D11ShaderResourceView* PointLightShadowSRV     = nullptr;
+	uint32 PointLightShadowTextureResolution = 1024;
+	uint32 PointLightShadowTextureCount      = 0;
 
 	// ── Per-light StructuredBuffers (t24, t25) ──
 	ID3D11Buffer*             SpotShadowDataBuffer  = nullptr;
 	ID3D11ShaderResourceView* SpotShadowDataSRV     = nullptr;
 	uint32                    SpotShadowDataCapacity = 0;
 
-	ID3D11Buffer*             PointShadowDataBuffer = nullptr;
-	ID3D11ShaderResourceView* PointShadowDataSRV    = nullptr;
-	uint32                    PointShadowDataCapacity = 0;
+	ID3D11Buffer*             PointLightShadowDataBuffer = nullptr;
+	ID3D11ShaderResourceView* PointLightShadowDataSRV    = nullptr;
+	uint32                    PointLightShadowDataCapacity = 0;
 
 	// ── VSM Moment Textures (FilterMode == VSM 일 때 사용) ──
 	// CSM VSM
@@ -83,7 +83,7 @@ struct FShadowMapResources
 
 	bool IsCSMValid()   const { return CSMTexture != nullptr; }
 	bool IsSpotValid()  const { return SpotAtlasTexture != nullptr && SpotAtlasPageCount > 0; }
-	bool IsPointValid() const { return PointCubeTexture != nullptr && PointCubeCount > 0; }
+	bool IsPointLightValid() const { return PointLightShadowTexture != nullptr && PointLightShadowTextureCount > 0; }
 
 	bool IsCSMVSMValid()   const { return CSMVSMTexture != nullptr; }
 	bool IsSpotVSMValid()  const { return SpotVSMTexture != nullptr; }
@@ -91,7 +91,7 @@ struct FShadowMapResources
 
 	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
-	void EnsurePointCube(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
+	void EnsurePointLightTexture(ID3D11Device* Device, uint32 Resolution, uint32 CubeCount);
 
 	void EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);

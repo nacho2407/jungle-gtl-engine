@@ -134,7 +134,7 @@ struct FPointShadowData
     float4x4 FaceViewProj[6];   // 384B
     float    NearZ;             //   4B
     float    FarZ;              //   4B
-    uint     CubeArrayIndex;    //   4B  (TextureCubeArray index)
+    uint     ArrayIndex;        //   4B  (Texture2DArray first slice = ArrayIndex * 6)
     float    _pad[5];           //  20B  → 합계 416B
 };
 

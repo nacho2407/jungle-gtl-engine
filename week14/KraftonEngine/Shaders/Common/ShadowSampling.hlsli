@@ -189,7 +189,7 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
     if (NumShadowPointLights == 0)
         return 1.0f;
 
-    FPointShadowData pd = PointShadowDatas[lightIndex];
+    FPointShadowData pointLightData = PointShadowDatas[lightIndex];
 
     // 라이트→프래그먼트 방향으로 dominant face 결정
     float3 L = worldPos - lightPos;
@@ -203,20 +203,21 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
     else
         face = (L.z > 0.0f) ? 4 : 5; // +Z, -Z
 
-    float4 lightSpacePos = mul(float4(worldPos, 1.0f), pd.FaceViewProj[face]);
-    float fragDepth = (lightSpacePos.z / lightSpacePos.w) + ShadowBias; // Reversed-Z
+    float4 lightSpacePos = mul(float4(worldPos, 1.0f), pointLightData.FaceViewProj[face]);
+    float3 ndc = lightSpacePos.xyz / lightSpacePos.w;
 
-    // TextureCubeArray 샘플링 — 방향 벡터 + array index
-    float4 cubeCoord = float4(L, (float)pd.CubeArrayIndex);
+    float2 projUV = ndc.xy * float2(0.5f, -0.5f) + 0.5f;
+    float  fragDepth = ndc.z + ShadowBias;
+    float3 sampleCoord = float3(projUV, (float)(pointLightData.ArrayIndex * 6 + face));
 
     if (ShadowFilterMode == 2) // VSM
     {
-        float2 moments = ShadowMapPointCube.SampleLevel(ShadowLinearSampler, cubeCoord, 0).rg;
+        float2 moments = ShadowMapPointLightTextureArray.SampleLevel(ShadowLinearSampler, sampleCoord, 0).rg;
         return ComputeVSMFactor(moments, fragDepth);
     }
     else // Hard or PCF — 수동 비교
     {
-        float depth = ShadowMapPointCube.SampleLevel(PointClampSampler, cubeCoord, 0).r;
+        float depth = ShadowMapPointLightTextureArray.SampleLevel(PointClampSampler, sampleCoord, 0).r;
         return (fragDepth >= depth) ? 1.0f : 0.0f;
     }
 }
