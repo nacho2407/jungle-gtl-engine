@@ -54,9 +54,10 @@ public:
 	EPrimitiveProxyFlags  GetProxyFlags() const { return ProxyFlags; }
 	bool HasProxyFlag(EPrimitiveProxyFlags F) const { return (ProxyFlags & F) != EPrimitiveProxyFlags::None; }
 
-	// --- 가시성 / 선택 ---
-	bool IsVisible()  const { return bVisible; }
-	bool IsSelected() const { return bSelected; }
+	// --- 가시성 / 선택 / 그림자 ---
+	bool IsVisible()    const { return bVisible; }
+	bool IsSelected()   const { return bSelected; }
+	bool CastsShadow()  const { return bCastShadow; }
 
 	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
 	ERenderPass        GetRenderPass()  const;
@@ -115,6 +116,7 @@ protected:
 
 	// 가시성 (서브클래스 UpdateVisibility/UpdatePerViewport에서 변경)
 	bool bVisible = true;
+	bool bCastShadow = true;
 
 	// LOD (서브클래스 UpdateLOD에서 변경)
 	uint32 CurrentLOD = 0;

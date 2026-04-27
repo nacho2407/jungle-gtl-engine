@@ -1,4 +1,4 @@
-﻿#include "ShadowMapPass.h"
+#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -71,10 +71,10 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	else
 		Resources.SetBlendState(Device, EBlendState::NoColor);
 
-	// Shadow CB 캐시 초기화
+	// Shadow CB 캐시 초기화 — Bias/SlopeBias/Sharpen은 RenderDirectionalShadows에서 per-light 값으로 갱신
 	ShadowCBCache = {};
-	ShadowCBCache.ShadowBias      = FShadowSettings::Get().GetEffectiveBias();
-	ShadowCBCache.ShadowSlopeBias = FShadowSettings::Get().GetEffectiveSlopeBias();
+	ShadowCBCache.ShadowBias       = FShadowSettings::kDefaultBias;
+	ShadowCBCache.ShadowSlopeBias  = FShadowSettings::kDefaultSlopeBias;
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
 }
 
@@ -284,6 +284,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
 		if (!Proxy || !Proxy->IsVisible()) continue;
+		if (!Proxy->CastsShadow()) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;
 
@@ -333,6 +334,12 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 
 	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+
+	// b5 Bias/SlopeBias/Sharpen: FShadowSettings override > per-light 값
+	const auto& Settings = FShadowSettings::Get();
+	ShadowCBCache.ShadowBias      = Settings.GetBias().value_or(DirectionalParams.ShadowBias);
+	ShadowCBCache.ShadowSlopeBias = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
+	ShadowCBCache.ShadowSharpen   = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
 
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
@@ -495,9 +502,15 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 										   static_cast<float>(AtlasRegion.Size) / AtlasF,
 										   static_cast<float>(AtlasRegion.X)	/ AtlasF,
 										   static_cast<float>(AtlasRegion.Y)	/ AtlasF);
+		const FSpotLightParams& SpotLight = Env.GetSpotLight(i);
+		const auto& Settings = FShadowSettings::Get();
+
 		SpotGPUData[ShadowIdx].ViewProj = VP.ViewProj;
 		SpotGPUData[ShadowIdx].AtlasScaleBias = AtlasScaleBias;
 		SpotGPUData[ShadowIdx].PageIndex = 0;
+		SpotGPUData[ShadowIdx].ShadowBias      = Settings.GetBias().value_or(SpotLight.ShadowBias);
+		SpotGPUData[ShadowIdx].ShadowSharpen   = Settings.GetSharpen().value_or(SpotLight.ShadowSharpen);
+		SpotGPUData[ShadowIdx].ShadowSlopeBias = Settings.GetSlopeBias().value_or(SpotLight.ShadowSlopeBias);
 
 		++ShadowIdx;
 	}
@@ -578,6 +591,11 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		ShadowData.NearZ = ShadowNearZ;
 		ShadowData.FarZ = PointLight.AttenuationRadius;
 		ShadowData.ArrayIndex = ShadowedPointLightIndex;
+
+		const auto& Settings = FShadowSettings::Get();
+		ShadowData.ShadowBias      = Settings.GetBias().value_or(PointLight.ShadowBias);
+		ShadowData.ShadowSharpen   = Settings.GetSharpen().value_or(PointLight.ShadowSharpen);
+		ShadowData.ShadowSlopeBias = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
 
 		for (uint32 CubeFaceIndex = 0; CubeFaceIndex < 6; ++CubeFaceIndex)
 		{

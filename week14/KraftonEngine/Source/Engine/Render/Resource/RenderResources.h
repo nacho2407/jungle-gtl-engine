@@ -44,6 +44,7 @@ struct FShadowMapResources
 	ID3D11Texture2D*          PointLightShadowTexture = nullptr;
 	ID3D11DepthStencilView**  PointLightShadowDSVs    = nullptr;
 	ID3D11ShaderResourceView* PointLightShadowSRV     = nullptr;
+	ID3D11ShaderResourceView** PointLightSliceSRVs    = nullptr;  // [PointIndex*6 + FaceIndex] — ImGui 디버그용
 	uint32 PointLightShadowTextureResolution = 1024;
 	uint32 PointLightShadowTextureCount      = 0;
 
