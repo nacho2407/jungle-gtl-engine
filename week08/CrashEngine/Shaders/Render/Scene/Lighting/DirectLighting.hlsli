@@ -36,14 +36,15 @@ cbuffer LightCullingParams : register(b2)
     float NumLights;
 }
 
-static const float kShadowBias = 0.002f; // ÀÏ´Ü ÇÏµåÄÚµùµÈ bias·Î µû¶ó°¬À½
-static const float2 kShadowTexelSize = float2(1.0f / 2048.0f, 1.0f / 2048.0f); // °¡º¯ÀûÀ¸·Î ¹Ù²î¾î¾ßµÊ
+static const float kShadowBias = 0.002f; // ï¿½Ï´ï¿½ ï¿½Ïµï¿½ï¿½Úµï¿½ï¿½ï¿½ biasï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+static const float2 kShadowTexelSize = float2(1.0f / 2048.0f, 1.0f / 2048.0f); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù²ï¿½ï¿½ßµï¿½
 
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
 }
 
+// Get Shadow Factor from single Texture (Directional or Spot light)
 float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
@@ -136,6 +137,7 @@ float PCF_NvidiaOptimizedSpot(int ShadowIndex, float3 ShadowPosNDC, float4 Pixel
     return ShadowCoeff * 0.25f;
 }
 
+// Get Shadow Factor from Cubemap (Point light)
 float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, float Radius)
 {
     if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
@@ -190,7 +192,11 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
     Attenuation *= Attenuation;
 
     float Shadow = 1.0f;
-    if (dot(LocalLight.Direction, LocalLight.Direction) > 0.0001f)
+    if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
+    {
+        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius);
+    }
+    else                            // Spot light
     {
         float3 SpotDir = normalize(LocalLight.Direction);
         Attenuation *= smoothstep(
@@ -198,10 +204,6 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
         Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition);
-    }
-    else
-    {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius);
     }
 
     return Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation * Shadow;
@@ -236,8 +238,11 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
     Attenuation *= Attenuation;
 
     float Shadow = 1.0f;
-    const bool bIsSpotLight = LocalLight.OuterConeAngle < 179.5f;
-    if (bIsSpotLight)
+    if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
+    {
+        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius);
+    }
+    else                            // Spot light
     {
         float3 SpotDir = normalize(LocalLight.Direction);
         Attenuation *= smoothstep(
@@ -262,10 +267,6 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             ShadowPosNDC.z = ShadowPos.z;
             Shadow = PCF_NvidiaOptimizedSpot(LocalLight.ShadowMapIndex, ShadowPosNDC, PixelPos);
         }
-    }
-    else
-    {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, LocalLight.AttenuationRadius);
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;

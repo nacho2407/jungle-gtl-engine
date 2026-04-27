@@ -65,6 +65,7 @@ cbuffer GlobalLightParams : register(b4)
 
 struct FLocalLight
 {
+    int LightType; // 4B
     float3 Color; // 12B
     float Intensity; // 4B
     float3 Position; // 12B
@@ -73,7 +74,7 @@ struct FLocalLight
     float InnerConeAngle; // 4B
     float OuterConeAngle; // 4B
     int ShadowMapIndex; // 4B
-    float2 _PaddingLocal; // 8B
+    float _PaddingLocal; // 4B
     float4x4 ShadowViewProj; // 64B
 }; // Total: 128B
 
