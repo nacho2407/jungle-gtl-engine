@@ -329,6 +329,10 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 			FColor(  0, 255,   0),
 			FColor(  0, 255, 255),
 		};
+		auto DimColor = [](const FColor& Color)
+		{
+			return FColor(Color.R / 3, Color.G / 3, Color.B / 3);
+		};
 
 		constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 		const FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
@@ -350,6 +354,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 		for (int32 CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
 		{
 			const FColor& Color = CascadeColors[CascadeIndex];
+			const FColor ReceiverColor = DimColor(Color);
 			const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
 			const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
 
@@ -369,7 +374,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				World,
 				CascadeCorners[0], CascadeCorners[1], CascadeCorners[2], CascadeCorners[3],
 				CascadeCorners[4], CascadeCorners[5], CascadeCorners[6], CascadeCorners[7],
-				Color,
+				ReceiverColor,
 				0.0f
 			);
 
@@ -385,7 +390,23 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 					CascadeFarZ
 				);
 
-			DrawDebugFrustum(World, DirectionalVP.ViewProj, Color, 0.0f);
+			FVector ShadowBoxCorners[8];
+			FLightFrustumUtils::ComputeOrthoWorldCorners(
+				DirectionalVP.View,
+				DirectionalVP.OrthoWidth,
+				DirectionalVP.OrthoHeight,
+				DirectionalVP.NearZ,
+				DirectionalVP.FarZ,
+				ShadowBoxCorners
+			);
+
+			DrawDebugBox(
+				World,
+				ShadowBoxCorners[0], ShadowBoxCorners[1], ShadowBoxCorners[2], ShadowBoxCorners[3],
+				ShadowBoxCorners[4], ShadowBoxCorners[5], ShadowBoxCorners[6], ShadowBoxCorners[7],
+				Color,
+				0.0f
+			);
 		}
 	}
 
