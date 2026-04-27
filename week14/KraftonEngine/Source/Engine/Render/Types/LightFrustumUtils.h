@@ -121,7 +121,40 @@ namespace FLightFrustumUtils
 		FMatrix View;
 		FMatrix Proj;
 		FMatrix ViewProj;
+		float OrthoWidth = 0.0f;
+		float OrthoHeight = 0.0f;
+		float NearZ = 0.0f;
+		float FarZ = 0.0f;
 	};
+
+	inline void ComputeOrthoWorldCorners(
+		const FMatrix& View,
+		float Width,
+		float Height,
+		float NearZ,
+		float FarZ,
+		FVector (&OutCorners)[8])
+	{
+		const float HalfWidth = Width * 0.5f;
+		const float HalfHeight = Height * 0.5f;
+		const FMatrix InvView = View.GetInverseFast();
+		FVector Right = InvView.TransformVector(FVector(1.0f, 0.0f, 0.0f)).Normalized();
+		FVector Up = InvView.TransformVector(FVector(0.0f, 1.0f, 0.0f)).Normalized();
+		FVector Forward = InvView.TransformVector(FVector(0.0f, 0.0f, 1.0f)).Normalized();
+		const float DepthLength = FarZ - NearZ;
+
+		const FVector NearCenter = InvView.TransformPositionWithW(FVector(0.0f, 0.0f, NearZ));
+		const FVector FarCenter = NearCenter + Forward * DepthLength;
+
+		OutCorners[0] = NearCenter - Right * HalfWidth - Up * HalfHeight;
+		OutCorners[1] = NearCenter + Right * HalfWidth - Up * HalfHeight;
+		OutCorners[2] = NearCenter + Right * HalfWidth + Up * HalfHeight;
+		OutCorners[3] = NearCenter - Right * HalfWidth + Up * HalfHeight;
+		OutCorners[4] = FarCenter - Right * HalfWidth - Up * HalfHeight;
+		OutCorners[5] = FarCenter + Right * HalfWidth - Up * HalfHeight;
+		OutCorners[6] = FarCenter + Right * HalfWidth + Up * HalfHeight;
+		OutCorners[7] = FarCenter - Right * HalfWidth + Up * HalfHeight;
+	}
 
 	// CameraView/CameraProj로 카메라 frustum 8개 꼭짓점을 구하고,
 	// Light 방향의 직교 투영으로 감싸는 행렬을 생성.
@@ -207,6 +240,10 @@ namespace FLightFrustumUtils
 		// 넉넉한 depth range
 		float NearZ = 0.0f;
 		float FarZ  = (MaxZ - MinZ) + 100.0f;
+		Result.OrthoWidth = Width;
+		Result.OrthoHeight = Height;
+		Result.NearZ = NearZ;
+		Result.FarZ = FarZ;
 		Result.Proj = FMatrix::OrthoLH(Width, Height, NearZ, FarZ);
 
 		Result.ViewProj = Result.View * Result.Proj;
@@ -228,6 +265,11 @@ namespace FLightFrustumUtils
 	// ============================================================
 	// Directional Light(2) — 카메라 frustum 기반 Cascaded Shadow Map
 	// ============================================================
+
+	// Receiver cascade slice 밖에 있지만 해당 slice에 그림자를 드리우는 caster를
+	// 포함하기 위한 공통 light-direction depth 길이. Ortho width/height는 유지되므로
+	// shadow map의 X/Y texel density는 바뀌지 않는다.
+	inline constexpr float CSMShadowDepthLength = 500.0f;
 
 	struct FCascadeRange
 	{
@@ -352,26 +394,30 @@ namespace FLightFrustumUtils
 		float CenterX = (MinX + MaxX) * 0.5f;
 		float CenterY = (MinY + MaxY) * 0.5f;
 
+		const float ReceiverCenterZ = (MinZ + MaxZ) * 0.5f;
+		const float PaddedDepthRange = CSMShadowDepthLength;
+		const float PaddedMinZ = ReceiverCenterZ - PaddedDepthRange * 0.5f;
+
 		FMatrix InvLightView = Result.View.GetInverseFast();
 
-		FVector LSCenter(CenterX, CenterY, MinZ);
+		FVector LSCenter(CenterX, CenterY, PaddedMinZ);
 		FVector WSCenter = InvLightView.TransformPositionWithW(LSCenter);
 
-		float DepthRange = MaxZ - MinZ;
-
 		Result.View = FMatrix::LookAtLH(
-			WSCenter - LightDir * DepthRange,
 			WSCenter,
+			WSCenter + LightDir,
 			Up
 		);
 
-		const float DepthPadding = 100.0f;
-
+		Result.OrthoWidth = Width;
+		Result.OrthoHeight = Height;
+		Result.NearZ = 0.0f;
+		Result.FarZ = PaddedDepthRange;
 		Result.Proj = FMatrix::OrthoLH(
 			Width,
 			Height,
-			0.0f,
-			DepthRange + DepthPadding
+			Result.NearZ,
+			Result.FarZ
 		);
 
 		Result.ViewProj = Result.View * Result.Proj;
