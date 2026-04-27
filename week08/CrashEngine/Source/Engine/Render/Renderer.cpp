@@ -709,9 +709,17 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawBindStateCac
     Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullSRV);
-    for (uint32 ShadowSlot = 20; ShadowSlot < 25; ++ShadowSlot)
+    for (uint32 ShadowOffset = 0; ShadowOffset < ESystemTexSlot::MaxShadowMaps2DCount; ++ShadowOffset)
     {
-        Context->PSSetShaderResources(ShadowSlot, 1, &NullSRV);
+        const uint32 Slot = ESystemTexSlot::ShadowMap2DBase + ShadowOffset;
+        Context->VSSetShaderResources(Slot, 1, &NullSRV);
+        Context->PSSetShaderResources(Slot, 1, &NullSRV);
+    }
+    for (uint32 ShadowOffset = 0; ShadowOffset < ESystemTexSlot::MaxShadowMapsCubeCount; ++ShadowOffset)
+    {
+        const uint32 Slot = ESystemTexSlot::ShadowMapCubeBase + ShadowOffset;
+        Context->VSSetShaderResources(Slot, 1, &NullSRV);
+        Context->PSSetShaderResources(Slot, 1, &NullSRV);
     }
 
     Cache.Cleanup(Context);
