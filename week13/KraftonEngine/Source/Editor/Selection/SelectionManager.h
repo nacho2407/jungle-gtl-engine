@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 
 class AActor;
+class USceneComponent;
 class UGizmoComponent;
 class UWorld;
 
@@ -19,6 +20,9 @@ public:
 	void ClearSelection();
 	int32 DeleteSelectedActors();
 	void Tick();
+
+	void SelectComponent(USceneComponent* Component);
+	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
 
 	bool IsSelected(AActor* Actor) const
 	{
@@ -43,6 +47,7 @@ private:
 	void SetActorProxiesSelected(AActor* Actor, bool bSelected);
 
 	TArray<AActor*> SelectedActors;
+	USceneComponent* SelectedComponent = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	UWorld* World = nullptr;
 	bool bGizmoEnabled = true;
