@@ -25,6 +25,7 @@
 // ==================== Render Execute ====================
 
 #include "Render/Execute/Passes/Scene/PresentPass.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 
 // ==================== Render Resources ====================
@@ -692,8 +693,24 @@ void FRenderer::UpdateFrameBuffer(ID3D11DeviceContext* Context, const FSceneView
     const FCollectedLights  EmptyLights = {};
     const FCollectedLights& Lights      = ActiveScene ? DrawCollector.GetCollectedSceneData().Lights : EmptyLights;
 
+    float              ShadowTexelSize = 1.0f / 2048.0f;
+    if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        const FShadowMapPass* ShadowPass     = static_cast<FShadowMapPass*>(Pass);
+        const uint32          ShadowMapSize  = std::max(1u, ShadowPass->GetShadowMapSize());
+        ShadowTexelSize                     = 1.0f / static_cast<float>(ShadowMapSize);
+    }
+
     FrameResources.GlobalLightBuffer.Update(Context, &Lights.GlobalLights, sizeof(FGlobalLightCBData));
-    FrameResources.UpdateLocalLights(Device.GetDevice(), Context, Lights.LocalLights);
+
+    TArray<FLocalLightCBData> LocalLights = Lights.LocalLights;
+    for (FLocalLightCBData& LocalLight : LocalLights)
+    {
+        LocalLight.ShadowTexelSizeX = ShadowTexelSize;
+        LocalLight.ShadowTexelSizeY = ShadowTexelSize;
+    }
+
+    FrameResources.UpdateLocalLights(Device.GetDevice(), Context, LocalLights);
 }
 
 void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawBindStateCache& Cache)
@@ -709,9 +726,23 @@ void FRenderer::CleanupPassState(ID3D11DeviceContext* Context, FDrawBindStateCac
     Context->PSSetShaderResources(ESystemTexSlot::LocalLights, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::LightTileMask, 1, &NullSRV);
     Context->PSSetShaderResources(ESystemTexSlot::DebugHitMap, 1, &NullSRV);
-    for (uint32 ShadowSlot = 20; ShadowSlot < 25; ++ShadowSlot)
+    for (uint32 ShadowOffset = 0; ShadowOffset < ESystemTexSlot::MaxShadowMaps2DCount; ++ShadowOffset)
     {
-        Context->PSSetShaderResources(ShadowSlot, 1, &NullSRV);
+        const uint32 Slot = ESystemTexSlot::ShadowMap2DBase + ShadowOffset;
+        Context->VSSetShaderResources(Slot, 1, &NullSRV);
+        Context->PSSetShaderResources(Slot, 1, &NullSRV);
+        const uint32 MomentSlot = ESystemTexSlot::ShadowMoment2DBase + ShadowOffset;
+        Context->VSSetShaderResources(MomentSlot, 1, &NullSRV);
+        Context->PSSetShaderResources(MomentSlot, 1, &NullSRV);
+    }
+    for (uint32 ShadowOffset = 0; ShadowOffset < ESystemTexSlot::MaxShadowMapsCubeCount; ++ShadowOffset)
+    {
+        const uint32 Slot = ESystemTexSlot::ShadowMapCubeBase + ShadowOffset;
+        Context->VSSetShaderResources(Slot, 1, &NullSRV);
+        Context->PSSetShaderResources(Slot, 1, &NullSRV);
+        const uint32 MomentSlot = ESystemTexSlot::ShadowMomentCubeBase + ShadowOffset;
+        Context->VSSetShaderResources(MomentSlot, 1, &NullSRV);
+        Context->PSSetShaderResources(MomentSlot, 1, &NullSRV);
     }
 
     Cache.Cleanup(Context);

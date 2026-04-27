@@ -47,12 +47,18 @@ void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
                 ID3D11ShaderResourceView* ShadowSRV2D = ShadowPass->GetShadowSRV2D(i);
                 Context.Context->VSSetShaderResources(ESystemTexSlot::ShadowMap2DBase + i, 1, &ShadowSRV2D);
                 Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMap2DBase + i, 1, &ShadowSRV2D);
+                ID3D11ShaderResourceView* ShadowMomentSRV2D = ShadowPass->GetMomentSRV2D(i);
+                Context.Context->VSSetShaderResources(ESystemTexSlot::ShadowMoment2DBase + i, 1, &ShadowMomentSRV2D);
+                Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMoment2DBase + i, 1, &ShadowMomentSRV2D);
             }
             for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMapsCubeCount; ++i)
             {
                 ID3D11ShaderResourceView* ShadowSRVCube = ShadowPass->GetShadowSRVCube(i);
                 Context.Context->VSSetShaderResources(ESystemTexSlot::ShadowMapCubeBase + i, 1, &ShadowSRVCube);
                 Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMapCubeBase + i, 1, &ShadowSRVCube);
+                ID3D11ShaderResourceView* ShadowMomentSRVCube = ShadowPass->GetMomentSRVCube(i);
+                Context.Context->VSSetShaderResources(ESystemTexSlot::ShadowMomentCubeBase + i, 1, &ShadowMomentSRVCube);
+                Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMomentCubeBase + i, 1, &ShadowMomentSRVCube);
             }
         }
     }

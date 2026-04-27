@@ -24,5 +24,8 @@ struct FLightProxyInfo
     float    InnerConeAngle;
     float    OuterConeAngle;
     uint32   LightType;
+    float    ShadowBias;
+    float    ShadowSlopeBias;
+    float    ShadowNormalBias;
     float    Padding;
 };
