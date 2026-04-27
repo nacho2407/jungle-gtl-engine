@@ -22,4 +22,5 @@ private:
 
 	// Point Atlas: brightness 조절
 	float PointDepthBrightness = 1.0f;
+	bool bShowPointRegions	   = true;
 };
