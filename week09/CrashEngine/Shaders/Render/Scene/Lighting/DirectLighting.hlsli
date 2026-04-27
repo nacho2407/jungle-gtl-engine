@@ -330,7 +330,7 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
     return float4(BaseColor.rgb * saturate(TotalLight), BaseColor.a);
 }
 
-float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition)
+float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pixelPos)
 {
     float3 N = normalize(Normal);
     float3 TotalLight = GetAmbientLightColor();
@@ -340,16 +340,16 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition)
     {
         if (i >= NumDirectionalLights) break;
         float3 L = normalize(Directional[i].Direction);
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, pixelPos);
         TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
     return TotalLight;
 }
 
-float4 ComputeLambertLightingGlobalOnly(float4 BaseColor, float3 Normal, float3 WorldPos)
+float4 ComputeLambertLightingGlobalOnly(float4 BaseColor, float3 Normal, float3 WorldPos, float4 PixelPos)
 {
-    return float4(BaseColor.rgb * saturate(ComputeLambertGlobalLight(Normal, WorldPos)), BaseColor.a);
+    return float4(BaseColor.rgb * saturate(ComputeLambertGlobalLight(Normal, WorldPos, PixelPos)), BaseColor.a);
 }
 
 float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 WorldPosition, float3 ViewDirection, float4 PixelPos)
@@ -393,7 +393,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
     return float4(BaseColor.rgb * saturate(TotalDiffuse) + TotalSpecular * 0.2f, BaseColor.a);
 }
 
-FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 MaterialParam, float3 ViewDirection, float3 WorldPosition)
+FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 MaterialParam, float3 ViewDirection, float3 WorldPosition, float4 PixelPos)
 {
     FLocalBlinnPhongTerm Out;
     Out.Diffuse = GetAmbientLightColor();
@@ -414,7 +414,7 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition);
+        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, PixelPos);
 
         Out.Diffuse += Diffuse * LightColor * Shadow;
         Out.Specular += Specular * LightColor * Shadow;
@@ -423,9 +423,9 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
     return Out;
 }
 
-float4 ComputeBlinnPhongLightingGlobalOnly(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 ViewDirection, float3 WorldPos)
+float4 ComputeBlinnPhongLightingGlobalOnly(float4 BaseColor, float3 Normal, float4 MaterialParam, float3 ViewDirection, float3 WorldPos, float4 PixelPos)
 {
-    FLocalBlinnPhongTerm GlobalTerm = ComputeBlinnPhongGlobalLight(Normal, MaterialParam, ViewDirection, WorldPos);
+    FLocalBlinnPhongTerm GlobalTerm = ComputeBlinnPhongGlobalLight(Normal, MaterialParam, ViewDirection, WorldPos, PixelPos);
     return float4(BaseColor.rgb * saturate(GlobalTerm.Diffuse) + GlobalTerm.Specular * 0.2f, BaseColor.a);
 }
 

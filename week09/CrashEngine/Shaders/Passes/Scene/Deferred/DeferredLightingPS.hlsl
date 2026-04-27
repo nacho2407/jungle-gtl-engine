@@ -82,7 +82,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
 #elif defined(LIGHTING_MODEL_LAMBERT)
     float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
-    float3 TotalLight = ComputeLambertGlobalLight(Normal, WorldPos);
+    float3 TotalLight = ComputeLambertGlobalLight(Normal, WorldPos, Input.position);
     float3 TotalLocalLight = 0.0f;
 
     // Deferred는 global light를 먼저 구한 뒤, 아래 타일 light 목록에서
@@ -122,7 +122,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float4 MaterialParam = DecodeMaterialParam(ResolveSurface2(UV));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
     float3 ViewDir = normalize(CameraWorldPos - WorldPos);
-    FLocalBlinnPhongTerm TotalLight = ComputeBlinnPhongGlobalLight(Normal, MaterialParam, ViewDir, WorldPos);
+    FLocalBlinnPhongTerm TotalLight = ComputeBlinnPhongGlobalLight(Normal, MaterialParam, ViewDir, WorldPos, Input.position);
     FLocalBlinnPhongTerm TotalLocalLight = (FLocalBlinnPhongTerm)0;
 
     float Shininess = max(MaterialParam.x, 1.0f);
