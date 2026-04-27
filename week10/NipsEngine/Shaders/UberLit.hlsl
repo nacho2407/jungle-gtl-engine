@@ -165,6 +165,17 @@ uint SelectDirectionalCascade(float CameraDepth)
     return MAX_DIRECTIONAL_CASCADE_COUNT;
 }
 
+float3 ComputeShadowCoordCascade(float4 worldPos, int CascadeIndex)
+{
+    float4 shadowCoord = mul(worldPos, CascadeViewProj[CascadeIndex]);
+
+    if (abs(shadowCoord.w) < 1e-5f)
+    {
+        return 1.0f;
+    }
+
+    return shadowCoord.xyz / shadowCoord.w;
+}
 #ifdef SHADOW_MAP_CSM
 float CalculateShadow(float4 worldPos)
 {
@@ -181,14 +192,15 @@ float CalculateShadow(float4 worldPos)
         return 1.0f;
     }
 
-    float4 shadowCoord = mul(worldPos, CascadeViewProj[CascadeIndex]);
+    const float BlendAreaRatio = 0.1f;
+    float CascadeFar  = GetCascadeSplitFarValue(CascadeIndex);
+    float CascadeNear = (CascadeIndex == 0) ? 0.0f : GetCascadeSplitFarValue(CascadeIndex - 1);
+    float BlendWidth  = (CascadeFar - CascadeNear) * BlendAreaRatio;
 
-    if (abs(shadowCoord.w) < 1e-5f)
-    {
-        return 1.0f;
-    }
+    float BlendFactor = saturate((CameraDepth - (CascadeFar - BlendWidth)) / BlendWidth);
 
-    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+    float3 projCoords = ComputeShadowCoordCascade(worldPos, CascadeIndex);
+    
     float2 shadowUV = float2(
           projCoords.x * 0.5f + 0.5f,
           -projCoords.y * 0.5f + 0.5f
@@ -202,13 +214,18 @@ float CalculateShadow(float4 worldPos)
     }
 
     const float shadowBias = 0.005f;
-    return ComputeShadowPCF(
-          projCoords,
-          CascadeScaleOffset[CascadeIndex],
-          2,
-          ShadowSampler,
-          ShadowMap,
-          shadowBias);
+    float ShadowFactor = ComputeShadowPCF(projCoords, CascadeScaleOffset[CascadeIndex], 2, ShadowSampler, ShadowMap, shadowBias);
+    
+    // 마지막 인덱스 제외하고 블렌드
+    if (CascadeIndex < MAX_DIRECTIONAL_CASCADE_COUNT - 1)
+    {
+        int NextCascade = CascadeIndex + 1;
+        float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
+        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, CascadeScaleOffset[NextCascade], 2, ShadowSampler, ShadowMap, shadowBias);
+        ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
+    }
+    
+    return ShadowFactor;
 }
 #endif
 
@@ -249,7 +266,7 @@ float CalculateShadow(float4 worldPos)
 }
 #endif
 
-PSOutput mainPS(PSInput input) : SV_TARGET
+PSOutput mainPS(PSInput input): SV_TARGET
 {
     PSOutput output;
     
