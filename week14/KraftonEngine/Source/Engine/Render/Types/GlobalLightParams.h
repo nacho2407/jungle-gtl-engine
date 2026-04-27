@@ -28,6 +28,7 @@ struct FPointLightParams : public LightBaseParams
 	float AttenuationRadius;
 	float LightFalloffExponent;
 	uint32 LightType;
+	uint8 PCFScale = 0;
 
 	virtual FLightInfo ToLightInfo() const
 	{
@@ -57,7 +58,6 @@ struct FSpotLightParams : public FPointLightParams
 	float InnerConeCos;
 	float OuterConeCos;
 	float ShadowResolutionScale = 1;
-	uint8 PCFScale = 0;
 
 	virtual FLightInfo ToLightInfo() const override
 	{
