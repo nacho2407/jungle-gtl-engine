@@ -144,7 +144,7 @@ void UPrimitiveComponent::MarkRenderTransformDirty()
         return;
 
     World->UpdateActorInOctree(OwnerActor);
-    World->MarkWorldPrimitivePickingBVHDirty();
+    World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
 }
 
 void UPrimitiveComponent::MarkRenderVisibilityDirty()
@@ -159,7 +159,7 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
         return;
 
     World->UpdateActorInOctree(OwnerActor);
-    World->MarkWorldPrimitivePickingBVHDirty();
+    World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
 }
 
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -289,7 +289,7 @@ void UPrimitiveComponent::CreateRenderState()
     }
 
     World->GetPartition().AddSinglePrimitive(this);
-    World->MarkWorldPrimitivePickingBVHDirty();
+    World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
 }
 
 void UPrimitiveComponent::DestroyRenderState()
@@ -299,7 +299,7 @@ void UPrimitiveComponent::DestroyRenderState()
         if (UWorld* World = Owner->GetWorld())
         {
             World->GetPartition().RemoveSinglePrimitive(this);
-            World->MarkWorldPrimitivePickingBVHDirty();
+            World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
 
             if (SceneProxy)
             {

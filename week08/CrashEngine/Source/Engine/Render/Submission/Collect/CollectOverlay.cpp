@@ -1,7 +1,7 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Submission/Collect/DrawCollector.h"
 
-#include "Collision/BVH/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/ScenePrimitiveBVH.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Engine/Collision/Octree.h"
@@ -43,9 +43,9 @@ void FDrawCollector::CollectOverlay(const FCollectOverlayContext& OverlayContext
         CollectOctreeDebug(OverlayContext.Octree, CollectedOverlayData);
     }
 
-    if (OverlayContext.WorldBVH)
+    if (OverlayContext.ScenePrimitiveBVH)
     {
-        CollectWorldBVHDebug(*OverlayContext.WorldBVH, CollectedOverlayData);
+        CollectScenePrimitiveBVHDebug(*OverlayContext.ScenePrimitiveBVH, CollectedOverlayData);
     }
 
     if (OverlayContext.WorldBoundsProxies)
@@ -74,9 +74,9 @@ void FDrawCollector::CollectOctreeDebug(const FOctree* Node, uint32 Depth)
     CollectOctreeDebug(Node, CollectedOverlayData, Depth);
 }
 
-void FDrawCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH)
+void FDrawCollector::CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH)
 {
-    CollectWorldBVHDebug(BVH, CollectedOverlayData);
+    CollectScenePrimitiveBVHDebug(BVH, CollectedOverlayData);
 }
 
 void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies)
@@ -92,7 +92,7 @@ void FDrawCollector::CollectEditorHelpers(UWorld* World, const FSceneView& Scene
     OverlayData.EditorHelpers.Billboards.clear();
     OverlayData.EditorHelpers.Texts.clear();
 
-    if (!World || World->GetWorldType() != EWorldType::Editor)
+    if (!World || World->GetWorldType() != EWorldType::Editor || !SceneView.ShowFlags.bBillboardText)
     {
         return;
     }
@@ -224,10 +224,10 @@ void FDrawCollector::CollectOctreeDebug(const FOctree* Node, FCollectedOverlayDa
     }
 }
 
-void FDrawCollector::CollectWorldBVHDebug(const FWorldPrimitivePickingBVH& BVH, FCollectedOverlayData& OverlayData)
+void FDrawCollector::CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH, FCollectedOverlayData& OverlayData)
 {
-    const TArray<FWorldPrimitivePickingBVH::FNode>& Nodes = BVH.GetNodes();
-    for (const FWorldPrimitivePickingBVH::FNode& Node : Nodes)
+    const TArray<FScenePrimitiveBVH::FNode>& Nodes = BVH.GetNodes();
+    for (const FScenePrimitiveBVH::FNode& Node : Nodes)
     {
         if (!Node.Bounds.IsValid())
         {

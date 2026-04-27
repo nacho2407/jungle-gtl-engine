@@ -1,5 +1,4 @@
-﻿// 충돌/피킹 영역의 세부 동작을 구현합니다.
-#include "Collision/BVH/WorldPrimitivePickingBVH.h"
+#include "Collision/BVH/EditorHelperBVH.h"
 
 #include "Collision/RayUtils.h"
 #include "Collision/RayUtilsSIMD.h"
@@ -13,12 +12,9 @@
 #include <algorithm>
 #include <bit>
 
-/**
- * BVH 트리를 설정합니다.
- */
 namespace
 {
-constexpr int32 WorldBVHMaxTraversalStack = 512;
+constexpr int32 EditorHelperBVHMaxTraversalStack = 512;
 
 bool IsPickableEditorHelper(const UPrimitiveComponent* Primitive)
 {
@@ -26,12 +22,12 @@ bool IsPickableEditorHelper(const UPrimitiveComponent* Primitive)
 }
 } // namespace
 
-void FWorldPrimitivePickingBVH::MarkDirty()
+void FEditorHelperBVH::MarkDirty()
 {
     bDirty = true;
 }
 
-void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors, bool bIncludePickableEditorHelpers)
+void FEditorHelperBVH::BuildNow(const TArray<AActor*>& Actors)
 {
     Leaves.clear();
     BVH.Reset();
@@ -46,13 +42,7 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors, bool bIn
 
         for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
         {
-            if (!Primitive || !Primitive->ShouldRenderInCurrentWorld())
-            {
-                continue;
-            }
-
-            // if (Primitive->IsEditorHelper() && (!bIncludePickableEditorHelpers || !IsPickableEditorHelper(Primitive)))
-            if (Primitive->IsEditorHelper())
+            if (!Primitive || !Primitive->ShouldRenderInCurrentWorld() || !Primitive->IsEditorHelper() || !IsPickableEditorHelper(Primitive))
             {
                 continue;
             }
@@ -136,31 +126,18 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors, bool bIn
     bDirty = false;
 }
 
-void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors, bool bIncludePickableEditorHelpers)
+void FEditorHelperBVH::EnsureBuilt(const TArray<AActor*>& Actors)
 {
     if (!bDirty)
     {
         return;
     }
 
-    BuildNow(Actors, bIncludePickableEditorHelpers);
+    BuildNow(Actors);
 }
 
-/**
- * @brief BVH 트리를 순회하며 주어진 Ray와 교차하는 가장 가까운 프리미티브를 찾습니다.
- * SIMD를 활용하여 (BVH 트리에서 자식으로 이동하며 만나는) 여러 AABB와의 교차 검사를
- * 병렬로 빠르게 수행하며, 비트 연산 기반의 최적화를 통해 유효한 충돌만 빠르게 필터링합니다.
- * 검사된 노드들은 거리에 따라 정렬되어 가장 가까운 노드부터 탐색하여
- * 불필요한 연산을 효과적으로 걷어냅니다.
- *
- * @param Ray 쏠 광선(Ray)의 원점과 방향 정보
- * @param OutHitResult 가장 가까운 교차점의 물리적 충돌 결과 (반환용)
- * @param OutActor 교차된 프리미티브를 소유한 액터 포인터 (반환용)
- * @return 교차한 액터가 있으면 true, 없으면 false를 반환합니다.
- */
-bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
+bool FEditorHelperBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
 {
-    // FTraversalEntry는 충돌/피킹 처리에 필요한 데이터를 묶는 구조체입니다.
     struct FTraversalEntry
     {
         int32 NodeIndex = -1;
@@ -178,25 +155,20 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
     float RootTMin = 0.0f;
     float RootTMax = 0.0f;
-
-    // 루트 노드에 대해 AABB 검사 후 실패했다면, picking될 가능성이 없을 테니 바로 return.
     if (!FMath::IntersectRayAABB(Ray, Nodes[0].Bounds, RootTMin, RootTMax))
     {
         return false;
     }
 
-    // SIMD 최적화를 위해 Ray 정보를 미리 SIMD 레지스터에 적재해둡니다. Gather 오버헤드를 줄일 수 있습니다.
     const FRaySIMDContext RayContext = FRayUtilsSIMD::MakeRayContext(Ray.Origin, Ray.Direction);
 
-    // BVH 트리 순회. DFS 방식이나 재귀 없이 로컬 스택을 사용
-    FTraversalEntry NodeStack[WorldBVHMaxTraversalStack];
+    FTraversalEntry NodeStack[EditorHelperBVHMaxTraversalStack];
     int32 StackSize = 0;
     NodeStack[StackSize++] = { 0, RootTMin };
 
     while (StackSize > 0)
     {
         const FTraversalEntry Entry = NodeStack[--StackSize];
-        // 현재 노드와의 최소 교차 거리가 이미 찾은 가장 가까운 충돌점보다 멀다면 검사를 생략합니다
         if (Entry.TMin > OutHitResult.Distance)
         {
             continue;
@@ -208,13 +180,10 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
             FTraversalEntry PrimitiveEntries[MaxLeafSize];
             int32 PrimitiveEntryCount = 0;
 
-            // 교차 판정이 필요한 리프 노드의 프리미티브들입니다.
             for (int32 PacketIndex = 0; PacketIndex < Node.PayloadCount; ++PacketIndex)
             {
-                // Ray와 충돌 검사할 AABB packet들을 가져옵니다.
                 const FPrimitivePacket& Packet = PrimitivePackets[Node.PayloadIndex + PacketIndex];
-                alignas(32) float PrimitiveTMinValues[8]; // 32비트 정렬
-                // 리프 노드 내부에서 AABB 테스트를 SIMD로 수행하여 hit primitive 후보를 뽑아냅니다.
+                alignas(32) float PrimitiveTMinValues[8];
                 const int32 PrimitiveMask = FRayUtilsSIMD::IntersectAABB8(
                     RayContext,
                     Packet.MinX, Packet.MinY, Packet.MinZ,
@@ -222,16 +191,12 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                     OutHitResult.Distance,
                     PrimitiveTMinValues);
 
-                // 광선과 충돌한 자식이 하나도 없다면 하위 탐색 생략
                 if (PrimitiveMask == 0)
                 {
                     continue;
                 }
-                // 월드 BVH도 메시 BVH와 동일하게, 루프를 돌지 않고 countr_zero를 사용하여 충돌한 ChildLane만 빠르게 추출
 
                 uint32 RemainingPrimitiveMask = static_cast<uint32>(PrimitiveMask) & ((1u << Packet.PrimitiveCount) - 1u);
-                // countr_zero를 통해 켜져 있는 가장 낮은 비트(Lane 인덱스)를 찾아내는 방식으로
-                // for문을 전부 순회하는 O(N) 대신 켜진 비트 수 비례대로 O(k)로 루프를 처리합니다.
                 while (RemainingPrimitiveMask != 0)
                 {
                     const uint32 Lane = std::countr_zero(RemainingPrimitiveMask);
@@ -240,8 +205,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                 }
             }
 
-            // 잠재적 충돌 대상 프리미티브들을 거리 순으로 정렬합니다.
-            // 가장 가까운 것을 먼저 정밀 검사해야 이후 후보들을 빠르게 쳐낼 수 있습니다.
             if (PrimitiveEntryCount > 1)
             {
                 if (PrimitiveEntryCount == 2)
@@ -251,13 +214,12 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                         std::swap(PrimitiveEntries[0], PrimitiveEntries[1]);
                     }
                 }
-                else // 삽입 정렬 수행
+                else
                 {
                     for (int32 I = 1; I < PrimitiveEntryCount; ++I)
                     {
                         FTraversalEntry Key = PrimitiveEntries[I];
                         int32 J = I - 1;
-                        // 가까운 것이 배열의 앞쪽 인덱스로 오도록 정렬
                         while (J >= 0 && PrimitiveEntries[J].TMin > Key.TMin)
                         {
                             PrimitiveEntries[J + 1] = PrimitiveEntries[J];
@@ -268,14 +230,10 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                 }
             }
 
-            // 정렬된 후보들을 순서대로 실제 폴리곤 단위의 정밀 충돌 검사를 시작합니다.
-            // 여기서부터 narrow phase, mesh BVH입니다.
             for (int32 EntryIndex = 0; EntryIndex < PrimitiveEntryCount; ++EntryIndex)
             {
                 if (PrimitiveEntries[EntryIndex].TMin >= OutHitResult.Distance)
                 {
-                    // 이미 더 가까운 hit를 찾은 뒤에는 그보다 먼 후보를 바로 버립니다.
-                    // 위의 pruning과는 별개입니다.
                     continue;
                 }
 
@@ -283,7 +241,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                 FHitResult CandidateHit{};
                 bool bHit = false;
 
-                // 스태틱 메시 컴포넌트인 경우 최적화된 계층적 메시 교차 검사를 호출
                 if (UStaticMeshComponent* const StaticMeshComponent = Leaf.StaticMeshPrimitive)
                 {
                     const FMatrix& WorldMatrix = StaticMeshComponent->GetWorldMatrix();
@@ -295,7 +252,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
                     bHit = Leaf.Primitive->LineTraceComponent(Ray, CandidateHit);
                 }
 
-                // 현재 최고 기록보다 매시에 닿은 실제 거리가 더 짧다면 결과를 갱신합니다.
                 if (bHit && CandidateHit.Distance < OutHitResult.Distance)
                 {
                     OutHitResult = CandidateHit;
@@ -320,8 +276,6 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
         FTraversalEntry ChildEntries[ChildFanout];
         int32 ChildEntryCount = 0;
 
-        // 월드 BVH도 메시 BVH와 같은 방식으로 hit child만 뽑아 정렬한다.
-        // 가까운 child를 먼저 방문해야 OutHitResult.Distance가 빨리 줄어 후속 노드를 더 많이 건너뛸 수 있다.
         uint32 RemainingChildMask = static_cast<uint32>(Mask) & ((1u << Node.ChildCount) - 1u);
         while (RemainingChildMask != 0)
         {
@@ -332,7 +286,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 
         if (ChildEntryCount == 1)
         {
-            if (StackSize < WorldBVHMaxTraversalStack)
+            if (StackSize < EditorHelperBVHMaxTraversalStack)
             {
                 NodeStack[StackSize++] = ChildEntries[0];
             }
@@ -358,7 +312,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
             }
         }
 
-        for (int32 I = 0; I < ChildEntryCount && StackSize < WorldBVHMaxTraversalStack; ++I)
+        for (int32 I = 0; I < ChildEntryCount && StackSize < EditorHelperBVHMaxTraversalStack; ++I)
         {
             NodeStack[StackSize++] = ChildEntries[I];
         }

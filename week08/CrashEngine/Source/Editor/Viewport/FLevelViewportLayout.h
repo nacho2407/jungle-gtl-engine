@@ -16,6 +16,7 @@ class FWindowsWindow;
 class FRenderer;
 class UWorld;
 class UEditorEngine;
+class AActor;
 
 // 뷰포트 레이아웃 종류 (12가지, UE 동일)
 enum class EViewportLayout : uint8
@@ -120,4 +121,6 @@ private:
     bool SavedSceneBVHVisibility[MaxViewportSlots] = {};
     bool SavedSceneOctreeVisibility[MaxViewportSlots] = {};
     bool SavedWorldBoundVisibility[MaxViewportSlots] = {};
+    AActor* PendingPilotContextActor = nullptr;
+    FLevelEditorViewportClient* PendingPilotContextViewport = nullptr;
 };

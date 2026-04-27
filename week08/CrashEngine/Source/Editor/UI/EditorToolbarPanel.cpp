@@ -5,8 +5,10 @@
 #include "Component/GizmoComponent.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/PIE/PIETypes.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Editor/Viewport/FLevelViewportLayout.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "GameFramework/AActor.h"
 #include "ImGui/imgui.h"
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
@@ -422,6 +424,43 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
                 Gizmo->SetScaleMode();
             } });
     }
+
+    OpenToolbarPopup("Pilot", "PilotPopup", [&]()
+                     {
+        FSelectionManager& Selection = Editor->GetSelectionManager();
+        AActor* SelectedActor = Selection.GetPrimarySelection();
+        const bool bCanPilotSelectedActor = (SelectedActor != nullptr);
+
+        BeginDisabledUnless(bCanPilotSelectedActor, [&]()
+        {
+            FString ActorName = SelectedActor ? SelectedActor->GetFName().ToString() : FString();
+            if (ActorName.empty() && SelectedActor && SelectedActor->GetClass())
+            {
+                ActorName = SelectedActor->GetClass()->GetName();
+            }
+
+            FString PilotLabel = "Pilot Selected Actor";
+            if (!ActorName.empty())
+            {
+                PilotLabel += " (" + ActorName + ")";
+            }
+
+            if (ImGui::Selectable(PilotLabel.c_str(), false))
+            {
+                VC->PilotSelectedActor(SelectedActor);
+                ImGui::CloseCurrentPopup();
+            }
+        });
+
+        const bool bIsPilotingActor = VC->IsPilotingActor();
+        BeginDisabledUnless(bIsPilotingActor, [&]()
+        {
+            if (ImGui::Selectable("Stop Piloting Actor", false))
+            {
+                VC->StopPilotingActor();
+                ImGui::CloseCurrentPopup();
+            }
+        }); });
 
     OpenToolbarPopup("ViewMode", "ViewModePopup", [&]()
                      {
