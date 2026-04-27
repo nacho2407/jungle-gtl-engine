@@ -124,12 +124,34 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources& Res)
 {
-	if (Res.CSMSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
-	if (Res.SpotAtlasSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
-	if (Res.PointCubeSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+	if (CurrentFilterMode == EShadowFilterMode::VSM)
+	{
+		// VSM: moment texture SRV 바인딩 (R32G32_FLOAT)
+		if (Res.CSMVSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMVSMSRV);
+		else if (Res.CSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
+
+		if (Res.SpotVSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotVSMSRV);
+		else if (Res.SpotAtlasSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
+
+		if (Res.PointVSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointVSMSRV);
+		else if (Res.PointCubeSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+	}
+	else
+	{
+		// Hard/PCF: depth SRV 바인딩 (R32_FLOAT)
+		if (Res.CSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
+		if (Res.SpotAtlasSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
+		if (Res.PointCubeSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointCube, 1, &Res.PointCubeSRV);
+	}
 
 	if (Res.SpotShadowDataSRV)
 		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.SpotShadowDataSRV);
@@ -180,20 +202,15 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 {
 	ID3D11Device* Dev = Ctx.Device.GetDevice();
 	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
-	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 
 	const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
 
 	// CSM (Directional) — 항상 Ensure (cascade 수는 상수)
 	Res.EnsureCSM(Dev, Resolution);
 
-	// Spot Atlas — shadow-casting spot 수 기반 page 수 결정
-	// TODO: 실제 shadow-casting spot 수 카운트 후 page 수 계산
-	// Res.EnsureSpotAtlas(Dev, Resolution, PageCount);
-
-	// Point Cube — shadow-casting point 수 기반
-	// TODO: 실제 shadow-casting point 수 카운트 후 cube 수 계산
-	// Res.EnsurePointCube(Dev, Resolution, CubeCount);
+	// VSM 모드일 때 moment 텍스처도 Ensure
+	if (CurrentFilterMode == EShadowFilterMode::VSM)
+		Res.EnsureCSM_VSM(Dev, Resolution);
 }
 
 // ============================================================
@@ -361,9 +378,20 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 		UploadLightViewProj(DC, DirectionalVP.ViewProj);
 
-		//reverse-Z
-		DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
-		DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+		// DSV(+RTV) 바인딩: VSM 모드일 때 moment RTV + depth DSV 동시 바인딩
+		if (CurrentFilterMode == EShadowFilterMode::VSM && Res.IsCSMVSMValid())
+		{
+			float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
+			DC->ClearRenderTargetView(Res.CSMVSMRTV[i], clearColor);
+			DC->ClearDepthStencilView(Res.CSMVSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(1, &Res.CSMVSMRTV[i], Res.CSMVSMDSV[i]);
+		}
+		else
+		{
+			//reverse-Z
+			DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+		}
 
 		D3D11_VIEWPORT ShadowVP = {};
 		ShadowVP.TopLeftX = 0.0f;
@@ -413,6 +441,10 @@ void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Devi
 	Res.EnsureSpotAtlas(Device.GetDevice(), Resolution, ShadowSpotCount);
 	if (!Res.IsSpotValid()) return;
 
+	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+	if (bVSM)
+		Res.EnsureSpotAtlas_VSM(Device.GetDevice(), Resolution, ShadowSpotCount);
+
 	// per-light GPU 데이터 준비
 	TArray<FSpotShadowDataGPU> SpotGPUData;
 	SpotGPUData.resize(ShadowSpotCount);
@@ -437,9 +469,19 @@ void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Devi
 		// b2에 LightViewProj 업로드
 		UploadLightViewProj(DC, VP.ViewProj);
 
-		// DSV 바인딩 (slice = ShadowIdx)
-		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
-		DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[ShadowIdx]);
+		// DSV(+RTV) 바인딩 (slice = ShadowIdx)
+		if (bVSM && Res.IsSpotVSMValid())
+		{
+			float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
+			DC->ClearRenderTargetView(Res.SpotVSMRTVs[ShadowIdx], clearColor);
+			DC->ClearDepthStencilView(Res.SpotVSMDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(1, &Res.SpotVSMRTVs[ShadowIdx], Res.SpotVSMDSVs[ShadowIdx]);
+		}
+		else
+		{
+			DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[ShadowIdx]);
+		}
 		DC->RSSetViewports(1, &ShadowVP);
 
 		// depth 렌더링
@@ -491,7 +533,21 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	const uint32 Resolution = SpotLightAtlas.GetAtlasSize();
 	Res.EnsureSpotAtlas(Ctx.Device.GetDevice(), Resolution, 1);
 	if (!Res.IsSpotValid()) return;
-	DC->ClearDepthStencilView(Res.SpotAtlasDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+
+	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+	if (bVSM)
+		Res.EnsureSpotAtlas_VSM(Ctx.Device.GetDevice(), Resolution, 1);
+
+	if (bVSM && Res.IsSpotVSMValid())
+	{
+		float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
+		DC->ClearRenderTargetView(Res.SpotVSMRTVs[0], clearColor);
+		DC->ClearDepthStencilView(Res.SpotVSMDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+	}
+	else
+	{
+		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+	}
 
 	// per-light GPU 데이터 준비
 	TArray<FSpotShadowDataGPU> SpotGPUData;
@@ -526,8 +582,15 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		// b2에 LightViewProj 업로드
 		UploadLightViewProj(DC, VP.ViewProj);
 
-		// DSV 바인딩 (slice = ShadowIdx)
-		DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[0]);
+		// DSV(+RTV) 바인딩
+		if (bVSM && Res.IsSpotVSMValid())
+		{
+			DC->OMSetRenderTargets(1, &Res.SpotVSMRTVs[0], Res.SpotVSMDSVs[0]);
+		}
+		else
+		{
+			DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[0]);
+		}
 		DC->RSSetViewports(1, &ShadowVP);
 
 		// depth 렌더링
@@ -596,6 +659,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		return;
 	}
 
+	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+	if (bVSM)
+		Res.EnsurePointCube_VSM(Ctx.Device.GetDevice(), ShadowResolution, ShadowPointLightCount);
+
 	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
 	PointLightShadowGPUData.resize(ShadowPointLightCount);
 
@@ -631,9 +698,19 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			UploadLightViewProj(DC, FaceViewProjection.ViewProj);
 
 			uint32 DSVFaceIndex = ShadowPointLightIndex * 6 + CubeFaceIndex;
-			ID3D11DepthStencilView *FaceDepthStencilView = Res.PointCubeDSVs[DSVFaceIndex];
-			DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
-			DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
+			if (bVSM && Res.IsPointVSMValid())
+			{
+				float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
+				DC->ClearRenderTargetView(Res.PointVSMRTVs[DSVFaceIndex], clearColor);
+				DC->ClearDepthStencilView(Res.PointVSMDSVs[DSVFaceIndex], D3D11_CLEAR_DEPTH, 0.0f, 0);
+				DC->OMSetRenderTargets(1, &Res.PointVSMRTVs[DSVFaceIndex], Res.PointVSMDSVs[DSVFaceIndex]);
+			}
+			else
+			{
+				ID3D11DepthStencilView *FaceDepthStencilView = Res.PointCubeDSVs[DSVFaceIndex];
+				DC->ClearDepthStencilView(FaceDepthStencilView, D3D11_CLEAR_DEPTH, 0.0f, 0);
+				DC->OMSetRenderTargets(0, nullptr, FaceDepthStencilView);
+			}
 			DC->RSSetViewports(1, &ShadowViewport);
 
 			DrawShadowCasters(Ctx, LightFrustum);
