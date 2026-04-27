@@ -158,7 +158,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			VisibleBoundingBox.Merge(Box);
 		}
 
-		float Slideback = 1.0f;
+		float Slideback = 5.0f;
 
 		float Near = RenderBus->GetNearPlane();
 		float MinZ = FLT_MAX;
