@@ -74,3 +74,15 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildShadowMapMacros(EShadowMap Map)
 	Macros.push_back({ nullptr, nullptr });
 	return Macros;
 }
+
+TArray<D3D_SHADER_MACRO> FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass Pass)
+{
+    TArray<D3D_SHADER_MACRO> Macros;
+    if (Pass == EVSMBlurPass::Horizontal)
+	{
+        Macros.push_back({ "HORIZONTAL_PASS", "1" });
+	}
+	// Vertical은 매크로 없이 compile
+    Macros.push_back({ nullptr, nullptr });
+    return Macros;
+}

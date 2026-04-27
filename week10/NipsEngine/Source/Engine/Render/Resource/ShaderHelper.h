@@ -32,6 +32,11 @@ enum class ELightingModel : uint32
 	Heatmap		= 4 << 8,
 };
 
+enum class EVSMBlurPass : uint32
+{
+	Horizontal,
+	Vertical,
+};
 
 class FShaderHelper
 {
@@ -39,6 +44,7 @@ public:
 	static TArray<D3D_SHADER_MACRO> BuildUberLitMacros(uint32 PermutationKey);
 	static TArray<D3D_SHADER_MACRO> BuildLightCullingCSMacros(ELightCullMode Mode);
 	static TArray<D3D_SHADER_MACRO> BuildShadowMapMacros(EShadowMap Map);
+    static TArray<D3D_SHADER_MACRO> BuildVSMBlurCSMacros(EVSMBlurPass Pass);
 };
 
 inline EShaderFeature operator&(EShaderFeature a, EShaderFeature b)
