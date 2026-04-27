@@ -12,6 +12,12 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Render/Visibility/LightCulling/TileBasedLightCulling.h"
 
+namespace
+{
+    constexpr uint32 SHADOWMAP_2D_SLOT_START = 20;
+    constexpr uint32 SHADOWMAP_CUBE_SLOT_START = 25;
+} // namespace
+
 void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     ID3D11ShaderResourceView* NullSRVs[6] = {};
@@ -42,11 +48,17 @@ void FDeferredOpaquePass::PrepareInputs(FRenderPipelineContext& Context)
         if (FRenderPass* Pass = Context.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
         {
             FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
-            for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS; ++i)
+            for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS_2D; ++i)
             {
-                ID3D11ShaderResourceView* ShadowSRV = ShadowPass->GetShadowSRV(i);
-                Context.Context->VSSetShaderResources(20 + i, 1, &ShadowSRV);
-                Context.Context->PSSetShaderResources(20 + i, 1, &ShadowSRV);
+                ID3D11ShaderResourceView* ShadowSRV2D = ShadowPass->GetShadowSRV2D(i);
+                Context.Context->VSSetShaderResources(SHADOWMAP_2D_SLOT_START + i, 1, &ShadowSRV2D);
+                Context.Context->PSSetShaderResources(SHADOWMAP_2D_SLOT_START + i, 1, &ShadowSRV2D);
+            }
+            for (uint32 i = 0; i < FShadowMapPass::MAX_SHADOW_MAPS_CUBE; ++i)
+            {
+                ID3D11ShaderResourceView* ShadowSRVCube = ShadowPass->GetShadowSRVCube(i);
+                Context.Context->VSSetShaderResources(SHADOWMAP_CUBE_SLOT_START + i, 1, &ShadowSRVCube);
+                Context.Context->PSSetShaderResources(SHADOWMAP_CUBE_SLOT_START + i, 1, &ShadowSRVCube);
             }
         }
     }

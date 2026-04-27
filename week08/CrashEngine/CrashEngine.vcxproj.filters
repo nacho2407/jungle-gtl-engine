@@ -91,6 +91,9 @@
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{c9473e67-01af-08d9-c000-4f3a61330e70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Collision\BVH">
+      <UniqueIdentifier>{fb7a1aec-fa97-ea02-1e2f-e49fb0e0e4be}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{9b83a0eb-f993-371d-6d99-fd85ab0e2245}</UniqueIdentifier>
     </Filter>
@@ -470,12 +473,6 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\Octree.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -491,14 +488,20 @@
     <ClCompile Include="Source\Engine\Collision\Sphere.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\EditorHelperBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\EditorPickingBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.cpp">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -1034,18 +1037,6 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\BVH\BVH.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\OBB.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
@@ -1064,11 +1055,23 @@
     <ClInclude Include="Source\Engine\Collision\Sphere.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\BVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\EditorPickingBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.h">
-      <Filter>Source\Engine\Collision</Filter>
+      <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>

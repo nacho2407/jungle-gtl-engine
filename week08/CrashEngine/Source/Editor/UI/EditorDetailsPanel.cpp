@@ -923,7 +923,8 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     }
 
     uint32 PreviewFace = 0;
-    if (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point))
+    bool bIsCubeShadow = (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point));
+    if (bIsCubeShadow)
     {
         static const char* FaceLabels[6] = { "World +X", "World -X", "World +Y", "World -Y", "World +Z", "World -Z" };
         static const char* FaceButtonLabels[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
@@ -974,7 +975,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
 
     ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
     ID3D11ShaderResourceView* PreviewSRV =
-        ShadowPass->GetShadowPreviewSRV(static_cast<uint32>(LightProxy->ShadowMapIndex), PreviewFace, Context);
+        ShadowPass->GetShadowPreviewSRV(static_cast<uint32>(LightProxy->ShadowMapIndex), bIsCubeShadow, PreviewFace, Context);
     if (!PreviewSRV)
     {
         ImGui::TextDisabled("Shadow preview is unavailable.");
