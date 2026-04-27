@@ -267,8 +267,8 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 
 void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 Resolution, uint32 PointLightCount)
 {
-	// if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == CubeCount && PointLightShadowTexture)
-	// 	return;
+	if (PointLightShadowTextureResolution == Resolution && PointLightShadowTextureCount == PointLightCount && PointLightShadowTexture)
+		return;
 	// 매 프레임 재생성
 
 	// 기존 리소스 해제
@@ -617,7 +617,7 @@ void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resol
 
 	if (CubeCount == 0) return;
 
-	// Moment Texture: R32G32_FLOAT, TextureCubeArray
+	// Moment Texture: R32G32_FLOAT, Texture2DArray
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
 	MomentDesc.Width  = Resolution;
 	MomentDesc.Height = Resolution;
@@ -627,7 +627,7 @@ void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resol
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	MomentDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+	MomentDesc.MiscFlags = 0;
 
 	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &PointVSMTexture))) return;
 
@@ -641,7 +641,6 @@ void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resol
 	DepthDesc.SampleDesc.Count = 1;
 	DepthDesc.Usage  = D3D11_USAGE_DEFAULT;
 	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	DepthDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
 
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &PointVSMDepthTexture)))
 	{
@@ -672,14 +671,14 @@ void FShadowMapResources::EnsurePointCube_VSM(ID3D11Device* Device, uint32 Resol
 		Device->CreateDepthStencilView(PointVSMDepthTexture, &DSVDesc, &PointVSMDSVs[i]);
 	}
 
-	// SRV — TextureCubeArray
+	// SRV — Texture2DArray (matches hard/PCF path binding)
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-	SRVDesc.TextureCubeArray.MostDetailedMip = 0;
-	SRVDesc.TextureCubeArray.MipLevels = 1;
-	SRVDesc.TextureCubeArray.First2DArrayFace = 0;
-	SRVDesc.TextureCubeArray.NumCubes = CubeCount;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+	SRVDesc.Texture2DArray.MostDetailedMip = 0;
+	SRVDesc.Texture2DArray.MipLevels = 1;
+	SRVDesc.Texture2DArray.FirstArraySlice = 0;
+	SRVDesc.Texture2DArray.ArraySize = CubeCount * 6;
 	Device->CreateShaderResourceView(PointVSMTexture, &SRVDesc, &PointVSMSRV);
 }
 
