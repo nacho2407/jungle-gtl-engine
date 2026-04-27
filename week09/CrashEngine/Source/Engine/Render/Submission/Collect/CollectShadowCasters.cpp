@@ -11,7 +11,8 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
         return;
     }
 
-    uint32 ShadowMapCount = 0;
+    uint32 ShadowMap2DCount = 0;
+    uint32 ShadowMapCubeCount = 0;
 
     for (FLightProxy* Light : CollectedSceneData.Lights.VisibleLightProxies)
     {
@@ -20,19 +21,29 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
         // Reset
         Light->ShadowMapIndex = -1;
 
-        if (!Light->bCastShadow || ShadowMapCount >= 5 /* FShadowMapPass::MAX_SHADOW_MAPS */)
+        if (!Light->bCastShadow)
         {
             continue;
         }
 
-        Light->ShadowMapIndex = static_cast<int32>(ShadowMapCount++);
+        FLightProxyInfo& LC = Light->LightProxyInfo;
+
+        // Assign indices based on type
+        if (LC.LightType == static_cast<uint32>(ELightType::Point))
+        {
+            if (ShadowMapCubeCount >= 5) continue;
+            Light->ShadowMapIndex = static_cast<int32>(ShadowMapCubeCount++);
+        }
+        else // Directional or Spot
+        {
+            if (ShadowMap2DCount >= 5) continue;
+            Light->ShadowMapIndex = static_cast<int32>(ShadowMap2DCount++);
+        }
 
         // Clear previous frame results
         Light->VisibleShadowCasters.clear();
 
-        // 1. Update ShadowViewFrustum and LightViewProj based on light type
-        FLightProxyInfo& LC = Light->LightProxyInfo;
-        
+        // Update ShadowViewFrustum and LightViewProj based on light type
         FMatrix LightView = FMatrix::Identity;
         FMatrix LightProj = FMatrix::Identity;
 
