@@ -1,5 +1,6 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Registry/ShaderProgramRegistry.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
 
 namespace
 {
@@ -63,6 +64,13 @@ void FShaderProgramRegistry::Initialize()
     Add(EShaderType::Billboard, MakeGraphicsProgramDesc("Billboard", "Shaders/Render/Editor/ShaderBillboard.hlsl"));
     Add(EShaderType::HeightFog, MakeGraphicsProgramDesc("HeightFog", "Shaders/Passes/PostProcess/HeightFogPass.hlsl"));
     Add(EShaderType::DepthOnly, MakeGraphicsProgramDesc("DepthOnly", "Shaders/Passes/Scene/Shared/DepthOnlyPass.hlsl"));
+    FGraphicsProgramDesc ShadowEncodeVSM = MakeGraphicsProgramDesc("ShadowEncodeVSM", "Shaders/Passes/Scene/Shared/ShadowEncodePass.hlsl");
+    AddDefine(ShadowEncodeVSM, "SHADOW_FILTER_METHOD", GetShadowFilterMethodDefineValue(EShadowFilterMethod::VSM));
+    Add(EShaderType::ShadowEncodeVSM, ShadowEncodeVSM);
+
+    FGraphicsProgramDesc ShadowEncodeESM = MakeGraphicsProgramDesc("ShadowEncodeESM", "Shaders/Passes/Scene/Shared/ShadowEncodePass.hlsl");
+    AddDefine(ShadowEncodeESM, "SHADOW_FILTER_METHOD", GetShadowFilterMethodDefineValue(EShadowFilterMethod::ESM));
+    Add(EShaderType::ShadowEncodeESM, ShadowEncodeESM);
     Add(EShaderType::LightHitMap, MakeGraphicsProgramDesc("LightHitMap", "Shaders/Passes/PostProcess/LightHitMapPass.hlsl"));
 
     FGraphicsProgramDesc SceneDepth = MakeGraphicsProgramDesc("SceneDepth", "Shaders/Render/Scene/ViewModes/NonLitViewMode.hlsl");

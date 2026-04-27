@@ -2,6 +2,10 @@
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
+
+#include <algorithm>
+#include <cctype>
 
 void FEditorConsolePanel::AddLog(const char* fmt, ...)
 {
@@ -66,6 +70,40 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
 				AddLog("Usage: stat fps | stat memory | stat lightcull | stat none\n");
 			} });
+
+    RegisterCommand("shadow_filter", [this](const TArray<FString>& Args)
+                    {
+			if (Args.size() < 2)
+			{
+				AddLog("Usage: shadow_filter PCF | VSM | ESM\n");
+				AddLog("Current shadow filter: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod()));
+				return;
+			}
+
+			FString FilterName = Args[1];
+			std::transform(FilterName.begin(), FilterName.end(), FilterName.begin(),
+				[](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
+
+			if (FilterName == "PCF")
+			{
+				SetShadowFilterMethod(EShadowFilterMethod::PCF);
+			}
+			else if (FilterName == "VSM")
+			{
+				SetShadowFilterMethod(EShadowFilterMethod::VSM);
+			}
+			else if (FilterName == "ESM")
+			{
+				SetShadowFilterMethod(EShadowFilterMethod::ESM);
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown shadow filter: '%s'\n", Args[1].c_str());
+				AddLog("Usage: shadow_filter PCF | VSM | ESM\n");
+				return;
+			}
+
+			AddLog("Shadow filter changed to: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod())); });
 }
 
 void FEditorConsolePanel::Render(float DeltaTime)
