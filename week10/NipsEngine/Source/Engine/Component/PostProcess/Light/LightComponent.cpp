@@ -52,22 +52,20 @@ namespace
 		}
 		Center /= 8.0f;
 
-		const FVector Ref =
-			(std::abs(FVector::DotProduct(LightDir, FVector::UpVector)) < 0.9f)
-			? FVector::UpVector
-			: FVector::RightVector;
-
-		const FVector Right = FVector::CrossProduct(Ref, LightDir).GetSafeNormal();
-		const FVector Up = FVector::CrossProduct(LightDir, Right).GetSafeNormal();
+		FVector Ref = FVector::UpVector;
+		if (std::abs(FVector::DotProduct(LightDir, FVector::UpVector)) >= 0.9f)
+		{
+			Ref = FVector::RightVector;
+		}
+		
+		FVector Right = FVector::CrossProduct(Ref, LightDir).GetSafeNormal();
+		FVector Up = FVector::CrossProduct(LightDir, Right).GetSafeNormal();
 
 		float Radius = 1.0f;
 		for (int i = 0; i < 8; ++i)
 		{
 			const float Dist = (SplitCorners[i] - Center).Size();
-			if (Dist > Radius)
-			{
-				Radius = Dist;
-			}
+			Radius = std::max(Radius, Dist);
 		}
 
 		const float ViewBackoff = Radius + 10.0f;
@@ -253,11 +251,11 @@ FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, cons
 
 	for (int i = 0; i < 8; ++i)
 	{
-		const FVector4 LS4 = FVector4(SplitCorners[i], 1.0f) * LightView;
-		const FVector LS(LS4.X, LS4.Y, LS4.Z);
+		const FVector4 tmp = FVector4(SplitCorners[i], 1.0f) * LightView;
+		const FVector LightSapceVertex(tmp.X, tmp.Y, tmp.Z);
 
-		Min = FVector::Min(Min, LS);
-		Max = FVector::Max(Max, LS);
+		Min = FVector::Min(Min, LightSapceVertex);
+		Max = FVector::Max(Max, LightSapceVertex);
 	}
 
 	Min.X -= DepthPad;
