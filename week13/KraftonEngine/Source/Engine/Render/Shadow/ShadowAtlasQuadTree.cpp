@@ -3,157 +3,17 @@
 
 #include <algorithm>
 
-namespace {
-	uint32 NextPowerOfTwo(uint32 v)
-	{
-		v--;
-		v |= v >> 1;
-		v |= v >> 2;
-		v |= v >> 4;
-		v |= v >> 8;
-		v |= v >> 16;
-		v++;
-		return v;
-	}
-
-	uint32 RoundToNearestPowerOfTwo(uint32 Value)
-	{
-		if (Value <= 1)
-			return 1;
-
-		uint32 Upper = NextPowerOfTwo(Value);
-		uint32 Lower = Upper >> 1;
-
-		return (Value - Lower < Upper - Value) ? Lower : Upper;
-	}
-}
-
 // Public functions
-void FShadowAtlasQuadTree::Init(float InAtlasSize, float InMinShadowMapResolution) {
-	if (InMinShadowMapResolution <= 0.f || InAtlasSize <= 0.f) {
-		return;
-	}
-	if (InMinShadowMapResolution > InAtlasSize) {
-		return;
-	}
-
-	AtlasSize = InAtlasSize;
-	RemainingSpace = AtlasSize * AtlasSize;
-	MinShadowMapResolution = InMinShadowMapResolution;
-	Node RootNode = {};
-	RootNode.TopLeft = FVector2(0.f, 0.f);
-	RootNode.Resolution = InAtlasSize;
-
-	Nodes.push_back(RootNode);
-}
 
 // Unused for now
-FAtlasRegion FShadowAtlasQuadTree::Add(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
-	if (Nodes.empty()) return { 0, 0, 0, false };
-	float RequestedSize = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
-	return AllocateNode(0, RequestedSize);
-}
+//FAtlasRegion FShadowAtlasQuadTree::Add(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
+//	if (Nodes.empty()) return { 0, 0, 0, false };
+//	float RequestedSize = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
+//	return AllocateNode(0, RequestedSize);
+//}
 
 void FShadowAtlasQuadTree::AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
 	Batch.push_back({InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H)});
-}
-
-void FShadowAtlasQuadTree::Reset() {
-	if (!Nodes.empty()) {
-		Nodes.resize(1);
-		Node& Root = Nodes[0];
-		Root.bOccupied = false;
-		Root.bSplit = false;
-		Root.Children[0] = Root.Children[1] = Root.Children[2] = Root.Children[3] = -1;
-	}
-
-	RemainingSpace = AtlasSize * AtlasSize;
-}
-
-void FShadowAtlasQuadTree::Clear() {
-	Nodes.clear();
-	RemainingSpace = AtlasSize * AtlasSize;
-}
-
-// Private helpers
-FAtlasRegion FShadowAtlasQuadTree::AllocateNode(int32 NodeIdx, uint32 RequestedSize) {
-	if (NodeIdx < 0
-		|| NodeIdx >= Nodes.size()
-		|| Nodes[NodeIdx].bOccupied
-		|| RequestedSize < (uint32) (MinShadowMapResolution)
-		|| !RemainingSpace) {
-		// Invalid Node index
-		return { 0, 0, 0, false };
-	}
-
-	if (RequestedSize * RequestedSize >= RemainingSpace && RequestedSize > MinShadowMapResolution)
-		return AllocateNode(NodeIdx, RequestedSize / 2);
-
-	Node node = Nodes[NodeIdx];
-	if (node.bSplit) {
-		for (int32 SubIdx : node.Children) {
-			if (Nodes[SubIdx].bOccupied || Nodes[SubIdx].Resolution < RequestedSize) continue;
-
-			// Greedily allocate the first child node that can fit the requested size
-			FAtlasRegion AllocatedRegion = AllocateNode(SubIdx, RequestedSize);
-			if (AllocatedRegion.bValid) {
-				return AllocatedRegion;
-			}
-		}
-
-		return { 0, 0, 0, false };
-	}
-	else {
-		if (node.Resolution == RequestedSize) {
-			RemainingSpace -= RequestedSize * RequestedSize;
-			Nodes[NodeIdx].bOccupied = true;
-			return { static_cast<uint32> (node.TopLeft.X), static_cast<uint32> (node.TopLeft.Y), static_cast<uint32>(node.Resolution), true };
-		}
-		else {
-
-			// Try again after splitting
-			if (Split(NodeIdx)) {
-				return AllocateNode(NodeIdx, RequestedSize);
-			}
-		}
-	}
-
-	return { 0, 0, 0, false };
-}
-
-bool FShadowAtlasQuadTree::Split(int32 Idx) {
-	if (Idx < 0 || Idx >= (int32)Nodes.size()) return false;
-
-	float HalfRes = Nodes[Idx].Resolution / 2.f;
-	if (HalfRes < MinShadowMapResolution) {
-		// Reached the minimum resolution. Should not split further.
-		return false;
-	}
-
-	FVector2 TL = Nodes[Idx].TopLeft;
-	for (int i = 0; i < 4; i++) {
-		Node NewNode = {};
-		NewNode.Resolution = HalfRes;
-
-		switch (i) {
-		case (0): // Top-Left
-			NewNode.TopLeft = TL;
-			break;
-		case (1): // Top-Right
-			NewNode.TopLeft = TL + FVector2(HalfRes, 0);
-			break;
-		case (2): // Bottom-Left
-			NewNode.TopLeft = TL + FVector2(0, HalfRes);
-			break;
-		case (3): // Bottom-Right
-			NewNode.TopLeft = TL + FVector2(HalfRes, HalfRes);
-			break;
-		}
-		Nodes.push_back(NewNode);
-		Nodes[Idx].Children[i] = (int32)(Nodes.size() - 1);
-	}
-	Nodes[Idx].bSplit = true;
-	return true;
 }
 
 float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
@@ -173,7 +33,6 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightIn
 	}
 
 	auto z_view = (c_sphere - CameraPos).Dot(Forward);
-	float z_guard = 5.f;
 	z_view = z_view > z_guard ? z_view : z_guard;
 	auto r_ndc = (r_sphere / z_view) / tanf(FOV / 2.f);
 	auto r_pixel = r_ndc * H / 2.f;
