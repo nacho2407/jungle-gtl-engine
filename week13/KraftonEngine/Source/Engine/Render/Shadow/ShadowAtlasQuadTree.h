@@ -3,7 +3,7 @@
 #include "Core/ClassTypes.h"
 
 // Exclusive to spotlights
-struct FLightInfo;
+struct FSpotLightParams;
 
 struct Node {
 	// Dimensions
@@ -25,9 +25,9 @@ public:
 	void Init(float InAtlasSize, float inMinShadowMapResolution);
 
 	// Try allocating the uv region for the input light source
-	FAtlasRegion Add(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
+	FAtlasRegion Add(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
 
-	void AddToBatch(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
+	void AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
 
 	// Sorts the pending batch by evaluated resolution, then allocates all entries into the atlas.
 	TArray<FAtlasRegion> CommitBatch();
@@ -49,13 +49,10 @@ private:
 	bool  Split(int32 Idx);
 
 	// Ranks the importance of the input light source based on its properties.
-	float EvaluateResolution(const FLightInfo& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
-
-	// Non-camera dependent version
-	//float EvaluateResolution(const FLightInfo& InLightInfo);
+	float EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
 
 private:
-	TArray<std::pair<FLightInfo, float>> Batch;
+	TArray<std::pair<FSpotLightParams, float>> Batch;
 	TArray<Node> Nodes;
 	float		 AtlasSize				= 4096.f;
 	float		 MinShadowMapResolution = 64.f;
