@@ -410,105 +410,6 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	ShadowCBCache.NumCSMCascades = NumCascades;
 }
 
-// ============================================================
-// RenderSpotShadows — 1 texture per spotlight (Atlas 우회 테스트용)
-// ============================================================
-// Texture2DArray의 slice를 1 spot = 1 slice로 사용.
-// Atlas quadtree 완성 후 교체 예정.
-
-void FShadowMapPass::RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition)
-{
-	SpotLightAtlas.Reset();
-	const FSceneEnvironment& Env = Scene.GetEnvironment();
-	const uint32 NumSpots = Env.GetNumSpotLights();
-	if (NumSpots == 0) return;
-
-	// shadow-casting spot 수 카운트
-	uint32 ShadowSpotCount = 0;
-	for (uint32 i = 0; i < NumSpots; ++i)
-	{
-		if (Env.GetSpotLight(i).bCastShadows)
-			++ShadowSpotCount;
-	}
-	if (ShadowSpotCount == 0) return;
-
-	ShadowSpotCount = (ShadowSpotCount > MAX_SHADOW_SPOT_LIGHTS)
-		? MAX_SHADOW_SPOT_LIGHTS : ShadowSpotCount;
-
-	// 1 spot = 1 slice → SpotAtlas를 slice 배열로 사용
-	//const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
-	const uint32 Resolution = (uint32)SpotLightAtlas.GetAtlasSize();
-	Res.EnsureSpotAtlas(Device.GetDevice(), Resolution, ShadowSpotCount);
-	if (!Res.IsSpotValid()) return;
-
-	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
-	if (bVSM)
-		Res.EnsureSpotAtlas_VSM(Device.GetDevice(), Resolution, ShadowSpotCount);
-
-	// per-light GPU 데이터 준비
-	TArray<FSpotShadowDataGPU> SpotGPUData;
-	SpotGPUData.resize(ShadowSpotCount);
-
-	D3D11_VIEWPORT ShadowVP = {};
-	ShadowVP.Width    = static_cast<float>(Resolution);
-	ShadowVP.Height   = static_cast<float>(Resolution);
-	ShadowVP.MinDepth = 0.0f;
-	ShadowVP.MaxDepth = 1.0f;
-
-	uint32 ShadowIdx = 0;
-	for (uint32 i = 0; i < NumSpots && ShadowIdx < ShadowSpotCount; ++i)
-	{
-		const FSpotLightParams& Light = Env.GetSpotLight(i);
-		if (!Light.bCastShadows) continue;
-
-		// ViewProj 계산
-		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Light);
-		FConvexVolume LightFrustum;
-		LightFrustum.UpdateFromMatrix(VP.ViewProj);
-
-		// b2에 LightViewProj 업로드
-		UploadLightViewProj(DC, VP.ViewProj);
-
-		// DSV(+RTV) 바인딩 (slice = ShadowIdx)
-		if (bVSM && Res.IsSpotVSMValid())
-		{
-			float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
-			DC->ClearRenderTargetView(Res.SpotVSMRTVs[ShadowIdx], clearColor);
-			DC->ClearDepthStencilView(Res.SpotVSMDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
-			DC->OMSetRenderTargets(1, &Res.SpotVSMRTVs[ShadowIdx], Res.SpotVSMDSVs[ShadowIdx]);
-		}
-		else
-		{
-			DC->ClearDepthStencilView(Res.SpotAtlasDSVs[ShadowIdx], D3D11_CLEAR_DEPTH, 0.0f, 0);
-			DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[ShadowIdx]);
-		}
-		DC->RSSetViewports(1, &ShadowVP);
-
-		// depth 렌더링
-		DrawShadowCasters(DC, Scene, LightFrustum, Partition);
-
-		// GPU 데이터 기록 — 1:1 slice, UV = 전체 (atlas 안 쓰므로)
-		SpotGPUData[ShadowIdx].ViewProj        = VP.ViewProj;
-		SpotGPUData[ShadowIdx].AtlasScaleBias  = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
-		SpotGPUData[ShadowIdx].PageIndex        = ShadowIdx;
-
-		++ShadowIdx;
-	}
-
-	// StructuredBuffer 업로드
-	if (ShadowIdx > 0 && Res.SpotShadowDataBuffer)
-	{
-		D3D11_MAPPED_SUBRESOURCE Mapped = {};
-		if (SUCCEEDED(DC->Map(Res.SpotShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
-		{
-			memcpy(Mapped.pData, SpotGPUData.data(), sizeof(FSpotShadowDataGPU) * ShadowIdx);
-			DC->Unmap(Res.SpotShadowDataBuffer, 0);
-		}
-	}
-
-	ShadowCBCache.NumShadowSpotLights = ShadowIdx;
-}
-
 void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res) {
 	SpotLightAtlas.Reset();
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
@@ -748,9 +649,6 @@ void FShadowMapPass::RenderGlobal(FD3DDevice& Device, FSystemResources& Resource
 	SetupShadowRenderState(Device, Resources, DC);
 
 	FShadowMapResources& Res = Resources.ShadowResources;
-
-	// Spot/Point shadow 렌더링
-	RenderSpotShadows(DC, Device, Resources, Scene, Res, Partition);
 
 	// Shadow depth 렌더링 종료 — DSV 언바인딩 (SRV 바인딩 전 R/W hazard 방지)
 	DC->OMSetRenderTargets(0, nullptr, nullptr);
