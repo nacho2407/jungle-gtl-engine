@@ -26,9 +26,9 @@ public:
 	EShadowMap GetShadowMapType() const { return eShadowMapType; }
 	void SetShadowMapType(EShadowMap InType) { eShadowMapType = InType; }
 
-private:
-	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
-		const TArray<FBoundingBox>* VisibleObjectsBounds) const;
+protected:
+	virtual FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+		const TArray<FBoundingBox>* VisibleObjectsBounds) const { return FMatrix::Identity; }
 
 	FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		float SplitNearT, float SplitFarT) const;

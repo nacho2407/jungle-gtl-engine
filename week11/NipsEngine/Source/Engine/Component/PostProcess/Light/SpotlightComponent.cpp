@@ -29,11 +29,11 @@ FMatrix USpotlightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamVi
 	FVector CamDir = FVector(CamView[0][0], CamView[1][0], CamView[2][0]) * -1.0f;
 	FVector LightDir = GetForwardVector().GetSafeNormal();
 
-	float Dot = MathUtil::Abs(FVector::DotProduct(CamDir, LightDir));
-	if (Dot < 0.1f)
-	{
-		return ComputeBasicShadowMatrix(CamView, CamProj);
-	}
+	//float Dot = MathUtil::Abs(FVector::DotProduct(CamDir, LightDir));
+	//if (Dot < 0.1f)
+	//{
+	//	return ComputeBasicShadowMatrix(CamView, CamProj);
+	//}
 
 	FMatrix CamViewProj = CamView * CamProj;
 
