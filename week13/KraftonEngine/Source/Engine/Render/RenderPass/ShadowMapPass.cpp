@@ -243,7 +243,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	{
 		const uint32 SpotRes = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
 		Res.EnsureSpotAtlas(Dev, SpotRes, ShadowSpotCount);
-		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, ShadowSpotCount);
+		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
 	}
 
 	// ── Point Cube — shadow-casting point 수 기반 ──
