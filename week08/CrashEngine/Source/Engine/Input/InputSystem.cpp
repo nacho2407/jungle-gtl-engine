@@ -2,14 +2,14 @@
 
 void InputSystem::Tick(bool IsWindowFocused)
 {
-	if (!IsWindowFocused)
-	{
-		ClearInputOnFocusLost();
-		return;
-    }
-
     PreviousSnapshot = CurrentSnapshot;
     CurrentSnapshot = {};
+
+    if (!IsWindowFocused)
+    {
+        ClearInputOnFocusLost();
+        return;
+    }
 
     SampleKeyboard();
     SampleMouse();
