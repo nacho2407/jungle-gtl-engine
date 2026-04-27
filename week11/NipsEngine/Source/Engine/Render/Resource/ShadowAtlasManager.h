@@ -12,8 +12,6 @@ static constexpr uint32 SHADOW_CUBE_SIZE = 512;
 
 struct FShadowAtlasTile
 {
-    int32 TileIndex = -1;
-
     int32 TileX = 0;
     int32 TileY = 0;
 
@@ -112,11 +110,17 @@ public:
         return false;
     }
 
-	void FreeTile(int32 TileX, int32 TileY)
+	void FreeTile(int32 TileX, int32 TileY, int32 GridSize)
 	{
-        if (TileX >= 0 && TileX < GridCount && TileY >= 0 && TileY < GridCount)
-		{
-            Used[TileY][TileX] = false;
+        for (int32 y = 0; y < GridSize; ++y)
+        {
+            for (int32 x = 0; x < GridSize; ++x)
+            {
+                if (TileX + x >= 0 && TileX + x < GridCount && TileY + y >= 0 && TileY + y < GridCount)
+                {
+                    Used[TileY + y][TileX + x] = false;
+                }
+            }
 		}
     }
 
@@ -193,6 +197,10 @@ struct FShadowAtlasCube
             return true;
 		}
 		return false;
+	}
+
+	void ClearCubes(){
+        CurrentCubeCount = 0;
 	}
 
     bool IsValid() const { return CubeShadowMap != nullptr && CubeDSV != nullptr && CubeSRV != nullptr; }
@@ -303,12 +311,12 @@ public:
     void VSMInitialize(ID3D11Device* Device);
 
     bool AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile);
-    bool FreeTile(const int32& TileIndex);
+    bool FreeTile(const int32& TileX, const int32& TileY, const int32& TileSize);
     void ClearTiles() { ShadowAllocator.FreeAllTiles(); }
 
     bool AllocateTileCube(int32& OutCubeIndex);
     bool FreeTileCube(const int32& CubeIndex);
-    void ClearTilesCube() {}
+    void ClearTilesCube() { ShadowCubeMapArray.ClearCubes(); }
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
