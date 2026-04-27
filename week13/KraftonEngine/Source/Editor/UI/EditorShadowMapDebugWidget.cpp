@@ -6,7 +6,7 @@
 #include "Render/RenderPass/ShadowMapPass.h"
 #include "ImGui/imgui.h"
 
-static const char* CubeFaceNames[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+static const char* FaceNames[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
 
 void EditorShadowMapDebugWidget::Render(float DeltaTime)
 {
@@ -26,7 +26,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	ImGui::SameLine();
 	ImGui::RadioButton("Spot Atlas (t22)", &SelectedTab, 1);
 	ImGui::SameLine();
-	ImGui::RadioButton("Point Cube (t23)", &SelectedTab, 2);
+	ImGui::RadioButton("Point (t23)", &SelectedTab, 2);
 	ImGui::Separator();
 
 	float AvailWidth = ImGui::GetContentRegionAvail().x;
@@ -160,35 +160,42 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 	}
 	// ════════════════════════════════════════
-	// Point CubeMap (t23)
+	// Point (t23)
 	// ════════════════════════════════════════
 	else if (SelectedTab == 2)
 	{
 		if (!SR.IsPointLightValid())
 		{
-			ImGui::TextDisabled("Point CubeMap: not allocated");
+			ImGui::TextDisabled("Point: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Resolution: %u x %u, Cubes: %u", SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureCount);
+		ImGui::Text("Resolution: %u x %u, Lights: %u", SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureResolution, SR.PointLightShadowTextureCount);
 
-		// Cube 선택
-		if (PointCubeIndex >= (int32)SR.PointLightShadowTextureCount)
-			PointCubeIndex = 0;
+		if (PointLightIndex >= (int32)SR.PointLightShadowTextureCount)
+			PointLightIndex = 0;
 
 		ImGui::SetNextItemWidth(100.0f);
-		ImGui::SliderInt("Cube", &PointCubeIndex, 0, (int32)SR.PointLightShadowTextureCount - 1);
+		ImGui::SliderInt("Light", &PointLightIndex, 0, (int32)SR.PointLightShadowTextureCount - 1);
 
 		// Face 선택 (6방향)
 		for (int32 i = 0; i < 6; ++i)
 		{
 			if (i > 0) ImGui::SameLine();
-			ImGui::RadioButton(CubeFaceNames[i], &PointFaceIndex, i);
+			ImGui::RadioButton(FaceNames[i], &PointFaceIndex, i);
 		}
 
-		// TODO: per-face slice SRV 생성 후 여기서 프리뷰
-		ImGui::TextDisabled("Cube %d, Face %s preview (TODO: per-face SRV)", PointCubeIndex, CubeFaceNames[PointFaceIndex]);
+		int32 Slot = PointLightIndex * 6 + PointFaceIndex;
+		if (SR.PointLightSliceSRVs && SR.PointLightSliceSRVs[Slot])
+		{
+			ImGui::Image(
+				(ImTextureID)SR.PointLightSliceSRVs[Slot],
+				ImVec2(PreviewSize, PreviewSize),
+				ImVec2(0, 0), ImVec2(1, 1),
+				ImVec4(1, 1, 1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1)
+			);
+		}
 	}
 
 	ImGui::End();

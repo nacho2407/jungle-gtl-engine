@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Render/Types/RenderConstants.h"
@@ -22,7 +22,6 @@ private:
 	float SpotDepthBrightness = 1.0f;
 	bool  bShowSpotRegions    = true;
 
-	// Point Cube: 선택된 cube index + face index
-	int32 PointCubeIndex = 0;
+	int32 PointLightIndex = 0;
 	int32 PointFaceIndex = 0;
 };

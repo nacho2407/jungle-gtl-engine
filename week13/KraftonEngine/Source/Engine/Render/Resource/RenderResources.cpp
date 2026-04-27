@@ -278,6 +278,16 @@ void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 R
 		PointLightShadowSRV = nullptr;
 	}
 
+	if (PointLightSliceSRVs)
+	{
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
+		{
+			if (PointLightSliceSRVs[i]) PointLightSliceSRVs[i]->Release();
+		}
+		delete[] PointLightSliceSRVs;
+		PointLightSliceSRVs = nullptr;
+	}
+
 	if (PointLightShadowDSVs)
 	{
 		for (uint32 i = 0; i < PointLightShadowTextureCount; ++i)
@@ -335,24 +345,23 @@ void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 R
 
 	PointLightShadowTextureCount = PointLightCount;
 	PointLightShadowDSVs = new ID3D11DepthStencilView *[PointLightCount * 6]();
-	for (uint32 CubeIndex = 0; CubeIndex < PointLightCount; ++CubeIndex)
+	for (uint32 PointLightIndex = 0; PointLightIndex < PointLightCount; ++PointLightIndex)
 	{
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
-			uint32 CubeFaceIndex = CubeIndex * 6 + FaceIndex;
+			uint32 SliceIndex = PointLightIndex * 6 + FaceIndex;
 
 			D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 			DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
 			DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 			DSVDesc.Texture2DArray.MipSlice = 0;
-			DSVDesc.Texture2DArray.FirstArraySlice = CubeFaceIndex;
+			DSVDesc.Texture2DArray.FirstArraySlice = SliceIndex;
 			DSVDesc.Texture2DArray.ArraySize = 1;
 
-			Device->CreateDepthStencilView(PointLightShadowTexture, &DSVDesc, &PointLightShadowDSVs[CubeFaceIndex]);
+			Device->CreateDepthStencilView(PointLightShadowTexture, &DSVDesc, &PointLightShadowDSVs[SliceIndex]);
 		}
 	}
 
-	// TODO: Imgui 띄우려면 SRV를 여러개 생성
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -362,6 +371,23 @@ void FShadowMapResources::EnsurePointLightTexture(ID3D11Device* Device, uint32 R
 	SRVDesc.Texture2DArray.ArraySize = PointLightCount * 6;
 
 	Device->CreateShaderResourceView(PointLightShadowTexture, &SRVDesc, &PointLightShadowSRV);
+
+	PointLightSliceSRVs = new ID3D11ShaderResourceView*[PointLightCount * 6]();
+	for (uint32 PointLightIndex = 0; PointLightIndex < PointLightCount; ++PointLightIndex)
+	{
+		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+		{
+			uint32 Slot = PointLightIndex * 6 + FaceIndex;
+			D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
+			SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+			SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
+			SliceSRVDesc.Texture2DArray.MipLevels = 1;
+			SliceSRVDesc.Texture2DArray.FirstArraySlice = Slot;
+			SliceSRVDesc.Texture2DArray.ArraySize = 1;
+			Device->CreateShaderResourceView(PointLightShadowTexture, &SliceSRVDesc, &PointLightSliceSRVs[Slot]);
+		}
+	}
 
 	PointLightShadowDataCapacity = PointLightCount;
 
@@ -746,6 +772,15 @@ void FShadowMapResources::Release()
 	SpotAtlasPageCount = 0;
 
 	if (PointLightShadowSRV) { PointLightShadowSRV->Release(); PointLightShadowSRV = nullptr; }
+	if (PointLightSliceSRVs)
+	{
+		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)
+		{
+			if (PointLightSliceSRVs[i]) PointLightSliceSRVs[i]->Release();
+		}
+		delete[] PointLightSliceSRVs;
+		PointLightSliceSRVs = nullptr;
+	}
 	if (PointLightShadowDSVs)
 	{
 		for (uint32 i = 0; i < PointLightShadowTextureCount * 6; ++i)

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/RenderPass/RenderPassBase.h"
 #include "Render/Resource/Buffer.h"
