@@ -2,7 +2,6 @@
 
 #include "Render/Types/RenderTypes.h"
 #include "Render/Shader/ShaderManager.h"
-#include "Render/RenderPass/ShadowMapPass.h"
 #include "Core/Log.h"
 #include "Render/Scene/FScene.h"
 #include "GameFramework/World.h"
@@ -88,21 +87,6 @@ void FRenderer::Render(const FFrameContext& Frame, FScene& Scene)
 	Pipeline.Execute(PassCtx);
 
 	CleanupPassState(Cache);
-}
-
-// ============================================================
-// RenderGlobalShadows — Non-PSM 전체 1회 shadow bake
-// ============================================================
-// PSM OFF 시 뷰포트 루프 전에 1회 호출.
-// 카메라 독립적인 shadow map을 굽고 SRV/CB를 바인딩합니다.
-// 이후 각 뷰포트의 Render() → FShadowMapPass는 BeginPass에서 skip.
-
-void FRenderer::RenderGlobalShadows(FScene& Scene, FSpatialPartition* Partition)
-{
-	auto* ShadowPass = Pipeline.FindPass<FShadowMapPass>();
-	if (!ShadowPass) return;
-
-	ShadowPass->RenderGlobal(Device, Resources, Scene, Partition);
 }
 
 // ============================================================

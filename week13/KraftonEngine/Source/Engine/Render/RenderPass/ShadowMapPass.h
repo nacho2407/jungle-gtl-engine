@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/RenderPass/RenderPassBase.h"
 #include "Render/Resource/Buffer.h"
@@ -32,32 +32,25 @@ public:
 	FShadowMapPass();
 	~FShadowMapPass();
 
-	// ── PSM 패스 인터페이스 (per-viewport, Directional 전용) ──
+	// ── 패스 인터페이스 ──
 	bool BeginPass(const FPassContext& Ctx) override;
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
-	// ── Global Shadow (뷰포트 루프 전 1회, Spot/Point 전용) ──
-	void RenderGlobal(FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FSpatialPartition* Partition = nullptr);
-
 private:
-	// ── 라이트 타입별 Shadow 렌더링 (팀원별 담당) ──
+	// ── 라이트 타입별 Shadow 렌더링 ──
 	void RenderDirectionalShadows(const FPassContext& Ctx, FShadowMapResources& Res);
-	void RenderSpotShadows(ID3D11DeviceContext* DC, FD3DDevice& Device, FSystemResources& Resources, FScene& Scene, FShadowMapResources& Res, FSpatialPartition* Partition);
 	void RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res);
 	void RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res);
 
 	// ── 공용: frustum culling + depth-only draw ──
 	void DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, const FConvexVolume& LightFrustum, FSpatialPartition* Partition = nullptr);
-
-	// PSM용 래퍼 (기존 호출부 호환)
 	void DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum);
 
 	// ── 리소스 Ensure: FilterMode에 따라 depth-only / VSM moment 리소스 분기 ──
 	void EnsureResources(const FPassContext& Ctx);
 
 	// ── Shadow CB (b5) 업데이트 ──
-	void UpdateShadowCB(ID3D11DeviceContext* DC, FSystemResources& Resources, FShadowMapResources& Res);
 	void UpdateShadowCB(const FPassContext& Ctx);
 
 	// ── 공용 렌더 상태 세팅 ──
