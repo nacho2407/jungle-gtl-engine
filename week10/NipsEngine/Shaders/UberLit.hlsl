@@ -195,7 +195,7 @@ float CalculateShadow(float4 worldPos)
         return 1.0f;
     }
 
-    const float shadowBias = 0.005f;
+    const float shadowBias = 0.00f;
     float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
     return shadowFactor;
 }
