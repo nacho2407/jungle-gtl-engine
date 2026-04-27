@@ -199,10 +199,11 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			FCascadeSplit CascadeSplits[4] = {};
 
 			// MaxDistance 하드 코딩
+			// Practical한 방식이고 0일수록 로그split
 			BuildPracticalCascadeSplit(
 				RenderBus->GetNearPlane(),
 				RenderBus->GetFarPlane(),
-				100.f, 0.75f,
+				100.f, 0.15f,
 				CascadeSplits);
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
@@ -245,10 +246,12 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 				DirectionalShadowData.CascadeViewProj[CascadeIndex] = CascadeMatrix;
 				DirectionalShadowData.CascadeScaleOffset[CascadeIndex] = ShadowTile.ScaleOffset;
+
 				::SetCascadeSplitFar(
 					DirectionalShadowData.CascadeSplitFar,
 					CascadeIndex,
 					CascadeSplits[CascadeIndex].FarDistance);
+
 				DirectionalShadowData.DirectionalCascadeCount = CascadeIndex + 1;
 
 				if (!bHasDirectionalShadow)
