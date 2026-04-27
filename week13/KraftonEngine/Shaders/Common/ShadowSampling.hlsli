@@ -13,11 +13,12 @@
 // =============================================================================
 
 // ── Hard Shadow (1-tap comparison) ──────────────────────────────
+// SampleLevel + 수동 비교: R32G32_FLOAT(VSM)와 R32_FLOAT(depth) 모두 호환
 float SampleShadowHard(Texture2DArray shadowMap, float3 uvw, float compareDepth)
 {
-    // ShadowComparisonSampler (s3): D3D11_COMPARISON_GREATER_EQUAL (Reversed-Z)
-    // compareDepth >= texel → lit (1.0), compareDepth < texel → shadow (0.0)
-    return shadowMap.SampleCmpLevelZero(ShadowComparisonSampler, uvw, compareDepth);
+    // Reversed-Z: compareDepth >= texel → lit (1.0)
+    float shadowMapDepth = shadowMap.SampleLevel(PointClampSampler, uvw, 0).r;
+    return (compareDepth >= shadowMapDepth) ? 1.0f : 0.0f;
 }
 
 // ── PCF 3x3 (9-tap) ────────────────────────────────────────────
@@ -32,7 +33,8 @@ float SampleShadowPCF3x3(Texture2DArray shadowMap, float3 uvw, float compareDept
         for (int x = -1; x <= 1; ++x)
         {
             float3 offset = float3(float(x) * texelSize, float(y) * texelSize, 0.0f);
-            shadow += shadowMap.SampleCmpLevelZero(ShadowComparisonSampler, uvw + offset, compareDepth);
+            float depth = shadowMap.SampleLevel(PointClampSampler, uvw + offset, 0).r;
+            shadow += (compareDepth >= depth) ? 1.0f : 0.0f;
         }
     }
 
@@ -51,7 +53,8 @@ float SampleShadowPCF5x5(Texture2DArray shadowMap, float3 uvw, float compareDept
         for (int x = -2; x <= 2; ++x)
         {
             float3 offset = float3(float(x) * texelSize, float(y) * texelSize, 0.0f);
-            shadow += shadowMap.SampleCmpLevelZero(ShadowComparisonSampler, uvw + offset, compareDepth);
+            float depth = shadowMap.SampleLevel(PointClampSampler, uvw + offset, 0).r;
+            shadow += (compareDepth >= depth) ? 1.0f : 0.0f;
         }
     }
 
@@ -211,9 +214,10 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos)
         float2 moments = ShadowMapPointCube.SampleLevel(ShadowLinearSampler, cubeCoord, 0).rg;
         return ComputeVSMFactor(moments, fragDepth);
     }
-    else // Hard or PCF — comparison sampler로 단일 탭
+    else // Hard or PCF — 수동 비교
     {
-        return ShadowMapPointCube.SampleCmpLevelZero(ShadowComparisonSampler, cubeCoord, fragDepth);
+        float depth = ShadowMapPointCube.SampleLevel(PointClampSampler, cubeCoord, 0).r;
+        return (fragDepth >= depth) ? 1.0f : 0.0f;
     }
 }
 
