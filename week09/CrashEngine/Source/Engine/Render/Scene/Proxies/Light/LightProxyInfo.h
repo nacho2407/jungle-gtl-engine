@@ -8,9 +8,9 @@
 enum class ELightType : uint32
 {
     Ambient = 0,
-    Directional,
-    Point,
-    Spot,
+    Directional =1,
+    Point = 2,
+    Spot = 3,
 };
 
 // FLightProxyInfo stores the CPU-side light data a proxy submits to the renderer.
