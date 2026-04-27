@@ -150,7 +150,9 @@ struct alignas(32) FLocalLightCBData
     float    ShadowBias;        // 4B
     float    ShadowSlopeBias;   // 4B
     float    ShadowNormalBias;  // 4B
-    float    _Padding[5];       // 20B
+    float    ShadowTexelSizeX = 1.0f / 2048.0f; // 4B
+    float    ShadowTexelSizeY = 1.0f / 2048.0f; // 4B
+    float    _Padding[3]       = {};            // 12B
 }; // Total: 160B
 
 // FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.

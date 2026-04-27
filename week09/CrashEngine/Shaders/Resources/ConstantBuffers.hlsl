@@ -82,7 +82,8 @@ struct FLocalLight
     float ShadowBias; // 4B
     float ShadowSlopeBias; // 4B
     float ShadowNormalBias; // 4B
-    float _Padding[5]; // 20B
+    float2 ShadowTexelSize; // 8B
+    float _Padding[3]; // 12B
 }; // Total: 160B
 
 #endif // CONSTANT_BUFFERS_HLSL
