@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -59,7 +59,7 @@ public:
 	}
 
 	// 기본값 상수
-	static constexpr uint32 kDefaultResolution = 2048;
+	static constexpr uint32 kDefaultResolution = 32;
 	static constexpr float  kDefaultBias = 0.005f;
 	static constexpr float  kDefaultSlopeBias = 0.005f;
 	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;

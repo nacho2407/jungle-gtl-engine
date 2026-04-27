@@ -329,6 +329,10 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 			FColor(  0, 255,   0),
 			FColor(  0, 255, 255),
 		};
+		auto DimColor = [](const FColor& Color)
+		{
+			return FColor(Color.R / 3, Color.G / 3, Color.B / 3);
+		};
 
 		constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 		const FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
@@ -350,9 +354,11 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 		for (int32 CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
 		{
 			const FColor& Color = CascadeColors[CascadeIndex];
+			const FColor ReceiverColor = DimColor(Color);
 			const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
 			const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
 
+			// Camera frustum의 cascade slice를 world-space 8개 코너로 계산하여 와이어박스 그리기
 			FVector CascadeCorners[8];
 			FLightFrustumUtils::ComputeCascadeWorldCorners(
 				Frame.View,
@@ -368,10 +374,11 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				World,
 				CascadeCorners[0], CascadeCorners[1], CascadeCorners[2], CascadeCorners[3],
 				CascadeCorners[4], CascadeCorners[5], CascadeCorners[6], CascadeCorners[7],
-				Color,
+				ReceiverColor,
 				0.0f
 			);
 
+			// 같은 slice를 light-space ortho frustum으로 변환한 뒤 와이어프레임으로 그리기
 			const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
 				FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
 					DirectionalParams,
@@ -383,7 +390,23 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 					CascadeFarZ
 				);
 
-			DrawDebugFrustum(World, DirectionalVP.ViewProj, Color, 0.0f);
+			FVector ShadowBoxCorners[8];
+			FLightFrustumUtils::ComputeOrthoWorldCorners(
+				DirectionalVP.View,
+				DirectionalVP.OrthoWidth,
+				DirectionalVP.OrthoHeight,
+				DirectionalVP.NearZ,
+				DirectionalVP.FarZ,
+				ShadowBoxCorners
+			);
+
+			DrawDebugBox(
+				World,
+				ShadowBoxCorners[0], ShadowBoxCorners[1], ShadowBoxCorners[2], ShadowBoxCorners[3],
+				ShadowBoxCorners[4], ShadowBoxCorners[5], ShadowBoxCorners[6], ShadowBoxCorners[7],
+				Color,
+				0.0f
+			);
 		}
 	}
 
