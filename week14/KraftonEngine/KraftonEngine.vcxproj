@@ -385,6 +385,8 @@
     <ClCompile Include="Source\Engine\Render\Scene\SceneEnvironment.cpp" />
     <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp" />
     <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.cpp" />
     <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp" />
     <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
@@ -583,6 +585,8 @@
     <ClInclude Include="Source\Engine\Render\Shader\Shader.h" />
     <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h" />
     <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h" />
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.h" />
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.h" />
     <ClInclude Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.h" />
     <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
     <ClInclude Include="Source\Engine\Render\Types\ForwardLightData.h" />

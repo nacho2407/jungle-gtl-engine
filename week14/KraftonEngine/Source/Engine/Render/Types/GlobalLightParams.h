@@ -22,13 +22,22 @@ struct FGlobalDirectionalLightParams : public LightBaseParams
 	FVector Direction;
 };
 
+enum class ECubeMapOrientation {
+	CMO_X,
+	CMO_negX,
+	CMO_Y,
+	CMO_negY,
+	CMO_Z,
+	CMO_negZ,
+	CMO_Unknown,
+};
 struct FPointLightParams : public LightBaseParams
 {
 	FVector Position;
 	float AttenuationRadius;
 	float LightFalloffExponent;
 	uint32 LightType;
-	uint8 PCFScale = 0;
+	ECubeMapOrientation CubeMapOrientation = ECubeMapOrientation::CMO_Unknown;
 
 	virtual FLightInfo ToLightInfo() const
 	{
