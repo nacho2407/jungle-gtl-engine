@@ -29,7 +29,7 @@ protected:
 	~ULightComponent() = default;
 
 public:
-	float ShadowResolutionScale = 1024.0f;
+	int32 ShadowResolutionScale = 1024;
 	float ShadowBias = 0.5f;
 	float ShadowSlopeBias = 0.5f;
 	float ShadowSharpen = 0.5f;
