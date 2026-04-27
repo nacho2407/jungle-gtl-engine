@@ -33,29 +33,36 @@ cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix VirtualViewProj;
     row_major matrix ShadowViewProj;
-    float4 ScaleOffset;
-
-    // directional CSM lighting 경로용
-    row_major matrix CascadeViewProj[MAX_DIRECTIONAL_CASCADE_COUNT];
-    float4 CascadeScaleOffset[MAX_DIRECTIONAL_CASCADE_COUNT];
-
+    
     float4 CascadeSplitFar;
     uint DirectionalCascadeCount;
-    float3 ShadowBufferPadding;
+    uint DirectionalShadowStartIndex;
+    float2 ShadowBufferPadding;
+};
+
+struct FLightShadowIndices
+{
+    uint ShadowIndex;
+    uint IndexCount;
 };
 
 struct FAtlasShadowData
 {
     row_major float4x4 ShadowViewProj;
-    float4 ScaleOffset; // xy = scale, zw = offset
+    row_major float4x4 VirtualViewProj;
+
+    float4 ScaleOffset;
     float ShadowBias;
     float ShadowStrength;
     float ShadowSoftness;
     uint ShadowType;
+
+    uint ShadowMapType;
+    float3 Padding;
 };
 
 #ifndef CS_SHADER
-StructuredBuffer<uint> LightShadowIndices : register(t14);
+StructuredBuffer<FLightShadowIndices> LightShadowIndices : register(t14);
 StructuredBuffer<FAtlasShadowData> AtlasShadowDatas : register(t15);
 #endif
 

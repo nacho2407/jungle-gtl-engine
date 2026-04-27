@@ -173,7 +173,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		VisibleBounds.push_back(Cmd.WorldAABB);
 	}
 
-	TArray<uint32> LightShadowIndices(RenderBus->LightInfos.size(), InvalidShadowIndex);
+	TArray<FLightShadowIndices> LightShadowIndices(RenderBus->LightInfos.size(), FLightShadowIndices{ InvalidShadowIndex, 0});
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
 	ShadowAtlasConstants.reserve(RenderBus->ShadowLightRequests.size());
 
@@ -191,7 +191,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 	for (const FShadowLightRequest& Request : SortedRequests)
 	{
-		const ULightComponent* LightComp = GetSupportedShadowLight(Request);
+        const ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
 
 		if (LightComp == nullptr)
 		{
@@ -208,6 +208,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			LightComp->GetShadowMapType() == EShadowMap::CSM)
 		{
 			DirectionalShadowData.VirtualViewProj = CamView * CamProj;
+            DirectionalShadowData.DirectionalShadowStartIndex = InvalidShadowIndex;
 			DirectionalShadowData.DirectionalCascadeCount = 0;
 
 			FCascadeSplit CascadeSplits[4] = {};
@@ -219,6 +220,10 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderBus->GetFarPlane(),
 				300.f, 0.15f,
 				CascadeSplits);
+			
+			
+			const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
+            uint32 WrittenCascadeCount = 0;
 
 			for (uint32 CascadeIndex = 0; CascadeIndex < 4; ++CascadeIndex)
 			{
@@ -246,7 +251,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				FShadowConstants ShadowData = {};
 				ShadowData.VirtualViewProj = CamView * CamProj;
 				ShadowData.DirLightViewProj = CascadeMatrix;
-				ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
 
 				RenderShadowDepth(
 					Context,
@@ -256,27 +260,41 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					ShadowDSV,
 					ShadowViewport,
 					ShadowKey,
-					ShadowData);
+                    ShadowData);
 
-				DirectionalShadowData.CascadeViewProj[CascadeIndex] = CascadeMatrix;
-				DirectionalShadowData.CascadeScaleOffset[CascadeIndex] = ShadowTile.ScaleOffset;
-
-				::SetCascadeSplitFar(
-					DirectionalShadowData.CascadeSplitFar,
-					CascadeIndex,
-					CascadeSplits[CascadeIndex].FarDistance);
-
-				DirectionalShadowData.DirectionalCascadeCount = CascadeIndex + 1;
+                ::SetCascadeSplitFar(
+                    DirectionalShadowData.CascadeSplitFar,
+                    CascadeIndex,
+                    CascadeSplits[CascadeIndex].FarDistance);
 
 				if (!bHasDirectionalShadow)
 				{
 					DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
-					DirectionalShadowData.ScaleOffset = ShadowData.ScaleOffset;
 					bHasDirectionalShadow = true;
 				}
+
+                FShadowAtlasConstants atlasConstants = {};
+                atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+                atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
+                atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
+                atlasConstants.ShadowBias = Request.ShadowBias;
+                atlasConstants.ShadowStrength = 1.0f;
+                atlasConstants.ShadowSoftness = Request.ShadowSharpen;
+                atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+                atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
+                ShadowAtlasConstants.push_back(atlasConstants);
+
+                ++WrittenCascadeCount;
+                DirectionalShadowData.DirectionalCascadeCount = WrittenCascadeCount;
 			}
 
-			continue;
+            if (WrittenCascadeCount > 0)
+            {
+                DirectionalShadowData.DirectionalShadowStartIndex = FirstShadowIndex;
+            }
+            bHasDirectionalShadow = true;
+
+            continue;
 		}
 
 		FShadowAtlasTile ShadowTile;
@@ -365,8 +383,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				&VisibleBounds);
 		}
 
-		ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
-
 		RenderShadowDepth(
 			Context,
 			ShadowBuffer,
@@ -380,25 +396,27 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		uint32 ShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
 		if (Request.LightIndex != InvalidShadowIndex && Request.LightIndex < LightShadowIndices.size())
 		{
-			LightShadowIndices[Request.LightIndex] = ShadowIndex;
+			LightShadowIndices[Request.LightIndex].StartIndex = ShadowIndex;
+			LightShadowIndices[Request.LightIndex].IndexCount = 1;
 		}
 
-		float tile = static_cast<float>(ShadowTile.Width);
-
 		FShadowAtlasConstants atlasConstants = {};
-		atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+        atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+        atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
 		atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
 		atlasConstants.ShadowBias = Request.ShadowBias;
 		atlasConstants.ShadowStrength = 1.0f;
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
-		atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+        atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+        atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
 		ShadowAtlasConstants.push_back(atlasConstants);
 
 		if (Request.Type == EShadowLightType::SLT_Directional)
 		{
 			DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
-			DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
-			DirectionalShadowData.ScaleOffset = atlasConstants.ScaleOffset;
+            DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
+            DirectionalShadowData.DirectionalShadowStartIndex = ShadowIndex;
+            DirectionalShadowData.DirectionalCascadeCount = 1;
 			bHasDirectionalShadow = true;
 		}
 	}
