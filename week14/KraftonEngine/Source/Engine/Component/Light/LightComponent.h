@@ -19,7 +19,4 @@ protected:
 	float ShadowBias			= 0.005f;
 	float ShadowSlopeBias		= 0.005f;
 	float ShadowSharpen			= 0.67f;
-
-	// Scale^2 = No. of samples used to compute average depth. 1 = No PCF applied
-	uint8 PCFScale				= 1;
 };
