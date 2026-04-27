@@ -15,7 +15,7 @@ FShadowMapPass::~FShadowMapPass()
 
 void FShadowMapPass::ReleaseShadowMapResources()
 {
-    for (uint32 i = 0; i < MAX_SHADOW_MAPS_2D; i++)
+    for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMaps2DCount; i++)
     {
         if (ShadowResources2D[i].Texture2D) ShadowResources2D[i].Texture2D->Release();
         if (ShadowResources2D[i].DSV2D) ShadowResources2D[i].DSV2D->Release();
@@ -23,7 +23,7 @@ void FShadowMapPass::ReleaseShadowMapResources()
         if (ShadowResources2D[i].PreviewSRV) ShadowResources2D[i].PreviewSRV->Release();
         ShadowResources2D[i] = {};
     }
-    for (uint32 i = 0; i < MAX_SHADOW_MAPS_CUBE; i++)
+    for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMapsCubeCount; i++)
     {
         if (ShadowResourcesCube[i].TextureCube) ShadowResourcesCube[i].TextureCube->Release();
         for (int f = 0; f < 6; ++f)
@@ -42,12 +42,12 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(uint32 Index, bool
 
     if (bIsCube)
     {
-        if (Index >= MAX_SHADOW_MAPS_CUBE || Face >= 6) return nullptr;
+        if (Index >= ESystemTexSlot::MaxShadowMapsCubeCount || Face >= 6) return nullptr;
         return ShadowResourcesCube[Index].PreviewSRVs[Face];
     }
     else
     {
-        if (Index >= MAX_SHADOW_MAPS_2D) return nullptr;
+        if (Index >= ESystemTexSlot::MaxShadowMaps2DCount) return nullptr;
         return ShadowResources2D[Index].PreviewSRV;
     }
 }
@@ -235,7 +235,7 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
     if (ShadowResources2D[0].Texture2D) return;
 
     // 1. Texture2D for Directional/Spot
-    for (uint32 i = 0; i < MAX_SHADOW_MAPS_2D; ++i)
+    for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMaps2DCount; ++i)
     {
         D3D11_TEXTURE2D_DESC texDesc = {};
         texDesc.Width = ShadowMapSize;
@@ -267,7 +267,7 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
     }
 
     // 2. TextureCube for Point
-    for (uint32 i = 0; i < MAX_SHADOW_MAPS_CUBE; ++i)
+    for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMapsCubeCount; ++i)
     {
         D3D11_TEXTURE2D_DESC texDesc = {};
         texDesc.Width = ShadowMapSize;
