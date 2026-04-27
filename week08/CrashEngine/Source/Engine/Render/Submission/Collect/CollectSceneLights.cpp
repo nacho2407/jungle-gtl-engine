@@ -57,6 +57,7 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
         else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
             FLocalLightCBData LocalLight = {};
+            LocalLight.LightType         = LC.LightType;
             LocalLight.Color             = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
             LocalLight.Intensity         = LC.Intensity;
             LocalLight.Position          = LC.Position;

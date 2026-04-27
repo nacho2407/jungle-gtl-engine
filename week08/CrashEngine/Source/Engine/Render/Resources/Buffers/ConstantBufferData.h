@@ -133,6 +133,7 @@ struct alignas(32) FGlobalLightCBData
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
 struct alignas(32) FLocalLightCBData
 {
+    uint32   LightType;         // 4B
     FVector  Color;             // 12B
     float    Intensity;         // 4B
     FVector  Position;          // 12B
@@ -141,7 +142,7 @@ struct alignas(32) FLocalLightCBData
     float    InnerConeAngle;    // 4B
     float    OuterConeAngle;    // 4B
     int32    ShadowMapIndex;    // 4B
-    float    _PaddingLocal[2];  // 8B
+    float    _PaddingLocal;     // 4B
     FMatrix  ShadowViewProj;    // 64B
 }; // Total: 128B
 
