@@ -50,6 +50,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 {
 	USceneComponent::Serialize(Ar);
 	Ar << bIsVisible;
+	Ar << bCastShadow;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -57,6 +58,13 @@ void UPrimitiveComponent::SetVisibility(bool bNewVisible)
 {
 	if (bIsVisible == bNewVisible) return;
 	bIsVisible = bNewVisible;
+	MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetCastShadow(bool bNewCastShadow)
+{
+	if (bCastShadow == bNewCastShadow) return;
+	bCastShadow = bNewCastShadow;
 	MarkRenderVisibilityDirty();
 }
 
@@ -96,6 +104,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
+	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -106,6 +115,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	if (strcmp(PropertyName, "Visible") == 0)
 	{
 		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "Cast Shadow") == 0)
+	{
 		MarkRenderVisibilityDirty();
 	}
 }

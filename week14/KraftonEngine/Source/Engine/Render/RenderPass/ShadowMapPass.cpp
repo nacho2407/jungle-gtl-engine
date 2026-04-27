@@ -284,6 +284,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
 		if (!Proxy || !Proxy->IsVisible()) continue;
+		if (!Proxy->CastsShadow()) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;
 

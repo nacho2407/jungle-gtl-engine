@@ -61,6 +61,7 @@ void FPrimitiveSceneProxy::UpdateVisibility()
 		if (OwnerActor && !OwnerActor->IsVisible())
 			bVisible = false;
 	}
+	bCastShadow = Owner->GetCastShadow();
 }
 
 void FPrimitiveSceneProxy::UpdateMesh()

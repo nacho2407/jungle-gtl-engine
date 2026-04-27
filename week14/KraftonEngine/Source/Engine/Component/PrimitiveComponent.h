@@ -31,6 +31,9 @@ public:
 	void SetVisibility(bool bNewVisible);
 	inline bool IsVisible() const { return bIsVisible; }
 
+	void SetCastShadow(bool bNewCastShadow);
+	bool GetCastShadow() const { return bCastShadow; }
+
 	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
 	void MarkWorldBoundsDirty();
@@ -88,6 +91,7 @@ protected:
 	mutable bool bWorldAABBDirty = true;
 	mutable bool bHasValidWorldAABB = false;
 	bool bIsVisible = true;
+	bool bCastShadow = true;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 	
 	FOctree* OctreeNode = nullptr;
