@@ -5,6 +5,7 @@
 #include "Render/Scene/Scene.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "GameFramework/World.h"
+#include <cstring>
 
 IMPLEMENT_CLASS(ULightComponent, ULightComponentBase)
 
@@ -21,7 +22,21 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void ULightComponent::PostEditProperty(const char* PropertyName)
 {
     ULightComponentBase::PostEditProperty(PropertyName);
-    MarkRenderStateDirty(); // 속성 변경은 프록시 전체 재생성이 필요합니다.
+
+    if (!LightProxy || !Owner || !Owner->GetWorld())
+    {
+        return;
+    }
+
+    // Transform edits are already propagated through USceneComponent::PostEditProperty()
+    // -> MarkTransformDirty() -> OnTransformDirty(), so we avoid duplicating that work here.
+    if (strcmp(PropertyName, "Location") == 0 || strcmp(PropertyName, "Rotation") == 0 || strcmp(PropertyName, "Scale") == 0)
+    {
+        return;
+    }
+
+    FScene& Scene = Owner->GetWorld()->GetScene();
+    Scene.MarkLightProxyDirty(LightProxy, ESceneProxyDirtyFlag::Lighting | ESceneProxyDirtyFlag::Shadow);
 }
 
 void ULightComponent::OnTransformDirty()
