@@ -59,14 +59,6 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 이전 프레임 시각화 데이터 readback + 디버그 라인 제출
 	Renderer.SubmitCullingDebugLines(Editor->GetWorld());
 
-	// Non-PSM: 전체 1회 shadow bake (뷰포트 루프 전)
-	const auto& Shadow = FProjectSettings::Get().Shadow;
-	if (Shadow.bEnabled && !Shadow.bPSM)
-	{
-		SCOPE_STAT_CAT("GlobalShadows", "4_ExecutePass");
-		// Renderer.RenderGlobalShadows(Editor->GetWorld()->GetScene(), &Editor->GetWorld()->GetPartition());
-	}
-
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
 		if (!Editor->ShouldRenderViewportClient(ViewportClient))
