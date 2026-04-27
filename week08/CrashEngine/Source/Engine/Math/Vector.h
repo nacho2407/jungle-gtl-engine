@@ -38,6 +38,12 @@ struct FVector
         Y = 0.0f;
         Z = 0.0f;
     }
+    FVector(float InXYZ)
+    {
+        X = InXYZ;
+        Y = InXYZ;
+        Z = InXYZ;
+    }
     FVector(float InX, float InY, float InZ)
     {
         X = InX;

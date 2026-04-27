@@ -4,9 +4,9 @@
 |---|---|
 | 최초 작성자 | 김연하 |
 | 최초 작성일 | 2026-04-24 |
-| 최근 수정자 | 김연하 |
-| 최근 수정일 | 2026-04-25 |
-| 버전 | 1.1 |
+| 최근 수정자 | 김태현 |
+| 최근 수정일 | 2026-04-27 |
+| 버전 | 1.2 |
 
 ## 1. Slot 분류
 
@@ -58,8 +58,8 @@ C++ 기준 슬롯 정의는 `Render/Resources/Bindings/RenderBindingSlots.h`에 
 | `t5` | modified surface2 |
 | `t7` | per-tile light mask |
 | `t8` | light hit map debug SRV |
-
-현재 shadow map은 시스템 슬롯 상수에 `t9`가 정의되어 있지만, 실제 deferred lighting shader(`UberLit.hlsl`)는 shadow cube map 5개를 `t20 ~ t24`에 바인딩해 사용한다. 문서상 대표 슬롯은 둘 다 함께 관리한다.
+| `t20~t24` | shadow map 2D for Directional / Spot light. (OR ShadowMap Atlas) |
+| `t25~t30` | shadow cubemap for Point light |
 
 ## 5. Sampler Slot 규약
 

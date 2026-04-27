@@ -115,12 +115,18 @@ void FNonLitViewModePass::BuildDrawCommands(FRenderPipelineContext& Context)
         break;
     }
 
+    auto GetPtrHash = [](const void* Ptr) -> uint32
+    {
+        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+    };
+
     Command.SortKey = FDrawCommand::BuildSortKey(
         Command.Pass,
+        static_cast<uint8>(ToPostProcessUserBits(Variant)),
         Command.Shader,
         nullptr,
-        Command.DiffuseSRV,
-        ToPostProcessUserBits(Variant));
+        GetPtrHash(Command.DiffuseSRV));
 }
 
 void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
@@ -130,7 +136,7 @@ void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
-    const uint16 ExpectedUserBits = ToPostProcessUserBits(GetViewModePostProcessVariant(Context));
+    const uint8 ExpectedUserBits = static_cast<uint8>(ToPostProcessUserBits(GetViewModePostProcessVariant(Context)));
     if (ExpectedUserBits == 0)
     {
         return;
@@ -142,7 +148,8 @@ void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
     for (uint32 Index = Start; Index < End; ++Index)
     {
         const FDrawCommand& Command = Context.DrawCommandList->GetCommands()[Index];
-        if (static_cast<uint16>(Command.SortKey & 0xFFFu) == ExpectedUserBits)
+        const uint8 UserBits = static_cast<uint8>((Command.SortKey >> 52) & 0xFFu);
+        if (UserBits == ExpectedUserBits)
         {
             Context.DrawCommandList->SubmitRange(Index, Index + 1, *Context.Device, Context.Context, *Context.StateCache);
         }

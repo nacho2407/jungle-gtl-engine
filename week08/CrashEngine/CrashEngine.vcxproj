@@ -305,6 +305,7 @@
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Input\ViewportInputRouter.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />

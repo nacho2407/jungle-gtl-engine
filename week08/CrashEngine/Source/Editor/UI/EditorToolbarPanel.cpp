@@ -489,7 +489,6 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         if (ImGui::CollapsingHeader("Common Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
-            ImGui::Checkbox("Fog", &Opts.ShowFlags.bFog);
         }
 
         if (ImGui::CollapsingHeader("Actor Helpers", ImGuiTreeNodeFlags_DefaultOpen))
@@ -515,12 +514,13 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::Checkbox("Scene Octree (Cyan)", &Opts.ShowFlags.bSceneOctree);
             ImGui::Checkbox("World Bound (Magenta)", &Opts.ShowFlags.bWorldBound);
             ImGui::Checkbox("Light Debug Lines", &Opts.ShowFlags.bLightDebugLines);
-            ImGui::Checkbox("LightHitMap", &Opts.ShowFlags.bLightHitMap);
+            ImGui::Checkbox("Light Hit Map", &Opts.ShowFlags.bLightHitMap);
 
         }
 
         if (ImGui::CollapsingHeader("Post-Processing Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            ImGui::Checkbox("Height Distance Fog", &Opts.ShowFlags.bFog);
             ImGui::Checkbox("Anti-Aliasing (FXAA)", &Opts.ShowFlags.bFXAA);
 
             BeginDisabledUnless(Opts.ShowFlags.bFXAA, [&]()

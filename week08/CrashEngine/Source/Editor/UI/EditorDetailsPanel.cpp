@@ -2,10 +2,17 @@
 #include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "GameFramework/AActor.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
+#include "Component/AmbientLightComponent.h"
+#include "Component/DecalComponent.h"
+#include "Component/DirectionalLightComponent.h"
+#include "Component/HeightFogComponent.h"
+#include "Component/LightComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
@@ -21,10 +28,15 @@
 
 #include <Windows.h>
 #include <commdlg.h>
+#include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <functional>
 
 #include "Materials/MaterialManager.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Execute/Registry/RenderPassRegistry.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
 
 #define SEPARATOR()     \
     ;                   \
@@ -67,6 +79,112 @@ static FString BuildComponentDisplayLabel(UActorComponent* Comp)
     return TypeName + "(" + Name + ")";
 }
 
+static FString GetEditorFriendlyPropertyName(const FString& RawName)
+{
+    if (RawName == "bTickEnable")
+    {
+        return "Tick Enabled";
+    }
+    if (RawName == "bAffectsWorld")
+    {
+        return "Affects World";
+    }
+    if (RawName == "bCastShadows")
+    {
+        return "Cast Shadows";
+    }
+    if (RawName == "CSM Max Distance")
+    {
+        return "CSM Max Distance";
+    }
+
+    FString Name = RawName;
+    if (Name.size() > 1 && Name[0] == 'b' && std::isupper(static_cast<unsigned char>(Name[1])))
+    {
+        Name.erase(Name.begin());
+    }
+
+    FString Result;
+    Result.reserve(Name.size() + 8);
+    for (size_t Index = 0; Index < Name.size(); ++Index)
+    {
+        const char Current = Name[Index];
+        const bool bHasPrev = (Index > 0);
+        const bool bHasNext = (Index + 1 < Name.size());
+        const char Prev = bHasPrev ? Name[Index - 1] : '\0';
+        const char Next = bHasNext ? Name[Index + 1] : '\0';
+
+        const bool bBreakBeforeUpper =
+            bHasPrev && std::isupper(static_cast<unsigned char>(Current)) &&
+            (std::islower(static_cast<unsigned char>(Prev)) ||
+             (bHasNext && std::islower(static_cast<unsigned char>(Next))));
+        const bool bBreakBeforeDigit =
+            bHasPrev && std::isdigit(static_cast<unsigned char>(Current)) &&
+            !std::isdigit(static_cast<unsigned char>(Prev));
+
+        if ((bBreakBeforeUpper || bBreakBeforeDigit) && !Result.empty() && Result.back() != ' ')
+        {
+            Result.push_back(' ');
+        }
+
+        Result.push_back(Current);
+    }
+
+    return Result;
+}
+
+static bool BeginEditorSection(const char* Label, ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen)
+{
+    return ImGui::CollapsingHeader(Label, Flags);
+}
+
+static void EndEditorSection(bool bWasOpen)
+{
+    if (bWasOpen)
+    {
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    }
+}
+
+static int32 GetClosestWorldAlignedPointShadowFace(const UEditorEngine* InEditorEngine)
+{
+    if (!InEditorEngine)
+    {
+        return 0;
+    }
+
+    const auto* ActiveViewport = InEditorEngine->GetActiveViewport();
+    const UCameraComponent* ActiveCamera = ActiveViewport ? ActiveViewport->GetCamera() : InEditorEngine->GetCamera();
+    if (!ActiveCamera)
+    {
+        return 0;
+    }
+
+    const FVector Forward = ActiveCamera->GetForwardVector().Normalized();
+    static const FVector FaceDirections[6] = {
+        FVector(1.0f, 0.0f, 0.0f),
+        FVector(-1.0f, 0.0f, 0.0f),
+        FVector(0.0f, 1.0f, 0.0f),
+        FVector(0.0f, -1.0f, 0.0f),
+        FVector(0.0f, 0.0f, 1.0f),
+        FVector(0.0f, 0.0f, -1.0f),
+    };
+
+    int32 BestFace = 0;
+    float BestDot = -FLT_MAX;
+    for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+    {
+        const float DotValue = Forward.Dot(FaceDirections[FaceIndex]);
+        if (DotValue > BestDot)
+        {
+            BestDot = DotValue;
+            BestFace = FaceIndex;
+        }
+    }
+
+    return BestFace;
+}
+
 FString FEditorDetailsPanel::OpenObjFileDialog()
 {
     wchar_t FilePath[MAX_PATH] = {};
@@ -107,6 +225,20 @@ void FEditorDetailsPanel::Render(float DeltaTime)
 
     FSelectionManager& Selection = EditorEngine->GetSelectionManager();
     AActor* PrimaryActor = Selection.GetPrimarySelection();
+    TArray<AActor*> FallbackActors;
+    if (!PrimaryActor)
+    {
+        FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport();
+        if (ActiveViewport && ActiveViewport->IsPilotingActor())
+        {
+            if (AActor* PilotedActor = ActiveViewport->GetPilotedActor())
+            {
+                PrimaryActor = PilotedActor;
+                FallbackActors.push_back(PilotedActor);
+            }
+        }
+    }
+
     if (!PrimaryActor)
     {
         SelectedComponent = nullptr;
@@ -125,7 +257,7 @@ void FEditorDetailsPanel::Render(float DeltaTime)
         bActorSelected = true;
     }
 
-    const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+    const TArray<AActor*>& SelectedActors = FallbackActors.empty() ? Selection.GetSelectedActors() : FallbackActors;
     const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
     // ========== 고정 영역: Actor Info ==========
@@ -425,6 +557,21 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     {
         return Name == "Visible" || Name == "Visible In Editor" || Name == "Visible In Game" || Name == "Is Editor Helper";
     };
+    auto IsBehaviorProp = [](const FString& Name)
+    {
+        return Name == "bTickEnable";
+    };
+    auto IsShadowProp = [](const FString& Name)
+    {
+        return Name == "bCastShadows"
+            || Name == "Bias"
+            || Name == "Slope Bias"
+            || Name == "Normal Bias"
+            || Name == "Cascade Count"
+            || Name == "CSM Max Distance"
+            || Name == "Cascade Distribution"
+            || Name == "bAffectsWorld";
+    };
 
     bool bIsRoot = false;
     if (SelectedComponent->IsA<USceneComponent>())
@@ -433,7 +580,12 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
         bIsRoot = (SceneComp->GetParent() == nullptr);
     }
 
-    if (SelectedComponent->IsA<USceneComponent>() && ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+    const bool bIsDecalComponent = SelectedComponent->IsA<UDecalComponent>();
+    const bool bIsFogComponent = SelectedComponent->IsA<UHeightFogComponent>();
+    const bool bIsLightComponent = SelectedComponent->IsA<ULightComponent>();
+
+    const bool bTransformOpen = SelectedComponent->IsA<USceneComponent>() && BeginEditorSection("Transform");
+    if (bTransformOpen)
     {
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
@@ -443,10 +595,12 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
             }
         }
     }
+    EndEditorSection(bTransformOpen);
 
     const bool bIsStaticMeshComponent = SelectedComponent->IsA<UStaticMeshComponent>();
     UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SelectedComponent);
-    if (bIsStaticMeshComponent && ImGui::CollapsingHeader("Static Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+    const bool bStaticMeshOpen = bIsStaticMeshComponent && BeginEditorSection("Static Mesh");
+    if (bStaticMeshOpen)
     {
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
@@ -464,6 +618,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
             }
         }
     }
+    EndEditorSection(bStaticMeshOpen);
 
     bool bHasMaterialProp = false;
     for (const FPropertyDescriptor& Prop : Props)
@@ -475,7 +630,8 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
         }
     }
 
-    if (bHasMaterialProp && ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen))
+    const bool bMaterialsOpen = bHasMaterialProp && BeginEditorSection("Materials");
+    if (bMaterialsOpen)
     {
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
@@ -485,8 +641,10 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
             }
         }
     }
+    EndEditorSection(bMaterialsOpen);
 
-    if (PrimitiveComponent && ImGui::CollapsingHeader("Visibility", ImGuiTreeNodeFlags_DefaultOpen))
+    const bool bVisibilityOpen = PrimitiveComponent && BeginEditorSection("Visibility");
+    if (bVisibilityOpen)
     {
         bool bVisible = PrimitiveComponent->IsVisible();
         if (ImGui::Checkbox("Visible", &bVisible))
@@ -519,17 +677,116 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
         ImGui::EndDisabled();
         ImGui::Unindent();
     }
+    EndEditorSection(bVisibilityOpen);
 
-    if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_DefaultOpen))
+    const char* PropertySectionLabel = "Component";
+    if (bIsLightComponent)
     {
+        PropertySectionLabel = "Light";
+    }
+    else if (bIsDecalComponent)
+    {
+        PropertySectionLabel = "Decal";
+    }
+    else if (bIsFogComponent)
+    {
+        PropertySectionLabel = "Fog";
+    }
+
+    bool bShowLightShadowSection = true;
+    bool bHasPropertySectionContent = false;
+    if (bIsLightComponent)
+    {
+        bHasPropertySectionContent = true; // Affects World is always surfaced at the top for lights.
+    }
+    else
+    {
+        for (const FPropertyDescriptor& Prop : Props)
+        {
+            if (IsTransformProp(Prop.Name) || IsStaticMeshProp(Prop.Name, Prop.Type) || IsMaterialProp(Prop.Name, Prop.Type) || IsVisibilityProp(Prop.Name) || IsBehaviorProp(Prop.Name))
+            {
+                continue;
+            }
+            bHasPropertySectionContent = true;
+            break;
+        }
+    }
+
+    const bool bPropertySectionOpen = bHasPropertySectionContent && BeginEditorSection(PropertySectionLabel);
+    if (bPropertySectionOpen)
+    {
+        ULightComponent* LightComponent = Cast<ULightComponent>(SelectedComponent);
+        if (LightComponent)
+        {
+            for (int32 i = 0; i < (int32)Props.size(); ++i)
+            {
+                if (Props[i].Name == "bAffectsWorld")
+                {
+                    const bool bChanged = RenderDetailsPanel(Props, i);
+                    if (bChanged)
+                    {
+                        LightComponent->PostEditProperty("bAffectsWorld");
+                    }
+                    break;
+                }
+            }
+
+            if (!LightComponent->AffectsWorld())
+            {
+                bShowLightShadowSection = false;
+            }
+        }
+
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
-            if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name))
+            if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name) || IsBehaviorProp(Props[i].Name))
+            {
+                continue;
+            }
+            if (LightComponent && IsShadowProp(Props[i].Name))
+            {
+                continue;
+            }
+            if (LightComponent && Props[i].Name == "bAffectsWorld")
+            {
+                continue;
+            }
+            if (LightComponent && !LightComponent->AffectsWorld())
             {
                 continue;
             }
             RenderDetailsPanel(Props, i);
         }
+    }
+    EndEditorSection(bPropertySectionOpen);
+
+    bool bHasBehaviorSectionContent = false;
+    for (const FPropertyDescriptor& Prop : Props)
+    {
+        if (IsBehaviorProp(Prop.Name))
+        {
+            bHasBehaviorSectionContent = true;
+            break;
+        }
+    }
+
+    const bool bBehaviorSectionOpen = bHasBehaviorSectionContent && BeginEditorSection("Behavior");
+    if (bBehaviorSectionOpen)
+    {
+        for (int32 i = 0; i < (int32)Props.size(); ++i)
+        {
+            if (IsBehaviorProp(Props[i].Name))
+            {
+                RenderDetailsPanel(Props, i);
+            }
+        }
+    }
+    EndEditorSection(bBehaviorSectionOpen);
+
+    ULightComponent* LightComponent = Cast<ULightComponent>(SelectedComponent);
+    if (LightComponent && bShowLightShadowSection)
+    {
+        RenderLightShadowSettings(LightComponent);
     }
 
     if (SelectedComponent->IsA<USceneComponent>())
@@ -538,25 +795,249 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     }
 }
 
+void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightComponent)
+{
+    if (!LightComponent || LightComponent->IsA<UAmbientLightComponent>())
+    {
+        return;
+    }
+
+    if (!BeginEditorSection("Shadow"))
+    {
+        return;
+    }
+
+    TArray<FPropertyDescriptor> ShadowProps;
+    LightComponent->GetEditableProperties(ShadowProps);
+
+    auto RenderShadowPropertyByName = [&](const char* PropertyName)
+    {
+        for (int32 PropIndex = 0; PropIndex < static_cast<int32>(ShadowProps.size()); ++PropIndex)
+        {
+            if (ShadowProps[PropIndex].Name == PropertyName)
+            {
+                bool bChanged = false;
+                if (ShadowProps[PropIndex].Name == "bCastShadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
+                {
+                    bool* ValuePtr = static_cast<bool*>(ShadowProps[PropIndex].ValuePtr);
+                    bChanged = ImGui::Checkbox("Cast Shadows", ValuePtr);
+                }
+                else if (ShadowProps[PropIndex].Name == "Cascade Distribution" && ShadowProps[PropIndex].Type == EPropertyType::Float)
+                {
+                    static const char* DistributionLabels[] = { "Uniform", "Balanced", "Near Focused" };
+                    static const float DistributionValues[] = { 1.0f, 2.0f, 4.0f };
+                    float* ValuePtr = static_cast<float*>(ShadowProps[PropIndex].ValuePtr);
+
+                    int32 SelectedIndex = 0;
+                    float BestDistance = FLT_MAX;
+                    for (int32 OptionIndex = 0; OptionIndex < IM_ARRAYSIZE(DistributionValues); ++OptionIndex)
+                    {
+                        const float Distance = std::abs(*ValuePtr - DistributionValues[OptionIndex]);
+                        if (Distance < BestDistance)
+                        {
+                            BestDistance = Distance;
+                            SelectedIndex = OptionIndex;
+                        }
+                    }
+
+                    if (ImGui::Combo("Cascade Distribution##CascadeDistribution", &SelectedIndex, DistributionLabels, IM_ARRAYSIZE(DistributionLabels)))
+                    {
+                        *ValuePtr = DistributionValues[SelectedIndex];
+                        bChanged = true;
+                    }
+                }
+                else
+                {
+                    bChanged = RenderDetailsPanel(ShadowProps, PropIndex);
+                }
+
+                if (bChanged)
+                {
+                    LightComponent->PostEditProperty(PropertyName);
+                }
+                return true;
+            }
+        }
+        return false;
+    };
+
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    RenderShadowPropertyByName("bCastShadows");
+    if (!LightComponent->DoesCastShadows())
+    {
+        return;
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    ImGui::SeparatorText("Common");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    FLightProxy* LightProxy = LightComponent->GetLightProxy();
+    if (!LightProxy)
+    {
+        ImGui::TextDisabled("Light proxy is not ready.");
+        return;
+    }
+
+    if (!GEngine)
+    {
+        ImGui::TextDisabled("Renderer is unavailable.");
+        return;
+    }
+
+    FRenderPass* Pass = GEngine->GetRenderer().GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass);
+    FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+    if (!ShadowPass)
+    {
+        ImGui::TextDisabled("Shadow pass is unavailable.");
+        return;
+    }
+
+    static const int32 ShadowMapSizes[] = { 512, 1024, 2048, 4096 };
+    static const char* ShadowMapSizeLabels = "512\0""1024\0""2048\0""4096\0\0";
+    int32 SelectedShadowMapSizeIndex = 0;
+    for (int32 SizeIndex = 0; SizeIndex < IM_ARRAYSIZE(ShadowMapSizes); ++SizeIndex)
+    {
+        if (ShadowMapSizes[SizeIndex] == static_cast<int32>(ShadowPass->GetShadowMapSize()))
+        {
+            SelectedShadowMapSizeIndex = SizeIndex;
+            break;
+        }
+    }
+
+    ImGui::SetNextItemWidth(140.0f);
+    if (ImGui::Combo("Resolution", &SelectedShadowMapSizeIndex, ShadowMapSizeLabels))
+    {
+        ShadowPass->SetShadowMapSize(static_cast<uint32>(ShadowMapSizes[SelectedShadowMapSizeIndex]));
+    }
+
+    RenderShadowPropertyByName("Bias");
+    RenderShadowPropertyByName("Slope Bias");
+    RenderShadowPropertyByName("Normal Bias");
+
+    if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(LightComponent))
+    {
+        (void)DirectionalLight;
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+        ImGui::SeparatorText("Cascade Settings");
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        RenderShadowPropertyByName("Cascade Count");
+        RenderShadowPropertyByName("CSM Max Distance");
+        RenderShadowPropertyByName("Cascade Distribution");
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    ImGui::SeparatorText("Shadow Map Preview");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    if (LightProxy->ShadowMapIndex < 0)
+    {
+        ImGui::TextDisabled("No shadow map assigned this frame.");
+        return;
+    }
+
+    uint32 PreviewFace = 0;
+    bool bIsCubeShadow = (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point));
+    if (bIsCubeShadow)
+    {
+        static const char* FaceLabels[6] = { "World +X", "World -X", "World +Y", "World -Y", "World +Z", "World -Z" };
+        static const char* FaceButtonLabels[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+        const int32 ClosestFace = GetClosestWorldAlignedPointShadowFace(EditorEngine);
+
+        ImGui::TextDisabled("Point light shadow faces are world-aligned.");
+        ImGui::TextDisabled("Closest to current view: %s", FaceLabels[ClosestFace]);
+        ImGui::SameLine();
+        if (ImGui::Button("Use Closest Face"))
+        {
+            SelectedPointLightShadowFace = ClosestFace;
+        }
+
+        static const int32 FaceButtonOrder[6] = { 0, 1, 2, 3, 4, 5 };
+        const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+        const float ButtonSpacing = ImGui::GetStyle().ItemSpacing.x;
+        const float FaceButtonWidth = std::max(64.0f, (AvailableWidth - ButtonSpacing) / 2.0f);
+
+        ImGui::Text("Face");
+        for (int32 ButtonIndex = 0; ButtonIndex < 6; ++ButtonIndex)
+        {
+            if ((ButtonIndex % 2) != 0)
+            {
+                ImGui::SameLine();
+            }
+
+            const int32 FaceIndex = FaceButtonOrder[ButtonIndex];
+            const bool bSelectedFace = (SelectedPointLightShadowFace == FaceIndex);
+            if (bSelectedFace)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+
+            if (ImGui::Button(FaceButtonLabels[FaceIndex], ImVec2(FaceButtonWidth, 0.0f)))
+            {
+                SelectedPointLightShadowFace = FaceIndex;
+            }
+
+            if (bSelectedFace)
+            {
+                ImGui::PopStyleColor(2);
+            }
+        }
+
+        PreviewFace = static_cast<uint32>(std::clamp(SelectedPointLightShadowFace, 0, 5));
+    }
+
+    ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+    ID3D11ShaderResourceView* PreviewSRV =
+        ShadowPass->GetShadowPreviewSRV(static_cast<uint32>(LightProxy->ShadowMapIndex), bIsCubeShadow, PreviewFace, Context);
+    if (!PreviewSRV)
+    {
+        ImGui::TextDisabled("Shadow preview is unavailable.");
+        return;
+    }
+
+    const float MaxWidth = ImGui::GetContentRegionAvail().x;
+    const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
+
+    const ImVec2 PreviewMin = ImGui::GetCursorScreenPos();
+    const ImVec2 PreviewMax = ImVec2(PreviewMin.x + PreviewSize, PreviewMin.y + PreviewSize);
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    DrawList->AddImageQuad(
+        reinterpret_cast<ImTextureID>(PreviewSRV),
+        PreviewMin,
+        ImVec2(PreviewMax.x, PreviewMin.y),
+        PreviewMax,
+        ImVec2(PreviewMin.x, PreviewMax.y),
+        ImVec2(0.0f, 1.0f),
+        ImVec2(0.0f, 0.0f),
+        ImVec2(1.0f, 0.0f),
+        ImVec2(1.0f, 1.0f));
+    ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
+
+    ImGui::TextDisabled("Shadow Map Index: %d", LightProxy->ShadowMapIndex);
+}
+
 bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props, int32& Index)
 {
     ImGui::PushID(Index);
     FPropertyDescriptor& Prop = Props[Index];
     bool bChanged = false;
+    const FString DisplayName = GetEditorFriendlyPropertyName(Prop.Name);
+    const FString WidgetLabel = DisplayName + "##" + Prop.Name;
 
     switch (Prop.Type)
     {
     case EPropertyType::Bool:
     {
         bool* Val = static_cast<bool*>(Prop.ValuePtr);
-        bChanged = ImGui::Checkbox(Prop.Name.c_str(), Val);
+        bChanged = ImGui::Checkbox(WidgetLabel.c_str(), Val);
         break;
     }
     case EPropertyType::ByteBool:
     {
         uint8* Val = static_cast<uint8*>(Prop.ValuePtr);
         bool bVal = (*Val != 0);
-        if (ImGui::Checkbox(Prop.Name.c_str(), &bVal))
+        if (ImGui::Checkbox(WidgetLabel.c_str(), &bVal))
         {
             *Val = bVal ? 1 : 0;
             bChanged = true;
@@ -566,22 +1047,22 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
     case EPropertyType::Int:
     {
         int32* Val = static_cast<int32*>(Prop.ValuePtr);
-        bChanged = ImGui::DragInt(Prop.Name.c_str(), Val);
+        bChanged = ImGui::DragInt(WidgetLabel.c_str(), Val);
         break;
     }
     case EPropertyType::Float:
     {
         float* Val = static_cast<float*>(Prop.ValuePtr);
         if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-            bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed, Prop.Min, Prop.Max);
+            bChanged = ImGui::DragFloat(WidgetLabel.c_str(), Val, Prop.Speed, Prop.Min, Prop.Max);
         else
-            bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed);
+            bChanged = ImGui::DragFloat(WidgetLabel.c_str(), Val, Prop.Speed);
         break;
     }
     case EPropertyType::Vec3:
     {
         float* Val = static_cast<float*>(Prop.ValuePtr);
-        bChanged = ImGui::DragFloat3(Prop.Name.c_str(), Val, Prop.Speed);
+        bChanged = ImGui::DragFloat3(WidgetLabel.c_str(), Val, Prop.Speed);
         break;
     }
     case EPropertyType::Rotator:
@@ -589,7 +1070,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         // FRotator 메모리 레이아웃 [Pitch,Yaw,Roll] → UI X=Roll(X축), Y=Pitch(Y축), Z=Yaw(Z축)
         FRotator* Rot = static_cast<FRotator*>(Prop.ValuePtr);
         float RotXYZ[3] = { Rot->Roll, Rot->Pitch, Rot->Yaw };
-        bChanged = ImGui::DragFloat3(Prop.Name.c_str(), RotXYZ, Prop.Speed);
+        bChanged = ImGui::DragFloat3(WidgetLabel.c_str(), RotXYZ, Prop.Speed);
         if (bChanged)
         {
             Rot->Roll = RotXYZ[0];
@@ -605,13 +1086,13 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
     case EPropertyType::Vec4:
     {
         float* Val = static_cast<float*>(Prop.ValuePtr);
-        bChanged = ImGui::DragFloat4(Prop.Name.c_str(), Val, Prop.Speed);
+        bChanged = ImGui::DragFloat4(WidgetLabel.c_str(), Val, Prop.Speed);
         break;
     }
     case EPropertyType::Color4:
     {
         float* Val = static_cast<float*>(Prop.ValuePtr);
-        bChanged = ImGui::ColorEdit4(Prop.Name.c_str(), Val);
+        bChanged = ImGui::ColorEdit4(WidgetLabel.c_str(), Val);
         break;
     }
     case EPropertyType::String:
@@ -619,7 +1100,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         FString* Val = static_cast<FString*>(Prop.ValuePtr);
         char Buf[256];
         strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
-        if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
+        if (ImGui::InputText(WidgetLabel.c_str(), Buf, sizeof(Buf)))
         {
             *Val = Buf;
             bChanged = true;
@@ -634,7 +1115,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         if (*Val == "None")
             Preview = "None";
 
-        ImGui::Text("%s", Prop.Name.c_str());
+        ImGui::Text("%s", DisplayName.c_str());
         ImGui::SameLine(120);
         ImGui::SetNextItemWidth(-1.0f);
 
@@ -745,7 +1226,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
             }
         }
 
-        ImGui::Text("%s", Prop.Name.c_str());
+        ImGui::Text("%s", DisplayName.c_str());
         ImGui::SameLine(140);
         ImGui::SetNextItemWidth(-1.0f);
         if (ImGui::BeginCombo(("##compref_" + Prop.Name).c_str(), Preview.c_str()))
@@ -833,7 +1314,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         }
         else
         {
-            ImGui::TextUnformatted(Prop.Name.c_str());
+            ImGui::TextUnformatted(DisplayName.c_str());
         }
         ImGui::EndGroup();
 
@@ -894,7 +1375,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 
         if (!Names.empty())
         {
-            if (ImGui::BeginCombo(Prop.Name.c_str(), Current.c_str()))
+            if (ImGui::BeginCombo(WidgetLabel.c_str(), Current.c_str()))
             {
                 for (const auto& Name : Names)
                 {
@@ -914,7 +1395,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         {
             char Buf[256];
             strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
-            if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
+            if (ImGui::InputText(WidgetLabel.c_str(), Buf, sizeof(Buf)))
             {
                 *Val = FName(Buf);
                 bChanged = true;
