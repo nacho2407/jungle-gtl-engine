@@ -76,7 +76,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float3 Normal = normalize(DecodeNormal(ResolveSurface1(UV)));
     float3 WorldPos = ReconstructWorldPositionFromSceneDepth(UV);
 
-    FinalColor = ComputeLambertLightingGlobalOnly(BaseColor, Normal);
+    FinalColor = ComputeLambertLightingGlobalOnly(BaseColor, Normal, WorldPos);
 
     uint2 PixelCoord = uint2(Input.position.xy);
     uint2 TileCoord = PixelCoord / TileSize;
@@ -115,7 +115,7 @@ float4 PS_UberLit(PS_Input_UV Input) : SV_TARGET0
     float Shininess = max(MaterialParam.x, 1.0f);
     float SpecularStrength = max(MaterialParam.y, 0.0f);
 
-    FinalColor = ComputeBlinnPhongLightingGlobalOnly(BaseColor, Normal, MaterialParam, ViewDir);
+    FinalColor = ComputeBlinnPhongLightingGlobalOnly(BaseColor, Normal, MaterialParam, ViewDir, WorldPos);
 
     uint2 PixelCoord = uint2(Input.position.xy);
     uint2 TileCoord = PixelCoord / TileSize;
