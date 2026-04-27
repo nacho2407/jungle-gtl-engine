@@ -5,6 +5,7 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 	if (InDevice == nullptr) return;
 
 	ShadowMapAtlas.Initialize(InDevice);
+    ShadowCubeMapArray.Initialize(InDevice);
 }
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
@@ -93,4 +94,9 @@ bool FShadowAtlasManager::FreeTile(const int32& TileIndex)
 		return true;
     }
     return false;
+}
+
+bool FShadowAtlasManager::AllocateTileCube(int32& OutCubeIndex)
+{
+    return ShadowCubeMapArray.AllocateCube(OutCubeIndex);
 }

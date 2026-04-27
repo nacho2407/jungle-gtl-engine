@@ -139,6 +139,8 @@ struct FShadowAtlasCube
 
     TComPtr<ID3D11DepthStencilView> CubeDSV[MAX_SHADOW_CUBES][CUBE_FACE_COUNT] = {};
 
+    uint32 CurrentCubeCount = 0;
+
     void Initialize(ID3D11Device* Device)
     {
         if (Device == nullptr)
@@ -148,7 +150,7 @@ struct FShadowAtlasCube
         CubeShadowDesc.Width = SHADOW_CUBE_SIZE;
         CubeShadowDesc.Height = SHADOW_CUBE_SIZE;
         CubeShadowDesc.MipLevels = 1;
-        CubeShadowDesc.ArraySize = 6; // Cube Map은 6개의 면으로 구성
+        CubeShadowDesc.ArraySize = 6 * MAX_SHADOW_CUBES; // Cube Map은 6개의 면으로 구성
         CubeShadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
         CubeShadowDesc.SampleDesc.Count = 1;
         CubeShadowDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -175,11 +177,23 @@ struct FShadowAtlasCube
         // Shader Resource View(SRV) 생성
         D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
         SrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-        SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE; // Cube Map은 TextureCube로 처리
-        SrvDesc.TextureCube.MostDetailedMip = 0;
-        SrvDesc.TextureCube.MipLevels = 1;
+        SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY; // Cube Map은 TextureCubeArray로 처리
+        SrvDesc.TextureCubeArray.MostDetailedMip = 0;
+        SrvDesc.TextureCubeArray.MipLevels = 1;
+        SrvDesc.TextureCubeArray.First2DArrayFace = 0;
+        SrvDesc.TextureCubeArray.NumCubes = MAX_SHADOW_CUBES;
         hr = Device->CreateShaderResourceView(CubeShadowMap.Get(), &SrvDesc, CubeSRV.ReleaseAndGetAddressOf());
     }
+
+	bool AllocateCube(int32& OutCubeIndex) {
+		if (CurrentCubeCount < MAX_SHADOW_CUBES)
+        {
+            OutCubeIndex = CurrentCubeCount;
+            ++CurrentCubeCount;
+            return true;
+		}
+		return false;
+	}
 
     bool IsValid() const { return CubeShadowMap != nullptr && CubeDSV != nullptr && CubeSRV != nullptr; }
 };
@@ -292,25 +306,36 @@ public:
     bool FreeTile(const int32& TileIndex);
     void ClearTiles() { ShadowAllocator.FreeAllTiles(); }
 
-    bool AllocateTileCube(uint32& OutCubeIndex);
+    bool AllocateTileCube(int32& OutCubeIndex);
     bool FreeTileCube(const int32& CubeIndex);
     void ClearTilesCube() {}
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
     ID3D11Texture2D* GetAtlas() const { return ShadowMapAtlas.ShadowMapAtlas.Get(); }
-    TComPtr<ID3D11Device> Device;
 
+	
+    ID3D11ShaderResourceView* GetCubeSRV(int32 index) const { return ShadowCubeMapArray.CubeSRV.Get(); }
+    ID3D11Texture2D* GetCubeAtlas(int32 index) const { return ShadowCubeMapArray.CubeShadowMap.Get(); }
+	ID3D11DepthStencilView* GetCubeDSV(int32 CubeIndex, int32 FaceIndex) const
+    {
+        if (CubeIndex >= MAX_SHADOW_CUBES || FaceIndex >= 6)
+        {
+            return nullptr;
+        }
+        return ShadowCubeMapArray.CubeDSV[CubeIndex][FaceIndex].Get();
+    }
+
+    TComPtr<ID3D11Device> Device;
     TComPtr<ID3D11Texture2D> ShadowMap;
     TComPtr<ID3D11DepthStencilView> ShadowDSV;
     TComPtr<ID3D11ShaderResourceView> ShadowSRV;
-
 
     TComPtr<ID3D11Texture2D> VarianceRTVShadowMap;       // 텍스처
     TComPtr<ID3D11RenderTargetView> VarianceShadowRTV;   // 쓰기용 (Shadow Pass)
     TComPtr<ID3D11ShaderResourceView> VarianceShadowSRV; // 읽기용 (Lighting Pass)
 
-		float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+	float ClearColor[4] = { 0.f, 0.f, 0.f, 0.f };
 
 private:
 	// TComPtr<ID3D11Texture2D> VarianceDepthShadowMap;	 // DSV용 깊이 테스트
