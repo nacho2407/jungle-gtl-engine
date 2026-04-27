@@ -141,6 +141,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return false;
 	}
 
+	ShadowShader->Bind(Context->DeviceContext);
+
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
 	const FRenderBus* RenderBus = Context->RenderBus;
@@ -166,19 +168,31 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	FMatrix CamProj = RenderBus->GetProj();
 
 	TArray<FBoundingBox> VisibleBounds;
+	for (const auto& Cmd : OpaqueCmds)
+	{
+		VisibleBounds.push_back(Cmd.WorldAABB);
+	}
 
 	TArray<uint32> LightShadowIndices(RenderBus->LightInfos.size(), InvalidShadowIndex);
 	TArray<FShadowAtlasConstants> ShadowAtlasConstants;
 	ShadowAtlasConstants.reserve(RenderBus->ShadowLightRequests.size());
 
-	float atlasW = static_cast<float>(ShadowMapDesc.Width);
-	float atlasH = static_cast<float>(ShadowMapDesc.Height);
 	FShadowConstants DirectionalShadowData = {};
 	bool bHasDirectionalShadow = false;
 
-	for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
+	TArray<FShadowLightRequest> SortedRequests = RenderBus->ShadowLightRequests;
+    std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
+              { 
+			  if(A.Type != B.Type)
+			  {
+				  return A.Type > B.Type;
+			  }
+			  return A.ShadowResolution > B.ShadowResolution; });
+
+	for (const FShadowLightRequest& Request : SortedRequests)
 	{
 		const ULightComponent* LightComp = GetSupportedShadowLight(Request);
+
 		if (LightComp == nullptr)
 		{
 			continue;
@@ -266,7 +280,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		}
 
 		FShadowAtlasTile ShadowTile;
-		if (!FShadowAtlasManager::Get().AllocateTile(ShadowTile))
+		if (!FShadowAtlasManager::Get().AllocateTile(Request.ShadowResolution, ShadowTile))
 		{
 			// atlas가 꽉 찼음
 			// shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
@@ -288,6 +302,71 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			CamView,
 			CamProj,
 			&VisibleBounds);
+        DeviceContext->RSSetViewports(1, &ShadowViewport);
+
+		// Debug용으로 라이트 컴포넌트에 타일 오프셋 정보 전달 (실제 렌더링에는 사용되지 않음)
+        {
+            ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+            MutableLight->DebugShadowAtlasScaleOffset = ShadowTile.ScaleOffset;
+            MutableLight->bHasDebugShadowAtlasTile = true;
+        }
+
+        ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+        DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
+		const uint32 ShadowKey = static_cast<uint32>(LightComp->GetShadowMapType());
+		FShadowConstants ShadowData = {};
+
+		FBoundingBox VisibleBoundingBox;
+
+		for (const auto& Box : VisibleBounds)
+		{
+			VisibleBoundingBox.Merge(Box);
+		}
+
+		float Slideback = 5.0f;
+
+		float Near = RenderBus->GetNearPlane();
+		float MinZ = FLT_MAX;
+		FVector Corners[8];
+		VisibleBoundingBox.GetVertices(Corners);
+		for (int i = 0; i < 8; ++i)
+		{
+			auto ToBB = Corners[i] - RenderBus->GetCameraPosition();
+			float X = FVector::DotProduct(ToBB, RenderBus->GetCameraForward());
+
+			MinZ = std::min(X, MinZ);
+		}
+
+		if (MinZ < FLT_MAX && MinZ > Near)
+		{
+			Near = MinZ;
+		}
+
+		if (LightComp->GetShadowMapType() == EShadowMap::PSM)
+		{
+			FVector PrevCameraUp = RenderBus->GetCameraUp();
+			FVector VirtualCamPos = RenderBus->GetCameraPosition() - RenderBus->GetCameraForward() * Slideback;
+			FVector VirtualCamTarget = RenderBus->GetCameraPosition() + RenderBus->GetCameraForward() * Slideback;
+			FVector VirtualCamUp = VirtualCamPos + PrevCameraUp;
+
+			FMatrix VirtualView = FMatrix::MakeViewLookAtLH(VirtualCamPos, VirtualCamTarget, VirtualCamUp);
+			FMatrix VirtualProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(90.0f), 1.0f, Near + Slideback, RenderBus->GetFarPlane());
+
+			ShadowData.VirtualViewProj = VirtualView * VirtualProj;
+			ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
+				VirtualView,
+				VirtualProj,
+				&VisibleBounds);
+		}
+		else
+		{
+			ShadowData.VirtualViewProj = CamView * CamProj;
+			ShadowData.DirLightViewProj = LightComp->GetLightViewProj(
+				CamView,
+				CamProj,
+				&VisibleBounds);
+		}
 
 		ShadowData.ScaleOffset = ShadowTile.ScaleOffset;
 
@@ -311,16 +390,20 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 		FShadowAtlasConstants atlasConstants = {};
 		atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
-		atlasConstants.ScaleOffset = FVector4(
-			tile / atlasW,
-			tile / atlasH,
-			(ShadowTile.TileX * tile) / atlasW,
-			(ShadowTile.TileY * tile) / atlasH);
+		atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
 		atlasConstants.ShadowBias = Request.ShadowBias;
 		atlasConstants.ShadowStrength = 1.0f;
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
 		atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
 		ShadowAtlasConstants.push_back(atlasConstants);
+
+		if (Request.Type == EShadowLightType::SLT_Directional)
+		{
+			DirectionalShadowData.DirLightViewProj = ShadowData.DirLightViewProj;
+			DirectionalShadowData.VirtualViewProj = ShadowData.VirtualViewProj;
+			DirectionalShadowData.ScaleOffset = atlasConstants.ScaleOffset;
+			bHasDirectionalShadow = true;
+		}
 	}
 
 	if (!LightShadowIndices.empty())

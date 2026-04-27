@@ -1,11 +1,13 @@
 /* Constant Buffers */
+#ifndef COMMON_H
+#define COMMON_H
 
 #define TILE_SIZE 16
 #define NUM_SLICE 24
 
 #define MAX_ATLAS_SHADOW_COUNT 64
-#define INVALID_SHADOW_INDEX -1
 #define MAX_DIRECTIONAL_CASCADE_COUNT 4
+#define INVALID_SHADOW_INDEX 0xFFFFFFFFu
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -30,9 +32,7 @@ cbuffer PerObjectBuffer : register(b1)
 cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix VirtualViewProj;
-
-    // 기존 directional / PSM 경로 호환용
-    row_major matrix DirLightViewProj;
+    row_major matrix ShadowViewProj;
     float4 ScaleOffset;
 
     // directional CSM lighting 경로용
@@ -119,3 +119,5 @@ float LinearizeDepth(float d)
         return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
     }
 }
+
+#endif

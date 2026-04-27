@@ -79,6 +79,7 @@ void UObject::CopyPropertiesFrom(UObject* Src)
         case EPropertyType::Vec3:
         case EPropertyType::Vec4:
 		case EPropertyType::Color:
+		case EPropertyType::Enum:
         {
             const size_t Size = GetPropertySize(SrcProp.Type);
             if (Size > 0)

@@ -15,6 +15,10 @@ bool FOpaqueRenderPass::Initialize()
 
 bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 {
+
+
+
+
     const FRenderTargetSet* RenderTargets = Context->RenderTargets;
     ID3D11RenderTargetView* RTVs[3] = { 
 		RenderTargets->SceneColorRTV, 
@@ -31,6 +35,13 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 
 	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
 	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
+
+	///// debugging
+	ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().VarianceShadowSRV.Get();
+    Context->DeviceContext->PSSetShaderResources(11, 1, &VSMSRV);
+    ///// debugging
+
+
 
 	ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
 		Context->RenderResources->LightShadowIndexBuffer.GetSRV(),

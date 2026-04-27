@@ -26,62 +26,21 @@ void FRenderer::Create(HWND hWindow)
 		std::cout << "Failed to create D3D Device." << std::endl;
 	}
 
-	uint32 PermutationKey = static_cast<uint32>(ELightingModel::Gouraud) | static_cast<uint32>(EShaderFeature::HasNormalMap);
-
 	FResourceManager::Get().SetCachedDevice(Device.GetDevice());
-	FResourceManager::Get().LoadShader("Shaders/Primitive.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
-    //FResourceManager::Get().LoadShader("Shaders/ShaderDecal.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
-    FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
-
-	#define LIGHT(x) static_cast<uint32>(ELightingModel::x)
-	#define FEAT(x)  static_cast<uint32>(EShaderFeature::x)
-    #define SAHDOWMAP(x) static_cast<uint32>(EShadowMap::x)
-
-	static const uint32 UberLitPermutations[] =
-	{
-		// 1. 기본 라이팅 모델 (No Maps)
-		LIGHT(Unlit),
-		LIGHT(Gouraud),
-		LIGHT(Lambert),
-		LIGHT(BlinnPhong),
-
-		LIGHT(Unlit) | FEAT(HasDiffuseMap),
-
-		LIGHT(Gouraud) | FEAT(HasDiffuseMap),
-		LIGHT(Gouraud) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
-
-		LIGHT(Lambert) | FEAT(HasDiffuseMap),
-		LIGHT(Lambert) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
-
-		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap),
-		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap),
-		LIGHT(BlinnPhong) | FEAT(HasDiffuseMap) | FEAT(HasNormalMap) | FEAT(HasSpecularMap),
-
-		LIGHT(Heatmap),
-		LIGHT(Heatmap) | FEAT(HasDiffuseMap),
-	};
-
-	for (uint32 Key : UberLitPermutations)
-	{
-		for (uint32 CullBit : { 0u, FEAT(ClusterCull), FEAT(TileCull) })
-		{
-			for (uint32 ShadowMap : { 0u, FEAT(ShadowCSM), FEAT(ShadowPSM)})
-			{
-				uint32 CullKey = Key | CullBit | ShadowMap;
-				FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS", FShaderHelper::BuildUberLitMacros(CullKey).data(), CullKey);
-			}
-		}
-	}
+	FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
+	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
+    FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
+	FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS");
 
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
@@ -121,6 +80,7 @@ void FRenderer::CreateResources()
 	//	MeshManager init
 	FMeshManager::Initialize();
 	FShadowAtlasManager::Get().Initialize(Device.GetDevice());
+    FShadowAtlasManager::Get().VSMInitialize(Device.GetDevice()); /// VSM 추가
 
 	EditorLineBatcher.Create(Device.GetDevice());
 	GridLineBatcher.Create(Device.GetDevice());

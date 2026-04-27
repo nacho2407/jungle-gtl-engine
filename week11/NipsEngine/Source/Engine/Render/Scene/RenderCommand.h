@@ -15,7 +15,7 @@
 
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
-#include <Component/PostProcess/Light/LightComponentBase.h>
+#include "Component/PostProcess/Light/LightComponent.h"
 
 
 struct ID3D11ShaderResourceView;
@@ -40,9 +40,9 @@ enum class ERenderCommandType
 	Light,
 };
 
-enum EShadowLightType
+enum EShadowLightType : int32
 {
-	SLT_Directional,
+	SLT_Directional = 0,
 	SLT_Point,
 	SLT_Spot,
 };
@@ -110,10 +110,11 @@ struct FLightInfo
 struct FShadowLightRequest
 {
 	uint32 LightIndex = InvalidShadowIndex;
-    ULightComponentBase* LightComponent = nullptr;
+    ULightComponent* LightComponent = nullptr;
     EShadowLightType Type;
     FVector WorldLocation;
     bool bCastShadows = true;
+    uint32 ShadowResolution;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowSharpen = 1.0f;
