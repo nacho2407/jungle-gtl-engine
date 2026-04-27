@@ -20,40 +20,36 @@ void FShadowMapPass::ReleaseShadowMapResources()
         if (ShadowResources2D[i].Texture2D) ShadowResources2D[i].Texture2D->Release();
         if (ShadowResources2D[i].DSV2D) ShadowResources2D[i].DSV2D->Release();
         if (ShadowResources2D[i].SRV2D) ShadowResources2D[i].SRV2D->Release();
+        if (ShadowResources2D[i].PreviewSRV) ShadowResources2D[i].PreviewSRV->Release();
+        ShadowResources2D[i] = {};
     }
     for (uint32 i = 0; i < MAX_SHADOW_MAPS_CUBE; i++)
     {
         if (ShadowResourcesCube[i].TextureCube) ShadowResourcesCube[i].TextureCube->Release();
         for (int f = 0; f < 6; ++f)
         {
-            if (ShadowResourcesCube[i].DSVCubes[f])
-            {
-                ShadowResourcesCube[i].DSVCubes[f]->Release();
-            }
+            if (ShadowResourcesCube[i].DSVCubes[f]) ShadowResourcesCube[i].DSVCubes[f]->Release();
+            if (ShadowResourcesCube[i].PreviewSRVs[f]) ShadowResourcesCube[i].PreviewSRVs[f]->Release();
         }
-        if (ShadowResourcesCube[i].SRVCube)
-        {
-            ShadowResourcesCube[i].SRVCube->Release();
-        }
+        if (ShadowResourcesCube[i].SRVCube) ShadowResourcesCube[i].SRVCube->Release();
+        ShadowResourcesCube[i] = {};
     }
 }
 
-ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(uint32 Index, uint32 Face, ID3D11DeviceContext* Context)
+ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(uint32 Index, bool bIsCube, uint32 Face, ID3D11DeviceContext* Context)
 {
     (void)Context;
 
-    if (Index >= MAX_SHADOW_MAPS || Face >= 6)
+    if (bIsCube)
     {
-        return nullptr;
+        if (Index >= MAX_SHADOW_MAPS_CUBE || Face >= 6) return nullptr;
+        return ShadowResourcesCube[Index].PreviewSRVs[Face];
     }
-
-    FShadowResource& Resource = ShadowResources[Index];
-    if (!Resource.Texture)
+    else
     {
-        return nullptr;
+        if (Index >= MAX_SHADOW_MAPS_2D) return nullptr;
+        return ShadowResources2D[Index].PreviewSRV;
     }
-
-    return Resource.PreviewSRVs[Face];
 }
 
 void FShadowMapPass::SetShadowMapSize(uint32 InShadowMapSize)
@@ -265,6 +261,9 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         srvDesc.Texture2D.MipLevels = 1;
         srvDesc.Texture2D.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResources2D[i].Texture2D, &srvDesc, &ShadowResources2D[i].SRV2D);
+
+        // Preview SRV (identical to SRV2D for now)
+        Device->CreateShaderResourceView(ShadowResources2D[i].Texture2D, &srvDesc, &ShadowResources2D[i].PreviewSRV);
     }
 
     // 2. TextureCube for Point
@@ -300,6 +299,7 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         srvDesc.TextureCube.MipLevels = 1;
         srvDesc.TextureCube.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResourcesCube[i].TextureCube, &srvDesc, &ShadowResourcesCube[i].SRVCube);
+
         for (int f = 0; f < 6; ++f)
         {
             D3D11_SHADER_RESOURCE_VIEW_DESC previewSrvDesc = {};
@@ -309,7 +309,7 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
             previewSrvDesc.Texture2DArray.MipLevels = 1;
             previewSrvDesc.Texture2DArray.FirstArraySlice = f;
             previewSrvDesc.Texture2DArray.ArraySize = 1;
-            Device->CreateShaderResourceView(ShadowResources[i].Texture, &previewSrvDesc, &ShadowResources[i].PreviewSRVs[f]);
+            Device->CreateShaderResourceView(ShadowResourcesCube[i].TextureCube, &previewSrvDesc, &ShadowResourcesCube[i].PreviewSRVs[f]);
         }
     }
 }

@@ -25,7 +25,7 @@ public:
     { 
         return (Index < MAX_SHADOW_MAPS_CUBE) ? ShadowResourcesCube[Index].SRVCube : nullptr; 
     }
-    ID3D11ShaderResourceView* GetShadowPreviewSRV(uint32 Index, uint32 Face, ID3D11DeviceContext* Context);
+    ID3D11ShaderResourceView* GetShadowPreviewSRV(uint32 Index, bool bIsCube, uint32 Face, ID3D11DeviceContext* Context);
     uint32 GetShadowMapSize() const { return ShadowMapSize; }
     void SetShadowMapSize(uint32 InShadowMapSize);
 
@@ -38,6 +38,7 @@ private:
         ID3D11Texture2D*          Texture2D   = nullptr;
         ID3D11DepthStencilView*   DSV2D       = nullptr;
         ID3D11ShaderResourceView* SRV2D       = nullptr;
+        ID3D11ShaderResourceView* PreviewSRV  = nullptr;
     };
     FShadowResource2D ShadowResources2D[MAX_SHADOW_MAPS_2D];
     struct FShadowResourceCube
