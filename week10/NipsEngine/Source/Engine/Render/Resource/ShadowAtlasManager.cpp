@@ -15,8 +15,6 @@ bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& 
 	int32 TileX, TileY;
     if (ShadowAllocator.AllocateTiled(RequestTileSize, TileX, TileY))
     {
-        OutTile.TileIndex = TileY * RequestTileSize + TileX;
-
         OutTile.TileX = TileX;
         OutTile.TileY = TileY;
 
@@ -35,6 +33,18 @@ bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& 
         return true;
     }
 	return false;
+}
+
+bool FShadowAtlasManager::FreeTile(const int32& TileX, const int32& TileY, const int32& TileSize)
+{
+    if (TileX >= 0 && TileX < ShadowAllocator.GridCount && TileY >= 0 && TileY < ShadowAllocator.GridCount)
+    {
+        int32 QuantizedTileSize = ShadowAllocator.QuantizeShadowSize(TileSize);
+        QuantizedTileSize /= ShadowAllocator.GridSize; // Grid 단위로 변환
+        ShadowAllocator.FreeTile(TileX, TileY, QuantizedTileSize);
+        return true;
+    }
+    return false;
 }
 
 void FShadowAtlasManager::VSMInitialize(ID3D11Device* InDevice)
@@ -82,18 +92,6 @@ void FShadowAtlasManager::VSMInitialize(ID3D11Device* InDevice)
     //   dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     //   dsvDesc.Texture2D.MipSlice = 0;
     //   Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
-}
-
-bool FShadowAtlasManager::FreeTile(const int32& TileIndex)
-{
-	if (TileIndex >= 0 && TileIndex < ShadowAllocator.GridCount * ShadowAllocator.GridCount)
-	{
-		int32 TileX = TileIndex % ShadowAllocator.GridCount;
-		int32 TileY = TileIndex / ShadowAllocator.GridCount;
-		ShadowAllocator.FreeTile(TileX, TileY);
-		return true;
-    }
-    return false;
 }
 
 bool FShadowAtlasManager::AllocateTileCube(int32& OutCubeIndex)
