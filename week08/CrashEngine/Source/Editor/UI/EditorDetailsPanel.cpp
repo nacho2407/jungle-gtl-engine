@@ -225,6 +225,20 @@ void FEditorDetailsPanel::Render(float DeltaTime)
 
     FSelectionManager& Selection = EditorEngine->GetSelectionManager();
     AActor* PrimaryActor = Selection.GetPrimarySelection();
+    TArray<AActor*> FallbackActors;
+    if (!PrimaryActor)
+    {
+        FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport();
+        if (ActiveViewport && ActiveViewport->IsPilotingActor())
+        {
+            if (AActor* PilotedActor = ActiveViewport->GetPilotedActor())
+            {
+                PrimaryActor = PilotedActor;
+                FallbackActors.push_back(PilotedActor);
+            }
+        }
+    }
+
     if (!PrimaryActor)
     {
         SelectedComponent = nullptr;
@@ -243,7 +257,7 @@ void FEditorDetailsPanel::Render(float DeltaTime)
         bActorSelected = true;
     }
 
-    const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+    const TArray<AActor*>& SelectedActors = FallbackActors.empty() ? Selection.GetSelectedActors() : FallbackActors;
     const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
     // ========== 고정 영역: Actor Info ==========
