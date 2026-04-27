@@ -14,6 +14,8 @@ public:
 		const TArray<FBoundingBox>* VisibleObjectsBounds = nullptr) const;
 
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	
+	void Serialize(FArchive& Ar) override;
 
 public:
 	EShadowMap GetShadowMapType() const { return eShadowMapType; }
