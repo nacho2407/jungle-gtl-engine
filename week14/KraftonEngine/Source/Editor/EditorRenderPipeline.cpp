@@ -232,7 +232,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 		Collector.CollectGrid(Frame.RenderOptions.GridSpacing, Frame.RenderOptions.GridHalfLineCount, Scene);
 
 		if (Flags.bShowShadowFrustum)
-			Scene.SubmitShadowFrustumDebug(World);
+			Scene.SubmitShadowFrustumDebug(World, Frame);
 
 		if (Flags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);

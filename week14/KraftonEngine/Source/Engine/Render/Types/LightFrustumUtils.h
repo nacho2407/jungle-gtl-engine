@@ -263,17 +263,15 @@ namespace FLightFrustumUtils
 		OutRanges[NumCascades - 1].FarZ = FarZ;
 	}
 
-	inline FDirectionalLightViewProj BuildDirectionalLightCascadeViewProj(
-		const FGlobalDirectionalLightParams& Light,
+	inline void ComputeCascadeWorldCorners(
 		const FMatrix& CameraView,
 		const FMatrix& CameraProj,
 		float CameraNearZ,
 		float CameraFarZ,
 		float CascadeNearZ,
-		float CascadeFarZ)
+		float CascadeFarZ,
+		FVector (&OutCorners)[8])
 	{
-		FDirectionalLightViewProj Result;
-
 		FMatrix InvVP = (CameraView * CameraProj).GetInverse();
 
 		static const FVector NDCCorners[8] = {
@@ -293,16 +291,33 @@ namespace FLightFrustumUtils
 		NearT = Clamp(NearT, 0.0f, 1.0f);
 		FarT = Clamp(FarT, 0.0f, 1.0f);
 
-		FVector WorldCorners[8];
-
 		for (int i = 0; i < 4; ++i)
 		{
 			const FVector& FullNear = FullCorners[i];
 			const FVector& FullFar = FullCorners[i + 4];
 
-			WorldCorners[i] = FullNear + (FullFar - FullNear) * NearT;
-			WorldCorners[i + 4] = FullNear + (FullFar - FullNear) * FarT;
+			OutCorners[i] = FullNear + (FullFar - FullNear) * NearT;
+			OutCorners[i + 4] = FullNear + (FullFar - FullNear) * FarT;
 		}
+	}
+
+	inline FDirectionalLightViewProj BuildDirectionalLightCascadeViewProj(
+		const FGlobalDirectionalLightParams& Light,
+		const FMatrix& CameraView,
+		const FMatrix& CameraProj,
+		float CameraNearZ,
+		float CameraFarZ,
+		float CascadeNearZ,
+		float CascadeFarZ)
+	{
+		FDirectionalLightViewProj Result;
+
+		FVector WorldCorners[8];
+		ComputeCascadeWorldCorners(
+			CameraView, CameraProj,
+			CameraNearZ, CameraFarZ,
+			CascadeNearZ, CascadeFarZ,
+			WorldCorners);
 
 		FVector Center(0, 0, 0);
 		for (int i = 0; i < 8; ++i)

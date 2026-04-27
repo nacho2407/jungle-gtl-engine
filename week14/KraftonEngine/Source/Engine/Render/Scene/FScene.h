@@ -8,6 +8,7 @@
 class AActor;
 class UPrimitiveComponent;
 class UWorld;
+struct FFrameContext;
 
 // ============================================================
 // FScene — FPrimitiveSceneProxy의 소유자 겸 변경 추적 컨테이너
@@ -71,7 +72,7 @@ public:
 	const FDebugDrawQueue& GetDebugDrawQueue() const { return DebugDrawQueue; }
 
 	// --- Shadow frustum 디버그 라인 제출 ---
-	void SubmitShadowFrustumDebug(UWorld* World);
+	void SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame);
 
 	// --- 환경 데이터 (Fog, Light) ---
 	FSceneEnvironment& GetEnvironment() { return Environment; }
