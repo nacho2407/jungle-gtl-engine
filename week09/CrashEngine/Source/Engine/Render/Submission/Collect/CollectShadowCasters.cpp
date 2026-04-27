@@ -51,26 +51,56 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
 
         if (LC.LightType == static_cast<uint32>(ELightType::Directional))
         {
-            // Simple orthographic for directional light.
-            // Until full CSM lands, use the user-configured dynamic shadow distance as coverage.
             FVector LightDir = LC.Direction.Normalized();
             
             FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
             FVector Right = LightDir.Cross(Up).Normalized();
             Up = Right.Cross(LightDir).Normalized();
 
-            const float ShadowDistance = std::max(Light->DynamicShadowDistance, 100.0f);
-            const float OrthoExtent = ShadowDistance * 0.5f;
-            FVector LightPos = LC.Position - LightDir * OrthoExtent;
+            // Get scene bounds from Octree 
+            // Use default value if not exist
+            const FOctree* Octree = World->GetPartition().GetOctree();
+            FBoundingBox SceneBounds = Octree ? Octree->GetCellBounds() : FBoundingBox(FVector(-500), FVector(500));
+            FVector SceneCenter = SceneBounds.GetCenter();
 
+            // Calculate initial LightView centered on the scene
+            // We'll adjust the Z-range later
             LightView = FMatrix(
                 Right.X, Up.X, LightDir.X, 0,
                 Right.Y, Up.Y, LightDir.Y, 0,
                 Right.Z, Up.Z, LightDir.Z, 0,
-                -LightPos.Dot(Right), -LightPos.Dot(Up), -LightPos.Dot(LightDir), 1);
+                -SceneCenter.Dot(Right), -SceneCenter.Dot(Up), -SceneCenter.Dot(LightDir), 1);
 
-            // 임시로 고정 범위
-            LightProj = FMatrix::MakeOrthographic(OrthoExtent, OrthoExtent, 0.1f, ShadowDistance * 2.0f);
+            // Transform all 8 corners of the scene AABB to light view space
+            FVector Corners[8];
+            SceneBounds.GetCorners(Corners);
+
+            FVector MinLS(FLT_MAX), MaxLS(-FLT_MAX);
+            for (int i = 0; i < 8; ++i)
+            {
+                FVector CornerLS = LightView.TransformPositionWithW(Corners[i]);
+                MinLS.X = std::min(MinLS.X, CornerLS.X);
+                MaxLS.X = std::max(MaxLS.X, CornerLS.X);
+                MinLS.Y = std::min(MinLS.Y, CornerLS.Y);
+                MaxLS.Y = std::max(MaxLS.Y, CornerLS.Y);
+                MinLS.Z = std::min(MinLS.Z, CornerLS.Z);
+                MaxLS.Z = std::max(MaxLS.Z, CornerLS.Z);
+            }
+
+            // Adjust LightView translation so that Z starts from the nearest point of the scene
+            // to maximize precision. Directional light "origin" is moved back.
+            float NearZ = MinLS.Z - 100.0f; // Add small padding for casters outside bounds
+            float FarZ = MaxLS.Z + 100.0f;
+            
+            float Width = MaxLS.X - MinLS.X;
+            float Height = MaxLS.Y - MinLS.Y;
+
+            // Update LightView to center the projection on the scene's XY extent in light space
+            FVector OffsetLS(-(MinLS.X + MaxLS.X) * 0.5f, -(MinLS.Y + MaxLS.Y) * 0.5f, 0.0f);
+            FMatrix LSAdjustment = FMatrix::MakeTranslationMatrix(OffsetLS);
+            LightView = LightView * LSAdjustment;
+
+            LightProj = FMatrix::MakeOrthographic(Width, Height, NearZ, FarZ);
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
