@@ -44,13 +44,16 @@ void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 
 void USceneComponent::PostEditProperty(const char* PropertyName)
 {
-    bool bApplyChangeToPartition = (strcmp(PropertyName, "Location") == 0 || strcmp(PropertyName, "Rotation") == 0 || strcmp(PropertyName, "Scale") == 0);
+    const bool bIsLocationProperty = (strcmp(PropertyName, "Location") == 0);
+    const bool bIsRotationProperty = (strcmp(PropertyName, "Rotation") == 0);
+    const bool bIsScaleProperty = (strcmp(PropertyName, "Scale") == 0);
+    const bool bApplyChangeToPartition = bIsLocationProperty || bIsRotationProperty || bIsScaleProperty;
 
-    if (strcmp(PropertyName, "Rotation") == 0)
+    if (bIsRotationProperty)
     {
         ApplyCachedEditRotator();
     }
-    else
+    else if (bApplyChangeToPartition)
     {
         MarkTransformDirty();
     }
