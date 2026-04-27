@@ -571,6 +571,100 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	Device->CreateShaderResourceView(PointVSMTexture, &SRVDesc, &PointVSMSRV);
 }
 
+void FShadowMapResources::ReleaseCSM()
+{
+	// CSM VSM
+	if (CSMVSMSRV) { CSMVSMSRV->Release(); CSMVSMSRV = nullptr; }
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		if (CSMVSMSliceSRV[i]) { CSMVSMSliceSRV[i]->Release(); CSMVSMSliceSRV[i] = nullptr; }
+		if (CSMVSMRTV[i]) { CSMVSMRTV[i]->Release(); CSMVSMRTV[i] = nullptr; }
+		if (CSMVSMDSV[i]) { CSMVSMDSV[i]->Release(); CSMVSMDSV[i] = nullptr; }
+	}
+	if (CSMVSMTexture) { CSMVSMTexture->Release(); CSMVSMTexture = nullptr; }
+	if (CSMVSMDepthTexture) { CSMVSMDepthTexture->Release(); CSMVSMDepthTexture = nullptr; }
+
+	// CSM depth
+	if (CSMSRV) { CSMSRV->Release(); CSMSRV = nullptr; }
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		if (CSMSliceSRV[i]) { CSMSliceSRV[i]->Release(); CSMSliceSRV[i] = nullptr; }
+		if (CSMDSV[i]) { CSMDSV[i]->Release(); CSMDSV[i] = nullptr; }
+	}
+	if (CSMTexture) { CSMTexture->Release(); CSMTexture = nullptr; }
+	CSMResolution = 0;
+}
+
+void FShadowMapResources::ReleaseSpotAtlas()
+{
+	// Spot VSM
+	if (SpotVSMSRV) { SpotVSMSRV->Release(); SpotVSMSRV = nullptr; }
+	if (SpotVSMRTVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+			if (SpotVSMRTVs[i]) SpotVSMRTVs[i]->Release();
+		delete[] SpotVSMRTVs;
+		SpotVSMRTVs = nullptr;
+	}
+	if (SpotVSMDSVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+			if (SpotVSMDSVs[i]) SpotVSMDSVs[i]->Release();
+		delete[] SpotVSMDSVs;
+		SpotVSMDSVs = nullptr;
+	}
+	if (SpotVSMTexture) { SpotVSMTexture->Release(); SpotVSMTexture = nullptr; }
+	if (SpotVSMDepthTexture) { SpotVSMDepthTexture->Release(); SpotVSMDepthTexture = nullptr; }
+
+	// Spot depth atlas
+	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
+	if (SpotAtlasSliceSRVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+		{
+			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
+		}
+		delete[] SpotAtlasSliceSRVs;
+		SpotAtlasSliceSRVs = nullptr;
+	}
+	if (SpotAtlasDSVs)
+	{
+		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
+		{
+			if (SpotAtlasDSVs[i]) SpotAtlasDSVs[i]->Release();
+		}
+		delete[] SpotAtlasDSVs;
+		SpotAtlasDSVs = nullptr;
+	}
+	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
+	SpotAtlasPageCount = 0;
+	SpotAtlasResolution = 0;
+
+	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }
+	if (SpotShadowDataBuffer) { SpotShadowDataBuffer->Release(); SpotShadowDataBuffer = nullptr; }
+	SpotShadowDataCapacity = 0;
+}
+
+void FShadowMapResources::ReleasePointAtlas()
+{
+	// Point VSM
+	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
+	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
+	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
+	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
+	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
+
+	// Point depth atlas
+	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
+	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
+	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
+	PointAtlasResolution = 0;
+
+	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV = nullptr; }
+	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
+	PointLightShadowDataCapacity = 0;
+}
+
 void FShadowMapResources::ReleaseVSM()
 {
 	// CSM VSM
@@ -613,53 +707,9 @@ void FShadowMapResources::ReleaseVSM()
 
 void FShadowMapResources::Release()
 {
-	ReleaseVSM();
-
-	// CSM
-	if (CSMSRV) { CSMSRV->Release(); CSMSRV = nullptr; }
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		if (CSMSliceSRV[i]) { CSMSliceSRV[i]->Release(); CSMSliceSRV[i] = nullptr; }
-		if (CSMDSV[i]) { CSMDSV[i]->Release(); CSMDSV[i] = nullptr; }
-	}
-	if (CSMTexture) { CSMTexture->Release(); CSMTexture = nullptr; }
-
-	// Spot Atlas
-	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
-	if (SpotAtlasSliceSRVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
-		}
-		delete[] SpotAtlasSliceSRVs;
-		SpotAtlasSliceSRVs = nullptr;
-	}
-	if (SpotAtlasDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasDSVs[i]) SpotAtlasDSVs[i]->Release();
-		}
-		delete[] SpotAtlasDSVs;
-		SpotAtlasDSVs = nullptr;
-	}
-	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
-	SpotAtlasPageCount = 0;
-
-	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
-	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
-	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
-	PointAtlasResolution = 0;
-
-	// StructuredBuffers
-	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }
-	if (SpotShadowDataBuffer) { SpotShadowDataBuffer->Release(); SpotShadowDataBuffer = nullptr; }
-	SpotShadowDataCapacity = 0;
-
-	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV = nullptr; }
-	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
-	PointLightShadowDataCapacity = 0;
+	ReleaseCSM();
+	ReleaseSpotAtlas();
+	ReleasePointAtlas();
 }
 
 void FSystemResources::Release()

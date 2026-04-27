@@ -149,8 +149,9 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 		const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4; // depth + (moment if VSM)
 		uint64 TotalBytes = 0;
 
-		// CSM: Resolution^2 * cascades
-		TotalBytes += static_cast<uint64>(ShadowRes.CSMResolution) * ShadowRes.CSMResolution * MAX_SHADOW_CASCADES * BPP;
+		// CSM: Resolution^2 * cascades (ReleaseCSM 시 CSMResolution=0 → 자동 스킵)
+		if (ShadowRes.CSMResolution > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.CSMResolution) * ShadowRes.CSMResolution * MAX_SHADOW_CASCADES * BPP;
 
 		// Spot Atlas: AtlasResolution^2 * pages
 		if (ShadowRes.SpotAtlasPageCount > 0)
@@ -228,9 +229,16 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 
-	// ── CSM (Directional) — cascade 수는 상수 ──
-	Res.EnsureCSM(Dev, Resolution);
-	if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+	// ── CSM (Directional) — Directional Light가 있을 때만 생성, 없으면 해제 ──
+	if (Env.HasGlobalDirectionalLight())
+	{
+		Res.EnsureCSM(Dev, Resolution);
+		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+	}
+	else if (Res.IsCSMValid())
+	{
+		Res.ReleaseCSM();
+	}
 
 	// ── Spot Atlas — 단일 페이지 아틀라스 ──
 	uint32 ShadowSpotCount = 0;
@@ -246,6 +254,10 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.EnsureSpotAtlas(Dev, SpotRes, ShadowSpotCount);
 		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
 	}
+	else if (Res.IsSpotValid())
+	{
+		Res.ReleaseSpotAtlas();
+	}
 
 	// ── Point Atlas — shadow-casting point 수 기반 ──
 	uint32 ShadowPointCount = 0;
@@ -260,6 +272,10 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		const uint32 PointAtlasSize = static_cast<uint32>(PointLightAtlas.GetAtlasSize());
 		Res.EnsurePointAtlas(Dev, PointAtlasSize, ShadowPointCount);
 		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize);
+	}
+	else if (Res.IsPointLightValid())
+	{
+		Res.ReleasePointAtlas();
 	}
 }
 

@@ -96,6 +96,9 @@ struct FShadowMapResources
 	void EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
 	void EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize);
 
+	void ReleaseCSM();
+	void ReleaseSpotAtlas();
+	void ReleasePointAtlas();
 	void ReleaseVSM();
 	void Release();
 };
