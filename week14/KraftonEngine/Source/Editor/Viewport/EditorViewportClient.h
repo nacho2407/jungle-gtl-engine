@@ -8,6 +8,7 @@
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+#include "Math/Rotator.h"
 #include "imgui.h"
 
 class UWorld;
@@ -111,6 +112,15 @@ private:
 
 	// Marquee Selection (영역 드래그 선택)
 	bool bIsMarqueeSelecting = false;
-	ImVec2 MarqueeStartPos;
-	ImVec2 MarqueeCurrentPos;
-};
+	FVector MarqueeStartPos;
+	FVector MarqueeCurrentPos;
+
+	// Camera Focus Animation
+	bool bIsFocusAnimating = false;
+	FVector FocusStartLoc;
+	FRotator FocusStartRot;
+	FVector FocusEndLoc;
+	FRotator FocusEndRot;
+	float FocusAnimTimer = 0.0f;
+	const float FocusAnimDuration = 0.5f; // 0.5초 동안 이동
+	};
