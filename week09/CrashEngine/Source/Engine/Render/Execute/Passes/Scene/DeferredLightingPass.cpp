@@ -161,12 +161,16 @@ void FDeferredLightingPass::PrepareInputs(FRenderPipelineContext& Context)
                 // Texture2D for Directional/Spot -> t20 ~ t24
                 ID3D11ShaderResourceView* ShadowSRV2D = ShadowPass->GetShadowSRV2D(i);
                 Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMap2DBase + i, 1, &ShadowSRV2D);
+                ID3D11ShaderResourceView* ShadowMomentSRV2D = ShadowPass->GetMomentSRV2D(i);
+                Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMoment2DBase + i, 1, &ShadowMomentSRV2D);
             }
             for (uint32 i = 0; i < ESystemTexSlot::MaxShadowMapsCubeCount; i++)
             {
                 // TextureCube for Point -> t25 ~ t29
                 ID3D11ShaderResourceView* ShadowSRVCube = ShadowPass->GetShadowSRVCube(i);
                 Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMapCubeBase + i, 1, &ShadowSRVCube);
+                ID3D11ShaderResourceView* ShadowMomentSRVCube = ShadowPass->GetMomentSRVCube(i);
+                Context.Context->PSSetShaderResources(ESystemTexSlot::ShadowMomentCubeBase + i, 1, &ShadowMomentSRVCube);
             }
         }
     }
