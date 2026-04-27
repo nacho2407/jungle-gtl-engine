@@ -359,7 +359,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
 
 	// 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 드래그 종료를 처리해야 함
-	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding())
+	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding() && !bIsMarqueeSelecting)
 	{
 		return;
 	}
@@ -383,50 +383,109 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	// 마우스 좌표를 뷰포트 슬롯 로컬 좌표로 변환
 	// (ImGui screen space = 윈도우 클라이언트 좌표)
-	POINT MousePoint = InputSystem::Get().GetMousePos();
-	MousePoint = Window->ScreenToClientPoint(MousePoint);
-
-	float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
-	float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportScreenRect.Y;
-
-	// 커서 숨김 제거: ShowCursor는 전역 레퍼런스 카운터라 멀티 뷰포트에서
-	// active 전환 시 GetKeyUp이 처리되지 않아 커서가 영구 숨김될 수 있음
+	ImVec2 MousePos = ImGui::GetIO().MousePos;
+	float LocalMouseX = MousePos.x - ViewportScreenRect.X;
+	float LocalMouseY = MousePos.y - ViewportScreenRect.Y;
 
 	// FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
 	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
 	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
-	//성능 향상을 위해 필요할 때만 아래 분기에서 Ray 생성.
+	
 	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
 	// 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
 	FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
 
-	if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
-	{
-		HandleDragStart(Ray);
-	}
-	else if (InputSystem::Get().GetLeftDragging())
-	{
-		//	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
-		if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
-		{
-			Gizmo->SetHolding(true);
-		}
+	InputSystem& Input = InputSystem::Get();
 
-		if (Gizmo->IsHolding())
+	if (Input.GetKeyDown(VK_LBUTTON))
+	{
+		if (Input.GetKey(VK_CONTROL) && Input.GetKey(VK_MENU)) // Ctrl + Alt
 		{
-			Gizmo->UpdateDrag(Ray);
+			bIsMarqueeSelecting = true;
+			MarqueeStartPos = MousePos;
+			MarqueeCurrentPos = MousePos;
+		}
+		else
+		{
+			HandleDragStart(Ray);
 		}
 	}
-	else if (InputSystem::Get().GetLeftDragEnd())
+	else if (Input.GetLeftDragging())
 	{
-		Gizmo->DragEnd();
+		if (bIsMarqueeSelecting)
+		{
+			MarqueeCurrentPos = MousePos;
+		}
+		else
+		{
+			//	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
+			if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
+			{
+				Gizmo->SetHolding(true);
+			}
+
+			if (Gizmo->IsHolding())
+			{
+				Gizmo->UpdateDrag(Ray);
+			}
+		}
 	}
-	else if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
+	else if (Input.GetLeftDragEnd())
+	{
+		if (bIsMarqueeSelecting)
+		{
+			// Marquee Selection 종료 및 선택 로직 수행
+			bIsMarqueeSelecting = false;
+
+			float MinX = (std::min)(MarqueeStartPos.x, MarqueeCurrentPos.x);
+			float MaxX = (std::max)(MarqueeStartPos.x, MarqueeCurrentPos.x);
+			float MinY = (std::min)(MarqueeStartPos.y, MarqueeCurrentPos.y);
+			float MaxY = (std::max)(MarqueeStartPos.y, MarqueeCurrentPos.y);
+
+			// 사각형 크기가 너무 작으면 일반 클릭으로 간주하거나 무시
+			if (std::abs(MaxX - MinX) > 2.0f || std::abs(MaxY - MinY) > 2.0f)
+			{
+				UWorld* World = GetWorld();
+				if (World && SelectionManager)
+				{
+					if (!Input.GetKey(VK_CONTROL))
+					{
+						SelectionManager->ClearSelection();
+					}
+
+					FMatrix VP = Camera->GetViewProjectionMatrix();
+					
+					for (AActor* Actor : World->GetActors())
+					{
+						if (!Actor || !Actor->IsVisible() || Actor->IsA<UGizmoComponent>()) continue;
+
+						FVector WorldPos = Actor->GetActorLocation();
+						FVector ClipSpace = VP.TransformPositionWithW(WorldPos);
+
+						// NDX to Screen
+						float ScreenX = (ClipSpace.X * 0.5f + 0.5f) * VPWidth + ViewportScreenRect.X;
+						float ScreenY = (1.0f - (ClipSpace.Y * 0.5f + 0.5f)) * VPHeight + ViewportScreenRect.Y;
+
+						if (ScreenX >= MinX && ScreenX <= MaxX && ScreenY >= MinY && ScreenY <= MaxY)
+						{
+							SelectionManager->ToggleSelect(Actor);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			Gizmo->DragEnd();
+		}
+	}
+	else if (Input.GetKeyUp(VK_LBUTTON))
 	{
 		// 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
 		Gizmo->SetPressedOnHandle(false);
+		bIsMarqueeSelecting = false;
 	}
 }
 
@@ -532,6 +591,18 @@ void FEditorViewportClient::RenderViewportImage(bool bIsActiveViewport)
 	if (bIsActiveViewport)
 	{
 		DrawList->AddRect(Min, Max, IM_COL32(255, 200, 0, 200), 0.0f, 0, 2.0f);
+	}
+
+	// Marquee Selection 사각형 렌더링
+	if (bIsMarqueeSelecting)
+	{
+		ImDrawList* ForegroundDrawList = ImGui::GetForegroundDrawList();
+
+		ImVec2 RectMin((std::min)(MarqueeStartPos.x, MarqueeCurrentPos.x), std::min(MarqueeStartPos.y, MarqueeCurrentPos.y));
+		ImVec2 RectMax((std::max)(MarqueeStartPos.x, MarqueeCurrentPos.x), std::max(MarqueeStartPos.y, MarqueeCurrentPos.y));
+
+		ForegroundDrawList->AddRectFilled(RectMin, RectMax, IM_COL32(0, 0, 0, 0)); // 투명 채우기
+		ForegroundDrawList->AddRect(RectMin, RectMax, IM_COL32(255, 255, 255, 255), 0.0f, 0, 5.0f); // 하얀색 테두리
 	}
 }
 
