@@ -1,4 +1,4 @@
-#include "LineGeometry.h"
+﻿#include "LineGeometry.h"
 #include "Math/MathUtils.h"
 
 #include <algorithm>
@@ -179,25 +179,20 @@ void FLineGeometry::AddWorldHelpers(const FShowFlags& ShowFlags, float GridSpaci
 		}
 	}
 
-	if (ShowFlags.bWorldAxis && bShowAxis0)
+	if (ShowFlags.bWorldAxis)
 	{
+		const float AxisLen = std::max(BaseGridExtent, Spacing * 10.0f);
+
 		AddLine(
-			MakeGridPoint(A0, A1, N, Min0, 0.0f, AxisBias),
-			MakeGridPoint(A0, A1, N, Max0, 0.0f, AxisBias),
+			MakeGridPoint(A0, A1, N, -AxisLen, 0.0f, AxisBias),
+			MakeGridPoint(A0, A1, N, AxisLen, 0.0f, AxisBias),
 			AxisColor(A0));
-	}
 
-	if (ShowFlags.bWorldAxis && bShowAxis1)
-	{
 		AddLine(
-			MakeGridPoint(A0, A1, N, 0.0f, Min1, AxisBias),
-			MakeGridPoint(A0, A1, N, 0.0f, Max1, AxisBias),
+			MakeGridPoint(A0, A1, N, 0.0f, -AxisLen, AxisBias),
+			MakeGridPoint(A0, A1, N, 0.0f, AxisLen, AxisBias),
 			AxisColor(A1));
-	}
 
-	if (ShowFlags.bWorldAxis && bShowAxis0 && bShowAxis1)
-	{
-		const float AxisLen = std::max(Spacing * static_cast<float>(BaseHalfCount), Spacing * 10.0f);
 		AddLine(
 			MakeGridPoint(A0, A1, N, 0.0f, 0.0f, -AxisLen),
 			MakeGridPoint(A0, A1, N, 0.0f, 0.0f, AxisLen),
