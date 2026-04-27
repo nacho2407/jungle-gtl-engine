@@ -4,6 +4,8 @@
 #include "Collision/SpatialPartition.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 
+#include <algorithm>
+
 void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* SceneView)
 {
     if (!World || !SceneView)
@@ -38,16 +40,17 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
 
         if (LC.LightType == static_cast<uint32>(ELightType::Directional))
         {
-            // Simple orthographic for directional light
-            // For now, assume a fixed large area. In real CSM, this depends on main camera.
+            // Simple orthographic for directional light.
+            // Until full CSM lands, use the user-configured dynamic shadow distance as coverage.
             FVector LightDir = LC.Direction.Normalized();
             
             FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
             FVector Right = LightDir.Cross(Up).Normalized();
             Up = Right.Cross(LightDir).Normalized();
 
-            // Place "camera" far back along direction
-            FVector LightPos = LightDir * -500.0f; 
+            const float ShadowDistance = std::max(Light->DynamicShadowDistance, 100.0f);
+            const float OrthoExtent = ShadowDistance * 0.5f;
+            FVector LightPos = LC.Position - LightDir * OrthoExtent;
 
             LightView = FMatrix(
                 Right.X, Up.X, LightDir.X, 0,
@@ -56,7 +59,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
                 -LightPos.Dot(Right), -LightPos.Dot(Up), -LightPos.Dot(LightDir), 1);
 
             // 임시로 고정 범위
-            LightProj = FMatrix::MakeOrthographic(100.0f, 100.0f, 0.1f, 2000.0f);
+            LightProj = FMatrix::MakeOrthographic(OrthoExtent, OrthoExtent, 0.1f, ShadowDistance * 2.0f);
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Spot))
         {

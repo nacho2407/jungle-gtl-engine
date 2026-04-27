@@ -2,10 +2,15 @@
 #include "Editor/UI/EditorDetailsPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "GameFramework/AActor.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
+#include "Component/AmbientLightComponent.h"
+#include "Component/DirectionalLightComponent.h"
+#include "Component/LightComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SceneComponent.h"
@@ -25,6 +30,9 @@
 #include <functional>
 
 #include "Materials/MaterialManager.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Execute/Registry/RenderPassRegistry.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
 
 #define SEPARATOR()     \
     ;                   \
@@ -65,6 +73,45 @@ static FString BuildComponentDisplayLabel(UActorComponent* Comp)
         Name = TypeName;
     }
     return TypeName + "(" + Name + ")";
+}
+
+static int32 GetClosestWorldAlignedPointShadowFace(const UEditorEngine* InEditorEngine)
+{
+    if (!InEditorEngine)
+    {
+        return 0;
+    }
+
+    const auto* ActiveViewport = InEditorEngine->GetActiveViewport();
+    const UCameraComponent* ActiveCamera = ActiveViewport ? ActiveViewport->GetCamera() : InEditorEngine->GetCamera();
+    if (!ActiveCamera)
+    {
+        return 0;
+    }
+
+    const FVector Forward = ActiveCamera->GetForwardVector().Normalized();
+    static const FVector FaceDirections[6] = {
+        FVector(1.0f, 0.0f, 0.0f),
+        FVector(-1.0f, 0.0f, 0.0f),
+        FVector(0.0f, 1.0f, 0.0f),
+        FVector(0.0f, -1.0f, 0.0f),
+        FVector(0.0f, 0.0f, 1.0f),
+        FVector(0.0f, 0.0f, -1.0f),
+    };
+
+    int32 BestFace = 0;
+    float BestDot = -FLT_MAX;
+    for (int32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+    {
+        const float DotValue = Forward.Dot(FaceDirections[FaceIndex]);
+        if (DotValue > BestDot)
+        {
+            BestDot = DotValue;
+            BestFace = FaceIndex;
+        }
+    }
+
+    return BestFace;
 }
 
 FString FEditorDetailsPanel::OpenObjFileDialog()
@@ -425,6 +472,16 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     {
         return Name == "Visible" || Name == "Visible In Editor" || Name == "Visible In Game" || Name == "Is Editor Helper";
     };
+    auto IsShadowProp = [](const FString& Name)
+    {
+        return Name == "bCastShadows"
+            || Name == "Bias"
+            || Name == "Slope Bias"
+            || Name == "Normal Bias"
+            || Name == "Cascade Count"
+            || Name == "CSM Max Distance"
+            || Name == "Cascade Distribution";
+    };
 
     bool bIsRoot = false;
     if (SelectedComponent->IsA<USceneComponent>())
@@ -442,6 +499,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
                 RenderDetailsPanel(Props, i);
             }
         }
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
     }
 
     const bool bIsStaticMeshComponent = SelectedComponent->IsA<UStaticMeshComponent>();
@@ -484,6 +542,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
                 RenderDetailsPanel(Props, i);
             }
         }
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
     }
 
     if (PrimitiveComponent && ImGui::CollapsingHeader("Visibility", ImGuiTreeNodeFlags_DefaultOpen))
@@ -518,24 +577,233 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
         }
         ImGui::EndDisabled();
         ImGui::Unindent();
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
     }
 
     if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_DefaultOpen))
     {
+        ULightComponent* LightComponent = Cast<ULightComponent>(SelectedComponent);
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
             if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name))
             {
                 continue;
             }
+            if (LightComponent && IsShadowProp(Props[i].Name))
+            {
+                continue;
+            }
             RenderDetailsPanel(Props, i);
         }
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    }
+
+    if (ULightComponent* LightComponent = Cast<ULightComponent>(SelectedComponent))
+    {
+        RenderLightShadowSettings(LightComponent);
     }
 
     if (SelectedComponent->IsA<USceneComponent>())
     {
         static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
     }
+}
+
+void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightComponent)
+{
+    if (!LightComponent || LightComponent->IsA<UAmbientLightComponent>())
+    {
+        return;
+    }
+
+    if (!ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        return;
+    }
+
+    TArray<FPropertyDescriptor> ShadowProps;
+    LightComponent->GetEditableProperties(ShadowProps);
+
+    auto RenderShadowPropertyByName = [&](const char* PropertyName)
+    {
+        for (int32 PropIndex = 0; PropIndex < static_cast<int32>(ShadowProps.size()); ++PropIndex)
+        {
+            if (ShadowProps[PropIndex].Name == PropertyName)
+            {
+                bool bChanged = false;
+                if (ShadowProps[PropIndex].Name == "bCastShadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
+                {
+                    bool* ValuePtr = static_cast<bool*>(ShadowProps[PropIndex].ValuePtr);
+                    bChanged = ImGui::Checkbox("Cast Shadows", ValuePtr);
+                }
+                else
+                {
+                    bChanged = RenderDetailsPanel(ShadowProps, PropIndex);
+                }
+
+                if (bChanged)
+                {
+                    LightComponent->PostEditProperty(PropertyName);
+                }
+                return true;
+            }
+        }
+        return false;
+    };
+
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+    RenderShadowPropertyByName("bCastShadows");
+    if (!LightComponent->DoesCastShadows())
+    {
+        return;
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    ImGui::SeparatorText("Common");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    FLightProxy* LightProxy = LightComponent->GetLightProxy();
+    if (!LightProxy)
+    {
+        ImGui::TextDisabled("Light proxy is not ready.");
+        return;
+    }
+
+    if (!GEngine)
+    {
+        ImGui::TextDisabled("Renderer is unavailable.");
+        return;
+    }
+
+    FRenderPass* Pass = GEngine->GetRenderer().GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass);
+    FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+    if (!ShadowPass)
+    {
+        ImGui::TextDisabled("Shadow pass is unavailable.");
+        return;
+    }
+
+    static const int32 ShadowMapSizes[] = { 512, 1024, 2048, 4096 };
+    static const char* ShadowMapSizeLabels = "512\0""1024\0""2048\0""4096\0\0";
+    int32 SelectedShadowMapSizeIndex = 0;
+    for (int32 SizeIndex = 0; SizeIndex < IM_ARRAYSIZE(ShadowMapSizes); ++SizeIndex)
+    {
+        if (ShadowMapSizes[SizeIndex] == static_cast<int32>(ShadowPass->GetShadowMapSize()))
+        {
+            SelectedShadowMapSizeIndex = SizeIndex;
+            break;
+        }
+    }
+
+    ImGui::SetNextItemWidth(140.0f);
+    if (ImGui::Combo("Resolution", &SelectedShadowMapSizeIndex, ShadowMapSizeLabels))
+    {
+        ShadowPass->SetShadowMapSize(static_cast<uint32>(ShadowMapSizes[SelectedShadowMapSizeIndex]));
+    }
+
+    RenderShadowPropertyByName("Bias");
+    RenderShadowPropertyByName("Slope Bias");
+    RenderShadowPropertyByName("Normal Bias");
+
+    if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(LightComponent))
+    {
+        (void)DirectionalLight;
+        ImGui::Dummy(ImVec2(0.0f, 6.0f));
+        ImGui::SeparatorText("Cascade Settings");
+        ImGui::Dummy(ImVec2(0.0f, 4.0f));
+        RenderShadowPropertyByName("Cascade Count");
+        RenderShadowPropertyByName("CSM Max Distance");
+        RenderShadowPropertyByName("Cascade Distribution");
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    ImGui::SeparatorText("Shadow Map Preview");
+    ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+    if (LightProxy->ShadowMapIndex < 0)
+    {
+        ImGui::TextDisabled("No shadow map assigned this frame.");
+        return;
+    }
+
+    uint32 PreviewFace = 0;
+    if (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point))
+    {
+        static const char* FaceLabels[6] = { "World +X", "World -X", "World +Y", "World -Y", "World +Z", "World -Z" };
+        static const char* FaceButtonLabels[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+        const int32 ClosestFace = GetClosestWorldAlignedPointShadowFace(EditorEngine);
+
+        ImGui::TextDisabled("Point light shadow faces are world-aligned.");
+        ImGui::TextDisabled("Closest to current view: %s", FaceLabels[ClosestFace]);
+        ImGui::SameLine();
+        if (ImGui::Button("Use Closest Face"))
+        {
+            SelectedPointLightShadowFace = ClosestFace;
+        }
+
+        static const int32 FaceButtonOrder[6] = { 0, 1, 2, 3, 4, 5 };
+        const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+        const float ButtonSpacing = ImGui::GetStyle().ItemSpacing.x;
+        const float FaceButtonWidth = std::max(64.0f, (AvailableWidth - ButtonSpacing) / 2.0f);
+
+        ImGui::Text("Face");
+        for (int32 ButtonIndex = 0; ButtonIndex < 6; ++ButtonIndex)
+        {
+            if ((ButtonIndex % 2) != 0)
+            {
+                ImGui::SameLine();
+            }
+
+            const int32 FaceIndex = FaceButtonOrder[ButtonIndex];
+            const bool bSelectedFace = (SelectedPointLightShadowFace == FaceIndex);
+            if (bSelectedFace)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+
+            if (ImGui::Button(FaceButtonLabels[FaceIndex], ImVec2(FaceButtonWidth, 0.0f)))
+            {
+                SelectedPointLightShadowFace = FaceIndex;
+            }
+
+            if (bSelectedFace)
+            {
+                ImGui::PopStyleColor(2);
+            }
+        }
+
+        PreviewFace = static_cast<uint32>(std::clamp(SelectedPointLightShadowFace, 0, 5));
+    }
+
+    ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+    ID3D11ShaderResourceView* PreviewSRV =
+        ShadowPass->GetShadowPreviewSRV(static_cast<uint32>(LightProxy->ShadowMapIndex), PreviewFace, Context);
+    if (!PreviewSRV)
+    {
+        ImGui::TextDisabled("Shadow preview is unavailable.");
+        return;
+    }
+
+    const float MaxWidth = ImGui::GetContentRegionAvail().x;
+    const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
+
+    const ImVec2 PreviewMin = ImGui::GetCursorScreenPos();
+    const ImVec2 PreviewMax = ImVec2(PreviewMin.x + PreviewSize, PreviewMin.y + PreviewSize);
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    DrawList->AddImageQuad(
+        reinterpret_cast<ImTextureID>(PreviewSRV),
+        PreviewMin,
+        ImVec2(PreviewMax.x, PreviewMin.y),
+        PreviewMax,
+        ImVec2(PreviewMin.x, PreviewMax.y),
+        ImVec2(0.0f, 1.0f),
+        ImVec2(0.0f, 0.0f),
+        ImVec2(1.0f, 0.0f),
+        ImVec2(1.0f, 1.0f));
+    ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
+
+    ImGui::TextDisabled("Shadow Map Index: %d", LightProxy->ShadowMapIndex);
 }
 
 bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props, int32& Index)

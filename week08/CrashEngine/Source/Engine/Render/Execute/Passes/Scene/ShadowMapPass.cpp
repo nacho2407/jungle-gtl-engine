@@ -6,17 +6,59 @@
 #include "Render/Renderer.h"
 #include "Component/LightComponent.h"
 
+#include <algorithm>
+
 FShadowMapPass::~FShadowMapPass()
+{
+    ReleaseShadowMapResources();
+}
+
+void FShadowMapPass::ReleaseShadowMapResources()
 {
     for (uint32 i = 0; i < MAX_SHADOW_MAPS; ++i)
     {
         if (ShadowResources[i].Texture) ShadowResources[i].Texture->Release();
+        ShadowResources[i].Texture = nullptr;
         for (int f = 0; f < 6; ++f)
         {
             if (ShadowResources[i].DSVs[f]) ShadowResources[i].DSVs[f]->Release();
+            ShadowResources[i].DSVs[f] = nullptr;
+            if (ShadowResources[i].PreviewSRVs[f]) ShadowResources[i].PreviewSRVs[f]->Release();
+            ShadowResources[i].PreviewSRVs[f] = nullptr;
         }
         if (ShadowResources[i].SRV) ShadowResources[i].SRV->Release();
+        ShadowResources[i].SRV = nullptr;
     }
+}
+
+ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(uint32 Index, uint32 Face, ID3D11DeviceContext* Context)
+{
+    (void)Context;
+
+    if (Index >= MAX_SHADOW_MAPS || Face >= 6)
+    {
+        return nullptr;
+    }
+
+    FShadowResource& Resource = ShadowResources[Index];
+    if (!Resource.Texture)
+    {
+        return nullptr;
+    }
+
+    return Resource.PreviewSRVs[Face];
+}
+
+void FShadowMapPass::SetShadowMapSize(uint32 InShadowMapSize)
+{
+    const uint32 ClampedSize = std::max(128u, InShadowMapSize);
+    if (ShadowMapSize == ClampedSize)
+    {
+        return;
+    }
+
+    ShadowMapSize = ClampedSize;
+    ReleaseShadowMapResources();
 }
 
 void FShadowMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -203,5 +245,17 @@ void FShadowMapPass::EnsureShadowMapResources(ID3D11Device* Device)
         srvDesc.TextureCube.MipLevels = 1;
         srvDesc.TextureCube.MostDetailedMip = 0;
         Device->CreateShaderResourceView(ShadowResources[i].Texture, &srvDesc, &ShadowResources[i].SRV);
+
+        for (int f = 0; f < 6; ++f)
+        {
+            D3D11_SHADER_RESOURCE_VIEW_DESC previewSrvDesc = {};
+            previewSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+            previewSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+            previewSrvDesc.Texture2DArray.MostDetailedMip = 0;
+            previewSrvDesc.Texture2DArray.MipLevels = 1;
+            previewSrvDesc.Texture2DArray.FirstArraySlice = f;
+            previewSrvDesc.Texture2DArray.ArraySize = 1;
+            Device->CreateShaderResourceView(ShadowResources[i].Texture, &previewSrvDesc, &ShadowResources[i].PreviewSRVs[f]);
+        }
     }
 }

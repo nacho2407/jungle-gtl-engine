@@ -6,6 +6,7 @@
 
 class UActorComponent;
 class AActor;
+class ULightComponent;
 
 // FEditorDetailsPanel는 에디터 UI 표시와 입력 처리를 담당합니다.
 class FEditorDetailsPanel : public FEditorPanel
@@ -21,6 +22,7 @@ private:
     void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
     void RenderComponentProperties(AActor* Actor);
     void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
+    void RenderLightShadowSettings(ULightComponent* LightComponent);
     bool RenderDetailsPanel(TArray<struct FPropertyDescriptor>& Props, int32& Index);
 
     static FString OpenObjFileDialog();
@@ -28,4 +30,5 @@ private:
     UActorComponent* SelectedComponent = nullptr;
     AActor* LastSelectedActor = nullptr;
     bool bActorSelected = true; // true: Actor details, false: Component details
+    int32 SelectedPointLightShadowFace = 0;
 };
