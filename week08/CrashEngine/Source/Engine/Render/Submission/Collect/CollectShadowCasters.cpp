@@ -41,9 +41,10 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
             // Simple orthographic for directional light
             // For now, assume a fixed large area. In real CSM, this depends on main camera.
             FVector LightDir = LC.Direction.Normalized();
+            
             FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
-            FVector Right = Up.Cross(LightDir).Normalized();
-            Up = LightDir.Cross(Right).Normalized();
+            FVector Right = LightDir.Cross(Up).Normalized();
+            Up = Right.Cross(LightDir).Normalized();
 
             // Place "camera" far back along direction
             FVector LightPos = LightDir * -500.0f; 
