@@ -3,7 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"

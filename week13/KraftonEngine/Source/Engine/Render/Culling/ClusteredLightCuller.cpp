@@ -24,8 +24,8 @@ void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceConte
 	Device = InDevice;
 	Context = InContext;
 
-	ViewSpaceAABBCS = FShaderManager::Get().GetOrCreateCS("Shaders/ClusterConstructCS.hlsl", "CSMain");
-	LightCullingCS  = FShaderManager::Get().GetOrCreateCS("Shaders/LightCullingCS.hlsl", "CSMain");
+	ViewSpaceAABBCS = FShaderManager::Get().GetOrCreateCS("Shaders/Lighting/ClusterConstructCS.hlsl", "CSMain");
+	LightCullingCS  = FShaderManager::Get().GetOrCreateCS("Shaders/Lighting/LightCullingCS.hlsl", "CSMain");
 
 	const uint32 ClusterCount = State.ClusterX * State.ClusterY * State.ClusterZ;
 	struct Pair

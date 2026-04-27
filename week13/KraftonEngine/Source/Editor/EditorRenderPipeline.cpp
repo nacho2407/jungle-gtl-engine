@@ -10,7 +10,7 @@
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
 #include "Component/Light/LightComponentBase.h"
-#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)

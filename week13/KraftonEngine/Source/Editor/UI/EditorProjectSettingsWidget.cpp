@@ -1,5 +1,5 @@
 ﻿#include "Editor/UI/EditorProjectSettingsWidget.h"
-#include "Editor/Settings/ProjectSettings.h"
+#include "Core/ProjectSettings.h"
 #include "ImGui/imgui.h"
 
 void EditorProjectSettingsWidget::Render()
