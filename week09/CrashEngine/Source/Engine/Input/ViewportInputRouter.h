@@ -17,14 +17,14 @@ class FViewportInputRouter
 public:
     // 메인 윈도우에서 타겟 뷰포트의 위치와 크기를 얻어오는 함수 타입
 	// FViewport 내에 있는 Rect 정보는 RTV 내에서의 크기를 의미하는, 렌더링에 더 가까운 정보라서 별개임
+	// function의 FRect&는 OutRect
     using FRectProvider = std::function<bool(FRect&)>;
 
     void SetOwnerWindow(HWND InOwnerWindow) { OwnerWindow = InOwnerWindow; }
 
-    void SetGuiCaptureState(bool bMouse, bool bKeyboard)
+    void SetGuiCaptureState(const FGuiInputCaptureState& InState)
     {
-        bGuiCaptureMouse = bMouse;
-        bGuiCaptureKeyboard = bKeyboard;
+        GuiCaptureState = InState;
     }
 
     void ClearTargets();
@@ -52,6 +52,7 @@ private:
     FTargetEntry* FindHoveredTarget(const POINT& ClientPos, FRect& OutRect);
     FTargetEntry* FindTargetByViewport(FViewport* InViewport, FRect& OutRect);
     FTargetEntry* ResolvePointerTarget(const POINT& ClientPos, FRect& OutRect);
+    FTargetEntry* ResolveKeyTarget(FRect& OutRect);
 
     void DispatchPointerEvents(FTargetEntry* Target, const FRect& TargetRect, const FInputSnapshot& Input);
     void DispatchAxisEvents(FTargetEntry* Target, const FInputSnapshot& Input, float DeltaTime);
@@ -60,15 +61,17 @@ private:
     POINT ScreenToClientPoint(POINT ScreenPos) const;
     POINT ClientToLocalPoint(const POINT& ClientPos, const FRect& TargetRect) const;
 
+	void ResetKeyRepeatState();
+
 private:
+    FGuiInputCaptureState GuiCaptureState{};
+
     TArray<FTargetEntry> Targets;
     HWND OwnerWindow = nullptr;
 
     FViewport* HoveredViewport = nullptr;
     FViewport* CapturedViewport = nullptr;
-
-    bool bGuiCaptureMouse = false;
-    bool bGuiCaptureKeyboard = false;
+    FViewport* KeyFocusedViewport = nullptr;
 
 	// 키보드 Repeat 처리를 위한 상태 저장용 배열들
 	float KeyRepeatElapsed[256] = {}; // Repeat 계산을 위해 누적된 시간

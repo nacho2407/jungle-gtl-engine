@@ -4,7 +4,6 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/UI/EditorConsolePanel.h"
-#include "Engine/Input/InputSystem.h"
 #include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
@@ -13,10 +12,6 @@
 #include "GameFramework/World.h"
 #include "Viewport/Viewport.h"
 
-UWorld* FEditorViewportClient::GetWorld() const
-{
-    return GEngine ? GEngine->GetWorld() : nullptr;
-}
 #include "Collision/RayUtils.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -28,6 +23,16 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "GameFramework/SpotLightActor.h"
 #include "ImGui/imgui.h"
 #include "Object/Object.h"
+
+#include "Engine/Input/InputTypes.h"
+#include "Engine/Input/InputSystem.h"
+
+#include "Editor/Input/EditorViewportInputController.h"
+
+UWorld* FEditorViewportClient::GetWorld() const
+{
+    return GEngine ? GEngine->GetWorld() : nullptr;
+}
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
@@ -139,40 +144,37 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 void FEditorViewportClient::Tick(float DeltaTime)
 {
     if (!bIsActive)
-        return;
-
-    // TODO: Milestone 1의 임시 디스패치
-	const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
-    const FGuiInputState& GuiInputState = InputSystem::Get().GetGuiInputState();
-
-    if (!GuiInputState.bUsingKeyboard)
     {
-        for (int32 VK = 0; VK < 256; ++VK)
-        {
-            if (Input.KeyPressed[VK])
-            {
-                FViewportKeyEvent Event{};
-                Event.Key = VK;
-                Event.Type = EKeyEventType::Pressed;
-                Event.Modifiers = Input.Modifiers;
-                InputKey(Event);
-            }
-
-            if (Input.KeyReleased[VK])
-            {
-                FViewportKeyEvent Event{};
-                Event.Key = VK;
-                Event.Type = EKeyEventType::Released;
-                Event.Modifiers = Input.Modifiers;
-                InputKey(Event);
-            }
-        }
+        return;
     }
 
     UpdateViewFromPilotedActor();
-    TickEditorShortcuts(Input);
-    TickInput(Input, DeltaTime);
-    TickInteraction(Input, DeltaTime);
+
+    if (InputController)
+    {
+        bool bConsumed = false;
+
+        if (!bConsumed)
+        {
+            bConsumed = InputController->HandleViewportCommandInput(DeltaTime);
+        }
+
+        if (!bConsumed)
+        {
+            bConsumed = InputController->HandleGizmoInput(DeltaTime);
+        }
+
+        if (!bConsumed)
+        {
+            bConsumed = InputController->HandleSelectionInput(DeltaTime);
+        }
+
+        if (!bConsumed)
+        {
+            bConsumed = InputController->HandleNavigationInput(DeltaTime);
+        }
+    }
+
     ApplyViewToPilotedActor();
 }
 
@@ -345,46 +347,6 @@ AActor* FEditorViewportClient::PickActorAtScreenPoint(float ScreenX, float Scree
     AActor* BestActor = nullptr;
     const_cast<UWorld*>(World)->RaycastEditorPicking(Ray, HitResult, BestActor);
     return BestActor;
-}
-
-void FEditorViewportClient::TickEditorShortcuts(const FInputSnapshot& Input)
-{
-    UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
-    if (!EditorEngine)
-    {
-        return;
-    }
-
-    // PIE 중 ESC로 종료 (UE 동작과 동일)
-    if (EditorEngine->IsPlayingInEditor() && Input.KeyPressed[VK_ESCAPE])
-    {
-        EditorEngine->RequestEndPlayMap();
-    }
-
-    // Ctrl+D — 선택된 액터 복제
-    if (SelectionManager && Input.KeyDown[VK_CONTROL] && Input.KeyPressed['D'])
-    {
-        const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-        if (!ToDuplicate.empty())
-        {
-            TArray<AActor*> NewSelection;
-            for (AActor* Src : ToDuplicate)
-            {
-                if (!Src)
-                    continue;
-                AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-                if (Dup)
-                {
-                    NewSelection.push_back(Dup);
-                }
-            }
-            SelectionManager->ClearSelection();
-            for (AActor* Actor : NewSelection)
-            {    
-                SelectionManager->ToggleSelect(Actor);
-            }
-        }
-    }
 }
 
 void FEditorViewportClient::TickInput(const FInputSnapshot& Input, float DeltaTime)
@@ -739,31 +701,142 @@ void FEditorViewportClient::RenderViewportBorder()
         BorderThickness);
 }
 
-// TODO: 일단은 빈 함수로 두고 InputRouter가 붙은 후 Tick 계열 입력 함수들을 정리하면서 내용 채우기
 bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
 {
-	if (!Gizmo)
-	{
-		return false;
-	}
+    if (Event.Key < 0 || Event.Key >= 256)
+    {
+        return false;
+    }
 
-	if (Event.Key == VK_SPACE && Event.Type == EKeyEventType::Released)
-	{
-		Gizmo->SetNextMode();
-		return true;
-	}
+    CurrentInput.Modifiers = Event.Modifiers;
 
-	return false;
+    switch (Event.Type)
+    {
+    case EKeyEventType::Pressed:
+        CurrentInput.KeyPressed[Event.Key] = true;
+        CurrentInput.KeyDown[Event.Key] = true;
+        break;
+
+    case EKeyEventType::Released:
+        CurrentInput.KeyReleased[Event.Key] = true;
+        CurrentInput.KeyDown[Event.Key] = false;
+        break;
+
+    case EKeyEventType::Repeat:
+        CurrentInput.KeyRepeated[Event.Key] = true;
+        CurrentInput.KeyDown[Event.Key] = true;
+        break;
+    }
+
+	// 일단은 기록만 해두고 나중에 처리 로직(tool) 추가 예정
+
+    return false;
 }
 
 bool FEditorViewportClient::InputAxis(const FViewportAxisEvent& Event)
 {
-    (void) Event;
-	return false;
+    CurrentInput.Modifiers = Event.Modifiers;
+
+    switch (Event.Axis)
+    {
+    case EInputAxis::MouseX:
+        CurrentInput.MouseAxisDelta.x += static_cast<LONG>(Event.Value);
+        break;
+
+    case EInputAxis::MouseY:
+        CurrentInput.MouseAxisDelta.y += static_cast<LONG>(Event.Value);
+        break;
+
+    case EInputAxis::MouseWheel:
+        CurrentInput.MouseWheelNotches += Event.Value;
+        break;
+
+    default:
+        break;
+    }
+
+	// 일단은 기록만 해두고 나중에 처리 로직(tool) 추가 예정
+
+    return false;
 }
 
 bool FEditorViewportClient::InputPointer(const FViewportPointerEvent& Event)
 {
-    (void)Event;
+    CurrentInput.Modifiers = Event.Modifiers;
+
+    CurrentInput.MouseLocalPos = Event.LocalPos;
+    CurrentInput.MouseClientPos = Event.ClientPos;
+    CurrentInput.MouseScreenPos = Event.ScreenPos;
+
+    switch (Event.Button)
+    {
+    case EPointerButton::Left:
+        if (Event.Type == EPointerEventType::Pressed)
+        {
+            CurrentInput.bLeftPressed = true;
+            CurrentInput.bLeftDown = true;
+        }
+        else if (Event.Type == EPointerEventType::Released)
+        {
+            CurrentInput.bLeftReleased = true;
+            CurrentInput.bLeftDown = false;
+        }
+        break;
+
+    case EPointerButton::Right:
+        if (Event.Type == EPointerEventType::Pressed)
+        {
+            CurrentInput.bRightPressed = true;
+            CurrentInput.bRightDown = true;
+        }
+        else if (Event.Type == EPointerEventType::Released)
+        {
+            CurrentInput.bRightReleased = true;
+            CurrentInput.bRightDown = false;
+        }
+        break;
+
+    case EPointerButton::Middle:
+        if (Event.Type == EPointerEventType::Pressed)
+        {
+            CurrentInput.bMiddlePressed = true;
+            CurrentInput.bMiddleDown = true;
+        }
+        else if (Event.Type == EPointerEventType::Released)
+        {
+            CurrentInput.bMiddleReleased = true;
+            CurrentInput.bMiddleDown = false;
+        }
+        break;
+
+    case EPointerButton::None:
+    default:
+        break;
+    }
+
+	// 일단은 기록만 해두고 나중에 처리 로직(tool) 추가 예정
+
     return false;
+}
+
+void FEditorViewportClient::BeginInputFrame()
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        CurrentInput.KeyPressed[VK] = false;
+        CurrentInput.KeyReleased[VK] = false;
+        CurrentInput.KeyRepeated[VK] = false;
+    }
+
+    CurrentInput.MouseAxisDelta = { 0, 0 };
+    CurrentInput.MouseWheelNotches = 0.0f;
+
+    CurrentInput.bLeftPressed = false;
+    CurrentInput.bLeftReleased = false;
+
+    CurrentInput.bRightPressed = false;
+    CurrentInput.bRightReleased = false;
+
+    CurrentInput.bMiddlePressed = false;
+    CurrentInput.bMiddleReleased = false;
 }

@@ -1,6 +1,7 @@
 ﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "Core/RayTypes.h"
@@ -24,6 +25,7 @@ class FWindowsWindow;
 class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
+class FEditorViewportInputController;
 
 // EEditorViewportPlayState는 에디터 처리에서 사용할 선택지를 정의합니다.
 enum class EEditorViewportPlayState : uint8
@@ -31,6 +33,38 @@ enum class EEditorViewportPlayState : uint8
     Stopped,
     Playing,
     Paused,
+};
+
+/**
+ * @brief FEditorViewportClient가 한 프레임 동안 받은 입력 event를 저장하는 구조체
+ */
+struct FEditorViewportFrameInput
+{
+    bool KeyDown[256] = {};
+    bool KeyPressed[256] = {};
+    bool KeyReleased[256] = {};
+    bool KeyRepeated[256] = {};
+
+    POINT MouseLocalPos = { 0, 0 };
+    POINT MouseClientPos = { 0, 0 };
+    POINT MouseScreenPos = { 0, 0 };
+
+    POINT MouseAxisDelta = { 0, 0 };
+    float MouseWheelNotches = 0.0f;
+
+    bool bLeftPressed = false;
+    bool bLeftDown = false;
+    bool bLeftReleased = false;
+
+    bool bRightPressed = false;
+    bool bRightDown = false;
+    bool bRightReleased = false;
+
+    bool bMiddlePressed = false;
+    bool bMiddleDown = false;
+    bool bMiddleReleased = false;
+
+    FInputModifiers Modifiers;
 };
 
 // FEditorViewportClient는 카메라와 화면 출력에 필요한 상태를 다룹니다.
@@ -94,10 +128,21 @@ public:
     bool InputAxis(const FViewportAxisEvent& Event) override;
     bool InputPointer(const FViewportPointerEvent& Event) override;
 
+	const FRect& GetViewportScreenRect() const { return ViewportScreenRect; }
+    const FRect& GetViewportFrameRect() const { return ViewportFrameRect; }
+
+    void BeginInputFrame();
+    const FEditorViewportFrameInput& GetCurrentInput() const { return CurrentInput; }
+
+	FEditorViewportInputController* GetInputController() const
+    {
+        return InputController.get();
+    }
+
+	FSelectionManager* GetSelectionManager() const { return SelectionManager; }
+    UGizmoComponent* GetGizmo() const { return Gizmo; }
+
 private:
-    void TickEditorShortcuts(const FInputSnapshot& Input);
-    void TickInput(const FInputSnapshot& Input, float DeltaTime);
-    void TickInteraction(const FInputSnapshot& Input, float DeltaTime);
     void HandleDragStart(const FRay& Ray);
 
 private:
@@ -124,4 +169,8 @@ private:
     float PaneToolbarHeight = 0.0f;
     FRect ViewportScreenRect;
     FRect ViewportFrameRect;
+
+	FEditorViewportFrameInput CurrentInput;
+
+    std::unique_ptr<FEditorViewportInputController> InputController;
 };

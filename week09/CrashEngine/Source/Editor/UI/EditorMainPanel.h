@@ -1,6 +1,8 @@
 ﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+
 #pragma once
 
+#include "Engine/Input/InputTypes.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/UI/EditorControlPanel.h"
@@ -23,6 +25,11 @@ public:
     void HideEditorWindowsForPIE();
     void RestoreEditorWindowsAfterPIE();
 
+	 const FGuiInputCaptureState& GetGuiInputCaptureState() const
+    {
+        return GuiInputCaptureState;
+    }
+
 private:
     FWindowsWindow* Window = nullptr;
     UEditorEngine* EditorEngine = nullptr;
@@ -36,4 +43,6 @@ private:
     bool bHasSavedUIVisibility = false;
     bool bSavedShowPanelList = false;
     FEditorSettings::FUIVisibility SavedUIVisibility{};
+
+	FGuiInputCaptureState GuiInputCaptureState{};
 };

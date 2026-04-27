@@ -76,7 +76,7 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
-    InputSystem::Get().Tick();
+    InputSystem::Get().Tick(Window->IsForeground());
     WorldTick(DeltaTime);
     Render(DeltaTime);
 }

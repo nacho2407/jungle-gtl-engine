@@ -34,16 +34,25 @@ void FViewportInputRouter::Tick(const FInputSnapshot& Input, float DeltaTime)
     FTargetEntry* Hovered = FindHoveredTarget(ClientPos, HoveredRect);
     HoveredViewport = Hovered ? Hovered->Viewport : nullptr;
 
-    FRect TargetRect{};
-    FTargetEntry* Target = ResolvePointerTarget(ClientPos, TargetRect);
-    if (!Target)
+    FRect PointerTargetRect{};
+    FTargetEntry* PointerTarget = ResolvePointerTarget(ClientPos, PointerTargetRect);
+
+    if (PointerTarget)
     {
+        DispatchPointerEvents(PointerTarget, PointerTargetRect, Input);
+        DispatchAxisEvents(PointerTarget, Input, DeltaTime);
+    }
+
+    FRect KeyTargetRect{};
+    FTargetEntry* KeyTarget = ResolveKeyTarget(KeyTargetRect);
+
+    if (!KeyTarget)
+    {
+        ResetKeyRepeatState();
         return;
     }
 
-    DispatchPointerEvents(Target, TargetRect, Input);
-    DispatchAxisEvents(Target, Input, DeltaTime);
-    DispatchKeyEvents(Target, Input, DeltaTime);
+    DispatchKeyEvents(KeyTarget, Input, DeltaTime);
 }
 
 /*
@@ -122,6 +131,21 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolvePointerTarget(c
     return FindHoveredTarget(ClientPos, OutRect);
 }
 
+FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolveKeyTarget(FRect& OutRect)
+{
+    if (KeyFocusedViewport)
+    {
+        if (FTargetEntry* Focused = FindTargetByViewport(KeyFocusedViewport, OutRect))
+        {
+            return Focused;
+        }
+
+        KeyFocusedViewport = nullptr;
+    }
+
+    return nullptr;
+}
+
 void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRect& TargetRect, const FInputSnapshot& Input)
 {
     if (!Target || !Target->Client)
@@ -129,19 +153,13 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
         return;
     }
 
-    if (bGuiCaptureMouse && !CapturedViewport)
+    if (GuiCaptureState.bMouse && !CapturedViewport)
     {
         return;
     }
 
     POINT ClientPos = ScreenToClientPoint(Input.MouseScreenPos);
-    POINT PrevClientPos = ScreenToClientPoint(Input.PrevMouseScreenPos);
     POINT LocalPos = ClientToLocalPoint(ClientPos, TargetRect);
-    POINT PrevLocalPos = ClientToLocalPoint(PrevClientPos, TargetRect);
-
-    POINT LocalDelta{};
-    LocalDelta.x = LocalPos.x - PrevLocalPos.x;
-    LocalDelta.y = LocalPos.y - PrevLocalPos.y;
 
     auto MakePointerEvent = [&](EPointerButton Button, EPointerEventType Type)
     {
@@ -159,18 +177,24 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
     if (Input.KeyPressed[VK_LBUTTON])
     {
         CapturedViewport = Target->Viewport;
+        KeyFocusedViewport = Target->Viewport;
+
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Left, EPointerEventType::Pressed));
     }
 
     if (Input.KeyPressed[VK_RBUTTON])
     {
         CapturedViewport = Target->Viewport;
+        KeyFocusedViewport = Target->Viewport;
+
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Right, EPointerEventType::Pressed));
     }
 
     if (Input.KeyPressed[VK_MBUTTON])
     {
         CapturedViewport = Target->Viewport;
+        KeyFocusedViewport = Target->Viewport;
+
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Middle, EPointerEventType::Pressed));
     }
 
@@ -207,7 +231,7 @@ void FViewportInputRouter::DispatchAxisEvents(FTargetEntry* Target, const FInput
         return;
     }
 
-    if (bGuiCaptureMouse && !CapturedViewport)
+    if (GuiCaptureState.bMouse && !CapturedViewport)
     {
         return;
     }
@@ -255,16 +279,12 @@ void FViewportInputRouter::DispatchKeyEvents(FTargetEntry* Target, const FInputS
         return;
     }
 
-    if (bGuiCaptureKeyboard)
+    if (GuiCaptureState.bKeyboard)
     {
         // GUI가 키보드 입력을 캡처하는 경우, 모든 키에 대해 Key Repeat 상태를 초기화
         // GUI 내부의 Key Repeat은 GUI 시스템(우리 프로젝트의 경우 ImGui)이 자체적으로 처리하기를 기대
-        for (int32 VK = 0; VK < 256; ++VK)
-        {
-            KeyRepeatElapsed[VK] = 0.0f;
-            bKeyRepeatActive[VK] = false;
-        }
-
+        KeyFocusedViewport = nullptr;
+        ResetKeyRepeatState();
         return;
     }
 
@@ -354,4 +374,13 @@ POINT FViewportInputRouter::ClientToLocalPoint(const POINT& ClientPos, const FRe
     Local.x = static_cast<LONG>(ClientPos.x - TargetRect.X);
     Local.y = static_cast<LONG>(ClientPos.y - TargetRect.Y);
     return Local;
+}
+
+void FViewportInputRouter::ResetKeyRepeatState()
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        KeyRepeatElapsed[VK] = 0.0f;
+        bKeyRepeatActive[VK] = false;
+    }
 }

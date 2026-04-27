@@ -339,15 +339,28 @@ void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
 
+	const bool bWantTextInput = IO.WantTextInput;
+    const bool bAnyItemActive = ImGui::IsAnyItemActive();
+    const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+
     bool bWantMouse = IO.WantCaptureMouse;
-    bool bWantKeyboard = IO.WantCaptureKeyboard;
+    bool bWantKeyboard = IO.WantCaptureKeyboard || bWantTextInput;
+
     if (EditorEngine && EditorEngine->IsMouseOverViewport())
     {
-        bWantMouse = false;
-        bWantKeyboard = false;
+        if (!bAnyPopupOpen && !bAnyItemActive)
+        {
+            bWantMouse = false;
+        }
+
+        if (!bAnyPopupOpen && !bWantTextInput && !bAnyItemActive)
+        {
+            bWantKeyboard = false;
+        }
     }
 
-    InputSystem::Get().SetGuiCaptureState(bWantMouse, bWantKeyboard);
+    GuiInputCaptureState.bMouse = bWantMouse;
+    GuiInputCaptureState.bKeyboard = bWantKeyboard;
 
     if (Window)
     {

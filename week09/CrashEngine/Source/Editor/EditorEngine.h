@@ -120,4 +120,6 @@ private:
     void StartQueuedPlaySessionRequest();
     void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
     void EndPlayMap();
+
+	void RegisterViewportInputTargets();
 };

@@ -108,12 +108,36 @@ void UEditorEngine::Tick(float DeltaTime)
 
     MainPanel.Update();
 
-	const bool bWindowFocused = Window && Window->IsForeground();
-    InputSystem::Get().Tick(bWindowFocused);
+    InputSystem::Get().Tick(Window->IsForeground());
 
-    for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    const FGuiInputCaptureState& GuiCapture = MainPanel.GetGuiInputCaptureState();
+
+	ViewportInputRouter.SetGuiCaptureState(GuiCapture);
+
+	/*
+     * note: RegisterViewportInputTargets에서 사용되는 ViewportClient의 Rect는 현재 프레임이 아닌 이전 프레임에서 캐시된 ViewportScreenRect임
+     *       ViewportScreenRect는 FLevelViewportLayout::RenderViewportUI 내의 ImGui 문맥 내에서만 갱신이 가능하기 때문에 이러한 타이밍이 불가피함
+	 */
+
+    RegisterViewportInputTargets();
+
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
     {
-        VC->Tick(DeltaTime);
+        if (VC)
+        {
+            VC->BeginInputFrame();
+        }
+    }
+
+    ViewportInputRouter.Tick(Input, DeltaTime);
+
+    for (FEditorViewportClient* VC: ViewportLayout.GetAllViewportClients())
+    {
+		if (VC)
+        {
+            VC->Tick(DeltaTime);
+		}
     }
 
     const bool bPIEPaused = IsPausedInEditor();
@@ -600,5 +624,33 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
             Renderer.GetCollectedPrimitives().VisibleProxies,
             SceneView.View, SceneView.Proj,
             VP->GetWidth(), VP->GetHeight());
+    }
+}
+
+void UEditorEngine::RegisterViewportInputTargets()
+{
+    ViewportInputRouter.ClearTargets();
+
+    for (FLevelEditorViewportClient* VC: ViewportLayout.GetLevelViewportClients())
+    {
+        if (!VC || !VC->GetViewport())
+        {
+            continue;
+        }
+
+        ViewportInputRouter.RegisterTarget(
+            VC->GetViewport(),
+            VC,
+            [VC](FRect& OutRect)
+            {
+                const FRect& Rect = VC->GetViewportScreenRect();
+                if (Rect.Width <= 0.0f || Rect.Height <= 0.0f)
+                {
+                    return false;
+                }
+
+                OutRect = Rect;
+                return true;
+            });
     }
 }
