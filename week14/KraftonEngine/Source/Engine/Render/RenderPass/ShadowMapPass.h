@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/RenderPass/RenderPassBase.h"
 #include "Render/Resource/Buffer.h"
@@ -38,8 +38,9 @@ public:
 	void Execute(const FPassContext& Ctx) override;
 	void EndPass(const FPassContext& Ctx) override;
 
-	// 마지막 프레임의 Spot Atlas 할당 결과 (에디터 디버그용)
+	// 마지막 프레임의 Atlas 할당 결과 (에디터 디버그용)
 	const TArray<FAtlasRegion>& GetLastSpotAtlasRegions() const { return SpotAtlasRegion; }
+	const TArray<FAtlasRegion>& GetLastPointAtlasRegions() const { return PointAtlasRegion; }
 
 private:
 	// ── 라이트 타입별 Shadow 렌더링 ──
