@@ -921,6 +921,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.ShadowBias		= DirLight->ShadowBias;
         DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
+        DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
 
 		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
 	}
@@ -945,6 +946,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
 		ShadowRequest.Type			= EShadowLightType::SLT_Spot;
 		ShadowRequest.bCastShadows	= SpotLight->bCastShadows;
+        ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
 		ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
 		ShadowRequest.ShadowBias	= SpotLight->ShadowBias;
 		ShadowRequest.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
@@ -964,7 +966,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		FShadowLightRequest PointLightDataShadow = {};
 		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
 		PointLightDataShadow.Type = EShadowLightType::SLT_Point;
-		PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+        PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+        PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
 		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
 		PointLightDataShadow.ShadowBias = PointLight->ShadowBias;
 		PointLightDataShadow.ShadowSlopeBias = PointLight->ShadowSlopeBias;

@@ -40,9 +40,9 @@ enum class ERenderCommandType
 	Light,
 };
 
-enum EShadowLightType
+enum EShadowLightType : int32
 {
-	SLT_Directional,
+	SLT_Directional = 0,
 	SLT_Point,
 	SLT_Spot,
 };
@@ -114,6 +114,7 @@ struct FShadowLightRequest
     EShadowLightType Type;
     FVector WorldLocation;
     bool bCastShadows = true;
+    uint32 ShadowResolution;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowSharpen = 1.0f;
