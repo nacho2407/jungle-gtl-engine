@@ -115,7 +115,9 @@ struct FSpotShadowDataGPU
 	FMatrix  ViewProj;           // 64B | offset  0
 	FVector4 AtlasScaleBias;     // 16B | offset 64  (xy=scale, zw=bias)
 	uint32   PageIndex;          //  4B | offset 80  (Texture2DArray slice)
-	float    _pad[3];            // 12B | offset 84  → 합계 96B
+	float    ShadowBias;         //  4B | offset 84
+	float    ShadowSharpen;      //  4B | offset 88
+	float    ShadowSlopeBias;    //  4B | offset 92  → 합계 96B
 };
 static_assert(sizeof(FSpotShadowDataGPU) == 96, "FSpotShadowDataGPU size mismatch with HLSL");
 static_assert(sizeof(FSpotShadowDataGPU) % 16 == 0);
@@ -127,8 +129,11 @@ struct FPointShadowDataGPU
 	FMatrix  FaceViewProj[6];    // 384B | offset  0
 	float    NearZ;              //   4B | offset 384
 	float    FarZ;               //   4B | offset 388
-	uint32   ArrayIndex;         //   4B | offset 392
-	float    _pad[5];            //  20B | offset 396  → 합계 416B (32B aligned)
+	uint32   ArrayIndex;         //   4B | offset 392  (Texture2DArray first slice = ArrayIndex * 6)
+	float    ShadowBias;         //   4B | offset 396
+	float    ShadowSharpen;      //   4B | offset 400
+	float    ShadowSlopeBias;    //   4B | offset 404
+	float    _pad[2];            //   8B | offset 408  → 합계 416B (32B aligned)
 };
 static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);
 static_assert(sizeof(FPointShadowDataGPU) % 32 == 0, "FPointShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");
@@ -144,7 +149,7 @@ struct FShadowCBData
 	FMatrix  CSMViewProj[MAX_SHADOW_CASCADES];   // 256B | offset   0
 	FVector4 CascadeSplits;                      //  16B | offset 256  (cascade 분할 거리)
 
-	// 공통 파라미터
+	// CSM(Directional) 파라미터 — Spot/Point는 per-light StructuredBuffer(t24,t25) 참조
 	float    ShadowBias;                         //   4B | offset 272
 	float    ShadowSlopeBias;                    //   4B | offset 276
 	float    ShadowSharpen;                      //   4B | offset 280

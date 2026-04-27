@@ -108,9 +108,9 @@ float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
     if (light.bCastShadow)
     {
         if (light.LightType == LIGHT_TYPE_SPOT)
-            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos);
+            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos, N, L);
         else if (light.LightType == LIGHT_TYPE_POINT)
-            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position);
+            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position, N);
     }
 
     return light.Color.rgb * light.Intensity * NdotL * atten * spotFactor * shadow;
@@ -133,9 +133,9 @@ float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, 
     if (light.bCastShadow)
     {
         if (light.LightType == LIGHT_TYPE_SPOT)
-            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos);
+            shadow = CalcSpotShadowFactor(light.ShadowMapIndex, worldPos, N, L);
         else if (light.LightType == LIGHT_TYPE_POINT)
-            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position);
+            shadow = CalcPointShadowFactor(light.ShadowMapIndex, worldPos, light.Position, N);
     }
 
     float3 H = normalize(L + V);
@@ -203,10 +203,10 @@ void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shin
     }
 }
 
-float CalcDirectionalShadow(float3 worldPos)
+float CalcDirectionalShadow(float3 worldPos, float3 N)
 {
     float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
-    return CalcDirectionalShadowFactor(worldPos, viewDepth);
+    return CalcDirectionalShadowFactor(worldPos, viewDepth, N);
 }
 
 float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
@@ -217,7 +217,7 @@ float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
     float3 dirDiffuse = CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                                DirectionalLight.Intensity, N);
     float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
-    dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth);
+    dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
     result += dirDiffuse;
 
     AccumulatePointSpotDiffuse(worldPos, N, screenPos, result);
@@ -231,7 +231,7 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, 
     float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                              DirectionalLight.Intensity, N, V, shininess);
     float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
-    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth);
+    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
     result += dirSpec;
 
     AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result);

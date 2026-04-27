@@ -19,6 +19,6 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	ULightComponentBase::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Float, &ShadowResolutionScale, 0.1f, 4.0f, 0.1f });
 	OutProps.push_back({ "Shadow Bias",             EPropertyType::Float, &ShadowBias,            0.0f, 0.1f, 0.0001f });
-	OutProps.push_back({ "Shadow Slope Bias",       EPropertyType::Float, &ShadowSlopeBias,       0.0f, 10.0f, 0.1f });
-	OutProps.push_back({ "Shadow Sharpen",          EPropertyType::Float, &ShadowSharpen,         0.0f, 1.0f, 0.01f });
+	OutProps.push_back({ "Shadow Slope Bias",       EPropertyType::Float, &ShadowSlopeBias,       0.0f, 0.1f, 0.001f });
+	OutProps.push_back({ "Shadow Sharpen",          EPropertyType::Float, &ShadowSharpen,         0.0f, 1.0f, 0.05f });
 }

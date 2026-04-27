@@ -43,19 +43,25 @@ public:
 	void ResetFilterMode() { FilterMode.reset(); }
 	std::optional<EShadowFilterMode> GetFilterMode() const { return FilterMode; }
 
+	// --- Sharpen ---
+	void SetSharpen(float S) { ShadowSharpen = S; }
+	void ResetSharpen() { ShadowSharpen.reset(); }
+	std::optional<float> GetSharpen() const { return ShadowSharpen; }
+
 	// 모든 오버라이드 해제
 	void ResetAll()
 	{
 		Resolution.reset();
 		ShadowBias.reset();
 		ShadowSlopeBias.reset();
+		ShadowSharpen.reset();
 		FilterMode.reset();
 	}
 
 	// 기본값 상수
 	static constexpr uint32 kDefaultResolution = 2048;
 	static constexpr float  kDefaultBias = 0.005f;
-	static constexpr float  kDefaultSlopeBias = 1.0f;
+	static constexpr float  kDefaultSlopeBias = 0.005f;
 	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
 
 	// 오버라이드 또는 기본값 반환 (편의 함수)
@@ -69,5 +75,6 @@ private:
 	std::optional<uint32> Resolution;
 	std::optional<float>  ShadowBias;
 	std::optional<float>  ShadowSlopeBias;
+	std::optional<float>  ShadowSharpen;
 	std::optional<EShadowFilterMode> FilterMode;
 };
