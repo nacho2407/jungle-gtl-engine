@@ -10,11 +10,13 @@ static constexpr int CUBE_FACE_COUNT = 6;
 static constexpr int MAX_SHADOW_CUBES = 32;
 static constexpr uint32 SHADOW_CUBE_SIZE = 512;
 
+static constexpr int32 AtlasSizeTier[4] = { 256, 512, 1024, 2048 };
+static constexpr int32 TierCount = sizeof(AtlasSizeTier) / sizeof(AtlasSizeTier[0]);
+
 struct FShadowAtlasTile
 {
     int32 TileX = 0;
     int32 TileY = 0;
-
     int32 PixelX = 0;
     int32 PixelY = 0;
 
@@ -24,18 +26,141 @@ struct FShadowAtlasTile
     FVector4 ScaleOffset;
 };
 
+struct FShadowAtlasDebugRect
+{
+	int32 X = 0;
+	int32 Y = 0;
+	int32 Width = 0;
+	int32 Height = 0;
+	int32 Depth = 0;
+	bool bUsed = false;
+};
+
+struct Node
+{
+    Node* Child[2] = { nullptr, nullptr };
+    int32 X = 0;
+    int32 Y = 0;
+    int32 Width = 0;
+    int32 Height = 0;
+	bool bUsed = false;
+
+	bool IsLeaf() const
+	{
+		return Child[0] == nullptr && Child[1] == nullptr;
+    }	
+
+	Node(int32 InX, int32 InY, int32 InW, int32 InH)
+		: X(InX), Y(InY), Width(InW), Height(InH)
+	{
+	}
+	~Node()
+	{
+		delete Child[0];
+		delete Child[1];
+    }
+
+    Node(const Node&) = delete;
+    Node& operator=(const Node&) = delete;
+
+    bool Insert(int32 RequestTileSize, int32& OutX, int32& OutY)
+    {
+        if (!IsLeaf())
+        {
+            if (Child[0] && Child[0]->Insert(RequestTileSize, OutX, OutY))
+            {	
+                return true;
+            }
+
+            if (Child[1] && Child[1]->Insert(RequestTileSize, OutX, OutY))
+            {
+                return true;
+            }
+			return false;
+        }
+        
+		if (bUsed || RequestTileSize > Width || RequestTileSize > Height)
+		{
+			return false;
+        }
+
+		if (RequestTileSize == Width && RequestTileSize == Height)
+        {
+            bUsed = true;
+
+			OutX = X;
+            OutY = Y;
+
+			return true;
+		}
+
+		int32 RemainingWidth = Width - RequestTileSize;
+        int32 RemainingHeight = Height - RequestTileSize;
+
+		if (RemainingHeight > RemainingWidth)
+		{
+			Child[0] = new Node(X, Y, Width, RequestTileSize);
+			Child[1] = new Node(X, Y + RequestTileSize, Width, RemainingHeight);
+		}
+		else
+		{
+			Child[0] = new Node(X, Y, RequestTileSize, Height);
+			Child[1] = new Node(X + RequestTileSize, Y, RemainingWidth, Height);
+        }
+
+        return Child[0]->Insert(RequestTileSize, OutX, OutY);
+    }
+
+	void FreeAll()
+	{
+		bUsed = false;
+		if (Child[0])
+		{
+			Child[0]->FreeAll();
+            Child[0] = nullptr;
+		}
+		if (Child[1])
+		{
+			Child[1]->FreeAll();
+            Child[1] = nullptr;
+		}
+    }
+
+	void CollectLeafRects(TArray<FShadowAtlasDebugRect>& OutRects, int32 Depth = 0) const
+	{
+		if (!IsLeaf())
+		{
+			if (Child[0])
+			{
+				Child[0]->CollectLeafRects(OutRects, Depth + 1);
+			}
+			if (Child[1])
+			{
+				Child[1]->CollectLeafRects(OutRects, Depth + 1);
+			}
+			return;
+		}
+
+		FShadowAtlasDebugRect Rect = {};
+		Rect.X = X;
+		Rect.Y = Y;
+		Rect.Width = Width;
+		Rect.Height = Height;
+		Rect.Depth = Depth;
+		Rect.bUsed = bUsed;
+		OutRects.push_back(Rect);
+	}
+};
+
 struct FShadowAtlasAllocator
 {
 public:
     static constexpr int32 AtlasSize = 8192;
     static constexpr int32 GridSize = 256;
     static constexpr int32 GridCount = AtlasSize / GridSize; // 32
-
-    static constexpr int32 AtlasSizeTier[4] = { 256, 512, 1024, 2048 };
-    static constexpr int32 TierCount = sizeof(AtlasSizeTier) / sizeof(AtlasSizeTier[0]);
-
 private:
     bool Used[GridCount][GridCount] = {};
+    Node* RootNode = nullptr;
 
 public:
     void Reset()
@@ -142,6 +267,8 @@ struct FShadowAtlasCube
     TComPtr<ID3D11ShaderResourceView> CubeSRV;
 
     TComPtr<ID3D11DepthStencilView> CubeDSV[MAX_SHADOW_CUBES][CUBE_FACE_COUNT] = {};
+    TComPtr<ID3D11Texture2D> CubeDebugTexture[MAX_SHADOW_CUBES][CUBE_FACE_COUNT] = {};
+    TComPtr<ID3D11ShaderResourceView> CubeDebugSRV[MAX_SHADOW_CUBES][CUBE_FACE_COUNT] = {};
 
     uint32 CurrentCubeCount = 0;
 
@@ -175,8 +302,34 @@ struct FShadowAtlasCube
                 DsvDesc.Texture2DArray.FirstArraySlice = FaceIndex + CubeIndex * CUBE_FACE_COUNT; // 각 면에 대한 슬라이스 계산
                 DsvDesc.Texture2DArray.MipSlice = 0;
                 hr = Device->CreateDepthStencilView(CubeShadowMap.Get(), &DsvDesc, CubeDSV[CubeIndex][FaceIndex].ReleaseAndGetAddressOf());
+
+                D3D11_TEXTURE2D_DESC DebugTexDesc = {};
+                DebugTexDesc.Width = SHADOW_CUBE_SIZE;
+                DebugTexDesc.Height = SHADOW_CUBE_SIZE;
+                DebugTexDesc.MipLevels = 1;
+                DebugTexDesc.ArraySize = 1;
+                DebugTexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+                DebugTexDesc.SampleDesc.Count = 1;
+                DebugTexDesc.Usage = D3D11_USAGE_DEFAULT;
+                DebugTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                hr = Device->CreateTexture2D(
+                    &DebugTexDesc,
+                    nullptr,
+                    CubeDebugTexture[CubeIndex][FaceIndex].ReleaseAndGetAddressOf());
+
+                D3D11_SHADER_RESOURCE_VIEW_DESC FaceSrvDesc = {};
+                FaceSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+                FaceSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+                FaceSrvDesc.Texture2D.MostDetailedMip = 0;
+                FaceSrvDesc.Texture2D.MipLevels = 1;
+
+                hr = Device->CreateShaderResourceView(
+                    CubeDebugTexture[CubeIndex][FaceIndex].Get(),
+                    &FaceSrvDesc,
+                    CubeDebugSRV[CubeIndex][FaceIndex].ReleaseAndGetAddressOf());
             }
         }
+
 
         // Shader Resource View(SRV) 생성
         D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
@@ -320,27 +473,37 @@ public:
 
     bool AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile);
     bool FreeTile(const int32& TileX, const int32& TileY, const int32& TileSize);
-    void ClearTiles() { ShadowAllocator.FreeAllTiles(); }
+    void ClearTiles() { 
+		ShadowAllocator.FreeAllTiles(); 
+		/*if (RootNode)
+		{
+			RootNode->FreeAll();
+		}*/
+	}
+	void GetDebugLeafRects(TArray<FShadowAtlasDebugRect>& OutRects) const
+	{
+		OutRects.clear();
+		/*if (RootNode)
+		{
+			RootNode->CollectLeafRects(OutRects);
+		}*/
+	}
 
     bool AllocateTileCube(int32& OutCubeIndex);
     bool FreeTileCube(const int32& CubeIndex);
     void ClearTilesCube() { ShadowCubeMapArray.FreeAllCubes(); }
+    void UpdateCubeDebugFace(ID3D11DeviceContext* DeviceContext, int32 CubeIndex, int32 FaceIndex);
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
     ID3D11Texture2D* GetAtlas() const { return ShadowMapAtlas.ShadowMapAtlas.Get(); }
 
 	
-    ID3D11ShaderResourceView* GetCubeSRV(int32 index) const { return ShadowCubeMapArray.CubeSRV.Get(); }
-    ID3D11Texture2D* GetCubeAtlas(int32 index) const { return ShadowCubeMapArray.CubeShadowMap.Get(); }
-	ID3D11DepthStencilView* GetCubeDSV(int32 CubeIndex, int32 FaceIndex) const
-    {
-        if (CubeIndex >= MAX_SHADOW_CUBES || FaceIndex >= 6)
-        {
-            return nullptr;
-        }
-        return ShadowCubeMapArray.CubeDSV[CubeIndex][FaceIndex].Get();
-    }
+    ID3D11ShaderResourceView* GetCubeSRV() const { return ShadowCubeMapArray.CubeSRV.Get(); }
+    ID3D11Texture2D* GetCubeAtlas() const { return ShadowCubeMapArray.CubeShadowMap.Get(); }
+    uint32 GetAllocatedCubeCount() const { return ShadowCubeMapArray.CurrentCubeCount; }
+	ID3D11DepthStencilView* GetCubeDSV(int32 CubeIndex, int32 FaceIndex) const;
+    ID3D11ShaderResourceView* GetCubeDebugSRV(int32 CubeIndex, int32 FaceIndex) const;
 
     TComPtr<ID3D11Device> Device;
     TComPtr<ID3D11Texture2D> ShadowMap;
@@ -359,6 +522,7 @@ private:
 
 	FShadowAtlas ShadowMapAtlas;
     FShadowAtlasAllocator ShadowAllocator;
+    //Node* RootNode = nullptr;
 
 	FShadowAtlasCube ShadowCubeMapArray;
 };

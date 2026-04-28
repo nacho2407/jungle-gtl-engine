@@ -1028,6 +1028,28 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		break;
 	}
+    case EPropertyType::CubeSRV:
+    {
+        auto CubeSRV = static_cast<ID3D11ShaderResourceView**>(Prop.ValuePtr);
+        if (CubeSRV)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                if (!CubeSRV[i])
+                {
+                    continue;
+                }
+
+                ImGui::Image(CubeSRV[i], ImVec2(128, 128));
+
+                if ((i % 3) != 2)
+                {
+                    ImGui::SameLine();
+                }
+            }
+        }
+        break;
+    }
 	}
 
 	if (bChanged && SelectedComponent)

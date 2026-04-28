@@ -118,25 +118,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	static const char* ShadowMapTypeNames[] = { "CSM", "PSM" };
 	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
 
-	FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
-
-    const FVector4& SO = bHasDebugShadowAtlasTile
-                             ? DebugShadowAtlasScaleOffset
-                             : FVector4(1, 1, 0, 0);
-
-
-	static FSRVDisplayInfo ShadowMapDisplay;
-    ShadowMapDisplay = {
-        256.f,
-        256.f, 
-		SO.Z,
-        SO.W,
-        SO.Z + SO.X,
-        SO.W + SO.Y
-    };
-
-	OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
-
+	PrintShadowMapDebugInfo(OutProps);
 	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Int, &ShadowResolutionScale});
 
 	// ConstantBias = DepthBias * (1 / 2 ^ 24 or 16) + SlopeScaledBias * (MaxDepthSlope)
@@ -200,4 +182,26 @@ FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, cons
 		Min.X, Max.X);
 
 	return LightView * LightProj;
+}
+
+void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const
+{
+    FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
+
+    const FVector4& SO = bHasDebugShadowAtlasTile
+                             ? DebugShadowAtlasScaleOffset
+                             : FVector4(1, 1, 0, 0);
+
+
+    static FSRVDisplayInfo ShadowMapDisplay;
+    ShadowMapDisplay = {
+        256.f,
+        256.f,
+        SO.Z,
+        SO.W,
+        SO.Z + SO.X,
+        SO.W + SO.Y
+    };
+
+    OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
 }
