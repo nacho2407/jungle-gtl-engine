@@ -557,12 +557,16 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             SelectedShadowMapMethod = 0;
         }
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+
         if (ImGui::Combo("Shadow Map Method", &SelectedShadowMapMethod, ShadowMapMethodLabels, IM_ARRAYSIZE(ShadowMapMethodLabels)))
         {
             SetShadowMapMethod(static_cast<EShadowMapMethod>(SelectedShadowMapMethod));
         }
 
         static const char* ShadowFilterLabels[] = {
+            "None (Single Compare)",
             "PCF (Percentage-Closer Filtering)",
             "VSM (Variance Shadow Map)",
             "ESM (Exponential Shadow Map)"
@@ -577,6 +581,8 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         {
             SetShadowFilterMethod(static_cast<EShadowFilterMethod>(SelectedShadowFilter));
         }
+
+        ImGui::PopStyleVar(2);
 
         ImGui::TextDisabled("Global renderer settings.");
         ImGui::TextDisabled("Applied to all shadow-casting lights.");
