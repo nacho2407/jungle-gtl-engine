@@ -472,10 +472,10 @@ FVector operator*(const FVector& vector, const FMatrix& matrix)
 FVector4 operator*(const FVector4& vector, const FMatrix& matrix)
 {
     FVector4 ret{};
-    ret.X = vector.X * matrix.M[0][0] + vector.Y * matrix.M[1][0] + vector.Z * matrix.M[2][0] + matrix.M[3][0];
-    ret.Y = vector.X * matrix.M[0][1] + vector.Y * matrix.M[1][1] + vector.Z * matrix.M[2][1] + matrix.M[3][1];
-    ret.Z = vector.X * matrix.M[0][2] + vector.Y * matrix.M[1][2] + vector.Z * matrix.M[2][2] + matrix.M[3][2];
-    ret.W = vector.X * matrix.M[0][3] + vector.Y * matrix.M[1][3] + vector.Z * matrix.M[2][3] + matrix.M[3][3];
+    ret.X = vector.X * matrix.M[0][0] + vector.Y * matrix.M[1][0] + vector.Z * matrix.M[2][0] + vector.W * matrix.M[3][0];
+    ret.Y = vector.X * matrix.M[0][1] + vector.Y * matrix.M[1][1] + vector.Z * matrix.M[2][1] + vector.W * matrix.M[3][1];
+    ret.Z = vector.X * matrix.M[0][2] + vector.Y * matrix.M[1][2] + vector.Z * matrix.M[2][2] + vector.W * matrix.M[3][2];
+    ret.W = vector.X * matrix.M[0][3] + vector.Y * matrix.M[1][3] + vector.Z * matrix.M[2][3] + vector.W * matrix.M[3][3];
     return ret;
 }
 

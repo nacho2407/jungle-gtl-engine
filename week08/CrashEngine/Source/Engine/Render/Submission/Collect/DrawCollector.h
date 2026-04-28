@@ -42,6 +42,8 @@ public:
 private:
     // ==================== Shadow Helpers ====================
     void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
+    FMatrix GetDirectionalSSMMatrix(UWorld* World, FVector LightDir);
+    FMatrix GetDirectionalPSMMatrix(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
     void ComputeSpotShadowMatrices(FLightProxy* Light);
     void ComputePointShadowMatrices(FLightProxy* Light);
 
