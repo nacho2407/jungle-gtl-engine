@@ -17,6 +17,8 @@
 #include "Profiling/ShadowStats.h"
 #include "Core/ProjectSettings.h"
 #include "Collision/SpatialPartition.h"
+#include "Runtime/Engine.h"
+#include "GameFramework/World.h"
 #include <d3d11.h>
 
 REGISTER_RENDER_PASS(FShadowMapPass)
@@ -396,7 +398,13 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 
 void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
 {
-	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, LightFrustum);
+	FSpatialPartition* Partition = nullptr;
+	if (GEngine)
+	{
+		if (UWorld* World = GEngine->GetWorld())
+			Partition = &World->GetPartition();
+	}
+	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, LightFrustum, Partition);
 }
 
 // ============================================================
