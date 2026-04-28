@@ -10,6 +10,7 @@ struct LightBaseParams
 	// Per-light shadow parameters (FShadowSettings override 시 무시됨)
 	float ShadowBias = 0.005f;
 	float ShadowSlopeBias = 0.005f;
+	float ShadowNormalBias = 0.005f;
 	float ShadowSharpen = 0.67f;
 };
 struct FGlobalAmbientLightParams : public LightBaseParams

@@ -42,13 +42,16 @@ cbuffer ShadowBuffer : register(b5)
     // CSM(Directional) 파라미터 — Spot/Point는 per-light StructuredBuffer(t24,t25) 참조
     float    ShadowBias;                       //   4B
     float    ShadowSlopeBias;                  //   4B
+    float    ShadowNormalBias;                 //   4B    
     float    ShadowSharpen;                    //   4B
+    
     uint     ShadowFilterMode;                 //   4B  (0=Hard, 1=PCF, 2=VSM)
-
     uint     NumCSMCascades;                   //   4B
     uint     NumShadowSpotLights;              //   4B
     uint     NumShadowPointLights;             //   4B
+    
     uint     CSMResolution;                    //   4B
+    float3   SBPad;                            //   12B
 };
 
 // ── Shadow 텍스처 바인딩 ──

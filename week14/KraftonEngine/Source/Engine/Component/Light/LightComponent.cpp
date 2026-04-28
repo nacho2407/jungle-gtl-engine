@@ -11,6 +11,7 @@ void ULightComponent::Serialize(FArchive& Ar)
 	Ar << ShadowResolutionScale;
 	Ar << ShadowBias;
 	Ar << ShadowSlopeBias;
+	Ar << ShadowNormalBias;
 	Ar << ShadowSharpen;
 }
 
@@ -20,5 +21,6 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Float, &ShadowResolutionScale, 0.1f, 4.0f, 0.1f });
 	OutProps.push_back({ "Shadow Bias",             EPropertyType::Float, &ShadowBias,            0.0f, 0.1f, 0.0001f });
 	OutProps.push_back({ "Shadow Slope Bias",       EPropertyType::Float, &ShadowSlopeBias,       0.0f, 0.1f, 0.001f });
+	OutProps.push_back({ "Shadow Normal Bias",      EPropertyType::Float, &ShadowNormalBias,       0.0f, 0.1f, 0.001f });
 	OutProps.push_back({ "Shadow Sharpen",          EPropertyType::Float, &ShadowSharpen,         0.0f, 1.0f, 0.05f });
 }

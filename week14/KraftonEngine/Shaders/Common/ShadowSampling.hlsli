@@ -95,9 +95,12 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
 
     // cascade 선택
     uint cascade = SelectCascade(viewDepth);
+    
+    // Normal bias
+    float3 biasedPos = worldPos + N * ShadowNormalBias;
 
     // 라이트 공간 좌표 계산
-    float4 lightSpacePos = mul(float4(worldPos, 1.0f), CSMViewProj[cascade]);
+    float4 lightSpacePos = mul(float4(biasedPos, 1.0f), CSMViewProj[cascade]);
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
 
     // NDC [-1,1] → UV [0,1]  (Y 반전)
@@ -110,9 +113,8 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
         fragDepth < 0.0f  || fragDepth > 1.0f)
         return 1.0f;
 
-    // slope bias: 경사면일수록 bias 증가 (Normal Offset 방식)
-    float slope = 1.0f - saturate(dot(N, -DirectionalLight.Direction));
-    fragDepth += ShadowBias + ShadowSlopeBias * slope;
+    // constant depth bias only — slope bias is already handled by normal offset above
+    fragDepth += ShadowBias;
 
     float3 uvw = float3(shadowUV, (float)cascade);
     float texelSize = 1.0f / (float)CSMResolution;
@@ -142,7 +144,8 @@ float CalcSpotShadowFactor(uint lightIndex, float3 worldPos, float3 N, float3 li
 
     FSpotShadowData sd = SpotShadowDatas[lightIndex];
 
-    float4 lightSpacePos = mul(float4(worldPos, 1.0f), sd.ViewProj);
+    float3 biasedPos = worldPos + N * sd.ShadowNormalBias;
+    float4 lightSpacePos = mul(float4(biasedPos, 1.0f), sd.ViewProj);
     float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
 
     float2 shadowUV = projCoords.xy * float2(0.5f, -0.5f) + 0.5f;
@@ -197,7 +200,8 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos, f
     float3 lightDir = normalize(L);
     float slope = 1.0f - saturate(dot(N, -lightDir));
 
-    float4 lightSpacePos = mul(float4(worldPos, 1.0f), pointLightData.FaceViewProj[face]);
+    float3 biasedPos = worldPos + N * pointLightData.ShadowNormalBias;
+    float4 lightSpacePos = mul(float4(biasedPos, 1.0f), pointLightData.FaceViewProj[face]);
     float3 ndc = lightSpacePos.xyz / lightSpacePos.w;
 
     float2 projUV = ndc.xy * float2(0.5f, -0.5f) + 0.5f;

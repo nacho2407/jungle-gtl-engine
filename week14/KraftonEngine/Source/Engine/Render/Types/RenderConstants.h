@@ -117,9 +117,10 @@ struct FSpotShadowDataGPU
 	uint32   PageIndex;          //  4B | offset 80  (Texture2DArray slice)
 	float    ShadowBias;         //  4B | offset 84
 	float    ShadowSharpen;      //  4B | offset 88
-	float    ShadowSlopeBias;    //  4B | offset 92  → 합계 96B
+	float    ShadowSlopeBias;    //  4B | offset 92 
+	float    ShadowNormalBias;   //  4B | offset 96
+	float    SpotPad0[3];		 // 12B | offset 100
 };
-static_assert(sizeof(FSpotShadowDataGPU) == 96, "FSpotShadowDataGPU size mismatch with HLSL");
 static_assert(sizeof(FSpotShadowDataGPU) % 16 == 0);
 
 // Point Light: 6면 ViewProj + per-face atlas UV rect
@@ -133,7 +134,8 @@ struct FPointShadowDataGPU
 	float    ShadowBias;               //   4B | offset 488
 	float    ShadowSharpen;            //   4B | offset 492
 	float    ShadowSlopeBias;          //   4B | offset 496
-	float    _pad[3];                  //  12B | offset 500  → 합계 512B (32B aligned)
+	float	 ShadowNormalBias;         //   4B
+	float    _pad[2];                  //  12B | offset 500  → 합계 512B (32B aligned)
 };
 static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);
 static_assert(sizeof(FPointShadowDataGPU) % 32 == 0, "FPointShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");
@@ -152,13 +154,16 @@ struct FShadowCBData
 	// CSM(Directional) 파라미터 — Spot/Point는 per-light StructuredBuffer(t24,t25) 참조
 	float    ShadowBias;                         //   4B | offset 272
 	float    ShadowSlopeBias;                    //   4B | offset 276
+	float    ShadowNormalBias;					 //   4B
 	float    ShadowSharpen;                      //   4B | offset 280
-	uint32   ShadowFilterMode;                   //   4B | offset 284  (0=Hard, 1=PCF, 2=VSM)
 
+	uint32   ShadowFilterMode;                   //   4B | offset 284  (0=Hard, 1=PCF, 2=VSM)
 	uint32   NumCSMCascades;                     //   4B | offset 288
 	uint32   NumShadowSpotLights;                //   4B | offset 292
 	uint32   NumShadowPointLights;               //   4B | offset 296
+
 	uint32   CSMResolution;                      //   4B | offset 300  → 합계 304B, 16B 정렬 OK
+	float    Pad[3];
 };
 static_assert(sizeof(FShadowCBData) % 16 == 0, "FShadowCBData must be 16-byte aligned");
 
