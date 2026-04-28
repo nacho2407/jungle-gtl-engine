@@ -64,6 +64,29 @@ bool FEditorViewportCommandTool::HandleInput(float DeltaTime)
         return true;
     }
 
+    if (SelectionManager && Input.Modifiers.bCtrl && Input.KeyDown['A'])
+    {
+        if (Input.KeyPressed['A'])
+        {
+            UWorld* World = Owner->GetWorld();
+            if (!World)
+            {
+                return false;
+            }
+
+            SelectionManager->ClearSelection();
+            for (AActor* Actor : World->GetActors())
+            {
+                if (Actor)
+                {
+                    SelectionManager->ToggleSelect(Actor);
+                }
+            }
+        }
+
+        return true;
+    }
+
     if (SelectionManager && Input.Modifiers.bCtrl && Input.KeyDown['D'])
     {
         if (Input.KeyPressed['D'])

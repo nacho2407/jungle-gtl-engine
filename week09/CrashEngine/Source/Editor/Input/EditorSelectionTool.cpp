@@ -60,6 +60,16 @@ bool FEditorSelectionTool::HandleWorldPicking(const FRay& Ray)
         OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
     }
 
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
+    if (Input.Modifiers.bCtrl)
+    {
+        if (BestActor)
+        {
+            SelectionManager->ToggleSelect(BestActor);
+        }
+        return true;
+    }
+
     if (BestActor == nullptr)
     {
         SelectionManager->ClearSelection();
