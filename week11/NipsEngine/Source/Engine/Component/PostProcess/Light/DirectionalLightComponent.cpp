@@ -7,6 +7,12 @@ REGISTER_FACTORY(UDirectionalLightComponent)
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	ULightComponent::GetEditableProperties(OutProps);
+
+	if (eShadowMapType == EShadowMap::CSM)
+	{
+		OutProps.push_back({ "MaxDistance", EPropertyType::Float, &CSMMaxDistance, 0.f, 1000.f, 10.f });
+		OutProps.push_back({ "Lambda", EPropertyType::Float, &CSMPractialLambda, 0.0f, 1.0f, 0.01f });
+	}
 }
 
 FMatrix UDirectionalLightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
