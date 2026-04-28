@@ -296,13 +296,16 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	}
 
 	// ── Point Atlas — 카메라 프러스텀 컬링 후 가시 라이트만 ──
+	// Point Light는 전방향 조명이므로 라이트가 프러스텀 밖에 있어도
+	// 그림자가 프러스텀 안의 오브젝트에 드리워질 수 있다.
+	// 감쇠 반경의 2배로 컬링 마진을 확장하여 그림자 누락을 방지한다.
 	VisibleShadowPointIndices.clear();
 	const uint32 NumPoints = Env.GetNumPointLights();
 	for (uint32 i = 0; i < NumPoints; ++i)
 	{
 		const auto& Light = Env.GetPointLight(i);
 		if (!Light.bCastShadows) continue;
-		if (!CameraFrustum.IntersectSphere(Light.Position, Light.AttenuationRadius)) continue;
+		if (!CameraFrustum.IntersectSphere(Light.Position, Light.AttenuationRadius * 2.0f)) continue;
 		VisibleShadowPointIndices.push_back(i);
 		if (VisibleShadowPointIndices.size() >= MAX_SHADOW_POINT_LIGHTS) break;
 	}
