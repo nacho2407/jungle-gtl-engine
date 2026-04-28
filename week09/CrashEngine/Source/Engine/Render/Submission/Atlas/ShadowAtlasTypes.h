@@ -71,3 +71,14 @@ struct FCubeShadowMapData
         *this = {};
     }
 };
+
+// Light별 shadow atlas allocation cache가 보관하는 메타데이터입니다.
+struct FLightShadowRecord
+{
+    uint32                Resolution           = 0;
+    uint32                CascadeCount         = 0;
+    uint32                LightType            = 0;
+    FCascadeShadowMapData CascadeShadowMapData = {};
+    FShadowMapData        SpotShadowMapData    = {};
+    FCubeShadowMapData    CubeShadowMapData    = {};
+};

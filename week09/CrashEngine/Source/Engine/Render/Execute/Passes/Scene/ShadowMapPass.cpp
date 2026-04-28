@@ -1,16 +1,16 @@
 #include "ShadowMapPass.h"
 
 #include "Component/LightComponent.h"
-#include "Editor/UI/EditorConsolePanel.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Resources/FrameResources.h"
 #include "Render/Resources/Shadows/ShadowFilterSettings.h"
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
+#include "Render/RHI/D3D11/Device/D3DDevice.h"
 #include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Submission/Command/BuildDrawCommand.h"
-#include "Render/RHI/D3D11/Device/D3DDevice.h"
 
 #include <algorithm>
 #include <cstring>
@@ -20,6 +20,8 @@ namespace
 struct FShadowDebugPreviewCBData
 {
     FMatrix InvViewProj = FMatrix::Identity;
+    uint32  ShadowDepthPreviewMode = static_cast<uint32>(EShadowDepthPreviewMode::LinearizedDepth);
+    float   Padding[3] = {};
 };
 } // namespace
 
@@ -30,27 +32,27 @@ FShadowMapPass::~FShadowMapPass()
 
 bool FShadowMapPass::UpdateLightShadowAllocation(FLightProxy& Light, ID3D11Device* Device)
 {
-    return ShadowRegistry.UpdateLightShadow(Light, Device, AtlasManager);
+    return ShadowAllocationMap.UpdateLightShadow(Light, Device, AtlasPool);
 }
 
 void FShadowMapPass::ReleaseShadowAtlasResources()
 {
-    ShadowRegistry.Release(AtlasManager);
-    AtlasManager.Release();
-    ReleaseMomentBlurResources();
+    ShadowAllocationMap.Release(AtlasPool);
+    AtlasPool.Release();
+    MomentFilter.Release();
     ReleaseDebugPreviewResources();
     RenderItems.clear();
 }
 
 ID3D11ShaderResourceView* FShadowMapPass::GetShadowAtlasSRV(uint32 PageIndex) const
 {
-    const FShadowAtlas* Page = AtlasManager.GetPage(PageIndex);
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
     return Page ? Page->GetDepthArraySRV() : nullptr;
 }
 
 ID3D11ShaderResourceView* FShadowMapPass::GetShadowMomentSRV(uint32 PageIndex) const
 {
-    const FShadowAtlas* Page = AtlasManager.GetPage(PageIndex);
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
     return Page ? Page->GetMomentArraySRV() : nullptr;
 }
 
@@ -61,13 +63,24 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowPreviewSRV(const FShadowMapDa
         return nullptr;
     }
 
-    const FShadowAtlas* Page = AtlasManager.GetPage(ShadowMapData.AtlasPageIndex);
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(ShadowMapData.AtlasPageIndex);
     return Page ? Page->GetPreviewSliceSRV(ShadowMapData.SliceIndex) : nullptr;
+}
+
+ID3D11ShaderResourceView* FShadowMapPass::GetShadowMomentPreviewSRV(const FShadowMapData& ShadowMapData) const
+{
+    if (!ShadowMapData.bAllocated)
+    {
+        return nullptr;
+    }
+
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(ShadowMapData.AtlasPageIndex);
+    return Page ? Page->GetMomentSliceSRV(ShadowMapData.SliceIndex) : nullptr;
 }
 
 ID3D11ShaderResourceView* FShadowMapPass::GetShadowPageSlicePreviewSRV(uint32 PageIndex, uint32 SliceIndex) const
 {
-    const FShadowAtlas* Page = AtlasManager.GetPage(PageIndex);
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
     return Page ? Page->GetPreviewSliceSRV(SliceIndex) : nullptr;
 }
 
@@ -75,7 +88,7 @@ void FShadowMapPass::GetShadowPageSliceAllocations(uint32 PageIndex, uint32 Slic
 {
     OutAllocations.clear();
 
-    const FShadowAtlas* Page = AtlasManager.GetPage(PageIndex);
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
     if (!Page)
     {
         return;
@@ -86,117 +99,7 @@ void FShadowMapPass::GetShadowPageSliceAllocations(uint32 PageIndex, uint32 Slic
 
 uint32 FShadowMapPass::GetShadowAtlasPageCount() const
 {
-    return AtlasManager.GetPageCount();
-}
-
-void FShadowMapPass::EnsureMomentBlurResources(ID3D11Device* Device)
-{
-    if (Device == nullptr)
-    {
-        return;
-    }
-
-    if (MomentBlurVS == nullptr || MomentBlurPSHorizontal == nullptr || MomentBlurPSVertical == nullptr)
-    {
-        FShaderStageDesc BlurVSDesc = {};
-        BlurVSDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
-        BlurVSDesc.EntryPoint       = "VS";
-
-        FShaderStageDesc BlurPSHorizontalDesc = {};
-        BlurPSHorizontalDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
-        BlurPSHorizontalDesc.EntryPoint       = "PS_Horizontal";
-
-        FShaderStageDesc BlurPSVerticalDesc = {};
-        BlurPSVerticalDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowMomentBlurPass.hlsl";
-        BlurPSVerticalDesc.EntryPoint       = "PS_Vertical";
-
-        ID3DBlob* VsBlob = nullptr;
-        ID3DBlob* PsHorizontalBlob = nullptr;
-        ID3DBlob* PsVerticalBlob = nullptr;
-
-        const bool bCompiledVS = FShaderProgramBase::CompileShaderBlobStandalone(
-            &VsBlob, BlurVSDesc, "vs_5_0", "Shadow Moment Blur VS Compile Error");
-        const bool bCompiledH = FShaderProgramBase::CompileShaderBlobStandalone(
-            &PsHorizontalBlob, BlurPSHorizontalDesc, "ps_5_0", "Shadow Moment Blur Horizontal PS Compile Error");
-        const bool bCompiledV = FShaderProgramBase::CompileShaderBlobStandalone(
-            &PsVerticalBlob, BlurPSVerticalDesc, "ps_5_0", "Shadow Moment Blur Vertical PS Compile Error");
-        if (!bCompiledVS || !bCompiledH || !bCompiledV)
-        {
-            if (VsBlob) VsBlob->Release();
-            if (PsHorizontalBlob) PsHorizontalBlob->Release();
-            if (PsVerticalBlob) PsVerticalBlob->Release();
-            return;
-        }
-
-        const HRESULT HrVS = Device->CreateVertexShader(VsBlob->GetBufferPointer(), VsBlob->GetBufferSize(), nullptr, &MomentBlurVS);
-        const HRESULT HrH = Device->CreatePixelShader(PsHorizontalBlob->GetBufferPointer(), PsHorizontalBlob->GetBufferSize(), nullptr, &MomentBlurPSHorizontal);
-        const HRESULT HrV = Device->CreatePixelShader(PsVerticalBlob->GetBufferPointer(), PsVerticalBlob->GetBufferSize(), nullptr, &MomentBlurPSVertical);
-
-        VsBlob->Release();
-        PsHorizontalBlob->Release();
-        PsVerticalBlob->Release();
-
-        if (FAILED(HrVS) || FAILED(HrH) || FAILED(HrV))
-        {
-            ReleaseMomentBlurResources();
-            return;
-        }
-    }
-
-    if (MomentBlurCB == nullptr)
-    {
-        D3D11_BUFFER_DESC CbDesc = {};
-        CbDesc.ByteWidth = sizeof(FMomentBlurCBData);
-        CbDesc.Usage = D3D11_USAGE_DYNAMIC;
-        CbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        CbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &MomentBlurCB)))
-        {
-            return;
-        }
-    }
-
-    if (MomentBlurTemp2D && MomentBlurTempSize == ShadowAtlas::AtlasSize)
-    {
-        return;
-    }
-
-    if (MomentBlurTempSRV)
-    {
-        MomentBlurTempSRV->Release();
-        MomentBlurTempSRV = nullptr;
-    }
-    if (MomentBlurTempRTV)
-    {
-        MomentBlurTempRTV->Release();
-        MomentBlurTempRTV = nullptr;
-    }
-    if (MomentBlurTemp2D)
-    {
-        MomentBlurTemp2D->Release();
-        MomentBlurTemp2D = nullptr;
-    }
-    MomentBlurTempSize = 0;
-
-    D3D11_TEXTURE2D_DESC TempDesc = {};
-    TempDesc.Width = ShadowAtlas::AtlasSize;
-    TempDesc.Height = ShadowAtlas::AtlasSize;
-    TempDesc.MipLevels = 1;
-    TempDesc.ArraySize = 1;
-    TempDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-    TempDesc.SampleDesc.Count = 1;
-    TempDesc.Usage = D3D11_USAGE_DEFAULT;
-    TempDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    if (FAILED(Device->CreateTexture2D(&TempDesc, nullptr, &MomentBlurTemp2D)) ||
-        FAILED(Device->CreateRenderTargetView(MomentBlurTemp2D, nullptr, &MomentBlurTempRTV)) ||
-        FAILED(Device->CreateShaderResourceView(MomentBlurTemp2D, nullptr, &MomentBlurTempSRV)))
-    {
-        ReleaseMomentBlurResources();
-        return;
-    }
-
-    MomentBlurTempSize = ShadowAtlas::AtlasSize;
+    return AtlasPool.GetPageCount();
 }
 
 void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
@@ -206,7 +109,7 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
         return;
     }
 
-    if (DebugPreviewVS == nullptr || DebugPreviewPS == nullptr)
+    if (DebugPreview.VS == nullptr || DebugPreview.PS == nullptr)
     {
         FShaderStageDesc PreviewVSDesc = {};
         PreviewVSDesc.FilePath         = "Shaders/Passes/Scene/Shared/ShadowDepthPreviewPass.hlsl";
@@ -229,8 +132,8 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
             return;
         }
 
-        const HRESULT HrVS = Device->CreateVertexShader(VsBlob->GetBufferPointer(), VsBlob->GetBufferSize(), nullptr, &DebugPreviewVS);
-        const HRESULT HrPS = Device->CreatePixelShader(PsBlob->GetBufferPointer(), PsBlob->GetBufferSize(), nullptr, &DebugPreviewPS);
+        const HRESULT HrVS = Device->CreateVertexShader(VsBlob->GetBufferPointer(), VsBlob->GetBufferSize(), nullptr, &DebugPreview.VS);
+        const HRESULT HrPS = Device->CreatePixelShader(PsBlob->GetBufferPointer(), PsBlob->GetBufferSize(), nullptr, &DebugPreview.PS);
 
         VsBlob->Release();
         PsBlob->Release();
@@ -242,27 +145,27 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
         }
     }
 
-    if (DebugPreviewCB == nullptr)
+    if (DebugPreview.CB == nullptr)
     {
         D3D11_BUFFER_DESC CbDesc = {};
         CbDesc.ByteWidth = sizeof(FShadowDebugPreviewCBData);
         CbDesc.Usage = D3D11_USAGE_DYNAMIC;
         CbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         CbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &DebugPreviewCB)))
+        if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &DebugPreview.CB)))
         {
             return;
         }
     }
 
-    if (DebugPreviewTexture && DebugPreviewRTV && DebugPreviewSRV)
+    if (DebugPreview.Texture && DebugPreview.RTV && DebugPreview.SRV)
     {
         return;
     }
 
     D3D11_TEXTURE2D_DESC PreviewDesc = {};
-    PreviewDesc.Width = DebugPreviewSize;
-    PreviewDesc.Height = DebugPreviewSize;
+    PreviewDesc.Width = DebugPreview.Size;
+    PreviewDesc.Height = DebugPreview.Size;
     PreviewDesc.MipLevels = 1;
     PreviewDesc.ArraySize = 1;
     PreviewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -270,132 +173,43 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
     PreviewDesc.Usage = D3D11_USAGE_DEFAULT;
     PreviewDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    if (FAILED(Device->CreateTexture2D(&PreviewDesc, nullptr, &DebugPreviewTexture)) ||
-        FAILED(Device->CreateRenderTargetView(DebugPreviewTexture, nullptr, &DebugPreviewRTV)) ||
-        FAILED(Device->CreateShaderResourceView(DebugPreviewTexture, nullptr, &DebugPreviewSRV)))
+    if (FAILED(Device->CreateTexture2D(&PreviewDesc, nullptr, &DebugPreview.Texture)) ||
+        FAILED(Device->CreateRenderTargetView(DebugPreview.Texture, nullptr, &DebugPreview.RTV)) ||
+        FAILED(Device->CreateShaderResourceView(DebugPreview.Texture, nullptr, &DebugPreview.SRV)))
     {
         ReleaseDebugPreviewResources();
-        return;
     }
-}
-
-void FShadowMapPass::ReleaseMomentBlurResources()
-{
-    if (MomentBlurTempSRV) { MomentBlurTempSRV->Release(); MomentBlurTempSRV = nullptr; }
-    if (MomentBlurTempRTV) { MomentBlurTempRTV->Release(); MomentBlurTempRTV = nullptr; }
-    if (MomentBlurTemp2D) { MomentBlurTemp2D->Release(); MomentBlurTemp2D = nullptr; }
-    if (MomentBlurCB) { MomentBlurCB->Release(); MomentBlurCB = nullptr; }
-    if (MomentBlurPSVertical) { MomentBlurPSVertical->Release(); MomentBlurPSVertical = nullptr; }
-    if (MomentBlurPSHorizontal) { MomentBlurPSHorizontal->Release(); MomentBlurPSHorizontal = nullptr; }
-    if (MomentBlurVS) { MomentBlurVS->Release(); MomentBlurVS = nullptr; }
-    MomentBlurTempSize = 0;
 }
 
 void FShadowMapPass::ReleaseDebugPreviewResources()
 {
-    if (DebugPreviewSRV) { DebugPreviewSRV->Release(); DebugPreviewSRV = nullptr; }
-    if (DebugPreviewRTV) { DebugPreviewRTV->Release(); DebugPreviewRTV = nullptr; }
-    if (DebugPreviewTexture) { DebugPreviewTexture->Release(); DebugPreviewTexture = nullptr; }
-    if (DebugPreviewCB) { DebugPreviewCB->Release(); DebugPreviewCB = nullptr; }
-    if (DebugPreviewPS) { DebugPreviewPS->Release(); DebugPreviewPS = nullptr; }
-    if (DebugPreviewVS) { DebugPreviewVS->Release(); DebugPreviewVS = nullptr; }
-}
-
-void FShadowMapPass::BlurMomentTextureSlice(FRenderPipelineContext& Context, FShadowAtlas& AtlasPage, uint32 SliceIndex)
-{
-    if (GetShadowFilterMethod() != EShadowFilterMethod::VSM || !Context.Device || !Context.Context)
-    {
-        return;
-    }
-
-    EnsureMomentBlurResources(Context.Device->GetDevice());
-    if (!MomentBlurVS || !MomentBlurPSHorizontal || !MomentBlurPSVertical || !MomentBlurCB || !MomentBlurTempRTV || !MomentBlurTempSRV)
-    {
-        return;
-    }
-
-    ID3D11RenderTargetView* TargetRTV = AtlasPage.GetMomentSliceRTV(SliceIndex);
-    ID3D11ShaderResourceView* TargetSRV = AtlasPage.GetMomentSliceSRV(SliceIndex);
-    if (!TargetRTV || !TargetSRV)
-    {
-        return;
-    }
-
-    FMomentBlurCBData BlurCBData = {};
-    BlurCBData.TexelSizeX = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
-    BlurCBData.TexelSizeY = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
-
-    D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    if (SUCCEEDED(Context.Context->Map(MomentBlurCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
-    {
-        std::memcpy(Mapped.pData, &BlurCBData, sizeof(BlurCBData));
-        Context.Context->Unmap(MomentBlurCB, 0);
-    }
-
-    Context.Device->SetDepthStencilState(EDepthStencilState::NoDepth);
-    Context.Device->SetBlendState(EBlendState::Opaque);
-    Context.Device->SetRasterizerState(ERasterizerState::SolidNoCull);
-
-    // Moment blur는 마지막 shadow rect viewport를 이어받으면 안 되므로 slice 전체 viewport로 복원합니다.
-    D3D11_VIEWPORT FullSliceViewport = {};
-    FullSliceViewport.TopLeftX = 0.0f;
-    FullSliceViewport.TopLeftY = 0.0f;
-    FullSliceViewport.Width = static_cast<float>(ShadowAtlas::AtlasSize);
-    FullSliceViewport.Height = static_cast<float>(ShadowAtlas::AtlasSize);
-    FullSliceViewport.MinDepth = 0.0f;
-    FullSliceViewport.MaxDepth = 1.0f;
-    Context.Context->RSSetViewports(1, &FullSliceViewport);
-
-    D3D11_RECT FullSliceScissor = {};
-    FullSliceScissor.left = 0;
-    FullSliceScissor.top = 0;
-    FullSliceScissor.right = static_cast<LONG>(ShadowAtlas::AtlasSize);
-    FullSliceScissor.bottom = static_cast<LONG>(ShadowAtlas::AtlasSize);
-    Context.Context->RSSetScissorRects(1, &FullSliceScissor);
-
-    Context.Context->IASetInputLayout(nullptr);
-    Context.Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    Context.Context->VSSetShader(MomentBlurVS, nullptr, 0);
-    Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &MomentBlurCB);
-
-    Context.Context->OMSetRenderTargets(1, &MomentBlurTempRTV, nullptr);
-    Context.Context->PSSetShader(MomentBlurPSHorizontal, nullptr, 0);
-    Context.Context->PSSetShaderResources(0, 1, &TargetSRV);
-    Context.Context->Draw(3, 0);
-
-    ID3D11ShaderResourceView* NullSRV = nullptr;
-    Context.Context->PSSetShaderResources(0, 1, &NullSRV);
-
-    Context.Context->OMSetRenderTargets(1, &TargetRTV, nullptr);
-    Context.Context->PSSetShader(MomentBlurPSVertical, nullptr, 0);
-    Context.Context->PSSetShaderResources(0, 1, &MomentBlurTempSRV);
-    Context.Context->Draw(3, 0);
-    Context.Context->PSSetShaderResources(0, 1, &NullSRV);
-
-    if (Context.StateCache)
-    {
-        Context.StateCache->Reset();
-    }
+    if (DebugPreview.SRV) { DebugPreview.SRV->Release(); DebugPreview.SRV = nullptr; }
+    if (DebugPreview.RTV) { DebugPreview.RTV->Release(); DebugPreview.RTV = nullptr; }
+    if (DebugPreview.Texture) { DebugPreview.Texture->Release(); DebugPreview.Texture = nullptr; }
+    if (DebugPreview.CB) { DebugPreview.CB->Release(); DebugPreview.CB = nullptr; }
+    if (DebugPreview.PS) { DebugPreview.PS->Release(); DebugPreview.PS = nullptr; }
+    if (DebugPreview.VS) { DebugPreview.VS->Release(); DebugPreview.VS = nullptr; }
 }
 
 bool FShadowMapPass::HasPSMCameraChanged(const FSceneView& SceneView)
 {
     const bool bChanged =
-        !bHasLastPSMCamera ||
-        FVector::DistSquared(LastPSMCameraPosition, SceneView.CameraPosition) > 1e-4f ||
-        FVector::DistSquared(LastPSMCameraForward, SceneView.CameraForward) > 1e-6f ||
-        FVector::DistSquared(LastPSMCameraUp, SceneView.CameraUp) > 1e-6f;
+        !PSMCameraState.bHasLastCamera ||
+        FVector::DistSquared(PSMCameraState.LastPosition, SceneView.CameraPosition) > 1e-4f ||
+        FVector::DistSquared(PSMCameraState.LastForward, SceneView.CameraForward) > 1e-6f ||
+        FVector::DistSquared(PSMCameraState.LastUp, SceneView.CameraUp) > 1e-6f;
 
-    LastPSMCameraPosition = SceneView.CameraPosition;
-    LastPSMCameraForward = SceneView.CameraForward;
-    LastPSMCameraUp = SceneView.CameraUp;
-    bHasLastPSMCamera = true;
+    PSMCameraState.LastPosition = SceneView.CameraPosition;
+    PSMCameraState.LastForward = SceneView.CameraForward;
+    PSMCameraState.LastUp = SceneView.CameraUp;
+    PSMCameraState.bHasLastCamera = true;
     return bChanged;
 }
 
 ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     const FShadowMapData& ShadowMapData,
     const FMatrix&        ViewProj,
+    EShadowDepthPreviewMode ShadowDepthPreviewMode,
     ID3D11Device*         Device,
     ID3D11DeviceContext*  DeviceContext)
 {
@@ -405,7 +219,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     }
 
     EnsureDebugPreviewResources(Device);
-    if (!DebugPreviewVS || !DebugPreviewPS || !DebugPreviewCB || !DebugPreviewRTV || !DebugPreviewSRV)
+    if (!DebugPreview.VS || !DebugPreview.PS || !DebugPreview.CB || !DebugPreview.RTV || !DebugPreview.SRV)
     {
         return nullptr;
     }
@@ -417,12 +231,13 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     }
 
     D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    if (SUCCEEDED(DeviceContext->Map(DebugPreviewCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+    if (SUCCEEDED(DeviceContext->Map(DebugPreview.CB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
     {
         FShadowDebugPreviewCBData PreviewCBData = {};
         PreviewCBData.InvViewProj = ViewProj.GetInverse();
+        PreviewCBData.ShadowDepthPreviewMode = static_cast<uint32>(ShadowDepthPreviewMode);
         std::memcpy(Mapped.pData, &PreviewCBData, sizeof(PreviewCBData));
-        DeviceContext->Unmap(DebugPreviewCB, 0);
+        DeviceContext->Unmap(DebugPreview.CB, 0);
     }
 
     ID3D11RenderTargetView* SavedRTV = nullptr;
@@ -438,13 +253,13 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     DeviceContext->RSGetScissorRects(&NumScissors, &SavedScissor);
 
     const float ClearColor[4] = { 0.03f, 0.03f, 0.03f, 1.0f };
-    DeviceContext->ClearRenderTargetView(DebugPreviewRTV, ClearColor);
+    DeviceContext->ClearRenderTargetView(DebugPreview.RTV, ClearColor);
 
     D3D11_VIEWPORT PreviewViewport = {};
     PreviewViewport.TopLeftX = 0.0f;
     PreviewViewport.TopLeftY = 0.0f;
-    PreviewViewport.Width = static_cast<float>(DebugPreviewSize);
-    PreviewViewport.Height = static_cast<float>(DebugPreviewSize);
+    PreviewViewport.Width = static_cast<float>(DebugPreview.Size);
+    PreviewViewport.Height = static_cast<float>(DebugPreview.Size);
     PreviewViewport.MinDepth = 0.0f;
     PreviewViewport.MaxDepth = 1.0f;
     DeviceContext->RSSetViewports(1, &PreviewViewport);
@@ -452,16 +267,16 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     D3D11_RECT PreviewScissor = {};
     PreviewScissor.left = 0;
     PreviewScissor.top = 0;
-    PreviewScissor.right = static_cast<LONG>(DebugPreviewSize);
-    PreviewScissor.bottom = static_cast<LONG>(DebugPreviewSize);
+    PreviewScissor.right = static_cast<LONG>(DebugPreview.Size);
+    PreviewScissor.bottom = static_cast<LONG>(DebugPreview.Size);
     DeviceContext->RSSetScissorRects(1, &PreviewScissor);
 
     DeviceContext->IASetInputLayout(nullptr);
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    DeviceContext->VSSetShader(DebugPreviewVS, nullptr, 0);
-    DeviceContext->PSSetShader(DebugPreviewPS, nullptr, 0);
-    DeviceContext->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &DebugPreviewCB);
-    DeviceContext->OMSetRenderTargets(1, &DebugPreviewRTV, nullptr);
+    DeviceContext->VSSetShader(DebugPreview.VS, nullptr, 0);
+    DeviceContext->PSSetShader(DebugPreview.PS, nullptr, 0);
+    DeviceContext->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &DebugPreview.CB);
+    DeviceContext->OMSetRenderTargets(1, &DebugPreview.RTV, nullptr);
     DeviceContext->PSSetShaderResources(0, 1, &SourceSRV);
     DeviceContext->Draw(3, 0);
 
@@ -474,7 +289,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     if (SavedRTV) SavedRTV->Release();
     if (SavedDSV) SavedDSV->Release();
 
-    return DebugPreviewSRV;
+    return DebugPreview.SRV;
 }
 
 void FShadowMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -491,22 +306,9 @@ void FShadowMapPass::PrepareTargets(FRenderPipelineContext& Context)
 void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     RenderItems.clear();
-    bLoggedPSMRedrawThisFrame = false;
-
-    const bool bPSM = GetShadowMapMethod() == EShadowMapMethod::PSM;
-    if (bPSM && Context.SceneView && HasPSMCameraChanged(*Context.SceneView))
-    {
-        bLoggedPSMRedrawThisFrame = true;
-        UE_LOG(
-            "[Shadow][PSM] camera changed -> rebuild shadow map commands. CamPos=(%.2f, %.2f, %.2f) CamFwd=(%.3f, %.3f, %.3f) VisibleLights=%zu",
-            Context.SceneView->CameraPosition.X,
-            Context.SceneView->CameraPosition.Y,
-            Context.SceneView->CameraPosition.Z,
-            Context.SceneView->CameraForward.X,
-            Context.SceneView->CameraForward.Y,
-            Context.SceneView->CameraForward.Z,
-            Context.Submission.SceneData ? Context.Submission.SceneData->Lights.VisibleLightProxies.size() : 0ull);
-    }
+    PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod::PSM &&
+                                            Context.SceneView != nullptr &&
+                                            HasPSMCameraChanged(*Context.SceneView);
 
     auto AppendRenderItem = [&](FLightProxy* Light, const FShadowMapData* Allocation, const FMatrix& ViewProj)
     {
@@ -534,54 +336,44 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         const uint32 LightType = Light->LightProxyInfo.LightType;
         if (LightType == static_cast<uint32>(ELightType::Directional))
         {
-            const uint32 CascadeCount = std::max(1u, Light->CascadeShadowMapData.CascadeCount);
+            const FCascadeShadowMapData* CascadeShadowMapData = Light->GetCascadeShadowMapData();
+            if (!CascadeShadowMapData)
+            {
+                continue;
+            }
+
+            const uint32 CascadeCount = std::max(1u, CascadeShadowMapData->CascadeCount);
             for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
             {
-                if (bLoggedPSMRedrawThisFrame && GetShadowMapMethod() == EShadowMapMethod::PSM && CascadeIndex == 0)
-                {
-                    const uint64* HashBytes = reinterpret_cast<const uint64*>(Light->LightViewProj.Data);
-                    UE_LOG(
-                        "[Shadow][PSM] directional light hash sample=%016llX-%016llX casters=%zu cascadeCount=%u",
-                        HashBytes[0],
-                        HashBytes[1],
-                        Light->VisibleShadowCasters.size(),
-                        CascadeCount);
-                }
                 AppendRenderItem(
                     Light,
-                    &Light->CascadeShadowMapData.Cascades[CascadeIndex],
-                    Light->CascadeShadowMapData.CascadeViewProj[CascadeIndex]);
+                    &CascadeShadowMapData->Cascades[CascadeIndex],
+                    CascadeShadowMapData->CascadeViewProj[CascadeIndex]);
             }
         }
         else if (LightType == static_cast<uint32>(ELightType::Spot))
         {
-            AppendRenderItem(Light, &Light->SpotShadowMapData, Light->LightViewProj);
+            const FShadowMapData* SpotShadowMapData = Light->GetSpotShadowMapData();
+            if (!SpotShadowMapData)
+            {
+                continue;
+            }
+
+            AppendRenderItem(Light, SpotShadowMapData, Light->LightViewProj);
         }
         else if (LightType == static_cast<uint32>(ELightType::Point))
         {
+            const FCubeShadowMapData* CubeShadowMapData = Light->GetCubeShadowMapData();
+            if (!CubeShadowMapData)
+            {
+                continue;
+            }
+
             for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
             {
-                AppendRenderItem(Light, &Light->CubeShadowMapData.Faces[FaceIndex], Light->CubeShadowMapData.FaceViewProj[FaceIndex]);
+                AppendRenderItem(Light, &CubeShadowMapData->Faces[FaceIndex], CubeShadowMapData->FaceViewProj[FaceIndex]);
             }
         }
-    }
-
-    if (bLoggedPSMRedrawThisFrame)
-    {
-        uint64 TotalShadowCasters = 0;
-        auto& VisibleLights = Context.Submission.SceneData->Lights.VisibleLightProxies;
-        for (FLightProxy* Light : VisibleLights)
-        {
-            if (Light && Light->bCastShadow)
-            {
-                TotalShadowCasters += static_cast<uint64>(Light->VisibleShadowCasters.size());
-            }
-        }
-
-        UE_LOG(
-            "[Shadow][PSM] built render items=%zu totalShadowCasters=%llu",
-            RenderItems.size(),
-            TotalShadowCasters);
     }
 }
 
@@ -595,10 +387,6 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
     if (!Context.DrawCommandList || RenderItems.empty())
     {
-        if (bLoggedPSMRedrawThisFrame)
-        {
-            UE_LOG("[Shadow][PSM] submit skipped. RenderItems=%zu", RenderItems.size());
-        }
         return;
     }
 
@@ -607,20 +395,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     Context.DrawCommandList->GetPassRange(ERenderPass::ShadowMap, GlobalStart, GlobalEnd);
     if (GlobalStart >= GlobalEnd)
     {
-        if (bLoggedPSMRedrawThisFrame)
-        {
-            UE_LOG("[Shadow][PSM] submit skipped. ShadowMap pass range empty. Start=%u End=%u", GlobalStart, GlobalEnd);
-        }
         return;
-    }
-
-    if (bLoggedPSMRedrawThisFrame)
-    {
-        UE_LOG(
-            "[Shadow][PSM] submitting shadow map draw range Start=%u End=%u RenderItems=%zu",
-            GlobalStart,
-            GlobalEnd,
-            RenderItems.size());
     }
 
     ID3D11RenderTargetView* SavedRTV = nullptr;
@@ -660,8 +435,14 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             continue;
         }
 
-        FShadowAtlas* AtlasPage = AtlasManager.GetPage(Item.Allocation->AtlasPageIndex);
+        FShadowAtlasPage* AtlasPage = AtlasPool.GetPage(Item.Allocation->AtlasPageIndex);
         if (!AtlasPage)
+        {
+            continue;
+        }
+
+        const bool bUsesVSMMoments = GetShadowFilterMethod() == EShadowFilterMethod::VSM;
+        if (bUsesVSMMoments && !AtlasPage->EnsureMomentResources(Context.Device->GetDevice()))
         {
             continue;
         }
@@ -711,9 +492,9 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.DrawCommandList->SubmitRange(RangeStart, RangeEnd, *Context.Device, Context.Context, *Context.StateCache);
     }
 
-    for (uint32 PageIndex = 0; PageIndex < AtlasManager.GetPageCount(); ++PageIndex)
+    for (uint32 PageIndex = 0; PageIndex < AtlasPool.GetPageCount(); ++PageIndex)
     {
-        FShadowAtlas* AtlasPage = AtlasManager.GetPage(PageIndex);
+        FShadowAtlasPage* AtlasPage = AtlasPool.GetPage(PageIndex);
         if (!AtlasPage)
         {
             continue;
@@ -726,7 +507,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
                 continue;
             }
 
-            BlurMomentTextureSlice(Context, *AtlasPage, SliceIndex);
+            MomentFilter.BlurMomentTextureSlice(Context, *AtlasPage, SliceIndex);
         }
 
         if (ID3D11ShaderResourceView* MomentSRV = AtlasPage->GetMomentArraySRV())

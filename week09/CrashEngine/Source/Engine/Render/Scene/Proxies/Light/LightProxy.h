@@ -5,7 +5,7 @@
 #include "Engine/Math/Matrix.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
 #include "Render/Scene/Proxies/SceneProxy.h"
-#include "Render/Submission/Atlas/ShadowAtlasSystem.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 #include "Render/Visibility/Frustum/ConvexVolume.h"
 
 class ULightComponent;
@@ -23,6 +23,18 @@ public:
 
     virtual void VisualizeLightsInEditor(FScene& Scene) const {}
 
+    virtual FCascadeShadowMapData*       GetCascadeShadowMapData() { return nullptr; }
+    virtual const FCascadeShadowMapData* GetCascadeShadowMapData() const { return nullptr; }
+    virtual FShadowMapData*              GetSpotShadowMapData() { return nullptr; }
+    virtual const FShadowMapData*        GetSpotShadowMapData() const { return nullptr; }
+    virtual FCubeShadowMapData*          GetCubeShadowMapData() { return nullptr; }
+    virtual const FCubeShadowMapData*    GetCubeShadowMapData() const { return nullptr; }
+    virtual FMatrix*                     GetPointShadowViewProjMatrices() { return nullptr; }
+    virtual const FMatrix*               GetPointShadowViewProjMatrices() const { return nullptr; }
+    virtual int32                        GetCascadeCountSetting() const { return 1; }
+    virtual float                        GetDynamicShadowDistanceSetting() const { return 2000.0f; }
+    virtual float                        GetCascadeDistributionSetting() const { return 1.0f; }
+
     void ClearShadowData();
     void ApplyShadowRecord(const FLightShadowRecord& Record);
 
@@ -36,17 +48,10 @@ public:
     TArray<FPrimitiveProxy*> VisibleShadowCasters;
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
-    FMatrix                  ShadowViewProjMatrices[ShadowAtlas::MaxPointFaces];
-    bool                     bCastShadow = false;
+    bool                     bCastShadow      = false;
     uint32                   ShadowResolution = 1024;
-    FCascadeShadowMapData    CascadeShadowMapData = {};
-    FShadowMapData           SpotShadowMapData = {};
-    FCubeShadowMapData       CubeShadowMapData = {};
 
-    float ShadowBias = 0.005f;
-    float ShadowSlopeBias = 0.5f;
-    float ShadowNormalBias = 1.0f;
-    int32 CascadeCount = 1;
-    float DynamicShadowDistance = 2000.0f;
-    float CascadeDistribution = 1.0f;
+    float ShadowBias       = 0.0f;
+    float ShadowSlopeBias  = 0.0f;
+    float ShadowNormalBias = 0.0f;
 };

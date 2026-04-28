@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
-#include "Render/Submission/Atlas/ShadowAtlasSystem.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 
 // FPerObjectCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FPerObjectCBData

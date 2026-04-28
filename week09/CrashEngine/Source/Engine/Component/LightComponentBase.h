@@ -34,7 +34,7 @@ protected:
     bool bAffectsWorld = true;            // 조명의 영향 여부를 켜고 끕니다.
     bool bCastShadows = true;             // Shadow 구현 주차에 사용: 조명이 그림자를 드리울지 여부를 켜고 끕니다.
     int32 ShadowResolution = 1024;
-    float ShadowBias = 0.005f;
-    float ShadowSlopeBias = 0.5f;
-    float ShadowNormalBias = 1.0f;
+    float ShadowBias = 0.0f;
+    float ShadowSlopeBias = 0.0f;
+    float ShadowNormalBias = 0.0f;
 };

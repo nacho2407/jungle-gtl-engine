@@ -111,8 +111,8 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
     {
         if (Args.size() < 2)
         {
-            AddLog("Usage: shadow_mode SSM | PSM | CSM\n");
-            AddLog("Current shadow mode: %s\n", GetShadowMapMathodName(GetShadowMapMethod()));
+            AddLog("Usage: shadow_mode STANDARD | PSM\n");
+            AddLog("Current shadow mode: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
             return;
         }
         
@@ -120,26 +120,22 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
         std::transform(MethodName.begin(), MethodName.end(), MethodName.begin(),
             [](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
 
-        if (MethodName == "SSM")
+        if (MethodName == "STANDARD" || MethodName == "SSM")
         {
-            SetShadowMapMethod(EShadowMapMethod::SSM);
+            SetShadowMapMethod(EShadowMapMethod::Standard);
         }
         else if (MethodName == "PSM")
         {
             SetShadowMapMethod(EShadowMapMethod::PSM);
         }
-        else if (MethodName == "CSM")
-        {
-            SetShadowMapMethod(EShadowMapMethod::CSM);
-        }
         else
         {
             AddLog("[ERROR] Unknown shadow map method: '%s'\n", Args[1].c_str());
-            AddLog("Usage: shadow_mode SSM | PSM | CSM\n");
+            AddLog("Usage: shadow_mode STANDARD | PSM\n");
             return;
         }
         
-        AddLog("Shadow map method changed to: %s\n", GetShadowMapMathodName(GetShadowMapMethod()));
+        AddLog("Shadow map method changed to: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
     });
 }
 
