@@ -199,8 +199,16 @@ struct FShadowAtlasCube
 		return false;
 	}
 
-	void ClearCubes(){
-        CurrentCubeCount = 0;
+	void FreeCube(int32 CubeIndex) {
+		if (CubeIndex >= 0 && CubeIndex < MAX_SHADOW_CUBES)
+		{
+			// 실제로는 DSV와 SRV를 재사용할 수 있도록 관리하는 로직이 필요하지만, 간단히 카운트만 감소시키는 방식으로 구현
+			--CurrentCubeCount;
+		}
+	}
+
+	void FreeAllCubes() {
+		CurrentCubeCount = 0;
 	}
 
     bool IsValid() const { return CubeShadowMap != nullptr && CubeDSV != nullptr && CubeSRV != nullptr; }
@@ -316,7 +324,7 @@ public:
 
     bool AllocateTileCube(int32& OutCubeIndex);
     bool FreeTileCube(const int32& CubeIndex);
-    void ClearTilesCube() { ShadowCubeMapArray.ClearCubes(); }
+    void ClearTilesCube() { ShadowCubeMapArray.FreeAllCubes(); }
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }

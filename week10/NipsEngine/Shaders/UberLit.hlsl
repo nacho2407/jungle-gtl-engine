@@ -399,7 +399,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #else 
         uint lightIndex = i;
 #endif
-        LightInfo light = Lights[lightIndex]; 
+        LightInfo light = Lights[lightIndex];
         float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap);
     
 #if LIGHTING_MODEL_LAMBERT
