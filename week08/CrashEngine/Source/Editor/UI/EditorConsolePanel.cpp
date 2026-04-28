@@ -111,7 +111,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
     {
         if (Args.size() < 2)
         {
-            AddLog("Usage: shadow_mode STANDARD | PSM\n");
+            AddLog("Usage: shadow_mode STANDARD | PSM | CASCADE\n");
             AddLog("Current shadow mode: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
             return;
         }
@@ -128,10 +128,14 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
         {
             SetShadowMapMethod(EShadowMapMethod::PSM);
         }
+        else if (MethodName == "CASCADE" || MethodName == "CSM")
+        {
+            SetShadowMapMethod(EShadowMapMethod::Cascade);
+        }
         else
         {
             AddLog("[ERROR] Unknown shadow map method: '%s'\n", Args[1].c_str());
-            AddLog("Usage: shadow_mode STANDARD | PSM\n");
+            AddLog("Usage: shadow_mode STANDARD | PSM | CASCADE\n");
             return;
         }
         

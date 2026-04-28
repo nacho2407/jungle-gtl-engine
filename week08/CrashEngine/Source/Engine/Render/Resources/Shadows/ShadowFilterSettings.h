@@ -26,11 +26,11 @@ inline const char* GetShadowFilterMethodName(EShadowFilterMethod InMethod)
     switch (InMethod)
     {
     case EShadowFilterMethod::PCF:
-        return "PCF";
+        return "PCF (Percentage-Closer Filtering)";
     case EShadowFilterMethod::VSM:
-        return "VSM";
+        return "VSM (Variance Shadow Map)";
     case EShadowFilterMethod::ESM:
-        return "ESM";
+        return "ESM (Exponential Shadow Map)";
     default:
         return "Unknown";
     }

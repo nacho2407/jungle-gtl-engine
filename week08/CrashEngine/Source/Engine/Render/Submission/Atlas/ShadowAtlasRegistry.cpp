@@ -2,22 +2,11 @@
 
 #include "Component/DirectionalLightComponent.h"
 #include "Component/LightComponent.h"
+#include "Render/Resources/Shadows/ShadowResolutionSettings.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
 
 #include <algorithm>
-
-namespace
-{
-uint32 ClampShadowResolution(uint32 Resolution)
-{
-    if (Resolution <= 256u) return 256u;
-    if (Resolution <= 512u) return 512u;
-    if (Resolution <= 1024u) return 1024u;
-    if (Resolution <= 2048u) return 2048u;
-    return 4096u;
-}
-} // namespace
 
 void FShadowAtlasRegistry::Release(FShadowAtlasManager& AtlasManager)
 {
@@ -49,7 +38,7 @@ bool FShadowAtlasRegistry::UpdateLightShadow(FLightProxy& Light, ID3D11Device* D
         return false;
     }
 
-    const uint32 Resolution = ClampShadowResolution(Light.ShadowResolution);
+    const uint32 Resolution = GetShadowResolutionValue(RoundShadowResolutionToTier(Light.ShadowResolution));
     const uint32 CascadeCount = std::clamp(Light.CascadeCount, 1, static_cast<int32>(ShadowAtlas::MaxCascades));
     const uint32 LightType = Light.LightProxyInfo.LightType;
 

@@ -36,6 +36,7 @@
 #include "Materials/MaterialManager.h"
 #include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/RenderPassRegistry.h"
+#include "Render/Resources/Shadows/ShadowResolutionSettings.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 
 #define SEPARATOR()     \
@@ -922,16 +923,17 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         return;
     }
 
-    static const int32 ShadowMapSizes[] = { 256, 512, 1024, 2048, 4096 };
     ImGui::Text("Resolution");
-    for (int32 SizeIndex = 0; SizeIndex < IM_ARRAYSIZE(ShadowMapSizes); ++SizeIndex)
+    for (int32 SizeIndex = 0; SizeIndex < static_cast<int32>(GShadowResolutionOptions.size()); ++SizeIndex)
     {
+        const EShadowResolution ResolutionTier = GShadowResolutionOptions[SizeIndex];
+        const uint32 ResolutionValue = GetShadowResolutionValue(ResolutionTier);
         if (SizeIndex > 0)
         {
             ImGui::SameLine();
         }
 
-        const bool bSelected = (ShadowMapSizes[SizeIndex] == static_cast<int32>(LightComponent->GetShadowResolution()));
+        const bool bSelected = (ResolutionValue == LightComponent->GetShadowResolution());
         if (bSelected)
         {
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.28f, 0.46f, 0.80f, 1.0f));
@@ -939,10 +941,10 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         }
 
         char ButtonLabel[32] = {};
-        sprintf_s(ButtonLabel, "%d##ShadowRes%d", ShadowMapSizes[SizeIndex], SizeIndex);
+        sprintf_s(ButtonLabel, "%s##ShadowRes%d", GetShadowResolutionLabel(ResolutionTier), SizeIndex);
         if (ImGui::Button(ButtonLabel, ImVec2(64.0f, 0.0f)) && !bSelected)
         {
-            LightComponent->SetShadowResolution(static_cast<uint32>(ShadowMapSizes[SizeIndex]));
+            LightComponent->SetShadowResolution(ResolutionTier);
             LightComponent->PostEditProperty("Shadow Resolution");
         }
 
