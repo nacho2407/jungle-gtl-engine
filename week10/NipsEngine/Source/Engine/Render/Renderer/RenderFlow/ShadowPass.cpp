@@ -124,6 +124,9 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 
 bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (!Context->RenderBus->GetShowFlags().bShadow)
+        return false;
+
 	UShader* ShadowShader = FResourceManager::Get().GetShader("Shaders/Shadow.hlsl");
 	if (ShadowShader == nullptr)
 	{
