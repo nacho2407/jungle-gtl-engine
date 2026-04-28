@@ -37,6 +37,7 @@ namespace EditorKey
 	constexpr const char* bBoundingVolume = "bBoundingVolume";
 	constexpr const char* bEnableLOD = "bEnableLOD";
 	constexpr const char* bBVHBoundingVolume = "bBVHBoundingVolume";
+    constexpr const char* bShadow = "bShadow";
 	constexpr const char* FXAAEnabled = "FXAAEnabled";
 	constexpr const char* FXAAThreshold = "FXAAThreshold"; // Backward compatibility
 
@@ -95,7 +96,9 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[EditorKey::bBoundingVolume] = ShowFlags.bBoundingVolume;
 	ViewObj[EditorKey::bEnableLOD] = ShowFlags.bEnableLOD;
 	ViewObj[EditorKey::bBVHBoundingVolume] = ShowFlags.bBVHBoundingVolume;
+    ViewObj[EditorKey::bShadow] = ShowFlags.bShadow;
 	ViewObj[EditorKey::FXAAEnabled] = bEnableFXAA;
+
 	Root[EditorKey::View] = ViewObj;
 
 	// Grid
@@ -224,7 +227,9 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (ViewObj.hasKey(EditorKey::bEnableLOD))
 			ShowFlags.bEnableLOD = ViewObj[EditorKey::bEnableLOD].ToBool();
 		if (ViewObj.hasKey(EditorKey::bBVHBoundingVolume))
-			ShowFlags.bBVHBoundingVolume = ViewObj[EditorKey::bBVHBoundingVolume].ToBool();
+            ShowFlags.bBVHBoundingVolume = ViewObj[EditorKey::bBVHBoundingVolume].ToBool();
+        if (ViewObj.hasKey(EditorKey::bShadow))
+            ShowFlags.bShadow = ViewObj[EditorKey::bShadow].ToBool(); 
 		if (ViewObj.hasKey(EditorKey::FXAAEnabled))
 			bEnableFXAA = ViewObj[EditorKey::FXAAEnabled].ToBool();
 		else if (ViewObj.hasKey(EditorKey::FXAAThreshold))

@@ -756,6 +756,17 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 	return true;
 }
 
+bool FResourceManager::EnsureShaderPermutation(const FString& FilePath, uint32 PermutationKey)
+{
+	UShader* Shader = GetShader(FilePath);
+	if (!Shader)
+	{
+		return false;
+	}
+
+	return Shader->EnsurePermutation(CachedDevice.Get(), PermutationKey);
+}
+
 void FResourceManager::ReloadShader(const FString& FilePath)
 {
 	UShader* Shader = GetShader(FilePath);

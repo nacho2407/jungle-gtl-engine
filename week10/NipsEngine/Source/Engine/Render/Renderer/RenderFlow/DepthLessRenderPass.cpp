@@ -1,4 +1,4 @@
-#include "DepthLessRenderPass.h"
+﻿#include "DepthLessRenderPass.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
@@ -15,8 +15,13 @@ bool FDepthLessRenderPass::Release()
 
 bool FDepthLessRenderPass::Begin(const FRenderPassContext* Context)
 {
+
     ID3D11RenderTargetView* RTV = PrevPassRTV;
     ID3D11DepthStencilView* DSV = Context->RenderTargets->DepthStencilView;
+
+    ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
+    Context->DeviceContext->PSSetShaderResources(11, 1, NullSRV);
+
     Context->DeviceContext->OMSetRenderTargets(1, &RTV, DSV);
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

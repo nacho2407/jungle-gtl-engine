@@ -40,9 +40,9 @@ enum class ERenderCommandType
 	Light,
 };
 
-enum EShadowLightType
+enum EShadowLightType : int32
 {
-	SLT_Directional,
+	SLT_Directional = 0,
 	SLT_Point,
 	SLT_Spot,
 };
@@ -107,23 +107,39 @@ struct FLightInfo
     float Padding1;
 };
 
+struct FLightShadowIndices
+{
+    uint32 StartIndex;
+    uint32 IndexCount;
+};
+
 struct FShadowLightRequest
 {
 	uint32 LightIndex = InvalidShadowIndex;
-    ULightComponentBase* LightComponent = nullptr;
+    ULightComponent* LightComponent = nullptr;
     EShadowLightType Type;
     FVector WorldLocation;
     bool bCastShadows = true;
-    float ShadowBias = 0.0f;
-    float ShadowSlopeBias = 0.0f;
+    uint32 ShadowResolution;
+    float ConstantBias = 0.0f;
+    float SlopeScaledBias = 0.0f;
     float ShadowSharpen = 1.0f;
+    FVector4 CascadeSplitFar = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 };
+
+constexpr uint32 MaxDirectionalCascadeCount = 4;
 
 struct FShadowConstants
 {
-	FMatrix	VirtualViewProj;
+	FMatrix VirtualViewProj;
+
+	// 기존 directional / PSM 경로 호환용 단일 matrix 정보
 	FMatrix DirLightViewProj;
-    FVector4 ScaleOffset; // xy: Scale, zw: Offset
+
+	FVector4 CascadeSplitFar; // x,y,z,w 에 각각 비율이 아닌 카메라와의 거리를 넣어뒀음
+	uint32   DirectionalCascadeCount = 0;
+    uint32   DirectionalShadowStartIndex = 0;
+	float    Padding[2] = { 0.0f, 0.0f };
 };
 
 struct FVSMBlurConstants
@@ -134,16 +150,33 @@ struct FVSMBlurConstants
     uint32 TileHeight;   // 4바이트
 };						// 총 16바이트
 
+inline void SetCascadeSplitFar(FVector4& OutValue, uint32 CascadeIndex, float SplitFar)
+{
+	switch (CascadeIndex)
+	{
+	case 0: OutValue.X = SplitFar; break;
+	case 1: OutValue.Y = SplitFar; break;
+	case 2: OutValue.Z = SplitFar; break;
+	case 3: OutValue.W = SplitFar; break;
+	default: break;
+	}
+}
+
 struct FShadowAtlasConstants
 {
     FMatrix ShadowViewProjMatrix;	// 64
+    FMatrix VirtualViewProjMatrix;
 
     FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
 
-    float ShadowBias;				// 4
+    float ConstantBias;				// 4
     float ShadowStrength;			// 4
     float ShadowSoftness;			// 4
     uint32 ShadowType;				// 4
+
+    uint32 ShadowMapType;
+    float SlopedBias;
+    float Padding[2];
 };
 
 struct FUberConstants

@@ -265,6 +265,12 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 			AddLog("  'stat nametable list' to dump all entries to console.\n");
 		}
 	}
+	else if (Target == "cascadevis")
+	{
+		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowCascadeVis;
+		bFlag = !bFlag;
+		AddLog("Stat CascadeVis %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
+	}
 	else if (Target == "none")
 	{
 		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
@@ -272,6 +278,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 			Layout.GetViewportState(i).bShowStatFPS       = false;
 			Layout.GetViewportState(i).bShowStatMemory    = false;
 			Layout.GetViewportState(i).bShowStatNameTable = false;
+			Layout.GetViewportState(i).bShowCascadeVis    = false;
 		}
 		AddLog("All Stats Disabled\n");
 	}

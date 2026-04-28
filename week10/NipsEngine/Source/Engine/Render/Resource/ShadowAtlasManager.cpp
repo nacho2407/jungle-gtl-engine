@@ -5,36 +5,30 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 	if (InDevice == nullptr) return;
 
 	ShadowMapAtlas.Initialize(InDevice);
+    ShadowCubeMapArray.Initialize(InDevice);
 }
 
-bool FShadowAtlasManager::AllocateTile(FShadowAtlasTile& OutTile)
+bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
 {
-    const int32 TileSize = GetTileSize();
+    int32 RequestTileSize = ResolutionScale;
 
 	int32 TileX, TileY;
-
-    if (ShadowAllocator.AllocateTile(TileX, TileY))
+    if (ShadowAllocator.AllocateTiled(RequestTileSize, TileX, TileY))
     {
-        OutTile.TileIndex = TileY * ShadowAllocator.TileCountX + TileX;
-
         OutTile.TileX = TileX;
         OutTile.TileY = TileY;
 
-        OutTile.PixelX = TileX * TileSize;
-        OutTile.PixelY = TileY * TileSize;
+        OutTile.PixelX = TileX * ShadowAllocator.GridSize;
+        OutTile.PixelY = TileY * ShadowAllocator.GridSize;
 
-        OutTile.Width = TileSize;
-        OutTile.Height = TileSize;
-
-        const float AtlasW = static_cast<float>(GetAtlasWidth());
-        const float AtlasH = static_cast<float>(GetAtlasHeight());
-        const float Tile = static_cast<float>(TileSize);
+        OutTile.Width = RequestTileSize;
+        OutTile.Height = RequestTileSize;
 
         OutTile.ScaleOffset = FVector4(
-            Tile / AtlasW,
-            Tile / AtlasH,
-            static_cast<float>(OutTile.PixelX) / AtlasW,
-            static_cast<float>(OutTile.PixelY) / AtlasH);
+            static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
+            static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
+            static_cast<float>(OutTile.PixelX) / ShadowAtlasResolution2D,
+            static_cast<float>(OutTile.PixelY) / ShadowAtlasResolution2D);
 
         return true;
     }

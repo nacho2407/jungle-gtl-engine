@@ -918,11 +918,11 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
         DirLightDataShadow.bCastShadows		= DirLight->bCastShadows;
         DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
-        DirLightDataShadow.ShadowBias		= DirLight->ShadowBias;
-        DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
+        DirLightDataShadow.ConstantBias		= DirLight->ConstantBias;
+        DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
+        DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
 
-		RenderBus.ShadowLightRequests.clear();
 		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
 	}
 
@@ -946,9 +946,10 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
 		ShadowRequest.Type			= EShadowLightType::SLT_Spot;
 		ShadowRequest.bCastShadows	= SpotLight->bCastShadows;
+        ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
 		ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
-		ShadowRequest.ShadowBias	= SpotLight->ShadowBias;
-		ShadowRequest.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
+		ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
+		ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
 		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(ShadowRequest);
 	}
@@ -963,12 +964,14 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		RenderBus.LightInfos.push_back(LightData);
 
 		FShadowLightRequest PointLightDataShadow = {};
+		PointLightDataShadow.LightIndex = static_cast<uint32>(RenderBus.LightInfos.size() - 1); // TODO: Cubemap Index를 가리키도록 수정
 		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
 		PointLightDataShadow.Type = EShadowLightType::SLT_Point;
-		PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+        PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
+        PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
 		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
-		PointLightDataShadow.ShadowBias = PointLight->ShadowBias;
-		PointLightDataShadow.ShadowSlopeBias = PointLight->ShadowSlopeBias;
+		PointLightDataShadow.ConstantBias = PointLight->ConstantBias;
+		PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
 		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
 	}

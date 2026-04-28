@@ -4,9 +4,8 @@
 // ShadowMap Method
 enum class EShadowMap : uint32
 {
-	BASIC,
-	PSM,
 	CSM,
+	PSM,
 	MAX
 };
 

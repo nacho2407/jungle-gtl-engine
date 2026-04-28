@@ -85,6 +85,10 @@ public:
 	{
 		PermutationDescs[Key] = Desc;
 	}
+	bool HasPermutation(uint32 Key) const
+	{
+		return Permutations.contains(Key);
+	}
 	void AddPermutation(uint32 Key, const FShader& Data)
 	{
 		if (Permutations.contains(Key))
@@ -157,6 +161,7 @@ public:
 	void ReflectShader(ID3DBlob* ShaderBlob, ID3D11Device* Device, FShader& Target,
 		TMap<FString, uint32>& OutTextureBindSlots, TMap<FString, FShaderVariableInfo>& OutShaderVariables, uint32& OutCBufferSize);
 	
+	bool EnsurePermutation(ID3D11Device* Device, uint32 PermutationKey);
 	void Reload(ID3D11Device* Device);
 
 	uint32 GetCBufferSize() const { return CBufferSize; }
