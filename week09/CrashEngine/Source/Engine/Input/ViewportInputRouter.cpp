@@ -33,6 +33,15 @@ void FViewportInputRouter::SetKeyTargetViewport(FViewport* InViewport)
         return;
     }
 
+    FRect PreviousRect{};
+    if (FTargetEntry* PreviousTarget = FindTargetByViewport(KeyTargetViewport, PreviousRect))
+    {
+        if (PreviousTarget->Client)
+        {
+            PreviousTarget->Client->ResetInputState();
+        }
+    }
+
     KeyTargetViewport = InViewport;
     ResetKeyRepeatState();
 }
@@ -294,6 +303,7 @@ void FViewportInputRouter::DispatchKeyEvents(FTargetEntry* Target, const FInputS
     {
         // GUI가 키보드 입력을 캡처하는 경우, 모든 키에 대해 Key Repeat 상태를 초기화
         // GUI 내부의 Key Repeat은 GUI 시스템(우리 프로젝트의 경우 ImGui)이 자체적으로 처리하기를 기대
+        Target->Client->ResetInputState();
         ResetKeyRepeatState();
         return;
     }

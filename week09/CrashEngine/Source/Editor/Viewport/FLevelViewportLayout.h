@@ -89,6 +89,7 @@ private:
     SSplitter* BuildSplitterTree(EViewportLayout Layout);
     void EnsureViewportSlots(int32 RequiredCount);
     void ShrinkViewportSlots(int32 RequiredCount);
+    void ResetAllViewportInputStates();
 
     // 아이콘 텍스처
     void LoadLayoutIcons(ID3D11Device* Device);

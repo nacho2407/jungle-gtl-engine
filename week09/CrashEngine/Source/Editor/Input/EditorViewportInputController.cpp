@@ -152,6 +152,34 @@ void FEditorViewportInputController::BeginInputFrame()
     CurrentInput.bMiddleReleased = false;
 }
 
+void FEditorViewportInputController::ResetInputState()
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        CurrentInput.KeyDown[VK] = false;
+        CurrentInput.KeyPressed[VK] = false;
+        CurrentInput.KeyReleased[VK] = false;
+        CurrentInput.KeyRepeated[VK] = false;
+    }
+
+    CurrentInput.MouseAxisDelta = { 0, 0 };
+    CurrentInput.MouseWheelNotches = 0.0f;
+
+    CurrentInput.bLeftPressed = false;
+    CurrentInput.bLeftDown = false;
+    CurrentInput.bLeftReleased = false;
+
+    CurrentInput.bRightPressed = false;
+    CurrentInput.bRightDown = false;
+    CurrentInput.bRightReleased = false;
+
+    CurrentInput.bMiddlePressed = false;
+    CurrentInput.bMiddleDown = false;
+    CurrentInput.bMiddleReleased = false;
+
+    CurrentInput.Modifiers = {};
+}
+
 void FEditorViewportInputController::RequestContextMenu(const FEditorViewportContextMenuRequest& Request)
 {
     PendingContextMenuRequest = Request;

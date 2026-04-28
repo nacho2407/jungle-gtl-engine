@@ -346,6 +346,17 @@ void FLevelViewportLayout::RestoreWorldAxisAfterPIE()
     bHasSavedWorldAxisVisibility = false;
 }
 
+void FLevelViewportLayout::ResetAllViewportInputStates()
+{
+    for (FEditorViewportClient* Client : AllViewportClients)
+    {
+        if (Client)
+        {
+            Client->ResetInputState();
+        }
+    }
+}
+
 // ─── 뷰포트 슬롯 관리 ───────────────────────────────────────
 
 void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
@@ -388,6 +399,11 @@ void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
         FLevelEditorViewportClient* VC = LevelViewportClients.back();
         int32 Idx = static_cast<int32>(LevelViewportClients.size()) - 1;
         LevelViewportClients.pop_back();
+
+        if (VC)
+        {
+            VC->ResetInputState();
+        }
 
         for (auto It = AllViewportClients.begin(); It != AllViewportClients.end(); ++It)
         {
@@ -572,6 +588,8 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
 {
     if (NewLayout == CurrentLayout)
         return;
+
+    ResetAllViewportInputStates();
 
     bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
 

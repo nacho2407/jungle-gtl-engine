@@ -65,6 +65,7 @@ public:
     bool InputPointer(const FViewportPointerEvent& Event);
 
     void BeginInputFrame();
+    void ResetInputState();
     const FEditorViewportFrameInput& GetCurrentInput() const { return CurrentInput; }
 
     void RequestContextMenu(const FEditorViewportContextMenuRequest& Request);
