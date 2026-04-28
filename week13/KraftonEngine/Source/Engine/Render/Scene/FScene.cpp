@@ -342,13 +342,14 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 		const float CameraFarZ = Frame.FarClip;
 		const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
 		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+		const float Lambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
 		FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
 		FLightFrustumUtils::ComputeCascadeRanges(
 			CameraNearZ,
 			ShadowFarZ,
 			NumCascades,
-			0.85f,
+			Lambda,
 			CascadeRanges
 		);
 
