@@ -46,6 +46,14 @@ namespace
 	{
 		return ImGui::ColorConvertFloat4ToU32(Color);
 	}
+
+	ImVec2 AtlasPixelToPreview(const ImVec2& ImagePos, const ImVec2& ImageSize, int32 X, int32 Y)
+	{
+		const float AtlasSize = static_cast<float>(ShadowAtlasResolution2D);
+		return ImVec2(
+			ImagePos.x + ImageSize.x * (static_cast<float>(X) / AtlasSize),
+			ImagePos.y + ImageSize.y * (static_cast<float>(Y) / AtlasSize));
+	}
 } // namespace
 
 // 뷰포트 타입 → 표시 이름
@@ -700,6 +708,58 @@ void FEditorViewportOverlayWidget::RenderShadowAtlasPreview()
         }
     }
 
+    const TArray<FShadowAtlasTile> AtlasTiles = FShadowAtlasManager::Get().GetAllocatedTiles();
+    static const ImU32 TileColors[] =
+    {
+        IM_COL32(255, 104, 104, 255),
+        IM_COL32(255, 190,  82, 255),
+        IM_COL32(105, 219, 124, 255),
+        IM_COL32( 88, 191, 255, 255),
+        IM_COL32(164, 132, 255, 255),
+        IM_COL32(255, 117, 214, 255),
+        IM_COL32(117, 232, 217, 255),
+        IM_COL32(230, 232, 117, 255)
+    };
+
+    int32 UsedTileCount = 0;
+    int32 HoveredTileIndex = -1;
+    const FShadowAtlasTile* HoveredTile = nullptr;
+    for (const FShadowAtlasTile& Tile : AtlasTiles)
+    {
+        if (!Tile.bUsed)
+        {
+            continue;
+        }
+
+        const ImVec2 TileMin = AtlasPixelToPreview(ImagePos, ImageSize, Tile.X, Tile.Y);
+        const ImVec2 TileMax = AtlasPixelToPreview(ImagePos, ImageSize, Tile.X + Tile.Width, Tile.Y + Tile.Height);
+        const ImU32 TileColor = TileColors[UsedTileCount % (sizeof(TileColors) / sizeof(TileColors[0]))];
+
+        DrawList->AddRectFilled(TileMin, TileMax, IM_COL32(0, 0, 0, 42), 2.0f);
+        DrawList->AddRect(TileMin, TileMax, TileColor, 2.0f, 0, 2.0f);
+
+        const ImVec2 TileSize = Subtract(TileMax, TileMin);
+        if (TileSize.x >= 22.0f && TileSize.y >= 18.0f)
+        {
+            char Label[16];
+            snprintf(Label, sizeof(Label), "#%d", UsedTileCount);
+            DrawList->AddRectFilled(
+                TileMin,
+                Add(TileMin, ImVec2(24.0f, 17.0f)),
+                IM_COL32(3, 6, 10, 205),
+                2.0f);
+            DrawList->AddText(Add(TileMin, ImVec2(4.0f, 1.0f)), TileColor, Label);
+        }
+
+        if (ImGui::IsMouseHoveringRect(TileMin, TileMax))
+        {
+            HoveredTileIndex = UsedTileCount;
+            HoveredTile = &Tile;
+        }
+
+        ++UsedTileCount;
+    }
+
     DrawList->AddRect(ImagePos, ImageMax, BorderColor, 4.0f, 0, 1.5f);
 
     if (ImGui::IsItemHovered())
@@ -735,6 +795,17 @@ void FEditorViewportOverlayWidget::RenderShadowAtlasPreview()
             ImGui::Text("UV %.4f, %.4f", U, V);
             ImGui::Text("Pixel %d, %d", PixelX, PixelY);
             ImGui::Text("Grid %d, %d", TileX, TileY);
+            if (HoveredTile != nullptr)
+            {
+                ImGui::Separator();
+                ImGui::Text("Shadow #%d", HoveredTileIndex);
+                ImGui::Text("Rect %d, %d  %dx%d",
+                    HoveredTile->X,
+                    HoveredTile->Y,
+                    HoveredTile->Width,
+                    HoveredTile->Height);
+                ImGui::Text("Tree depth %d", HoveredTile->Depth);
+            }
             ImGui::Separator();
             ImGui::Image(ShadowAtlasSRV, ImVec2(220.0f, 220.0f), Uv0, Uv1);
             ImGui::EndTooltip();
@@ -742,9 +813,10 @@ void FEditorViewportOverlayWidget::RenderShadowAtlasPreview()
     }
 
     ImGui::TextDisabled(
-        "Atlas %ux%u | grid %.0f px | hover shows pixel, grid cell, and zoom",
+        "Atlas %ux%u | shadows %d | grid %.0f px | hover shows pixel, grid cell, and zoom",
         ShadowAtlasResolution2D,
         ShadowAtlasResolution2D,
+        UsedTileCount,
         AtlasGridCellPixels);
 
     ImGui::PopID();
