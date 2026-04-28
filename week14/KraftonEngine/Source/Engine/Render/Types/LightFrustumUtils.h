@@ -481,7 +481,7 @@ namespace FLightFrustumUtils
 		// PaddedMinZ는 고정 깊이 범위의 시작점이다.
 		// ------------------------------------------------------------
 		const float ReceiverCenterZ = (MinZ + MaxZ) * 0.5f;
-		const float PaddedDepthRange = FShadowSettings::Get().GetEffectiveCSMDirectionalShadowDistance();
+		const float PaddedDepthRange = FShadowSettings::Get().GetEffectiveCSMCasterDistance();
 		const float PaddedMinZ = ReceiverCenterZ - PaddedDepthRange * 0.5f;
 
 		// 10. 현재 임시 light view의 역행렬을 구한다.

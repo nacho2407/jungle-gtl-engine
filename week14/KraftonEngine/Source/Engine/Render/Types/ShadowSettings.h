@@ -90,7 +90,7 @@ public:
 	static constexpr float  kDefaultDirectionalShadowDistance = 300.0f;
 	static constexpr float  kDefaultDirectionalShadowCasterDistance = 500.0f;
 	static constexpr bool   kDefaultCSMBlendEnabled = true;
-	static constexpr float  kDefaultCSMBlendRange = 10.0f;
+	static constexpr float  kDefaultCSMBlendRange = 5.0f;
 
 	// 기본값 상수
 	static constexpr float  kDefaultBias = 0.005f;
@@ -100,10 +100,11 @@ public:
 	// 오버라이드 또는 기본값 반환 (편의 함수)
 	uint32            GetEffectiveCSMResolution() const { return Resolution.value_or(kDefaultCSMResolution); }
 	float             GetEffectiveCSMCascadeLambda() const { return CSMSplitLambda.value_or(kDefaultCSMSplitLambda); }
-	float             GetEffectiveShadowDistance() const { return DirectionalShadowDistance.value_or(kDefaultDirectionalShadowDistance); }
-	float             GetEffectiveCSMDirectionalShadowDistance() const { return DirectionalShadowCasterDistance.value_or(kDefaultDirectionalShadowCasterDistance); }
+	float             GetEffectiveCSMDistance() const { return DirectionalShadowDistance.value_or(kDefaultDirectionalShadowDistance); }
+	float             GetEffectiveCSMCasterDistance() const { return DirectionalShadowCasterDistance.value_or(kDefaultDirectionalShadowCasterDistance); }
 	bool              GetEffectiveCSMBlendEnabled() const { return CSMBlendEnabled.value_or(kDefaultCSMBlendEnabled); }
 	float             GetEffectiveCSMBlendRange() const { return CSMBlendRange.value_or(kDefaultCSMBlendRange); }
+	
 	float             GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }

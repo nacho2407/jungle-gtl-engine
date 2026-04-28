@@ -481,7 +481,8 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const float CameraNearZ = Ctx.Frame.NearClip;
 	const float CameraFarZ = Ctx.Frame.FarClip;
 
-	const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
+	//해당 범위까지 directional light에 대한 shadow가 그려지며, 이 구간을 4개의 cascade로 분할함
+	const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 	const float CascadeLambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
