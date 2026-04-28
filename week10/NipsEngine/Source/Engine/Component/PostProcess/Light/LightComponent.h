@@ -49,7 +49,6 @@ public:
     bool bHasDebugShadowAtlasTile = false;
     float DebugShadowCubeIndex;
     bool bHasDebugShadowCubeTile = false;
-
-private:
+protected:
 	EShadowMap eShadowMapType = EShadowMap::CSM;
 };

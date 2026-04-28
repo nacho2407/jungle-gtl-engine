@@ -183,7 +183,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 	for (const FShadowLightRequest& Request : SortedRequests)
 	{
-        const ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
+        ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
 
 		if (LightComp == nullptr)
 		{
@@ -205,12 +205,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 			FCascadeSplit CascadeSplits[4] = {};
 
+			UDirectionalLightComponent* DirectinalLightComp = static_cast<UDirectionalLightComponent*>(LightComp);
+
 			// MaxDistance 하드 코딩
 			// Practical한 방식이고 0일수록 로그split
 			BuildPracticalCascadeSplit(
 				RenderBus->GetNearPlane(),
 				RenderBus->GetFarPlane(),
-				300.f, 0.15f,
+				DirectinalLightComp->CSMMaxDistance, DirectinalLightComp->CSMPractialLambda,
 				CascadeSplits);
 			
 			
