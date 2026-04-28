@@ -97,6 +97,15 @@ struct FFXAACBData
     float _pad[2];
 };
 
+// FMomentBlurCBData는 shadow moment blur pass(b2)에 사용하는 상수 버퍼 데이터입니다.
+struct FMomentBlurCBData
+{
+    float TexelSizeX = 0.0f;
+    float TexelSizeY = 0.0f;
+    float Padding0   = 0.0f;
+    float Padding1   = 0.0f;
+};
+
 constexpr uint32 MAX_DIRECTIONAL_LIGHTS = 4;
 
 // FAmbientLightCBData는 전역 라이트 상수 버퍼에 기록되는 Ambient 라이트 데이터입니다.

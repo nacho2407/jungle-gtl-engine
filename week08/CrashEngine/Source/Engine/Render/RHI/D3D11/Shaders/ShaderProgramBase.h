@@ -27,6 +27,13 @@ public:
 
     const TMap<FString, FMaterialParameterInfo*>& GetParameterLayout() const { return ShaderParameterLayout; }
 
+    static bool CompileShaderBlobStandalone(
+        ID3DBlob**                        OutShaderBlob,
+        const FShaderStageDesc&           InDesc,
+        const char*                       InTarget,
+        const char*                       InErrorTitle,
+        std::unordered_set<std::wstring>* OutDependencies = nullptr);
+
 protected:
     bool CompileShaderBlob(
         ID3DBlob**                        OutShaderBlob,

@@ -37,6 +37,8 @@ public:
 private:
     void EnsureShadowMapResources(ID3D11Device* Device);
     void ReleaseShadowMapResources();
+    void EnsureMomentBlurResources(ID3D11Device* Device);
+    void ReleaseMomentBlurResources();
 
     struct FShadowResource2D
     {
@@ -64,8 +66,21 @@ private:
 		ID3D11Texture2D*          MomentTextureCube = nullptr;
         ID3D11RenderTargetView*   MomentRTVCubes[6] = {};
         ID3D11ShaderResourceView* MomentSRVCube     = nullptr;
+        ID3D11ShaderResourceView* MomentFaceSRVs[6] = {};
     };
     FShadowResourceCube ShadowResourcesCube[ESystemTexSlot::MaxShadowMapsCubeCount];
+
+    void BlurMomentTexture2D(FRenderPipelineContext& Context, FShadowResource2D& Resource);
+    void BlurMomentTextureCube(FRenderPipelineContext& Context, FShadowResourceCube& Resource);
+
+    ID3D11VertexShader*        MomentBlurVS           = nullptr;
+    ID3D11PixelShader*         MomentBlurPSHorizontal = nullptr;
+    ID3D11PixelShader*         MomentBlurPSVertical   = nullptr;
+    ID3D11Buffer*              MomentBlurCB           = nullptr;
+    ID3D11Texture2D*           MomentBlurTemp2D       = nullptr;
+    ID3D11RenderTargetView*    MomentBlurTempRTV      = nullptr;
+    ID3D11ShaderResourceView*  MomentBlurTempSRV      = nullptr;
+    uint32                     MomentBlurTempSize     = 0;
     
     uint32          ShadowMapSize = 2048;
 };
