@@ -546,7 +546,11 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
     OpenToolbarPopup("Shadow", "ShadowPopup", [&]()
                      {
-        static const char* ShadowMapMethodLabels[] = { "Standard", "PSM" };
+        static const char* ShadowMapMethodLabels[] = {
+            "Standard",
+            "PSM (Perspective Shadow Map)",
+            "Cascade"
+        };
         int32 SelectedShadowMapMethod = static_cast<int32>(GetShadowMapMethod());
         if (SelectedShadowMapMethod < 0 || SelectedShadowMapMethod >= IM_ARRAYSIZE(ShadowMapMethodLabels))
         {
@@ -558,7 +562,11 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             SetShadowMapMethod(static_cast<EShadowMapMethod>(SelectedShadowMapMethod));
         }
 
-        static const char* ShadowFilterLabels[] = { "PCF", "VSM", "ESM" };
+        static const char* ShadowFilterLabels[] = {
+            "PCF (Percentage-Closer Filtering)",
+            "VSM (Variance Shadow Map)",
+            "ESM (Exponential Shadow Map)"
+        };
         int32 SelectedShadowFilter = static_cast<int32>(GetShadowFilterMethod());
         if (SelectedShadowFilter < 0 || SelectedShadowFilter >= IM_ARRAYSIZE(ShadowFilterLabels))
         {
