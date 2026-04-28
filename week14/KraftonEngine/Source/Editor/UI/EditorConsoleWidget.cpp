@@ -264,7 +264,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				if (Cur.has_value())
 					AddLog("CSM_shadow_resolution: %u\n", Cur.value());
 				else
-					AddLog("CSM_shadow_resolution: default (%u)\n", FShadowSettings::kDefaultResolution);
+					AddLog("CSM_shadow_resolution: default (%u)\n", FShadowSettings::kDefaultCSMResolution);
 				AddLog("Usage: shadow_resolution <size> | shadow_resolution reset\n");
 				return;
 			}
@@ -282,35 +282,6 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 				AddLog("CSM_Shadow resolution override set to %u.\n", Res);
 			}
 		}, "Overrides shadow map resolution. Usage: shadow_resolution <size> | shadow_resolution reset");
-
-	RegisterCommand("CSM_distance", [this](const TArray<FString>& Args)
-		{
-			FShadowSettings& Settings = FShadowSettings::Get();
-
-			if (Args.size() < 2)
-			{
-				auto Cur = Settings.GetShadowDistance();
-				if (Cur.has_value())
-					AddLog("CSM_shadow_distance: %.3f\n", Cur.value());
-				else
-					AddLog("CSM_shadow_distance: default (%.3f)\n", FShadowSettings::kDefaultShadowDistance);
-				AddLog("Usage: shadow_distance <distance> | shadow_distance reset\n");
-				return;
-			}
-
-			if (Args[1] == "reset")
-			{
-				Settings.ResetShadowDistance();
-				AddLog("CSM_Shadow distance override reset to default.\n");
-			}
-			else
-			{
-				float Distance = static_cast<float>(std::atof(Args[1].c_str()));
-				if (Distance <= 0.0f) { AddLog("[ERROR] Shadow distance must be greater than 0.\n"); return; }
-				Settings.SetShadowDistance(Distance);
-				AddLog("CSM_Shadow distance override set to %.3f.\n", Distance);
-			}
-		}, "Overrides directional shadow distance. Usage: shadow_distance <distance> | shadow_distance reset");
 
 	RegisterCommand("CSM_split", [this](const TArray<FString>& Args)
 		{
@@ -342,7 +313,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 						CameraNearZ, ShadowFarZ, MAX_SHADOW_CASCADES, Lambda, CascadeRanges
 					);
 
-					AddLog("CSM_split: %.3f (0=linear, 1=log)\n", Lambda);
+					AddLog("CSM_split: %.1f (0=linear, 100=log)\n", Lambda * 100.0f);
 					for (int32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 					{
 						AddLog("  C%d: %.3f ~ %.3f\n", i, CascadeRanges[i].NearZ, CascadeRanges[i].FarZ);
@@ -351,37 +322,97 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 
 			if (Args.size() < 2)
 			{
-				auto Cur = Settings.GetCSMCascadeLambda(); 
+				auto Cur = Settings.GetCSMCascadeLambda();
 				if (Cur.has_value())
-					AddLog("CSM_lambda: %.3f\n", Cur.value());
+					AddLog("CSM_split: %.1f\n", Cur.value() * 100.0f);
 				else
-					AddLog("CSM_lambda: default (%.3f)\n", FShadowSettings::kDefaultCSMSplitLambda);
+					AddLog("CSM_split: default (%.1f)\n", FShadowSettings::kDefaultCSMSplitLambda * 100.0f);
 
 				PrintCascadeRanges();
-				AddLog("Usage: CSM_lambda <0-1> | CSM_lambda reset\n");
+				AddLog("Usage: CSM_split <0-100> | CSM_split reset\n");
 				return;
 			}
 
 			if (Args[1] == "reset")
 			{
 				Settings.ResetCSMCascadeLambda();
-				AddLog("CSM_lambda override reset to default.\n");
+				AddLog("CSM_split override reset to default.\n");
 				PrintCascadeRanges();
 			}
 			else
 			{
-				float Lambda = static_cast<float>(std::atof(Args[1].c_str()));
-				if (Lambda < 0.0f || Lambda > 1.0f)
+				float LambdaPercent = static_cast<float>(std::atof(Args[1].c_str()));
+				if (LambdaPercent < 0.0f || LambdaPercent > 100.0f)
 				{
-					AddLog("[ERROR] Lambda must be in range 0.0 ~ 1.0.\n");
+					AddLog("[ERROR] Split percent must be in range 0 ~ 100.\n");
 					return;
 				}
 
+				const float Lambda = LambdaPercent * 0.01f;
 				Settings.SetCSMCascadeLambda(Lambda);
-				AddLog("CSM_lambda override set to %.3f.\n", Lambda);
+				AddLog("CSM_split override set to %.1f (lambda=%.3f).\n", LambdaPercent, Lambda);
 				PrintCascadeRanges();
 			}
-		}, "Overrides CSM cascade split lambda. Usage: CSM_lambda <0-1> | CSM_lambda reset");
+		}, "Overrides CSM cascade split lambda. Usage: CSM_split <0-100> | CSM_split reset");
+
+	RegisterCommand("CSM_distance", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetCSMShadowDistance();
+				if (Cur.has_value())
+					AddLog("CSM_shadow_distance: %.3f\n", Cur.value());
+				else
+					AddLog("CSM_shadow_distance: default (%.3f)\n", FShadowSettings::kDefaultDirectionalShadowDistance);
+				AddLog("Usage: shadow_distance <distance> | shadow_distance reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetCSMShadowDistance();
+				AddLog("CSM_Shadow distance override reset to default.\n");
+			}
+			else
+			{
+				float Distance = static_cast<float>(std::atof(Args[1].c_str()));
+				if (Distance <= 0.0f) { AddLog("[ERROR] Shadow distance must be greater than 0.\n"); return; }
+				Settings.SetCSMShadowDistance(Distance);
+				AddLog("CSM_Shadow distance override set to %.3f.\n", Distance);
+			}
+		}, "Overrides directional shadow distance. Usage: shadow_distance <distance> | shadow_distance reset");
+
+	RegisterCommand("CSM_casting_distance", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetCSMShadowCasterDistance();
+				if (Cur.has_value())
+					AddLog("CSM_casting_distance: %.3f\n", Cur.value());
+				else
+					AddLog("CSM_casting_distance: default (%.3f)\n", FShadowSettings::kDefaultDirectionalShadowCasterDistance);
+
+				AddLog("Usage: CSM_casting_distance <distance> | CSM_casting_distance reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetCSMShadowCasterDistance();
+				AddLog("CSM_casting_distance override reset to default.\n");
+			}
+			else
+			{
+				float Distance = static_cast<float>(std::atof(Args[1].c_str()));
+				if (Distance <= 0.0f) { AddLog("[ERROR] Casting distance must be greater than 0.\n"); return; }
+				Settings.SetCSMShadowCasterDistance(Distance);
+				AddLog("CSM_casting_distance override set to %.3f.\n", Distance);
+			}
+		}, "Overrides directional shadow caster distance. Usage: CSM_casting_distance <distance> | CSM_casting_distance reset");
 
 	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
 		{
