@@ -205,35 +205,68 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 	{
 		// VSM: moment texture SRV 바인딩 (R32G32_FLOAT)
 		if (Res.CSM.VSMSRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.VSMSRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.VSMSRV);
+		}
 		else if (Res.CSM.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
+		}
 
 		if (Res.Spot.VSMSRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.VSMSRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.VSMSRV);
+		}
 		else if (Res.Spot.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
+		}
 
 		if (Res.Point.VSMSRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.VSMSRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.VSMSRV);
+		}
 		else if (Res.Point.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
+		}
 	}
 	else
 	{
 		// Hard/PCF: depth SRV 바인딩 (R32_FLOAT)
 		if (Res.CSM.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
+		}
 		if (Res.Spot.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
+		}
 		if (Res.Point.SRV)
+		{
 			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
+			DC->VSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
+		}
 	}
 
 	if (Res.Spot.DataSRV)
+	{
 		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.Spot.DataSRV);
+		DC->VSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.Spot.DataSRV);
+	}
 	if (Res.Point.DataSRV)
+	{
 		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.Point.DataSRV);
+		DC->VSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.Point.DataSRV);
+	}
 }
 
 // ============================================================
@@ -337,6 +370,7 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 	Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
 	ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
 	DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
+	DC->VSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
 }
 
 // ============================================================
