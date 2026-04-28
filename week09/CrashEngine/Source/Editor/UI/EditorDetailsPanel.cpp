@@ -1224,7 +1224,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         PreviewSRV = ShadowPass->GetShadowMomentPreviewSRV(*PreviewShadowData);
         if (!PreviewSRV)
         {
-            ImGui::TextDisabled("Moment preview is unavailable. VSM moment texture may not be allocated.");
+            ImGui::TextDisabled("Moment preview is unavailable. Filterable moment texture may not be allocated.");
             ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
             return;
         }
