@@ -28,6 +28,7 @@ public:
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView);
+    void UpdateShadowViews(UWorld* World, const FSceneView* SceneView);
     void CollectShadowCasters(UWorld* World, const FSceneView* SceneView);
     void UpdateShadowDataInCBs();
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
@@ -39,6 +40,13 @@ public:
     const FCollectedOverlayData&    GetCollectedOverlayData() const { return CollectedOverlayData; }
 
 private:
+    // ==================== Shadow Helpers ====================
+    void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
+    FMatrix GetDirectionalSSMMatrix(UWorld* World, FVector LightDir);
+    FMatrix GetDirectionalPSMMatrix(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    void ComputeSpotShadowMatrices(FLightProxy* Light);
+    void ComputePointShadowMatrices(FLightProxy* Light);
+
     // ==================== Reset Helpers ====================
     static void ResetCollectedPrimitives(FCollectedPrimitives& OutPrimitives, bool bClearOverlayTexts);
     static void ResetCollectedLights(FCollectedLights& OutLights);
