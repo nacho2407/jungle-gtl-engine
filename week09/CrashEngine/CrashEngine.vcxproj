@@ -389,6 +389,9 @@
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Batching\FontBatch.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Batching\LineBatch.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectOverlay.cpp" />
@@ -396,9 +399,6 @@
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectShadowCasters.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp" />
-    <ClCompile Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.cpp" />
-    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.cpp" />
-    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp" />
@@ -595,6 +595,8 @@
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderManager.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderProgramDesc.h" />
     <ClInclude Include="Source\Engine\Render\Resources\Shaders\ShaderVariantCache.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowFilterSettings.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowMapSettings.h" />
     <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateNames.h" />
     <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\RHI\D3D11\Buffers\Buffers.h" />
@@ -640,6 +642,12 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\StaticMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasSystem.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Batching\BatchBuffer.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Batching\FontBatch.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Batching\LineBatch.h" />
@@ -647,12 +655,6 @@
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedOverlayData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedSceneData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\DrawCollector.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasSystem.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommandList.h" />
@@ -749,6 +751,18 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\Scene\Shared\DepthOnlyPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\Shared\ShadowEncodePass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\Shared\ShadowMomentBlurPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
@@ -875,6 +889,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Render\Scene\Lighting\LightingCommon.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\ShadowFiltering.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>

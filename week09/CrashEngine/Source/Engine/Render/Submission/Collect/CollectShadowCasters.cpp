@@ -4,6 +4,7 @@
 #include "GameFramework/World.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
 
 #include <algorithm>
 #include <cmath>
@@ -85,14 +86,17 @@ void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld
     FLightProxyInfo& LC = Light->LightProxyInfo;
     FVector LightDir = LC.Direction.Normalized();
 
-    bool bUsePSM = true;
-    if (bUsePSM)
+    switch (GetShadowMapMethod())
     {
-        Light->LightViewProj = GetDirectionalPSMMatrix(World, LightDir, SceneView, Light->DynamicShadowDistance);
-    }
-    else
-    {
+    case EShadowMapMethod::SSM:
         Light->LightViewProj = GetDirectionalSSMMatrix(World, LightDir);
+        break;
+    case EShadowMapMethod::PSM:
+        Light->LightViewProj = GetDirectionalPSMMatrix(World, LightDir, SceneView, Light->DynamicShadowDistance);
+        break;
+    case EShadowMapMethod::CSM:
+        
+        break;
     }
 }
 
