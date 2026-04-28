@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Component/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"

@@ -61,6 +61,9 @@
     <Filter Include="Source\Engine\Component\Light">
       <UniqueIdentifier>{68733902-62c6-6992-604b-99f4fd185b46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Movement">
+      <UniqueIdentifier>{9d062af4-b676-61f1-319e-efb1ba670c12}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{aaeb2f3f-eff4-9d0e-a471-82c1372b9aed}</UniqueIdentifier>
     </Filter>
@@ -389,19 +392,7 @@
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp">
@@ -433,6 +424,18 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
@@ -923,19 +926,7 @@
     <ClInclude Include="Source\Engine\Component\MeshComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SceneComponent.h">
@@ -967,6 +958,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ClassTypes.h">
       <Filter>Source\Engine\Core</Filter>

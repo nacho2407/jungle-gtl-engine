@@ -282,11 +282,7 @@
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\ProjectileMovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
@@ -297,6 +293,10 @@
     <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Log.cpp" />
     <ClCompile Include="Source\Engine\Core\Notification.cpp" />
@@ -462,11 +462,7 @@
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
-    <ClInclude Include="Source\Engine\Component\ProjectileMovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
@@ -477,6 +473,10 @@
     <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
     <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Engine\Core\ClassTypes.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
