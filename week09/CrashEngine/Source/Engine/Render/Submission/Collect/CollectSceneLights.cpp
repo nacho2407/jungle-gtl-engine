@@ -72,6 +72,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowNormalBias = LC.ShadowNormalBias;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSharpen = LC.ShadowSharpen;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowESMExponent = LC.ShadowESMExponent;
                 CollectedSceneData.Lights.GlobalLights.NumDirectionalLights++;
             }
         }
@@ -117,6 +119,8 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
             LocalLight.ShadowBias = LC.ShadowBias;
             LocalLight.ShadowSlopeBias = LC.ShadowSlopeBias;
             LocalLight.ShadowNormalBias = LC.ShadowNormalBias;
+            LocalLight.ShadowSharpen = LC.ShadowSharpen;
+            LocalLight.ShadowESMExponent = LC.ShadowESMExponent;
             CollectedSceneData.Lights.LocalLights.push_back(LocalLight);
         }
 

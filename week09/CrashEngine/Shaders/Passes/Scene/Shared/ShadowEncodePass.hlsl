@@ -13,10 +13,6 @@
 #define SHADOW_FILTER_METHOD SHADOW_FILTER_METHOD_PCF
 #endif
 
-#ifndef SHADOW_ESM_EXPONENT
-#define SHADOW_ESM_EXPONENT 10.0f
-#endif
-
 struct FShadowEncodeVSOutput
 {
     float4 Position : SV_POSITION;
@@ -44,7 +40,7 @@ float2 PS(FShadowEncodeVSOutput Input) : SV_Target0
     const float Variance = 0.25f * (Dx * Dx + Dy * Dy);
     return float2(D, D * D + Variance);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
-    const float Encoded = exp(-SHADOW_ESM_EXPONENT * D);
+    const float Encoded = exp(-max(ShadowESMExponent, 0.01f) * D);
     return float2(Encoded, 0.0f);
 #else
     return float2(D, D * D);

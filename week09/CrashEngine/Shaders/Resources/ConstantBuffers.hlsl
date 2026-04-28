@@ -34,7 +34,7 @@ cbuffer ShadowPassParams : register(b5)
     float ShadowNearZ;             // 4B
     float ShadowFarZ;              // 4B
     uint ShadowProjectionType;     // 4B, 0: orthographic, 1: perspective
-    float ShadowPassPadding;       // 4B
+    float ShadowESMExponent;       // 4B
 }; // Total: 208B
 
 cbuffer PerObjectParams : register(b1)
@@ -73,9 +73,12 @@ struct FDirectionalLight
     float ShadowBias;              // 4B
     float ShadowSlopeBias;         // 4B
     float ShadowNormalBias;        // 4B
-    float _Padding0;               // 4B
+    float ShadowSharpen;           // 4B
+    float ShadowESMExponent;       // 4B
+    float3 _Padding0;              // 12B
     float4 CascadeSplits;          // 16B
-}; // Total: 448B
+    float4 _Padding1;              // 16B
+}; // Total: 480B
 
 #define MAX_DIRECTIONAL_LIGHTS 4
 
@@ -85,8 +88,8 @@ cbuffer GlobalLightParams : register(b4)
     int NumDirectionalLights;                          // 4B
     int NumLocalLights;                                // 4B
     float2 _Padding0;                                  // 8B
-    FDirectionalLight Directional[MAX_DIRECTIONAL_LIGHTS]; // 1792B
-}; // Total: 1824B
+    FDirectionalLight Directional[MAX_DIRECTIONAL_LIGHTS]; // 1920B
+}; // Total: 1952B
 
 
 // TODO: 라이트 타입에 따라 구조체 분리
@@ -107,7 +110,9 @@ struct FLocalLight
     float ShadowBias;              // 4B
     float ShadowSlopeBias;         // 4B
     float ShadowNormalBias;        // 4B
-    float _Pad1;                   // 4B
-}; // Total: 656B
+    float ShadowSharpen;           // 4B
+    float ShadowESMExponent;       // 4B
+    float3 _Pad1;                  // 12B
+}; // Total: 672B
 
 #endif // CONSTANT_BUFFERS_HLSL

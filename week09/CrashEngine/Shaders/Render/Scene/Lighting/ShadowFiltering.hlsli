@@ -17,10 +17,6 @@
 #define SHADOW_FILTER_METHOD SHADOW_FILTER_METHOD_PCF
 #endif
 
-#ifndef SHADOW_ESM_EXPONENT
-#define SHADOW_ESM_EXPONENT 10.0f
-#endif
-
 Texture2DArray g_ShadowAtlas0 : register(t20);
 Texture2DArray g_ShadowAtlas1 : register(t21);
 Texture2DArray g_ShadowAtlas2 : register(t22);
@@ -88,7 +84,7 @@ float2 ClampAtlasUVToSampleBounds(FShadowAtlasSample Sample, float2 AtlasUV)
     return clamp(AtlasUV, MinUV, MaxUV);
 }
 
-float ComputeVSMVisibility(float2 Moments, float CompareDepth)
+float ComputeVSMVisibility(float2 Moments, float CompareDepth, float ShadowSharpen)
 {
     const float ReceiverDepth = saturate(CompareDepth);
     float Mean = Moments.x;
@@ -101,21 +97,24 @@ float ComputeVSMVisibility(float2 Moments, float CompareDepth)
 
     float Delta = ReceiverDepth - Mean;
     float PMax = Variance / (Variance + Delta * Delta);
-    return saturate(PMax);
+    const float Sharpen = saturate(ShadowSharpen);
+    PMax = saturate((PMax - Sharpen) / max(1.0f - Sharpen, 1e-5f));
+
+    return PMax;
 }
 
-float ComputeESMVisibility(float EncodedMoment, float CompareDepth)
+float ComputeESMVisibility(float EncodedMoment, float CompareDepth, float ShadowESMExponent)
 {
     if (EncodedMoment <= 0.0f)
     {
         return 1.0f;
     }
 
-    float Receiver = exp(-SHADOW_ESM_EXPONENT * CompareDepth);
+    float Receiver = exp(-max(ShadowESMExponent, 0.01f) * CompareDepth);
     return saturate(Receiver / EncodedMoment);
 }
 
-float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareDepth, float4 PixelPos)
+float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareDepth, float ShadowSharpen, float ShadowESMExponent, float4 PixelPos)
 {
     if (Sample.PageIndex < 0 || Sample.SliceIndex < 0)
     {
@@ -132,9 +131,9 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE
     return SampleShadowAtlasCmp(Sample.PageIndex, Sample.SliceIndex, AtlasUV, CompareDepth);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
-    return ComputeVSMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV), CompareDepth);
+    return ComputeVSMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV), CompareDepth, ShadowSharpen);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
-    return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth);
+    return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth, ShadowESMExponent);
 #else
     float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
     Offset.y += Offset.x;

@@ -57,4 +57,6 @@ public:
     float ShadowBias       = 0.0f;
     float ShadowSlopeBias  = 0.0f;
     float ShadowNormalBias = 0.0f;
+    float ShadowSharpen    = 0.0f;
+    float ShadowESMExponent = 40.0f;
 };

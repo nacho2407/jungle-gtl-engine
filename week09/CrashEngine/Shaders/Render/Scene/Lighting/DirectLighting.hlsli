@@ -56,7 +56,7 @@ float ComputeLinearShadowCompareDepth(float ReverseDepth, uint ShadowProjectionT
     return saturate(1.0f - ReverseDepth);
 }
 
-float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float4 PixelPos, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
+float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float ShadowSharpen, float ShadowESMExponent, float4 PixelPos, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
 {
     if (ShadowSample.PageIndex < 0)
         return 1.0f;
@@ -89,7 +89,7 @@ float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, 
 
     float2 BaseUV = ShadowVector * 0.5f + 0.5f;
     BaseUV.y = 1.0f - BaseUV.y;
-    return FilterShadowAtlas(ShadowSample, BaseUV, CompareDepth, PixelPos);
+    return FilterShadowAtlas(ShadowSample, BaseUV, CompareDepth, ShadowSharpen, ShadowESMExponent, PixelPos);
 }
 
 int ResolvePointShadowFaceIndex(float3 L)
@@ -108,8 +108,7 @@ int ResolvePointShadowFaceIndex(float3 L)
 
 float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Normal, float4 PixelPos)
 {
-    float3 BiasedWorldPos = WorldPos + Normal * LocalLight.ShadowNormalBias;
-    float3 L = BiasedWorldPos - LocalLight.Position;
+    float3 L = WorldPos - LocalLight.Position;
     if (dot(L, L) <= 1e-6f) return 1.0f;
 
     const int FaceIndex = ResolvePointShadowFaceIndex(L);
@@ -119,10 +118,12 @@ float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Norma
         LocalLight.ShadowViewProj[FaceIndex],
         WorldPos,
         Normal,
-        normalize(-L),
+        normalize(L),
         LocalLight.ShadowBias,
         LocalLight.ShadowSlopeBias,
         LocalLight.ShadowNormalBias,
+        LocalLight.ShadowSharpen,
+        LocalLight.ShadowESMExponent,
         PixelPos,
         SHADOW_PROJECTION_PERSPECTIVE,
         1.0f,
@@ -173,6 +174,8 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             LocalLight.ShadowBias,
             LocalLight.ShadowSlopeBias,
             LocalLight.ShadowNormalBias,
+            LocalLight.ShadowSharpen,
+            LocalLight.ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_PERSPECTIVE,
             1.0f,
@@ -232,6 +235,8 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             LocalLight.ShadowBias,
             LocalLight.ShadowSlopeBias,
             LocalLight.ShadowNormalBias,
+            LocalLight.ShadowSharpen,
+            LocalLight.ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_PERSPECTIVE,
             1.0f,
@@ -267,6 +272,8 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
@@ -300,6 +307,8 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
@@ -334,6 +343,8 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             pixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
@@ -376,6 +387,8 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
@@ -432,6 +445,8 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,

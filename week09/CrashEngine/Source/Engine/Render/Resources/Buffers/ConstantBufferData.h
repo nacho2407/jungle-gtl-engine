@@ -45,7 +45,7 @@ struct FShadowPassCBData
     float   ShadowNearZ = 0.0f;  // 4B
     float   ShadowFarZ = 1.0f;   // 4B
     uint32  ShadowProjectionType = 0; // 4B, 0: orthographic, 1: perspective
-    float   ShadowPassPadding = 0.0f; // 4B
+    float   ShadowESMExponent = 40.0f; // 4B
 }; // Total: 208B
 
 // FSubUVRegionCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
@@ -197,9 +197,12 @@ struct alignas(32) FDirectionalLightCBData
     float    ShadowBias = 0.0f;                                // 4B
     float    ShadowSlopeBias = 0.0f;                           // 4B
     float    ShadowNormalBias = 0.0f;                          // 4B
-    float    _Padding0 = 0.0f;                                 // 4B
+    float    ShadowSharpen = 0.0f;                              // 4B
+    float    ShadowESMExponent = 40.0f;                         // 4B
+    FVector  _Padding0 = FVector(0.0f, 0.0f, 0.0f);             // 12B
     FVector4 CascadeSplits = FVector4(0.0f, 0.0f, 0.0f, 0.0f); // 16B
-}; // Total: 448B
+    FVector4 _Padding1 = FVector4(0.0f, 0.0f, 0.0f, 0.0f);      // 16B
+}; // Total: 480B
 
 // FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
@@ -209,8 +212,8 @@ struct alignas(32) FGlobalLightCBData
     int32                   NumDirectionalLights;           // 4B
     int32                   NumLocalLights;                 // 4B
     float                   _Padding0[2];                   // 8B
-    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 1792B
-}; // Total: 1824B
+    FDirectionalLightCBData Directional[MAX_DIRECTIONAL_LIGHTS]; // 1920B
+}; // Total: 1952B
 
 // FLocalLightCBData는 로컬 라이트 구조화 버퍼에 기록되는 라이트 데이터입니다.
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
@@ -231,8 +234,10 @@ struct alignas(16) FLocalLightCBData
     float    ShadowBias = 0.0f;                             // 4B
     float    ShadowSlopeBias = 0.0f;                        // 4B
     float    ShadowNormalBias = 0.0f;                       // 4B
-    float    _Pad1 = 0.0f;                                  // 4B
-}; // Total: 656B
+    float    ShadowSharpen = 0.0f;                           // 4B
+    float    ShadowESMExponent = 40.0f;                      // 4B
+    FVector  _Pad1 = FVector(0.0f, 0.0f, 0.0f);              // 12B
+}; // Total: 672B
 
 // FLightCullingCBData는 타일 기반 라이트 컬링 상수 버퍼 레이아웃입니다.
 struct FLightCullingCBData

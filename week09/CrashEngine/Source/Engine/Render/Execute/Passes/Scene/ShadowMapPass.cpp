@@ -500,6 +500,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         ShadowPassData.ShadowNearZ = Item.ShadowView.NearZ;
         ShadowPassData.ShadowFarZ = Item.ShadowView.FarZ;
         ShadowPassData.ShadowProjectionType = Item.ShadowView.ProjectionType;
+        ShadowPassData.ShadowESMExponent = Item.Light ? Item.Light->ShadowESMExponent : 40.0f;
         Context.Resources->ShadowPassBuffer.Update(Context.Context, &ShadowPassData, sizeof(FShadowPassCBData));
 
         ID3D11Buffer* ShadowPassCB = Context.Resources->ShadowPassBuffer.GetBuffer();
