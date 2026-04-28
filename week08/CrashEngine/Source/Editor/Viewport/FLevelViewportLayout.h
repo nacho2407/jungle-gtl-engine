@@ -14,6 +14,7 @@ class FSelectionManager;
 class FEditorSettings;
 class FWindowsWindow;
 class FRenderer;
+class FViewport;
 class UWorld;
 class UEditorEngine;
 class AActor;
@@ -72,6 +73,7 @@ public:
 
     void SetActiveViewport(FLevelEditorViewportClient* InClient);
     FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
+    void SyncActiveViewportFromFocusedViewport(FViewport* FocusedViewport);
 
     void ResetViewport(UWorld* InWorld);
     void DestroyAllCameras();

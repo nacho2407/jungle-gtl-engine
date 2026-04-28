@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Engine/Input/InputTypes.h"
+#include "Engine/Input/ViewportInputRouter.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/UI/EditorControlPanel.h"

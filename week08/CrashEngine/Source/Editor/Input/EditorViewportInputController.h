@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <memory>
 
@@ -6,6 +6,7 @@
 #include "EditorViewportTool.h"
 #include "Input/InputTypes.h"
 
+class AActor;
 class FEditorViewportClient;
 
 /**
@@ -40,6 +41,20 @@ struct FEditorViewportFrameInput
     FInputModifiers Modifiers;
 };
 
+/*
+ * note: 현재는 pilot 관련 context menu 요청만 고려하여 설계하였지만, 향후 다른 종류의 요청이 추가되는 경우 이 구조체의 내용을 수정하여 사용해야 함
+ */
+struct FEditorViewportContextMenuRequest
+{
+    AActor* HitActor = nullptr;
+
+    POINT ScreenPos = { 0, 0 };
+    POINT ClientPos = { 0, 0 };
+    POINT LocalPos = { 0, 0 };
+
+    bool bCanStopPiloting = false;
+};
+
 class FEditorViewportInputController
 {
 public:
@@ -52,11 +67,16 @@ public:
     void BeginInputFrame();
     const FEditorViewportFrameInput& GetCurrentInput() const { return CurrentInput; }
 
+    void RequestContextMenu(const FEditorViewportContextMenuRequest& Request);
+    bool ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest);
+
     bool HandleInput(float DeltaTime);
 
 private:
     FEditorViewportClient* Owner = nullptr;
     FEditorViewportFrameInput CurrentInput;
+    FEditorViewportContextMenuRequest PendingContextMenuRequest;
+    bool bHasPendingContextMenuRequest = false;
 
     TArray<std::unique_ptr<FEditorViewportTool>> Tools;
 };

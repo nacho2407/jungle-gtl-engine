@@ -1,6 +1,7 @@
 ﻿#include "EditorViewportInputController.h"
 
 #include "EditorGizmoTool.h"
+#include "EditorViewportContextMenuTool.h"
 #include "EditorNavigationTool.h"
 #include "EditorSelectionTool.h"
 #include "EditorViewportCommandTool.h"
@@ -12,6 +13,7 @@ FEditorViewportInputController::FEditorViewportInputController(FEditorViewportCl
 	// 순서 중요!!!
     Tools.emplace_back(std::make_unique<FEditorViewportCommandTool>(Owner, this));
     Tools.emplace_back(std::make_unique<FEditorGizmoTool>(Owner, this));
+    Tools.emplace_back(std::make_unique<FEditorViewportContextMenuTool>(Owner, this));
     Tools.emplace_back(std::make_unique<FEditorSelectionTool>(Owner, this));
     Tools.emplace_back(std::make_unique<FEditorNavigationTool>(Owner, this));
 }
@@ -148,6 +150,25 @@ void FEditorViewportInputController::BeginInputFrame()
 
     CurrentInput.bMiddlePressed = false;
     CurrentInput.bMiddleReleased = false;
+}
+
+void FEditorViewportInputController::RequestContextMenu(const FEditorViewportContextMenuRequest& Request)
+{
+    PendingContextMenuRequest = Request;
+    bHasPendingContextMenuRequest = Request.HitActor || Request.bCanStopPiloting;
+}
+
+bool FEditorViewportInputController::ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest)
+{
+    if (!bHasPendingContextMenuRequest)
+    {
+        return false;
+    }
+
+    OutRequest = PendingContextMenuRequest;
+    PendingContextMenuRequest = {};
+    bHasPendingContextMenuRequest = false;
+    return true;
 }
 
 bool FEditorViewportInputController::HandleInput(float DeltaTime)

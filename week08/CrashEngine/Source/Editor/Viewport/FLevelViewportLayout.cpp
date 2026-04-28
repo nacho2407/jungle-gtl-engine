@@ -229,6 +229,28 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
     }
 }
 
+void FLevelViewportLayout::SyncActiveViewportFromFocusedViewport(FViewport* FocusedViewport)
+{
+    if (!FocusedViewport)
+    {
+        return;
+    }
+
+    for (FLevelEditorViewportClient* Client : LevelViewportClients)
+    {
+        if (!Client || Client->GetViewport() != FocusedViewport)
+        {
+            continue;
+        }
+
+        if (Client != ActiveViewportClient)
+        {
+            SetActiveViewport(Client);
+        }
+        return;
+    }
+}
+
 void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 {
     for (FLevelEditorViewportClient* VC : LevelViewportClients)
@@ -743,31 +765,23 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
                 }
             }
 
-            if (!DraggingSplitter && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)))
-            {
-                for (int32 i = 0; i < ActiveSlotCount; ++i)
-                {
-                    if (i < static_cast<int32>(LevelViewportClients.size()) &&
-                        ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
-                    {
-                        FLevelEditorViewportClient* HoveredViewportClient = LevelViewportClients[i];
-                        if (HoveredViewportClient != ActiveViewportClient)
-                        {
-                            SetActiveViewport(HoveredViewportClient);
-                        }
+        }
 
-                        if (ImGui::IsMouseClicked(1))
-                        {
-                            PendingPilotContextViewport = HoveredViewportClient;
-                            PendingPilotContextActor = HoveredViewportClient->PickActorAtScreenPoint(MousePos.x, MousePos.y);
-                            if (PendingPilotContextActor || HoveredViewportClient->IsPilotingActor())
-                            {
-                                ImGui::OpenPopup("ViewportPilotContextMenu");
-                            }
-                        }
-                        break;
-                    }
-                }
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            FLevelEditorViewportClient* ViewportClient = LevelViewportClients[i];
+            if (!ViewportClient)
+            {
+                continue;
+            }
+
+            FEditorViewportContextMenuRequest ContextMenuRequest{};
+            if (ViewportClient->ConsumeContextMenuRequest(ContextMenuRequest))
+            {
+                PendingPilotContextViewport = ViewportClient;
+                PendingPilotContextActor = ContextMenuRequest.HitActor;
+                ImGui::OpenPopup("ViewportPilotContextMenu");
+                break;
             }
         }
 

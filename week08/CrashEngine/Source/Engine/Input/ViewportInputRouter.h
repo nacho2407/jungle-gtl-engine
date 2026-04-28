@@ -12,6 +12,12 @@
 class FViewport;
 class FViewportClient;
 
+struct FGuiInputCaptureState
+{
+    bool bMouse = false;
+    bool bKeyboard = false;
+};
+
 class FViewportInputRouter
 {
 public:
