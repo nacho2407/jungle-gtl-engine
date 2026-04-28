@@ -73,6 +73,7 @@ class FEditorViewportClient : public FViewportClient
 public:
     void Initialize(FWindowsWindow* InWindow);
     void SetOverlayStatSystem(FOverlayStatSystem* InOverlayStatSystem) { OverlayStatSystem = InOverlayStatSystem; }
+    FOverlayStatSystem* GetOverlayStatSystem() const { return OverlayStatSystem; }
     UWorld* GetWorld() const;
     void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
     void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }

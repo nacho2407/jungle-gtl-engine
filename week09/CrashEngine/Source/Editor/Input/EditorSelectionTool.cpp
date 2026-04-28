@@ -2,7 +2,9 @@
 
 #include "Component/CameraComponent.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Viewport/EditorViewportClient.h"
+#include "Engine/Profiling/PlatformTime.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 
@@ -47,7 +49,15 @@ bool FEditorSelectionTool::HandleWorldPicking(const FRay& Ray)
     FHitResult HitResult{};
     AActor* BestActor = nullptr;
 
+    FScopeCycleCounter PickCounter;
     World->RaycastEditorPicking(Ray, HitResult, BestActor);
+
+    if (FOverlayStatSystem* OverlayStatSystem = Owner->GetOverlayStatSystem())
+    {
+        const uint64 PickCycles = PickCounter.Finish();
+        const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
+        OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
+    }
 
     if (BestActor == nullptr)
     {
