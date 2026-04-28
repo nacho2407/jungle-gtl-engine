@@ -73,7 +73,7 @@ public:
 
     void SetActiveViewport(FLevelEditorViewportClient* InClient);
     FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
-    void SyncActiveViewportFromFocusedViewport(FViewport* FocusedViewport);
+    void SyncActiveViewportFromKeyTargetViewport(FViewport* KeyTargetViewport);
 
     void ResetViewport(UWorld* InWorld);
     void DestroyAllCameras();

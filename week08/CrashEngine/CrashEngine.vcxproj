@@ -261,7 +261,6 @@
     <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorToolbarPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorViewportPanel.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
     <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp" />
@@ -461,7 +460,6 @@
     <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorToolbarPanel.h" />
-    <ClInclude Include="Source\Editor\UI\EditorViewportPanel.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />

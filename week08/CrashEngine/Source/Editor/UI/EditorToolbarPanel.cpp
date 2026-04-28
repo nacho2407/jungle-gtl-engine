@@ -263,7 +263,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
     if (DrawIconButton("PIE_Play", CurrentPlayIcon, bPlaying ? (bPaused ? "Resume" : "Pause") : "Play", PlayTint))
     {
-        Layout->SetActiveViewport(VC);
+        Editor->SetActiveViewport(VC);
 
         if (!bPlaying)
         {
