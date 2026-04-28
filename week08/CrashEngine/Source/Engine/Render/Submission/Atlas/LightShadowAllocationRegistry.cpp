@@ -107,26 +107,35 @@ void FLightShadowAllocationRegistry::SyncLightShadowMatrices(FLightShadowRecord&
     const uint32 LightType = Light.LightProxyInfo.LightType;
     if (LightType == static_cast<uint32>(ELightType::Directional))
     {
+        const FCascadeShadowMapData* LiveCascadeShadowMapData = Light.GetCascadeShadowMapData();
+        if (!LiveCascadeShadowMapData)
+        {
+            return;
+        }
+
         const uint32 CascadeCount = std::min(
             Record.CascadeShadowMapData.CascadeCount,
             static_cast<uint32>(ShadowAtlas::MaxCascades));
         for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
         {
-            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.LightViewProj;
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = LiveCascadeShadowMapData->CascadeViews[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = LiveCascadeShadowMapData->CascadeViewProj[CascadeIndex];
         }
         return;
     }
 
     if (LightType == static_cast<uint32>(ELightType::Point))
     {
+        const FCubeShadowMapData* LiveCubeShadowMapData = Light.GetCubeShadowMapData();
         const FMatrix* PointShadowViewProjMatrices = Light.GetPointShadowViewProjMatrices();
-        if (!PointShadowViewProjMatrices)
+        if (!LiveCubeShadowMapData || !PointShadowViewProjMatrices)
         {
             return;
         }
 
         for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
         {
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = LiveCubeShadowMapData->FaceViews[FaceIndex];
             Record.CubeShadowMapData.FaceViewProj[FaceIndex] = PointShadowViewProjMatrices[FaceIndex];
         }
     }
