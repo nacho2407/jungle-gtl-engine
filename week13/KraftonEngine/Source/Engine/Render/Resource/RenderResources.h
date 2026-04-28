@@ -36,13 +36,11 @@ struct FShadowMapResources
 		ID3D11Texture2D*          Texture  = nullptr;
 		ID3D11DepthStencilView*   DSV[MAX_SHADOW_CASCADES] = {};
 		ID3D11ShaderResourceView* SRV      = nullptr;              // 전체 array SRV (셰이더용)
-		ID3D11ShaderResourceView* SliceSRV[MAX_SHADOW_CASCADES] = {}; // per-cascade SRV (ImGui 디버그용)
 
 		// ── VSM (moment + depth) ──
 		ID3D11Texture2D*          VSMTexture = nullptr;        // R32G32_FLOAT
 		ID3D11RenderTargetView*   VSMRTV[MAX_SHADOW_CASCADES] = {};
 		ID3D11ShaderResourceView* VSMSRV = nullptr;
-		ID3D11ShaderResourceView* VSMSliceSRV[MAX_SHADOW_CASCADES] = {};
 		ID3D11Texture2D*          VSMDepthTexture = nullptr;   // D32_FLOAT
 		ID3D11DepthStencilView*   VSMDSV[MAX_SHADOW_CASCADES] = {};
 
@@ -65,7 +63,6 @@ struct FShadowMapResources
 		ID3D11Texture2D*                   Texture = nullptr;
 		TArray<ID3D11DepthStencilView*>    DSVs;
 		ID3D11ShaderResourceView*          SRV = nullptr;
-		TArray<ID3D11ShaderResourceView*>  SliceSRVs;  // per-slice SRV (ImGui 디버그용)
 
 		// ── VSM (moment + depth) ──
 		ID3D11Texture2D*                   VSMTexture = nullptr;

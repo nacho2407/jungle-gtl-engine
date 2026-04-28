@@ -83,6 +83,7 @@ namespace EShaderPath
 	inline constexpr const char* Billboard = "Shaders/UI/Billboard.hlsl";
 
 	inline constexpr const char* ShadowDepth = "Shaders/Lighting/ShadowDepth.hlsl";
+	inline constexpr const char* ShadowMapVis = "Shaders/PostProcess/ShadowMapVis.hlsl";
 }
 
 namespace EUberLitDefines
