@@ -396,6 +396,9 @@
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectScenePrimitives.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\CollectShadowCasters.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.cpp" />
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp" />
     <ClCompile Include="Source\Engine\Render\Submission\Command\DrawCommandList.cpp" />
     <ClCompile Include="Source\Engine\Render\Visibility\Frustum\ConvexVolume.cpp" />
@@ -644,6 +647,12 @@
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedOverlayData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\CollectedSceneData.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Collect\DrawCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasSystem.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommand.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Command\DrawCommandList.h" />

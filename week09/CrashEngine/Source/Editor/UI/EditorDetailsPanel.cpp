@@ -185,6 +185,19 @@ static int32 GetClosestWorldAlignedPointShadowFace(const UEditorEngine* InEditor
     return BestFace;
 }
 
+static ImU32 GetShadowAtlasDebugColor(uint32 Resolution)
+{
+    switch (Resolution)
+    {
+    case 256:  return IM_COL32(90, 200, 255, 255);
+    case 512:  return IM_COL32(110, 230, 140, 255);
+    case 1024: return IM_COL32(255, 215, 90, 255);
+    case 2048: return IM_COL32(255, 150, 80, 255);
+    case 4096: return IM_COL32(255, 90, 90, 255);
+    default:   return IM_COL32(220, 220, 220, 255);
+    }
+}
+
 FString FEditorDetailsPanel::OpenObjFileDialog()
 {
     wchar_t FilePath[MAX_PATH] = {};
@@ -305,6 +318,7 @@ void FEditorDetailsPanel::Render(float DeltaTime)
     ImGui::EndChild();
 
     ImGui::End();
+
 }
 
 void FEditorDetailsPanel::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -893,22 +907,34 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         return;
     }
 
-    static const int32 ShadowMapSizes[] = { 512, 1024, 2048, 4096 };
-    static const char* ShadowMapSizeLabels = "512\0""1024\0""2048\0""4096\0\0";
-    int32 SelectedShadowMapSizeIndex = 0;
+    static const int32 ShadowMapSizes[] = { 256, 512, 1024, 2048, 4096 };
+    ImGui::Text("Resolution");
     for (int32 SizeIndex = 0; SizeIndex < IM_ARRAYSIZE(ShadowMapSizes); ++SizeIndex)
     {
-        if (ShadowMapSizes[SizeIndex] == static_cast<int32>(ShadowPass->GetShadowMapSize()))
+        if (SizeIndex > 0)
         {
-            SelectedShadowMapSizeIndex = SizeIndex;
-            break;
+            ImGui::SameLine();
         }
-    }
 
-    ImGui::SetNextItemWidth(140.0f);
-    if (ImGui::Combo("Resolution", &SelectedShadowMapSizeIndex, ShadowMapSizeLabels))
-    {
-        ShadowPass->SetShadowMapSize(static_cast<uint32>(ShadowMapSizes[SelectedShadowMapSizeIndex]));
+        const bool bSelected = (ShadowMapSizes[SizeIndex] == static_cast<int32>(LightComponent->GetShadowResolution()));
+        if (bSelected)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.28f, 0.46f, 0.80f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.34f, 0.53f, 0.90f, 1.0f));
+        }
+
+        char ButtonLabel[32] = {};
+        sprintf_s(ButtonLabel, "%d##ShadowRes%d", ShadowMapSizes[SizeIndex], SizeIndex);
+        if (ImGui::Button(ButtonLabel, ImVec2(64.0f, 0.0f)) && !bSelected)
+        {
+            LightComponent->SetShadowResolution(static_cast<uint32>(ShadowMapSizes[SizeIndex]));
+            LightComponent->PostEditProperty("Shadow Resolution");
+        }
+
+        if (bSelected)
+        {
+            ImGui::PopStyleColor(2);
+        }
     }
 
     RenderShadowPropertyByName("Bias");
@@ -932,13 +958,6 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
 
     const float MaxWidth = ImGui::GetContentRegionAvail().x;
     const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
-
-    if (LightProxy->ShadowMapIndex < 0)
-    {
-        ImGui::TextDisabled("No shadow map assigned this frame.");
-        ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
-        return;
-    }
 
     uint32 PreviewFace = 0;
     bool bIsCubeShadow = (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point));
@@ -991,9 +1010,28 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         PreviewFace = static_cast<uint32>(std::clamp(SelectedPointLightShadowFace, 0, 5));
     }
 
-    ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-    ID3D11ShaderResourceView* PreviewSRV =
-        ShadowPass->GetShadowPreviewSRV(static_cast<uint32>(LightProxy->ShadowMapIndex), bIsCubeShadow, PreviewFace, Context);
+    const FShadowMapData* PreviewShadowData = nullptr;
+    if (bIsCubeShadow)
+    {
+        PreviewShadowData = &LightProxy->CubeShadowMapData.Faces[PreviewFace];
+    }
+    else if (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        PreviewShadowData = &LightProxy->CascadeShadowMapData.Cascades[0];
+    }
+    else
+    {
+        PreviewShadowData = &LightProxy->SpotShadowMapData;
+    }
+
+    if (!PreviewShadowData || !PreviewShadowData->bAllocated)
+    {
+        ImGui::TextDisabled("No shadow map assigned this frame.");
+        ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
+        return;
+    }
+
+    ID3D11ShaderResourceView* PreviewSRV = ShadowPass->GetShadowPreviewSRV(*PreviewShadowData);
     if (!PreviewSRV)
     {
         ImGui::TextDisabled("Shadow preview is unavailable.");
@@ -1010,13 +1048,147 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         ImVec2(PreviewMax.x, PreviewMin.y),
         PreviewMax,
         ImVec2(PreviewMin.x, PreviewMax.y),
-        ImVec2(0.0f, 1.0f),
-        ImVec2(0.0f, 0.0f),
-        ImVec2(1.0f, 0.0f),
-        ImVec2(1.0f, 1.0f));
+        ImVec2(PreviewShadowData->UVScaleOffset.Z, PreviewShadowData->UVScaleOffset.W + PreviewShadowData->UVScaleOffset.Y),
+        ImVec2(PreviewShadowData->UVScaleOffset.Z, PreviewShadowData->UVScaleOffset.W),
+        ImVec2(PreviewShadowData->UVScaleOffset.Z + PreviewShadowData->UVScaleOffset.X, PreviewShadowData->UVScaleOffset.W),
+        ImVec2(PreviewShadowData->UVScaleOffset.Z + PreviewShadowData->UVScaleOffset.X,
+               PreviewShadowData->UVScaleOffset.W + PreviewShadowData->UVScaleOffset.Y));
     ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
 
-    ImGui::TextDisabled("Shadow Map Index: %d", LightProxy->ShadowMapIndex);
+    ImGui::TextDisabled("Atlas Page: %u  Slice: %u", PreviewShadowData->AtlasPageIndex, PreviewShadowData->SliceIndex);
+}
+
+void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
+{
+    if (!GEngine)
+    {
+        return;
+    }
+
+    FRenderPass* Pass = GEngine->GetRenderer().GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass);
+    FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+    if (!ShadowPass)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(700.0f, 760.0f), ImGuiCond_Once);
+    if (!ImGui::Begin("Shadow Atlas Debug"))
+    {
+        ImGui::End();
+        return;
+    }
+
+    const uint32 PageCount = ShadowPass->GetShadowAtlasPageCount();
+    if (PageCount == 0)
+    {
+        ImGui::TextDisabled("No shadow atlas page has been allocated yet.");
+        ImGui::End();
+        return;
+    }
+
+    SelectedShadowAtlasPage = std::clamp(SelectedShadowAtlasPage, 0, static_cast<int32>(PageCount) - 1);
+
+    ImGui::Text("Atlas Size: %u x %u", ShadowPass->GetShadowAtlasSize(), ShadowPass->GetShadowAtlasSize());
+    ImGui::Text("Page Count: %u / %u", PageCount, ShadowAtlas::MaxPages);
+    ImGui::Separator();
+
+    for (uint32 PageIndex = 0; PageIndex < PageCount; ++PageIndex)
+    {
+        if (PageIndex > 0)
+        {
+            ImGui::SameLine();
+        }
+
+        char ButtonLabel[32] = {};
+        sprintf_s(ButtonLabel, "Page %u", PageIndex);
+        if (ImGui::Selectable(ButtonLabel, SelectedShadowAtlasPage == static_cast<int32>(PageIndex), 0, ImVec2(78.0f, 0.0f)))
+        {
+            SelectedShadowAtlasPage = static_cast<int32>(PageIndex);
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+    const float ContentWidth = ImGui::GetContentRegionAvail().x;
+    const float ColumnSpacing = ImGui::GetStyle().ItemSpacing.x;
+    const float ImageSize = std::max(140.0f, (ContentWidth - ColumnSpacing) * 0.5f);
+    const float LabelHeight = ImGui::GetTextLineHeightWithSpacing();
+
+    for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
+    {
+        ID3D11ShaderResourceView* SliceSRV =
+            ShadowPass->GetShadowPageSlicePreviewSRV(static_cast<uint32>(SelectedShadowAtlasPage), SliceIndex);
+
+        char ChildLabel[40] = {};
+        sprintf_s(ChildLabel, "Slice %u##AtlasSlice%u", SliceIndex, SliceIndex);
+        ImGui::BeginChild(ChildLabel, ImVec2(ImageSize, ImageSize + LabelHeight + 24.0f), true);
+        ImGui::Text("Slice %u", SliceIndex);
+
+        const ImVec2 ImageMin = ImGui::GetCursorScreenPos();
+        if (SliceSRV)
+        {
+            ImGui::Image(reinterpret_cast<ImTextureID>(SliceSRV), ImVec2(ImageSize, ImageSize));
+        }
+        else
+        {
+            ImGui::Dummy(ImVec2(ImageSize, ImageSize));
+        }
+        const ImVec2 ImageMax(ImageMin.x + ImageSize, ImageMin.y + ImageSize);
+
+        ImDrawList* DrawList = ImGui::GetWindowDrawList();
+        DrawList->AddRect(ImageMin, ImageMax, IM_COL32(160, 160, 160, 255), 0.0f, 0, 1.0f);
+
+        TArray<FShadowMapData> SliceAllocations;
+        ShadowPass->GetShadowPageSliceAllocations(static_cast<uint32>(SelectedShadowAtlasPage), SliceIndex, SliceAllocations);
+        for (const FShadowMapData& Allocation : SliceAllocations)
+        {
+            const float Scale = ImageSize / static_cast<float>(ShadowPass->GetShadowAtlasSize());
+            const ImVec2 RectMin(
+                ImageMin.x + static_cast<float>(Allocation.Rect.X) * Scale,
+                ImageMin.y + static_cast<float>(Allocation.Rect.Y) * Scale);
+            const ImVec2 RectMax(
+                RectMin.x + static_cast<float>(Allocation.Rect.Width) * Scale,
+                RectMin.y + static_cast<float>(Allocation.Rect.Height) * Scale);
+            const ImVec2 ViewMin(
+                ImageMin.x + static_cast<float>(Allocation.ViewportRect.X) * Scale,
+                ImageMin.y + static_cast<float>(Allocation.ViewportRect.Y) * Scale);
+            const ImVec2 ViewMax(
+                ViewMin.x + static_cast<float>(Allocation.ViewportRect.Width) * Scale,
+                ViewMin.y + static_cast<float>(Allocation.ViewportRect.Height) * Scale);
+
+            const ImU32 Color = GetShadowAtlasDebugColor(Allocation.Resolution);
+            DrawList->AddRectFilled(RectMin, RectMax, IM_COL32(0, 0, 0, 32));
+            DrawList->AddRect(RectMin, RectMax, Color, 0.0f, 0, 2.0f);
+            DrawList->AddRect(ViewMin, ViewMax, IM_COL32(255, 255, 255, 140), 0.0f, 0, 1.0f);
+
+            char RectLabel[24] = {};
+            sprintf_s(RectLabel, "%u", Allocation.Resolution);
+            DrawList->AddText(ImVec2(RectMin.x + 4.0f, RectMin.y + 4.0f), Color, RectLabel);
+        }
+
+        ImGui::Text("Allocations: %d", static_cast<int32>(SliceAllocations.size()));
+        ImGui::EndChild();
+
+        if ((SliceIndex % 2u) == 0u)
+        {
+            ImGui::SameLine();
+        }
+    }
+
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+    ImGui::SeparatorText("Legend");
+    ImGui::TextColored(ImVec4(0.35f, 0.78f, 1.0f, 1.0f), "256");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.43f, 0.90f, 0.55f, 1.0f), "512");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.84f, 0.35f, 1.0f), "1024");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.59f, 0.31f, 1.0f), "2048");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "4096");
+    ImGui::TextDisabled("White inner box = padded viewport. Colored outer box = allocated buddy block.");
+
+    ImGui::End();
 }
 
 bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props, int32& Index)

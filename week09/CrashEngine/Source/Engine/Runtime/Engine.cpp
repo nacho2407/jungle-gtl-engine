@@ -123,6 +123,7 @@ void UEngine::Render(float DeltaTime)
         FRenderCollectContext CollectContext = {};
         CollectContext.SceneView = &SceneView;
         CollectContext.Scene = Scene;
+        CollectContext.Renderer = &Renderer;
         CollectContext.ViewModePassRegistry = Renderer.GetViewModePassRegistry();
         CollectContext.ActiveViewMode = SceneView.ViewMode;
 
