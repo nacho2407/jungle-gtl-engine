@@ -3,8 +3,8 @@
 
 #include <algorithm>
 
-void FAtlasQuadTreePoint::AddToBatch(const FPointLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) {
-	Batch.push_back({ InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H) });
+void FAtlasQuadTreePoint::AddToBatch(const FPointLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H, int32 LightIdx) {
+	Batch.push_back({ InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H), LightIdx });
 }
 
 TArray<FAtlasRegion> FAtlasQuadTreePoint::CommitBatch() {
@@ -14,15 +14,15 @@ TArray<FAtlasRegion> FAtlasQuadTreePoint::CommitBatch() {
 	TArray<int32> Order(N);
 	for (int32 i = 0; i < N; ++i) Order[i] = i;
 	std::sort(Order.begin(), Order.end(), [&](int32 A, int32 B) {
-		return Batch[A].second > Batch[B].second;
+		return Batch[A].Resolution > Batch[B].Resolution;
 		});
 
 	TArray<FAtlasRegion> Results(N, { 0, 0, 0, false, -1 });
 	for (int32 OrigIdx : Order) {
 		// Clamp and snap to nearest power of 2
-		auto desired_res = std::min(Batch[OrigIdx].second, AtlasSize);
+		auto desired_res = std::min(Batch[OrigIdx].Resolution, AtlasSize);
 		desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
-		FAtlasRegion AtlasRegion = AllocateNode(0, desired_res, OrigIdx / 6, Batch[OrigIdx].first.CubeMapOrientation);
+		FAtlasRegion AtlasRegion = AllocateNode(0, desired_res, Batch[OrigIdx].LightIdx, Batch[OrigIdx].Light.CubeMapOrientation);
 		Results[OrigIdx] = AtlasRegion;
 	}
 

@@ -8,7 +8,7 @@ struct FSpotLightParams;
 // Buddy allocation quadtree for shadow atlas management
 class FShadowAtlasQuadTree : public FAtlasQuadTreeBase {
 public:
-	void AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H);
+	void AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H, int32 LightIdx = -1);
 
 	// Sorts the pending batch by evaluated resolution, then allocates all entries into the atlas.
 	TArray<FAtlasRegion> CommitBatch() override;
@@ -18,5 +18,6 @@ private:
 	float EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
 
 private:
-	TArray<std::pair<FSpotLightParams, float>> Batch;
+	struct FBatchEntry { FSpotLightParams Light; float Resolution; int32 LightIdx; };
+	TArray<FBatchEntry> Batch;
 };

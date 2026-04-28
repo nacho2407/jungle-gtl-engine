@@ -543,7 +543,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 	for (uint32 idx : VisibleShadowSpotIndices) {
 		const FSpotLightParams& Light = Env.GetSpotLight(idx);
-		SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+		SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(idx));
 	}
 	SpotAtlasRegion = SpotLightAtlas.CommitBatch();
 
@@ -650,7 +650,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		{
 			FPointLightParams FaceParams = PointLight;
 			FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
-			PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
+			PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(idx));
 		}
 	}
 
