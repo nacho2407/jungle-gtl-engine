@@ -6,6 +6,8 @@
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/RenderConstants.h"
 #include "Component/CameraComponent.h"
+#include "GameFramework/World.h"
+#include "Render/Scene/FScene.h"
 
 #include <algorithm>
 #include <cctype>
@@ -771,13 +773,36 @@ void FEditorConsoleWidget::HandleCSMResolution(const TArray<FString>& Args)
 {
 	FShadowSettings& Settings = FShadowSettings::Get();
 
+	auto PrintResolutionInfo = [this, &Settings]()
+		{
+			auto Cur = Settings.GetResolution();
+			if (Cur.has_value())
+				AddLog("csm resolution (settings): %u\n", Cur.value());
+			else
+				AddLog("csm resolution (settings): default (%u)\n", FShadowSettings::kDefaultCSMResolution);
+
+			float ResolutionScale = 1.0f;
+			if (EditorEngine)
+			{
+				if (UWorld* World = EditorEngine->GetWorld())
+				{
+					const auto& Env = World->GetScene().GetEnvironment();
+					if (Env.HasGlobalDirectionalLight())
+						ResolutionScale = Env.GetGlobalDirectionalLightParams().ShadowResolutionScale;
+				}
+			}
+
+			const uint32 BaseResolution = Settings.GetEffectiveCSMResolution();
+			const float ScaledResolution = static_cast<float>(BaseResolution) * ResolutionScale;
+			const uint32 FinalResolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
+
+			AddLog("csm resolution (component scale): %.3f\n", ResolutionScale);
+			AddLog("csm resolution (real resolution): %u\n", FinalResolution);
+		};
+
 	if (Args.empty())
 	{
-		auto Cur = Settings.GetResolution();
-		if (Cur.has_value())
-			AddLog("csm resolution: %u\n", Cur.value());
-		else
-			AddLog("csm resolution: default (%u)\n", FShadowSettings::kDefaultCSMResolution);
+		PrintResolutionInfo();
 		AddLog("Usage: csm resolution <size>|reset\n");
 		return;
 	}

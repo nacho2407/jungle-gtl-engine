@@ -98,7 +98,7 @@ public:
 	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
 
 	// 오버라이드 또는 기본값 반환 (편의 함수)
-	uint32            GetEffectiveResolution() const { return Resolution.value_or(kDefaultCSMResolution); }
+	uint32            GetEffectiveCSMResolution() const { return Resolution.value_or(kDefaultCSMResolution); }
 	float             GetEffectiveCSMCascadeLambda() const { return CSMSplitLambda.value_or(kDefaultCSMSplitLambda); }
 	float             GetEffectiveShadowDistance() const { return DirectionalShadowDistance.value_or(kDefaultDirectionalShadowDistance); }
 	float             GetEffectiveCSMDirectionalShadowDistance() const { return DirectionalShadowCasterDistance.value_or(kDefaultDirectionalShadowCasterDistance); }

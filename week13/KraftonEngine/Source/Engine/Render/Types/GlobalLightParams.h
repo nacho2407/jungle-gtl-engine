@@ -21,6 +21,7 @@ struct FGlobalAmbientLightParams : public LightBaseParams
 struct FGlobalDirectionalLightParams : public LightBaseParams
 {
 	FVector Direction;
+	float ShadowResolutionScale = 1.0f;
 };
 
 enum class ECubeMapOrientation {

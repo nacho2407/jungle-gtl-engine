@@ -289,12 +289,16 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	ID3D11Device* Dev = Ctx.Device.GetDevice();
 	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
-	const uint32 Resolution = FShadowSettings::Get().GetEffectiveResolution();
+	uint32 Resolution = FShadowSettings::Get().GetEffectiveCSMResolution();
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 
 	// ── CSM (Directional) — Directional Light가 있을 때만 생성, 없으면 해제 ──
 	if (Env.HasGlobalDirectionalLight())
 	{
+		const FGlobalDirectionalLightParams& DirectionalParams = Env.GetGlobalDirectionalLightParams();
+		const float ScaledResolution = static_cast<float>(Resolution) * DirectionalParams.ShadowResolutionScale;
+		Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
+		
 		Res.EnsureCSM(Dev, Resolution);
 		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
 	}
