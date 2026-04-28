@@ -121,6 +121,10 @@ void FLightShadowAllocationRegistry::SyncLightShadowMatrices(FLightShadowRecord&
             Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = LiveCascadeShadowMapData->CascadeViews[CascadeIndex];
             Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = LiveCascadeShadowMapData->CascadeViewProj[CascadeIndex];
         }
+        for (uint32 SplitIndex = 0; SplitIndex <= CascadeCount; ++SplitIndex)
+        {
+            Record.CascadeShadowMapData.CascadeSplits[SplitIndex] = LiveCascadeShadowMapData->CascadeSplits[SplitIndex];
+        }
         return;
     }
 
@@ -154,6 +158,15 @@ bool FLightShadowAllocationRegistry::AllocateDirectional(FLightShadowRecord& Rec
             return false;
         }
         Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.LightViewProj;
+    }
+
+    const FCascadeShadowMapData* LiveCascadeShadowMapData = Light.GetCascadeShadowMapData();
+    if (LiveCascadeShadowMapData)
+    {
+        for (uint32 SplitIndex = 0; SplitIndex <= Record.CascadeCount; ++SplitIndex)
+        {
+            Record.CascadeShadowMapData.CascadeSplits[SplitIndex] = LiveCascadeShadowMapData->CascadeSplits[SplitIndex];
+        }
     }
 
     return true;

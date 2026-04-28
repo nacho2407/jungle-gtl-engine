@@ -4,6 +4,7 @@
 #include "GameFramework/World.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 
 #include <algorithm>
@@ -36,6 +37,41 @@ void BuildPerspectiveFrustumCorners(const FSceneView* SceneView, float NearZ, fl
     OutCorners[5] = FarCenter + FarRight - FarUp;
     OutCorners[6] = FarCenter + FarRight + FarUp;
     OutCorners[7] = FarCenter - FarRight + FarUp;
+}
+
+void BuildCascadeSplitDistances(
+    const FSceneView* SceneView,
+    float ShadowDistance,
+    float CascadeDistribution,
+    int SliceCount,
+    float OutSplitDistances[ShadowAtlas::MaxCascades + 1])
+{
+    const float NearClip = SceneView ? std::max(0.1f, SceneView->NearClip) : 0.1f;
+    float MaxDistance = ShadowDistance;
+    if (SceneView)
+    {
+        MaxDistance = std::min(MaxDistance, SceneView->FarClip);
+    }
+    MaxDistance = std::max(NearClip + 1.0f, MaxDistance);
+
+    const float DistributionExponent = std::max(0.1f, CascadeDistribution);
+    OutSplitDistances[0] = NearClip;
+    for (int SliceIndex = 1; SliceIndex <= SliceCount; ++SliceIndex)
+    {
+        const float NormalizedT = static_cast<float>(SliceIndex) / static_cast<float>(SliceCount);
+        const float DistributedT = std::pow(NormalizedT, DistributionExponent);
+        OutSplitDistances[SliceIndex] = NearClip + (MaxDistance - NearClip) * DistributedT;
+    }
+}
+
+float SnapToTexel(float Value, float WorldUnitsPerTexel)
+{
+    if (WorldUnitsPerTexel <= 0.0f)
+    {
+        return Value;
+    }
+
+    return std::floor(Value / WorldUnitsPerTexel + 0.5f) * WorldUnitsPerTexel;
 }
 } // namespace
 
@@ -83,6 +119,90 @@ FShadowViewData FDrawCollector::GetDirectionalSSMView(UWorld* World, FVector Lig
     FShadowViewData ShadowView = {};
     ShadowView.Set(LightView, FMatrix::MakeOrthographic(Width, Height, NearZ, FarZ), NearZ, FarZ, 0);
     return ShadowView;
+}
+
+TArray<FShadowViewData> FDrawCollector::GetDirectionalCSMViews(
+    UWorld* World,
+    FVector LightDir,
+    const FSceneView* SceneView,
+    int SliceCount,
+    float ShadowDistance,
+    float CascadeDistribution,
+    uint32 ShadowResolution,
+    float OutCascadeSplits[ShadowAtlas::MaxCascades + 1])
+{
+    TArray<FShadowViewData> Result;
+    if (!SceneView || SliceCount <= 0)
+    {
+        return Result;
+    }
+
+    BuildCascadeSplitDistances(SceneView, ShadowDistance, CascadeDistribution, SliceCount, OutCascadeSplits);
+
+    FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
+    FVector Right = LightDir.Cross(Up).Normalized();
+    Up = Right.Cross(LightDir).Normalized();
+
+    FMatrix LightViewBase = FMatrix::Identity;
+    LightViewBase.M[0][0] = Right.X; LightViewBase.M[0][1] = Up.X; LightViewBase.M[0][2] = LightDir.X;
+    LightViewBase.M[1][0] = Right.Y; LightViewBase.M[1][1] = Up.Y; LightViewBase.M[1][2] = LightDir.Y;
+    LightViewBase.M[2][0] = Right.Z; LightViewBase.M[2][1] = Up.Z; LightViewBase.M[2][2] = LightDir.Z;
+
+    const FOctree* Octree = World ? World->GetPartition().GetOctree() : nullptr;
+    const FBoundingBox SceneBounds = Octree ? Octree->GetCellBounds() : FBoundingBox(FVector(-500), FVector(500));
+    FVector SceneCorners[8];
+    SceneBounds.GetCorners(SceneCorners);
+    const uint32 EffectiveResolution = std::max(
+        1u,
+        ShadowResolution > (ShadowAtlas::Padding * 2u) ? ShadowResolution - (ShadowAtlas::Padding * 2u) : ShadowResolution);
+
+    for (int i = 0; i < SliceCount; i++)
+    {
+        FVector FrustumPoints[8];
+        BuildPerspectiveFrustumCorners(SceneView, OutCascadeSplits[i], OutCascadeSplits[i + 1], FrustumPoints);
+
+        FVector AABBMin(FLT_MAX), AABBMax(-FLT_MAX);
+        for (int j = 0; j < 8; j++)
+        {
+            FVector P = LightViewBase.TransformPositionWithW(FrustumPoints[j]);
+            AABBMin.X = std::min(AABBMin.X, P.X);
+            AABBMax.X = std::max(AABBMax.X, P.X);
+            AABBMin.Y = std::min(AABBMin.Y, P.Y);
+            AABBMax.Y = std::max(AABBMax.Y, P.Y);
+            AABBMin.Z = std::min(AABBMin.Z, P.Z);
+            AABBMax.Z = std::max(AABBMax.Z, P.Z);
+        }
+
+        float SceneMinZ = FLT_MAX;
+        float SceneMaxZ = -FLT_MAX;
+        for (int CornerIndex = 0; CornerIndex < 8; ++CornerIndex)
+        {
+            const FVector CornerLS = LightViewBase.TransformPositionWithW(SceneCorners[CornerIndex]);
+            SceneMinZ = std::min(SceneMinZ, CornerLS.Z);
+            SceneMaxZ = std::max(SceneMaxZ, CornerLS.Z);
+        }
+
+        AABBMin.Z = std::min(AABBMin.Z, SceneMinZ) - 100.0f;
+        AABBMax.Z = std::max(AABBMax.Z, SceneMaxZ) + 100.0f;
+
+        const float Width = std::max(AABBMax.X - AABBMin.X, 1.0f);
+        const float Height = std::max(AABBMax.Y - AABBMin.Y, 1.0f);
+        const float NearZ = AABBMin.Z;
+        const float FarZ = AABBMax.Z;
+
+        FVector Center = (AABBMax + AABBMin) * 0.5f;
+        Center.X = SnapToTexel(Center.X, Width / static_cast<float>(EffectiveResolution));
+        Center.Y = SnapToTexel(Center.Y, Height / static_cast<float>(EffectiveResolution));
+        FMatrix Translation = FMatrix::MakeTranslationMatrix(FVector(-Center.X, -Center.Y, 0.0f));
+        FMatrix CascadeView = LightViewBase * Translation;
+        FMatrix CascadeProj = FMatrix::MakeOrthographic(Width, Height, NearZ, FarZ);
+
+        FShadowViewData ShadowView = {};
+        ShadowView.Set(CascadeView, CascadeProj, NearZ, FarZ, 0);
+        Result.push_back(ShadowView);
+    }
+
+    return Result;
 }
 
 FShadowViewData FDrawCollector::GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance)
@@ -189,27 +309,60 @@ void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld
 
     FShadowViewData ShadowView = {};
     const FVector LightDir = Light->LightProxyInfo.Direction.Normalized();
-    switch (GetShadowMapMethod())
+    const EShadowMapMethod Method = GetShadowMapMethod();
+
+    if (Method == EShadowMapMethod::Cascade)
     {
-    case EShadowMapMethod::Standard:
+        const uint32 Count = static_cast<uint32>(std::clamp(Light->GetCascadeCountSetting(), 1, static_cast<int32>(ShadowAtlas::MaxCascades)));
+        float CascadeSplits[ShadowAtlas::MaxCascades + 1] = {};
+        TArray<FShadowViewData> CascadeViews = GetDirectionalCSMViews(
+            World,
+            LightDir,
+            SceneView,
+            static_cast<int>(Count),
+            Light->GetDynamicShadowDistanceSetting(),
+            Light->GetCascadeDistributionSetting(),
+            Light->ShadowResolution,
+            CascadeSplits);
+        
+        CascadeShadowMapData->CascadeCount = Count;
+        for (uint32 i = 0; i < Count; i++)
+        {
+            CascadeShadowMapData->CascadeViews[i] = CascadeViews[i];
+            CascadeShadowMapData->CascadeViewProj[i] = CascadeViews[i].ViewProj;
+        }
+
+        for (uint32 SplitIndex = 0; SplitIndex <= Count; ++SplitIndex)
+        {
+            CascadeShadowMapData->CascadeSplits[SplitIndex] = CascadeSplits[SplitIndex];
+        }
+
+        // CSM 컬링을 위해 모든 캐스케이드를 포함할 수 있는 SSM 뷰를 대표 ViewProj로 설정합니다.
         ShadowView = GetDirectionalSSMView(World, LightDir);
-        break;
-    case EShadowMapMethod::PSM:
-        ShadowView = GetDirectionalPSMView(World, LightDir, SceneView, Light->GetDynamicShadowDistanceSetting());
-        break;
-    default:
-        ShadowView = GetDirectionalSSMView(World, LightDir);
-        break;
+    }
+    else
+    {
+        switch (Method)
+        {
+        case EShadowMapMethod::Standard:
+            ShadowView = GetDirectionalSSMView(World, LightDir);
+            break;
+        case EShadowMapMethod::PSM:
+            ShadowView = GetDirectionalPSMView(World, LightDir, SceneView, Light->GetDynamicShadowDistanceSetting());
+            break;
+        default:
+            ShadowView = GetDirectionalSSMView(World, LightDir);
+            break;
+        }
+
+        // CSM이 아닐 때는 CascadeCount를 1로 강제하고 데이터를 초기화합니다.
+        CascadeShadowMapData->Reset(); 
+        CascadeShadowMapData->CascadeCount = 1;
+        CascadeShadowMapData->CascadeViews[0] = ShadowView;
+        CascadeShadowMapData->CascadeViewProj[0] = ShadowView.ViewProj;
     }
 
     Light->LightViewProj = ShadowView.ViewProj;
-    const uint32 CascadeCount = static_cast<uint32>(std::clamp(Light->GetCascadeCountSetting(), 1, static_cast<int32>(ShadowAtlas::MaxCascades)));
-    CascadeShadowMapData->CascadeCount = CascadeCount;
-    for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
-    {
-        CascadeShadowMapData->CascadeViews[CascadeIndex] = ShadowView;
-        CascadeShadowMapData->CascadeViewProj[CascadeIndex] = ShadowView.ViewProj;
-    }
 }
 
 void FDrawCollector::ComputeSpotShadowMatrices(FLightProxy* Light)

@@ -39,7 +39,9 @@ bool FShadowAtlasRegistry::UpdateLightShadow(FLightProxy& Light, ID3D11Device* D
     }
 
     const uint32 Resolution = GetShadowResolutionValue(RoundShadowResolutionToTier(Light.ShadowResolution));
-    const uint32 CascadeCount = std::clamp(Light.CascadeCount, 1, static_cast<int32>(ShadowAtlas::MaxCascades));
+    // 수정: 현재 프레임의 CascadeShadowMapData.CascadeCount를 사용하여 렌더 설정(CSM 여부)에 따른 할당을 수행합니다.
+    const FCascadeShadowMapData* CascadeData = Light.GetCascadeShadowMapData();
+    const uint32 CascadeCount = CascadeData ? std::clamp(CascadeData->CascadeCount, 1u, static_cast<uint32>(ShadowAtlas::MaxCascades)) : 1u;
     const uint32 LightType = Light.LightProxyInfo.LightType;
 
     FLightShadowRecord& Record = Records[&Light];
@@ -107,28 +109,35 @@ void FShadowAtlasRegistry::SyncLightShadowMatrices(FLightShadowRecord& Record, c
     const uint32 LightType = Light.LightProxyInfo.LightType;
     if (LightType == static_cast<uint32>(ELightType::Directional))
     {
-        const uint32 CascadeCount = std::min(
-            Record.CascadeCount,
-            static_cast<uint32>(ShadowAtlas::MaxCascades));
+        const FCascadeShadowMapData* SrcCascadeData = Light.GetCascadeShadowMapData();
+        if (!SrcCascadeData) return;
+
+        const uint32 CascadeCount = Record.CascadeCount;
         Record.CascadeShadowMapData.CascadeCount = CascadeCount;
         for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
         {
-            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = Light.CascadeShadowMapData.CascadeViews[CascadeIndex];
-            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = SrcCascadeData->CascadeViews[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = SrcCascadeData->CascadeViewProj[CascadeIndex];
+        }
+        for (uint32 SplitIndex = 0; SplitIndex <= CascadeCount; ++SplitIndex)
+        {
+            Record.CascadeShadowMapData.CascadeSplits[SplitIndex] = SrcCascadeData->CascadeSplits[SplitIndex];
         }
         return;
     }
 
     if (LightType == static_cast<uint32>(ELightType::Point))
     {
+        const FCubeShadowMapData* SrcCubeData = Light.GetCubeShadowMapData();
+        if (!SrcCubeData) return;
+
         for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
         {
-            Record.CubeShadowMapData.FaceViews[FaceIndex] = Light.CubeShadowMapData.FaceViews[FaceIndex];
-            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.CubeShadowMapData.FaceViewProj[FaceIndex];
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = SrcCubeData->FaceViews[FaceIndex];
+            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = SrcCubeData->FaceViewProj[FaceIndex];
         }
         return;
     }
-
 }
 
 bool FShadowAtlasRegistry::AllocateDirectional(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager)
@@ -136,7 +145,6 @@ bool FShadowAtlasRegistry::AllocateDirectional(FLightShadowRecord& Record, FLigh
     Record.CascadeShadowMapData.Reset();
     Record.CascadeShadowMapData.CascadeCount = Record.CascadeCount;
 
-    // 현재는 cascade별 atlas rect만 따로 잡고, view-proj는 기존 light 계산값을 그대로 사용합니다.
     for (uint32 CascadeIndex = 0; CascadeIndex < Record.CascadeCount; ++CascadeIndex)
     {
         if (!AtlasManager.Allocate(Device, Record.Resolution, Record.CascadeShadowMapData.Cascades[CascadeIndex]))
@@ -144,7 +152,22 @@ bool FShadowAtlasRegistry::AllocateDirectional(FLightShadowRecord& Record, FLigh
             FreeRecord(Record, AtlasManager);
             return false;
         }
-        Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.LightViewProj;
+
+        const FCascadeShadowMapData* SrcCascadeData = Light.GetCascadeShadowMapData();
+        if (SrcCascadeData)
+        {
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = SrcCascadeData->CascadeViewProj[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = SrcCascadeData->CascadeViews[CascadeIndex];
+        }
+    }
+
+    const FCascadeShadowMapData* SrcCascadeData = Light.GetCascadeShadowMapData();
+    if (SrcCascadeData)
+    {
+        for (uint32 SplitIndex = 0; SplitIndex <= Record.CascadeCount; ++SplitIndex)
+        {
+            Record.CascadeShadowMapData.CascadeSplits[SplitIndex] = SrcCascadeData->CascadeSplits[SplitIndex];
+        }
     }
 
     return true;
@@ -160,6 +183,9 @@ bool FShadowAtlasRegistry::AllocateSpot(FLightShadowRecord& Record, FLightProxy&
 bool FShadowAtlasRegistry::AllocatePoint(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager)
 {
     Record.CubeShadowMapData.Reset();
+    const FMatrix* PointShadowViewProjMatrices = Light.GetPointShadowViewProjMatrices();
+    const FCubeShadowMapData* SrcCubeData = Light.GetCubeShadowMapData();
+
     for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
     {
         if (!AtlasManager.Allocate(Device, Record.Resolution, Record.CubeShadowMapData.Faces[FaceIndex]))
@@ -167,7 +193,15 @@ bool FShadowAtlasRegistry::AllocatePoint(FLightShadowRecord& Record, FLightProxy
             FreeRecord(Record, AtlasManager);
             return false;
         }
-        Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.ShadowViewProjMatrices[FaceIndex];
+        
+        if (PointShadowViewProjMatrices)
+        {
+            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = PointShadowViewProjMatrices[FaceIndex];
+        }
+        if (SrcCubeData)
+        {
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = SrcCubeData->FaceViews[FaceIndex];
+        }
     }
     return true;
 }

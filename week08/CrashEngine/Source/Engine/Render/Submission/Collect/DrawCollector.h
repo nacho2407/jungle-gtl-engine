@@ -44,6 +44,15 @@ private:
     void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
     FShadowViewData GetDirectionalSSMView(UWorld* World, FVector LightDir);
     FShadowViewData GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    TArray<FShadowViewData> GetDirectionalCSMViews(
+        UWorld* World,
+        FVector LightDir,
+        const FSceneView* SceneView,
+        int SliceCount,
+        float ShadowDistance,
+        float CascadeDistribution,
+        uint32 ShadowResolution,
+        float OutCascadeSplits[ShadowAtlas::MaxCascades + 1]);
     void ComputeSpotShadowMatrices(FLightProxy* Light);
     void ComputePointShadowMatrices(FLightProxy* Light);
     // ==================== Reset Helpers ====================

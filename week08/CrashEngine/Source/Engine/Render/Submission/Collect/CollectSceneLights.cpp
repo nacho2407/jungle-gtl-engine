@@ -11,6 +11,8 @@
 #include "Render/Scene/Proxies/Light/SpotLightSceneProxy.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 
+#include <algorithm>
+
 // ==================== Public API ====================
 
 void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView)
@@ -68,6 +70,16 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
                         CascadeShadowMapData->CascadeViewProj[CascadeIndex];
                     CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSamples[CascadeIndex] =
                         MakeSampleCBData(CascadeShadowMapData->Cascades[CascadeIndex]);
+                }
+                for (int32 SplitIndex = 0; SplitIndex < 8; ++SplitIndex)
+                {
+                    CollectedSceneData.Lights.GlobalLights.Directional[Index].CascadeSplits[SplitIndex] = 0.0f;
+                }
+                const uint32 SplitCount = std::min<uint32>(CascadeShadowMapData->CascadeCount + 1, 8u);
+                for (uint32 SplitIndex = 0; SplitIndex < SplitCount; ++SplitIndex)
+                {
+                    CollectedSceneData.Lights.GlobalLights.Directional[Index].CascadeSplits[SplitIndex] =
+                        CascadeShadowMapData->CascadeSplits[SplitIndex];
                 }
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSlopeBias = LC.ShadowSlopeBias;

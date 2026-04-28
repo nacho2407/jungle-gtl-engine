@@ -74,6 +74,7 @@ struct FCascadeShadowMapData
     FShadowMapData Cascades[ShadowAtlas::MaxCascades] = {};
     FMatrix        CascadeViewProj[ShadowAtlas::MaxCascades] = {};
     FShadowViewData CascadeViews[ShadowAtlas::MaxCascades] = {};
+    float          CascadeSplits[ShadowAtlas::MaxCascades + 1] = {};
     uint32         CascadeCount = 0;
 
     void Reset()

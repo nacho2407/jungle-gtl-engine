@@ -65,17 +65,18 @@ struct FShadowAtlasSampleData
 struct FDirectionalLight
 {
     float3 Color;                  // 12B
-    float Intensity;               // 4B
+    float  Intensity;              // 4B
     float3 Direction;              // 12B
-    int CascadeCount;              // 4B
+    int    CascadeCount;           // 4B
     float4x4 ShadowViewProj[4];    // 256B
     FShadowAtlasSampleData ShadowSampleData[4]; // 128B
     float ShadowBias;              // 4B
     float ShadowSlopeBias;         // 4B
     float ShadowNormalBias;        // 4B
-    float _Padding0;               // 4B
-    float4 CascadeSplits;          // 16B
-}; // Total: 448B
+    float _Pad1;                   // 4B
+    float4 CascadeSplits[2];       // 32B (float[8]을 float4[2]로 패킹)
+    float4 _FinalPad;              // 16B
+}; // Total: 480B
 
 #define MAX_DIRECTIONAL_LIGHTS 4
 

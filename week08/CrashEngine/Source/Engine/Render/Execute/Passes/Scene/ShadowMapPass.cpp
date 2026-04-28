@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "Profiling/Stats.h"
+
 namespace
 {
 struct FShadowDebugPreviewCBData
@@ -306,7 +308,7 @@ void FShadowMapPass::PrepareTargets(FRenderPipelineContext& Context)
 void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     RenderItems.clear();
-    PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod::PSM &&
+PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod::PSM &&
                                             Context.SceneView != nullptr &&
                                             HasPSMCameraChanged(*Context.SceneView);
 
@@ -321,6 +323,7 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         RenderItems.push_back({ Light, Allocation, ShadowView });
         for (FPrimitiveProxy* Proxy : Light->VisibleShadowCasters)
         {
+            SCOPE_STAT_CAT("Add ShadowMap Draw Command", "6.Shadow");
             DrawCommandBuild::BuildMeshDrawCommand(*Proxy, ERenderPass::ShadowMap, Context, *Context.DrawCommandList, ItemIndex);
         }
     };
@@ -342,7 +345,8 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
                 continue;
             }
 
-            const uint32 CascadeCount = std::max(1u, CascadeShadowMapData->CascadeCount);
+            const uint32 MaxAllowedCascades = (GetShadowMapMethod() == EShadowMapMethod::Cascade) ? ShadowAtlas::MaxCascades : 1u;
+            const uint32 CascadeCount = std::clamp(CascadeShadowMapData->CascadeCount, 1u, MaxAllowedCascades);
             for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
             {
                 AppendRenderItem(
