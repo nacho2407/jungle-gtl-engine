@@ -141,7 +141,9 @@ void FShadowMomentFilter::Release()
 
 void FShadowMomentFilter::BlurMomentTextureSlice(FRenderPipelineContext& Context, FShadowAtlasPage& AtlasPage, uint32 SliceIndex)
 {
-    if (GetShadowFilterMethod() != EShadowFilterMethod::VSM || !Context.Device || !Context.Context)
+    if ((GetShadowFilterMethod() != EShadowFilterMethod::VSM &&
+         GetShadowFilterMethod() != EShadowFilterMethod::ESM) ||
+        !Context.Device || !Context.Context)
     {
         return;
     }

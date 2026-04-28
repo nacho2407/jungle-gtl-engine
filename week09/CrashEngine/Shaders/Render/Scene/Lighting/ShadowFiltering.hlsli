@@ -18,7 +18,7 @@
 #endif
 
 #ifndef SHADOW_ESM_EXPONENT
-#define SHADOW_ESM_EXPONENT 80.0f
+#define SHADOW_ESM_EXPONENT 10.0f
 #endif
 
 Texture2DArray g_ShadowAtlas0 : register(t20);
@@ -106,8 +106,13 @@ float ComputeVSMVisibility(float2 Moments, float CompareDepth)
 
 float ComputeESMVisibility(float EncodedMoment, float CompareDepth)
 {
+    if (EncodedMoment <= 0.0f)
+    {
+        return 1.0f;
+    }
+
     float Receiver = exp(-SHADOW_ESM_EXPONENT * CompareDepth);
-    return saturate(Receiver / max(EncodedMoment, 1e-5f));
+    return saturate(Receiver / EncodedMoment);
 }
 
 float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareDepth, float4 PixelPos)
