@@ -1,12 +1,13 @@
 #include "EditorViewportTool.h"
 
 #include "Component/CameraComponent.h"
+#include "Editor/Input/EditorViewportInputController.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Viewport/Viewport.h"
 
 bool FEditorViewportTool::BuildMouseRay(FRay& OutRay) const
 {
-    if (!Owner || !Owner->GetCamera())
+    if (!Owner || !Controller || !Owner->GetCamera())
     {
         return false;
     }
@@ -21,7 +22,7 @@ bool FEditorViewportTool::BuildMouseRay(FRay& OutRay) const
         return false;
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
     const float LocalMouseX = static_cast<float>(Input.MouseLocalPos.x);
     const float LocalMouseY = static_cast<float>(Input.MouseLocalPos.y);
 

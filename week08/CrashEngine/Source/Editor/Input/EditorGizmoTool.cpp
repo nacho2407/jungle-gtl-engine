@@ -3,6 +3,7 @@
 #include "Collision/RayUtils.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Editor/Input/EditorViewportInputController.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "GameFramework/World.h"
 
@@ -10,7 +11,7 @@ bool FEditorGizmoTool::HandleInput(float DeltaTime)
 {
     (void)DeltaTime;
 
-    if (!Owner || !Owner->GetCamera() || !Owner->GetGizmo() || !Owner->GetWorld())
+    if (!Owner || !Controller || !Owner->GetCamera() || !Owner->GetGizmo() || !Owner->GetWorld())
     {
         return false;
     }
@@ -42,7 +43,7 @@ bool FEditorGizmoTool::HandleInput(float DeltaTime)
         return Gizmo->IsHolding() || Gizmo->IsPressedOnHandle();
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
     const bool bMouseMoved = Input.MouseAxisDelta.x != 0 || Input.MouseAxisDelta.y != 0;
     const bool bLeftDragging = Input.bLeftDown && bMouseMoved;
 

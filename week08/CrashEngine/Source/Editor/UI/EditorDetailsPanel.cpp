@@ -931,7 +931,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
 
     const float MaxWidth = ImGui::GetContentRegionAvail().x;
-    const float PreviewSize = (MaxWidth > 0.0f) ? std::min(MaxWidth, 256.0f) : 256.0f;
+    const float PreviewSize = (MaxWidth > 0.0f) ? (std::min)(MaxWidth, 256.0f) : 256.0f;
 
     if (LightProxy->ShadowMapIndex < 0)
     {
@@ -959,7 +959,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         static const int32 FaceButtonOrder[6] = { 0, 1, 2, 3, 4, 5 };
         const float AvailableWidth = ImGui::GetContentRegionAvail().x;
         const float ButtonSpacing = ImGui::GetStyle().ItemSpacing.x;
-        const float FaceButtonWidth = std::max(64.0f, (AvailableWidth - ButtonSpacing) / 2.0f);
+        const float FaceButtonWidth = (std::max)(64.0f, (AvailableWidth - ButtonSpacing) / 2.0f);
 
         ImGui::Text("Face");
         for (int32 ButtonIndex = 0; ButtonIndex < 6; ++ButtonIndex)
