@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 
@@ -12,7 +12,7 @@ struct ID3D11VertexShader;
 struct FRenderPipelineContext;
 class FShadowAtlasPage;
 
-// VSM moment blur와 임시 리소스 생명주기를 담당합니다.
+// Owns the blur pass and temporary resources for filterable shadow moments.
 class FShadowMomentFilter
 {
 public:

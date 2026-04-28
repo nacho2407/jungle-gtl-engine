@@ -442,8 +442,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             continue;
         }
 
-        const bool bUsesVSMMoments = GetShadowFilterMethod() == EShadowFilterMethod::VSM;
-        if (bUsesVSMMoments && !AtlasPage->EnsureMomentResources(Context.Device->GetDevice()))
+        const EShadowFilterMethod ShadowFilterMethod = GetShadowFilterMethod();
+        const bool bUsesFilterableMoments =
+            ShadowFilterMethod == EShadowFilterMethod::VSM ||
+            ShadowFilterMethod == EShadowFilterMethod::ESM;
+        if (bUsesFilterableMoments && !AtlasPage->EnsureMomentResources(Context.Device->GetDevice()))
         {
             continue;
         }
