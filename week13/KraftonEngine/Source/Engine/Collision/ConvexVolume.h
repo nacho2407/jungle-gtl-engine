@@ -22,6 +22,7 @@ public:
 	bool ContainsAABB(const FBoundingBox& Box) const;
 	
 	EAABBFrustumClassify ClassifyAABB(const FBoundingBox& Box) const;
+	bool IntersectSphere(const FVector& Center, float Radius) const;
 private:
 	FVector4 Planes[6];
 };

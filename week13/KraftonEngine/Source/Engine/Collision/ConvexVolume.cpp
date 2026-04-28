@@ -65,6 +65,20 @@ bool FConvexVolume::ContainsAABB(const FBoundingBox& Box) const
 	return true;
 }
 
+bool FConvexVolume::IntersectSphere(const FVector& Center, float Radius) const
+{
+	for (const auto& P : Planes)
+	{
+		// Plane normal length — FVector4::Normalize uses 4-component length,
+		// so the normal (xyz) is not unit-length. Compute true signed distance.
+		float NormalLen = std::sqrtf(P.X * P.X + P.Y * P.Y + P.Z * P.Z);
+		float Dist = P.Dot(FVector4(Center, 1.0f)) / NormalLen;
+		if (Dist < -Radius)
+			return false;
+	}
+	return true;
+}
+
 EAABBFrustumClassify FConvexVolume::ClassifyAABB(const FBoundingBox& Box) const
 {
 	bool bContained = true;
