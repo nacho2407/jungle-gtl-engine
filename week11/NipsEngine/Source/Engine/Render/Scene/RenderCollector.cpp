@@ -918,8 +918,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
         DirLightDataShadow.bCastShadows		= DirLight->bCastShadows;
         DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
-        DirLightDataShadow.ShadowBias		= DirLight->ShadowBias;
-        DirLightDataShadow.ShadowSlopeBias	= DirLight->ShadowSlopeBias;
+        DirLightDataShadow.ConstantBias		= DirLight->ConstantBias;
+        DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
         DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
 
@@ -948,8 +948,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.bCastShadows	= SpotLight->bCastShadows;
         ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
 		ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
-		ShadowRequest.ShadowBias	= SpotLight->ShadowBias;
-		ShadowRequest.ShadowSlopeBias = SpotLight->ShadowSlopeBias;
+		ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
+		ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
 		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(ShadowRequest);
 	}
@@ -969,8 +969,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
         PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
 		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
-		PointLightDataShadow.ShadowBias = PointLight->ShadowBias;
-		PointLightDataShadow.ShadowSlopeBias = PointLight->ShadowSlopeBias;
+		PointLightDataShadow.ConstantBias = PointLight->ConstantBias;
+		PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
 		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
 	}

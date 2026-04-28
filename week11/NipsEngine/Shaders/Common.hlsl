@@ -52,7 +52,7 @@ struct FAtlasShadowData
     row_major float4x4 VirtualViewProj;
 
     float4 ScaleOffset;
-    float ShadowBias;
+    float ConstantBias;
     float ShadowStrength;
     float ShadowSoftness;
     uint ShadowType;
