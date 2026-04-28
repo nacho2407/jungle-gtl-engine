@@ -1,6 +1,6 @@
 /*
     ShadowMomentBlurPass.hlsl
-    Separable Gaussian blur for VSM moment textures (mip0 prefilter).
+    Separable Gaussian blur for filterable shadow moment textures (mip0 prefilter).
 */
 
 // Slice 하나만 보더라도 SRV는 Texture2DArray view로 만들어져 있으므로 타입을 맞춰줍니다.
