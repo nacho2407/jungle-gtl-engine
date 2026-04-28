@@ -320,7 +320,14 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
         else if (LC.LightType == static_cast<uint32>(ELightType::Directional) ||
                  LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
-            World->GetPartition().QueryFrustumAllProxies(Light->ShadowViewFrustum, Light->VisibleShadowCasters);
+            const bool bUseCameraFrustumForPSM =
+                LC.LightType == static_cast<uint32>(ELightType::Directional) &&
+                GetShadowMapMethod() == EShadowMapMethod::PSM;
+
+            const FConvexVolume& CasterQueryFrustum =
+                bUseCameraFrustumForPSM ? SceneView->FrustumVolume : Light->ShadowViewFrustum;
+
+            World->GetPartition().QueryFrustumAllProxies(CasterQueryFrustum, Light->VisibleShadowCasters);
         }
     }
 }
