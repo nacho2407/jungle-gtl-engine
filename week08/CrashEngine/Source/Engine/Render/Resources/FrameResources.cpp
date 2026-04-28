@@ -13,6 +13,7 @@ void FFrameResources::Create(ID3D11Device* InDevice)
     FrameBuffer.Create(InDevice, sizeof(FFrameCBData));
     PerObjectConstantBuffer.Create(InDevice, sizeof(FPerObjectCBData));
     GlobalLightBuffer.Create(InDevice, sizeof(FGlobalLightCBData));
+    ShadowPassBuffer.Create(InDevice, sizeof(FShadowPassCBData));
     TextBatch.Create(InDevice);
 
     // s0: LinearClamp sampler for post process and UI.
@@ -81,6 +82,7 @@ void FFrameResources::Release()
     FrameBuffer.Release();
     PerObjectConstantBuffer.Release();
     GlobalLightBuffer.Release();
+    ShadowPassBuffer.Release();
 
     if (LocalLightSRV)
     {

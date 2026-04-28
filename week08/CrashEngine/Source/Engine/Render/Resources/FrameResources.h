@@ -17,6 +17,7 @@ struct FFrameResources
     FConstantBuffer FrameBuffer;
     FConstantBuffer PerObjectConstantBuffer;
     FConstantBuffer GlobalLightBuffer;
+    FConstantBuffer ShadowPassBuffer;
 
     ID3D11SamplerState* LinearClampSampler = nullptr;
     ID3D11SamplerState* LinearWrapSampler  = nullptr;

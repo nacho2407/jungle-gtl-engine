@@ -28,13 +28,6 @@ void FLightProxy::UpdateLightConstants()
     LightProxyInfo.ShadowBias  = ShadowBias;
     LightProxyInfo.ShadowSlopeBias = ShadowSlopeBias;
     LightProxyInfo.ShadowNormalBias = ShadowNormalBias;
-
-    if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Owner))
-    {
-        CascadeCount = std::clamp(DirectionalLight->GetCascadeCount(), 1, 4);
-        DynamicShadowDistance = DirectionalLight->GetDynamicShadowDistance();
-        CascadeDistribution = DirectionalLight->GetCascadeDistribution();
-    }
 }
 
 void FLightProxy::UpdateTransform()
@@ -47,15 +40,37 @@ void FLightProxy::UpdateTransform()
 
 void FLightProxy::ClearShadowData()
 {
-    CascadeShadowMapData.Reset();
-    SpotShadowMapData.Reset();
-    CubeShadowMapData.Reset();
+    if (FCascadeShadowMapData* CascadeShadowMapData = GetCascadeShadowMapData())
+    {
+        CascadeShadowMapData->Reset();
+    }
+
+    if (FShadowMapData* SpotShadowMapData = GetSpotShadowMapData())
+    {
+        SpotShadowMapData->Reset();
+    }
+
+    if (FCubeShadowMapData* CubeShadowMapData = GetCubeShadowMapData())
+    {
+        CubeShadowMapData->Reset();
+    }
 }
 
 void FLightProxy::ApplyShadowRecord(const FLightShadowRecord& Record)
 {
-    CascadeShadowMapData = Record.CascadeShadowMapData;
-    SpotShadowMapData = Record.SpotShadowMapData;
-    CubeShadowMapData = Record.CubeShadowMapData;
+    if (FCascadeShadowMapData* CascadeShadowMapData = GetCascadeShadowMapData())
+    {
+        *CascadeShadowMapData = Record.CascadeShadowMapData;
+    }
+
+    if (FShadowMapData* SpotShadowMapData = GetSpotShadowMapData())
+    {
+        *SpotShadowMapData = Record.SpotShadowMapData;
+    }
+
+    if (FCubeShadowMapData* CubeShadowMapData = GetCubeShadowMapData())
+    {
+        *CubeShadowMapData = Record.CubeShadowMapData;
+    }
 }
 
