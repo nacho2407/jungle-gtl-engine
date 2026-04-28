@@ -56,6 +56,7 @@ void UPointLightComponent::PushToScene()
 	Params.bCastShadows = bCastShadows;
 	Params.ShadowBias = ShadowBias;
 	Params.ShadowSlopeBias = ShadowSlopeBias;
+	Params.ShadowNormalBias = ShadowNormalBias;
 	Params.ShadowSharpen = ShadowSharpen;
 
 	World->GetScene().GetEnvironment().AddPointLight(this, Params);

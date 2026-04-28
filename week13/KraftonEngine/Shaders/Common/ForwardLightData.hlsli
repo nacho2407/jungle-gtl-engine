@@ -127,7 +127,9 @@ struct FSpotShadowData
     uint     PageIndex;         //  4B  (Texture2DArray slice)
     float    ShadowBias;        //  4B
     float    ShadowSharpen;     //  4B
-    float    ShadowSlopeBias;   //  4B  → 합계 96B
+    float    ShadowSlopeBias;   //  4B 
+    float    ShadowNormalBias;  //  4B 
+    float3   SpotPad0;          // 12B -> 112B
 };
 
 // Point Light: 6면 ViewProj + per-face atlas UV rect  (512B, 32B aligned)
@@ -140,7 +142,8 @@ struct FPointShadowData
     float    ShadowBias;               //   4B
     float    ShadowSharpen;            //   4B
     float    ShadowSlopeBias;          //   4B
-    float    _pad[3];                  //  12B  → 합계 512B
+    float    ShadowNormalBias;         //   4B
+    float    _pad[2];                  //  12B  → 합계 512B
 };
 
 // ── Per-light Shadow StructuredBuffers (t24, t25) ──

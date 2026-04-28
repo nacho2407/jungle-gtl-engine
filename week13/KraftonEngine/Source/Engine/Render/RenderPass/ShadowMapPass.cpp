@@ -424,9 +424,10 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 	// b5 Bias/SlopeBias/Sharpen: FShadowSettings override > per-light 값
 	const auto& Settings = FShadowSettings::Get();
-	ShadowCBCache.ShadowBias      = Settings.GetBias().value_or(DirectionalParams.ShadowBias);
-	ShadowCBCache.ShadowSlopeBias = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
-	ShadowCBCache.ShadowSharpen   = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
+	ShadowCBCache.ShadowBias       = Settings.GetBias().value_or(DirectionalParams.ShadowBias);
+	ShadowCBCache.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
+	ShadowCBCache.ShadowNormalBias = DirectionalParams.ShadowNormalBias;
+	ShadowCBCache.ShadowSharpen    = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
 
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
@@ -596,9 +597,10 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		SpotGPUData[ShadowIdx].ViewProj = VP.ViewProj;
 		SpotGPUData[ShadowIdx].AtlasScaleBias = AtlasScaleBias;
 		SpotGPUData[ShadowIdx].PageIndex = 0;
-		SpotGPUData[ShadowIdx].ShadowBias      = Settings.GetBias().value_or(SpotLight.ShadowBias);
-		SpotGPUData[ShadowIdx].ShadowSharpen   = Settings.GetSharpen().value_or(SpotLight.ShadowSharpen);
-		SpotGPUData[ShadowIdx].ShadowSlopeBias = Settings.GetSlopeBias().value_or(SpotLight.ShadowSlopeBias);
+		SpotGPUData[ShadowIdx].ShadowBias       = Settings.GetBias().value_or(SpotLight.ShadowBias);
+		SpotGPUData[ShadowIdx].ShadowSharpen    = Settings.GetSharpen().value_or(SpotLight.ShadowSharpen);
+		SpotGPUData[ShadowIdx].ShadowSlopeBias  = Settings.GetSlopeBias().value_or(SpotLight.ShadowSlopeBias);
+		SpotGPUData[ShadowIdx].ShadowNormalBias = SpotLight.ShadowNormalBias;
 
 		++ShadowIdx;
 	}
@@ -694,9 +696,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		ShadowData.FarZ  = PointLight.AttenuationRadius;
 
 		const auto& Settings = FShadowSettings::Get();
-		ShadowData.ShadowBias      = Settings.GetBias().value_or(PointLight.ShadowBias);
-		ShadowData.ShadowSharpen   = Settings.GetSharpen().value_or(PointLight.ShadowSharpen);
-		ShadowData.ShadowSlopeBias = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
+		ShadowData.ShadowBias       = Settings.GetBias().value_or(PointLight.ShadowBias);
+		ShadowData.ShadowSharpen    = Settings.GetSharpen().value_or(PointLight.ShadowSharpen);
+		ShadowData.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
+		ShadowData.ShadowNormalBias = PointLight.ShadowNormalBias;
 
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
