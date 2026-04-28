@@ -86,21 +86,33 @@ void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld
     FLightProxyInfo& LC = Light->LightProxyInfo;
     FVector LightDir = LC.Direction.Normalized();
 
+    FShadowViewData ShadowView = {};
     switch (GetShadowMapMethod())
     {
     case EShadowMapMethod::SSM:
-        Light->LightViewProj = GetDirectionalSSMMatrix(World, LightDir);
+        ShadowView = GetDirectionalSSMView(World, LightDir);
         break;
     case EShadowMapMethod::PSM:
-        Light->LightViewProj = GetDirectionalPSMMatrix(World, LightDir, SceneView, Light->DynamicShadowDistance);
+        ShadowView = GetDirectionalPSMView(World, LightDir, SceneView, Light->DynamicShadowDistance);
         break;
     case EShadowMapMethod::CSM:
-        
+        ShadowView = GetDirectionalSSMView(World, LightDir);
         break;
+    }
+
+    Light->LightShadowView = ShadowView;
+    Light->LightViewProj = ShadowView.ViewProj;
+
+    const uint32 CascadeCount = static_cast<uint32>(std::clamp(Light->CascadeCount, 1, static_cast<int32>(ShadowAtlas::MaxCascades)));
+    Light->CascadeShadowMapData.CascadeCount = CascadeCount;
+    for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
+    {
+        Light->CascadeShadowMapData.CascadeViews[CascadeIndex] = ShadowView;
+        Light->CascadeShadowMapData.CascadeViewProj[CascadeIndex] = ShadowView.ViewProj;
     }
 }
 
-FMatrix FDrawCollector::GetDirectionalSSMMatrix(UWorld* World, FVector LightDir)
+FShadowViewData FDrawCollector::GetDirectionalSSMView(UWorld* World, FVector LightDir)
 {
     FVector Up = (std::abs(LightDir.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
     FVector Right = LightDir.Cross(Up).Normalized();
@@ -140,10 +152,13 @@ FMatrix FDrawCollector::GetDirectionalSSMMatrix(UWorld* World, FVector LightDir)
 
     const FVector OffsetLS(-(MinLS.X + MaxLS.X) * 0.5f, -(MinLS.Y + MaxLS.Y) * 0.5f, 0.0f);
     LightView = LightView * FMatrix::MakeTranslationMatrix(OffsetLS);
-    return LightView * FMatrix::MakeOrthographic(Width, Height, NearZ, FarZ);
+
+    FShadowViewData ShadowView = {};
+    ShadowView.Set(LightView, FMatrix::MakeOrthographic(Width, Height, NearZ, FarZ), NearZ, FarZ, 0);
+    return ShadowView;
 }
 
-FMatrix FDrawCollector::GetDirectionalPSMMatrix(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance)
+FShadowViewData FDrawCollector::GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance)
 {
     (void)World;
 
@@ -175,6 +190,8 @@ FMatrix FDrawCollector::GetDirectionalPSMMatrix(UWorld* World, FVector LightDir,
     const FMatrix VCProj = FMatrix::MakePerspective(FOV, Aspect, VCNear, VCFar);
 
     FMatrix ViewPP, ProjPP;
+    float NearPP = 0.0f;
+    float FarPP = 1.0f;
     {
         const FMatrix WorldToPPS = VCView * VCProj;
         FVector CornersPPS[8];
@@ -220,15 +237,17 @@ FMatrix FDrawCollector::GetDirectionalPSMMatrix(UWorld* World, FVector LightDir,
 
         const float Width = std::max(0.01f, MaxLS.X - MinLS.X);
         const float Height = std::max(0.01f, MaxLS.Y - MinLS.Y);
-        const float NearPP = MinLS.Z - 0.1f;
-        const float FarPP = MaxLS.Z + 0.1f;
+        NearPP = MinLS.Z - 0.1f;
+        FarPP = MaxLS.Z + 0.1f;
 
         const FVector OffsetLS(-(MinLS.X + MaxLS.X) * 0.5f, -(MinLS.Y + MaxLS.Y) * 0.5f, 0.0f);
         ViewPP = ViewPP * FMatrix::MakeTranslationMatrix(OffsetLS);
         ProjPP = FMatrix::MakeOrthographic(Width, Height, NearPP, FarPP);
     }
 
-    return VCView * VCProj * ViewPP * ProjPP;
+    FShadowViewData ShadowView = {};
+    ShadowView.Set(VCView * VCProj * ViewPP, ProjPP, NearPP, FarPP, 0);
+    return ShadowView;
 }
 
 void FDrawCollector::ComputeSpotShadowMatrices(FLightProxy* Light)
@@ -249,17 +268,22 @@ void FDrawCollector::ComputeSpotShadowMatrices(FLightProxy* Light)
     LightView.M[3][1] = -LightPos.Dot(Up);
     LightView.M[3][2] = -LightPos.Dot(LightDir);
 
+    const float NearZ = 1.0f;
+    const float FarZ = std::max(NearZ + 0.001f, LC.AttenuationRadius);
     const float FOV = LC.OuterConeAngle * 2.0f * (3.141592f / 180.0f);
-    const FMatrix LightProj = FMatrix::MakePerspective(FOV, 1.0f, 1.0f, LC.AttenuationRadius);
+    const FMatrix LightProj = FMatrix::MakePerspective(FOV, 1.0f, NearZ, FarZ);
 
-    Light->LightViewProj = LightView * LightProj;
+    Light->LightShadowView.Set(LightView, LightProj, NearZ, FarZ, 1);
+    Light->LightViewProj = Light->LightShadowView.ViewProj;
 }
 
 void FDrawCollector::ComputePointShadowMatrices(FLightProxy* Light)
 {
     FLightProxyInfo& LC = Light->LightProxyInfo;
     FVector LightPos = LC.Position;
-    FMatrix LightProjCube = FMatrix::MakePerspective(0.5f * 3.141592f, 1.0f, 1.0f, LC.AttenuationRadius);
+    const float NearZ = 1.0f;
+    const float FarZ = std::max(NearZ + 0.001f, LC.AttenuationRadius);
+    FMatrix LightProjCube = FMatrix::MakePerspective(0.5f * 3.141592f, 1.0f, NearZ, FarZ);
 
     struct FFaceDir
     {
@@ -290,10 +314,14 @@ void FDrawCollector::ComputePointShadowMatrices(FLightProxy* Light)
         LightViewCube.M[3][1] = -LightPos.Dot(Up);
         LightViewCube.M[3][2] = -LightPos.Dot(Forward);
 
-        Light->ShadowViewProjMatrices[FaceIndex] = LightViewCube * LightProjCube;
+        Light->ShadowFaceViews[FaceIndex].Set(LightViewCube, LightProjCube, NearZ, FarZ, 1);
+        Light->ShadowViewProjMatrices[FaceIndex] = Light->ShadowFaceViews[FaceIndex].ViewProj;
+        Light->CubeShadowMapData.FaceViews[FaceIndex] = Light->ShadowFaceViews[FaceIndex];
+        Light->CubeShadowMapData.FaceViewProj[FaceIndex] = Light->ShadowFaceViews[FaceIndex].ViewProj;
     }
 
     Light->LightViewProj = Light->ShadowViewProjMatrices[0];
+    Light->LightShadowView = Light->ShadowFaceViews[0];
 }
 
 void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* SceneView)

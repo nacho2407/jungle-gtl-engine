@@ -85,12 +85,12 @@ float ComputeVSMVisibility(float2 Moments, float CompareDepth)
     float Mean = Moments.x;
     float Variance = max(Moments.y - Mean * Mean, 1e-5f);
 
-    if (ReceiverDepth >= Mean)
+    if (ReceiverDepth <= Mean)
     {
         return 1.0f;
     }
 
-    float Delta = Mean - ReceiverDepth;
+    float Delta = ReceiverDepth - Mean;
     float PMax = Variance / (Variance + Delta * Delta);
     return saturate(PMax);
 }

@@ -26,6 +26,17 @@ cbuffer FrameParams : register(b0)
     float3 CameraWorldPos; // 12B
 }; // Total: 224B
 
+cbuffer ShadowPassParams : register(b5)
+{
+    float4x4 ShadowView;           // 64B
+    float4x4 ShadowProjection;     // 64B
+    float4x4 ShadowInvViewProj;    // 64B
+    float ShadowNearZ;             // 4B
+    float ShadowFarZ;              // 4B
+    uint ShadowProjectionType;     // 4B, 0: orthographic, 1: perspective
+    float ShadowPassPadding;       // 4B
+}; // Total: 208B
+
 cbuffer PerObjectParams : register(b1)
 {
     float4x4 Model;                    // 64B
