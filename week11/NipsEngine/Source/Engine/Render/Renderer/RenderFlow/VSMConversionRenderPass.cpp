@@ -151,7 +151,9 @@ bool FVSMConversionRenderPass::DispatchHorizontalBlur(const FRenderPassContext* 
 
 	//constantbuffer는 B11에 바인딩하고 바로 해제할 것.
     for (const auto& Tile : ShadowAtlasTile)
-    {
+    {	
+		if (!Tile.bUsed)
+            continue;
         FVSMBlurConstants CBData;
         CBData.AtlasOffsetX = static_cast<uint32>(Tile.X);            // 타일 좌상단 픽셀 X
         CBData.AtlasOffsetY = static_cast<uint32>(Tile.Y);            // 타일 좌상단 픽셀 Y
@@ -212,6 +214,9 @@ bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Co
 	// constantbuffer는 B11에 바인딩하고 바로 해제할 것.
     for (const auto& Tile : ShadowAtlasTile)
     {
+        if (!Tile.bUsed)
+            continue;
+
         FVSMBlurConstants CBData;
         CBData.AtlasOffsetX = static_cast<uint32>(Tile.X);            // 타일 좌상단 픽셀 X
         CBData.AtlasOffsetY = static_cast<uint32>(Tile.Y);            // 타일 좌상단 픽셀 Y
@@ -227,8 +232,8 @@ bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Co
 
         // TileSize = 1024 * 1024
         // atlas = 8192 * 8192s
-        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasResolution();
-        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasResolution();
+        //uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasResolution();
+        //uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasResolution();
 
 		uint32 DispatchX = (Tile.Width + 7) / 8;
         uint32 DispatchY = (Tile.Height + 7) / 8;
