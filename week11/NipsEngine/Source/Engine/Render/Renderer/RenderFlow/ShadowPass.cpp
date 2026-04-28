@@ -173,13 +173,15 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	bool bHasDirectionalShadow = false;
 
 	TArray<FShadowLightRequest> SortedRequests = RenderBus->ShadowLightRequests;
+
+	for (auto& Request : SortedRequests)
+    {
+            Request.PriorityScore = CalculatePriority(Request, Context);
+    }
+
     std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
               { 
-			  if(A.Type != B.Type)
-			  {
-				  return A.Type > B.Type;
-			  }
-			  return A.ShadowResolution > B.ShadowResolution; });
+			  return A.PriorityScore > B.PriorityScore; });
 
 	for (const FShadowLightRequest& Request : SortedRequests)
 	{
@@ -228,8 +230,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				}
 
 				D3D11_VIEWPORT ShadowViewport = {};
-				ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.PixelX);
-				ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.PixelY);
+				ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.X);
+				ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.Y);
 				ShadowViewport.Width = static_cast<float>(ShadowTile.Width);
 				ShadowViewport.Height = static_cast<float>(ShadowTile.Height);
 				ShadowViewport.MinDepth = 0.0f;
@@ -421,8 +423,8 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		}
 
 		D3D11_VIEWPORT ShadowViewport = {};
-		ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.PixelX);
-		ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.PixelY);
+		ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.X);
+		ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.Y);
 		ShadowViewport.Width = static_cast<float>(ShadowTile.Width);
 		ShadowViewport.Height = static_cast<float>(ShadowTile.Height);
 		ShadowViewport.MinDepth = 0.0f;
@@ -587,6 +589,53 @@ bool FShadowPass::End(const FRenderPassContext* Context)
 	Context->DeviceContext->RSSetViewports(1, &OriginViewport);
 
 	return true;
+}
+
+float FShadowPass::CalculatePriority(FShadowLightRequest& Request, const FRenderPassContext* Context)
+{
+    FFrustum Frustum = {};
+    Frustum.UpdateFromCamera(
+        Context->RenderBus->GetView(),
+        Context->RenderBus->GetProj());
+
+    float Priority = 0.0f;
+
+    // 1. Directional Light는 최우선
+    if (Request.Type == EShadowLightType::SLT_Directional)
+    {
+        Priority += 10000.0f;
+    }
+
+    // 2. 카메라 프러스텀 안에 있으면 우선순위 증가
+    Priority += Frustum.Contains(Request.WorldLocation) ? 1000.0f : 0.0f;
+
+    // 3. 거리 기반 우선순위
+    const float DistanceToCamera = FVector::Distance(
+        Request.WorldLocation,
+        Context->RenderBus->GetCameraPosition());
+
+    constexpr float MaxShadowDistance = 5000.0f;
+
+    // raw 1 / Distance 말고, 정규화된 inverse 사용
+    const float DistancePriority =
+        1.0f / (1.0f + DistanceToCamera / MaxShadowDistance);
+
+    Priority += DistancePriority * 500.0f;
+
+    // 4. 해상도 기반 우선순위
+    constexpr float MaxShadowResolution = 2048.0f;
+
+    float ResolutionPriority =
+        static_cast<float>(Request.ShadowResolution) / MaxShadowResolution;
+
+    if (ResolutionPriority > 1.0f)
+    {
+        ResolutionPriority = 1.0f;
+    }
+
+    Priority += ResolutionPriority * 100.0f;
+
+    return Priority;
 }
 
 void FShadowPass::BuildPracticalCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, float Lambda, FCascadeSplit OutSplit[4])
