@@ -990,6 +990,9 @@
     <ClCompile Include="Source\Editor\Input\EditorViewportCommandTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Input\EditorGizmoTool.cpp">
+      <Filter>Source\Editor\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Input\EditorNavigationTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
@@ -1767,6 +1770,9 @@
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Input\EditorViewportCommandTool.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorGizmoTool.h">
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Input\EditorNavigationTool.h">
