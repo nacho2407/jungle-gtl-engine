@@ -56,7 +56,7 @@ public:
     const TArray<FEditorViewportClient*>& GetAllViewportClients() const { return ViewportLayout.GetAllViewportClients(); }
     const TArray<FLevelEditorViewportClient*>& GetLevelViewportClients() const { return ViewportLayout.GetLevelViewportClients(); }
 
-    void SetActiveViewport(FLevelEditorViewportClient* InClient) { ViewportLayout.SetActiveViewport(InClient); }
+    void SetActiveViewport(FLevelEditorViewportClient* InClient);
     FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
 
     void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }

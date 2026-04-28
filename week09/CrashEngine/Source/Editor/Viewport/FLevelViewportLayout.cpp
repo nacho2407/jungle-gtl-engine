@@ -229,16 +229,16 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
     }
 }
 
-void FLevelViewportLayout::SyncActiveViewportFromFocusedViewport(FViewport* FocusedViewport)
+void FLevelViewportLayout::SyncActiveViewportFromKeyTargetViewport(FViewport* KeyTargetViewport)
 {
-    if (!FocusedViewport)
+    if (!KeyTargetViewport)
     {
         return;
     }
 
     for (FLevelEditorViewportClient* Client : LevelViewportClients)
     {
-        if (!Client || Client->GetViewport() != FocusedViewport)
+        if (!Client || Client->GetViewport() != KeyTargetViewport)
         {
             continue;
         }
@@ -399,7 +399,9 @@ void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
         }
 
         if (ActiveViewportClient == VC)
-            SetActiveViewport(LevelViewportClients[0]);
+        {
+            Editor->SetActiveViewport(LevelViewportClients.empty() ? nullptr : LevelViewportClients[0]);
+        }
 
         if (FViewport* VP = VC->GetViewport())
         {

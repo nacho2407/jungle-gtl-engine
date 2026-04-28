@@ -73,6 +73,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
     ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
     ViewportLayout.LoadFromSettings();
+    SetActiveViewport(ViewportLayout.GetActiveViewport());
 }
 
 void UEditorEngine::Shutdown()
@@ -131,7 +132,7 @@ void UEditorEngine::Tick(float DeltaTime)
     }
 
     ViewportInputRouter.Tick(Input, DeltaTime);
-    ViewportLayout.SyncActiveViewportFromFocusedViewport(ViewportInputRouter.GetFocusedViewport());
+    ViewportLayout.SyncActiveViewportFromKeyTargetViewport(ViewportInputRouter.GetKeyTargetViewport());
 
     for (FEditorViewportClient* VC: ViewportLayout.GetAllViewportClients())
     {
@@ -185,6 +186,12 @@ UCameraComponent* UEditorEngine::GetCamera() const
         return ActiveVC->GetCamera();
     }
     return nullptr;
+}
+
+void UEditorEngine::SetActiveViewport(FLevelEditorViewportClient* InClient)
+{
+    ViewportLayout.SetActiveViewport(InClient);
+    ViewportInputRouter.SetKeyTargetViewport(InClient ? InClient->GetViewport() : nullptr);
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
