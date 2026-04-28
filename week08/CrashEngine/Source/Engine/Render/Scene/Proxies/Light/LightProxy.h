@@ -3,6 +3,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Engine/Math/Matrix.h"
+#include "Render/Resources/Shadows/ShadowResolutionSettings.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
 #include "Render/Scene/Proxies/SceneProxy.h"
 #include "Render/Submission/Atlas/ShadowAtlasTypes.h"
@@ -51,7 +52,7 @@ public:
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
     bool                     bCastShadow      = false;
-    uint32                   ShadowResolution = 2048;
+    uint32                   ShadowResolution = GetShadowResolutionValue(GDefaultShadowResolution);
 
     float ShadowBias       = 0.0f;
     float ShadowSlopeBias  = 0.0f;
