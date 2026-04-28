@@ -5,6 +5,7 @@
 #include "Object/ObjectFactory.h"
 #include "Core/EngineTypes.h"
 #include "Math/Vector.h"
+#include "Render/Resources/Shadows/ShadowResolutionSettings.h"
 
 // ULightComponentBase 클래스이다.
 class ULightComponentBase : public USceneComponent
@@ -22,18 +23,20 @@ public:
     const FVector4& GetLightColor() const { return LightColor; }
     bool AffectsWorld() const { return bAffectsWorld; }
     bool DoesCastShadows() const { return bCastShadows; }
-    uint32 GetShadowResolution() const { return static_cast<uint32>(ShadowResolution); }
+    EShadowResolution GetShadowResolutionTier() const { return ShadowResolution; }
+    uint32 GetShadowResolution() const { return GetShadowResolutionValue(ShadowResolution); }
     float GetShadowBias() const { return ShadowBias; }
     float GetShadowSlopeBias() const { return ShadowSlopeBias; }
     float GetShadowNormalBias() const { return ShadowNormalBias; }
-    void SetShadowResolution(uint32 InResolution) { ShadowResolution = static_cast<int32>(InResolution); }
+    void SetShadowResolution(EShadowResolution InResolution) { ShadowResolution = InResolution; }
+    void SetShadowResolution(uint32 InResolution) { ShadowResolution = RoundShadowResolutionToTier(InResolution); }
 
 protected:
     float Intensity = 2.5f;
     FVector4 LightColor = { 1, 1, 1, 1 }; // linear RGBA (0~1)
     bool bAffectsWorld = true;            // 조명의 영향 여부를 켜고 끕니다.
     bool bCastShadows = true;             // Shadow 구현 주차에 사용: 조명이 그림자를 드리울지 여부를 켜고 끕니다.
-    int32 ShadowResolution = 2048;
+    EShadowResolution ShadowResolution = GDefaultShadowResolution;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowNormalBias = 0.0f;

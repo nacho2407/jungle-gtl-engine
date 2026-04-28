@@ -18,7 +18,7 @@ void FBuddyAllocator2D::Reset()
 
 bool FBuddyAllocator2D::Allocate(uint32 Resolution, FShadowMapData& OutData)
 {
-    const uint32 TargetSize = RoundShadowResolutionToTier(Resolution);
+    const uint32 TargetSize = GetShadowResolutionValue(RoundShadowResolutionToTierPolicy(Resolution));
     if (TargetSize < ShadowAtlas::MinResolution || TargetSize > ShadowAtlas::MaxResolution)
     {
         return false;

@@ -38,7 +38,7 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
         return false;
     }
 
-    const uint32 Resolution   = RoundShadowResolutionToTier(Light.ShadowResolution);
+    const uint32 Resolution   = GetShadowResolutionValue(RoundShadowResolutionToTierPolicy(Light.ShadowResolution));
     const uint32 CascadeCount = std::clamp(Light.GetCascadeCountSetting(), 1, static_cast<int32>(ShadowAtlas::MaxCascades));
     const uint32 LightType    = Light.LightProxyInfo.LightType;
 

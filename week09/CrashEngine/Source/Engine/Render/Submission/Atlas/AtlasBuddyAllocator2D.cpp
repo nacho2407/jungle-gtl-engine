@@ -1,18 +1,10 @@
+#include "Render/Resources/Shadows/ShadowResolutionSettings.h"
 #include "Render/Submission/Atlas/AtlasBuddyAllocator2D.h"
 
 #include <algorithm>
 
 namespace
 {
-uint32 ClampShadowResolution(uint32 Resolution)
-{
-    if (Resolution <= 256u) return 256u;
-    if (Resolution <= 512u) return 512u;
-    if (Resolution <= 1024u) return 1024u;
-    if (Resolution <= 2048u) return 2048u;
-    return 4096u;
-}
-
 // 할당된 정사각형 블록 안쪽에 패딩을 적용한 실제 렌더 영역을 계산합니다.
 FShadowAtlasRect MakeViewportRect(const FShadowAtlasRect& Rect)
 {
@@ -25,7 +17,7 @@ FShadowAtlasRect MakeViewportRect(const FShadowAtlasRect& Rect)
     return Viewport;
 }
 
-// 셰이더가 atlas 내부 좌표를 바로 복원할 수 있도록 UV scale/offset을 계산합니다.
+// 깊이맵이 atlas 내부 좌표를 바로 복원할 수 있도록 UV scale/offset을 계산합니다.
 FVector4 MakeUVScaleOffset(const FShadowAtlasRect& ViewportRect)
 {
     const float AtlasSize = static_cast<float>(ShadowAtlas::AtlasSize);
@@ -52,7 +44,7 @@ void FBuddyAllocator2D::Reset()
 
 bool FBuddyAllocator2D::Allocate(uint32 Resolution, FShadowMapData& OutData)
 {
-    const uint32 TargetSize = ClampShadowResolution(Resolution);
+    const uint32 TargetSize = GetShadowResolutionValue(RoundShadowResolutionToTier(Resolution));
     if (TargetSize < ShadowAtlas::MinResolution || TargetSize > ShadowAtlas::MaxResolution)
     {
         return false;
