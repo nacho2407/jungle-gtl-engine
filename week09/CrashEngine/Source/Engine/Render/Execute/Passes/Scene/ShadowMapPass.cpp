@@ -310,7 +310,7 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
                                             Context.SceneView != nullptr &&
                                             HasPSMCameraChanged(*Context.SceneView);
 
-    auto AppendRenderItem = [&](FLightProxy* Light, const FShadowMapData* Allocation, const FMatrix& ViewProj)
+    auto AppendRenderItem = [&](FLightProxy* Light, const FShadowMapData* Allocation, const FShadowViewData& ShadowView)
     {
         if (!Light || !Allocation || !Allocation->bAllocated || RenderItems.size() >= 255)
         {
@@ -318,7 +318,7 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
         }
 
         const uint16 ItemIndex = static_cast<uint16>(RenderItems.size());
-        RenderItems.push_back({ Light, Allocation, ViewProj });
+        RenderItems.push_back({ Light, Allocation, ShadowView });
         for (FPrimitiveProxy* Proxy : Light->VisibleShadowCasters)
         {
             DrawCommandBuild::BuildMeshDrawCommand(*Proxy, ERenderPass::ShadowMap, Context, *Context.DrawCommandList, ItemIndex);
@@ -348,18 +348,19 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
                 AppendRenderItem(
                     Light,
                     &CascadeShadowMapData->Cascades[CascadeIndex],
-                    CascadeShadowMapData->CascadeViewProj[CascadeIndex]);
+                    CascadeShadowMapData->CascadeViews[CascadeIndex]);
             }
         }
         else if (LightType == static_cast<uint32>(ELightType::Spot))
         {
             const FShadowMapData* SpotShadowMapData = Light->GetSpotShadowMapData();
-            if (!SpotShadowMapData)
+            const FShadowViewData* SpotShadowView = Light->GetSpotShadowView();
+            if (!SpotShadowMapData || !SpotShadowView)
             {
                 continue;
             }
 
-            AppendRenderItem(Light, SpotShadowMapData, Light->LightViewProj);
+            AppendRenderItem(Light, SpotShadowMapData, *SpotShadowView);
         }
         else if (LightType == static_cast<uint32>(ELightType::Point))
         {
@@ -371,7 +372,7 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
 
             for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
             {
-                AppendRenderItem(Light, &CubeShadowMapData->Faces[FaceIndex], CubeShadowMapData->FaceViewProj[FaceIndex]);
+                AppendRenderItem(Light, &CubeShadowMapData->Faces[FaceIndex], CubeShadowMapData->FaceViews[FaceIndex]);
             }
         }
     }
@@ -484,10 +485,23 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         Context.Context->OMSetRenderTargets(1, &RTV, DSV);
 
         FFrameCBData ShadowFrameData = {};
-        ShadowFrameData.View = FMatrix::Identity;
-        ShadowFrameData.Projection = Item.ViewProj;
-        ShadowFrameData.InvViewProj = Item.ViewProj.GetInverse();
+        ShadowFrameData.View = Item.ShadowView.View;
+        ShadowFrameData.Projection = Item.ShadowView.Projection;
+        ShadowFrameData.InvViewProj = Item.ShadowView.ViewProj.GetInverse();
         Context.Resources->FrameBuffer.Update(Context.Context, &ShadowFrameData, sizeof(FFrameCBData));
+
+        FShadowPassCBData ShadowPassData = {};
+        ShadowPassData.ShadowView = Item.ShadowView.View;
+        ShadowPassData.ShadowProjection = Item.ShadowView.Projection;
+        ShadowPassData.ShadowInvViewProj = Item.ShadowView.ViewProj.GetInverse();
+        ShadowPassData.ShadowNearZ = Item.ShadowView.NearZ;
+        ShadowPassData.ShadowFarZ = Item.ShadowView.FarZ;
+        ShadowPassData.ShadowProjectionType = Item.ShadowView.ProjectionType;
+        Context.Resources->ShadowPassBuffer.Update(Context.Context, &ShadowPassData, sizeof(FShadowPassCBData));
+
+        ID3D11Buffer* ShadowPassCB = Context.Resources->ShadowPassBuffer.GetBuffer();
+        Context.Context->VSSetConstantBuffers(ECBSlot::ShadowPass, 1, &ShadowPassCB);
+        Context.Context->PSSetConstantBuffers(ECBSlot::ShadowPass, 1, &ShadowPassCB);
 
         Context.DrawCommandList->SubmitRange(RangeStart, RangeEnd, *Context.Device, Context.Context, *Context.StateCache);
     }
