@@ -86,8 +86,33 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 {
 	const auto& Shadow = FProjectSettings::Get().Shadow;
-	if (!Shadow.bEnabled || !Shadow.bPSM)
+	if (!Shadow.bEnabled)
+	{
+		FShadowMapResources& Res = Ctx.Resources.ShadowResources;
+		if (Res.IsCSMValid() || Res.IsSpotValid() || Res.IsPointLightValid())
+		{
+			// GPU 리소스 해제
+			Res.Release();
+
+			// Shadow SRV 언바인드 (해제된 텍스처가 바인딩에 남지 않도록)
+			ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+			ID3D11ShaderResourceView* nullSRVs[5] = {};
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 5, nullSRVs);
+
+			// Shadow CB (b5) 초기화 → 셰이더에서 NumCSMCascades=0 등으로 early-out
+			ShadowCBCache = {};
+			Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
+			ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
+			DC->PSSetConstantBuffers(ECBSlot::Shadow, 1, &b5);
+		}
+
+		// Stats 초기화
+		SHADOW_STATS_RESET();
+		SHADOW_STATS_SET_MEMORY(0);
+		SHADOW_STATS_SET_RESOLUTION(0);
+
 		return false;
+	}
 
 	SetupShadowRenderState(Ctx.Device, Ctx.Resources, Ctx.Device.GetDeviceContext());
 	EnsureResources(Ctx);
