@@ -4,6 +4,7 @@
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
 
 #include <algorithm>
 #include <cmath>
@@ -27,12 +28,6 @@ namespace
 	const ULightComponent* GetSupportedShadowLight(const FShadowLightRequest& Request)
 	{
 		if (!Request.bCastShadows)
-		{
-			return nullptr;
-		}
-
-		if (Request.Type != EShadowLightType::SLT_Directional &&
-			Request.Type != EShadowLightType::SLT_Spot)
 		{
 			return nullptr;
 		}
@@ -115,21 +110,15 @@ bool FShadowPass::Initialize()
 bool FShadowPass::Begin(const FRenderPassContext* Context)
 {
 	FShadowAtlasManager::Get().ClearTiles();
+	FShadowAtlasManager::Get().ClearTilesCube();
+
+    ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
+	Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 	ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
 	Context->DeviceContext->PSSetShaderResources(10, 1, NullSRV);
+	Context->DeviceContext->PSSetShaderResources(12, 1, NullSRV);
 
-	// Shadow Atlas에 쓰기
-
-	ID3D11DepthStencilView* ShadowDSV = FShadowAtlasManager::Get().GetDSV();
-	if (ShadowDSV != nullptr)
-	{
-		Context->DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);
-		Context->DeviceContext->ClearDepthStencilView(
-			ShadowDSV,
-			D3D11_CLEAR_DEPTH,
-			1.0f,
-			0);
-	}
 	return true;
 }
 
@@ -295,6 +284,100 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
             bHasDirectionalShadow = true;
 
             continue;
+		}
+
+		if (Request.Type == EShadowLightType::SLT_Point)
+		{
+			const UPointLightComponent* PointLight = Cast<UPointLightComponent>(LightComp);
+			if (PointLight == nullptr) continue;
+
+			const FVector LightPos = PointLight->GetWorldLocation();
+			const float Near = 0.1f;
+			const float Far = PointLight->AttenuationRadius;
+
+			static const FVector FaceDirs[6] =
+			{
+				FVector(-1, 0, 0),
+				FVector(1, 0, 0),
+				FVector(0, -1, 0),
+				FVector(0, 1, 0),
+				FVector(0, 0, -1),
+				FVector(0, 0, 1)
+			};
+
+			static const FVector FaceUps[6] =
+			{
+				FVector(0, 0, 1),
+				FVector(0, 0, 1),
+				FVector(0, 0, 1),
+				FVector(0, 0, 1),
+				FVector(0, -1, 0),
+				FVector(0, 1, 0)
+			};
+
+			ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+			DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
+			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+			{
+                FShadowAtlasTile ShadowTile;
+                if (!FShadowAtlasManager::Get().AllocateTile(Request.ShadowResolution, ShadowTile))
+                {
+                    // atlas가 꽉 찼음
+                    // shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
+                    continue;
+                }
+
+                ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
+				if (DSV == nullptr)
+				{
+					continue;
+				}
+
+				D3D11_VIEWPORT ShadowViewport = {};
+                ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.PixelX);
+                ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.PixelY);
+                ShadowViewport.Width = static_cast<float>(ShadowTile.Width);
+                ShadowViewport.Height = static_cast<float>(ShadowTile.Height);
+                ShadowViewport.MinDepth = 0.0f;
+                ShadowViewport.MaxDepth = 1.0f;
+
+				const FVector Target = LightPos + FaceDirs[FaceIndex];
+				const FVector Up = LightPos + FaceUps[FaceIndex];
+
+				FMatrix FaceView = FMatrix::MakeViewLookAtLH(LightPos, Target, Up);
+				FMatrix FaceProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(90.0f), 1.0f, Near, Far);
+
+				FShadowConstants ShadowData = {};
+				ShadowData.VirtualViewProj = FaceView * FaceProj;
+				ShadowData.DirLightViewProj = FaceView * FaceProj;
+
+				RenderShadowDepth(
+					Context,
+					ShadowBuffer,
+					ShadowShader,
+					OpaqueCmds,
+					DSV,
+					ShadowViewport,
+					ShadowKey,
+					ShadowData);
+
+				FShadowAtlasConstants atlasConstants = {};
+                atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
+                atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
+                atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
+                atlasConstants.ShadowBias = Request.ShadowBias;
+                atlasConstants.ShadowStrength = 1.0f;
+                atlasConstants.ShadowSoftness = Request.ShadowSharpen;
+                atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
+                atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
+                ShadowAtlasConstants.push_back(atlasConstants);
+			}
+
+			LightShadowIndices[Request.LightIndex].StartIndex = static_cast<uint32>(ShadowAtlasConstants.size() - 6);
+			LightShadowIndices[Request.LightIndex].IndexCount = 6;
+				
+			continue;
 		}
 
 		FShadowAtlasTile ShadowTile;
