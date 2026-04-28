@@ -86,25 +86,129 @@ void FSystemResources::Create(ID3D11Device* InDevice)
 	FMaterialManager::Get().Initialize(InDevice);
 }
 
-void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 Resolution)
-{
-	if (CSMResolution == Resolution && CSMTexture) return;
+// ============================================================
+// Helper: COM view 배열 일괄 해제
+// ============================================================
 
-	// 기존 CSM 리소스 해제
-	if (CSMSRV) { CSMSRV->Release(); CSMSRV = nullptr; }
+template<typename T>
+static void ReleaseViewArray(TArray<T*>& Views)
+{
+	for (auto& V : Views)
+	{
+		if (V) { V->Release(); V = nullptr; }
+	}
+	Views.clear();
+}
+
+template<typename T>
+static void ReleaseCOM(T*& Ptr)
+{
+	if (Ptr) { Ptr->Release(); Ptr = nullptr; }
+}
+
+// ============================================================
+// FCSMResources
+// ============================================================
+
+void FShadowMapResources::FCSMResources::Release()
+{
+	// VSM
+	ReleaseCOM(VSMSRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		if (CSMSliceSRV[i]) { CSMSliceSRV[i]->Release(); CSMSliceSRV[i] = nullptr; }
-		if (CSMDSV[i]) { CSMDSV[i]->Release(); CSMDSV[i] = nullptr; }
+		ReleaseCOM(VSMSliceSRV[i]);
+		ReleaseCOM(VSMRTV[i]);
+		ReleaseCOM(VSMDSV[i]);
 	}
-	if (CSMTexture) { CSMTexture->Release(); CSMTexture = nullptr; }
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
 
-	CSMResolution = Resolution;
+	// Normal
+	ReleaseCOM(SRV);
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		ReleaseCOM(SliceSRV[i]);
+		ReleaseCOM(DSV[i]);
+	}
+	ReleaseCOM(Texture);
+	Resolution = 0;
+}
+
+// ============================================================
+// FSpotResources
+// ============================================================
+
+void FShadowMapResources::FSpotResources::Release()
+{
+	// VSM
+	ReleaseCOM(VSMSRV);
+	ReleaseViewArray(VSMRTVs);
+	ReleaseViewArray(VSMDSVs);
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
+
+	// Normal
+	ReleaseCOM(SRV);
+	ReleaseViewArray(SliceSRVs);
+	ReleaseViewArray(DSVs);
+	ReleaseCOM(Texture);
+	PageCount = 0;
+	Resolution = 0;
+
+	// Data buffer
+	ReleaseCOM(DataSRV);
+	ReleaseCOM(DataBuffer);
+	DataCapacity = 0;
+}
+
+// ============================================================
+// FPointResources
+// ============================================================
+
+void FShadowMapResources::FPointResources::Release()
+{
+	// VSM
+	ReleaseCOM(VSMSRV);
+	ReleaseCOM(VSMRTV);
+	ReleaseCOM(VSMDSV);
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
+
+	// Normal
+	ReleaseCOM(SRV);
+	ReleaseCOM(DSV);
+	ReleaseCOM(Texture);
+	Resolution = 0;
+
+	// Data buffer
+	ReleaseCOM(DataSRV);
+	ReleaseCOM(DataBuffer);
+	DataCapacity = 0;
+}
+
+// ============================================================
+// FShadowMapResources — Ensure (Normal)
+// ============================================================
+
+void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
+{
+	if (CSM.Resolution == InResolution && CSM.Texture) return;
+
+	// 기존 리소스 해제
+	ReleaseCOM(CSM.SRV);
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		ReleaseCOM(CSM.SliceSRV[i]);
+		ReleaseCOM(CSM.DSV[i]);
+	}
+	ReleaseCOM(CSM.Texture);
+
+	CSM.Resolution = InResolution;
 
 	// Texture2DArray: ArraySize = MAX_SHADOW_CASCADES, R32_TYPELESS
 	D3D11_TEXTURE2D_DESC TexDesc = {};
-	TexDesc.Width  = Resolution;
-	TexDesc.Height = Resolution;
+	TexDesc.Width  = InResolution;
+	TexDesc.Height = InResolution;
 	TexDesc.MipLevels = 1;
 	TexDesc.ArraySize = MAX_SHADOW_CASCADES;
 	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -112,10 +216,10 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 Resolution)
 	TexDesc.Usage  = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &CSMTexture);
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &CSM.Texture);
 	if (FAILED(hr)) return;
 
-	// Per-cascade DSV (Texture2DArray slice)
+	// Per-cascade DSV
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
@@ -125,7 +229,7 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 Resolution)
 		DSVDesc.Texture2DArray.FirstArraySlice = i;
 		DSVDesc.Texture2DArray.ArraySize = 1;
 
-		Device->CreateDepthStencilView(CSMTexture, &DSVDesc, &CSMDSV[i]);
+		Device->CreateDepthStencilView(CSM.Texture, &DSVDesc, &CSM.DSV[i]);
 	}
 
 	// SRV — 전체 array (셰이더용)
@@ -137,9 +241,9 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 Resolution)
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = MAX_SHADOW_CASCADES;
 
-	Device->CreateShaderResourceView(CSMTexture, &SRVDesc, &CSMSRV);
+	Device->CreateShaderResourceView(CSM.Texture, &SRVDesc, &CSM.SRV);
 
-	// Per-cascade slice SRV (single slice — ImGui 디버그용)
+	// Per-cascade slice SRV (ImGui 디버그용)
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
@@ -150,50 +254,33 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 Resolution)
 		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
 		SliceSRVDesc.Texture2DArray.ArraySize = 1;
 
-		Device->CreateShaderResourceView(CSMTexture, &SliceSRVDesc, &CSMSliceSRV[i]);
+		Device->CreateShaderResourceView(CSM.Texture, &SliceSRVDesc, &CSM.SliceSRV[i]);
 	}
 }
 
-void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount)
+void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolution, uint32 InPageCount)
 {
-	if (PageCount == 0) return;
+	if (InPageCount == 0) return;
 
-	// 리사이즈 또는 slice 수 변경 시에만 재생성
-	if (SpotAtlasResolution == Resolution && SpotAtlasPageCount == PageCount && SpotAtlasTexture)
+	if (Spot.Resolution == InResolution && Spot.PageCount == InPageCount && Spot.Texture)
 		return;
 
 	// 기존 리소스 해제
-	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
-	if (SpotAtlasSliceSRVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
-		}
-		delete[] SpotAtlasSliceSRVs;
-		SpotAtlasSliceSRVs = nullptr;
-	}
-	if (SpotAtlasDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasDSVs[i]) SpotAtlasDSVs[i]->Release();
-		}
-		delete[] SpotAtlasDSVs;
-		SpotAtlasDSVs = nullptr;
-	}
-	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
-	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }
-	if (SpotShadowDataBuffer) { SpotShadowDataBuffer->Release(); SpotShadowDataBuffer = nullptr; }
-	SpotShadowDataCapacity = 0;
+	ReleaseCOM(Spot.SRV);
+	ReleaseViewArray(Spot.SliceSRVs);
+	ReleaseViewArray(Spot.DSVs);
+	ReleaseCOM(Spot.Texture);
+	ReleaseCOM(Spot.DataSRV);
+	ReleaseCOM(Spot.DataBuffer);
+	Spot.DataCapacity = 0;
 
-	SpotAtlasResolution = Resolution;
-	SpotAtlasPageCount  = 1;
+	Spot.Resolution = InResolution;
+	Spot.PageCount  = 1;
 
-	// Texture2DArray: 1 slice = 1 spot light
+	// Texture2DArray: 1 slice
 	D3D11_TEXTURE2D_DESC TexDesc = {};
-	TexDesc.Width  = Resolution;
-	TexDesc.Height = Resolution;
+	TexDesc.Width  = InResolution;
+	TexDesc.Height = InResolution;
 	TexDesc.MipLevels = 1;
 	TexDesc.ArraySize = 1;
 	TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -201,21 +288,20 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	TexDesc.Usage  = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &SpotAtlasTexture);
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &Spot.Texture);
 	if (FAILED(hr)) return;
 
 	// Per-slice DSV
-	SpotAtlasDSVs = new ID3D11DepthStencilView*[1]();
-	for (uint32 i = 0; i < 1; ++i)
+	Spot.DSVs.resize(1, nullptr);
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
 		DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
 		DSVDesc.Texture2DArray.MipSlice = 0;
-		DSVDesc.Texture2DArray.FirstArraySlice = i;
+		DSVDesc.Texture2DArray.FirstArraySlice = 0;
 		DSVDesc.Texture2DArray.ArraySize = 1;
 
-		Device->CreateDepthStencilView(SpotAtlasTexture, &DSVDesc, &SpotAtlasDSVs[i]);
+		Device->CreateDepthStencilView(Spot.Texture, &DSVDesc, &Spot.DSVs[0]);
 	}
 
 	// SRV — 전체 array
@@ -227,62 +313,61 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolutio
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = 1;
 
-	Device->CreateShaderResourceView(SpotAtlasTexture, &SRVDesc, &SpotAtlasSRV);
+	Device->CreateShaderResourceView(Spot.Texture, &SRVDesc, &Spot.SRV);
 
 	// Per-slice SRV (ImGui 디버그용)
-	SpotAtlasSliceSRVs = new ID3D11ShaderResourceView*[1]();
-	for (uint32 i = 0; i < 1; ++i)
+	Spot.SliceSRVs.resize(1, nullptr);
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
 		SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
 		SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
 		SliceSRVDesc.Texture2DArray.MipLevels = 1;
 		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
-		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
+		SliceSRVDesc.Texture2DArray.FirstArraySlice = 0;
 		SliceSRVDesc.Texture2DArray.ArraySize = 1;
 
-		Device->CreateShaderResourceView(SpotAtlasTexture, &SliceSRVDesc, &SpotAtlasSliceSRVs[i]);
+		Device->CreateShaderResourceView(Spot.Texture, &SliceSRVDesc, &Spot.SliceSRVs[0]);
 	}
 
-	// StructuredBuffer<FSpotShadowDataGPU> — per-light 행렬 데이터
-	SpotShadowDataCapacity = PageCount;
+	// StructuredBuffer<FSpotShadowDataGPU>
+	Spot.DataCapacity = InPageCount;
 
 	D3D11_BUFFER_DESC BufDesc = {};
-	BufDesc.ByteWidth = sizeof(FSpotShadowDataGPU) * PageCount;
+	BufDesc.ByteWidth = sizeof(FSpotShadowDataGPU) * InPageCount;
 	BufDesc.Usage = D3D11_USAGE_DYNAMIC;
 	BufDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	BufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	BufDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	BufDesc.StructureByteStride = sizeof(FSpotShadowDataGPU);
 
-	Device->CreateBuffer(&BufDesc, nullptr, &SpotShadowDataBuffer);
+	Device->CreateBuffer(&BufDesc, nullptr, &Spot.DataBuffer);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SBSRVDesc = {};
 	SBSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	SBSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-	SBSRVDesc.Buffer.NumElements = PageCount;
+	SBSRVDesc.Buffer.NumElements = InPageCount;
 
-	Device->CreateShaderResourceView(SpotShadowDataBuffer, &SBSRVDesc, &SpotShadowDataSRV);
+	Device->CreateShaderResourceView(Spot.DataBuffer, &SBSRVDesc, &Spot.DataSRV);
 }
 
 void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSize, uint32 MaxLights)
 {
-	if (PointAtlasResolution == AtlasSize && PointLightShadowDataCapacity == MaxLights && PointAtlasTexture)
+	if (Point.Resolution == AtlasSize && Point.DataCapacity == MaxLights && Point.Texture)
 		return;
 
-	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
-	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
-	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
-	PointAtlasResolution = 0;
+	ReleaseCOM(Point.DSV);
+	ReleaseCOM(Point.SRV);
+	ReleaseCOM(Point.Texture);
+	Point.Resolution = 0;
 
-	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV    = nullptr; }
-	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
-	PointLightShadowDataCapacity = 0;
+	ReleaseCOM(Point.DataSRV);
+	ReleaseCOM(Point.DataBuffer);
+	Point.DataCapacity = 0;
 
 	if (AtlasSize == 0 || MaxLights == 0)
 		return;
 
-	PointAtlasResolution = AtlasSize;
+	Point.Resolution = AtlasSize;
 
 	// Texture2D atlas (R32_TYPELESS — depth + SRV)
 	D3D11_TEXTURE2D_DESC TexDesc = {};
@@ -295,23 +380,23 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	TexDesc.Usage            = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &PointAtlasTexture))) { assert(false); return; }
+	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture))) { assert(false); return; }
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 	DSVDesc.Format             = DXGI_FORMAT_D32_FLOAT;
 	DSVDesc.ViewDimension      = D3D11_DSV_DIMENSION_TEXTURE2D;
 	DSVDesc.Texture2D.MipSlice = 0;
-	Device->CreateDepthStencilView(PointAtlasTexture, &DSVDesc, &PointAtlasDSV);
+	Device->CreateDepthStencilView(Point.Texture, &DSVDesc, &Point.DSV);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format                    = DXGI_FORMAT_R32_FLOAT;
 	SRVDesc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 	SRVDesc.Texture2D.MipLevels       = 1;
-	Device->CreateShaderResourceView(PointAtlasTexture, &SRVDesc, &PointAtlasSRV);
+	Device->CreateShaderResourceView(Point.Texture, &SRVDesc, &Point.SRV);
 
 	// StructuredBuffer<FPointShadowDataGPU>
-	PointLightShadowDataCapacity = MaxLights;
+	Point.DataCapacity = MaxLights;
 
 	D3D11_BUFFER_DESC BufferDesc = {};
 	BufferDesc.ByteWidth           = sizeof(FPointShadowDataGPU) * MaxLights;
@@ -320,38 +405,38 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	BufferDesc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
 	BufferDesc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
-	Device->CreateBuffer(&BufferDesc, nullptr, &PointLightShadowDataBuffer);
+	Device->CreateBuffer(&BufferDesc, nullptr, &Point.DataBuffer);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC BufSRVDesc = {};
 	BufSRVDesc.Format             = DXGI_FORMAT_UNKNOWN;
 	BufSRVDesc.ViewDimension      = D3D11_SRV_DIMENSION_BUFFER;
 	BufSRVDesc.Buffer.NumElements = MaxLights;
-	Device->CreateShaderResourceView(PointLightShadowDataBuffer, &BufSRVDesc, &PointLightShadowDataSRV);
+	Device->CreateShaderResourceView(Point.DataBuffer, &BufSRVDesc, &Point.DataSRV);
 }
 
 // ============================================================
-// VSM Ensure 함수들 — R32G32_FLOAT moment + D32_FLOAT depth
+// FShadowMapResources — Ensure (VSM)
 // ============================================================
 
-void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
+void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolution)
 {
-	if (CSMResolution == Resolution && CSMVSMTexture) return;
+	if (CSM.Resolution == InResolution && CSM.VSMTexture) return;
 
 	// 기존 VSM CSM 리소스 해제
-	if (CSMVSMSRV) { CSMVSMSRV->Release(); CSMVSMSRV = nullptr; }
+	ReleaseCOM(CSM.VSMSRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		if (CSMVSMSliceSRV[i]) { CSMVSMSliceSRV[i]->Release(); CSMVSMSliceSRV[i] = nullptr; }
-		if (CSMVSMRTV[i]) { CSMVSMRTV[i]->Release(); CSMVSMRTV[i] = nullptr; }
-		if (CSMVSMDSV[i]) { CSMVSMDSV[i]->Release(); CSMVSMDSV[i] = nullptr; }
+		ReleaseCOM(CSM.VSMSliceSRV[i]);
+		ReleaseCOM(CSM.VSMRTV[i]);
+		ReleaseCOM(CSM.VSMDSV[i]);
 	}
-	if (CSMVSMTexture) { CSMVSMTexture->Release(); CSMVSMTexture = nullptr; }
-	if (CSMVSMDepthTexture) { CSMVSMDepthTexture->Release(); CSMVSMDepthTexture = nullptr; }
+	ReleaseCOM(CSM.VSMTexture);
+	ReleaseCOM(CSM.VSMDepthTexture);
 
 	// Moment Texture: R32G32_FLOAT, Texture2DArray
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
-	MomentDesc.Width  = Resolution;
-	MomentDesc.Height = Resolution;
+	MomentDesc.Width  = InResolution;
+	MomentDesc.Height = InResolution;
 	MomentDesc.MipLevels = 1;
 	MomentDesc.ArraySize = MAX_SHADOW_CASCADES;
 	MomentDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -359,12 +444,12 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSMVSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSM.VSMTexture))) return;
 
 	// Depth Texture: D32_FLOAT (DSV 전용, SRV 불필요)
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
-	DepthDesc.Width  = Resolution;
-	DepthDesc.Height = Resolution;
+	DepthDesc.Width  = InResolution;
+	DepthDesc.Height = InResolution;
 	DepthDesc.MipLevels = 1;
 	DepthDesc.ArraySize = MAX_SHADOW_CASCADES;
 	DepthDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -372,9 +457,9 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 	DepthDesc.Usage  = D3D11_USAGE_DEFAULT;
 	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &CSMVSMDepthTexture)))
+	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &CSM.VSMDepthTexture)))
 	{
-		CSMVSMTexture->Release(); CSMVSMTexture = nullptr;
+		CSM.VSMTexture->Release(); CSM.VSMTexture = nullptr;
 		return;
 	}
 
@@ -387,7 +472,7 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 		RTVDesc.Texture2DArray.MipSlice = 0;
 		RTVDesc.Texture2DArray.FirstArraySlice = i;
 		RTVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateRenderTargetView(CSMVSMTexture, &RTVDesc, &CSMVSMRTV[i]);
+		Device->CreateRenderTargetView(CSM.VSMTexture, &RTVDesc, &CSM.VSMRTV[i]);
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -395,10 +480,10 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 		DSVDesc.Texture2DArray.MipSlice = 0;
 		DSVDesc.Texture2DArray.FirstArraySlice = i;
 		DSVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateDepthStencilView(CSMVSMDepthTexture, &DSVDesc, &CSMVSMDSV[i]);
+		Device->CreateDepthStencilView(CSM.VSMDepthTexture, &DSVDesc, &CSM.VSMDSV[i]);
 	}
 
-	// SRV — 전체 array (셰이더에서 moment.rg로 읽음)
+	// SRV — 전체 array
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
@@ -406,7 +491,7 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 	SRVDesc.Texture2DArray.MostDetailedMip = 0;
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = MAX_SHADOW_CASCADES;
-	Device->CreateShaderResourceView(CSMVSMTexture, &SRVDesc, &CSMVSMSRV);
+	Device->CreateShaderResourceView(CSM.VSMTexture, &SRVDesc, &CSM.VSMSRV);
 
 	// Per-cascade slice SRV (ImGui 디버그용)
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
@@ -418,69 +503,57 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution)
 		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
 		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
 		SliceSRVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateShaderResourceView(CSMVSMTexture, &SliceSRVDesc, &CSMVSMSliceSRV[i]);
+		Device->CreateShaderResourceView(CSM.VSMTexture, &SliceSRVDesc, &CSM.VSMSliceSRV[i]);
 	}
 }
 
-void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount)
+void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InResolution, uint32 InPageCount)
 {
-	if (PageCount == 0) return;
-	if (SpotAtlasResolution == Resolution && SpotAtlasPageCount == PageCount && SpotVSMTexture)
+	if (InPageCount == 0) return;
+	if (Spot.Resolution == InResolution && Spot.PageCount == InPageCount && Spot.VSMTexture)
 		return;
 
 	// 기존 Spot VSM 리소스 해제
-	if (SpotVSMSRV) { SpotVSMSRV->Release(); SpotVSMSRV = nullptr; }
-	if (SpotVSMRTVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMRTVs[i]) SpotVSMRTVs[i]->Release();
-		delete[] SpotVSMRTVs;
-		SpotVSMRTVs = nullptr;
-	}
-	if (SpotVSMDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMDSVs[i]) SpotVSMDSVs[i]->Release();
-		delete[] SpotVSMDSVs;
-		SpotVSMDSVs = nullptr;
-	}
-	if (SpotVSMTexture) { SpotVSMTexture->Release(); SpotVSMTexture = nullptr; }
-	if (SpotVSMDepthTexture) { SpotVSMDepthTexture->Release(); SpotVSMDepthTexture = nullptr; }
+	ReleaseCOM(Spot.VSMSRV);
+	ReleaseViewArray(Spot.VSMRTVs);
+	ReleaseViewArray(Spot.VSMDSVs);
+	ReleaseCOM(Spot.VSMTexture);
+	ReleaseCOM(Spot.VSMDepthTexture);
 
 	// Moment Texture
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
-	MomentDesc.Width  = Resolution;
-	MomentDesc.Height = Resolution;
+	MomentDesc.Width  = InResolution;
+	MomentDesc.Height = InResolution;
 	MomentDesc.MipLevels = 1;
-	MomentDesc.ArraySize = PageCount;
+	MomentDesc.ArraySize = InPageCount;
 	MomentDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &SpotVSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Spot.VSMTexture))) return;
 
 	// Depth Texture
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
-	DepthDesc.Width  = Resolution;
-	DepthDesc.Height = Resolution;
+	DepthDesc.Width  = InResolution;
+	DepthDesc.Height = InResolution;
 	DepthDesc.MipLevels = 1;
-	DepthDesc.ArraySize = PageCount;
+	DepthDesc.ArraySize = InPageCount;
 	DepthDesc.Format = DXGI_FORMAT_D32_FLOAT;
 	DepthDesc.SampleDesc.Count = 1;
 	DepthDesc.Usage  = D3D11_USAGE_DEFAULT;
 	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &SpotVSMDepthTexture)))
+	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Spot.VSMDepthTexture)))
 	{
-		SpotVSMTexture->Release(); SpotVSMTexture = nullptr;
+		Spot.VSMTexture->Release(); Spot.VSMTexture = nullptr;
 		return;
 	}
 
 	// Per-slice RTV + DSV
-	SpotVSMRTVs = new ID3D11RenderTargetView*[PageCount]();
-	SpotVSMDSVs = new ID3D11DepthStencilView*[PageCount]();
-	for (uint32 i = 0; i < PageCount; ++i)
+	Spot.VSMRTVs.resize(InPageCount, nullptr);
+	Spot.VSMDSVs.resize(InPageCount, nullptr);
+	for (uint32 i = 0; i < InPageCount; ++i)
 	{
 		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -488,7 +561,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resol
 		RTVDesc.Texture2DArray.MipSlice = 0;
 		RTVDesc.Texture2DArray.FirstArraySlice = i;
 		RTVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateRenderTargetView(SpotVSMTexture, &RTVDesc, &SpotVSMRTVs[i]);
+		Device->CreateRenderTargetView(Spot.VSMTexture, &RTVDesc, &Spot.VSMRTVs[i]);
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -496,7 +569,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resol
 		DSVDesc.Texture2DArray.MipSlice = 0;
 		DSVDesc.Texture2DArray.FirstArraySlice = i;
 		DSVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateDepthStencilView(SpotVSMDepthTexture, &DSVDesc, &SpotVSMDSVs[i]);
+		Device->CreateDepthStencilView(Spot.VSMDepthTexture, &DSVDesc, &Spot.VSMDSVs[i]);
 	}
 
 	// SRV — 전체 array
@@ -506,20 +579,20 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resol
 	SRVDesc.Texture2DArray.MipLevels = 1;
 	SRVDesc.Texture2DArray.MostDetailedMip = 0;
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
-	SRVDesc.Texture2DArray.ArraySize = PageCount;
-	Device->CreateShaderResourceView(SpotVSMTexture, &SRVDesc, &SpotVSMSRV);
+	SRVDesc.Texture2DArray.ArraySize = InPageCount;
+	Device->CreateShaderResourceView(Spot.VSMTexture, &SRVDesc, &Spot.VSMSRV);
 }
 
 void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize)
 {
-	if (PointAtlasResolution == AtlasSize && PointVSMTexture)
+	if (Point.Resolution == AtlasSize && Point.VSMTexture)
 		return;
 
-	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
-	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
-	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
-	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
-	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
+	ReleaseCOM(Point.VSMSRV);
+	ReleaseCOM(Point.VSMRTV);
+	ReleaseCOM(Point.VSMDSV);
+	ReleaseCOM(Point.VSMTexture);
+	ReleaseCOM(Point.VSMDepthTexture);
 
 	if (AtlasSize == 0) return;
 
@@ -533,7 +606,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage            = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags        = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &PointVSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture))) return;
 
 	// Depth atlas: D32_FLOAT Texture2D
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -545,9 +618,9 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	DepthDesc.SampleDesc.Count = 1;
 	DepthDesc.Usage            = D3D11_USAGE_DEFAULT;
 	DepthDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL;
-	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &PointVSMDepthTexture)))
+	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Point.VSMDepthTexture)))
 	{
-		PointVSMTexture->Release(); PointVSMTexture = nullptr;
+		Point.VSMTexture->Release(); Point.VSMTexture = nullptr;
 		return;
 	}
 
@@ -555,162 +628,36 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	RTVDesc.Format             = DXGI_FORMAT_R32G32_FLOAT;
 	RTVDesc.ViewDimension      = D3D11_RTV_DIMENSION_TEXTURE2D;
 	RTVDesc.Texture2D.MipSlice = 0;
-	Device->CreateRenderTargetView(PointVSMTexture, &RTVDesc, &PointVSMRTV);
+	Device->CreateRenderTargetView(Point.VSMTexture, &RTVDesc, &Point.VSMRTV);
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
 	DSVDesc.Format             = DXGI_FORMAT_D32_FLOAT;
 	DSVDesc.ViewDimension      = D3D11_DSV_DIMENSION_TEXTURE2D;
 	DSVDesc.Texture2D.MipSlice = 0;
-	Device->CreateDepthStencilView(PointVSMDepthTexture, &DSVDesc, &PointVSMDSV);
+	Device->CreateDepthStencilView(Point.VSMDepthTexture, &DSVDesc, &Point.VSMDSV);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format                    = DXGI_FORMAT_R32G32_FLOAT;
 	SRVDesc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 	SRVDesc.Texture2D.MipLevels       = 1;
-	Device->CreateShaderResourceView(PointVSMTexture, &SRVDesc, &PointVSMSRV);
+	Device->CreateShaderResourceView(Point.VSMTexture, &SRVDesc, &Point.VSMSRV);
 }
 
-void FShadowMapResources::ReleaseCSM()
-{
-	// CSM VSM
-	if (CSMVSMSRV) { CSMVSMSRV->Release(); CSMVSMSRV = nullptr; }
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		if (CSMVSMSliceSRV[i]) { CSMVSMSliceSRV[i]->Release(); CSMVSMSliceSRV[i] = nullptr; }
-		if (CSMVSMRTV[i]) { CSMVSMRTV[i]->Release(); CSMVSMRTV[i] = nullptr; }
-		if (CSMVSMDSV[i]) { CSMVSMDSV[i]->Release(); CSMVSMDSV[i] = nullptr; }
-	}
-	if (CSMVSMTexture) { CSMVSMTexture->Release(); CSMVSMTexture = nullptr; }
-	if (CSMVSMDepthTexture) { CSMVSMDepthTexture->Release(); CSMVSMDepthTexture = nullptr; }
-
-	// CSM depth
-	if (CSMSRV) { CSMSRV->Release(); CSMSRV = nullptr; }
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		if (CSMSliceSRV[i]) { CSMSliceSRV[i]->Release(); CSMSliceSRV[i] = nullptr; }
-		if (CSMDSV[i]) { CSMDSV[i]->Release(); CSMDSV[i] = nullptr; }
-	}
-	if (CSMTexture) { CSMTexture->Release(); CSMTexture = nullptr; }
-	CSMResolution = 0;
-}
-
-void FShadowMapResources::ReleaseSpotAtlas()
-{
-	// Spot VSM
-	if (SpotVSMSRV) { SpotVSMSRV->Release(); SpotVSMSRV = nullptr; }
-	if (SpotVSMRTVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMRTVs[i]) SpotVSMRTVs[i]->Release();
-		delete[] SpotVSMRTVs;
-		SpotVSMRTVs = nullptr;
-	}
-	if (SpotVSMDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMDSVs[i]) SpotVSMDSVs[i]->Release();
-		delete[] SpotVSMDSVs;
-		SpotVSMDSVs = nullptr;
-	}
-	if (SpotVSMTexture) { SpotVSMTexture->Release(); SpotVSMTexture = nullptr; }
-	if (SpotVSMDepthTexture) { SpotVSMDepthTexture->Release(); SpotVSMDepthTexture = nullptr; }
-
-	// Spot depth atlas
-	if (SpotAtlasSRV) { SpotAtlasSRV->Release(); SpotAtlasSRV = nullptr; }
-	if (SpotAtlasSliceSRVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasSliceSRVs[i]) SpotAtlasSliceSRVs[i]->Release();
-		}
-		delete[] SpotAtlasSliceSRVs;
-		SpotAtlasSliceSRVs = nullptr;
-	}
-	if (SpotAtlasDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-		{
-			if (SpotAtlasDSVs[i]) SpotAtlasDSVs[i]->Release();
-		}
-		delete[] SpotAtlasDSVs;
-		SpotAtlasDSVs = nullptr;
-	}
-	if (SpotAtlasTexture) { SpotAtlasTexture->Release(); SpotAtlasTexture = nullptr; }
-	SpotAtlasPageCount = 0;
-	SpotAtlasResolution = 0;
-
-	if (SpotShadowDataSRV)    { SpotShadowDataSRV->Release();    SpotShadowDataSRV = nullptr; }
-	if (SpotShadowDataBuffer) { SpotShadowDataBuffer->Release(); SpotShadowDataBuffer = nullptr; }
-	SpotShadowDataCapacity = 0;
-}
-
-void FShadowMapResources::ReleasePointAtlas()
-{
-	// Point VSM
-	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
-	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
-	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
-	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
-	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
-
-	// Point depth atlas
-	if (PointAtlasSRV)     { PointAtlasSRV->Release();     PointAtlasSRV     = nullptr; }
-	if (PointAtlasDSV)     { PointAtlasDSV->Release();     PointAtlasDSV     = nullptr; }
-	if (PointAtlasTexture) { PointAtlasTexture->Release(); PointAtlasTexture = nullptr; }
-	PointAtlasResolution = 0;
-
-	if (PointLightShadowDataSRV)    { PointLightShadowDataSRV->Release();    PointLightShadowDataSRV = nullptr; }
-	if (PointLightShadowDataBuffer) { PointLightShadowDataBuffer->Release(); PointLightShadowDataBuffer = nullptr; }
-	PointLightShadowDataCapacity = 0;
-}
-
-void FShadowMapResources::ReleaseVSM()
-{
-	// CSM VSM
-	if (CSMVSMSRV) { CSMVSMSRV->Release(); CSMVSMSRV = nullptr; }
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		if (CSMVSMSliceSRV[i]) { CSMVSMSliceSRV[i]->Release(); CSMVSMSliceSRV[i] = nullptr; }
-		if (CSMVSMRTV[i]) { CSMVSMRTV[i]->Release(); CSMVSMRTV[i] = nullptr; }
-		if (CSMVSMDSV[i]) { CSMVSMDSV[i]->Release(); CSMVSMDSV[i] = nullptr; }
-	}
-	if (CSMVSMTexture) { CSMVSMTexture->Release(); CSMVSMTexture = nullptr; }
-	if (CSMVSMDepthTexture) { CSMVSMDepthTexture->Release(); CSMVSMDepthTexture = nullptr; }
-
-	// Spot VSM
-	if (SpotVSMSRV) { SpotVSMSRV->Release(); SpotVSMSRV = nullptr; }
-	if (SpotVSMRTVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMRTVs[i]) SpotVSMRTVs[i]->Release();
-		delete[] SpotVSMRTVs;
-		SpotVSMRTVs = nullptr;
-	}
-	if (SpotVSMDSVs)
-	{
-		for (uint32 i = 0; i < SpotAtlasPageCount; ++i)
-			if (SpotVSMDSVs[i]) SpotVSMDSVs[i]->Release();
-		delete[] SpotVSMDSVs;
-		SpotVSMDSVs = nullptr;
-	}
-	if (SpotVSMTexture) { SpotVSMTexture->Release(); SpotVSMTexture = nullptr; }
-	if (SpotVSMDepthTexture) { SpotVSMDepthTexture->Release(); SpotVSMDepthTexture = nullptr; }
-
-	// Point VSM Atlas
-	if (PointVSMSRV)          { PointVSMSRV->Release();          PointVSMSRV          = nullptr; }
-	if (PointVSMRTV)          { PointVSMRTV->Release();          PointVSMRTV          = nullptr; }
-	if (PointVSMDSV)          { PointVSMDSV->Release();          PointVSMDSV          = nullptr; }
-	if (PointVSMTexture)      { PointVSMTexture->Release();      PointVSMTexture      = nullptr; }
-	if (PointVSMDepthTexture) { PointVSMDepthTexture->Release(); PointVSMDepthTexture = nullptr; }
-}
+// ============================================================
+// FShadowMapResources::Release
+// ============================================================
 
 void FShadowMapResources::Release()
 {
-	ReleaseCSM();
-	ReleaseSpotAtlas();
-	ReleasePointAtlas();
+	CSM.Release();
+	Spot.Release();
+	Point.Release();
 }
+
+// ============================================================
+// FSystemResources
+// ============================================================
 
 void FSystemResources::Release()
 {

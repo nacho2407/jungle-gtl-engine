@@ -163,18 +163,18 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	// ════════════════════════════════════════
 	if (SelectedTab == 0)
 	{
-		if (!SR.IsCSMValid())
+		if (!SR.CSM.IsValid())
 		{
 			ImGui::TextDisabled("CSM: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Resolution: %u x %u", SR.CSMResolution, SR.CSMResolution);
+		ImGui::Text("Resolution: %u x %u", SR.CSM.Resolution, SR.CSM.Resolution);
 		ImGui::Text("C%d range: %.3f - %.3f",
 			CSMCascadeIndex,
-			SR.CSMDebugCascadeNear.Data[CSMCascadeIndex],
-			SR.CSMDebugCascadeFar.Data[CSMCascadeIndex]);
+			SR.CSM.DebugCascadeNear.Data[CSMCascadeIndex],
+			SR.CSM.DebugCascadeFar.Data[CSMCascadeIndex]);
 
 		// Cascade 선택 버튼
 		for (int32 i = 0; i < (int32)MAX_SHADOW_CASCADES; ++i)
@@ -186,10 +186,10 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 
 		// 선택된 cascade 프리뷰
-		if (CSMCascadeIndex >= 0 && CSMCascadeIndex < (int32)MAX_SHADOW_CASCADES && SR.CSMSliceSRV[CSMCascadeIndex])
+		if (CSMCascadeIndex >= 0 && CSMCascadeIndex < (int32)MAX_SHADOW_CASCADES && SR.CSM.SliceSRV[CSMCascadeIndex])
 		{
 			ImGui::Image(
-				(ImTextureID)SR.CSMSliceSRV[CSMCascadeIndex],
+				(ImTextureID)SR.CSM.SliceSRV[CSMCascadeIndex],
 				ImVec2(PreviewSize, PreviewSize),
 				ImVec2(0, 0), ImVec2(1, 1),
 				ImVec4(1, 1, 1, 1), ImVec4(0.3f, 0.3f, 0.3f, 1)
@@ -201,20 +201,20 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	// ════════════════════════════════════════
 	else if (SelectedTab == 1)
 	{
-		if (!SR.IsSpotValid())
+		if (!SR.Spot.IsValid())
 		{
 			ImGui::TextDisabled("Spot Atlas: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Resolution: %u x %u, Pages: %u", SR.SpotAtlasResolution, SR.SpotAtlasResolution, SR.SpotAtlasPageCount);
+		ImGui::Text("Resolution: %u x %u, Pages: %u", SR.Spot.Resolution, SR.Spot.Resolution, SR.Spot.PageCount);
 
 		// Page 선택
-		if (SpotPageIndex >= (int32)SR.SpotAtlasPageCount)
+		if (SpotPageIndex >= (int32)SR.Spot.PageCount)
 			SpotPageIndex = 0;
 
-		for (int32 i = 0; i < (int32)SR.SpotAtlasPageCount; ++i)
+		for (int32 i = 0; i < (int32)SR.Spot.PageCount; ++i)
 		{
 			if (i > 0) ImGui::SameLine();
 			char label[16];
@@ -240,17 +240,17 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			{
 				if (!R.bValid || R.LightIdx != SelLight.EnvIndex) continue;
 
-				float AtlasF = static_cast<float>(SR.SpotAtlasResolution);
+				float AtlasF = static_cast<float>(SR.Spot.Resolution);
 				ImVec2 uv0(static_cast<float>(R.X) / AtlasF, static_cast<float>(R.Y) / AtlasF);
 				ImVec2 uv1(static_cast<float>(R.X + R.Size) / AtlasF, static_cast<float>(R.Y + R.Size) / AtlasF);
 
 				ImGui::Text("Selected: L%d (%u x %u px)", R.LightIdx, R.Size, R.Size);
 
 				float B = SpotDepthBrightness;
-				if (SR.SpotAtlasSliceSRVs && SR.SpotAtlasSliceSRVs[SpotPageIndex])
+				if (!SR.Spot.SliceSRVs.empty() && SR.Spot.SliceSRVs[SpotPageIndex])
 				{
 					ImGui::Image(
-						(ImTextureID)SR.SpotAtlasSliceSRVs[SpotPageIndex],
+						(ImTextureID)SR.Spot.SliceSRVs[SpotPageIndex],
 						ImVec2(PreviewSize, PreviewSize),
 						uv0, uv1,
 						ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
@@ -264,18 +264,18 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		// ── 선택 없거나 못 찾으면 기존: 아틀라스 전체 표시 ──
 		if (!bShowCropped)
 		{
-			if (SpotPageIndex >= 0 && SpotPageIndex < (int32)SR.SpotAtlasPageCount && SR.SpotAtlasSliceSRVs && SR.SpotAtlasSliceSRVs[SpotPageIndex])
+			if (SpotPageIndex >= 0 && SpotPageIndex < (int32)SR.Spot.PageCount && !SR.Spot.SliceSRVs.empty() && SR.Spot.SliceSRVs[SpotPageIndex])
 			{
 				float B = SpotDepthBrightness;
 				ImGui::Image(
-					(ImTextureID)SR.SpotAtlasSliceSRVs[SpotPageIndex],
+					(ImTextureID)SR.Spot.SliceSRVs[SpotPageIndex],
 					ImVec2(PreviewSize, PreviewSize),
 					ImVec2(0, 0), ImVec2(1, 1),
 					ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
 				);
 
 				if (bShowSpotRegions && pRegions)
-					DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.SpotAtlasResolution));
+					DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Spot.Resolution));
 			}
 		}
 	}
@@ -284,14 +284,14 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	// ════════════════════════════════════════
 	else if (SelectedTab == 2)
 	{
-		if (!SR.IsPointLightValid())
+		if (!SR.Point.IsValid())
 		{
 			ImGui::TextDisabled("Point Atlas: not allocated");
 			ImGui::End();
 			return;
 		}
 
-		ImGui::Text("Atlas: %u x %u", SR.PointAtlasResolution, SR.PointAtlasResolution);
+		ImGui::Text("Atlas: %u x %u", SR.Point.Resolution, SR.Point.Resolution);
 
 		ImGui::SetNextItemWidth(180.0f);
 		ImGui::SliderFloat("Brightness##pt", &PointDepthBrightness, 0.1f, 8.0f, "%.2fx");
@@ -304,7 +304,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		const TArray<FAtlasRegion>* pRegions = ShadowPass ? &ShadowPass->GetLastPointAtlasRegions() : nullptr;
 		bool bShowCropped = false;
 
-		if (SelLight.Type == ESelectedLightType::Point && SelLight.EnvIndex >= 0 && pRegions && SR.PointAtlasSRV)
+		if (SelLight.Type == ESelectedLightType::Point && SelLight.EnvIndex >= 0 && pRegions && SR.Point.SRV)
 		{
 			// 해당 라이트의 face 영역 수집
 			TArray<const FAtlasRegion*> FaceRegions;
@@ -321,7 +321,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 				ImGui::Text("Selected: L%d (%u x %u px, %u faces)", SelLight.EnvIndex, FaceSize, FaceSize, (uint32)FaceRegions.size());
 
 				float FacePreview = (PreviewSize - 10.0f * 2) / 3.0f;
-				float AtlasF = static_cast<float>(SR.PointAtlasResolution);
+				float AtlasF = static_cast<float>(SR.Point.Resolution);
 				float B = PointDepthBrightness;
 
 				for (int32 f = 0; f < (int32)FaceRegions.size(); ++f)
@@ -337,7 +337,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 					const char* FaceName = (FaceIdx >= 0 && FaceIdx < 6) ? FaceNames[FaceIdx] : "?";
 					ImGui::Text("%s", FaceName);
 					ImGui::Image(
-						(ImTextureID)SR.PointAtlasSRV,
+						(ImTextureID)SR.Point.SRV,
 						ImVec2(FacePreview, FacePreview),
 						uv0, uv1,
 						ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
@@ -348,18 +348,18 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 
 		// ── 선택 없거나 못 찾으면 기존: 아틀라스 전체 표시 ──
-		if (!bShowCropped && SR.PointAtlasSRV)
+		if (!bShowCropped && SR.Point.SRV)
 		{
 			float B = PointDepthBrightness;
 			ImGui::Image(
-				(ImTextureID)SR.PointAtlasSRV,
+				(ImTextureID)SR.Point.SRV,
 				ImVec2(PreviewSize, PreviewSize),
 				ImVec2(0, 0), ImVec2(1, 1),
 				ImVec4(B, B, B, 1.0f), ImVec4(0.3f, 0.3f, 0.3f, 1.0f)
 			);
 
 			if (bShowPointRegions && pRegions)
-				DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.PointAtlasResolution));
+				DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Point.Resolution));
 		}
 	}
 

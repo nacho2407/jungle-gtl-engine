@@ -91,7 +91,7 @@ bool FShadowMapPass::BeginPass(const FPassContext& Ctx)
 	if (!Shadow.bEnabled)
 	{
 		FShadowMapResources& Res = Ctx.Resources.ShadowResources;
-		if (Res.IsCSMValid() || Res.IsSpotValid() || Res.IsPointLightValid())
+		if (Res.CSM.IsValid() || Res.Spot.IsValid() || Res.Point.IsValid())
 		{
 			// GPU 리소스 해제
 			Res.Release();
@@ -169,24 +169,24 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 	UpdateShadowCB(Ctx);
 
 	// ── Shadow Stats: 해상도 + 메모리 ──
-	SHADOW_STATS_SET_RESOLUTION(ShadowRes.CSMResolution);
+	SHADOW_STATS_SET_RESOLUTION(ShadowRes.CSM.Resolution);
 
 	// Shadow map 텍스처 메모리 추정 (depth = 4B/pixel, VSM moment = 8B/pixel)
 	{
 		const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4; // depth + (moment if VSM)
 		uint64 TotalBytes = 0;
 
-		// CSM: Resolution^2 * cascades (ReleaseCSM 시 CSMResolution=0 → 자동 스킵)
-		if (ShadowRes.CSMResolution > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.CSMResolution) * ShadowRes.CSMResolution * MAX_SHADOW_CASCADES * BPP;
+		// CSM: Resolution^2 * cascades
+		if (ShadowRes.CSM.Resolution > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.CSM.Resolution) * ShadowRes.CSM.Resolution * MAX_SHADOW_CASCADES * BPP;
 
 		// Spot Atlas: AtlasResolution^2 * pages
-		if (ShadowRes.SpotAtlasPageCount > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.SpotAtlasResolution) * ShadowRes.SpotAtlasResolution * ShadowRes.SpotAtlasPageCount * BPP;
+		if (ShadowRes.Spot.PageCount > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.Spot.Resolution) * ShadowRes.Spot.Resolution * ShadowRes.Spot.PageCount * BPP;
 
 		// Point Atlas: AtlasSize^2
-		if (ShadowRes.PointAtlasResolution > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.PointAtlasResolution) * ShadowRes.PointAtlasResolution * BPP;
+		if (ShadowRes.Point.Resolution > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.Point.Resolution) * ShadowRes.Point.Resolution * BPP;
 
 		SHADOW_STATS_SET_MEMORY(TotalBytes);
 	}
@@ -201,36 +201,36 @@ void FShadowMapPass::BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources
 	if (CurrentFilterMode == EShadowFilterMode::VSM)
 	{
 		// VSM: moment texture SRV 바인딩 (R32G32_FLOAT)
-		if (Res.CSMVSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMVSMSRV);
-		else if (Res.CSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
+		if (Res.CSM.VSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.VSMSRV);
+		else if (Res.CSM.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
 
-		if (Res.SpotVSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotVSMSRV);
-		else if (Res.SpotAtlasSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
+		if (Res.Spot.VSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.VSMSRV);
+		else if (Res.Spot.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
 
-		if (Res.PointVSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointVSMSRV);
-		else if (Res.PointAtlasSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointAtlasSRV);
+		if (Res.Point.VSMSRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.VSMSRV);
+		else if (Res.Point.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
 	}
 	else
 	{
 		// Hard/PCF: depth SRV 바인딩 (R32_FLOAT)
-		if (Res.CSMSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSMSRV);
-		if (Res.SpotAtlasSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.SpotAtlasSRV);
-		if (Res.PointAtlasSRV)
-			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.PointAtlasSRV);
+		if (Res.CSM.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 1, &Res.CSM.SRV);
+		if (Res.Spot.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapSpotAtlas, 1, &Res.Spot.SRV);
+		if (Res.Point.SRV)
+			DC->PSSetShaderResources(ESystemTexSlot::ShadowMapPointLightTextureArray, 1, &Res.Point.SRV);
 	}
 
-	if (Res.SpotShadowDataSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.SpotShadowDataSRV);
-	if (Res.PointLightShadowDataSRV)
-		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.PointLightShadowDataSRV);
+	if (Res.Spot.DataSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 1, &Res.Spot.DataSRV);
+	if (Res.Point.DataSRV)
+		DC->PSSetShaderResources(ESystemTexSlot::PointShadowDatas, 1, &Res.Point.DataSRV);
 }
 
 // ============================================================
@@ -262,9 +262,9 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.EnsureCSM(Dev, Resolution);
 		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
 	}
-	else if (Res.IsCSMValid())
+	else if (Res.CSM.IsValid())
 	{
-		Res.ReleaseCSM();
+		Res.CSM.Release();
 	}
 
 	// ── Spot Atlas — 카메라 프러스텀 컬링 후 가시 라이트만 ──
@@ -287,9 +287,9 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.EnsureSpotAtlas(Dev, SpotRes, ShadowSpotCount);
 		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
 	}
-	else if (Res.IsSpotValid())
+	else if (Res.Spot.IsValid())
 	{
-		Res.ReleaseSpotAtlas();
+		Res.Spot.Release();
 	}
 
 	// ── Point Atlas — 카메라 프러스텀 컬링 후 가시 라이트만 ──
@@ -311,9 +311,9 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.EnsurePointAtlas(Dev, PointAtlasSize, ShadowPointCount);
 		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize);
 	}
-	else if (Res.IsPointLightValid())
+	else if (Res.Point.IsValid())
 	{
-		Res.ReleasePointAtlas();
+		Res.Point.Release();
 	}
 }
 
@@ -326,7 +326,7 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
 
-	ShadowCBCache.CSMResolution = Res.CSMResolution;
+	ShadowCBCache.CSMResolution = Res.CSM.Resolution;
 
 	Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
 	ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();
@@ -413,7 +413,7 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 
 void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
-	if (!Res.IsCSMValid()) return;
+	if (!Res.CSM.IsValid()) return;
 
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	if (!Env.HasGlobalDirectionalLight()) return;
@@ -446,11 +446,11 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 		CascadeRanges[0].FarZ, CascadeRanges[1].FarZ,
 		CascadeRanges[2].FarZ, CascadeRanges[3].FarZ
 	);
-	Res.CSMDebugCascadeNear = FVector4(
+	Res.CSM.DebugCascadeNear = FVector4(
 		CascadeRanges[0].NearZ, CascadeRanges[1].NearZ,
 		CascadeRanges[2].NearZ, CascadeRanges[3].NearZ
 	);
-	Res.CSMDebugCascadeFar = ShadowCBCache.CascadeSplits;
+	Res.CSM.DebugCascadeFar = ShadowCBCache.CascadeSplits;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
@@ -470,22 +470,22 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 		UploadLightViewProj(DC, DirectionalVP.ViewProj);
 
-		if (CurrentFilterMode == EShadowFilterMode::VSM && Res.IsCSMVSMValid())
+		if (CurrentFilterMode == EShadowFilterMode::VSM && Res.CSM.IsVSMValid())
 		{
 			float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
-			DC->ClearRenderTargetView(Res.CSMVSMRTV[i], clearColor);
-			DC->ClearDepthStencilView(Res.CSMVSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
-			DC->OMSetRenderTargets(1, &Res.CSMVSMRTV[i], Res.CSMVSMDSV[i]);
+			DC->ClearRenderTargetView(Res.CSM.VSMRTV[i], clearColor);
+			DC->ClearDepthStencilView(Res.CSM.VSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(1, &Res.CSM.VSMRTV[i], Res.CSM.VSMDSV[i]);
 		}
 		else
 		{
-			DC->ClearDepthStencilView(Res.CSMDSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
-			DC->OMSetRenderTargets(0, nullptr, Res.CSMDSV[i]);
+			DC->ClearDepthStencilView(Res.CSM.DSV[i], D3D11_CLEAR_DEPTH, 0.0f, 0);
+			DC->OMSetRenderTargets(0, nullptr, Res.CSM.DSV[i]);
 		}
 
 		D3D11_VIEWPORT ShadowVP = {};
-		ShadowVP.Width = static_cast<float>(Res.CSMResolution);
-		ShadowVP.Height = static_cast<float>(Res.CSMResolution);
+		ShadowVP.Width = static_cast<float>(Res.CSM.Resolution);
+		ShadowVP.Height = static_cast<float>(Res.CSM.Resolution);
 		ShadowVP.MinDepth = 0.0f;
 		ShadowVP.MaxDepth = 1.0f;
 
@@ -512,22 +512,22 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 	const uint32 ShadowSpotCount = static_cast<uint32>(VisibleShadowSpotIndices.size());
 	if (ShadowSpotCount == 0) return;
-	if (!Res.IsSpotValid()) return;
+	if (!Res.Spot.IsValid()) return;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 	const uint32 Resolution = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
 
-	if (bVSM && Res.IsSpotVSMValid())
+	if (bVSM && Res.Spot.IsVSMValid())
 	{
 		float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
-		DC->ClearRenderTargetView(Res.SpotVSMRTVs[0], clearColor);
-		DC->ClearDepthStencilView(Res.SpotVSMDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->ClearRenderTargetView(Res.Spot.VSMRTVs[0], clearColor);
+		DC->ClearDepthStencilView(Res.Spot.VSMDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
 	}
 	else
 	{
-		DC->ClearDepthStencilView(Res.SpotAtlasDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->ClearDepthStencilView(Res.Spot.DSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
 	}
 
 	TArray<FSpotShadowDataGPU> SpotGPUData;
@@ -566,13 +566,13 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 		UploadLightViewProj(DC, VP.ViewProj);
 
-		if (bVSM && Res.IsSpotVSMValid())
+		if (bVSM && Res.Spot.IsVSMValid())
 		{
-			DC->OMSetRenderTargets(1, &Res.SpotVSMRTVs[0], Res.SpotVSMDSVs[0]);
+			DC->OMSetRenderTargets(1, &Res.Spot.VSMRTVs[0], Res.Spot.VSMDSVs[0]);
 		}
 		else
 		{
-			DC->OMSetRenderTargets(0, nullptr, Res.SpotAtlasDSVs[0]);
+			DC->OMSetRenderTargets(0, nullptr, Res.Spot.DSVs[0]);
 		}
 		DC->RSSetViewports(1, &ShadowVP);
 
@@ -597,13 +597,13 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		++ShadowIdx;
 	}
 
-	if (ShadowIdx > 0 && Res.SpotShadowDataBuffer)
+	if (ShadowIdx > 0 && Res.Spot.DataBuffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
-		if (SUCCEEDED(DC->Map(Res.SpotShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+		if (SUCCEEDED(DC->Map(Res.Spot.DataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 		{
 			memcpy(Mapped.pData, SpotGPUData.data(), sizeof(FSpotShadowDataGPU) * ShadowIdx);
-			DC->Unmap(Res.SpotShadowDataBuffer, 0);
+			DC->Unmap(Res.Spot.DataBuffer, 0);
 		}
 	}
 
@@ -629,7 +629,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		return;
 	}
 
-	if (!Res.IsPointLightValid() || !Res.PointLightShadowDataBuffer)
+	if (!Res.Point.IsValid() || !Res.Point.DataBuffer)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
 		return;
@@ -657,15 +657,15 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	PointAtlasRegion = PointLightAtlas.CommitBatch();
 
 	// 아틀라스 전체를 한 번만 클리어
-	if (bVSM && Res.IsPointVSMValid())
+	if (bVSM && Res.Point.IsVSMValid())
 	{
 		float clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
-		DC->ClearRenderTargetView(Res.PointVSMRTV, clearColor);
-		DC->ClearDepthStencilView(Res.PointVSMDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->ClearRenderTargetView(Res.Point.VSMRTV, clearColor);
+		DC->ClearDepthStencilView(Res.Point.VSMDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
 	}
 	else
 	{
-		DC->ClearDepthStencilView(Res.PointAtlasDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+		DC->ClearDepthStencilView(Res.Point.DSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
 	}
 
 	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
@@ -676,7 +676,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	ShadowVP.MaxDepth = 1.0f;
 
 	constexpr float ShadowNearZ = 0.1f;
-	const float AtlasF = static_cast<float>(Res.PointAtlasResolution);
+	const float AtlasF = static_cast<float>(Res.Point.Resolution);
 
 	for (uint32 ShadowedLightIndex = 0; ShadowedLightIndex < ShadowedPointLightCount; ++ShadowedLightIndex)
 	{
@@ -722,10 +722,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			ShadowVP.Width    = static_cast<float>(Region.Size);
 			ShadowVP.Height   = static_cast<float>(Region.Size);
 
-			if (bVSM && Res.IsPointVSMValid())
-				DC->OMSetRenderTargets(1, &Res.PointVSMRTV, Res.PointVSMDSV);
+			if (bVSM && Res.Point.IsVSMValid())
+				DC->OMSetRenderTargets(1, &Res.Point.VSMRTV, Res.Point.VSMDSV);
 			else
-				DC->OMSetRenderTargets(0, nullptr, Res.PointAtlasDSV);
+				DC->OMSetRenderTargets(0, nullptr, Res.Point.DSV);
 
 			DC->RSSetViewports(1, &ShadowVP);
 
@@ -735,13 +735,13 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 
 	}
 
-	if (ShadowedPointLightCount > 0 && Res.PointLightShadowDataBuffer)
+	if (ShadowedPointLightCount > 0 && Res.Point.DataBuffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
-		if (SUCCEEDED(DC->Map(Res.PointLightShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+		if (SUCCEEDED(DC->Map(Res.Point.DataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 		{
 			memcpy(Mapped.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedPointLightCount);
-			DC->Unmap(Res.PointLightShadowDataBuffer, 0);
+			DC->Unmap(Res.Point.DataBuffer, 0);
 		}
 	}
 
