@@ -180,8 +180,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
     }
 
     std::sort(SortedRequests.begin(), SortedRequests.end(), [](const FShadowLightRequest& A, const FShadowLightRequest& B)
-              { 
-			  return A.PriorityScore > B.PriorityScore; });
+              { return A.PriorityScore > B.PriorityScore; });
 
 	for (const FShadowLightRequest& Request : SortedRequests)
 	{
