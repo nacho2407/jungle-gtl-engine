@@ -94,6 +94,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
+    Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
 
     const FFrustum& ViewFrustum = SceneView.CameraFrustum;
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);

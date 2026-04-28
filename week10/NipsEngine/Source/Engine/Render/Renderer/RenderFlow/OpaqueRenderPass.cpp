@@ -128,6 +128,8 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 		   case EShadowMap::CSM:
 		   {
 			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+			   if (RenderBus->GetCascadeVis())
+				   PermutationKey |= (uint32)EShaderFeature::CascadeVis;
 			   break;
 		   }
 

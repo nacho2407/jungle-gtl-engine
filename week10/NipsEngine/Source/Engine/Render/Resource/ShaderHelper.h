@@ -20,6 +20,8 @@ enum class EShaderFeature : uint32
 
 	ShadowCSM		= 1 << 13,
 	ShadowPSM		= 1 << 14,
+
+	CascadeVis		= 1 << 5,
 };
 
 enum class ELightingModel : uint32

@@ -28,6 +28,7 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	if (!!(Features & EShaderFeature::TileCull))       AddMacro("CULLING_MODEL_TILED", "1");
 	if (!!(Features & EShaderFeature::ShadowCSM))      AddMacro("SHADOW_MAP_CSM", "1");
 	if (!!(Features & EShaderFeature::ShadowPSM))      AddMacro("SHADOW_MAP_PSM", "1");
+	if (!!(Features & EShaderFeature::CascadeVis))     AddMacro("CASCADE_VIS", "1");
 
 	switch (LightingModel)
 	{

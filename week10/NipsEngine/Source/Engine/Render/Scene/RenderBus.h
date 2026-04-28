@@ -40,6 +40,8 @@ public:
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 	bool GetFXAAEnabled() const { return bFXAAEnabled; }
 	void SetFXAAEnabled(bool bInEnabled) { bFXAAEnabled = bInEnabled; }
+	bool GetCascadeVis() const { return bCascadeVis; }
+	void SetCascadeVis(bool bInEnabled) { bCascadeVis = bInEnabled; }
 	bool IsOrthographic() const { return Proj.M[3][3] == 1.0f; }
 	void SetViewportSize(const FVector2& InViewportSize) { ViewportSize = InViewportSize; }
 	const FVector2& GetViewportSize() const { return ViewportSize; }
@@ -76,4 +78,5 @@ private:
 	FShowFlags		ShowFlags;
 	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
 	bool			bFXAAEnabled	= true;
+	bool			bCascadeVis		= false;
 };
