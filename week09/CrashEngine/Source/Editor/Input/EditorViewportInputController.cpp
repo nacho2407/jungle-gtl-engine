@@ -122,6 +122,32 @@ bool FEditorViewportInputController::InputPointer(const FViewportPointerEvent& E
         }
         break;
 
+    case EPointerButton::X1:
+        if (Event.Type == EPointerEventType::Pressed)
+        {
+            CurrentInput.bX1Pressed = true;
+            CurrentInput.bX1Down = true;
+        }
+        else if (Event.Type == EPointerEventType::Released)
+        {
+            CurrentInput.bX1Released = true;
+            CurrentInput.bX1Down = false;
+        }
+        break;
+
+    case EPointerButton::X2:
+        if (Event.Type == EPointerEventType::Pressed)
+        {
+            CurrentInput.bX2Pressed = true;
+            CurrentInput.bX2Down = true;
+        }
+        else if (Event.Type == EPointerEventType::Released)
+        {
+            CurrentInput.bX2Released = true;
+            CurrentInput.bX2Down = false;
+        }
+        break;
+
     case EPointerButton::None:
     default:
         break;
@@ -150,6 +176,12 @@ void FEditorViewportInputController::BeginInputFrame()
 
     CurrentInput.bMiddlePressed = false;
     CurrentInput.bMiddleReleased = false;
+
+    CurrentInput.bX1Pressed = false;
+    CurrentInput.bX1Released = false;
+
+    CurrentInput.bX2Pressed = false;
+    CurrentInput.bX2Released = false;
 }
 
 void FEditorViewportInputController::ResetInputState()
@@ -176,6 +208,14 @@ void FEditorViewportInputController::ResetInputState()
     CurrentInput.bMiddlePressed = false;
     CurrentInput.bMiddleDown = false;
     CurrentInput.bMiddleReleased = false;
+
+    CurrentInput.bX1Pressed = false;
+    CurrentInput.bX1Down = false;
+    CurrentInput.bX1Released = false;
+
+    CurrentInput.bX2Pressed = false;
+    CurrentInput.bX2Down = false;
+    CurrentInput.bX2Released = false;
 
     CurrentInput.Modifiers = {};
 }

@@ -38,6 +38,14 @@ struct FEditorViewportFrameInput
     bool bMiddleDown = false;
     bool bMiddleReleased = false;
 
+    bool bX1Pressed = false;
+    bool bX1Down = false;
+    bool bX1Released = false;
+
+    bool bX2Pressed = false;
+    bool bX2Down = false;
+    bool bX2Released = false;
+
     FInputModifiers Modifiers;
 };
 

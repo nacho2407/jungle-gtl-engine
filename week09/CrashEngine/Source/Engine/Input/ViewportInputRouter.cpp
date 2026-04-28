@@ -193,6 +193,15 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
         return Event;
     };
 
+    auto HasAnyMouseButtonDown = [&Input]()
+    {
+        return Input.KeyDown[VK_LBUTTON]
+            || Input.KeyDown[VK_RBUTTON]
+            || Input.KeyDown[VK_MBUTTON]
+            || Input.KeyDown[VK_XBUTTON1]
+            || Input.KeyDown[VK_XBUTTON2];
+    };
+
 	// Pressed
     if (Input.KeyPressed[VK_LBUTTON])
     {
@@ -218,6 +227,22 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Middle, EPointerEventType::Pressed));
     }
 
+    if (Input.KeyPressed[VK_XBUTTON1])
+    {
+        CapturedViewport = Target->Viewport;
+        SetKeyTargetViewport(Target->Viewport);
+
+        Target->Client->InputPointer(MakePointerEvent(EPointerButton::X1, EPointerEventType::Pressed));
+    }
+
+    if (Input.KeyPressed[VK_XBUTTON2])
+    {
+        CapturedViewport = Target->Viewport;
+        SetKeyTargetViewport(Target->Viewport);
+
+        Target->Client->InputPointer(MakePointerEvent(EPointerButton::X2, EPointerEventType::Pressed));
+    }
+
 	// Moved
     if (Input.MouseDelta.x != 0 || Input.MouseDelta.y != 0)
     {
@@ -225,21 +250,40 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
     }
 
 	// Released
+    bool bAnyMouseButtonReleased = false;
+
     if (Input.KeyReleased[VK_LBUTTON])
     {
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Left, EPointerEventType::Released));
-        CapturedViewport = nullptr;
+        bAnyMouseButtonReleased = true;
     }
 
     if (Input.KeyReleased[VK_RBUTTON])
     {
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Right, EPointerEventType::Released));
-        CapturedViewport = nullptr;
+        bAnyMouseButtonReleased = true;
     }
 
     if (Input.KeyReleased[VK_MBUTTON])
     {
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Middle, EPointerEventType::Released));
+        bAnyMouseButtonReleased = true;
+    }
+
+    if (Input.KeyReleased[VK_XBUTTON1])
+    {
+        Target->Client->InputPointer(MakePointerEvent(EPointerButton::X1, EPointerEventType::Released));
+        bAnyMouseButtonReleased = true;
+    }
+
+    if (Input.KeyReleased[VK_XBUTTON2])
+    {
+        Target->Client->InputPointer(MakePointerEvent(EPointerButton::X2, EPointerEventType::Released));
+        bAnyMouseButtonReleased = true;
+    }
+
+    if (bAnyMouseButtonReleased && !HasAnyMouseButtonDown())
+    {
         CapturedViewport = nullptr;
     }
 }
