@@ -47,6 +47,8 @@ void FDrawCollector::UpdateShadowDataInCBs()
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowNormalBias = LC.ShadowNormalBias;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSharpen = LC.ShadowSharpen;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowESMExponent = LC.ShadowESMExponent;
                 DirIdx++;
             }
         }
@@ -86,6 +88,8 @@ void FDrawCollector::UpdateShadowDataInCBs()
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowNormalBias = LC.ShadowNormalBias;
+                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSharpen = LC.ShadowSharpen;
+                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowESMExponent = LC.ShadowESMExponent;
                 LocalIdx++;
             }
         }

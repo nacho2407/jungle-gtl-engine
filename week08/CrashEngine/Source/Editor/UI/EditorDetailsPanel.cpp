@@ -727,6 +727,8 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
             || Name == "Bias"
             || Name == "Slope Bias"
             || Name == "Normal Bias"
+            || Name == "Shadow Sharpen"
+            || Name == "ESM Exponent"
             || Name == "Cascade Count"
             || Name == "CSM Max Distance"
             || Name == "Cascade Distribution"
@@ -1087,6 +1089,8 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     RenderShadowPropertyByName("Bias");
     RenderShadowPropertyByName("Slope Bias");
     RenderShadowPropertyByName("Normal Bias");
+    RenderShadowPropertyByName("Shadow Sharpen");
+    RenderShadowPropertyByName("ESM Exponent");
 
     if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(LightComponent))
     {
