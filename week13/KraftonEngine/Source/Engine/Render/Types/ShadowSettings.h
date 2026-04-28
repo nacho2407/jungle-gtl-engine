@@ -89,7 +89,7 @@ public:
 	static constexpr float  kDefaultCSMSplitLambda = 0.85f;
 	static constexpr float  kDefaultDirectionalShadowDistance = 300.0f;
 	static constexpr float  kDefaultDirectionalShadowCasterDistance = 500.0f;
-	static constexpr bool   kDefaultCSMBlendEnabled = true;
+	static constexpr bool   kDefaultCSMBlendEnabled = false;
 	static constexpr float  kDefaultCSMBlendRange = 5.0f;
 
 	// 기본값 상수
