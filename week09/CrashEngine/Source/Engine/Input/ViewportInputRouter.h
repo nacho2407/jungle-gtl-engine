@@ -38,6 +38,7 @@ public:
 
     FViewport* GetHoveredViewport() const { return HoveredViewport; }
     FViewport* GetCapturedViewport() const { return CapturedViewport; }
+    FViewport* GetFocusedViewport() const { return FocusedViewport; }
 
 private:
     struct FTargetEntry
@@ -71,7 +72,7 @@ private:
 
     FViewport* HoveredViewport = nullptr;
     FViewport* CapturedViewport = nullptr;
-    FViewport* KeyFocusedViewport = nullptr;
+    FViewport* FocusedViewport = nullptr;
 
 	// 키보드 Repeat 처리를 위한 상태 저장용 배열들
 	float KeyRepeatElapsed[256] = {}; // Repeat 계산을 위해 누적된 시간
