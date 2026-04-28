@@ -263,9 +263,7 @@ float CalculateShadow(float4 worldPos)
     
     return ShadowFactor;
 }
-#endif
-
-#ifdef SHADOW_MAP_PSM
+#elif SHADOW_MAP_PSM
 float CalculateShadow(float4 worldPos)
 {
     float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
@@ -303,6 +301,11 @@ float CalculateShadow(float4 worldPos)
     float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
     return shadowFactor;
 }
+#else
+    float CalculateShadow(float4 worldPos)
+    {
+        return 1.0f;
+    }
 #endif
 
 PSOutput mainPS(PSInput input) : SV_TARGET
