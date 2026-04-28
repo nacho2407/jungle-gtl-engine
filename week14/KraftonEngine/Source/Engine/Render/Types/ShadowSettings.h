@@ -28,10 +28,14 @@ public:
 	void ResetResolution() { Resolution.reset(); }
 	std::optional<uint32> GetResolution() const { return Resolution; }
 
-	// --- Directional Shadow Distance ---
+	// --- Directional Shadow ---
 	void SetShadowDistance(float Distance) { ShadowDistance = Distance; }
 	void ResetShadowDistance() { ShadowDistance.reset(); }
 	std::optional<float> GetShadowDistance() const { return ShadowDistance; }
+
+	void SetCSMCascadeLambda(float Lambda) { CSMSplitLambda = Lambda; }
+	void ResetCSMCascadeLambda() { CSMSplitLambda.reset(); }
+	std::optional<float> GetCSMCascadeLambda() const { return CSMSplitLambda; }
 
 	// --- Bias ---
 	void SetBias(float Bias) { ShadowBias = Bias; }
@@ -58,6 +62,7 @@ public:
 	{
 		Resolution.reset();
 		ShadowDistance.reset();
+		CSMSplitLambda.reset();
 		ShadowBias.reset();
 		ShadowSlopeBias.reset();
 		ShadowSharpen.reset();
@@ -67,6 +72,7 @@ public:
 	// 기본값 상수
 	static constexpr uint32 kDefaultResolution = 2048;
 	static constexpr float  kDefaultShadowDistance = 300.0f;
+	static constexpr float  kDefaultCSMSplitLambda = 0.85f;
 	static constexpr float  kDefaultBias = 0.005f;
 	static constexpr float  kDefaultSlopeBias = 0.005f;
 	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
@@ -74,6 +80,7 @@ public:
 	// 오버라이드 또는 기본값 반환 (편의 함수)
 	uint32            GetEffectiveResolution() const { return Resolution.value_or(kDefaultResolution); }
 	float             GetEffectiveShadowDistance() const { return ShadowDistance.value_or(kDefaultShadowDistance); }
+	float             GetEffectiveCSMCascadeLambda() const { return CSMSplitLambda.value_or(kDefaultCSMSplitLambda); }
 	float             GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
@@ -82,6 +89,7 @@ public:
 private:
 	std::optional<uint32> Resolution;
 	std::optional<float>  ShadowDistance;
+	std::optional<float>  CSMSplitLambda;
 	std::optional<float>  ShadowBias;
 	std::optional<float>  ShadowSlopeBias;
 	std::optional<float>  ShadowSharpen;

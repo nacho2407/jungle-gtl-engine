@@ -292,8 +292,11 @@ namespace FLightFrustumUtils
 		{
 			float P = static_cast<float>(i + 1) / static_cast<float>(NumCascades);
 
+			//로그 분할, logarithmic split, 원근 투영이라는 점을 반영
 			float LogSplit = NearZ * powf(FarZ / NearZ, P);
+			//선형 분할, Linear Splitm, 거리를 동일하게 간격 나눔
 			float LinSplit = NearZ + (FarZ - NearZ) * P;
+			//다시 둘을 interpolation함
 			float Split = LinSplit * (1.0f - Lambda) + LogSplit * Lambda;
 
 			OutRanges[i].NearZ = Prev;

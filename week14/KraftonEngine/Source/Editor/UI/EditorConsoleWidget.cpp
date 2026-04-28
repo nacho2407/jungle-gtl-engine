@@ -3,6 +3,9 @@
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
 #include "Render/Types/ShadowSettings.h"
+#include "Render/Types/LightFrustumUtils.h"
+#include "Render/Types/RenderConstants.h"
+#include "Component/CameraComponent.h"
 
 #include <algorithm>
 
@@ -251,7 +254,7 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			}
 		}, "Toggles overlay stats. Usage: stat fps | stat memory | stat shadow | stat none");
 
-	RegisterCommand("CMS_resolution", [this](const TArray<FString>& Args)
+	RegisterCommand("CSM_resolution", [this](const TArray<FString>& Args)
 		{
 			FShadowSettings& Settings = FShadowSettings::Get();
 
@@ -259,9 +262,9 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			{
 				auto Cur = Settings.GetResolution();
 				if (Cur.has_value())
-					AddLog("CMS_shadow_resolution: %u\n", Cur.value());
+					AddLog("CSM_shadow_resolution: %u\n", Cur.value());
 				else
-					AddLog("CMS_shadow_resolution: default (%u)\n", FShadowSettings::kDefaultResolution);
+					AddLog("CSM_shadow_resolution: default (%u)\n", FShadowSettings::kDefaultResolution);
 				AddLog("Usage: shadow_resolution <size> | shadow_resolution reset\n");
 				return;
 			}
@@ -269,18 +272,18 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			if (Args[1] == "reset")
 			{
 				Settings.ResetResolution();
-				AddLog("CMS_Shadow resolution override reset to default.\n");
+				AddLog("CSM_Shadow resolution override reset to default.\n");
 			}
 			else
 			{
 				uint32 Res = static_cast<uint32>(std::atoi(Args[1].c_str()));
 				if (Res < 64 || Res > 8192) { AddLog("[ERROR] Resolution must be 64~8192.\n"); return; }
 				Settings.SetResolution(Res);
-				AddLog("CMS_Shadow resolution override set to %u.\n", Res);
+				AddLog("CSM_Shadow resolution override set to %u.\n", Res);
 			}
 		}, "Overrides shadow map resolution. Usage: shadow_resolution <size> | shadow_resolution reset");
 
-	RegisterCommand("CMS_distance", [this](const TArray<FString>& Args)
+	RegisterCommand("CSM_distance", [this](const TArray<FString>& Args)
 		{
 			FShadowSettings& Settings = FShadowSettings::Get();
 
@@ -288,9 +291,9 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			{
 				auto Cur = Settings.GetShadowDistance();
 				if (Cur.has_value())
-					AddLog("CMS_shadow_distance: %.3f\n", Cur.value());
+					AddLog("CSM_shadow_distance: %.3f\n", Cur.value());
 				else
-					AddLog("CMS_shadow_distance: default (%.3f)\n", FShadowSettings::kDefaultShadowDistance);
+					AddLog("CSM_shadow_distance: default (%.3f)\n", FShadowSettings::kDefaultShadowDistance);
 				AddLog("Usage: shadow_distance <distance> | shadow_distance reset\n");
 				return;
 			}
@@ -298,16 +301,87 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			if (Args[1] == "reset")
 			{
 				Settings.ResetShadowDistance();
-				AddLog("CMS_Shadow distance override reset to default.\n");
+				AddLog("CSM_Shadow distance override reset to default.\n");
 			}
 			else
 			{
 				float Distance = static_cast<float>(std::atof(Args[1].c_str()));
 				if (Distance <= 0.0f) { AddLog("[ERROR] Shadow distance must be greater than 0.\n"); return; }
 				Settings.SetShadowDistance(Distance);
-				AddLog("CMS_Shadow distance override set to %.3f.\n", Distance);
+				AddLog("CSM_Shadow distance override set to %.3f.\n", Distance);
 			}
 		}, "Overrides directional shadow distance. Usage: shadow_distance <distance> | shadow_distance reset");
+
+	RegisterCommand("CSM_split", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			auto PrintCascadeRanges = [this, &Settings]()
+				{
+					if (!EditorEngine)
+					{
+						AddLog("[ERROR] EditorEngine is null.\n");
+						return;
+					}
+
+					UCameraComponent* Camera = EditorEngine->GetCamera();
+					if (!Camera)
+					{
+						AddLog("[ERROR] Camera is null.\n");
+						return;
+					}
+
+					const float CameraNearZ = Camera->GetNearPlane();
+					const float CameraFarZ = Camera->GetFarPlane();
+					const float ShadowDistance = Settings.GetEffectiveShadowDistance();
+					const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+					const float Lambda = Settings.GetEffectiveCSMCascadeLambda();
+
+					FLightFrustumUtils::FCascadeRange CascadeRanges[MAX_SHADOW_CASCADES];
+					FLightFrustumUtils::ComputeCascadeRanges(
+						CameraNearZ, ShadowFarZ, MAX_SHADOW_CASCADES, Lambda, CascadeRanges
+					);
+
+					AddLog("CSM_split: %.3f (0=linear, 1=log)\n", Lambda);
+					for (int32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+					{
+						AddLog("  C%d: %.3f ~ %.3f\n", i, CascadeRanges[i].NearZ, CascadeRanges[i].FarZ);
+					}
+				};
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetCSMCascadeLambda(); 
+				if (Cur.has_value())
+					AddLog("CSM_lambda: %.3f\n", Cur.value());
+				else
+					AddLog("CSM_lambda: default (%.3f)\n", FShadowSettings::kDefaultCSMSplitLambda);
+
+				PrintCascadeRanges();
+				AddLog("Usage: CSM_lambda <0-1> | CSM_lambda reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetCSMCascadeLambda();
+				AddLog("CSM_lambda override reset to default.\n");
+				PrintCascadeRanges();
+			}
+			else
+			{
+				float Lambda = static_cast<float>(std::atof(Args[1].c_str()));
+				if (Lambda < 0.0f || Lambda > 1.0f)
+				{
+					AddLog("[ERROR] Lambda must be in range 0.0 ~ 1.0.\n");
+					return;
+				}
+
+				Settings.SetCSMCascadeLambda(Lambda);
+				AddLog("CSM_lambda override set to %.3f.\n", Lambda);
+				PrintCascadeRanges();
+			}
+		}, "Overrides CSM cascade split lambda. Usage: CSM_lambda <0-1> | CSM_lambda reset");
 
 	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
 		{

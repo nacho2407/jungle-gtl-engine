@@ -436,10 +436,16 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 	const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+	const float CascadeLambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
+	//view frustum을 분할합니다.
 	FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
 	FLightFrustumUtils::ComputeCascadeRanges(
-		CameraNearZ, ShadowFarZ, NumCascades, 0.85f, CascadeRanges
+		CameraNearZ,
+		ShadowFarZ,
+		NumCascades,
+		CascadeLambda,
+		CascadeRanges
 	);
 
 	ShadowCBCache.CascadeSplits = FVector4(
