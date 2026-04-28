@@ -120,3 +120,17 @@ void FSceneEnvironment::RemoveSpotLight(const USpotLightComponent* Owner)
 			[Owner](const FSpotLightEntry& E) { return E.Owner == Owner; }),
 		SpotLights.end());
 }
+
+int32 FSceneEnvironment::FindSpotLightIndex(const USpotLightComponent* Owner) const
+{
+	for (int32 i = 0; i < static_cast<int32>(SpotLights.size()); ++i)
+		if (SpotLights[i].Owner == Owner) return i;
+	return -1;
+}
+
+int32 FSceneEnvironment::FindPointLightIndex(const UPointLightComponent* Owner) const
+{
+	for (int32 i = 0; i < static_cast<int32>(PointLights.size()); ++i)
+		if (PointLights[i].Owner == Owner) return i;
+	return -1;
+}
