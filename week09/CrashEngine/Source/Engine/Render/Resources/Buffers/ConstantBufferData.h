@@ -118,21 +118,21 @@ struct FMomentBlurCBData
     float Padding1   = 0.0f; // 4B
 }; // Total: 16B
 
-struct alignas(16) FShadowAtlasSampleCBData
+struct FShadowAtlasSampleCBData
 {
-    int32 PageIndex = -1;                                      // 4B
-    int32 SliceIndex = -1;                                     // 4B
-    float AtlasTexelSizeX = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize); // 4B
-    float AtlasTexelSizeY = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize); // 4B
-    float UVScaleX = 1.0f;                                     // 4B
-    float UVScaleY = 1.0f;                                     // 4B
-    float UVOffsetX = 0.0f;                                    // 4B
-    float UVOffsetY = 0.0f;                                    // 4B
+    int32   PageIndex = -1;                                    // 4B
+    int32   SliceIndex = -1;                                   // 4B
+    float   AtlasTexelSizeX = 0.0f;                            // 4B
+    float   AtlasTexelSizeY = 0.0f;                            // 4B
+    float   UVScaleX = 1.0f;                                   // 4B
+    float   UVScaleY = 1.0f;                                   // 4B
+    float   UVOffsetX = 0.0f;                                  // 4B
+    float   UVOffsetY = 0.0f;                                  // 4B
 }; // Total: 32B
 
 inline FShadowAtlasSampleCBData MakeSampleCBData(const FShadowMapData& Data)
 {
-    FShadowAtlasSampleCBData Out = {};
+    FShadowAtlasSampleCBData Out;
     if (!Data.bAllocated)
     {
         Out.PageIndex = -1;
@@ -142,6 +142,11 @@ inline FShadowAtlasSampleCBData MakeSampleCBData(const FShadowMapData& Data)
 
     Out.PageIndex = static_cast<int32>(Data.AtlasPageIndex);
     Out.SliceIndex = static_cast<int32>(Data.SliceIndex);
+    
+    // Atlas 전체 크기에 대한 1 텍셀의 UV 크기를 명시적으로 계산하여 설정합니다.
+    Out.AtlasTexelSizeX = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
+    Out.AtlasTexelSizeY = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
+
     Out.UVScaleX = Data.UVScaleOffset.X;
     Out.UVScaleY = Data.UVScaleOffset.Y;
     Out.UVOffsetX = Data.UVScaleOffset.Z;
@@ -192,14 +197,17 @@ struct alignas(32) FDirectionalLightCBData
     float    Intensity;                                        // 4B
     FVector  Direction;                                        // 12B
     int32    CascadeCount = 0;                                 // 4B
-    FMatrix  ShadowViewProj[MAX_DIRECTIONAL_SHADOW_CASCADES];  // 256B
-    FShadowAtlasSampleCBData ShadowSamples[MAX_DIRECTIONAL_SHADOW_CASCADES]; // 128B
+    FMatrix  ShadowViewProj[MAX_DIRECTIONAL_SHADOW_CASCADES];  // 256B (4 * 64B)
+    FShadowAtlasSampleCBData ShadowSamples[MAX_DIRECTIONAL_SHADOW_CASCADES]; // 128B (4 * 32B)
     float    ShadowBias = 0.0f;                                // 4B
     float    ShadowSlopeBias = 0.0f;                           // 4B
     float    ShadowNormalBias = 0.0f;                          // 4B
-    float    _Padding0 = 0.0f;                                 // 4B
-    FVector4 CascadeSplits = FVector4(0.0f, 0.0f, 0.0f, 0.0f); // 16B
-}; // Total: 448B
+    float    _Padding0 = 0.0f;                                 // 4B (16B alignment)
+    
+    float CascadeSplits[8] = {};                               // 32B
+    
+    float    _Padding1[4] = {};                                // 16B
+}; // Total: 480B
 
 // FGlobalLightCBData는 전역 라이트 상수 버퍼 레이아웃입니다.
 // Matrix의 SIMD 연산 지원때문에 16bit 대신 32bit 단위 align 필수
