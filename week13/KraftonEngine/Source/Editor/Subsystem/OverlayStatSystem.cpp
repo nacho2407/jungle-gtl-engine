@@ -167,12 +167,6 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 		AppendLine(OutLines, CurrentY, FString(Buffer));
 		CurrentY += Layout.LineHeight;
 
-		// Shadow map 해상도
-		snprintf(Buffer, sizeof(Buffer), "Shadow Map Resolution : %ux%u",
-			FShadowStats::ShadowMapResolution, FShadowStats::ShadowMapResolution);
-		AppendLine(OutLines, CurrentY, FString(Buffer));
-		CurrentY += Layout.LineHeight;
-
 		// GPU 시간 (GPUProfiler snapshot에서 "ShadowMapPass" 검색)
 		const TArray<FStatEntry>& GPUSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
 		double ShadowGpuMs = 0.0;
@@ -206,6 +200,12 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 			FShadowStats::SpotLightShadowCount,
 			FShadowStats::PointLightShadowCount,
 			FShadowStats::DirectionalLightShadowCount);
+		AppendLine(OutLines, CurrentY, FString(Buffer));
+		CurrentY += Layout.LineHeight;
+
+		// directional light CSM Shadow map 해상도
+		snprintf(Buffer, sizeof(Buffer), "CSM Shadow Map Resolution : %ux%u",
+			FShadowStats::ShadowMapResolution, FShadowStats::ShadowMapResolution);
 		AppendLine(OutLines, CurrentY, FString(Buffer));
 		CurrentY += Layout.LineHeight;
 	}
