@@ -662,8 +662,6 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
 
 	// ── Multi-page allocation ──
-	// LightPageMap[visibleIdx] = page where the light was allocated
-	TArray<uint32> LightPageMap(ShadowSpotCount, 0);
 	TArray<uint32> PendingLights;
 	PendingLights.reserve(ShadowSpotCount);
 	for (uint32 i = 0; i < ShadowSpotCount; ++i)
@@ -692,7 +690,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 			if (RegionIdx < PageRegions.size() && PageRegions[RegionIdx].bValid)
 			{
 				SpotAtlasRegion[visIdx] = PageRegions[RegionIdx];
-				LightPageMap[visIdx] = Page;
+				SpotAtlasRegion[visIdx].PageIdx = Page;
 			}
 			else
 			{
@@ -733,7 +731,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		const FAtlasRegion& AtlasRegion = SpotAtlasRegion[i];
 		if (!AtlasRegion.bValid) continue;
 
-		const uint32 PageIdx = LightPageMap[i];
+		const uint32 PageIdx = AtlasRegion.PageIdx;
 		const uint32 LightIdx = VisibleShadowSpotIndices[i];
 
 		// Shadow Viewport Computation
@@ -829,9 +827,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	// ── Multi-page allocation strategy ──
 	// Try to allocate all lights on page 0. If some lights' 6 faces fail to
 	// fit, move them to the next page and retry, up to MaxPages.
-	// LightPageMap[shadowLightIdx] = page index where the light was allocated.
-	TArray<uint32> LightPageMap(ShadowedPointLightCount, 0);
-	TArray<uint32> PendingLights; // shadowLightIndices that still need allocation
+	TArray<uint32> PendingLights;
 	PendingLights.reserve(ShadowedPointLightCount);
 	for (uint32 i = 0; i < ShadowedPointLightCount; ++i)
 		PendingLights.push_back(i);
@@ -876,7 +872,8 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 
 			if (bAllValid)
 			{
-				LightPageMap[ShadowedLightIndex] = Page;
+				for (uint32 f = 0; f < 6; ++f)
+					PointAtlasRegion[ShadowedLightIndex * 6 + f].PageIdx = Page;
 			}
 			else
 			{
@@ -920,7 +917,8 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	{
 		const uint32 LightIdx = VisibleShadowPointIndices[ShadowedLightIndex];
 		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(LightIdx);
-		const uint32 PageIdx = LightPageMap[ShadowedLightIndex];
+		// PageIdx comes from any valid face's region (all 6 faces share the same page)
+		const uint32 PageIdx = PointAtlasRegion[ShadowedLightIndex * 6].PageIdx;
 
 		FPointShadowDataGPU& ShadowData = PointLightShadowGPUData[ShadowedLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
