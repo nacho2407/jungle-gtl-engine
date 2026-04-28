@@ -2,7 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
-#include "Component/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 #include "Math/Rotator.h"
 #include "GameFramework/Level.h"
 #include "GameFramework/World.h"

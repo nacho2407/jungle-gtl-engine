@@ -6,7 +6,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/MeshComponent.h"
-#include "Component/MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
