@@ -32,24 +32,39 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
 {
+    if (RootNode == nullptr)
+    {
+        return false;
+    }
+
     int32 RequestTileSize = QuantizeShadowSize(ResolutionScale);
 
-	int32 X, Y;
-    if (RootNode->Insert(RequestTileSize, X, Y))
+    const int32 MinShadowResolution = AtlasSizeTier[0];
+    while (RequestTileSize >= MinShadowResolution)
     {
-        OutTile.X = X;
-        OutTile.Y = Y;
+        const int32 AllocSize = RequestTileSize;
 
-        OutTile.Width = RequestTileSize;
-        OutTile.Height = RequestTileSize;
+        int32 X = 0;
+        int32 Y = 0;
 
-        OutTile.ScaleOffset = FVector4(
-            static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
-            static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
-            static_cast<float>(OutTile.X) / ShadowAtlasResolution2D,
-            static_cast<float>(OutTile.Y) / ShadowAtlasResolution2D);
+        if (RootNode->Insert(AllocSize, X, Y))
+        {
+            OutTile.X = X;
+            OutTile.Y = Y;
 
-        return true;
+            OutTile.Width = RequestTileSize;
+            OutTile.Height = RequestTileSize;
+
+            OutTile.ScaleOffset = FVector4(
+                static_cast<float>(RequestTileSize) / ShadowAtlasResolution2D,
+                static_cast<float>(RequestTileSize) / ShadowAtlasResolution2D,
+                static_cast<float>(OutTile.X) / ShadowAtlasResolution2D,
+                static_cast<float>(OutTile.Y) / ShadowAtlasResolution2D);
+
+			return true;
+        }
+
+        RequestTileSize /= 2;
     }
 	return false;
 }
