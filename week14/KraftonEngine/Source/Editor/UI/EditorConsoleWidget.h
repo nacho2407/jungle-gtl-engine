@@ -57,7 +57,6 @@ private:
 	static ImVector<char*> History;
 	int32 HistoryPos = -1;
 	ImGuiTextFilter Filter;
-	TArray<FString> CompletionCandidates;
 
 	FConsoleLogOutputDevice ConsoleDevice;
 
@@ -71,7 +70,14 @@ private:
 		FString Description;
 	};
 
+	struct FCompletionCandidate
+	{
+		FString CommandName;
+		FString DisplayText;
+	};
+
 	TMap<FString, FConsoleCommand> Commands;
+	TArray<FCompletionCandidate> CompletionCandidates;
 
 	void RegisterCommand(const FString& Name, CommandFn Fn, const FString& Category, const FString& Usage, const FString& Description);
 	void RegisterDefaultCommands();
@@ -82,7 +88,8 @@ private:
 
 	void RenderCompletionCandidates();
 	void UpdateCompletionCandidates();
-	TArray<FString> GetCompletionCandidates(const FString& Input) const;
+	TArray<FCompletionCandidate> GetCompletionCandidates(const FString& Input) const;
+	bool PrintCompactHelp(const FString& CategoryFilter = "");
 	bool TryFindCommand(const TArray<FString>& Tokens, FString& OutCommandName, const FConsoleCommand*& OutCommand, int32& OutConsumedTokens) const;
 	void ExecCommand(const char* CommandLine);
 

@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorConsoleWidget.h"
+﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
@@ -45,27 +45,96 @@ namespace
 		{
 			return false;
 		}
-		if (!StartsWith(CommandName, Input))
-		{
-			return false;
-		}
-		return CommandName.size() == Input.size() || Input.back() == ' ' || CommandName[Input.size()] == ' ';
+		return StartsWith(CommandName, Input);
 	}
 
-	bool TokensMatchCommandPrefix(const TArray<FString>& InputTokens, const TArray<FString>& CommandTokens)
+	FString TrimLeft(FString Value)
 	{
-		if (InputTokens.size() > CommandTokens.size())
+		while (!Value.empty() && std::isspace(static_cast<unsigned char>(Value.front())))
 		{
-			return false;
+			Value.erase(Value.begin());
 		}
-		for (size_t i = 0; i < InputTokens.size(); ++i)
+		return Value;
+	}
+
+	FString GetFirstToken(const FString& CommandName)
+	{
+		const size_t SpaceIndex = CommandName.find(' ');
+		if (SpaceIndex == FString::npos)
 		{
-			if (!StartsWith(CommandTokens[i], InputTokens[i]))
+			return CommandName;
+		}
+		return CommandName.substr(0, SpaceIndex);
+	}
+
+	FString GetCommandSuffix(const FString& CommandName)
+	{
+		const size_t SpaceIndex = CommandName.find(' ');
+		if (SpaceIndex == FString::npos)
+		{
+			return "";
+		}
+		return CommandName.substr(SpaceIndex + 1);
+	}
+
+	FString Trim(FString Value)
+	{
+		Value = TrimLeft(Value);
+		while (!Value.empty() && std::isspace(static_cast<unsigned char>(Value.back())))
+		{
+			Value.pop_back();
+		}
+		return Value;
+	}
+
+	TArray<FString> SplitAlternatives(const FString& Text)
+	{
+		TArray<FString> Parts;
+		size_t Start = 0;
+		while (Start <= Text.size())
+		{
+			const size_t Separator = Text.find('|', Start);
+			if (Separator == FString::npos)
 			{
-				return false;
+				Parts.push_back(Text.substr(Start));
+				break;
+			}
+			Parts.push_back(Text.substr(Start, Separator - Start));
+			Start = Separator + 1;
+		}
+		return Parts;
+	}
+
+	TArray<FString> BuildUsageVariants(const FString& CommandName, const FString& Usage)
+	{
+		if (Usage.find('|') == FString::npos)
+		{
+			return { Usage.empty() ? CommandName : Usage };
+		}
+
+		TArray<FString> Variants;
+		for (const FString& Part : SplitAlternatives(Usage))
+		{
+			const FString CleanPart = Trim(Part);
+			if (CleanPart.empty())
+			{
+				Variants.push_back(CommandName);
+			}
+			else if (StartsWith(ToLower(CleanPart), CommandName))
+			{
+				Variants.push_back(CleanPart);
+			}
+			else
+			{
+				Variants.push_back(CommandName + " " + CleanPart);
 			}
 		}
-		return true;
+		return Variants;
+	}
+
+	bool HasPlaceholderArgument(const FString& Text)
+	{
+		return Text.find('<') != FString::npos || Text.find('[') != FString::npos;
 	}
 
 	FString JoinTokens(const TArray<FString>& Tokens, size_t BeginIndex)
@@ -132,7 +201,7 @@ void FEditorConsoleWidget::RegisterDefaultCommands()
 void FEditorConsoleWidget::RegisterSystemCommands()
 {
 	RegisterCommand("help", [this](const TArray<FString>& Args) { HandleHelp(Args); },
-		"System", "help [category|command]", "Lists commands or shows detailed help.");
+		"System", "help|<category>|<command>", "Lists commands or shows detailed help.");
 	RegisterCommand("clear", [this](const TArray<FString>& Args) { (void)Args; Clear(); },
 		"System", "clear", "Clears the console log.");
 }
@@ -148,7 +217,7 @@ void FEditorConsoleWidget::RegisterEditorCommands()
 void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 {
 	RegisterCommand("obj list", [this](const TArray<FString>& Args) { HandleObjList(Args); },
-		"Diagnostics", "obj list [ClassName]", "Lists live UObject counts and memory by class.");
+		"Diagnostics", "obj list [<ClassName>]", "Lists live UObject counts and memory by class.");
 	RegisterCommand("stat fps", [this](const TArray<FString>& Args) { HandleStatFPS(Args); },
 		"Diagnostics", "stat fps", "Shows the FPS overlay stat.");
 	RegisterCommand("stat memory", [this](const TArray<FString>& Args) { HandleStatMemory(Args); },
@@ -174,7 +243,7 @@ void FEditorConsoleWidget::RegisterRenderCommands()
 	RegisterCommand("csm blend range", [this](const TArray<FString>& Args) { HandleCSMBlendRange(Args); },
 		"Render", "csm blend range <range>|reset", "Overrides directional light CSM boundary blend range.");
 	RegisterCommand("shadow bias", [this](const TArray<FString>& Args) { HandleShadowBias(Args); },
-		"Render", "shadow bias <bias> [slope_bias]|reset", "Overrides global shadow bias values.");
+		"Render", "shadow bias <bias> [<slope_bias>]|reset", "Overrides global shadow bias values.");
 	RegisterCommand("shadow filter", [this](const TArray<FString>& Args) { HandleShadowFilter(Args); },
 		"Render", "shadow filter hard|pcf|vsm|reset", "Overrides shadow filter mode.");
 }
@@ -200,13 +269,10 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 		return;
 	}
 
-	UpdateCompletionCandidates();
 	RenderDrawerToolbar();
-	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing()
-		+ (CompletionCandidates.empty() ? 0.0f : (CompletionCandidates.size() * ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y));
+	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 	RenderLogContents(-FooterHeight);
 	ImGui::Separator();
-	RenderCompletionCandidates();
 	RenderInputLine("Input");
 
 	ImGui::End();
@@ -276,12 +342,36 @@ void FEditorConsoleWidget::RenderCompletionCandidates()
 		return;
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.85f, 1.0f, 1.0f));
-	for (const FString& Candidate : CompletionCandidates)
+	const float LineHeight = ImGui::GetTextLineHeightWithSpacing();
+	const float PanelPaddingX = 8.0f;
+	const float PanelPaddingY = 4.0f;
+	const float PanelHeight = CompletionCandidates.size() * LineHeight + PanelPaddingY * 2.0f;
+	const ImVec2 InputMin = ImGui::GetItemRectMin();
+	const ImVec2 InputMax = ImGui::GetItemRectMax();
+	const ImVec2 PanelMin(InputMin.x, InputMin.y - PanelHeight - 2.0f);
+	const ImVec2 PanelMax(InputMax.x, InputMin.y - 2.0f);
+	ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+	DrawList->AddRectFilled(PanelMin, PanelMax, IM_COL32(18, 22, 28, 210), 4.0f);
+	DrawList->AddRect(PanelMin, PanelMax, IM_COL32(80, 92, 110, 170), 4.0f);
+
+	const FString Prefix = TrimLeft(ToLower(InputBuf));
+	const ImU32 PrefixColor = IM_COL32(120, 132, 150, 255);
+	const ImU32 SuffixColor = IM_COL32(210, 225, 245, 255);
+	float Y = PanelMin.y + PanelPaddingY;
+
+	for (const FCompletionCandidate& Candidate : CompletionCandidates)
 	{
-		ImGui::TextUnformatted(Candidate.c_str());
+		const FString LowerDisplayText = ToLower(Candidate.DisplayText);
+		const size_t PrefixLength = (Prefix.size() <= LowerDisplayText.size() && StartsWith(LowerDisplayText, Prefix)) ? Prefix.size() : 0;
+		const FString PrefixText = Candidate.DisplayText.substr(0, PrefixLength);
+		const FString SuffixText = Candidate.DisplayText.substr(PrefixLength);
+		const ImVec2 TextPos(PanelMin.x + PanelPaddingX, Y);
+
+		DrawList->AddText(TextPos, PrefixColor, PrefixText.c_str());
+		const float PrefixWidth = ImGui::CalcTextSize(PrefixText.c_str()).x;
+		DrawList->AddText(ImVec2(TextPos.x + PrefixWidth, TextPos.y), SuffixColor, SuffixText.c_str());
+		Y += LineHeight;
 	}
-	ImGui::PopStyleColor();
 }
 
 void FEditorConsoleWidget::RenderInputLine(const char* Label, float Width, bool bFocusInput)
@@ -308,6 +398,11 @@ void FEditorConsoleWidget::RenderInputLine(const char* Label, float Width, bool 
 		strcpy_s(InputBuf, "");
 		CompletionCandidates.clear();
 		bReclaimFocus = true;
+	}
+	else
+	{
+		UpdateCompletionCandidates();
+		RenderCompletionCandidates();
 	}
 
 	if (Width > 0.0f)
@@ -337,45 +432,35 @@ void FEditorConsoleWidget::UpdateCompletionCandidates()
 	CompletionCandidates = GetCompletionCandidates(InputBuf);
 }
 
-TArray<FString> FEditorConsoleWidget::GetCompletionCandidates(const FString& Input) const
+TArray<FEditorConsoleWidget::FCompletionCandidate> FEditorConsoleWidget::GetCompletionCandidates(const FString& Input) const
 {
-	FString LowerInput = ToLower(Input);
-	while (!LowerInput.empty() && std::isspace(static_cast<unsigned char>(LowerInput.front())))
-	{
-		LowerInput.erase(LowerInput.begin());
-	}
+	FString LowerInput = TrimLeft(ToLower(Input));
 	if (LowerInput.empty())
 	{
 		return {};
 	}
 
-	TArray<FString> Candidates;
+	TArray<FCompletionCandidate> Candidates;
 	for (const auto& Pair : Commands)
 	{
 		const FString& Name = Pair.first;
-		if (CommandStartsWithInput(Name, LowerInput))
+		for (const FString& Variant : BuildUsageVariants(Name, Pair.second.Usage))
 		{
-			Candidates.push_back(Name);
-		}
-	}
-
-	if (Candidates.empty())
-	{
-		const TArray<FString> InputTokens = Tokenize(LowerInput);
-		for (const auto& Pair : Commands)
-		{
-			const TArray<FString> CommandTokens = Tokenize(Pair.first);
-			if (TokensMatchCommandPrefix(InputTokens, CommandTokens))
+			if (StartsWith(ToLower(Variant), LowerInput))
 			{
-				Candidates.push_back(Pair.first);
+				Candidates.push_back({ Name, Variant });
 			}
 		}
 	}
 
-	std::sort(Candidates.begin(), Candidates.end());
-	if (Candidates.size() > 8)
+	std::sort(Candidates.begin(), Candidates.end(),
+		[](const FCompletionCandidate& A, const FCompletionCandidate& B)
+		{
+			return A.DisplayText < B.DisplayText;
+		});
+	if (Candidates.size() > 3)
 	{
-		Candidates.resize(8);
+		Candidates.resize(3);
 	}
 	return Candidates;
 }
@@ -412,6 +497,77 @@ bool FEditorConsoleWidget::TryFindCommand(const TArray<FString>& Tokens, FString
 	}
 
 	return OutCommand != nullptr;
+}
+
+bool FEditorConsoleWidget::PrintCompactHelp(const FString& CategoryFilter)
+{
+	const FString LowerCategoryFilter = ToLower(CategoryFilter);
+	std::set<FString> Categories;
+	for (const auto& Pair : Commands)
+	{
+		if (LowerCategoryFilter.empty() || ToLower(Pair.second.Category) == LowerCategoryFilter)
+		{
+			Categories.insert(Pair.second.Category);
+		}
+	}
+
+	if (Categories.empty())
+	{
+		return false;
+	}
+
+	for (const FString& Category : Categories)
+	{
+		AddLog("[%s]\n", Category.c_str());
+
+		TMap<FString, TArray<FString>> GroupedCommands;
+		TArray<FString> Prefixes;
+		for (const auto& Pair : Commands)
+		{
+			if (Pair.second.Category != Category)
+			{
+				continue;
+			}
+
+			const FString Prefix = GetFirstToken(Pair.first);
+			if (GroupedCommands.find(Prefix) == GroupedCommands.end())
+			{
+				Prefixes.push_back(Prefix);
+			}
+			GroupedCommands[Prefix].push_back(GetCommandSuffix(Pair.first));
+		}
+
+		std::sort(Prefixes.begin(), Prefixes.end());
+		for (const FString& Prefix : Prefixes)
+		{
+			TArray<FString>& Suffixes = GroupedCommands[Prefix];
+			std::sort(Suffixes.begin(), Suffixes.end());
+
+			FString Line = Prefix;
+			FString JoinedSuffixes;
+			for (const FString& Suffix : Suffixes)
+			{
+				if (Suffix.empty())
+				{
+					continue;
+				}
+				if (!JoinedSuffixes.empty())
+				{
+					JoinedSuffixes += " | ";
+				}
+				JoinedSuffixes += Suffix;
+			}
+			if (!JoinedSuffixes.empty())
+			{
+				Line += " ";
+				Line += JoinedSuffixes;
+			}
+			AddLog("  %s\n", Line.c_str());
+		}
+	}
+
+	AddLog("Use: help <category> or help <command>\n");
+	return true;
 }
 
 void FEditorConsoleWidget::ExecCommand(const char* CommandLine)
@@ -455,20 +611,7 @@ void FEditorConsoleWidget::HandleHelp(const TArray<FString>& Args)
 			return;
 		}
 
-		bool bFoundCategory = false;
-		for (const auto& Pair : Commands)
-		{
-			if (ToLower(Pair.second.Category) == Query)
-			{
-				if (!bFoundCategory)
-				{
-					AddLog("[%s]\n", Pair.second.Category.c_str());
-					bFoundCategory = true;
-				}
-				AddLog("  %-24s %s\n", Pair.first.c_str(), Pair.second.Description.c_str());
-			}
-		}
-		if (bFoundCategory)
+		if (PrintCompactHelp(Query))
 		{
 			return;
 		}
@@ -477,31 +620,7 @@ void FEditorConsoleWidget::HandleHelp(const TArray<FString>& Args)
 		return;
 	}
 
-	std::set<FString> Categories;
-	for (const auto& Pair : Commands)
-	{
-		Categories.insert(Pair.second.Category);
-	}
-
-	for (const FString& Category : Categories)
-	{
-		AddLog("[%s]\n", Category.c_str());
-		TArray<FString> Names;
-		for (const auto& Pair : Commands)
-		{
-			if (Pair.second.Category == Category)
-			{
-				Names.push_back(Pair.first);
-			}
-		}
-		std::sort(Names.begin(), Names.end());
-		for (const FString& Name : Names)
-		{
-			const FConsoleCommand& Command = Commands.find(Name)->second;
-			AddLog("  %-24s %s\n", Name.c_str(), Command.Description.c_str());
-		}
-	}
-	AddLog("Use: help <category> or help <command>\n");
+	PrintCompactHelp();
 }
 
 void FEditorConsoleWidget::HandleContentBrowserRefresh(const TArray<FString>& Args)
@@ -891,7 +1010,7 @@ void FEditorConsoleWidget::HandleShadowBias(const TArray<FString>& Args)
 		const FString BiasText = Bias.has_value() ? std::to_string(Bias.value()) : "per-light";
 		const FString SlopeText = Slope.has_value() ? std::to_string(Slope.value()) : "per-light";
 		AddLog("shadow bias: %s  slope: %s\n", BiasText.c_str(), SlopeText.c_str());
-		AddLog("Usage: shadow bias <bias> [slope_bias]|reset\n");
+		AddLog("Usage: shadow bias <bias> [<slope_bias>]|reset\n");
 		return;
 	}
 
@@ -1000,7 +1119,7 @@ int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data)
 	}
 
 	if (Data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
-		const TArray<FString> Candidates = Console->GetCompletionCandidates(Data->Buf);
+		const TArray<FCompletionCandidate> Candidates = Console->GetCompletionCandidates(Data->Buf);
 		if (Candidates.empty())
 		{
 			return 0;
@@ -1014,17 +1133,21 @@ int32 FEditorConsoleWidget::TextEditCallback(ImGuiInputTextCallbackData* Data)
 
 		if (Candidates.size() == 1)
 		{
+			const FString CompletionText = HasPlaceholderArgument(Candidates[0].DisplayText)
+				? Candidates[0].CommandName
+				: Candidates[0].DisplayText;
 			Data->DeleteChars(0, Data->BufTextLen);
-			Data->InsertChars(0, Candidates[0].c_str());
+			Data->InsertChars(0, CompletionText.c_str());
 			Data->InsertChars(Data->CursorPos, " ");
 			return 0;
 		}
 
-		FString Common = Candidates[0];
+		FString Common = Candidates[0].CommandName;
 		for (size_t i = 1; i < Candidates.size(); ++i)
 		{
+			const FString& CommandName = Candidates[i].CommandName;
 			size_t CommonLen = 0;
-			while (CommonLen < Common.size() && CommonLen < Candidates[i].size() && Common[CommonLen] == Candidates[i][CommonLen])
+			while (CommonLen < Common.size() && CommonLen < CommandName.size() && Common[CommonLen] == CommandName[CommonLen])
 			{
 				++CommonLen;
 			}
