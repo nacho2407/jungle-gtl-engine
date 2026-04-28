@@ -38,7 +38,7 @@ private:
     {
         FLightProxy*          Light      = nullptr;
         const FShadowMapData* Allocation = nullptr;
-        FMatrix               ViewProj   = FMatrix::Identity;
+        FShadowViewData       ShadowView = {};
     };
 
     void EnsureMomentBlurResources(ID3D11Device* Device);

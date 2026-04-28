@@ -2,6 +2,7 @@
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 
 class UWorld;
 struct FSceneView;
@@ -42,8 +43,8 @@ public:
 private:
     // ==================== Shadow Helpers ====================
     void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
-    FMatrix GetDirectionalSSMMatrix(UWorld* World, FVector LightDir);
-    FMatrix GetDirectionalPSMMatrix(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    FShadowViewData GetDirectionalSSMView(UWorld* World, FVector LightDir);
+    FShadowViewData GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
     void ComputeSpotShadowMatrices(FLightProxy* Light);
     void ComputePointShadowMatrices(FLightProxy* Light);
 

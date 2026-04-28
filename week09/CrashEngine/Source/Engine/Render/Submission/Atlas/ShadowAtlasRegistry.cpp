@@ -119,11 +119,13 @@ void FShadowAtlasRegistry::SyncLightShadowMatrices(FLightShadowRecord& Record, c
     if (LightType == static_cast<uint32>(ELightType::Directional))
     {
         const uint32 CascadeCount = std::min(
-            Record.CascadeShadowMapData.CascadeCount,
+            Record.CascadeCount,
             static_cast<uint32>(ShadowAtlas::MaxCascades));
+        Record.CascadeShadowMapData.CascadeCount = CascadeCount;
         for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
         {
-            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.LightViewProj;
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = Light.CascadeShadowMapData.CascadeViews[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.CascadeShadowMapData.CascadeViewProj[CascadeIndex];
         }
         return;
     }
@@ -132,7 +134,8 @@ void FShadowAtlasRegistry::SyncLightShadowMatrices(FLightShadowRecord& Record, c
     {
         for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
         {
-            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.ShadowViewProjMatrices[FaceIndex];
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = Light.CubeShadowMapData.FaceViews[FaceIndex];
+            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.CubeShadowMapData.FaceViewProj[FaceIndex];
         }
         return;
     }
