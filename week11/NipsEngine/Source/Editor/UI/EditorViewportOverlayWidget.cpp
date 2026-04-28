@@ -11,6 +11,7 @@
 #include "Engine/Asset/StaticMeshTypes.h"
 #include "Engine/Component/GizmoComponent.h"
 #include "Engine/Object/FName.h"
+#include "Render/Resource/ShadowAtlasManager.h"
 #include <cstdio>
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
@@ -20,6 +21,32 @@
 #include <initializer_list>
 #include <utility>
 #include <algorithm>
+
+namespace
+{
+	constexpr float AtlasGridCellPixels = 256.0f;
+	constexpr float AtlasZoomRegionUv = 1.0f / 16.0f;
+
+	float ClampFloat(float Value, float MinValue, float MaxValue)
+	{
+		return std::max(MinValue, std::min(Value, MaxValue));
+	}
+
+	ImVec2 Add(const ImVec2& A, const ImVec2& B)
+	{
+		return ImVec2(A.x + B.x, A.y + B.y);
+	}
+
+	ImVec2 Subtract(const ImVec2& A, const ImVec2& B)
+	{
+		return ImVec2(A.x - B.x, A.y - B.y);
+	}
+
+	ImU32 ToU32(const ImVec4& Color)
+	{
+		return ImGui::ColorConvertFloat4ToU32(Color);
+	}
+} // namespace
 
 // 뷰포트 타입 → 표시 이름
 static const char* GetViewportTypeName(EEditorViewportType Type)
@@ -60,7 +87,7 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
 	RenderBoxSelectionOverlay();
-	RenderShortcutsWindow();
+    RenderShortcutsWindow();
 }
 
 void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
@@ -160,7 +187,110 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
         EditorEngine->ApplySpatialIndexMaintenanceSettings();
     }
 
+    RenderShadowAtlasPreview();
+    RenderShadowCubeArrayPreview();
+
     ImGui::End();
+}
+
+void FEditorViewportOverlayWidget::RenderShadowCubeArrayPreview()
+{
+    FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
+    const uint32 AllocatedCubeCount = AtlasManager.GetAllocatedCubeCount();
+
+    ImGui::Separator();
+    if (!ImGui::CollapsingHeader("Point Shadow Cube Array", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        return;
+    }
+
+    ImGui::TextColored(ImVec4(0.72f, 0.78f, 0.86f, 1.0f),
+        "Allocated Cubes: %u / %d    Face: %u x %u",
+        AllocatedCubeCount,
+        MAX_SHADOW_CUBES,
+        SHADOW_CUBE_SIZE,
+        SHADOW_CUBE_SIZE);
+
+    if (AllocatedCubeCount == 0)
+    {
+        ImGui::TextDisabled("No point shadow cube allocated this frame.");
+        return;
+    }
+
+    static const char* FaceNames[CUBE_FACE_COUNT] =
+    {
+        "+X", "-X", "+Y", "-Y", "+Z", "-Z"
+    };
+
+    static const ImVec4 FaceColors[CUBE_FACE_COUNT] =
+    {
+        ImVec4(0.95f, 0.35f, 0.32f, 1.0f),
+        ImVec4(0.75f, 0.18f, 0.18f, 1.0f),
+        ImVec4(0.34f, 0.78f, 0.40f, 1.0f),
+        ImVec4(0.16f, 0.54f, 0.25f, 1.0f),
+        ImVec4(0.36f, 0.56f, 0.96f, 1.0f),
+        ImVec4(0.16f, 0.28f, 0.70f, 1.0f)
+    };
+
+    const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+    const float Padding = 8.0f;
+    const float Gap = 6.0f;
+    const float HeaderHeight = 24.0f;
+    const float FaceSize = ClampFloat((AvailableWidth - Padding * 2.0f - Gap * 2.0f) / 3.0f, 48.0f, 96.0f);
+    const float PanelWidth = FaceSize * 3.0f + Gap * 2.0f + Padding * 2.0f;
+    const float PanelHeight = HeaderHeight + FaceSize * 2.0f + Gap + Padding * 2.0f;
+
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+    for (uint32 CubeIndex = 0; CubeIndex < AllocatedCubeCount && CubeIndex < MAX_SHADOW_CUBES; ++CubeIndex)
+    {
+        ImGui::PushID(static_cast<int>(CubeIndex));
+
+        const ImVec2 PanelMin = ImGui::GetCursorScreenPos();
+        const ImVec2 PanelMax = Add(PanelMin, ImVec2(PanelWidth, PanelHeight));
+        DrawList->AddRectFilled(PanelMin, PanelMax, ToU32(ImVec4(0.055f, 0.060f, 0.070f, 0.96f)), 6.0f);
+        DrawList->AddRect(PanelMin, PanelMax, ToU32(ImVec4(0.24f, 0.28f, 0.34f, 1.0f)), 6.0f);
+
+        ImGui::SetCursorScreenPos(Add(PanelMin, ImVec2(Padding, 5.0f)));
+        ImGui::TextColored(ImVec4(0.90f, 0.93f, 0.98f, 1.0f), "Cube %u", CubeIndex);
+
+        for (int Face = 0; Face < CUBE_FACE_COUNT; ++Face)
+        {
+            const int Column = Face % 3;
+            const int Row = Face / 3;
+            const ImVec2 CellPos = Add(
+                PanelMin,
+                ImVec2(
+                    Padding + Column * (FaceSize + Gap),
+                    HeaderHeight + Row * (FaceSize + Gap)));
+
+            ImGui::SetCursorScreenPos(CellPos);
+
+            ID3D11ShaderResourceView* SRV = AtlasManager.GetCubeDebugSRV(static_cast<int32>(CubeIndex), Face);
+            if (SRV != nullptr)
+            {
+                ImGui::Image(SRV, ImVec2(FaceSize, FaceSize));
+            }
+            else
+            {
+                ImGui::InvisibleButton("MissingFace", ImVec2(FaceSize, FaceSize));
+            }
+
+            const ImVec2 ImageMin = ImGui::GetItemRectMin();
+            const ImVec2 ImageMax = ImGui::GetItemRectMax();
+            DrawList->AddRectFilled(
+                ImageMin,
+                Add(ImageMin, ImVec2(24.0f, 16.0f)),
+                ToU32(ImVec4(0.02f, 0.025f, 0.030f, 0.82f)),
+                3.0f);
+            DrawList->AddText(Add(ImageMin, ImVec2(4.0f, 1.0f)), ToU32(FaceColors[Face]), FaceNames[Face]);
+            DrawList->AddRect(ImageMin, ImageMax, ToU32(FaceColors[Face]), 3.0f, 0, 1.5f);
+        }
+		ImGui::SetCursorScreenPos(PanelMin);
+        ImGui::Dummy(ImVec2(PanelWidth, PanelHeight + 6.0f));
+
+        ImGui::PopID();
+    }
 }
 
 void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
@@ -512,4 +642,111 @@ void FEditorViewportOverlayWidget::RenderShortcutsWindow()
 	ImGui::TextUnformatted("참고: ImGui 입력창이 키보드를 잡고 있을 때는 일부 단축키가 동작하지 않습니다.");
 	ImGui::EndPopup();
 	ImGui::PopStyleColor();
+}
+
+
+void FEditorViewportOverlayWidget::RenderShadowAtlasPreview()
+{
+#if STATS
+    if (!ImGui::CollapsingHeader("Shadow Atlas", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* ShadowAtlasSRV = FShadowAtlasManager::Get().GetSRV();
+    if (ShadowAtlasSRV == nullptr)
+    {
+        ImGui::TextDisabled("Shadow atlas SRV is not available.");
+        return;
+    }
+
+    ImGui::PushID("ShadowAtlasPreview");
+
+    ImGui::Checkbox("Grid", &bShowShadowAtlasGrid);
+    ImGui::SameLine();
+    ImGui::Checkbox("Zoom", &bShowShadowAtlasZoom);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(150.0f);
+    ImGui::SliderFloat("Size", &ShadowAtlasPreviewSize, 192.0f, 640.0f, "%.0f px");
+
+    const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+    const float PreviewSize = ClampFloat(ShadowAtlasPreviewSize, 128.0f, std::max(128.0f, AvailableWidth));
+    const ImVec2 ImageSize(PreviewSize, PreviewSize);
+    const ImVec2 ImagePos = ImGui::GetCursorScreenPos();
+    const ImVec2 ImageMax = Add(ImagePos, ImageSize);
+
+    ImDrawList* DrawList = ImGui::GetWindowDrawList();
+    const ImU32 BackColor = IM_COL32(18, 20, 24, 255);
+    const ImU32 BorderColor = IM_COL32(110, 130, 155, 210);
+    const ImU32 GridMajorColor = IM_COL32(255, 255, 255, 65);
+    const ImU32 GridMinorColor = IM_COL32(255, 255, 255, 25);
+    const ImU32 HoverColor = IM_COL32(80, 190, 255, 230);
+
+    DrawList->AddRectFilled(ImagePos, ImageMax, BackColor, 4.0f);
+    ImGui::Image(ShadowAtlasSRV, ImageSize);
+
+    DrawList->AddRectFilled(ImagePos, ImageMax, IM_COL32(4, 8, 12, 140), 4.0f);
+    if (bShowShadowAtlasGrid)
+    {
+        const float GridCount = static_cast<float>(ShadowAtlasResolution2D) / AtlasGridCellPixels;
+        for (int i = 1; i < static_cast<int>(GridCount); ++i)
+        {
+            const float T = static_cast<float>(i) / GridCount;
+            const float X = ImagePos.x + ImageSize.x * T;
+            const float Y = ImagePos.y + ImageSize.y * T;
+            const bool bMajor = (i % 4) == 0;
+            DrawList->AddLine(ImVec2(X, ImagePos.y), ImVec2(X, ImageMax.y), bMajor ? GridMajorColor : GridMinorColor, bMajor ? 1.2f : 1.0f);
+            DrawList->AddLine(ImVec2(ImagePos.x, Y), ImVec2(ImageMax.x, Y), bMajor ? GridMajorColor : GridMinorColor, bMajor ? 1.2f : 1.0f);
+        }
+    }
+
+    DrawList->AddRect(ImagePos, ImageMax, BorderColor, 4.0f, 0, 1.5f);
+
+    if (ImGui::IsItemHovered())
+    {
+        const ImVec2 Mouse = ImGui::GetIO().MousePos;
+        const ImVec2 Local = Subtract(Mouse, ImagePos);
+        const float U = ClampFloat(Local.x / ImageSize.x, 0.0f, 1.0f);
+        const float V = ClampFloat(Local.y / ImageSize.y, 0.0f, 1.0f);
+        const int PixelX = static_cast<int>(U * static_cast<float>(ShadowAtlasResolution2D));
+        const int PixelY = static_cast<int>(V * static_cast<float>(ShadowAtlasResolution2D));
+        const int TileX = static_cast<int>(PixelX / static_cast<int>(AtlasGridCellPixels));
+        const int TileY = static_cast<int>(PixelY / static_cast<int>(AtlasGridCellPixels));
+
+        DrawList->AddLine(ImVec2(Mouse.x, ImagePos.y), ImVec2(Mouse.x, ImageMax.y), HoverColor, 1.0f);
+        DrawList->AddLine(ImVec2(ImagePos.x, Mouse.y), ImVec2(ImageMax.x, Mouse.y), HoverColor, 1.0f);
+
+        const float TileSizeOnPreview = ImageSize.x * (AtlasGridCellPixels / static_cast<float>(ShadowAtlasResolution2D));
+        const ImVec2 TileMin(
+            ImagePos.x + static_cast<float>(TileX) * TileSizeOnPreview,
+            ImagePos.y + static_cast<float>(TileY) * TileSizeOnPreview);
+        DrawList->AddRect(TileMin, Add(TileMin, ImVec2(TileSizeOnPreview, TileSizeOnPreview)), HoverColor, 0.0f, 0, 1.5f);
+
+        if (bShowShadowAtlasZoom && ImGui::BeginTooltip())
+        {
+            const float HalfRegion = AtlasZoomRegionUv * 0.5f;
+            const ImVec2 Uv0(
+                ClampFloat(U - HalfRegion, 0.0f, 1.0f),
+                ClampFloat(V - HalfRegion, 0.0f, 1.0f));
+            const ImVec2 Uv1(
+                ClampFloat(U + HalfRegion, 0.0f, 1.0f),
+                ClampFloat(V + HalfRegion, 0.0f, 1.0f));
+
+            ImGui::Text("UV %.4f, %.4f", U, V);
+            ImGui::Text("Pixel %d, %d", PixelX, PixelY);
+            ImGui::Text("Grid %d, %d", TileX, TileY);
+            ImGui::Separator();
+            ImGui::Image(ShadowAtlasSRV, ImVec2(220.0f, 220.0f), Uv0, Uv1);
+            ImGui::EndTooltip();
+        }
+    }
+
+    ImGui::TextDisabled(
+        "Atlas %ux%u | grid %.0f px | hover shows pixel, grid cell, and zoom",
+        ShadowAtlasResolution2D,
+        ShadowAtlasResolution2D,
+        AtlasGridCellPixels);
+
+    ImGui::PopID();
+#endif
 }

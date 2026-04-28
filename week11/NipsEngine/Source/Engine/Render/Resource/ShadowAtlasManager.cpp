@@ -1,8 +1,30 @@
 ﻿#include "ShadowAtlasManager.h"
 
+namespace
+{
+	int32 QuantizeShadowSize(const int32 RequestTileSize)
+	{
+		if (RequestTileSize <= 0)
+		{
+			return AtlasSizeTier[0];
+		}
+
+		for (int32 i = 0; i < TierCount; ++i)
+		{
+			if (RequestTileSize <= AtlasSizeTier[i])
+			{
+				return AtlasSizeTier[i];
+			}
+		}
+
+		return AtlasSizeTier[TierCount - 1];
+	}
+}
+
 void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 {
 	if (InDevice == nullptr) return;
+    //RootNode = new Node(0, 0, ShadowAtlasResolution2D, ShadowAtlasResolution2D);
 
 	ShadowMapAtlas.Initialize(InDevice);
     ShadowCubeMapArray.Initialize(InDevice);
@@ -10,7 +32,7 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
 {
-    int32 RequestTileSize = ResolutionScale;
+    int32 RequestTileSize = ResolutionScale; //QuantizeShadowSize(ResolutionScale);
 
 	int32 TileX, TileY;
     if (ShadowAllocator.AllocateTiled(RequestTileSize, TileX, TileY))
@@ -129,4 +151,74 @@ TArray<FShadowAtlasTile> FShadowAtlasManager::GetAllocatedTiles() const
         }
     }
     return Result;
+}
+    // D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    //   dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    //   dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    //   dsvDesc.Texture2D.MipSlice = 0;
+    //   Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
+}
+
+bool FShadowAtlasManager::FreeTile(const int32& TileX, const int32& TileY, const int32& TileSize)
+{
+    if (TileX >= 0 && TileX < ShadowAllocator.GridCount && TileY >= 0 && TileY < ShadowAllocator.GridCount)
+    {
+        int32 QuantizedTileSize = ShadowAllocator.QuantizeShadowSize(TileSize);
+        QuantizedTileSize /= ShadowAllocator.GridSize; // Grid 단위로 변환
+        ShadowAllocator.FreeTile(TileX, TileY, QuantizedTileSize);
+        return true;
+    }
+    return false;
+}
+
+bool FShadowAtlasManager::AllocateTileCube(int32& OutCubeIndex)
+{
+    return ShadowCubeMapArray.AllocateCube(OutCubeIndex);
+}
+
+void FShadowAtlasManager::UpdateCubeDebugFace(ID3D11DeviceContext* DeviceContext, int32 CubeIndex, int32 FaceIndex)
+{
+    if (DeviceContext == nullptr ||
+        CubeIndex < 0 || CubeIndex >= MAX_SHADOW_CUBES ||
+        FaceIndex < 0 || FaceIndex >= CUBE_FACE_COUNT)
+    {
+        return;
+    }
+
+    ID3D11Texture2D* SourceTexture = ShadowCubeMapArray.CubeShadowMap.Get();
+    ID3D11Texture2D* DebugTexture = ShadowCubeMapArray.CubeDebugTexture[CubeIndex][FaceIndex].Get();
+    if (SourceTexture == nullptr || DebugTexture == nullptr)
+    {
+        return;
+    }
+
+    const uint32 SourceSlice = static_cast<uint32>(FaceIndex + CubeIndex * CUBE_FACE_COUNT);
+    const uint32 SourceSubresource = D3D11CalcSubresource(0, SourceSlice, 1);
+    DeviceContext->CopySubresourceRegion(
+        DebugTexture,
+        0,
+        0,
+        0,
+        0,
+        SourceTexture,
+        SourceSubresource,
+        nullptr);
+}
+
+ID3D11DepthStencilView* FShadowAtlasManager::GetCubeDSV(int32 CubeIndex, int32 FaceIndex) const
+{
+    if (CubeIndex >= MAX_SHADOW_CUBES || FaceIndex >= 6)
+    {
+        return nullptr;
+    }
+    return ShadowCubeMapArray.CubeDSV[CubeIndex][FaceIndex].Get();
+}
+
+ID3D11ShaderResourceView* FShadowAtlasManager::GetCubeDebugSRV(int32 CubeIndex, int32 FaceIndex) const
+{
+	if (CubeIndex >= MAX_SHADOW_CUBES || FaceIndex >= 6)
+	{
+		return nullptr;
+    }
+    return ShadowCubeMapArray.CubeDebugSRV[CubeIndex][FaceIndex].Get();
 }

@@ -104,7 +104,7 @@ struct FLightInfo
 	float Falloff;
 
 	FVector Position;
-    float Padding1;
+    uint32 ShadowTextureIndex = InvalidShadowIndex;
 };
 
 struct FLightShadowIndices
@@ -125,6 +125,7 @@ struct FShadowLightRequest
     float SlopeScaledBias = 0.0f;
     float ShadowSharpen = 1.0f;
     FVector4 CascadeSplitFar = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
+    float PriorityScore;
 };
 
 constexpr uint32 MaxDirectionalCascadeCount = 4;

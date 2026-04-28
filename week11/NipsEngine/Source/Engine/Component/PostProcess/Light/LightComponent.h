@@ -32,6 +32,9 @@ protected:
 
 	FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		float SplitNearT, float SplitFarT) const;
+
+	virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const;
+
 protected:
 	~ULightComponent() = default;
 
@@ -44,6 +47,8 @@ public:
 	// 디버그용으로 Shadow Atlas에서 해당 라이트의 타일 위치와 크기를 저장하는 변수, 현재 지워도됩니다
     FVector4 DebugShadowAtlasScaleOffset;
     bool bHasDebugShadowAtlasTile = false;
+    float DebugShadowCubeIndex;
+    bool bHasDebugShadowCubeTile = false;
 
 private:
 	EShadowMap eShadowMapType = EShadowMap::CSM;
