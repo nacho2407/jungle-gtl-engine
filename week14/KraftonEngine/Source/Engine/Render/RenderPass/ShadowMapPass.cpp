@@ -51,6 +51,8 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	ID3D11ShaderResourceView* nullSRVs[5] = {};
 	DC->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 3, nullSRVs);       // t21~t23
 	DC->PSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 2, nullSRVs);    // t24~t25
+	DC->VSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 3, nullSRVs);       // t21~t23
+	DC->VSSetShaderResources(ESystemTexSlot::SpotShadowDatas, 2, nullSRVs);    // t24~t25
 
 	// FilterMode 결정
 	CurrentFilterMode = FShadowSettings::Get().GetEffectiveFilterMode();
