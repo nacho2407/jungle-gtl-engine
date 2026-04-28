@@ -353,13 +353,20 @@ void FEditorMainPanel::Update()
 	const bool bWantTextInput = IO.WantTextInput;
     const bool bAnyItemActive = ImGui::IsAnyItemActive();
     const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+    const bool bAnyMouseButtonDown =
+        IO.MouseDown[0] ||
+        IO.MouseDown[1] ||
+        IO.MouseDown[2] ||
+        IO.MouseDown[3] ||
+        IO.MouseDown[4]; // L / M / R / X1 / X2(그 마우스 옆에 쪼마낳게 달려있는 버튼 두 개)
+    const bool bActiveMouseInteraction = bAnyItemActive && bAnyMouseButtonDown;
 
     bool bWantMouse = IO.WantCaptureMouse;
     bool bWantKeyboard = IO.WantCaptureKeyboard || bWantTextInput;
 
     if (EditorEngine && EditorEngine->IsMouseOverViewport())
     {
-        if (!bAnyPopupOpen && !bAnyItemActive)
+        if (!bAnyPopupOpen && !bActiveMouseInteraction)
         {
             bWantMouse = false;
         }
