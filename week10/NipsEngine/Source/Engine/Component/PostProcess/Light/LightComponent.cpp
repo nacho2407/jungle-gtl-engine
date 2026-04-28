@@ -115,7 +115,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 {
 	ULightComponentBase::GetEditableProperties(OutProps);
 
-	static const char* ShadowMapTypeNames[] = { "CSM", "PSM" };
+	static const char* ShadowMapTypeNames[] = { "CSM" ,"PSM" };
 	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
 
 	PrintShadowMapDebugInfo(OutProps);

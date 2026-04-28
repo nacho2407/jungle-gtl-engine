@@ -46,28 +46,10 @@ Texture2D SpecularMap : register(t3);
 Texture2D ShadowMap : register(t10);
 TextureCubeArray<float> PointShadowCube : register(t12);
 
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-Texture2D VSMDebugMap : register(t11); // 상단 선언부에 추가
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-////////////////////////////////////// debugging
-
 SamplerState SampleState : register(s0);
 SamplerComparisonState ShadowSampler : register(s1);
+
+Texture2D VSMMap : register(t11); // 상단 선언부에 추가
 
 struct VSInput
 {
@@ -299,7 +281,8 @@ float CalculateShadow(float4 worldPos)
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
     float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
    //VSM 추가할 것
-    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
+    //float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
+    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset , VSMMap, SampleState, 0.0001);
     return shadowFactor;
 }
 #else
