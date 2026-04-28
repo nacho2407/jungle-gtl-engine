@@ -8,6 +8,7 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
@@ -350,9 +351,10 @@ void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
 
-	const bool bWantTextInput = IO.WantTextInput;
+    const bool bWantTextInput = IO.WantTextInput;
     const bool bAnyItemActive = ImGui::IsAnyItemActive();
     const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+    const bool bRightMouseDown = IO.MouseDown[1];
     const bool bAnyMouseButtonDown =
         IO.MouseDown[0] ||
         IO.MouseDown[1] ||
@@ -366,6 +368,8 @@ void FEditorMainPanel::Update()
 
     if (EditorEngine && EditorEngine->IsMouseOverViewport())
     {
+        const bool bViewportKeyboardFocusRequest = !bAnyPopupOpen && bRightMouseDown;
+
         if (!bAnyPopupOpen && !bActiveMouseInteraction)
         {
             bWantMouse = false;
@@ -373,6 +377,12 @@ void FEditorMainPanel::Update()
 
         if (!bAnyPopupOpen && !bWantTextInput && !bAnyItemActive)
         {
+            bWantKeyboard = false;
+        }
+
+        if (bViewportKeyboardFocusRequest)
+        {
+            ImGui::ClearActiveID();
             bWantKeyboard = false;
         }
     }

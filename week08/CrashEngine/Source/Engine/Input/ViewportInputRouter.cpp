@@ -191,6 +191,11 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
 
     if (GuiCaptureState.bMouse && !CapturedViewport)
     {
+        if (!GuiCaptureState.bKeyboard && Input.KeyPressed[VK_RBUTTON])
+        {
+            SetKeyTargetViewport(Target->Viewport);
+        }
+
         return;
     }
 
