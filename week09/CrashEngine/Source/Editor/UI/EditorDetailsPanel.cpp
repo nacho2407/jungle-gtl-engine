@@ -1111,7 +1111,7 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
     const float ContentWidth = ImGui::GetContentRegionAvail().x;
     const float ColumnSpacing = ImGui::GetStyle().ItemSpacing.x;
-    const float ImageSize = std::max(140.0f, (ContentWidth - ColumnSpacing) * 0.5f);
+    const float ImageSize = (std::max)(140.0f, (ContentWidth - ColumnSpacing) * 0.5f);
     const float LabelHeight = ImGui::GetTextLineHeightWithSpacing();
 
     for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
