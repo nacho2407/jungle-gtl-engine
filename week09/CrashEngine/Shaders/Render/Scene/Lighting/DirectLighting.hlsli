@@ -80,7 +80,7 @@ float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, 
     float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
     float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
     // Reversed-Z에서는 더 작은 depth가 더 멀기 때문에, bias는 compare depth를 줄이는 방향으로 적용합니다.
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
+#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
     float CompareDepth = ShadowPos.z - TotalBias;
 #else
     float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, ShadowProjectionType, ShadowNearZ, ShadowFarZ);
@@ -113,7 +113,7 @@ float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Norma
     if (dot(L, L) <= 1e-6f) return 1.0f;
 
     const int FaceIndex = ResolvePointShadowFaceIndex(L);
-    const FShadowAtlasSample ShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[FaceIndex][0], LocalLight.ShadowSampleData[FaceIndex][1]);
+    const FShadowAtlasSample ShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[FaceIndex]);
     return GetShadowFactor(
         ShadowSample,
         LocalLight.ShadowViewProj[FaceIndex],
@@ -165,7 +165,7 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
         Shadow = GetShadowFactor(
-            DecodeShadowSample(LocalLight.ShadowSampleData[0][0], LocalLight.ShadowSampleData[0][1]),
+            DecodeShadowSample(LocalLight.ShadowSampleData[0]),
             LocalLight.ShadowViewProj[0],
             WorldPosition,
             N,
@@ -224,7 +224,7 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             dot(-L, SpotDir));
 
         Shadow = GetShadowFactor(
-            DecodeShadowSample(LocalLight.ShadowSampleData[0][0], LocalLight.ShadowSampleData[0][1]),
+            DecodeShadowSample(LocalLight.ShadowSampleData[0]),
             LocalLight.ShadowViewProj[0],
             WorldPosition,
             N,
@@ -259,7 +259,7 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
         float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            DecodeShadowSample(Directional[i].ShadowSampleData[0]),
             Directional[i].ShadowViewProj[0],
             WorldPosition,
             N,
@@ -292,7 +292,7 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
         float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            DecodeShadowSample(Directional[i].ShadowSampleData[0]),
             Directional[i].ShadowViewProj[0],
             WorldPosition,
             N,
@@ -326,7 +326,7 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
         if (i >= NumDirectionalLights) break;
         float3 L = normalize(Directional[i].Direction);
         float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            DecodeShadowSample(Directional[i].ShadowSampleData[0]),
             Directional[i].ShadowViewProj[0],
             WorldPosition,
             N,
@@ -368,7 +368,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
         float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            DecodeShadowSample(Directional[i].ShadowSampleData[0]),
             Directional[i].ShadowViewProj[0],
             WorldPosition,
             N,
@@ -424,7 +424,7 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
         float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            DecodeShadowSample(Directional[i].ShadowSampleData[0]),
             Directional[i].ShadowViewProj[0],
             WorldPosition,
             N,

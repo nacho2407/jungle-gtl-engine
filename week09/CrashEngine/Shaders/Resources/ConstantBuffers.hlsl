@@ -53,6 +53,15 @@ struct FAmbientLight
     float Intensity; // 4B
 }; // Total: 16B
 
+struct FShadowAtlasSampleData
+{
+    int PageIndex;             // 4B
+    int SliceIndex;            // 4B
+    float2 AtlasTexelSize;     // 8B
+    float2 UVScale;            // 8B
+    float2 UVOffset;           // 8B
+}; // Total: 32B
+
 struct FDirectionalLight
 {
     float3 Color;                  // 12B
@@ -60,7 +69,7 @@ struct FDirectionalLight
     float3 Direction;              // 12B
     int CascadeCount;              // 4B
     float4x4 ShadowViewProj[4];    // 256B
-    float4 ShadowSampleData[4][2]; // 128B
+    FShadowAtlasSampleData ShadowSampleData[4]; // 128B
     float ShadowBias;              // 4B
     float ShadowSlopeBias;         // 4B
     float ShadowNormalBias;        // 4B
@@ -94,7 +103,7 @@ struct FLocalLight
     int ShadowSampleCount;         // 4B
     float _Pad0;                   // 4B
     float4x4 ShadowViewProj[6];    // 384B
-    float4 ShadowSampleData[6][2]; // 192B
+    FShadowAtlasSampleData ShadowSampleData[6]; // 192B
     float ShadowBias;              // 4B
     float ShadowSlopeBias;         // 4B
     float ShadowNormalBias;        // 4B
