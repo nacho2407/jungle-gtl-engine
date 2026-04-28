@@ -38,6 +38,7 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     ID3D11DepthStencilState* DSState = nullptr;
     Context->Device->CreateDepthStencilState(&DSDesc, &DSState);
     DeviceContext->OMSetDepthStencilState(DSState, 0);
+    DSState->Release();
 
 
     D3D11_VIEWPORT ShadowViewport = {};
@@ -57,6 +58,7 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
 bool FVSMConversionRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
     DrawVSMConversion(Context);
+	// AtlasManager.VSMRTV를 통해서 depth , depth^2 기록
     DispatchHorizontalBlur(Context);
     DispatchVerticalBlur(Context);
 
@@ -113,48 +115,75 @@ bool FVSMConversionRenderPass::DrawVSMConversion(const FRenderPassContext* Conte
     Context->DeviceContext->Draw(3, 0);
     // depth ,depth^2 기록한 RTV를 SRV로 쓰기 위한 Unbind
     Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+	    // 추가: PS t10 명시적 해제 — VarianceShadowTexture UAV 바인딩 전에 반드시 정리
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context->DeviceContext->PSSetShaderResources(10, 1, &NullSRV);
+    return true;
 }
 
 bool FVSMConversionRenderPass::DispatchHorizontalBlur(const FRenderPassContext* Context)
 {
+
     ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
     // VarianceShadowSRV t10에 binding
 	ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().GetVarianceSRV();
-    DeviceContext->CSSetShaderResources(0, 1, &VSMSRV);
 	
 	// Horizontal Blur UAV binding
     ID3D11UnorderedAccessView* HorizonUAV = FShadowAtlasManager::Get().GetBlurUAV();
     DeviceContext->CSSetUnorderedAccessViews(0, 1, &HorizonUAV, nullptr);
+    DeviceContext->CSSetShaderResources(0, 1, &VSMSRV);
 
-	FConstantBuffer* ShadowConstantBuffer = &Context->RenderResources->ShadowBuffer;
-    ID3D11Buffer* UAVShadowConstantbuffer = ShadowConstantBuffer->GetBuffer();
-    DeviceContext->CSSetConstantBuffers(0, 1, &UAVShadowConstantbuffer);
- 
- 
+
+
 	FComputeShader* Horizontal_CS = FResourceManager::Get().GetComputeShader("VSMBlur_H");
  	if (!Horizontal_CS)
 	{
         return false;
 	}
-	
+
 	Horizontal_CS->Bind(DeviceContext);
 	// SRV 는 read - data slot
 	// UAV 는 RW - data slot 
 
+	const TArray<FShadowAtlasTile> ShadowAtlasTile = FShadowAtlasManager::Get().GetAllocatedTiles();
 
-	// TileSize = 1024 * 1024 
-	// atlas = 8192 * 8192s
-    uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
-    uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
+	//constantbuffer는 B11에 바인딩하고 바로 해제할 것.
+    for (const auto& Tile : ShadowAtlasTile)
+    {
+        FVSMBlurConstants CBData;
+        CBData.AtlasOffsetX = static_cast<uint32>(Tile.PixelX);            // 타일 좌상단 픽셀 X
+        CBData.AtlasOffsetY = static_cast<uint32>(Tile.PixelY);            // 타일 좌상단 픽셀 Y
+        CBData.TileWidth = static_cast<uint32>(Tile.Width);                // 타일 픽셀 너비
+        CBData.TileHeight = static_cast<uint32>(Tile.Height);              // 타일 픽셀 높이
 
-    uint32 DispatchX = (AtalsWidth + 7) / 8;
-    uint32 DispatchY = (AtalsHeight + 7) / 8;
+		FConstantBuffer* VSMTileConstantbuffer = &Context->RenderResources->VSMConstantBuffer;
 
-    Horizontal_CS->Dispatch(DeviceContext, DispatchX, DispatchY, 1);
+		VSMTileConstantbuffer->Update(DeviceContext, &CBData, sizeof(FVSMBlurConstants));
+        ID3D11Buffer* BlurCB = VSMTileConstantbuffer->GetBuffer();
+		DeviceContext->CSSetConstantBuffers(11, 1, &BlurCB);
+
+		// TileSize = 1024 * 1024
+        // atlas = 8192 * 8192s
+        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
+        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
+
+        uint32 DispatchX = (Tile.Width + 7) / 8;
+        uint32 DispatchY = (Tile.Height + 7) / 8;
+
+        Horizontal_CS->Dispatch(DeviceContext, DispatchX, DispatchY, 1);
+    }
+
     Horizontal_CS->Unbind(DeviceContext);
-    DeviceContext->CSSetUnorderedAccessViews(0, 1, nullptr, nullptr);
-    DeviceContext->CSSetShaderResources(0, 1, nullptr);
+    ID3D11UnorderedAccessView* NullUAV = nullptr;
+    DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUAV, nullptr);
 
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    DeviceContext->CSSetShaderResources(0, 1, &NullSRV);
+
+	ID3D11Buffer* NullCB = nullptr;
+    DeviceContext->CSSetConstantBuffers(11, 1, &NullCB);
+	return true;
 }
 
 bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Context)
@@ -162,29 +191,60 @@ bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Co
     ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 
 	ID3D11ShaderResourceView* VerticalSRV = FShadowAtlasManager::Get().GetBlurSRV();
-    DeviceContext->CSSetShaderResources(0, 1, &VerticalSRV);
 
 	ID3D11UnorderedAccessView* VerticalUAV = FShadowAtlasManager::Get().GetVarianceUAV();
-    DeviceContext->CSSetUnorderedAccessViews(0, 1, &VerticalUAV, nullptr);
-	
+
+	DeviceContext->CSSetShaderResources(0, 1, &VerticalSRV);
+	DeviceContext->CSSetUnorderedAccessViews(0, 1, &VerticalUAV, nullptr);
+
+
 	FComputeShader* Vertical_CS = FResourceManager::Get().GetComputeShader("VSMBlur_V");
     if (!Vertical_CS)
     {
         return false;
     }
 
-
-    // TileSize = 1024 * 1024
-    // atlas = 8192 * 8192s
-    uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
-    uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
-
-    uint32 DispatchX = (AtalsWidth + 7) / 8;
-    uint32 DispatchY = (AtalsHeight + 7) / 8;
-
 	Vertical_CS->Bind(DeviceContext);
-    Vertical_CS->Dispatch(DeviceContext, DispatchX, DispatchY, 1);
+
+	const TArray<FShadowAtlasTile> ShadowAtlasTile = FShadowAtlasManager::Get().GetAllocatedTiles();
+
+	// constantbuffer는 B11에 바인딩하고 바로 해제할 것.
+    for (const auto& Tile : ShadowAtlasTile)
+    {
+        FVSMBlurConstants CBData;
+        CBData.AtlasOffsetX = static_cast<uint32>(Tile.PixelX);            // 타일 좌상단 픽셀 X
+        CBData.AtlasOffsetY = static_cast<uint32>(Tile.PixelY);            // 타일 좌상단 픽셀 Y
+        CBData.TileWidth = static_cast<uint32>(Tile.Width);                // 타일 픽셀 너비
+        CBData.TileHeight = static_cast<uint32>(Tile.Height);              // 타일 픽셀 높이
+
+        FConstantBuffer* VSMTileConstantbuffer = &Context->RenderResources->VSMConstantBuffer;
+
+        VSMTileConstantbuffer->Update(DeviceContext, &CBData, sizeof(FVSMBlurConstants));
+        ID3D11Buffer* BlurCB = VSMTileConstantbuffer->GetBuffer();
+
+        DeviceContext->CSSetConstantBuffers(11, 1, &BlurCB);
+
+        // TileSize = 1024 * 1024
+        // atlas = 8192 * 8192s
+        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
+        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
+
+		uint32 DispatchX = (Tile.Width + 7) / 8;
+        uint32 DispatchY = (Tile.Height + 7) / 8;
+
+
+        Vertical_CS->Dispatch(DeviceContext, DispatchX, DispatchY, 1);
+    }
+
+
 	Vertical_CS->Unbind(DeviceContext);
-    DeviceContext->CSSetUnorderedAccessViews(0, 1, nullptr, nullptr);
-    DeviceContext->CSSetShaderResources(0, 1, nullptr);
+    ID3D11UnorderedAccessView* NullUAV = nullptr;
+    DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUAV, nullptr);
+
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    DeviceContext->CSSetShaderResources(0, 1, &NullSRV);
+
+	ID3D11Buffer* NullCB = nullptr;
+    DeviceContext->CSSetConstantBuffers(11, 1, &NullCB);
+    return true;
 }

@@ -126,6 +126,14 @@ struct FShadowConstants
     FVector4 ScaleOffset; // xy: Scale, zw: Offset
 };
 
+struct FVSMBlurConstants
+{
+    uint32 AtlasOffsetX; // 4바이트
+    uint32 AtlasOffsetY; // 4바이트
+    uint32 TileWidth;    // 4바이트
+    uint32 TileHeight;   // 4바이트
+};						// 총 16바이트
+
 struct FShadowAtlasConstants
 {
     FMatrix ShadowViewProjMatrix;	// 64

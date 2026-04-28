@@ -12,10 +12,10 @@ static const float GaussWeights[9] =
     0.1945, 0.1216, 0.0540, 0.0162
 };
 
-Texture2D<float2> SrcTexture : register(t);
-RWTexture2D<float2> DstTexture : register(u);
+Texture2D<float2> SrcTexture : register(t0);
+RWTexture2D<float2> DstTexture : register(u0);
 
-cbuffer BlurCB : register(b)
+cbuffer BlurCB : register(b11)
 {
     // 이 Dispatch가 처리할 타일의 픽셀 공간 rect
     // (AtlasOffsetX, AtlasOffsetY): 타일 좌상단 픽셀 좌표
