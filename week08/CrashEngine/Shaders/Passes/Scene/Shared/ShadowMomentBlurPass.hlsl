@@ -3,7 +3,8 @@
     Separable Gaussian blur for VSM moment textures (mip0 prefilter).
 */
 
-Texture2D<float2> g_InputMoment : register(t0);
+// Slice 하나만 보더라도 SRV는 Texture2DArray view로 만들어져 있으므로 타입을 맞춰줍니다.
+Texture2DArray<float2> g_InputMoment : register(t0);
 SamplerState LinearClampSampler : register(s0);
 
 cbuffer MomentBlurParams : register(b2)

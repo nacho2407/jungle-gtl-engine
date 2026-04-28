@@ -2,16 +2,16 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
+#include "Engine/Math/Matrix.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
 #include "Render/Scene/Proxies/SceneProxy.h"
-#include "Engine/Math/Matrix.h"
+#include "Render/Submission/Atlas/ShadowAtlasSystem.h"
 #include "Render/Visibility/Frustum/ConvexVolume.h"
 
 class ULightComponent;
 class FPrimitiveProxy;
 class FScene;
 
-// FLightProxy converts a light component into renderer submission data.
 class FLightProxy : public FSceneProxy
 {
 public:
@@ -23,6 +23,9 @@ public:
 
     virtual void VisualizeLightsInEditor(FScene& Scene) const {}
 
+    void ClearShadowData();
+    void ApplyShadowRecord(const FLightShadowRecord& Record);
+
     ULightComponent* Owner = nullptr;
 
     FLightProxyInfo LightProxyInfo = {};
@@ -30,22 +33,20 @@ public:
     bool bVisible      = true;
     bool bAffectsWorld = true;
 
-    // --- Shadow Related ---
     TArray<FPrimitiveProxy*> VisibleShadowCasters;
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
-    FMatrix                  ShadowViewProjMatrices[6]; // For Point Light (Cube faces)
-    int32                    ShadowMapIndex = -1;
+    FMatrix                  ShadowViewProjMatrices[ShadowAtlas::MaxPointFaces];
     bool                     bCastShadow = false;
+    uint32                   ShadowResolution = 1024;
+    FCascadeShadowMapData    CascadeShadowMapData = {};
+    FShadowMapData           SpotShadowMapData = {};
+    FCubeShadowMapData       CubeShadowMapData = {};
 
-    // TODO: 쉐도우 연산시 반영 필요
-    float                    ShadowBias = 0.005f;
-    float                    ShadowSlopeBias = 0.5f;
-    float                    ShadowNormalBias = 1.0f;
-    int32                    CascadeCount = 1;
-    float                    DynamicShadowDistance = 2000.0f;
-    float                    CascadeDistribution = 1.0f;
+    float ShadowBias = 0.005f;
+    float ShadowSlopeBias = 0.5f;
+    float ShadowNormalBias = 1.0f;
+    int32 CascadeCount = 1;
+    float DynamicShadowDistance = 2000.0f;
+    float CascadeDistribution = 1.0f;
 };
-
-using FLightSceneProxy = FLightProxy;
-

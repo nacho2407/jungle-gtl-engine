@@ -15,6 +15,7 @@ void FSceneView::SetCameraInfo(const UCameraComponent* Camera)
     OrthoWidth     = Camera->GetOrthoWidth();
     NearClip       = Camera->GetCameraState().NearZ;
     FarClip        = Camera->GetCameraState().FarZ;
+    FOV            = Camera->GetFOV();
     FrustumVolume.UpdateFromMatrix(View * Proj);
 }
 

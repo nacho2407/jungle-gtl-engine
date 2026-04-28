@@ -16,6 +16,7 @@ void FLightProxy::UpdateLightConstants()
         return;
     bAffectsWorld         = Owner->AffectsWorld();
     bCastShadow           = Owner->DoesCastShadows();
+    ShadowResolution      = Owner->GetShadowResolution();
     ShadowBias            = Owner->GetShadowBias();
     ShadowSlopeBias       = Owner->GetShadowSlopeBias();
     ShadowNormalBias      = Owner->GetShadowNormalBias();
@@ -42,5 +43,19 @@ void FLightProxy::UpdateTransform()
         return;
     LightProxyInfo.Position  = Owner->GetWorldLocation();
     LightProxyInfo.Direction = Owner->GetForwardVector();
+}
+
+void FLightProxy::ClearShadowData()
+{
+    CascadeShadowMapData.Reset();
+    SpotShadowMapData.Reset();
+    CubeShadowMapData.Reset();
+}
+
+void FLightProxy::ApplyShadowRecord(const FLightShadowRecord& Record)
+{
+    CascadeShadowMapData = Record.CascadeShadowMapData;
+    SpotShadowMapData = Record.SpotShadowMapData;
+    CubeShadowMapData = Record.CubeShadowMapData;
 }
 
