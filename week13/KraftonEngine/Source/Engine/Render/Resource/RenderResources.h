@@ -21,7 +21,7 @@
 
 	t21: Directional CSM     — Texture2DArray (MAX_SHADOW_CASCADES slices)
 	t22: Spot Light Atlas    — Texture2DArray (page 단위, 동적 slice 수)
-	t23: Point Light Atlas   — Texture2D (viewport-packed cube faces)
+	t23: Point Light Atlas   — Texture2DArray (page 단위, 동적 slice 수)
 	t24: StructuredBuffer<FSpotShadowDataGPU>  (per-spot 행렬 + atlas rect)
 	t25: StructuredBuffer<FPointShadowDataGPU> (per-point 6면 행렬 + atlas rect)
 */
@@ -91,38 +91,39 @@ struct FShadowMapResources
 	struct FPointResources
 	{
 		// ── Normal (depth) ──
-		ID3D11Texture2D*          Texture = nullptr;
-		ID3D11DepthStencilView*   DSV     = nullptr;
-		ID3D11ShaderResourceView* SRV     = nullptr;
+		ID3D11Texture2D*                   Texture = nullptr;
+		TArray<ID3D11DepthStencilView*>    DSVs;
+		ID3D11ShaderResourceView*          SRV     = nullptr;
 
 		// ── VSM (moment + depth) ──
-		ID3D11Texture2D*          VSMTexture      = nullptr;
-		ID3D11RenderTargetView*   VSMRTV          = nullptr;
-		ID3D11ShaderResourceView* VSMSRV          = nullptr;
-		ID3D11Texture2D*          VSMDepthTexture = nullptr;
-		ID3D11DepthStencilView*   VSMDSV          = nullptr;
+		ID3D11Texture2D*                   VSMTexture      = nullptr;
+		TArray<ID3D11RenderTargetView*>    VSMRTVs;
+		ID3D11ShaderResourceView*          VSMSRV          = nullptr;
+		ID3D11Texture2D*                   VSMDepthTexture = nullptr;
+		TArray<ID3D11DepthStencilView*>    VSMDSVs;
 
 		// ── Shared ──
 		uint32 Resolution = 0;
+		uint32 PageCount  = 0;
 
 		// ── Per-light StructuredBuffer (t25) ──
 		ID3D11Buffer*             DataBuffer  = nullptr;
 		ID3D11ShaderResourceView* DataSRV     = nullptr;
 		uint32                    DataCapacity = 0;
 
-		bool IsValid()    const { return Texture != nullptr; }
+		bool IsValid()    const { return Texture != nullptr && PageCount > 0; }
 		bool IsVSMValid() const { return VSMTexture != nullptr; }
 		void Release();
 	} Point;
 
 	// ── Ensure methods ──
 	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
-	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
-	void EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSize, uint32 MaxLights);
+	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount, uint32 MaxLights);
+	void EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSize, uint32 PageCount, uint32 MaxLights);
 
 	void EnsureCSM_VSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 Resolution, uint32 PageCount);
-	void EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize);
+	void EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize, uint32 PageCount);
 
 	void Release();
 };

@@ -144,7 +144,8 @@ struct FPointShadowData
     float    ShadowSharpen;            //   4B
     float    ShadowSlopeBias;          //   4B
     float    ShadowNormalBias;         //   4B
-    float    _pad[2];                  //  12B  → 합계 512B
+    uint     PageIndex;               //   4B  (Texture2DArray slice)
+    float    _pad[1];                 //   4B  → 합계 512B
 };
 
 // ── Per-light Shadow StructuredBuffers (t24, t25) ──

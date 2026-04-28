@@ -24,9 +24,10 @@ private:
 	float SpotDepthBrightness = 1.0f;
 	bool  bShowSpotRegions    = true;
 
-	// Point Atlas: brightness 조절
-	float PointDepthBrightness = 1.0f;
-	bool bShowPointRegions	   = true;
+	// Point Atlas: page index + brightness 조절
+	int32 PointPageIndex        = 0;
+	float PointDepthBrightness  = 1.0f;
+	bool  bShowPointRegions     = true;
 
 	// 시각화 모드: 0 = Linear, 1 = Pow
 	int32 VizMode     = 0;

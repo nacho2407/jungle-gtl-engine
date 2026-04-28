@@ -236,15 +236,16 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos, f
     // Atlas UV 변환: face별 scale/bias로 아틀라스 내 위치로 리맵
     float4 sb = pointLightData.FaceAtlasScaleBias[face];
     float2 atlasUV = projUV * sb.xy + sb.zw;
+    float3 uvw = float3(atlasUV, (float)pointLightData.PageIndex);
 
     if (ShadowFilterMode == 2) // VSM
     {
-        float2 moments = ShadowMapPointLightAtlas.SampleLevel(ShadowLinearSampler, atlasUV, 0).rg;
+        float2 moments = ShadowMapPointLightAtlas.SampleLevel(ShadowLinearSampler, uvw, 0).rg;
         return ComputeVSMFactor(moments, fragDepth, pointLightData.ShadowSharpen);
     }
     else // Hard or PCF
     {
-        float depth = ShadowMapPointLightAtlas.SampleLevel(PointClampSampler, atlasUV, 0).r;
+        float depth = ShadowMapPointLightAtlas.SampleLevel(PointClampSampler, uvw, 0).r;
         return (fragDepth >= depth) ? 1.0f : 0.0f;
     }
 }

@@ -187,9 +187,9 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 		if (ShadowRes.Spot.PageCount > 0)
 			TotalBytes += static_cast<uint64>(ShadowRes.Spot.Resolution) * ShadowRes.Spot.Resolution * ShadowRes.Spot.PageCount * BPP;
 
-		// Point Atlas: AtlasSize^2
-		if (ShadowRes.Point.Resolution > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.Point.Resolution) * ShadowRes.Point.Resolution * BPP;
+		// Point Atlas: AtlasSize^2 * pages
+		if (ShadowRes.Point.PageCount > 0)
+			TotalBytes += static_cast<uint64>(ShadowRes.Point.Resolution) * ShadowRes.Point.Resolution * ShadowRes.Point.PageCount * BPP;
 
 		SHADOW_STATS_SET_MEMORY(TotalBytes);
 	}
@@ -324,8 +324,50 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	if (ShadowSpotCount > 0)
 	{
 		const uint32 SpotRes = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
-		Res.EnsureSpotAtlas(Dev, SpotRes, ShadowSpotCount);
-		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, 1);		// Change 1 to PageCount for multiple atlas pages
+		const uint32 MaxSpotPages = FProjectSettings::Get().Shadow.MaxSpotAtlasPages;
+
+		// 면적 기반 page 수 추정
+		const float SpotAtlasArea = static_cast<float>(SpotRes) * static_cast<float>(SpotRes);
+		const float SpotMinRes = SpotLightAtlas.GetMinResolution();
+		float TotalSpotArea = 0.0f;
+		float FOVySpot = 2.0f * atanf(1.0f / Ctx.Frame.Proj.M[1][1]);
+		for (uint32 idx : VisibleShadowSpotIndices)
+		{
+			const FSpotLightParams& SL = Env.GetSpotLight(idx);
+			// Simplified EvaluateResolution (same formula as ShadowAtlasQuadTree)
+			float rSphere, zView;
+			FVector cSphere;
+			if (SL.OuterConeCos >= 0.5f) {
+				rSphere = SL.AttenuationRadius / (2.0f * SL.OuterConeCos);
+				cSphere = SL.Position + SL.Direction * rSphere;
+			} else {
+				rSphere = SL.AttenuationRadius;
+				cSphere = SL.Position;
+			}
+			zView = (cSphere - Ctx.Frame.CameraPosition).Dot(Ctx.Frame.CameraForward);
+			zView = zView > 5.0f ? zView : 5.0f;
+			float rNDC = (rSphere / zView) / tanf(FOVySpot / 2.0f);
+			float rPixel = rNDC * Ctx.Frame.ViewportHeight / 2.0f;
+			float AScreen = 3.14159265f * rPixel * rPixel;
+			FVector4 Color = SL.LightColor;
+			float Lum = Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f;
+			float desiredRes = sqrtf(AScreen) * Lum * SL.Intensity * SL.ShadowResolutionScale;
+			desiredRes = (std::min)(desiredRes, static_cast<float>(SpotRes));
+			uint32 snapped = 1;
+			uint32 raw = static_cast<uint32>(desiredRes);
+			while (snapped < raw) snapped <<= 1;
+			if (snapped > 1 && (snapped - raw) > (raw - snapped / 2))
+				snapped /= 2;
+			if (snapped < static_cast<uint32>(SpotMinRes))
+				snapped = static_cast<uint32>(SpotMinRes);
+			TotalSpotArea += static_cast<float>(snapped) * static_cast<float>(snapped);
+		}
+		constexpr float SpotPackingOverhead = 1.3f;
+		uint32 EstimatedSpotPages = static_cast<uint32>(ceilf(TotalSpotArea * SpotPackingOverhead / SpotAtlasArea));
+		EstimatedSpotPages = (std::max)(1u, (std::min)(EstimatedSpotPages, MaxSpotPages));
+
+		Res.EnsureSpotAtlas(Dev, SpotRes, EstimatedSpotPages, ShadowSpotCount);
+		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, EstimatedSpotPages);
 	}
 	else if (Res.Spot.IsValid())
 	{
@@ -351,8 +393,45 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	if (ShadowPointCount > 0)
 	{
 		const uint32 PointAtlasSize = static_cast<uint32>(PointLightAtlas.GetAtlasSize());
-		Res.EnsurePointAtlas(Dev, PointAtlasSize, ShadowPointCount);
-		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize);
+		const uint32 MaxPointPages = FProjectSettings::Get().Shadow.MaxPointAtlasPages;
+
+		// 면적 기반 page 수 추정: 각 face의 snap된 해상도 제곱합 / atlas 면적
+		const float AtlasArea = static_cast<float>(PointAtlasSize) * static_cast<float>(PointAtlasSize);
+		const float MinRes = PointLightAtlas.GetMinResolution();
+		float TotalFaceArea = 0.0f;
+		float FOVy = 2.0f * atanf(1.0f / Ctx.Frame.Proj.M[1][1]);
+		for (uint32 idx : VisibleShadowPointIndices)
+		{
+			const FPointLightParams& PL = Env.GetPointLight(idx);
+			// Simplified EvaluateResolution (same formula as AtlasQuadTreePoint)
+			float rSphere = PL.AttenuationRadius;
+			float zView = (PL.Position - Ctx.Frame.CameraPosition).Dot(Ctx.Frame.CameraForward);
+			zView = zView > 5.0f ? zView : 5.0f;
+			float rNDC = (rSphere / zView) / tanf(FOVy / 2.0f);
+			float rPixel = rNDC * Ctx.Frame.ViewportHeight / 2.0f;
+			float AScreen = 3.14159265f * rPixel * rPixel;
+			FVector4 Color = PL.LightColor;
+			float Lum = Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f;
+			float desiredRes = sqrtf(AScreen) * Lum * PL.Intensity / (2.0f * PL.LightFalloffExponent) / 6.0f * PL.ShadowResolutionScale;
+			desiredRes = (std::min)(desiredRes, static_cast<float>(PointAtlasSize));
+			// Snap to power-of-two (same as QuadTree)
+			uint32 snapped = 1;
+			uint32 raw = static_cast<uint32>(desiredRes);
+			while (snapped < raw) snapped <<= 1;
+			// RoundToNearestPowerOfTwo: pick closer of snapped and snapped/2
+			if (snapped > 1 && (snapped - raw) > (raw - snapped / 2))
+				snapped /= 2;
+			if (snapped < static_cast<uint32>(MinRes))
+				snapped = static_cast<uint32>(MinRes);
+			TotalFaceArea += 6.0f * static_cast<float>(snapped) * static_cast<float>(snapped);
+		}
+		// QuadTree packing overhead ~1.3x
+		constexpr float PackingOverhead = 1.3f;
+		uint32 EstimatedPages = static_cast<uint32>(ceilf(TotalFaceArea * PackingOverhead / AtlasArea));
+		EstimatedPages = (std::max)(1u, (std::min)(EstimatedPages, MaxPointPages));
+
+		Res.EnsurePointAtlas(Dev, PointAtlasSize, EstimatedPages, ShadowPointCount);
+		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize, EstimatedPages);
 	}
 	else if (Res.Point.IsValid())
 	{
@@ -565,7 +644,6 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 
 void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
-	SpotLightAtlas.Reset();
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	const uint32 NumSpots = Env.GetNumSpotLights();
 	if (NumSpots == 0) return;
@@ -578,16 +656,68 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 	const uint32 Resolution = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
+	const uint32 MaxPages = Res.Spot.PageCount;
 
-	if (bVSM && Res.Spot.IsVSMValid())
+	auto& Frame = Ctx.Frame;
+	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
+
+	// ── Multi-page allocation ──
+	// LightPageMap[visibleIdx] = page where the light was allocated
+	TArray<uint32> LightPageMap(ShadowSpotCount, 0);
+	TArray<uint32> PendingLights;
+	PendingLights.reserve(ShadowSpotCount);
+	for (uint32 i = 0; i < ShadowSpotCount; ++i)
+		PendingLights.push_back(i);
+
+	SpotAtlasRegion.clear();
+	SpotAtlasRegion.resize(ShadowSpotCount);
+
+	for (uint32 Page = 0; Page < MaxPages && !PendingLights.empty(); ++Page)
 	{
-		float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
-		DC->ClearRenderTargetView(Res.Spot.VSMRTVs[0], clearColor);
-		DC->ClearDepthStencilView(Res.Spot.VSMDSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		SpotLightAtlas.Reset();
+
+		for (uint32 visIdx : PendingLights)
+		{
+			const uint32 LightIdx = VisibleShadowSpotIndices[visIdx];
+			const FSpotLightParams& Light = Env.GetSpotLight(LightIdx);
+			SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(visIdx));
+		}
+
+		TArray<FAtlasRegion> PageRegions = SpotLightAtlas.CommitBatch();
+
+		TArray<uint32> FailedLights;
+		uint32 RegionIdx = 0;
+		for (uint32 visIdx : PendingLights)
+		{
+			if (RegionIdx < PageRegions.size() && PageRegions[RegionIdx].bValid)
+			{
+				SpotAtlasRegion[visIdx] = PageRegions[RegionIdx];
+				LightPageMap[visIdx] = Page;
+			}
+			else
+			{
+				SpotAtlasRegion[visIdx] = {};
+				FailedLights.push_back(visIdx);
+			}
+			++RegionIdx;
+		}
+
+		PendingLights = std::move(FailedLights);
 	}
-	else
+
+	// ── Clear all pages ──
+	for (uint32 Page = 0; Page < MaxPages; ++Page)
 	{
-		DC->ClearDepthStencilView(Res.Spot.DSVs[0], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		if (bVSM && Res.Spot.IsVSMValid())
+		{
+			float clearColor[4] = {0.f, 0.f, 0.f, 0.f};
+			DC->ClearRenderTargetView(Res.Spot.VSMRTVs[Page], clearColor);
+			DC->ClearDepthStencilView(Res.Spot.VSMDSVs[Page], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		}
+		else
+		{
+			DC->ClearDepthStencilView(Res.Spot.DSVs[Page], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		}
 	}
 
 	TArray<FSpotShadowDataGPU> SpotGPUData;
@@ -598,20 +728,13 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	ShadowVP.MaxDepth = 1.0f;
 
 	uint32 ShadowIdx = 0;
-	auto& Frame = Ctx.Frame;
-	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
-
-	for (uint32 idx : VisibleShadowSpotIndices) {
-		const FSpotLightParams& Light = Env.GetSpotLight(idx);
-		SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(idx));
-	}
-	SpotAtlasRegion = SpotLightAtlas.CommitBatch();
-
-	for (uint32 i = 0; i < SpotAtlasRegion.size(); ++i)
+	for (uint32 i = 0; i < ShadowSpotCount; ++i)
 	{
-		if (ShadowIdx >= ShadowSpotCount) break;
-		FAtlasRegion AtlasRegion = SpotAtlasRegion[i];
+		const FAtlasRegion& AtlasRegion = SpotAtlasRegion[i];
 		if (!AtlasRegion.bValid) continue;
+
+		const uint32 PageIdx = LightPageMap[i];
+		const uint32 LightIdx = VisibleShadowSpotIndices[i];
 
 		// Shadow Viewport Computation
 		ShadowVP.TopLeftX = static_cast<float>(AtlasRegion.X);
@@ -619,7 +742,6 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		ShadowVP.Width    = static_cast<float>(AtlasRegion.Size);
 		ShadowVP.Height   = static_cast<float>(AtlasRegion.Size);
 
-		const uint32 LightIdx = VisibleShadowSpotIndices[i];
 		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Env.GetSpotLight(LightIdx));
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(VP.ViewProj);
@@ -628,11 +750,11 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 		if (bVSM && Res.Spot.IsVSMValid())
 		{
-			DC->OMSetRenderTargets(1, &Res.Spot.VSMRTVs[0], Res.Spot.VSMDSVs[0]);
+			DC->OMSetRenderTargets(1, &Res.Spot.VSMRTVs[PageIdx], Res.Spot.VSMDSVs[PageIdx]);
 		}
 		else
 		{
-			DC->OMSetRenderTargets(0, nullptr, Res.Spot.DSVs[0]);
+			DC->OMSetRenderTargets(0, nullptr, Res.Spot.DSVs[PageIdx]);
 		}
 		DC->RSSetViewports(1, &ShadowVP);
 
@@ -652,7 +774,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 		SpotGPUData[ShadowIdx].ViewProj = VP.ViewProj;
 		SpotGPUData[ShadowIdx].AtlasScaleBias = AtlasScaleBias;
-		SpotGPUData[ShadowIdx].PageIndex = 0;
+		SpotGPUData[ShadowIdx].PageIndex = PageIdx;
 		SpotGPUData[ShadowIdx].ShadowBias       = Settings.GetBias().value_or(SpotLight.ShadowBias);
 		SpotGPUData[ShadowIdx].ShadowSharpen    = Settings.GetSharpen().value_or(SpotLight.ShadowSharpen);
 		SpotGPUData[ShadowIdx].ShadowSlopeBias  = Settings.GetSlopeBias().value_or(SpotLight.ShadowSlopeBias);
@@ -682,8 +804,6 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 
 void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
-	PointLightAtlas.Reset();
-
 	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
 
 	const uint32 ShadowedPointLightCount = static_cast<uint32>(VisibleShadowPointIndices.size());
@@ -701,35 +821,89 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+	const uint32 MaxPages = Res.Point.PageCount;
 
-	// 아틀라스 배치: 라이트당 6개 엔트리 (face별 하나씩)
 	auto& Frame = Ctx.Frame;
 	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
 
-	for (uint32 idx : VisibleShadowPointIndices)
-	{
-		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(idx);
+	// ── Multi-page allocation strategy ──
+	// Try to allocate all lights on page 0. If some lights' 6 faces fail to
+	// fit, move them to the next page and retry, up to MaxPages.
+	// LightPageMap[shadowLightIdx] = page index where the light was allocated.
+	TArray<uint32> LightPageMap(ShadowedPointLightCount, 0);
+	TArray<uint32> PendingLights; // shadowLightIndices that still need allocation
+	PendingLights.reserve(ShadowedPointLightCount);
+	for (uint32 i = 0; i < ShadowedPointLightCount; ++i)
+		PendingLights.push_back(i);
 
-		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+	// PointAtlasRegion stores all regions across all pages.
+	// Index: ShadowedLightIndex * 6 + FaceIndex
+	PointAtlasRegion.clear();
+	PointAtlasRegion.resize(ShadowedPointLightCount * 6);
+
+	for (uint32 Page = 0; Page < MaxPages && !PendingLights.empty(); ++Page)
+	{
+		PointLightAtlas.Reset();
+
+		for (uint32 ShadowedLightIndex : PendingLights)
 		{
-			FPointLightParams FaceParams = PointLight;
-			FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
-			PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(idx));
+			const uint32 LightIdx = VisibleShadowPointIndices[ShadowedLightIndex];
+			const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(LightIdx);
+
+			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
+			{
+				FPointLightParams FaceParams = PointLight;
+				FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
+				PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(ShadowedLightIndex));
+			}
 		}
+
+		TArray<FAtlasRegion> PageRegions = PointLightAtlas.CommitBatch();
+
+		// Determine which lights succeeded (all 6 faces valid) and which failed
+		TArray<uint32> FailedLights;
+		uint32 RegionIdx = 0;
+		for (uint32 ShadowedLightIndex : PendingLights)
+		{
+			bool bAllValid = true;
+			for (uint32 f = 0; f < 6; ++f)
+			{
+				if (RegionIdx + f < PageRegions.size() && PageRegions[RegionIdx + f].bValid)
+					PointAtlasRegion[ShadowedLightIndex * 6 + f] = PageRegions[RegionIdx + f];
+				else
+					bAllValid = false;
+			}
+
+			if (bAllValid)
+			{
+				LightPageMap[ShadowedLightIndex] = Page;
+			}
+			else
+			{
+				// Clear the partial allocation for this light
+				for (uint32 f = 0; f < 6; ++f)
+					PointAtlasRegion[ShadowedLightIndex * 6 + f] = {};
+				FailedLights.push_back(ShadowedLightIndex);
+			}
+			RegionIdx += 6;
+		}
+
+		PendingLights = std::move(FailedLights);
 	}
 
-	PointAtlasRegion = PointLightAtlas.CommitBatch();
-
-	// 아틀라스 전체를 한 번만 클리어
-	if (bVSM && Res.Point.IsVSMValid())
+	// ── Clear all pages ──
+	for (uint32 Page = 0; Page < MaxPages; ++Page)
 	{
-		float clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
-		DC->ClearRenderTargetView(Res.Point.VSMRTV, clearColor);
-		DC->ClearDepthStencilView(Res.Point.VSMDSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
-	}
-	else
-	{
-		DC->ClearDepthStencilView(Res.Point.DSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
+		if (bVSM && Res.Point.IsVSMValid())
+		{
+			float clearColor[4] = { 0.f, 0.f, 0.f, 0.f };
+			DC->ClearRenderTargetView(Res.Point.VSMRTVs[Page], clearColor);
+			DC->ClearDepthStencilView(Res.Point.VSMDSVs[Page], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		}
+		else
+		{
+			DC->ClearDepthStencilView(Res.Point.DSVs[Page], D3D11_CLEAR_DEPTH, 0.0f, 0);
+		}
 	}
 
 	TArray<FPointShadowDataGPU> PointLightShadowGPUData;
@@ -746,10 +920,12 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	{
 		const uint32 LightIdx = VisibleShadowPointIndices[ShadowedLightIndex];
 		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(LightIdx);
+		const uint32 PageIdx = LightPageMap[ShadowedLightIndex];
 
 		FPointShadowDataGPU& ShadowData = PointLightShadowGPUData[ShadowedLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
 		ShadowData.FarZ  = PointLight.AttenuationRadius;
+		ShadowData.PageIndex = PageIdx;
 
 		const auto& Settings = FShadowSettings::Get();
 		ShadowData.ShadowBias       = Settings.GetBias().value_or(PointLight.ShadowBias);
@@ -792,9 +968,9 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			ShadowVP.Height   = static_cast<float>(Region.Size);
 
 			if (bVSM && Res.Point.IsVSMValid())
-				DC->OMSetRenderTargets(1, &Res.Point.VSMRTV, Res.Point.VSMDSV);
+				DC->OMSetRenderTargets(1, &Res.Point.VSMRTVs[PageIdx], Res.Point.VSMDSVs[PageIdx]);
 			else
-				DC->OMSetRenderTargets(0, nullptr, Res.Point.DSV);
+				DC->OMSetRenderTargets(0, nullptr, Res.Point.DSVs[PageIdx]);
 
 			DC->RSSetViewports(1, &ShadowVP);
 

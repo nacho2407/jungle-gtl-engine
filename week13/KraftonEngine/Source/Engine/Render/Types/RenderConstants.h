@@ -136,8 +136,9 @@ struct FPointShadowDataGPU
 	float    ShadowBias;               //   4B | offset 488
 	float    ShadowSharpen;            //   4B | offset 492
 	float    ShadowSlopeBias;          //   4B | offset 496
-	float	 ShadowNormalBias;         //   4B
-	float    _pad[2];                  //  12B | offset 500  → 합계 512B (32B aligned)
+	float	 ShadowNormalBias;         //   4B | offset 500
+	uint32   PageIndex;                //   4B | offset 504  (Texture2DArray slice)
+	float    _pad[1];                  //   4B | offset 508  → 합계 512B (32B aligned)
 };
 static_assert(sizeof(FPointShadowDataGPU) % 16 == 0);
 static_assert(sizeof(FPointShadowDataGPU) % 32 == 0, "FPointShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");

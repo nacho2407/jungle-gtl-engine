@@ -17,6 +17,8 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 	{
 		bool bEnabled = true;
 		bool bPSM = false;		// Perspective Shadow Maps (per-viewport, 카메라 연동)
+		uint32 MaxSpotAtlasPages  = 4;	// Spot Light Atlas 최대 page 수
+		uint32 MaxPointAtlasPages = 4;	// Point Light Atlas 최대 page 수
 	};
 
 public:
