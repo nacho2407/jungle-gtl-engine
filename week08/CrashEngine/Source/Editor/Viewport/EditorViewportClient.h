@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 
 #include "Input/InputTypes.h"
@@ -145,12 +144,8 @@ public:
     UGizmoComponent* GetGizmo() const { return Gizmo; }
 
 private:
-    void HandleDragStart(const FRay& Ray);
-
-private:
     FViewport* Viewport = nullptr;
     SWindow* LayoutWindow = nullptr;
-    FWindowsWindow* Window = nullptr;
     FOverlayStatSystem* OverlayStatSystem = nullptr;
     UCameraComponent* Camera = nullptr;
     UGizmoComponent* Gizmo = nullptr;
