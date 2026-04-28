@@ -29,6 +29,7 @@ protected:
 	bool End(const FRenderPassContext* Context) override;
 
 private:
+    float CalculatePriority(FShadowLightRequest& Request, const FRenderPassContext* Context);
 	void BuildPracticalCascadeSplit(float CamNear, float CamFar, float MaxShadowDistance, float Lambda, FCascadeSplit OutSplit[4]);
 	void RenderShadowDepth(
 		const FRenderPassContext* Context,

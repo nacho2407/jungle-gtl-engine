@@ -334,6 +334,12 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 			ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
 			DeviceContext->OMSetDepthStencilState(DepthState, 0);
+			
+            {
+                ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+                MutableLight->DebugShadowCubeIndex = CubeIndex;
+                MutableLight->bHasDebugShadowCubeTile = true;
+            }
 
 			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 			{
@@ -372,6 +378,9 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					ShadowViewport,
 					ShadowKey,
 					ShadowData);
+
+				DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+                FShadowAtlasManager::Get().UpdateCubeDebugFace(DeviceContext, CubeIndex, FaceIndex);
 
 				FShadowAtlasConstants atlasConstants = {};
                 atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;

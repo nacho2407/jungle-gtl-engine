@@ -25,6 +25,7 @@ enum class EPropertyType : uint8_t
 
 	Material, // TODO: 수정필요
 	SRV,
+    CubeSRV, // Shadow Cube Map Face SRV
 };
 
 // SRV 정보
