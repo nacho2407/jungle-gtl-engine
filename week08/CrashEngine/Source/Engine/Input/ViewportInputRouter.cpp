@@ -133,14 +133,14 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolvePointerTarget(c
 
 FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolveKeyTarget(FRect& OutRect)
 {
-    if (KeyFocusedViewport)
+    if (FocusedViewport)
     {
-        if (FTargetEntry* Focused = FindTargetByViewport(KeyFocusedViewport, OutRect))
+        if (FTargetEntry* Focused = FindTargetByViewport(FocusedViewport, OutRect))
         {
             return Focused;
         }
 
-        KeyFocusedViewport = nullptr;
+        FocusedViewport = nullptr;
     }
 
     return nullptr;
@@ -177,7 +177,7 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
     if (Input.KeyPressed[VK_LBUTTON])
     {
         CapturedViewport = Target->Viewport;
-        KeyFocusedViewport = Target->Viewport;
+        FocusedViewport = Target->Viewport;
 
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Left, EPointerEventType::Pressed));
     }
@@ -185,7 +185,7 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
     if (Input.KeyPressed[VK_RBUTTON])
     {
         CapturedViewport = Target->Viewport;
-        KeyFocusedViewport = Target->Viewport;
+        FocusedViewport = Target->Viewport;
 
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Right, EPointerEventType::Pressed));
     }
@@ -193,7 +193,7 @@ void FViewportInputRouter::DispatchPointerEvents(FTargetEntry* Target, const FRe
     if (Input.KeyPressed[VK_MBUTTON])
     {
         CapturedViewport = Target->Viewport;
-        KeyFocusedViewport = Target->Viewport;
+        FocusedViewport = Target->Viewport;
 
         Target->Client->InputPointer(MakePointerEvent(EPointerButton::Middle, EPointerEventType::Pressed));
     }
@@ -283,7 +283,7 @@ void FViewportInputRouter::DispatchKeyEvents(FTargetEntry* Target, const FInputS
     {
         // GUI가 키보드 입력을 캡처하는 경우, 모든 키에 대해 Key Repeat 상태를 초기화
         // GUI 내부의 Key Repeat은 GUI 시스템(우리 프로젝트의 경우 ImGui)이 자체적으로 처리하기를 기대
-        KeyFocusedViewport = nullptr;
+        FocusedViewport = nullptr;
         ResetKeyRepeatState();
         return;
     }
