@@ -198,6 +198,21 @@ static ImU32 GetShadowAtlasDebugColor(uint32 Resolution)
     }
 }
 
+static uint64 HashShadowViewProj(const FMatrix& Matrix)
+{
+    constexpr uint64 FnvOffset = 1469598103934665603ull;
+    constexpr uint64 FnvPrime = 1099511628211ull;
+
+    uint64 Hash = FnvOffset;
+    const uint8* Bytes = reinterpret_cast<const uint8*>(Matrix.Data);
+    for (size_t ByteIndex = 0; ByteIndex < sizeof(Matrix.Data); ++ByteIndex)
+    {
+        Hash ^= static_cast<uint64>(Bytes[ByteIndex]);
+        Hash *= FnvPrime;
+    }
+    return Hash;
+}
+
 FString FEditorDetailsPanel::OpenObjFileDialog()
 {
     wchar_t FilePath[MAX_PATH] = {};
@@ -1011,27 +1026,37 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     }
 
     const FShadowMapData* PreviewShadowData = nullptr;
+    const FMatrix* PreviewViewProj = nullptr;
     if (bIsCubeShadow)
     {
         PreviewShadowData = &LightProxy->CubeShadowMapData.Faces[PreviewFace];
+        PreviewViewProj = &LightProxy->CubeShadowMapData.FaceViewProj[PreviewFace];
     }
     else if (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Directional))
     {
         PreviewShadowData = &LightProxy->CascadeShadowMapData.Cascades[0];
+        PreviewViewProj = &LightProxy->CascadeShadowMapData.CascadeViewProj[0];
     }
     else
     {
         PreviewShadowData = &LightProxy->SpotShadowMapData;
+        PreviewViewProj = &LightProxy->LightViewProj;
     }
 
-    if (!PreviewShadowData || !PreviewShadowData->bAllocated)
+    if (!PreviewShadowData || !PreviewViewProj || !PreviewShadowData->bAllocated)
     {
         ImGui::TextDisabled("No shadow map assigned this frame.");
         ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
         return;
     }
 
-    ID3D11ShaderResourceView* PreviewSRV = ShadowPass->GetShadowPreviewSRV(*PreviewShadowData);
+    ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+    ID3D11DeviceContext* DeviceContext = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+    ID3D11ShaderResourceView* PreviewSRV = ShadowPass->GetShadowDebugPreviewSRV(*PreviewShadowData, *PreviewViewProj, Device, DeviceContext);
+    if (!PreviewSRV)
+    {
+        PreviewSRV = ShadowPass->GetShadowPreviewSRV(*PreviewShadowData);
+    }
     if (!PreviewSRV)
     {
         ImGui::TextDisabled("Shadow preview is unavailable.");
@@ -1055,7 +1080,33 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
                PreviewShadowData->UVScaleOffset.W + PreviewShadowData->UVScaleOffset.Y));
     ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
 
+    const FLevelEditorViewportClient* ActiveViewport = EditorEngine ? EditorEngine->GetActiveViewport() : nullptr;
+    const UCameraComponent* ActiveCamera = ActiveViewport ? ActiveViewport->GetCamera() : (EditorEngine ? EditorEngine->GetCamera() : nullptr);
+    const uint64 ShadowViewProjHash = HashShadowViewProj(*PreviewViewProj);
+    const uint64 LightViewProjHash = HashShadowViewProj(LightProxy->LightViewProj);
+    const uint64 CameraViewProjHash = ActiveCamera ? HashShadowViewProj(ActiveCamera->GetViewProjectionMatrix()) : 0ull;
+    ImGui::TextDisabled("Preview: linearized depth visualization");
     ImGui::TextDisabled("Atlas Page: %u  Slice: %u", PreviewShadowData->AtlasPageIndex, PreviewShadowData->SliceIndex);
+    ImGui::TextDisabled(
+        "Rect: (%u, %u) %u x %u",
+        PreviewShadowData->Rect.X,
+        PreviewShadowData->Rect.Y,
+        PreviewShadowData->Rect.Width,
+        PreviewShadowData->Rect.Height);
+    ImGui::TextDisabled(
+        "Viewport: (%u, %u) %u x %u",
+        PreviewShadowData->ViewportRect.X,
+        PreviewShadowData->ViewportRect.Y,
+        PreviewShadowData->ViewportRect.Width,
+        PreviewShadowData->ViewportRect.Height);
+    ImGui::TextDisabled("Camera ViewProj Hash: 0x%016llX", CameraViewProjHash);
+    ImGui::TextDisabled("Shadow ViewProj Hash: 0x%016llX", ShadowViewProjHash);
+    ImGui::TextDisabled("Light ViewProj Hash:  0x%016llX", LightViewProjHash);
+    ImGui::TextDisabled(
+        "Light Dir: (%.3f, %.3f, %.3f)",
+        LightProxy->LightProxyInfo.Direction.X,
+        LightProxy->LightProxyInfo.Direction.Y,
+        LightProxy->LightProxyInfo.Direction.Z);
 }
 
 void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()

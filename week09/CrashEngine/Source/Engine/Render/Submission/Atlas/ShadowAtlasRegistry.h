@@ -25,6 +25,7 @@ public:
 
 private:
     void FreeRecord(FLightShadowRecord& Record, FShadowAtlasManager& AtlasManager);
+    void SyncLightShadowMatrices(FLightShadowRecord& Record, const FLightProxy& Light) const;
     bool AllocateDirectional(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager);
     bool AllocateSpot(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager);
     bool AllocatePoint(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager);
