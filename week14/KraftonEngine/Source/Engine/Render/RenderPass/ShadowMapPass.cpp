@@ -265,13 +265,19 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.ReleaseCSM();
 	}
 
-	// ── Spot Atlas — 단일 페이지 아틀라스 ──
-	uint32 ShadowSpotCount = 0;
+	// ── Spot Atlas — 카메라 프러스텀 컬링 후 가시 라이트만 ──
+	const FConvexVolume& CameraFrustum = Ctx.Frame.FrustumVolume;
+	VisibleShadowSpotIndices.clear();
 	const uint32 NumSpots = Env.GetNumSpotLights();
 	for (uint32 i = 0; i < NumSpots; ++i)
-		if (Env.GetSpotLight(i).bCastShadows) ++ShadowSpotCount;
-	if (ShadowSpotCount > MAX_SHADOW_SPOT_LIGHTS)
-		ShadowSpotCount = MAX_SHADOW_SPOT_LIGHTS;
+	{
+		const auto& Light = Env.GetSpotLight(i);
+		if (!Light.bCastShadows) continue;
+		if (!CameraFrustum.IntersectSphere(Light.Position, Light.AttenuationRadius)) continue;
+		VisibleShadowSpotIndices.push_back(i);
+		if (VisibleShadowSpotIndices.size() >= MAX_SHADOW_SPOT_LIGHTS) break;
+	}
+	uint32 ShadowSpotCount = static_cast<uint32>(VisibleShadowSpotIndices.size());
 
 	if (ShadowSpotCount > 0)
 	{
@@ -284,13 +290,18 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		Res.ReleaseSpotAtlas();
 	}
 
-	// ── Point Atlas — shadow-casting point 수 기반 ──
-	uint32 ShadowPointCount = 0;
+	// ── Point Atlas — 카메라 프러스텀 컬링 후 가시 라이트만 ──
+	VisibleShadowPointIndices.clear();
 	const uint32 NumPoints = Env.GetNumPointLights();
 	for (uint32 i = 0; i < NumPoints; ++i)
-		if (Env.GetPointLight(i).bCastShadows) ++ShadowPointCount;
-	if (ShadowPointCount > MAX_SHADOW_POINT_LIGHTS)
-		ShadowPointCount = MAX_SHADOW_POINT_LIGHTS;
+	{
+		const auto& Light = Env.GetPointLight(i);
+		if (!Light.bCastShadows) continue;
+		if (!CameraFrustum.IntersectSphere(Light.Position, Light.AttenuationRadius)) continue;
+		VisibleShadowPointIndices.push_back(i);
+		if (VisibleShadowPointIndices.size() >= MAX_SHADOW_POINT_LIGHTS) break;
+	}
+	uint32 ShadowPointCount = static_cast<uint32>(VisibleShadowPointIndices.size());
 
 	if (ShadowPointCount > 0)
 	{
@@ -491,20 +502,11 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	const uint32 NumSpots = Env.GetNumSpotLights();
 	if (NumSpots == 0) return;
 
-	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
-
-	uint32 ShadowSpotCount = 0;
-	for (uint32 i = 0; i < NumSpots; ++i)
-	{
-		if (Env.GetSpotLight(i).bCastShadows)
-			++ShadowSpotCount;
-	}
+	const uint32 ShadowSpotCount = static_cast<uint32>(VisibleShadowSpotIndices.size());
 	if (ShadowSpotCount == 0) return;
-
-	ShadowSpotCount = (ShadowSpotCount > MAX_SHADOW_SPOT_LIGHTS)
-		? MAX_SHADOW_SPOT_LIGHTS : ShadowSpotCount;
-
 	if (!Res.IsSpotValid()) return;
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 	const uint32 Resolution = static_cast<uint32>(SpotLightAtlas.GetAtlasSize());
@@ -531,8 +533,8 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 	auto& Frame = Ctx.Frame;
 	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
 
-	for (uint32 i = 0; i < NumSpots; ++i) {
-		const FSpotLightParams& Light = Env.GetSpotLight(i);
+	for (uint32 idx : VisibleShadowSpotIndices) {
+		const FSpotLightParams& Light = Env.GetSpotLight(idx);
 		SpotLightAtlas.AddToBatch(Light, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
 	}
 	SpotAtlasRegion = SpotLightAtlas.CommitBatch();
@@ -549,7 +551,8 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		ShadowVP.Width    = static_cast<float>(AtlasRegion.Size);
 		ShadowVP.Height   = static_cast<float>(AtlasRegion.Size);
 
-		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Env.GetSpotLight(i));
+		const uint32 LightIdx = VisibleShadowSpotIndices[i];
+		auto VP = FLightFrustumUtils::BuildSpotLightViewProj(Env.GetSpotLight(LightIdx));
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(VP.ViewProj);
 
@@ -573,7 +576,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 										   static_cast<float>(AtlasRegion.Size) / AtlasF,
 										   static_cast<float>(AtlasRegion.X)	/ AtlasF,
 										   static_cast<float>(AtlasRegion.Y)	/ AtlasF);
-		const FSpotLightParams& SpotLight = Env.GetSpotLight(i);
+		const FSpotLightParams& SpotLight = Env.GetSpotLight(LightIdx);
 		const auto& Settings = FShadowSettings::Get();
 
 		SpotGPUData[ShadowIdx].ViewProj = VP.ViewProj;
@@ -610,21 +613,13 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	PointLightAtlas.Reset();
 
 	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
-	const uint32 NumPointLights = SceneEnvironment.GetNumPointLights();
 
-	uint32 ShadowedPointLightCount = 0;
-	for (uint32 i = 0; i < NumPointLights; ++i)
-		if (SceneEnvironment.GetPointLight(i).bCastShadows)
-			++ShadowedPointLightCount;
-
+	const uint32 ShadowedPointLightCount = static_cast<uint32>(VisibleShadowPointIndices.size());
 	if (ShadowedPointLightCount == 0)
 	{
 		ShadowCBCache.NumShadowPointLights = 0;
 		return;
 	}
-
-	if (ShadowedPointLightCount > MAX_SHADOW_POINT_LIGHTS)
-		ShadowedPointLightCount = MAX_SHADOW_POINT_LIGHTS;
 
 	if (!Res.IsPointLightValid() || !Res.PointLightShadowDataBuffer)
 	{
@@ -639,11 +634,9 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	auto& Frame = Ctx.Frame;
 	float FOVy = 2.0f * atanf(1.0f / Frame.Proj.M[1][1]);
 
-	uint32 BatchedLights = 0;
-	for (uint32 i = 0; i < NumPointLights && BatchedLights < ShadowedPointLightCount; ++i)
+	for (uint32 idx : VisibleShadowPointIndices)
 	{
-		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(i);
-		if (!PointLight.bCastShadows) continue;
+		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(idx);
 
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
@@ -651,7 +644,6 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
 			PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight);
 		}
-		++BatchedLights;
 	}
 
 	PointAtlasRegion = PointLightAtlas.CommitBatch();
@@ -678,11 +670,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 	constexpr float ShadowNearZ = 0.1f;
 	const float AtlasF = static_cast<float>(Res.PointAtlasResolution);
 
-	uint32 ShadowedLightIndex = 0;
-	for (uint32 i = 0; i < NumPointLights && ShadowedLightIndex < ShadowedPointLightCount; ++i)
+	for (uint32 ShadowedLightIndex = 0; ShadowedLightIndex < ShadowedPointLightCount; ++ShadowedLightIndex)
 	{
-		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(i);
-		if (!PointLight.bCastShadows) continue;
+		const uint32 LightIdx = VisibleShadowPointIndices[ShadowedLightIndex];
+		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(LightIdx);
 
 		FPointShadowDataGPU& ShadowData = PointLightShadowGPUData[ShadowedLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
@@ -734,20 +725,19 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			SHADOW_STATS_ADD_CASTER(PointLight, LastDrawCasterCount);
 		}
 
-		++ShadowedLightIndex;
 	}
 
-	if (ShadowedLightIndex > 0 && Res.PointLightShadowDataBuffer)
+	if (ShadowedPointLightCount > 0 && Res.PointLightShadowDataBuffer)
 	{
 		D3D11_MAPPED_SUBRESOURCE Mapped = {};
 		if (SUCCEEDED(DC->Map(Res.PointLightShadowDataBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
 		{
-			memcpy(Mapped.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedLightIndex);
+			memcpy(Mapped.pData, PointLightShadowGPUData.data(), sizeof(FPointShadowDataGPU) * ShadowedPointLightCount);
 			DC->Unmap(Res.PointLightShadowDataBuffer, 0);
 		}
 	}
 
-	ShadowCBCache.NumShadowPointLights = ShadowedLightIndex;
-	for (uint32 p = 0; p < ShadowedLightIndex; ++p)
+	ShadowCBCache.NumShadowPointLights = ShadowedPointLightCount;
+	for (uint32 p = 0; p < ShadowedPointLightCount; ++p)
 		SHADOW_STATS_ADD_SHADOW_LIGHT(PointLight);
 }

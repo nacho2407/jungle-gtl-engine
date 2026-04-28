@@ -84,6 +84,10 @@ private:
 	FAtlasQuadTreePoint  PointLightAtlas;
 	TArray<FAtlasRegion> PointAtlasRegion;
 
+	// 카메라 프러스텀 컬링된 shadow-casting 라이트 인덱스 캐시
+	TArray<uint32> VisibleShadowSpotIndices;
+	TArray<uint32> VisibleShadowPointIndices;
+
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;
 };
