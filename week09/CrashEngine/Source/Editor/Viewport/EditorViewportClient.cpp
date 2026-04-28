@@ -395,6 +395,14 @@ void FEditorViewportClient::ResetInputState()
     }
 }
 
+void FEditorViewportClient::ResetKeyboardInputState()
+{
+    if (InputController)
+    {
+        InputController->ResetKeyboardInputState();
+    }
+}
+
 void FEditorViewportClient::BeginInputFrame()
 {
     if (InputController)

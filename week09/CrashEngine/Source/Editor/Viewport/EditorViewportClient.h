@@ -96,6 +96,7 @@ public:
     bool InputAxis(const FViewportAxisEvent& Event) override;
     bool InputPointer(const FViewportPointerEvent& Event) override;
     void ResetInputState() override;
+    void ResetKeyboardInputState() override;
 
 	const FRect& GetViewportScreenRect() const { return ViewportScreenRect; }
     const FRect& GetViewportFrameRect() const { return ViewportFrameRect; }

@@ -231,6 +231,19 @@ void FEditorViewportInputController::ResetInputState()
     }
 }
 
+void FEditorViewportInputController::ResetKeyboardInputState()
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        CurrentInput.KeyDown[VK] = false;
+        CurrentInput.KeyPressed[VK] = false;
+        CurrentInput.KeyReleased[VK] = false;
+        CurrentInput.KeyRepeated[VK] = false;
+    }
+
+    CurrentInput.Modifiers = {};
+}
+
 void FEditorViewportInputController::RequestContextMenu(const FEditorViewportContextMenuRequest& Request)
 {
     PendingContextMenuRequest = Request;

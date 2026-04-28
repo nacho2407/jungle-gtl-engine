@@ -47,6 +47,15 @@ bool FEditorGizmoTool::HandleInput(float DeltaTime)
     const bool bMouseMoved = Input.MouseAxisDelta.x != 0 || Input.MouseAxisDelta.y != 0;
     const bool bLeftDragging = Input.bLeftDown && bMouseMoved;
 
+    if (!Gizmo->IsHolding())
+    {
+        FHitResult HoverHit{};
+        if (!FRayUtils::RaycastComponent(Gizmo, Ray, HoverHit))
+        {
+            Gizmo->UpdateHoveredAxis(-1);
+        }
+    }
+
     if (Input.bLeftReleased)
     {
         if (Gizmo->IsHolding() && bMouseMoved)
