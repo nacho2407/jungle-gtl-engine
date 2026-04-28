@@ -232,3 +232,8 @@ struct FVector2
     FVector2& operator*=(float Scalar);
     FVector2& operator/=(float Scalar);
 };
+
+// Scalar * Vector overloads
+inline FVector operator*(float Scalar, const FVector& Vec) { return Vec * Scalar; }
+inline FVector4 operator*(float Scalar, const FVector4& Vec) { return Vec * Scalar; }
+inline FVector2 operator*(float Scalar, const FVector2& Vec) { return Vec * Scalar; }
