@@ -242,6 +242,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorGizmoTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorNavigationTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorSelectionTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorViewportCommandTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorViewportContextMenuTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorViewportInputController.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorViewportTool.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
@@ -254,18 +261,17 @@
     <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorToolbarPanel.cpp" />
-    <ClCompile Include="Source\Editor\UI\EditorViewportPanel.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\Octree.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Collision\SpatialPartition.cpp" />
     <ClCompile Include="Source\Engine\Collision\Sphere.cpp" />
-    <ClCompile Include="Source\Engine\Collision\BVH\DecalVolumeBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\BVH\EditorHelperBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\BVH\EditorPickingBVH.cpp" />
-    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp" />
     <ClCompile Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp" />
@@ -305,6 +311,7 @@
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Input\ViewportInputRouter.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
@@ -436,6 +443,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
+    <ClInclude Include="Source\Editor\Input\EditorGizmoTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorNavigationTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorSelectionTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorViewportCommandTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorViewportContextMenuTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorViewportInputController.h" />
+    <ClInclude Include="Source\Editor\Input\EditorViewportTool.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
@@ -449,21 +463,20 @@
     <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorStatPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorToolbarPanel.h" />
-    <ClInclude Include="Source\Editor\UI\EditorViewportPanel.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\BVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h" />
     <ClInclude Include="Source\Engine\Collision\OBB.h" />
     <ClInclude Include="Source\Engine\Collision\Octree.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtils.h" />
     <ClInclude Include="Source\Engine\Collision\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Collision\SpatialPartition.h" />
     <ClInclude Include="Source\Engine\Collision\Sphere.h" />
-    <ClInclude Include="Source\Engine\Collision\BVH\BVH.h" />
-    <ClInclude Include="Source\Engine\Collision\BVH\DecalVolumeBVH.h" />
-    <ClInclude Include="Source\Engine\Collision\BVH\EditorHelperBVH.h" />
     <ClInclude Include="Source\Engine\Collision\BVH\EditorPickingBVH.h" />
-    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h" />
     <ClInclude Include="Source\Engine\Collision\BVH\ScenePrimitiveBVH.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h" />
@@ -513,6 +526,8 @@
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Input\InputTypes.h" />
+    <ClInclude Include="Source\Engine\Input\ViewportInputRouter.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />

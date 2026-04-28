@@ -2,25 +2,12 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/Settings/EditorSettings.h"
-#include "Editor/Subsystem/OverlayStatSystem.h"
-#include "Editor/UI/EditorConsolePanel.h"
-#include "Engine/Input/InputSystem.h"
-#include "Engine/Profiling/PlatformTime.h"
-#include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/World.h"
 #include "Viewport/Viewport.h"
 
-UWorld* FEditorViewportClient::GetWorld() const
-{
-    return GEngine ? GEngine->GetWorld() : nullptr;
-}
-#include "Collision/RayUtils.h"
-#include "Component/GizmoComponent.h"
-#include "Component/PrimitiveComponent.h"
-#include "Editor/EditorEngine.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/DirectionalLightActor.h"
@@ -29,9 +16,17 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "ImGui/imgui.h"
 #include "Object/Object.h"
 
+#include "Editor/Input/EditorViewportInputController.h"
+
+UWorld* FEditorViewportClient::GetWorld() const
+{
+    return GEngine ? GEngine->GetWorld() : nullptr;
+}
+
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
-    Window = InWindow;
+    (void)InWindow;
+    InputController = std::make_unique<FEditorViewportInputController>(this);
 }
 
 void FEditorViewportClient::CreateCamera()
@@ -139,12 +134,17 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 void FEditorViewportClient::Tick(float DeltaTime)
 {
     if (!bIsActive)
+    {
         return;
+    }
 
     UpdateViewFromPilotedActor();
-    TickEditorShortcuts();
-    TickInput(DeltaTime);
-    TickInteraction(DeltaTime);
+
+    if (InputController)
+    {
+        InputController->HandleInput(DeltaTime);
+    }
+
     ApplyViewToPilotedActor();
 }
 
@@ -284,338 +284,6 @@ FString FEditorViewportClient::GetPilotHintText() const
     return FString();
 }
 
-AActor* FEditorViewportClient::PickActorAtScreenPoint(float ScreenX, float ScreenY) const
-{
-    if (!Camera || !Viewport)
-    {
-        return nullptr;
-    }
-
-    const UWorld* World = GetWorld();
-    if (!World)
-    {
-        return nullptr;
-    }
-
-    const float LocalMouseX = ScreenX - ViewportScreenRect.X;
-    const float LocalMouseY = ScreenY - ViewportScreenRect.Y;
-    if (LocalMouseX < 0.0f || LocalMouseY < 0.0f ||
-        LocalMouseX > ViewportScreenRect.Width || LocalMouseY > ViewportScreenRect.Height)
-    {
-        return nullptr;
-    }
-
-    const float VPWidth = static_cast<float>(Viewport->GetWidth());
-    const float VPHeight = static_cast<float>(Viewport->GetHeight());
-    if (VPWidth <= 0.0f || VPHeight <= 0.0f)
-    {
-        return nullptr;
-    }
-
-    const FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
-    FHitResult HitResult{};
-    AActor* BestActor = nullptr;
-    const_cast<UWorld*>(World)->RaycastEditorPicking(Ray, HitResult, BestActor);
-    return BestActor;
-}
-
-void FEditorViewportClient::TickEditorShortcuts()
-{
-    UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
-    if (!EditorEngine)
-    {
-        return;
-    }
-
-    // PIE 중 ESC로 종료 (UE 동작과 동일)
-    if (EditorEngine->IsPlayingInEditor() && InputSystem::Get().GetKeyDown(VK_ESCAPE))
-    {
-        EditorEngine->RequestEndPlayMap();
-    }
-
-    // Ctrl+D — 선택된 액터 복제
-    if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
-    {
-        const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-        if (!ToDuplicate.empty())
-        {
-            TArray<AActor*> NewSelection;
-            for (AActor* Src : ToDuplicate)
-            {
-                if (!Src)
-                    continue;
-                AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-                if (Dup)
-                {
-                    NewSelection.push_back(Dup);
-                }
-            }
-            SelectionManager->ClearSelection();
-            for (AActor* Actor : NewSelection)
-            {    
-                SelectionManager->ToggleSelect(Actor);
-            }
-        }
-    }
-}
-
-void FEditorViewportClient::TickInput(float DeltaTime)
-{
-    if (!Camera)
-    {
-        return;
-    }
-
-    if (InputSystem::Get().GetGuiInputState().bUsingKeyboard == true)
-    {
-        return;
-    }
-
-    const FCameraState& CameraState = Camera->GetCameraState();
-    const bool bIsOrtho = CameraState.bIsOrthogonal;
-
-    const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
-    const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
-    const float PanMouseScale = CameraSpeed * 0.01f;
-
-    if (!bIsOrtho)
-    {
-        // ── Perspective: 키보드 이동 + 중클릭 로컬 팬 ──
-        FVector LocalMove = FVector(0, 0, 0);
-        float WorldVerticalMove = 0.0f;
-
-        if (InputSystem::Get().GetKey('W'))
-            LocalMove.X += CameraSpeed;
-        if (InputSystem::Get().GetKey('A'))
-            LocalMove.Y -= CameraSpeed;
-        if (InputSystem::Get().GetKey('S'))
-            LocalMove.X -= CameraSpeed;
-        if (InputSystem::Get().GetKey('D'))
-            LocalMove.Y += CameraSpeed;
-        if (InputSystem::Get().GetKey('Q'))
-            WorldVerticalMove -= CameraSpeed;
-        if (InputSystem::Get().GetKey('E'))
-            WorldVerticalMove += CameraSpeed;
-
-        LocalMove *= DeltaTime;
-        Camera->MoveLocal(LocalMove);
-        if (WorldVerticalMove != 0.0f)
-        {
-            Camera->AddWorldOffset(FVector(0.0f, 0.0f, WorldVerticalMove * DeltaTime));
-        }
-
-        // pan 패닝
-        if (InputSystem::Get().GetKey(VK_MBUTTON))
-        {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
-            Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.05f, DeltaY * PanMouseScale * 0.05f));
-        }
-
-        // ── Perspective: 키보드 회전 ──
-        FVector Rotation = FVector(0, 0, 0);
-
-        const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
-        const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
-        if (InputSystem::Get().GetKey(VK_UP))
-            Rotation.Z -= AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_LEFT))
-            Rotation.Y -= AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_DOWN))
-            Rotation.Z += AngleVelocity;
-        if (InputSystem::Get().GetKey(VK_RIGHT))
-            Rotation.Y += AngleVelocity;
-
-        // ── Perspective: 마우스 우클릭 → 회전 ──
-        FVector MouseRotation = FVector(0, 0, 0);
-        float MouseRotationSpeed = 0.15f * RotateSensitivity;
-
-        if (InputSystem::Get().GetKey(VK_RBUTTON))
-        {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
-
-            MouseRotation.Y += DeltaX * MouseRotationSpeed;
-            MouseRotation.Z += DeltaY * MouseRotationSpeed;
-        }
-
-        Rotation *= DeltaTime;
-        Camera->Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
-    }
-    else
-    {
-        // ── Orthographic: 마우스 우클릭 드래그 → 평행이동 (Pan) ──
-        if (InputSystem::Get().GetKey(VK_RBUTTON))
-        {
-            float DeltaX = static_cast<float>(InputSystem::Get().MouseDeltaX());
-            float DeltaY = static_cast<float>(InputSystem::Get().MouseDeltaY());
-
-            // OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례)
-            float PanScale = CameraState.OrthoWidth * 0.002f * MoveSensitivity;
-
-            // 카메라 로컬 Right/Up 방향으로 이동
-            Camera->MoveLocal(FVector(0, -DeltaX * PanScale, DeltaY * PanScale));
-        }
-    }
-
-    if (InputSystem::Get().GetKeyUp(VK_SPACE))
-        Gizmo->SetNextMode();
-}
-
-void FEditorViewportClient::TickInteraction(float DeltaTime)
-{
-    (void)DeltaTime;
-
-    if (!Camera || !Gizmo || !GetWorld())
-    {
-        return;
-    }
-
-    // 기즈모 비활성화하는 설정. 일단은 PIE 중에도 기즈모가 생김.
-    // UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
-    // if (EditorEngine && EditorEngine->IsPlayingInEditor())
-    //{
-    //	Gizmo->Deactivate();
-    //	return;
-    // }
-
-    Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(), Camera->IsOrthogonal(), Camera->GetOrthoWidth());
-
-    // LineTrace 히트 판정용 AxisMask 갱신 (렌더링은 Proxy가 per-viewport로 직접 계산)
-    Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
-
-    // 기즈모 드래그 중에는 마우스가 뷰포트 밖으로 나가도 드래그 종료를 처리해야 함
-    if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding())
-    {
-        return;
-    }
-
-    const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
-
-    float ScrollNotches = InputSystem::Get().GetScrollNotches();
-    if (ScrollNotches != 0.0f)
-    {
-        if (Camera->IsOrthogonal())
-        {
-            float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * ZoomSpeed * DeltaTime;
-            Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
-        }
-        else
-        {
-            // foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
-            Camera->MoveLocal(FVector(ScrollNotches * ZoomSpeed * 0.015f, 0.0f, 0.0f));
-        }
-    }
-
-    // 마우스 좌표를 뷰포트 슬롯 로컬 좌표로 변환
-    // (ImGui screen space = 윈도우 클라이언트 좌표)
-    POINT MousePoint = InputSystem::Get().GetMousePos();
-    MousePoint = Window->ScreenToClientPoint(MousePoint);
-
-    float LocalMouseX = static_cast<float>(MousePoint.x) - ViewportScreenRect.X;
-    float LocalMouseY = static_cast<float>(MousePoint.y) - ViewportScreenRect.Y;
-
-    // 커서 숨김 제거: ShowCursor는 전역 레퍼런스 카운터라 멀티 뷰포트에서
-    // active 전환 시 GetKeyUp이 처리되지 않아 커서가 영구 숨김될 수 있음
-
-    // FViewport 크기 기준으로 디프로젝션 (슬롯 크기와 동기화됨)
-    float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
-    float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
-    // 성능 향상을 위해 필요할 때만 아래 분기에서 Ray 생성.
-    FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
-    FHitResult HitResult;
-
-    // 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
-    FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
-
-    if (InputSystem::Get().GetKeyDown(VK_LBUTTON))
-    {
-        HandleDragStart(Ray);
-    }
-    else if (InputSystem::Get().GetLeftDragging())
-    {
-        //	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
-        if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
-        {
-            Gizmo->SetHolding(true);
-        }
-
-        if (Gizmo->IsHolding())
-        {
-            Gizmo->UpdateDrag(Ray);
-        }
-    }
-    else if (InputSystem::Get().GetLeftDragEnd())
-    {
-        Gizmo->DragEnd();
-    }
-    else if (InputSystem::Get().GetKeyUp(VK_LBUTTON))
-    {
-        // 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
-        Gizmo->SetPressedOnHandle(false);
-    }
-}
-
-/**
- * Picking , 마우스 좌클릭 시 Gizmo 핸들과의 충돌을 우선적으로 검사하며 드래그 시작 여부 결정
- *
- * \param Ray
- */
-void FEditorViewportClient::HandleDragStart(const FRay& Ray)
-{
-    if (UWorld* World = GetWorld())
-    {
-        if (World->GetWorldType() == EWorldType::PIE)
-        {
-            return;
-        }
-    }
-
-    FScopeCycleCounter PickCounter; // 시간측정용 카운터 시작
-
-    FHitResult HitResult{};
-    // 먼저 Ray와 기즈모의 충돌을 감지하고
-    if (FRayUtils::RaycastComponent(Gizmo, Ray, HitResult))
-    {
-        Gizmo->SetPressedOnHandle(true);
-    }
-    else
-    {
-        // 기즈모와 충돌하지 않았다면 월드 BVH를 통해 가장 가까운 프리미티브를 찾음
-        AActor* BestActor = nullptr;
-        if (UWorld* W = GetWorld())
-        {
-            W->RaycastEditorPicking(Ray, HitResult, BestActor); // editor picking BVH
-        }
-
-        // 멀티픽킹은 성능을 위해 일단 비활성화
-        // bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
-
-        if (BestActor == nullptr)
-        {
-            SelectionManager->ClearSelection();
-        }
-        else
-        {
-            // if (bCtrlHeld)
-            // {
-            // 	SelectionManager->ToggleSelect(BestActor);
-            // }
-            // else
-            {
-                SelectionManager->Select(BestActor);
-            }
-        }
-    }
-
-    if (OverlayStatSystem)
-    {
-        const uint64 PickCycles = PickCounter.Finish();
-        const double ElapsedMs = FPlatformTime::ToMilliseconds(PickCycles);
-        OverlayStatSystem->RecordPickingAttempt(ElapsedMs);
-    }
-}
-
 void FEditorViewportClient::UpdateLayoutRect()
 {
     if (!LayoutWindow)
@@ -702,4 +370,48 @@ void FEditorViewportClient::RenderViewportBorder()
         0.0f,
         0,
         BorderThickness);
+}
+
+bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
+{
+    return InputController ? InputController->InputKey(Event) : false;
+}
+
+bool FEditorViewportClient::InputAxis(const FViewportAxisEvent& Event)
+{
+    return InputController ? InputController->InputAxis(Event) : false;
+}
+
+bool FEditorViewportClient::InputPointer(const FViewportPointerEvent& Event)
+{
+    return InputController ? InputController->InputPointer(Event) : false;
+}
+
+void FEditorViewportClient::ResetInputState()
+{
+    if (InputController)
+    {
+        InputController->ResetInputState();
+    }
+}
+
+void FEditorViewportClient::ResetKeyboardInputState()
+{
+    if (InputController)
+    {
+        InputController->ResetKeyboardInputState();
+    }
+}
+
+void FEditorViewportClient::BeginInputFrame()
+{
+    if (InputController)
+    {
+        InputController->BeginInputFrame();
+    }
+}
+
+bool FEditorViewportClient::ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest)
+{
+    return InputController && InputController->ConsumeContextMenuRequest(OutRequest);
 }

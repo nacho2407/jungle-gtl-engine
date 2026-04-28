@@ -25,6 +25,8 @@ public:
     /** ScreenToClient 래핑 — 스크린 좌표를 클라이언트 좌표로 변환 */
     POINT ScreenToClientPoint(POINT ScreenPoint) const;
 
+	bool IsForeground() const { return HWindow && GetForegroundWindow() == HWindow; }
+
 private:
     HWND HWindow = nullptr;
     float Width = 0.f;

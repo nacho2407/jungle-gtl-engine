@@ -46,7 +46,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
     FNamePool::Get();
     FObjectFactory::Get();
 
-    InputSystem::Get().SetOwnerWindow(Window->GetHWND());
     Renderer.Create(Window->GetHWND());
 
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
@@ -77,7 +76,7 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
-    InputSystem::Get().Tick();
+    InputSystem::Get().Tick(Window->IsForeground());
     WorldTick(DeltaTime);
     Render(DeltaTime);
 }

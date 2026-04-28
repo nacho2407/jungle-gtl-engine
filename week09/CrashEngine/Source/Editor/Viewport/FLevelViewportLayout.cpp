@@ -229,6 +229,28 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
     }
 }
 
+void FLevelViewportLayout::SyncActiveViewportFromKeyTargetViewport(FViewport* KeyTargetViewport)
+{
+    if (!KeyTargetViewport)
+    {
+        return;
+    }
+
+    for (FLevelEditorViewportClient* Client : LevelViewportClients)
+    {
+        if (!Client || Client->GetViewport() != KeyTargetViewport)
+        {
+            continue;
+        }
+
+        if (Client != ActiveViewportClient)
+        {
+            SetActiveViewport(Client);
+        }
+        return;
+    }
+}
+
 void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 {
     for (FLevelEditorViewportClient* VC : LevelViewportClients)
@@ -324,6 +346,17 @@ void FLevelViewportLayout::RestoreWorldAxisAfterPIE()
     bHasSavedWorldAxisVisibility = false;
 }
 
+void FLevelViewportLayout::ResetAllViewportInputStates()
+{
+    for (FEditorViewportClient* Client : AllViewportClients)
+    {
+        if (Client)
+        {
+            Client->ResetInputState();
+        }
+    }
+}
+
 // ─── 뷰포트 슬롯 관리 ───────────────────────────────────────
 
 void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
@@ -367,6 +400,11 @@ void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
         int32 Idx = static_cast<int32>(LevelViewportClients.size()) - 1;
         LevelViewportClients.pop_back();
 
+        if (VC)
+        {
+            VC->ResetInputState();
+        }
+
         for (auto It = AllViewportClients.begin(); It != AllViewportClients.end(); ++It)
         {
             if (*It == VC)
@@ -377,7 +415,9 @@ void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
         }
 
         if (ActiveViewportClient == VC)
-            SetActiveViewport(LevelViewportClients[0]);
+        {
+            Editor->SetActiveViewport(LevelViewportClients.empty() ? nullptr : LevelViewportClients[0]);
+        }
 
         if (FViewport* VP = VC->GetViewport())
         {
@@ -549,6 +589,8 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
     if (NewLayout == CurrentLayout)
         return;
 
+    ResetAllViewportInputStates();
+
     bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
 
     // 기존 트리 해제
@@ -585,6 +627,11 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
     RootSplitter = BuildSplitterTree(NewLayout);
     ActiveSlotCount = RequiredSlots;
     CurrentLayout = NewLayout;
+
+    if (Editor)
+    {
+        Editor->ResetViewportInputRouting();
+    }
 }
 
 void FLevelViewportLayout::ToggleViewportSplit()
@@ -743,31 +790,23 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
                 }
             }
 
-            if (!DraggingSplitter && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)))
-            {
-                for (int32 i = 0; i < ActiveSlotCount; ++i)
-                {
-                    if (i < static_cast<int32>(LevelViewportClients.size()) &&
-                        ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
-                    {
-                        FLevelEditorViewportClient* HoveredViewportClient = LevelViewportClients[i];
-                        if (HoveredViewportClient != ActiveViewportClient)
-                        {
-                            SetActiveViewport(HoveredViewportClient);
-                        }
+        }
 
-                        if (ImGui::IsMouseClicked(1))
-                        {
-                            PendingPilotContextViewport = HoveredViewportClient;
-                            PendingPilotContextActor = HoveredViewportClient->PickActorAtScreenPoint(MousePos.x, MousePos.y);
-                            if (PendingPilotContextActor || HoveredViewportClient->IsPilotingActor())
-                            {
-                                ImGui::OpenPopup("ViewportPilotContextMenu");
-                            }
-                        }
-                        break;
-                    }
-                }
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            FLevelEditorViewportClient* ViewportClient = LevelViewportClients[i];
+            if (!ViewportClient)
+            {
+                continue;
+            }
+
+            FEditorViewportContextMenuRequest ContextMenuRequest{};
+            if (ViewportClient->ConsumeContextMenuRequest(ContextMenuRequest))
+            {
+                PendingPilotContextViewport = ViewportClient;
+                PendingPilotContextActor = ContextMenuRequest.HitActor;
+                ImGui::OpenPopup("ViewportPilotContextMenu");
+                break;
             }
         }
 

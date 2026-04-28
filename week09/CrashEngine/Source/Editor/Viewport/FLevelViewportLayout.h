@@ -14,6 +14,7 @@ class FSelectionManager;
 class FEditorSettings;
 class FWindowsWindow;
 class FRenderer;
+class FViewport;
 class UWorld;
 class UEditorEngine;
 class AActor;
@@ -72,6 +73,7 @@ public:
 
     void SetActiveViewport(FLevelEditorViewportClient* InClient);
     FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
+    void SyncActiveViewportFromKeyTargetViewport(FViewport* KeyTargetViewport);
 
     void ResetViewport(UWorld* InWorld);
     void DestroyAllCameras();
@@ -87,6 +89,7 @@ private:
     SSplitter* BuildSplitterTree(EViewportLayout Layout);
     void EnsureViewportSlots(int32 RequiredCount);
     void ShrinkViewportSlots(int32 RequiredCount);
+    void ResetAllViewportInputStates();
 
     // 아이콘 텍스처
     void LoadLayoutIcons(ID3D11Device* Device);

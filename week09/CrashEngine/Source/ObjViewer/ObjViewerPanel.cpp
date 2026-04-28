@@ -65,8 +65,6 @@
 //		// (뷰포트 ImGui::Image 위에 InvisibleButton이 있으므로 그걸로 판단)
 //		bWantMouse = IO.WantCaptureMouse;
 //	}
-//	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-//	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
 // }
 //
 // void FObjViewerPanel::RenderMeshList()
@@ -210,10 +208,6 @@
 //
 //			// 투명 버튼으로 ImGui 마우스 캡처를 뷰포트 위에서 해제
 //			ImGui::InvisibleButton("##PreviewViewport", Size);
-//			if (ImGui::IsItemHovered())
-//			{
-//				InputSystem::Get().GetGuiInputState().bUsingMouse = false;
-//			}
 //		}
 //	}
 //
