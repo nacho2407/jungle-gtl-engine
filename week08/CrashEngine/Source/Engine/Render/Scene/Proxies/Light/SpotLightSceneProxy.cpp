@@ -58,7 +58,7 @@ void AddDebugCone(FScene& Scene, const FVector& Apex, const FVector& Direction,
 } // namespace
 
 FSpotLightSceneProxy::FSpotLightSceneProxy(USpotLightComponent* InComponent)
-    : FPointLightSceneProxy(InComponent)
+    : FLightProxy(InComponent)
 {
     LightProxyInfo.LightType = static_cast<uint32>(ELightType::Spot);
 }
@@ -70,9 +70,10 @@ void FSpotLightSceneProxy::UpdateLightConstants()
         return;
     }
 
-    FPointLightSceneProxy::UpdateLightConstants();
+    FLightProxy::UpdateLightConstants();
 
     USpotLightComponent* SpotLight = static_cast<USpotLightComponent*>(Owner);
+    LightProxyInfo.AttenuationRadius = SpotLight->GetAttenuationRadius();
     LightProxyInfo.InnerConeAngle  = SpotLight->GetInnerConeAngle();
     LightProxyInfo.OuterConeAngle  = SpotLight->GetOuterConeAngle();
     LightProxyInfo.LightType       = static_cast<uint32>(ELightType::Spot);

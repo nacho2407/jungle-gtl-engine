@@ -1,6 +1,8 @@
 cbuffer ShadowDebugPreviewCB : register(b2)
 {
     float4x4 InvViewProj;
+    uint ShadowDepthPreviewMode;
+    float3 ShadowDebugPreviewPadding;
 };
 
 Texture2D<float> ShadowDepthTexture : register(t0);
@@ -35,14 +37,17 @@ float4 PS(VSOut Input) : SV_Target
         min((uint)(Input.UV.y * Height), Height - 1));
     const float RawDepth = ShadowDepthTexture.Load(int3(PixelCoord, 0)).r;
 
+    if (ShadowDepthPreviewMode == 0)
+    {
+        return float4(RawDepth, 0.0, 0.0, 1.0);
+    }
+
     float3 WorldNear = ReconstructWorld(Input.UV, 0.0);
     float3 WorldFar = ReconstructWorld(Input.UV, 1.0);
     float3 WorldPoint = ReconstructWorld(Input.UV, RawDepth);
 
     const float RayLength = max(length(WorldFar - WorldNear), 1e-6);
     const float Linear01 = saturate(length(WorldPoint - WorldNear) / RayLength);
-
-    // Keep the value linear, then add a mild visualization curve so subtle motion is easier to read.
     const float Visual = saturate(pow(1.0 - Linear01, 0.55));
     return float4(Visual, Visual, Visual, 1.0);
 }

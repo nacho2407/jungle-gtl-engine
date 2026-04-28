@@ -10,14 +10,30 @@ void ReleaseView(ID3D11DeviceChild*& Resource)
         Resource = nullptr;
     }
 }
+
+void ReleaseMomentViews(
+    ID3D11Texture2D*& MomentTexture,
+    ID3D11RenderTargetView* (&MomentSliceRTVs)[ShadowAtlas::SliceCount],
+    ID3D11ShaderResourceView*& MomentArraySRV,
+    ID3D11ShaderResourceView* (&MomentSliceSRVs)[ShadowAtlas::SliceCount])
+{
+    for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
+    {
+        ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentSliceRTVs[SliceIndex]));
+        ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentSliceSRVs[SliceIndex]));
+    }
+
+    ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentArraySRV));
+    ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentTexture));
+}
 } // namespace
 
-FShadowAtlas::~FShadowAtlas()
+FShadowAtlasPage::~FShadowAtlasPage()
 {
     Release();
 }
 
-bool FShadowAtlas::Initialize(ID3D11Device* Device)
+bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
 {
     if (!Device)
     {
@@ -86,6 +102,21 @@ bool FShadowAtlas::Initialize(ID3D11Device* Device)
         return false;
     }
 
+    return true;
+}
+
+bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
+{
+    if (!Device)
+    {
+        return false;
+    }
+
+    if (MomentTexture)
+    {
+        return true;
+    }
+
     D3D11_TEXTURE2D_DESC MomentDesc = {};
     MomentDesc.Width = ShadowAtlas::AtlasSize;
     MomentDesc.Height = ShadowAtlas::AtlasSize;
@@ -99,7 +130,7 @@ bool FShadowAtlas::Initialize(ID3D11Device* Device)
 
     if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &MomentTexture)))
     {
-        Release();
+        ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
         return false;
     }
 
@@ -113,7 +144,7 @@ bool FShadowAtlas::Initialize(ID3D11Device* Device)
         RTVDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateRenderTargetView(MomentTexture, &RTVDesc, &MomentSliceRTVs[SliceIndex])))
         {
-            Release();
+            ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
             return false;
         }
 
@@ -126,7 +157,7 @@ bool FShadowAtlas::Initialize(ID3D11Device* Device)
         SliceMomentDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateShaderResourceView(MomentTexture, &SliceMomentDesc, &MomentSliceSRVs[SliceIndex])))
         {
-            Release();
+            ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
             return false;
         }
     }
@@ -140,14 +171,14 @@ bool FShadowAtlas::Initialize(ID3D11Device* Device)
     MomentArrayDesc.Texture2DArray.ArraySize = ShadowAtlas::SliceCount;
     if (FAILED(Device->CreateShaderResourceView(MomentTexture, &MomentArrayDesc, &MomentArraySRV)))
     {
-        Release();
+        ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
         return false;
     }
 
     return true;
 }
 
-void FShadowAtlas::Release()
+void FShadowAtlasPage::Release()
 {
     for (FBuddyAllocator2D& Allocator : SliceAllocators)
     {
@@ -158,19 +189,16 @@ void FShadowAtlas::Release()
     {
         ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(SliceDSVs[SliceIndex]));
         ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(PreviewSliceSRVs[SliceIndex]));
-        ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentSliceRTVs[SliceIndex]));
-        ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentSliceSRVs[SliceIndex]));
     }
 
     ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(DepthArraySRV));
-    ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentArraySRV));
     ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(DepthTexture));
-    ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(MomentTexture));
+    ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
 }
 
-bool FShadowAtlas::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShadowMapData& OutData)
+bool FShadowAtlasPage::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShadowMapData& OutData)
 {
-    // 같은 page 안에서는 slice를 앞에서부터 순회하며 먼저 맞는 자리를 찾습니다.
+    // 같은 page 안에서는 slice를 앞에서부터 순회하면서 먼저 맞는 자리를 찾습니다.
     for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
     {
         FShadowMapData Candidate = {};
@@ -188,7 +216,7 @@ bool FShadowAtlas::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShadowMap
     return false;
 }
 
-void FShadowAtlas::Free(const FShadowMapData& Allocation)
+void FShadowAtlasPage::Free(const FShadowMapData& Allocation)
 {
     if (!Allocation.bAllocated || Allocation.SliceIndex >= ShadowAtlas::SliceCount)
     {
@@ -198,7 +226,7 @@ void FShadowAtlas::Free(const FShadowMapData& Allocation)
     SliceAllocators[Allocation.SliceIndex].Free(Allocation);
 }
 
-void FShadowAtlas::GatherSliceAllocations(uint32 SliceIndex, uint32 AtlasPageIndex, TArray<FShadowMapData>& OutAllocations) const
+void FShadowAtlasPage::GatherSliceAllocations(uint32 SliceIndex, uint32 AtlasPageIndex, TArray<FShadowMapData>& OutAllocations) const
 {
     if (SliceIndex >= ShadowAtlas::SliceCount)
     {
@@ -214,41 +242,41 @@ void FShadowAtlas::GatherSliceAllocations(uint32 SliceIndex, uint32 AtlasPageInd
     }
 }
 
-ID3D11DepthStencilView* FShadowAtlas::GetSliceDSV(uint32 SliceIndex) const
+ID3D11DepthStencilView* FShadowAtlasPage::GetSliceDSV(uint32 SliceIndex) const
 {
     return (SliceIndex < ShadowAtlas::SliceCount) ? SliceDSVs[SliceIndex] : nullptr;
 }
 
-ID3D11RenderTargetView* FShadowAtlas::GetMomentSliceRTV(uint32 SliceIndex) const
+ID3D11RenderTargetView* FShadowAtlasPage::GetMomentSliceRTV(uint32 SliceIndex) const
 {
     return (SliceIndex < ShadowAtlas::SliceCount) ? MomentSliceRTVs[SliceIndex] : nullptr;
 }
 
-ID3D11ShaderResourceView* FShadowAtlas::GetMomentSliceSRV(uint32 SliceIndex) const
+ID3D11ShaderResourceView* FShadowAtlasPage::GetMomentSliceSRV(uint32 SliceIndex) const
 {
     return (SliceIndex < ShadowAtlas::SliceCount) ? MomentSliceSRVs[SliceIndex] : nullptr;
 }
 
-ID3D11ShaderResourceView* FShadowAtlas::GetPreviewSliceSRV(uint32 SliceIndex) const
+ID3D11ShaderResourceView* FShadowAtlasPage::GetPreviewSliceSRV(uint32 SliceIndex) const
 {
     return (SliceIndex < ShadowAtlas::SliceCount) ? PreviewSliceSRVs[SliceIndex] : nullptr;
 }
 
-FShadowAtlasManager::~FShadowAtlasManager()
+FShadowAtlasPool::~FShadowAtlasPool()
 {
     Release();
 }
 
-void FShadowAtlasManager::Release()
+void FShadowAtlasPool::Release()
 {
-    for (FShadowAtlas* Page : Pages)
+    for (FShadowAtlasPage* Page : Pages)
     {
         delete Page;
     }
     Pages.clear();
 }
 
-bool FShadowAtlasManager::Allocate(ID3D11Device* Device, uint32 Resolution, FShadowMapData& OutData)
+bool FShadowAtlasPool::Allocate(ID3D11Device* Device, uint32 Resolution, FShadowMapData& OutData)
 {
     for (uint32 PageIndex = 0; PageIndex < Pages.size(); ++PageIndex)
     {
@@ -263,8 +291,8 @@ bool FShadowAtlasManager::Allocate(ID3D11Device* Device, uint32 Resolution, FSha
         return false;
     }
 
-    // 기존 page에 빈 자리가 없으면 새 page를 만들지만, MaxPages 상한을 넘기지는 않습니다.
-    FShadowAtlas* NewPage = new FShadowAtlas();
+    // 기존 page에 빈 자리가 없으면 새 page를 만들지만 MaxPages 상한은 넘기지 않습니다.
+    FShadowAtlasPage* NewPage = new FShadowAtlasPage();
     if (!NewPage->Initialize(Device))
     {
         delete NewPage;
@@ -276,7 +304,7 @@ bool FShadowAtlasManager::Allocate(ID3D11Device* Device, uint32 Resolution, FSha
     return NewPage->Allocate(Resolution, PageIndex, OutData);
 }
 
-void FShadowAtlasManager::Free(const FShadowMapData& Allocation)
+void FShadowAtlasPool::Free(const FShadowMapData& Allocation)
 {
     if (!Allocation.bAllocated || Allocation.AtlasPageIndex >= Pages.size() || !Pages[Allocation.AtlasPageIndex])
     {
@@ -286,12 +314,12 @@ void FShadowAtlasManager::Free(const FShadowMapData& Allocation)
     Pages[Allocation.AtlasPageIndex]->Free(Allocation);
 }
 
-FShadowAtlas* FShadowAtlasManager::GetPage(uint32 PageIndex)
+FShadowAtlasPage* FShadowAtlasPool::GetPage(uint32 PageIndex)
 {
     return (PageIndex < Pages.size()) ? Pages[PageIndex] : nullptr;
 }
 
-const FShadowAtlas* FShadowAtlasManager::GetPage(uint32 PageIndex) const
+const FShadowAtlasPage* FShadowAtlasPool::GetPage(uint32 PageIndex) const
 {
     return (PageIndex < Pages.size()) ? Pages[PageIndex] : nullptr;
 }

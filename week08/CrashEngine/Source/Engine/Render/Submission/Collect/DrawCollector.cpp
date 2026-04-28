@@ -29,14 +29,20 @@ void FDrawCollector::UpdateShadowDataInCBs()
         {
             if (DirIdx < MAX_DIRECTIONAL_LIGHTS)
             {
+                const FCascadeShadowMapData* CascadeShadowMapData = Proxy->GetCascadeShadowMapData();
+                if (!CascadeShadowMapData)
+                {
+                    continue;
+                }
+
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].CascadeCount =
-                    static_cast<int32>(Proxy->CascadeShadowMapData.CascadeCount);
+                    static_cast<int32>(CascadeShadowMapData->CascadeCount);
                 for (uint32 CascadeIndex = 0; CascadeIndex < MAX_DIRECTIONAL_SHADOW_CASCADES; ++CascadeIndex)
                 {
                     CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowViewProj[CascadeIndex] =
-                        Proxy->CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+                        CascadeShadowMapData->CascadeViewProj[CascadeIndex];
                     CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSamples[CascadeIndex] =
-                        MakeSampleCBData(Proxy->CascadeShadowMapData.Cascades[CascadeIndex]);
+                        MakeSampleCBData(CascadeShadowMapData->Cascades[CascadeIndex]);
                 }
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
@@ -50,19 +56,31 @@ void FDrawCollector::UpdateShadowDataInCBs()
             {
                 if (LC.LightType == static_cast<uint32>(ELightType::Spot))
                 {
+                    const FShadowMapData* SpotShadowMapData = Proxy->GetSpotShadowMapData();
+                    if (!SpotShadowMapData)
+                    {
+                        continue;
+                    }
+
                     CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = 1;
                     CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[0] = Proxy->LightViewProj;
-                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[0] = MakeSampleCBData(Proxy->SpotShadowMapData);
+                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[0] = MakeSampleCBData(*SpotShadowMapData);
                 }
                 else
                 {
+                    const FCubeShadowMapData* CubeShadowMapData = Proxy->GetCubeShadowMapData();
+                    if (!CubeShadowMapData)
+                    {
+                        continue;
+                    }
+
                     CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = MAX_POINT_SHADOW_FACES;
                     for (uint32 FaceIndex = 0; FaceIndex < MAX_POINT_SHADOW_FACES; ++FaceIndex)
                     {
                         CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[FaceIndex] =
-                            Proxy->CubeShadowMapData.FaceViewProj[FaceIndex];
+                            CubeShadowMapData->FaceViewProj[FaceIndex];
                         CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[FaceIndex] =
-                            MakeSampleCBData(Proxy->CubeShadowMapData.Faces[FaceIndex]);
+                            MakeSampleCBData(CubeShadowMapData->Faces[FaceIndex]);
                     }
                 }
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowBias = LC.ShadowBias;
