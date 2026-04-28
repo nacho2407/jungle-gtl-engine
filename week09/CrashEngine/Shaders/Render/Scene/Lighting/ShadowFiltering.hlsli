@@ -8,9 +8,10 @@
 #include "../../../Resources/BindingSlots.hlsli"
 #include "../../../Resources/SystemSamplers.hlsl"
 
-#define SHADOW_FILTER_METHOD_PCF 0
-#define SHADOW_FILTER_METHOD_VSM 1
-#define SHADOW_FILTER_METHOD_ESM 2
+#define SHADOW_FILTER_METHOD_NONE 0
+#define SHADOW_FILTER_METHOD_PCF 1
+#define SHADOW_FILTER_METHOD_VSM 2
+#define SHADOW_FILTER_METHOD_ESM 3
 
 #ifndef SHADOW_FILTER_METHOD
 #define SHADOW_FILTER_METHOD SHADOW_FILTER_METHOD_PCF
@@ -39,14 +40,14 @@ struct FShadowAtlasSample
     float2 UVOffset;
 };
 
-FShadowAtlasSample DecodeShadowSample(float4 Data0, float4 Data1)
+FShadowAtlasSample DecodeShadowSample(FShadowAtlasSampleData Data)
 {
     FShadowAtlasSample Sample;
-    Sample.PageIndex = (int)Data0.x;
-    Sample.SliceIndex = (int)Data0.y;
-    Sample.AtlasTexelSize = Data0.zw;
-    Sample.UVScale = Data1.xy;
-    Sample.UVOffset = Data1.zw;
+    Sample.PageIndex = Data.PageIndex;
+    Sample.SliceIndex = Data.SliceIndex;
+    Sample.AtlasTexelSize = Data.AtlasTexelSize;
+    Sample.UVScale = Data.UVScale;
+    Sample.UVOffset = Data.UVOffset;
     return Sample;
 }
 
@@ -77,6 +78,14 @@ float2 SampleShadowAtlasMoment(int PageIndex, int SliceIndex, float2 ShadowUV)
 float2 AtlasUVFromBaseUV(FShadowAtlasSample Sample, float2 BaseUV)
 {
     return BaseUV * Sample.UVScale + Sample.UVOffset;
+}
+
+float2 ClampAtlasUVToSampleBounds(FShadowAtlasSample Sample, float2 AtlasUV)
+{
+    const float2 HalfTexel = Sample.AtlasTexelSize * 0.5f;
+    const float2 MinUV = Sample.UVOffset + HalfTexel;
+    const float2 MaxUV = Sample.UVOffset + Sample.UVScale - HalfTexel;
+    return clamp(AtlasUV, MinUV, MaxUV);
 }
 
 float ComputeVSMVisibility(float2 Moments, float CompareDepth)
@@ -113,9 +122,11 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
         return 1.0f;
     }
 
-    const float2 AtlasUV = AtlasUVFromBaseUV(Sample, BaseUV);
+    const float2 AtlasUV = ClampAtlasUVToSampleBounds(Sample, AtlasUVFromBaseUV(Sample, BaseUV));
 
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
+#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE
+    return SampleShadowAtlasCmp(Sample.PageIndex, Sample.SliceIndex, AtlasUV, CompareDepth);
+#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
     return ComputeVSMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV), CompareDepth);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
     return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth);
@@ -138,7 +149,9 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
     [unroll]
     for (int KernelIndex = 0; KernelIndex < 4; ++KernelIndex)
     {
-        const float2 SampleUV = AtlasUV + (Kernel[KernelIndex] + Offset) * Sample.AtlasTexelSize;
+        const float2 SampleUV = ClampAtlasUVToSampleBounds(
+            Sample,
+            AtlasUV + (Kernel[KernelIndex] + Offset) * Sample.AtlasTexelSize);
         ShadowCoeff += SampleShadowAtlasCmp(Sample.PageIndex, Sample.SliceIndex, SampleUV, CompareDepth);
     }
 

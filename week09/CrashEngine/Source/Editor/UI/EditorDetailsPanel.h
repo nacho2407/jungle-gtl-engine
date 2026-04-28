@@ -21,6 +21,7 @@ public:
     void RenderShadowAtlasDebugWindow();
 
 private:
+    void FocusComponentDetails(UActorComponent* Component);
     void RenderComponentTree(AActor* Actor);
     void RenderSceneComponentNode(class USceneComponent* Comp);
     void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
