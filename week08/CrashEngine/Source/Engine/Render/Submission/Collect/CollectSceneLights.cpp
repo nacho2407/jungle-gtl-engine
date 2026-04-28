@@ -1,4 +1,4 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Submission/Collect/DrawCollector.h"
 
 #include "GameFramework/AActor.h"
@@ -47,12 +47,19 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
         {
             if (CollectedSceneData.Lights.GlobalLights.NumDirectionalLights < MAX_DIRECTIONAL_LIGHTS)
             {
-                uint32 Index                                                        = CollectedSceneData.Lights.GlobalLights.NumDirectionalLights;
-                CollectedSceneData.Lights.GlobalLights.Directional[Index].Color     = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
+                uint32 Index = CollectedSceneData.Lights.GlobalLights.NumDirectionalLights;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].Color = FVector(LC.LightColor.X, LC.LightColor.Y, LC.LightColor.Z);
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].Intensity = LC.Intensity;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].Direction = LC.Direction;
-                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowMapIndex = Proxy->ShadowMapIndex;
-                CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowViewProj = Proxy->LightViewProj;
+                CollectedSceneData.Lights.GlobalLights.Directional[Index].CascadeCount =
+                    static_cast<int32>(Proxy->CascadeShadowMapData.CascadeCount);
+                for (uint32 CascadeIndex = 0; CascadeIndex < MAX_DIRECTIONAL_SHADOW_CASCADES; ++CascadeIndex)
+                {
+                    CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowViewProj[CascadeIndex] =
+                        Proxy->CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+                    CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSamples[CascadeIndex] =
+                        MakeSampleCBData(Proxy->CascadeShadowMapData.Cascades[CascadeIndex]);
+                }
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[Index].ShadowNormalBias = LC.ShadowNormalBias;
@@ -70,11 +77,24 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
             LocalLight.Direction         = LC.Direction;
             LocalLight.InnerConeAngle    = LC.InnerConeAngle;
             LocalLight.OuterConeAngle    = LC.OuterConeAngle;
-            LocalLight.ShadowMapIndex    = Proxy->ShadowMapIndex;
-            LocalLight.ShadowViewProj    = Proxy->LightViewProj;
-            LocalLight.ShadowBias        = LC.ShadowBias;
-            LocalLight.ShadowSlopeBias   = LC.ShadowSlopeBias;
-            LocalLight.ShadowNormalBias  = LC.ShadowNormalBias;
+            if (LC.LightType == static_cast<uint32>(ELightType::Spot))
+            {
+                LocalLight.ShadowSampleCount = 1;
+                LocalLight.ShadowViewProj[0] = Proxy->LightViewProj;
+                LocalLight.ShadowSamples[0] = MakeSampleCBData(Proxy->SpotShadowMapData);
+            }
+            else
+            {
+                LocalLight.ShadowSampleCount = MAX_POINT_SHADOW_FACES;
+                for (uint32 FaceIndex = 0; FaceIndex < MAX_POINT_SHADOW_FACES; ++FaceIndex)
+                {
+                    LocalLight.ShadowViewProj[FaceIndex] = Proxy->CubeShadowMapData.FaceViewProj[FaceIndex];
+                    LocalLight.ShadowSamples[FaceIndex] = MakeSampleCBData(Proxy->CubeShadowMapData.Faces[FaceIndex]);
+                }
+            }
+            LocalLight.ShadowBias = LC.ShadowBias;
+            LocalLight.ShadowSlopeBias = LC.ShadowSlopeBias;
+            LocalLight.ShadowNormalBias = LC.ShadowNormalBias;
             CollectedSceneData.Lights.LocalLights.push_back(LocalLight);
         }
 
@@ -86,4 +106,3 @@ void FDrawCollector::CollectSceneLights(UWorld* World, FScene* Scene, const FSce
 
     CollectedSceneData.Lights.GlobalLights.NumLocalLights = static_cast<int32>(CollectedSceneData.Lights.LocalLights.size());
 }
-

@@ -229,6 +229,9 @@
     <Filter Include="Source\Engine\Render\Submission\Command">
       <UniqueIdentifier>{415045d8-4e23-0336-e0e6-370f6c3e8e93}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Render\Submission\Atlas">
+      <UniqueIdentifier>{f5bfe6ab-2cfd-4d73-9154-e17b4629f316}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Render\Visibility">
       <UniqueIdentifier>{b65f75d2-8132-419f-abd2-e160ae5f5b7b}</UniqueIdentifier>
     </Filter>
@@ -889,6 +892,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Collect\DrawCollector.cpp">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.cpp">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.cpp">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.cpp">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.cpp">
       <Filter>Source\Engine\Render\Submission\Command</Filter>
@@ -1627,6 +1639,24 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Collect\DrawCollector.h">
       <Filter>Source\Engine\Render\Submission\Collect</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasRegistry.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasSystem.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h">
+      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.h">
       <Filter>Source\Engine\Render\Submission\Command</Filter>

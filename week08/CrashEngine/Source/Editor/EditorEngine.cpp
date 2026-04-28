@@ -544,6 +544,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     FRenderCollectContext CollectContext = {};
     CollectContext.SceneView = &SceneView;
     CollectContext.Scene = &Scene;
+    CollectContext.Renderer = &Renderer;
     CollectContext.ViewModePassRegistry = Renderer.GetViewModePassRegistry();
     CollectContext.ActiveViewMode = ViewMode;
     CollectContext.CollectedPrimitives = const_cast<FCollectedPrimitives*>(&Renderer.GetCollectedPrimitives());

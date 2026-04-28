@@ -15,6 +15,9 @@ public:
     virtual void Render(float DeltaTime) override;
 
     UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
+    bool IsShadowAtlasDebugWindowOpen() const { return bShowShadowAtlasDebugWindow; }
+    void SetShadowAtlasDebugWindowOpen(bool bOpen) { bShowShadowAtlasDebugWindow = bOpen; }
+    void RenderShadowAtlasDebugWindow();
 
 private:
     void RenderComponentTree(AActor* Actor);
@@ -30,5 +33,7 @@ private:
     UActorComponent* SelectedComponent = nullptr;
     AActor* LastSelectedActor = nullptr;
     bool bActorSelected = true; // true: Actor details, false: Component details
+    bool bShowShadowAtlasDebugWindow = false;
     int32 SelectedPointLightShadowFace = 0;
+    int32 SelectedShadowAtlasPage = 0;
 };

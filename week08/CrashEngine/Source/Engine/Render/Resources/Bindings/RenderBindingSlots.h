@@ -28,14 +28,11 @@ constexpr uint32 SceneColor    = 11; // t11: scene color copy
 constexpr uint32 ForwardDecalData      = 12; // t12: forward decal metadata buffer
 constexpr uint32 Stencil       = 13; // t13: stencil copy
 constexpr uint32 ForwardDecalIndexList = 14; // t14: per-object decal index buffer
-constexpr uint32 ShadowMap2DBase = 20;          // t20~t24: shadow map texture2D
-constexpr uint32 ShadowMapCubeBase = 25;        // t25~t29: shadow map textureCube
-constexpr uint32 ShadowMoment2DBase = 48;       // t48~t52: shadow moment texture2D
-constexpr uint32 ShadowMomentCubeBase = 53;     // t53~t57: shadow moment textureCube
+constexpr uint32 ShadowAtlasBase = 20;          // t20~t23: shadow atlas texture2DArray pages
+constexpr uint32 ShadowMomentAtlasBase = 48;    // t48~t51: shadow moment atlas texture2DArray pages
 constexpr uint32 ForwardDecalTextureBase = 32; // t32+: forward decal texture array
 
-constexpr uint32 MaxShadowMaps2DCount = 5;
-constexpr uint32 MaxShadowMapsCubeCount = 5;
+constexpr uint32 MaxShadowAtlasPages = 4;
 } // namespace ESystemTexSlot
 
 // Sampler register slots (s#)

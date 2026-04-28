@@ -6,8 +6,11 @@
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Render/Scene/Scene.h"
+#include "Render/Renderer.h"
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
 
 #include <algorithm>
@@ -91,6 +94,23 @@ void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectC
     CollectScenePrimitives(World, CollectContext);
     CollectSceneLights(World, CollectContext.Scene, CollectContext.SceneView);
     CollectShadowCasters(World, CollectContext.SceneView);
+
+    if (CollectContext.Renderer)
+    {
+        FRenderPass* Pass = CollectContext.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass);
+        FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
+        if (ShadowPass && CollectContext.Renderer->GetFD3DDevice().GetDevice())
+        {
+            for (FLightProxy* Light : CollectedSceneData.Lights.VisibleLightProxies)
+            {
+                if (Light)
+                {
+                    ShadowPass->UpdateLightShadowAllocation(*Light, CollectContext.Renderer->GetFD3DDevice().GetDevice());
+                }
+            }
+        }
+    }
+
     UpdateShadowDataInCBs();
 
     if (World && CollectContext.SceneView)

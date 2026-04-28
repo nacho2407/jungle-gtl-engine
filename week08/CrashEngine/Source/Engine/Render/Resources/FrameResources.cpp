@@ -319,6 +319,7 @@ void FFrameResources::UpdateForwardDecals(
 void FFrameResources::BindSystemSamplers(ID3D11DeviceContext* Ctx)
 {
     ID3D11SamplerState* Samplers[4] = { LinearClampSampler, LinearWrapSampler, PointClampSampler, ShadowSampler };
+    Ctx->VSSetSamplers(0, 4, Samplers);
     Ctx->PSSetSamplers(0, 4, Samplers);
 }
 
