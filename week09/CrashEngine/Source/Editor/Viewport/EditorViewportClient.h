@@ -76,6 +76,7 @@ public:
     UWorld* GetWorld() const;
     void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
     void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
+    const FEditorSettings* GetSettings() const { return Settings; }
     void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
     UGizmoComponent* GetGizmo() { return Gizmo; }
 
