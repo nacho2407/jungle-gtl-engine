@@ -119,7 +119,8 @@ StructuredBuffer<uint2> g_ClusterLightGrid : register(t12);
 // StructuredBuffer로 바인딩 (CB 64KB 제한 회피)
 // =============================================================================
 
-// Spot Light: ViewProj + atlas UV rect + page(slice) index  (96B)
+// Spot Light: ViewProj + atlas UV rect + page(slice) index  (128B, 32B aligned)
+// C++ FMatrix에 __m256가 포함되어 구조체가 32B alignment 패딩됨
 struct FSpotShadowData
 {
     float4x4 ViewProj;          // 64B
@@ -127,9 +128,9 @@ struct FSpotShadowData
     uint     PageIndex;         //  4B  (Texture2DArray slice)
     float    ShadowBias;        //  4B
     float    ShadowSharpen;     //  4B
-    float    ShadowSlopeBias;   //  4B 
-    float    ShadowNormalBias;  //  4B 
-    float3   SpotPad0;          // 12B -> 112B
+    float    ShadowSlopeBias;   //  4B
+    float    ShadowNormalBias;  //  4B
+    float    SpotPad0[7];       // 28B -> 128B
 };
 
 // Point Light: 6면 ViewProj + per-face atlas UV rect  (512B, 32B aligned)

@@ -110,18 +110,20 @@ static constexpr uint32 MAX_SHADOW_POINT_LIGHTS  = 16;
 // =============================================================================
 
 // Spot Light: ViewProj + atlas 내 UV rect + page index
+// FMatrix가 __m256 포함 → 32B alignment → 컴파일러가 구조체 끝을 32B 경계로 패딩
 struct FSpotShadowDataGPU
 {
-	FMatrix  ViewProj;           // 64B | offset  0
-	FVector4 AtlasScaleBias;     // 16B | offset 64  (xy=scale, zw=bias)
-	uint32   PageIndex;          //  4B | offset 80  (Texture2DArray slice)
-	float    ShadowBias;         //  4B | offset 84
-	float    ShadowSharpen;      //  4B | offset 88
-	float    ShadowSlopeBias;    //  4B | offset 92 
-	float    ShadowNormalBias;   //  4B | offset 96
-	float    SpotPad0[3];		 // 12B | offset 100
+	FMatrix  ViewProj;           // 64B | offset   0
+	FVector4 AtlasScaleBias;     // 16B | offset  64  (xy=scale, zw=bias)
+	uint32   PageIndex;          //  4B | offset  80  (Texture2DArray slice)
+	float    ShadowBias;         //  4B | offset  84
+	float    ShadowSharpen;      //  4B | offset  88
+	float    ShadowSlopeBias;    //  4B | offset  92
+	float    ShadowNormalBias;   //  4B | offset  96
+	float    SpotPad0[7];        // 28B | offset 100  → 합계 128B (32B aligned)
 };
 static_assert(sizeof(FSpotShadowDataGPU) % 16 == 0);
+static_assert(sizeof(FSpotShadowDataGPU) % 32 == 0, "FSpotShadowDataGPU must be 32-byte aligned for FMatrix(__m256)");
 
 // Point Light: 6면 ViewProj + per-face atlas UV rect
 // FMatrix가 __m256 포함 → 32B alignment → 컴파일러가 구조체 끝을 32B 경계로 패딩
