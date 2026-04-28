@@ -453,6 +453,23 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     {
         output.Color = float4(WireframeRGB, 1.f);
     }
+
+#ifdef CASCADE_VIS
+    if (DirectionalCascadeCount > 0)
+    {
+        float CameraDepth = GetCameraDepthForCSM(input.WorldPos);
+        uint CascadeIndex = SelectDirectionalCascade(CameraDepth);
+
+        float3 cascadeColor;
+        if      (CascadeIndex == 0) cascadeColor = float3(1.0f, 0.0f, 0.0f);
+        else if (CascadeIndex == 1) cascadeColor = float3(0.0f, 1.0f, 0.0f);
+        else if (CascadeIndex == 2) cascadeColor = float3(0.0f, 0.0f, 1.0f);
+        else                        cascadeColor = float3(1.0f, 1.0f, 0.0f);
+
+        if (CascadeIndex < MAX_DIRECTIONAL_CASCADE_COUNT)
+            output.Color.rgb = lerp(output.Color.rgb, cascadeColor, 0.5f);
+    }
+#endif
  
     
     
