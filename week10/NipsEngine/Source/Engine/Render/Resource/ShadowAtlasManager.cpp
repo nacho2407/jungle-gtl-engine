@@ -24,7 +24,7 @@ namespace
 void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 {
 	if (InDevice == nullptr) return;
-    //RootNode = new Node(0, 0, ShadowAtlasResolution2D, ShadowAtlasResolution2D);
+    RootNode = new Node(0, 0, ShadowAtlasResolution2D, ShadowAtlasResolution2D);
 
 	ShadowMapAtlas.Initialize(InDevice);
     ShadowCubeMapArray.Initialize(InDevice);
@@ -32,16 +32,13 @@ void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
 {
-    int32 RequestTileSize = ResolutionScale; //QuantizeShadowSize(ResolutionScale);
+    int32 RequestTileSize = QuantizeShadowSize(ResolutionScale);
 
-	int32 TileX, TileY;
-    if (ShadowAllocator.AllocateTiled(RequestTileSize, TileX, TileY))
+	int32 X, Y;
+    if (RootNode->Insert(RequestTileSize, X, Y))
     {
-        OutTile.TileX = TileX;
-        OutTile.TileY = TileY;
-
-        OutTile.PixelX = TileX * ShadowAllocator.GridSize;
-        OutTile.PixelY = TileY * ShadowAllocator.GridSize;
+        OutTile.X = X;
+        OutTile.Y = Y;
 
         OutTile.Width = RequestTileSize;
         OutTile.Height = RequestTileSize;
@@ -49,15 +46,13 @@ bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& 
         OutTile.ScaleOffset = FVector4(
             static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
             static_cast<float> (RequestTileSize) / ShadowAtlasResolution2D,
-            static_cast<float>(OutTile.PixelX) / ShadowAtlasResolution2D,
-            static_cast<float>(OutTile.PixelY) / ShadowAtlasResolution2D);
+            static_cast<float>(OutTile.X) / ShadowAtlasResolution2D,
+            static_cast<float>(OutTile.Y) / ShadowAtlasResolution2D);
 
         return true;
     }
 	return false;
 }
-
-
 
 //void FShadowAtlasManager::VSMInitialize(ID3D11Device* InDevice)
 //{
@@ -106,50 +101,10 @@ bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& 
 //    //   Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
 //}
 
-bool FShadowAtlasManager::FreeTile(const int32& TileIndex)
-{
-	if (TileIndex >= 0 && TileIndex < ShadowAllocator.TileCountX * ShadowAllocator.TileCountY)
-	{
-		int32 TileX = TileIndex % ShadowAllocator.TileCountX;
-		int32 TileY = TileIndex / ShadowAllocator.TileCountX;
-		ShadowAllocator.FreeTile(TileX, TileY);
-		return true;
-    }
-    return false;
-}
-
 TArray<FShadowAtlasTile> FShadowAtlasManager::GetAllocatedTiles() const
 {
     TArray<FShadowAtlasTile> Result;
-    const int32 TileSize = ShadowAllocator.TileSize;
-    const float AtlasW = static_cast<float>(GetAtlasWidth());
-    const float AtlasH = static_cast<float>(GetAtlasHeight());
-
-    for (int32 Y = 0; Y < ShadowAllocator.TileCountY; ++Y)
-    {
-        for (int32 X = 0; X < ShadowAllocator.TileCountX; ++X)
-        {
-            int32 Index = Y * ShadowAllocator.TileCountX + X;
-            if (!ShadowAllocator.TileUsed[Index])
-                continue;
-
-            FShadowAtlasTile Tile;
-            Tile.TileIndex = Index;
-            Tile.TileX = X;
-            Tile.TileY = Y;
-            Tile.PixelX = X * TileSize;
-            Tile.PixelY = Y * TileSize;
-            Tile.Width = TileSize;
-            Tile.Height = TileSize;
-            Tile.ScaleOffset = FVector4(
-                static_cast<float>(TileSize) / AtlasW,
-                static_cast<float>(TileSize) / AtlasH,
-                static_cast<float>(Tile.PixelX) / AtlasW,
-                static_cast<float>(Tile.PixelY) / AtlasH);
-
-            Result.push_back(Tile);
-        }
-    }
+    GetLeafRects(Result);
     return Result;
 }
     // D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
@@ -157,19 +112,6 @@ TArray<FShadowAtlasTile> FShadowAtlasManager::GetAllocatedTiles() const
     //   dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     //   dsvDesc.Texture2D.MipSlice = 0;
     //   Device.Get()->CreateDepthStencilView(VarianceDepthShadowMap.Get(), &dsvDesc, &VarianceShadowDSV);
-}
-
-bool FShadowAtlasManager::FreeTile(const int32& TileX, const int32& TileY, const int32& TileSize)
-{
-    if (TileX >= 0 && TileX < ShadowAllocator.GridCount && TileY >= 0 && TileY < ShadowAllocator.GridCount)
-    {
-        int32 QuantizedTileSize = ShadowAllocator.QuantizeShadowSize(TileSize);
-        QuantizedTileSize /= ShadowAllocator.GridSize; // Grid 단위로 변환
-        ShadowAllocator.FreeTile(TileX, TileY, QuantizedTileSize);
-        return true;
-    }
-    return false;
-}
 
 bool FShadowAtlasManager::AllocateTileCube(int32& OutCubeIndex)
 {

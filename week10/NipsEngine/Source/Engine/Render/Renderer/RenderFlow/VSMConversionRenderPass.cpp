@@ -45,8 +45,8 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     D3D11_VIEWPORT ShadowViewport = {};
     ShadowViewport.TopLeftX = 0.0f;
     ShadowViewport.TopLeftY = 0.0f;
-    ShadowViewport.Width = static_cast<float>(FShadowAtlasManager::Get().GetAtlasWidth());
-    ShadowViewport.Height = static_cast<float>(FShadowAtlasManager::Get().GetAtlasHeight());
+    ShadowViewport.Width = static_cast<float>(FShadowAtlasManager::Get().GetAtlasResolution());
+    ShadowViewport.Height = static_cast<float>(FShadowAtlasManager::Get().GetAtlasResolution());
     ShadowViewport.MinDepth = 0.0f;
     ShadowViewport.MaxDepth = 1.0f;
     DeviceContext->RSSetViewports(1, &ShadowViewport);
@@ -153,8 +153,8 @@ bool FVSMConversionRenderPass::DispatchHorizontalBlur(const FRenderPassContext* 
     for (const auto& Tile : ShadowAtlasTile)
     {
         FVSMBlurConstants CBData;
-        CBData.AtlasOffsetX = static_cast<uint32>(Tile.PixelX);            // 타일 좌상단 픽셀 X
-        CBData.AtlasOffsetY = static_cast<uint32>(Tile.PixelY);            // 타일 좌상단 픽셀 Y
+        CBData.AtlasOffsetX = static_cast<uint32>(Tile.X);            // 타일 좌상단 픽셀 X
+        CBData.AtlasOffsetY = static_cast<uint32>(Tile.Y);            // 타일 좌상단 픽셀 Y
         CBData.TileWidth = static_cast<uint32>(Tile.Width);                // 타일 픽셀 너비
         CBData.TileHeight = static_cast<uint32>(Tile.Height);              // 타일 픽셀 높이
 
@@ -166,8 +166,8 @@ bool FVSMConversionRenderPass::DispatchHorizontalBlur(const FRenderPassContext* 
 
 		// TileSize = 1024 * 1024
         // atlas = 8192 * 8192s
-        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
-        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
+        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasResolution();
+        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasResolution();
 
         uint32 DispatchX = (Tile.Width + 7) / 8;
         uint32 DispatchY = (Tile.Height + 7) / 8;
@@ -213,8 +213,8 @@ bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Co
     for (const auto& Tile : ShadowAtlasTile)
     {
         FVSMBlurConstants CBData;
-        CBData.AtlasOffsetX = static_cast<uint32>(Tile.PixelX);            // 타일 좌상단 픽셀 X
-        CBData.AtlasOffsetY = static_cast<uint32>(Tile.PixelY);            // 타일 좌상단 픽셀 Y
+        CBData.AtlasOffsetX = static_cast<uint32>(Tile.X);            // 타일 좌상단 픽셀 X
+        CBData.AtlasOffsetY = static_cast<uint32>(Tile.Y);            // 타일 좌상단 픽셀 Y
         CBData.TileWidth = static_cast<uint32>(Tile.Width);                // 타일 픽셀 너비
         CBData.TileHeight = static_cast<uint32>(Tile.Height);              // 타일 픽셀 높이
 
@@ -227,8 +227,8 @@ bool FVSMConversionRenderPass::DispatchVerticalBlur(const FRenderPassContext* Co
 
         // TileSize = 1024 * 1024
         // atlas = 8192 * 8192s
-        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasWidth();
-        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasHeight();
+        uint32 AtalsWidth = FShadowAtlasManager::Get().GetAtlasResolution();
+        uint32 AtalsHeight = FShadowAtlasManager::Get().GetAtlasResolution();
 
 		uint32 DispatchX = (Tile.Width + 7) / 8;
         uint32 DispatchY = (Tile.Height + 7) / 8;
