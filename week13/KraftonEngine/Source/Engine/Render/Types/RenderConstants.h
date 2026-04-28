@@ -165,7 +165,9 @@ struct FShadowCBData
 	uint32   NumShadowPointLights;               //   4B | offset 296
 
 	uint32   CSMResolution;                      //   4B | offset 300  → 합계 304B, 16B 정렬 OK
-	float    Pad[3];
+	float    CSMBlendRange;						 //   4B | view-depth units
+	uint32   CSMBlendEnabled;					 //   4B | 0=off, 1=on
+	float    Pad;
 };
 static_assert(sizeof(FShadowCBData) % 16 == 0, "FShadowCBData must be 16-byte aligned");
 

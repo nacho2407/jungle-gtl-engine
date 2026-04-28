@@ -19,6 +19,7 @@
 #include "Collision/SpatialPartition.h"
 #include "Runtime/Engine.h"
 #include "GameFramework/World.h"
+#include <algorithm>
 #include <d3d11.h>
 
 REGISTER_RENDER_PASS(FShadowMapPass)
@@ -79,6 +80,8 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	ShadowCBCache.ShadowBias       = FShadowSettings::kDefaultBias;
 	ShadowCBCache.ShadowSlopeBias  = FShadowSettings::kDefaultSlopeBias;
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
+	ShadowCBCache.CSMBlendRange    = FShadowSettings::kDefaultCSMBlendRange;
+	ShadowCBCache.CSMBlendEnabled  = FShadowSettings::kDefaultCSMBlendEnabled ? 1u : 0u;
 }
 
 // ============================================================
@@ -428,6 +431,8 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	ShadowCBCache.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
 	ShadowCBCache.ShadowNormalBias = DirectionalParams.ShadowNormalBias;
 	ShadowCBCache.ShadowSharpen    = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
+	ShadowCBCache.CSMBlendRange    = (std::max)(0.0f, Settings.GetEffectiveCSMBlendRange());
+	ShadowCBCache.CSMBlendEnabled  = Settings.GetEffectiveCSMBlendEnabled() ? 1u : 0u;
 
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
@@ -465,12 +470,19 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	{
 		const float CascadeNearZ = CascadeRanges[i].NearZ;
 		const float CascadeFarZ = CascadeRanges[i].FarZ;
+		const bool bBlendEnabled = ShadowCBCache.CSMBlendEnabled != 0 && ShadowCBCache.CSMBlendRange > 0.0f;
+		const float RenderNearZ = bBlendEnabled
+			? (std::max)(CameraNearZ, CascadeNearZ - ShadowCBCache.CSMBlendRange)
+			: CascadeNearZ;
+		const float RenderFarZ = bBlendEnabled
+			? (std::min)(ShadowFarZ, CascadeFarZ + ShadowCBCache.CSMBlendRange)
+			: CascadeFarZ;
 
 		FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP
 			= FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
 				DirectionalParams, CameraView, CameraProj,
 				CameraNearZ, CameraFarZ,
-				CascadeNearZ, CascadeFarZ);
+				RenderNearZ, RenderFarZ);
 
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
