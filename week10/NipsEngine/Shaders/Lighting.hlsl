@@ -15,7 +15,7 @@ struct LightInfo
     float Falloff;
 
     float3 Position;
-    float Padding1;
+    uint ShadowTextureIndex;
 };
 
 struct AmbientLightInfo

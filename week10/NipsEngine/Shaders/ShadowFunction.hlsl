@@ -16,15 +16,15 @@ uint SelectPointFace(float3 dir)
     
     if (a.x >= a.y && a.x >= a.z)
     {
-        return dir.x < 0 ? 0u : 1u; // -X, +X
+        return dir.x >= 0 ? 0u : 1u; // +X, -X
     }
     else if (a.y >= a.x && a.y >= a.z)
     {
-        return dir.y < 0 ? 2u : 3u; // -Y, +Y
+        return dir.y >= 0 ? 2u : 3u; // +Y, -Y
     }
     else
     {
-        return dir.z < 0 ? 4u : 5u; // -Z, +Z
+        return dir.z >= 0 ? 4u : 5u; // +Z, -Z
     }
 }
 
@@ -123,7 +123,9 @@ float ComputeShadowAtlas(
     uint lightIndex,
     float4 worldPos,
     SamplerComparisonState shadowSampler,
-    Texture2D shadowMap
+    Texture2D shadowMap,
+    SamplerState linearSampler,
+    TextureCubeArray<float> pointShadowCube
 )
 {
     FLightShadowIndices shadowIndices = LightShadowIndices[lightIndex];
@@ -140,9 +142,39 @@ float ComputeShadowAtlas(
     {
         LightInfo light = Lights[lightIndex];
         float3 dir = worldPos.xyz - light.Position;
+
+        if (light.ShadowTextureIndex == INVALID_SHADOW_INDEX)
+        {
+            return 1.0f;
+        }
         
         uint faceIndex = SelectPointFace(dir);
+        if (faceIndex >= shadowIndices.IndexCount)
+        {
+            return 1.0f;
+        }
+
         shadowData = AtlasShadowDatas[shadowIndices.ShadowIndex + faceIndex];
+
+        float4 shadowCoord = mul(worldPos, shadowData.ShadowViewProj);
+        if (abs(shadowCoord.w) < 1e-5f)
+        {
+            return 1.0f;
+        }
+
+        float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+        if (projCoords.z < 0.0f || projCoords.z > 1.0f)
+        {
+            return 1.0f;
+        }
+
+        float3 sampleDir = normalize(dir);
+        float storedDepth = pointShadowCube.SampleLevel(
+            linearSampler,
+            float4(sampleDir, (float)light.ShadowTextureIndex),
+            0).r;
+
+        return (projCoords.z - shadowData.ConstantBias) <= storedDepth ? 1.0f : 0.0f;
     }
 
     float4 shadowCoord;

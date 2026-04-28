@@ -298,56 +298,69 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			const FVector LightPos = PointLight->GetWorldLocation();
 			const float Near = 0.1f;
 			const float Far = PointLight->AttenuationRadius;
+            const uint32 FirstShadowIndex = static_cast<uint32>(ShadowAtlasConstants.size());
+            uint32 WrittenFaceCount = 0;
+            int32 CubeIndex = -1;
+
+            if (!FShadowAtlasManager::Get().AllocateTileCube(CubeIndex))
+            {
+                continue;
+            }
+
+            if (Request.LightIndex < RenderBus->LightInfos.size())
+            {
+                const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = static_cast<uint32>(CubeIndex);
+            }
 
 			static const FVector FaceDirs[6] =
 			{
-				FVector(-1, 0, 0),
 				FVector(1, 0, 0),
-				FVector(0, -1, 0),
+				FVector(-1, 0, 0),
 				FVector(0, 1, 0),
-				FVector(0, 0, -1),
-				FVector(0, 0, 1)
+				FVector(0, -1, 0),
+				FVector(0, 0, 1),
+				FVector(0, 0, -1)
 			};
 
 			static const FVector FaceUps[6] =
 			{
+				FVector(0, 1, 0),
+				FVector(0, 1, 0),
+				FVector(0, 0, -1),
 				FVector(0, 0, 1),
-				FVector(0, 0, 1),
-				FVector(0, 0, 1),
-				FVector(0, 0, 1),
-				FVector(0, -1, 0),
+				FVector(0, 1, 0),
 				FVector(0, 1, 0)
 			};
 
 			ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
 			DeviceContext->OMSetDepthStencilState(DepthState, 0);
+			
+            {
+                ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
+                MutableLight->DebugShadowCubeIndex = CubeIndex;
+                MutableLight->bHasDebugShadowCubeTile = true;
+            }
 
 			for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 			{
-                FShadowAtlasTile ShadowTile;
-                if (!FShadowAtlasManager::Get().AllocateTile(Request.ShadowResolution, ShadowTile))
-                {
-                    // atlas가 꽉 찼음
-                    // shadow 해상도 낮추기, 해당 light shadow skip, atlas resize 등 처리 필요
-                    continue;
-                }
-
-                ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
+                ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetCubeDSV(CubeIndex, FaceIndex);
 				if (DSV == nullptr)
 				{
 					continue;
 				}
 
+                DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
 				D3D11_VIEWPORT ShadowViewport = {};
-                ShadowViewport.TopLeftX = static_cast<float>(ShadowTile.PixelX);
-                ShadowViewport.TopLeftY = static_cast<float>(ShadowTile.PixelY);
-                ShadowViewport.Width = static_cast<float>(ShadowTile.Width);
-                ShadowViewport.Height = static_cast<float>(ShadowTile.Height);
+                ShadowViewport.TopLeftX = 0.0f;
+                ShadowViewport.TopLeftY = 0.0f;
+                ShadowViewport.Width = static_cast<float>(SHADOW_CUBE_SIZE);
+                ShadowViewport.Height = static_cast<float>(SHADOW_CUBE_SIZE);
                 ShadowViewport.MinDepth = 0.0f;
                 ShadowViewport.MaxDepth = 1.0f;
 
 				const FVector Target = LightPos + FaceDirs[FaceIndex];
-				const FVector Up = LightPos + FaceUps[FaceIndex];
+				const FVector Up = FaceUps[FaceIndex];
 
 				FMatrix FaceView = FMatrix::MakeViewLookAtLH(LightPos, Target, Up);
 				FMatrix FaceProj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(90.0f), 1.0f, Near, Far);
@@ -366,10 +379,13 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 					ShadowKey,
 					ShadowData);
 
+				DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+                FShadowAtlasManager::Get().UpdateCubeDebugFace(DeviceContext, CubeIndex, FaceIndex);
+
 				FShadowAtlasConstants atlasConstants = {};
                 atlasConstants.ShadowViewProjMatrix = ShadowData.DirLightViewProj;
                 atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
-                atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
+                atlasConstants.ScaleOffset = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
                 atlasConstants.ConstantBias = Request.ConstantBias;
 				atlasConstants.SlopedBias = Request.SlopeScaledBias;
 
@@ -378,10 +394,18 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
                 atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
                 atlasConstants.ShadowMapType = static_cast<uint32>(LightComp->GetShadowMapType());
                 ShadowAtlasConstants.push_back(atlasConstants);
+                ++WrittenFaceCount;
 			}
 
-			LightShadowIndices[Request.LightIndex].StartIndex = static_cast<uint32>(ShadowAtlasConstants.size() - 6);
-			LightShadowIndices[Request.LightIndex].IndexCount = 6;
+            if (WrittenFaceCount > 0 && Request.LightIndex < LightShadowIndices.size())
+            {
+			    LightShadowIndices[Request.LightIndex].StartIndex = FirstShadowIndex;
+			    LightShadowIndices[Request.LightIndex].IndexCount = WrittenFaceCount;
+            }
+            else if (Request.LightIndex < RenderBus->LightInfos.size())
+            {
+                const_cast<FLightInfo&>(RenderBus->LightInfos[Request.LightIndex]).ShadowTextureIndex = InvalidShadowIndex;
+            }
 				
 			continue;
 		}
@@ -518,6 +542,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			LightShadowIndices.data(),
 			static_cast<uint32>(LightShadowIndices.size()));
 	}
+
+    if (!RenderBus->LightInfos.empty())
+    {
+        Context->RenderResources->LightStructuredBuffer.Update(
+            DeviceContext,
+            RenderBus->LightInfos.data(),
+            static_cast<uint32>(RenderBus->LightInfos.size()));
+    }
 
 	if (!ShadowAtlasConstants.empty())
 	{

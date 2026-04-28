@@ -44,6 +44,7 @@ Texture2D SpecularMap : register(t3);
 #endif
 
 Texture2D ShadowMap : register(t10);
+TextureCubeArray<float> PointShadowCube : register(t12);
 
 ////////////////////////////////////// debugging
 ////////////////////////////////////// debugging
@@ -419,7 +420,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         uint lightIndex = i;
 #endif
         LightInfo light = Lights[lightIndex];
-        float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap);
+        float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap, SampleState, PointShadowCube);
     
 #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += (light.Type == 0 ?
