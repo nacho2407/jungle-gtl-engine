@@ -116,7 +116,6 @@ void FShadowMapResources::FCSMResources::Release()
 	ReleaseCOM(VSMSRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		ReleaseCOM(VSMSliceSRV[i]);
 		ReleaseCOM(VSMRTV[i]);
 		ReleaseCOM(VSMDSV[i]);
 	}
@@ -127,7 +126,6 @@ void FShadowMapResources::FCSMResources::Release()
 	ReleaseCOM(SRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		ReleaseCOM(SliceSRV[i]);
 		ReleaseCOM(DSV[i]);
 	}
 	ReleaseCOM(Texture);
@@ -149,7 +147,6 @@ void FShadowMapResources::FSpotResources::Release()
 
 	// Normal
 	ReleaseCOM(SRV);
-	ReleaseViewArray(SliceSRVs);
 	ReleaseViewArray(DSVs);
 	ReleaseCOM(Texture);
 	PageCount = 0;
@@ -198,7 +195,6 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 	ReleaseCOM(CSM.SRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		ReleaseCOM(CSM.SliceSRV[i]);
 		ReleaseCOM(CSM.DSV[i]);
 	}
 	ReleaseCOM(CSM.Texture);
@@ -242,20 +238,6 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 	SRVDesc.Texture2DArray.ArraySize = MAX_SHADOW_CASCADES;
 
 	Device->CreateShaderResourceView(CSM.Texture, &SRVDesc, &CSM.SRV);
-
-	// Per-cascade slice SRV (ImGui 디버그용)
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
-		SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SliceSRVDesc.Texture2DArray.MipLevels = 1;
-		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
-		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
-		SliceSRVDesc.Texture2DArray.ArraySize = 1;
-
-		Device->CreateShaderResourceView(CSM.Texture, &SliceSRVDesc, &CSM.SliceSRV[i]);
-	}
 }
 
 void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolution, uint32 InPageCount)
@@ -267,7 +249,6 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 
 	// 기존 리소스 해제
 	ReleaseCOM(Spot.SRV);
-	ReleaseViewArray(Spot.SliceSRVs);
 	ReleaseViewArray(Spot.DSVs);
 	ReleaseCOM(Spot.Texture);
 	ReleaseCOM(Spot.DataSRV);
@@ -314,20 +295,6 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 	SRVDesc.Texture2DArray.ArraySize = 1;
 
 	Device->CreateShaderResourceView(Spot.Texture, &SRVDesc, &Spot.SRV);
-
-	// Per-slice SRV (ImGui 디버그용)
-	Spot.SliceSRVs.resize(1, nullptr);
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
-		SliceSRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
-		SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SliceSRVDesc.Texture2DArray.MipLevels = 1;
-		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
-		SliceSRVDesc.Texture2DArray.FirstArraySlice = 0;
-		SliceSRVDesc.Texture2DArray.ArraySize = 1;
-
-		Device->CreateShaderResourceView(Spot.Texture, &SliceSRVDesc, &Spot.SliceSRVs[0]);
-	}
 
 	// StructuredBuffer<FSpotShadowDataGPU>
 	Spot.DataCapacity = InPageCount;
@@ -426,7 +393,6 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	ReleaseCOM(CSM.VSMSRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
-		ReleaseCOM(CSM.VSMSliceSRV[i]);
 		ReleaseCOM(CSM.VSMRTV[i]);
 		ReleaseCOM(CSM.VSMDSV[i]);
 	}
@@ -492,19 +458,6 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = MAX_SHADOW_CASCADES;
 	Device->CreateShaderResourceView(CSM.VSMTexture, &SRVDesc, &CSM.VSMSRV);
-
-	// Per-cascade slice SRV (ImGui 디버그용)
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC SliceSRVDesc = {};
-		SliceSRVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
-		SliceSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		SliceSRVDesc.Texture2DArray.MipLevels = 1;
-		SliceSRVDesc.Texture2DArray.MostDetailedMip = 0;
-		SliceSRVDesc.Texture2DArray.FirstArraySlice = i;
-		SliceSRVDesc.Texture2DArray.ArraySize = 1;
-		Device->CreateShaderResourceView(CSM.VSMTexture, &SliceSRVDesc, &CSM.VSMSliceSRV[i]);
-	}
 }
 
 void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InResolution, uint32 InPageCount)

@@ -249,6 +249,9 @@
     <FxCompile Include="Shaders\PostProcess\SceneNormal.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\ShadowMapVis.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\UI\Billboard.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
@@ -694,6 +697,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp">
       <Filter>Source\Engine\Render\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.cpp">
+      <Filter>Source\Engine\Render\Shadow</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.cpp">
+      <Filter>Source\Engine\Render\Shadow</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp">
       <Filter>Source\Engine\Render\Shadow</Filter>
@@ -1282,6 +1291,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h">
       <Filter>Source\Engine\Render\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.h">
+      <Filter>Source\Engine\Render\Shadow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.h">
+      <Filter>Source\Engine\Render\Shadow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.h">
       <Filter>Source\Engine\Render\Shadow</Filter>
