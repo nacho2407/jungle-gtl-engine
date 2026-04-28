@@ -12,6 +12,8 @@
 #include "ImGui/imgui.h"
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
+#include "Render/Resources/Shadows/ShadowFilterSettings.h"
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
 #include "WICTextureLoader.h"
 
 #include <cstdio>
@@ -541,6 +543,36 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
             Opts.ShowFlags.b25DCulling = (mode == 1);
         } });
+
+    OpenToolbarPopup("Shadow", "ShadowPopup", [&]()
+                     {
+        static const char* ShadowMapMethodLabels[] = { "Standard", "PSM" };
+        int32 SelectedShadowMapMethod = static_cast<int32>(GetShadowMapMethod());
+        if (SelectedShadowMapMethod < 0 || SelectedShadowMapMethod >= IM_ARRAYSIZE(ShadowMapMethodLabels))
+        {
+            SelectedShadowMapMethod = 0;
+        }
+
+        if (ImGui::Combo("Shadow Map Method", &SelectedShadowMapMethod, ShadowMapMethodLabels, IM_ARRAYSIZE(ShadowMapMethodLabels)))
+        {
+            SetShadowMapMethod(static_cast<EShadowMapMethod>(SelectedShadowMapMethod));
+        }
+
+        static const char* ShadowFilterLabels[] = { "PCF", "VSM", "ESM" };
+        int32 SelectedShadowFilter = static_cast<int32>(GetShadowFilterMethod());
+        if (SelectedShadowFilter < 0 || SelectedShadowFilter >= IM_ARRAYSIZE(ShadowFilterLabels))
+        {
+            SelectedShadowFilter = 0;
+        }
+
+        if (ImGui::Combo("Shadow Filter", &SelectedShadowFilter, ShadowFilterLabels, IM_ARRAYSIZE(ShadowFilterLabels)))
+        {
+            SetShadowFilterMethod(static_cast<EShadowFilterMethod>(SelectedShadowFilter));
+        }
+
+        ImGui::TextDisabled("Global renderer settings.");
+        ImGui::TextDisabled("Applied to all shadow-casting lights.");
+    });
 
     const_cast<FEditorToolbarPanel*>(this)->IconSize = PrevIconSize;
     const_cast<FEditorToolbarPanel*>(this)->ToolbarHeight = PrevToolbarHeight;

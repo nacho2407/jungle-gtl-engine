@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cctype>
 
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
+
 void FEditorConsolePanel::AddLog(const char* fmt, ...)
 {
     char buf[1024];
@@ -104,6 +106,37 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 			}
 
 			AddLog("Shadow filter changed to: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod())); });
+    
+    RegisterCommand("shadow_mode", [this](const TArray<FString>& Args)
+    {
+        if (Args.size() < 2)
+        {
+            AddLog("Usage: shadow_mode STANDARD | PSM\n");
+            AddLog("Current shadow mode: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
+            return;
+        }
+        
+        FString MethodName = Args[1];
+        std::transform(MethodName.begin(), MethodName.end(), MethodName.begin(),
+            [](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
+
+        if (MethodName == "STANDARD" || MethodName == "SSM")
+        {
+            SetShadowMapMethod(EShadowMapMethod::Standard);
+        }
+        else if (MethodName == "PSM")
+        {
+            SetShadowMapMethod(EShadowMapMethod::PSM);
+        }
+        else
+        {
+            AddLog("[ERROR] Unknown shadow map method: '%s'\n", Args[1].c_str());
+            AddLog("Usage: shadow_mode STANDARD | PSM\n");
+            return;
+        }
+        
+        AddLog("Shadow map method changed to: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
+    });
 }
 
 void FEditorConsolePanel::Render(float DeltaTime)

@@ -2,6 +2,7 @@
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 
 class UWorld;
 struct FSceneView;
@@ -28,7 +29,6 @@ public:
 
     void CollectScenePrimitives(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectSceneLights(UWorld* World, FScene* Scene, const FSceneView* SceneView);
-    void UpdateShadowViews(UWorld* World, const FSceneView* SceneView);
     void CollectShadowCasters(UWorld* World, const FSceneView* SceneView);
     void UpdateShadowDataInCBs();
     void CollectOverlay(const FCollectOverlayContext& OverlayContext);
@@ -42,11 +42,10 @@ public:
 private:
     // ==================== Shadow Helpers ====================
     void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
-    FMatrix GetDirectionalSSMMatrix(UWorld* World, FVector LightDir);
-    FMatrix GetDirectionalPSMMatrix(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    FShadowViewData GetDirectionalSSMView(UWorld* World, FVector LightDir);
+    FShadowViewData GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
     void ComputeSpotShadowMatrices(FLightProxy* Light);
     void ComputePointShadowMatrices(FLightProxy* Light);
-
     // ==================== Reset Helpers ====================
     static void ResetCollectedPrimitives(FCollectedPrimitives& OutPrimitives, bool bClearOverlayTexts);
     static void ResetCollectedLights(FCollectedLights& OutLights);

@@ -3,7 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
-#include "Render/Submission/Atlas/ShadowAtlasSystem.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 
 // FPerObjectCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FPerObjectCBData
@@ -36,6 +36,17 @@ struct FFrameCBData
     float   Time;               // 4B
     FVector CameraWorldPos;     // 12B
 }; // Total: 224B
+
+struct FShadowPassCBData
+{
+    FMatrix ShadowView;          // 64B
+    FMatrix ShadowProjection;    // 64B
+    FMatrix ShadowInvViewProj;   // 64B
+    float   ShadowNearZ = 0.0f;  // 4B
+    float   ShadowFarZ = 1.0f;   // 4B
+    uint32  ShadowProjectionType = 0; // 4B, 0: orthographic, 1: perspective
+    float   ShadowPassPadding = 0.0f; // 4B
+}; // Total: 208B
 
 // FSubUVRegionCBData는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FSubUVRegionCBData

@@ -87,6 +87,7 @@ bool FShadowAtlasRegistry::UpdateLightShadow(FLightProxy& Light, ID3D11Device* D
         }
     }
 
+    SyncLightShadowMatrices(Record, Light);
     Light.ApplyShadowRecord(Record);
     return true;
 }
@@ -110,6 +111,35 @@ void FShadowAtlasRegistry::FreeRecord(FLightShadowRecord& Record, FShadowAtlasMa
 
     Record.CascadeShadowMapData.Reset();
     Record.CubeShadowMapData.Reset();
+}
+
+void FShadowAtlasRegistry::SyncLightShadowMatrices(FLightShadowRecord& Record, const FLightProxy& Light) const
+{
+    const uint32 LightType = Light.LightProxyInfo.LightType;
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        const uint32 CascadeCount = std::min(
+            Record.CascadeCount,
+            static_cast<uint32>(ShadowAtlas::MaxCascades));
+        Record.CascadeShadowMapData.CascadeCount = CascadeCount;
+        for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
+        {
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = Light.CascadeShadowMapData.CascadeViews[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+        }
+        return;
+    }
+
+    if (LightType == static_cast<uint32>(ELightType::Point))
+    {
+        for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
+        {
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = Light.CubeShadowMapData.FaceViews[FaceIndex];
+            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.CubeShadowMapData.FaceViewProj[FaceIndex];
+        }
+        return;
+    }
+
 }
 
 bool FShadowAtlasRegistry::AllocateDirectional(FLightShadowRecord& Record, FLightProxy& Light, ID3D11Device* Device, FShadowAtlasManager& AtlasManager)

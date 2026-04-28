@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Editor/UI/EditorPanel.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Object/Object.h"
 
 class UActorComponent;
@@ -36,4 +37,5 @@ private:
     bool bShowShadowAtlasDebugWindow = false;
     int32 SelectedPointLightShadowFace = 0;
     int32 SelectedShadowAtlasPage = 0;
+    EShadowDepthPreviewMode ShadowDepthPreviewMode = EShadowDepthPreviewMode::LinearizedDepth;
 };

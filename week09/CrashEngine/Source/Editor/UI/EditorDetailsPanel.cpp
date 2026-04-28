@@ -198,6 +198,21 @@ static ImU32 GetShadowAtlasDebugColor(uint32 Resolution)
     }
 }
 
+static uint64 HashShadowViewProj(const FMatrix& Matrix)
+{
+    constexpr uint64 FnvOffset = 1469598103934665603ull;
+    constexpr uint64 FnvPrime = 1099511628211ull;
+
+    uint64 Hash = FnvOffset;
+    const uint8* Bytes = reinterpret_cast<const uint8*>(Matrix.Data);
+    for (size_t ByteIndex = 0; ByteIndex < sizeof(Matrix.Data); ++ByteIndex)
+    {
+        Hash ^= static_cast<uint64>(Bytes[ByteIndex]);
+        Hash *= FnvPrime;
+    }
+    return Hash;
+}
+
 FString FEditorDetailsPanel::OpenObjFileDialog()
 {
     wchar_t FilePath[MAX_PATH] = {};
@@ -1011,27 +1026,91 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     }
 
     const FShadowMapData* PreviewShadowData = nullptr;
+    const FMatrix* PreviewViewProj = nullptr;
     if (bIsCubeShadow)
     {
-        PreviewShadowData = &LightProxy->CubeShadowMapData.Faces[PreviewFace];
+        if (const FCubeShadowMapData* CubeShadowMapData = LightProxy->GetCubeShadowMapData())
+        {
+            PreviewShadowData = &CubeShadowMapData->Faces[PreviewFace];
+            PreviewViewProj = &CubeShadowMapData->FaceViewProj[PreviewFace];
+        }
     }
     else if (LightProxy->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Directional))
     {
-        PreviewShadowData = &LightProxy->CascadeShadowMapData.Cascades[0];
+        if (const FCascadeShadowMapData* CascadeShadowMapData = LightProxy->GetCascadeShadowMapData())
+        {
+            PreviewShadowData = &CascadeShadowMapData->Cascades[0];
+            PreviewViewProj = &CascadeShadowMapData->CascadeViewProj[0];
+        }
     }
     else
     {
-        PreviewShadowData = &LightProxy->SpotShadowMapData;
+        PreviewShadowData = LightProxy->GetSpotShadowMapData();
+        PreviewViewProj = &LightProxy->LightViewProj;
     }
 
-    if (!PreviewShadowData || !PreviewShadowData->bAllocated)
+    if (!PreviewShadowData || !PreviewViewProj || !PreviewShadowData->bAllocated)
     {
         ImGui::TextDisabled("No shadow map assigned this frame.");
         ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
         return;
     }
 
-    ID3D11ShaderResourceView* PreviewSRV = ShadowPass->GetShadowPreviewSRV(*PreviewShadowData);
+    ImGui::Text("Preview Mode");
+    const char* CurrentPreviewModeLabel = "Linearized Depth";
+    if (ImGui::Button("Raw Depth", ImVec2(120.0f, 0.0f)))
+    {
+        ShadowDepthPreviewMode = EShadowDepthPreviewMode::RawDepth;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Linearized Depth", ImVec2(140.0f, 0.0f)))
+    {
+        ShadowDepthPreviewMode = EShadowDepthPreviewMode::LinearizedDepth;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Moments", ImVec2(100.0f, 0.0f)))
+    {
+        ShadowDepthPreviewMode = EShadowDepthPreviewMode::Moments;
+    }
+
+    if (ShadowDepthPreviewMode == EShadowDepthPreviewMode::RawDepth)
+    {
+        CurrentPreviewModeLabel = "Raw Depth";
+    }
+    else if (ShadowDepthPreviewMode == EShadowDepthPreviewMode::Moments)
+    {
+        CurrentPreviewModeLabel = "Moments";
+    }
+    ImGui::TextDisabled("Current: %s", CurrentPreviewModeLabel);
+
+    ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+    ID3D11DeviceContext* DeviceContext = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+
+    ID3D11ShaderResourceView* PreviewSRV = nullptr;
+    if (ShadowDepthPreviewMode == EShadowDepthPreviewMode::Moments)
+    {
+        PreviewSRV = ShadowPass->GetShadowMomentPreviewSRV(*PreviewShadowData);
+        if (!PreviewSRV)
+        {
+            ImGui::TextDisabled("Moment preview is unavailable. VSM moment texture may not be allocated.");
+            ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
+            return;
+        }
+    }
+    else
+    {
+        PreviewSRV = ShadowPass->GetShadowDebugPreviewSRV(
+            *PreviewShadowData,
+            *PreviewViewProj,
+            ShadowDepthPreviewMode,
+            Device,
+            DeviceContext);
+        if (!PreviewSRV)
+        {
+            PreviewSRV = ShadowPass->GetShadowPreviewSRV(*PreviewShadowData);
+        }
+    }
+
     if (!PreviewSRV)
     {
         ImGui::TextDisabled("Shadow preview is unavailable.");
@@ -1055,7 +1134,28 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
                PreviewShadowData->UVScaleOffset.W + PreviewShadowData->UVScaleOffset.Y));
     ImGui::Dummy(ImVec2(PreviewSize, PreviewSize));
 
+    const FLevelEditorViewportClient* ActiveViewport = EditorEngine ? EditorEngine->GetActiveViewport() : nullptr;
+    const UCameraComponent* ActiveCamera = ActiveViewport ? ActiveViewport->GetCamera() : (EditorEngine ? EditorEngine->GetCamera() : nullptr);
+    const uint64 ShadowViewProjHash = HashShadowViewProj(*PreviewViewProj);
+    const uint64 LightViewProjHash = HashShadowViewProj(LightProxy->LightViewProj);
+    const uint64 CameraViewProjHash = ActiveCamera ? HashShadowViewProj(ActiveCamera->GetViewProjectionMatrix()) : 0ull;
+
     ImGui::TextDisabled("Atlas Page: %u  Slice: %u", PreviewShadowData->AtlasPageIndex, PreviewShadowData->SliceIndex);
+    ImGui::TextDisabled(
+        "Rect: (%u, %u) %u x %u",
+        PreviewShadowData->Rect.X,
+        PreviewShadowData->Rect.Y,
+        PreviewShadowData->Rect.Width,
+        PreviewShadowData->Rect.Height);
+    ImGui::TextDisabled(
+        "Viewport: (%u, %u) %u x %u",
+        PreviewShadowData->ViewportRect.X,
+        PreviewShadowData->ViewportRect.Y,
+        PreviewShadowData->ViewportRect.Width,
+        PreviewShadowData->ViewportRect.Height);
+    ImGui::TextDisabled("Camera ViewProj Hash: 0x%016llX", CameraViewProjHash);
+    ImGui::TextDisabled("Shadow ViewProj Hash: 0x%016llX", ShadowViewProjHash);
+    ImGui::TextDisabled("Light ViewProj Hash:  0x%016llX", LightViewProjHash);
 }
 
 void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
