@@ -192,8 +192,10 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd, FD3DDevice& Device
         Cmd.Shader->Bind(Ctx);
 
         const bool bDisablePSForDepthPre = (Cmd.Pass == ERenderPass::DepthPre);
-        const bool bDisablePSForShadowPCF = (Cmd.Pass == ERenderPass::ShadowMap && GetShadowFilterMethod() == EShadowFilterMethod::PCF);
-        if (bDisablePSForDepthPre || bDisablePSForShadowPCF)
+        const bool bDisablePSForShadowCompareOnly =
+            Cmd.Pass == ERenderPass::ShadowMap &&
+            (GetShadowFilterMethod() == EShadowFilterMethod::None || GetShadowFilterMethod() == EShadowFilterMethod::PCF);
+        if (bDisablePSForDepthPre || bDisablePSForShadowCompareOnly)
         {
             Ctx->PSSetShader(nullptr, nullptr, 0);
         }

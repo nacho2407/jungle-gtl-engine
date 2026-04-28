@@ -14,7 +14,7 @@
 #endif
 
 #ifndef SHADOW_ESM_EXPONENT
-#define SHADOW_ESM_EXPONENT 80.0f
+#define SHADOW_ESM_EXPONENT 10.0f
 #endif
 
 struct FShadowEncodeVSOutput

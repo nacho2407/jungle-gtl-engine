@@ -5,6 +5,7 @@
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
@@ -78,6 +79,116 @@ static FString BuildComponentDisplayLabel(UActorComponent* Comp)
         Name = TypeName;
     }
     return TypeName + "(" + Name + ")";
+}
+
+struct FShadowAtlasOwnerInfo
+{
+    UActorComponent* Component = nullptr;
+    int32 CascadeIndex = -1;
+    int32 FaceIndex = -1;
+};
+
+static bool MatchesShadowAllocation(const FShadowMapData& A, const FShadowMapData& B)
+{
+    return A.bAllocated == B.bAllocated &&
+           A.AtlasPageIndex == B.AtlasPageIndex &&
+           A.SliceIndex == B.SliceIndex &&
+           A.Rect.X == B.Rect.X &&
+           A.Rect.Y == B.Rect.Y &&
+           A.Rect.Width == B.Rect.Width &&
+           A.Rect.Height == B.Rect.Height &&
+           A.ViewportRect.X == B.ViewportRect.X &&
+           A.ViewportRect.Y == B.ViewportRect.Y &&
+           A.ViewportRect.Width == B.ViewportRect.Width &&
+           A.ViewportRect.Height == B.ViewportRect.Height;
+}
+
+static FShadowAtlasOwnerInfo FindShadowAtlasOwnerInfo(UWorld* World, const FShadowMapData& Allocation)
+{
+    if (!World || !Allocation.bAllocated)
+    {
+        return {};
+    }
+
+    const TArray<FLightProxy*>& LightProxies = World->GetScene().GetLightProxies();
+    for (FLightProxy* LightProxy : LightProxies)
+    {
+        if (!LightProxy || !LightProxy->Owner)
+        {
+            continue;
+        }
+
+        if (const FCascadeShadowMapData* CascadeShadowMapData = LightProxy->GetCascadeShadowMapData())
+        {
+            const uint32 CascadeCount = std::min(CascadeShadowMapData->CascadeCount, static_cast<uint32>(ShadowAtlas::MaxCascades));
+            for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
+            {
+                if (MatchesShadowAllocation(CascadeShadowMapData->Cascades[CascadeIndex], Allocation))
+                {
+                    FShadowAtlasOwnerInfo Info = {};
+                    Info.Component = LightProxy->Owner;
+                    Info.CascadeIndex = static_cast<int32>(CascadeIndex);
+                    return Info;
+                }
+            }
+        }
+
+        if (const FShadowMapData* SpotShadowMapData = LightProxy->GetSpotShadowMapData())
+        {
+            if (MatchesShadowAllocation(*SpotShadowMapData, Allocation))
+            {
+                FShadowAtlasOwnerInfo Info = {};
+                Info.Component = LightProxy->Owner;
+                return Info;
+            }
+        }
+
+        if (const FCubeShadowMapData* CubeShadowMapData = LightProxy->GetCubeShadowMapData())
+        {
+            for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
+            {
+                if (MatchesShadowAllocation(CubeShadowMapData->Faces[FaceIndex], Allocation))
+                {
+                    FShadowAtlasOwnerInfo Info = {};
+                    Info.Component = LightProxy->Owner;
+                    Info.FaceIndex = static_cast<int32>(FaceIndex);
+                    return Info;
+                }
+            }
+        }
+    }
+
+    return {};
+}
+
+static FString BuildShadowAtlasOwnerLabel(const FShadowAtlasOwnerInfo& Info)
+{
+    if (!Info.Component)
+    {
+        return "Unresolved allocation";
+    }
+
+    FString Label = BuildComponentDisplayLabel(Info.Component);
+    if (AActor* OwnerActor = Info.Component->GetOwner())
+    {
+        FString ActorName = OwnerActor->GetFName().ToString();
+        if (ActorName.empty())
+        {
+            ActorName = OwnerActor->GetClass()->GetName();
+        }
+        Label = ActorName + " / " + Label;
+    }
+
+    if (Info.FaceIndex >= 0)
+    {
+        Label += " / Face " + std::to_string(Info.FaceIndex);
+    }
+    else if (Info.CascadeIndex >= 0)
+    {
+        Label += " / Cascade " + std::to_string(Info.CascadeIndex);
+    }
+
+    return Label;
 }
 
 static FString GetEditorFriendlyPropertyName(const FString& RawName)
@@ -242,6 +353,25 @@ FString FEditorDetailsPanel::OpenObjFileDialog()
     }
 
     return FString();
+}
+
+void FEditorDetailsPanel::FocusComponentDetails(UActorComponent* Component)
+{
+    if (!EditorEngine || !Component)
+    {
+        return;
+    }
+
+    AActor* OwnerActor = Component->GetOwner();
+    if (!OwnerActor)
+    {
+        return;
+    }
+
+    EditorEngine->GetSelectionManager().Select(OwnerActor);
+    LastSelectedActor = OwnerActor;
+    SelectedComponent = Component;
+    bActorSelected = false;
 }
 
 void FEditorDetailsPanel::Render(float DeltaTime)
@@ -1215,6 +1345,7 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
     const float ColumnSpacing = ImGui::GetStyle().ItemSpacing.x;
     const float ImageSize = (std::max)(140.0f, (ContentWidth - ColumnSpacing) * 0.5f);
     const float LabelHeight = ImGui::GetTextLineHeightWithSpacing();
+    UWorld* World = GEngine->GetWorld();
 
     for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
     {
@@ -1242,6 +1373,10 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
 
         TArray<FShadowMapData> SliceAllocations;
         ShadowPass->GetShadowPageSliceAllocations(static_cast<uint32>(SelectedShadowAtlasPage), SliceIndex, SliceAllocations);
+        FShadowAtlasOwnerInfo HoveredOwnerInfo = {};
+        const FShadowMapData* HoveredAllocation = nullptr;
+        ImVec2 HoveredRectMin = {};
+        ImVec2 HoveredRectMax = {};
         for (const FShadowMapData& Allocation : SliceAllocations)
         {
             const float Scale = ImageSize / static_cast<float>(ShadowPass->GetShadowAtlasSize());
@@ -1266,6 +1401,48 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
             char RectLabel[24] = {};
             sprintf_s(RectLabel, "%u", Allocation.Resolution);
             DrawList->AddText(ImVec2(RectMin.x + 4.0f, RectMin.y + 4.0f), Color, RectLabel);
+
+            const bool bHovered = ImGui::IsMouseHoveringRect(RectMin, RectMax) && ImGui::IsWindowHovered();
+            if (bHovered)
+            {
+                HoveredAllocation = &Allocation;
+                HoveredOwnerInfo = FindShadowAtlasOwnerInfo(World, Allocation);
+                HoveredRectMin = RectMin;
+                HoveredRectMax = RectMax;
+            }
+        }
+
+        if (HoveredAllocation)
+        {
+            DrawList->AddRect(HoveredRectMin, HoveredRectMax, IM_COL32(255, 255, 255, 255), 0.0f, 0, 3.0f);
+
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(BuildShadowAtlasOwnerLabel(HoveredOwnerInfo).c_str());
+            ImGui::Separator();
+            ImGui::Text("Resolution: %u", HoveredAllocation->Resolution);
+            ImGui::Text("Atlas Page: %u  Slice: %u", HoveredAllocation->AtlasPageIndex, HoveredAllocation->SliceIndex);
+            ImGui::Text(
+                "Rect: (%u, %u) %ux%u",
+                HoveredAllocation->Rect.X,
+                HoveredAllocation->Rect.Y,
+                HoveredAllocation->Rect.Width,
+                HoveredAllocation->Rect.Height);
+            ImGui::Text(
+                "Viewport: (%u, %u) %ux%u",
+                HoveredAllocation->ViewportRect.X,
+                HoveredAllocation->ViewportRect.Y,
+                HoveredAllocation->ViewportRect.Width,
+                HoveredAllocation->ViewportRect.Height);
+            if (HoveredOwnerInfo.Component)
+            {
+                ImGui::TextDisabled("Click to focus this component in Details.");
+            }
+            ImGui::EndTooltip();
+
+            if (HoveredOwnerInfo.Component && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                FocusComponentDetails(HoveredOwnerInfo.Component);
+            }
         }
 
         ImGui::Text("Allocations: %d", static_cast<int32>(SliceAllocations.size()));

@@ -34,7 +34,7 @@ struct FSceneView
 
     FViewportRenderOptions RenderOptions;
     EViewMode              ViewMode = EViewMode::Lit_Phong;
-    ERenderShadingPath     RenderPath = ERenderShadingPath::Deferred;
+    ERenderShadingPath     RenderPath = ERenderShadingPath::Forward;
     FShowFlags             ShowFlags;
     FVector                WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 

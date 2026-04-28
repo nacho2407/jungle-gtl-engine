@@ -77,7 +77,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
                     {
 			if (Args.size() < 2)
 			{
-				AddLog("Usage: shadow_filter PCF | VSM | ESM\n");
+				AddLog("Usage: shadow_filter NONE | PCF | VSM | ESM\n");
 				AddLog("Current shadow filter: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod()));
 				return;
 			}
@@ -86,7 +86,11 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 			std::transform(FilterName.begin(), FilterName.end(), FilterName.begin(),
 				[](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
 
-			if (FilterName == "PCF")
+			if (FilterName == "NONE")
+			{
+				SetShadowFilterMethod(EShadowFilterMethod::None);
+			}
+			else if (FilterName == "PCF")
 			{
 				SetShadowFilterMethod(EShadowFilterMethod::PCF);
 			}
@@ -101,7 +105,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
 			else
 			{
 				AddLog("[ERROR] Unknown shadow filter: '%s'\n", Args[1].c_str());
-				AddLog("Usage: shadow_filter PCF | VSM | ESM\n");
+				AddLog("Usage: shadow_filter NONE | PCF | VSM | ESM\n");
 				return;
 			}
 
