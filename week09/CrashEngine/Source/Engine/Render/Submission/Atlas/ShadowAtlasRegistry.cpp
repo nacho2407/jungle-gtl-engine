@@ -87,6 +87,24 @@ bool FShadowAtlasRegistry::UpdateLightShadow(FLightProxy& Light, ID3D11Device* D
         }
     }
 
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        Record.CascadeShadowMapData.CascadeCount = CascadeCount;
+        for (uint32 CascadeIndex = 0; CascadeIndex < CascadeCount; ++CascadeIndex)
+        {
+            Record.CascadeShadowMapData.CascadeViews[CascadeIndex] = Light.CascadeShadowMapData.CascadeViews[CascadeIndex];
+            Record.CascadeShadowMapData.CascadeViewProj[CascadeIndex] = Light.CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+        }
+    }
+    else if (LightType == static_cast<uint32>(ELightType::Point))
+    {
+        for (uint32 FaceIndex = 0; FaceIndex < ShadowAtlas::MaxPointFaces; ++FaceIndex)
+        {
+            Record.CubeShadowMapData.FaceViews[FaceIndex] = Light.CubeShadowMapData.FaceViews[FaceIndex];
+            Record.CubeShadowMapData.FaceViewProj[FaceIndex] = Light.CubeShadowMapData.FaceViewProj[FaceIndex];
+        }
+    }
+
     Light.ApplyShadowRecord(Record);
     return true;
 }
