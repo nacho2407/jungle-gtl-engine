@@ -16,7 +16,7 @@ struct Node {
 
 // LightIdx tracks which point this AtlasRegion belongs to. -1 mean spotlight.
 // FaceIdx tracks which face of the point cubemap this AtlasRegion belongs to.
-struct FAtlasRegion { uint32 X, Y, Size; bool bValid; int32 LightIdx = -1; ECubeMapOrientation FaceIdx = ECubeMapOrientation::CMO_Unknown;  };
+struct FAtlasRegion { uint32 X, Y, Size; bool bValid; int32 LightIdx = -1; ECubeMapOrientation FaceIdx = ECubeMapOrientation::CMO_Unknown; uint32 PageIdx = 0; };
 
 class FAtlasQuadTreeBase {
 	using enum ECubeMapOrientation;
