@@ -8,6 +8,25 @@
 #define SHADOW_MAP_PSM_TYPE 1u
 
 #include "Common.hlsl"
+#include "Lighting.hlsl"
+
+uint SelectPointFace(float3 dir)
+{
+    float3 a = abs(dir);
+    
+    if (a.x >= a.y && a.x >= a.z)
+    {
+        return dir.x < 0 ? 0u : 1u; // -X, +X
+    }
+    else if (a.y >= a.x && a.y >= a.z)
+    {
+        return dir.y < 0 ? 2u : 3u; // -Y, +Y
+    }
+    else
+    {
+        return dir.z < 0 ? 4u : 5u; // -Z, +Z
+    }
+}
 
 float ComputeShadowPCF(
     float3 lightSpacePos,
@@ -63,10 +82,14 @@ float ComputeShadowAtlas(
     }
 
     FAtlasShadowData shadowData = AtlasShadowDatas[shadowIndices.ShadowIndex];
-
+    
     if (shadowData.ShadowType == SHADOW_LIGHT_POINT)
     {
-        return 1.0f;
+        LightInfo light = Lights[lightIndex];
+        float3 dir = worldPos.xyz - light.Position;
+        
+        uint faceIndex = SelectPointFace(dir);
+        shadowData = AtlasShadowDatas[shadowIndices.ShadowIndex + faceIndex];
     }
 
     float4 shadowCoord;

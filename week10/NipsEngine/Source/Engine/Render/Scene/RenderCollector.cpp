@@ -964,6 +964,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		RenderBus.LightInfos.push_back(LightData);
 
 		FShadowLightRequest PointLightDataShadow = {};
+		PointLightDataShadow.LightIndex = static_cast<uint32>(RenderBus.LightInfos.size() - 1); // TODO: Cubemap Index를 가리키도록 수정
 		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
 		PointLightDataShadow.Type = EShadowLightType::SLT_Point;
         PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
