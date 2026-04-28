@@ -7,7 +7,7 @@
 
 namespace
 {
-constexpr int32 ContextClickDragThreshold = 4;
+constexpr int32 ContextClickDragThreshold = 2;
 constexpr int32 ContextClickDragThresholdSq = ContextClickDragThreshold * ContextClickDragThreshold; // sqrt 사용을 피하기 위해 제곱값을 미리 계산
 }
 

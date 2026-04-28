@@ -20,6 +20,7 @@ public:
     virtual bool InputAxis(const FViewportAxisEvent& Event) { return false; }
     virtual bool InputPointer(const FViewportPointerEvent& Event) { return false; }
     virtual void ResetInputState() {}
+    virtual void ResetKeyboardInputState() {}
 
     virtual FViewport* GetViewport() const { return nullptr; }
 };

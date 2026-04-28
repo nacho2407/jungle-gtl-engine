@@ -74,6 +74,7 @@ public:
 
     void BeginInputFrame();
     void ResetInputState();
+    void ResetKeyboardInputState();
     const FEditorViewportFrameInput& GetCurrentInput() const { return CurrentInput; }
 
     void RequestContextMenu(const FEditorViewportContextMenuRequest& Request);
