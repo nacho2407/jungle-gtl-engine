@@ -1,3 +1,33 @@
+#ifndef SHADOW_FUNCTION_H
+#define SHADOW_FUNCTION_H
+#define SHADOW_LIGHT_DIRECTIONAL 0u
+#define SHADOW_LIGHT_POINT       1u
+#define SHADOW_LIGHT_SPOT        2u
+
+#define SHADOW_MAP_CSM_TYPE 0u
+#define SHADOW_MAP_PSM_TYPE 1u
+
+#include "Common.hlsl"
+#include "Lighting.hlsl"
+
+uint SelectPointFace(float3 dir)
+{
+    float3 a = abs(dir);
+    
+    if (a.x >= a.y && a.x >= a.z)
+    {
+        return dir.x < 0 ? 0u : 1u; // -X, +X
+    }
+    else if (a.y >= a.x && a.y >= a.z)
+    {
+        return dir.y < 0 ? 2u : 3u; // -Y, +Y
+    }
+    else
+    {
+        return dir.z < 0 ? 4u : 5u; // -Z, +Z
+    }
+}
+
 float ComputeShadowPCF(
     float3 lightSpacePos,
     float4 ScaleOffset,
@@ -18,7 +48,7 @@ float ComputeShadowPCF(
 
     float shadow = 0.0;
     int count = 0;
-
+    
     for (int x = -kernelHalfSize; x <= kernelHalfSize; x++)
     {
         for (int y = -kernelHalfSize; y <= kernelHalfSize; y++)
@@ -96,31 +126,53 @@ float ComputeShadowAtlas(
     Texture2D shadowMap
 )
 {
-    uint shadowIndex = LightShadowIndices[lightIndex];
-    if (shadowIndex == INVALID_SHADOW_INDEX)
+    FLightShadowIndices shadowIndices = LightShadowIndices[lightIndex];
+
+    if (shadowIndices.ShadowIndex == INVALID_SHADOW_INDEX ||
+        shadowIndices.IndexCount == 0)
     {
         return 1.0f;
     }
 
-    FAtlasShadowData shadowData = AtlasShadowDatas[shadowIndex];
-
-    float4 camClip = mul(worldPos, VirtualViewProj);
-    if (abs(camClip.w) < 1e-5f)
+    FAtlasShadowData shadowData = AtlasShadowDatas[shadowIndices.ShadowIndex];
+    
+    if (shadowData.ShadowType == SHADOW_LIGHT_POINT)
     {
-        return 1.0f;
+        LightInfo light = Lights[lightIndex];
+        float3 dir = worldPos.xyz - light.Position;
+        
+        uint faceIndex = SelectPointFace(dir);
+        shadowData = AtlasShadowDatas[shadowIndices.ShadowIndex + faceIndex];
     }
 
-    float3 post = camClip.xyz / camClip.w;
-    float4 shadowCoord = mul(float4(post, 1.0f), shadowData.ShadowViewProj);
+    float4 shadowCoord;
+
+    if (shadowData.ShadowMapType == SHADOW_MAP_PSM_TYPE)
+    {
+        float4 camClip = mul(worldPos, shadowData.VirtualViewProj);
+        if (abs(camClip.w) < 1e-5f)
+        {
+            return 1.0f;
+        }
+
+        float3 post = camClip.xyz / camClip.w;
+        shadowCoord = mul(float4(post, 1.0f), shadowData.ShadowViewProj);
+    }
+    else
+    {
+        shadowCoord = mul(worldPos, shadowData.ShadowViewProj);
+    }
+
     if (abs(shadowCoord.w) < 1e-5f)
     {
         return 1.0f;
     }
 
     float3 projCoords = shadowCoord.xyz / shadowCoord.w;
+
     float2 shadowUV = float2(
         projCoords.x * 0.5f + 0.5f,
-        -projCoords.y * 0.5f + 0.5f
+       -projCoords.y * 0.5f + 0.5f
     );
 
     if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
@@ -130,5 +182,15 @@ float ComputeShadowAtlas(
         return 1.0f;
     }
 
-    return ComputeShadowPCF(projCoords, shadowData.ScaleOffset, 2, shadowSampler, shadowMap, shadowData.ShadowBias);
+    int kernel = clamp((int) shadowData.ShadowSoftness, 0, 4);
+
+    return ComputeShadowPCF(
+        projCoords,
+        shadowData.ScaleOffset,
+        kernel,
+        shadowSampler,
+        shadowMap,
+        shadowData.ConstantBias
+    );
 }
+#endif

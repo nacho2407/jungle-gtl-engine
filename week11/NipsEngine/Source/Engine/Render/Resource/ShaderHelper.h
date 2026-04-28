@@ -18,9 +18,10 @@ enum class EShaderFeature : uint32
 	ClusterCull		= 1 << 11,
 	TileCull		= 1 << 12,
 
-	ShadowBasic		= 1 << 13,
+	ShadowCSM		= 1 << 13,
 	ShadowPSM		= 1 << 14,
-	ShadowCSM		= 1 << 15,
+
+	CascadeVis		= 1 << 5,
 };
 
 enum class ELightingModel : uint32

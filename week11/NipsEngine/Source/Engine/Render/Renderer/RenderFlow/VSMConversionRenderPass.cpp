@@ -35,6 +35,7 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     DSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // Depth Write 끔
     DSDesc.StencilEnable = FALSE;
 
+	// TODO : DepthStencil 따로 관리
     ID3D11DepthStencilState* DSState = nullptr;
     Context->Device->CreateDepthStencilState(&DSDesc, &DSState);
     DeviceContext->OMSetDepthStencilState(DSState, 0);

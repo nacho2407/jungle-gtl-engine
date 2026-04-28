@@ -9,6 +9,10 @@ DEFINE_CLASS(UMaterialInstance, UMaterialInterface)
 void UMaterial::Bind(ID3D11DeviceContext* Context, uint32 PermutationKey) const
 {
 	if (!Shader) return;
+	if (!FResourceManager::Get().EnsureShaderPermutation(Shader->FilePath, PermutationKey))
+	{
+		return;
+	}
 	Shader->Bind(Context, PermutationKey);
 
 	auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(DepthStencilType);

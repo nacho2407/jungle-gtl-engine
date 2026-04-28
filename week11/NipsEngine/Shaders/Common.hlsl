@@ -1,9 +1,13 @@
 /* Constant Buffers */
+#ifndef COMMON_H
+#define COMMON_H
+
 #define TILE_SIZE 16
 #define NUM_SLICE 24
 
 #define MAX_ATLAS_SHADOW_COUNT 64
-#define INVALID_SHADOW_INDEX -1
+#define MAX_DIRECTIONAL_CASCADE_COUNT 4
+#define INVALID_SHADOW_INDEX 0xFFFFFFFFu
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -29,21 +33,37 @@ cbuffer ShadowBuffer : register(b4)
 {
     row_major matrix VirtualViewProj;
     row_major matrix ShadowViewProj;
-    float4 ScaleOffset;
+    
+    float4 CascadeSplitFar;
+    uint DirectionalCascadeCount;
+    uint DirectionalShadowStartIndex;
+    float2 ShadowBufferPadding;
+};
+
+struct FLightShadowIndices
+{
+    uint ShadowIndex;
+    uint IndexCount;
 };
 
 struct FAtlasShadowData
 {
     row_major float4x4 ShadowViewProj;
-    float4 ScaleOffset; // xy = scale, zw = offset
-    float ShadowBias;
+    row_major float4x4 VirtualViewProj;
+
+    float4 ScaleOffset;
+    float ConstantBias;
     float ShadowStrength;
     float ShadowSoftness;
     uint ShadowType;
+
+    uint ShadowMapType;
+    float SlopedBias;
+    float2 Padding;
 };
 
 #ifndef CS_SHADER
-StructuredBuffer<uint> LightShadowIndices : register(t14);
+StructuredBuffer<FLightShadowIndices> LightShadowIndices : register(t14);
 StructuredBuffer<FAtlasShadowData> AtlasShadowDatas : register(t15);
 #endif
 
@@ -107,3 +127,5 @@ float LinearizeDepth(float d)
         return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
     }
 }
+
+#endif

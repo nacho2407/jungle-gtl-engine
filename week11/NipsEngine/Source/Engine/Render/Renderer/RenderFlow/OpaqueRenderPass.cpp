@@ -122,23 +122,22 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
        {
            if (!Request.bCastShadows || !Request.LightComponent) continue;
+
            ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
            if (!LightComp) continue;
            switch (LightComp->GetShadowMapType())
            {
-		   case EShadowMap::BASIC:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowBasic;
-			   break;
-		   }
-		   case EShadowMap::PSM:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
-			   break;
-		   }
 		   case EShadowMap::CSM:
 		   {
 			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
+			   if (RenderBus->GetCascadeVis())
+				   PermutationKey |= (uint32)EShaderFeature::CascadeVis;
+			   break;
+		   }
+
+		   case EShadowMap::PSM:
+		   {
+			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
 			   break;
 		   }
            default: break;
