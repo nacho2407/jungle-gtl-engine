@@ -36,7 +36,9 @@ public:
     TArray<FPrimitiveProxy*> VisibleShadowCasters;
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
+    FShadowViewData          LightShadowView;
     FMatrix                  ShadowViewProjMatrices[ShadowAtlas::MaxPointFaces];
+    FShadowViewData          ShadowFaceViews[ShadowAtlas::MaxPointFaces];
     bool                     bCastShadow = false;
     uint32                   ShadowResolution = 1024;
     FCascadeShadowMapData    CascadeShadowMapData = {};

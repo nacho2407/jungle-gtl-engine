@@ -14,7 +14,8 @@ constexpr uint32 PerObject  = 1; // b1: object 단위 상수
 constexpr uint32 PerShader0 = 2; // b2: pass/material 추가 상수
 constexpr uint32 PerShader1 = 3; // b3: pass/material 추가 상수
 constexpr uint32 Light      = 4; // b4: 전역 조명 상수
-constexpr uint32 PerShader2 = 5; // b5: 추가 pass 입력 상수
+constexpr uint32 ShadowPass = 5; // b5: shadow map 생성 전용 상수
+constexpr uint32 PerShader2 = ShadowPass; // b5: 추가 pass 입력 상수
 } // namespace ECBSlot
 
 // Shader Resource register slots (t#)

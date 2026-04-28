@@ -20,18 +20,23 @@
 struct FShadowEncodeVSOutput
 {
     float4 Position : SV_POSITION;
+    float3 ViewPos  : TEXCOORD0;
 };
 
 FShadowEncodeVSOutput VS(VS_Input_PNCT_T Input)
 {
     FShadowEncodeVSOutput Output;
-    Output.Position = ApplyMVP(Input.position);
+    float4 World = mul(float4(Input.position, 1.0f), Model);
+    float4 ShadowViewPosition = mul(World, ShadowView);
+    Output.Position = mul(ShadowViewPosition, ShadowProjection);
+    Output.ViewPos = ShadowViewPosition.xyz;
     return Output;
 }
 
 float2 PS(FShadowEncodeVSOutput Input) : SV_Target0
 {
-    const float D = Input.Position.z;
+    const float DepthRange = max(ShadowFarZ - ShadowNearZ, 1e-5f);
+    const float D = saturate((Input.ViewPos.z - ShadowNearZ) / DepthRange);
 
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
     const float Dx = ddx(D);
