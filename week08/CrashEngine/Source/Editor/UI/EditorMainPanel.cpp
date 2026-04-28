@@ -8,6 +8,7 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
@@ -350,15 +351,44 @@ void FEditorMainPanel::Update()
 {
     ImGuiIO& IO = ImGui::GetIO();
 
+    const bool bWantTextInput = IO.WantTextInput;
+    const bool bAnyItemActive = ImGui::IsAnyItemActive();
+    const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+    const bool bRightMouseDown = IO.MouseDown[1];
+    const bool bAnyMouseButtonDown =
+        IO.MouseDown[0] ||
+        IO.MouseDown[1] ||
+        IO.MouseDown[2] ||
+        IO.MouseDown[3] ||
+        IO.MouseDown[4]; // L / M / R / X1 / X2(그 마우스 옆에 쪼마낳게 달려있는 버튼 두 개)
+    const bool bActiveMouseInteraction = bAnyItemActive && bAnyMouseButtonDown;
+
     bool bWantMouse = IO.WantCaptureMouse;
-    bool bWantKeyboard = IO.WantCaptureKeyboard;
+    bool bWantKeyboard = IO.WantCaptureKeyboard || bWantTextInput;
+
     if (EditorEngine && EditorEngine->IsMouseOverViewport())
     {
-        bWantMouse = false;
-        bWantKeyboard = false;
+        const bool bViewportKeyboardFocusRequest = !bAnyPopupOpen && bRightMouseDown;
+
+        if (!bAnyPopupOpen && !bActiveMouseInteraction)
+        {
+            bWantMouse = false;
+        }
+
+        if (!bAnyPopupOpen && !bWantTextInput && !bAnyItemActive)
+        {
+            bWantKeyboard = false;
+        }
+
+        if (bViewportKeyboardFocusRequest)
+        {
+            ImGui::ClearActiveID();
+            bWantKeyboard = false;
+        }
     }
-    InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
-    InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+
+    GuiInputCaptureState.bMouse = bWantMouse;
+    GuiInputCaptureState.bKeyboard = bWantKeyboard;
 
     if (Window)
     {

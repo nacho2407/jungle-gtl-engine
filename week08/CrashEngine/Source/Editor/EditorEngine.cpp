@@ -48,6 +48,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
     UEngine::Init(InWindow);
 
+	ViewportInputRouter.SetOwnerWindow(InWindow->GetHWND());
+
     FObjManager::ScanMeshAssets();
     FObjManager::ScanObjSourceFiles();
     FMaterialManager::Get().ScanMaterialAssets();
@@ -71,6 +73,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
     ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
     ViewportLayout.LoadFromSettings();
+    SetActiveViewport(ViewportLayout.GetActiveViewport());
 }
 
 void UEditorEngine::Shutdown()
@@ -104,13 +107,40 @@ void UEditorEngine::Tick(float DeltaTime)
         StartQueuedPlaySessionRequest();
     }
 
-    for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
+    MainPanel.Update();
+
+    InputSystem::Get().Tick(Window->IsForeground());
+
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    const FGuiInputCaptureState& GuiCapture = MainPanel.GetGuiInputCaptureState();
+
+	ViewportInputRouter.SetGuiCaptureState(GuiCapture);
+
+	/*
+     * note: RegisterViewportInputTargets에서 사용되는 ViewportClient의 Rect는 현재 프레임이 아닌 이전 프레임에서 캐시된 ViewportScreenRect임
+     *       ViewportScreenRect는 FLevelViewportLayout::RenderViewportUI 내의 ImGui 문맥 내에서만 갱신이 가능하기 때문에 이러한 타이밍이 불가피함
+	 */
+
+    RegisterViewportInputTargets();
+
+	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
     {
-        VC->Tick(DeltaTime);
+        if (VC)
+        {
+            VC->BeginInputFrame();
+        }
     }
 
-    MainPanel.Update();
-    InputSystem::Get().Tick();
+    ViewportInputRouter.Tick(Input, DeltaTime);
+    ViewportLayout.SyncActiveViewportFromKeyTargetViewport(ViewportInputRouter.GetKeyTargetViewport());
+
+    for (FEditorViewportClient* VC: ViewportLayout.GetAllViewportClients())
+    {
+		if (VC)
+        {
+            VC->Tick(DeltaTime);
+		}
+    }
 
     const bool bPIEPaused = IsPausedInEditor();
     const bool bHasPIEWorld = IsPlayingInEditor();
@@ -156,6 +186,22 @@ UCameraComponent* UEditorEngine::GetCamera() const
         return ActiveVC->GetCamera();
     }
     return nullptr;
+}
+
+void UEditorEngine::SetActiveViewport(FLevelEditorViewportClient* InClient)
+{
+    ViewportLayout.SetActiveViewport(InClient);
+    ViewportInputRouter.SetKeyTargetViewport(InClient ? InClient->GetViewport() : nullptr);
+}
+
+void UEditorEngine::ResetViewportInputRouting()
+{
+    ViewportInputRouter.ResetRoutingState();
+
+    if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+    {
+        ViewportInputRouter.SetKeyTargetViewport(ActiveVC->GetViewport());
+    }
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
@@ -597,5 +643,33 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
             Renderer.GetCollectedPrimitives().VisibleProxies,
             SceneView.View, SceneView.Proj,
             VP->GetWidth(), VP->GetHeight());
+    }
+}
+
+void UEditorEngine::RegisterViewportInputTargets()
+{
+    ViewportInputRouter.ClearTargets();
+
+    for (FLevelEditorViewportClient* VC: ViewportLayout.GetLevelViewportClients())
+    {
+        if (!VC || !VC->GetViewport())
+        {
+            continue;
+        }
+
+        ViewportInputRouter.RegisterTarget(
+            VC->GetViewport(),
+            VC,
+            [VC](FRect& OutRect)
+            {
+                const FRect& Rect = VC->GetViewportScreenRect();
+                if (Rect.Width <= 0.0f || Rect.Height <= 0.0f)
+                {
+                    return false;
+                }
+
+                OutRect = Rect;
+                return true;
+            });
     }
 }

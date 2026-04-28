@@ -1,14 +1,21 @@
 ﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
-#include "Viewport/ViewportClient.h"
-#include "Render/Execute/Context/Scene/ViewTypes.h"
-#include "Math/Rotator.h"
+#include <memory>
+#include <string>
+
+#include "Core/CollisionTypes.h"
+
+#include "Input/InputTypes.h"
 
 #include "UI/SWindow.h"
-#include <string>
-#include "Core/RayTypes.h"
-#include "Core/CollisionTypes.h"
+
+#include "Viewport/ViewportClient.h"
+
+#include "Render/Execute/Context/Scene/ViewTypes.h"
+#include "Math/Rotator.h"
+#include "Editor/Input/EditorViewportInputController.h"
+
 class UWorld;
 class AActor;
 class UCameraComponent;
@@ -33,9 +40,11 @@ class FEditorViewportClient : public FViewportClient
 public:
     void Initialize(FWindowsWindow* InWindow);
     void SetOverlayStatSystem(FOverlayStatSystem* InOverlayStatSystem) { OverlayStatSystem = InOverlayStatSystem; }
+    FOverlayStatSystem* GetOverlayStatSystem() const { return OverlayStatSystem; }
     UWorld* GetWorld() const;
     void SetGizmo(UGizmoComponent* InGizmo) { Gizmo = InGizmo; }
     void SetSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
+    const FEditorSettings* GetSettings() const { return Settings; }
     void SetSelectionManager(FSelectionManager* InSelectionManager) { SelectionManager = InSelectionManager; }
     UGizmoComponent* GetGizmo() { return Gizmo; }
 
@@ -63,7 +72,6 @@ public:
     FString GetPilotedActorDisplayName() const;
     FString GetPilotOverlayText() const;
     FString GetPilotHintText() const;
-    AActor* PickActorAtScreenPoint(float ScreenX, float ScreenY) const;
 
     void SetActive(bool bInActive) { bIsActive = bInActive; }
     bool IsActive() const { return bIsActive; }
@@ -84,16 +92,29 @@ public:
     void RenderViewportImage();
     void RenderViewportBorder();
 
-private:
-    void TickEditorShortcuts();
-    void TickInput(float DeltaTime);
-    void TickInteraction(float DeltaTime);
-    void HandleDragStart(const FRay& Ray);
+	bool InputKey(const FViewportKeyEvent& Event) override;
+    bool InputAxis(const FViewportAxisEvent& Event) override;
+    bool InputPointer(const FViewportPointerEvent& Event) override;
+    void ResetInputState() override;
+    void ResetKeyboardInputState() override;
+
+	const FRect& GetViewportScreenRect() const { return ViewportScreenRect; }
+    const FRect& GetViewportFrameRect() const { return ViewportFrameRect; }
+
+    void BeginInputFrame();
+    bool ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest);
+
+	FEditorViewportInputController* GetInputController() const
+    {
+        return InputController.get();
+    }
+
+	FSelectionManager* GetSelectionManager() const { return SelectionManager; }
+    UGizmoComponent* GetGizmo() const { return Gizmo; }
 
 private:
     FViewport* Viewport = nullptr;
     SWindow* LayoutWindow = nullptr;
-    FWindowsWindow* Window = nullptr;
     FOverlayStatSystem* OverlayStatSystem = nullptr;
     UCameraComponent* Camera = nullptr;
     UGizmoComponent* Gizmo = nullptr;
@@ -114,4 +135,6 @@ private:
     float PaneToolbarHeight = 0.0f;
     FRect ViewportScreenRect;
     FRect ViewportFrameRect;
+
+    std::unique_ptr<FEditorViewportInputController> InputController;
 };
