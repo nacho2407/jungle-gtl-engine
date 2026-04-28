@@ -16,7 +16,10 @@ public:
     void VisualizeLightsInEditor(FScene& Scene) const override;
     FShadowMapData*       GetSpotShadowMapData() override { return &SpotShadowMapData; }
     const FShadowMapData* GetSpotShadowMapData() const override { return &SpotShadowMapData; }
+    FShadowViewData*      GetSpotShadowView() override { return &SpotShadowView; }
+    const FShadowViewData* GetSpotShadowView() const override { return &SpotShadowView; }
 
 private:
-    FShadowMapData SpotShadowMapData = {};
+    FShadowMapData  SpotShadowMapData = {};
+    FShadowViewData SpotShadowView = {};
 };

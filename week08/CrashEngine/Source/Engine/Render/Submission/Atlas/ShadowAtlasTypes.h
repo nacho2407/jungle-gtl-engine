@@ -47,11 +47,33 @@ struct FShadowMapData
     }
 };
 
+// One shadow-rendering view derived from a light.
+struct FShadowViewData
+{
+    FMatrix View = FMatrix::Identity;
+    FMatrix Projection = FMatrix::Identity;
+    FMatrix ViewProj = FMatrix::Identity;
+    float   NearZ = 0.0f;
+    float   FarZ = 1.0f;
+    uint32  ProjectionType = 0; // 0: orthographic, 1: perspective
+
+    void Set(const FMatrix& InView, const FMatrix& InProjection, float InNearZ, float InFarZ, uint32 InProjectionType)
+    {
+        View = InView;
+        Projection = InProjection;
+        ViewProj = InView * InProjection;
+        NearZ = InNearZ;
+        FarZ = InFarZ;
+        ProjectionType = InProjectionType;
+    }
+};
+
 // Directional light는 cascade별 atlas allocation을 따로 가집니다.
 struct FCascadeShadowMapData
 {
     FShadowMapData Cascades[ShadowAtlas::MaxCascades] = {};
     FMatrix        CascadeViewProj[ShadowAtlas::MaxCascades] = {};
+    FShadowViewData CascadeViews[ShadowAtlas::MaxCascades] = {};
     uint32         CascadeCount = 0;
 
     void Reset()
@@ -65,6 +87,7 @@ struct FCubeShadowMapData
 {
     FShadowMapData Faces[ShadowAtlas::MaxPointFaces] = {};
     FMatrix        FaceViewProj[ShadowAtlas::MaxPointFaces] = {};
+    FShadowViewData FaceViews[ShadowAtlas::MaxPointFaces] = {};
 
     void Reset()
     {

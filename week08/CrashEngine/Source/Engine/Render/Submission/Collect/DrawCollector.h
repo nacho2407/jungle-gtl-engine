@@ -2,6 +2,7 @@
 
 #include "Render/Submission/Collect/CollectedOverlayData.h"
 #include "Render/Submission/Collect/CollectedSceneData.h"
+#include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 
 class UWorld;
 struct FSceneView;
@@ -39,6 +40,12 @@ public:
     const FCollectedOverlayData&    GetCollectedOverlayData() const { return CollectedOverlayData; }
 
 private:
+    // ==================== Shadow Helpers ====================
+    void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
+    FShadowViewData GetDirectionalSSMView(UWorld* World, FVector LightDir);
+    FShadowViewData GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    void ComputeSpotShadowMatrices(FLightProxy* Light);
+    void ComputePointShadowMatrices(FLightProxy* Light);
     // ==================== Reset Helpers ====================
     static void ResetCollectedPrimitives(FCollectedPrimitives& OutPrimitives, bool bClearOverlayTexts);
     static void ResetCollectedLights(FCollectedLights& OutLights);

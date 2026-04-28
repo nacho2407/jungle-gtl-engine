@@ -27,6 +27,8 @@ public:
     virtual const FCascadeShadowMapData* GetCascadeShadowMapData() const { return nullptr; }
     virtual FShadowMapData*              GetSpotShadowMapData() { return nullptr; }
     virtual const FShadowMapData*        GetSpotShadowMapData() const { return nullptr; }
+    virtual FShadowViewData*             GetSpotShadowView() { return nullptr; }
+    virtual const FShadowViewData*       GetSpotShadowView() const { return nullptr; }
     virtual FCubeShadowMapData*          GetCubeShadowMapData() { return nullptr; }
     virtual const FCubeShadowMapData*    GetCubeShadowMapData() const { return nullptr; }
     virtual FMatrix*                     GetPointShadowViewProjMatrices() { return nullptr; }

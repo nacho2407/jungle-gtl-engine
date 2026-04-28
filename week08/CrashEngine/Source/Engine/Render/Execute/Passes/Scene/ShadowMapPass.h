@@ -48,7 +48,7 @@ private:
     {
         FLightProxy*          Light      = nullptr;
         const FShadowMapData* Allocation = nullptr;
-        FMatrix               ViewProj   = FMatrix::Identity;
+        FShadowViewData       ShadowView = {};
     };
 
     struct FPSMCameraState
