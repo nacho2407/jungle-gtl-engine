@@ -85,6 +85,47 @@ uint SelectCascade(float viewDepth)
     return NumCSMCascades - 1;
 }
 
+bool SampleDirectionalCascade(float3 biasedPos, uint cascade, out float shadowFactor)
+{
+    float4 lightSpacePos = mul(float4(biasedPos, 1.0f), CSMViewProj[cascade]);
+    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+
+    float2 shadowUV = projCoords.xy * float2(0.5f, -0.5f) + 0.5f;
+    float  fragDepth = projCoords.z;
+
+    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
+        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
+        fragDepth < 0.0f  || fragDepth > 1.0f)
+    {
+        shadowFactor = 1.0f;
+        return false;
+    }
+
+    // constant depth bias only — slope bias is already handled by normal offset above
+    fragDepth += ShadowBias;
+
+    float3 uvw = float3(shadowUV, (float)cascade);
+    float texelSize = 1.0f / (float)CSMResolution;
+
+    // FilterMode 분기 — ShadowSharpen은 b5 (Directional per-light)
+    if (ShadowFilterMode == 0) // Hard
+    {
+        float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, uvw, 0).r;
+        shadowFactor = fragDepth < shadowMapDepth ? 0.0f : 1.0f;
+    }
+    else if (ShadowFilterMode == 1) // PCF
+    {
+        int halfSize = ComputePCFHalfSize(ShadowSharpen);
+        shadowFactor = SampleShadowPCF(ShadowMapCSM, uvw, fragDepth, texelSize, halfSize);
+    }
+    else // VSM
+    {
+        shadowFactor = SampleShadowVSM(ShadowMapCSM, uvw, fragDepth, ShadowSharpen);
+    }
+
+    return true;
+}
+
 // ── Directional Light Shadow Factor (통합) ──────────────────────
 // worldPos:  월드 좌표
 // viewDepth: 카메라 뷰 공간 깊이 (abs(viewPos.z))
@@ -99,41 +140,26 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
     // Normal bias
     float3 biasedPos = worldPos + N * ShadowNormalBias;
 
-    // 라이트 공간 좌표 계산
-    float4 lightSpacePos = mul(float4(biasedPos, 1.0f), CSMViewProj[cascade]);
-    float3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    float shadowFactor = 1.0f;
+    SampleDirectionalCascade(biasedPos, cascade, shadowFactor);
 
-    // NDC [-1,1] → UV [0,1]  (Y 반전)
-    float2 shadowUV = projCoords.xy * float2(0.5f, -0.5f) + 0.5f;
-    float  fragDepth = projCoords.z;
-
-    // UV 범위 밖이면 그림자 없음
-    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
-        shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
-        fragDepth < 0.0f  || fragDepth > 1.0f)
-        return 1.0f;
-
-    // constant depth bias only — slope bias is already handled by normal offset above
-    fragDepth += ShadowBias;
-
-    float3 uvw = float3(shadowUV, (float)cascade);
-    float texelSize = 1.0f / (float)CSMResolution;
-
-    // FilterMode 분기 — ShadowSharpen은 b5 (Directional per-light)
-    if (ShadowFilterMode == 0) // Hard
+    if (CSMBlendEnabled != 0 && CSMBlendRange > 0.0f && cascade + 1 < NumCSMCascades)
     {
-        float shadowMapDepth = ShadowMapCSM.SampleLevel(PointClampSampler, uvw, 0).r;
-        return fragDepth < shadowMapDepth ? 0.0f : 1.0f;
+        float splitDepth = CascadeSplits[cascade];
+        float blendStart = splitDepth - CSMBlendRange;
+
+        if (viewDepth >= blendStart && viewDepth < splitDepth)
+        {
+            float nextShadowFactor = 1.0f;
+            if (SampleDirectionalCascade(biasedPos, cascade + 1, nextShadowFactor))
+            {
+                float blendT = saturate((viewDepth - blendStart) / CSMBlendRange);
+                shadowFactor = lerp(shadowFactor, nextShadowFactor, blendT);
+            }
+        }
     }
-    else if (ShadowFilterMode == 1) // PCF
-    {
-        int halfSize = ComputePCFHalfSize(ShadowSharpen);
-        return SampleShadowPCF(ShadowMapCSM, uvw, fragDepth, texelSize, halfSize);
-    }
-    else // VSM
-    {
-        return SampleShadowVSM(ShadowMapCSM, uvw, fragDepth, ShadowSharpen);
-    }
+
+    return shadowFactor;
 }
 
 // ── Spot Light Shadow Factor ────────────────────────────────────

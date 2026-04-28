@@ -51,7 +51,9 @@ cbuffer ShadowBuffer : register(b5)
     uint     NumShadowPointLights;             //   4B
     
     uint     CSMResolution;                    //   4B
-    float3   SBPad;                            //   12B
+    float    CSMBlendRange;                    //   4B
+    uint     CSMBlendEnabled;                  //   4B
+    float    SBPad;                            //   4B
 };
 
 // ── Shadow 텍스처 바인딩 ──

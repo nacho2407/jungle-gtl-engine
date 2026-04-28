@@ -40,6 +40,14 @@ public:
 	void ResetCSMShadowCasterDistance() { DirectionalShadowCasterDistance.reset(); }
 	std::optional<float> GetCSMShadowCasterDistance() const { return DirectionalShadowCasterDistance; }
 
+	void SetCSMBlendEnabled(bool bEnabled) { CSMBlendEnabled = bEnabled; }
+	void ResetCSMBlendEnabled() { CSMBlendEnabled.reset(); }
+	std::optional<bool> GetCSMBlendEnabled() const { return CSMBlendEnabled; }
+
+	void SetCSMBlendRange(float Range) { CSMBlendRange = Range; }
+	void ResetCSMBlendRange() { CSMBlendRange.reset(); }
+	std::optional<float> GetCSMBlendRange() const { return CSMBlendRange; }
+
 	// --- Bias ---
 	void SetBias(float Bias) { ShadowBias = Bias; }
 	void ResetBias() { ShadowBias.reset(); }
@@ -66,7 +74,9 @@ public:
 		Resolution.reset();
 		DirectionalShadowDistance.reset();
 		CSMSplitLambda.reset();
-		DirectionalShadowDistance.reset();
+		DirectionalShadowCasterDistance.reset();
+		CSMBlendEnabled.reset();
+		CSMBlendRange.reset();
 
 		ShadowBias.reset();
 		ShadowSlopeBias.reset();
@@ -79,6 +89,8 @@ public:
 	static constexpr float  kDefaultCSMSplitLambda = 0.85f;
 	static constexpr float  kDefaultDirectionalShadowDistance = 300.0f;
 	static constexpr float  kDefaultDirectionalShadowCasterDistance = 500.0f;
+	static constexpr bool   kDefaultCSMBlendEnabled = true;
+	static constexpr float  kDefaultCSMBlendRange = 10.0f;
 
 	// 기본값 상수
 	static constexpr float  kDefaultBias = 0.005f;
@@ -90,6 +102,8 @@ public:
 	float             GetEffectiveCSMCascadeLambda() const { return CSMSplitLambda.value_or(kDefaultCSMSplitLambda); }
 	float             GetEffectiveShadowDistance() const { return DirectionalShadowDistance.value_or(kDefaultDirectionalShadowDistance); }
 	float             GetEffectiveCSMDirectionalShadowDistance() const { return DirectionalShadowCasterDistance.value_or(kDefaultDirectionalShadowCasterDistance); }
+	bool              GetEffectiveCSMBlendEnabled() const { return CSMBlendEnabled.value_or(kDefaultCSMBlendEnabled); }
+	float             GetEffectiveCSMBlendRange() const { return CSMBlendRange.value_or(kDefaultCSMBlendRange); }
 	float             GetEffectiveBias() const { return ShadowBias.value_or(kDefaultBias); }
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
@@ -100,6 +114,8 @@ private:
 	std::optional<float>  CSMSplitLambda;
 	std::optional<float>  DirectionalShadowDistance;
 	std::optional<float>  DirectionalShadowCasterDistance;
+	std::optional<bool>   CSMBlendEnabled;
+	std::optional<float>  CSMBlendRange;
 
 	std::optional<float>  ShadowBias;
 	std::optional<float>  ShadowSlopeBias;

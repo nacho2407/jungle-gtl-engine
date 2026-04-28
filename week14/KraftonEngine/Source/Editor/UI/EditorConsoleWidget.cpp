@@ -414,6 +414,79 @@ void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 			}
 		}, "Overrides directional shadow caster distance. Usage: CSM_casting_distance <distance> | CSM_casting_distance reset");
 
+	RegisterCommand("CSM_blend", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetCSMBlendEnabled();
+				if (Cur.has_value())
+					AddLog("CSM_blend: %s\n", Cur.value() ? "on" : "off");
+				else
+					AddLog("CSM_blend: default (%s)\n", FShadowSettings::kDefaultCSMBlendEnabled ? "on" : "off");
+				AddLog("Usage: CSM_blend on|off|reset\n");
+				return;
+			}
+
+			FString Arg = Args[1];
+			std::transform(Arg.begin(), Arg.end(), Arg.begin(), ::tolower);
+
+			if (Arg == "reset")
+			{
+				Settings.ResetCSMBlendEnabled();
+				AddLog("CSM_blend override reset to default (%s).\n", FShadowSettings::kDefaultCSMBlendEnabled ? "on" : "off");
+			}
+			else if (Arg == "on")
+			{
+				Settings.SetCSMBlendEnabled(true);
+				AddLog("CSM_blend set to on.\n");
+			}
+			else if (Arg == "off")
+			{
+				Settings.SetCSMBlendEnabled(false);
+				AddLog("CSM_blend set to off.\n");
+			}
+			else
+			{
+				AddLog("[ERROR] Unknown CSM_blend value: '%s'\n", Args[1].c_str());
+				AddLog("Usage: CSM_blend on|off|reset\n");
+			}
+		}, "Toggles CSM cascade boundary blending. Usage: CSM_blend on|off|reset");
+
+	RegisterCommand("CSM_blend_range", [this](const TArray<FString>& Args)
+		{
+			FShadowSettings& Settings = FShadowSettings::Get();
+
+			if (Args.size() < 2)
+			{
+				auto Cur = Settings.GetCSMBlendRange();
+				if (Cur.has_value())
+					AddLog("CSM_blend_range: %.3f\n", Cur.value());
+				else
+					AddLog("CSM_blend_range: default (%.3f)\n", FShadowSettings::kDefaultCSMBlendRange);
+				AddLog("Usage: CSM_blend_range <range> | CSM_blend_range reset\n");
+				return;
+			}
+
+			if (Args[1] == "reset")
+			{
+				Settings.ResetCSMBlendRange();
+				AddLog("CSM_blend_range override reset to default.\n");
+			}
+			else
+			{
+				float Range = static_cast<float>(std::atof(Args[1].c_str()));
+				if (Range < 0.0f)
+				{
+					AddLog("[ERROR] Blend range must be greater than or equal to 0.\n");
+					return;
+				}
+				Settings.SetCSMBlendRange(Range);
+				AddLog("CSM_blend_range override set to %.3f.\n", Range);
+			}
+		}, "Overrides CSM boundary blend range. Usage: CSM_blend_range <range> | CSM_blend_range reset");
+
 	RegisterCommand("shadow_bias", [this](const TArray<FString>& Args)
 		{
 			FShadowSettings& Settings = FShadowSettings::Get();
