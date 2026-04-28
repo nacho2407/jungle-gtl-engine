@@ -2,6 +2,7 @@
 
 #include "Engine/Component/GizmoComponent.h"
 #include "Engine/GameFramework/AActor.h"
+#include "Engine/GameFramework/World.h"
 #include "Engine/Object/Object.h"
 
 #include "Editor/EditorEngine.h"
@@ -34,26 +35,58 @@ bool FEditorViewportCommandTool::HandleInput(float DeltaTime)
 
 	FSelectionManager* SelectionManager = Owner->GetSelectionManager();
 
-    if (SelectionManager && Input.Modifiers.bCtrl && Input.KeyPressed['D'])
+    if (SelectionManager && Input.KeyPressed[VK_DELETE])
     {
-        const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-        if (!ToDuplicate.empty())
+        UWorld* World = Owner->GetWorld();
+        if (!World)
         {
-            TArray<AActor*> NewSelection;
-            for (AActor* Src : ToDuplicate)
+            return false;
+        }
+
+        const TArray<AActor*> ActorsToDelete = SelectionManager->GetSelectedActors();
+        if (ActorsToDelete.empty())
+        {
+            return false;
+        }
+
+        SelectionManager->ClearSelection();
+
+        World->BeginDeferredPickingBVHUpdate();
+        for (AActor* Actor : ActorsToDelete)
+        {
+            if (Actor && Actor->GetWorld() == World)
             {
-                if (!Src)
-                    continue;
-                AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-                if (Dup)
-                {
-                    NewSelection.push_back(Dup);
-                }
+                World->DestroyActor(Actor);
             }
-            SelectionManager->ClearSelection();
-            for (AActor* Actor : NewSelection)
+        }
+        World->EndDeferredPickingBVHUpdate();
+
+        return true;
+    }
+
+    if (SelectionManager && Input.Modifiers.bCtrl && Input.KeyDown['D'])
+    {
+        if (Input.KeyPressed['D'])
+        {
+            const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
+            if (!ToDuplicate.empty())
             {
-                SelectionManager->ToggleSelect(Actor);
+                TArray<AActor*> NewSelection;
+                for (AActor* Src : ToDuplicate)
+                {
+                    if (!Src)
+                        continue;
+                    AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+                    if (Dup)
+                    {
+                        NewSelection.push_back(Dup);
+                    }
+                }
+                SelectionManager->ClearSelection();
+                for (AActor* Actor : NewSelection)
+                {
+                    SelectionManager->ToggleSelect(Actor);
+                }
             }
         }
 		
