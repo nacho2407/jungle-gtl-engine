@@ -6,6 +6,7 @@
 #include "Collision/ConvexVolume.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/FrameContext.h"
+#include "Render/Types/ShadowSettings.h"
 #include <numbers>
 
 /*
@@ -267,8 +268,9 @@ namespace FLightFrustumUtils
 	// ============================================================
 
 	// Receiver cascade slice 밖에 있지만 해당 slice에 그림자를 드리우는 caster를
-	// 포함하기 위한 공통 light-direction depth 길이. Ortho width/height는 유지되므로
+	// 포함하기 위한 light-direction depth 길이. Ortho width/height는 유지되므로
 	// shadow map의 X/Y texel density는 바뀌지 않는다.
+	// 디폴트 값은 FShadowSettings::DirectionalShadowCasterDistance를 사용한다.
 	inline constexpr float CSMShadowDepthLength = 500.0f;
 
 	struct FCascadeRange
@@ -479,7 +481,7 @@ namespace FLightFrustumUtils
 		// PaddedMinZ는 고정 깊이 범위의 시작점이다.
 		// ------------------------------------------------------------
 		const float ReceiverCenterZ = (MinZ + MaxZ) * 0.5f;
-		const float PaddedDepthRange = CSMShadowDepthLength;
+		const float PaddedDepthRange = FShadowSettings::Get().GetEffectiveCSMDirectionalShadowDistance();
 		const float PaddedMinZ = ReceiverCenterZ - PaddedDepthRange * 0.5f;
 
 		// 10. 현재 임시 light view의 역행렬을 구한다.
