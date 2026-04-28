@@ -242,8 +242,13 @@ float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, 
 float3 AccumulateDiffuseVS(float3 worldPos, float3 N)
 {
     float3 result = CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
-    result += CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
+
+    float3 dirDiffuse = CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                      DirectionalLight.Intensity, N);
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
+    result += dirDiffuse;
+
     //light culling에서는 픽셀 좌표(0~1920)를 기대하지만, 버텍스 셰이더(VS)의 좌표는 클립 공간(-1~1).
     //아주 작은 좌표값을 사용하여 잘못된 타일 인덱스를 참조했고 조명 목록을 가져오지 못해 빛이 사라짐.
     // 전체 라이트 순회로 해결(임시로 VS는 정점 수가 적으므로 성능을 일부 포기하고 버그를 해결.)
@@ -256,9 +261,12 @@ float3 AccumulateDiffuseVS(float3 worldPos, float3 N)
 
 float3 AccumulateSpecularVS(float3 worldPos, float3 N, float3 V, float shininess)
 {
-    float3 result = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
+    float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
                                       DirectionalLight.Intensity, N, V, shininess);
-    
+    float viewDepth = abs(mul(float4(worldPos, 1.0f), View).z);
+    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
+    float3 result = dirSpec;
+
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
     {
         result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
