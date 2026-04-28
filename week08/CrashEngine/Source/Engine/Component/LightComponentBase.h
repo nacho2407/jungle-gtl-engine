@@ -33,7 +33,7 @@ protected:
     FVector4 LightColor = { 1, 1, 1, 1 }; // linear RGBA (0~1)
     bool bAffectsWorld = true;            // 조명의 영향 여부를 켜고 끕니다.
     bool bCastShadows = true;             // Shadow 구현 주차에 사용: 조명이 그림자를 드리울지 여부를 켜고 끕니다.
-    int32 ShadowResolution = 1024;
+    int32 ShadowResolution = 2048;
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowNormalBias = 0.0f;
