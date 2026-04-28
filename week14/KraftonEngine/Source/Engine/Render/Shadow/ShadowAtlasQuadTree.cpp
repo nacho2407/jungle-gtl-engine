@@ -54,6 +54,7 @@ TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
 	TArray<FAtlasRegion> Results(N, { 0, 0, 0, false });
 	for (int32 OrigIdx : Order) {
 		auto desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(Batch[OrigIdx].Resolution)));
+		desired_res = desired_res > MinShadowMapResolution ? desired_res : MinShadowMapResolution;
 		FAtlasRegion AtlasRegion = AllocateNode(0, desired_res, Batch[OrigIdx].LightIdx);
 		Results[OrigIdx] = AtlasRegion;
 	}

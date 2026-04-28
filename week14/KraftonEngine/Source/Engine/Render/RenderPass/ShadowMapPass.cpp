@@ -636,10 +636,13 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		SHADOW_STATS_ADD_CASTER(SpotLight, LastDrawCasterCount);
 
 		float AtlasF = static_cast<float>(Resolution);
-		FVector4 AtlasScaleBias = FVector4(static_cast<float>(AtlasRegion.Size) / AtlasF,
-										   static_cast<float>(AtlasRegion.Size) / AtlasF,
-										   static_cast<float>(AtlasRegion.X)	/ AtlasF,
-										   static_cast<float>(AtlasRegion.Y)	/ AtlasF);
+		float Sharpen = Env.GetSpotLight(LightIdx).ShadowSharpen;
+		float HalfSize = std::round((1.0f - Sharpen) * 3.0f); // mirrors ComputePCFHalfSize
+		float PaddingUV = HalfSize / AtlasF;
+		FVector4 AtlasScaleBias = FVector4(static_cast<float>(AtlasRegion.Size) / AtlasF - 2 * PaddingUV,
+										   static_cast<float>(AtlasRegion.Size) / AtlasF - 2 * PaddingUV,
+										   static_cast<float>(AtlasRegion.X)	/ AtlasF + PaddingUV,
+										   static_cast<float>(AtlasRegion.Y)	/ AtlasF + PaddingUV);
 		const FSpotLightParams& SpotLight = Env.GetSpotLight(LightIdx);
 		const auto& Settings = FShadowSettings::Get();
 
@@ -750,6 +753,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		ShadowData.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
 		ShadowData.ShadowNormalBias = PointLight.ShadowNormalBias;
 
+		float Sharpen = SceneEnvironment.GetPointLight(LightIdx).ShadowSharpen;
+		float HalfSize = std::round((1.0f - Sharpen) * 3.0f); // mirrors ComputePCFHalfSize
+		float PaddingUV = HalfSize / AtlasF;
+
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
 			const uint32 AtlasIdx = ShadowedLightIndex * 6 + FaceIndex;
@@ -765,10 +772,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			}
 
 			ShadowData.FaceAtlasScaleBias[FaceIndex] = FVector4(
-				static_cast<float>(Region.Size) / AtlasF,
-				static_cast<float>(Region.Size) / AtlasF,
-				static_cast<float>(Region.X)    / AtlasF,
-				static_cast<float>(Region.Y)    / AtlasF
+				static_cast<float>(Region.Size) / AtlasF - 2 * PaddingUV,
+				static_cast<float>(Region.Size) / AtlasF - 2 * PaddingUV,
+				static_cast<float>(Region.X)    / AtlasF + PaddingUV,
+				static_cast<float>(Region.Y)    / AtlasF + PaddingUV
 			);
 
 			FConvexVolume LightFrustum;
