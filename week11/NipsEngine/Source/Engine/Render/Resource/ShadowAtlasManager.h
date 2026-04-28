@@ -214,7 +214,7 @@ class FShadowAtlasManager : public TSingleton<FShadowAtlasManager>
 	friend class TSingleton<FShadowAtlasManager>;
 public:
 	void Initialize(ID3D11Device* InDevice);
-    void VSMInitialize(ID3D11Device* Device);
+    //void VSMInitialize(ID3D11Device* Device);
 	
 	
 
@@ -231,19 +231,30 @@ public:
 	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
 	///////////////////////////////// ShadowAtlas /////////////////////////////////////////////////////// 
 	// OpaquePass, BlurPass에서 꺼내 쓸 getter
+
+
+
+
+
+
     ID3D11Texture2D* GetVarianceTexture2D() const { return ShadowMapAtlas.VarianceShadowTexture.Get(); }
 	ID3D11RenderTargetView* GetVarianceRTV() const { return ShadowMapAtlas.VarianceShadowRTV.Get(); }
     ID3D11ShaderResourceView* GetVarianceSRV() const { return ShadowMapAtlas.VarianceShadowSRV.Get(); }
     ID3D11UnorderedAccessView* GetVarianceUAV() const { return ShadowMapAtlas.VarianceShadowUAV.Get(); }
+
     ID3D11ShaderResourceView* GetBlurSRV() const { return ShadowMapAtlas.BlurIntermediateSRV.Get(); }
     ID3D11UnorderedAccessView* GetBlurUAV() const { return ShadowMapAtlas.BlurIntermediateUAV.Get(); }
+
 
 
     ID3D11DepthStencilView* GetDSV() const { return ShadowMapAtlas.ShadowDSV.Get(); }
     ID3D11ShaderResourceView* GetSRV() const { return ShadowMapAtlas.ShadowSRV.Get(); }
     ID3D11Texture2D* GetAtlas() const { return ShadowMapAtlas.ShadowMapAtlas.Get(); }
-    TComPtr<ID3D11Device> Device;
 
+	TArray<FShadowAtlasTile> GetAllocatedTiles() const;
+
+
+    TComPtr<ID3D11Device> Device;
     TComPtr<ID3D11Texture2D> ShadowMap;
     TComPtr<ID3D11DepthStencilView> ShadowDSV;
     TComPtr<ID3D11ShaderResourceView> ShadowSRV;

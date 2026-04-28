@@ -180,8 +180,8 @@ float CalculateShadow(float4 worldPos)
     }
 
     const float shadowBias = 0.005f;
-    float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
-    //float shadowFactor = ComputeShadowVSM(projCoords, ScaleOffset, VSMMap, SampleState , 0.0001);
+    //float shadowFactor = ComputeShadowPCF(projCoords, ScaleOffset, 2, ShadowSampler, ShadowMap, shadowBias);
+    float shadowFactor = ComputeShadowVSM(projCoords, ScaleOffset, VSMMap, SampleState , 0.0001); /// 고장남
     return shadowFactor;
 }
 

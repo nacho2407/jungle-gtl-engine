@@ -12,11 +12,17 @@ struct FRenderResources
 {
 	FConstantBuffer FrameBuffer;					// b0
     FConstantBuffer PerObjectConstantBuffer;        // b1
-
 	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)		
 	FConstantBuffer ShadowBuffer;                   // b4
-    FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)
+    FConstantBuffer LightPassConstantBuffer;        // b7
+    FConstantBuffer FogPassConstantBuffer;          // b9
+    FConstantBuffer FXAAConstantBuffer;             // b10
+	FConstantBuffer VSMConstantBuffer;				// b11
+
+	
+	FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)
     FStructuredBuffer AtlasShadowBuffer;           // t15 (FShadowAtlasConstants)
+
 
 	// Compute Shader에서는 UAV로 바인딩하기 때문에 Slot이 달라질 수 있습니다.
     FStructuredBuffer DecalStructuredBuffer;        // t8 (FDecalInfo)
@@ -26,9 +32,6 @@ struct FRenderResources
 	FStructuredBuffer LightTileBuffer;				// t6 (LightTile) (uint2) 
 	FStructuredBuffer MPLightStructuredBuffer;		// t13 Light (Multipass)
 
-    FConstantBuffer LightPassConstantBuffer;		// b7
-    FConstantBuffer FogPassConstantBuffer;			// b9
-    FConstantBuffer FXAAConstantBuffer;				// b10
 };
 
 enum class ESamplerType

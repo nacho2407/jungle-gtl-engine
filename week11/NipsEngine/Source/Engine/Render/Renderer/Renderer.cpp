@@ -94,12 +94,12 @@ void FRenderer::Create(HWND hWindow)
     {
         auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Horizontal);
         FResourceManager::Get().LoadComputeShader(
-            "Shaders/VSMBlurCS.hlsl", "main", Macros.data(), "VSMBlur_H");
+            "Shaders/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_H");
     }
     {
         auto Macros = FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass::Vertical);
         FResourceManager::Get().LoadComputeShader(
-            "Shaders/VSMBlurCS.hlsl", "main", Macros.data(), "VSMBlur_V");
+            "Shaders/VSMBlurComputeShader.hlsl", "main", Macros.data(), "VSMBlur_V");
     }
 
 	// Uber ShadowMap
@@ -131,6 +131,9 @@ void FRenderer::CreateResources()
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 	Resources.DecalStructuredBuffer.Create(Device.GetDevice(), sizeof(FDecalInfo), 256);
+
+	// VSM 전용 ComputeShader Constantbuffer
+    Resources.VSMConstantBuffer.Create(Device.GetDevice(), sizeof(FVSMBlurConstants));
 
 	//	MeshManager init
 	FMeshManager::Initialize();
@@ -177,7 +180,7 @@ void FRenderer::Release()
     Resources.FogPassConstantBuffer.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
-
+    Resources.VSMConstantBuffer.Release();
 	FGPUProfiler::Get().Shutdown();
 
 	EditorLineBatcher.Release();
