@@ -131,6 +131,7 @@ void UEditorEngine::Tick(float DeltaTime)
     }
 
     ViewportInputRouter.Tick(Input, DeltaTime);
+    ViewportLayout.SyncActiveViewportFromFocusedViewport(ViewportInputRouter.GetFocusedViewport());
 
     for (FEditorViewportClient* VC: ViewportLayout.GetAllViewportClients())
     {

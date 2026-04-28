@@ -1,7 +1,6 @@
 ﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/Viewport/EditorViewportClient.h"
 
-#include "Core/RayTypes.h"
 #include "Editor/Settings/EditorSettings.h"
 
 #include "Component/CameraComponent.h"
@@ -285,41 +284,6 @@ FString FEditorViewportClient::GetPilotHintText() const
     return FString();
 }
 
-AActor* FEditorViewportClient::PickActorAtScreenPoint(float ScreenX, float ScreenY) const
-{
-    if (!Camera || !Viewport)
-    {
-        return nullptr;
-    }
-
-    const UWorld* World = GetWorld();
-    if (!World)
-    {
-        return nullptr;
-    }
-
-    const float LocalMouseX = ScreenX - ViewportScreenRect.X;
-    const float LocalMouseY = ScreenY - ViewportScreenRect.Y;
-    if (LocalMouseX < 0.0f || LocalMouseY < 0.0f ||
-        LocalMouseX > ViewportScreenRect.Width || LocalMouseY > ViewportScreenRect.Height)
-    {
-        return nullptr;
-    }
-
-    const float VPWidth = static_cast<float>(Viewport->GetWidth());
-    const float VPHeight = static_cast<float>(Viewport->GetHeight());
-    if (VPWidth <= 0.0f || VPHeight <= 0.0f)
-    {
-        return nullptr;
-    }
-
-    const FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
-    FHitResult HitResult{};
-    AActor* BestActor = nullptr;
-    const_cast<UWorld*>(World)->RaycastEditorPicking(Ray, HitResult, BestActor);
-    return BestActor;
-}
-
 void FEditorViewportClient::UpdateLayoutRect()
 {
     if (!LayoutWindow)
@@ -429,4 +393,9 @@ void FEditorViewportClient::BeginInputFrame()
     {
         InputController->BeginInputFrame();
     }
+}
+
+bool FEditorViewportClient::ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest)
+{
+    return InputController && InputController->ConsumeContextMenuRequest(OutRequest);
 }

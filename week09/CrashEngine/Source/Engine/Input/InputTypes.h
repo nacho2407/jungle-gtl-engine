@@ -57,12 +57,6 @@ struct FInputSnapshot
     FInputModifiers Modifiers;
 };
 
-struct FGuiInputCaptureState
-{
-    bool bMouse = false;
-    bool bKeyboard = false;
-};
-
 /*
  * Viewport client에게 전달하기 좋게 가공한 입력 메시지 구조체들
  */

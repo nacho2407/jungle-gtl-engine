@@ -246,6 +246,7 @@
     <ClCompile Include="Source\Editor\Input\EditorNavigationTool.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorSelectionTool.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorViewportCommandTool.cpp" />
+    <ClCompile Include="Source\Editor\Input\EditorViewportContextMenuTool.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorViewportInputController.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorViewportTool.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -441,6 +442,7 @@
     <ClInclude Include="Source\Editor\Input\EditorNavigationTool.h" />
     <ClInclude Include="Source\Editor\Input\EditorSelectionTool.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportCommandTool.h" />
+    <ClInclude Include="Source\Editor\Input\EditorViewportContextMenuTool.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportInputController.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportTool.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />

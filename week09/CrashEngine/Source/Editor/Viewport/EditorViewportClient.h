@@ -72,7 +72,6 @@ public:
     FString GetPilotedActorDisplayName() const;
     FString GetPilotOverlayText() const;
     FString GetPilotHintText() const;
-    AActor* PickActorAtScreenPoint(float ScreenX, float ScreenY) const;
 
     void SetActive(bool bInActive) { bIsActive = bInActive; }
     bool IsActive() const { return bIsActive; }
@@ -101,6 +100,7 @@ public:
     const FRect& GetViewportFrameRect() const { return ViewportFrameRect; }
 
     void BeginInputFrame();
+    bool ConsumeContextMenuRequest(FEditorViewportContextMenuRequest& OutRequest);
 
 	FEditorViewportInputController* GetInputController() const
     {
