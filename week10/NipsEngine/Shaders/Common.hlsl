@@ -58,7 +58,8 @@ struct FAtlasShadowData
     uint ShadowType;
 
     uint ShadowMapType;
-    float3 Padding;
+    float SlopedBias;
+    float2 Padding;
 };
 
 #ifndef CS_SHADER

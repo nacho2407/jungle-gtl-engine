@@ -167,7 +167,8 @@ struct FShadowAtlasConstants
     uint32 ShadowType;				// 4
 
     uint32 ShadowMapType;
-    float Padding[3];
+    float SlopedBias;
+    float Padding[2];
 };
 
 struct FUberConstants

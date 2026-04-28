@@ -184,6 +184,16 @@ uint SelectDirectionalCascade(float CameraDepth)
     return MAX_DIRECTIONAL_CASCADE_COUNT;
 }
 
+float ComputeBias(float LightSpaceZ, float ConstantBias, float SlopeScaleBias)
+{
+    // 가장 기울기가 큰 것으로 SlopBias 가중치를 결정
+    float dz_dx = ddx(LightSpaceZ);
+    float dz_dy = ddy(LightSpaceZ);
+    float slope = max(abs(dz_dx), abs(dz_dy));
+    float slopeBias = slope * SlopeScaleBias;
+    return ConstantBias + slopeBias;
+}
+
 float3 ComputeShadowCoordCascade(float4 worldPos, int CascadeIndex)
 {
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
@@ -196,6 +206,7 @@ float3 ComputeShadowCoordCascade(float4 worldPos, int CascadeIndex)
 
     return shadowCoord.xyz / shadowCoord.w;
 }
+
 #ifdef SHADOW_MAP_CSM
 float CalculateShadow(float4 worldPos)
 {
@@ -235,7 +246,9 @@ float CalculateShadow(float4 worldPos)
     
     FAtlasShadowData cascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
     
-    float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, cascadeShadowData.ConstantBias);
+    float totalBias = ComputeBias(projCoords.z, cascadeShadowData.ConstantBias, cascadeShadowData.SlopedBias);
+    
+    float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
     
     // 마지막 인덱스 제외하고 블렌드
     if (CascadeIndex < DirectionalCascadeCount - 1)
@@ -243,7 +256,8 @@ float CalculateShadow(float4 worldPos)
         int NextCascade = CascadeIndex + 1;
         float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
         FAtlasShadowData nextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
-        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextCascadeShadowData.ConstantBias);
+        float nextTotalBias = ComputeBias(NextCascadeProjCoords.z, nextCascadeShadowData.ConstantBias, nextCascadeShadowData.SlopedBias);
+        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextTotalBias);
         ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
     }
     
@@ -284,9 +298,9 @@ float CalculateShadow(float4 worldPos)
     }
     
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
-
-    
-    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, shadowData.ConstantBias);
+    float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
+   
+    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
     return shadowFactor;
 }
 #endif
