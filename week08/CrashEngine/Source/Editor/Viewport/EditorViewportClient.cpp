@@ -387,6 +387,14 @@ bool FEditorViewportClient::InputPointer(const FViewportPointerEvent& Event)
     return InputController ? InputController->InputPointer(Event) : false;
 }
 
+void FEditorViewportClient::ResetInputState()
+{
+    if (InputController)
+    {
+        InputController->ResetInputState();
+    }
+}
+
 void FEditorViewportClient::BeginInputFrame()
 {
     if (InputController)
