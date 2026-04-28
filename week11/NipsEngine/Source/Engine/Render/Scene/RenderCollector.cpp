@@ -953,7 +953,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(ShadowRequest);
 	}
-    else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
+	else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};
 		LightData.Color				= Color;
 		LightData.Intensity			= PointLight->Intensity;
@@ -961,6 +961,7 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		LightData.Radius			= PointLight->AttenuationRadius;
 		LightData.Falloff			= PointLight->LightFalloffExponent;
         LightData.Type				= 1;
+        LightData.ShadowTextureIndex = InvalidShadowIndex;
 		RenderBus.LightInfos.push_back(LightData);
 
 		FShadowLightRequest PointLightDataShadow = {};

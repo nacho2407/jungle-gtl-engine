@@ -104,7 +104,7 @@ struct FLightInfo
 	float Falloff;
 
 	FVector Position;
-    float Padding1;
+    uint32 ShadowTextureIndex = InvalidShadowIndex;
 };
 
 struct FLightShadowIndices
