@@ -410,140 +410,23 @@ void FEditorViewportClient::RenderViewportBorder()
 
 bool FEditorViewportClient::InputKey(const FViewportKeyEvent& Event)
 {
-    if (Event.Key < 0 || Event.Key >= 256)
-    {
-        return false;
-    }
-
-    CurrentInput.Modifiers = Event.Modifiers;
-
-    switch (Event.Type)
-    {
-    case EKeyEventType::Pressed:
-        CurrentInput.KeyPressed[Event.Key] = true;
-        CurrentInput.KeyDown[Event.Key] = true;
-        break;
-
-    case EKeyEventType::Released:
-        CurrentInput.KeyReleased[Event.Key] = true;
-        CurrentInput.KeyDown[Event.Key] = false;
-        break;
-
-    case EKeyEventType::Repeat:
-        CurrentInput.KeyRepeated[Event.Key] = true;
-        CurrentInput.KeyDown[Event.Key] = true;
-        break;
-    }
-
-    // 입력 이벤트는 프레임 상태로 누적하고, 실제 해석은 editor viewport tool 계층에서 수행합니다.
-
-    return false;
+    return InputController ? InputController->InputKey(Event) : false;
 }
 
 bool FEditorViewportClient::InputAxis(const FViewportAxisEvent& Event)
 {
-    CurrentInput.Modifiers = Event.Modifiers;
-
-    switch (Event.Axis)
-    {
-    case EInputAxis::MouseX:
-        CurrentInput.MouseAxisDelta.x += static_cast<LONG>(Event.Value);
-        break;
-
-    case EInputAxis::MouseY:
-        CurrentInput.MouseAxisDelta.y += static_cast<LONG>(Event.Value);
-        break;
-
-    case EInputAxis::MouseWheel:
-        CurrentInput.MouseWheelNotches += Event.Value;
-        break;
-
-    default:
-        break;
-    }
-
-    // 입력 이벤트는 프레임 상태로 누적하고, 실제 해석은 editor viewport tool 계층에서 수행합니다.
-
-    return false;
+    return InputController ? InputController->InputAxis(Event) : false;
 }
 
 bool FEditorViewportClient::InputPointer(const FViewportPointerEvent& Event)
 {
-    CurrentInput.Modifiers = Event.Modifiers;
-
-    CurrentInput.MouseLocalPos = Event.LocalPos;
-    CurrentInput.MouseClientPos = Event.ClientPos;
-    CurrentInput.MouseScreenPos = Event.ScreenPos;
-
-    switch (Event.Button)
-    {
-    case EPointerButton::Left:
-        if (Event.Type == EPointerEventType::Pressed)
-        {
-            CurrentInput.bLeftPressed = true;
-            CurrentInput.bLeftDown = true;
-        }
-        else if (Event.Type == EPointerEventType::Released)
-        {
-            CurrentInput.bLeftReleased = true;
-            CurrentInput.bLeftDown = false;
-        }
-        break;
-
-    case EPointerButton::Right:
-        if (Event.Type == EPointerEventType::Pressed)
-        {
-            CurrentInput.bRightPressed = true;
-            CurrentInput.bRightDown = true;
-        }
-        else if (Event.Type == EPointerEventType::Released)
-        {
-            CurrentInput.bRightReleased = true;
-            CurrentInput.bRightDown = false;
-        }
-        break;
-
-    case EPointerButton::Middle:
-        if (Event.Type == EPointerEventType::Pressed)
-        {
-            CurrentInput.bMiddlePressed = true;
-            CurrentInput.bMiddleDown = true;
-        }
-        else if (Event.Type == EPointerEventType::Released)
-        {
-            CurrentInput.bMiddleReleased = true;
-            CurrentInput.bMiddleDown = false;
-        }
-        break;
-
-    case EPointerButton::None:
-    default:
-        break;
-    }
-
-    // 입력 이벤트는 프레임 상태로 누적하고, 실제 해석은 editor viewport tool 계층에서 수행합니다.
-
-    return false;
+    return InputController ? InputController->InputPointer(Event) : false;
 }
 
 void FEditorViewportClient::BeginInputFrame()
 {
-    for (int32 VK = 0; VK < 256; ++VK)
+    if (InputController)
     {
-        CurrentInput.KeyPressed[VK] = false;
-        CurrentInput.KeyReleased[VK] = false;
-        CurrentInput.KeyRepeated[VK] = false;
+        InputController->BeginInputFrame();
     }
-
-    CurrentInput.MouseAxisDelta = { 0, 0 };
-    CurrentInput.MouseWheelNotches = 0.0f;
-
-    CurrentInput.bLeftPressed = false;
-    CurrentInput.bLeftReleased = false;
-
-    CurrentInput.bRightPressed = false;
-    CurrentInput.bRightReleased = false;
-
-    CurrentInput.bMiddlePressed = false;
-    CurrentInput.bMiddleReleased = false;
 }

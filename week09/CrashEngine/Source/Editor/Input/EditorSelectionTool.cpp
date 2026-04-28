@@ -1,6 +1,7 @@
 ﻿#include "EditorSelectionTool.h"
 
 #include "Component/CameraComponent.h"
+#include "Editor/Input/EditorViewportInputController.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Viewport/EditorViewportClient.h"
@@ -12,12 +13,12 @@ bool FEditorSelectionTool::HandleInput(float DeltaTime)
 {
     (void)DeltaTime;
 
-    if (!Owner || !Owner->GetCamera() || !Owner->GetWorld() || !Owner->GetSelectionManager())
+    if (!Owner || !Controller || !Owner->GetCamera() || !Owner->GetWorld() || !Owner->GetSelectionManager())
     {
         return false;
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
     if (!Input.bLeftPressed)
     {
         return false;

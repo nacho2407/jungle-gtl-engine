@@ -5,6 +5,7 @@
 #include "Engine/Object/Object.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Input/EditorViewportInputController.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 
@@ -12,12 +13,12 @@ bool FEditorViewportCommandTool::HandleInput(float DeltaTime)
 {
     (void) DeltaTime;
 
-    if (!Owner)
+    if (!Owner || !Controller)
     {
         return false;
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
 
 	UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (!EditorEngine)
@@ -58,8 +59,6 @@ bool FEditorViewportCommandTool::HandleInput(float DeltaTime)
 		
 		return true;
     }
-
-	UGizmoComponent* Gizmo = Owner->GetGizmo();
 
     if (Input.KeyReleased[VK_SPACE])
     {

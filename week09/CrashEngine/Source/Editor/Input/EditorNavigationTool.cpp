@@ -1,5 +1,6 @@
 ﻿#include "EditorNavigationTool.h"
 
+#include "Editor/Input/EditorViewportInputController.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Engine/Component/CameraComponent.h"
@@ -7,7 +8,7 @@
 
 bool FEditorNavigationTool::HandleInput(float DeltaTime)
 {
-    if (!Owner || !Owner->GetCamera())
+    if (!Owner || !Controller || !Owner->GetCamera())
     {
         return false;
     }
@@ -26,7 +27,7 @@ bool FEditorNavigationTool::HandleKeyboardAndMouseNavigation(float DeltaTime)
         return false;
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
     const FViewportRenderOptions& RenderOptions = Owner->GetRenderOptions();
     const FEditorSettings* Settings = Owner->GetSettings();
     const FCameraState& CameraState = Camera->GetCameraState();
@@ -138,7 +139,7 @@ bool FEditorNavigationTool::HandleWheelZoom(float DeltaTime)
         return false;
     }
 
-    const FEditorViewportFrameInput& Input = Owner->GetCurrentInput();
+    const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();
     const float ScrollNotches = Input.MouseWheelNotches;
     if (ScrollNotches == 0.0f)
     {
