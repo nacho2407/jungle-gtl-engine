@@ -57,15 +57,52 @@ private:
 	static ImVector<char*> History;
 	int32 HistoryPos = -1;
 	ImGuiTextFilter Filter;
+	TArray<FString> CompletionCandidates;
 
 	FConsoleLogOutputDevice ConsoleDevice;
 
 	//Command Dispatch System
 	using CommandFn = std::function<void(const TArray<FString>& args)>;
-	TMap<FString, CommandFn> Commands;
-	TMap<FString, FString> CommandHelp;
+	struct FConsoleCommand
+	{
+		CommandFn Fn;
+		FString Category;
+		FString Usage;
+		FString Description;
+	};
 
-	void RegisterCommand(const FString& Name, CommandFn Fn, const FString& Help = "");
+	TMap<FString, FConsoleCommand> Commands;
+
+	void RegisterCommand(const FString& Name, CommandFn Fn, const FString& Category, const FString& Usage, const FString& Description);
+	void RegisterDefaultCommands();
+	void RegisterSystemCommands();
+	void RegisterEditorCommands();
+	void RegisterDiagnosticsCommands();
+	void RegisterRenderCommands();
+
+	void RenderCompletionCandidates();
+	void UpdateCompletionCandidates();
+	TArray<FString> GetCompletionCandidates(const FString& Input) const;
+	bool TryFindCommand(const TArray<FString>& Tokens, FString& OutCommandName, const FConsoleCommand*& OutCommand, int32& OutConsumedTokens) const;
 	void ExecCommand(const char* CommandLine);
+
+	void HandleHelp(const TArray<FString>& Args);
+	void HandleContentBrowserRefresh(const TArray<FString>& Args);
+	void HandleContentBrowserIconSize(const TArray<FString>& Args);
+	void HandleObjList(const TArray<FString>& Args);
+	void HandleStatFPS(const TArray<FString>& Args);
+	void HandleStatMemory(const TArray<FString>& Args);
+	void HandleStatShadow(const TArray<FString>& Args);
+	void HandleStatNone(const TArray<FString>& Args);
+	void HandleCSMResolution(const TArray<FString>& Args);
+	void HandleCSMSplit(const TArray<FString>& Args);
+	void HandleCSMDistance(const TArray<FString>& Args);
+	void HandleCSMCastingDistance(const TArray<FString>& Args);
+	void HandleCSMBlend(const TArray<FString>& Args);
+	void HandleCSMBlendRange(const TArray<FString>& Args);
+	void HandleShadowBias(const TArray<FString>& Args);
+	void HandleShadowFilter(const TArray<FString>& Args);
+	void PrintCSMCascadeRanges();
+
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
 };
