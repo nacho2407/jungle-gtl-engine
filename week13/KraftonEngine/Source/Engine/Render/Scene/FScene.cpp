@@ -340,7 +340,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 
 		const float CameraNearZ = Frame.NearClip;
 		const float CameraFarZ = Frame.FarClip;
-		const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
+		const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
 		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 		const float Lambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 

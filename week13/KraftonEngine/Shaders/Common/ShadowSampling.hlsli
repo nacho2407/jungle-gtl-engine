@@ -158,6 +158,20 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
             }
         }
     }
+    
+    //마지막 cascade의 경우 fade out 효과 적용
+    if (NumCSMCascades > 1 && cascade == NumCSMCascades - 1)
+    {
+        float lastSplit = CascadeSplits[NumCSMCascades - 1];
+        float prevSplit = CascadeSplits[NumCSMCascades - 2];
+        float fadeStart = lerp(prevSplit, lastSplit, 0.5f);
+
+        if (viewDepth > fadeStart)
+        {
+            float fadeT = saturate((viewDepth - fadeStart) / (lastSplit - fadeStart));
+            shadowFactor = lerp(shadowFactor, 1.0f, fadeT);
+        }
+    }
 
     return shadowFactor;
 }
