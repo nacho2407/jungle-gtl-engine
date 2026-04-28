@@ -716,6 +716,10 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		ShadowData.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(PointLight.ShadowSlopeBias);
 		ShadowData.ShadowNormalBias = PointLight.ShadowNormalBias;
 
+		float Sharpen = SceneEnvironment.GetPointLight(LightIdx).ShadowSharpen;
+		float HalfSize = std::round((1.0f - Sharpen) * 3.0f); // mirrors ComputePCFHalfSize
+		float PaddingUV = HalfSize / AtlasF;
+
 		for (uint32 FaceIndex = 0; FaceIndex < 6; ++FaceIndex)
 		{
 			const uint32 AtlasIdx = ShadowedLightIndex * 6 + FaceIndex;
@@ -730,10 +734,6 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 				continue;
 			}
 
-			float AtlasF = static_cast<float>(PointLightAtlas.GetAtlasSize());
-			float Sharpen = SceneEnvironment.GetPointLight(LightIdx).ShadowSharpen;
-			float HalfSize = std::round((1.0f - Sharpen) * 3.0f); // mirrors ComputePCFHalfSize
-			float PaddingUV = HalfSize / AtlasF;
 			ShadowData.FaceAtlasScaleBias[FaceIndex] = FVector4(
 				static_cast<float>(Region.Size) / AtlasF - 2 * PaddingUV,
 				static_cast<float>(Region.Size) / AtlasF - 2 * PaddingUV,
