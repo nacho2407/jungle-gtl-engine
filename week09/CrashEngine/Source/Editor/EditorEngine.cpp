@@ -194,6 +194,16 @@ void UEditorEngine::SetActiveViewport(FLevelEditorViewportClient* InClient)
     ViewportInputRouter.SetKeyTargetViewport(InClient ? InClient->GetViewport() : nullptr);
 }
 
+void UEditorEngine::ResetViewportInputRouting()
+{
+    ViewportInputRouter.ResetRoutingState();
+
+    if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+    {
+        ViewportInputRouter.SetKeyTargetViewport(ActiveVC->GetViewport());
+    }
+}
+
 void UEditorEngine::RenderUI(float DeltaTime)
 {
     MainPanel.Render(DeltaTime);

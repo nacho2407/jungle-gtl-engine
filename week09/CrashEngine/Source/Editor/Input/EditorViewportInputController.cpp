@@ -218,6 +218,17 @@ void FEditorViewportInputController::ResetInputState()
     CurrentInput.bX2Released = false;
 
     CurrentInput.Modifiers = {};
+
+    PendingContextMenuRequest = {};
+    bHasPendingContextMenuRequest = false;
+
+    for (const std::unique_ptr<FEditorViewportTool>& Tool : Tools)
+    {
+        if (Tool)
+        {
+            Tool->ResetState();
+        }
+    }
 }
 
 void FEditorViewportInputController::RequestContextMenu(const FEditorViewportContextMenuRequest& Request)

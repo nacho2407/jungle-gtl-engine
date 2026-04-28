@@ -627,6 +627,11 @@ void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
     RootSplitter = BuildSplitterTree(NewLayout);
     ActiveSlotCount = RequiredSlots;
     CurrentLayout = NewLayout;
+
+    if (Editor)
+    {
+        Editor->ResetViewportInputRouting();
+    }
 }
 
 void FLevelViewportLayout::ToggleViewportSplit()

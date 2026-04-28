@@ -9,6 +9,7 @@ public:
     using FEditorViewportTool::FEditorViewportTool;
 
     bool HandleInput(float DeltaTime) override;
+    void ResetState() override;
 
 private:
     bool HandleContextMenuRequest();

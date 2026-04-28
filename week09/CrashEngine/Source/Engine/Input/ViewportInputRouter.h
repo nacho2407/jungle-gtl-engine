@@ -46,6 +46,7 @@ public:
     FViewport* GetCapturedViewport() const { return CapturedViewport; }
     FViewport* GetKeyTargetViewport() const { return KeyTargetViewport; }
     void SetKeyTargetViewport(FViewport* InViewport);
+    void ResetRoutingState();
 
 private:
     struct FTargetEntry
@@ -58,9 +59,10 @@ private:
     static bool IsPointInRect(const POINT& Point, const FRect& Rect);
 
     FTargetEntry* FindHoveredTarget(const POINT& ClientPos, FRect& OutRect);
-    FTargetEntry* FindTargetByViewport(FViewport* InViewport, FRect& OutRect);
+    FTargetEntry* FindTargetEntryByViewport(FViewport* InViewport);
+    FTargetEntry* FindRoutableTargetByViewport(FViewport* InViewport, FRect& OutRect);
     FTargetEntry* ResolvePointerTarget(const POINT& ClientPos, FRect& OutRect);
-    FTargetEntry* ResolveKeyTarget(FRect& OutRect);
+    FTargetEntry* ResolveKeyTarget();
 
     void DispatchPointerEvents(FTargetEntry* Target, const FRect& TargetRect, const FInputSnapshot& Input);
     void DispatchAxisEvents(FTargetEntry* Target, const FInputSnapshot& Input, float DeltaTime);
