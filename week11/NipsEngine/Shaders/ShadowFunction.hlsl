@@ -29,7 +29,7 @@ float ComputeShadowPCF(
 
     float shadow = 0.0;
     int count = 0;
-
+    
     for (int x = -kernelHalfSize; x <= kernelHalfSize; x++)
     {
         for (int y = -kernelHalfSize; y <= kernelHalfSize; y++)

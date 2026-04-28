@@ -278,6 +278,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
                 atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
                 atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
                 atlasConstants.ConstantBias = Request.ConstantBias;
+				atlasConstants.SlopedBias = Request.SlopeScaledBias;
                 atlasConstants.ShadowStrength = 1.0f;
                 atlasConstants.ShadowSoftness = Request.ShadowSharpen;
                 atlasConstants.ShadowType = static_cast<uint32>(Request.Type);
@@ -405,6 +406,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
         atlasConstants.VirtualViewProjMatrix = ShadowData.VirtualViewProj;
 		atlasConstants.ScaleOffset = ShadowTile.ScaleOffset;
 		atlasConstants.ConstantBias = Request.ConstantBias;
+		atlasConstants.SlopedBias = Request.SlopeScaledBias;
 		atlasConstants.ShadowStrength = 1.0f;
 		atlasConstants.ShadowSoftness = Request.ShadowSharpen;
         atlasConstants.ShadowType = static_cast<uint32>(Request.Type);

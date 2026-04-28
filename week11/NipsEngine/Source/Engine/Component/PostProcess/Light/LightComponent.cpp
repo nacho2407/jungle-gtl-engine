@@ -142,7 +142,7 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	// ConstantBias = DepthBias * (1 / 2 ^ 24 or 16) + SlopeScaledBias * (MaxDepthSlope)
 	// MaxDepthSlope는 이제 셰이더에서 직접 구할 예정. 레스터라이즈로 할 경우 PSM 처리가 안됨
 	OutProps.push_back({ "Constant Bias ( DepthBias ^ (1 / TextureBit))", EPropertyType::Float, &ConstantBias, 0.000f, 0.01f, 0.001f });
-	OutProps.push_back({ "Slope-Scaled Bias", EPropertyType::Float, &SlopeScaledBias, 0.0f, 1.0f, 0.1f });
+	OutProps.push_back({ "Slope-Scaled Bias", EPropertyType::Float, &SlopeScaledBias, 0.0f, 1.0f, 0.01f });
 	OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
 }
 
