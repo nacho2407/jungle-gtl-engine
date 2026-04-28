@@ -103,7 +103,7 @@ bool ShouldExecutePipeline(const FRenderPipelineContext& Context, ERenderPipelin
     }
 
     const bool bUsesLighting = Registry->UsesLightingPass(Context.ViewMode.ActiveViewMode);
-    const ERenderShadingPath RenderPath = Context.SceneView ? Context.SceneView->RenderPath : ERenderShadingPath::Deferred;
+    const ERenderShadingPath RenderPath = Context.SceneView ? Context.SceneView->RenderPath : ERenderShadingPath::Forward;
 
     switch (PipelineType)
     {
