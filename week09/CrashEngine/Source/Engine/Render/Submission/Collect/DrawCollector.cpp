@@ -1,10 +1,11 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Submission/Collect/DrawCollector.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Render/Scene/Proxies/Light/LightProxyInfo.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Renderer.h"
 
 // ==================== Public API ====================
-
 
 void FDrawCollector::Reset()
 {
@@ -13,9 +14,8 @@ void FDrawCollector::Reset()
     CollectedOverlayData.ClearTransientData();
 }
 
-
 // ==================== Reset Helpers ====================
-// 그림자를 드리우는 라이트가 몇번 t슬롯을 사용하고 있는지에 대한 정보를 업데이트
+// 그림자를 드리우는 라이트가 어떤 atlas rect를 쓰는지 CB 데이터에 다시 반영합니다.
 void FDrawCollector::UpdateShadowDataInCBs()
 {
     uint32 DirIdx = 0;
@@ -29,8 +29,15 @@ void FDrawCollector::UpdateShadowDataInCBs()
         {
             if (DirIdx < MAX_DIRECTIONAL_LIGHTS)
             {
-                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowMapIndex = Proxy->ShadowMapIndex;
-                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowViewProj = Proxy->LightViewProj;
+                CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].CascadeCount =
+                    static_cast<int32>(Proxy->CascadeShadowMapData.CascadeCount);
+                for (uint32 CascadeIndex = 0; CascadeIndex < MAX_DIRECTIONAL_SHADOW_CASCADES; ++CascadeIndex)
+                {
+                    CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowViewProj[CascadeIndex] =
+                        Proxy->CascadeShadowMapData.CascadeViewProj[CascadeIndex];
+                    CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSamples[CascadeIndex] =
+                        MakeSampleCBData(Proxy->CascadeShadowMapData.Cascades[CascadeIndex]);
+                }
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.GlobalLights.Directional[DirIdx].ShadowNormalBias = LC.ShadowNormalBias;
@@ -41,8 +48,23 @@ void FDrawCollector::UpdateShadowDataInCBs()
         {
             if (LocalIdx < CollectedSceneData.Lights.LocalLights.size())
             {
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowMapIndex = Proxy->ShadowMapIndex;
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj = Proxy->LightViewProj;
+                if (LC.LightType == static_cast<uint32>(ELightType::Spot))
+                {
+                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = 1;
+                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[0] = Proxy->LightViewProj;
+                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[0] = MakeSampleCBData(Proxy->SpotShadowMapData);
+                }
+                else
+                {
+                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = MAX_POINT_SHADOW_FACES;
+                    for (uint32 FaceIndex = 0; FaceIndex < MAX_POINT_SHADOW_FACES; ++FaceIndex)
+                    {
+                        CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[FaceIndex] =
+                            Proxy->CubeShadowMapData.FaceViewProj[FaceIndex];
+                        CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[FaceIndex] =
+                            MakeSampleCBData(Proxy->CubeShadowMapData.Faces[FaceIndex]);
+                    }
+                }
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowBias = LC.ShadowBias;
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
                 CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowNormalBias = LC.ShadowNormalBias;

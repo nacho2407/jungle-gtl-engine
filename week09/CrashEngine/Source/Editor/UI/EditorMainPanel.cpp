@@ -226,6 +226,11 @@ void FEditorMainPanel::Render(float DeltaTime)
             ImGui::MenuItem("Details", nullptr, &S.UI.bProperty);
             ImGui::MenuItem("Scene Manager", nullptr, &S.UI.bScene);
             ImGui::MenuItem("Stat Profiler", nullptr, &S.UI.bStat);
+            bool bShadowAtlasDebug = DetailsPanel.IsShadowAtlasDebugWindowOpen();
+            if (ImGui::MenuItem("Shadow Atlas Debug", nullptr, &bShadowAtlasDebug))
+            {
+                DetailsPanel.SetShadowAtlasDebugWindowOpen(bShadowAtlasDebug);
+            }
             ImGui::EndMenu();
         }
 
@@ -328,6 +333,12 @@ void FEditorMainPanel::Render(float DeltaTime)
     {
         SCOPE_STAT_CAT("StatPanel.Render", "5_UI");
         StatPanel.Render(DeltaTime);
+    }
+
+    if (!bHideEditorWindows && DetailsPanel.IsShadowAtlasDebugWindowOpen())
+    {
+        SCOPE_STAT_CAT("DetailsPanel.RenderShadowAtlasDebugWindow", "5_UI");
+        DetailsPanel.RenderShadowAtlasDebugWindow();
     }
 
     ImGui::Render();

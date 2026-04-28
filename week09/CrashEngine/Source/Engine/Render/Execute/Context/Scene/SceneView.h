@@ -23,6 +23,7 @@ struct FSceneView
     FVector CameraUp;
     float   NearClip = 0.1f;
     float   FarClip  = 1000.0f;
+    float   FOV      = 60.0f;
 
     bool  bIsOrtho   = false;
     float OrthoWidth = 10.0f;

@@ -36,15 +36,9 @@ float3 GetAmbientLightColor()
     return Ambient.Color * Ambient.Intensity;
 }
 
-float2 GetDirectionalShadowTexelSize()
+float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float4 PixelPos)
 {
-    return float2(1.0f / 2048.0f, 1.0f / 2048.0f);
-}
-
-// Get Shadow Factor from single Texture (Directional or Spot light)
-float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float4 PixelPos, float2 ShadowTexelSize)
-{
-    if (ShadowIndex < 0 || ShadowIndex >= 5)
+    if (ShadowSample.PageIndex < 0)
         return 1.0f;
 
     // Apply Normal Bias: Push world position along normal to reduce shadow acne
@@ -65,34 +59,46 @@ float GetShadowFactor(int ShadowIndex, float4x4 ShadowViewProj, float3 WorldPos,
     float CosTheta = saturate(dot(Normal, -LightDir));
     float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
     float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
-    float CompareDepth = ShadowPos.z + TotalBias;
+    // Reversed-Z에서는 더 작은 depth가 더 멀기 때문에, bias는 compare depth를 줄이는 방향으로 적용합니다.
+    float CompareDepth = ShadowPos.z - TotalBias;
 
-    return FilterSpotShadow(ShadowIndex, ShadowVector, CompareDepth, PixelPos, ShadowTexelSize);
+    float2 BaseUV = ShadowVector * 0.5f + 0.5f;
+    BaseUV.y = 1.0f - BaseUV.y;
+    return FilterShadowAtlas(ShadowSample, BaseUV, CompareDepth, PixelPos);
 }
 
-// Get Shadow Factor from Cubemap (Point light)
-float GetPointShadowFactor(int ShadowIndex, float3 LightPos, float3 WorldPos, float3 Normal, float Radius, float Bias, float NormalBias, float4 PixelPos, float2 ShadowTexelSize)
+int ResolvePointShadowFaceIndex(float3 L)
 {
-    if (ShadowIndex < 0 || ShadowIndex >= 5) return 1.0f;
+    float3 AbsL = abs(L);
+    if (AbsL.x >= AbsL.y && AbsL.x >= AbsL.z)
+    {
+        return (L.x >= 0.0f) ? 0 : 1;
+    }
+    if (AbsL.y >= AbsL.x && AbsL.y >= AbsL.z)
+    {
+        return (L.y >= 0.0f) ? 2 : 3;
+    }
+    return (L.z >= 0.0f) ? 4 : 5;
+}
 
-    // Normal bias for point light
-    float3 BiasedWorldPos = WorldPos + Normal * NormalBias;
-
-    float3 L = BiasedWorldPos - LightPos;
+float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Normal, float4 PixelPos)
+{
+    float3 BiasedWorldPos = WorldPos + Normal * LocalLight.ShadowNormalBias;
+    float3 L = BiasedWorldPos - LocalLight.Position;
     if (dot(L, L) <= 1e-6f) return 1.0f;
 
-    float ZView = max(abs(L.x), max(abs(L.y), abs(L.z)));
-    ZView = max(ZView, 1e-4f);
-
-    float N = 1.0f;
-    float F = Radius;
-    if (F <= N) F = N + 100.0f;
-
-    float PostProjDepth = N / (N - F) - (F * N / (N - F)) / ZView;
-
-    float CompareDepth = PostProjDepth + Bias;
-    float3 ShadowVector = normalize(L);
-    return FilterPointShadow(ShadowIndex, ShadowVector, CompareDepth, PixelPos, ShadowTexelSize);
+    const int FaceIndex = ResolvePointShadowFaceIndex(L);
+    const FShadowAtlasSample ShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[FaceIndex][0], LocalLight.ShadowSampleData[FaceIndex][1]);
+    return GetShadowFactor(
+        ShadowSample,
+        LocalLight.ShadowViewProj[FaceIndex],
+        WorldPos,
+        Normal,
+        normalize(-L),
+        LocalLight.ShadowBias,
+        LocalLight.ShadowSlopeBias,
+        LocalLight.ShadowNormalBias,
+        PixelPos);
 }
 
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
@@ -121,7 +127,7 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
     float Shadow = 1.0f;
     if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
     {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, N, LocalLight.AttenuationRadius, LocalLight.ShadowBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
+        Shadow = GetPointShadowFactor(LocalLight, WorldPosition, N, PixelPos);
     }
     else                            // Spot light
     {
@@ -130,7 +136,16 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             cos(radians(LocalLight.OuterConeAngle)),
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
-        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, N, LocalLight.Direction, LocalLight.ShadowBias, LocalLight.ShadowSlopeBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
+        Shadow = GetShadowFactor(
+            DecodeShadowSample(LocalLight.ShadowSampleData[0][0], LocalLight.ShadowSampleData[0][1]),
+            LocalLight.ShadowViewProj[0],
+            WorldPosition,
+            N,
+            LocalLight.Direction,
+            LocalLight.ShadowBias,
+            LocalLight.ShadowSlopeBias,
+            LocalLight.ShadowNormalBias,
+            PixelPos);
     }
 
     return Diffuse * LocalLight.Color * LocalLight.Intensity * Attenuation * Shadow;
@@ -167,7 +182,7 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
     float Shadow = 1.0f;
     if (LocalLight.LightType == 2)  // Point light (see LightProxyInfo.h)
     {
-        Shadow = GetPointShadowFactor(LocalLight.ShadowMapIndex, LocalLight.Position, WorldPosition, N, LocalLight.AttenuationRadius, LocalLight.ShadowBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
+        Shadow = GetPointShadowFactor(LocalLight, WorldPosition, N, PixelPos);
     }
     else                            // Spot light
     {
@@ -177,7 +192,16 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             cos(radians(LocalLight.InnerConeAngle)),
             dot(-L, SpotDir));
 
-        Shadow = GetShadowFactor(LocalLight.ShadowMapIndex, LocalLight.ShadowViewProj, WorldPosition, N, LocalLight.Direction, LocalLight.ShadowBias, LocalLight.ShadowSlopeBias, LocalLight.ShadowNormalBias, PixelPos, LocalLight.ShadowTexelSize);
+        Shadow = GetShadowFactor(
+            DecodeShadowSample(LocalLight.ShadowSampleData[0][0], LocalLight.ShadowSampleData[0][1]),
+            LocalLight.ShadowViewProj[0],
+            WorldPosition,
+            N,
+            LocalLight.Direction,
+            LocalLight.ShadowBias,
+            LocalLight.ShadowSlopeBias,
+            LocalLight.ShadowNormalBias,
+            PixelPos);
     }
 
     float3 LightColor = LocalLight.Color * LocalLight.Intensity;
@@ -200,7 +224,16 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
+        float Shadow = GetShadowFactor(
+            DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]),
+            Directional[i].ShadowViewProj[0],
+            WorldPosition,
+            N,
+            Directional[i].Direction,
+            Directional[i].ShadowBias,
+            Directional[i].ShadowSlopeBias,
+            Directional[i].ShadowNormalBias,
+            PixelPos);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -221,7 +254,7 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
+        float Shadow = GetShadowFactor(DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]), Directional[i].ShadowViewProj[0], WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -243,7 +276,7 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
     {
         if (i >= NumDirectionalLights) break;
         float3 L = normalize(Directional[i].Direction);
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, pixelPos, GetDirectionalShadowTexelSize());
+        float Shadow = GetShadowFactor(DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]), Directional[i].ShadowViewProj[0], WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, pixelPos);
         TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity * Shadow;
     }
 
@@ -273,7 +306,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
+        float Shadow = GetShadowFactor(DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]), Directional[i].ShadowViewProj[0], WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos);
 
         TotalDiffuse += Diffuse * LightColor * Shadow;
         TotalSpecular += Specular * LightColor * Shadow;
@@ -317,7 +350,7 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        float Shadow = GetShadowFactor(Directional[i].ShadowMapIndex, Directional[i].ShadowViewProj, WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos, GetDirectionalShadowTexelSize());
+        float Shadow = GetShadowFactor(DecodeShadowSample(Directional[i].ShadowSampleData[0][0], Directional[i].ShadowSampleData[0][1]), Directional[i].ShadowViewProj[0], WorldPosition, N, Directional[i].Direction, Directional[i].ShadowBias, Directional[i].ShadowSlopeBias, Directional[i].ShadowNormalBias, PixelPos);
 
         Out.Diffuse += Diffuse * LightColor * Shadow;
         Out.Specular += Specular * LightColor * Shadow;

@@ -7,6 +7,18 @@
 
 IMPLEMENT_ABSTRACT_CLASS(ULightComponentBase, USceneComponent)
 
+namespace
+{
+int32 ClampShadowResolution(int32 Resolution)
+{
+    if (Resolution <= 256u) return 256u;
+    if (Resolution <= 512u) return 512u;
+    if (Resolution <= 1024u) return 1024u;
+    if (Resolution <= 2048u) return 2048u;
+    return 4096u;
+}
+}
+
 // 조명은 일반적으로 Tick을 필요로 하지 않으므로 bTickEnable을 꺼 둔다.
 ULightComponentBase::ULightComponentBase()
 {
@@ -20,6 +32,7 @@ void ULightComponentBase::Serialize(FArchive& Ar)
     Ar << LightColor;
     Ar << bAffectsWorld;
     Ar << bCastShadows;
+    Ar << ShadowResolution;
     Ar << ShadowBias;
     Ar << ShadowSlopeBias;
     Ar << ShadowNormalBias;
@@ -32,6 +45,7 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "LightColor", EPropertyType::Color4, &LightColor });
     OutProps.push_back({ "bAffectsWorld", EPropertyType::Bool, &bAffectsWorld });
     OutProps.push_back({ "bCastShadows", EPropertyType::Bool, &bCastShadows });
+    OutProps.push_back({ "Shadow Resolution", EPropertyType::Int, &ShadowResolution, 256.0f, 4096.0f, 256.0f });
     OutProps.push_back({ "Bias", EPropertyType::Float, &ShadowBias, 0.0f, 0.1f, 0.0001f });
     OutProps.push_back({ "Slope Bias", EPropertyType::Float, &ShadowSlopeBias, 0.0f, 8.0f, 0.01f });
     OutProps.push_back({ "Normal Bias", EPropertyType::Float, &ShadowNormalBias, 0.0f, 8.0f, 0.01f });
@@ -39,6 +53,7 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 
 void ULightComponentBase::PostEditProperty(const char* PropertyName)
 {
+    ShadowResolution = ClampShadowResolution(ShadowResolution);
     ShadowBias = std::max(0.0f, ShadowBias);
     ShadowSlopeBias = std::max(0.0f, ShadowSlopeBias);
     ShadowNormalBias = std::max(0.0f, ShadowNormalBias);
