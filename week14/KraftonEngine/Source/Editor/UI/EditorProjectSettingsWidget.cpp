@@ -21,6 +21,14 @@ void EditorProjectSettingsWidget::Render()
 		if (PS.Shadow.bEnabled)
 		{
 			ImGui::Checkbox("Perspective Shadow Maps (PSM)", &PS.Shadow.bPSM);
+
+			int spotPages = static_cast<int>(PS.Shadow.MaxSpotAtlasPages);
+			if (ImGui::SliderInt("Max Spot Atlas Pages", &spotPages, 1, 16))
+				PS.Shadow.MaxSpotAtlasPages = static_cast<uint32>(spotPages);
+
+			int pointPages = static_cast<int>(PS.Shadow.MaxPointAtlasPages);
+			if (ImGui::SliderInt("Max Point Atlas Pages", &pointPages, 1, 16))
+				PS.Shadow.MaxPointAtlasPages = static_cast<uint32>(pointPages);
 		}
 	}
 

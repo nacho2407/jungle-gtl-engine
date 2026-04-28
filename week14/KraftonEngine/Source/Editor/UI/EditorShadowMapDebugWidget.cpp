@@ -449,7 +449,19 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			return;
 		}
 
-		ImGui::Text("Atlas: %u x %u", SR.Point.Resolution, SR.Point.Resolution);
+		ImGui::Text("Atlas: %u x %u, Pages: %u", SR.Point.Resolution, SR.Point.Resolution, SR.Point.PageCount);
+
+		// Page 선택
+		if (PointPageIndex >= (int32)SR.Point.PageCount)
+			PointPageIndex = 0;
+
+		for (int32 i = 0; i < (int32)SR.Point.PageCount; ++i)
+		{
+			if (i > 0) ImGui::SameLine();
+			char label[16];
+			snprintf(label, sizeof(label), "Page %d##pt", i);
+			ImGui::RadioButton(label, &PointPageIndex, i);
+		}
 
 		ImGui::SetNextItemWidth(180.0f);
 		ImGui::SliderFloat("Brightness##pt", &PointDepthBrightness, 0.1f, 8.0f, "%.2fx");
@@ -481,8 +493,8 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 				uint32 FaceSize = FaceRegions[0]->Size;
 				ImGui::Text("Selected: L%d (%u x %u px, %u faces)", SelLight.EnvIndex, FaceSize, FaceSize, (uint32)FaceRegions.size());
 
-				// 전체 atlas를 한 번 변환
-				RenderVizPass(DC, SR.Point.SRV, false, 0, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
+				// 전체 atlas를 한 번 변환 (선택된 page)
+				RenderVizPass(DC, SR.Point.SRV, true, PointPageIndex, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
 
 				float FacePreview = (PreviewSize - 10.0f * 2) / 3.0f;
 				float AtlasF = static_cast<float>(SR.Point.Resolution);
@@ -513,7 +525,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		// ── 선택 없거나 못 찾으면 기존: 아틀라스 전체 표시 ──
 		if (!bShowCropped && SR.Point.SRV)
 		{
-			RenderVizPass(DC, SR.Point.SRV, false, 0, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
+			RenderVizPass(DC, SR.Point.SRV, true, PointPageIndex, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
 
 			ImGui::Image(
 				(ImTextureID)VizSRV,

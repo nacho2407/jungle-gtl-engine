@@ -37,6 +37,7 @@ public:
 
 	// Accessor
 	float GetAtlasSize() const { return AtlasSize; }
+	float GetMinResolution() const { return MinShadowMapResolution; }
 
 protected:
 	// Allocates the node at NodeIdx and returns the corresponding atlas region. Returns invalid region if the node is occupied or too small.
