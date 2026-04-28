@@ -70,6 +70,24 @@ bool FEditorGizmoTool::HandleInput(float DeltaTime)
     return Gizmo->IsHolding() || Gizmo->IsPressedOnHandle();
 }
 
+void FEditorGizmoTool::ResetState()
+{
+    UGizmoComponent* Gizmo = Owner ? Owner->GetGizmo() : nullptr;
+    if (!Gizmo)
+    {
+        return;
+    }
+
+    if (Gizmo->IsHolding())
+    {
+        Gizmo->DragEnd();
+    }
+    else if (Gizmo->IsPressedOnHandle())
+    {
+        Gizmo->SetPressedOnHandle(false);
+    }
+}
+
 bool FEditorGizmoTool::HandleDragStart(const FRay& Ray)
 {
     UGizmoComponent* Gizmo = Owner ? Owner->GetGizmo() : nullptr;

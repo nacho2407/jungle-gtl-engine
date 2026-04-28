@@ -58,6 +58,12 @@ bool FEditorViewportContextMenuTool::HandleInput(float DeltaTime)
     return false;
 }
 
+void FEditorViewportContextMenuTool::ResetState()
+{
+    bRightClickCandidate = false;
+    RightClickStartLocalPos = { 0, 0 };
+}
+
 bool FEditorViewportContextMenuTool::HandleContextMenuRequest()
 {
     const FEditorViewportFrameInput& Input = Controller->GetCurrentInput();

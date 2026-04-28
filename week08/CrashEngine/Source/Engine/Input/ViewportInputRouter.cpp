@@ -33,8 +33,7 @@ void FViewportInputRouter::SetKeyTargetViewport(FViewport* InViewport)
         return;
     }
 
-    FRect PreviousRect{};
-    if (FTargetEntry* PreviousTarget = FindTargetByViewport(KeyTargetViewport, PreviousRect))
+    if (FTargetEntry* PreviousTarget = FindTargetEntryByViewport(KeyTargetViewport))
     {
         if (PreviousTarget->Client)
         {
@@ -43,6 +42,14 @@ void FViewportInputRouter::SetKeyTargetViewport(FViewport* InViewport)
     }
 
     KeyTargetViewport = InViewport;
+    ResetKeyRepeatState();
+}
+
+void FViewportInputRouter::ResetRoutingState()
+{
+    HoveredViewport = nullptr;
+    CapturedViewport = nullptr;
+    KeyTargetViewport = nullptr;
     ResetKeyRepeatState();
 }
 
@@ -63,8 +70,7 @@ void FViewportInputRouter::Tick(const FInputSnapshot& Input, float DeltaTime)
         DispatchAxisEvents(PointerTarget, Input, DeltaTime);
     }
 
-    FRect KeyTargetRect{};
-    FTargetEntry* KeyTarget = ResolveKeyTarget(KeyTargetRect);
+    FTargetEntry* KeyTarget = ResolveKeyTarget();
 
     if (!KeyTarget)
     {
@@ -109,7 +115,7 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::FindHoveredTarget(cons
     return nullptr;
 }
 
-FViewportInputRouter::FTargetEntry* FViewportInputRouter::FindTargetByViewport(FViewport* InViewport, FRect& OutRect)
+FViewportInputRouter::FTargetEntry* FViewportInputRouter::FindTargetEntryByViewport(FViewport* InViewport)
 {
     if (!InViewport)
     {
@@ -123,14 +129,24 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::FindTargetByViewport(F
             continue;
         }
 
+        return &Entry;
+    }
+
+    return nullptr;
+}
+
+FViewportInputRouter::FTargetEntry* FViewportInputRouter::FindRoutableTargetByViewport(FViewport* InViewport, FRect& OutRect)
+{
+    if (FTargetEntry* Entry = FindTargetEntryByViewport(InViewport))
+    {
         FRect Rect{};
-        if (!Entry.RectProvider(Rect))
+        if (!Entry->RectProvider(Rect))
         {
             return nullptr;
         }
 
         OutRect = Rect;
-        return &Entry;
+        return Entry;
     }
 
     return nullptr;
@@ -140,7 +156,7 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolvePointerTarget(c
 {
     if (CapturedViewport)
     {
-        if (FTargetEntry* Captured = FindTargetByViewport(CapturedViewport, OutRect))
+        if (FTargetEntry* Captured = FindRoutableTargetByViewport(CapturedViewport, OutRect))
         {
             return Captured;
         }
@@ -151,11 +167,11 @@ FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolvePointerTarget(c
     return FindHoveredTarget(ClientPos, OutRect);
 }
 
-FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolveKeyTarget(FRect& OutRect)
+FViewportInputRouter::FTargetEntry* FViewportInputRouter::ResolveKeyTarget()
 {
     if (KeyTargetViewport)
     {
-        if (FTargetEntry* KeyTarget = FindTargetByViewport(KeyTargetViewport, OutRect))
+        if (FTargetEntry* KeyTarget = FindTargetEntryByViewport(KeyTargetViewport))
         {
             return KeyTarget;
         }

@@ -58,6 +58,7 @@ public:
 
     void SetActiveViewport(FLevelEditorViewportClient* InClient);
     FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
+    void ResetViewportInputRouting();
 
     void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }
     bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }
