@@ -51,7 +51,7 @@ public:
     FConvexVolume            ShadowViewFrustum;
     FMatrix                  LightViewProj;
     bool                     bCastShadow      = false;
-    uint32                   ShadowResolution = 1024;
+    uint32                   ShadowResolution = 2048;
 
     float ShadowBias       = 0.0f;
     float ShadowSlopeBias  = 0.0f;
