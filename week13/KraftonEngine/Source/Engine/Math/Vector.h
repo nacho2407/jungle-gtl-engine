@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <cmath>
+#include <DirectXMath.h>
 
 #if defined(_MSC_VER)
 	#include <intrin.h>     // MSVC
@@ -39,6 +40,20 @@ struct FVector {
 		Y = InY;
 		Z = InZ;
 	}
+
+	DirectX::XMVECTOR ToXMVector(float W = 0.f) const noexcept
+	{
+		return DirectX::XMVectorSet(X, Y, Z, W);
+	}
+
+	// 모든 성분이 허용 오차(Tolerance) 이하인지 확인함
+	bool IsNearlyZero(float Tolerance = 1.e-6f) const noexcept
+	{
+		return DirectX::XMVector3NearEqual(
+			ToXMVector(),
+			DirectX::XMVectorZero(),
+			DirectX::XMVectorReplicate(Tolerance));
+	}
 	
 	float Length() const;
 	void  Normalize();
@@ -49,6 +64,9 @@ struct FVector {
 	static FVector Cross(const FVector& v1, const FVector& v2) { return v1.Cross(v2); }
 	static float Distance(const FVector& V1, const FVector& V2);
 	static float DistSquared(const FVector& V1, const FVector& V2);
+
+	// Linear interpolation from A to B at time t
+	static FVector Lerp(const FVector& A, const FVector& B, float t);
 
 	FVector operator+(const FVector& Other) const;
 	FVector operator-(const FVector& Other) const;
@@ -63,6 +81,39 @@ struct FVector {
 	FVector& operator-=(float Scalar);
 	FVector& operator*=(float Scalar);
 	FVector& operator/=(float Scalar);
+
+	/** A zero vector (0,0,0) */
+	static const FVector ZeroVector;
+
+	/** One vector (1,1,1) */
+	static const FVector OneVector;
+
+	/** Up vector (0,0,1) */
+	static const FVector UpVector;
+
+	/** Down vector (0,0,-1) */
+	static const FVector DownVector;
+
+	/** Forward vector (1,0,0) */
+	static const FVector ForwardVector;
+
+	/** Backward vector (-1,0,0) */
+	static const FVector BackwardVector;
+
+	/** Right vector (0,1,0) */
+	static const FVector RightVector;
+
+	/** Left vector (0,-1,0) */
+	static const FVector LeftVector;
+
+	/** Unit X axis vector (1,0,0) */
+	static const FVector XAxisVector;
+
+	/** Unit Y axis vector (0,1,0) */
+	static const FVector YAxisVector;
+
+	/** Unit Z axis vector (0,0,1) */
+	static const FVector ZAxisVector;
 };
 
 struct FVector4 {
