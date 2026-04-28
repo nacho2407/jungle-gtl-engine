@@ -37,6 +37,7 @@ UWorld* FEditorViewportClient::GetWorld() const
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     Window = InWindow;
+    InputController = std::make_unique<FEditorViewportInputController>(this);
 }
 
 void FEditorViewportClient::CreateCamera()
@@ -152,27 +153,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
     if (InputController)
     {
-        bool bConsumed = false;
-
-        if (!bConsumed)
-        {
-            bConsumed = InputController->HandleViewportCommandInput(DeltaTime);
-        }
-
-        if (!bConsumed)
-        {
-            bConsumed = InputController->HandleGizmoInput(DeltaTime);
-        }
-
-        if (!bConsumed)
-        {
-            bConsumed = InputController->HandleSelectionInput(DeltaTime);
-        }
-
-        if (!bConsumed)
-        {
-            bConsumed = InputController->HandleNavigationInput(DeltaTime);
-        }
+        InputController->HandleInput(DeltaTime);
     }
 
     ApplyViewToPilotedActor();

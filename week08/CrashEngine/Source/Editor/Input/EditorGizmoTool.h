@@ -1,27 +1,17 @@
 #pragma once
 
 #include "Core/RayTypes.h"
+#include "EditorViewportTool.h"
 
-class FEditorViewportClient;
-class FEditorViewportController;
-
-class FEditorGizmoTool
+class FEditorGizmoTool : public FEditorViewportTool
 {
 public:
-    FEditorGizmoTool(FEditorViewportClient* InOwner, FEditorViewportController* InController)
-        : Owner(InOwner), Controller(InController)
-    {
-    }
+    using FEditorViewportTool::FEditorViewportTool;
 
-    bool HandleInput(float DeltaTime);
+    bool HandleInput(float DeltaTime) override;
 
 private:
-    bool BuildMouseRay(FRay& OutRay) const;
     bool HandleDragStart(const FRay& Ray);
     bool HandleDragUpdate(const FRay& Ray);
     bool HandleDragEnd();
-
-private:
-    FEditorViewportClient* Owner = nullptr;
-    FEditorViewportController* Controller = nullptr;
 };

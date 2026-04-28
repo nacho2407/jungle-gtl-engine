@@ -1,23 +1,15 @@
 #pragma once
 
-class FEditorViewportClient;
-class FEditorViewportController;
+#include "EditorViewportTool.h"
 
-class FEditorNavigationTool
+class FEditorNavigationTool : public FEditorViewportTool
 {
 public:
-    FEditorNavigationTool(FEditorViewportClient* InOwner, FEditorViewportController* InController)
-        : Owner(InOwner), Controller(InController)
-    {
-    }
+    using FEditorViewportTool::FEditorViewportTool;
 
-    bool HandleInput(float DeltaTime);
+    bool HandleInput(float DeltaTime) override;
 
 private:
     bool HandleKeyboardAndMouseNavigation(float DeltaTime);
     bool HandleWheelZoom(float DeltaTime);
-
-private:
-    FEditorViewportClient* Owner = nullptr;
-    FEditorViewportController* Controller = nullptr;
 };

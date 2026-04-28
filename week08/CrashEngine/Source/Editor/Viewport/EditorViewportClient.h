@@ -15,6 +15,7 @@
 
 #include "Render/Execute/Context/Scene/ViewTypes.h"
 #include "Math/Rotator.h"
+#include "Editor/Input/EditorViewportInputController.h"
 
 class UWorld;
 class AActor;
@@ -25,7 +26,6 @@ class FWindowsWindow;
 class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
-class FEditorViewportInputController;
 
 // EEditorViewportPlayState는 에디터 처리에서 사용할 선택지를 정의합니다.
 enum class EEditorViewportPlayState : uint8

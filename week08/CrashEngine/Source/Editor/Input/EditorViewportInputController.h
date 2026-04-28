@@ -1,28 +1,21 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 
-class FEditorViewportClient;
-class FEditorViewportCommandTool;
-class FEditorGizmoTool;
-class FEditorSelectionTool;
-class FEditorNavigationTool;
+#include "Core/CoreTypes.h"
+#include "EditorViewportTool.h"
 
-class FEditorViewportController
+class FEditorViewportClient;
+
+class FEditorViewportInputController
 {
 public:
-    explicit FEditorViewportController(FEditorViewportClient* InOwner);
+    explicit FEditorViewportInputController(FEditorViewportClient* InOwner);
 
-    bool HandleViewportCommandInput(float DeltaTime);
-    bool HandleGizmoInput(float DeltaTime);
-    bool HandleSelectionInput(float DeltaTime);
-    bool HandleNavigationInput(float DeltaTime);
+    bool HandleInput(float DeltaTime);
 
 private:
     FEditorViewportClient* Owner = nullptr;
 
-    std::unique_ptr<FEditorViewportCommandTool> CommandTool;
-    std::unique_ptr<FEditorGizmoTool> GizmoTool;
-    std::unique_ptr<FEditorSelectionTool> SelectionTool;
-    std::unique_ptr<FEditorNavigationTool> NavigationTool;
+    TArray<std::unique_ptr<FEditorViewportTool>> Tools;
 };

@@ -996,6 +996,15 @@
     <ClCompile Include="Source\Editor\Input\EditorNavigationTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Input\EditorSelectionTool.cpp">
+      <Filter>Source\Editor\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Input\EditorViewportInputController.cpp">
+      <Filter>Source\Editor\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Input\EditorViewportTool.cpp">
+      <Filter>Source\Editor\Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1776,6 +1785,12 @@
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Input\EditorNavigationTool.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorSelectionTool.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorViewportTool.h">
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
   </ItemGroup>
