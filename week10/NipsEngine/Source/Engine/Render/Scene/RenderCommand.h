@@ -121,8 +121,8 @@ struct FShadowLightRequest
     FVector WorldLocation;
     bool bCastShadows = true;
     uint32 ShadowResolution;
-    float ShadowBias = 0.0f;
-    float ShadowSlopeBias = 0.0f;
+    float ConstantBias = 0.0f;
+    float SlopeScaledBias = 0.0f;
     float ShadowSharpen = 1.0f;
     FVector4 CascadeSplitFar = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 };
@@ -161,7 +161,7 @@ struct FShadowAtlasConstants
 
     FVector4 ScaleOffset;			// 16, xy: Scale, zw: Offset
 
-    float ShadowBias;				// 4
+    float ConstantBias;				// 4
     float ShadowStrength;			// 4
     float ShadowSoftness;			// 4
     uint32 ShadowType;				// 4

@@ -114,7 +114,7 @@ float ComputeShadowAtlas(
         kernel,
         shadowSampler,
         shadowMap,
-        shadowData.ShadowBias
+        shadowData.ConstantBias
     );
 }
 #endif
