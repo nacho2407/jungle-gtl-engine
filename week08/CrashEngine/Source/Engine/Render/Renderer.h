@@ -65,6 +65,7 @@ public:
 
     FViewModeSurfaces* AcquireViewModeSurfaces(FViewport* Viewport, uint32 Width, uint32 Height);
     void               ReleaseViewModeSurfaces(FViewport* Viewport = nullptr);
+    void               WarmUpViewModeShaders(EViewMode ViewMode, ERenderShadingPath RenderPath);
 
     const FViewModePassRegistry* GetViewModePassRegistry() const { return ViewModePassRegistry; }
     const FRenderPassRegistry&   GetPassRegistry() const { return PassRegistry; }

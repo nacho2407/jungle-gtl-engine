@@ -105,21 +105,82 @@ uint64 BuildShaderCacheSignature(
     return Hash;
 }
 
-std::wstring BuildShaderCacheFileStem(uint64 SignatureHash)
+std::wstring SanitizeShaderCacheToken(const std::wstring& Token)
 {
-    std::ostringstream Stream;
-    Stream << std::hex << SignatureHash;
-    return FPaths::ToWide(Stream.str());
+    std::wstring Sanitized;
+    Sanitized.reserve(Token.size());
+
+    for (wchar_t Ch : Token)
+    {
+        if ((Ch >= L'a' && Ch <= L'z') ||
+            (Ch >= L'A' && Ch <= L'Z') ||
+            (Ch >= L'0' && Ch <= L'9') ||
+            Ch == L'_' || Ch == L'-')
+        {
+            Sanitized.push_back(Ch);
+        }
+        else
+        {
+            Sanitized.push_back(L'_');
+        }
+    }
+
+    return Sanitized;
 }
 
-std::filesystem::path BuildShaderCacheBlobPath(uint64 SignatureHash)
+std::wstring BuildShaderCacheFileStem(
+    const std::wstring&     AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*             InTarget,
+    uint64                  SignatureHash)
 {
-    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(SignatureHash) + L".cso");
+    std::filesystem::path RelativePath;
+    std::error_code       EC;
+    const std::filesystem::path RootPath = FPaths::ToPath(FPaths::RootDir());
+    const std::filesystem::path FullPath(AbsolutePath);
+
+    RelativePath = std::filesystem::relative(FullPath, RootPath, EC);
+    if (EC || RelativePath.empty())
+    {
+        RelativePath = FullPath.filename();
+    }
+
+    std::wstring RelativeStem = RelativePath.replace_extension().wstring();
+    for (wchar_t& Ch : RelativeStem)
+    {
+        if (Ch == L'\\' || Ch == L'/' || Ch == L':')
+        {
+            Ch = L'_';
+        }
+    }
+
+    std::wostringstream Stream;
+    Stream << SanitizeShaderCacheToken(RelativeStem)
+           << L"__"
+           << SanitizeShaderCacheToken(FPaths::ToWide(InDesc.EntryPoint))
+           << L"__"
+           << SanitizeShaderCacheToken(FPaths::ToWide(InTarget ? InTarget : "unknown"))
+           << L"__"
+           << std::hex << SignatureHash;
+    return Stream.str();
 }
 
-std::filesystem::path BuildShaderCacheMetaPath(uint64 SignatureHash)
+std::filesystem::path BuildShaderCacheBlobPath(
+    const std::wstring&     AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*             InTarget,
+    uint64                  SignatureHash)
 {
-    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(SignatureHash) + L".meta");
+    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(AbsolutePath, InDesc, InTarget, SignatureHash) + L".cso");
+}
+
+std::filesystem::path BuildShaderCacheMetaPath(
+    const std::wstring&     AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*             InTarget,
+    uint64                  SignatureHash)
+{
+    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(AbsolutePath, InDesc, InTarget, SignatureHash) + L".meta");
 }
 
 bool TryReadShaderCacheHeader(const std::filesystem::path& MetaPath, FShaderCacheHeader& OutHeader)
@@ -164,9 +225,9 @@ bool TryLoadCachedShaderBlob(
 
     FPaths::CreateDir(FPaths::ShaderCacheDir());
 
-    const uint64               SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
-    const std::filesystem::path BlobPath     = BuildShaderCacheBlobPath(SignatureHash);
-    const std::filesystem::path MetaPath     = BuildShaderCacheMetaPath(SignatureHash);
+    const uint64 SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
+    const std::filesystem::path BlobPath = BuildShaderCacheBlobPath(AbsolutePath, InDesc, InTarget, SignatureHash);
+    const std::filesystem::path MetaPath = BuildShaderCacheMetaPath(AbsolutePath, InDesc, InTarget, SignatureHash);
 
     FShaderCacheHeader Header;
     if (!TryReadShaderCacheHeader(MetaPath, Header))
@@ -205,9 +266,9 @@ void StoreShaderBlobInCache(
         return;
     }
 
-    const uint64               SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
-    const std::filesystem::path BlobPath     = BuildShaderCacheBlobPath(SignatureHash);
-    const std::filesystem::path MetaPath     = BuildShaderCacheMetaPath(SignatureHash);
+    const uint64 SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
+    const std::filesystem::path BlobPath = BuildShaderCacheBlobPath(AbsolutePath, InDesc, InTarget, SignatureHash);
+    const std::filesystem::path MetaPath = BuildShaderCacheMetaPath(AbsolutePath, InDesc, InTarget, SignatureHash);
 
     if (FAILED(D3DWriteBlobToFile(ShaderBlob, BlobPath.c_str(), TRUE)))
     {

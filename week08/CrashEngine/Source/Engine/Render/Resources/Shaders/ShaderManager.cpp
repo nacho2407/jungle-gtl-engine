@@ -88,8 +88,8 @@ void FShaderManager::TickHotReload()
 
 /*
     셰이더 타입에 대응하는 내장 그래픽 프로그램을 반환합니다.
-    디버그 빌드에서는 조회 직전에 변경 여부를 확인합니다.
-*/
+    핫 리로드 검사는 프레임 시작의 TickHotReload에서 일괄 처리합니다.
+ */
 FGraphicsProgram* FShaderManager::GetShader(EShaderType InType)
 {
     const uint32 Idx = (uint32)InType;
@@ -103,9 +103,6 @@ FGraphicsProgram* FShaderManager::GetShader(EShaderType InType)
         {
             RefreshBuiltInShader(InType);
         }
-#if defined(_DEBUG)
-        RefreshBuiltInShader(InType);
-#endif
     }
     return &Shaders[Idx];
 }

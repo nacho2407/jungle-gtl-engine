@@ -213,6 +213,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 
             if (bChanged)
             {
+                EditorEngine->WarmUpRenderPathShaders(Settings.RenderShadingPath);
                 SaveEditorSettings();
             }
 

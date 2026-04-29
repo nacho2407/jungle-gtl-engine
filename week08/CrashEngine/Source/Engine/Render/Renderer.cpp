@@ -51,6 +51,39 @@
 
 namespace
 {
+void WarmUpBuiltInViewModeShaders(const FViewModePassRegistry& Registry, EViewMode ViewMode)
+{
+    if (Registry.UsesNonLitViewMode(ViewMode))
+    {
+        switch (Registry.GetPostProcessVariant(ViewMode))
+        {
+        case EViewModePostProcessVariant::SceneDepth:
+            FShaderManager::Get().GetShader(EShaderType::SceneDepth);
+            break;
+        case EViewModePostProcessVariant::WorldNormal:
+            FShaderManager::Get().GetShader(EShaderType::NormalView);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (Registry.UsesHeightFog(ViewMode))
+    {
+        FShaderManager::Get().GetShader(EShaderType::HeightFog);
+    }
+
+    if (Registry.UsesFXAA(ViewMode))
+    {
+        FShaderManager::Get().GetShader(EShaderType::FXAA);
+    }
+
+    if (Registry.UsesDepthPrePass(ViewMode))
+    {
+        FShaderManager::Get().GetShader(EShaderType::DepthOnly);
+    }
+}
+
 ERenderPassNodeType MapPassToNodeType(ERenderPass Pass, const FRenderPipelineContext& Context)
 {
     switch (Pass)
@@ -221,6 +254,17 @@ void FRenderer::ReleaseViewModeSurfaces(FViewport* Viewport)
     }
 
     ViewModeSurfacesMap.erase(It);
+}
+
+void FRenderer::WarmUpViewModeShaders(EViewMode ViewMode, ERenderShadingPath RenderPath)
+{
+    if (!ViewModePassRegistry || !ViewModePassRegistry->HasConfig(ViewMode))
+    {
+        return;
+    }
+
+    ViewModePassRegistry->WarmUpViewMode(ViewMode, RenderPath);
+    WarmUpBuiltInViewModeShaders(*ViewModePassRegistry, ViewMode);
 }
 
 // ==================== Scene Collection ====================
@@ -537,6 +581,10 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
 void FRenderer::BeginFrame(const FSceneView& SceneView, const FViewportRenderTargets* Targets)
 {
     FShaderManager::Get().TickHotReload();
+    if (ViewModePassRegistry)
+    {
+        ViewModePassRegistry->TickHotReload();
+    }
 
     ID3D11DeviceContext*    Context = Device.GetDeviceContext();
     ID3D11RenderTargetView* RTV     = (Targets && Targets->ViewportRTV) ? Targets->ViewportRTV : Device.GetFrameBufferRTV();

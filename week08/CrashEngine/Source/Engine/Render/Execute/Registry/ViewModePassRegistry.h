@@ -82,6 +82,7 @@ class FViewModePassRegistry
 public:
     void Initialize(ID3D11Device* Device);
     void Release();
+    void TickHotReload();
 
     bool                       HasConfig(EViewMode ViewMode) const;
     const FViewModePassConfig* GetConfig(EViewMode ViewMode) const;
@@ -98,9 +99,12 @@ public:
     bool                        UsesFXAA(EViewMode ViewMode) const;
     EViewModePostProcessVariant GetPostProcessVariant(EViewMode ViewMode) const;
     const FViewModePassDesc*    FindPassDesc(EViewMode ViewMode, ERenderPass RenderPass, ERenderShadingPath ShadingPath = ERenderShadingPath::Deferred) const;
+    void                        WarmUpViewMode(EViewMode ViewMode, ERenderShadingPath RenderPath) const;
 
 private:
-    void RefreshCompiledShaders(FViewModePassConfig& Config) const;
+    const FViewModePassConfig* FindConfig(EViewMode ViewMode) const;
+    FViewModePassDesc*         FindPassDescMutable(EViewMode ViewMode, ERenderPass RenderPass, ERenderShadingPath ShadingPath) const;
+    FGraphicsProgram*          CompilePassVariant(FViewModePassDesc& Pass) const;
 
     mutable FShaderVariantCache                  VariantCache;
     mutable TMap<EViewMode, FViewModePassConfig> Configs;
