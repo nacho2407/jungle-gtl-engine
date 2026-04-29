@@ -22,6 +22,25 @@ void SafeRelease(T*& Ptr)
         Ptr = nullptr;
     }
 }
+
+FMomentBlurCBData BuildMomentBlurCBData(const FShadowMapData& Allocation)
+{
+    FMomentBlurCBData BlurCBData = {};
+    BlurCBData.TexelSizeX = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
+    BlurCBData.TexelSizeY = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
+
+    const float AtlasSize = static_cast<float>(ShadowAtlas::AtlasSize);
+    const float HalfTexel = 0.5f / AtlasSize;
+    BlurCBData.UVScaleX = static_cast<float>(Allocation.ViewportRect.Width) / AtlasSize;
+    BlurCBData.UVScaleY = static_cast<float>(Allocation.ViewportRect.Height) / AtlasSize;
+    BlurCBData.UVOffsetX = static_cast<float>(Allocation.ViewportRect.X) / AtlasSize;
+    BlurCBData.UVOffsetY = static_cast<float>(Allocation.ViewportRect.Y) / AtlasSize;
+    BlurCBData.UVMinX = BlurCBData.UVOffsetX + HalfTexel;
+    BlurCBData.UVMinY = BlurCBData.UVOffsetY + HalfTexel;
+    BlurCBData.UVMaxX = BlurCBData.UVOffsetX + BlurCBData.UVScaleX - HalfTexel;
+    BlurCBData.UVMaxY = BlurCBData.UVOffsetY + BlurCBData.UVScaleY - HalfTexel;
+    return BlurCBData;
+}
 } // namespace
 
 FShadowMomentFilter::~FShadowMomentFilter()
@@ -161,55 +180,62 @@ void FShadowMomentFilter::BlurMomentTextureSlice(FRenderPipelineContext& Context
         return;
     }
 
-    FMomentBlurCBData BlurCBData = {};
-    BlurCBData.TexelSizeX = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
-    BlurCBData.TexelSizeY = 1.0f / static_cast<float>(ShadowAtlas::AtlasSize);
-
-    D3D11_MAPPED_SUBRESOURCE Mapped = {};
-    if (SUCCEEDED(Context.Context->Map(BlurCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
-    {
-        std::memcpy(Mapped.pData, &BlurCBData, sizeof(BlurCBData));
-        Context.Context->Unmap(BlurCB, 0);
-    }
-
     Context.Device->SetDepthStencilState(EDepthStencilState::NoDepth);
     Context.Device->SetBlendState(EBlendState::Opaque);
     Context.Device->SetRasterizerState(ERasterizerState::SolidNoCull);
-
-    D3D11_VIEWPORT FullSliceViewport = {};
-    FullSliceViewport.TopLeftX = 0.0f;
-    FullSliceViewport.TopLeftY = 0.0f;
-    FullSliceViewport.Width = static_cast<float>(ShadowAtlas::AtlasSize);
-    FullSliceViewport.Height = static_cast<float>(ShadowAtlas::AtlasSize);
-    FullSliceViewport.MinDepth = 0.0f;
-    FullSliceViewport.MaxDepth = 1.0f;
-    Context.Context->RSSetViewports(1, &FullSliceViewport);
-
-    D3D11_RECT FullSliceScissor = {};
-    FullSliceScissor.left = 0;
-    FullSliceScissor.top = 0;
-    FullSliceScissor.right = static_cast<LONG>(ShadowAtlas::AtlasSize);
-    FullSliceScissor.bottom = static_cast<LONG>(ShadowAtlas::AtlasSize);
-    Context.Context->RSSetScissorRects(1, &FullSliceScissor);
 
     Context.Context->IASetInputLayout(nullptr);
     Context.Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Context.Context->VSSetShader(BlurVS, nullptr, 0);
     Context.Context->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &BlurCB);
 
-    Context.Context->OMSetRenderTargets(1, &BlurTempRTV, nullptr);
-    Context.Context->PSSetShader(BlurPSHorizontal, nullptr, 0);
-    Context.Context->PSSetShaderResources(0, 1, &TargetSRV);
-    Context.Context->Draw(3, 0);
+    TArray<FShadowMapData> SliceAllocations;
+    AtlasPage.GatherSliceAllocations(SliceIndex, 0, SliceAllocations);
 
     ID3D11ShaderResourceView* NullSRV = nullptr;
-    Context.Context->PSSetShaderResources(0, 1, &NullSRV);
+    for (const FShadowMapData& Allocation : SliceAllocations)
+    {
+        if (!Allocation.bAllocated || Allocation.ViewportRect.Width == 0 || Allocation.ViewportRect.Height == 0)
+        {
+            continue;
+        }
 
-    Context.Context->OMSetRenderTargets(1, &TargetRTV, nullptr);
-    Context.Context->PSSetShader(BlurPSVertical, nullptr, 0);
-    Context.Context->PSSetShaderResources(0, 1, &BlurTempSRV);
-    Context.Context->Draw(3, 0);
-    Context.Context->PSSetShaderResources(0, 1, &NullSRV);
+        const FMomentBlurCBData BlurCBData = BuildMomentBlurCBData(Allocation);
+        D3D11_MAPPED_SUBRESOURCE Mapped = {};
+        if (SUCCEEDED(Context.Context->Map(BlurCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+        {
+            std::memcpy(Mapped.pData, &BlurCBData, sizeof(BlurCBData));
+            Context.Context->Unmap(BlurCB, 0);
+        }
+
+        D3D11_VIEWPORT Viewport = {};
+        Viewport.TopLeftX = static_cast<float>(Allocation.ViewportRect.X);
+        Viewport.TopLeftY = static_cast<float>(Allocation.ViewportRect.Y);
+        Viewport.Width = static_cast<float>(Allocation.ViewportRect.Width);
+        Viewport.Height = static_cast<float>(Allocation.ViewportRect.Height);
+        Viewport.MinDepth = 0.0f;
+        Viewport.MaxDepth = 1.0f;
+        Context.Context->RSSetViewports(1, &Viewport);
+
+        D3D11_RECT ScissorRect = {};
+        ScissorRect.left = static_cast<LONG>(Allocation.ViewportRect.X);
+        ScissorRect.top = static_cast<LONG>(Allocation.ViewportRect.Y);
+        ScissorRect.right = static_cast<LONG>(Allocation.ViewportRect.X + Allocation.ViewportRect.Width);
+        ScissorRect.bottom = static_cast<LONG>(Allocation.ViewportRect.Y + Allocation.ViewportRect.Height);
+        Context.Context->RSSetScissorRects(1, &ScissorRect);
+
+        Context.Context->OMSetRenderTargets(1, &BlurTempRTV, nullptr);
+        Context.Context->PSSetShader(BlurPSHorizontal, nullptr, 0);
+        Context.Context->PSSetShaderResources(0, 1, &TargetSRV);
+        Context.Context->Draw(3, 0);
+        Context.Context->PSSetShaderResources(0, 1, &NullSRV);
+
+        Context.Context->OMSetRenderTargets(1, &TargetRTV, nullptr);
+        Context.Context->PSSetShader(BlurPSVertical, nullptr, 0);
+        Context.Context->PSSetShaderResources(0, 1, &BlurTempSRV);
+        Context.Context->Draw(3, 0);
+        Context.Context->PSSetShaderResources(0, 1, &NullSRV);
+    }
 
     if (Context.StateCache)
     {

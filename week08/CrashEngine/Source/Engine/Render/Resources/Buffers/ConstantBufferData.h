@@ -114,9 +114,17 @@ struct FMomentBlurCBData
 {
     float TexelSizeX = 0.0f; // 4B
     float TexelSizeY = 0.0f; // 4B
+    float UVScaleX   = 1.0f; // 4B
+    float UVScaleY   = 1.0f; // 4B
+    float UVOffsetX  = 0.0f; // 4B
+    float UVOffsetY  = 0.0f; // 4B
+    float UVMinX     = 0.0f; // 4B
+    float UVMinY     = 0.0f; // 4B
+    float UVMaxX     = 1.0f; // 4B
+    float UVMaxY     = 1.0f; // 4B
     float Padding0   = 0.0f; // 4B
     float Padding1   = 0.0f; // 4B
-}; // Total: 16B
+}; // Total: 48B
 
 struct alignas(16) FShadowAtlasSampleCBData
 {

@@ -10,6 +10,10 @@ SamplerState LinearClampSampler : register(s0);
 cbuffer MomentBlurParams : register(b2)
 {
     float2 BlurTexelSize;
+    float2 BlurUVScale;
+    float2 BlurUVOffset;
+    float2 BlurUVMin;
+    float2 BlurUVMax;
     float2 Padding;
 }
 
@@ -34,19 +38,21 @@ FVSOut VS(uint VertexID : SV_VertexID)
 
 float2 SampleMoment(float2 UV)
 {
-    return g_InputMoment.SampleLevel(LinearClampSampler, float3(UV, 0.0f), 0.0f).rg;
+    const float2 ClampedUV = clamp(UV, BlurUVMin, BlurUVMax);
+    return g_InputMoment.SampleLevel(LinearClampSampler, float3(ClampedUV, 0.0f), 0.0f).rg;
 }
 
 float2 PS_Horizontal(FVSOut Input) : SV_TARGET0
 {
     const float2 Offset1 = float2(1.3846153846f * BlurTexelSize.x, 0.0f);
     const float2 Offset2 = float2(3.2307692308f * BlurTexelSize.x, 0.0f);
+    const float2 AtlasUV = BlurUVOffset + Input.UV * BlurUVScale;
 
-    float2 Sum = SampleMoment(Input.UV) * 0.2270270270f;
-    Sum += SampleMoment(Input.UV + Offset1) * 0.3162162162f;
-    Sum += SampleMoment(Input.UV - Offset1) * 0.3162162162f;
-    Sum += SampleMoment(Input.UV + Offset2) * 0.0702702703f;
-    Sum += SampleMoment(Input.UV - Offset2) * 0.0702702703f;
+    float2 Sum = SampleMoment(AtlasUV) * 0.2270270270f;
+    Sum += SampleMoment(AtlasUV + Offset1) * 0.3162162162f;
+    Sum += SampleMoment(AtlasUV - Offset1) * 0.3162162162f;
+    Sum += SampleMoment(AtlasUV + Offset2) * 0.0702702703f;
+    Sum += SampleMoment(AtlasUV - Offset2) * 0.0702702703f;
     return Sum;
 }
 
@@ -54,11 +60,12 @@ float2 PS_Vertical(FVSOut Input) : SV_TARGET0
 {
     const float2 Offset1 = float2(0.0f, 1.3846153846f * BlurTexelSize.y);
     const float2 Offset2 = float2(0.0f, 3.2307692308f * BlurTexelSize.y);
+    const float2 AtlasUV = BlurUVOffset + Input.UV * BlurUVScale;
 
-    float2 Sum = SampleMoment(Input.UV) * 0.2270270270f;
-    Sum += SampleMoment(Input.UV + Offset1) * 0.3162162162f;
-    Sum += SampleMoment(Input.UV - Offset1) * 0.3162162162f;
-    Sum += SampleMoment(Input.UV + Offset2) * 0.0702702703f;
-    Sum += SampleMoment(Input.UV - Offset2) * 0.0702702703f;
+    float2 Sum = SampleMoment(AtlasUV) * 0.2270270270f;
+    Sum += SampleMoment(AtlasUV + Offset1) * 0.3162162162f;
+    Sum += SampleMoment(AtlasUV - Offset1) * 0.3162162162f;
+    Sum += SampleMoment(AtlasUV + Offset2) * 0.0702702703f;
+    Sum += SampleMoment(AtlasUV - Offset2) * 0.0702702703f;
     return Sum;
 }
