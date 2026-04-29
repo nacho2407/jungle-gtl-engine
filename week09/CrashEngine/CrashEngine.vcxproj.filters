@@ -476,6 +476,9 @@
     <ClCompile Include="Source\Editor\UI\EditorDetailsPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorShadowAtlasDebugWindow.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>

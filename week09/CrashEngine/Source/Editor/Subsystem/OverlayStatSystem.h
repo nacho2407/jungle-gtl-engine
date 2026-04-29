@@ -12,6 +12,7 @@ struct FOverlayStatLine
     FString Label;
     FString Value;
     FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
+    bool bIsSectionHeader = false;
 };
 
 // FOverlayStatLayout는 에디터 처리에 필요한 데이터를 묶는 구조체입니다.
@@ -47,6 +48,7 @@ public:
 
 private:
     void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Label, const FString& Value) const;
+    void AppendSection(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Label) const;
     void ClearDisplayFlags();
 
     bool bShowFPS = false;
@@ -59,6 +61,9 @@ private:
     uint32 PickingAttemptCount = 0;
     mutable FString CachedFPSLine;
     mutable FString CachedPickingLine;
+    mutable bool bHasAveragedFPS = false;
+    mutable float AveragedFPS = 0.0f;
+    mutable float AveragedFrameTimeMs = 0.0f;
 
     FOverlayStatLayout Layout;
 };

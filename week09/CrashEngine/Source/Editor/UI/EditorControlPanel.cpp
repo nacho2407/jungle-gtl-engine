@@ -90,11 +90,10 @@ void FEditorControlPanel::Render(float DeltaTime)
         return;
 
     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
-    ImGui::Begin("Control");
+    ImGui::SetNextWindowSize(ImVec2(360.0f, 220.0f), ImGuiCond_Once);
+    ImGui::Begin("Place Actors");
 
-    // ─── Spawn ───
-    ImGui::Combo("Primitive", &SelectedPrimitiveType, GetSpawnLabel, nullptr, SpawnTableSize);
+    ImGui::Combo("Actor", &SelectedPrimitiveType, GetSpawnLabel, nullptr, SpawnTableSize);
 
     if (ImGui::Button("Spawn"))
     {
@@ -102,38 +101,46 @@ void FEditorControlPanel::Render(float DeltaTime)
         if (SelectedPrimitiveType >= 0 && SelectedPrimitiveType < SpawnTableSize)
         {
             for (int32 i = 0; i < NumberOfSpawnedActors; ++i)
+            {
                 SpawnTable[SelectedPrimitiveType].Spawn(World, CurSpawnPoint);
+            }
         }
         NumberOfSpawnedActors = 1;
     }
-    ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
+    ImGui::InputInt("Spawn Count", &NumberOfSpawnedActors, 1, 10);
+    ImGui::End();
 
-    SEPARATOR();
-
-    // ─── Camera ───
     UCameraComponent* Camera = EditorEngine->GetCamera();
+    if (!Camera)
+    {
+        return;
+    }
 
-    float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
-    if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
-        Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
+    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(420.0f, 280.0f), ImGuiCond_Once);
+    ImGui::Begin("Control Camera");
 
-    float CameraSpeed = FEditorSettings::Get().CameraSpeed;
-    if (ImGui::DragFloat("Camera Speed", &CameraSpeed, 0.1f, 0.1f, 200.0f, "%.2f"))
-        FEditorSettings::Get().CameraSpeed = Clamp(CameraSpeed, 0.1f, 200.0f);
+    float FOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
+    if (ImGui::DragFloat("FOV", &FOV_Deg, 0.5f, 1.0f, 90.0f))
+        Camera->SetFOV(FOV_Deg * DEG_TO_RAD);
+
+    float Speed = FEditorSettings::Get().CameraSpeed;
+    if (ImGui::DragFloat("Speed", &Speed, 0.1f, 0.1f, 200.0f, "%.2f"))
+        FEditorSettings::Get().CameraSpeed = Clamp(Speed, 0.1f, 200.0f);
 
     float OrthoWidth = Camera->GetOrthoWidth();
     if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
         Camera->SetOrthoWidth(Clamp(OrthoWidth, 0.1f, 1000.0f));
 
     FVector CamPos = Camera->GetWorldLocation();
-    float CameraLocation[3] = { CamPos.X, CamPos.Y, CamPos.Z };
-    if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))
-        Camera->SetWorldLocation(FVector(CameraLocation[0], CameraLocation[1], CameraLocation[2]));
+    float Location[3] = { CamPos.X, CamPos.Y, CamPos.Z };
+    if (ImGui::DragFloat3("Location", Location, 0.1f))
+        Camera->SetWorldLocation(FVector(Location[0], Location[1], Location[2]));
 
     FRotator CamRot = Camera->GetRelativeRotation();
-    float CameraRotation[3] = { CamRot.Roll, CamRot.Pitch, CamRot.Yaw };
-    if (ImGui::DragFloat3("Camera Rotation", CameraRotation, 0.1f))
-        Camera->SetRelativeRotation(FRotator(CameraRotation[1], CameraRotation[2], CamRot.Roll));
+    float Rotation[3] = { CamRot.Roll, CamRot.Pitch, CamRot.Yaw };
+    if (ImGui::DragFloat3("Rotation", Rotation, 0.1f))
+        Camera->SetRelativeRotation(FRotator(Rotation[1], Rotation[2], CamRot.Roll));
 
     ImGui::End();
 }

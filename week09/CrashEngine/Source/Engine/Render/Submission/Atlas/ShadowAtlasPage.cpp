@@ -207,6 +207,17 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
     return true;
 }
 
+void FShadowAtlasPage::ReleaseMomentResources()
+{
+    if (!MomentTexture && !MomentArraySRV)
+    {
+        return;
+    }
+
+    UE_LOG(Render, Info, "Released shadow moment resources for atlas page.");
+    ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
+}
+
 void FShadowAtlasPage::Release()
 {
     for (FBuddyAllocator2D& Allocator : SliceAllocators)
@@ -222,7 +233,7 @@ void FShadowAtlasPage::Release()
 
     ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(DepthArraySRV));
     ReleaseView(reinterpret_cast<ID3D11DeviceChild*&>(DepthTexture));
-    ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
+    ReleaseMomentResources();
 }
 
 bool FShadowAtlasPage::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShadowMapData& OutData)
@@ -392,16 +403,34 @@ void FShadowAtlasPool::Free(const FShadowMapData& Allocation)
     Pages[Allocation.AtlasPageIndex]->Free(Allocation);
 }
 
+void FShadowAtlasPool::ReleaseMomentResources()
+{
+    for (FShadowAtlasPage* Page : Pages)
+    {
+        if (Page)
+        {
+            Page->ReleaseMomentResources();
+        }
+    }
+}
+
 FShadowAtlasBudgetStats FShadowAtlasPool::GetBudgetStats() const
 {
     FShadowAtlasBudgetStats Stats = {};
-    const uint64 BytesPerAllocatedTexel = static_cast<uint64>(sizeof(float) + (sizeof(float) * 2));
-    Stats.TotalAtlasMemoryBytes =
-        static_cast<uint64>(ShadowAtlas::MaxPages) *
+    const uint64 DepthBytesPerTexel = static_cast<uint64>(sizeof(float));
+    const uint64 MomentBytesPerTexel = static_cast<uint64>(sizeof(float) * 2);
+    const uint64 PageTexelCount =
         static_cast<uint64>(ShadowAtlas::SliceCount) *
         static_cast<uint64>(ShadowAtlas::AtlasSize) *
-        static_cast<uint64>(ShadowAtlas::AtlasSize) *
-        BytesPerAllocatedTexel;
+        static_cast<uint64>(ShadowAtlas::AtlasSize);
+    Stats.TotalAtlasMemoryBytes =
+        static_cast<uint64>(ShadowAtlas::MaxPages) *
+        PageTexelCount *
+        DepthBytesPerTexel;
+    Stats.TotalMomentMemoryBytes =
+        static_cast<uint64>(ShadowAtlas::MaxPages) *
+        PageTexelCount *
+        MomentBytesPerTexel;
 
     uint64 UsedArea = 0;
     const uint64 CapacityArea =
@@ -413,10 +442,8 @@ FShadowAtlasBudgetStats FShadowAtlasPool::GetBudgetStats() const
     Stats.UsedPageCount = static_cast<uint32>(Pages.size());
     Stats.ResidentAtlasMemoryBytes =
         static_cast<uint64>(Pages.size()) *
-        static_cast<uint64>(ShadowAtlas::SliceCount) *
-        static_cast<uint64>(ShadowAtlas::AtlasSize) *
-        static_cast<uint64>(ShadowAtlas::AtlasSize) *
-        BytesPerAllocatedTexel;
+        PageTexelCount *
+        DepthBytesPerTexel;
 
     for (const FShadowAtlasPage* Page : Pages)
     {
@@ -426,6 +453,10 @@ FShadowAtlasBudgetStats FShadowAtlasPool::GetBudgetStats() const
         }
 
         UsedArea += Page->GetAllocatedArea();
+        if (Page->HasMomentResources())
+        {
+            ++Stats.MomentResidentPageCount;
+        }
         for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
         {
             if (Page->IsSliceUsed(SliceIndex))
@@ -438,7 +469,9 @@ FShadowAtlasBudgetStats FShadowAtlasPool::GetBudgetStats() const
     Stats.UsedAreaPercent = CapacityArea > 0
         ? static_cast<float>(static_cast<double>(UsedArea) / static_cast<double>(CapacityArea) * 100.0)
         : 0.0f;
-    Stats.UsedAtlasMemoryBytes = UsedArea * BytesPerAllocatedTexel;
+    Stats.UsedAtlasMemoryBytes = UsedArea * DepthBytesPerTexel;
+    Stats.ResidentMomentMemoryBytes = static_cast<uint64>(Stats.MomentResidentPageCount) * PageTexelCount * MomentBytesPerTexel;
+    Stats.UsedMomentMemoryBytes = Stats.MomentResidentPageCount > 0 ? UsedArea * MomentBytesPerTexel : 0;
 
     return Stats;
 }

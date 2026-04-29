@@ -77,6 +77,15 @@ void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y,
     OutLines.push_back(std::move(Line));
 }
 
+void FOverlayStatSystem::AppendSection(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Label) const
+{
+    FOverlayStatLine Line;
+    Line.Label = Label;
+    Line.ScreenPosition = FVector2(Layout.StartX, Y);
+    Line.bIsSectionHeader = true;
+    OutLines.push_back(std::move(Line));
+}
+
 void FOverlayStatSystem::RecordPickingAttempt(double ElapsedMs)
 {
     LastPickingTimeMs = ElapsedMs;
@@ -146,7 +155,7 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
     uint32 EstimatedLineCount = 0;
     if (bShowFPS)
     {
-        EstimatedLineCount += 2;
+        EstimatedLineCount += 3;
     }
     if (bShowPickingTime)
     {
@@ -158,7 +167,7 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
     }
     if (bShowShadow)
     {
-        EstimatedLineCount += 10;
+        EstimatedLineCount += 15;
     }
     if (bShowLightCull)
     {
@@ -170,17 +179,38 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
     if (bShowFPS)
     {
         const FTimer* Timer = Editor.GetTimer();
-        const float FPS = Timer ? Timer->GetDisplayFPS() : 0.0f;
-        const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
+        const float FPS = Timer ? Timer->GetFPS() : 0.0f;
+        const float MS = Timer ? Timer->GetFrameTimeMs() : 0.0f;
+        const float DeltaTime = Timer ? Timer->GetDeltaTime() : 0.0f;
+        const float AverageWindowSeconds = 1.5f;
+        const float Alpha = (DeltaTime > 0.0f)
+            ? std::clamp(DeltaTime / AverageWindowSeconds, 0.0f, 1.0f)
+            : 1.0f;
+
+        if (!bHasAveragedFPS)
+        {
+            AveragedFPS = FPS;
+            AveragedFrameTimeMs = MS;
+            bHasAveragedFPS = true;
+        }
+        else
+        {
+            AveragedFPS += (FPS - AveragedFPS) * Alpha;
+            AveragedFrameTimeMs += (MS - AveragedFrameTimeMs) * Alpha;
+        }
 
         char Buffer[128] = {};
-        snprintf(Buffer, sizeof(Buffer), "%.1f", FPS);
+        snprintf(Buffer, sizeof(Buffer), "%.1f", AveragedFPS);
         CachedFPSLine = Buffer;
-        AppendLine(OutLines, CurrentY, FString("FPS"), CachedFPSLine);
+        AppendLine(OutLines, CurrentY, FString("FPS (1.5s Avg)"), CachedFPSLine);
         CurrentY += Layout.LineHeight;
 
-        snprintf(Buffer, sizeof(Buffer), "%.2f ms", MS);
-        AppendLine(OutLines, CurrentY, FString("Frame Time"), FString(Buffer));
+        snprintf(Buffer, sizeof(Buffer), "%.2f ms", AveragedFrameTimeMs);
+        AppendLine(OutLines, CurrentY, FString("Frame Time (1.5s Avg)"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%.1f", FPS);
+        AppendLine(OutLines, CurrentY, FString("FPS (Current)"), FString(Buffer));
         CurrentY += Layout.LineHeight + Layout.GroupSpacing;
     }
 
@@ -281,6 +311,9 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
             }
         }
 
+        AppendSection(OutLines, CurrentY, FString("Atlas"));
+        CurrentY += Layout.LineHeight;
+
         FormatBytes(Buffer, sizeof(Buffer), "Used Memory", ShadowStats.UsedAtlasMemoryBytes);
         if (const char* Separator = strstr(Buffer, " : "))
         {
@@ -295,17 +328,6 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
         }
         CurrentY += Layout.LineHeight;
 
-        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u", VisibleDirectionalLights, VisibleSpotLights, VisiblePointLights);
-        AppendLine(OutLines, CurrentY, FString("Count of Visible Light"), FString(Buffer));
-        CurrentY += Layout.LineHeight;
-
-        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u",
-            ShadowStats.DirectionalShadowLightCount,
-            ShadowStats.SpotShadowLightCount,
-            ShadowStats.PointShadowLightCount);
-        AppendLine(OutLines, CurrentY, FString("Count of Shadowed Light"), FString(Buffer));
-        CurrentY += Layout.LineHeight;
-
         snprintf(Buffer, sizeof(Buffer), "%u / %u", ShadowStats.UsedPageCount, ShadowAtlas::MaxPages);
         AppendLine(OutLines, CurrentY, FString("Used Pages"), FString(Buffer));
         CurrentY += Layout.LineHeight;
@@ -316,6 +338,45 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 
         snprintf(Buffer, sizeof(Buffer), "%.1f%%", ShadowStats.UsedAreaPercent);
         AppendLine(OutLines, CurrentY, FString("Used Area"), FString(Buffer));
+        CurrentY += Layout.LineHeight + Layout.GroupSpacing;
+
+        AppendSection(OutLines, CurrentY, FString("Moments"));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%s (%u pages)", ShadowStats.MomentResidentPageCount > 0 ? "Resident" : "Disabled", ShadowStats.MomentResidentPageCount);
+        AppendLine(OutLines, CurrentY, FString("Moment Resources"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        FormatBytes(Buffer, sizeof(Buffer), "Moment Resident", ShadowStats.ResidentMomentMemoryBytes);
+        if (const char* Separator = strstr(Buffer, " : "))
+        {
+            AppendLine(OutLines, CurrentY, FString(Buffer, Buffer + static_cast<int32>(Separator - Buffer)), FString(Separator + 3));
+        }
+        CurrentY += Layout.LineHeight;
+
+        FormatBytes(Buffer, sizeof(Buffer), "Moment Used", ShadowStats.UsedMomentMemoryBytes);
+        if (const char* Separator = strstr(Buffer, " : "))
+        {
+            AppendLine(OutLines, CurrentY, FString(Buffer, Buffer + static_cast<int32>(Separator - Buffer)), FString(Separator + 3));
+        }
+        CurrentY += Layout.LineHeight;
+
+        CurrentY += Layout.GroupSpacing;
+        AppendSection(OutLines, CurrentY, FString("Lights"));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u", VisibleDirectionalLights, VisibleSpotLights, VisiblePointLights);
+        AppendLine(OutLines, CurrentY, FString("Visible Count"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u",
+            ShadowStats.DirectionalShadowLightCount,
+            ShadowStats.SpotShadowLightCount,
+            ShadowStats.PointShadowLightCount);
+        AppendLine(OutLines, CurrentY, FString("Shadowed Count"), FString(Buffer));
+        CurrentY += Layout.LineHeight + Layout.GroupSpacing;
+
+        AppendSection(OutLines, CurrentY, FString("Allocation"));
         CurrentY += Layout.LineHeight;
 
         snprintf(Buffer, sizeof(Buffer), "%u", ShadowStats.FailedAllocationCount);

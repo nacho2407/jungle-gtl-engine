@@ -873,6 +873,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
             const float StatTextScale = OverlaySystem.GetLayout().TextScale * 0.92f;
             const float StatFontSize = ImGui::GetFontSize() * StatTextScale;
             const float StatLineHeight = 22.0f;
+            const float SectionLineHeight = 28.0f;
             const float HeaderHeight = 20.0f;
             const float TitleHeight = 22.0f;
             const float ColumnGap = 18.0f;
@@ -884,6 +885,11 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
             float ValueWidth = 0.0f;
             for (const FOverlayStatLine& Line : StatLines)
             {
+                if (Line.bIsSectionHeader)
+                {
+                    continue;
+                }
+
                 ImVec2 LabelSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Label.c_str());
                 LabelWidth = (LabelWidth > LabelSize.x) ? LabelWidth : LabelSize.x;
 
@@ -897,7 +903,13 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
             float BoxWidth = LabelWidth + ValueWidth + ColumnGap + StatPadding * 2.0f;
             const float MaxAllowedWidth = (std::min)(MaxBoxWidth, OverlayAnchorRect.Width - 24.0f);
             BoxWidth = (std::max)(MinBoxWidth, (std::min)(BoxWidth, MaxAllowedWidth));
-            const float StatHeight = StatPadding + StatBottomPadding + TitleHeight + HeaderHeight + static_cast<float>(StatLines.size()) * StatLineHeight;
+            float StatLinesHeight = 0.0f;
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                StatLinesHeight += Line.bIsSectionHeader ? SectionLineHeight : StatLineHeight;
+            }
+
+            const float StatHeight = StatPadding + StatBottomPadding + TitleHeight + HeaderHeight + StatLinesHeight;
             const ImVec2 BoxMin(
                 OverlayAnchorRect.X + 12.0f,
                 OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + 12.0f);
@@ -940,14 +952,36 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
             TextPos = ImVec2(BoxMin.x + StatPadding, HeaderDividerY + 7.0f);
             for (const FOverlayStatLine& Line : StatLines)
             {
-                OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(LabelColumnX, TextPos.y), IM_COL32(210, 210, 210, 255), Line.Label.c_str());
-                OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(ValueColumnX, TextPos.y), IM_COL32(248, 248, 248, 255), Line.Value.c_str());
-                OverlayDrawList->AddLine(
-                    ImVec2(BoxMin.x + StatPadding, TextPos.y + StatLineHeight - 2.0f),
-                    ImVec2(BoxMax.x - StatPadding, TextPos.y + StatLineHeight - 2.0f),
-                    IM_COL32(255, 255, 255, 10),
-                    1.0f);
-                TextPos.y += StatLineHeight;
+                if (Line.bIsSectionHeader)
+                {
+                    const float SectionTextX = LabelColumnX + 10.0f;
+                    const float SectionTextY = TextPos.y + 5.0f;
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(SectionTextX, SectionTextY), IM_COL32(150, 170, 190, 255), Line.Label.c_str());
+                    const ImVec2 SectionSize = OverlayFont->CalcTextSizeA(StatFontSize - 0.5f, FLT_MAX, 0.0f, Line.Label.c_str());
+                    const float SectionLineY = TextPos.y + SectionLineHeight * 0.55f;
+                    OverlayDrawList->AddLine(
+                        ImVec2(SectionTextX + SectionSize.x + 12.0f, SectionLineY),
+                        ImVec2(BoxMax.x - StatPadding, SectionLineY),
+                        IM_COL32(255, 255, 255, 22),
+                        1.0f);
+                    OverlayDrawList->AddLine(
+                        ImVec2(BoxMin.x + StatPadding, TextPos.y + SectionLineHeight - 3.0f),
+                        ImVec2(BoxMax.x - StatPadding, TextPos.y + SectionLineHeight - 3.0f),
+                        IM_COL32(255, 255, 255, 12),
+                        1.0f);
+                    TextPos.y += SectionLineHeight;
+                }
+                else
+                {
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(LabelColumnX, TextPos.y), IM_COL32(210, 210, 210, 255), Line.Label.c_str());
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(ValueColumnX, TextPos.y), IM_COL32(248, 248, 248, 255), Line.Value.c_str());
+                    OverlayDrawList->AddLine(
+                        ImVec2(BoxMin.x + StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                        ImVec2(BoxMax.x - StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                        IM_COL32(255, 255, 255, 10),
+                        1.0f);
+                    TextPos.y += StatLineHeight;
+                }
             }
         }
 

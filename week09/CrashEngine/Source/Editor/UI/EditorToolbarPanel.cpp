@@ -14,6 +14,7 @@
 #include "Platform/Paths.h"
 #include "Render/Resources/Shadows/ShadowFilterSettings.h"
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
+#include "Render/Submission/Atlas/ShadowResolutionPolicy.h"
 #include "WICTextureLoader.h"
 
 #include <cstdio>
@@ -364,7 +365,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
     FViewportRenderOptions& Opts = VC->GetRenderOptions();
 
-    OpenToolbarPopup("ViewOrientation", "ViewportTypePopup", [&]()
+    OpenToolbarPopup("View", "ViewportTypePopup", [&]()
                      {
         ImGui::SeparatorText("Perspective");
         if (ImGui::Selectable("Perspective", Opts.ViewportType == ELevelViewportType::Perspective))
@@ -407,28 +408,6 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             }
         } });
 
-    if (UGizmoComponent* Gizmo = Editor->GetGizmo())
-    {
-        OpenToolbarPopup("Gizmo", "GizmoModePopup", [&]()
-                         {
-            int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
-
-            if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
-            {
-                Gizmo->SetTranslateMode();
-            }
-
-            if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
-            {
-                Gizmo->SetRotateMode();
-            }
-
-            if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
-            {
-                Gizmo->SetScaleMode();
-            } });
-    }
-
     OpenToolbarPopup("Pilot", "PilotPopup", [&]()
                      {
         FSelectionManager& Selection = Editor->GetSelectionManager();
@@ -465,6 +444,28 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
                 ImGui::CloseCurrentPopup();
             }
         }); });
+
+    if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+    {
+        OpenToolbarPopup("Gizmo", "GizmoModePopup", [&]()
+                         {
+            int32 CurrentGizmoMode = static_cast<int32>(Gizmo->GetMode());
+
+            if (ImGui::RadioButton("Translate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Translate)))
+            {
+                Gizmo->SetTranslateMode();
+            }
+
+            if (ImGui::RadioButton("Rotate", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Rotate)))
+            {
+                Gizmo->SetRotateMode();
+            }
+
+            if (ImGui::RadioButton("Scale", &CurrentGizmoMode, static_cast<int32>(EGizmoMode::Scale)))
+            {
+                Gizmo->SetScaleMode();
+            } });
+    }
 
     OpenToolbarPopup("ViewMode", "ViewModePopup", [&]()
                      {
@@ -555,7 +556,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             Opts.ShowFlags.b25DCulling = (mode == 1);
         } });
 
-    OpenToolbarPopup("Shadow", "ShadowPopup", [&]()
+    OpenToolbarPopup("Shadows", "ShadowPopup", [&]()
                      {
         static const char* ShadowMapMethodLabels[] = {
             "Standard",
@@ -571,7 +572,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 
-        if (ImGui::Combo("Shadow Map Method", &SelectedShadowMapMethod, ShadowMapMethodLabels, IM_ARRAYSIZE(ShadowMapMethodLabels)))
+        if (ImGui::Combo("Map Method", &SelectedShadowMapMethod, ShadowMapMethodLabels, IM_ARRAYSIZE(ShadowMapMethodLabels)))
         {
             SetShadowMapMethod(static_cast<EShadowMapMethod>(SelectedShadowMapMethod));
         }
@@ -588,9 +589,25 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             SelectedShadowFilter = 0;
         }
 
-        if (ImGui::Combo("Shadow Filter", &SelectedShadowFilter, ShadowFilterLabels, IM_ARRAYSIZE(ShadowFilterLabels)))
+        if (ImGui::Combo("Filter", &SelectedShadowFilter, ShadowFilterLabels, IM_ARRAYSIZE(ShadowFilterLabels)))
         {
             SetShadowFilterMethod(static_cast<EShadowFilterMethod>(SelectedShadowFilter));
+        }
+
+        static const char* AllocationPolicyLabels[] = {
+            "Prefer Downgrade",
+            "Prefer Eviction",
+            "Downgrade Only"
+        };
+        int32 SelectedAllocationPolicy = static_cast<int32>(GetShadowAllocationPolicy());
+        if (SelectedAllocationPolicy < 0 || SelectedAllocationPolicy >= IM_ARRAYSIZE(AllocationPolicyLabels))
+        {
+            SelectedAllocationPolicy = 0;
+        }
+
+        if (ImGui::Combo("Eviction Policy", &SelectedAllocationPolicy, AllocationPolicyLabels, IM_ARRAYSIZE(AllocationPolicyLabels)))
+        {
+            SetShadowAllocationPolicy(static_cast<EShadowAllocationPolicy>(SelectedAllocationPolicy));
         }
 
         ImGui::PopStyleVar(2);

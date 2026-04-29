@@ -19,6 +19,7 @@ public:
 
     bool Initialize(ID3D11Device* Device) override;
     bool EnsureMomentResources(ID3D11Device* Device);
+    void ReleaseMomentResources();
     void Release() override;
     bool HasMomentResources() const { return MomentTexture != nullptr; }
 
@@ -62,6 +63,7 @@ public:
     void Release();
     bool Allocate(ID3D11Device* Device, uint32 Resolution, FShadowMapData& OutData);
     void Free(const FShadowMapData& Allocation);
+    void ReleaseMomentResources();
     FShadowAtlasBudgetStats GetBudgetStats() const;
 
     uint32                  GetPageCount() const { return static_cast<uint32>(Pages.size()); }

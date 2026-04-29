@@ -34,10 +34,12 @@ public:
     ID3D11ShaderResourceView* GetShadowMomentSRV(uint32 PageIndex) const;
     ID3D11ShaderResourceView* GetShadowPreviewSRV(const FShadowMapData& ShadowMapData) const;
     ID3D11ShaderResourceView* GetShadowMomentPreviewSRV(const FShadowMapData& ShadowMapData) const;
+    ID3D11ShaderResourceView* GetShadowPageSliceMomentPreviewSRV(uint32 PageIndex, uint32 SliceIndex) const;
     ID3D11ShaderResourceView* GetShadowDebugPreviewSRV(
         const FShadowMapData& ShadowMapData,
         const FMatrix&        ViewProj,
         EShadowDepthPreviewMode ShadowDepthPreviewMode,
+        float                ShadowESMExponent,
         ID3D11Device*         Device,
         ID3D11DeviceContext*  DeviceContext);
     ID3D11ShaderResourceView* GetShadowPageSlicePreviewSRV(uint32 PageIndex, uint32 SliceIndex) const;
@@ -65,13 +67,21 @@ private:
 
     struct FDebugPreviewResources
     {
+        static constexpr uint32 PoolSize = 64;
+
+        struct FSlot
+        {
+            ID3D11Texture2D*          Texture = nullptr;
+            ID3D11RenderTargetView*   RTV     = nullptr;
+            ID3D11ShaderResourceView* SRV     = nullptr;
+        };
+
         ID3D11VertexShader*       VS      = nullptr;
         ID3D11PixelShader*        PS      = nullptr;
         ID3D11Buffer*             CB      = nullptr;
-        ID3D11Texture2D*          Texture = nullptr;
-        ID3D11RenderTargetView*   RTV     = nullptr;
-        ID3D11ShaderResourceView* SRV     = nullptr;
         uint32                    Size    = 512;
+        uint32                    NextSlot = 0;
+        FSlot                     Slots[PoolSize] = {};
     };
 
     void EnsureDebugPreviewResources(ID3D11Device* Device);
