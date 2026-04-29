@@ -14,7 +14,7 @@ protected:
 	virtual FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
 
-	virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const override;
+	//virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const override;
 
 public:
     float AttenuationRadius		= 10.f;

@@ -1040,7 +1040,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
                     continue;
                 }
 
-                ImGui::Image(CubeSRV[i], ImVec2(128, 128));
+                ImGui::Image(CubeSRV[i], ImVec2(64, 64));
 
                 if ((i % 3) != 2)
                 {
