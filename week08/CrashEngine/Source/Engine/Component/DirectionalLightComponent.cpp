@@ -28,14 +28,14 @@ void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescripto
     ULightComponent::GetEditableProperties(OutProps);
     OutProps.push_back({ "Cascade Count", EPropertyType::Int, &CascadeCount, 1.0f, 4.0f, 1.0f });
     OutProps.push_back({ "CSM Max Distance", EPropertyType::Float, &DynamicShadowDistance, 100.0f, 20000.0f, 10.0f });
-    OutProps.push_back({ "Cascade Distribution", EPropertyType::Float, &CascadeDistribution, 0.1f, 4.0f, 0.01f });
+    OutProps.push_back({ "Cascade Distribution", EPropertyType::Float, &CascadeDistribution, 0.0f, 1.0f, 0.01f });
 }
 
 void UDirectionalLightComponent::PostEditProperty(const char* PropertyName)
 {
     CascadeCount = std::clamp(CascadeCount, 1, 4);
     DynamicShadowDistance = std::max(100.0f, DynamicShadowDistance);
-    CascadeDistribution = std::clamp(CascadeDistribution, 0.1f, 4.0f);
+    CascadeDistribution = std::clamp(CascadeDistribution, 0.0f, 1.0f);
     ULightComponent::PostEditProperty(PropertyName);
 }
 

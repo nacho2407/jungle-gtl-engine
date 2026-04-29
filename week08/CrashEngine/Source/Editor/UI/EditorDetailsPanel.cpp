@@ -982,30 +982,6 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
                     bool* ValuePtr = static_cast<bool*>(ShadowProps[PropIndex].ValuePtr);
                     bChanged = ImGui::Checkbox("Cast Shadows", ValuePtr);
                 }
-                else if (ShadowProps[PropIndex].Name == "Cascade Distribution" && ShadowProps[PropIndex].Type == EPropertyType::Float)
-                {
-                    static const char* DistributionLabels[] = { "Uniform", "Balanced", "Near Focused" };
-                    static const float DistributionValues[] = { 1.0f, 2.0f, 4.0f };
-                    float* ValuePtr = static_cast<float*>(ShadowProps[PropIndex].ValuePtr);
-
-                    int32 SelectedIndex = 0;
-                    float BestDistance = FLT_MAX;
-                    for (int32 OptionIndex = 0; OptionIndex < IM_ARRAYSIZE(DistributionValues); ++OptionIndex)
-                    {
-                        const float Distance = std::abs(*ValuePtr - DistributionValues[OptionIndex]);
-                        if (Distance < BestDistance)
-                        {
-                            BestDistance = Distance;
-                            SelectedIndex = OptionIndex;
-                        }
-                    }
-
-                    if (ImGui::Combo("Cascade Distribution##CascadeDistribution", &SelectedIndex, DistributionLabels, IM_ARRAYSIZE(DistributionLabels)))
-                    {
-                        *ValuePtr = DistributionValues[SelectedIndex];
-                        bChanged = true;
-                    }
-                }
                 else
                 {
                     bChanged = RenderDetailsPanel(ShadowProps, PropIndex);
