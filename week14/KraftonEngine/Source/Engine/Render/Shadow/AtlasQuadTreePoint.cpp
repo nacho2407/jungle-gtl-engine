@@ -58,7 +58,7 @@ float FAtlasQuadTreePoint::EvaluateResolution(const FPointLightParams& InLightIn
 
 	// Calculate ideal resolution based on area, luminance, and intensity
 	float ResolutionScale = InLightInfo.ShadowResolutionScale;
-	float desired_res = sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity / (2 * InLightInfo.LightFalloffExponent) / 6 * ResolutionScale;
+	float desired_res = sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity / (InLightInfo.LightFalloffExponent) / 3 * ResolutionScale;
 
 	return desired_res;
 }
