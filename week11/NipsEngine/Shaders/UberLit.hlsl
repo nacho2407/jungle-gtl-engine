@@ -230,9 +230,11 @@ float CalculateShadow(float4 worldPos)
     FAtlasShadowData cascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
     
     float totalBias = ComputeBias(projCoords.z, cascadeShadowData.ConstantBias, cascadeShadowData.SlopedBias);
-    
+#if SHADOW_MAP_VSM
+    float ShadowFactor = ComputeShadowVSM(projCoords, cascadeShadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
+#else
     float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-    
+#endif   
     // 마지막 인덱스 제외하고 블렌드
     if (CascadeIndex < DirectionalCascadeCount - 1)
     {
