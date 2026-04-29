@@ -201,7 +201,7 @@ static FString GetEditorFriendlyPropertyName(const FString& RawName)
     {
         return "Affects World";
     }
-    if (RawName == "bCastShadows")
+    if (RawName == "Cast Shadows")
     {
         return "Cast Shadows";
     }
@@ -723,8 +723,8 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     };
     auto IsShadowProp = [](const FString& Name)
     {
-        return Name == "bCastShadows"
-            || Name == "Bias"
+        return Name == "Cast Shadows"
+            || Name == "Depth Bias"
             || Name == "Slope Bias"
             || Name == "Normal Bias"
             || Name == "Shadow Sharpen"
@@ -979,7 +979,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
             if (ShadowProps[PropIndex].Name == PropertyName)
             {
                 bool bChanged = false;
-                if (ShadowProps[PropIndex].Name == "bCastShadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
+                if (ShadowProps[PropIndex].Name == "Cast Shadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
                 {
                     bool* ValuePtr = static_cast<bool*>(ShadowProps[PropIndex].ValuePtr);
                     bChanged = ImGui::Checkbox("Cast Shadows", ValuePtr);
@@ -1024,7 +1024,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     };
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    RenderShadowPropertyByName("bCastShadows");
+    RenderShadowPropertyByName("Cast Shadows");
     if (!LightComponent->DoesCastShadows())
     {
         return;
