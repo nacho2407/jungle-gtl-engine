@@ -681,7 +681,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		for (uint32 visIdx : SpotPageGroups[Page])
 		{
 			const uint32 LightIdx = VisibleShadowSpotIndices[visIdx];
-			SpotLightAtlas.AddToBatch(Env.GetSpotLight(LightIdx), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(visIdx));
+			SpotLightAtlas.AddToBatch(Env.GetSpotLight(LightIdx), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(LightIdx));
 		}
 
 		TArray<FAtlasRegion> PageRegions = SpotLightAtlas.CommitBatch();
@@ -836,7 +836,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			{
 				FPointLightParams FaceParams = PointLight;
 				FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
-				PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(shadowIdx));
+				PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(LightIdx));
 			}
 		}
 
