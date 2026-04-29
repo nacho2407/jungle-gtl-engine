@@ -10,6 +10,8 @@ class FEditorPropertyWidget : public FEditorWidget
 {
 public:
 	virtual void Render(float DeltaTime) override;
+	void SetShowEditorOnlyComponents(bool bEnable) { bShowEditorOnlyComponents = bEnable; }
+	bool IsShowingEditorOnlyComponents() const { return bShowEditorOnlyComponents; }
 
 private:
 	void RenderComponentTree(AActor* Actor);

@@ -242,9 +242,6 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	}
 
 	// ========== 고정 영역: Component Tree ==========
-	SEPARATOR();
-	ImGui::Checkbox("Show Editor Only", &bShowEditorOnlyComponents);
-	ImGui::Separator();
 	RenderComponentTree(PrimaryActor);
 
 	// ========== 스크롤 영역: Details ==========
