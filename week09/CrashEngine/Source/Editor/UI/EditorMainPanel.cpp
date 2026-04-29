@@ -155,7 +155,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     EditorEngine = InEditorEngine;
     GLog = &LogBuffer;
 
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 19.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
     IO.FontGlobalScale = 1.05f;
     ImGui::GetStyle().ScaleAllSizes(1.05f);
 

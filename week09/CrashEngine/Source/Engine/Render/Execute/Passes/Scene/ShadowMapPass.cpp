@@ -1,6 +1,7 @@
 #include "ShadowMapPass.h"
 
 #include "Component/LightComponent.h"
+#include "Core/Logging/LogMacros.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
@@ -20,6 +21,43 @@
 
 namespace
 {
+const char* GetLightTypeName(uint32 LightType)
+{
+    switch (static_cast<ELightType>(LightType))
+    {
+    case ELightType::Ambient:
+        return "Ambient";
+    case ELightType::Directional:
+        return "Directional";
+    case ELightType::Point:
+        return "Point";
+    case ELightType::Spot:
+        return "Spot";
+    default:
+        return "Unknown";
+    }
+}
+
+FString GetLightLabel(const FLightProxy* Light)
+{
+    return (Light && Light->Owner) ? Light->Owner->GetFName().ToString() : FString("UnnamedLight");
+}
+
+FString FormatShadowAllocation(const FShadowMapData* Allocation)
+{
+    if (!Allocation)
+    {
+        return FString("Unallocated");
+    }
+
+    return "page=" + std::to_string(Allocation->AtlasPageIndex) +
+           " slice=" + std::to_string(Allocation->SliceIndex) +
+           " rect=(" + std::to_string(Allocation->ViewportRect.X) +
+           ", " + std::to_string(Allocation->ViewportRect.Y) +
+           " " + std::to_string(Allocation->ViewportRect.Width) +
+           "x" + std::to_string(Allocation->ViewportRect.Height) + ")";
+}
+
 struct FShadowDebugPreviewCBData
 {
     FMatrix InvViewProj = FMatrix::Identity;
@@ -130,6 +168,7 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
             &PsBlob, PreviewPSDesc, "ps_5_0", "Shadow Debug Preview PS Compile Error");
         if (!bCompiledVS || !bCompiledPS)
         {
+            UE_LOG(Render, Error, "Failed to compile shadow debug preview shaders.");
             if (VsBlob) VsBlob->Release();
             if (PsBlob) PsBlob->Release();
             return;
@@ -143,9 +182,12 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
 
         if (FAILED(HrVS) || FAILED(HrPS))
         {
+            UE_LOG(Render, Error, "Failed to create shadow debug preview shader objects.");
             ReleaseDebugPreviewResources();
             return;
         }
+
+        UE_LOG(Render, Verbose, "Initialized shadow debug preview shaders.");
     }
 
     if (DebugPreview.CB == nullptr)
@@ -157,6 +199,7 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
         CbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &DebugPreview.CB)))
         {
+            UE_LOG(Render, Error, "Failed to create shadow debug preview constant buffer.");
             return;
         }
     }
@@ -180,7 +223,12 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
         FAILED(Device->CreateRenderTargetView(DebugPreview.Texture, nullptr, &DebugPreview.RTV)) ||
         FAILED(Device->CreateShaderResourceView(DebugPreview.Texture, nullptr, &DebugPreview.SRV)))
     {
+        UE_LOG(Render, Error, "Failed to create shadow debug preview render target resources.");
         ReleaseDebugPreviewResources();
+    }
+    else
+    {
+        UE_LOG(Render, Verbose, "Created shadow debug preview render target. Size=%u", DebugPreview.Size);
     }
 }
 
@@ -330,6 +378,13 @@ PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod
     };
 
     auto& VisibleLights = Context.Submission.SceneData->Lights.VisibleLightProxies;
+    static uint32 LastLoggedVisibleLightCount = UINT32_MAX;
+    const uint32 VisibleLightCount = static_cast<uint32>(VisibleLights.size());
+    if (LastLoggedVisibleLightCount != VisibleLightCount)
+    {
+        UE_LOG(Render, Verbose, "Building shadow draw commands for %u visible lights.", VisibleLightCount);
+        LastLoggedVisibleLightCount = VisibleLightCount;
+    }
     for (FLightProxy* Light : VisibleLights)
     {
         if (!Light || !Light->bCastShadow)
@@ -391,6 +446,11 @@ void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context, const FP
 
 void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 {
+    static bool bLoggedInvalidItemIndex = false;
+    static bool bLoggedMissingAtlasPage = false;
+    static bool bLoggedMomentResourceFailure = false;
+    static bool bLoggedMissingSliceDSV = false;
+
     if (!Context.DrawCommandList || RenderItems.empty())
     {
         return;
@@ -432,6 +492,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
 
         if (ItemIndex >= RenderItems.size())
         {
+            if (!bLoggedInvalidItemIndex)
+            {
+                UE_LOG(Render, Warning, "Shadow draw command referenced invalid render item index %u.", ItemIndex);
+                bLoggedInvalidItemIndex = true;
+            }
             continue;
         }
 
@@ -444,6 +509,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         FShadowAtlasPage* AtlasPage = AtlasPool.GetPage(Item.Allocation->AtlasPageIndex);
         if (!AtlasPage)
         {
+            if (!bLoggedMissingAtlasPage)
+            {
+                UE_LOG(Render, Warning, "Missing shadow atlas page %u for %s.", Item.Allocation->AtlasPageIndex, GetLightLabel(Item.Light).c_str());
+                bLoggedMissingAtlasPage = true;
+            }
             continue;
         }
 
@@ -453,6 +523,12 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             ShadowFilterMethod == EShadowFilterMethod::ESM;
         if (bUsesFilterableMoments && !AtlasPage->EnsureMomentResources(Context.Device->GetDevice()))
         {
+            if (!bLoggedMomentResourceFailure)
+            {
+                UE_LOG(Render, Warning, "Failed to ensure shadow moment resources for %s at %s.",
+                    GetLightLabel(Item.Light).c_str(), FormatShadowAllocation(Item.Allocation).c_str());
+                bLoggedMomentResourceFailure = true;
+            }
             continue;
         }
 
@@ -460,6 +536,11 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         ID3D11RenderTargetView* RTV = AtlasPage->GetMomentSliceRTV(Item.Allocation->SliceIndex);
         if (!DSV)
         {
+            if (!bLoggedMissingSliceDSV)
+            {
+                UE_LOG(Render, Warning, "Missing shadow DSV for %s at %s.", GetLightLabel(Item.Light).c_str(), FormatShadowAllocation(Item.Allocation).c_str());
+                bLoggedMissingSliceDSV = true;
+            }
             continue;
         }
 

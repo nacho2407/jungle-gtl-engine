@@ -52,9 +52,11 @@ void FShaderProgramRegistry::Initialize()
         Desc = {};
     }
 
+    Add(EShaderType::Default, MakeGraphicsProgramDesc("Default", "Shaders/Render/Editor/Primitive.hlsl"));
     Add(EShaderType::Primitive, MakeGraphicsProgramDesc("Primitive", "Shaders/Render/Editor/Primitive.hlsl"));
     Add(EShaderType::Gizmo, MakeGraphicsProgramDesc("Gizmo", "Shaders/Render/Editor/Gizmo.hlsl"));
     Add(EShaderType::Editor, MakeGraphicsProgramDesc("Editor", "Shaders/Render/Editor/Editor.hlsl"));
+    Add(EShaderType::StaticMesh, MakeGraphicsProgramDesc("StaticMesh", "Shaders/Render/Editor/Primitive.hlsl"));
     Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/Deferred/DeferredDecalPS.hlsl"));
     Add(EShaderType::OutlinePostProcess, MakeGraphicsProgramDesc("OutlinePostProcess", "Shaders/Passes/PostProcess/OutlinePostProcessPass.hlsl"));
     Add(EShaderType::FXAA, MakeGraphicsProgramDesc("FXAA", "Shaders/Passes/PostProcess/FXAAPass.hlsl"));

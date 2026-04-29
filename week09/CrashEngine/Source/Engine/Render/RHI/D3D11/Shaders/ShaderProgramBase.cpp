@@ -1,6 +1,7 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
 #include "Render/Resources/Shaders/ShaderIncludeLoader.h"
@@ -242,7 +243,12 @@ bool TryLoadCachedShaderBlob(
         return false;
     }
 
-    return SUCCEEDED(D3DReadFileToBlob(BlobPath.c_str(), OutShaderBlob));
+    const bool bLoaded = SUCCEEDED(D3DReadFileToBlob(BlobPath.c_str(), OutShaderBlob));
+    if (bLoaded)
+    {
+        UE_LOG(Render, Verbose, "Loaded cached shader blob: %s [%s::%s]", InDesc.FilePath.c_str(), InDesc.EntryPoint.c_str(), InTarget);
+    }
+    return bLoaded;
 }
 
 void StoreShaderBlobInCache(
@@ -278,6 +284,7 @@ void StoreShaderBlobInCache(
     FShaderCacheHeader Header;
     Header.DependencyHash = Dependency.DependencyHash;
     WriteShaderCacheHeader(MetaPath, Header);
+    UE_LOG(Render, Verbose, "Stored shader cache blob: %s [%s::%s]", InDesc.FilePath.c_str(), InDesc.EntryPoint.c_str(), InTarget);
 }
 } // namespace
 
@@ -367,6 +374,7 @@ bool FShaderProgramBase::CompileShaderBlobStandalone(
 
     if (FAILED(Hr))
     {
+        UE_LOG(Render, Error, "Shader compile failed: %s [%s::%s]", InDesc.FilePath.c_str(), InDesc.EntryPoint.c_str(), InTarget);
         if (ErrorBlob)
         {
             MessageBoxA(nullptr, static_cast<const char*>(ErrorBlob->GetBufferPointer()), InErrorTitle ? InErrorTitle : "Shader Compile Error", MB_OK | MB_ICONERROR);
@@ -381,6 +389,7 @@ bool FShaderProgramBase::CompileShaderBlobStandalone(
     }
 
     StoreShaderBlobInCache(*OutShaderBlob, AbsolutePath, InDesc, InTarget, CompileFlags);
+    UE_LOG(Render, Verbose, "Compiled shader blob: %s [%s::%s]", InDesc.FilePath.c_str(), InDesc.EntryPoint.c_str(), InTarget);
     return true;
 }
 

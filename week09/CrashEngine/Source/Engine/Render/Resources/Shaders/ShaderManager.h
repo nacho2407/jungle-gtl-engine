@@ -7,6 +7,7 @@
 #include "Render/RHI/D3D11/Shaders/GraphicsProgram.h"
 #include "Render/Resources/Shaders/ShaderDependencyUtils.h"
 
+#include <array>
 #include <memory>
 
 using ShaderDependencyUtils::FShaderFileDependency;
@@ -44,6 +45,7 @@ private:
     FShaderProgramRegistry                 ShaderRegistry;
     FGraphicsProgram                       Shaders[(uint32)EShaderType::MAX];
     FShaderFileDependency                  BuiltInShaderFiles[(uint32)EShaderType::MAX];
+    std::array<bool, static_cast<uint32>(EShaderType::MAX)> MissingBuiltInShaderWarnings{};
     TMap<FString, FCustomShaderCacheEntry> CustomShaderCache;
 
     ID3D11Device* Device         = nullptr;

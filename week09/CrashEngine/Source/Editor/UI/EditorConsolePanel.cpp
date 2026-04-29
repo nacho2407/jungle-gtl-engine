@@ -20,9 +20,9 @@ ImVec4 GetLogTextColor(ELogLevel Level)
     case ELogLevel::Verbose:
         return ImVec4(0.50f, 0.50f, 0.50f, 1.0f);
     case ELogLevel::Debug:
-        return ImVec4(0.62f, 0.62f, 0.62f, 1.0f);
+        return ImVec4(0.96f, 0.96f, 0.96f, 1.0f);
     case ELogLevel::Info:
-        return ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
+        return ImVec4(0.35f, 0.86f, 1.0f, 1.0f);
     case ELogLevel::Warning:
         return ImVec4(0.98f, 0.86f, 0.20f, 1.0f);
     case ELogLevel::Error:
@@ -37,17 +37,37 @@ ImVec4 GetLogChipColor(ELogLevel Level)
     switch (Level)
     {
     case ELogLevel::Verbose:
-        return ImVec4(0.22f, 0.22f, 0.22f, 1.0f);
+        return ImVec4(0.50f, 0.50f, 0.50f, 1.0f);
     case ELogLevel::Debug:
-        return ImVec4(0.28f, 0.28f, 0.28f, 1.0f);
+        return ImVec4(0.96f, 0.96f, 0.96f, 1.0f);
     case ELogLevel::Info:
-        return ImVec4(0.34f, 0.34f, 0.34f, 1.0f);
+        return ImVec4(0.35f, 0.86f, 1.0f, 1.0f);
     case ELogLevel::Warning:
-        return ImVec4(0.40f, 0.32f, 0.06f, 1.0f);
+        return ImVec4(0.98f, 0.86f, 0.20f, 1.0f);
     case ELogLevel::Error:
-        return ImVec4(0.42f, 0.10f, 0.10f, 1.0f);
+        return ImVec4(0.95f, 0.24f, 0.24f, 1.0f);
     default:
         return ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    }
+}
+
+ImVec4 Dim(const ImVec4& Color, float Factor)
+{
+    return ImVec4(Color.x * Factor, Color.y * Factor, Color.z * Factor, Color.w);
+}
+
+ImVec4 GetLogButtonTextColor(ELogLevel Level)
+{
+    switch (Level)
+    {
+    case ELogLevel::Debug:
+    case ELogLevel::Info:
+    case ELogLevel::Warning:
+        return ImVec4(0.08f, 0.08f, 0.08f, 1.0f);
+    case ELogLevel::Verbose:
+    case ELogLevel::Error:
+    default:
+        return ImVec4(0.97f, 0.97f, 0.97f, 1.0f);
     }
 }
 
@@ -261,18 +281,9 @@ bool FEditorConsolePanel::ShouldDisplayEntry(ELogLevel Level, const FString& Tex
 
 void FEditorConsolePanel::DrawToolbar()
 {
-    if (ImGui::Button("Clear"))
-    {
-        Clear();
-    }
-
+    ImGui::TextUnformatted("Minimum Level ");
     ImGui::SameLine();
-    ImGui::Checkbox("Auto-scroll", &AutoScroll);
-
-    ImGui::SameLine();
-    ImGui::TextUnformatted("Min");
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(92.0f);
+    ImGui::SetNextItemWidth(100.0f);
     if (ImGui::BeginCombo("##MinimumLevel", GetLogLevelDisplayName(MinimumVisibleLevel)))
     {
         for (int32 Index = static_cast<int32>(ELogLevel::Verbose); Index <= static_cast<int32>(ELogLevel::Error); ++Index)
@@ -296,17 +307,29 @@ void FEditorConsolePanel::DrawToolbar()
     {
         ImGui::SameLine();
         const ELogLevel Level = static_cast<ELogLevel>(Index);
-        ImGui::PushStyleColor(ImGuiCol_Button, GetLogChipColor(Level));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Brighten(GetLogChipColor(Level), 0.08f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Brighten(GetLogChipColor(Level), 0.14f));
+        const bool bVisible = LevelVisibility[Index];
+        const ImVec4 BaseColor = bVisible ? GetLogChipColor(Level) : Dim(GetLogChipColor(Level), 0.28f);
+        const ImVec4 TextColor = bVisible ? GetLogButtonTextColor(Level) : ImVec4(0.62f, 0.62f, 0.62f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, BaseColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Brighten(BaseColor, 0.08f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Brighten(BaseColor, 0.14f));
+        ImGui::PushStyleColor(ImGuiCol_Text, TextColor);
 
-        if (ImGui::Button(GetLogLevelDisplayName(Level)))
+        if (ImGui::Button(GetLogLevelDisplayName(Level), ImVec2(76.0f, 0.0f)))
         {
             LevelVisibility[Index] = !LevelVisibility[Index];
         }
 
-        ImGui::PopStyleColor(3);
+        ImGui::PopStyleColor(4);
     }
+
+    if (ImGui::Button("Clear"))
+    {
+        Clear();
+    }
+
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto-scroll", &AutoScroll);
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(240.0f);

@@ -1,10 +1,59 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/Shaders/ShaderManager.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Platform/Paths.h"
 
 namespace
 {
+const char* GetShaderTypeName(EShaderType InType)
+{
+    switch (InType)
+    {
+    case EShaderType::Default:
+        return "Default";
+    case EShaderType::Primitive:
+        return "Primitive";
+    case EShaderType::Gizmo:
+        return "Gizmo";
+    case EShaderType::Editor:
+        return "Editor";
+    case EShaderType::StaticMesh:
+        return "StaticMesh";
+    case EShaderType::Decal:
+        return "Decal";
+    case EShaderType::OutlinePostProcess:
+        return "OutlinePostProcess";
+    case EShaderType::Font:
+        return "Font";
+    case EShaderType::OverlayFont:
+        return "OverlayFont";
+    case EShaderType::SubUV:
+        return "SubUV";
+    case EShaderType::Billboard:
+        return "Billboard";
+    case EShaderType::HeightFog:
+        return "HeightFog";
+    case EShaderType::DepthOnly:
+        return "DepthOnly";
+    case EShaderType::ShadowEncodeVSM:
+        return "ShadowEncodeVSM";
+    case EShaderType::ShadowEncodeESM:
+        return "ShadowEncodeESM";
+    case EShaderType::SceneDepth:
+        return "SceneDepth";
+    case EShaderType::NormalView:
+        return "NormalView";
+    case EShaderType::FXAA:
+        return "FXAA";
+    case EShaderType::LightHitMap:
+        return "LightHitMap";
+    case EShaderType::MAX:
+    default:
+        return "Unknown";
+    }
+}
+
 /*
     외부에서 넘겨받은 단일 HLSL 파일을 기본 VS/PS 엔트리 프로그램 desc로 감쌉니다.
     커스텀 셰이더는 레지스트리를 거치지 않으므로 최소한의 그래픽 프로그램 규칙만 적용합니다.
@@ -27,9 +76,11 @@ FGraphicsProgramDesc MakeCustomGraphicsDesc(const FString& InPath)
 void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
     Device = InDevice;
+    MissingBuiltInShaderWarnings.fill(false);
     if (!bIsInitialized)
     {
         bIsInitialized = true;
+        UE_LOG(Render, Info, "Shader manager initialized.");
     }
 
     ShaderRegistry.Initialize();
@@ -40,6 +91,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 */
 void FShaderManager::Release()
 {
+    UE_LOG(Render, Verbose, "Releasing shader manager resources. BuiltIn=%u Custom=%u",
+        static_cast<uint32>(EShaderType::MAX),
+        static_cast<uint32>(CustomShaderCache.size()));
     for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
     {
         Shaders[i].Release();
@@ -54,6 +108,7 @@ void FShaderManager::Release()
         }
     }
     CustomShaderCache.clear();
+    MissingBuiltInShaderWarnings.fill(false);
 
     Device         = nullptr;
     bIsInitialized = false;
@@ -74,7 +129,13 @@ void FShaderManager::TickHotReload()
 
     for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
     {
-        RefreshBuiltInShader(static_cast<EShaderType>(i));
+        const EShaderType ShaderType = static_cast<EShaderType>(i);
+        if (ShaderRegistry.Find(ShaderType) == nullptr)
+        {
+            continue;
+        }
+
+        RefreshBuiltInShader(ShaderType);
     }
 
     for (auto& Pair : CustomShaderCache)
@@ -135,6 +196,7 @@ FGraphicsProgram* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, con
     Device = InDevice ? InDevice : Device;
     if (!Device || InFilePath == nullptr)
     {
+        UE_LOG(Render, Warning, "CreateCustomShader skipped because device or file path was invalid.");
         return nullptr;
     }
 
@@ -144,6 +206,7 @@ FGraphicsProgram* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, con
     auto It = CustomShaderCache.find(NormalizedKey);
     if (It != CustomShaderCache.end())
     {
+        UE_LOG(Render, Verbose, "Reusing custom shader cache entry: %s", NormalizedKey.c_str());
         RefreshCustomShader(It->second, NormalizedKey);
         return It->second.Shader.get();
     }
@@ -153,12 +216,14 @@ FGraphicsProgram* FShaderManager::CreateCustomShader(ID3D11Device* InDevice, con
     const FGraphicsProgramDesc Desc = MakeCustomGraphicsDesc(NormalizedKey);
     if (!Entry.Shader->Create(Device, Desc))
     {
+        UE_LOG(Render, Error, "Failed to create custom shader: %s", NormalizedKey.c_str());
         return nullptr;
     }
 
     Entry.SourceFile                 = ShaderDependencyUtils::BuildFileDependency(NormalizedKey);
     auto* RawPtr                     = Entry.Shader.get();
     CustomShaderCache[NormalizedKey] = std::move(Entry);
+    UE_LOG(Render, Info, "Created custom shader program: %s", NormalizedKey.c_str());
     return RawPtr;
 }
 
@@ -179,8 +244,15 @@ void FShaderManager::RefreshBuiltInShader(EShaderType InType)
     const FGraphicsProgramDesc* Desc = ShaderRegistry.Find(InType);
     if (!Desc)
     {
+        if (!MissingBuiltInShaderWarnings[Idx])
+        {
+            MissingBuiltInShaderWarnings[Idx] = true;
+            UE_LOG(Render, Warning, "Built-in shader descriptor was not found for type %s.", GetShaderTypeName(InType));
+        }
         return;
     }
+
+    MissingBuiltInShaderWarnings[Idx] = false;
 
     auto& Dependency = BuiltInShaderFiles[Idx];
     if (Dependency.bExists && !ShaderDependencyUtils::HasDependencyChanged(Dependency))
@@ -191,6 +263,11 @@ void FShaderManager::RefreshBuiltInShader(EShaderType InType)
     if (Shaders[Idx].Create(Device, *Desc))
     {
         Dependency = ShaderDependencyUtils::BuildFileDependency(Desc->VS.FilePath);
+        UE_LOG(Render, Verbose, "Compiled built-in shader [%s] from %s", GetShaderTypeName(InType), Desc->VS.FilePath.c_str());
+    }
+    else
+    {
+        UE_LOG(Render, Error, "Failed to compile built-in shader [%s] from %s", GetShaderTypeName(InType), Desc->VS.FilePath.c_str());
     }
 }
 
@@ -215,8 +292,10 @@ bool FShaderManager::RefreshCustomShader(FCustomShaderCacheEntry& Entry, const F
     if (Entry.Shader->Create(Device, Desc))
     {
         Entry.SourceFile = ShaderDependencyUtils::BuildFileDependency(NormalizedKey);
+        UE_LOG(Render, Verbose, "Refreshed custom shader program: %s", NormalizedKey.c_str());
         return true;
     }
 
+    UE_LOG(Render, Error, "Failed to refresh custom shader program: %s", NormalizedKey.c_str());
     return false;
 }

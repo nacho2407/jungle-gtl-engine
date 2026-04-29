@@ -1,5 +1,6 @@
 #include "Render/Submission/Atlas/ShadowMomentFilter.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Render/Execute/Context/RenderPipelineContext.h"
 #include "Render/Resources/Bindings/RenderBindingSlots.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
@@ -52,6 +53,7 @@ void FShadowMomentFilter::EnsureResources(ID3D11Device* Device)
 {
     if (Device == nullptr)
     {
+        UE_LOG(Render, Warning, "Shadow moment filter resource creation skipped because device was null.");
         return;
     }
 
@@ -81,6 +83,7 @@ void FShadowMomentFilter::EnsureResources(ID3D11Device* Device)
             &PsVerticalBlob, BlurPSVerticalDesc, "ps_5_0", "Shadow Moment Blur Vertical PS Compile Error");
         if (!bCompiledVS || !bCompiledH || !bCompiledV)
         {
+            UE_LOG(Render, Error, "Failed to compile one or more shadow moment blur shaders.");
             SafeRelease(VsBlob);
             SafeRelease(PsHorizontalBlob);
             SafeRelease(PsVerticalBlob);
@@ -97,9 +100,12 @@ void FShadowMomentFilter::EnsureResources(ID3D11Device* Device)
 
         if (FAILED(HrVS) || FAILED(HrH) || FAILED(HrV))
         {
+            UE_LOG(Render, Error, "Failed to create shadow moment blur shader objects.");
             Release();
             return;
         }
+
+        UE_LOG(Render, Verbose, "Initialized shadow moment blur shaders.");
     }
 
     if (BlurCB == nullptr)
@@ -111,6 +117,7 @@ void FShadowMomentFilter::EnsureResources(ID3D11Device* Device)
         CbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         if (FAILED(Device->CreateBuffer(&CbDesc, nullptr, &BlurCB)))
         {
+            UE_LOG(Render, Error, "Failed to create shadow moment blur constant buffer.");
             return;
         }
     }
@@ -139,11 +146,13 @@ void FShadowMomentFilter::EnsureResources(ID3D11Device* Device)
         FAILED(Device->CreateRenderTargetView(BlurTemp2D, nullptr, &BlurTempRTV)) ||
         FAILED(Device->CreateShaderResourceView(BlurTemp2D, nullptr, &BlurTempSRV)))
     {
+        UE_LOG(Render, Error, "Failed to create temporary shadow moment blur resources.");
         Release();
         return;
     }
 
     BlurTempSize = ShadowAtlas::AtlasSize;
+    UE_LOG(Render, Verbose, "Created temporary shadow moment blur resources. Size=%u", BlurTempSize);
 }
 
 void FShadowMomentFilter::Release()
@@ -160,6 +169,9 @@ void FShadowMomentFilter::Release()
 
 void FShadowMomentFilter::BlurMomentTextureSlice(FRenderPipelineContext& Context, FShadowAtlasPage& AtlasPage, uint32 SliceIndex)
 {
+    static bool bLoggedUnavailableBlurResources = false;
+    static bool bLoggedMissingBlurTargets = false;
+
     if ((GetShadowFilterMethod() != EShadowFilterMethod::VSM &&
          GetShadowFilterMethod() != EShadowFilterMethod::ESM) ||
         !Context.Device || !Context.Context)
@@ -170,6 +182,11 @@ void FShadowMomentFilter::BlurMomentTextureSlice(FRenderPipelineContext& Context
     EnsureResources(Context.Device->GetDevice());
     if (!BlurVS || !BlurPSHorizontal || !BlurPSVertical || !BlurCB || !BlurTempRTV || !BlurTempSRV)
     {
+        if (!bLoggedUnavailableBlurResources)
+        {
+            UE_LOG(Render, Warning, "Shadow moment blur skipped because required resources were unavailable.");
+            bLoggedUnavailableBlurResources = true;
+        }
         return;
     }
 
@@ -177,6 +194,11 @@ void FShadowMomentFilter::BlurMomentTextureSlice(FRenderPipelineContext& Context
     ID3D11ShaderResourceView* TargetSRV = AtlasPage.GetMomentSliceSRV(SliceIndex);
     if (!TargetRTV || !TargetSRV)
     {
+        if (!bLoggedMissingBlurTargets)
+        {
+            UE_LOG(Render, Warning, "Shadow moment blur skipped for slice %u because target views were unavailable.", SliceIndex);
+            bLoggedMissingBlurTargets = true;
+        }
         return;
     }
 
