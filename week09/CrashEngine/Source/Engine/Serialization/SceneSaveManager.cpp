@@ -11,6 +11,7 @@
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/LightComponentBase.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/StaticMeshActor.h"
@@ -64,6 +65,7 @@ static constexpr const char* RootComponent = "RootComponent";
 static constexpr const char* NonSceneComponents = "NonSceneComponents";
 static constexpr const char* Properties = "Properties";
 static constexpr const char* Children = "Children";
+static constexpr const char* ShadowResolution = "Shadow Resolution";
 } // namespace SceneKeys
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -284,6 +286,12 @@ json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
         // if (Prop.Name == "Static Mesh") continue; // Primitives 블록에 이미 저장됨
         props[Prop.Name] = SerializePropertyValue(Prop);
     }
+
+    if (ULightComponentBase* LightComponent = Cast<ULightComponentBase>(Comp))
+    {
+        props[SceneKeys::ShadowResolution] = JSON(static_cast<int32>(LightComponent->GetShadowResolution()));
+    }
+
     return props;
 }
 
@@ -697,6 +705,15 @@ void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON&
         json::JSON& Value = PropsJSON[Prop.Name.c_str()];
         DeserializePropertyValue(Prop, Value);
         Comp->PostEditProperty(Prop.Name.c_str());
+    }
+
+    if (ULightComponentBase* LightComponent = Cast<ULightComponentBase>(Comp))
+    {
+        if (PropsJSON.hasKey(SceneKeys::ShadowResolution))
+        {
+            LightComponent->SetShadowResolution(static_cast<uint32>(PropsJSON[SceneKeys::ShadowResolution].ToInt()));
+            Comp->PostEditProperty(SceneKeys::ShadowResolution);
+        }
     }
 
     // 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음

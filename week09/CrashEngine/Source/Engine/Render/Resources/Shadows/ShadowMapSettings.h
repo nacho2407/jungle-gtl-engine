@@ -9,7 +9,7 @@ enum class EShadowMapMethod : uint32
     Cascade = 2,
 };
 
-inline EShadowMapMethod GShadowMapMethod = EShadowMapMethod::Standard;
+inline EShadowMapMethod GShadowMapMethod = EShadowMapMethod::Cascade;
 
 inline EShadowMapMethod GetShadowMapMethod()
 {
