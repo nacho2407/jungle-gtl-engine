@@ -390,7 +390,13 @@
     <FxCompile Include="Shaders\Render\Scene\Lighting\LightingCommon.hlsli">
       <Filter>Shaders\Render\Scene\Lighting</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Render\Scene\Lighting\ShadowFiltering.hlsli">
+    <FxCompile Include="Shaders\Render\Scene\Lighting\PointLightShadow.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\ShadowProjection.hlsli">
+      <Filter>Shaders\Render\Scene\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Render\Scene\Lighting\ShadowSampling.hlsli">
       <Filter>Shaders\Render\Scene\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Render\Scene\Material\MaterialSampling.hlsli">

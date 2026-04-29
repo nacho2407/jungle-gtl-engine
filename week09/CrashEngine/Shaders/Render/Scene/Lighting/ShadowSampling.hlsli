@@ -1,9 +1,17 @@
 /*
-    ShadowFiltering.hlsli: shared shadow filtering helpers for atlas-backed shadow maps.
+    ShadowSampling.hlsli
+    섀도우 아틀라스에서 값을 읽고, PCF/VSM/ESM 방식으로 가시성을 계산하는 공용 헤더입니다.
+    아틀라스 페이지/슬라이스 해석, UV 변환, 경계 clamp, 최종 필터링 진입점을 포함합니다.
+
+    슬롯 용도
+    - t20~t23: 비교 샘플링용 depth shadow atlas 배열 텍스처
+    - t48~t51: VSM/ESM용 moment shadow atlas 배열 텍스처
+    - `ShadowSampler`: depth compare 샘플링
+    - `LinearClampSampler`: moment 텍스처 선형 샘플링
 */
 
-#ifndef SHADOW_FILTERING_HLSLI
-#define SHADOW_FILTERING_HLSLI
+#ifndef SHADOW_SAMPLING_HLSLI
+#define SHADOW_SAMPLING_HLSLI
 
 #include "../../../Resources/BindingSlots.hlsli"
 #include "../../../Resources/SystemSamplers.hlsl"

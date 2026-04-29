@@ -1,5 +1,16 @@
 /*
-    DirectLighting.hlsli: scene direct lighting helpers.
+    DirectLighting.hlsli
+    장면의 직접광(Direct Light) 계산을 담당하는 헤더입니다.
+    direct light는 빛이 표면에 한 번 바로 도달하는 성분을 뜻하며,
+    방향광, 포인트 라이트, 스포트라이트의 diffuse/specular/shadow 합산이 여기 들어 있습니다.
+    반대로 indirect light는 반사, 전역 조명, bounce light처럼 다른 표면을 거친 빛입니다.
+
+    슬롯 용도
+    - t6: `g_LightBuffer`, 로컬 라이트 목록 structured buffer
+    - `SLOT_TEX_LIGHT_TILE_MASK`: 타일 기반 라이트 컬링 마스크
+    - `SLOT_TEX_DEBUG_HIT_MAP`: 디버그용 light hit map 텍스처
+    - b2: `LightCullingParams`, 화면 크기/타일 크기/깊이 범위/라이트 개수
+    - `SceneDepth`: 깊이로부터 월드 위치를 복원할 때 사용
 */
 
 #ifndef DIRECT_LIGHTING_HLSLI
@@ -9,7 +20,8 @@
 #include "../../../Resources/SystemSamplers.hlsl"
 #include "LightTypes.hlsli"
 #include "BRDF.hlsli"
-#include "ShadowFiltering.hlsli"
+#include "ShadowProjection.hlsli"
+#include "PointLightShadow.hlsli"
 
 #define TILE_SIZE                       4
 #define NUM_SLICES                      32
@@ -34,225 +46,6 @@ cbuffer LightCullingParams : register(b2)
 float3 GetAmbientLightColor()
 {
     return Ambient.Color * Ambient.Intensity;
-}
-
-#define SHADOW_PROJECTION_ORTHOGRAPHIC 0
-#define SHADOW_PROJECTION_PERSPECTIVE 1
-
-float LinearizeReversedZPerspectiveDepth01(float ReverseDepth, float NearZ, float FarZ)
-{
-    const float Denominator = max(NearZ + ReverseDepth * (FarZ - NearZ), 1e-5f);
-    const float ViewZ = (NearZ * FarZ) / Denominator;
-    return saturate((ViewZ - NearZ) / max(FarZ - NearZ, 1e-5f));
-}
-
-float ComputeLinearShadowCompareDepth(float ReverseDepth, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
-{
-    if (ShadowProjectionType == SHADOW_PROJECTION_PERSPECTIVE)
-    {
-        return LinearizeReversedZPerspectiveDepth01(ReverseDepth, ShadowNearZ, ShadowFarZ);
-    }
-
-    return saturate(1.0f - ReverseDepth);
-}
-
-float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float ShadowSharpen, float ShadowESMExponent, float4 PixelPos, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
-{
-    if (ShadowSample.PageIndex < 0)
-        return 1.0f;
-
-    // Apply Normal Bias: Push world position along normal to reduce shadow acne
-    float3 BiasedWorldPos = WorldPos + Normal * NormalBias;
-    
-    float4 ShadowPos = mul(float4(BiasedWorldPos, 1.0f), ShadowViewProj);
-    ShadowPos.xyz /= ShadowPos.w;
-
-    if (abs(ShadowPos.x) > 1.0f || abs(ShadowPos.y) > 1.0f ||
-        ShadowPos.z < 0.0f || ShadowPos.z > 1.0f)
-    {
-        return 1.0f;
-    }
-
-    float2 ShadowVector = ShadowPos.xy;
-
-    // Apply slope-scaled depth bias to reduce shadow acne at grazing angles.
-    float CosTheta = saturate(dot(Normal, -LightDir));
-    float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
-    float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
-    // Reversed-Z에서는 더 작은 depth가 더 멀기 때문에, bias는 compare depth를 줄이는 방향으로 적용합니다.
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    float CompareDepth = ShadowPos.z - TotalBias;
-#else
-    float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, ShadowProjectionType, ShadowNearZ, ShadowFarZ);
-    CompareDepth = saturate(CompareDepth - TotalBias);
-#endif
-
-    float2 BaseUV = ShadowVector * 0.5f + 0.5f;
-    BaseUV.y = 1.0f - BaseUV.y;
-    return FilterShadowAtlas(ShadowSample, BaseUV, CompareDepth, ShadowSharpen, ShadowESMExponent, PixelPos);
-}
-
-int ResolvePointShadowFaceIndex(float3 L)
-{
-    float3 AbsL = abs(L);
-    if (AbsL.x >= AbsL.y && AbsL.x >= AbsL.z)
-    {
-        return (L.x >= 0.0f) ? 0 : 1;
-    }
-    if (AbsL.y >= AbsL.x && AbsL.y >= AbsL.z)
-    {
-        return (L.y >= 0.0f) ? 2 : 3;
-    }
-    return (L.z >= 0.0f) ? 4 : 5;
-}
-
-float3 BuildPointShadowSamplePosition(float3 LightPos, float3 SampleDir, float ReceiverDistance)
-{
-    return LightPos + normalize(SampleDir) * ReceiverDistance;
-}
-
-float2 ComputePointShadowBaseUV(float4x4 ShadowViewProj, float3 SampleWorldPos)
-{
-    float4 ShadowPos = mul(float4(SampleWorldPos, 1.0f), ShadowViewProj);
-    ShadowPos.xyz /= max(ShadowPos.w, 1e-5f);
-
-    float2 BaseUV = ShadowPos.xy * 0.5f + 0.5f;
-    BaseUV.y = 1.0f - BaseUV.y;
-    return BaseUV;
-}
-
-float ComputePointShadowCompareDepth(float4x4 ShadowViewProj, float3 SampleWorldPos, float TotalBias, float ShadowFarZ)
-{
-    float4 ShadowPos = mul(float4(SampleWorldPos, 1.0f), ShadowViewProj);
-    ShadowPos.xyz /= max(ShadowPos.w, 1e-5f);
-
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return ShadowPos.z - TotalBias;
-#else
-    float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, SHADOW_PROJECTION_PERSPECTIVE, 1.0f, ShadowFarZ);
-    return saturate(CompareDepth - TotalBias);
-#endif
-}
-
-float GetPointShadowKernelScale(FShadowAtlasSample ShadowSample)
-{
-    const float FaceResolution = max(ShadowSample.UVScale.x / max(ShadowSample.AtlasTexelSize.x, 1e-6f), 1.0f);
-    return 2.0f / FaceResolution;
-}
-
-float SamplePointShadowFaceVisibility(
-    FLocalLight LocalLight,
-    float3 SampleWorldPos,
-    float TotalBias,
-    int FaceIndex,
-    float ShadowSharpen,
-    float ShadowESMExponent)
-{
-    const FShadowAtlasSample ShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[FaceIndex]);
-    if (ShadowSample.PageIndex < 0)
-    {
-        return 1.0f;
-    }
-
-    const float2 BaseUV = ComputePointShadowBaseUV(LocalLight.ShadowViewProj[FaceIndex], SampleWorldPos);
-    if (BaseUV.x < 0.0f || BaseUV.x > 1.0f || BaseUV.y < 0.0f || BaseUV.y > 1.0f)
-    {
-        return 1.0f;
-    }
-
-    const float2 AtlasUV = ClampAtlasUVToSampleBounds(ShadowSample, AtlasUVFromBaseUV(ShadowSample, BaseUV));
-    const float CompareDepth = ComputePointShadowCompareDepth(
-        LocalLight.ShadowViewProj[FaceIndex],
-        SampleWorldPos,
-        TotalBias,
-        LocalLight.AttenuationRadius);
-
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return SampleShadowAtlasCmp(ShadowSample.PageIndex, ShadowSample.SliceIndex, AtlasUV, CompareDepth);
-#elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
-    return ComputeVSMVisibility(
-        SampleShadowAtlasMoment(ShadowSample.PageIndex, ShadowSample.SliceIndex, AtlasUV),
-        CompareDepth,
-        ShadowSharpen);
-#else
-    return ComputeESMVisibility(
-        SampleShadowAtlasMoment(ShadowSample.PageIndex, ShadowSample.SliceIndex, AtlasUV).x,
-        CompareDepth,
-        ShadowESMExponent);
-#endif
-}
-
-float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Normal, float4 PixelPos)
-{
-    float3 ReceiverVector = WorldPos - LocalLight.Position;
-    const float ReceiverDistance = length(ReceiverVector);
-    if (ReceiverDistance <= 1e-6f)
-    {
-        return 1.0f;
-    }
-
-    const float3 ReceiverDir = ReceiverVector / ReceiverDistance;
-    const float3 BiasedWorldPos = WorldPos + Normal * LocalLight.ShadowNormalBias;
-    const float3 BiasedReceiverVector = BiasedWorldPos - LocalLight.Position;
-    const float BiasedReceiverDistance = max(length(BiasedReceiverVector), 1e-5f);
-
-    const float CosTheta = saturate(dot(Normal, normalize(LocalLight.Position - WorldPos)));
-    const float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
-    const float TotalBias = LocalLight.ShadowBias + saturate(LocalLight.ShadowSlopeBias * SlopeFactor);
-
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE
-    const int FaceIndex = ResolvePointShadowFaceIndex(ReceiverDir);
-    const float3 SampleWorldPos = BuildPointShadowSamplePosition(LocalLight.Position, ReceiverDir, BiasedReceiverDistance);
-    return SamplePointShadowFaceVisibility(
-        LocalLight,
-        SampleWorldPos,
-        TotalBias,
-        FaceIndex,
-        LocalLight.ShadowSharpen,
-        LocalLight.ShadowESMExponent);
-#else
-    float3 UpHint = (abs(ReceiverDir.z) < 0.999f) ? float3(0.0f, 0.0f, 1.0f) : float3(0.0f, 1.0f, 0.0f);
-    float3 TangentX = normalize(cross(UpHint, ReceiverDir));
-    float3 TangentY = normalize(cross(ReceiverDir, TangentX));
-
-    float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
-    Offset.y += Offset.x;
-    if (Offset.y > 1.1f)
-    {
-        Offset.y = 0.0f;
-    }
-
-    const float2 Kernel[4] = {
-        float2(-1.5f, 0.5f),
-        float2(0.5f, 0.5f),
-        float2(-1.5f, -1.5f),
-        float2(0.5f, -1.5f)
-    };
-
-    float ShadowCoeff = 0.0f;
-    const int CenterFaceIndex = ResolvePointShadowFaceIndex(ReceiverDir);
-    const FShadowAtlasSample CenterShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[CenterFaceIndex]);
-    const float KernelScale = GetPointShadowKernelScale(CenterShadowSample);
-
-    [unroll]
-    for (int KernelIndex = 0; KernelIndex < 4; ++KernelIndex)
-    {
-        const float2 KernelOffset = (Kernel[KernelIndex] + Offset) * KernelScale;
-        const float3 SampleDir = normalize(ReceiverDir + TangentX * KernelOffset.x + TangentY * KernelOffset.y);
-        const int FaceIndex = ResolvePointShadowFaceIndex(SampleDir);
-        const float3 SampleWorldPos = BuildPointShadowSamplePosition(LocalLight.Position, SampleDir, BiasedReceiverDistance);
-
-        ShadowCoeff += SamplePointShadowFaceVisibility(
-            LocalLight,
-            SampleWorldPos,
-            TotalBias,
-            FaceIndex,
-            LocalLight.ShadowSharpen,
-            LocalLight.ShadowESMExponent);
-    }
-
-    return ShadowCoeff * 0.25f;
-#endif
 }
 
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
