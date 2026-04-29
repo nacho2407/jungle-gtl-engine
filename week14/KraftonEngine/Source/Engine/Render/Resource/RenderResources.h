@@ -49,9 +49,12 @@ struct FShadowMapResources
 		FVector4 DebugCascadeNear = {};
 		FVector4 DebugCascadeFar = {};
 
+		uint32 FailedResolution = 0;  // 마지막 CreateTexture2D 실패 해상도 (0 = 실패 없음)
+
 		bool IsValid()    const { return Texture != nullptr; }
 		bool IsVSMValid() const { return VSMTexture != nullptr; }
 		void Release();
+		void ReleaseVSM();
 	} CSM;
 
 	// ══════════════════════════════════════════
@@ -75,6 +78,9 @@ struct FShadowMapResources
 		uint32 Resolution = 4096;
 		uint32 PageCount  = 0;
 
+		uint32 FailedResolution = 0;
+		uint32 FailedPageCount  = 0;
+
 		// ── Per-light StructuredBuffer (t24) ──
 		ID3D11Buffer*             DataBuffer  = nullptr;
 		ID3D11ShaderResourceView* DataSRV     = nullptr;
@@ -83,6 +89,7 @@ struct FShadowMapResources
 		bool IsValid()    const { return Texture != nullptr && PageCount > 0; }
 		bool IsVSMValid() const { return VSMTexture != nullptr; }
 		void Release();
+		void ReleaseVSM();
 	} Spot;
 
 	// ══════════════════════════════════════════
@@ -106,6 +113,9 @@ struct FShadowMapResources
 		uint32 Resolution = 0;
 		uint32 PageCount  = 0;
 
+		uint32 FailedResolution = 0;
+		uint32 FailedPageCount  = 0;
+
 		// ── Per-light StructuredBuffer (t25) ──
 		ID3D11Buffer*             DataBuffer  = nullptr;
 		ID3D11ShaderResourceView* DataSRV     = nullptr;
@@ -114,6 +124,7 @@ struct FShadowMapResources
 		bool IsValid()    const { return Texture != nullptr && PageCount > 0; }
 		bool IsVSMValid() const { return VSMTexture != nullptr; }
 		void Release();
+		void ReleaseVSM();
 	} Point;
 
 	// ── Ensure methods ──

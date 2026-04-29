@@ -345,6 +345,14 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	const auto& ProjShadow = FProjectSettings::Get().Shadow;
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
 
+	// VSM → Non-VSM 전환 시 VSM 전용 리소스 해제
+	if (!bVSM)
+	{
+		if (Res.CSM.IsVSMValid())   Res.CSM.ReleaseVSM();
+		if (Res.Spot.IsVSMValid())  Res.Spot.ReleaseVSM();
+		if (Res.Point.IsVSMValid()) Res.Point.ReleaseVSM();
+	}
+
 	// Atlas 해상도가 변경되었으면 재초기화
 	if (static_cast<uint32>(SpotLightAtlas.GetAtlasSize()) != ProjShadow.SpotAtlasResolution)
 	{

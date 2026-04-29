@@ -130,6 +130,19 @@ void FShadowMapResources::FCSMResources::Release()
 	}
 	ReleaseCOM(Texture);
 	Resolution = 0;
+	FailedResolution = 0;
+}
+
+void FShadowMapResources::FCSMResources::ReleaseVSM()
+{
+	ReleaseCOM(VSMSRV);
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		ReleaseCOM(VSMRTV[i]);
+		ReleaseCOM(VSMDSV[i]);
+	}
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
 }
 
 // ============================================================
@@ -151,11 +164,22 @@ void FShadowMapResources::FSpotResources::Release()
 	ReleaseCOM(Texture);
 	PageCount = 0;
 	Resolution = 0;
+	FailedResolution = 0;
+	FailedPageCount  = 0;
 
 	// Data buffer
 	ReleaseCOM(DataSRV);
 	ReleaseCOM(DataBuffer);
 	DataCapacity = 0;
+}
+
+void FShadowMapResources::FSpotResources::ReleaseVSM()
+{
+	ReleaseCOM(VSMSRV);
+	ReleaseViewArray(VSMRTVs);
+	ReleaseViewArray(VSMDSVs);
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
 }
 
 // ============================================================
@@ -177,11 +201,22 @@ void FShadowMapResources::FPointResources::Release()
 	ReleaseCOM(Texture);
 	PageCount = 0;
 	Resolution = 0;
+	FailedResolution = 0;
+	FailedPageCount  = 0;
 
 	// Data buffer
 	ReleaseCOM(DataSRV);
 	ReleaseCOM(DataBuffer);
 	DataCapacity = 0;
+}
+
+void FShadowMapResources::FPointResources::ReleaseVSM()
+{
+	ReleaseCOM(VSMSRV);
+	ReleaseViewArray(VSMRTVs);
+	ReleaseViewArray(VSMDSVs);
+	ReleaseCOM(VSMTexture);
+	ReleaseCOM(VSMDepthTexture);
 }
 
 // ============================================================
@@ -191,6 +226,7 @@ void FShadowMapResources::FPointResources::Release()
 void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 {
 	if (CSM.Resolution == InResolution && CSM.Texture) return;
+	if (CSM.FailedResolution == InResolution) return;  // 동일 파라미터 실패 → 스킵
 
 	// 기존 리소스 해제 (Normal + VSM 동시 해제 — Resolution 변경 시 VSM 불일치 방지)
 	ReleaseCOM(CSM.SRV);
@@ -223,7 +259,8 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
 	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &CSM.Texture);
-	if (FAILED(hr)) return;
+	if (FAILED(hr)) { CSM.FailedResolution = InResolution; return; }
+	CSM.FailedResolution = 0;
 
 	// Per-cascade DSV
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
@@ -257,6 +294,7 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 	if (Spot.Resolution == InResolution && Spot.PageCount == InPageCount
 		&& Spot.DataCapacity == MaxLights && Spot.Texture)
 		return;
+	if (Spot.FailedResolution == InResolution && Spot.FailedPageCount == InPageCount) return;
 
 	// 기존 리소스 해제 (Normal + VSM 동시 해제 — PageCount/Resolution 변경 시 VSM 불일치 방지)
 	ReleaseCOM(Spot.SRV);
@@ -287,7 +325,8 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
 	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &Spot.Texture);
-	if (FAILED(hr)) return;
+	if (FAILED(hr)) { Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount; return; }
+	Spot.FailedResolution = 0; Spot.FailedPageCount = 0;
 
 	// Per-page DSV
 	Spot.DSVs.resize(InPageCount, nullptr);
@@ -342,6 +381,7 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	if (Point.Resolution == AtlasSize && Point.PageCount == InPageCount
 		&& Point.DataCapacity == MaxLights && Point.Texture)
 		return;
+	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
 
 	// 기존 리소스 해제 (Normal + VSM 동시 해제 — PageCount/Resolution 변경 시 VSM 불일치 방지)
 	ReleaseViewArray(Point.DSVs);
@@ -377,7 +417,8 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	TexDesc.Usage            = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture))) { assert(false); return; }
+	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture))) { Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount; return; }
+	Point.FailedResolution = 0; Point.FailedPageCount = 0;
 
 	// Per-page DSV
 	Point.DSVs.resize(InPageCount, nullptr);
@@ -428,6 +469,7 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolution)
 {
 	if (CSM.Resolution == InResolution && CSM.VSMTexture) return;
+	if (CSM.FailedResolution == InResolution) return;
 
 	// 기존 VSM CSM 리소스 해제
 	ReleaseCOM(CSM.VSMSRV);
@@ -450,7 +492,7 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSM.VSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSM.VSMTexture))) { CSM.FailedResolution = InResolution; return; }
 
 	// Depth Texture: D32_FLOAT (DSV 전용, SRV 불필요)
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -466,8 +508,10 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &CSM.VSMDepthTexture)))
 	{
 		CSM.VSMTexture->Release(); CSM.VSMTexture = nullptr;
+		CSM.FailedResolution = InResolution;
 		return;
 	}
+	CSM.FailedResolution = 0;
 
 	// Per-cascade RTV + DSV
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
@@ -505,6 +549,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	if (InPageCount == 0) return;
 	if (Spot.Resolution == InResolution && Spot.PageCount == InPageCount && Spot.VSMTexture)
 		return;
+	if (Spot.FailedResolution == InResolution && Spot.FailedPageCount == InPageCount) return;
 
 	// 기존 Spot VSM 리소스 해제
 	ReleaseCOM(Spot.VSMSRV);
@@ -524,7 +569,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Spot.VSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Spot.VSMTexture))) { Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount; return; }
 
 	// Depth Texture
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -540,8 +585,10 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Spot.VSMDepthTexture)))
 	{
 		Spot.VSMTexture->Release(); Spot.VSMTexture = nullptr;
+		Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount;
 		return;
 	}
+	Spot.FailedResolution = 0; Spot.FailedPageCount = 0;
 
 	// Per-slice RTV + DSV
 	Spot.VSMRTVs.resize(InPageCount, nullptr);
@@ -581,6 +628,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	if (InPageCount == 0) return;
 	if (Point.Resolution == AtlasSize && Point.PageCount == InPageCount && Point.VSMTexture)
 		return;
+	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
 
 	ReleaseCOM(Point.VSMSRV);
 	ReleaseViewArray(Point.VSMRTVs);
@@ -600,7 +648,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage            = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags        = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture))) return;
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture))) { Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount; return; }
 
 	// Depth atlas: D32_FLOAT Texture2DArray
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -615,8 +663,10 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Point.VSMDepthTexture)))
 	{
 		Point.VSMTexture->Release(); Point.VSMTexture = nullptr;
+		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
 		return;
 	}
+	Point.FailedResolution = 0; Point.FailedPageCount = 0;
 
 	// Per-page RTV + DSV
 	Point.VSMRTVs.resize(InPageCount, nullptr);
