@@ -35,7 +35,7 @@ void ULightComponentBase::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "LightColor", EPropertyType::Color4, &LightColor });
     OutProps.push_back({ "bAffectsWorld", EPropertyType::Bool, &bAffectsWorld });
     OutProps.push_back({ "Cast Shadows", EPropertyType::Bool, &bCastShadows });
-    OutProps.push_back({ "Bias", EPropertyType::Float, &ShadowBias, 0.0f, 0.1f, 0.0001f });
+    OutProps.push_back({ "Depth Bias", EPropertyType::Float, &ShadowBias, 0.0f, 0.1f, 0.0001f });
     OutProps.push_back({ "Slope Bias", EPropertyType::Float, &ShadowSlopeBias, 0.0f, 8.0f, 0.01f });
     OutProps.push_back({ "Normal Bias", EPropertyType::Float, &ShadowNormalBias, 0.0f, 8.0f, 0.01f });
     OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen, 0.0f, 0.99f, 0.01f });
