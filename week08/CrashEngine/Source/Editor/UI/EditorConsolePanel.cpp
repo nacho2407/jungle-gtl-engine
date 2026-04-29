@@ -208,7 +208,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine, FEditorLogBu
     {
         if (Args.size() < 2)
         {
-            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | PSM | CASCADE");
+            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | LiPSM | CASCADE");
             UE_LOG(Console, Info, "Current shadow mode: %s", GetShadowMapMethodName(GetShadowMapMethod()));
             return;
         }
@@ -221,9 +221,9 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine, FEditorLogBu
         {
             SetShadowMapMethod(EShadowMapMethod::Standard);
         }
-        else if (MethodName == "PSM")
+        else if (MethodName == "LiPSM")
         {
-            SetShadowMapMethod(EShadowMapMethod::PSM);
+            SetShadowMapMethod(EShadowMapMethod::LiPSM);
         }
         else if (MethodName == "CASCADE" || MethodName == "CSM")
         {
@@ -232,7 +232,7 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine, FEditorLogBu
         else
         {
             UE_LOG(Console, Error, "Unknown shadow map method: '%s'", Args[1].c_str());
-            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | PSM | CASCADE");
+            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | LiPSM | CASCADE");
             return;
         }
 

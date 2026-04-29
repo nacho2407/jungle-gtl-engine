@@ -557,7 +557,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
                      {
         static const char* ShadowMapMethodLabels[] = {
             "Standard",
-            "PSM (Perspective Shadow Map)",
+            "LiPSM",
             "Cascade"
         };
         int32 SelectedShadowMapMethod = static_cast<int32>(GetShadowMapMethod());

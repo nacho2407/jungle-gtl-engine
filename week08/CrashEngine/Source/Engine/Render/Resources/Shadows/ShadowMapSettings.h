@@ -5,7 +5,7 @@
 enum class EShadowMapMethod : uint32
 {
     Standard = 0,
-    PSM = 1,
+    LiPSM = 1,
     Cascade = 2,
 };
 
@@ -27,8 +27,8 @@ inline const char* GetShadowMapMethodName(EShadowMapMethod InMethod)
     {
     case EShadowMapMethod::Standard:
         return "Standard";
-    case EShadowMapMethod::PSM:
-        return "PSM (Perspective Shadow Map)";
+    case EShadowMapMethod::LiPSM:
+        return "LiPSM";
     case EShadowMapMethod::Cascade:
         return "Cascade";
     default:
