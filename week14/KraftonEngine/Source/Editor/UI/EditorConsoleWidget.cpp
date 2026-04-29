@@ -210,6 +210,10 @@ void FEditorConsoleWidget::RegisterSystemCommands()
 
 void FEditorConsoleWidget::RegisterEditorCommands()
 {
+	RegisterCommand("hide windows", [this](const TArray<FString>& Args) { HandleHideWindows(Args); },
+		"Editor", "hide windows", "Hides editor panels and saves their current visibility.");
+	RegisterCommand("show windows", [this](const TArray<FString>& Args) { HandleShowWindows(Args); },
+		"Editor", "show windows", "Restores editor panel visibility saved by hide windows.");
 	RegisterCommand("cb refresh", [this](const TArray<FString>& Args) { HandleContentBrowserRefresh(Args); },
 		"Editor", "cb refresh", "Refreshes the content browser.");
 	RegisterCommand("cb icon size", [this](const TArray<FString>& Args) { HandleContentBrowserIconSize(Args); },
@@ -623,6 +627,32 @@ void FEditorConsoleWidget::HandleHelp(const TArray<FString>& Args)
 	}
 
 	PrintCompactHelp();
+}
+
+void FEditorConsoleWidget::HandleHideWindows(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->HideEditorWindows();
+	AddLog("Editor windows hidden.\n");
+}
+
+void FEditorConsoleWidget::HandleShowWindows(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->ShowEditorWindows();
+	AddLog("Editor windows restored.\n");
 }
 
 void FEditorConsoleWidget::HandleContentBrowserRefresh(const TArray<FString>& Args)
