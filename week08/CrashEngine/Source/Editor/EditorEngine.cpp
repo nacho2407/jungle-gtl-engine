@@ -1,6 +1,7 @@
 ﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/EditorEngine.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Component/CameraComponent.h"
@@ -91,6 +92,7 @@ void WarmUpMinimalViewModesForRenderPath(UEditorEngine& Editor, ERenderShadingPa
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
+    UE_LOG(EditorEngine, Info, "Initializing editor engine.");
     UEngine::Init(InWindow);
 
 	ViewportInputRouter.SetOwnerWindow(InWindow->GetHWND());
@@ -98,6 +100,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     FObjManager::ScanMeshAssets();
     FObjManager::ScanObjSourceFiles();
     FMaterialManager::Get().ScanMaterialAssets();
+    UE_LOG(EditorEngine, Debug, "Asset registries scanned.");
     PreloadDefaultObjAssets(Renderer.GetFD3DDevice().GetDevice());
     FObjManager::ScanMeshAssets();
     FMaterialManager::Get().ScanMaterialAssets();
@@ -106,6 +109,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     WarmUpEditorViewModeShaders(Renderer);
 
     MainPanel.Create(Window, Renderer, this);
+    UE_LOG(EditorEngine, Debug, "Editor main panel created.");
 
     // World
     if (WorldList.empty())
@@ -122,10 +126,12 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
     ViewportLayout.LoadFromSettings();
     SetActiveViewport(ViewportLayout.GetActiveViewport());
+    UE_LOG(EditorEngine, Info, "Editor engine initialized successfully.");
 }
 
 void UEditorEngine::Shutdown()
 {
+    UE_LOG(EditorEngine, Info, "Shutting down editor engine.");
     ViewportLayout.SaveToSettings();
     FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
     CloseScene();
@@ -254,6 +260,7 @@ void UEditorEngine::ResetViewportInputRouting()
 
 void UEditorEngine::WarmUpRenderPathShaders(ERenderShadingPath RenderPath)
 {
+    UE_LOG(EditorEngine, Debug, "Warming up render path shaders. Path=%d", static_cast<int32>(RenderPath));
     WarmUpMinimalViewModesForRenderPath(*this, RenderPath);
 }
 
@@ -360,11 +367,13 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     UWorld* EditorWorld = GetWorld();
     if (!EditorWorld)
     {
+        UE_LOG(EditorEngine, Error, "Failed to start PIE because editor world is null.");
         return;
     }
     UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate(nullptr));
     if (!PIEWorld)
     {
+        UE_LOG(EditorEngine, Error, "Failed to duplicate editor world for PIE.");
         return;
     }
 
@@ -382,6 +391,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     FLevelEditorViewportClient* PIEViewportClient = Params.DestinationViewportClient ? Params.DestinationViewportClient : ViewportLayout.GetActiveViewport();
     if (!PIEViewportClient)
     {
+        UE_LOG(EditorEngine, Error, "Failed to start PIE because destination viewport is null.");
         return;
     }
 
@@ -423,6 +433,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
     ViewportLayout.DisableWorldAxisForPIE();
 
     PIEWorld->BeginPlay();
+    UE_LOG(EditorEngine, Info, "Play In Editor session started.");
 }
 
 void UEditorEngine::EndPlayMap()
@@ -431,6 +442,7 @@ void UEditorEngine::EndPlayMap()
     {
         return;
     }
+    UE_LOG(EditorEngine, Info, "Ending Play In Editor session.");
 
     const FName PrevHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
     SetActiveWorld(PrevHandle);
@@ -498,6 +510,7 @@ void UEditorEngine::CloseScene()
 
 void UEditorEngine::NewScene()
 {
+    UE_LOG(EditorEngine, Info, "Creating a new editor scene.");
     StopPlayInEditorImmediate();
     ClearScene();
     FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
@@ -510,6 +523,7 @@ void UEditorEngine::NewScene()
 
 void UEditorEngine::ClearScene()
 {
+    UE_LOG(EditorEngine, Info, "Clearing scene and destroying world contexts.");
     StopPlayInEditorImmediate();
     SelectionManager.ClearSelection();
     SelectionManager.SetWorld(nullptr);

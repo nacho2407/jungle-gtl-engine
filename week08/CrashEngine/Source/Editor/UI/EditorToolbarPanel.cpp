@@ -516,7 +516,7 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::Checkbox("Scene BVH (Green)", &Opts.ShowFlags.bSceneBVH);
             ImGui::Checkbox("Scene Octree (Cyan)", &Opts.ShowFlags.bSceneOctree);
             ImGui::Checkbox("World Bound (Magenta)", &Opts.ShowFlags.bWorldBound);
-            ImGui::Checkbox("Light Debug Lines", &Opts.ShowFlags.bLightDebugLines);
+            ImGui::Checkbox("Light Visualization", &Opts.ShowFlags.bLightDebugLines);
             BeginDisabledUnless(Opts.ShowFlags.bLightDebugLines, [&]()
             {
                 ImGui::Indent();
@@ -542,13 +542,13 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
                 ImGui::Unindent();
             });
         }
-		if (ImGui::CollapsingHeader("Optimization Options", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::CollapsingHeader("Light Culling Options", ImGuiTreeNodeFlags_DefaultOpen))
         {
             int mode = Opts.ShowFlags.b25DCulling ? 1 : 0;
 
-            ImGui::RadioButton("Tile Culling", &mode, 0);
+            ImGui::RadioButton("2D Tile Culling", &mode, 0);
             ImGui::SameLine();
-            ImGui::RadioButton("25D Culling", &mode, 1);
+            ImGui::RadioButton("2.5D Tile Culling", &mode, 1);
 
             Opts.ShowFlags.b25DCulling = (mode == 1);
         } });

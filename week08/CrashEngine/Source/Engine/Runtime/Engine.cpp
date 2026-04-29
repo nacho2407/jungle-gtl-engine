@@ -2,6 +2,7 @@
 #include "Render/Execute/Context/Scene/ViewTypes.h"
 #include "Engine/Runtime/Engine.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Platform/Paths.h"
 #include "Profiling/Stats.h"
 #include "Engine/Input/InputSystem.h"
@@ -41,20 +42,24 @@ ELevelTick ToLevelTickType(EWorldType WorldType)
 
 void UEngine::Init(FWindowsWindow* InWindow)
 {
+    UE_LOG(Engine, Info, "Initializing runtime engine.");
     Window = InWindow;
 
     FNamePool::Get();
     FObjectFactory::Get();
 
     Renderer.Create(Window->GetHWND());
+    UE_LOG(Engine, Debug, "Renderer created.");
 
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
     FMeshBufferManager::Get().Initialize(Device);
     FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+    UE_LOG(Engine, Info, "Runtime engine initialization completed.");
 }
 
 void UEngine::Shutdown()
 {
+    UE_LOG(Engine, Info, "Shutting down runtime engine.");
     FResourceManager::Get().ReleaseGPUResources();
     UTexture2D::ReleaseAllGPU();
     FObjManager::ReleaseAllGPU();
@@ -155,6 +160,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
         return;
     }
 
+    UE_LOG(Engine, Debug, "Window resized to %ux%u.", Width, Height);
     Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
 }
 

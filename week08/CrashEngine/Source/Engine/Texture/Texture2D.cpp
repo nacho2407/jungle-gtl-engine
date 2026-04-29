@@ -1,7 +1,7 @@
 ﻿// 텍스처 영역의 세부 동작을 구현합니다.
 #include "Texture/Texture2D.h"
+#include "Core/Logging/LogMacros.h"
 #include "Object/ObjectFactory.h"
-#include "Editor/UI/EditorConsolePanel.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
 
@@ -75,7 +75,12 @@ void UTexture2D::ReleaseAllGPU()
 UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device)
 {
     if (FilePath.empty() || !Device)
+    {
+        UE_LOG(Texture, Warning, "LoadFromFile rejected. PathEmpty=%s DeviceNull=%s",
+               FilePath.empty() ? "true" : "false",
+               Device == nullptr ? "true" : "false");
         return nullptr;
+    }
 
     const std::filesystem::path FullPath = ResolveFullPath(FilePath);
     const FString CacheKey = FPaths::FromPath(FullPath);
@@ -85,6 +90,7 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
     {
         if (!HasCacheEntryChanged(It->second))
         {
+            UE_LOG(Texture, Debug, "Texture cache hit: %s", CacheKey.c_str());
             return It->second.Texture;
         }
 
@@ -104,6 +110,7 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
 
     TextureCache[CacheKey] = BuildCacheEntry(FullPath);
     TextureCache[CacheKey].Texture = Texture;
+    UE_LOG(Texture, Info, "Texture loaded: %s (%ux%u)", CacheKey.c_str(), Texture->Width, Texture->Height);
     return Texture;
 }
 
@@ -124,7 +131,7 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 
     if (FAILED(hr))
     {
-        UE_LOG("Failed to load texture: %s", FilePath.c_str());
+        UE_LOG(Texture, Error, "Failed to load texture: %s", FilePath.c_str());
         return false;
     }
 

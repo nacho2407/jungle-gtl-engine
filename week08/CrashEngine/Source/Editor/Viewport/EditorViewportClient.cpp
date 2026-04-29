@@ -1,6 +1,7 @@
 ﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/Viewport/EditorViewportClient.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "Editor/Settings/EditorSettings.h"
 
 #include "Component/CameraComponent.h"
@@ -28,18 +29,21 @@ void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
     (void)InWindow;
     InputController = std::make_unique<FEditorViewportInputController>(this);
+    UE_LOG(Viewport, Debug, "Editor viewport client initialized.");
 }
 
 void FEditorViewportClient::CreateCamera()
 {
     DestroyCamera();
     Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
+    UE_LOG(Viewport, Debug, "Viewport camera created.");
 }
 
 void FEditorViewportClient::DestroyCamera()
 {
     if (Camera)
     {
+        UE_LOG(Viewport, Debug, "Viewport camera destroyed.");
         UObjectManager::Get().DestroyObject(Camera);
         Camera = nullptr;
     }
@@ -51,6 +55,7 @@ void FEditorViewportClient::ResetCamera()
         return;
     Camera->SetWorldLocation(Settings->InitViewPos);
     Camera->LookAt(Settings->InitLookAt);
+    UE_LOG(Viewport, Debug, "Viewport camera reset to initial editor view.");
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
@@ -59,6 +64,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
         return;
 
     RenderOptions.ViewportType = NewType;
+    UE_LOG(Viewport, Debug, "Viewport type changed to %d.", static_cast<int32>(NewType));
 
     if (NewType == ELevelViewportType::Perspective)
     {
@@ -171,6 +177,7 @@ void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
 
     PilotedActor = Actor;
     bIsPilotingActor = true;
+    UE_LOG(Viewport, Info, "Started piloting actor '%s'.", GetActorDisplayName(Actor).c_str());
 
     if (SelectionManager)
     {
@@ -201,6 +208,7 @@ void FEditorViewportClient::StopPilotingActor()
     SetPilotedActorEditorHelpersVisible(true);
     PilotedActor = nullptr;
     bIsPilotingActor = false;
+    UE_LOG(Viewport, Info, "Stopped piloting actor.");
 
     if (Camera)
     {

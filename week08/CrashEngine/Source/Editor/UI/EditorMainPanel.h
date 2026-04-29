@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/Input/ViewportInputRouter.h"
+#include "Editor/Logging/EditorLogBuffer.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorConsolePanel.h"
 #include "Editor/UI/EditorControlPanel.h"
@@ -33,6 +34,7 @@ public:
 private:
     FWindowsWindow* Window = nullptr;
     UEditorEngine* EditorEngine = nullptr;
+    FEditorLogBuffer LogBuffer;
     FEditorConsolePanel ConsolePanel;
     FEditorControlPanel ControlPanel;
     FEditorDetailsPanel DetailsPanel;

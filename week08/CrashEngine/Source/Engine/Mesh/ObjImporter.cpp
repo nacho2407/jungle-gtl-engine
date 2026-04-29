@@ -1,8 +1,8 @@
 ﻿// 메시 영역의 세부 동작을 구현합니다.
 #include "Mesh/ObjImporter.h"
+#include "Core/Logging/LogMacros.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Materials/Material.h"
-#include "Editor/UI/EditorConsolePanel.h"
 #include "Engine/Platform/Paths.h"
 #include "Mesh/ObjManager.h"
 #include "SimpleJSON/json.hpp"
@@ -203,7 +203,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
     std::ifstream File(FPaths::ToWide(ObjFilePath), std::ios::binary | std::ios::ate);
     if (!File.is_open())
     {
-        UE_LOG("Failed to open OBJ file: %s", ObjFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "Failed to open OBJ file: %s", ObjFilePath.c_str());
         return false;
     }
 
@@ -212,7 +212,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
     TArray<char> Buffer(FileSize);
     if (!File.read(Buffer.data(), FileSize))
     {
-        UE_LOG("Failed to read OBJ file: %s", ObjFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "Failed to read OBJ file: %s", ObjFilePath.c_str());
         return false;
     }
 
@@ -287,7 +287,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 
             if (FaceVertices.size() < 3)
             {
-                UE_LOG("Face with less than 3 vertices");
+                UE_LOG(ObjImporter, Warning, "Face with less than 3 vertices encountered.");
                 continue;
             }
 
@@ -316,7 +316,7 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
                 }
                 FStringParser::TrimLeft(Line);
                 OutObjInfo.MaterialLibraryFilePath = FPaths::ResolveAssetPath(ObjFilePath, std::string(Line));
-                UE_LOG("Found material library: %s", OutObjInfo.MaterialLibraryFilePath.c_str());
+                UE_LOG(ObjImporter, Debug, "Found material library: %s", OutObjInfo.MaterialLibraryFilePath.c_str());
             }
             else if (Prefix == "usemtl")
             {
@@ -364,6 +364,14 @@ bool FObjImporter::ParseObj(const FString& ObjFilePath, FObjInfo& OutObjInfo)
         OutObjInfo.UVs.emplace_back(FVector2{ 0.0f, 0.0f });
     }
 
+    UE_LOG(ObjImporter, Debug, "Parsed OBJ '%s'. Positions=%u UVs=%u Normals=%u Sections=%u Triangles=%u",
+           ObjFilePath.c_str(),
+           static_cast<uint32>(OutObjInfo.Positions.size()),
+           static_cast<uint32>(OutObjInfo.UVs.size()),
+           static_cast<uint32>(OutObjInfo.Normals.size()),
+           static_cast<uint32>(OutObjInfo.Sections.size()),
+           static_cast<uint32>(OutObjInfo.PosIndices.size() / 3));
+
     return true;
 }
 
@@ -374,7 +382,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
 
     if (!File.is_open())
     {
-        UE_LOG("Failed to open MTL file: %s", MtlFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "Failed to open MTL file: %s", MtlFilePath.c_str());
         return false;
     }
 
@@ -383,7 +391,7 @@ bool FObjImporter::ParseMtl(const FString& MtlFilePath, TArray<FObjMaterialInfo>
     TArray<char> Buffer(FileSize);
     if (!File.read(Buffer.data(), FileSize))
     {
-        UE_LOG("Failed to read MTL file: %s", MtlFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "Failed to read MTL file: %s", MtlFilePath.c_str());
         return false;
     }
 
@@ -650,7 +658,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         if (It != MtlInfos.end())
         {
             MatchedMaterial = &(*It);
-            UE_LOG("Importer TargetSlotName: %s;", TargetSlotName.c_str());
+            UE_LOG(ObjImporter, Debug, "Resolved material slot: %s", TargetSlotName.c_str());
 
             FString JsonPath = ConvertMtlInfoToJson(MatchedMaterial);
             UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateStaticMeshMaterial(JsonPath);
@@ -701,7 +709,7 @@ bool FObjImporter::Convert(const FObjInfo& ObjInfo, const TArray<FObjMaterialInf
         else
         {
             MaterialIndex = OutMaterials.size() - 1;
-            UE_LOG("Warning: Material slot '%s' not found. Assigning to Default slot.", RawSection.MaterialSlotName.c_str());
+            UE_LOG(ObjImporter, Warning, "Material slot '%s' not found. Assigning to Default slot.", RawSection.MaterialSlotName.c_str());
         }
 
         for (uint32 i = 0; i < RawSection.NumTriangles; ++i)
@@ -850,7 +858,7 @@ bool FObjImporter::Import(const FString& ObjFilePath, const FImportOptions& Opti
     FObjInfo ObjInfo;
     if (!FObjImporter::ParseObj(ObjFilePath, ObjInfo))
     {
-        UE_LOG("ParseObj failed for: %s", ObjFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "ParseObj failed for: %s", ObjFilePath.c_str());
         return false;
     }
 
@@ -859,7 +867,7 @@ bool FObjImporter::Import(const FString& ObjFilePath, const FImportOptions& Opti
     {
         if (!FObjImporter::ParseMtl(ObjInfo.MaterialLibraryFilePath, ParsedMtlInfos))
         {
-            UE_LOG("ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
+            UE_LOG(ObjImporter, Warning, "ParseMtl failed for: %s", ObjInfo.MaterialLibraryFilePath.c_str());
             ObjInfo.MaterialLibraryFilePath.clear();
             ParsedMtlInfos.clear();
         }
@@ -867,14 +875,19 @@ bool FObjImporter::Import(const FString& ObjFilePath, const FImportOptions& Opti
 
     if (!FObjImporter::Convert(ObjInfo, ParsedMtlInfos, Options, OutMesh, OutMaterials))
     {
-        UE_LOG("Convert failed for: %s", ObjFilePath.c_str());
+        UE_LOG(ObjImporter, Error, "Convert failed for: %s", ObjFilePath.c_str());
         return false;
     }
     OutMesh.PathFileName = ObjFilePath;
 
     auto EndTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> Duration = EndTime - StartTime;
-    UE_LOG("OBJ Imported successfully. File: %s. Time taken: %.4f seconds", ObjFilePath.c_str(), Duration.count());
+    UE_LOG(ObjImporter, Info, "OBJ imported successfully. File=%s Time=%.4f sec Vertices=%u Indices=%u Materials=%u",
+           ObjFilePath.c_str(),
+           Duration.count(),
+           static_cast<uint32>(OutMesh.Vertices.size()),
+           static_cast<uint32>(OutMesh.Indices.size()),
+           static_cast<uint32>(OutMaterials.size()));
 
     return true;
 }

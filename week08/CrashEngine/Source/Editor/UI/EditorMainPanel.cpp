@@ -1,6 +1,8 @@
 ﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/UI/EditorMainPanel.h"
 
+#include "Core/CoreGlobals.h"
+#include "Core/Logging/LogMacros.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -51,12 +53,14 @@ void SaveSceneFromEditor(UEditorEngine* EditorEngine)
 {
     if (!EditorEngine)
     {
+        UE_LOG(EditorUI, Warning, "SaveScene requested without editor engine.");
         return;
     }
 
     const std::string FilePath = OpenSceneFileDialog(true);
     if (FilePath.empty())
     {
+        UE_LOG(EditorUI, Debug, "SaveScene dialog canceled.");
         return;
     }
 
@@ -64,6 +68,7 @@ void SaveSceneFromEditor(UEditorEngine* EditorEngine)
     FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
     if (!Ctx)
     {
+        UE_LOG(EditorUI, Error, "SaveScene failed because active world context is missing.");
         return;
     }
 
@@ -80,18 +85,21 @@ void SaveSceneFromEditor(UEditorEngine* EditorEngine)
 
     std::filesystem::path ScenePath = FPaths::ToPath(FilePath);
     FSceneSaveManager::SaveSceneAsJSON(FPaths::FromPath(ScenePath.stem()), *Ctx, PerspectiveCam);
+    UE_LOG(EditorUI, Info, "Scene saved: %s", FilePath.c_str());
 }
 
 void LoadSceneFromEditor(UEditorEngine* EditorEngine)
 {
     if (!EditorEngine)
     {
+        UE_LOG(EditorUI, Warning, "LoadScene requested without editor engine.");
         return;
     }
 
     const std::string FilePath = OpenSceneFileDialog(false);
     if (FilePath.empty())
     {
+        UE_LOG(EditorUI, Debug, "LoadScene dialog canceled.");
         return;
     }
 
@@ -107,6 +115,7 @@ void LoadSceneFromEditor(UEditorEngine* EditorEngine)
         EditorEngine->SetActiveWorld(LoadCtx.ContextHandle);
         EditorEngine->GetSelectionManager().SetWorld(LoadCtx.World);
         LoadCtx.World->WarmupPickingData();
+        UE_LOG(EditorUI, Info, "Scene loaded: %s", FilePath.c_str());
     }
     EditorEngine->ResetViewport();
 
@@ -144,23 +153,30 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
     Window = InWindow;
     EditorEngine = InEditorEngine;
+    GLog = &LogBuffer;
 
-    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 17.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
-    IO.FontGlobalScale = 1.00f;
-    ImGui::GetStyle().ScaleAllSizes(1.00f);
+    IO.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 19.0f, nullptr, IO.Fonts->GetGlyphRangesKorean());
+    IO.FontGlobalScale = 1.05f;
+    ImGui::GetStyle().ScaleAllSizes(1.05f);
 
     ImGui_ImplWin32_Init((void*)InWindow->GetHWND());
     ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
-    ConsolePanel.Initialize(InEditorEngine);
+    ConsolePanel.Initialize(InEditorEngine, &LogBuffer);
     ControlPanel.Initialize(InEditorEngine);
     DetailsPanel.Initialize(InEditorEngine);
     ScenePanel.Initialize(InEditorEngine);
     StatPanel.Initialize(InEditorEngine);
+    UE_LOG(EditorUI, Info, "Editor main panel initialized.");
 }
 
 void FEditorMainPanel::Release()
 {
+    UE_LOG(EditorUI, Info, "Editor main panel releasing.");
+    if (GLog == &LogBuffer)
+    {
+        GLog = nullptr;
+    }
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
