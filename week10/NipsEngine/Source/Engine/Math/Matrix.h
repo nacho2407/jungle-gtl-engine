@@ -947,7 +947,6 @@ struct FMatrix
                                         float FarZ) noexcept
     {
         assert(AspectRatio != 0.f);
-        assert(FarZ != NearZ);
 
         const float YScale = 1.0f / std::tan(FovYRad * 0.5f);
         const float XScale = YScale / AspectRatio;
