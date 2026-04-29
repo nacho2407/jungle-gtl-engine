@@ -103,16 +103,10 @@ struct Node
 	void FreeAll()
 	{
 		bUsed = false;
-		if (Child[0])
-		{
-			Child[0]->FreeAll();
-            Child[0] = nullptr;
-		}
-		if (Child[1])
-		{
-			Child[1]->FreeAll();
-            Child[1] = nullptr;
-		}
+		delete Child[0];
+		delete Child[1];
+		Child[0] = nullptr;
+		Child[1] = nullptr;
     }
 
 	void CollectLeafRects(TArray<FShadowAtlasTile>& OutRects, int32 Depth = 0) const
@@ -392,6 +386,7 @@ class FShadowAtlasManager : public TSingleton<FShadowAtlasManager>
 	friend class TSingleton<FShadowAtlasManager>;
 public:
 	void Initialize(ID3D11Device* InDevice);
+    void Release();
     //void VSMInitialize(ID3D11Device* Device);
 
 	uint32 GetAtlasResolution() const { return ShadowAtlasResolution2D; }

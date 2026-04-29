@@ -145,6 +145,7 @@ void FRenderer::Release()
 	SubUVBatcher.Release();
 
     // Device::ReportLiveObjects 이전에 ResourceManager가 잡고 있던 D3D 객체를 먼저 해제한다.
+    FShadowAtlasManager::Get().Release();
     FResourceManager::Get().ReleaseGPUResources();
 
 	Device.Release();
