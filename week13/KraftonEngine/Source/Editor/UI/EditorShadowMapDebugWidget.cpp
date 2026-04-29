@@ -11,6 +11,7 @@
 #include "Component/Light/SpotLightComponent.h"
 #include "Component/Light/PointLightComponent.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
+#include "Object/Object.h"
 #include "ImGui/imgui.h"
 
 static const char* FaceNames[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
@@ -38,9 +39,12 @@ static FSelectedLightInfo FindSelectedLight()
 	const FSceneEnvironment& Env = World->GetScene().GetEnvironment();
 	FSelectionManager& Sel = Editor->GetSelectionManager();
 
-	// 1) SelectedComponent 우선 검사
+	// 1) SelectedComponent 우선 검사 (댕글링 포인터 방어)
 	if (USceneComponent* SelComp = Sel.GetSelectedComponent())
 	{
+		if (!IsAliveObject(SelComp))
+			return Info;
+
 		if (USpotLightComponent* Spot = Cast<USpotLightComponent>(SelComp))
 		{
 			Info.Type = ESelectedLightType::Spot;

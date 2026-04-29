@@ -108,6 +108,11 @@ private:
 
 extern TArray<UObject*> GUObjectArray;
 
+inline bool IsAliveObject(const UObject* Object)
+{
+	return Object && std::find(GUObjectArray.begin(), GUObjectArray.end(), Object) != GUObjectArray.end();
+}
+
 class UObjectManager : public TSingleton<UObjectManager>
 {
 	friend class TSingleton<UObjectManager>;

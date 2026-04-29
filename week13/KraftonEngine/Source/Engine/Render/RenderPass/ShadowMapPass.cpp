@@ -416,7 +416,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		for (const auto& alloc : SpotAllocs)
 		{
 			float area = static_cast<float>(alloc.snappedRes) * static_cast<float>(alloc.snappedRes);
-			if (spotUsed + area > SpotPageBudget && spotPage + 1 < EstimatedSpotPages)
+			if (spotUsed > 0.0f && spotUsed + area > SpotPageBudget && spotPage + 1 < EstimatedSpotPages)
 			{
 				++spotPage;
 				spotUsed = 0.0f;
@@ -483,7 +483,7 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		{
 			// 6 faces per light
 			float area = 6.0f * static_cast<float>(alloc.snappedRes) * static_cast<float>(alloc.snappedRes);
-			if (pointUsed + area > PointPageBudget && pointPage + 1 < EstimatedPages)
+			if (pointUsed > 0.0f && pointUsed + area > PointPageBudget && pointPage + 1 < EstimatedPages)
 			{
 				++pointPage;
 				pointUsed = 0.0f;
