@@ -382,11 +382,9 @@ void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewM
 
     BuildViewModePasses(Config);
 
-    // ---------- Initial Shader Compile ----------
     for (FViewModePassDesc& Pass : Config.Passes)
     {
-        ApplyShadowFilterDefine(Pass);
-        Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
+        Pass.CompiledShader = nullptr;
     }
 }
 

@@ -17,8 +17,10 @@ public:
     static std::wstring ContentDir();  // Asset/Content/
     static std::wstring EditorDir();   // Asset/Editor/
     static std::wstring ShaderDir();   // Shaders/
+    static std::wstring SavedDir();    // Saved/
+    static std::wstring ShaderCacheDir(); // Saved/ShaderCache/
     static std::wstring SceneDir();    // Asset/Content/Scene/
-    static std::wstring DumpDir();     // Saves/Dump/
+    static std::wstring DumpDir();     // Saved/Dump/
     static std::wstring SettingsDir(); // Settings/
 
     // 주요 파일 경로

@@ -199,6 +199,9 @@ inline uint64 BuildDependencyHashRecursive(const std::filesystem::path& FilePath
     std::string Line;
     while (std::getline(File, Line))
     {
+        HashCombine64(Hash, HashString64(Line));
+        HashCombine64(Hash, static_cast<uint64>('\n'));
+
         std::string IncludePath;
         if (!TryExtractIncludePath(Line, IncludePath))
         {

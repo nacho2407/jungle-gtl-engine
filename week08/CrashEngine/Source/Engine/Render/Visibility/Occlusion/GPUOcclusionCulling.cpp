@@ -1,5 +1,8 @@
 ﻿// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Visibility/Occlusion/GPUOcclusionCulling.h"
+#include "Platform/Paths.h"
+#include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
+#include "Render/Resources/Shaders/ShaderProgramDesc.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Profiling/Stats.h"
@@ -11,25 +14,19 @@
 // ================================================================
 static ID3D11ComputeShader* CompileCS(ID3D11Device* Dev, const wchar_t* Path, const char* Entry)
 {
-    ID3DBlob* csBlob  = nullptr;
-    ID3DBlob* errBlob = nullptr;
+    ID3DBlob* csBlob = nullptr;
 
-    HRESULT hr = D3DCompileFromFile(Path, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                                    Entry, "cs_5_0", 0, 0, &csBlob, &errBlob);
+    FShaderStageDesc StageDesc = {};
+    StageDesc.FilePath         = FPaths::FromWide(Path);
+    StageDesc.EntryPoint       = Entry;
 
-    if (FAILED(hr))
+    if (!FShaderProgramBase::CompileShaderBlobStandalone(&csBlob, StageDesc, "cs_5_0", "Compute Shader Compile Error"))
     {
-        if (errBlob)
-        {
-            MessageBoxA(nullptr, (char*)errBlob->GetBufferPointer(),
-                        "Compute Shader Compile Error", MB_OK | MB_ICONERROR);
-            errBlob->Release();
-        }
         return nullptr;
     }
 
     ID3D11ComputeShader* cs = nullptr;
-    hr                      = Dev->CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &cs);
+    const HRESULT hr        = Dev->CreateComputeShader(csBlob->GetBufferPointer(), csBlob->GetBufferSize(), nullptr, &cs);
     csBlob->Release();
 
     return SUCCEEDED(hr) ? cs : nullptr;
