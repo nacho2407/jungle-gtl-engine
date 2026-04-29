@@ -34,6 +34,15 @@ public:
 		int32 CollectTimeMS = 0;
 	};
 
+	struct FLightStats
+	{
+        int32 DirectionalLightCount = 0;
+        int32 PointLightCount = 0;
+        int32 SpotlightCount = 0;
+        int32 ShadowCastingLightCount = 0;
+        int32 TotalLightCount = 0;
+	};
+
 private:
 	FMeshBufferManager MeshBufferManager;
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
@@ -41,6 +50,8 @@ private:
 	TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
 	FCullingStats LastCullingStats;
 	FDecalStats LastDecalStats;
+    FLightStats LastLightStats;
+
 public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
@@ -52,10 +63,12 @@ public:
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
 	const FDecalStats& GetLastDecalStats() const { return LastDecalStats; }
+    const FLightStats& GetLastLightStats() const { return LastLightStats; }
 
 private:
 	void ResetCullingStats();
 	void ResetDecalStats();
+	void ResetLightStats();
 
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                             FRenderBus& RenderBus);
