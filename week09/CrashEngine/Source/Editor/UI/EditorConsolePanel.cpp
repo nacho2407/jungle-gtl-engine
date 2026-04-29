@@ -1,128 +1,201 @@
-﻿// 에디터 영역의 세부 동작을 구현합니다.
+// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/UI/EditorConsolePanel.h"
+
+#include "Core/Logging/LogMacros.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Logging/EditorLogBuffer.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Render/Resources/Shadows/ShadowFilterSettings.h"
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
 
 #include <algorithm>
 #include <cctype>
 
-#include "Render/Resources/Shadows/ShadowMapSettings.h"
-
-void FEditorConsolePanel::AddLog(const char* fmt, ...)
+namespace
 {
-    char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, args);
-    va_end(args);
-    Messages.push_back(_strdup(buf));
-    if (AutoScroll)
-        ScrollToBottom = true;
+ImVec4 GetLogTextColor(ELogLevel Level)
+{
+    switch (Level)
+    {
+    case ELogLevel::Verbose:
+        return ImVec4(0.50f, 0.50f, 0.50f, 1.0f);
+    case ELogLevel::Debug:
+        return ImVec4(0.62f, 0.62f, 0.62f, 1.0f);
+    case ELogLevel::Info:
+        return ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
+    case ELogLevel::Warning:
+        return ImVec4(0.98f, 0.86f, 0.20f, 1.0f);
+    case ELogLevel::Error:
+        return ImVec4(0.95f, 0.24f, 0.24f, 1.0f);
+    default:
+        return ImVec4(1, 1, 1, 1);
+    }
 }
 
-void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
+ImVec4 GetLogChipColor(ELogLevel Level)
+{
+    switch (Level)
+    {
+    case ELogLevel::Verbose:
+        return ImVec4(0.22f, 0.22f, 0.22f, 1.0f);
+    case ELogLevel::Debug:
+        return ImVec4(0.28f, 0.28f, 0.28f, 1.0f);
+    case ELogLevel::Info:
+        return ImVec4(0.34f, 0.34f, 0.34f, 1.0f);
+    case ELogLevel::Warning:
+        return ImVec4(0.40f, 0.32f, 0.06f, 1.0f);
+    case ELogLevel::Error:
+        return ImVec4(0.42f, 0.10f, 0.10f, 1.0f);
+    default:
+        return ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    }
+}
+
+ImVec4 Brighten(const ImVec4& Color, float Amount)
+{
+    return ImVec4(
+        (std::min)(1.0f, Color.x + Amount),
+        (std::min)(1.0f, Color.y + Amount),
+        (std::min)(1.0f, Color.z + Amount),
+        Color.w);
+}
+
+const char* GetLogLevelDisplayName(ELogLevel Level)
+{
+    switch (Level)
+    {
+    case ELogLevel::Verbose:
+        return "Verbose";
+    case ELogLevel::Debug:
+        return "Debug";
+    case ELogLevel::Info:
+        return "Info";
+    case ELogLevel::Warning:
+        return "Warning";
+    case ELogLevel::Error:
+        return "Error";
+    default:
+        return "Unknown";
+    }
+}
+
+FString ToLowerAsciiCopy(const FString& Value)
+{
+    FString Lower = Value;
+    std::transform(Lower.begin(), Lower.end(), Lower.begin(),
+                   [](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+    return Lower;
+}
+} // namespace
+
+void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine, FEditorLogBuffer* InLogBuffer)
 {
     FEditorPanel::Initialize(InEditorEngine);
+    LogBuffer = InLogBuffer;
+    InputBuf.fill('\0');
+    SearchBuf.fill('\0');
 
     RegisterCommand("clear", [this](const TArray<FString>& Args)
                     {
-			(void)Args;
-			Clear(); });
+                        (void)Args;
+                        Clear();
+                    });
 
     RegisterCommand("stat", [this](const TArray<FString>& Args)
                     {
-			if (EditorEngine == nullptr)
-			{
-				AddLog("[ERROR] EditorEngine is null.\n");
-				return;
-			}
+                        if (EditorEngine == nullptr)
+                        {
+                            UE_LOG(Console, Error, "EditorEngine is null.");
+                            return;
+                        }
 
-			if (Args.size() < 2)
-			{
-				AddLog("Usage: stat fps | stat memory | stat lightcull | stat none\n");
-				return;
-			}
+                        if (Args.size() < 2)
+                        {
+                            UE_LOG(Console, Warning, "Usage: stat fps | stat memory | stat lightcull | stat none");
+                            return;
+                        }
 
-			FOverlayStatSystem& StatSystem = EditorEngine->GetOverlayStatSystem();
-			const FString& SubCommand = Args[1];
+                        FOverlayStatSystem& StatSystem = EditorEngine->GetOverlayStatSystem();
+                        const FString& SubCommand = Args[1];
 
-			if (SubCommand == "fps")
-			{
-				StatSystem.ShowFPS(true);
-				AddLog("Overlay stat enabled: fps\n");
-			}
-			else if (SubCommand == "memory")
-			{
-				StatSystem.ShowMemory(true);
-				AddLog("Overlay stat enabled: memory\n");
-			}
-			else if (SubCommand == "lightcull")
-			{
-				StatSystem.ShowLightCull(true);
-				AddLog("Overlay stat enabled: lightcull\n");
-			}
-			else if (SubCommand == "none")
-			{
-				StatSystem.HideAll();
-				AddLog("Overlay stat disabled: all\n");
-			}
-			else
-			{
-				AddLog("[ERROR] Unknown stat command: '%s'\n", SubCommand.c_str());
-				AddLog("Usage: stat fps | stat memory | stat lightcull | stat none\n");
-			} });
+                        if (SubCommand == "fps")
+                        {
+                            StatSystem.ShowFPS(true);
+                            UE_LOG(Console, Info, "Overlay stat enabled: fps");
+                        }
+                        else if (SubCommand == "memory")
+                        {
+                            StatSystem.ShowMemory(true);
+                            UE_LOG(Console, Info, "Overlay stat enabled: memory");
+                        }
+                        else if (SubCommand == "lightcull")
+                        {
+                            StatSystem.ShowLightCull(true);
+                            UE_LOG(Console, Info, "Overlay stat enabled: lightcull");
+                        }
+                        else if (SubCommand == "none")
+                        {
+                            StatSystem.HideAll();
+                            UE_LOG(Console, Info, "Overlay stat disabled: all");
+                        }
+                        else
+                        {
+                            UE_LOG(Console, Error, "Unknown stat command: '%s'", SubCommand.c_str());
+                            UE_LOG(Console, Warning, "Usage: stat fps | stat memory | stat lightcull | stat none");
+                        }
+                    });
 
     RegisterCommand("shadow_filter", [this](const TArray<FString>& Args)
                     {
-			if (Args.size() < 2)
-			{
-				AddLog("Usage: shadow_filter NONE | PCF | VSM | ESM\n");
-				AddLog("Current shadow filter: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod()));
-				return;
-			}
+                        if (Args.size() < 2)
+                        {
+                            UE_LOG(Console, Warning, "Usage: shadow_filter NONE | PCF | VSM | ESM");
+                            UE_LOG(Console, Info, "Current shadow filter: %s", GetShadowFilterMethodName(GetShadowFilterMethod()));
+                            return;
+                        }
 
-			FString FilterName = Args[1];
-			std::transform(FilterName.begin(), FilterName.end(), FilterName.begin(),
-				[](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
+                        FString FilterName = Args[1];
+                        std::transform(FilterName.begin(), FilterName.end(), FilterName.begin(),
+                                       [](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
 
-			if (FilterName == "NONE")
-			{
-				SetShadowFilterMethod(EShadowFilterMethod::None);
-			}
-			else if (FilterName == "PCF")
-			{
-				SetShadowFilterMethod(EShadowFilterMethod::PCF);
-			}
-			else if (FilterName == "VSM")
-			{
-				SetShadowFilterMethod(EShadowFilterMethod::VSM);
-			}
-			else if (FilterName == "ESM")
-			{
-				SetShadowFilterMethod(EShadowFilterMethod::ESM);
-			}
-			else
-			{
-				AddLog("[ERROR] Unknown shadow filter: '%s'\n", Args[1].c_str());
-				AddLog("Usage: shadow_filter NONE | PCF | VSM | ESM\n");
-				return;
-			}
+                        if (FilterName == "NONE")
+                        {
+                            SetShadowFilterMethod(EShadowFilterMethod::None);
+                        }
+                        else if (FilterName == "PCF")
+                        {
+                            SetShadowFilterMethod(EShadowFilterMethod::PCF);
+                        }
+                        else if (FilterName == "VSM")
+                        {
+                            SetShadowFilterMethod(EShadowFilterMethod::VSM);
+                        }
+                        else if (FilterName == "ESM")
+                        {
+                            SetShadowFilterMethod(EShadowFilterMethod::ESM);
+                        }
+                        else
+                        {
+                            UE_LOG(Console, Error, "Unknown shadow filter: '%s'", Args[1].c_str());
+                            UE_LOG(Console, Warning, "Usage: shadow_filter NONE | PCF | VSM | ESM");
+                            return;
+                        }
 
-			AddLog("Shadow filter changed to: %s\n", GetShadowFilterMethodName(GetShadowFilterMethod())); });
-    
+                        UE_LOG(Console, Info, "Shadow filter changed to: %s", GetShadowFilterMethodName(GetShadowFilterMethod()));
+                    });
+
     RegisterCommand("shadow_mode", [this](const TArray<FString>& Args)
     {
         if (Args.size() < 2)
         {
-            AddLog("Usage: shadow_mode STANDARD | PSM | CASCADE\n");
-            AddLog("Current shadow mode: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
+            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | PSM | CASCADE");
+            UE_LOG(Console, Info, "Current shadow mode: %s", GetShadowMapMethodName(GetShadowMapMethod()));
             return;
         }
-        
+
         FString MethodName = Args[1];
         std::transform(MethodName.begin(), MethodName.end(), MethodName.begin(),
-            [](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
+                       [](unsigned char Ch) { return static_cast<char>(std::toupper(Ch)); });
 
         if (MethodName == "STANDARD" || MethodName == "SSM")
         {
@@ -138,13 +211,162 @@ void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
         }
         else
         {
-            AddLog("[ERROR] Unknown shadow map method: '%s'\n", Args[1].c_str());
-            AddLog("Usage: shadow_mode STANDARD | PSM | CASCADE\n");
+            UE_LOG(Console, Error, "Unknown shadow map method: '%s'", Args[1].c_str());
+            UE_LOG(Console, Warning, "Usage: shadow_mode STANDARD | PSM | CASCADE");
             return;
         }
-        
-        AddLog("Shadow map method changed to: %s\n", GetShadowMapMethodName(GetShadowMapMethod()));
+
+        UE_LOG(Console, Info, "Shadow map method changed to: %s", GetShadowMapMethodName(GetShadowMapMethod()));
     });
+
+    UE_LOG(Console, Info, "Console panel initialized.");
+}
+
+void FEditorConsolePanel::Initialize(UEditorEngine* InEditorEngine)
+{
+    Initialize(InEditorEngine, nullptr);
+}
+
+void FEditorConsolePanel::Clear()
+{
+    if (LogBuffer)
+    {
+        LogBuffer->Clear();
+    }
+
+    ScrollToBottom = true;
+}
+
+bool FEditorConsolePanel::ShouldDisplayEntry(ELogLevel Level, const FString& Text) const
+{
+    const int32 LevelIndex = static_cast<int32>(Level);
+    if (LevelIndex < 0 || LevelIndex >= LogLevelCount)
+    {
+        return false;
+    }
+
+    if (!LevelVisibility[LevelIndex] || static_cast<uint8>(Level) < static_cast<uint8>(MinimumVisibleLevel))
+    {
+        return false;
+    }
+
+    const FString SearchText = ToLowerAsciiCopy(SearchBuf.data());
+    if (SearchText.empty())
+    {
+        return true;
+    }
+
+    return ToLowerAsciiCopy(Text).find(SearchText) != FString::npos;
+}
+
+void FEditorConsolePanel::DrawToolbar()
+{
+    if (ImGui::Button("Clear"))
+    {
+        Clear();
+    }
+
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto-scroll", &AutoScroll);
+
+    ImGui::SameLine();
+    ImGui::TextUnformatted("Min");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(92.0f);
+    if (ImGui::BeginCombo("##MinimumLevel", GetLogLevelDisplayName(MinimumVisibleLevel)))
+    {
+        for (int32 Index = static_cast<int32>(ELogLevel::Verbose); Index <= static_cast<int32>(ELogLevel::Error); ++Index)
+        {
+            const ELogLevel Level = static_cast<ELogLevel>(Index);
+            const bool bSelected = (MinimumVisibleLevel == Level);
+            if (ImGui::Selectable(GetLogLevelDisplayName(Level), bSelected))
+            {
+                MinimumVisibleLevel = Level;
+            }
+
+            if (bSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    for (int32 Index = static_cast<int32>(ELogLevel::Verbose); Index <= static_cast<int32>(ELogLevel::Error); ++Index)
+    {
+        ImGui::SameLine();
+        const ELogLevel Level = static_cast<ELogLevel>(Index);
+        ImGui::PushStyleColor(ImGuiCol_Button, GetLogChipColor(Level));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Brighten(GetLogChipColor(Level), 0.08f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Brighten(GetLogChipColor(Level), 0.14f));
+
+        if (ImGui::Button(GetLogLevelDisplayName(Level)))
+        {
+            LevelVisibility[Index] = !LevelVisibility[Index];
+        }
+
+        ImGui::PopStyleColor(3);
+    }
+
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(240.0f);
+    ImGui::InputTextWithHint("##ConsoleSearch", "Search logs...", SearchBuf.data(), SearchBuf.size());
+}
+
+void FEditorConsolePanel::DrawLogOutput()
+{
+    const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+    if (!ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar))
+    {
+        ImGui::EndChild();
+        return;
+    }
+
+    if (LogBuffer)
+    {
+        const TArray<FEditorLogEntry>& Entries = LogBuffer->GetEntries();
+        for (const FEditorLogEntry& Entry : Entries)
+        {
+            if (!ShouldDisplayEntry(Entry.Level, Entry.FormattedMessage))
+            {
+                continue;
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_Text, GetLogTextColor(Entry.Level));
+            ImGui::TextUnformatted(Entry.FormattedMessage.c_str());
+            ImGui::PopStyleColor();
+        }
+    }
+
+    if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+    {
+        ImGui::SetScrollHereY(1.0f);
+    }
+    ScrollToBottom = false;
+
+    ImGui::EndChild();
+}
+
+void FEditorConsolePanel::DrawInputRow()
+{
+    ImGuiInputTextFlags Flags = ImGuiInputTextFlags_EnterReturnsTrue |
+                                ImGuiInputTextFlags_EscapeClearsAll |
+                                ImGuiInputTextFlags_CallbackHistory |
+                                ImGuiInputTextFlags_CallbackCompletion;
+
+    if (ImGui::InputText("Input", InputBuf.data(), InputBuf.size(), Flags, &TextEditCallback, this))
+    {
+        ExecCommand(InputBuf.data());
+        InputBuf[0] = '\0';
+        bReclaimFocus = true;
+    }
+
+    ImGui::SetItemDefaultFocus();
+    if (bReclaimFocus)
+    {
+        ImGui::SetKeyboardFocusHere(-1);
+        bReclaimFocus = false;
+    }
 }
 
 void FEditorConsolePanel::Render(float DeltaTime)
@@ -158,89 +380,11 @@ void FEditorConsolePanel::Render(float DeltaTime)
         return;
     }
 
-    if (ImGui::SmallButton("Clear"))
-    {
-        Clear();
-    }
-
+    DrawToolbar();
     ImGui::Separator();
-
-    //// Options menu
-    if (ImGui::BeginPopup("Options"))
-    {
-        ImGui::Checkbox("Auto-scroll", &AutoScroll);
-        ImGui::EndPopup();
-    }
-
-    // Options, Filter
-    ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_Tooltip);
-    if (ImGui::Button("Options"))
-        ImGui::OpenPopup("Options");
-    ImGui::SameLine();
-    Filter.Draw("Filter (\"incl,-excl\") (\"error\")", 180);
+    DrawLogOutput();
     ImGui::Separator();
-
-    const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-    if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar))
-    {
-        for (auto& Item : Messages)
-        {
-            if (!Filter.PassFilter(Item))
-                continue;
-
-            ImVec4 Color;
-            bool bHasColor = false;
-            if (strncmp(Item, "[ERROR]", 7) == 0)
-            {
-                Color = ImVec4(1, 0.4f, 0.4f, 1);
-                bHasColor = true;
-            }
-            else if (strncmp(Item, "[WARN]", 6) == 0)
-            {
-                Color = ImVec4(1, 0.8f, 0.2f, 1);
-                bHasColor = true;
-            }
-            else if (strncmp(Item, "#", 1) == 0)
-            {
-                Color = ImVec4(1, 0.8f, 0.6f, 1);
-                bHasColor = true;
-            }
-
-            if (bHasColor)
-            {
-                ImGui::PushStyleColor(ImGuiCol_Text, Color);
-            }
-            ImGui::TextUnformatted(Item);
-            if (bHasColor)
-            {
-                ImGui::PopStyleColor();
-            }
-        }
-
-        if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-        {
-            ImGui::SetScrollHereY(1.0f);
-        }
-        ScrollToBottom = false;
-    }
-    ImGui::EndChild();
-    ImGui::Separator();
-
-    // Input line
-    bool bReclaimFocus = false;
-    ImGuiInputTextFlags Flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
-    if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), Flags, &TextEditCallback, this))
-    {
-        ExecCommand(InputBuf);
-        strcpy_s(InputBuf, "");
-        bReclaimFocus = true;
-    }
-
-    ImGui::SetItemDefaultFocus();
-    if (bReclaimFocus)
-    {
-        ImGui::SetKeyboardFocusHere(-1);
-    }
+    DrawInputRow();
 
     ImGui::End();
 }
@@ -252,17 +396,28 @@ void FEditorConsolePanel::RegisterCommand(const FString& Name, CommandFn Fn)
 
 void FEditorConsolePanel::ExecCommand(const char* CommandLine)
 {
-    AddLog("# %s\n", CommandLine);
-    History.push_back(_strdup(CommandLine));
+    if (CommandLine == nullptr || CommandLine[0] == '\0')
+    {
+        return;
+    }
+
+    UE_LOG(Console, Debug, "> %s", CommandLine);
+    History.push_back(CommandLine);
     HistoryPos = -1;
+    ScrollToBottom = true;
 
     TArray<FString> Tokens;
     std::istringstream Iss(CommandLine);
     FString Token;
     while (Iss >> Token)
+    {
         Tokens.push_back(Token);
+    }
+
     if (Tokens.empty())
+    {
         return;
+    }
 
     auto It = Commands.find(Tokens[0]);
     if (It != Commands.end())
@@ -271,14 +426,13 @@ void FEditorConsolePanel::ExecCommand(const char* CommandLine)
     }
     else
     {
-        AddLog("[ERROR] Unknown command: '%s'\n", Tokens[0].c_str());
+        UE_LOG(Console, Error, "Unknown command: '%s'", Tokens[0].c_str());
     }
 }
 
-// History & Tab-Completion Callback____________________________________________________________
 int32 FEditorConsolePanel::TextEditCallback(ImGuiInputTextCallbackData* Data)
 {
-    FEditorConsolePanel* Console = (FEditorConsolePanel*)Data->UserData;
+    FEditorConsolePanel* Console = static_cast<FEditorConsolePanel*>(Data->UserData);
 
     if (Data->EventFlag == ImGuiInputTextFlags_CallbackHistory)
     {
@@ -286,21 +440,25 @@ int32 FEditorConsolePanel::TextEditCallback(ImGuiInputTextCallbackData* Data)
         if (Data->EventKey == ImGuiKey_UpArrow)
         {
             if (Console->HistoryPos == -1)
-                Console->HistoryPos = Console->History.Size - 1;
+            {
+                Console->HistoryPos = static_cast<int32>(Console->History.size()) - 1;
+            }
             else if (Console->HistoryPos > 0)
+            {
                 Console->HistoryPos--;
+            }
         }
         else if (Data->EventKey == ImGuiKey_DownArrow)
         {
-            if (Console->HistoryPos != -1 &&
-                ++Console->HistoryPos >= Console->History.Size)
+            if (Console->HistoryPos != -1 && ++Console->HistoryPos >= static_cast<int32>(Console->History.size()))
+            {
                 Console->HistoryPos = -1;
+            }
         }
+
         if (PrevPos != Console->HistoryPos)
         {
-            const char* HistoryStr = (Console->HistoryPos >= 0)
-                                         ? Console->History[Console->HistoryPos]
-                                         : "";
+            const char* HistoryStr = (Console->HistoryPos >= 0) ? Console->History[Console->HistoryPos].c_str() : "";
             Data->DeleteChars(0, Data->BufTextLen);
             Data->InsertChars(0, HistoryStr);
         }
@@ -308,19 +466,21 @@ int32 FEditorConsolePanel::TextEditCallback(ImGuiInputTextCallbackData* Data)
 
     if (Data->EventFlag == ImGuiInputTextFlags_CallbackCompletion)
     {
-        // Find last word typed
         const char* WordEnd = Data->Buf + Data->CursorPos;
         const char* WordStart = WordEnd;
         while (WordStart > Data->Buf && WordStart[-1] != ' ')
+        {
             WordStart--;
+        }
 
-        // Collect matches from registered commands
         ImVector<const char*> Candidates;
         for (auto& Pair : Console->Commands)
         {
             const FString& Name = Pair.first;
             if (strncmp(Name.c_str(), WordStart, WordEnd - WordStart) == 0)
+            {
                 Candidates.push_back(Name.c_str());
+            }
         }
 
         if (Candidates.Size == 1)
@@ -331,17 +491,13 @@ int32 FEditorConsolePanel::TextEditCallback(ImGuiInputTextCallbackData* Data)
         }
         else if (Candidates.Size > 1)
         {
-            Console->AddLog("Possible completions:\n");
-            for (auto& C : Candidates)
-                Console->AddLog("  %s\n", C);
+            UE_LOG(Console, Info, "Possible completions:");
+            for (auto& Candidate : Candidates)
+            {
+                UE_LOG(Console, Info, "  %s", Candidate);
+            }
         }
     }
 
     return 0;
 }
-
-ImVector<char*> FEditorConsolePanel::Messages;
-ImVector<char*> FEditorConsolePanel::History;
-
-bool FEditorConsolePanel::AutoScroll = true;
-bool FEditorConsolePanel::ScrollToBottom = true;

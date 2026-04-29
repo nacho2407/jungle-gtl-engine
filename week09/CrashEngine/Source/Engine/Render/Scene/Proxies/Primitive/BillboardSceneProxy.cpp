@@ -56,7 +56,7 @@ ID3D11ShaderResourceView* ResolveBillboardTextureSRV(UMaterial* Material)
 }
 } // namespace
 
-#include "Editor/UI/EditorConsolePanel.h"
+#include "Core/Logging/LogMacros.h"
 
 // ============================================================
 // ============================================================
@@ -87,7 +87,7 @@ void FBillboardSceneProxy::UpdateMesh()
 
     if (Mat && !DiffuseSRV)
     {
-        UE_LOG("Billboard DiffuseSRV is null. Material=%s", Mat->GetAssetPathFileName().c_str());
+        UE_LOG(Renderer, Warning, "Billboard DiffuseSRV is null. Material=%s", Mat->GetAssetPathFileName().c_str());
     }
 }
 

@@ -242,6 +242,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorGizmoTool.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorNavigationTool.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorSelectionTool.cpp" />
@@ -297,6 +298,7 @@
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\UUIDTextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Core\CoreGlobals.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
@@ -444,6 +446,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
+    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
     <ClInclude Include="Source\Editor\Input\EditorGizmoTool.h" />
     <ClInclude Include="Source\Editor\Input\EditorNavigationTool.h" />
     <ClInclude Include="Source\Editor\Input\EditorSelectionTool.h" />
@@ -507,8 +511,11 @@
     <ClInclude Include="Source\Engine\Core\ClassTypes.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
+    <ClInclude Include="Source\Engine\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\LogMacros.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\LogOutputDevice.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
     <ClInclude Include="Source\Engine\Core\RayTypes.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />

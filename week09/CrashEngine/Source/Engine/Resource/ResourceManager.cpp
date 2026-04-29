@@ -1,5 +1,6 @@
 ﻿// 엔진 영역의 세부 동작을 구현합니다.
 #include "Resource/ResourceManager.h"
+#include "Core/Logging/LogMacros.h"
 #include "Platform/Paths.h"
 #include "SimpleJSON/json.hpp"
 
@@ -8,7 +9,6 @@
 #include <d3d11.h>
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "Editor/UI/EditorConsolePanel.h"
 #include "Profiling/MemoryStats.h"
 
 namespace ResourceKey
@@ -24,6 +24,7 @@ constexpr const char* Rows = "Rows";
 void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
 {
     using namespace json;
+    UE_LOG(Resource, Info, "Loading resource manifest: %s", Path.c_str());
 
     FontResources.clear();
     ParticleResources.clear();
@@ -109,13 +110,17 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
     }
 
     checkf(LoadGPUResources(InDevice), "Failed to create GPU resources from Settings/Resource.ini");
-    UE_LOG("Complete Load Resources!");
+    UE_LOG(Resource, Info, "Resources loaded. Fonts=%u Particles=%u Textures=%u",
+           static_cast<uint32>(FontResources.size()),
+           static_cast<uint32>(ParticleResources.size()),
+           static_cast<uint32>(TextureResources.size()));
 }
 
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
     if (!Device)
     {
+        UE_LOG(Resource, Error, "LoadGPUResources failed because device is null.");
         return false;
     }
 
@@ -172,6 +177,8 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
         }
         if (FAILED(hr) || !Resource.SRV)
         {
+            UE_LOG(Resource, Error, "Failed to create SRV for resource '%s' at path '%s'.",
+                   Resource.Name.ToString().c_str(), Resource.Path.c_str());
             return false;
         }
 
@@ -214,6 +221,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 void FResourceManager::ReleaseGPUResources()
 {
+    UE_LOG(Resource, Debug, "Releasing GPU resource SRVs.");
     for (auto& [Key, Resource] : FontResources)
     {
         if (Resource.TrackedMemoryBytes > 0)

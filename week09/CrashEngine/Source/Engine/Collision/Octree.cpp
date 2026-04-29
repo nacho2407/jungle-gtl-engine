@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-#include "Editor/UI/EditorConsolePanel.h"
+#include "Core/Logging/LogMacros.h"
 #include "Math/Intersection.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Sphere.h"
@@ -303,7 +303,12 @@ void FOctree::SubDivide()
             delete Child;
         Children.clear();
         // PrimitiveList는 이미 위에서 크로스-바운더리로 재구성됨
+        UE_LOG(Octree, Verbose, "Subdivision canceled because no primitives were distributable at depth %u.", Depth);
+        return;
     }
+
+    UE_LOG(Octree, Verbose, "Subdivided octree node at depth %u. Distributed=%d Retained=%u",
+           Depth, Distributed, static_cast<uint32>(PrimitiveList.size()));
 }
 
 bool FOctree::HasPrimitive(const UPrimitiveComponent* Primitive)

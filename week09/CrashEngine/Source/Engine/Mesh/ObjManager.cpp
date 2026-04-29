@@ -1,12 +1,12 @@
 ﻿// 메시 영역의 세부 동작을 구현합니다.
 #include "Mesh/ObjManager.h"
+#include "Core/Logging/LogMacros.h"
 #include "Mesh/StaticMesh.h"
 #include "Mesh/ObjImporter.h"
 #include "Materials/Material.h"
 #include "Serialization/WindowsArchive.h"
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
-#include "Editor/UI/EditorConsolePanel.h"
 #include <filesystem>
 #include <algorithm>
 #include <cwctype>
@@ -111,6 +111,8 @@ void FObjManager::ScanMeshAssets()
         Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
         AvailableMeshFiles.push_back(std::move(Item));
     }
+
+    UE_LOG(ObjManager, Debug, "Scanned mesh caches. Count=%u", static_cast<uint32>(AvailableMeshFiles.size()));
 }
 
 void FObjManager::ScanObjSourceFiles()
@@ -143,6 +145,8 @@ void FObjManager::ScanObjSourceFiles()
         Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
         AvailableObjFiles.push_back(std::move(Item));
     }
+
+    UE_LOG(ObjManager, Debug, "Scanned source obj files. Count=%u", static_cast<uint32>(AvailableObjFiles.size()));
 }
 
 const TArray<FMeshAssetListItem>& FObjManager::GetAvailableMeshFiles()
@@ -171,7 +175,7 @@ bool FObjManager::TryImportStaticMesh(const FString& ObjPath, const FImportOptio
 
     if (!bImported)
     {
-        UE_LOG("[ERROR] Failed to import static mesh source: %s", ObjPath.c_str());
+        UE_LOG(ObjManager, Error, "Failed to import static mesh source: %s", ObjPath.c_str());
         return false;
     }
 
@@ -186,8 +190,10 @@ bool FObjManager::TryImportStaticMesh(const FString& ObjPath, const FImportOptio
     }
     else
     {
-        UE_LOG("[WARN] Failed to open mesh cache for write: %s", BinPath.c_str());
+        UE_LOG(ObjManager, Warning, "Failed to open mesh cache for write: %s", BinPath.c_str());
     }
+
+    UE_LOG(ObjManager, Info, "Imported static mesh from source: %s", ObjPath.c_str());
 
     return true;
 }
@@ -221,6 +227,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
     auto It = StaticMeshCache.find(CacheKey);
     if (It != StaticMeshCache.end())
     {
+        UE_LOG(ObjManager, Debug, "Static mesh cache hit: %s", CacheKey.c_str());
         return It->second;
     }
 
@@ -246,10 +253,11 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
         if (Reader.IsValid())
         {
             StaticMesh->Serialize(Reader);
+            UE_LOG(ObjManager, Debug, "Loaded static mesh from binary cache: %s", BinPath.c_str());
         }
         else
         {
-            UE_LOG("[WARN] Failed to open mesh cache for read: %s", BinPath.c_str());
+            UE_LOG(ObjManager, Warning, "Failed to open mesh cache for read: %s", BinPath.c_str());
             bNeedRebuild = true;
         }
     }
@@ -264,7 +272,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
 
     if (!StaticMesh->GetStaticMeshAsset())
     {
-        UE_LOG("[ERROR] Static mesh asset was empty after load: %s", PathFileName.c_str());
+        UE_LOG(ObjManager, Error, "Static mesh asset was empty after load: %s", PathFileName.c_str());
         return nullptr;
     }
 
@@ -276,6 +284,7 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
         ScanMeshAssets();
         FMaterialManager::Get().ScanMaterialAssets();
     }
+    UE_LOG(ObjManager, Info, "Static mesh ready: %s", PathFileName.c_str());
     return StaticMesh;
 }
 
