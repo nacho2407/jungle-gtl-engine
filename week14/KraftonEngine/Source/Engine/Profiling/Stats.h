@@ -48,6 +48,25 @@ struct FStatAccum
 	uint32 WindowCount = 0;	// 채워진 수 (최대 STAT_WINDOW_SIZE)
 };
 
+// --- Stat Key (Name + Category 복합 키) ---
+struct FStatKey
+{
+	const char* Name     = nullptr;
+	const char* Category = nullptr;
+
+	bool operator==(const FStatKey& Other) const { return Name == Other.Name && Category == Other.Category; }
+};
+
+struct FStatKeyHash
+{
+	size_t operator()(const FStatKey& Key) const
+	{
+		size_t H1 = std::hash<const void*>{}(Key.Name);
+		size_t H2 = std::hash<const void*>{}(Key.Category);
+		return H1 ^ (H2 * 2654435761u);
+	}
+};
+
 // --- Stat Manager (싱글턴) ---
 class FStatManager : public TSingleton<FStatManager>
 {
@@ -63,7 +82,7 @@ private:
 	FStatManager();
 	~FStatManager() = default;
 
-	TMap<const char*, FStatAccum> Stats;
+	std::unordered_map<FStatKey, FStatAccum, FStatKeyHash> Stats;
 	TArray<FStatEntry> Snapshot;
 	LARGE_INTEGER Frequency;
 };
