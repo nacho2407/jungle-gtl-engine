@@ -12,8 +12,6 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/LightFrustumUtils.h"
-#include "Profiling/Stats.h"
-#include "Profiling/GPUProfiler.h"
 #include "Profiling/ShadowStats.h"
 #include "Core/ProjectSettings.h"
 #include "Collision/SpatialPartition.h"
@@ -135,8 +133,6 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 {
 	if (!Ctx.Scene) return;
 
-	SCOPE_STAT_CAT("ShadowMapPass", "4_ExecutePass");
-	GPU_SCOPE_STAT("ShadowMapPass");
 	SHADOW_STATS_RESET();
 
 	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
