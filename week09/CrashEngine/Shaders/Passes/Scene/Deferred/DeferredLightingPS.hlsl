@@ -24,6 +24,7 @@
     - ENABLE_LIGHT_EVAL_COUNTER
 */
 
+#define USE_LIGHT_CULLING 1
 #include "../../../Render/Scene/Shared/ViewModeCommon.hlsli"
 
 Texture2D g_BaseColorTex : register(t0);

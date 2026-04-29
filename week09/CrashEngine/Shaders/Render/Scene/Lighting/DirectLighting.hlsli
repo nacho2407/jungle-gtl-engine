@@ -29,6 +29,7 @@
 #define SHADER_ENTITY_TILE_BUCKET_COUNT (MAX_LIGHTS_PER_TILE / 32)
 
 StructuredBuffer<FLocalLight> g_LightBuffer : register(t6);
+#ifdef USE_LIGHT_CULLING
 StructuredBuffer<uint> PerTileLightMask : REGISTER_T(SLOT_TEX_LIGHT_TILE_MASK);
 Texture2D g_DebugHitMapTex : REGISTER_T(SLOT_TEX_DEBUG_HIT_MAP);
 
@@ -42,6 +43,7 @@ cbuffer LightCullingParams : register(b2)
     float FarZ;
     float NumLights;
 }
+#endif
 
 // =============================================================================
 // DEBUG: Cascade Visualization (Set to 1 to enable, 0 to disable)
@@ -57,20 +59,78 @@ float4 GetCascadeDebugColor(int Index)
     };
     return Colors[uint(Index) % 4];
 }
-// =============================================================================
 
-float3 GetAmbientLightColor()
+float GetDirectionalShadow(int i, float3 WorldPosition, float3 N, float4 PixelPos)
 {
-    return Ambient.Color * Ambient.Intensity;
+    float4 ViewPos = mul(float4(WorldPosition, 1.0f), View);
+    float Depth = ViewPos.z;
+
+    int CascadeIdx = 0;
+    for (int j = 0; j < Directional[i].CascadeCount - 1; ++j)
+    {
+        float split = Directional[i].CascadeSplits[(j + 1) / 4][(j + 1) % 4];
+        if (Depth > split)
+        {
+            CascadeIdx = j + 1;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    float Shadow = GetShadowFactor(
+        DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
+        Directional[i].ShadowViewProj[CascadeIdx],
+        WorldPosition,
+        N,
+        Directional[i].Direction,
+        Directional[i].ShadowBias,
+        Directional[i].ShadowSlopeBias,
+        Directional[i].ShadowNormalBias,
+        Directional[i].ShadowSharpen,
+        Directional[i].ShadowESMExponent,
+        PixelPos,
+        SHADOW_PROJECTION_ORTHOGRAPHIC,
+        0.0f,
+        1.0f);
+
+    // Cascade Blending
+    if (CascadeIdx < Directional[i].CascadeCount - 1)
+    {
+        float nextSplit = Directional[i].CascadeSplits[(CascadeIdx + 1) / 4][(CascadeIdx + 1) % 4];
+        float prevSplit = Directional[i].CascadeSplits[CascadeIdx / 4][CascadeIdx % 4];
+        
+        // 블렌딩 영역 설정 (캐스케이드 범위의 10%)
+        float BlendZone = (nextSplit - prevSplit) * 0.1f;
+        float Alpha = saturate((Depth - (nextSplit - BlendZone)) / max(BlendZone, 0.001f));
+
+        if (Alpha > 0.0f)
+        {
+            float NextShadow = GetShadowFactor(
+                DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx + 1]),
+                Directional[i].ShadowViewProj[CascadeIdx + 1],
+                WorldPosition,
+                N,
+                Directional[i].Direction,
+                Directional[i].ShadowBias,
+                Directional[i].ShadowSlopeBias,
+                Directional[i].ShadowNormalBias,
+                Directional[i].ShadowSharpen,
+                Directional[i].ShadowESMExponent,
+                PixelPos,
+                SHADOW_PROJECTION_ORTHOGRAPHIC,
+                0.0f,
+                1.0f);
+            Shadow = lerp(Shadow, NextShadow, Alpha);
+        }
+    }
+
+    return Shadow;
 }
 
 int SelectCascadeIndex(float3 WorldPos, float4 CascadeSplits[2], int CascadeCount)
 {
-    if (CascadeCount <= 1)
-    {
-        return 0;
-    }
-
     float4 ViewPos = mul(float4(WorldPos, 1.0f), View);
     float Depth = ViewPos.z;
 
@@ -88,6 +148,12 @@ int SelectCascadeIndex(float3 WorldPos, float4 CascadeSplits[2], int CascadeCoun
         }
     }
     return Index;
+}
+// =============================================================================
+
+float3 GetAmbientLightColor()
+{
+    return Ambient.Color * Ambient.Intensity;
 }
 
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
@@ -223,25 +289,10 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        int CascadeIdx = SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount);
-        float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
-            Directional[i].ShadowViewProj[CascadeIdx],
-            WorldPosition,
-            N,
-            Directional[i].Direction,
-            Directional[i].ShadowBias,
-            Directional[i].ShadowSlopeBias,
-            Directional[i].ShadowNormalBias,
-            Directional[i].ShadowSharpen,
-            Directional[i].ShadowESMExponent,
-            PixelPos,
-            SHADOW_PROJECTION_ORTHOGRAPHIC,
-            0.0f,
-            1.0f);
+        float Shadow = GetDirectionalShadow(i, WorldPosition, N, PixelPos);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx).rgb;
+        if (i == 0) return GetCascadeDebugColor(SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount)).rgb;
 #endif
     }
 
@@ -262,25 +313,10 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
     {
         float3 L = normalize(Directional[i].Direction);
         float Diffuse = saturate(dot(N, -L));
-        int CascadeIdx = SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount);
-        float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
-            Directional[i].ShadowViewProj[CascadeIdx],
-            WorldPosition,
-            N,
-            Directional[i].Direction,
-            Directional[i].ShadowBias,
-            Directional[i].ShadowSlopeBias,
-            Directional[i].ShadowNormalBias,
-            Directional[i].ShadowSharpen,
-            Directional[i].ShadowESMExponent,
-            PixelPos,
-            SHADOW_PROJECTION_ORTHOGRAPHIC,
-            0.0f,
-            1.0f);
+        float Shadow = GetDirectionalShadow(i, WorldPosition, N, PixelPos);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return float4(GetCascadeDebugColor(CascadeIdx).rgb, BaseColor.a);
+        if (i == 0) return float4(GetCascadeDebugColor(SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount)).rgb, BaseColor.a);
 #endif
     }
 
@@ -302,25 +338,10 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
     {
         if (i >= NumDirectionalLights) break;
         float3 L = normalize(Directional[i].Direction);
-        int CascadeIdx = SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount);
-        float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
-            Directional[i].ShadowViewProj[CascadeIdx],
-            WorldPosition,
-            N,
-            Directional[i].Direction,
-            Directional[i].ShadowBias,
-            Directional[i].ShadowSlopeBias,
-            Directional[i].ShadowNormalBias,
-            Directional[i].ShadowSharpen,
-            Directional[i].ShadowESMExponent,
-            pixelPos,
-            SHADOW_PROJECTION_ORTHOGRAPHIC,
-            0.0f,
-            1.0f);
+        float Shadow = GetDirectionalShadow(i, WorldPosition, N, pixelPos);
         TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx).rgb;
+        if (i == 0) return GetCascadeDebugColor(SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount)).rgb;
 #endif
     }
 
@@ -350,27 +371,12 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        int CascadeIdx = SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount);
-        float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
-            Directional[i].ShadowViewProj[CascadeIdx],
-            WorldPosition,
-            N,
-            Directional[i].Direction,
-            Directional[i].ShadowBias,
-            Directional[i].ShadowSlopeBias,
-            Directional[i].ShadowNormalBias,
-            Directional[i].ShadowSharpen,
-            Directional[i].ShadowESMExponent,
-            PixelPos,
-            SHADOW_PROJECTION_ORTHOGRAPHIC,
-            0.0f,
-            1.0f);
+        float Shadow = GetDirectionalShadow(i, WorldPosition, N, PixelPos);
 
         TotalDiffuse += Diffuse * LightColor * Shadow;
         TotalSpecular += Specular * LightColor * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return float4(GetCascadeDebugColor(CascadeIdx).rgb, BaseColor.a);
+        if (i == 0) return float4(GetCascadeDebugColor(SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount)).rgb, BaseColor.a);
 #endif
     }
 
@@ -412,22 +418,7 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
         float Specular = pow(saturate(dot(N, H)), Shininess) * SpecularStrength;
 
         float3 LightColor = Directional[i].Color * Directional[i].Intensity;
-        int CascadeIdx = SelectCascadeIndex(WorldPosition, Directional[i].CascadeSplits, Directional[i].CascadeCount);
-        float Shadow = GetShadowFactor(
-            DecodeShadowSample(Directional[i].ShadowSampleData[CascadeIdx]),
-            Directional[i].ShadowViewProj[CascadeIdx],
-            WorldPosition,
-            N,
-            Directional[i].Direction,
-            Directional[i].ShadowBias,
-            Directional[i].ShadowSlopeBias,
-            Directional[i].ShadowNormalBias,
-            Directional[i].ShadowSharpen,
-            Directional[i].ShadowESMExponent,
-            PixelPos,
-            SHADOW_PROJECTION_ORTHOGRAPHIC,
-            0.0f,
-            1.0f);
+        float Shadow = GetDirectionalShadow(i, WorldPosition, N, PixelPos);
 
         Out.Diffuse += Diffuse * LightColor * Shadow;
         Out.Specular += Specular * LightColor * Shadow;

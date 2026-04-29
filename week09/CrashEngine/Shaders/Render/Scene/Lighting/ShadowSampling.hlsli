@@ -143,19 +143,19 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
     return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth, ShadowESMExponent);
 #else
-    float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
-    Offset.y += Offset.x;
-    if (Offset.y > 1.1f)
-    {
-        Offset.y = 0.0f;
-    }
+    // 4-tap PCF (Bilinear samples cover 4x4 area)
+    // Dither pattern based on pixel position
+    float2 Dither = float2(
+        (uint(PixelPos.x) & 1) ^ (uint(PixelPos.y) & 1),
+        (uint(PixelPos.y) & 1)
+    ) - 0.5f;
 
     float ShadowCoeff = 0.0f;
     const float2 Kernel[4] = {
-        float2(-1.5f, 0.5f),
-        float2(0.5f, 0.5f),
-        float2(-1.5f, -1.5f),
-        float2(0.5f, -1.5f)
+        float2(-1.0f,  1.0f),
+        float2( 1.0f,  1.0f),
+        float2(-1.0f, -1.0f),
+        float2( 1.0f, -1.0f)
     };
 
     [unroll]
@@ -163,7 +163,7 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
     {
         const float2 SampleUV = ClampAtlasUVToSampleBounds(
             Sample,
-            AtlasUV + (Kernel[KernelIndex] + Offset) * Sample.AtlasTexelSize);
+            AtlasUV + (Kernel[KernelIndex] + Dither) * Sample.AtlasTexelSize);
         ShadowCoeff += SampleShadowAtlasCmp(Sample.PageIndex, Sample.SliceIndex, SampleUV, CompareDepth);
     }
 
