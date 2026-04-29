@@ -20,6 +20,7 @@ class UWorld;
 class AActor;
 class UCameraComponent;
 class UGizmoComponent;
+class UPrimitiveComponent;
 class FEditorSettings;
 class FWindowsWindow;
 class FSelectionManager;
@@ -65,6 +66,7 @@ public:
     void StopPilotingActor();
     void UpdateViewFromPilotedActor();
     void ApplyViewToPilotedActor();
+    void SetPilotedActorEditorHelpersVisible(bool bVisible);
 
     bool IsPilotingActor() const { return bIsPilotingActor && PilotedActor != nullptr; }
     AActor* GetPilotedActor() const { return PilotedActor; }
@@ -128,6 +130,12 @@ private:
     bool bIsActive = false;
     AActor* PilotedActor = nullptr;
     bool bIsPilotingActor = false;
+    struct FPilotedHelperVisibilityState
+    {
+        UPrimitiveComponent* Component = nullptr;
+        bool bWasVisibleInEditor = false;
+    };
+    TArray<FPilotedHelperVisibilityState> SavedPilotedHelperVisibility;
     FVector SavedViewLocation = FVector(0.0f, 0.0f, 0.0f);
     FRotator SavedViewRotation;
     ELevelViewportType SavedViewportType = ELevelViewportType::Perspective;
