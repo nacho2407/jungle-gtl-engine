@@ -12,6 +12,7 @@
 #include "GameFramework/World.h"
 #include "Engine/Runtime/Engine.h"
 #include "Math/Vector.h"
+#include "Math/MathUtils.h"
 
 UWorld* FEditorViewportClient::GetWorld() const
 {
@@ -136,6 +137,12 @@ void FEditorViewportClient::Tick(float DeltaTime)
 {
 	if (!bIsActive) return;
 
+	if (Camera && !bTargetLocationInitialized)
+	{
+		TargetLocation = Camera->GetWorldLocation();
+		bTargetLocationInitialized = true;
+	}
+
 	// Camera Focus Animation Update
 	if (bIsFocusAnimating && Camera)
 	{
@@ -159,6 +166,16 @@ void FEditorViewportClient::Tick(float DeltaTime)
 		
 		Camera->SetWorldLocation(NewLoc);
 		Camera->SetRelativeRotation(FRotator::FromQuaternion(BlendedQuat));
+
+		// Sync TargetLocation during animation to prevent jumping after focus ends
+		TargetLocation = NewLoc;
+	}
+	else if (Camera)
+	{
+		// Smooth Camera Movement (Lerp)
+		const FVector CurrentLocation = Camera->GetWorldLocation();
+		const float LerpAlpha = Clamp(DeltaTime * SmoothLocationSpeed, 0.0f, 1.0f);
+		Camera->SetWorldLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
 	}
 
 	TickEditorShortcuts();
@@ -324,19 +341,20 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		if (!bCtrlHeld && Input.GetKey('E'))
 			WorldVerticalMove += CameraSpeed;
 
-		LocalMove *= DeltaTime;
-		Camera->MoveLocal(LocalMove);
-		if (WorldVerticalMove != 0.0f)
-		{
-			Camera->AddWorldOffset(FVector(0.0f, 0.0f, WorldVerticalMove * DeltaTime));
-		}
+		// Instead of moving directly, update TargetLocation
+		FVector DeltaMove = (Camera->GetForwardVector() * LocalMove.X + Camera->GetRightVector() * LocalMove.Y) * DeltaTime;
+		DeltaMove.Z += WorldVerticalMove * DeltaTime;
+		TargetLocation += DeltaMove;
 
 		//pan 패닝
 		if (Input.GetKey(VK_MBUTTON))
 		{
 			float DeltaX = static_cast<float>(Input.MouseDeltaX());
 			float DeltaY = static_cast<float>(Input.MouseDeltaY());
-			Camera->MoveLocal(FVector(0.0f, -DeltaX * PanMouseScale * 0.05f , DeltaY * PanMouseScale * 0.05f));
+			
+			// Update TargetLocation for smooth panning
+			FVector PanDelta = (Camera->GetRightVector() * (-DeltaX * PanMouseScale * 0.15f)) + (Camera->GetUpVector() * (DeltaY * PanMouseScale * 0.15f));
+			TargetLocation += PanDelta;
 		}
 
 		// ── Perspective: 키보드 회전 ──
@@ -437,7 +455,8 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		else
 		{
 			//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
-			Camera->MoveLocal(FVector(ScrollNotches * ZoomSpeed*0.015f, 0.0f, 0.0f));
+			// Instead of moving directly, update TargetLocation for smooth zoom
+			TargetLocation += Camera->GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
 		}
 	}
 
