@@ -15,7 +15,7 @@ public:
     void VisualizeLightsInEditor(FScene& Scene, float DebugScale = 1.0f) const override;
     FCascadeShadowMapData*       GetCascadeShadowMapData() override { return &CascadeShadowMapData; }
     const FCascadeShadowMapData* GetCascadeShadowMapData() const override { return &CascadeShadowMapData; }
-    int32                        GetCascadeCountSetting() const override { return CascadeCount; }
+    uint32                       GetCascadeCountSetting() const override { return CascadeCount; }
     float                        GetDynamicShadowDistanceSetting() const override { return DynamicShadowDistance; }
     float                        GetCascadeDistributionSetting() const override { return CascadeDistribution; }
 
