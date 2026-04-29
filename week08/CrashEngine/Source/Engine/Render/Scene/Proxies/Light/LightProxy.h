@@ -34,7 +34,7 @@ public:
     virtual const FCubeShadowMapData*    GetCubeShadowMapData() const { return nullptr; }
     virtual FMatrix*                     GetPointShadowViewProjMatrices() { return nullptr; }
     virtual const FMatrix*               GetPointShadowViewProjMatrices() const { return nullptr; }
-    virtual int32                        GetCascadeCountSetting() const { return 1; }
+    virtual uint32                       GetCascadeCountSetting() const { return 1; }
     virtual float                        GetDynamicShadowDistanceSetting() const { return 2000.0f; }
     virtual float                        GetCascadeDistributionSetting() const { return 1.0f; }
 
