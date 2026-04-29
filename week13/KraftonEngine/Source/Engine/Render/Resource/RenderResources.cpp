@@ -192,13 +192,22 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 {
 	if (CSM.Resolution == InResolution && CSM.Texture) return;
 
-	// 기존 리소스 해제
+	// 기존 리소스 해제 (Normal + VSM 동시 해제 — Resolution 변경 시 VSM 불일치 방지)
 	ReleaseCOM(CSM.SRV);
 	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
 	{
 		ReleaseCOM(CSM.DSV[i]);
 	}
 	ReleaseCOM(CSM.Texture);
+
+	ReleaseCOM(CSM.VSMSRV);
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		ReleaseCOM(CSM.VSMRTV[i]);
+		ReleaseCOM(CSM.VSMDSV[i]);
+	}
+	ReleaseCOM(CSM.VSMTexture);
+	ReleaseCOM(CSM.VSMDepthTexture);
 
 	CSM.Resolution = InResolution;
 
@@ -249,13 +258,19 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 		&& Spot.DataCapacity == MaxLights && Spot.Texture)
 		return;
 
-	// 기존 리소스 해제
+	// 기존 리소스 해제 (Normal + VSM 동시 해제 — PageCount/Resolution 변경 시 VSM 불일치 방지)
 	ReleaseCOM(Spot.SRV);
 	ReleaseViewArray(Spot.DSVs);
 	ReleaseCOM(Spot.Texture);
 	ReleaseCOM(Spot.DataSRV);
 	ReleaseCOM(Spot.DataBuffer);
 	Spot.DataCapacity = 0;
+
+	ReleaseCOM(Spot.VSMSRV);
+	ReleaseViewArray(Spot.VSMRTVs);
+	ReleaseViewArray(Spot.VSMDSVs);
+	ReleaseCOM(Spot.VSMTexture);
+	ReleaseCOM(Spot.VSMDepthTexture);
 
 	Spot.Resolution = InResolution;
 	Spot.PageCount  = InPageCount;
@@ -328,6 +343,7 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 		&& Point.DataCapacity == MaxLights && Point.Texture)
 		return;
 
+	// 기존 리소스 해제 (Normal + VSM 동시 해제 — PageCount/Resolution 변경 시 VSM 불일치 방지)
 	ReleaseViewArray(Point.DSVs);
 	ReleaseCOM(Point.SRV);
 	ReleaseCOM(Point.Texture);
@@ -337,6 +353,12 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	ReleaseCOM(Point.DataSRV);
 	ReleaseCOM(Point.DataBuffer);
 	Point.DataCapacity = 0;
+
+	ReleaseCOM(Point.VSMSRV);
+	ReleaseViewArray(Point.VSMRTVs);
+	ReleaseViewArray(Point.VSMDSVs);
+	ReleaseCOM(Point.VSMTexture);
+	ReleaseCOM(Point.VSMDepthTexture);
 
 	if (AtlasSize == 0 || MaxLights == 0)
 		return;
