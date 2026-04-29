@@ -14,6 +14,7 @@ FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer&
     Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
     ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
+	ViewportLightStats.resize(FEditorViewportLayout::MaxViewports);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
@@ -100,6 +101,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
     ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
+    ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
     Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
 
     // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
@@ -138,10 +140,22 @@ const FRenderCollector::FDecalStats& FEditorRenderPipeline::GetViewportDecalStat
 {
 	static const FRenderCollector::FDecalStats EmptyStats{};
 
-	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportCullingStats.size()))
+	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportDecalStats.size()))
 	{
 		return EmptyStats;
 	}
 
 	return ViewportDecalStats[ViewportIndex];
+}
+
+const FRenderCollector::FLightStats& FEditorRenderPipeline::GetViewportLightStats(int32 ViewportIndex) const
+{
+	static const FRenderCollector::FLightStats EmptyStats{};
+
+	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportLightStats.size()))
+	{
+		return EmptyStats;
+	}
+
+	return ViewportLightStats[ViewportIndex];
 }

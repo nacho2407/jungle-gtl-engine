@@ -25,6 +25,8 @@ struct FEditorViewportState
 	bool bShowStatMemory    = false;
 	bool bShowStatNameTable = false;
 	bool bShowCascadeVis    = false;
+	bool bShowLight   = false;
+	bool bShowShadow  = false;
 
 	// NameTable 오버레이 스크롤 오프셋 (휠로 조작)
 	int32 NameTableScrollLine = 0;

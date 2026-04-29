@@ -166,6 +166,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 {
 	ResetCullingStats();
 	ResetDecalStats();
+	ResetLightStats();
 
 	if (!World) return;
 
@@ -202,6 +203,11 @@ void FRenderCollector::ResetCullingStats()
 void FRenderCollector::ResetDecalStats()
 {
 	LastDecalStats = {};
+}
+
+void FRenderCollector::ResetLightStats()
+{
+	LastLightStats = {};
 }
 
 void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
@@ -895,6 +901,8 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 	const auto& LightColor = Light->LightColor;
 	FVector Color = FVector(LightColor.R, LightColor.G, LightColor.B);
 
+	LastLightStats.TotalLightCount += 1;
+
 	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
 	{
 		// Collect Ambient Light Data
@@ -922,8 +930,11 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
         DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
         DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
-
 		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
+
+        LastLightStats.DirectionalLightCount += 1;
+        if (DirLight->bCastShadows)
+            LastLightStats.ShadowCastingLightCount += 1;
 	}
 
 	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
@@ -951,7 +962,11 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
 		ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
 		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
-		RenderBus.ShadowLightRequests.push_back(ShadowRequest);
+        RenderBus.ShadowLightRequests.push_back(ShadowRequest);
+
+        LastLightStats.SpotlightCount += 1;
+        if (SpotLight->bCastShadows)
+            LastLightStats.ShadowCastingLightCount += 1;
 	}
 	else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
         FLightInfo LightData = {};
@@ -975,5 +990,9 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
 		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
 		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
+
+        LastLightStats.PointLightCount += 1;
+        if (PointLight->bCastShadows)
+            LastLightStats.ShadowCastingLightCount += 1;
 	}
 }

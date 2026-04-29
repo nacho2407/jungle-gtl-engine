@@ -322,7 +322,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
         FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
 
-		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable) continue;
+		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable && !VS.bShowLight&& !VS.bShowShadow) continue;
         if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
             continue; // 비활성 뷰포트 스킵
 
@@ -385,6 +385,74 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Total Decals: %d", DecalStats->TotalDecalCount);
 				ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), "- Decal Time: %.4f ms", DecalStats->CollectTimeMS / 1000.f);
 			}
+
+            const FRenderCollector::FLightStats* LightStats =
+                (RenderPipeline != nullptr) ? &RenderPipeline->GetViewportLightStats(i) : nullptr;
+
+			if (VS.bShowLight)
+            {
+				if (LightStats != nullptr)
+				{
+                    ImGui::Separator();
+
+					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Light");
+					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Total Lights: %d", LightStats->TotalLightCount);
+					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Directional Lights: %d", LightStats->DirectionalLightCount);
+					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Point Lights: %d", LightStats->PointLightCount);
+					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Spot Lights: %d", LightStats->SpotlightCount);
+                    ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Shadow Cast Lights: %d", LightStats->ShadowCastingLightCount);
+				}
+			}
+
+            if (VS.bShowShadow)
+            {
+                if (CullingStats != nullptr || VS.bShowStatFPS || VS.bShowStatMemory)
+                {
+                    ImGui::Separator();
+                }
+
+                FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
+                const TArray<FShadowAtlasTile> AllocatedTiles = ShadowAtlasManager.GetAllocatedTiles();
+
+                int32 UsedShadowTiles = 0;
+                uint64 UsedAtlasPixels = 0;
+                for (const FShadowAtlasTile& Tile : AllocatedTiles)
+                {
+                    if (!Tile.bUsed)
+                    {
+                        continue;
+                    }
+
+                    ++UsedShadowTiles;
+                    UsedAtlasPixels += static_cast<uint64>(Tile.Width) * static_cast<uint64>(Tile.Height);
+                }
+
+                const uint32 AtlasResolution = ShadowAtlasManager.GetAtlasResolution();
+                const uint64 AtlasPixels = static_cast<uint64>(AtlasResolution) * static_cast<uint64>(AtlasResolution);
+                const uint64 AtlasBytes = AtlasPixels * sizeof(float);
+                const uint64 UsedAtlasBytes = UsedAtlasPixels * sizeof(float);
+
+                const uint32 AllocatedCubeCount = ShadowAtlasManager.GetAllocatedCubeCount();
+                const uint64 CubeFacePixels = static_cast<uint64>(SHADOW_CUBE_SIZE) * static_cast<uint64>(SHADOW_CUBE_SIZE);
+                const uint64 UsedCubeBytes = static_cast<uint64>(AllocatedCubeCount) * CUBE_FACE_COUNT * CubeFacePixels * sizeof(float);
+                const uint64 MaxCubeBytes = static_cast<uint64>(MAX_SHADOW_CUBES) * CUBE_FACE_COUNT * CubeFacePixels * sizeof(float);
+
+                const float AtlasUsagePercent = AtlasPixels > 0
+                                                    ? (static_cast<float>(UsedAtlasPixels) / static_cast<float>(AtlasPixels)) * 100.0f
+                                                    : 0.0f;
+
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "Shadow Stat");
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Resolution: %u x %u", AtlasResolution, AtlasResolution);
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Used 2D Tiles: %d", UsedShadowTiles);
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Usage: %.2f%%", AtlasUsagePercent);
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Atlas Memory: %.2f / %.2f MB",
+                                   UsedAtlasBytes / (1024.0f * 1024.0f),
+                                   AtlasBytes / (1024.0f * 1024.0f));
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Point Cubes: %u / %d", AllocatedCubeCount, MAX_SHADOW_CUBES);
+                ImGui::TextColored(ImVec4(0.f, 0.5f, 1.0f, 1.f), "- Cube Memory: %.2f / %.2f MB",
+                                   UsedCubeBytes / (1024.0f * 1024.0f),
+                                   MaxCubeBytes / (1024.0f * 1024.0f));
+            }
 
 			// Memory 출력 (노란색 텍스트)
 			if (VS.bShowStatMemory)
