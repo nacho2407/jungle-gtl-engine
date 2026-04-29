@@ -404,9 +404,9 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 				float uvMaxX = static_cast<float>(R.X + R.Size) / AtlasF;
 				float uvMaxY = static_cast<float>(R.Y + R.Size) / AtlasF;
 
-				ImGui::Text("Selected: L%d (%u x %u px)", R.LightIdx, R.Size, R.Size);
+				ImGui::Text("Selected: L%d (%u x %u px, Page %u)", R.LightIdx, R.Size, R.Size, R.PageIdx);
 
-				RenderVizPass(DC, SR.Spot.SRV, true, SpotPageIndex, uvMinX, uvMinY, uvMaxX, uvMaxY, SpotDepthBrightness, (uint32)VizMode, VizExponent);
+				RenderVizPass(DC, SR.Spot.SRV, true, R.PageIdx, uvMinX, uvMinY, uvMaxX, uvMaxY, SpotDepthBrightness, (uint32)VizMode, VizExponent);
 
 				ImGui::Image(
 					(ImTextureID)VizSRV,
@@ -492,10 +492,11 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			{
 				bShowCropped = true;
 				uint32 FaceSize = FaceRegions[0]->Size;
-				ImGui::Text("Selected: L%d (%u x %u px, %u faces)", SelLight.EnvIndex, FaceSize, FaceSize, (uint32)FaceRegions.size());
+				uint32 LightPageIdx = FaceRegions[0]->PageIdx;
+				ImGui::Text("Selected: L%d (%u x %u px, %u faces, Page %u)", SelLight.EnvIndex, FaceSize, FaceSize, (uint32)FaceRegions.size(), LightPageIdx);
 
-				// 전체 atlas를 한 번 변환 (선택된 page)
-				RenderVizPass(DC, SR.Point.SRV, true, PointPageIndex, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
+				// 전체 atlas를 한 번 변환 (라이트가 실제로 할당된 page)
+				RenderVizPass(DC, SR.Point.SRV, true, LightPageIdx, 0, 0, 1, 1, PointDepthBrightness, (uint32)VizMode, VizExponent);
 
 				float FacePreview = (PreviewSize - 10.0f * 2) / 3.0f;
 				float AtlasF = static_cast<float>(SR.Point.Resolution);
