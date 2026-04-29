@@ -16,6 +16,7 @@
 #include "Viewport/Viewport.h"
 #include "Profiling/GPUProfiler.h"
 #include "Profiling/Stats.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Execute/Context/RenderCollectContext.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
@@ -556,6 +557,11 @@ void UEditorEngine::Render(float DeltaTime)
     FGPUProfiler::Get().BeginFrame();
 #endif
 
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->BeginShadowFrame();
+    }
+
     for (FLevelEditorViewportClient* ViewportClient : GetLevelViewportClients())
     {
         SCOPE_STAT_CAT("RenderViewport", "2_Render");
@@ -575,6 +581,11 @@ void UEditorEngine::Render(float DeltaTime)
     {
         SCOPE_STAT_CAT("Present", "2_Render");
         Renderer.EndFrame();
+    }
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->EndShadowFrame();
     }
 }
 

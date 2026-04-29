@@ -55,6 +55,7 @@ public:
     FTimer* GetTimer() const { return Timer; }
 
     FRenderer& GetRenderer() { return Renderer; }
+    const FRenderer& GetRenderer() const { return Renderer; }
 
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }

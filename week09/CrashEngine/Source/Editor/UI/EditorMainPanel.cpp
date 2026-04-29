@@ -272,6 +272,12 @@ void FEditorMainPanel::Render(float DeltaTime)
                 FEditorSettings::Get().UI.bStat = true;
                 StatPanel.RequestOpen();
             }
+            if (ImGui::MenuItem("stat shadow"))
+            {
+                EditorEngine->GetOverlayStatSystem().ShowShadow(true);
+                FEditorSettings::Get().UI.bStat = true;
+                StatPanel.RequestOpen();
+            }
             if (ImGui::MenuItem("stat lightcull"))
             {
                 EditorEngine->GetOverlayStatSystem().ShowLightCull(true);

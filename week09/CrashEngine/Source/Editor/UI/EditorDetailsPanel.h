@@ -21,6 +21,12 @@ public:
     void RenderShadowAtlasDebugWindow();
 
 private:
+    struct FShadowAtlasSliceDebugCache
+    {
+        uint64 Hash = 0;
+        TArray<FShadowMapData> Allocations;
+    };
+
     void FocusComponentDetails(UActorComponent* Component);
     void RenderComponentTree(AActor* Actor);
     void RenderSceneComponentNode(class USceneComponent* Comp);
@@ -38,5 +44,6 @@ private:
     bool bShowShadowAtlasDebugWindow = false;
     int32 SelectedPointLightShadowFace = 0;
     int32 SelectedShadowAtlasPage = 0;
-    EShadowDepthPreviewMode ShadowDepthPreviewMode = EShadowDepthPreviewMode::LinearizedDepth;
+    EShadowDepthPreviewMode ShadowDepthPreviewMode = EShadowDepthPreviewMode::RawDepth;
+    FShadowAtlasSliceDebugCache ShadowAtlasDebugCache[ShadowAtlas::MaxPages][ShadowAtlas::SliceCount] = {};
 };

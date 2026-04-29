@@ -5,6 +5,8 @@
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Scene/Proxies/Light/LightProxy.h"
 #include "Profiling/Stats.h"
 #include <cstdio>
 
@@ -54,6 +56,10 @@ FString FOverlayStatSystem::GetDisplayTitle() const
     {
         return FString("Memory Statistics");
     }
+    if (bShowShadow)
+    {
+        return FString("Shadow Statistics");
+    }
     if (bShowLightCull)
     {
         return FString("Light Culling Statistics");
@@ -83,6 +89,7 @@ void FOverlayStatSystem::ClearDisplayFlags()
     bShowFPS = false;
     bShowPickingTime = false;
     bShowMemory = false;
+    bShowShadow = false;
     bShowLightCull = false;
 }
 
@@ -104,6 +111,13 @@ void FOverlayStatSystem::ShowMemory(bool bEnable)
 {
     ClearDisplayFlags();
     bShowMemory = bEnable;
+    FLightCullStats::SetEnabled(false);
+}
+
+void FOverlayStatSystem::ShowShadow(bool bEnable)
+{
+    ClearDisplayFlags();
+    bShowShadow = bEnable;
     FLightCullStats::SetEnabled(false);
 }
 
@@ -141,6 +155,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
     if (bShowMemory)
     {
         EstimatedLineCount += 8;
+    }
+    if (bShowShadow)
+    {
+        EstimatedLineCount += 10;
     }
     if (bShowLightCull)
     {
@@ -226,6 +244,87 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
             }
             CurrentY += Layout.LineHeight;
         }
+
+    }
+
+    if (bShowShadow)
+    {
+        char Buffer[128] = {};
+        FShadowAtlasBudgetStats ShadowStats = {};
+        if (FRenderPass* Pass = Editor.GetRenderer().GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+        {
+            ShadowStats = static_cast<FShadowMapPass*>(Pass)->GetShadowAtlasBudgetStats();
+        }
+
+        const FCollectedLights& CollectedLights = Editor.GetRenderer().GetCollectedLights();
+        uint32 VisibleDirectionalLights = 0;
+        uint32 VisibleSpotLights = 0;
+        uint32 VisiblePointLights = 0;
+        for (const FLightProxy* Light : CollectedLights.VisibleLightProxies)
+        {
+            if (!Light)
+            {
+                continue;
+            }
+
+            if (Light->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Directional))
+            {
+                ++VisibleDirectionalLights;
+            }
+            else if (Light->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Spot))
+            {
+                ++VisibleSpotLights;
+            }
+            else if (Light->LightProxyInfo.LightType == static_cast<uint32>(ELightType::Point))
+            {
+                ++VisiblePointLights;
+            }
+        }
+
+        FormatBytes(Buffer, sizeof(Buffer), "Used Memory", ShadowStats.UsedAtlasMemoryBytes);
+        if (const char* Separator = strstr(Buffer, " : "))
+        {
+            AppendLine(OutLines, CurrentY, FString(Buffer, Buffer + static_cast<int32>(Separator - Buffer)), FString(Separator + 3));
+        }
+        CurrentY += Layout.LineHeight;
+
+        FormatBytes(Buffer, sizeof(Buffer), "Resident Memory", ShadowStats.ResidentAtlasMemoryBytes);
+        if (const char* Separator = strstr(Buffer, " : "))
+        {
+            AppendLine(OutLines, CurrentY, FString(Buffer, Buffer + static_cast<int32>(Separator - Buffer)), FString(Separator + 3));
+        }
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u", VisibleDirectionalLights, VisibleSpotLights, VisiblePointLights);
+        AppendLine(OutLines, CurrentY, FString("Count of Visible Light"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "Dir %u  Spot %u  Point %u",
+            ShadowStats.DirectionalShadowLightCount,
+            ShadowStats.SpotShadowLightCount,
+            ShadowStats.PointShadowLightCount);
+        AppendLine(OutLines, CurrentY, FString("Count of Shadowed Light"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%u / %u", ShadowStats.UsedPageCount, ShadowAtlas::MaxPages);
+        AppendLine(OutLines, CurrentY, FString("Used Pages"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%u", ShadowStats.UsedSliceCount);
+        AppendLine(OutLines, CurrentY, FString("Used Slices"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%.1f%%", ShadowStats.UsedAreaPercent);
+        AppendLine(OutLines, CurrentY, FString("Used Area"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%u", ShadowStats.FailedAllocationCount);
+        AppendLine(OutLines, CurrentY, FString("Alloc Failures"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%u", ShadowStats.EvictedShadowCount);
+        AppendLine(OutLines, CurrentY, FString("Evicted"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
     }
 
     if (bShowLightCull)

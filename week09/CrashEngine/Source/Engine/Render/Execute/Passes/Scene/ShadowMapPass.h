@@ -25,6 +25,8 @@ public:
     void BuildDrawCommands(FRenderPipelineContext& Context, const FPrimitiveProxy& Proxy) override;
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
 
+    void BeginShadowFrame();
+    void EndShadowFrame();
     bool UpdateLightShadowAllocation(FLightProxy& Light, ID3D11Device* Device);
     void ReleaseShadowAtlasResources();
 
@@ -42,6 +44,7 @@ public:
     void                      GetShadowPageSliceAllocations(uint32 PageIndex, uint32 SliceIndex, TArray<FShadowMapData>& OutAllocations) const;
     uint32                    GetShadowAtlasPageCount() const;
     uint32                    GetShadowAtlasSize() const { return ShadowAtlas::AtlasSize; }
+    FShadowAtlasBudgetStats   GetShadowAtlasBudgetStats() const { return ShadowAllocationMap.GetBudgetStats(AtlasPool); }
 
 private:
     struct FShadowRenderItem

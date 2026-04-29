@@ -8,8 +8,8 @@
 namespace ShadowAtlas
 {
 constexpr uint32 AtlasSize         = 4096;
-constexpr uint32 SliceCount        = 8;
-constexpr uint32 MaxPages          = 4;
+constexpr uint32 SliceCount        = 4;
+constexpr uint32 MaxPages          = 2;
 constexpr uint32 Padding           = 4;
 constexpr uint32 MinResolution     = 256;
 constexpr uint32 MaxResolution     = 4096;
@@ -99,10 +99,31 @@ struct FCubeShadowMapData
 // Light별 shadow atlas allocation cache가 보관하는 메타데이터입니다.
 struct FLightShadowRecord
 {
+    uint32                RequestedResolution  = 0;
     uint32                Resolution           = 0;
     uint32                CascadeCount         = 0;
     uint32                LightType            = 0;
+    uint64                LastTouchedFrame     = 0;
+    uint64                LastAllocationFrame  = 0;
+    uint32                FailedAllocationCount = 0;
+    bool                  bTouchedThisFrame    = false;
     FCascadeShadowMapData CascadeShadowMapData = {};
     FShadowMapData        SpotShadowMapData    = {};
     FCubeShadowMapData    CubeShadowMapData    = {};
+};
+
+struct FShadowAtlasBudgetStats
+{
+    uint64 TotalAtlasMemoryBytes = 0;
+    uint64 ResidentAtlasMemoryBytes = 0;
+    uint64 UsedAtlasMemoryBytes = 0;
+    uint32 UsedPageCount = 0;
+    uint32 UsedSliceCount = 0;
+    float  UsedAreaPercent = 0.0f;
+    uint32 AllocatedShadowCount = 0;
+    uint32 FailedAllocationCount = 0;
+    uint32 EvictedShadowCount = 0;
+    uint32 DirectionalShadowLightCount = 0;
+    uint32 SpotShadowLightCount = 0;
+    uint32 PointShadowLightCount = 0;
 };

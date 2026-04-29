@@ -33,6 +33,7 @@ public:
     void ShowFPS(bool bEnable = true);
     void ShowPickingTime(bool bEnable = true);
     void ShowMemory(bool bEnable = true);
+    void ShowShadow(bool bEnable = true);
     void ShowLightCull(bool bEnable = true);
     void RecordPickingAttempt(double ElapsedMs);
     void HideAll();
@@ -51,6 +52,7 @@ private:
     bool bShowFPS = false;
     bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
     bool bShowMemory = false;
+    bool bShowShadow = false;
     bool bShowLightCull = false;
     double LastPickingTimeMs = 0.0;
     double AccumulatedPickingTimeMs = 0.0;

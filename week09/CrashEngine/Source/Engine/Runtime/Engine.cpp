@@ -17,6 +17,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 
 DEFINE_CLASS(UEngine, UObject)
@@ -90,6 +91,11 @@ void UEngine::Render(float DeltaTime)
 {
     SCOPE_STAT_CAT("UEngine::Render", "2_Render");
 
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->BeginShadowFrame();
+    }
+
     RenderTargets.Reset();
     FViewport* Viewport = GameViewportClient ? GameViewportClient->GetViewport() : nullptr;
     ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
@@ -150,6 +156,11 @@ void UEngine::Render(float DeltaTime)
         }
         Renderer.BuildDrawCommands(PipelineContext);
         Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
+    }
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->EndShadowFrame();
     }
 }
 
