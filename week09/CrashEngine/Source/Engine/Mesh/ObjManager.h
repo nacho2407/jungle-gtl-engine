@@ -36,8 +36,8 @@ public:
     // 이전 패치/로컬 코드와의 호환용 별칭
     static FString GetBinaryFilePathString(const FString& OriginalPath) { return GetBinaryFilePath(OriginalPath); }
 
-    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice);
-    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice);
+    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice, bool bRefreshAssetLists = true);
+    static UStaticMesh* LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice, bool bRefreshAssetLists = true);
     static void ScanMeshAssets();
     static const TArray<FMeshAssetListItem>& GetAvailableMeshFiles();
     static void ScanObjSourceFiles();
