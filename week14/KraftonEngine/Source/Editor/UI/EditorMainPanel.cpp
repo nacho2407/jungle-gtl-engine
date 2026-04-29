@@ -759,7 +759,7 @@ void FEditorMainPanel::HandleGlobalShortcuts()
 	}
 }
 
-void FEditorMainPanel::HideEditorWindowsForPIE()
+void FEditorMainPanel::HideEditorWindows()
 {
 	if (bHasSavedUIVisibility)
 	{
@@ -783,9 +783,10 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
 	Settings.UI.bContentBrowser = false;
 	Settings.UI.bImGUISettings = false;
 	Settings.UI.bEditorDebug = false;
+	Settings.UI.bShadowMapDebug = false;
 }
 
-void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
+void FEditorMainPanel::ShowEditorWindows()
 {
 	if (!bHasSavedUIVisibility)
 	{
@@ -798,4 +799,14 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 	bShowWidgetList = bSavedShowWidgetList;
 	bHideEditorWindows = false;
 	bHasSavedUIVisibility = false;
+}
+
+void FEditorMainPanel::HideEditorWindowsForPIE()
+{
+	HideEditorWindows();
+}
+
+void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
+{
+	ShowEditorWindows();
 }
