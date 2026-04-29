@@ -214,6 +214,10 @@ void FEditorConsoleWidget::RegisterEditorCommands()
 		"Editor", "hide windows", "Hides editor panels and saves their current visibility.");
 	RegisterCommand("show windows", [this](const TArray<FString>& Args) { HandleShowWindows(Args); },
 		"Editor", "show windows", "Restores editor panel visibility saved by hide windows.");
+	RegisterCommand("show editor only", [this](const TArray<FString>& Args) { HandleShowEditorOnly(Args); },
+		"Editor", "show editor only", "Shows editor-only components in the property component tree.");
+	RegisterCommand("hide editor only", [this](const TArray<FString>& Args) { HandleHideEditorOnly(Args); },
+		"Editor", "hide editor only", "Hides editor-only components in the property component tree.");
 	RegisterCommand("cb refresh", [this](const TArray<FString>& Args) { HandleContentBrowserRefresh(Args); },
 		"Editor", "cb refresh", "Refreshes the content browser.");
 	RegisterCommand("cb icon size", [this](const TArray<FString>& Args) { HandleContentBrowserIconSize(Args); },
@@ -653,6 +657,32 @@ void FEditorConsoleWidget::HandleShowWindows(const TArray<FString>& Args)
 
 	EditorEngine->ShowEditorWindows();
 	AddLog("Editor windows restored.\n");
+}
+
+void FEditorConsoleWidget::HandleShowEditorOnly(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->SetShowEditorOnlyComponents(true);
+	AddLog("Property component tree: editor-only components shown.\n");
+}
+
+void FEditorConsoleWidget::HandleHideEditorOnly(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->SetShowEditorOnlyComponents(false);
+	AddLog("Property component tree: editor-only components hidden.\n");
 }
 
 void FEditorConsoleWidget::HandleContentBrowserRefresh(const TArray<FString>& Args)
