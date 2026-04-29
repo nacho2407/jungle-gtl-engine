@@ -866,6 +866,8 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
+				case EPropertyType::Enum:           Size = sizeof(int32); break;
+				case EPropertyType::Vec3Array:      *static_cast<TArray<FVector>*>(DstProp.ValuePtr) = *static_cast<TArray<FVector>*>(SrcProp->ValuePtr); break;
 				}
 				if (Size > 0)
 					memcpy(DstProp.ValuePtr, SrcProp->ValuePtr, Size);
@@ -1197,6 +1199,59 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				*Val = FName(Buf);
 				bChanged = true;
 			}
+		}
+		break;
+	}
+	case EPropertyType::Enum:
+	{
+		if (!Prop.EnumNames || Prop.EnumCount == 0) break;
+		int32* Val = static_cast<int32*>(Prop.ValuePtr);
+		const char* Preview = ((uint32)*Val < Prop.EnumCount) ? Prop.EnumNames[*Val] : "Unknown";
+		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview))
+		{
+			for (uint32 i = 0; i < Prop.EnumCount; ++i)
+			{
+				bool bSelected = (*Val == (int32)i);
+				if (ImGui::Selectable(Prop.EnumNames[i], bSelected))
+				{
+					*Val = (int32)i;
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		break;
+	}
+	case EPropertyType::Vec3Array:
+	{
+		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
+
+		ImGui::TextUnformatted(Prop.Name.c_str());
+
+		int32 RemoveIdx = -1;
+		for (int32 i = 0; i < (int32)Arr->size(); ++i)
+		{
+			ImGui::PushID(i);
+			char Label[16];
+			snprintf(Label, sizeof(Label), "[%d]", i);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+			if (ImGui::DragFloat3(Label, &(*Arr)[i].X, 1.0f))
+				bChanged = true;
+			ImGui::SameLine();
+			if (ImGui::SmallButton("x"))
+				RemoveIdx = i;
+			ImGui::PopID();
+		}
+		if (RemoveIdx >= 0)
+		{
+			Arr->erase(Arr->begin() + RemoveIdx);
+			bChanged = true;
+		}
+		if (ImGui::Button("+ Add Point"))
+		{
+			Arr->push_back(FVector(0.0f, 0.0f, 0.0f));
+			bChanged = true;
 		}
 		break;
 	}

@@ -20,6 +20,26 @@ int ComputePCFHalfSize(float sharpen)
     return (int)round((1.0f - saturate(sharpen)) * 3.0f);
 }
 
+// ── Dynamic PCF (Texture2D — Point Light atlas) ────────────────
+float SampleShadowPCF2D(Texture2D shadowMap, float2 uv, float compareDepth, float texelSize, int halfSize)
+{
+    float shadow = 0.0f;
+    float count  = 0.0f;
+
+    for (int y = -halfSize; y <= halfSize; ++y)
+    {
+        for (int x = -halfSize; x <= halfSize; ++x)
+        {
+            float2 offset = float2(float(x) * texelSize, float(y) * texelSize);
+            float depth = shadowMap.SampleLevel(PointClampSampler, uv + offset, 0).r;
+            shadow += (compareDepth >= depth) ? 1.0f : 0.0f;
+            count += 1.0f;
+        }
+    }
+
+    return shadow / count;
+}
+
 // ── Dynamic PCF (Texture2DArray) ───────────────────────────────
 float SampleShadowPCF(Texture2DArray shadowMap, float3 uvw, float compareDepth, float texelSize, int halfSize)
 {
@@ -158,6 +178,20 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
             }
         }
     }
+    
+    //마지막 cascade의 경우 fade out 효과 적용
+    if (NumCSMCascades > 1 && cascade == NumCSMCascades - 1)
+    {
+        float lastSplit = CascadeSplits[NumCSMCascades - 1];
+        float prevSplit = CascadeSplits[NumCSMCascades - 2];
+        float fadeStart = lerp(prevSplit, lastSplit, 0.5f);
+
+        if (viewDepth > fadeStart)
+        {
+            float fadeT = saturate((viewDepth - fadeStart) / (lastSplit - fadeStart));
+            shadowFactor = lerp(shadowFactor, 1.0f, fadeT);
+        }
+    }
 
     return shadowFactor;
 }
@@ -243,7 +277,13 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos, f
         float2 moments = ShadowMapPointLightAtlas.SampleLevel(ShadowLinearSampler, uvw, 0).rg;
         return ComputeVSMFactor(moments, fragDepth, pointLightData.ShadowSharpen);
     }
-    else // Hard or PCF
+    else if (ShadowFilterMode == 1) // PCF
+    {
+        float texelSize = 1.0f / 4096.0f;
+        int halfSize = ComputePCFHalfSize(pointLightData.ShadowSharpen);
+        return SampleShadowPCF2D(ShadowMapPointLightAtlas, atlasUV, fragDepth, texelSize, halfSize);
+    }
+    else // Hard
     {
         float depth = ShadowMapPointLightAtlas.SampleLevel(PointClampSampler, uvw, 0).r;
         return (fragDepth >= depth) ? 1.0f : 0.0f;

@@ -45,7 +45,20 @@
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "UInterpToMovementComponent",
+          "Properties" : {
+            "Auto Activate" : true,
+            "Auto Register Updated" : true,
+            "Control Points" : [[0.000000, 0.000000, 0.000000], [3.000000, 0.000000, 0.000000], [0.000000, 10.000000, 8.000000], [11.000000, 8.000000, 0.000000], [1.000000, 8.000000, 18.000000], [0.000000, 0.000000, 0.000000]],
+            "Interp Duration" : 5.000000,
+            "Interp Mode" : 3,
+            "Orient To Movement" : true,
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "83",
       "RootComponent" : {
         "Children" : [],
@@ -143,6 +156,7 @@
           "Rotation" : [45.000000, -45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.000000,
+          "Shadow Normal Bias" : 0.005000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.670000,
           "Shadow Slope Bias" : 0.000000,
@@ -184,6 +198,7 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.005000,
+          "Shadow Normal Bias" : 0.005000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.000000,
           "Shadow Slope Bias" : 1.000000,
@@ -239,7 +254,7 @@
                   "Material" : {
                     "Path" : "Asset/Materials/Editor/PointLight.mat"
                   },
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "Visible" : true,
                   "Width" : 1.000000,
@@ -256,9 +271,10 @@
               "Intensity" : 1.000000,
               "LightFalloffExponent" : 1.000000,
               "Location" : [0.000000, 0.000000, -1.805698],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shadow Bias" : 0.005000,
+              "Shadow Normal Bias" : 0.005000,
               "Shadow Resolution Scale" : 1.000000,
               "Shadow Sharpen" : 0.670000,
               "Shadow Slope Bias" : 0.005000,
@@ -278,6 +294,7 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.000000,
+          "Shadow Normal Bias" : 0.005000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.670000,
           "Shadow Slope Bias" : 0.000000,
@@ -336,6 +353,7 @@
           "Rotation" : [27.600815, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.000000,
+          "Shadow Normal Bias" : 0.005000,
           "Shadow Resolution Scale" : 1.000000,
           "Shadow Sharpen" : 0.000000,
           "Shadow Slope Bias" : 0.000000,
@@ -355,7 +373,7 @@
     "FarClip" : 1000.000000,
     "Location" : [-12.956043, -3.956298, 7.813244],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 22.366817, -10.496198]
+    "Rotation" : [0.000000, 22.366814, -10.496196]
   },
   "Primitives" : {
     "74" : {

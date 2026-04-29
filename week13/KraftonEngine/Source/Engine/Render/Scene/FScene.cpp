@@ -340,7 +340,7 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 
 		const float CameraNearZ = Frame.NearClip;
 		const float CameraFarZ = Frame.FarClip;
-		const float ShadowDistance = FShadowSettings::Get().GetEffectiveShadowDistance();
+		const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
 		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 		const float Lambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
@@ -393,12 +393,22 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				);
 
 			FVector ShadowBoxCorners[8];
+			float MinZ = FLT_MAX;
+			float MaxZ = -FLT_MAX;
+
+			for (int32 i = 0; i < 8; ++i)
+			{
+				const FVector LS = DirectionalVP.View.TransformPositionWithW(CascadeCorners[i]);
+				MinZ = (std::min)(MinZ, LS.Z);
+				MaxZ = (std::max)(MaxZ, LS.Z);
+			}
+
 			FLightFrustumUtils::ComputeOrthoWorldCorners(
 				DirectionalVP.View,
 				DirectionalVP.OrthoWidth,
 				DirectionalVP.OrthoHeight,
-				DirectionalVP.NearZ,
-				DirectionalVP.FarZ,
+				MinZ,
+				MaxZ,
 				ShadowBoxCorners
 			);
 
