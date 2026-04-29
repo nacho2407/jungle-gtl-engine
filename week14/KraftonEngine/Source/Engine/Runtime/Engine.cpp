@@ -49,7 +49,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 
 	{
-		SCOPE_STARTUP_STAT("D3DDevice::Create");
+		SCOPE_STARTUP_STAT("Renderer::Create");
 		Renderer.Create(Window->GetHWND());
 	}
 

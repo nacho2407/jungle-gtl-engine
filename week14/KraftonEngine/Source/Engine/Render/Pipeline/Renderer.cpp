@@ -7,26 +7,51 @@
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
+#include "Profiling/StartupProfiler.h"
 #include "Materials/MaterialManager.h"
 
 
 void FRenderer::Create(HWND hWindow)
 {
-	Device.Create(hWindow);
+	{
+		SCOPE_STARTUP_STAT("  D3DDevice::CreateHW");
+		Device.Create(hWindow);
+	}
 
 	if (Device.GetDevice() == nullptr)
 	{
 		UE_LOG("Failed to create D3D Device.");
 	}
 
-	FShaderManager::Get().Initialize(Device.GetDevice());
-	Resources.Create(Device.GetDevice());
-	Resources.TileBasedCulling.Initialize(Device.GetDevice());
-	Resources.ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
+	{
+		SCOPE_STARTUP_STAT("  ShaderManager::Init");
+		FShaderManager::Get().Initialize(Device.GetDevice());
+	}
 
-	Pipeline.Initialize();
+	{
+		SCOPE_STARTUP_STAT("  SystemResources::Create");
+		Resources.Create(Device.GetDevice());
+	}
 
-	Builder.Create(Device.GetDevice(), Device.GetDeviceContext(), &Pipeline.GetStateTable());
+	{
+		SCOPE_STARTUP_STAT("  TileCulling::Init");
+		Resources.TileBasedCulling.Initialize(Device.GetDevice());
+	}
+
+	{
+		SCOPE_STARTUP_STAT("  ClusteredCuller::Init");
+		Resources.ClusteredLightCuller.Initialize(Device.GetDevice(), Device.GetDeviceContext());
+	}
+
+	{
+		SCOPE_STARTUP_STAT("  RenderPassPipeline::Init");
+		Pipeline.Initialize();
+	}
+
+	{
+		SCOPE_STARTUP_STAT("  DrawCommandBuilder::Create");
+		Builder.Create(Device.GetDevice(), Device.GetDeviceContext(), &Pipeline.GetStateTable());
+	}
 
 	// GPU Profiler 초기화
 	FGPUProfiler::Get().Initialize(Device.GetDevice(), Device.GetDeviceContext());
