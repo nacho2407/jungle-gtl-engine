@@ -63,7 +63,7 @@
 //	FShowFlags ShowFlags;
 //	ShowFlags.bGrid = false;
 //	ShowFlags.bGizmo = false;
-//	ShowFlags.bBillboardText = false;
+//	ShowFlags.bUUIDText = false;
 //	ShowFlags.bBoundingVolume = false;
 //	Frame.SetRenderSettings(EViewMode::Lit_Phong, ShowFlags);
 //

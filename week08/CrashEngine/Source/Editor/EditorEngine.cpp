@@ -539,7 +539,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     FShowFlags EffectiveShowFlags = Opts.ShowFlags;
     if (VC->IsPilotingActor())
     {
-        EffectiveShowFlags.bBillboardText = false;
+        EffectiveShowFlags.bUUIDText = false;
         EffectiveShowFlags.bGrid = false;
         EffectiveShowFlags.bWorldAxis = false;
         EffectiveShowFlags.bSceneBVH = false;

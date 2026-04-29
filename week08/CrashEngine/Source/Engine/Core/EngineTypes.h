@@ -113,11 +113,12 @@ enum class EViewModeIndex
 enum EEngineShowFlags : uint32
 {
     SF_None = 0,
-    SF_Primitives = 1 << 0,    // 프리미티브 메시
-    SF_Grid = 1 << 1,          // 월드 그리드
-    SF_BoundingBox = 1 << 2,   // AABB 바운딩 박스
-    SF_BillboardText = 1 << 3, // 빌보드 UUID 텍스트
-    SF_Gizmo = 1 << 4,         // 트랜스폼 기즈모
+    SF_Primitives = 1 << 0,  // 프리미티브 메시
+    SF_Text = 1 << 1,        // 일반 텍스트 렌더
+    SF_Grid = 1 << 2,        // 월드 그리드
+    SF_BoundingBox = 1 << 3, // AABB 바운딩 박스
+    SF_UUIDText = 1 << 4,    // UUID 텍스트
+    SF_Gizmo = 1 << 5,       // 트랜스폼 기즈모
 
-    SF_All = SF_Primitives | SF_Grid | SF_BoundingBox | SF_BillboardText | SF_Gizmo
+    SF_All = SF_Primitives | SF_Text | SF_Grid | SF_BoundingBox | SF_UUIDText | SF_Gizmo
 };
