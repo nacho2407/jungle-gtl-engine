@@ -12,6 +12,8 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
+	FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+		float SplitNearT, float SplitFarT) const override;
 	FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const override;
 

@@ -1,19 +1,34 @@
 ﻿#include "SpotlightComponent.h"
 #include "Object/ObjectFactory.h"
+#include <algorithm>
+
+namespace
+{
+	FVector GetSpotLightUpVector(const FVector& LightDir)
+	{
+		FVector UpVector = FVector::UpVector;
+		if (MathUtil::Abs(FVector::DotProduct(LightDir, UpVector)) > 0.99f)
+		{
+			UpVector = FVector::RightVector;
+		}
+
+		return UpVector;
+	}
+}
 
 DEFINE_CLASS(USpotlightComponent, UPointLightComponent)
 REGISTER_FACTORY(USpotlightComponent)
 
 void USpotlightComponent::PostDuplicate(UObject* Original)
 {
-    UPointLightComponent::PostDuplicate(Original);
+	UPointLightComponent::PostDuplicate(Original);
 }
 
 void USpotlightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    UPointLightComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({ "Inner Cone Angle", EPropertyType::Float, &InnerConeAngle });
-    OutProps.push_back({ "Outer Cone Angle", EPropertyType::Float, &OuterConeAngle });
+	UPointLightComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Inner Cone Angle", EPropertyType::Float, &InnerConeAngle });
+	OutProps.push_back({ "Outer Cone Angle", EPropertyType::Float, &OuterConeAngle });
 }
 
 void USpotlightComponent::Serialize(FArchive& Ar)
@@ -21,6 +36,31 @@ void USpotlightComponent::Serialize(FArchive& Ar)
 	UPointLightComponent::Serialize(Ar);
 	Ar << "InnerConeAngle" << InnerConeAngle;
 	Ar << "OuterConeAngle" << OuterConeAngle;
+}
+
+FMatrix USpotlightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+	float SplitNearT, float SplitFarT) const
+{
+	const FVector LightPos = GetWorldLocation();
+	const FVector LightDir = GetForwardVector().GetSafeNormal();
+	const FVector UpVector = GetSpotLightUpVector(LightDir);
+
+	const float SafeOuterConeAngle = std::clamp(OuterConeAngle, 1.0f, 89.0f);
+	const float NearPlane = std::max(0.05f, AttenuationRadius * 0.005f);
+	const float FarPlane = std::max(NearPlane + 0.1f, AttenuationRadius);
+
+	const FMatrix LightView = FMatrix::MakeViewLookAtLH(
+		LightPos,
+		LightPos + LightDir,
+		UpVector);
+
+	const FMatrix LightProj = FMatrix::MakePerspectiveFovLH(
+		MathUtil::DegreesToRadians(SafeOuterConeAngle * 2.0f),
+		1.0f,
+		NearPlane,
+		FarPlane);
+
+	return LightView * LightProj;
 }
 
 FMatrix USpotlightComponent::ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
