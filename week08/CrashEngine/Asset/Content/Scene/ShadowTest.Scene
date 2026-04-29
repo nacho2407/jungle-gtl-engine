@@ -161,7 +161,7 @@
           }],
         "ClassName" : "UDirectionalLightComponent",
         "Properties" : {
-          "Bias" : 0.001000,
+          "Depth Bias" : 0.001000,
           "CSM Max Distance" : 2000.000000,
           "Cascade Count" : 4,
           "Cascade Distribution" : 1.000000,

@@ -20,6 +20,8 @@ void FLightProxy::UpdateLightConstants()
     ShadowBias            = Owner->GetShadowBias();
     ShadowSlopeBias       = Owner->GetShadowSlopeBias();
     ShadowNormalBias      = Owner->GetShadowNormalBias();
+    ShadowSharpen         = Owner->GetShadowSharpen();
+    ShadowESMExponent     = Owner->GetShadowESMExponent();
     
     LightProxyInfo.Position    = Owner->GetWorldLocation();
     LightProxyInfo.Direction   = Owner->GetForwardVector();
@@ -28,6 +30,8 @@ void FLightProxy::UpdateLightConstants()
     LightProxyInfo.ShadowBias  = ShadowBias;
     LightProxyInfo.ShadowSlopeBias = ShadowSlopeBias;
     LightProxyInfo.ShadowNormalBias = ShadowNormalBias;
+    LightProxyInfo.ShadowSharpen = ShadowSharpen;
+    LightProxyInfo.ShadowESMExponent = ShadowESMExponent;
 }
 
 void FLightProxy::UpdateTransform()

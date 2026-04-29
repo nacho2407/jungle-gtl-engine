@@ -27,5 +27,6 @@ struct FLightProxyInfo
     float    ShadowBias;
     float    ShadowSlopeBias;
     float    ShadowNormalBias;
-    float    Padding;
+    float    ShadowSharpen;
+    float    ShadowESMExponent;
 };

@@ -39,38 +39,39 @@ void FDrawCollector::UpdateShadowDataInCBs()
             }
 
             const FCascadeShadowMapData* CascadeShadowMapData = Proxy->GetCascadeShadowMapData();
-            if (!CascadeShadowMapData)
-            {
-                continue;
-            }
-
             FDirectionalLightCBData& DirectionalCB = CollectedSceneData.Lights.GlobalLights.Directional[DirIdx];
-            DirectionalCB.CascadeCount = static_cast<int32>(CascadeShadowMapData->CascadeCount);
-            for (uint32 CascadeIndex = 0; CascadeIndex < MAX_DIRECTIONAL_SHADOW_CASCADES; ++CascadeIndex)
+            DirectionalCB.CascadeCount = 0;
+
+            if (CascadeShadowMapData)
             {
-                DirectionalCB.ShadowViewProj[CascadeIndex] = CascadeShadowMapData->CascadeViewProj[CascadeIndex];
-                DirectionalCB.ShadowSamples[CascadeIndex] = MakeSampleCBData(CascadeShadowMapData->Cascades[CascadeIndex]);
+                DirectionalCB.CascadeCount = static_cast<int32>(CascadeShadowMapData->CascadeCount);
+                for (uint32 CascadeIndex = 0; CascadeIndex < MAX_DIRECTIONAL_SHADOW_CASCADES; ++CascadeIndex)
+                {
+                    DirectionalCB.ShadowViewProj[CascadeIndex] = CascadeShadowMapData->CascadeViewProj[CascadeIndex];
+                    DirectionalCB.ShadowSamples[CascadeIndex] = MakeSampleCBData(CascadeShadowMapData->Cascades[CascadeIndex]);
+                }
+
+                for (int32 SplitIndex = 0; SplitIndex < 8; ++SplitIndex)
+                {
+                    DirectionalCB.CascadeSplits[SplitIndex] = 0.0f;
+                }
+
+                if (GetShadowMapMethod() == EShadowMapMethod::Cascade)
+                {
+                    const uint32 SplitCount = std::min<uint32>(CascadeShadowMapData->CascadeCount + 1, 8u);
+                    for (uint32 SplitIndex = 0; SplitIndex < SplitCount; ++SplitIndex)
+                    {
+                        DirectionalCB.CascadeSplits[SplitIndex] = CascadeShadowMapData->CascadeSplits[SplitIndex];
+                    }
+                }
             }
 
             DirectionalCB.ShadowBias = LC.ShadowBias;
             DirectionalCB.ShadowSlopeBias = LC.ShadowSlopeBias;
             DirectionalCB.ShadowNormalBias = LC.ShadowNormalBias;
-
-            for (int SplitIndex = 0; SplitIndex < 8; ++SplitIndex)
-            {
-                DirectionalCB.CascadeSplits[SplitIndex] = 0.0f;
-            }
-
-            if (GetShadowMapMethod() == EShadowMapMethod::Cascade)
-            {
-                const uint32 SplitCount = std::min<uint32>(CascadeShadowMapData->CascadeCount + 1, 8u);
-                for (uint32 SplitIndex = 0; SplitIndex < SplitCount; ++SplitIndex)
-                {
-                    DirectionalCB.CascadeSplits[SplitIndex] = CascadeShadowMapData->CascadeSplits[SplitIndex];
-                }
-            }
-
-            ++DirIdx;
+            DirectionalCB.ShadowSharpen = LC.ShadowSharpen;
+            DirectionalCB.ShadowESMExponent = LC.ShadowESMExponent;
+            DirIdx++;
         }
         else if (LC.LightType == static_cast<uint32>(ELightType::Point) || LC.LightType == static_cast<uint32>(ELightType::Spot))
         {
@@ -79,38 +80,38 @@ void FDrawCollector::UpdateShadowDataInCBs()
                 continue;
             }
 
+            FLocalLightCBData& LocalCB = CollectedSceneData.Lights.LocalLights[LocalIdx];
+            LocalCB.ShadowSampleCount = 0;
+
             if (LC.LightType == static_cast<uint32>(ELightType::Spot))
             {
                 const FShadowMapData* SpotShadowMapData = Proxy->GetSpotShadowMapData();
-                if (!SpotShadowMapData)
+                if (SpotShadowMapData)
                 {
-                    continue;
+                    LocalCB.ShadowSampleCount = 1;
+                    LocalCB.ShadowViewProj[0] = Proxy->LightViewProj;
+                    LocalCB.ShadowSamples[0] = MakeSampleCBData(*SpotShadowMapData);
                 }
-
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = 1;
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[0] = Proxy->LightViewProj;
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[0] = MakeSampleCBData(*SpotShadowMapData);
             }
-            else
+            else // Point
             {
                 const FCubeShadowMapData* CubeShadowMapData = Proxy->GetCubeShadowMapData();
-                if (!CubeShadowMapData)
+                if (CubeShadowMapData)
                 {
-                    continue;
-                }
-
-                CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSampleCount = MAX_POINT_SHADOW_FACES;
-                for (uint32 FaceIndex = 0; FaceIndex < MAX_POINT_SHADOW_FACES; ++FaceIndex)
-                {
-                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowViewProj[FaceIndex] = CubeShadowMapData->FaceViewProj[FaceIndex];
-                    CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSamples[FaceIndex] = MakeSampleCBData(CubeShadowMapData->Faces[FaceIndex]);
+                    LocalCB.ShadowSampleCount = MAX_POINT_SHADOW_FACES;
+                    for (uint32 FaceIndex = 0; FaceIndex < MAX_POINT_SHADOW_FACES; ++FaceIndex)
+                    {
+                        LocalCB.ShadowViewProj[FaceIndex] = CubeShadowMapData->FaceViewProj[FaceIndex];
+                        LocalCB.ShadowSamples[FaceIndex] = MakeSampleCBData(CubeShadowMapData->Faces[FaceIndex]);
+                    }
                 }
             }
-
-            CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowBias = LC.ShadowBias;
-            CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowSlopeBias = LC.ShadowSlopeBias;
-            CollectedSceneData.Lights.LocalLights[LocalIdx].ShadowNormalBias = LC.ShadowNormalBias;
-            ++LocalIdx;
+            LocalCB.ShadowBias = LC.ShadowBias;
+            LocalCB.ShadowSlopeBias = LC.ShadowSlopeBias;
+            LocalCB.ShadowNormalBias = LC.ShadowNormalBias;
+            LocalCB.ShadowSharpen = LC.ShadowSharpen;
+            LocalCB.ShadowESMExponent = LC.ShadowESMExponent;
+            LocalIdx++;
         }
     }
 }

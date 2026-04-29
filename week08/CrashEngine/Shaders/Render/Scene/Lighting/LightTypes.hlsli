@@ -1,17 +1,11 @@
 /*
-    LightTypes.hlsli는 scene lighting helper에서 쓰는 보조 타입을 정의합니다.
+    LightTypes.hlsli
+    조명 계산에서 공통으로 쓰는 보조 구조체를 정의하는 헤더입니다.
+    현재는 로컬 라이트 Blinn-Phong 계산 결과를 담는 `FLocalBlinnPhongTerm`를 제공합니다.
 
-    바인딩 컨벤션
-    - b0: Frame 상수 버퍼
-    - b1: PerObject/Material 상수 버퍼
-    - b2: Pass/Shader 상수 버퍼
-    - b3: Material 또는 보조 상수 버퍼
-    - b4: Light 상수 버퍼
-    - t0~t5: 패스/머티리얼 SRV
-    - t6: LocalLights structured buffer
-    - t10: SceneDepth, t11: SceneColor, t13: Stencil
-    - s0: LinearClamp, s1: LinearWrap, s2: PointClamp
-    - u#: Compute/후처리용 UAV
+    참고 바인딩
+    - 이 파일은 `ConstantBuffers.hlsl`를 통해 프레임/라이트 상수 버퍼 정의를 참조합니다.
+    - 직접 텍스처나 샘플러 슬롯을 선언하지는 않습니다.
 */
 
 #ifndef LIGHT_TYPES_HLSLI

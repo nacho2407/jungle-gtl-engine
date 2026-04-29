@@ -3,6 +3,7 @@
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Component/UUIDTextRenderComponent.h"
 #include "Component/ActorComponent.h"
 #include "Math/Rotator.h"
 #include "GameFramework/Level.h"
@@ -115,29 +116,43 @@ void AActor::EnsureDefaultEditorHelperTextComponent()
         return;
     }
 
+    UTextRenderComponent* LegacyTextComponent = nullptr;
+
     for (UActorComponent* Component : OwnedComponents)
     {
+        UUUIDTextRenderComponent* UUIDTextComponent = Cast<UUUIDTextRenderComponent>(Component);
+        if (UUIDTextComponent && UUIDTextComponent->IsEditorHelper())
+        {
+            if (UUIDTextComponent->GetParent() != RootComponent)
+            {
+                UUIDTextComponent->AttachToComponent(RootComponent);
+            }
+
+            UUIDTextComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 1.3f));
+            UUIDTextComponent->SetRelativeRotation(FRotator::ZeroRotator);
+            UUIDTextComponent->SetRelativeScale(FVector(1.0f, 1.0f, 1.0f));
+            UUIDTextComponent->SetBillboard(true);
+            UUIDTextComponent->SetVisibleInEditor(true);
+            UUIDTextComponent->SetVisibleInGame(false);
+            UUIDTextComponent->SetEditorHelper(true);
+            UUIDTextComponent->SetFont(FName("Default"));
+            UUIDTextComponent->SetText("UUID : " + std::to_string(GetUUID()));
+            return;
+        }
+
         UTextRenderComponent* TextComponent = Cast<UTextRenderComponent>(Component);
-        if (!TextComponent || !TextComponent->IsEditorHelper())
+        if (TextComponent && TextComponent->IsEditorHelper())
         {
-            continue;
+            LegacyTextComponent = TextComponent;
         }
-
-        if (TextComponent->GetParent() != RootComponent)
-        {
-            TextComponent->AttachToComponent(RootComponent);
-        }
-
-        TextComponent->SetBillboard(true);
-        TextComponent->SetVisibleInEditor(true);
-        TextComponent->SetVisibleInGame(false);
-        TextComponent->SetEditorHelper(true);
-        TextComponent->SetFont(FName("Default"));
-        TextComponent->SetText("UUID : " + std::to_string(GetUUID()));
-        return;
     }
 
-    UTextRenderComponent* TextComponent = AddComponent<UTextRenderComponent>();
+    if (LegacyTextComponent)
+    {
+        RemoveComponent(LegacyTextComponent);
+    }
+
+    UUUIDTextRenderComponent* TextComponent = AddComponent<UUUIDTextRenderComponent>();
     if (!TextComponent)
     {
         return;

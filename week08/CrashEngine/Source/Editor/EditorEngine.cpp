@@ -30,7 +30,6 @@ void PreloadDefaultObjAssets(ID3D11Device* Device)
         return;
     }
 
-    FObjManager::ScanObjSourceFiles();
     const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
     for (const FMeshAssetListItem& Item : ObjFiles)
     {
@@ -39,7 +38,7 @@ void PreloadDefaultObjAssets(ID3D11Device* Device)
             continue;
         }
 
-        FObjManager::LoadObjStaticMesh(Item.FullPath, Device);
+        FObjManager::LoadObjStaticMesh(Item.FullPath, Device, false);
     }
 }
 } // namespace
@@ -54,6 +53,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     FObjManager::ScanObjSourceFiles();
     FMaterialManager::Get().ScanMaterialAssets();
     PreloadDefaultObjAssets(Renderer.GetFD3DDevice().GetDevice());
+    FObjManager::ScanMeshAssets();
+    FMaterialManager::Get().ScanMaterialAssets();
 
     FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
@@ -538,7 +539,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     FShowFlags EffectiveShowFlags = Opts.ShowFlags;
     if (VC->IsPilotingActor())
     {
-        EffectiveShowFlags.bBillboardText = false;
+        EffectiveShowFlags.bUUIDText = false;
         EffectiveShowFlags.bGrid = false;
         EffectiveShowFlags.bWorldAxis = false;
         EffectiveShowFlags.bSceneBVH = false;

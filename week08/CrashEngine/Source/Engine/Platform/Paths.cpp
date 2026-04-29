@@ -43,13 +43,21 @@ std::wstring FPaths::ShaderDir()
 {
     return RootDir() + L"Shaders\\";
 }
+std::wstring FPaths::SavedDir()
+{
+    return RootDir() + L"Saved\\";
+}
+std::wstring FPaths::ShaderCacheDir()
+{
+    return SavedDir() + L"ShaderCache\\";
+}
 std::wstring FPaths::SceneDir()
 {
     return ContentDir() + L"Scene\\";
 }
 std::wstring FPaths::DumpDir()
 {
-    return RootDir() + L"Saves\\Dump\\";
+    return SavedDir() + L"Dump\\";
 }
 std::wstring FPaths::SettingsDir()
 {

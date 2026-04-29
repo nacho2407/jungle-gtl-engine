@@ -192,7 +192,7 @@ bool FObjManager::TryImportStaticMesh(const FString& ObjPath, const FImportOptio
     return true;
 }
 
-UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice)
+UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const FImportOptions& Options, ID3D11Device* InDevice, bool bRefreshAssetLists)
 {
     const FString CacheKey = GetBinaryFilePath(PathFileName);
     StaticMeshCache.erase(CacheKey);
@@ -206,12 +206,15 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, const F
     StaticMesh->InitResources(InDevice);
     StaticMeshCache[CacheKey] = StaticMesh;
 
-    ScanMeshAssets();
-    FMaterialManager::Get().ScanMaterialAssets();
+    if (bRefreshAssetLists)
+    {
+        ScanMeshAssets();
+        FMaterialManager::Get().ScanMaterialAssets();
+    }
     return StaticMesh;
 }
 
-UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice)
+UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11Device* InDevice, bool bRefreshAssetLists)
 {
     const FString CacheKey = GetBinaryFilePath(PathFileName);
 
@@ -268,8 +271,11 @@ UStaticMesh* FObjManager::LoadObjStaticMesh(const FString& PathFileName, ID3D11D
     StaticMesh->InitResources(InDevice);
     StaticMeshCache[CacheKey] = StaticMesh;
 
-    ScanMeshAssets();
-    FMaterialManager::Get().ScanMaterialAssets();
+    if (bRefreshAssetLists)
+    {
+        ScanMeshAssets();
+        FMaterialManager::Get().ScanMaterialAssets();
+    }
     return StaticMesh;
 }
 

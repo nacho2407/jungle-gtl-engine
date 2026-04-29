@@ -11,15 +11,15 @@ public:
     FPointLightSceneProxy(UPointLightComponent* InComponent);
     ~FPointLightSceneProxy() override = default;
 
-    void UpdateLightConstants() override;
-    void UpdateTransform() override;
-    void VisualizeLightsInEditor(FScene& Scene) const override;
+    void                      UpdateLightConstants() override;
+    void                      UpdateTransform() override;
+    void                      VisualizeLightsInEditor(FScene& Scene, float DebugScale = 1.0f) const override;
     FCubeShadowMapData*       GetCubeShadowMapData() override { return &CubeShadowMapData; }
     const FCubeShadowMapData* GetCubeShadowMapData() const override { return &CubeShadowMapData; }
     FMatrix*                  GetPointShadowViewProjMatrices() override { return ShadowViewProjMatrices; }
     const FMatrix*            GetPointShadowViewProjMatrices() const override { return ShadowViewProjMatrices; }
 
 private:
-    FCubeShadowMapData CubeShadowMapData = {};
+    FCubeShadowMapData CubeShadowMapData                                  = {};
     FMatrix            ShadowViewProjMatrices[ShadowAtlas::MaxPointFaces] = {};
 };

@@ -22,7 +22,7 @@ public:
     virtual void UpdateLightConstants();
     virtual void UpdateTransform();
 
-    virtual void VisualizeLightsInEditor(FScene& Scene) const {}
+    virtual void VisualizeLightsInEditor(FScene& Scene, float DebugScale = 1.0f) const {}
 
     virtual FCascadeShadowMapData*       GetCascadeShadowMapData() { return nullptr; }
     virtual const FCascadeShadowMapData* GetCascadeShadowMapData() const { return nullptr; }
@@ -57,4 +57,6 @@ public:
     float ShadowBias       = 0.0f;
     float ShadowSlopeBias  = 0.0f;
     float ShadowNormalBias = 0.0f;
+    float ShadowSharpen    = 0.0f;
+    float ShadowESMExponent = 40.0f;
 };

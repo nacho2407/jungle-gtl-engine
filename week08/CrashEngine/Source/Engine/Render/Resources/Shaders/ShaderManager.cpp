@@ -33,11 +33,6 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
     }
 
     ShaderRegistry.Initialize();
-
-    for (uint32 i = 0; i < (uint32)EShaderType::MAX; ++i)
-    {
-        RefreshBuiltInShader(static_cast<EShaderType>(i));
-    }
 }
 
 /*
@@ -104,6 +99,10 @@ FGraphicsProgram* FShaderManager::GetShader(EShaderType InType)
     }
     if (Device)
     {
+        if (!Shaders[Idx].IsValid())
+        {
+            RefreshBuiltInShader(InType);
+        }
 #if defined(_DEBUG)
         RefreshBuiltInShader(InType);
 #endif

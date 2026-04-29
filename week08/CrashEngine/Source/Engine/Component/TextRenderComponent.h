@@ -70,9 +70,10 @@ public:
     void UpdateWorldAABB() const override;
     bool LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult) override;
 
-    FMatrix CalculateBillboardWorldMatrix(const FVector& CameraForward) const;
-    FMatrix CalculateOutlineMatrix() const;
-    FMatrix CalculateOutlineMatrix(const FMatrix& TextWorldMatrix) const;
+    virtual FMatrix CalculateBillboardWorldMatrix(const FVector& CameraForward) const;
+    virtual FMatrix CalculateOutlineMatrix() const;
+    virtual FMatrix CalculateOutlineMatrix(const FMatrix& TextWorldMatrix) const;
+    virtual bool UsesUUIDTextShowFlag() const { return false; }
     int32 GetUTF8Length(const FString& Str) const;
 
 private:

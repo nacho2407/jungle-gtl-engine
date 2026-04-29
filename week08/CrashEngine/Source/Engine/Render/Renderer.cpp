@@ -595,6 +595,22 @@ void FRenderer::RunRootPipeline(ERenderPipelineType RootType, FRenderPipelineCon
     PipelineContext.ViewMode.Registry = ViewModePassRegistry;
     PipelineContext.LightCulling      = LightCulling.get();
 
+    if (!PipelineContext.ViewMode.Surfaces &&
+        PipelineContext.SceneView &&
+        PipelineContext.SceneView->RenderPath == ERenderShadingPath::Deferred &&
+        PipelineContext.Targets &&
+        PipelineContext.Targets->SourceViewport &&
+        ViewModePassRegistry &&
+        ViewModePassRegistry->HasConfig(PipelineContext.ViewMode.ActiveViewMode))
+    {
+        FViewport* Viewport = const_cast<FViewport*>(PipelineContext.Targets->SourceViewport);
+        PipelineContext.ViewMode.Surfaces =
+            AcquireViewModeSurfaces(
+                Viewport,
+                static_cast<uint32>(PipelineContext.SceneView->ViewportWidth),
+                static_cast<uint32>(PipelineContext.SceneView->ViewportHeight));
+    }
+
     PipelineRunner.ExecutePipeline(RootType, PipelineContext, *PipelineContext.SceneView, PipelineRegistry, PassRegistry);
 
     FinalizePipelineExecution();
@@ -612,6 +628,22 @@ void FRenderer::ExecutePipeline(ERenderPipelineType Type, FRenderPipelineContext
     PipelineContext.RenderPassPresets = PassRegistry.GetRenderPassPresets();
     PipelineContext.ViewMode.Registry = ViewModePassRegistry;
     PipelineContext.LightCulling      = LightCulling.get();
+
+    if (!PipelineContext.ViewMode.Surfaces &&
+        PipelineContext.SceneView &&
+        PipelineContext.SceneView->RenderPath == ERenderShadingPath::Deferred &&
+        PipelineContext.Targets &&
+        PipelineContext.Targets->SourceViewport &&
+        ViewModePassRegistry &&
+        ViewModePassRegistry->HasConfig(PipelineContext.ViewMode.ActiveViewMode))
+    {
+        FViewport* Viewport = const_cast<FViewport*>(PipelineContext.Targets->SourceViewport);
+        PipelineContext.ViewMode.Surfaces =
+            AcquireViewModeSurfaces(
+                Viewport,
+                static_cast<uint32>(PipelineContext.SceneView->ViewportWidth),
+                static_cast<uint32>(PipelineContext.SceneView->ViewportHeight));
+    }
 
     PipelineRunner.ExecutePipeline(Type, PipelineContext, *PipelineContext.SceneView, PipelineRegistry, PassRegistry);
 }
