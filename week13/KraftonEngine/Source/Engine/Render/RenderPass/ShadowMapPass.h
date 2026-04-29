@@ -88,6 +88,10 @@ private:
 	TArray<uint32> VisibleShadowSpotIndices;
 	TArray<uint32> VisibleShadowPointIndices;
 
+	// Area-budget 기반 페이지별 라이트 분배 (EnsureResources에서 계산)
+	TArray<TArray<uint32>> SpotPageGroups;
+	TArray<TArray<uint32>> PointPageGroups;
+
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;
 };

@@ -13,6 +13,9 @@ public:
 	// Sorts the pending batch by evaluated resolution, then allocates all entries into the atlas.
 	TArray<FAtlasRegion> CommitBatch() override;
 
+	// Returns the snapped power-of-two resolution for a light (same formula CommitBatch uses internally).
+	uint32 ComputeSnappedResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
+
 private:
 	// Ranks the importance of the input light source based on its properties.
 	float EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const;
