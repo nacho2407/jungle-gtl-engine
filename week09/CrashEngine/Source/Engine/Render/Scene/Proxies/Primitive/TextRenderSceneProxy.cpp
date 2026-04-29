@@ -45,7 +45,10 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
         return;
     }
 
-    if (!SceneView.ShowFlags.bBillboardText)
+    const bool bShowText = TextComp->UsesUUIDTextShowFlag()
+                               ? SceneView.ShowFlags.bUUIDText
+                               : SceneView.ShowFlags.bText;
+    if (!bShowText)
     {
         bVisible = false;
         return;
@@ -77,4 +80,3 @@ void FTextRenderSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
     PerObjectConstants          = FPerObjectCBData::FromWorldMatrix(OutlineMatrix);
     MarkPerObjectCBDirty();
 }
-
