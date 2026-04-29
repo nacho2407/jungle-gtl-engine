@@ -30,7 +30,7 @@ protected:
 	virtual FMatrix ComputePerspectiveShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		const TArray<FBoundingBox>* VisibleObjectsBounds) const { return FMatrix::Identity; }
 
-	FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
+	virtual FMatrix ComputeCascadeShadowMatrix(const FMatrix& CamView, const FMatrix& CamProj,
 		float SplitNearT, float SplitFarT) const;
 
 	virtual void PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const;

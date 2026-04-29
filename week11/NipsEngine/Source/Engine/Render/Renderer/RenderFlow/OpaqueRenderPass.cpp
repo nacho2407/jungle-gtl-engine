@@ -126,6 +126,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
        for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
        {
            if (!Request.bCastShadows || !Request.LightComponent) continue;
+           if (Request.Type != EShadowLightType::SLT_Directional) continue;
 
            ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
            if (!LightComp) continue;
