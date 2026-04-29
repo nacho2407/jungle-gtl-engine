@@ -112,15 +112,7 @@ static void ReleaseCOM(T*& Ptr)
 
 void FShadowMapResources::FCSMResources::Release()
 {
-	// VSM
-	ReleaseCOM(VSMSRV);
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		ReleaseCOM(VSMRTV[i]);
-		ReleaseCOM(VSMDSV[i]);
-	}
-	ReleaseCOM(VSMTexture);
-	ReleaseCOM(VSMDepthTexture);
+	ReleaseVSM();
 
 	// Normal
 	ReleaseCOM(SRV);
@@ -151,12 +143,7 @@ void FShadowMapResources::FCSMResources::ReleaseVSM()
 
 void FShadowMapResources::FSpotResources::Release()
 {
-	// VSM
-	ReleaseCOM(VSMSRV);
-	ReleaseViewArray(VSMRTVs);
-	ReleaseViewArray(VSMDSVs);
-	ReleaseCOM(VSMTexture);
-	ReleaseCOM(VSMDepthTexture);
+	ReleaseVSM();
 
 	// Normal
 	ReleaseCOM(SRV);
@@ -188,12 +175,7 @@ void FShadowMapResources::FSpotResources::ReleaseVSM()
 
 void FShadowMapResources::FPointResources::Release()
 {
-	// VSM
-	ReleaseCOM(VSMSRV);
-	ReleaseViewArray(VSMRTVs);
-	ReleaseViewArray(VSMDSVs);
-	ReleaseCOM(VSMTexture);
-	ReleaseCOM(VSMDepthTexture);
+	ReleaseVSM();
 
 	// Normal
 	ReleaseCOM(SRV);
@@ -235,15 +217,7 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 		ReleaseCOM(CSM.DSV[i]);
 	}
 	ReleaseCOM(CSM.Texture);
-
-	ReleaseCOM(CSM.VSMSRV);
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		ReleaseCOM(CSM.VSMRTV[i]);
-		ReleaseCOM(CSM.VSMDSV[i]);
-	}
-	ReleaseCOM(CSM.VSMTexture);
-	ReleaseCOM(CSM.VSMDepthTexture);
+	CSM.ReleaseVSM();
 
 	CSM.Resolution = InResolution;
 
@@ -304,11 +278,7 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 	ReleaseCOM(Spot.DataBuffer);
 	Spot.DataCapacity = 0;
 
-	ReleaseCOM(Spot.VSMSRV);
-	ReleaseViewArray(Spot.VSMRTVs);
-	ReleaseViewArray(Spot.VSMDSVs);
-	ReleaseCOM(Spot.VSMTexture);
-	ReleaseCOM(Spot.VSMDepthTexture);
+	Spot.ReleaseVSM();
 
 	Spot.Resolution = InResolution;
 	Spot.PageCount  = InPageCount;
@@ -394,11 +364,7 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	ReleaseCOM(Point.DataBuffer);
 	Point.DataCapacity = 0;
 
-	ReleaseCOM(Point.VSMSRV);
-	ReleaseViewArray(Point.VSMRTVs);
-	ReleaseViewArray(Point.VSMDSVs);
-	ReleaseCOM(Point.VSMTexture);
-	ReleaseCOM(Point.VSMDepthTexture);
+	Point.ReleaseVSM();
 
 	if (AtlasSize == 0 || MaxLights == 0)
 		return;
@@ -472,14 +438,7 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	if (CSM.FailedResolution == InResolution) return;
 
 	// 기존 VSM CSM 리소스 해제
-	ReleaseCOM(CSM.VSMSRV);
-	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
-	{
-		ReleaseCOM(CSM.VSMRTV[i]);
-		ReleaseCOM(CSM.VSMDSV[i]);
-	}
-	ReleaseCOM(CSM.VSMTexture);
-	ReleaseCOM(CSM.VSMDepthTexture);
+	CSM.ReleaseVSM();
 
 	// Moment Texture: R32G32_FLOAT, Texture2DArray
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
@@ -552,11 +511,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	if (Spot.FailedResolution == InResolution && Spot.FailedPageCount == InPageCount) return;
 
 	// 기존 Spot VSM 리소스 해제
-	ReleaseCOM(Spot.VSMSRV);
-	ReleaseViewArray(Spot.VSMRTVs);
-	ReleaseViewArray(Spot.VSMDSVs);
-	ReleaseCOM(Spot.VSMTexture);
-	ReleaseCOM(Spot.VSMDepthTexture);
+	Spot.ReleaseVSM();
 
 	// Moment Texture
 	D3D11_TEXTURE2D_DESC MomentDesc = {};
@@ -630,11 +585,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 		return;
 	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
 
-	ReleaseCOM(Point.VSMSRV);
-	ReleaseViewArray(Point.VSMRTVs);
-	ReleaseViewArray(Point.VSMDSVs);
-	ReleaseCOM(Point.VSMTexture);
-	ReleaseCOM(Point.VSMDepthTexture);
+	Point.ReleaseVSM();
 
 	if (AtlasSize == 0) return;
 
