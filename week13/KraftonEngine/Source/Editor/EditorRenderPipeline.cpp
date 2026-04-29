@@ -232,11 +232,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 		Collector.CollectDebugDraw(Frame, Scene);
 	}
 
-	// ── 3. UI: 오버레이 텍스트 ──
-	if (VC == Editor->GetActiveViewport())
-		Collector.CollectOverlayText(Editor->GetOverlayStatSystem(), *Editor, Scene);
-
-	// ── 4. 커맨드 일괄 생성 (프록시 + 동적) ──
+	// ── 3. 커맨드 일괄 생성 (프록시 + 동적) ──
 	{
 		SCOPE_STAT_CAT("BuildCommands", "3_Collect");
 		Builder.BuildCommands(Frame, &Scene, Output);

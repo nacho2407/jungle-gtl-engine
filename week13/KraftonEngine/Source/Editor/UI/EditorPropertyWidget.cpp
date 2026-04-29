@@ -918,7 +918,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	{
 		float* Val = static_cast<float*>(Prop.ValuePtr);
 		if (Prop.Min != 0.0f || Prop.Max != 0.0f)
-			bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed, Prop.Min, Prop.Max);
+			bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed, Prop.Min, Prop.Max, "%.4f");
 		else
 			bChanged = ImGui::DragFloat(Prop.Name.c_str(), Val, Prop.Speed);
 		break;
