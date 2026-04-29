@@ -53,6 +53,7 @@ void FEditorViewportClient::ResetCamera()
 	if (!Camera || !Settings) return;
 	Camera->SetWorldLocation(Settings->InitViewPos);
 	Camera->LookAt(Settings->InitLookAt);
+	SyncCameraSmoothingTarget();
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
@@ -64,6 +65,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::Perspective)
 	{
 		Camera->SetOrthographic(false);
+		SyncCameraSmoothingTarget();
 		return;
 	}
 
@@ -71,6 +73,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::FreeOrthographic)
 	{
 		Camera->SetOrthographic(true);
+		SyncCameraSmoothingTarget();
 		return;
 	}
 
@@ -113,6 +116,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 
 	Camera->SetRelativeLocation(Position);
 	Camera->SetRelativeRotation(Rotation);
+	SyncCameraSmoothingTarget();
 }
 
 void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
@@ -137,11 +141,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
 {
 	if (!bIsActive) return;
 
-	if (Camera && !bTargetLocationInitialized)
-	{
-		TargetLocation = Camera->GetWorldLocation();
-		bTargetLocationInitialized = true;
-	}
+	SyncCameraSmoothingTarget();
 
 	// Camera Focus Animation Update
 	if (bIsFocusAnimating && Camera)
@@ -169,18 +169,57 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
 		// Sync TargetLocation during animation to prevent jumping after focus ends
 		TargetLocation = NewLoc;
+		LastAppliedCameraLocation = NewLoc;
+		bLastAppliedCameraLocationInitialized = true;
 	}
-	else if (Camera)
+	else
 	{
-		// Smooth Camera Movement (Lerp)
-		const FVector CurrentLocation = Camera->GetWorldLocation();
-		const float LerpAlpha = Clamp(DeltaTime * SmoothLocationSpeed, 0.0f, 1.0f);
-		Camera->SetWorldLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
+		ApplySmoothedCameraLocation(DeltaTime);
 	}
 
 	TickEditorShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
+}
+
+void FEditorViewportClient::SyncCameraSmoothingTarget()
+{
+	if (!Camera)
+	{
+		bTargetLocationInitialized = false;
+		bLastAppliedCameraLocationInitialized = false;
+		return;
+	}
+
+	const FVector CurrentLocation = Camera->GetWorldLocation();
+	const bool bCameraMovedExternally =
+		bLastAppliedCameraLocationInitialized &&
+		FVector::DistSquared(CurrentLocation, LastAppliedCameraLocation) > 0.0001f;
+
+	if (!bTargetLocationInitialized || bCameraMovedExternally)
+	{
+		TargetLocation = CurrentLocation;
+		bTargetLocationInitialized = true;
+	}
+
+	LastAppliedCameraLocation = CurrentLocation;
+	bLastAppliedCameraLocationInitialized = true;
+}
+
+void FEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
+{
+	if (!Camera)
+	{
+		return;
+	}
+
+	const FVector CurrentLocation = Camera->GetWorldLocation();
+	const float LerpAlpha = Clamp(DeltaTime * SmoothLocationSpeed, 0.0f, 1.0f);
+	const FVector NewLocation = CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha;
+	Camera->SetWorldLocation(NewLocation);
+
+	LastAppliedCameraLocation = NewLocation;
+	bLastAppliedCameraLocationInitialized = true;
 }
 
 void FEditorViewportClient::TickEditorShortcuts()

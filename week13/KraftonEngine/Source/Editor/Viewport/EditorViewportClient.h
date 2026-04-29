@@ -89,6 +89,8 @@ private:
 	void TickInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void HandleDragStart(const FRay& Ray); //픽킹 시작
+	void SyncCameraSmoothingTarget();
+	void ApplySmoothedCameraLocation(float DeltaTime);
 
 private:
 	FViewport* Viewport = nullptr;
@@ -127,5 +129,7 @@ private:
 	// Camera Smoothing
 	FVector TargetLocation;
 	bool bTargetLocationInitialized = false;
+	FVector LastAppliedCameraLocation;
+	bool bLastAppliedCameraLocationInitialized = false;
 	const float SmoothLocationSpeed = 10.0f;
 };
