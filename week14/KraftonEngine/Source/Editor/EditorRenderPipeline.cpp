@@ -59,6 +59,9 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	// 이전 프레임 시각화 데이터 readback + 디버그 라인 제출
 	Renderer.SubmitCullingDebugLines(Editor->GetWorld());
 
+	// Shadow depth는 라이트 시점 → 뷰포트 무관. 프레임당 1회만 렌더링.
+	++Renderer.GetResources().ShadowResources.FrameGeneration;
+
 	for (FLevelEditorViewportClient* ViewportClient : Editor->GetLevelViewportClients())
 	{
 		if (!Editor->ShouldRenderViewportClient(ViewportClient))

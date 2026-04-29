@@ -115,4 +115,7 @@ private:
 
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;
+
+	// 다중 뷰포트: 이미 렌더링한 프레임 세대 (Execute 스킵용)
+	uint32 LastRenderedGeneration = 0;
 };

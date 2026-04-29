@@ -142,6 +142,9 @@ struct FShadowMapResources
 		void ReleaseVSM();
 	} Point;
 
+	// ── 다중 뷰포트 중복 렌더링 방지 ──
+	uint32 FrameGeneration = 0;
+
 	// ── Ensure methods ──
 	void EnsureCSM(ID3D11Device* Device, uint32 Resolution);
 	void EnsureSpotAtlas(ID3D11Device* Device, uint32 Resolution, uint32 PageCount, uint32 MaxLights);

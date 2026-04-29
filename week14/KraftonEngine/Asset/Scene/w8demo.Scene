@@ -2960,20 +2960,7 @@
       "bVisible" : true
     }, {
       "ClassName" : "ADirectionalLightActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "UPendulumMovementComponent",
-          "Properties" : {
-            "Amplitude (deg)" : 30.000000,
-            "Angle Offset (deg)" : 0.000000,
-            "Auto Register Updated" : true,
-            "Frequency (Hz)" : 0.500000,
-            "Phase (deg)" : 0.000000,
-            "Swing Axis" : [0.000000, 1.000000, 0.000000],
-            "Updated Component" : "",
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }],
+      "NonSceneComponents" : [],
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3569,9 +3556,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-3.582854, 24.849102, 6.963639],
+    "Location" : [-4.552670, 29.971489, 11.874520],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 18.624298, -86.996460]
+    "Rotation" : [0.000001, 19.674408, -78.596474]
   },
   "Primitives" : {
     "121" : {
