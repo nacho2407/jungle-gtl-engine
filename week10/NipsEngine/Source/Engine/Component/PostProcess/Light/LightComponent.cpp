@@ -118,14 +118,14 @@ void ULightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	static const char* ShadowMapTypeNames[] = { "CSM", "PSM" };
 	OutProps.push_back({ "ShadowMapType", EPropertyType::Enum, &eShadowMapType, 0.f, 0.f, 0.f, ShadowMapTypeNames, 2 });
 
-	PrintShadowMapDebugInfo(OutProps);
 	OutProps.push_back({ "Shadow Resolution Scale", EPropertyType::Int, &ShadowResolutionScale});
+    PrintShadowMapDebugInfo(OutProps);
 
 	// ConstantBias = DepthBias * (1 / 2 ^ 24 or 16) + SlopeScaledBias * (MaxDepthSlope)
 	// MaxDepthSlope는 이제 셰이더에서 직접 구할 예정. 레스터라이즈로 할 경우 PSM 처리가 안됨
 	OutProps.push_back({ "Constant Bias ( DepthBias ^ (1 / TextureBit))", EPropertyType::Float, &ConstantBias, 0.000f, 0.01f, 0.001f });
 	OutProps.push_back({ "Slope-Scaled Bias", EPropertyType::Float, &SlopeScaledBias, 0.0f, 1.0f, 0.01f });
-	OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
+    OutProps.push_back({ "Shadow Sharpen", EPropertyType::Float, &ShadowSharpen });
 }
 
 void ULightComponent::Serialize(FArchive& Ar)
@@ -187,21 +187,39 @@ FMatrix ULightComponent::ComputeCascadeShadowMatrix(const FMatrix& CamView, cons
 void ULightComponent::PrintShadowMapDebugInfo(TArray<FPropertyDescriptor>& OutProps) const
 {
     FShadowAtlasManager& AtlasManager = FShadowAtlasManager::Get();
+    static const char* ShadowMapFaceNames[] = { "PositiveX", "NegativeX", "PositiveY", "NegativeY", "PositiveZ", "NegativeZ" };
+    static ID3D11ShaderResourceView* FaceSRV[6];
 
-    const FVector4& SO = bHasDebugShadowAtlasTile
-                             ? DebugShadowAtlasScaleOffset
-                             : FVector4(1, 1, 0, 0);
+    if (bHasDebugShadowAtlasTile)
+    {
+        const FVector4& SO = bHasDebugShadowAtlasTile
+                                 ? DebugShadowAtlasScaleOffset
+                                 : FVector4(1, 1, 0, 0);
 
 
-    static FSRVDisplayInfo ShadowMapDisplay;
-    ShadowMapDisplay = {
-        256.f,
-        256.f,
-        SO.Z,
-        SO.W,
-        SO.Z + SO.X,
-        SO.W + SO.Y
-    };
+        static FSRVDisplayInfo ShadowMapDisplay;
+        ShadowMapDisplay = {
+            256.f,
+            256.f,
+            SO.Z,
+            SO.W,
+            SO.Z + SO.X,
+            SO.W + SO.Y
+        };
 
-    OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
+        OutProps.push_back({ "ShadowMap", EPropertyType::SRV, AtlasManager.GetSRV(), 0.f, 0.f, 0.f, nullptr, 0, &ShadowMapDisplay });
+    }
+    else if (bHasDebugShadowCubeTile)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            FaceSRV[i] = AtlasManager.GetCubeDebugSRV(static_cast<int>(DebugShadowCubeIndex), i);
+            if (!FaceSRV[i])
+                return;
+        }
+
+        OutProps.push_back({ "CubeMap",
+                             EPropertyType::CubeSRV,
+                             FaceSRV, 0.f, 0.f, 0.f, nullptr, 0 });
+	}
 }
