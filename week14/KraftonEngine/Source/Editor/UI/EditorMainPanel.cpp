@@ -43,10 +43,6 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
 };
 
-bool IsAliveObject(const UObject* Object)
-{
-	return Object && std::find(GUObjectArray.begin(), GUObjectArray.end(), Object) != GUObjectArray.end();
-}
 }
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
