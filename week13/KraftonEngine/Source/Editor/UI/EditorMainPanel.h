@@ -24,6 +24,8 @@ public:
 	void Render(float DeltaTime);
 	void Update();
 	void SaveToSettings() const;
+	void HideEditorWindows();
+	void ShowEditorWindows();
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
 	void RefreshContentBrowser() { ContentBrowserWidget.Refresh(); }

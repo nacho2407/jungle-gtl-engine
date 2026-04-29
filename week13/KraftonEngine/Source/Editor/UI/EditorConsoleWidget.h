@@ -94,6 +94,8 @@ private:
 	void ExecCommand(const char* CommandLine);
 
 	void HandleHelp(const TArray<FString>& Args);
+	void HandleHideWindows(const TArray<FString>& Args);
+	void HandleShowWindows(const TArray<FString>& Args);
 	void HandleContentBrowserRefresh(const TArray<FString>& Args);
 	void HandleContentBrowserIconSize(const TArray<FString>& Args);
 	void HandleObjList(const TArray<FString>& Args);
