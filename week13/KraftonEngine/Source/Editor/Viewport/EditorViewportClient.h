@@ -123,4 +123,9 @@ private:
 	FRotator FocusEndRot;
 	float FocusAnimTimer = 0.0f;
 	const float FocusAnimDuration = 0.5f; // 0.5초 동안 이동
-	};
+
+	// Camera Smoothing
+	FVector TargetLocation;
+	bool bTargetLocationInitialized = false;
+	const float SmoothLocationSpeed = 10.0f;
+};
