@@ -1519,14 +1519,14 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::RadioButton("WorldNormal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
 
 					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
-					ImGui::TableNextColumn();
-					ImGui::Dummy(ImVec2(0.0f, 0.0f));
-					ImGui::TableNextColumn();
-					ImGui::Dummy(ImVec2(0.0f, 0.0f));
+				 ImGui::TableNextColumn();
+				 ImGui::RadioButton("LightCulling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+				 ImGui::TableNextColumn();
+				 ImGui::Dummy(ImVec2(0.0f, 0.0f));
+				 ImGui::TableNextColumn();
+				 ImGui::Dummy(ImVec2(0.0f, 0.0f));
 
-					ImGui::EndTable();
+				 ImGui::EndTable();
 				}
 
 				Opts.ViewMode = static_cast<EViewMode>(CurrentMode);
@@ -1876,8 +1876,24 @@ bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FP
 	const float LocalY = Clamp(ClientPos.Y - ViewRect.Y, 0.0f, VPHeight - 1.0f);
 	// 클릭한 화면 좌표를 월드 레이로 바꿔 카메라 전방의 기본 배치 위치를 계산한다.
 	const FRay Ray = ViewportClient->GetCamera()->DeprojectScreenToWorld(LocalX, LocalY, VPWidth, VPHeight);
+	const FVector RayDirection = Ray.Direction.Normalized();
+
 	constexpr float SpawnDistanceFromCamera = 10.0f;
-	OutLocation = Ray.Origin + Ray.Direction.Normalized() * SpawnDistanceFromCamera;
+	OutLocation = Ray.Origin + Ray.Direction * SpawnDistanceFromCamera;
+
+	if (Editor)
+	{
+		if (UWorld* World = Editor->GetWorld())
+		{
+			FHitResult HitResult{};
+			AActor* HitActor = nullptr;
+			if (World->RaycastPrimitives(Ray, HitResult, HitActor))
+			{
+				OutLocation = Ray.Origin + RayDirection * HitResult.Distance;
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -1895,6 +1911,8 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	}
 
 	AActor* SpawnedActor = nullptr;
+	FVector SpawnLocation = Location;
+
 	switch (Type)
 	{
 	case EViewportPlaceActorType::Cube:
@@ -1935,6 +1953,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
 		}
+		SpawnLocation.Z += 1.0f;
 		break;
 	}
 	case EViewportPlaceActorType::HeightFog:
@@ -1944,6 +1963,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		{
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}
@@ -1954,6 +1974,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		{
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}
@@ -1965,6 +1986,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 			Actor->InitDefaultComponents();
 			Actor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
 			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}
@@ -1975,6 +1997,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		{
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}
@@ -1985,6 +2008,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		{
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}
@@ -1998,7 +2022,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	}
 
 	// 배치 직후 월드/옥트리/선택 상태를 함께 갱신해 에디터 피드백을 즉시 맞춘다.
-	SpawnedActor->SetActorLocation(Location);
+	SpawnedActor->SetActorLocation(SpawnLocation);
 	World->InsertActorToOctree(SpawnedActor);
 	if (SelectionManager)
 	{
