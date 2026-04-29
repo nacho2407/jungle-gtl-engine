@@ -117,7 +117,7 @@ void FPointLightSceneProxy::VisualizeLightsInEditor(FScene& Scene, float DebugSc
     const FVector         Center    = Component->GetWorldLocation();
     const float           Radius    = Component->GetAttenuationRadius();
     const FColor          Color(255, 220, 100);
-    const int32           Segments  = ComputeScaledSegments(32, DebugScale);
+    const int32           Segments  = ComputeScaledSegments(64, DebugScale);
     const int32           RingCount = ComputeScaledRingCount(DebugScale);
 
     AddSphereRings(Scene, Center, Radius, Segments, RingCount, Color);

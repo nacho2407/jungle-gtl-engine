@@ -1,7 +1,24 @@
 #include "Render/Submission/Atlas/ShadowAtlasPage.h"
 
+#include "Core/Logging/LogMacros.h"
+
 namespace
 {
+FString FormatShadowAllocation(const FShadowMapData& Allocation)
+{
+    return "page=" + std::to_string(Allocation.AtlasPageIndex) +
+           " slice=" + std::to_string(Allocation.SliceIndex) +
+           " rect=(" + std::to_string(Allocation.ViewportRect.X) +
+           ", " + std::to_string(Allocation.ViewportRect.Y) +
+           " " + std::to_string(Allocation.ViewportRect.Width) +
+           "x" + std::to_string(Allocation.ViewportRect.Height) +
+           ") node=" + std::to_string(Allocation.NodeIndex) +
+           " alloc=(" + std::to_string(Allocation.Rect.X) +
+           ", " + std::to_string(Allocation.Rect.Y) +
+           " " + std::to_string(Allocation.Rect.Width) +
+           "x" + std::to_string(Allocation.Rect.Height) + ")";
+}
+
 void ReleaseView(ID3D11DeviceChild*& Resource)
 {
     if (Resource)
@@ -37,6 +54,7 @@ bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
 {
     if (!Device)
     {
+        UE_LOG(Render, Warning, "Shadow atlas page initialization skipped because device was null.");
         return false;
     }
 
@@ -57,6 +75,7 @@ bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
 
     if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &DepthTexture)))
     {
+        UE_LOG(Render, Error, "Failed to create shadow atlas depth texture. Size=%u Slices=%u", ShadowAtlas::AtlasSize, ShadowAtlas::SliceCount);
         Release();
         return false;
     }
@@ -71,6 +90,7 @@ bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
         DSVDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &SliceDSVs[SliceIndex])))
         {
+            UE_LOG(Render, Error, "Failed to create shadow atlas DSV for slice %u.", SliceIndex);
             Release();
             return false;
         }
@@ -84,6 +104,7 @@ bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
         PreviewDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateShaderResourceView(DepthTexture, &PreviewDesc, &PreviewSliceSRVs[SliceIndex])))
         {
+            UE_LOG(Render, Error, "Failed to create shadow atlas preview SRV for slice %u.", SliceIndex);
             Release();
             return false;
         }
@@ -98,10 +119,12 @@ bool FShadowAtlasPage::Initialize(ID3D11Device* Device)
     DepthArrayDesc.Texture2DArray.ArraySize = ShadowAtlas::SliceCount;
     if (FAILED(Device->CreateShaderResourceView(DepthTexture, &DepthArrayDesc, &DepthArraySRV)))
     {
+        UE_LOG(Render, Error, "Failed to create shadow atlas array SRV.");
         Release();
         return false;
     }
 
+    UE_LOG(Render, Info, "Initialized shadow atlas page. AtlasSize=%u SliceCount=%u", ShadowAtlas::AtlasSize, ShadowAtlas::SliceCount);
     return true;
 }
 
@@ -109,6 +132,7 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
 {
     if (!Device)
     {
+        UE_LOG(Render, Warning, "Moment resource creation skipped because device was null.");
         return false;
     }
 
@@ -130,6 +154,7 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
 
     if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &MomentTexture)))
     {
+        UE_LOG(Render, Error, "Failed to create shadow moment texture. AtlasSize=%u Slices=%u", ShadowAtlas::AtlasSize, ShadowAtlas::SliceCount);
         ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
         return false;
     }
@@ -144,6 +169,7 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
         RTVDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateRenderTargetView(MomentTexture, &RTVDesc, &MomentSliceRTVs[SliceIndex])))
         {
+            UE_LOG(Render, Error, "Failed to create moment RTV for slice %u.", SliceIndex);
             ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
             return false;
         }
@@ -157,6 +183,7 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
         SliceMomentDesc.Texture2DArray.ArraySize = 1;
         if (FAILED(Device->CreateShaderResourceView(MomentTexture, &SliceMomentDesc, &MomentSliceSRVs[SliceIndex])))
         {
+            UE_LOG(Render, Error, "Failed to create moment slice SRV for slice %u.", SliceIndex);
             ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
             return false;
         }
@@ -171,10 +198,12 @@ bool FShadowAtlasPage::EnsureMomentResources(ID3D11Device* Device)
     MomentArrayDesc.Texture2DArray.ArraySize = ShadowAtlas::SliceCount;
     if (FAILED(Device->CreateShaderResourceView(MomentTexture, &MomentArrayDesc, &MomentArraySRV)))
     {
+        UE_LOG(Render, Error, "Failed to create shadow moment array SRV.");
         ReleaseMomentViews(MomentTexture, MomentSliceRTVs, MomentArraySRV, MomentSliceSRVs);
         return false;
     }
 
+    UE_LOG(Render, Verbose, "Created shadow moment resources for atlas page. AtlasSize=%u SliceCount=%u", ShadowAtlas::AtlasSize, ShadowAtlas::SliceCount);
     return true;
 }
 
@@ -210,9 +239,11 @@ bool FShadowAtlasPage::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShado
         Candidate.AtlasPageIndex = AtlasPageIndex;
         Candidate.SliceIndex = SliceIndex;
         OutData = Candidate;
+        UE_LOG(Render, Verbose, "Allocated shadow atlas slot: %s", FormatShadowAllocation(OutData).c_str());
         return true;
     }
 
+    UE_LOG(Render, Verbose, "Shadow atlas page %u had no free slot for resolution %u.", AtlasPageIndex, Resolution);
     return false;
 }
 
@@ -223,6 +254,7 @@ void FShadowAtlasPage::Free(const FShadowMapData& Allocation)
         return;
     }
 
+    UE_LOG(Render, Verbose, "Freed shadow atlas slot: %s", FormatShadowAllocation(Allocation).c_str());
     SliceAllocators[Allocation.SliceIndex].Free(Allocation);
 }
 
@@ -288,6 +320,10 @@ bool FShadowAtlasPool::Allocate(ID3D11Device* Device, uint32 Resolution, FShadow
 
     if (Pages.size() >= ShadowAtlas::MaxPages)
     {
+        UE_LOG(Render, Warning, "Shadow atlas pool is full. Resolution=%u ExistingPages=%u MaxPages=%u",
+            Resolution,
+            static_cast<uint32>(Pages.size()),
+            ShadowAtlas::MaxPages);
         return false;
     }
 
@@ -295,13 +331,20 @@ bool FShadowAtlasPool::Allocate(ID3D11Device* Device, uint32 Resolution, FShadow
     FShadowAtlasPage* NewPage = new FShadowAtlasPage();
     if (!NewPage->Initialize(Device))
     {
+        UE_LOG(Render, Error, "Failed to initialize a new shadow atlas page for resolution %u.", Resolution);
         delete NewPage;
         return false;
     }
 
     const uint32 PageIndex = static_cast<uint32>(Pages.size());
     Pages.push_back(NewPage);
-    return NewPage->Allocate(Resolution, PageIndex, OutData);
+    UE_LOG(Render, Info, "Created shadow atlas page %u for resolution %u.", PageIndex, Resolution);
+    const bool bAllocated = NewPage->Allocate(Resolution, PageIndex, OutData);
+    if (!bAllocated)
+    {
+        UE_LOG(Render, Warning, "New shadow atlas page %u could not fit allocation of resolution %u.", PageIndex, Resolution);
+    }
+    return bAllocated;
 }
 
 void FShadowAtlasPool::Free(const FShadowMapData& Allocation)

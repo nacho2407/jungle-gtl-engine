@@ -1,6 +1,7 @@
 ﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/UI/EditorControlPanel.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Engine/Profiling/Timer.h"
 #include "Engine/Profiling/MemoryStats.h"
 #include "ImGui/imgui.h"
@@ -115,6 +116,10 @@ void FEditorControlPanel::Render(float DeltaTime)
     float CameraFOV_Deg = Camera->GetFOV() * RAD_TO_DEG;
     if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
         Camera->SetFOV(CameraFOV_Deg * DEG_TO_RAD);
+
+    float CameraSpeed = FEditorSettings::Get().CameraSpeed;
+    if (ImGui::DragFloat("Camera Speed", &CameraSpeed, 0.1f, 0.1f, 200.0f, "%.2f"))
+        FEditorSettings::Get().CameraSpeed = Clamp(CameraSpeed, 0.1f, 200.0f);
 
     float OrthoWidth = Camera->GetOrthoWidth();
     if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 0.1f, 0.1f, 1000.0f))
