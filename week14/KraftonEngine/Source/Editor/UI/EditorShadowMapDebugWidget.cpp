@@ -98,7 +98,7 @@ static const ImU32 RegionColors[] = {
 };
 constexpr int32 NumRegionColors = (int32)(sizeof(RegionColors) / sizeof(RegionColors[0]));
 
-static void DrawRegionOverlay(const TArray<FAtlasRegion>& Regions, float PreviewSize, float AtlasResolution, int32 HighlightLightIdx = -1)
+static void DrawRegionOverlay(const TArray<FAtlasRegion>& Regions, float PreviewSize, float AtlasResolution, uint32 FilterPageIdx, int32 HighlightLightIdx = -1)
 {
 	ImVec2 ImageMin = ImGui::GetItemRectMin();
 	float Scale = PreviewSize / AtlasResolution;
@@ -108,6 +108,7 @@ static void DrawRegionOverlay(const TArray<FAtlasRegion>& Regions, float Preview
 	{
 		const FAtlasRegion& R = Regions[i];
 		if (!R.bValid) continue;
+		if (R.PageIdx != FilterPageIdx) continue;
 
 		ImU32  Col  = RegionColors[i % NumRegionColors];
 		ImVec2 RMin = ImVec2(ImageMin.x + R.X * Scale, ImageMin.y + R.Y * Scale);
@@ -433,7 +434,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 				);
 
 				if (bShowSpotRegions && pRegions)
-					DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Spot.Resolution));
+					DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Spot.Resolution), static_cast<uint32>(SpotPageIndex));
 			}
 		}
 	}
@@ -535,7 +536,7 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 			);
 
 			if (bShowPointRegions && pRegions)
-				DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Point.Resolution));
+				DrawRegionOverlay(*pRegions, PreviewSize, static_cast<float>(SR.Point.Resolution), static_cast<uint32>(PointPageIndex));
 		}
 	}
 
