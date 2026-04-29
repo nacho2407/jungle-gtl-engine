@@ -43,7 +43,7 @@ private:
     // ==================== Shadow Helpers ====================
     void ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView);
     FShadowViewData GetDirectionalSSMView(UWorld* World, FVector LightDir);
-    FShadowViewData GetDirectionalLiPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
+    FShadowViewData GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance);
     TArray<FShadowViewData> GetDirectionalCSMViews(
         UWorld* World,
         FVector LightDir,
