@@ -2,7 +2,7 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "74",
+      "PrimitiveKey" : "240",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -24,7 +24,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "78",
+      "PrimitiveKey" : "242",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -59,7 +59,7 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "83",
+      "PrimitiveKey" : "244",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -68,7 +68,7 @@
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
-          "Location" : [-1.321529, 2.017730, 0.534665],
+          "Location" : [-4.039981, 2.017730, 0.534665],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Data/BasicShape/Cylinder.obj",
@@ -92,7 +92,7 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "86",
+      "PrimitiveKey" : "246",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -152,7 +152,7 @@
           "Cast Shadows" : false,
           "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
           "Intensity" : 1.000000,
-          "Location" : [-0.135615, -0.898725, 4.039026],
+          "Location" : [-0.135615, -5.437597, 4.039026],
           "Rotation" : [45.000000, -45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : 0.000000,
@@ -348,7 +348,7 @@
           "InnerConeAngle" : 22.400000,
           "Intensity" : 12.000000,
           "LightFalloffExponent" : 1.000000,
-          "Location" : [-3.473364, 1.780516, 3.195414],
+          "Location" : [-6.191818, 1.780516, 3.195414],
           "OuterConeAngle" : 41.500000,
           "Rotation" : [27.600815, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -371,33 +371,33 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-12.956043, -3.956298, 7.813244],
+    "Location" : [-5.306901, -4.416908, 5.644362],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 22.366814, -10.496196]
+    "Rotation" : [0.000000, 37.966759, 60.754086]
   },
   "Primitives" : {
-    "74" : {
+    "240" : {
       "Location" : [0.000000, 0.000000, -1.500000],
       "ObjStaticMeshAsset" : "Data/GouraudCube/GouraudCube.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 100.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "78" : {
+    "242" : {
       "Location" : [2.432192, -2.341406, 1.097169],
       "ObjStaticMeshAsset" : "Data/BasicShape/Sphere.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "83" : {
-      "Location" : [-1.321529, 2.017730, 0.534665],
+    "244" : {
+      "Location" : [-4.039981, 2.017730, 0.534665],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cylinder.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "86" : {
+    "246" : {
       "Location" : [-2.350486, -8.914331, 0.492935],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
