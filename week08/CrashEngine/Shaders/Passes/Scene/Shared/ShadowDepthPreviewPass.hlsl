@@ -2,10 +2,13 @@ cbuffer ShadowDebugPreviewCB : register(b2)
 {
     float4x4 InvViewProj;
     uint ShadowDepthPreviewMode;
-    float3 ShadowDebugPreviewPadding;
+    uint ShadowFilterMethod;
+    float ShadowESMExponent;
+    float ShadowDebugPreviewPadding;
+    float4 AtlasUVScaleOffset;
 };
 
-Texture2D<float> ShadowDepthTexture : register(t0);
+Texture2D<float4> ShadowDebugTexture : register(t0);
 
 struct VSOut
 {
@@ -31,15 +34,35 @@ float3 ReconstructWorld(float2 UV, float Depth)
 float4 PS(VSOut Input) : SV_Target
 {
     uint Width, Height;
-    ShadowDepthTexture.GetDimensions(Width, Height);
+    ShadowDebugTexture.GetDimensions(Width, Height);
+    const float2 AtlasUV = float2(
+        AtlasUVScaleOffset.z + Input.UV.x * AtlasUVScaleOffset.x,
+        AtlasUVScaleOffset.w + Input.UV.y * AtlasUVScaleOffset.y);
     const uint2 PixelCoord = uint2(
-        min((uint)(Input.UV.x * Width), Width - 1),
-        min((uint)(Input.UV.y * Height), Height - 1));
-    const float RawDepth = ShadowDepthTexture.Load(int3(PixelCoord, 0)).r;
+        min((uint)(AtlasUV.x * Width), Width - 1),
+        min((uint)(AtlasUV.y * Height), Height - 1));
+    const float4 RawSample = ShadowDebugTexture.Load(int3(PixelCoord, 0));
+    const float RawDepth = RawSample.r;
 
     if (ShadowDepthPreviewMode == 0)
     {
         return float4(RawDepth, 0.0, 0.0, 1.0);
+    }
+
+    if (ShadowDepthPreviewMode == 2)
+    {
+        float3 VisualColor = float3(RawSample.r, RawSample.g, 0.0f);
+        if (ShadowFilterMethod == 3)
+        {
+            const float Encoded = max(RawSample.r, 1e-6f);
+            const float Linear01 = saturate(-log(Encoded) / max(ShadowESMExponent, 0.01f));
+            VisualColor = float3(saturate(pow(1.0f - Linear01, 0.55f)), RawSample.r, 0.0f);
+        }
+        else
+        {
+            VisualColor = saturate(VisualColor);
+        }
+        return float4(VisualColor, 1.0f);
     }
 
     float3 WorldNear = ReconstructWorld(Input.UV, 0.0);

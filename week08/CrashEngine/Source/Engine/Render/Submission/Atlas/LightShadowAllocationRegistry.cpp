@@ -8,6 +8,7 @@
 #include "Render/Submission/Atlas/ShadowResolutionPolicy.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
 
@@ -105,6 +106,36 @@ TArray<uint32> BuildResolutionCandidates(uint32 LightType, uint32 RequestedResol
 
     return Candidates;
 }
+
+double GetLightTypePriorityWeight(uint32 LightType)
+{
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        return 1000.0;
+    }
+    if (LightType == static_cast<uint32>(ELightType::Spot))
+    {
+        return 300.0;
+    }
+    if (LightType == static_cast<uint32>(ELightType::Point))
+    {
+        return 120.0;
+    }
+    return 0.0;
+}
+
+uint32 GetLightFaceCount(uint32 LightType, uint32 CascadeCount)
+{
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        return std::max(1u, CascadeCount);
+    }
+    if (LightType == static_cast<uint32>(ELightType::Point))
+    {
+        return ShadowAtlas::MaxPointFaces;
+    }
+    return 1u;
+}
 }
 
 void FLightShadowAllocationRegistry::BeginFrame()
@@ -177,7 +208,9 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
     FLightShadowRecord& Record = Records[&Light];
     Record.bTouchedThisFrame = true;
     Record.LastTouchedFrame = CurrentFrame;
+    const bool bHasAllocation = HasAllocatedShadowData(Record);
     const bool bNeedsReallocation =
+        (!bHasAllocation && Record.LastFailedAllocationFrame != CurrentFrame) ||
         Record.RequestedResolution != Resolution ||
         Record.CascadeCount != CascadeCount ||
         Record.LightType != LightType;
@@ -196,12 +229,14 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
             Record.bTouchedThisFrame = true;
             Record.LastTouchedFrame = CurrentFrame;
             Record.LastAllocationFrame = CurrentFrame;
+            Record.LastFailedAllocationFrame = 0;
         }
         else
         {
             InitializeEmptyRecord(CandidateRecord, Resolution, 0, CascadeCount, LightType);
             CandidateRecord.bTouchedThisFrame = true;
             CandidateRecord.LastTouchedFrame = CurrentFrame;
+            CandidateRecord.LastFailedAllocationFrame = CurrentFrame;
             CandidateRecord.FailedAllocationCount = Record.FailedAllocationCount + 1;
             ++FailedAllocationCount;
 
@@ -419,38 +454,235 @@ bool FLightShadowAllocationRegistry::TryAllocateRecord(
     uint32              LightType)
 {
     const TArray<uint32> ResolutionCandidates = BuildResolutionCandidates(LightType, RequestedResolution);
+    const EShadowAllocationPolicy AllocationPolicy = GetShadowAllocationPolicy();
+
+    if (AllocationPolicy == EShadowAllocationPolicy::PreferDowngrade)
+    {
+        for (uint32 CandidateResolution : ResolutionCandidates)
+        {
+            InitializeEmptyRecord(OutRecord, RequestedResolution, CandidateResolution, CascadeCount, LightType);
+            if (TryAllocateRecordByType(OutRecord, Light, Device, AtlasPool, LightType))
+            {
+                if (CandidateResolution != RequestedResolution)
+                {
+                    UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                        GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                }
+                return true;
+            }
+
+            FreeRecord(OutRecord, AtlasPool);
+        }
+
+        for (uint32 CandidateResolution : ResolutionCandidates)
+        {
+            while (true)
+            {
+                InitializeEmptyRecord(OutRecord, RequestedResolution, CandidateResolution, CascadeCount, LightType);
+                if (TryAllocateRecordByType(OutRecord, Light, Device, AtlasPool, LightType))
+                {
+                    if (CandidateResolution != RequestedResolution)
+                    {
+                        UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                            GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                    }
+                    return true;
+                }
+
+                FreeRecord(OutRecord, AtlasPool);
+                if (!TryEvictForAllocation(Light, AtlasPool, CandidateResolution, CascadeCount, LightType))
+                {
+                    break;
+                }
+            }
+        }
+
+        return false;
+    }
+
     for (uint32 CandidateResolution : ResolutionCandidates)
     {
-        InitializeEmptyRecord(OutRecord, RequestedResolution, CandidateResolution, CascadeCount, LightType);
+        while (true)
+        {
+            InitializeEmptyRecord(OutRecord, RequestedResolution, CandidateResolution, CascadeCount, LightType);
 
-        bool bAllocated = false;
-        if (LightType == static_cast<uint32>(ELightType::Directional))
-        {
-            bAllocated = AllocateDirectional(OutRecord, Light, Device, AtlasPool);
-        }
-        else if (LightType == static_cast<uint32>(ELightType::Point))
-        {
-            bAllocated = AllocatePoint(OutRecord, Light, Device, AtlasPool);
-        }
-        else if (LightType == static_cast<uint32>(ELightType::Spot))
-        {
-            bAllocated = AllocateSpot(OutRecord, Light, Device, AtlasPool);
-        }
-
-        if (bAllocated)
-        {
-            if (CandidateResolution != RequestedResolution)
+            if (TryAllocateRecordByType(OutRecord, Light, Device, AtlasPool, LightType))
             {
-                UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
-                    GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                if (CandidateResolution != RequestedResolution)
+                {
+                    UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                        GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                }
+                return true;
             }
-            return true;
+
+            FreeRecord(OutRecord, AtlasPool);
+            if (AllocationPolicy == EShadowAllocationPolicy::DowngradeOnly)
+            {
+                break;
+            }
+            if (!TryEvictForAllocation(Light, AtlasPool, CandidateResolution, CascadeCount, LightType))
+            {
+                break;
+            }
         }
 
-        FreeRecord(OutRecord, AtlasPool);
     }
 
     return false;
+}
+
+const FShadowMapData* GetFirstAllocatedShadowData(const FLightShadowRecord& Record)
+{
+    for (const FShadowMapData& Cascade : Record.CascadeShadowMapData.Cascades)
+    {
+        if (Cascade.bAllocated)
+        {
+            return &Cascade;
+        }
+    }
+
+    if (Record.SpotShadowMapData.bAllocated)
+    {
+        return &Record.SpotShadowMapData;
+    }
+
+    for (const FShadowMapData& Face : Record.CubeShadowMapData.Faces)
+    {
+        if (Face.bAllocated)
+        {
+            return &Face;
+        }
+    }
+
+    return nullptr;
+}
+
+bool FLightShadowAllocationRegistry::TryAllocateRecordByType(
+    FLightShadowRecord& Record,
+    FLightProxy&        Light,
+    ID3D11Device*       Device,
+    FShadowAtlasPool&   AtlasPool,
+    uint32              LightType)
+{
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        return AllocateDirectional(Record, Light, Device, AtlasPool);
+    }
+    if (LightType == static_cast<uint32>(ELightType::Point))
+    {
+        return AllocatePoint(Record, Light, Device, AtlasPool);
+    }
+    if (LightType == static_cast<uint32>(ELightType::Spot))
+    {
+        return AllocateSpot(Record, Light, Device, AtlasPool);
+    }
+    return false;
+}
+
+bool FLightShadowAllocationRegistry::TryEvictForAllocation(
+    FLightProxy&      RequestLight,
+    FShadowAtlasPool& AtlasPool,
+    uint32            RequestedResolution,
+    uint32            CascadeCount,
+    uint32            LightType)
+{
+    const double RequestScore = ComputeFinalScore(RequestLight, RequestedResolution, CascadeCount, LightType);
+    TArray<FShadowEvictionCandidate> Candidates;
+    Candidates.reserve(Records.size());
+
+    for (auto& Pair : Records)
+    {
+        FLightProxy* CandidateLight = Pair.first;
+        FLightShadowRecord& CandidateRecord = Pair.second;
+        if (CandidateLight == nullptr || CandidateLight == &RequestLight || !HasAllocatedShadowData(CandidateRecord))
+        {
+            continue;
+        }
+
+        if (IsEvictionProtected(*CandidateLight, CandidateRecord.LightType))
+        {
+            continue;
+        }
+
+        const double CandidateScore = ComputeFinalScore(
+            *CandidateLight,
+            CandidateRecord.Resolution,
+            CandidateRecord.CascadeCount,
+            CandidateRecord.LightType);
+
+        if (CandidateScore >= RequestScore)
+        {
+            continue;
+        }
+
+        Candidates.push_back({ CandidateLight, &CandidateRecord, CandidateScore });
+    }
+
+    if (Candidates.empty())
+    {
+        return false;
+    }
+
+    std::sort(Candidates.begin(), Candidates.end(), [](const FShadowEvictionCandidate& A, const FShadowEvictionCandidate& B)
+    {
+        if (A.Score != B.Score)
+        {
+            return A.Score < B.Score;
+        }
+
+        const bool bAPoint = A.Record && A.Record->LightType == static_cast<uint32>(ELightType::Point);
+        const bool bBPoint = B.Record && B.Record->LightType == static_cast<uint32>(ELightType::Point);
+        if (bAPoint != bBPoint)
+        {
+            return bAPoint;
+        }
+
+        const uint32 AResolution = A.Record ? A.Record->Resolution : 0u;
+        const uint32 BResolution = B.Record ? B.Record->Resolution : 0u;
+        return AResolution > BResolution;
+    });
+
+    FShadowEvictionCandidate& Victim = Candidates.front();
+    if (!Victim.Light || !Victim.Record)
+    {
+        return false;
+    }
+
+    UE_LOG(Render, Info, "Evicting %s shadow for %s to free atlas space for %s. VictimScore=%.3f RequestScore=%.3f",
+        GetLightTypeName(Victim.Record->LightType),
+        GetLightLabel(*Victim.Light).c_str(),
+        GetLightLabel(RequestLight).c_str(),
+        Victim.Score,
+        RequestScore);
+    if (const FShadowMapData* VictimAllocation = GetFirstAllocatedShadowData(*Victim.Record))
+    {
+        UE_LOG(Render, Info, "Evicted allocation detail for %s: resolution=%u %s",
+            GetLightLabel(*Victim.Light).c_str(),
+            Victim.Record->Resolution,
+            FormatShadowAllocation(*VictimAllocation).c_str());
+    }
+
+    FreeRecord(*Victim.Record, AtlasPool);
+    Victim.Record->LastFailedAllocationFrame = CurrentFrame;
+    Victim.Record->FailedAllocationCount++;
+    Victim.Light->ClearShadowData();
+    return true;
+}
+
+double FLightShadowAllocationRegistry::ComputeFinalScore(const FLightProxy& Light, uint32 Resolution, uint32 CascadeCount, uint32 LightType) const
+{
+    return BuildEvictionDebugInfo(Light, Resolution, CascadeCount, LightType).FinalScore;
+}
+
+bool FLightShadowAllocationRegistry::IsEvictionProtected(const FLightProxy& Light, uint32 LightType) const
+{
+    if (LightType == static_cast<uint32>(ELightType::Directional))
+    {
+        return true;
+    }
+
+    return Light.Owner == nullptr || !Light.bCastShadow;
 }
 
 void FLightShadowAllocationRegistry::InitializeEmptyRecord(
@@ -466,4 +698,27 @@ void FLightShadowAllocationRegistry::InitializeEmptyRecord(
     Record.CascadeCount = CascadeCount;
     Record.LightType = LightType;
     Record.CascadeShadowMapData.CascadeCount = LightType == static_cast<uint32>(ELightType::Directional) ? CascadeCount : 0;
+}
+
+FLightShadowAllocationRegistry::FShadowEvictionDebugInfo FLightShadowAllocationRegistry::BuildEvictionDebugInfo(
+    const FLightProxy& Light,
+    uint32             Resolution,
+    uint32             CascadeCount,
+    uint32             LightType)
+{
+    FShadowEvictionDebugInfo Info = {};
+    Info.Resolution = Resolution;
+    Info.CascadeCount = CascadeCount;
+    Info.LightType = LightType;
+    Info.TypeWeight = GetLightTypePriorityWeight(LightType);
+    Info.IntensityWeight = std::clamp(static_cast<double>(Light.LightProxyInfo.Intensity) / 10.0, 0.0, 10.0) * 25.0;
+    Info.CasterWeight = std::clamp(static_cast<double>(Light.VisibleShadowCasters.size()), 0.0, 64.0) * 3.0;
+    Info.RadiusWeight = std::clamp(static_cast<double>(Light.LightProxyInfo.AttenuationRadius) / 200.0, 0.0, 25.0);
+    Info.DirectionalBonus = (LightType == static_cast<uint32>(ELightType::Directional)) ? 500.0 : 0.0;
+    Info.Priority = Info.TypeWeight + Info.IntensityWeight + Info.CasterWeight + Info.RadiusWeight + Info.DirectionalBonus;
+    Info.FaceCount = static_cast<double>(GetLightFaceCount(LightType, CascadeCount));
+    Info.Cost = std::max(1.0, Info.FaceCount * static_cast<double>(Resolution) * static_cast<double>(Resolution));
+    Info.FinalScore = Info.Priority / Info.Cost;
+    Info.bEvictionProtected = (LightType == static_cast<uint32>(ELightType::Directional)) || Light.Owner == nullptr || !Light.bCastShadow;
+    return Info;
 }

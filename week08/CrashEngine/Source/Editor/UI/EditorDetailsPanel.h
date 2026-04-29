@@ -8,6 +8,9 @@
 class UActorComponent;
 class AActor;
 class ULightComponent;
+class FEditorDetailsPanel;
+
+void RenderEditorShadowAtlasDebugWindow(FEditorDetailsPanel& DetailsPanel);
 
 // FEditorDetailsPanel는 에디터 UI 표시와 입력 처리를 담당합니다.
 class FEditorDetailsPanel : public FEditorPanel
@@ -21,13 +24,15 @@ public:
     void RenderShadowAtlasDebugWindow();
 
 private:
+    friend void RenderEditorShadowAtlasDebugWindow(FEditorDetailsPanel& DetailsPanel);
+
     struct FShadowAtlasSliceDebugCache
     {
         uint64 Hash = 0;
         TArray<FShadowMapData> Allocations;
     };
 
-    void FocusComponentDetails(UActorComponent* Component);
+    void FocusComponentDetails(UActorComponent* Component, int32 CascadeIndex = -1, int32 FaceIndex = -1);
     void RenderComponentTree(AActor* Actor);
     void RenderSceneComponentNode(class USceneComponent* Comp);
     void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
@@ -43,7 +48,9 @@ private:
     bool bActorSelected = true; // true: Actor details, false: Component details
     bool bShowShadowAtlasDebugWindow = false;
     int32 SelectedPointLightShadowFace = 0;
+    int32 SelectedDirectionalCascade = 0;
     int32 SelectedShadowAtlasPage = 0;
     EShadowDepthPreviewMode ShadowDepthPreviewMode = EShadowDepthPreviewMode::RawDepth;
+    EShadowDepthPreviewMode ShadowAtlasDebugPreviewMode = EShadowDepthPreviewMode::RawDepth;
     FShadowAtlasSliceDebugCache ShadowAtlasDebugCache[ShadowAtlas::MaxPages][ShadowAtlas::SliceCount] = {};
 };

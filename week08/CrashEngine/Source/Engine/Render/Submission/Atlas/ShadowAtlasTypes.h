@@ -105,6 +105,7 @@ struct FLightShadowRecord
     uint32                LightType            = 0;
     uint64                LastTouchedFrame     = 0;
     uint64                LastAllocationFrame  = 0;
+    uint64                LastFailedAllocationFrame = 0;
     uint32                FailedAllocationCount = 0;
     bool                  bTouchedThisFrame    = false;
     FCascadeShadowMapData CascadeShadowMapData = {};
@@ -117,8 +118,12 @@ struct FShadowAtlasBudgetStats
     uint64 TotalAtlasMemoryBytes = 0;
     uint64 ResidentAtlasMemoryBytes = 0;
     uint64 UsedAtlasMemoryBytes = 0;
+    uint64 TotalMomentMemoryBytes = 0;
+    uint64 ResidentMomentMemoryBytes = 0;
+    uint64 UsedMomentMemoryBytes = 0;
     uint32 UsedPageCount = 0;
     uint32 UsedSliceCount = 0;
+    uint32 MomentResidentPageCount = 0;
     float  UsedAreaPercent = 0.0f;
     uint32 AllocatedShadowCount = 0;
     uint32 FailedAllocationCount = 0;

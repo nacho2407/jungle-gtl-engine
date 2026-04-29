@@ -62,7 +62,10 @@ struct FShadowDebugPreviewCBData
 {
     FMatrix InvViewProj = FMatrix::Identity;
     uint32  ShadowDepthPreviewMode = static_cast<uint32>(EShadowDepthPreviewMode::LinearizedDepth);
-    float   Padding[3] = {};
+    uint32  ShadowFilterMethod = static_cast<uint32>(EShadowFilterMethod::None);
+    float   ShadowESMExponent = 40.0f;
+    float   Padding[1] = {};
+    FVector4 AtlasUVScaleOffset = FVector4(1.0f, 1.0f, 0.0f, 0.0f);
 };
 } // namespace
 
@@ -133,6 +136,12 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowPageSlicePreviewSRV(uint32 Pa
 {
     const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
     return Page ? Page->GetPreviewSliceSRV(SliceIndex) : nullptr;
+}
+
+ID3D11ShaderResourceView* FShadowMapPass::GetShadowPageSliceMomentPreviewSRV(uint32 PageIndex, uint32 SliceIndex) const
+{
+    const FShadowAtlasPage* Page = AtlasPool.GetPage(PageIndex);
+    return Page ? Page->GetMomentSliceSRV(SliceIndex) : nullptr;
 }
 
 void FShadowMapPass::GetShadowPageSliceAllocations(uint32 PageIndex, uint32 SliceIndex, TArray<FShadowMapData>& OutAllocations) const
@@ -214,11 +223,6 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
         }
     }
 
-    if (DebugPreview.Texture && DebugPreview.RTV && DebugPreview.SRV)
-    {
-        return;
-    }
-
     D3D11_TEXTURE2D_DESC PreviewDesc = {};
     PreviewDesc.Width = DebugPreview.Size;
     PreviewDesc.Height = DebugPreview.Size;
@@ -229,27 +233,47 @@ void FShadowMapPass::EnsureDebugPreviewResources(ID3D11Device* Device)
     PreviewDesc.Usage = D3D11_USAGE_DEFAULT;
     PreviewDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    if (FAILED(Device->CreateTexture2D(&PreviewDesc, nullptr, &DebugPreview.Texture)) ||
-        FAILED(Device->CreateRenderTargetView(DebugPreview.Texture, nullptr, &DebugPreview.RTV)) ||
-        FAILED(Device->CreateShaderResourceView(DebugPreview.Texture, nullptr, &DebugPreview.SRV)))
+    bool bCreatedAnySlot = false;
+    for (uint32 SlotIndex = 0; SlotIndex < FShadowMapPass::FDebugPreviewResources::PoolSize; ++SlotIndex)
     {
-        UE_LOG(Render, Error, "Failed to create shadow debug preview render target resources.");
-        ReleaseDebugPreviewResources();
+        FShadowMapPass::FDebugPreviewResources::FSlot& Slot = DebugPreview.Slots[SlotIndex];
+        if (Slot.Texture && Slot.RTV && Slot.SRV)
+        {
+            continue;
+        }
+
+        if (FAILED(Device->CreateTexture2D(&PreviewDesc, nullptr, &Slot.Texture)) ||
+            FAILED(Device->CreateRenderTargetView(Slot.Texture, nullptr, &Slot.RTV)) ||
+            FAILED(Device->CreateShaderResourceView(Slot.Texture, nullptr, &Slot.SRV)))
+        {
+            UE_LOG(Render, Error, "Failed to create shadow debug preview render target resources.");
+            ReleaseDebugPreviewResources();
+            return;
+        }
+        bCreatedAnySlot = true;
     }
-    else
+
+    if (bCreatedAnySlot)
     {
-        UE_LOG(Render, Verbose, "Created shadow debug preview render target. Size=%u", DebugPreview.Size);
+        UE_LOG(Render, Verbose, "Created shadow debug preview render target pool. Size=%u Slots=%u",
+            DebugPreview.Size,
+            FShadowMapPass::FDebugPreviewResources::PoolSize);
     }
 }
 
 void FShadowMapPass::ReleaseDebugPreviewResources()
 {
-    if (DebugPreview.SRV) { DebugPreview.SRV->Release(); DebugPreview.SRV = nullptr; }
-    if (DebugPreview.RTV) { DebugPreview.RTV->Release(); DebugPreview.RTV = nullptr; }
-    if (DebugPreview.Texture) { DebugPreview.Texture->Release(); DebugPreview.Texture = nullptr; }
+    for (uint32 SlotIndex = 0; SlotIndex < FShadowMapPass::FDebugPreviewResources::PoolSize; ++SlotIndex)
+    {
+        FShadowMapPass::FDebugPreviewResources::FSlot& Slot = DebugPreview.Slots[SlotIndex];
+        if (Slot.SRV) { Slot.SRV->Release(); Slot.SRV = nullptr; }
+        if (Slot.RTV) { Slot.RTV->Release(); Slot.RTV = nullptr; }
+        if (Slot.Texture) { Slot.Texture->Release(); Slot.Texture = nullptr; }
+    }
     if (DebugPreview.CB) { DebugPreview.CB->Release(); DebugPreview.CB = nullptr; }
     if (DebugPreview.PS) { DebugPreview.PS->Release(); DebugPreview.PS = nullptr; }
     if (DebugPreview.VS) { DebugPreview.VS->Release(); DebugPreview.VS = nullptr; }
+    DebugPreview.NextSlot = 0;
 }
 
 bool FShadowMapPass::HasPSMCameraChanged(const FSceneView& SceneView)
@@ -271,6 +295,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     const FShadowMapData& ShadowMapData,
     const FMatrix&        ViewProj,
     EShadowDepthPreviewMode ShadowDepthPreviewMode,
+    float                ShadowESMExponent,
     ID3D11Device*         Device,
     ID3D11DeviceContext*  DeviceContext)
 {
@@ -280,12 +305,22 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     }
 
     EnsureDebugPreviewResources(Device);
-    if (!DebugPreview.VS || !DebugPreview.PS || !DebugPreview.CB || !DebugPreview.RTV || !DebugPreview.SRV)
+    if (!DebugPreview.VS || !DebugPreview.PS || !DebugPreview.CB)
     {
         return nullptr;
     }
 
-    ID3D11ShaderResourceView* SourceSRV = GetShadowPreviewSRV(ShadowMapData);
+    FDebugPreviewResources::FSlot& PreviewSlot =
+        DebugPreview.Slots[DebugPreview.NextSlot++ % FDebugPreviewResources::PoolSize];
+    if (!PreviewSlot.Texture || !PreviewSlot.RTV || !PreviewSlot.SRV)
+    {
+        return nullptr;
+    }
+
+    ID3D11ShaderResourceView* SourceSRV =
+        (ShadowDepthPreviewMode == EShadowDepthPreviewMode::Moments)
+            ? GetShadowMomentPreviewSRV(ShadowMapData)
+            : GetShadowPreviewSRV(ShadowMapData);
     if (!SourceSRV)
     {
         return nullptr;
@@ -297,6 +332,9 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
         FShadowDebugPreviewCBData PreviewCBData = {};
         PreviewCBData.InvViewProj = ViewProj.GetInverse();
         PreviewCBData.ShadowDepthPreviewMode = static_cast<uint32>(ShadowDepthPreviewMode);
+        PreviewCBData.ShadowFilterMethod = static_cast<uint32>(GetShadowFilterMethod());
+        PreviewCBData.ShadowESMExponent = ShadowESMExponent;
+        PreviewCBData.AtlasUVScaleOffset = ShadowMapData.UVScaleOffset;
         std::memcpy(Mapped.pData, &PreviewCBData, sizeof(PreviewCBData));
         DeviceContext->Unmap(DebugPreview.CB, 0);
     }
@@ -314,7 +352,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     DeviceContext->RSGetScissorRects(&NumScissors, &SavedScissor);
 
     const float ClearColor[4] = { 0.03f, 0.03f, 0.03f, 1.0f };
-    DeviceContext->ClearRenderTargetView(DebugPreview.RTV, ClearColor);
+    DeviceContext->ClearRenderTargetView(PreviewSlot.RTV, ClearColor);
 
     D3D11_VIEWPORT PreviewViewport = {};
     PreviewViewport.TopLeftX = 0.0f;
@@ -337,7 +375,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     DeviceContext->VSSetShader(DebugPreview.VS, nullptr, 0);
     DeviceContext->PSSetShader(DebugPreview.PS, nullptr, 0);
     DeviceContext->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &DebugPreview.CB);
-    DeviceContext->OMSetRenderTargets(1, &DebugPreview.RTV, nullptr);
+    DeviceContext->OMSetRenderTargets(1, &PreviewSlot.RTV, nullptr);
     DeviceContext->PSSetShaderResources(0, 1, &SourceSRV);
     DeviceContext->Draw(3, 0);
 
@@ -350,7 +388,7 @@ ID3D11ShaderResourceView* FShadowMapPass::GetShadowDebugPreviewSRV(
     if (SavedRTV) SavedRTV->Release();
     if (SavedDSV) SavedDSV->Release();
 
-    return DebugPreview.SRV;
+    return PreviewSlot.SRV;
 }
 
 void FShadowMapPass::PrepareInputs(FRenderPipelineContext& Context)
@@ -474,6 +512,15 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         return;
     }
 
+    const EShadowFilterMethod ShadowFilterMethod = GetShadowFilterMethod();
+    const bool bUsesFilterableMoments =
+        ShadowFilterMethod == EShadowFilterMethod::VSM ||
+        ShadowFilterMethod == EShadowFilterMethod::ESM;
+    if (!bUsesFilterableMoments)
+    {
+        AtlasPool.ReleaseMomentResources();
+    }
+
     ID3D11RenderTargetView* SavedRTV = nullptr;
     ID3D11DepthStencilView* SavedDSV = nullptr;
     Context.Context->OMGetRenderTargets(1, &SavedRTV, &SavedDSV);
@@ -527,10 +574,6 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             continue;
         }
 
-        const EShadowFilterMethod ShadowFilterMethod = GetShadowFilterMethod();
-        const bool bUsesFilterableMoments =
-            ShadowFilterMethod == EShadowFilterMethod::VSM ||
-            ShadowFilterMethod == EShadowFilterMethod::ESM;
         if (bUsesFilterableMoments && !AtlasPage->EnsureMomentResources(Context.Device->GetDevice()))
         {
             if (!bLoggedMomentResourceFailure)

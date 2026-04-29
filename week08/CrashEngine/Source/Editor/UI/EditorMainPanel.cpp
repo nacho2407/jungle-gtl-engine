@@ -245,7 +245,7 @@ void FEditorMainPanel::Render(float DeltaTime)
             ImGui::MenuItem("Scene Manager", nullptr, &S.UI.bScene);
             ImGui::MenuItem("Stat Profiler", nullptr, &S.UI.bStat);
             bool bShadowAtlasDebug = DetailsPanel.IsShadowAtlasDebugWindowOpen();
-            if (ImGui::MenuItem("Shadow Atlas Debug", nullptr, &bShadowAtlasDebug))
+            if (ImGui::MenuItem("Shadow Atlas", nullptr, &bShadowAtlasDebug))
             {
                 DetailsPanel.SetShadowAtlasDebugWindowOpen(bShadowAtlasDebug);
             }

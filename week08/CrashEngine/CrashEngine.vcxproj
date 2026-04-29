@@ -256,6 +256,7 @@
     <ClCompile Include="Source\Editor\UI\EditorConsolePanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDetailsPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorShadowAtlasDebugWindow.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMaterialPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPanel.cpp" />
