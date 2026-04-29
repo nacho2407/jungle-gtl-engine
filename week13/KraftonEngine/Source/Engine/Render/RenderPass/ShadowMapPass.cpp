@@ -137,9 +137,16 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 
 	FShadowMapResources& ShadowRes = Ctx.Resources.ShadowResources;
 
+	// CSM은 카메라 프러스텀 기반 → 뷰포트마다 재렌더링
 	RenderDirectionalShadows(Ctx, ShadowRes);
-	RenderSpotShadows(Ctx, ShadowRes);
-	RenderPointShadows(Ctx, ShadowRes);
+
+	// Spot/Point는 라이트 시점 → 프레임당 1회만 렌더링
+	if (ShadowRes.FrameGeneration != LastRenderedGeneration)
+	{
+		RenderSpotShadows(Ctx, ShadowRes);
+		RenderPointShadows(Ctx, ShadowRes);
+		LastRenderedGeneration = ShadowRes.FrameGeneration;
+	}
 
 	// VSM blur pass — shadow depth 렌더 완료 후 moment 텍스처에 Gaussian blur 적용
 	if (CurrentFilterMode == EShadowFilterMode::VSM)
