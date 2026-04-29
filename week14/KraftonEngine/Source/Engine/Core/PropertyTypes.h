@@ -20,6 +20,8 @@ enum class EPropertyType : uint8_t
 	Color4,	   // FVector4 RGBA — ImGui::ColorEdit4 위젯
 	StaticMeshRef, // UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
+	Enum,
+	Vec3Array,
 };
 
 // 머티리얼 슬롯: 경로를 하나의 단위로 관리
@@ -39,4 +41,8 @@ struct FPropertyDescriptor
 	float Min   = 0.0f;
 	float Max   = 0.0f;
 	float Speed = 0.1f;
+
+	// Enum Metadata
+	const char** EnumNames = nullptr;
+	uint32		 EnumCount = 0;
 };

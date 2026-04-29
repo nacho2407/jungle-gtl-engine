@@ -839,7 +839,7 @@ void FEditorConsoleWidget::PrintCSMCascadeRanges()
 
 	const float CameraNearZ = Camera->GetNearPlane();
 	const float CameraFarZ = Camera->GetFarPlane();
-	const float ShadowDistance = Settings.GetEffectiveShadowDistance();
+	const float ShadowDistance = Settings.GetEffectiveCSMDistance();
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 	const float Lambda = Settings.GetEffectiveCSMCascadeLambda();
 

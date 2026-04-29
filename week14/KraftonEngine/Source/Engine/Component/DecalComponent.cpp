@@ -275,7 +275,7 @@ UBillboardComponent* UDecalComponent::EnsureEditorBillboard()
 		Billboard->SetAbsoluteScale(true);
 		Billboard->SetEditorOnlyComponent(true);
 		Billboard->SetHiddenInComponentTree(true);
-		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/DefaultDecal.mat");
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Asset/Materials/Editor/Decal.mat");
 		Billboard->SetMaterial(Material);
 	}
 
