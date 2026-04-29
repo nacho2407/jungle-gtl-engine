@@ -34,6 +34,8 @@ public:
 	void SetCastShadow(bool bNewCastShadow);
 	bool GetCastShadow() const { return bCastShadow; }
 
+	bool GetCastShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
+
 	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
 	void MarkWorldBoundsDirty();
@@ -92,6 +94,7 @@ protected:
 	mutable bool bHasValidWorldAABB = false;
 	bool bIsVisible = true;
 	bool bCastShadow = true;
+	bool bCastShadowAsTwoSided = false;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 	
 	FOctree* OctreeNode = nullptr;
