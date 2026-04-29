@@ -7,6 +7,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "Profiling/Timer.h"
 #include "GameFramework/World.h"
+#include "Core/Notification.h"
 
 void FTileCullingResource::Create(ID3D11Device* Dev, uint32 InTileCountX, uint32 InTileCountY)
 {
@@ -104,6 +105,24 @@ template<typename T>
 static void ReleaseCOM(T*& Ptr)
 {
 	if (Ptr) { Ptr->Release(); Ptr = nullptr; }
+}
+
+// ============================================================
+// Helper: Shadow 텍스처 생성 실패 알림
+// ============================================================
+
+static void NotifyShadowAllocFailed(const char* LightType, const char* TextureType,
+	uint32 Resolution, uint32 ArraySize, uint32 BytesPerPixel)
+{
+	const uint64 Bytes = static_cast<uint64>(Resolution) * Resolution * ArraySize * BytesPerPixel;
+	const float MB = static_cast<float>(Bytes) / (1024.0f * 1024.0f);
+
+	char Buf[256];
+	snprintf(Buf, sizeof(Buf),
+		"[Shadow] %s %s 생성 실패: %ux%u x %u slices = %.0f MB. 해상도를 낮추세요.",
+		LightType, TextureType, Resolution, Resolution, ArraySize, MB);
+
+	FNotificationManager::Get().AddNotification(Buf, ENotificationType::Error, 5.0f);
 }
 
 // ============================================================
@@ -233,7 +252,12 @@ void FShadowMapResources::EnsureCSM(ID3D11Device* Device, uint32 InResolution)
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
 	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &CSM.Texture);
-	if (FAILED(hr)) { CSM.FailedResolution = InResolution; return; }
+	if (FAILED(hr))
+	{
+		NotifyShadowAllocFailed("CSM", "Depth", InResolution, MAX_SHADOW_CASCADES, 4);
+		CSM.FailedResolution = InResolution;
+		return;
+	}
 	CSM.FailedResolution = 0;
 
 	// Per-cascade DSV
@@ -295,7 +319,12 @@ void FShadowMapResources::EnsureSpotAtlas(ID3D11Device* Device, uint32 InResolut
 	TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
 	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &Spot.Texture);
-	if (FAILED(hr)) { Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount; return; }
+	if (FAILED(hr))
+	{
+		NotifyShadowAllocFailed("Spot", "Depth", InResolution, InPageCount, 4);
+		Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount;
+		return;
+	}
 	Spot.FailedResolution = 0; Spot.FailedPageCount = 0;
 
 	// Per-page DSV
@@ -383,7 +412,12 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 	TexDesc.Usage            = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture))) { Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount; return; }
+	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture)))
+	{
+		NotifyShadowAllocFailed("Point", "Depth", AtlasSize, InPageCount, 4);
+		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
+		return;
+	}
 	Point.FailedResolution = 0; Point.FailedPageCount = 0;
 
 	// Per-page DSV
@@ -451,7 +485,12 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSM.VSMTexture))) { CSM.FailedResolution = InResolution; return; }
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &CSM.VSMTexture)))
+	{
+		NotifyShadowAllocFailed("CSM", "VSM Moment", InResolution, MAX_SHADOW_CASCADES, 8);
+		CSM.FailedResolution = InResolution;
+		return;
+	}
 
 	// Depth Texture: D32_FLOAT (DSV 전용, SRV 불필요)
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -466,6 +505,7 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &CSM.VSMDepthTexture)))
 	{
+		NotifyShadowAllocFailed("CSM", "VSM Depth", InResolution, MAX_SHADOW_CASCADES, 4);
 		CSM.VSMTexture->Release(); CSM.VSMTexture = nullptr;
 		CSM.FailedResolution = InResolution;
 		return;
@@ -524,7 +564,12 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	MomentDesc.Usage  = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Spot.VSMTexture))) { Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount; return; }
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Spot.VSMTexture)))
+	{
+		NotifyShadowAllocFailed("Spot", "VSM Moment", InResolution, InPageCount, 8);
+		Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount;
+		return;
+	}
 
 	// Depth Texture
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -539,6 +584,7 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Spot.VSMDepthTexture)))
 	{
+		NotifyShadowAllocFailed("Spot", "VSM Depth", InResolution, InPageCount, 4);
 		Spot.VSMTexture->Release(); Spot.VSMTexture = nullptr;
 		Spot.FailedResolution = InResolution; Spot.FailedPageCount = InPageCount;
 		return;
@@ -599,7 +645,12 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage            = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags        = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture))) { Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount; return; }
+	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture)))
+	{
+		NotifyShadowAllocFailed("Point", "VSM Moment", AtlasSize, InPageCount, 8);
+		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
+		return;
+	}
 
 	// Depth atlas: D32_FLOAT Texture2DArray
 	D3D11_TEXTURE2D_DESC DepthDesc = {};
@@ -613,6 +664,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	DepthDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL;
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Point.VSMDepthTexture)))
 	{
+		NotifyShadowAllocFailed("Point", "VSM Depth", AtlasSize, InPageCount, 4);
 		Point.VSMTexture->Release(); Point.VSMTexture = nullptr;
 		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
 		return;
