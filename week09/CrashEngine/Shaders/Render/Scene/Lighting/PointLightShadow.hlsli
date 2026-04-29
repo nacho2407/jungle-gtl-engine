@@ -49,9 +49,11 @@ float ComputePointShadowCompareDepth(float4x4 ShadowViewProj, float3 SampleWorld
     ShadowPos.xyz /= max(ShadowPos.w, 1e-5f);
 
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    return ShadowPos.z - TotalBias;
+    // Reversed-Z에서는 값이 클수록 광원에 가까우므로 바이어스를 더해야 Acne를 방지할 수 있음
+    return ShadowPos.z + TotalBias;
 #else
     float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, SHADOW_PROJECTION_PERSPECTIVE, 1.0f, ShadowFarZ);
+    // Linear depth(0~1)로 변환된 경우에는 바이어스를 빼야 광원에 가까워짐
     return saturate(CompareDepth - TotalBias);
 #endif
 }

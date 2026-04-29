@@ -53,9 +53,11 @@ float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, 
     float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
     float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    float CompareDepth = ShadowPos.z - TotalBias;
+    // Reversed-Z에서는 값이 클수록 광원에 가까우므로 바이어스를 더해야 Acne를 방지할 수 있음
+    float CompareDepth = ShadowPos.z + TotalBias;
 #else
     float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, ShadowProjectionType, ShadowNearZ, ShadowFarZ);
+    // Linear depth(0~1)로 변환된 경우에는 바이어스를 빼야 광원에 가까워짐
     CompareDepth = saturate(CompareDepth - TotalBias);
 #endif
 
