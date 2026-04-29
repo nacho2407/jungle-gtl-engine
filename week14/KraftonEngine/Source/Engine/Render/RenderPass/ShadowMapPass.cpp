@@ -593,7 +593,7 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 // DrawShadowCasters — 공용 프록시 순회 + depth-only 렌더링
 // ============================================================
 
-void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, const FConvexVolume& LightFrustum, FSpatialPartition* Partition)
+void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, FSystemResources& Resources, const FConvexVolume& LightFrustum, FSpatialPartition* Partition)
 {
 	FShader* ShadowShader = FShaderManager::Get().GetOrCreate(EShaderPath::ShadowDepth);
 	if (!ShadowShader || !ShadowShader->IsValid()) return;
@@ -617,6 +617,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 	}
 
 	LastDrawCasterCount = 0;
+	bool bCurrentTwoSided = false;
 	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
 		if (!Proxy || !Proxy->IsVisible()) continue;
@@ -628,6 +629,15 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 
 		FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
 		if (!Mesh || !Mesh->IsValid()) continue;
+
+		// Two-sided shadow: front-cull ↔ no-cull 전환
+		bool bTwoSided = Proxy->CastsShadowAsTwoSided();
+		if (bTwoSided != bCurrentTwoSided)
+		{
+			bCurrentTwoSided = bTwoSided;
+			Resources.RasterizerStateManager.Set(DC,
+				bTwoSided ? ERasterizerState::SolidNoCull : ERasterizerState::SolidFrontCull);
+		}
 
 		++LastDrawCasterCount;
 		ShadowPerObjectCB.Update(DC, &Proxy->GetPerObjectConstants(), sizeof(FPerObjectConstants));
@@ -650,6 +660,9 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, c
 			SHADOW_STATS_ADD_DRAW_CALL();
 		}
 	}
+	// Front-cull로 복원
+	if (bCurrentTwoSided)
+		Resources.RasterizerStateManager.Set(DC, ERasterizerState::SolidFrontCull);
 }
 
 void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
@@ -660,7 +673,7 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 		if (UWorld* World = GEngine->GetWorld())
 			Partition = &World->GetPartition();
 	}
-	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, LightFrustum, Partition);
+	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, Ctx.Resources, LightFrustum, Partition);
 }
 
 // ============================================================

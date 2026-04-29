@@ -58,6 +58,7 @@ public:
 	bool IsVisible()    const { return bVisible; }
 	bool IsSelected()   const { return bSelected; }
 	bool CastsShadow()  const { return bCastShadow; }
+	bool CastsShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
 
 	// --- 렌더 데이터 (DrawCommandBuilder가 읽음) ---
 	ERenderPass        GetRenderPass()  const;
@@ -117,6 +118,7 @@ protected:
 	// 가시성 (서브클래스 UpdateVisibility/UpdatePerViewport에서 변경)
 	bool bVisible = true;
 	bool bCastShadow = true;
+	bool bCastShadowAsTwoSided = false;
 
 	// LOD (서브클래스 UpdateLOD에서 변경)
 	uint32 CurrentLOD = 0;

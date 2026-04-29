@@ -62,6 +62,7 @@ void FPrimitiveSceneProxy::UpdateVisibility()
 			bVisible = false;
 	}
 	bCastShadow = Owner->GetCastShadow();
+	bCastShadowAsTwoSided = Owner->GetCastShadowAsTwoSided();
 }
 
 void FPrimitiveSceneProxy::UpdateMesh()

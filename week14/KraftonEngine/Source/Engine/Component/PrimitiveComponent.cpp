@@ -51,6 +51,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	USceneComponent::Serialize(Ar);
 	Ar << bIsVisible;
 	Ar << bCastShadow;
+	Ar << bCastShadowAsTwoSided;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -105,6 +106,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
+	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, &bCastShadowAsTwoSided });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -118,6 +120,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 		MarkRenderVisibilityDirty();
 	}
 	else if (strcmp(PropertyName, "Cast Shadow") == 0)
+	{
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "Two Sided Shadow") == 0)
 	{
 		MarkRenderVisibilityDirty();
 	}
