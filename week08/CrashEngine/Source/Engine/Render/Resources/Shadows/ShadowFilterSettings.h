@@ -10,7 +10,7 @@ enum class EShadowFilterMethod : uint32
     ESM = 3,
 };
 
-inline EShadowFilterMethod GShadowFilterMethod = EShadowFilterMethod::PCF;
+inline EShadowFilterMethod GShadowFilterMethod = EShadowFilterMethod::None;
 
 inline EShadowFilterMethod GetShadowFilterMethod()
 {
