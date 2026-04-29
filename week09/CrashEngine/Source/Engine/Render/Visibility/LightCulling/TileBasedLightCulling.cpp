@@ -4,6 +4,8 @@
 #include "Viewport/Viewport.h"
 #include "Render/RHI/D3D11/Device/D3DDevice.h"
 #include "Render/RHI/D3D11/Buffers/ConstantBuffer.h"
+#include "Render/RHI/D3D11/Shaders/ShaderProgramBase.h"
+#include "Render/Resources/Shaders/ShaderProgramDesc.h"
 
 #include <d3dcompiler.h>
 
@@ -28,27 +30,21 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
     auto CompileCS = [&](D3D_SHADER_MACRO* macros, ID3D11ComputeShader** outCS)
     {
         ID3DBlob* CSBlob  = nullptr;
-        ID3DBlob* ErrBlob = nullptr;
 
-        HRESULT hr = D3DCompileFromFile(
-            L"Shaders/Passes/Visibility/LightCullingPassCS.hlsl",
-            macros,
-            D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            "CS_LightCulling", "cs_5_0",
-            D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
-            0, &CSBlob, &ErrBlob);
-
-        if (FAILED(hr))
+        FShaderStageDesc StageDesc = {};
+        StageDesc.FilePath         = "Shaders/Passes/Visibility/LightCullingPassCS.hlsl";
+        StageDesc.EntryPoint       = "CS_LightCulling";
+        for (const D3D_SHADER_MACRO* Macro = macros; Macro && Macro->Name; ++Macro)
         {
-            if (ErrBlob)
-            {
-                OutputDebugStringA((const char*)ErrBlob->GetBufferPointer());
-                ErrBlob->Release();
-            }
+            StageDesc.Defines.push_back({ Macro->Name, Macro->Definition ? Macro->Definition : "" });
+        }
+
+        if (!FShaderProgramBase::CompileShaderBlobStandalone(&CSBlob, StageDesc, "cs_5_0", "Compute Shader Compile Error"))
+        {
             check(false);
         }
 
-        hr = Device->GetDevice()->CreateComputeShader(
+        const HRESULT hr = Device->GetDevice()->CreateComputeShader(
             CSBlob->GetBufferPointer(),
             CSBlob->GetBufferSize(),
             nullptr,

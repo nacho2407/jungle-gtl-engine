@@ -1,9 +1,17 @@
 /*
-    ShadowFiltering.hlsli: shared shadow filtering helpers for atlas-backed shadow maps.
+    ShadowSampling.hlsli
+    섀도우 아틀라스에서 값을 읽고, PCF/VSM/ESM 방식으로 가시성을 계산하는 공용 헤더입니다.
+    아틀라스 페이지/슬라이스 해석, UV 변환, 경계 clamp, 최종 필터링 진입점을 포함합니다.
+
+    슬롯 용도
+    - t20~t23: 비교 샘플링용 depth shadow atlas 배열 텍스처
+    - t48~t51: VSM/ESM용 moment shadow atlas 배열 텍스처
+    - `ShadowSampler`: depth compare 샘플링
+    - `LinearClampSampler`: moment 텍스처 선형 샘플링
 */
 
-#ifndef SHADOW_FILTERING_HLSLI
-#define SHADOW_FILTERING_HLSLI
+#ifndef SHADOW_SAMPLING_HLSLI
+#define SHADOW_SAMPLING_HLSLI
 
 #include "../../../Resources/BindingSlots.hlsli"
 #include "../../../Resources/SystemSamplers.hlsl"
@@ -15,10 +23,6 @@
 
 #ifndef SHADOW_FILTER_METHOD
 #define SHADOW_FILTER_METHOD SHADOW_FILTER_METHOD_PCF
-#endif
-
-#ifndef SHADOW_ESM_EXPONENT
-#define SHADOW_ESM_EXPONENT 10.0f
 #endif
 
 Texture2DArray g_ShadowAtlas0 : register(t20);
@@ -88,7 +92,7 @@ float2 ClampAtlasUVToSampleBounds(FShadowAtlasSample Sample, float2 AtlasUV)
     return clamp(AtlasUV, MinUV, MaxUV);
 }
 
-float ComputeVSMVisibility(float2 Moments, float CompareDepth)
+float ComputeVSMVisibility(float2 Moments, float CompareDepth, float ShadowSharpen)
 {
     const float ReceiverDepth = saturate(CompareDepth);
     float Mean = Moments.x;
@@ -101,21 +105,24 @@ float ComputeVSMVisibility(float2 Moments, float CompareDepth)
 
     float Delta = ReceiverDepth - Mean;
     float PMax = Variance / (Variance + Delta * Delta);
-    return saturate(PMax);
+    const float Sharpen = saturate(ShadowSharpen);
+    PMax = saturate((PMax - Sharpen) / max(1.0f - Sharpen, 1e-5f));
+
+    return PMax;
 }
 
-float ComputeESMVisibility(float EncodedMoment, float CompareDepth)
+float ComputeESMVisibility(float EncodedMoment, float CompareDepth, float ShadowESMExponent)
 {
     if (EncodedMoment <= 0.0f)
     {
         return 1.0f;
     }
 
-    float Receiver = exp(-SHADOW_ESM_EXPONENT * CompareDepth);
+    float Receiver = exp(-max(ShadowESMExponent, 0.01f) * CompareDepth);
     return saturate(Receiver / EncodedMoment);
 }
 
-float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareDepth, float4 PixelPos)
+float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareDepth, float ShadowSharpen, float ShadowESMExponent, float4 PixelPos)
 {
     if (Sample.PageIndex < 0 || Sample.SliceIndex < 0)
     {
@@ -132,9 +139,9 @@ float FilterShadowAtlas(FShadowAtlasSample Sample, float2 BaseUV, float CompareD
 #if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE
     return SampleShadowAtlasCmp(Sample.PageIndex, Sample.SliceIndex, AtlasUV, CompareDepth);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_VSM
-    return ComputeVSMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV), CompareDepth);
+    return ComputeVSMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV), CompareDepth, ShadowSharpen);
 #elif SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_ESM
-    return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth);
+    return ComputeESMVisibility(SampleShadowAtlasMoment(Sample.PageIndex, Sample.SliceIndex, AtlasUV).x, CompareDepth, ShadowESMExponent);
 #else
     float2 Offset = (float2)(frac(PixelPos.xy * 0.5f) > 0.25f);
     Offset.y += Offset.x;

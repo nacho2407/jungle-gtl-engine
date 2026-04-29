@@ -491,11 +491,12 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
         if (ImGui::CollapsingHeader("Common Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Checkbox("Primitives", &Opts.ShowFlags.bPrimitives);
+            ImGui::Checkbox("Text", &Opts.ShowFlags.bText);
         }
 
         if (ImGui::CollapsingHeader("Actor Helpers", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Checkbox("Billboard Text", &Opts.ShowFlags.bBillboardText);
+            ImGui::Checkbox("UUID Text", &Opts.ShowFlags.bUUIDText);
             ImGui::Checkbox("Grid", &Opts.ShowFlags.bGrid);
 
             BeginDisabledUnless(Opts.ShowFlags.bGrid, [&]()
@@ -516,6 +517,14 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
             ImGui::Checkbox("Scene Octree (Cyan)", &Opts.ShowFlags.bSceneOctree);
             ImGui::Checkbox("World Bound (Magenta)", &Opts.ShowFlags.bWorldBound);
             ImGui::Checkbox("Light Debug Lines", &Opts.ShowFlags.bLightDebugLines);
+            BeginDisabledUnless(Opts.ShowFlags.bLightDebugLines, [&]()
+            {
+                ImGui::Indent();
+                ImGui::SliderFloat("Directional Scale", &Opts.ShowFlags.DirectionalLightDebugScale, 0.5f, 4.0f, "%.2f");
+                ImGui::SliderFloat("Point Scale", &Opts.ShowFlags.PointLightDebugScale, 0.5f, 4.0f, "%.2f");
+                ImGui::SliderFloat("Spot Scale", &Opts.ShowFlags.SpotLightDebugScale, 0.5f, 4.0f, "%.2f");
+                ImGui::Unindent();
+            });
             ImGui::Checkbox("Light Hit Map", &Opts.ShowFlags.bLightHitMap);
 
         }

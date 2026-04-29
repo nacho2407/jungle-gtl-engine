@@ -201,7 +201,7 @@ static FString GetEditorFriendlyPropertyName(const FString& RawName)
     {
         return "Affects World";
     }
-    if (RawName == "bCastShadows")
+    if (RawName == "Cast Shadows")
     {
         return "Cast Shadows";
     }
@@ -301,12 +301,18 @@ static ImU32 GetShadowAtlasDebugColor(uint32 Resolution)
 {
     switch (Resolution)
     {
-    case 256:  return IM_COL32(90, 200, 255, 255);
-    case 512:  return IM_COL32(110, 230, 140, 255);
-    case 1024: return IM_COL32(255, 215, 90, 255);
-    case 2048: return IM_COL32(255, 150, 80, 255);
-    case 4096: return IM_COL32(255, 90, 90, 255);
-    default:   return IM_COL32(220, 220, 220, 255);
+    case 256:
+        return IM_COL32(90, 200, 255, 255);
+    case 512:
+        return IM_COL32(110, 230, 140, 255);
+    case 1024:
+        return IM_COL32(255, 215, 90, 255);
+    case 2048:
+        return IM_COL32(255, 150, 80, 255);
+    case 4096:
+        return IM_COL32(255, 90, 90, 255);
+    default:
+        return IM_COL32(220, 220, 220, 255);
     }
 }
 
@@ -464,7 +470,6 @@ void FEditorDetailsPanel::Render(float DeltaTime)
     ImGui::EndChild();
 
     ImGui::End();
-
 }
 
 void FEditorDetailsPanel::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -723,14 +728,7 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     };
     auto IsShadowProp = [](const FString& Name)
     {
-        return Name == "bCastShadows"
-            || Name == "Bias"
-            || Name == "Slope Bias"
-            || Name == "Normal Bias"
-            || Name == "Cascade Count"
-            || Name == "CSM Max Distance"
-            || Name == "Cascade Distribution"
-            || Name == "bAffectsWorld";
+        return Name == "Cast Shadows" || Name == "Depth Bias" || Name == "Slope Bias" || Name == "Normal Bias" || Name == "Shadow Sharpen" || Name == "ESM Exponent" || Name == "Cascade Count" || Name == "CSM Max Distance" || Name == "Cascade Distribution" || Name == "bAffectsWorld";
     };
 
     bool bIsRoot = false;
@@ -977,7 +975,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
             if (ShadowProps[PropIndex].Name == PropertyName)
             {
                 bool bChanged = false;
-                if (ShadowProps[PropIndex].Name == "bCastShadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
+                if (ShadowProps[PropIndex].Name == "Cast Shadows" && ShadowProps[PropIndex].Type == EPropertyType::Bool)
                 {
                     bool* ValuePtr = static_cast<bool*>(ShadowProps[PropIndex].ValuePtr);
                     bChanged = ImGui::Checkbox("Cast Shadows", ValuePtr);
@@ -998,7 +996,7 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
     };
 
     ImGui::Dummy(ImVec2(0.0f, 4.0f));
-    RenderShadowPropertyByName("bCastShadows");
+    RenderShadowPropertyByName("Cast Shadows");
     if (!LightComponent->DoesCastShadows())
     {
         return;
@@ -1060,9 +1058,11 @@ void FEditorDetailsPanel::RenderLightShadowSettings(ULightComponent* LightCompon
         }
     }
 
-    RenderShadowPropertyByName("Bias");
+    RenderShadowPropertyByName("Depth Bias");
     RenderShadowPropertyByName("Slope Bias");
     RenderShadowPropertyByName("Normal Bias");
+    RenderShadowPropertyByName("Shadow Sharpen");
+    RenderShadowPropertyByName("ESM Exponent");
 
     if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(LightComponent))
     {

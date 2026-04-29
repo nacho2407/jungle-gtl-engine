@@ -28,6 +28,8 @@ public:
     float GetShadowBias() const { return ShadowBias; }
     float GetShadowSlopeBias() const { return ShadowSlopeBias; }
     float GetShadowNormalBias() const { return ShadowNormalBias; }
+    float GetShadowSharpen() const { return ShadowSharpen; }
+    float GetShadowESMExponent() const { return ShadowESMExponent; }
     void SetShadowResolution(EShadowResolution InResolution) { ShadowResolution = InResolution; }
     void SetShadowResolution(uint32 InResolution) { ShadowResolution = RoundShadowResolutionToTier(InResolution); }
 
@@ -40,4 +42,6 @@ protected:
     float ShadowBias = 0.0f;
     float ShadowSlopeBias = 0.0f;
     float ShadowNormalBias = 0.0f;
+    float ShadowSharpen = 0.0f;
+    float ShadowESMExponent = 40.0f;
 };

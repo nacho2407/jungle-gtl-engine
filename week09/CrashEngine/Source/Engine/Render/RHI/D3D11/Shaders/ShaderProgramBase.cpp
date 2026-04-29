@@ -4,13 +4,26 @@
 #include "Materials/Material.h"
 #include "Platform/Paths.h"
 #include "Render/Resources/Shaders/ShaderIncludeLoader.h"
+#include "Render/Resources/Shaders/ShaderDependencyUtils.h"
 
 #include <cstdlib>
+#include <fstream>
 #include <filesystem>
+#include <sstream>
 #include <system_error>
 
 namespace
 {
+constexpr uint32 GShaderCacheMagic   = 0x30485343; // "CSH0"
+constexpr uint32 GShaderCacheVersion = 1;
+
+struct FShaderCacheHeader
+{
+    uint32 Magic          = GShaderCacheMagic;
+    uint32 Version        = GShaderCacheVersion;
+    uint64 DependencyHash = 0;
+};
+
 /*
     셰이더 파일 경로를 엔진 루트 기준 절대 경로로 정규화합니다.
     include loader와 D3DCompileFromFile이 같은 기준 경로를 사용하도록 맞춥니다.
@@ -71,6 +84,140 @@ void ReleaseD3DDefines(TArray<D3D_SHADER_MACRO>& InOutDefines)
     }
     InOutDefines.clear();
 }
+
+uint64 BuildShaderCacheSignature(
+    const std::wstring&     AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*             InTarget,
+    UINT                    CompileFlags)
+{
+    uint64 Hash = ShaderDependencyUtils::HashString64(AbsolutePath);
+    ShaderDependencyUtils::HashCombine64(Hash, ShaderDependencyUtils::HashString64(InDesc.EntryPoint));
+    ShaderDependencyUtils::HashCombine64(Hash, ShaderDependencyUtils::HashString64(std::string(InTarget ? InTarget : "")));
+    ShaderDependencyUtils::HashCombine64(Hash, static_cast<uint64>(CompileFlags));
+
+    for (const FShaderCompileDefine& Define : InDesc.Defines)
+    {
+        ShaderDependencyUtils::HashCombine64(Hash, ShaderDependencyUtils::HashString64(Define.Name));
+        ShaderDependencyUtils::HashCombine64(Hash, ShaderDependencyUtils::HashString64(Define.Value));
+    }
+
+    return Hash;
+}
+
+std::wstring BuildShaderCacheFileStem(uint64 SignatureHash)
+{
+    std::ostringstream Stream;
+    Stream << std::hex << SignatureHash;
+    return FPaths::ToWide(Stream.str());
+}
+
+std::filesystem::path BuildShaderCacheBlobPath(uint64 SignatureHash)
+{
+    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(SignatureHash) + L".cso");
+}
+
+std::filesystem::path BuildShaderCacheMetaPath(uint64 SignatureHash)
+{
+    return FPaths::ToPath(FPaths::ShaderCacheDir()) / (BuildShaderCacheFileStem(SignatureHash) + L".meta");
+}
+
+bool TryReadShaderCacheHeader(const std::filesystem::path& MetaPath, FShaderCacheHeader& OutHeader)
+{
+    std::ifstream File(MetaPath, std::ios::binary);
+    if (!File.is_open())
+    {
+        return false;
+    }
+
+    File.read(reinterpret_cast<char*>(&OutHeader), sizeof(OutHeader));
+    if (!File || OutHeader.Magic != GShaderCacheMagic || OutHeader.Version != GShaderCacheVersion)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void WriteShaderCacheHeader(const std::filesystem::path& MetaPath, const FShaderCacheHeader& Header)
+{
+    std::ofstream File(MetaPath, std::ios::binary | std::ios::trunc);
+    if (!File.is_open())
+    {
+        return;
+    }
+
+    File.write(reinterpret_cast<const char*>(&Header), sizeof(Header));
+}
+
+bool TryLoadCachedShaderBlob(
+    ID3DBlob**            OutShaderBlob,
+    const std::wstring&   AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*           InTarget,
+    UINT                  CompileFlags)
+{
+    if (!OutShaderBlob)
+    {
+        return false;
+    }
+
+    FPaths::CreateDir(FPaths::ShaderCacheDir());
+
+    const uint64               SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
+    const std::filesystem::path BlobPath     = BuildShaderCacheBlobPath(SignatureHash);
+    const std::filesystem::path MetaPath     = BuildShaderCacheMetaPath(SignatureHash);
+
+    FShaderCacheHeader Header;
+    if (!TryReadShaderCacheHeader(MetaPath, Header))
+    {
+        return false;
+    }
+
+    const ShaderDependencyUtils::FShaderFileDependency Dependency =
+        ShaderDependencyUtils::BuildFileDependency(ShaderDependencyUtils::WStringToUtf8(AbsolutePath));
+    if (!Dependency.bExists || Dependency.DependencyHash != Header.DependencyHash)
+    {
+        return false;
+    }
+
+    return SUCCEEDED(D3DReadFileToBlob(BlobPath.c_str(), OutShaderBlob));
+}
+
+void StoreShaderBlobInCache(
+    ID3DBlob*             ShaderBlob,
+    const std::wstring&   AbsolutePath,
+    const FShaderStageDesc& InDesc,
+    const char*           InTarget,
+    UINT                  CompileFlags)
+{
+    if (!ShaderBlob)
+    {
+        return;
+    }
+
+    FPaths::CreateDir(FPaths::ShaderCacheDir());
+
+    const ShaderDependencyUtils::FShaderFileDependency Dependency =
+        ShaderDependencyUtils::BuildFileDependency(ShaderDependencyUtils::WStringToUtf8(AbsolutePath));
+    if (!Dependency.bExists)
+    {
+        return;
+    }
+
+    const uint64               SignatureHash = BuildShaderCacheSignature(AbsolutePath, InDesc, InTarget, CompileFlags);
+    const std::filesystem::path BlobPath     = BuildShaderCacheBlobPath(SignatureHash);
+    const std::filesystem::path MetaPath     = BuildShaderCacheMetaPath(SignatureHash);
+
+    if (FAILED(D3DWriteBlobToFile(ShaderBlob, BlobPath.c_str(), TRUE)))
+    {
+        return;
+    }
+
+    FShaderCacheHeader Header;
+    Header.DependencyHash = Dependency.DependencyHash;
+    WriteShaderCacheHeader(MetaPath, Header);
+}
 } // namespace
 
 /*
@@ -128,14 +275,20 @@ bool FShaderProgramBase::CompileShaderBlobStandalone(
 
     const std::wstring AbsolutePath = MakeAbsoluteShaderPath(InDesc.FilePath);
 
-    TArray<D3D_SHADER_MACRO> D3DDefines;
-    BuildD3DDefines(InDesc.Defines, D3DDefines);
-
-    ID3DBlob* ErrorBlob    = nullptr;
     UINT      CompileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined(_DEBUG)
     CompileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
+
+    if (TryLoadCachedShaderBlob(OutShaderBlob, AbsolutePath, InDesc, InTarget, CompileFlags))
+    {
+        return true;
+    }
+
+    TArray<D3D_SHADER_MACRO> D3DDefines;
+    BuildD3DDefines(InDesc.Defines, D3DDefines);
+
+    ID3DBlob* ErrorBlob = nullptr;
 
     FShaderIncludeLoader IncludeLoader(std::filesystem::path(AbsolutePath), OutDependencies);
     const HRESULT        Hr = D3DCompileFromFile(
@@ -166,6 +319,7 @@ bool FShaderProgramBase::CompileShaderBlobStandalone(
         ErrorBlob->Release();
     }
 
+    StoreShaderBlobInCache(*OutShaderBlob, AbsolutePath, InDesc, InTarget, CompileFlags);
     return true;
 }
 

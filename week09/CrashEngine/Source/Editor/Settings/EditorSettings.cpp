@@ -23,14 +23,19 @@ constexpr const char* InitLookAt = "InitLookAt";
 // Slot Render Options
 constexpr const char* ViewMode = "ViewMode";
 constexpr const char* bPrimitives = "bPrimitives";
+constexpr const char* bText = "bText";
 constexpr const char* bGrid = "bGrid";
 constexpr const char* bWorldAxis = "bWorldAxis";
 constexpr const char* bGizmo = "bGizmo";
-constexpr const char* bBillboardText = "bBillboardText";
+constexpr const char* bUUIDText = "bUUIDText";
 constexpr const char* bSceneBVH = "bSceneBVH";
 constexpr const char* bSceneOctree = "bSceneOctree";
 constexpr const char* bWorldBound = "bWorldBound";
 constexpr const char* bLightDebugLines = "bLightDebugLines";
+constexpr const char* LightDebugScale = "LightDebugScale";
+constexpr const char* DirectionalLightDebugScale = "DirectionalLightDebugScale";
+constexpr const char* PointLightDebugScale = "PointLightDebugScale";
+constexpr const char* SpotLightDebugScale = "SpotLightDebugScale";
 constexpr const char* bFog = "bFog";
 constexpr const char* GridSpacing = "GridSpacing";
 constexpr const char* GridHalfLineCount = "GridHalfLineCount";
@@ -107,14 +112,18 @@ void FEditorSettings::SaveToFile(const FString& Path) const
         SlotObj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
         SlotObj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
         SlotObj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
+        SlotObj[Key::bText] = Opts.ShowFlags.bText;
         SlotObj[Key::bGrid] = Opts.ShowFlags.bGrid;
         SlotObj[Key::bWorldAxis] = Opts.ShowFlags.bWorldAxis;
         SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
-        SlotObj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
+        SlotObj[Key::bUUIDText] = Opts.ShowFlags.bUUIDText;
         SlotObj[Key::bSceneBVH] = Opts.ShowFlags.bSceneBVH;
         SlotObj[Key::bSceneOctree] = Opts.ShowFlags.bSceneOctree;
         SlotObj[Key::bWorldBound] = Opts.ShowFlags.bWorldBound;
         SlotObj[Key::bLightDebugLines] = Opts.ShowFlags.bLightDebugLines;
+        SlotObj[Key::DirectionalLightDebugScale] = Opts.ShowFlags.DirectionalLightDebugScale;
+        SlotObj[Key::PointLightDebugScale] = Opts.ShowFlags.PointLightDebugScale;
+        SlotObj[Key::SpotLightDebugScale] = Opts.ShowFlags.SpotLightDebugScale;
         SlotObj[Key::bFog] = Opts.ShowFlags.bFog;
         SlotObj[Key::GridSpacing] = Opts.GridSpacing;
         SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
@@ -247,14 +256,18 @@ void FEditorSettings::LoadFromFile(const FString& Path)
                     Opts.ViewportType = static_cast<ELevelViewportType>(S[Key::ViewportType].ToInt());
                 if (S.hasKey(Key::bPrimitives))
                     Opts.ShowFlags.bPrimitives = S[Key::bPrimitives].ToBool();
+                if (S.hasKey(Key::bText))
+                    Opts.ShowFlags.bText = S[Key::bText].ToBool();
                 if (S.hasKey(Key::bGrid))
                     Opts.ShowFlags.bGrid = S[Key::bGrid].ToBool();
                 if (S.hasKey(Key::bWorldAxis))
                     Opts.ShowFlags.bWorldAxis = S[Key::bWorldAxis].ToBool();
                 if (S.hasKey(Key::bGizmo))
                     Opts.ShowFlags.bGizmo = S[Key::bGizmo].ToBool();
-                if (S.hasKey(Key::bBillboardText))
-                    Opts.ShowFlags.bBillboardText = S[Key::bBillboardText].ToBool();
+                if (S.hasKey(Key::bUUIDText))
+                    Opts.ShowFlags.bUUIDText = S[Key::bUUIDText].ToBool();
+                else if (S.hasKey("bBillboardText"))
+                    Opts.ShowFlags.bUUIDText = S["bBillboardText"].ToBool();
                 if (S.hasKey(Key::bSceneBVH))
                     Opts.ShowFlags.bSceneBVH = S[Key::bSceneBVH].ToBool();
                 if (S.hasKey(Key::bSceneOctree))
@@ -263,6 +276,22 @@ void FEditorSettings::LoadFromFile(const FString& Path)
                     Opts.ShowFlags.bWorldBound = S[Key::bWorldBound].ToBool();
                 if (S.hasKey(Key::bLightDebugLines))
                     Opts.ShowFlags.bLightDebugLines = S[Key::bLightDebugLines].ToBool();
+                if (S.hasKey(Key::DirectionalLightDebugScale))
+                    Opts.ShowFlags.DirectionalLightDebugScale = static_cast<float>(S[Key::DirectionalLightDebugScale].ToFloat());
+                if (S.hasKey(Key::PointLightDebugScale))
+                    Opts.ShowFlags.PointLightDebugScale = static_cast<float>(S[Key::PointLightDebugScale].ToFloat());
+                if (S.hasKey(Key::SpotLightDebugScale))
+                    Opts.ShowFlags.SpotLightDebugScale = static_cast<float>(S[Key::SpotLightDebugScale].ToFloat());
+                if (S.hasKey(Key::LightDebugScale))
+                {
+                    const float LegacyLightDebugScale = static_cast<float>(S[Key::LightDebugScale].ToFloat());
+                    if (!S.hasKey(Key::DirectionalLightDebugScale))
+                        Opts.ShowFlags.DirectionalLightDebugScale = LegacyLightDebugScale;
+                    if (!S.hasKey(Key::PointLightDebugScale))
+                        Opts.ShowFlags.PointLightDebugScale = LegacyLightDebugScale;
+                    if (!S.hasKey(Key::SpotLightDebugScale))
+                        Opts.ShowFlags.SpotLightDebugScale = LegacyLightDebugScale;
+                }
                 if (S.hasKey(Key::bFog))
                     Opts.ShowFlags.bFog = S[Key::bFog].ToBool();
                 if (S.hasKey(Key::GridSpacing))

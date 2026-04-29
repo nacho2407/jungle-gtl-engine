@@ -1,5 +1,16 @@
 /*
-    DirectLighting.hlsli: scene direct lighting helpers.
+    DirectLighting.hlsli
+    장면의 직접광(Direct Light) 계산을 담당하는 헤더입니다.
+    direct light는 빛이 표면에 한 번 바로 도달하는 성분을 뜻하며,
+    방향광, 포인트 라이트, 스포트라이트의 diffuse/specular/shadow 합산이 여기 들어 있습니다.
+    반대로 indirect light는 반사, 전역 조명, bounce light처럼 다른 표면을 거친 빛입니다.
+
+    슬롯 용도
+    - t6: `g_LightBuffer`, 로컬 라이트 목록 structured buffer
+    - `SLOT_TEX_LIGHT_TILE_MASK`: 타일 기반 라이트 컬링 마스크
+    - `SLOT_TEX_DEBUG_HIT_MAP`: 디버그용 light hit map 텍스처
+    - b2: `LightCullingParams`, 화면 크기/타일 크기/깊이 범위/라이트 개수
+    - `SceneDepth`: 깊이로부터 월드 위치를 복원할 때 사용
 */
 
 #ifndef DIRECT_LIGHTING_HLSLI
@@ -9,7 +20,8 @@
 #include "../../../Resources/SystemSamplers.hlsl"
 #include "LightTypes.hlsli"
 #include "BRDF.hlsli"
-#include "ShadowFiltering.hlsli"
+#include "ShadowProjection.hlsli"
+#include "PointLightShadow.hlsli"
 
 #define TILE_SIZE                       4
 #define NUM_SLICES                      32
@@ -78,101 +90,6 @@ int SelectCascadeIndex(float3 WorldPos, float4 CascadeSplits[2], int CascadeCoun
     return Index;
 }
 
-#define SHADOW_PROJECTION_ORTHOGRAPHIC 0
-#define SHADOW_PROJECTION_PERSPECTIVE 1
-
-float LinearizeReversedZPerspectiveDepth01(float ReverseDepth, float NearZ, float FarZ)
-{
-    const float Denominator = max(NearZ + ReverseDepth * (FarZ - NearZ), 1e-5f);
-    const float ViewZ = (NearZ * FarZ) / Denominator;
-    return saturate((ViewZ - NearZ) / max(FarZ - NearZ, 1e-5f));
-}
-
-float ComputeLinearShadowCompareDepth(float ReverseDepth, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
-{
-    if (ShadowProjectionType == SHADOW_PROJECTION_PERSPECTIVE)
-    {
-        return LinearizeReversedZPerspectiveDepth01(ReverseDepth, ShadowNearZ, ShadowFarZ);
-    }
-
-    return saturate(1.0f - ReverseDepth);
-}
-
-float GetShadowFactor(FShadowAtlasSample ShadowSample, float4x4 ShadowViewProj, float3 WorldPos, float3 Normal, float3 LightDir, float Bias, float SlopeBias, float NormalBias, float4 PixelPos, uint ShadowProjectionType, float ShadowNearZ, float ShadowFarZ)
-{
-    if (ShadowSample.PageIndex < 0)
-        return 1.0f;
-
-    // Apply Normal Bias: Push world position along normal to reduce shadow acne
-    float3 BiasedWorldPos = WorldPos + Normal * NormalBias;
-    
-    float4 ShadowPos = mul(float4(BiasedWorldPos, 1.0f), ShadowViewProj);
-    ShadowPos.xyz /= ShadowPos.w;
-
-    if (abs(ShadowPos.x) > 1.0f || abs(ShadowPos.y) > 1.0f ||
-        ShadowPos.z < 0.0f || ShadowPos.z > 1.0f)
-    {
-        return 1.0f;
-    }
-
-    float2 ShadowVector = ShadowPos.xy;
-
-    // Apply slope-scaled depth bias to reduce shadow acne at grazing angles.
-    float CosTheta = saturate(dot(Normal, -LightDir));
-    float SlopeFactor = sqrt(1.0f - CosTheta * CosTheta) / max(CosTheta, 0.0001f);
-    float TotalBias = Bias + saturate(SlopeBias * SlopeFactor);
-    // Reversed-Z (Near=1, Far=0)에서는 값이 클수록 광원에 가깝습니다.
-    // 따라서 비교 깊이(CompareDepth)에 바이어스를 더해야 자기 그림자 여드름(Acne)을 방지할 수 있습니다.
-#if SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_NONE || SHADOW_FILTER_METHOD == SHADOW_FILTER_METHOD_PCF
-    float CompareDepth = ShadowPos.z + TotalBias;
-#else
-    float CompareDepth = ComputeLinearShadowCompareDepth(ShadowPos.z, ShadowProjectionType, ShadowNearZ, ShadowFarZ);
-    // Linear depth (Near=0, Far=1)로 변환된 경우에는 바이어스를 빼야 광원에 가까워집니다.
-    CompareDepth = saturate(CompareDepth - TotalBias);
-    #endif
-
-    float2 BaseUV = ShadowVector * 0.5f + 0.5f;
-    BaseUV.y = 1.0f - BaseUV.y;
-    return FilterShadowAtlas(ShadowSample, BaseUV, CompareDepth, PixelPos);
-}
-
-int ResolvePointShadowFaceIndex(float3 L)
-{
-    float3 AbsL = abs(L);
-    if (AbsL.x >= AbsL.y && AbsL.x >= AbsL.z)
-    {
-        return (L.x >= 0.0f) ? 0 : 1;
-    }
-    if (AbsL.y >= AbsL.x && AbsL.y >= AbsL.z)
-    {
-        return (L.y >= 0.0f) ? 2 : 3;
-    }
-    return (L.z >= 0.0f) ? 4 : 5;
-}
-
-float GetPointShadowFactor(FLocalLight LocalLight, float3 WorldPos, float3 Normal, float4 PixelPos)
-{
-    float3 BiasedWorldPos = WorldPos + Normal * LocalLight.ShadowNormalBias;
-    float3 L = BiasedWorldPos - LocalLight.Position;
-    if (dot(L, L) <= 1e-6f) return 1.0f;
-
-    const int FaceIndex = ResolvePointShadowFaceIndex(L);
-    const FShadowAtlasSample ShadowSample = DecodeShadowSample(LocalLight.ShadowSampleData[FaceIndex]);
-    return GetShadowFactor(
-        ShadowSample,
-        LocalLight.ShadowViewProj[FaceIndex],
-        WorldPos,
-        Normal,
-        normalize(-L),
-        LocalLight.ShadowBias,
-        LocalLight.ShadowSlopeBias,
-        LocalLight.ShadowNormalBias,
-        PixelPos,
-        SHADOW_PROJECTION_PERSPECTIVE,
-        1.0f,
-        LocalLight.AttenuationRadius);
-}
-
 float3 ReconstructWorldPositionFromSceneDepth(float2 UV)
 {
     float Depth = SceneDepth.Sample(PointClampSampler, UV).r;
@@ -217,6 +134,8 @@ float3 LocalLightLambertTerm(FLocalLight LocalLight, float3 N, float3 WorldPosit
             LocalLight.ShadowBias,
             LocalLight.ShadowSlopeBias,
             LocalLight.ShadowNormalBias,
+            LocalLight.ShadowSharpen,
+            LocalLight.ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_PERSPECTIVE,
             1.0f,
@@ -276,6 +195,8 @@ FLocalBlinnPhongTerm LocalLightBlinnPhongTerm(
             LocalLight.ShadowBias,
             LocalLight.ShadowSlopeBias,
             LocalLight.ShadowNormalBias,
+            LocalLight.ShadowSharpen,
+            LocalLight.ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_PERSPECTIVE,
             1.0f,
@@ -312,13 +233,15 @@ float3 ComputeGouraudLightingColor(float3 Normal, float3 WorldPosition, float4 P
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
             1.0f);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx);
+        if (i == 0) return GetCascadeDebugColor(CascadeIdx).rgb;
 #endif
     }
 
@@ -349,13 +272,15 @@ float4 ComputeLambertLighting(float4 BaseColor, float3 Normal, float3 WorldPosit
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
             1.0f);
         TotalLight += Diffuse * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx);
+        if (i == 0) return float4(GetCascadeDebugColor(CascadeIdx).rgb, BaseColor.a);
 #endif
     }
 
@@ -387,13 +312,15 @@ float3 ComputeLambertGlobalLight(float3 Normal, float3 WorldPosition, float4 pix
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             pixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
             1.0f);
         TotalLight += saturate(dot(N, -L)) * Directional[i].Color * Directional[i].Intensity * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx);
+        if (i == 0) return GetCascadeDebugColor(CascadeIdx).rgb;
 #endif
     }
 
@@ -433,6 +360,8 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,
@@ -441,7 +370,7 @@ float4 ComputeBlinnPhongLighting(float4 BaseColor, float3 Normal, float4 Materia
         TotalDiffuse += Diffuse * LightColor * Shadow;
         TotalSpecular += Specular * LightColor * Shadow;
 #if DEBUG_VISUALIZE_CSM
-        if (i == 0) return GetCascadeDebugColor(CascadeIdx);
+        if (i == 0) return float4(GetCascadeDebugColor(CascadeIdx).rgb, BaseColor.a);
 #endif
     }
 
@@ -493,6 +422,8 @@ FLocalBlinnPhongTerm ComputeBlinnPhongGlobalLight(float3 Normal, float4 Material
             Directional[i].ShadowBias,
             Directional[i].ShadowSlopeBias,
             Directional[i].ShadowNormalBias,
+            Directional[i].ShadowSharpen,
+            Directional[i].ShadowESMExponent,
             PixelPos,
             SHADOW_PROJECTION_ORTHOGRAPHIC,
             0.0f,

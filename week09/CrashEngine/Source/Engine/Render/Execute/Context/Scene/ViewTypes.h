@@ -29,20 +29,24 @@ enum class ERenderShadingPath : int32
 // FShowFlags는 렌더 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FShowFlags
 {
-    bool bPrimitives      = true;
-    bool bGrid            = true;
-    bool bWorldAxis       = true;
-    bool bGizmo           = true;
-    bool bBillboardText   = true;
-    bool bSceneBVH        = false;
-    bool bSceneOctree     = false;
-    bool bBoundingVolume  = false;
-    bool bWorldBound      = false;
-    bool bLightDebugLines = true;
-    bool bFog             = true;
-    bool bFXAA            = false;
-    bool bLightHitMap     = false;
-    bool b25DCulling      = true; // false는 tile_based_culling
+    bool  bPrimitives                = true;
+    bool  bText                      = true;
+    bool  bGrid                      = true;
+    bool  bWorldAxis                 = true;
+    bool  bGizmo                     = true;
+    bool  bUUIDText                  = true;
+    bool  bSceneBVH                  = false;
+    bool  bSceneOctree               = false;
+    bool  bBoundingVolume            = false;
+    bool  bWorldBound                = false;
+    bool  bLightDebugLines           = true;
+    float DirectionalLightDebugScale = 1.0f;
+    float PointLightDebugScale       = 1.0f;
+    float SpotLightDebugScale        = 1.0f;
+    bool  bFog                       = true;
+    bool  bFXAA                      = false;
+    bool  bLightHitMap               = false;
+    bool  b25DCulling                = true; // false는 tile_based_culling
 };
 
 // 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)

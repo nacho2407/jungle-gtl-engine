@@ -13,6 +13,7 @@
 #include "Render/Submission/Command/BuildDrawCommand.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 #include "Profiling/Stats.h"
@@ -467,7 +468,18 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
             Context.Context->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 0.0f, 0);
             if (RTV)
             {
-                const float ClearMomentColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                float ClearMomentColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                if (ShadowFilterMethod == EShadowFilterMethod::VSM)
+                {
+                    // Unwritten texels should behave like "no occluder", i.e. the far plane.
+                    ClearMomentColor[0] = 1.0f;
+                    ClearMomentColor[1] = 1.0f;
+                }
+                else if (ShadowFilterMethod == EShadowFilterMethod::ESM)
+                {
+                    const float ShadowESMExponent = Item.Light ? Item.Light->ShadowESMExponent : 40.0f;
+                    ClearMomentColor[0] = std::exp(-std::max(ShadowESMExponent, 0.01f));
+                }
                 Context.Context->ClearRenderTargetView(RTV, ClearMomentColor);
             }
             ClearedSlices[Item.Allocation->AtlasPageIndex][Item.Allocation->SliceIndex] = true;
@@ -504,6 +516,7 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         ShadowPassData.ShadowNearZ = Item.ShadowView.NearZ;
         ShadowPassData.ShadowFarZ = Item.ShadowView.FarZ;
         ShadowPassData.ShadowProjectionType = Item.ShadowView.ProjectionType;
+        ShadowPassData.ShadowESMExponent = Item.Light ? Item.Light->ShadowESMExponent : 40.0f;
         Context.Resources->ShadowPassBuffer.Update(Context.Context, &ShadowPassData, sizeof(FShadowPassCBData));
 
         ID3D11Buffer* ShadowPassCB = Context.Resources->ShadowPassBuffer.GetBuffer();
