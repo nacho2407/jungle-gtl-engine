@@ -19,6 +19,8 @@
 #include "Render/Execute/Context/RenderCollectContext.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
 
+#include <algorithm>
+
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
 namespace
@@ -41,6 +43,50 @@ void PreloadDefaultObjAssets(ID3D11Device* Device)
         FObjManager::LoadObjStaticMesh(Item.FullPath, Device, false);
     }
 }
+
+void WarmUpEditorViewModeShaders(FRenderer& Renderer)
+{
+    const EViewMode ViewModesToWarmUp[] = {
+        EViewMode::Lit_Gouraud,
+        EViewMode::Lit_Lambert,
+        EViewMode::Lit_Phong,
+        EViewMode::Unlit,
+        EViewMode::WorldNormal,
+        EViewMode::Wireframe,
+        EViewMode::SceneDepth,
+    };
+
+    for (EViewMode ViewMode : ViewModesToWarmUp)
+    {
+        // Startup prewarm only targets the default forward path.
+        // Deferred variants are compiled on demand.
+        Renderer.WarmUpViewModeShaders(ViewMode, ERenderShadingPath::Forward);
+    }
+}
+
+void WarmUpMinimalViewModesForRenderPath(UEditorEngine& Editor, ERenderShadingPath RenderPath)
+{
+    FRenderer& Renderer = Editor.GetRenderer();
+
+    TArray<EViewMode> ViewModesToWarmUp = {
+        EViewMode::Lit_Phong,
+        EViewMode::Unlit,
+    };
+
+    if (FLevelEditorViewportClient* ActiveViewport = Editor.GetActiveViewport())
+    {
+        const EViewMode ActiveViewMode = ActiveViewport->GetRenderOptions().ViewMode;
+        if (std::find(ViewModesToWarmUp.begin(), ViewModesToWarmUp.end(), ActiveViewMode) == ViewModesToWarmUp.end())
+        {
+            ViewModesToWarmUp.push_back(ActiveViewMode);
+        }
+    }
+
+    for (EViewMode ViewMode : ViewModesToWarmUp)
+    {
+        Renderer.WarmUpViewModeShaders(ViewMode, RenderPath);
+    }
+}
 } // namespace
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
@@ -57,6 +103,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     FMaterialManager::Get().ScanMaterialAssets();
 
     FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
+    WarmUpEditorViewModeShaders(Renderer);
 
     MainPanel.Create(Window, Renderer, this);
 
@@ -203,6 +250,11 @@ void UEditorEngine::ResetViewportInputRouting()
     {
         ViewportInputRouter.SetKeyTargetViewport(ActiveVC->GetViewport());
     }
+}
+
+void UEditorEngine::WarmUpRenderPathShaders(ERenderShadingPath RenderPath)
+{
+    WarmUpMinimalViewModesForRenderPath(*this, RenderPath);
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
