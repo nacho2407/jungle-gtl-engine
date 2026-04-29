@@ -540,11 +540,6 @@ FViewModePassDesc* FViewModePassRegistry::FindPassDescMutable(EViewMode ViewMode
 
 FGraphicsProgram* FViewModePassRegistry::CompilePassVariant(FViewModePassDesc& Pass) const
 {
-    if (Pass.CompiledShader)
-    {
-        return Pass.CompiledShader;
-    }
-
     ApplyShadowFilterDefine(Pass);
     Pass.CompiledShader = VariantCache.GetOrCreate(Pass.ShaderVariant);
     return Pass.CompiledShader;
