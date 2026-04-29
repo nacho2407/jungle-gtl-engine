@@ -30,16 +30,18 @@ void FDirectionalLightSceneProxy::UpdateLightConstants()
     }
 }
 
-void FDirectionalLightSceneProxy::VisualizeLightsInEditor(FScene& Scene) const
+void FDirectionalLightSceneProxy::VisualizeLightsInEditor(FScene& Scene, float DebugScale) const
 {
     if (!Owner)
     {
         return;
     }
 
-    const FVector   Origin      = Owner->GetWorldLocation();
-    const FVector   Direction   = Owner->GetForwardVector();
-    constexpr float ArrowLength = 2.0f;
+    const float     EffectiveScale = std::max(DebugScale, 0.1f);
+    const FVector   Origin         = Owner->GetWorldLocation();
+    const FVector   Direction      = Owner->GetForwardVector();
+    constexpr float BaseArrowLength = 2.0f;
+    const float     ArrowLength     = BaseArrowLength * EffectiveScale;
     const FColor    Color(135, 206, 235);
 
     RenderDebugArrow(Scene, Origin, Direction, ArrowLength, Color);

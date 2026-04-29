@@ -92,7 +92,7 @@ void FDrawCollector::CollectEditorHelpers(UWorld* World, const FSceneView& Scene
     OverlayData.EditorHelpers.Billboards.clear();
     OverlayData.EditorHelpers.Texts.clear();
 
-    if (!World || World->GetWorldType() != EWorldType::Editor || !SceneView.ShowFlags.bBillboardText)
+    if (!World || World->GetWorldType() != EWorldType::Editor || !SceneView.ShowFlags.bPrimitives)
     {
         return;
     }
@@ -250,4 +250,3 @@ void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Pro
         OverlayData.Debug.AABBs.push_back({ Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor(255, 0, 255) });
     }
 }
-

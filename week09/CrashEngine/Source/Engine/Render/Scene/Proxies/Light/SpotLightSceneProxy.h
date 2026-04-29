@@ -11,15 +11,15 @@ public:
     FSpotLightSceneProxy(USpotLightComponent* InComponent);
     ~FSpotLightSceneProxy() override = default;
 
-    void UpdateLightConstants() override;
-    void UpdateTransform() override;
-    void VisualizeLightsInEditor(FScene& Scene) const override;
-    FShadowMapData*       GetSpotShadowMapData() override { return &SpotShadowMapData; }
-    const FShadowMapData* GetSpotShadowMapData() const override { return &SpotShadowMapData; }
-    FShadowViewData*      GetSpotShadowView() override { return &SpotShadowView; }
+    void                   UpdateLightConstants() override;
+    void                   UpdateTransform() override;
+    void                   VisualizeLightsInEditor(FScene& Scene, float DebugScale = 1.0f) const override;
+    FShadowMapData*        GetSpotShadowMapData() override { return &SpotShadowMapData; }
+    const FShadowMapData*  GetSpotShadowMapData() const override { return &SpotShadowMapData; }
+    FShadowViewData*       GetSpotShadowView() override { return &SpotShadowView; }
     const FShadowViewData* GetSpotShadowView() const override { return &SpotShadowView; }
 
 private:
     FShadowMapData  SpotShadowMapData = {};
-    FShadowViewData SpotShadowView = {};
+    FShadowViewData SpotShadowView    = {};
 };

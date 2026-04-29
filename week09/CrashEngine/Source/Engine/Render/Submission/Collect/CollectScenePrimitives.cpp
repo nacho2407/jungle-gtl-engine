@@ -3,6 +3,7 @@
 
 #include "GameFramework/World.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/TextRenderComponent.h"
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
@@ -92,10 +93,21 @@ uint32 FDrawCollector::SelectLOD(uint32 CurrentLOD, float DistSq)
 void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectContext)
 {
     CollectScenePrimitives(World, CollectContext);
-    CollectSceneLights(World, CollectContext.Scene, CollectContext.SceneView);
-    CollectShadowCasters(World, CollectContext.SceneView);
 
-    if (CollectContext.Renderer)
+    const bool bCollectScenePasses =
+        CollectContext.SceneView == nullptr || CollectContext.SceneView->ShowFlags.bPrimitives;
+
+    if (bCollectScenePasses)
+    {
+        CollectSceneLights(World, CollectContext.Scene, CollectContext.SceneView);
+        CollectShadowCasters(World, CollectContext.SceneView);
+    }
+    else
+    {
+        ResetCollectedLights(CollectedSceneData.Lights);
+    }
+
+    if (bCollectScenePasses && CollectContext.Renderer)
     {
         FRenderPass* Pass = CollectContext.Renderer->GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass);
         FShadowMapPass* ShadowPass = static_cast<FShadowMapPass*>(Pass);
@@ -111,7 +123,10 @@ void FDrawCollector::CollectWorld(UWorld* World, FRenderCollectContext& CollectC
         }
     }
 
-    UpdateShadowDataInCBs();
+    if (bCollectScenePasses)
+    {
+        UpdateShadowDataInCBs();
+    }
 
     if (World && CollectContext.SceneView)
     {
@@ -181,9 +196,15 @@ void FDrawCollector::CollectScenePrimitives(UWorld* World, FRenderCollectContext
             continue;
         }
 
+        const UPrimitiveComponent* PrimitiveOwner = Proxy->Owner;
+        const bool bIsTextPrimitive = PrimitiveOwner && PrimitiveOwner->IsA<UTextRenderComponent>();
+        if (!SceneView.ShowFlags.bPrimitives && !bIsTextPrimitive)
+        {
+            continue;
+        }
+
         if (World->GetWorldType() == EWorldType::Editor)
         {
-            const UPrimitiveComponent* PrimitiveOwner = Proxy->Owner;
             if (PrimitiveOwner && PrimitiveOwner->IsEditorHelper())
             {
                 continue;
