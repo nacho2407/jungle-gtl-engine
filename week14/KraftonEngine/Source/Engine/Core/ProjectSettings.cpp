@@ -8,7 +8,9 @@ namespace PSKey
 {
 	constexpr const char* Shadow = "Shadow";
 	constexpr const char* bShadows = "bShadows";
-	constexpr const char* bPSM = "bPSM";
+	constexpr const char* CSMResolution = "CSMResolution";
+	constexpr const char* SpotAtlasResolution = "SpotAtlasResolution";
+	constexpr const char* PointAtlasResolution = "PointAtlasResolution";
 	constexpr const char* MaxSpotAtlasPages = "MaxSpotAtlasPages";
 	constexpr const char* MaxPointAtlasPages = "MaxPointAtlasPages";
 }
@@ -21,7 +23,9 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 
 	JSON ShadowObj = Object();
 	ShadowObj[PSKey::bShadows] = Shadow.bEnabled;
-	ShadowObj[PSKey::bPSM] = Shadow.bPSM;
+	ShadowObj[PSKey::CSMResolution] = static_cast<int>(Shadow.CSMResolution);
+	ShadowObj[PSKey::SpotAtlasResolution] = static_cast<int>(Shadow.SpotAtlasResolution);
+	ShadowObj[PSKey::PointAtlasResolution] = static_cast<int>(Shadow.PointAtlasResolution);
 	ShadowObj[PSKey::MaxSpotAtlasPages] = static_cast<int>(Shadow.MaxSpotAtlasPages);
 	ShadowObj[PSKey::MaxPointAtlasPages] = static_cast<int>(Shadow.MaxPointAtlasPages);
 	Root[PSKey::Shadow] = ShadowObj;
@@ -53,8 +57,21 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		JSON S = Root[PSKey::Shadow];
 		if (S.hasKey(PSKey::bShadows))
 			Shadow.bEnabled = S[PSKey::bShadows].ToBool();
-		if (S.hasKey(PSKey::bPSM))
-			Shadow.bPSM = S[PSKey::bPSM].ToBool();
+		if (S.hasKey(PSKey::CSMResolution))
+		{
+			int v = S[PSKey::CSMResolution].ToInt();
+			Shadow.CSMResolution = static_cast<uint32>((std::max)(64, (std::min)(v, 8192)));
+		}
+		if (S.hasKey(PSKey::SpotAtlasResolution))
+		{
+			int v = S[PSKey::SpotAtlasResolution].ToInt();
+			Shadow.SpotAtlasResolution = static_cast<uint32>((std::max)(64, (std::min)(v, 8192)));
+		}
+		if (S.hasKey(PSKey::PointAtlasResolution))
+		{
+			int v = S[PSKey::PointAtlasResolution].ToInt();
+			Shadow.PointAtlasResolution = static_cast<uint32>((std::max)(64, (std::min)(v, 8192)));
+		}
 		if (S.hasKey(PSKey::MaxSpotAtlasPages))
 		{
 			int v = S[PSKey::MaxSpotAtlasPages].ToInt();

@@ -199,7 +199,7 @@ float CalcSpotShadowFactor(uint lightIndex, float3 worldPos, float3 N, float3 li
         return 1.0f;
 
     float3 uvw = float3(shadowUV, (float)sd.PageIndex);
-    float texelSize = 1.0f / 4096.0f; // atlas resolution
+    float texelSize = 1.0f / (float)SpotAtlasResolution;
 
     if (ShadowFilterMode == 0)
     {
@@ -259,7 +259,7 @@ float CalcPointShadowFactor(uint lightIndex, float3 worldPos, float3 lightPos, f
     }
     else if (ShadowFilterMode == 1) // PCF
     {
-        float texelSize = 1.0f / 4096.0f;
+        float texelSize = 1.0f / (float)PointAtlasResolution;
         int halfSize = ComputePCFHalfSize(pointLightData.ShadowSharpen);
         return SampleShadowPCF(ShadowMapPointLightAtlas, uvw, fragDepth, texelSize, halfSize);
     }

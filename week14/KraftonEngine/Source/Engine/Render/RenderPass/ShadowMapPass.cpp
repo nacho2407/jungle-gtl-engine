@@ -30,8 +30,9 @@ REGISTER_RENDER_PASS(FShadowMapPass)
 
 FShadowMapPass::FShadowMapPass()
 {
-	SpotLightAtlas.Init(4096.f, 64.f);
-	PointLightAtlas.Init(4096.f, 64.f);
+	const auto& ProjShadow = FProjectSettings::Get().Shadow;
+	SpotLightAtlas.Init(static_cast<float>(ProjShadow.SpotAtlasResolution), 64.f);
+	PointLightAtlas.Init(static_cast<float>(ProjShadow.PointAtlasResolution), 64.f);
 	PassType = ERenderPass::ShadowMap;
 }
 
@@ -341,15 +342,27 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 	ID3D11Device* Dev = Ctx.Device.GetDevice();
 	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
-	uint32 Resolution = FShadowSettings::Get().GetEffectiveCSMResolution();
+	const auto& ProjShadow = FProjectSettings::Get().Shadow;
 	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+
+	// Atlas 해상도가 변경되었으면 재초기화
+	if (static_cast<uint32>(SpotLightAtlas.GetAtlasSize()) != ProjShadow.SpotAtlasResolution)
+	{
+		SpotLightAtlas.Clear();
+		SpotLightAtlas.Init(static_cast<float>(ProjShadow.SpotAtlasResolution), 64.f);
+	}
+	if (static_cast<uint32>(PointLightAtlas.GetAtlasSize()) != ProjShadow.PointAtlasResolution)
+	{
+		PointLightAtlas.Clear();
+		PointLightAtlas.Init(static_cast<float>(ProjShadow.PointAtlasResolution), 64.f);
+	}
 
 	// ── CSM (Directional) — Directional Light가 있을 때만 생성, 없으면 해제 ──
 	if (Env.HasGlobalDirectionalLight())
 	{
 		const FGlobalDirectionalLightParams& DirectionalParams = Env.GetGlobalDirectionalLightParams();
-		const float ScaledResolution = static_cast<float>(Resolution) * DirectionalParams.ShadowResolutionScale;
-		Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
+		const float ScaledResolution = static_cast<float>(ProjShadow.CSMResolution) * DirectionalParams.ShadowResolutionScale;
+		uint32 Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
 		
 		Res.EnsureCSM(Dev, Resolution);
 		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
@@ -508,6 +521,8 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 	FShadowMapResources& Res = Ctx.Resources.ShadowResources;
 
 	ShadowCBCache.CSMResolution = Res.CSM.Resolution;
+	ShadowCBCache.SpotAtlasResolution  = Res.Spot.Resolution > 0 ? Res.Spot.Resolution : 4096;
+	ShadowCBCache.PointAtlasResolution = Res.Point.Resolution > 0 ? Res.Point.Resolution : 4096;
 
 	Ctx.Resources.ShadowConstantBuffer.Update(DC, &ShadowCBCache, sizeof(FShadowCBData));
 	ID3D11Buffer* b5 = Ctx.Resources.ShadowConstantBuffer.GetBuffer();

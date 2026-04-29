@@ -16,9 +16,11 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 	struct FShadowOption
 	{
 		bool bEnabled = true;
-		bool bPSM = false;		// Perspective Shadow Maps (per-viewport, 카메라 연동)
-		uint32 MaxSpotAtlasPages  = 4;	// Spot Light Atlas 최대 page 수
-		uint32 MaxPointAtlasPages = 4;	// Point Light Atlas 최대 page 수
+		uint32 CSMResolution       = 2048;	// Directional Light CSM cascade 해상도
+		uint32 SpotAtlasResolution = 4096;	// Spot Light Atlas page 해상도
+		uint32 PointAtlasResolution = 4096;	// Point Light Atlas page 해상도
+		uint32 MaxSpotAtlasPages   = 4;		// Spot Light Atlas 최대 page 수
+		uint32 MaxPointAtlasPages  = 4;		// Point Light Atlas 최대 page 수
 	};
 
 public:
