@@ -9,6 +9,7 @@ struct FSpotLightParams;
 class FShadowAtlasQuadTree : public FAtlasQuadTreeBase {
 public:
 	void AddToBatch(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H, int32 LightIdx = -1);
+	void AddToBatch(float OverrideResolution, int32 LightIdx = -1);
 
 	// Sorts the pending batch by evaluated resolution, then allocates all entries into the atlas.
 	TArray<FAtlasRegion> CommitBatch() override;
