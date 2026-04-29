@@ -329,7 +329,7 @@ void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld
 
     if (Method == EShadowMapMethod::Cascade)
     {
-        const uint32 Count = static_cast<uint32>(std::clamp(Light->GetCascadeCountSetting(), 1, static_cast<int32>(ShadowAtlas::MaxCascades)));
+        const uint32 Count = std::clamp(Light->GetCascadeCountSetting(), 1u, ShadowAtlas::MaxCascades);
         float CascadeSplits[ShadowAtlas::MaxCascades + 1] = {};
         TArray<FShadowViewData> CascadeViews = GetDirectionalCSMViews(
             World,

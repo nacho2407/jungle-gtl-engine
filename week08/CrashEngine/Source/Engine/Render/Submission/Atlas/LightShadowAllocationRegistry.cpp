@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
+
 void FLightShadowAllocationRegistry::Release(FShadowAtlasPool& AtlasPool)
 {
     for (auto& Pair : Records)
@@ -39,7 +41,8 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
     }
 
     const uint32 Resolution   = GetShadowResolutionValue(RoundShadowResolutionToTierPolicy(Light.ShadowResolution));
-    const uint32 CascadeCount = std::clamp(Light.GetCascadeCountSetting(), 1, static_cast<int32>(ShadowAtlas::MaxCascades));
+    const uint32 MaxCascades = GetShadowMapMethod() == EShadowMapMethod::Cascade ? ShadowAtlas::MaxCascades : 1u;
+    const uint32 CascadeCount = std::clamp(Light.GetCascadeCountSetting(), 1u, MaxCascades);
     const uint32 LightType    = Light.LightProxyInfo.LightType;
 
     FLightShadowRecord& Record = Records[&Light];

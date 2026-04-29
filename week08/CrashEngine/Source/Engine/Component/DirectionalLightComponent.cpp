@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+#include "Render/Resources/Shadows/ShadowMapSettings.h"
+
 IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
 
 UDirectionalLightComponent::UDirectionalLightComponent()
@@ -26,7 +28,10 @@ void UDirectionalLightComponent::Serialize(FArchive& Ar)
 void UDirectionalLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ULightComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({ "Cascade Count", EPropertyType::Int, &CascadeCount, 1.0f, 4.0f, 1.0f });
+    if (GetShadowMapMethod() == EShadowMapMethod::Cascade)
+    {
+        OutProps.push_back({ "Cascade Count", EPropertyType::Int, &CascadeCount, 1.0f, 4.0f, 1.0f });
+    }
     OutProps.push_back({ "CSM Max Distance", EPropertyType::Float, &DynamicShadowDistance, 100.0f, 20000.0f, 10.0f });
     OutProps.push_back({ "Cascade Distribution", EPropertyType::Float, &CascadeDistribution, 0.0f, 1.0f, 0.01f });
 }
