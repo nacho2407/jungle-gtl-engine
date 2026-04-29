@@ -24,10 +24,20 @@ namespace
 void FShadowAtlasManager::Initialize(ID3D11Device* InDevice)
 {
 	if (InDevice == nullptr) return;
+	Release();
     RootNode = new Node(0, 0, ShadowAtlasResolution2D, ShadowAtlasResolution2D);
 
 	ShadowMapAtlas.Initialize(InDevice);
     ShadowCubeMapArray.Initialize(InDevice);
+}
+
+void FShadowAtlasManager::Release()
+{
+	if (RootNode)
+	{
+		delete RootNode;
+		RootNode = nullptr;
+	}
 }
 
 bool FShadowAtlasManager::AllocateTile(int32 ResolutionScale, FShadowAtlasTile& OutTile)
