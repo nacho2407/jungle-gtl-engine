@@ -11,6 +11,8 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 {
 	// 임의의 명령어 문자열이 들어왔을 때 뒤의 함수를 실행하도록 분기한다.
 	RegisterCommand("stat", [this](const TArray<FString>& Args) { CmdStat(Args); });
+
+	RegisterCommand("Shadow", [this](const TArray<FString>& Args){ CmdShadow(Args); });
 }
 
 FEditorConsoleWidget::~FEditorConsoleWidget() 
@@ -282,6 +284,44 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 		}
 		AddLog("All Stats Disabled\n");
 	}
+}
+
+void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
+{
+    if (Args.size() < 3)
+    {
+        AddLog("[WARN] Usage: Shadow filter <pcf|vsm>\n");
+        return;
+    }
+
+    FString CommandTarget = Args[1];
+    FString CommandValue = Args[2];
+
+    // 대소문자 구분 없이 처리하기 위해 소문자로 변환
+    std::transform(CommandTarget.begin(), CommandTarget.end(), CommandTarget.begin(), ::tolower);
+    std::transform(CommandValue.begin(), CommandValue.end(), CommandValue.begin(), ::tolower);
+
+    if (CommandTarget == "filter")
+    {
+        if (CommandValue == "vsm")
+        {
+            FEditorSettings::Get().ShadowFilterMode = EShadowFilter::VSM;
+            AddLog("Shadow filter mode changed to: VSM\n");
+        }
+        else if (CommandValue == "pcf")
+        {
+            FEditorSettings::Get().ShadowFilterMode = EShadowFilter::PCF;
+            AddLog("Shadow filter mode changed to: PCF\n");
+        }
+        else
+        {
+            AddLog("[ERROR] Invalid shadow filter mode: %s\n", CommandValue.c_str());
+        }
+    }
+    else
+    {
+        AddLog("[ERROR] Unknown shadow command target: %s\n", CommandTarget.c_str());
+    }
 }
 
 ImVector<char*> FEditorConsoleWidget::Messages;

@@ -7,6 +7,7 @@
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
+#include "Editor/Settings/EditorSettings.h" // 상단에 추가
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -146,7 +147,11 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            }
            break;
        }
-
+       // VSM 모드 + 그림자 활성일 때만 OR
+       if ( FEditorSettings::Get().ShadowFilterMode == EShadowFilter::VSM)
+       {
+           PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
+       }
        if (Cmd.Material)
        {
 		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;

@@ -240,7 +240,12 @@ float CalculateShadow(float4 worldPos)
         float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
         FAtlasShadowData nextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
         float nextTotalBias = ComputeBias(NextCascadeProjCoords.z, nextCascadeShadowData.ConstantBias, nextCascadeShadowData.SlopedBias);
+
+#if SHADOW_MAP_VSM        
+        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset , VSMMap, SampleState, 0.0001);        
+#else 
         float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextTotalBias);
+#endif
         ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
     }
     
@@ -280,9 +285,12 @@ float CalculateShadow(float4 worldPos)
     
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
     float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
-   //VSM 추가할 것
-    //float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset , VSMMap, SampleState, 0.0001);
+   
+#if SHADOW_MAP_VSM
+    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
+#else
+    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
+#endif
     return shadowFactor;
 }
 #else
