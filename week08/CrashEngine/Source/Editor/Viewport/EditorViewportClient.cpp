@@ -4,6 +4,7 @@
 #include "Editor/Settings/EditorSettings.h"
 
 #include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/World.h"
 #include "Viewport/Viewport.h"
@@ -164,6 +165,7 @@ void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
 
     if (SelectionManager && PilotedActor && PilotedActor != Actor)
     {
+        SetPilotedActorEditorHelpersVisible(true);
         SelectionManager->RemoveSelectionBlock(PilotedActor);
     }
 
@@ -180,6 +182,7 @@ void FEditorViewportClient::PilotSelectedActor(AActor* Actor)
         SetViewportType(ELevelViewportType::Perspective);
     }
 
+    SetPilotedActorEditorHelpersVisible(false);
     UpdateViewFromPilotedActor();
 }
 
@@ -195,6 +198,7 @@ void FEditorViewportClient::StopPilotingActor()
         SelectionManager->RemoveSelectionBlock(PilotedActor);
     }
 
+    SetPilotedActorEditorHelpersVisible(true);
     PilotedActor = nullptr;
     bIsPilotingActor = false;
 
@@ -204,6 +208,42 @@ void FEditorViewportClient::StopPilotingActor()
         Camera->SetWorldLocation(SavedViewLocation);
         Camera->SetRelativeRotation(SavedViewRotation);
     }
+}
+
+void FEditorViewportClient::SetPilotedActorEditorHelpersVisible(bool bVisible)
+{
+    if (!PilotedActor)
+    {
+        SavedPilotedHelperVisibility.clear();
+        return;
+    }
+
+    if (!bVisible)
+    {
+        SavedPilotedHelperVisibility.clear();
+
+        for (UPrimitiveComponent* Primitive : PilotedActor->GetPrimitiveComponents())
+        {
+            if (!Primitive || !Primitive->IsEditorHelper())
+            {
+                continue;
+            }
+
+            SavedPilotedHelperVisibility.push_back({ Primitive, Primitive->IsVisibleInEditor() });
+            Primitive->SetVisibleInEditor(false);
+        }
+        return;
+    }
+
+    for (const FPilotedHelperVisibilityState& SavedState : SavedPilotedHelperVisibility)
+    {
+        if (SavedState.Component)
+        {
+            SavedState.Component->SetVisibleInEditor(SavedState.bWasVisibleInEditor);
+        }
+    }
+
+    SavedPilotedHelperVisibility.clear();
 }
 
 void FEditorViewportClient::UpdateViewFromPilotedActor()
