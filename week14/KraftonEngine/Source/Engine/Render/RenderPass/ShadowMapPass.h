@@ -64,6 +64,12 @@ private:
 	// ── SRV 바인딩 ──
 	void BindShadowSRVs(ID3D11DeviceContext* DC, FShadowMapResources& Res);
 
+	// ── Light Buffer 패치: ShadowMapIndex / bCastShadow 갱신 ──
+	void PatchLightBuffer(const FPassContext& Ctx);
+
+	// ── Shadow Stats 업데이트 ──
+	void UpdateShadowStats(const FShadowMapResources& Res);
+
 	// ── b2 (PerShader0)에 LightViewProj 업로드 ──
 	void UploadLightViewProj(ID3D11DeviceContext* DC, const FMatrix& LightViewProj);
 
@@ -91,6 +97,10 @@ private:
 	// Area-budget 기반 페이지별 라이트 분배 (EnsureResources에서 계산)
 	TArray<TArray<uint32>> SpotPageGroups;
 	TArray<TArray<uint32>> PointPageGroups;
+
+	// envIndex → shadowDataIdx 매핑 (EndPass에서 light buffer 패치에 사용)
+	TArray<int32> SpotShadowIndexMap;   // [envIndex] = shadowDataIdx, -1 = no shadow
+	TArray<int32> PointShadowIndexMap;  // [envIndex] = shadowDataIdx, -1 = no shadow
 
 	// DrawShadowCasters에서 렌더링한 프록시 수 (호출자가 누적)
 	uint32 LastDrawCasterCount = 0;

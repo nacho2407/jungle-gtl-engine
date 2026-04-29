@@ -170,29 +170,79 @@ void FShadowMapPass::EndPass(const FPassContext& Ctx)
 
 	BindShadowSRVs(DC, ShadowRes);
 	UpdateShadowCB(Ctx);
+	PatchLightBuffer(Ctx);
+	UpdateShadowStats(ShadowRes);
+}
 
-	// ── Shadow Stats: 해상도 + 메모리 ──
-	SHADOW_STATS_SET_RESOLUTION(ShadowRes.CSM.Resolution);
+// ============================================================
+// PatchLightBuffer — ShadowMapIndex / bCastShadow 갱신
+// ============================================================
 
-	// Shadow map 텍스처 메모리 추정 (depth = 4B/pixel, VSM moment = 8B/pixel)
+void FShadowMapPass::PatchLightBuffer(const FPassContext& Ctx)
+{
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
+	const uint32 NumPoints = Env.GetNumPointLights();
+	const uint32 NumSpots  = Env.GetNumSpotLights();
+
+	ID3D11Buffer* LightBuf = Ctx.Resources.ForwardLights.LightBuffer;
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	HRESULT hr = DC->Map(LightBuf, 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &Mapped);
+	if (FAILED(hr)) return;
+
+	FLightInfo* Lights = static_cast<FLightInfo*>(Mapped.pData);
+
+	// Point lights: index [0, NumPoints)
+	for (uint32 i = 0; i < NumPoints; ++i)
 	{
-		const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4; // depth + (moment if VSM)
-		uint64 TotalBytes = 0;
-
-		// CSM: Resolution^2 * cascades
-		if (ShadowRes.CSM.Resolution > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.CSM.Resolution) * ShadowRes.CSM.Resolution * MAX_SHADOW_CASCADES * BPP;
-
-		// Spot Atlas: AtlasResolution^2 * pages
-		if (ShadowRes.Spot.PageCount > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.Spot.Resolution) * ShadowRes.Spot.Resolution * ShadowRes.Spot.PageCount * BPP;
-
-		// Point Atlas: AtlasSize^2 * pages
-		if (ShadowRes.Point.PageCount > 0)
-			TotalBytes += static_cast<uint64>(ShadowRes.Point.Resolution) * ShadowRes.Point.Resolution * ShadowRes.Point.PageCount * BPP;
-
-		SHADOW_STATS_SET_MEMORY(TotalBytes);
+		if (Lights[i].bCastShadow)
+		{
+			int32 ShadowIdx = (i < static_cast<uint32>(PointShadowIndexMap.size())) ? PointShadowIndexMap[i] : -1;
+			if (ShadowIdx >= 0)
+				Lights[i].ShadowMapIndex = static_cast<uint32>(ShadowIdx);
+			else
+				Lights[i].bCastShadow = 0;
+		}
 	}
+
+	// Spot lights: index [NumPoints, NumPoints + NumSpots)
+	for (uint32 i = 0; i < NumSpots; ++i)
+	{
+		FLightInfo& L = Lights[NumPoints + i];
+		if (L.bCastShadow)
+		{
+			int32 ShadowIdx = (i < static_cast<uint32>(SpotShadowIndexMap.size())) ? SpotShadowIndexMap[i] : -1;
+			if (ShadowIdx >= 0)
+				L.ShadowMapIndex = static_cast<uint32>(ShadowIdx);
+			else
+				L.bCastShadow = 0;
+		}
+	}
+
+	DC->Unmap(LightBuf, 0);
+}
+
+// ============================================================
+// UpdateShadowStats — Shadow 해상도 + 메모리 통계
+// ============================================================
+
+void FShadowMapPass::UpdateShadowStats(const FShadowMapResources& Res)
+{
+	SHADOW_STATS_SET_RESOLUTION(Res.CSM.Resolution);
+
+	const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4;
+	uint64 TotalBytes = 0;
+
+	if (Res.CSM.Resolution > 0)
+		TotalBytes += static_cast<uint64>(Res.CSM.Resolution) * Res.CSM.Resolution * MAX_SHADOW_CASCADES * BPP;
+
+	if (Res.Spot.PageCount > 0)
+		TotalBytes += static_cast<uint64>(Res.Spot.Resolution) * Res.Spot.Resolution * Res.Spot.PageCount * BPP;
+
+	if (Res.Point.PageCount > 0)
+		TotalBytes += static_cast<uint64>(Res.Point.Resolution) * Res.Point.Resolution * Res.Point.PageCount * BPP;
+
+	SHADOW_STATS_SET_MEMORY(TotalBytes);
 }
 
 // ============================================================
@@ -653,6 +703,10 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 {
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
 	const uint32 NumSpots = Env.GetNumSpotLights();
+
+	// envIndex → shadowDataIdx 매핑 초기화 (-1 = shadow 없음)
+	SpotShadowIndexMap.assign(NumSpots, -1);
+
 	if (NumSpots == 0) return;
 
 	const uint32 ShadowSpotCount = static_cast<uint32>(VisibleShadowSpotIndices.size());
@@ -771,6 +825,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		SpotGPUData[ShadowIdx].ShadowSlopeBias  = Settings.GetSlopeBias().value_or(SpotLight.ShadowSlopeBias);
 		SpotGPUData[ShadowIdx].ShadowNormalBias = SpotLight.ShadowNormalBias;
 
+		SpotShadowIndexMap[LightIdx] = static_cast<int32>(ShadowIdx);
 		++ShadowIdx;
 	}
 
@@ -796,6 +851,10 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResources& Res)
 {
 	FSceneEnvironment& SceneEnvironment = Ctx.Scene->GetEnvironment();
+
+	// envIndex → shadowDataIdx 매핑 초기화 (-1 = shadow 없음)
+	const uint32 NumPoints = SceneEnvironment.GetNumPointLights();
+	PointShadowIndexMap.assign(NumPoints, -1);
 
 	const uint32 ShadowedPointLightCount = static_cast<uint32>(VisibleShadowPointIndices.size());
 	if (ShadowedPointLightCount == 0)
@@ -899,6 +958,8 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 		const FPointLightParams& PointLight = SceneEnvironment.GetPointLight(LightIdx);
 		// PageIdx comes from any valid face's region (all 6 faces share the same page)
 		const uint32 PageIdx = PointAtlasRegion[ShadowedLightIndex * 6].PageIdx;
+
+		PointShadowIndexMap[LightIdx] = static_cast<int32>(ShadowedLightIndex);
 
 		FPointShadowDataGPU& ShadowData = PointLightShadowGPUData[ShadowedLightIndex];
 		ShadowData.NearZ = ShadowNearZ;
