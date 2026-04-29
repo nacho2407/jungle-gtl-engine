@@ -147,9 +147,16 @@ void FDrawCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem,
     const float Scale = OverlaySystem.GetLayout().TextScale;
     for (const FOverlayStatLine& Line : Lines)
     {
-        if (!Line.Text.empty())
+        FString OverlayText = Line.Label;
+        if (!Line.Value.empty())
         {
-            OutPrimitives.OverlayTexts.push_back({ Line.Text, Line.ScreenPosition, Scale });
+            OverlayText += " : ";
+            OverlayText += Line.Value;
+        }
+
+        if (!OverlayText.empty())
+        {
+            OutPrimitives.OverlayTexts.push_back({ OverlayText, Line.ScreenPosition, Scale });
         }
     }
 }
