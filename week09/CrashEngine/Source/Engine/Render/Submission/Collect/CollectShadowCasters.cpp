@@ -54,13 +54,18 @@ void BuildCascadeSplitDistances(
     }
     MaxDistance = std::max(NearClip + 1.0f, MaxDistance);
 
-    const float DistributionExponent = std::max(0.1f, CascadeDistribution);
+    // Lambda (CascadeDistribution) determines the blend between logarithmic and linear splits.
+    // 1.0 = fully logarithmic (optimal for perspective), 0.0 = fully linear.
+    const float Lambda = std::clamp(CascadeDistribution, 0.0f, 1.0f);
+
     OutSplitDistances[0] = NearClip;
     for (int SliceIndex = 1; SliceIndex <= SliceCount; ++SliceIndex)
     {
-        const float NormalizedT = static_cast<float>(SliceIndex) / static_cast<float>(SliceCount);
-        const float DistributedT = std::pow(NormalizedT, DistributionExponent);
-        OutSplitDistances[SliceIndex] = NearClip + (MaxDistance - NearClip) * DistributedT;
+        const float f = static_cast<float>(SliceIndex) / static_cast<float>(SliceCount);
+        const float LogSplit = NearClip * std::pow(MaxDistance / NearClip, f);
+        const float LinearSplit = NearClip + (MaxDistance - NearClip) * f;
+        
+        OutSplitDistances[SliceIndex] = Lambda * LogSplit + (1.0f - Lambda) * LinearSplit;
     }
 }
 
