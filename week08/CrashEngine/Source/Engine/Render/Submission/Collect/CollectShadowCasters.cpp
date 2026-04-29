@@ -163,8 +163,19 @@ TArray<FShadowViewData> FDrawCollector::GetDirectionalCSMViews(
 
     for (int i = 0; i < SliceCount; i++)
     {
+        float NearSplit = OutCascadeSplits[i];
+        float FarSplit = OutCascadeSplits[i + 1];
+
+        // Cascade Blending을 위해 다음 캐스케이드가 이전 캐스케이드 영역을 약간 더 커버하도록 확장합니다.
+        // 셰이더의 BlendZone(10%)과 일치시킵니다.
+        if (i > 0)
+        {
+            float Overlap = (FarSplit - NearSplit) * 0.1f;
+            NearSplit = std::max(OutCascadeSplits[0], NearSplit - Overlap);
+        }
+
         FVector FrustumPoints[8];
-        BuildPerspectiveFrustumCorners(SceneView, OutCascadeSplits[i], OutCascadeSplits[i + 1], FrustumPoints);
+        BuildPerspectiveFrustumCorners(SceneView, NearSplit, FarSplit, FrustumPoints);
 
         FVector AABBMin(FLT_MAX), AABBMax(-FLT_MAX);
         for (int j = 0; j < 8; j++)
