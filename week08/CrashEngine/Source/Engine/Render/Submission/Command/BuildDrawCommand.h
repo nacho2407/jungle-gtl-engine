@@ -20,8 +20,7 @@ void BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawComm
 
 void BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
-void BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
-void BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+void BuildBatchedWorldTextDrawCommands(FRenderPipelineContext& Context, FDrawCommandList& OutList);
 
 void BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
 } // namespace DrawCommandBuild

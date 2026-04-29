@@ -23,6 +23,8 @@
 #include "Render/Submission/Command/DrawCommandList.h"
 #include "Resource/ResourceManager.h"
 
+#include <vector>
+
 void DrawCommandBuild::BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, uint16 UserBits)
 {
     const bool bHasMeshBuffer = (Proxy.MeshBuffer != nullptr);
@@ -447,6 +449,19 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
 
     if (OverlayData)
     {
+        struct FTextRange
+        {
+            uint32 StartIndex = 0;
+            uint32 IndexCount = 0;
+            ID3D11ShaderResourceView* FontSRV = nullptr;
+        };
+
+        std::vector<FTextRange> OverlayWorldRanges;
+        OverlayWorldRanges.reserve(OverlayData->GetEditorHelperTexts().size());
+
+        FFontBatch& FontBatch = Context.Renderer->GetTextBatch();
+        FontBatch.ClearOverlayWorld();
+
         for (FPrimitiveProxy* Proxy : OverlayData->GetEditorHelperTexts())
         {
             if (!Proxy)
@@ -457,7 +472,69 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
             const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
             if (!TextProxy->CachedText.empty())
             {
-                BuildOverlayWorldTextDrawCommand(*TextProxy, Context, OutList);
+                const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(TextProxy->Owner);
+
+                const FFontResource* FontRes = TextComp ? TextComp->GetFont() : nullptr;
+                if (!FontRes || !FontRes->IsLoaded())
+                {
+                    FontRes = FResourceManager::Get().FindFont(FName("Default"));
+                }
+                if (!FontRes || !FontRes->IsLoaded())
+                {
+                    continue;
+                }
+
+                const FVector WorldScale = TextComp ? TextComp->GetWorldScale() : FVector(1.0f, 1.0f, 1.0f);
+                FontBatch.EnsureCharInfoMap(FontRes);
+
+                const uint32 StartIndex = FontBatch.GetOverlayWorldIndexCount();
+                FontBatch.AddOverlayWorldText(
+                    TextProxy->CachedText,
+                    TextComp ? TextComp->GetWorldLocation() : TextProxy->CachedWorldPos,
+                    TextProxy->CachedTextRight,
+                    TextProxy->CachedTextUp,
+                    WorldScale,
+                    TextProxy->CachedFontScale);
+
+                const uint32 EndIndex = FontBatch.GetOverlayWorldIndexCount();
+                if (EndIndex > StartIndex)
+                {
+                    OverlayWorldRanges.push_back({ StartIndex, EndIndex - StartIndex, FontRes->SRV });
+                }
+            }
+        }
+
+        if (!OverlayWorldRanges.empty() && FontBatch.UploadOverlayWorldBuffers(Context.Context))
+        {
+            FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
+            if (Shader)
+            {
+                auto GetPtrHash = [](const void* Ptr) -> uint32
+                {
+                    uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
+                    return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
+                };
+
+                const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayTextWorld);
+
+                for (const FTextRange& Range : OverlayWorldRanges)
+                {
+                    FDrawCommand& Cmd = OutList.AddCommand();
+                    Cmd.Shader        = Shader;
+                    Cmd.DepthStencil  = State.DepthStencil;
+                    Cmd.Blend         = State.Blend;
+                    Cmd.Rasterizer    = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
+                    Cmd.Topology      = State.Topology;
+                    Cmd.RawVB         = FontBatch.GetOverlayWorldVBBuffer();
+                    Cmd.RawVBStride   = FontBatch.GetOverlayWorldVBStride();
+                    Cmd.RawIB         = FontBatch.GetOverlayWorldIBBuffer();
+                    Cmd.FirstIndex    = Range.StartIndex;
+                    Cmd.IndexCount    = Range.IndexCount;
+                    Cmd.DiffuseSRV    = Range.FontSRV;
+                    Cmd.Pass          = ERenderPass::OverlayTextWorld;
+                    Cmd.DebugName     = "OverlayWorldText";
+                    Cmd.SortKey       = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
+                }
             }
         }
     }
@@ -525,41 +602,71 @@ void DrawCommandBuild::BuildOverlayTextDrawCommand(FRenderPipelineContext& Conte
     Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
-void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
+void DrawCommandBuild::BuildBatchedWorldTextDrawCommands(FRenderPipelineContext& Context, FDrawCommandList& OutList)
 {
-    if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
+    if (!Context.Renderer || !Context.SceneView || !Context.Submission.SceneData)
     {
         return;
     }
-
-    const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(Proxy.Owner);
-
-    const FFontResource* FontRes = TextComp ? TextComp->GetFont() : nullptr;
-    if (!FontRes || !FontRes->IsLoaded())
-    {
-        FontRes = FResourceManager::Get().FindFont(FName("Default"));
-    }
-    if (!FontRes || !FontRes->IsLoaded())
-    {
-        return;
-    }
-
-    const FVector WorldScale = TextComp ? TextComp->GetWorldScale() : FVector(1.0f, 1.0f, 1.0f);
 
     FFontBatch& FontBatch = Context.Renderer->GetTextBatch();
-    FontBatch.EnsureCharInfoMap(FontRes);
-    const uint32 StartIndex = FontBatch.GetWorldIndexCount();
+    FontBatch.ClearWorld();
 
-    FontBatch.AddWorldText(
-        Proxy.CachedText,
-        TextComp ? TextComp->GetWorldLocation() : Proxy.CachedWorldPos,
-        Proxy.CachedTextRight,
-        Proxy.CachedTextUp,
-        WorldScale,
-        Proxy.CachedFontScale);
+    struct FTextRange
+    {
+        uint32 StartIndex = 0;
+        uint32 IndexCount = 0;
+        ID3D11ShaderResourceView* FontSRV = nullptr;
+    };
 
-    const uint32 EndIndex = FontBatch.GetWorldIndexCount();
-    if (EndIndex <= StartIndex || !FontBatch.UploadWorldBuffers(Context.Context))
+    std::vector<FTextRange> WorldRanges;
+    WorldRanges.reserve(Context.Submission.SceneData->Primitives.VisibleProxies.size());
+
+    for (FPrimitiveProxy* Proxy : Context.Submission.SceneData->Primitives.VisibleProxies)
+    {
+        if (!Proxy || !Proxy->bFontBatched)
+        {
+            continue;
+        }
+
+        const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
+        if (TextProxy->CachedText.empty())
+        {
+            continue;
+        }
+
+        const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(TextProxy->Owner);
+
+        const FFontResource* FontRes = TextComp ? TextComp->GetFont() : nullptr;
+        if (!FontRes || !FontRes->IsLoaded())
+        {
+            FontRes = FResourceManager::Get().FindFont(FName("Default"));
+        }
+        if (!FontRes || !FontRes->IsLoaded())
+        {
+            continue;
+        }
+
+        const FVector WorldScale = TextComp ? TextComp->GetWorldScale() : FVector(1.0f, 1.0f, 1.0f);
+        FontBatch.EnsureCharInfoMap(FontRes);
+
+        const uint32 StartIndex = FontBatch.GetWorldIndexCount();
+        FontBatch.AddWorldText(
+            TextProxy->CachedText,
+            TextComp ? TextComp->GetWorldLocation() : TextProxy->CachedWorldPos,
+            TextProxy->CachedTextRight,
+            TextProxy->CachedTextUp,
+            WorldScale,
+            TextProxy->CachedFontScale);
+
+        const uint32 EndIndex = FontBatch.GetWorldIndexCount();
+        if (EndIndex > StartIndex)
+        {
+            WorldRanges.push_back({ StartIndex, EndIndex - StartIndex, FontRes->SRV });
+        }
+    }
+
+    if (WorldRanges.empty() || !FontBatch.UploadWorldBuffers(Context.Context))
     {
         return;
     }
@@ -577,90 +684,24 @@ void DrawCommandBuild::BuildWorldTextDrawCommand(const FTextRenderSceneProxy& Pr
     };
 
     const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::AlphaBlend);
-    FDrawCommand&                Cmd   = OutList.AddCommand();
-    Cmd.Shader                         = Shader;
-    Cmd.DepthStencil                   = State.DepthStencil;
-    Cmd.Blend                          = State.Blend;
-    Cmd.Rasterizer                     = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
-    Cmd.Topology                       = State.Topology;
-    Cmd.RawVB                          = FontBatch.GetWorldVBBuffer();
-    Cmd.RawVBStride                    = FontBatch.GetWorldVBStride();
-    Cmd.RawIB                          = FontBatch.GetWorldIBBuffer();
-    Cmd.FirstIndex                     = StartIndex;
-    Cmd.IndexCount                     = EndIndex - StartIndex;
-    Cmd.DiffuseSRV                     = FontRes->SRV;
-    Cmd.Pass                           = ERenderPass::AlphaBlend;
-    Cmd.DebugName                      = "WorldText";
-    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
-}
-
-void DrawCommandBuild::BuildOverlayWorldTextDrawCommand(const FTextRenderSceneProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList)
-{
-    if (!Context.Renderer || !Context.SceneView || Proxy.CachedText.empty())
+    for (const FTextRange& Range : WorldRanges)
     {
-        return;
+        FDrawCommand& Cmd = OutList.AddCommand();
+        Cmd.Shader        = Shader;
+        Cmd.DepthStencil  = State.DepthStencil;
+        Cmd.Blend         = State.Blend;
+        Cmd.Rasterizer    = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
+        Cmd.Topology      = State.Topology;
+        Cmd.RawVB         = FontBatch.GetWorldVBBuffer();
+        Cmd.RawVBStride   = FontBatch.GetWorldVBStride();
+        Cmd.RawIB         = FontBatch.GetWorldIBBuffer();
+        Cmd.FirstIndex    = Range.StartIndex;
+        Cmd.IndexCount    = Range.IndexCount;
+        Cmd.DiffuseSRV    = Range.FontSRV;
+        Cmd.Pass          = ERenderPass::AlphaBlend;
+        Cmd.DebugName     = "WorldText";
+        Cmd.SortKey       = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
     }
-
-    const UTextRenderComponent* TextComp = static_cast<const UTextRenderComponent*>(Proxy.Owner);
-
-    const FFontResource* FontRes = TextComp ? TextComp->GetFont() : nullptr;
-    if (!FontRes || !FontRes->IsLoaded())
-    {
-        FontRes = FResourceManager::Get().FindFont(FName("Default"));
-    }
-    if (!FontRes || !FontRes->IsLoaded())
-    {
-        return;
-    }
-
-    const FVector WorldScale = TextComp ? TextComp->GetWorldScale() : FVector(1.0f, 1.0f, 1.0f);
-
-    FFontBatch& FontBatch = Context.Renderer->GetTextBatch();
-    FontBatch.EnsureCharInfoMap(FontRes);
-    const uint32 StartIndex = FontBatch.GetOverlayWorldIndexCount();
-
-    FontBatch.AddOverlayWorldText(
-        Proxy.CachedText,
-        TextComp ? TextComp->GetWorldLocation() : Proxy.CachedWorldPos,
-        Proxy.CachedTextRight,
-        Proxy.CachedTextUp,
-        WorldScale,
-        Proxy.CachedFontScale);
-
-    const uint32 EndIndex = FontBatch.GetOverlayWorldIndexCount();
-    if (EndIndex <= StartIndex || !FontBatch.UploadOverlayWorldBuffers(Context.Context))
-    {
-        return;
-    }
-
-    FGraphicsProgram* Shader = FShaderManager::Get().GetShader(EShaderType::Font);
-    if (!Shader)
-    {
-        return;
-    }
-
-    auto GetPtrHash = [](const void* Ptr) -> uint32
-    {
-        uintptr_t Val = reinterpret_cast<uintptr_t>(Ptr);
-        return static_cast<uint32>((Val >> 4) ^ (Val >> 20));
-    };
-
-    const FRenderPassDrawPreset& State = Context.GetRenderPassDrawPreset(ERenderPass::OverlayTextWorld);
-    FDrawCommand&                Cmd   = OutList.AddCommand();
-    Cmd.Shader                         = Shader;
-    Cmd.DepthStencil                   = State.DepthStencil;
-    Cmd.Blend                          = State.Blend;
-    Cmd.Rasterizer                     = Context.ViewMode.ActiveViewMode == EViewMode::Wireframe ? ERasterizerState::WireFrame : ERasterizerState::SolidNoCull;
-    Cmd.Topology                       = State.Topology;
-    Cmd.RawVB                          = FontBatch.GetOverlayWorldVBBuffer();
-    Cmd.RawVBStride                    = FontBatch.GetOverlayWorldVBStride();
-    Cmd.RawIB                          = FontBatch.GetOverlayWorldIBBuffer();
-    Cmd.FirstIndex                     = StartIndex;
-    Cmd.IndexCount                     = EndIndex - StartIndex;
-    Cmd.DiffuseSRV                     = FontRes->SRV;
-    Cmd.Pass                           = ERenderPass::OverlayTextWorld;
-    Cmd.DebugName                      = "OverlayWorldText";
-    Cmd.SortKey                        = FDrawCommand::BuildSortKey(Cmd.Pass, 0, Cmd.Shader, nullptr, GetPtrHash(Cmd.DiffuseSRV));
 }
 
 

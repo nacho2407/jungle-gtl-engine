@@ -370,7 +370,19 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         PipelineContext.Submission.OverlayData = &DrawCollector.GetCollectedOverlayData();
     }
 
+    // Draw command가 LocalLightSRV 포인터를 캡처하기 전에 현재 라이트 수에 맞는
+    // structured buffer/SRV가 먼저 확보되도록 순서를 맞춥니다.
+    if (PipelineContext.Resources && PipelineContext.Context && Device.GetDevice() && PipelineContext.Submission.SceneData)
+    {
+        PipelineContext.Resources->UpdateLocalLights(
+            Device.GetDevice(),
+            PipelineContext.Context,
+            PipelineContext.Submission.SceneData->Lights.LocalLights);
+    }
+
     const FCollectedPrimitives& CollectedPrimitives = PipelineContext.Submission.SceneData->Primitives;
+
+    DrawCommandBuild::BuildBatchedWorldTextDrawCommands(PipelineContext, *PipelineContext.DrawCommandList);
 
     // 현재 ViewMode가 사용할 패스 구성을 조회합니다.
     const FViewModePassRegistry* ViewModeRegistry   = PipelineContext.ViewMode.Registry ? PipelineContext.ViewMode.Registry : ViewModePassRegistry;
@@ -392,11 +404,7 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
         // 월드 공간 텍스트 프록시 처리
         if (Proxy->bFontBatched)
         {
-            const FTextRenderSceneProxy* TextProxy = static_cast<const FTextRenderSceneProxy*>(Proxy);
-            if (!TextProxy->CachedText.empty())
-            {
-                DrawCommandBuild::BuildWorldTextDrawCommand(*TextProxy, PipelineContext, *PipelineContext.DrawCommandList);
-            }
+            continue;
         }
         // 데칼 프록시 처리
         else if (Cast<UDecalComponent>(Proxy->Owner))
