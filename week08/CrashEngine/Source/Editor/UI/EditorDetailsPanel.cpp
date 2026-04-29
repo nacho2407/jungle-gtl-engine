@@ -331,6 +331,67 @@ static uint64 HashShadowViewProj(const FMatrix& Matrix)
     return Hash;
 }
 
+static bool CompareShadowMapDataStable(const FShadowMapData& A, const FShadowMapData& B)
+{
+    if (A.AtlasPageIndex != B.AtlasPageIndex)
+    {
+        return A.AtlasPageIndex < B.AtlasPageIndex;
+    }
+    if (A.SliceIndex != B.SliceIndex)
+    {
+        return A.SliceIndex < B.SliceIndex;
+    }
+    if (A.Rect.Y != B.Rect.Y)
+    {
+        return A.Rect.Y < B.Rect.Y;
+    }
+    if (A.Rect.X != B.Rect.X)
+    {
+        return A.Rect.X < B.Rect.X;
+    }
+    if (A.Rect.Width != B.Rect.Width)
+    {
+        return A.Rect.Width < B.Rect.Width;
+    }
+    return A.Rect.Height < B.Rect.Height;
+}
+
+static uint64 HashShadowAllocationsStable(TArray<FShadowMapData> Allocations)
+{
+    std::sort(Allocations.begin(), Allocations.end(), CompareShadowMapDataStable);
+
+    uint64 Hash = 1469598103934665603ull;
+    auto Mix = [&Hash](uint32 Value)
+    {
+        Hash ^= static_cast<uint64>(Value);
+        Hash *= 1099511628211ull;
+    };
+
+    Mix(static_cast<uint32>(Allocations.size()));
+    for (const FShadowMapData& Allocation : Allocations)
+    {
+        Mix(Allocation.AtlasPageIndex);
+        Mix(Allocation.SliceIndex);
+        Mix(Allocation.Resolution);
+        Mix(Allocation.Rect.X);
+        Mix(Allocation.Rect.Y);
+        Mix(Allocation.Rect.Width);
+        Mix(Allocation.Rect.Height);
+        Mix(Allocation.ViewportRect.X);
+        Mix(Allocation.ViewportRect.Y);
+        Mix(Allocation.ViewportRect.Width);
+        Mix(Allocation.ViewportRect.Height);
+        Mix(Allocation.NodeIndex);
+    }
+
+    return Hash;
+}
+
+static void NormalizeShadowAllocationsForDisplay(TArray<FShadowMapData>& Allocations)
+{
+    std::sort(Allocations.begin(), Allocations.end(), CompareShadowMapDataStable);
+}
+
 FString FEditorDetailsPanel::OpenObjFileDialog()
 {
     wchar_t FilePath[MAX_PATH] = {};
@@ -1299,8 +1360,6 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
 
     ImGui::Text("Atlas Size: %u x %u", ShadowPass->GetShadowAtlasSize(), ShadowPass->GetShadowAtlasSize());
     ImGui::Text("Page Count: %u / %u", PageCount, ShadowAtlas::MaxPages);
-    ImGui::Separator();
-
     for (uint32 PageIndex = 0; PageIndex < PageCount; ++PageIndex)
     {
         if (PageIndex > 0)
@@ -1315,12 +1374,33 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
             SelectedShadowAtlasPage = static_cast<int32>(PageIndex);
         }
     }
+    ImGui::Dummy(ImVec2(0.0f, 8.0f));
+    ImGui::Separator();
+
+    ImGui::Dummy(ImVec2(0.0f, 6.0f));
+    ImGui::Text("Legend: ");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.35f, 0.78f, 1.0f, 1.0f), "256");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.43f, 0.90f, 0.55f, 1.0f), "512");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.84f, 0.35f, 1.0f), "1024");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.59f, 0.31f, 1.0f), "2048");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "4096");
+    ImGui::TextDisabled("White inner box = padded viewport. Colored outer box = allocated buddy block.");
 
     ImGui::Dummy(ImVec2(0.0f, 8.0f));
-    const float ContentWidth = ImGui::GetContentRegionAvail().x;
-    const float ColumnSpacing = ImGui::GetStyle().ItemSpacing.x;
-    const float ImageSize = (std::max)(140.0f, (ContentWidth - ColumnSpacing) * 0.5f);
+    const ImGuiStyle& Style = ImGui::GetStyle();
+    const float RightEdgeReserve = Style.ScrollbarSize + Style.WindowPadding.x + 28.0f;
+    const float ColumnSpacing = Style.ItemSpacing.x;
+    const float AvailableGridWidth = (std::max)(260.0f, ImGui::GetContentRegionAvail().x - RightEdgeReserve);
+    const float ChildWidth = (std::max)(190.0f, (AvailableGridWidth - ColumnSpacing) * 0.5f);
+    const float ChildInnerPadding = (Style.WindowPadding.x * 2.0f) + 18.0f;
+    const float ImageSize = (std::max)(140.0f, ChildWidth - ChildInnerPadding);
     const float LabelHeight = ImGui::GetTextLineHeightWithSpacing();
+    const float ChildHeight = ImageSize + LabelHeight + 44.0f;
     UWorld* World = GEngine->GetWorld();
 
     for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
@@ -1330,7 +1410,7 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
 
         char ChildLabel[40] = {};
         sprintf_s(ChildLabel, "Slice %u##AtlasSlice%u", SliceIndex, SliceIndex);
-        ImGui::BeginChild(ChildLabel, ImVec2(ImageSize, ImageSize + LabelHeight + 24.0f), true);
+        ImGui::BeginChild(ChildLabel, ImVec2(ChildWidth, ChildHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         ImGui::Text("Slice %u", SliceIndex);
 
         const ImVec2 ImageMin = ImGui::GetCursorScreenPos();
@@ -1347,8 +1427,19 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
         DrawList->AddRect(ImageMin, ImageMax, IM_COL32(160, 160, 160, 255), 0.0f, 0, 1.0f);
 
-        TArray<FShadowMapData> SliceAllocations;
-        ShadowPass->GetShadowPageSliceAllocations(static_cast<uint32>(SelectedShadowAtlasPage), SliceIndex, SliceAllocations);
+        TArray<FShadowMapData> LiveAllocations;
+        ShadowPass->GetShadowPageSliceAllocations(static_cast<uint32>(SelectedShadowAtlasPage), SliceIndex, LiveAllocations);
+        NormalizeShadowAllocationsForDisplay(LiveAllocations);
+
+        FShadowAtlasSliceDebugCache& SliceCache = ShadowAtlasDebugCache[SelectedShadowAtlasPage][SliceIndex];
+        const uint64 LiveHash = HashShadowAllocationsStable(LiveAllocations);
+        if (SliceCache.Hash != LiveHash)
+        {
+            SliceCache.Hash = LiveHash;
+            SliceCache.Allocations = LiveAllocations;
+        }
+
+        const TArray<FShadowMapData>& SliceAllocations = SliceCache.Allocations;
         FShadowAtlasOwnerInfo HoveredOwnerInfo = {};
         const FShadowMapData* HoveredAllocation = nullptr;
         ImVec2 HoveredRectMin = {};
@@ -1424,24 +1515,11 @@ void FEditorDetailsPanel::RenderShadowAtlasDebugWindow()
         ImGui::Text("Allocations: %d", static_cast<int32>(SliceAllocations.size()));
         ImGui::EndChild();
 
-        if ((SliceIndex % 2u) == 0u)
+        if ((SliceIndex % 2u) == 0u && SliceIndex + 1u < ShadowAtlas::SliceCount)
         {
             ImGui::SameLine();
         }
     }
-
-    ImGui::Dummy(ImVec2(0.0f, 8.0f));
-    ImGui::SeparatorText("Legend");
-    ImGui::TextColored(ImVec4(0.35f, 0.78f, 1.0f, 1.0f), "256");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.43f, 0.90f, 0.55f, 1.0f), "512");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.84f, 0.35f, 1.0f), "1024");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.59f, 0.31f, 1.0f), "2048");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "4096");
-    ImGui::TextDisabled("White inner box = padded viewport. Colored outer box = allocated buddy block.");
 
     ImGui::End();
 }

@@ -71,6 +71,16 @@ FShadowMapPass::~FShadowMapPass()
     ReleaseShadowAtlasResources();
 }
 
+void FShadowMapPass::BeginShadowFrame()
+{
+    ShadowAllocationMap.BeginFrame();
+}
+
+void FShadowMapPass::EndShadowFrame()
+{
+    ShadowAllocationMap.EndFrame(AtlasPool);
+}
+
 bool FShadowMapPass::UpdateLightShadowAllocation(FLightProxy& Light, ID3D11Device* Device)
 {
     return ShadowAllocationMap.UpdateLightShadow(Light, Device, AtlasPool);

@@ -204,15 +204,17 @@ void FEditorToolbarPanel::RenderPaneToolbar(FLevelViewportLayout* Layout,
 
     ImGui::SetNextWindowPos(ImVec2(PaneRect.X, PaneRect.Y));
     ImGui::SetNextWindowBgAlpha(1.0f);
-    ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(PaneRect.Width, ToolbarHeight), ImGuiCond_Always);
 
     const ImGuiWindowFlags OverlayFlags =
         ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_AlwaysAutoResize |
         ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoFocusOnAppearing |
         ImGuiWindowFlags_NoNav |
-        ImGuiWindowFlags_NoMove;
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse;
 
     if (!ImGui::Begin(OverlayID, nullptr, OverlayFlags))
     {

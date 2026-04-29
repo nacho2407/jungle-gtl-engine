@@ -274,6 +274,41 @@ void FShadowAtlasPage::GatherSliceAllocations(uint32 SliceIndex, uint32 AtlasPag
     }
 }
 
+bool FShadowAtlasPage::IsSliceUsed(uint32 SliceIndex) const
+{
+    if (SliceIndex >= ShadowAtlas::SliceCount)
+    {
+        return false;
+    }
+
+    TArray<FShadowMapData> Allocations;
+    SliceAllocators[SliceIndex].GatherAllocated(Allocations);
+    return !Allocations.empty();
+}
+
+uint64 FShadowAtlasPage::GetAllocatedArea() const
+{
+    uint64 TotalArea = 0;
+    for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
+    {
+        TArray<FShadowMapData> Allocations;
+        SliceAllocators[SliceIndex].GatherAllocated(Allocations);
+        for (const FShadowMapData& Allocation : Allocations)
+        {
+            TotalArea += static_cast<uint64>(Allocation.Rect.Width) * static_cast<uint64>(Allocation.Rect.Height);
+        }
+    }
+
+    return TotalArea;
+}
+
+uint64 FShadowAtlasPage::GetCapacityArea() const
+{
+    return static_cast<uint64>(ShadowAtlas::AtlasSize) *
+           static_cast<uint64>(ShadowAtlas::AtlasSize) *
+           static_cast<uint64>(ShadowAtlas::SliceCount);
+}
+
 ID3D11DepthStencilView* FShadowAtlasPage::GetSliceDSV(uint32 SliceIndex) const
 {
     return (SliceIndex < ShadowAtlas::SliceCount) ? SliceDSVs[SliceIndex] : nullptr;
@@ -355,6 +390,57 @@ void FShadowAtlasPool::Free(const FShadowMapData& Allocation)
     }
 
     Pages[Allocation.AtlasPageIndex]->Free(Allocation);
+}
+
+FShadowAtlasBudgetStats FShadowAtlasPool::GetBudgetStats() const
+{
+    FShadowAtlasBudgetStats Stats = {};
+    const uint64 BytesPerAllocatedTexel = static_cast<uint64>(sizeof(float) + (sizeof(float) * 2));
+    Stats.TotalAtlasMemoryBytes =
+        static_cast<uint64>(ShadowAtlas::MaxPages) *
+        static_cast<uint64>(ShadowAtlas::SliceCount) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        BytesPerAllocatedTexel;
+
+    uint64 UsedArea = 0;
+    const uint64 CapacityArea =
+        static_cast<uint64>(Pages.size()) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        static_cast<uint64>(ShadowAtlas::SliceCount);
+
+    Stats.UsedPageCount = static_cast<uint32>(Pages.size());
+    Stats.ResidentAtlasMemoryBytes =
+        static_cast<uint64>(Pages.size()) *
+        static_cast<uint64>(ShadowAtlas::SliceCount) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        static_cast<uint64>(ShadowAtlas::AtlasSize) *
+        BytesPerAllocatedTexel;
+
+    for (const FShadowAtlasPage* Page : Pages)
+    {
+        if (!Page)
+        {
+            continue;
+        }
+
+        UsedArea += Page->GetAllocatedArea();
+        for (uint32 SliceIndex = 0; SliceIndex < ShadowAtlas::SliceCount; ++SliceIndex)
+        {
+            if (Page->IsSliceUsed(SliceIndex))
+            {
+                ++Stats.UsedSliceCount;
+            }
+        }
+    }
+
+    Stats.UsedAreaPercent = CapacityArea > 0
+        ? static_cast<float>(static_cast<double>(UsedArea) / static_cast<double>(CapacityArea) * 100.0)
+        : 0.0f;
+    Stats.UsedAtlasMemoryBytes = UsedArea * BytesPerAllocatedTexel;
+
+    return Stats;
 }
 
 FShadowAtlasPage* FShadowAtlasPool::GetPage(uint32 PageIndex)

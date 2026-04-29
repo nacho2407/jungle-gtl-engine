@@ -25,6 +25,9 @@ public:
     bool Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShadowMapData& OutData);
     void Free(const FShadowMapData& Allocation);
     void GatherSliceAllocations(uint32 SliceIndex, uint32 AtlasPageIndex, TArray<FShadowMapData>& OutAllocations) const;
+    bool IsSliceUsed(uint32 SliceIndex) const;
+    uint64 GetAllocatedArea() const;
+    uint64 GetCapacityArea() const;
 
     ID3D11DepthStencilView*   GetSliceDSV(uint32 SliceIndex) const;
     ID3D11RenderTargetView*   GetMomentSliceRTV(uint32 SliceIndex) const;
@@ -59,6 +62,7 @@ public:
     void Release();
     bool Allocate(ID3D11Device* Device, uint32 Resolution, FShadowMapData& OutData);
     void Free(const FShadowMapData& Allocation);
+    FShadowAtlasBudgetStats GetBudgetStats() const;
 
     uint32                  GetPageCount() const { return static_cast<uint32>(Pages.size()); }
     FShadowAtlasPage*       GetPage(uint32 PageIndex);
