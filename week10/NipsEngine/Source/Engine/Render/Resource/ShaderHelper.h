@@ -14,14 +14,16 @@ enum class EShaderFeature : uint32
 	HasSpecularMap	= 1 << 2,
 	HasEmissiveMap	= 1 << 3,
 	HasAlphaMask	= 1 << 4,
-	
+    CascadeVis		= 1 << 5,
+
 	ClusterCull		= 1 << 11,
 	TileCull		= 1 << 12,
 
 	ShadowCSM		= 1 << 13,
 	ShadowPSM		= 1 << 14,
+	ShadowPCF		= 1 << 15,
+	ShadowVSM		= 1 << 16,
 
-	CascadeVis		= 1 << 5,
 };
 
 enum class ELightingModel : uint32
@@ -38,6 +40,11 @@ enum class EVSMBlurPass : uint32
 	Horizontal,
 	Vertical,
 };
+enum class EShadowFilter : uint32
+{
+    PCF = 0,
+    VSM = 1,
+};
 
 class FShaderHelper
 {
@@ -46,7 +53,8 @@ public:
 	static TArray<D3D_SHADER_MACRO> BuildLightCullingCSMacros(ELightCullMode Mode);
 	static TArray<D3D_SHADER_MACRO> BuildShadowMapMacros(EShadowMap Map);
     static TArray<D3D_SHADER_MACRO> BuildVSMBlurCSMacros(EVSMBlurPass Pass);
-};
+
+ };
 
 inline EShaderFeature operator&(EShaderFeature a, EShaderFeature b)
 {

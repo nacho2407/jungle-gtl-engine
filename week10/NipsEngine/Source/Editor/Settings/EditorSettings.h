@@ -5,7 +5,8 @@
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Render/Common/ViewTypes.h"
-
+#include "Render/Resource/ShaderHelper.h"
+ 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
 	friend class TSingleton<FEditorSettings>;
@@ -45,6 +46,7 @@ public:
 	int32 SpatialRotationStructuralChangeThreshold = 8;
 	int32 SpatialRotationDirtyCountThreshold = 24;
 	int32 SpatialRotationDirtyPercentThreshold = 30;
+    EShadowFilter ShadowFilterMode = EShadowFilter::PCF;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
