@@ -4,6 +4,7 @@
 #include "Math/Vector.h"
 
 class UEditorEngine;
+struct FRect;
 
 // 스크린 공간 텍스트 — Overlay Stats 등에서 사용
 struct FOverlayStatLine
@@ -30,6 +31,9 @@ public:
 	void ShowPickingTime(bool bEnable = true) { bShowPickingTime = bEnable; }
 	void ShowMemory(bool bEnable = true) { bShowMemory = bEnable; }
 	void ShowShadow(bool bEnable = true) { bShowShadow = bEnable; }
+	bool ToggleFPS() { bShowFPS = !bShowFPS; return bShowFPS; }
+	bool ToggleMemory() { bShowMemory = !bShowMemory; return bShowMemory; }
+	bool ToggleShadow() { bShowShadow = !bShowShadow; return bShowShadow; }
 	void RecordPickingAttempt(double ElapsedMs);
 	void HideAll()
 	{
@@ -44,9 +48,13 @@ public:
 
 	void BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const;
 	TArray<FOverlayStatLine> BuildLines(const UEditorEngine& Editor) const;
+	void RenderImGui(const UEditorEngine& Editor, const FRect& ViewportRect) const;
 
 private:
 	void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const;
+	void BuildFPSLines(const UEditorEngine& Editor, TArray<FString>& OutLines) const;
+	void BuildMemoryLines(TArray<FString>& OutLines) const;
+	void BuildShadowLines(TArray<FString>& OutLines) const;
 
 	bool bShowFPS = false;
 	bool bShowPickingTime = false; // WM_LBUTTONDOWN , VK_LBUTTON 입력 시점이 아닌 오브젝트 충돌 판정에 걸린 시간을 측정합니다.
