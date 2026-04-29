@@ -7,6 +7,14 @@ void FAtlasQuadTreePoint::AddToBatch(const FPointLightParams& InLightInfo, FVect
 	Batch.push_back({ InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H), LightIdx });
 }
 
+uint32 FAtlasQuadTreePoint::ComputeSnappedResolution(const FPointLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
+	float res = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
+	res = std::min(res, AtlasSize);
+	uint32 snapped = RoundToNearestPowerOfTwo(static_cast<uint32>(res));
+	if (snapped < static_cast<uint32>(MinShadowMapResolution)) snapped = static_cast<uint32>(MinShadowMapResolution);
+	return snapped;
+}
+
 TArray<FAtlasRegion> FAtlasQuadTreePoint::CommitBatch() {
 	const int32 N = static_cast<int32>(Batch.size());
 

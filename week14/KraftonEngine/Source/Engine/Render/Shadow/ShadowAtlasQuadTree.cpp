@@ -41,6 +41,14 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightIn
 	return sqrtf(A_screen) * (Color.X * 0.2126f + Color.Y * 0.7152f + Color.Z * 0.0722f) * InLightInfo.Intensity * InLightInfo.ShadowResolutionScale;
 }
 
+uint32 FShadowAtlasQuadTree::ComputeSnappedResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
+	float res = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
+	uint32 snapped = RoundToNearestPowerOfTwo(static_cast<uint32>(res));
+	if (snapped < static_cast<uint32>(MinShadowMapResolution)) snapped = static_cast<uint32>(MinShadowMapResolution);
+	if (snapped > static_cast<uint32>(AtlasSize)) snapped = static_cast<uint32>(AtlasSize);
+	return snapped;
+}
+
 TArray<FAtlasRegion> FShadowAtlasQuadTree::CommitBatch() {
 	const int32 N = static_cast<int32>(Batch.size());
 
