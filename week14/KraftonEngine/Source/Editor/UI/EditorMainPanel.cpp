@@ -100,6 +100,11 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
 		EditorEngine->RenderViewportUI(DeltaTime);
+
+		if (FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport())
+		{
+			EditorEngine->GetOverlayStatSystem().RenderImGui(*EditorEngine, ActiveViewport->GetViewportScreenRect());
+		}
 	}
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
