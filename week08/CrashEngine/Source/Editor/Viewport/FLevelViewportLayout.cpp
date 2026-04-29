@@ -868,39 +868,85 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 
         if (!StatLines.empty())
         {
-            const float StatPadding = 18.0f;
-            const float StatTextScale = OverlaySystem.GetLayout().TextScale * 0.75f;
+            const float StatPadding = 14.0f;
+            const float StatBottomPadding = 22.0f;
+            const float StatTextScale = OverlaySystem.GetLayout().TextScale * 0.92f;
             const float StatFontSize = ImGui::GetFontSize() * StatTextScale;
-            const float StatLineHeight = ImGui::GetTextLineHeightWithSpacing() * StatTextScale;
+            const float StatLineHeight = 22.0f;
+            const float HeaderHeight = 20.0f;
+            const float TitleHeight = 22.0f;
+            const float ColumnGap = 18.0f;
+            const float MinBoxWidth = 360.0f;
+            const float MaxBoxWidth = 520.0f;
+            const FString StatTitle = OverlaySystem.GetDisplayTitle();
 
-            float StatWidth = 0.0f;
+            float LabelWidth = 0.0f;
+            float ValueWidth = 0.0f;
             for (const FOverlayStatLine& Line : StatLines)
             {
-                ImVec2 TextSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Text.c_str());
-                StatWidth = (StatWidth > TextSize.x) ? StatWidth : TextSize.x;
+                ImVec2 LabelSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Label.c_str());
+                LabelWidth = (LabelWidth > LabelSize.x) ? LabelWidth : LabelSize.x;
+
+                if (!Line.Value.empty())
+                {
+                    ImVec2 ValueSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Value.c_str());
+                    ValueWidth = (ValueWidth > ValueSize.x) ? ValueWidth : ValueSize.x;
+                }
             }
 
-            const float StatHeight = StatPadding * 2.0f + static_cast<float>(StatLines.size()) * StatLineHeight;
-            const float BoxWidth = StatWidth + StatPadding * 2.0f;
+            float BoxWidth = LabelWidth + ValueWidth + ColumnGap + StatPadding * 2.0f;
+            const float MaxAllowedWidth = (std::min)(MaxBoxWidth, OverlayAnchorRect.Width - 24.0f);
+            BoxWidth = (std::max)(MinBoxWidth, (std::min)(BoxWidth, MaxAllowedWidth));
+            const float StatHeight = StatPadding + StatBottomPadding + TitleHeight + HeaderHeight + static_cast<float>(StatLines.size()) * StatLineHeight;
             const ImVec2 BoxMin(
-                OverlayAnchorRect.X + (OverlayAnchorRect.Width - BoxWidth) * 0.5f,
-                OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + (OverlayAnchorRect.Height - Toolbar.GetDesiredHeight() - StatHeight) * 0.5f);
+                OverlayAnchorRect.X + 12.0f,
+                OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + 12.0f);
+            const ImVec2 BoxMax(BoxMin.x + BoxWidth, BoxMin.y + StatHeight);
+            const float LabelColumnX = BoxMin.x + StatPadding;
+            const float ValueColumnX = BoxMax.x - StatPadding - ValueWidth;
 
             OverlayDrawList->AddRectFilled(
                 BoxMin,
-                ImVec2(BoxMin.x + BoxWidth, BoxMin.y + StatHeight),
-                IM_COL32(10, 10, 10, 170),
+                BoxMax,
+                IM_COL32(14, 14, 14, 228),
                 8.0f);
             OverlayDrawList->AddRect(
                 BoxMin,
-                ImVec2(BoxMin.x + BoxWidth, BoxMin.y + StatHeight),
-                IM_COL32(255, 255, 255, 36),
+                BoxMax,
+                IM_COL32(255, 255, 255, 28),
                 8.0f);
 
-            ImVec2 TextPos(BoxMin.x + StatPadding, BoxMin.y + StatPadding - 1.0f);
+            ImVec2 TextPos(BoxMin.x + StatPadding, BoxMin.y + StatPadding);
+            OverlayDrawList->AddText(OverlayFont, StatFontSize + 1.0f, TextPos, IM_COL32(248, 248, 248, 255), StatTitle.c_str());
+
+            const float DividerY = TextPos.y + TitleHeight;
+            OverlayDrawList->AddLine(
+                ImVec2(BoxMin.x + StatPadding, DividerY),
+                ImVec2(BoxMax.x - StatPadding, DividerY),
+                IM_COL32(255, 255, 255, 34),
+                1.0f);
+
+            const float HeaderY = DividerY + 7.0f;
+            OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(LabelColumnX, HeaderY), IM_COL32(170, 170, 170, 255), "Metric");
+            OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(ValueColumnX, HeaderY), IM_COL32(170, 170, 170, 255), "Value");
+
+            const float HeaderDividerY = HeaderY + HeaderHeight;
+            OverlayDrawList->AddLine(
+                ImVec2(BoxMin.x + StatPadding, HeaderDividerY),
+                ImVec2(BoxMax.x - StatPadding, HeaderDividerY),
+                IM_COL32(255, 255, 255, 26),
+                1.0f);
+
+            TextPos = ImVec2(BoxMin.x + StatPadding, HeaderDividerY + 7.0f);
             for (const FOverlayStatLine& Line : StatLines)
             {
-                OverlayDrawList->AddText(OverlayFont, StatFontSize, TextPos, IM_COL32(255, 255, 255, 255), Line.Text.c_str());
+                OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(LabelColumnX, TextPos.y), IM_COL32(210, 210, 210, 255), Line.Label.c_str());
+                OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(ValueColumnX, TextPos.y), IM_COL32(248, 248, 248, 255), Line.Value.c_str());
+                OverlayDrawList->AddLine(
+                    ImVec2(BoxMin.x + StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                    ImVec2(BoxMax.x - StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                    IM_COL32(255, 255, 255, 10),
+                    1.0f);
                 TextPos.y += StatLineHeight;
             }
         }

@@ -40,10 +40,33 @@ static bool UsesLightingPass(EViewMode ViewMode)
     }
 }
 
-void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const
+FString FOverlayStatSystem::GetDisplayTitle() const
+{
+    if (bShowFPS)
+    {
+        return FString("Performance Statistics");
+    }
+    if (bShowPickingTime)
+    {
+        return FString("Picking Statistics");
+    }
+    if (bShowMemory)
+    {
+        return FString("Memory Statistics");
+    }
+    if (bShowLightCull)
+    {
+        return FString("Light Culling Statistics");
+    }
+
+    return FString("Statistics");
+}
+
+void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Label, const FString& Value) const
 {
     FOverlayStatLine Line;
-    Line.Text = Text;
+    Line.Label = Label;
+    Line.Value = Value;
     Line.ScreenPosition = FVector2(Layout.StartX, Y);
     OutLines.push_back(std::move(Line));
 }
@@ -109,11 +132,11 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
     uint32 EstimatedLineCount = 0;
     if (bShowFPS)
     {
-        ++EstimatedLineCount;
+        EstimatedLineCount += 2;
     }
     if (bShowPickingTime)
     {
-        ++EstimatedLineCount;
+        EstimatedLineCount += 3;
     }
     if (bShowMemory)
     {
@@ -133,21 +156,30 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
         const float MS = FPS > 0.0f ? 1000.0f / FPS : 0.0f;
 
         char Buffer[128] = {};
-        snprintf(Buffer, sizeof(Buffer), "FPS : %.1f (%.2f ms)", FPS, MS);
+        snprintf(Buffer, sizeof(Buffer), "%.1f", FPS);
         CachedFPSLine = Buffer;
-        AppendLine(OutLines, CurrentY, CachedFPSLine);
+        AppendLine(OutLines, CurrentY, FString("FPS"), CachedFPSLine);
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%.2f ms", MS);
+        AppendLine(OutLines, CurrentY, FString("Frame Time"), FString(Buffer));
         CurrentY += Layout.LineHeight + Layout.GroupSpacing;
     }
 
     if (bShowPickingTime)
     {
         char Buffer[160] = {};
-        snprintf(Buffer, sizeof(Buffer), "Picking Time %.5f ms : Num Attempts %d : Accumulated Time %.5f ms",
-                 LastPickingTimeMs,
-                 static_cast<int32>(PickingAttemptCount),
-                 AccumulatedPickingTimeMs);
+        snprintf(Buffer, sizeof(Buffer), "%.5f ms", LastPickingTimeMs);
+        AppendLine(OutLines, CurrentY, FString("Last Attempt"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%d", static_cast<int32>(PickingAttemptCount));
+        AppendLine(OutLines, CurrentY, FString("Attempt Count"), FString(Buffer));
+        CurrentY += Layout.LineHeight;
+
+        snprintf(Buffer, sizeof(Buffer), "%.5f ms", AccumulatedPickingTimeMs);
         CachedPickingLine = Buffer;
-        AppendLine(OutLines, CurrentY, CachedPickingLine);
+        AppendLine(OutLines, CurrentY, FString("Accumulated"), CachedPickingLine);
         CurrentY += Layout.LineHeight + Layout.GroupSpacing;
     }
 
@@ -156,8 +188,8 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
         char Buffer[128] = {};
 
         // 할당 횟수 (단위 없음)
-        snprintf(Buffer, sizeof(Buffer), "Allocation Count : %u", MemoryStats::GetTotalAllocationCount());
-        AppendLine(OutLines, CurrentY, FString(Buffer));
+        snprintf(Buffer, sizeof(Buffer), "%u", MemoryStats::GetTotalAllocationCount());
+        AppendLine(OutLines, CurrentY, FString("Allocation Count"), FString(Buffer));
         CurrentY += Layout.LineHeight;
 
         // 바이트 단위 메모리 — 자동 단위 변환 (B/KB/MB/GB)
@@ -178,7 +210,20 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
         for (const auto& Entry : MemEntries)
         {
             FormatBytes(Buffer, sizeof(Buffer), Entry.Label, Entry.Bytes);
-            AppendLine(OutLines, CurrentY, FString(Buffer));
+            const char* Separator = strstr(Buffer, " : ");
+            if (Separator)
+            {
+                const int32 LabelLength = static_cast<int32>(Separator - Buffer);
+                AppendLine(
+                    OutLines,
+                    CurrentY,
+                    FString(Buffer, Buffer + LabelLength),
+                    FString(Separator + 3));
+            }
+            else
+            {
+                AppendLine(OutLines, CurrentY, FString(Entry.Label), FString(Buffer));
+            }
             CurrentY += Layout.LineHeight;
         }
     }
@@ -189,31 +234,31 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
         const EViewMode ActiveViewMode = ActiveViewport ? ActiveViewport->GetRenderOptions().ViewMode : EViewMode::Unlit;
         if (!UsesLightingPass(ActiveViewMode))
         {
-            AppendLine(OutLines, CurrentY, FString("Lighting Pass GPU Time: N/A"));
+            AppendLine(OutLines, CurrentY, FString("Lighting GPU"), FString("N/A"));
             CurrentY += Layout.LineHeight;
 
-            AppendLine(OutLines, CurrentY, FString("Total Per-Pixel Local Light Evaluations: N/A"));
+            AppendLine(OutLines, CurrentY, FString("Light Evaluations"), FString("N/A"));
             CurrentY += Layout.LineHeight;
             return;
         }
 
         if (!FLightCullStats::HasSample())
         {
-            AppendLine(OutLines, CurrentY, FString("Lighting Pass GPU Time: Not measured"));
+            AppendLine(OutLines, CurrentY, FString("Lighting GPU"), FString("Not measured"));
             CurrentY += Layout.LineHeight;
 
-            AppendLine(OutLines, CurrentY, FString("Total Per-Pixel Local Light Evaluations: Not measured"));
+            AppendLine(OutLines, CurrentY, FString("Light Evaluations"), FString("Not measured"));
             CurrentY += Layout.LineHeight;
             return;
         }
 
         char Buffer[128] = {};
-        snprintf(Buffer, sizeof(Buffer), "Lighting Pass GPU Time: %.3f ms", FLightCullStats::GetGPUTimeMs());
-        AppendLine(OutLines, CurrentY, FString(Buffer));
+        snprintf(Buffer, sizeof(Buffer), "%.3f ms", FLightCullStats::GetGPUTimeMs());
+        AppendLine(OutLines, CurrentY, FString("Lighting GPU"), FString(Buffer));
         CurrentY += Layout.LineHeight;
 
-        snprintf(Buffer, sizeof(Buffer), "Total Per-Pixel Local Light Evaluations: %u", FLightCullStats::GetEvaluationCount());
-        AppendLine(OutLines, CurrentY, FString(Buffer));
+        snprintf(Buffer, sizeof(Buffer), "%u", FLightCullStats::GetEvaluationCount());
+        AppendLine(OutLines, CurrentY, FString("Light Evaluations"), FString(Buffer));
         CurrentY += Layout.LineHeight;
     }
 }

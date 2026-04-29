@@ -9,7 +9,8 @@ class UEditorEngine;
 // 스크린 공간 텍스트 — Overlay Stats 등에서 사용
 struct FOverlayStatLine
 {
-    FString Text;
+    FString Label;
+    FString Value;
     FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
 };
 
@@ -18,9 +19,9 @@ struct FOverlayStatLayout
 {
     float StartX = 16.0f;
     float StartY = 25.0f;
-    float LineHeight = 20.0f;
+    float LineHeight = 22.0f;
     float GroupSpacing = 12.0f;
-    float TextScale = 2.0f;
+    float TextScale = 1.05f;
 };
 
 // FOverlayStatSystem는 에디터 영역의 핵심 동작을 담당합니다.
@@ -38,12 +39,13 @@ public:
 
     const FOverlayStatLayout& GetLayout() const { return Layout; }
     FOverlayStatLayout& GetLayout() { return Layout; }
+    FString GetDisplayTitle() const;
 
     void BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const;
     TArray<FOverlayStatLine> BuildLines(const UEditorEngine& Editor) const;
 
 private:
-    void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const;
+    void AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Label, const FString& Value) const;
     void ClearDisplayFlags();
 
     bool bShowFPS = false;
