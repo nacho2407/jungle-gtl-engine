@@ -73,11 +73,22 @@ private:
 	// ── b2 (PerShader0)에 LightViewProj 업로드 ──
 	void UploadLightViewProj(ID3D11DeviceContext* DC, const FMatrix& LightViewProj);
 
+	// ── VSM Blur (separable Gaussian, 2-pass per slice) ──
+	void BlurVSMTexture(const FPassContext& Ctx, FShadowMapResources& Res);
+
+	struct FVSMBlurCBData
+	{
+		float TexelDirX;
+		float TexelDirY;
+		float ArraySlice;
+		float BlurRadius;
+	};
+
 private:
 	// Shadow 렌더링용 PerObject CB (b1) — Pass 전용 (light ViewProj 기준 Model 기록)
 	FConstantBuffer ShadowPerObjectCB;
 
-	// Light ViewProj CB (b2) — ShadowDepth 셰이더의 ShadowLightBuffer
+	// Light ViewProj CB (b2) — ShadowDepth 셰이더의 ShadowLightBuffer / VSMBlur params
 	FConstantBuffer ShadowLightCB;
 
 	// 이번 프레임 캐시

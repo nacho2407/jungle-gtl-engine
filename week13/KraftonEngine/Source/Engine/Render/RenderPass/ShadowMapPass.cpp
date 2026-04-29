@@ -140,6 +140,12 @@ void FShadowMapPass::Execute(const FPassContext& Ctx)
 	RenderDirectionalShadows(Ctx, ShadowRes);
 	RenderSpotShadows(Ctx, ShadowRes);
 	RenderPointShadows(Ctx, ShadowRes);
+
+	// VSM blur pass — shadow depth 렌더 완료 후 moment 텍스처에 Gaussian blur 적용
+	if (CurrentFilterMode == EShadowFilterMode::VSM)
+	{
+		//BlurVSMTexture(Ctx, ShadowRes);
+	}
 }
 
 // ============================================================
@@ -229,7 +235,9 @@ void FShadowMapPass::UpdateShadowStats(const FShadowMapResources& Res)
 {
 	SHADOW_STATS_SET_RESOLUTION(Res.CSM.Resolution);
 
-	const uint32 BPP = (CurrentFilterMode == EShadowFilterMode::VSM) ? 4 + 8 : 4;
+	const bool bVSM = (CurrentFilterMode == EShadowFilterMode::VSM);
+	// depth(4B) + moment(8B) + blur_temp(8B) per texel when VSM
+	const uint32 BPP = bVSM ? 4 + 8 + 8 : 4;
 	uint64 TotalBytes = 0;
 
 	if (Res.CSM.Resolution > 0)
@@ -606,6 +614,154 @@ void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVol
 			Partition = &World->GetPartition();
 	}
 	DrawShadowCasters(Ctx.Device.GetDeviceContext(), *Ctx.Scene, LightFrustum, Partition);
+}
+
+// ============================================================
+// BlurVSMTexture — VSM moment 텍스처에 separable Gaussian blur 적용
+// ============================================================
+// 각 라이트 타입(CSM/Spot/Point)의 moment 텍스처에 대해:
+//   Pass 1: Source SRV → Horizontal blur → Temp RTV
+//   Pass 2: Temp SRV   → Vertical blur   → Source RTV
+// ShadowSharpen 값으로 blur 반경 결정: sharpen 0=max blur(3), sharpen 1=no blur(0)
+
+void FShadowMapPass::BlurVSMTexture(const FPassContext& Ctx, FShadowMapResources& Res)
+{
+	FShader* BlurShader = FShaderManager::Get().GetOrCreate(EShaderPath::VSMBlur);
+	if (!BlurShader || !BlurShader->IsValid()) return;
+
+	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+
+	// Save current state — we'll restore after blur
+	Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::NoDepth);
+	Ctx.Resources.SetBlendState(Ctx.Device, EBlendState::Opaque);
+	Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidNoCull);
+
+	BlurShader->Bind(DC);
+	DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// RTV/SRV unbind helpers
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	ID3D11RenderTargetView*   nullRTV = nullptr;
+
+	// Shadow depth 렌더 후 남아있는 RTV 바인딩 해제 (R/W hazard 방지)
+	DC->OMSetRenderTargets(1, &nullRTV, nullptr);
+
+	// Lambda: blur a single Texture2DArray
+	auto BlurTextureArray = [&](
+		ID3D11ShaderResourceView* SrcSRV,
+		ID3D11RenderTargetView* const* TempRTVs,
+		ID3D11ShaderResourceView* TempSRV,
+		ID3D11RenderTargetView* const* DstRTVs,
+		uint32 Resolution, uint32 SliceCount, float BlurRadius)
+	{
+		if (!SrcSRV || !TempSRV || BlurRadius <= 0.0f) return;
+
+		float TexelSize = 1.0f / static_cast<float>(Resolution);
+
+		D3D11_VIEWPORT VP = {};
+		VP.Width    = static_cast<float>(Resolution);
+		VP.Height   = static_cast<float>(Resolution);
+		VP.MinDepth = 0.0f;
+		VP.MaxDepth = 1.0f;
+		DC->RSSetViewports(1, &VP);
+
+		for (uint32 Slice = 0; Slice < SliceCount; ++Slice)
+		{
+			FVSMBlurCBData CBData;
+			CBData.ArraySlice = static_cast<float>(Slice);
+			CBData.BlurRadius = BlurRadius;
+
+			// Pass 1: Horizontal — Source → Temp
+			CBData.TexelDirX  = TexelSize;
+			CBData.TexelDirY  = 0.0f;
+
+			ShadowLightCB.Update(DC, &CBData, sizeof(FVSMBlurCBData));
+			ID3D11Buffer* b2 = ShadowLightCB.GetBuffer();
+			DC->VSSetConstantBuffers(ECBSlot::PerShader0, 1, &b2);
+			DC->PSSetConstantBuffers(ECBSlot::PerShader0, 1, &b2);
+
+			DC->OMSetRenderTargets(1, &TempRTVs[Slice], nullptr);
+			DC->PSSetShaderResources(0, 1, &SrcSRV);
+			DC->Draw(3, 0);
+
+			// Unbind RTV + SRV before pass 2 (Temp is now both src and was dst)
+			DC->OMSetRenderTargets(1, &nullRTV, nullptr);
+			DC->PSSetShaderResources(0, 1, &nullSRV);
+
+			// Pass 2: Vertical — Temp → Dest (original moment texture)
+			CBData.TexelDirX  = 0.0f;
+			CBData.TexelDirY  = TexelSize;
+
+			ShadowLightCB.Update(DC, &CBData, sizeof(FVSMBlurCBData));
+
+			DC->OMSetRenderTargets(1, &DstRTVs[Slice], nullptr);
+			DC->PSSetShaderResources(0, 1, &TempSRV);
+			DC->Draw(3, 0);
+
+			// Unbind both for next slice (DstRTV[Slice] shares texture with SrcSRV)
+			DC->OMSetRenderTargets(1, &nullRTV, nullptr);
+			DC->PSSetShaderResources(0, 1, &nullSRV);
+		}
+	};
+
+	// Directional CSM 기본 sharpen (전체 CSM에 공통 적용)
+	float DirectionalSharpen = ShadowCBCache.ShadowSharpen;
+	float CSMBlurRadius = std::round((1.0f - DirectionalSharpen) * 3.0f);
+
+	// ── CSM Blur ──
+	if (Res.CSM.IsVSMValid() && Res.CSM.VSMBlurTemp)
+	{
+		BlurTextureArray(
+			Res.CSM.VSMSRV,
+			Res.CSM.VSMBlurTempRTV,
+			Res.CSM.VSMBlurTempSRV,
+			Res.CSM.VSMRTV,
+			Res.CSM.Resolution, MAX_SHADOW_CASCADES, CSMBlurRadius);
+	}
+
+	// ── Spot Blur ──
+	if (Res.Spot.IsVSMValid() && Res.Spot.VSMBlurTemp && Res.Spot.PageCount > 0)
+	{
+		// Spot은 per-light sharpen이 다를 수 있지만, atlas 단위로 blur하므로
+		// 전체 페이지에 공통 blur 적용 (가장 soft한 라이트 기준)
+		float MinSharpen = 1.0f;
+		for (uint32 i = 0; i < VisibleShadowSpotIndices.size(); ++i)
+		{
+			const auto& Light = Ctx.Scene->GetEnvironment().GetSpotLight(VisibleShadowSpotIndices[i]);
+			MinSharpen = (std::min)(MinSharpen, Light.ShadowSharpen);
+		}
+		float SpotBlurRadius = std::round((1.0f - MinSharpen) * 3.0f);
+
+		BlurTextureArray(
+			Res.Spot.VSMSRV,
+			Res.Spot.VSMBlurTempRTVs.data(),
+			Res.Spot.VSMBlurTempSRV,
+			Res.Spot.VSMRTVs.data(),
+			Res.Spot.Resolution, Res.Spot.PageCount, SpotBlurRadius);
+	}
+
+	// ── Point Blur ──
+	if (Res.Point.IsVSMValid() && Res.Point.VSMBlurTemp && Res.Point.PageCount > 0)
+	{
+		float MinSharpen = 1.0f;
+		for (uint32 i = 0; i < VisibleShadowPointIndices.size(); ++i)
+		{
+			const auto& Light = Ctx.Scene->GetEnvironment().GetPointLight(VisibleShadowPointIndices[i]);
+			MinSharpen = (std::min)(MinSharpen, Light.ShadowSharpen);
+		}
+		float PointBlurRadius = std::round((1.0f - MinSharpen) * 3.0f);
+
+		BlurTextureArray(
+			Res.Point.VSMSRV,
+			Res.Point.VSMBlurTempRTVs.data(),
+			Res.Point.VSMBlurTempSRV,
+			Res.Point.VSMRTVs.data(),
+			Res.Point.Resolution, Res.Point.PageCount, PointBlurRadius);
+	}
+
+	// Restore shadow render state
+	Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::Default);
+	Ctx.Resources.SetRasterizerState(Ctx.Device, ERasterizerState::SolidFrontCull);
 }
 
 // ============================================================
