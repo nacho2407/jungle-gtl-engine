@@ -1,4 +1,5 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
+#include "Profiling/StartupProfiler.h"
 
 #if IS_OBJ_VIEWER
 #include "ObjViewer/ObjViewerEngine.h"
@@ -19,9 +20,12 @@ void FEngineLoop::CreateEngine()
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 {
-	if (!Application.Init(hInstance))
 	{
-		return false;
+		SCOPE_STARTUP_STAT("WindowsApplication::Init");
+		if (!Application.Init(hInstance))
+		{
+			return false;
+		}
 	}
 
 	Application.SetOnSizingCallback([this]()
@@ -39,11 +43,21 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		});
 
 	CreateEngine();
-	GEngine->Init(&Application.GetWindow());
+
+	{
+		SCOPE_STARTUP_STAT("Engine::Init");
+		GEngine->Init(&Application.GetWindow());
+	}
+
 	GEngine->SetTimer(&Timer);
-	GEngine->BeginPlay();
+
+	{
+		SCOPE_STARTUP_STAT("Engine::BeginPlay");
+		GEngine->BeginPlay();
+	}
 
 	Timer.Initialize();
+	FStartupProfiler::Get().Finish();
 
 	return true;
 }

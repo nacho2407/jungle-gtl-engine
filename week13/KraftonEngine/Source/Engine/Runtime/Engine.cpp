@@ -5,6 +5,7 @@
 #include "Core/Notification.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats.h"
+#include "Profiling/StartupProfiler.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Resource/ResourceManager.h"
@@ -46,14 +47,33 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FObjectFactory::Get();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
-	Renderer.Create(Window->GetHWND());
+
+	{
+		SCOPE_STARTUP_STAT("D3DDevice::Create");
+		Renderer.Create(Window->GetHWND());
+	}
 
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
-	FMeshBufferManager::Get().Initialize(Device);
-	FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
-	FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::RootDir()), Device);
 
-	SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
+	{
+		SCOPE_STARTUP_STAT("MeshBufferManager::Init");
+		FMeshBufferManager::Get().Initialize(Device);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("ResourceManager::LoadFromFile");
+		FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("ResourceManager::LoadFromDir");
+		FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::RootDir()), Device);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("RenderPipeline::Create");
+		SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
+	}
 
 	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();

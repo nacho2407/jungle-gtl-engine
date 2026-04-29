@@ -1,5 +1,6 @@
 ﻿#include "Editor/EditorEngine.h"
 
+#include "Profiling/StartupProfiler.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Component/CameraComponent.h"
@@ -40,14 +41,24 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
 
-	FObjManager::ScanMeshAssets();
-	FMaterialManager::Get().ScanMaterialAssets();
+	{
+		SCOPE_STARTUP_STAT("ObjManager::ScanMeshAssets");
+		FObjManager::ScanMeshAssets();
+	}
+
+	{
+		SCOPE_STARTUP_STAT("MaterialManager::ScanAssets");
+		FMaterialManager::Get().ScanMaterialAssets();
+	}
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
-	MainPanel.Create(Window, Renderer, this);
+	{
+		SCOPE_STARTUP_STAT("EditorMainPanel::Create");
+		MainPanel.Create(Window, Renderer, this);
+	}
 
 	// 기본 월드 생성 — 모든 서브시스템 초기화의 기반
 	CreateWorldContext(EWorldType::Editor, FName("Default"));
@@ -62,12 +73,17 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	ViewportLayout.Initialize(this, Window, Renderer, &SelectionManager);
 	ViewportLayout.LoadFromSettings();
 
-	// EditorStartLevel이 설정돼 있으면 기본 월드를 교체 (EditorSceneWidget::LoadScene과 동일 플로우)
-	LoadStartLevel();
+	{
+		SCOPE_STARTUP_STAT("Editor::LoadStartLevel");
+		LoadStartLevel();
+	}
 	ApplyTransformSettingsToGizmo();
 
 	// Editor render pipeline
-	SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
+	{
+		SCOPE_STARTUP_STAT("EditorRenderPipeline::Create");
+		SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
+	}
 }
 
 void UEditorEngine::Shutdown()
