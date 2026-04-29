@@ -729,8 +729,8 @@ void FEditorConsoleWidget::HandleStatFPS(const TArray<FString>& Args)
 		AddLog("[ERROR] EditorEngine is null.\n");
 		return;
 	}
-	EditorEngine->GetOverlayStatSystem().ShowFPS(true);
-	AddLog("Overlay stat enabled: fps\n");
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleFPS();
+	AddLog("Overlay stat %s: fps\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatMemory(const TArray<FString>& Args)
@@ -741,8 +741,8 @@ void FEditorConsoleWidget::HandleStatMemory(const TArray<FString>& Args)
 		AddLog("[ERROR] EditorEngine is null.\n");
 		return;
 	}
-	EditorEngine->GetOverlayStatSystem().ShowMemory(true);
-	AddLog("Overlay stat enabled: memory\n");
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleMemory();
+	AddLog("Overlay stat %s: memory\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatShadow(const TArray<FString>& Args)
@@ -753,8 +753,8 @@ void FEditorConsoleWidget::HandleStatShadow(const TArray<FString>& Args)
 		AddLog("[ERROR] EditorEngine is null.\n");
 		return;
 	}
-	EditorEngine->GetOverlayStatSystem().ShowShadow(true);
-	AddLog("Overlay stat enabled: shadow\n");
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleShadow();
+	AddLog("Overlay stat %s: shadow\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)
