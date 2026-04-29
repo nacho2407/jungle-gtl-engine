@@ -15,7 +15,8 @@ FStatManager::FStatManager()
 
 void FStatManager::RecordTime(const char* Name, double ElapsedSeconds, const char* Category)
 {
-	FStatAccum& Accum = Stats[Name];
+	FStatKey Key{ Name, Category };
+	FStatAccum& Accum = Stats[Key];
 	if (!Accum.Name)
 	{
 		Accum.Name = Name;
@@ -30,7 +31,7 @@ void FStatManager::TakeSnapshot()
 	Snapshot.clear();
 	Snapshot.reserve(Stats.size());
 
-	for (auto& [Key, Accum] : Stats)
+	for (auto& [StatKey, Accum] : Stats)
 	{
 		// 현재 프레임 결과를 윈도우에 기록
 		double FrameTime = Accum.FrameTotal;
