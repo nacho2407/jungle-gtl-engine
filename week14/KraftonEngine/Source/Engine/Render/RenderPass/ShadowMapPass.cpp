@@ -429,12 +429,32 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 			TotalSpotArea += static_cast<float>(snapped) * static_cast<float>(snapped);
 		}
 
-		// 페이지 수 추정 + 텍스처 생성
+		// 페이지 수 추정 — MaxPages 초과 시 해상도 비례 축소
 		uint32 EstimatedSpotPages = static_cast<uint32>(ceilf(TotalSpotArea * PackingOverhead / SpotAtlasArea));
+		if (EstimatedSpotPages > MaxSpotPages)
+		{
+			float AvailableArea = static_cast<float>(MaxSpotPages) * SpotAtlasArea;
+			float Scale = sqrtf(AvailableArea / (TotalSpotArea * PackingOverhead));
+			TotalSpotArea = 0.0f;
+			for (uint32 i = 0; i < ShadowSpotCount; ++i)
+			{
+				uint32 scaled = SpotLightAtlas.RoundToNearestPowerOfTwo(
+					static_cast<uint32>(static_cast<float>(SpotAllocs[i].snappedRes) * Scale));
+				scaled = (std::max)(scaled, static_cast<uint32>(SpotLightAtlas.GetMinResolution()));
+				SpotAllocs[i].snappedRes = scaled;
+				TotalSpotArea += static_cast<float>(scaled) * static_cast<float>(scaled);
+			}
+			EstimatedSpotPages = static_cast<uint32>(ceilf(TotalSpotArea * PackingOverhead / SpotAtlasArea));
+		}
 		EstimatedSpotPages = (std::max)(1u, (std::min)(EstimatedSpotPages, MaxSpotPages));
 
 		Res.EnsureSpotAtlas(Dev, SpotRes, EstimatedSpotPages, ShadowSpotCount);
 		if (bVSM) Res.EnsureSpotAtlas_VSM(Dev, SpotRes, EstimatedSpotPages);
+
+		// 축소된 해상도 저장 (visIdx 기준 — RenderSpotShadows에서 사용)
+		SpotScaledResolutions.resize(ShadowSpotCount);
+		for (uint32 i = 0; i < ShadowSpotCount; ++i)
+			SpotScaledResolutions[SpotAllocs[i].visIdx] = SpotAllocs[i].snappedRes;
 
 		// 해상도 내림차순 정렬 → area-budget 기반 페이지 분배
 		std::sort(SpotAllocs.begin(), SpotAllocs.end(), [](const FAlloc& a, const FAlloc& b) {
@@ -495,12 +515,32 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 			TotalFaceArea += 6.0f * static_cast<float>(snapped) * static_cast<float>(snapped);
 		}
 
-		// 페이지 수 추정 + 텍스처 생성
+		// 페이지 수 추정 — MaxPages 초과 시 해상도 비례 축소
 		uint32 EstimatedPages = static_cast<uint32>(ceilf(TotalFaceArea * PackingOverhead / PointAtlasArea));
+		if (EstimatedPages > MaxPointPages)
+		{
+			float AvailableArea = static_cast<float>(MaxPointPages) * PointAtlasArea;
+			float Scale = sqrtf(AvailableArea / (TotalFaceArea * PackingOverhead));
+			TotalFaceArea = 0.0f;
+			for (uint32 i = 0; i < ShadowPointCount; ++i)
+			{
+				uint32 scaled = PointLightAtlas.RoundToNearestPowerOfTwo(
+					static_cast<uint32>(static_cast<float>(PointAllocs[i].snappedRes) * Scale));
+				scaled = (std::max)(scaled, static_cast<uint32>(PointLightAtlas.GetMinResolution()));
+				PointAllocs[i].snappedRes = scaled;
+				TotalFaceArea += 6.0f * static_cast<float>(scaled) * static_cast<float>(scaled);
+			}
+			EstimatedPages = static_cast<uint32>(ceilf(TotalFaceArea * PackingOverhead / PointAtlasArea));
+		}
 		EstimatedPages = (std::max)(1u, (std::min)(EstimatedPages, MaxPointPages));
 
 		Res.EnsurePointAtlas(Dev, PointAtlasSize, EstimatedPages, ShadowPointCount);
 		if (bVSM) Res.EnsurePointAtlas_VSM(Dev, PointAtlasSize, EstimatedPages);
+
+		// 축소된 해상도 저장 (visIdx 기준 — RenderPointShadows에서 사용)
+		PointScaledResolutions.resize(ShadowPointCount);
+		for (uint32 i = 0; i < ShadowPointCount; ++i)
+			PointScaledResolutions[PointAllocs[i].visIdx] = PointAllocs[i].snappedRes;
 
 		// 해상도 내림차순 정렬 → area-budget 기반 페이지 분배
 		std::sort(PointAllocs.begin(), PointAllocs.end(), [](const FAlloc& a, const FAlloc& b) {
@@ -920,7 +960,7 @@ void FShadowMapPass::RenderSpotShadows(const FPassContext& Ctx, FShadowMapResour
 		for (uint32 visIdx : SpotPageGroups[Page])
 		{
 			const uint32 LightIdx = VisibleShadowSpotIndices[visIdx];
-			SpotLightAtlas.AddToBatch(Env.GetSpotLight(LightIdx), Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(LightIdx));
+			SpotLightAtlas.AddToBatch(static_cast<float>(SpotScaledResolutions[visIdx]), static_cast<int32>(LightIdx));
 		}
 
 		TArray<FAtlasRegion> PageRegions = SpotLightAtlas.CommitBatch();
@@ -1080,7 +1120,7 @@ void FShadowMapPass::RenderPointShadows(const FPassContext& Ctx, FShadowMapResou
 			{
 				FPointLightParams FaceParams = PointLight;
 				FaceParams.CubeMapOrientation = static_cast<ECubeMapOrientation>(FaceIndex);
-				PointLightAtlas.AddToBatch(FaceParams, Frame.CameraPosition, Frame.CameraForward, FOVy, Frame.ViewportHeight, static_cast<int32>(LightIdx));
+				PointLightAtlas.AddToBatch(FaceParams, static_cast<float>(PointScaledResolutions[shadowIdx]), static_cast<int32>(LightIdx));
 			}
 		}
 

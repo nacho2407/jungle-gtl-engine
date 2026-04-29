@@ -109,6 +109,10 @@ private:
 	TArray<TArray<uint32>> SpotPageGroups;
 	TArray<TArray<uint32>> PointPageGroups;
 
+	// MaxPages 초과 시 비례 축소된 해상도 (visIdx 기준)
+	TArray<uint32> SpotScaledResolutions;
+	TArray<uint32> PointScaledResolutions;
+
 	// envIndex → shadowDataIdx 매핑 (EndPass에서 light buffer 패치에 사용)
 	TArray<int32> SpotShadowIndexMap;   // [envIndex] = shadowDataIdx, -1 = no shadow
 	TArray<int32> PointShadowIndexMap;  // [envIndex] = shadowDataIdx, -1 = no shadow

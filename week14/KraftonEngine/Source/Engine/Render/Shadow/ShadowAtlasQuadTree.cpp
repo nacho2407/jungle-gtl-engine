@@ -16,6 +16,10 @@ void FShadowAtlasQuadTree::AddToBatch(const FSpotLightParams& InLightInfo, FVect
 	Batch.push_back({InLightInfo, EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H), LightIdx});
 }
 
+void FShadowAtlasQuadTree::AddToBatch(float OverrideResolution, int32 LightIdx) {
+	Batch.push_back({{}, OverrideResolution, LightIdx});
+}
+
 float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
 	if (InLightInfo.bCastShadows == false) return 0.f;
 
@@ -44,8 +48,10 @@ float FShadowAtlasQuadTree::EvaluateResolution(const FSpotLightParams& InLightIn
 uint32 FShadowAtlasQuadTree::ComputeSnappedResolution(const FSpotLightParams& InLightInfo, FVector CameraPos, FVector Forward, float FOV, float H) const {
 	float res = EvaluateResolution(InLightInfo, CameraPos, Forward, FOV, H);
 	uint32 snapped = RoundToNearestPowerOfTwo(static_cast<uint32>(res));
+	// AtlasSize/2 캡: QuadTree의 >= 가드가 AtlasSize 요청을 절반으로 내리므로 추정과 실제 일치시킴
+	uint32 maxRes = static_cast<uint32>(AtlasSize) / 2;
 	if (snapped < static_cast<uint32>(MinShadowMapResolution)) snapped = static_cast<uint32>(MinShadowMapResolution);
-	if (snapped > static_cast<uint32>(AtlasSize)) snapped = static_cast<uint32>(AtlasSize);
+	if (snapped > maxRes) snapped = maxRes;
 	return snapped;
 }
 
