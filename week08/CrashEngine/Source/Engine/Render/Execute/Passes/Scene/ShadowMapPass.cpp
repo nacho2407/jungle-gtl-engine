@@ -405,7 +405,7 @@ void FShadowMapPass::PrepareTargets(FRenderPipelineContext& Context)
 void FShadowMapPass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
     RenderItems.clear();
-PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod::LiPSM &&
+PSMCameraState.bLoggedRedrawThisFrame = GetShadowMapMethod() == EShadowMapMethod::PSM &&
                                             Context.SceneView != nullptr &&
                                             HasPSMCameraChanged(*Context.SceneView);
 

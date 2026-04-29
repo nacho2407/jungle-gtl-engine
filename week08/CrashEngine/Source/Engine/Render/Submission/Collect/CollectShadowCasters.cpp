@@ -221,7 +221,7 @@ TArray<FShadowViewData> FDrawCollector::GetDirectionalCSMViews(
     return Result;
 }
 
-FShadowViewData FDrawCollector::GetDirectionalLiPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance)
+FShadowViewData FDrawCollector::GetDirectionalPSMView(UWorld* World, FVector LightDir, const FSceneView* SceneView, float ShadowDistance)
 {
     (void)World;
 
@@ -231,93 +231,87 @@ FShadowViewData FDrawCollector::GetDirectionalLiPSMView(UWorld* World, FVector L
     const float CameraFar = std::max(CameraNear + 100.0f, std::min(SceneView->FarClip, ClampedShadowDistance));
     BuildPerspectiveFrustumCorners(SceneView, CameraNear, CameraFar, Corners);
 
-    FVector V = SceneView->CameraForward.Normalized();
-    FVector L = LightDir.Normalized();
-
-    // [LiSPSM Basis]
-    // LiS 공간의 Y축은 광원 방향 L에 수직이면서 카메라 전방 벡터 V가 투영된 방향으로 설정합니다.
-    // 이는 카메라가 바라보는 깊이 방향을 따라 와핑(Warping)을 적용하기 위함입니다.
-    FVector Y_LiS = V - L * V.Dot(L);
-    if (Y_LiS.LengthSquared() < 1e-6f)
+    float MaxBackDist = 0.0f;
+    for (int32 CornerIndex = 0; CornerIndex < 8; ++CornerIndex)
     {
-        FVector Up = (std::abs(L.Y) < 0.99f) ? FVector(0, 1, 0) : FVector(0, 0, 1);
-        Y_LiS = (Up - L * Up.Dot(L)).Normalized();
+        const float Dist = (Corners[CornerIndex] - SceneView->CameraPosition).Dot(SceneView->CameraForward);
+        if (Dist < 0.0f)
+        {
+            MaxBackDist = std::max(MaxBackDist, std::abs(Dist));
+        }
     }
-    else
+    const float VCSlideBack = MaxBackDist + CameraNear;
+
+    const FVector VCPos = SceneView->CameraPosition - SceneView->CameraForward * VCSlideBack;
+    const FVector VCTarget = SceneView->CameraPosition;
+
+    const FMatrix VCView = FMatrix::MakeLookAt(VCPos, VCTarget, SceneView->CameraUp);
+    const float Aspect = SceneView->ViewportWidth / std::max(1.0f, SceneView->ViewportHeight);
+    const float FOV = SceneView->FOV;
+    const float VCNear = std::max(0.1f, VCSlideBack - MaxBackDist);
+    const float VCFar = VCSlideBack + CameraFar;
+    const FMatrix VCProj = FMatrix::MakePerspective(FOV, Aspect, VCNear, VCFar);
+
+    FMatrix ViewPP;
+    FMatrix ProjPP;
+    float NearPP = 0.0f;
+    float FarPP = 1.0f;
     {
-        Y_LiS.Normalize();
-    }
-    FVector X_LiS = Y_LiS.Cross(L).Normalized();
-    FVector Z_LiS = L;
+        const FMatrix WorldToPPS = VCView * VCProj;
+        FVector CornersPPS[8];
+        FVector CenterPPS(0.0f);
+        for (int32 CornerIndex = 0; CornerIndex < 8; ++CornerIndex)
+        {
+            CornersPPS[CornerIndex] = WorldToPPS.TransformPositionWithW(Corners[CornerIndex]);
+            CenterPPS += CornersPPS[CornerIndex];
+        }
+        CenterPPS /= 8.0f;
 
-    // 카메라 위치를 원점으로 하는 LiS 뷰 행렬 생성 (정밀도 유지를 위해 상대 좌표 사용)
-    FMatrix LiSView = FMatrix::Identity;
-    LiSView.M[0][0] = X_LiS.X; LiSView.M[0][1] = Y_LiS.X; LiSView.M[0][2] = Z_LiS.X;
-    LiSView.M[1][0] = X_LiS.Y; LiSView.M[1][1] = Y_LiS.Y; LiSView.M[1][2] = Z_LiS.Y;
-    LiSView.M[2][0] = X_LiS.Z; LiSView.M[2][1] = Y_LiS.Z; LiSView.M[2][2] = Z_LiS.Z;
-    LiSView.M[3][0] = -SceneView->CameraPosition.Dot(X_LiS);
-    LiSView.M[3][1] = -SceneView->CameraPosition.Dot(Y_LiS);
-    LiSView.M[3][2] = -SceneView->CameraPosition.Dot(Z_LiS);
+        const FVector FrustumCenterWorld =
+            SceneView->CameraPosition + SceneView->CameraForward * (CameraNear + CameraFar) * 0.5f;
+        const float DirectionProbeDistance = std::max(10.0f, CameraFar * 0.1f);
+        const FVector ProbeCenterPPS = WorldToPPS.TransformPositionWithW(FrustumCenterWorld);
+        const FVector ProbeOffsetPPS = WorldToPPS.TransformPositionWithW(FrustumCenterWorld + LightDir * DirectionProbeDistance);
 
-    // LiS 공간에서의 Frustum BBox 계산
-    FVector MinLiS(FLT_MAX), MaxLiS(-FLT_MAX);
-    for (int i = 0; i < 8; ++i)
-    {
-        FVector c = LiSView.TransformPositionWithW(Corners[i]);
-        MinLiS.X = std::min(MinLiS.X, c.X);
-        MaxLiS.X = std::max(MaxLiS.X, c.X);
-        MinLiS.Y = std::min(MinLiS.Y, c.Y);
-        MaxLiS.Y = std::max(MaxLiS.Y, c.Y);
-        MinLiS.Z = std::min(MinLiS.Z, c.Z);
-        MaxLiS.Z = std::max(MaxLiS.Z, c.Z);
-    }
+        FVector LightDirPP = (ProbeOffsetPPS - ProbeCenterPPS).Normalized();
+        if (LightDirPP.LengthSquared() < 1e-4f)
+        {
+            LightDirPP = VCView.TransformVector(LightDir).Normalized();
+        }
+        if (LightDirPP.LengthSquared() < 1e-4f)
+        {
+            LightDirPP = FVector(0.0f, 0.0f, 1.0f);
+        }
 
-    // [Optimal n_opt]
-    // 와핑의 강도를 결정하는 n_opt를 계산합니다. n_opt가 클수록 Uniform에 가까워지고, 작을수록 근거리 해상도가 높아집니다.
-    const float d = MaxLiS.Y - MinLiS.Y;
-    const float SinAlpha = std::sqrt(std::max(0.0f, 1.0f - std::pow(V.Dot(L), 2.0f)));
-    float n_opt = (CameraNear + std::sqrt(CameraNear * CameraFar)) / std::max(0.01f, SinAlpha);
-    
-    // 과도한 왜곡을 방지하기 위해 n_opt를 제한합니다.
-    n_opt = std::clamp(n_opt, CameraNear, CameraFar);
+        const FVector UpHint = (std::abs(LightDirPP.Z) < 0.99f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
+        const FVector LightPosPP = CenterPPS - LightDirPP * 4.0f;
+        ViewPP = FMatrix::MakeLookAt(LightPosPP, CenterPPS, UpHint);
 
-    const float Y_Center = MinLiS.Y - n_opt;
-    const float n_warp = n_opt;
-    const float f_warp = n_opt + d;
+        FVector MinLS(FLT_MAX), MaxLS(-FLT_MAX);
+        for (int32 CornerIndex = 0; CornerIndex < 8; ++CornerIndex)
+        {
+            const FVector CornerLS = ViewPP.TransformPositionWithW(CornersPPS[CornerIndex]);
+            MinLS.X = std::min(MinLS.X, CornerLS.X);
+            MaxLS.X = std::max(MaxLS.X, CornerLS.X);
+            MinLS.Y = std::min(MinLS.Y, CornerLS.Y);
+            MaxLS.Y = std::max(MaxLS.Y, CornerLS.Y);
+            MinLS.Z = std::min(MinLS.Z, CornerLS.Z);
+            MaxLS.Z = std::max(MaxLS.Z, CornerLS.Z);
+        }
 
-    // [Perspective Warp Matrix]
-    // Y축 방향으로 원근 투영을 적용하여 근거리(MinLiS.Y에 가까운 영역)의 공간을 확장합니다.
-    FMatrix Warp = FMatrix::Identity;
-    Warp.M[1][1] = (f_warp + n_warp) / d;
-    Warp.M[1][3] = 1.0f;
-    Warp.M[3][1] = -(f_warp * n_warp) / d;
-    Warp.M[3][3] = 0.0f;
+        const float Width = std::max(0.01f, MaxLS.X - MinLS.X);
+        const float Height = std::max(0.01f, MaxLS.Y - MinLS.Y);
+        NearPP = MinLS.Z - 0.1f;
+        FarPP = MaxLS.Z + 0.1f;
 
-    const FMatrix WorldToWarp = LiSView * FMatrix::MakeTranslationMatrix(FVector(0, -Y_Center, 0)) * Warp;
-
-    // 와핑된 공간에서의 최종 BBox를 구하여 Orthographic 투영 범위를 결정합니다.
-    FVector MinW(FLT_MAX), MaxW(-FLT_MAX);
-    for (int i = 0; i < 8; ++i)
-    {
-        FVector c = WorldToWarp.TransformPositionWithW(Corners[i]);
-        MinW.X = std::min(MinW.X, c.X);
-        MaxW.X = std::max(MaxW.X, c.X);
-        MinW.Y = std::min(MinW.Y, c.Y);
-        MaxW.Y = std::max(MaxW.Y, c.Y);
-        MinW.Z = std::min(MinW.Z, c.Z);
-        MaxW.Z = std::max(MaxW.Z, c.Z);
+        const FVector OffsetLS(-(MinLS.X + MaxLS.X) * 0.5f, -(MinLS.Y + MaxLS.Y) * 0.5f, 0.0f);
+        ViewPP = ViewPP * FMatrix::MakeTranslationMatrix(OffsetLS);
+        ProjPP = FMatrix::MakeOrthographic(Width, Height, NearPP, FarPP);
     }
 
-    const float Width = (MaxW.X - MinW.X) * 1.05f;
-    const float Height = (MaxW.Y - MinW.Y) * 1.05f;
-
-    const FVector CenterW = (MinW + MaxW) * 0.5f;
-    const FMatrix FinalView = WorldToWarp * FMatrix::MakeTranslationMatrix(FVector(-CenterW.X, -CenterW.Y, 0.0f));
-    const FMatrix FinalProj = FMatrix::MakeOrthographic(Width, Height, MinW.Z, MaxW.Z);
-
-    FShadowViewData Result = {};
-    Result.Set(FinalView, FinalProj, MinW.Z, MaxW.Z, 0);
-    return Result;
+    FShadowViewData ShadowView = {};
+    ShadowView.Set(VCView * VCProj * ViewPP, ProjPP, NearPP, FarPP, 0);
+    return ShadowView;
 }
 
 void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld* World, const FSceneView* SceneView)
@@ -369,8 +363,8 @@ void FDrawCollector::ComputeDirectionalShadowMatrices(FLightProxy* Light, UWorld
         case EShadowMapMethod::Standard:
             ShadowView = GetDirectionalSSMView(World, LightDir);
             break;
-        case EShadowMapMethod::LiPSM:
-            ShadowView = GetDirectionalLiPSMView(World, LightDir, SceneView, Light->GetDynamicShadowDistanceSetting());
+        case EShadowMapMethod::PSM:
+            ShadowView = GetDirectionalPSMView(World, LightDir, SceneView, Light->GetDynamicShadowDistanceSetting());
             break;
         default:
             ShadowView = GetDirectionalSSMView(World, LightDir);
@@ -501,7 +495,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
             Light->ShadowViewFrustum.UpdateFromMatrix(Light->LightViewProj);
 
             const FConvexVolume& CasterQueryFrustum =
-                GetShadowMapMethod() == EShadowMapMethod::LiPSM ? SceneView->FrustumVolume : Light->ShadowViewFrustum;
+                GetShadowMapMethod() == EShadowMapMethod::PSM ? SceneView->FrustumVolume : Light->ShadowViewFrustum;
             World->GetPartition().QueryFrustumAllProxies(CasterQueryFrustum, Light->VisibleShadowCasters);
             continue;
         }
