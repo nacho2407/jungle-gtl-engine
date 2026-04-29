@@ -32,6 +32,7 @@ cbuffer PerObjectBuffer : register(b1)
 #define MAX_SHADOW_CASCADES     4
 #define MAX_SHADOW_SPOT_LIGHTS  64
 #define MAX_SHADOW_POINT_LIGHTS 16
+#define EVSM_EXPONENT           30.0f
 
 cbuffer ShadowBuffer : register(b5)
 {

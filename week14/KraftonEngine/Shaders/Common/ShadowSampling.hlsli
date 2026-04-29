@@ -40,21 +40,25 @@ float SampleShadowPCF(Texture2DArray shadowMap, float3 uvw, float compareDepth, 
     return shadow / count;
 }
 
-// ── VSM (Variance Shadow Map) ───────────────────────────────────
-// moments = (E[z], E[z^2])   — Reversed-Z: near=1, far=0
+// ── EVSM (Exponential Variance Shadow Map) ──────────────────────
+// moments = (E[exp(c*z)], E[exp(2c*z)])   — Reversed-Z: near=1, far=0
+// 지수 워프로 깊이 분포를 분리하여 light bleeding 대폭 감소
 // sharpen: light bleeding cutoff 강도 (0=soft, 1=sharp)
 float ComputeVSMFactor(float2 moments, float fragDepth, float sharpen)
 {
-    // Reversed-Z: 가까울수록 depth가 크다
-    // fragDepth >= moments.x → 빛에 더 가까움 → lit
-    if (fragDepth >= moments.x)
+    // 프래그먼트 깊이도 같은 지수 워프 적용
+    float e = exp(EVSM_EXPONENT * fragDepth);
+
+    // Reversed-Z: 가까울수록 depth가 크다 → exp값도 크다
+    // e >= moments.x → 빛에 더 가까움 → lit
+    if (e >= moments.x)
         return 1.0f;
 
-    // Chebyshev 부등식
+    // Chebyshev 부등식 (warped domain)
     float variance = moments.y - (moments.x * moments.x);
-    variance = max(variance, 0.00002f); // numerical stability
+    variance = max(variance, 0.001f); // EVSM은 값이 크므로 epsilon도 키움
 
-    float d = moments.x - fragDepth; // Reversed-Z: occluder가 더 큰 값
+    float d = moments.x - e;
     float pMax = variance / (variance + d * d);
 
     // Light bleeding 감소 — sharpen이 클수록 공격적으로 cutoff

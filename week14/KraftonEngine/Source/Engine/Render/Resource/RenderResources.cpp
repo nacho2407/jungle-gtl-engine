@@ -151,9 +151,12 @@ void FShadowMapResources::FCSMResources::ReleaseVSM()
 	{
 		ReleaseCOM(VSMRTV[i]);
 		ReleaseCOM(VSMDSV[i]);
+		ReleaseCOM(VSMBlurTempRTV[i]);
 	}
 	ReleaseCOM(VSMTexture);
 	ReleaseCOM(VSMDepthTexture);
+	ReleaseCOM(VSMBlurTempSRV);
+	ReleaseCOM(VSMBlurTemp);
 }
 
 // ============================================================
@@ -186,6 +189,9 @@ void FShadowMapResources::FSpotResources::ReleaseVSM()
 	ReleaseViewArray(VSMDSVs);
 	ReleaseCOM(VSMTexture);
 	ReleaseCOM(VSMDepthTexture);
+	ReleaseCOM(VSMBlurTempSRV);
+	ReleaseViewArray(VSMBlurTempRTVs);
+	ReleaseCOM(VSMBlurTemp);
 }
 
 // ============================================================
@@ -218,6 +224,9 @@ void FShadowMapResources::FPointResources::ReleaseVSM()
 	ReleaseViewArray(VSMDSVs);
 	ReleaseCOM(VSMTexture);
 	ReleaseCOM(VSMDepthTexture);
+	ReleaseCOM(VSMBlurTempSRV);
+	ReleaseViewArray(VSMBlurTempRTVs);
+	ReleaseCOM(VSMBlurTemp);
 }
 
 // ============================================================
@@ -541,6 +550,28 @@ void FShadowMapResources::EnsureCSM_VSM(ID3D11Device* Device, uint32 InResolutio
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = MAX_SHADOW_CASCADES;
 	Device->CreateShaderResourceView(CSM.VSMTexture, &SRVDesc, &CSM.VSMSRV);
+
+	// Blur temp texture (same format/size as moment texture)
+	D3D11_TEXTURE2D_DESC BlurTempDesc = MomentDesc;
+	if (FAILED(Device->CreateTexture2D(&BlurTempDesc, nullptr, &CSM.VSMBlurTemp)))
+	{
+		// Non-fatal: blur will be skipped
+		return;
+	}
+
+	for (uint32 i = 0; i < MAX_SHADOW_CASCADES; ++i)
+	{
+		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+		RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		RTVDesc.Texture2DArray.MipSlice = 0;
+		RTVDesc.Texture2DArray.FirstArraySlice = i;
+		RTVDesc.Texture2DArray.ArraySize = 1;
+		Device->CreateRenderTargetView(CSM.VSMBlurTemp, &RTVDesc, &CSM.VSMBlurTempRTV[i]);
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC BlurSRVDesc = SRVDesc;
+	Device->CreateShaderResourceView(CSM.VSMBlurTemp, &BlurSRVDesc, &CSM.VSMBlurTempSRV);
 }
 
 void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InResolution, uint32 InPageCount)
@@ -622,6 +653,26 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize = InPageCount;
 	Device->CreateShaderResourceView(Spot.VSMTexture, &SRVDesc, &Spot.VSMSRV);
+
+	// Blur temp texture
+	D3D11_TEXTURE2D_DESC BlurTempDesc = MomentDesc;
+	if (FAILED(Device->CreateTexture2D(&BlurTempDesc, nullptr, &Spot.VSMBlurTemp)))
+		return;
+
+	Spot.VSMBlurTempRTVs.resize(InPageCount, nullptr);
+	for (uint32 i = 0; i < InPageCount; ++i)
+	{
+		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+		RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		RTVDesc.Texture2DArray.MipSlice = 0;
+		RTVDesc.Texture2DArray.FirstArraySlice = i;
+		RTVDesc.Texture2DArray.ArraySize = 1;
+		Device->CreateRenderTargetView(Spot.VSMBlurTemp, &RTVDesc, &Spot.VSMBlurTempRTVs[i]);
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC BlurSRVDesc = SRVDesc;
+	Device->CreateShaderResourceView(Spot.VSMBlurTemp, &BlurSRVDesc, &Spot.VSMBlurTempSRV);
 }
 
 void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize, uint32 InPageCount)
@@ -702,6 +753,26 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
 	SRVDesc.Texture2DArray.ArraySize       = InPageCount;
 	Device->CreateShaderResourceView(Point.VSMTexture, &SRVDesc, &Point.VSMSRV);
+
+	// Blur temp texture
+	D3D11_TEXTURE2D_DESC BlurTempDesc = MomentDesc;
+	if (FAILED(Device->CreateTexture2D(&BlurTempDesc, nullptr, &Point.VSMBlurTemp)))
+		return;
+
+	Point.VSMBlurTempRTVs.resize(InPageCount, nullptr);
+	for (uint32 i = 0; i < InPageCount; ++i)
+	{
+		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
+		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+		RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		RTVDesc.Texture2DArray.MipSlice        = 0;
+		RTVDesc.Texture2DArray.FirstArraySlice = i;
+		RTVDesc.Texture2DArray.ArraySize       = 1;
+		Device->CreateRenderTargetView(Point.VSMBlurTemp, &RTVDesc, &Point.VSMBlurTempRTVs[i]);
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC BlurSRVDesc = SRVDesc;
+	Device->CreateShaderResourceView(Point.VSMBlurTemp, &BlurSRVDesc, &Point.VSMBlurTempSRV);
 }
 
 // ============================================================

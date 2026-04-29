@@ -36,17 +36,20 @@ PS_Input_Shadow VS(VS_Input_PNCTT input)
 }
 
 // =============================================================================
-// Pixel Shader — VSM moment 출력 (Hard/PCF 모드에서는 바인딩하지 않음)
+// Pixel Shader — EVSM moment 출력 (Hard/PCF 모드에서는 바인딩하지 않음)
 // =============================================================================
-// RTV format: R32G32_FLOAT — (moment1, moment2) = (depth, depth^2)
+// RTV format: R32G32_FLOAT — (moment1, moment2) = (exp(c*d), exp(2c*d))
+// EVSM: 지수 워프로 깊이 분포를 분리하여 light bleeding 대폭 감소
 float2 PS(PS_Input_Shadow input) : SV_TARGET
 {
-    float d  = input.depth;
-    float dx = ddx(d);
-    float dy = ddy(d);
+    float d = input.depth;
+    float e = exp(EVSM_EXPONENT * d);
+
+    float dx = ddx(e);
+    float dy = ddy(e);
 
     // moment2에 partial derivative bias 추가 (shadow acne 완화)
-    float moment2 = d * d + 0.25f * (dx * dx + dy * dy);
+    float moment2 = e * e + 0.25f * (dx * dx + dy * dy);
 
-    return float2(d, moment2);
+    return float2(e, moment2);
 }

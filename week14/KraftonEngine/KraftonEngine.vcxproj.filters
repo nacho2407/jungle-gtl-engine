@@ -231,6 +231,9 @@
     <FxCompile Include="Shaders\Lighting\TileLightCulling.hlsl">
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Lighting\VSMBlur.hlsl">
+      <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
@@ -424,6 +427,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -961,6 +967,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>

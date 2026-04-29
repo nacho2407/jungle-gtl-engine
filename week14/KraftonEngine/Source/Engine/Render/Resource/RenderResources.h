@@ -44,6 +44,11 @@ struct FShadowMapResources
 		ID3D11Texture2D*          VSMDepthTexture = nullptr;   // D32_FLOAT
 		ID3D11DepthStencilView*   VSMDSV[MAX_SHADOW_CASCADES] = {};
 
+		// ── VSM Blur Temp ──
+		ID3D11Texture2D*          VSMBlurTemp = nullptr;       // R32G32_FLOAT (blur ping-pong)
+		ID3D11RenderTargetView*   VSMBlurTempRTV[MAX_SHADOW_CASCADES] = {};
+		ID3D11ShaderResourceView* VSMBlurTempSRV = nullptr;
+
 		// ── Shared ──
 		uint32 Resolution = 2048;
 		FVector4 DebugCascadeNear = {};
@@ -73,6 +78,11 @@ struct FShadowMapResources
 		ID3D11ShaderResourceView*          VSMSRV = nullptr;
 		ID3D11Texture2D*                   VSMDepthTexture = nullptr;
 		TArray<ID3D11DepthStencilView*>    VSMDSVs;
+
+		// ── VSM Blur Temp ──
+		ID3D11Texture2D*                   VSMBlurTemp = nullptr;
+		TArray<ID3D11RenderTargetView*>    VSMBlurTempRTVs;
+		ID3D11ShaderResourceView*          VSMBlurTempSRV = nullptr;
 
 		// ── Shared ──
 		uint32 Resolution = 4096;
@@ -108,6 +118,11 @@ struct FShadowMapResources
 		ID3D11ShaderResourceView*          VSMSRV          = nullptr;
 		ID3D11Texture2D*                   VSMDepthTexture = nullptr;
 		TArray<ID3D11DepthStencilView*>    VSMDSVs;
+
+		// ── VSM Blur Temp ──
+		ID3D11Texture2D*                   VSMBlurTemp = nullptr;
+		TArray<ID3D11RenderTargetView*>    VSMBlurTempRTVs;
+		ID3D11ShaderResourceView*          VSMBlurTempSRV = nullptr;
 
 		// ── Shared ──
 		uint32 Resolution = 0;
