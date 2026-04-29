@@ -7,6 +7,7 @@
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
+#include "Editor/Settings/EditorSettings.h" // 상단에 추가
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -119,6 +120,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
        else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
            PermutationKey |= (uint32)EShaderFeature::TileCull;
+       bool bShadowApplied = false; // 추가
 
 	   // ShadowMap Permutation Key 조합
        for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
@@ -134,19 +136,26 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
 			   if (RenderBus->GetCascadeVis())
 				   PermutationKey |= (uint32)EShaderFeature::CascadeVis;
+               bShadowApplied = true;
 			   break;
 		   }
 
 		   case EShadowMap::PSM:
 		   {
 			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
+               bShadowApplied = true;
+
 			   break;
 		   }
            default: break;
            }
            break;
        }
-
+       // VSM 모드 + 그림자 활성일 때만 OR
+       if (bShadowApplied and FEditorSettings::Get().ShadowFilterMode == EShadowFilter::VSM)
+       {
+           PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
+       }
        if (Cmd.Material)
        {
 		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;

@@ -230,9 +230,11 @@ float CalculateShadow(float4 worldPos)
     FAtlasShadowData cascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
     
     float totalBias = ComputeBias(projCoords.z, cascadeShadowData.ConstantBias, cascadeShadowData.SlopedBias);
-    
+#if SHADOW_MAP_VSM
+    float ShadowFactor = ComputeShadowVSM(projCoords, cascadeShadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
+#else
     float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-    
+#endif   
     // 마지막 인덱스 제외하고 블렌드
     if (CascadeIndex < DirectionalCascadeCount - 1)
     {
@@ -240,7 +242,12 @@ float CalculateShadow(float4 worldPos)
         float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
         FAtlasShadowData nextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
         float nextTotalBias = ComputeBias(NextCascadeProjCoords.z, nextCascadeShadowData.ConstantBias, nextCascadeShadowData.SlopedBias);
+
+#if SHADOW_MAP_VSM        
+        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset , VSMMap, SampleState, 0.0001);        
+#else 
         float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextTotalBias);
+#endif
         ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
     }
     
@@ -280,9 +287,12 @@ float CalculateShadow(float4 worldPos)
     
     FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
     float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
-   //VSM 추가할 것
-    //float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset , VSMMap, SampleState, 0.0001);
+   
+#if SHADOW_MAP_VSM
+    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
+#else
+    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
+#endif
     return shadowFactor;
 }
 #else

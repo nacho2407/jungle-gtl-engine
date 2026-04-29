@@ -2,8 +2,8 @@
 
 TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey)
 {
-	constexpr uint32 FeatureMask   = 0xFFFF;
-	constexpr uint32 LightingMask  = 0x700;
+    constexpr uint32 FeatureMask = 0x1FFFF; // bit 16(ShadowVSM)까지 포함
+    constexpr uint32 LightingMask = 0x700;
 
 	EShaderFeature Features =
 		static_cast<EShaderFeature>(PermutationKey & FeatureMask);
@@ -29,6 +29,7 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildUberLitMacros(uint32 PermutationKey
 	if (!!(Features & EShaderFeature::ShadowCSM))      AddMacro("SHADOW_MAP_CSM", "1");
 	if (!!(Features & EShaderFeature::ShadowPSM))      AddMacro("SHADOW_MAP_PSM", "1");
 	if (!!(Features & EShaderFeature::CascadeVis))     AddMacro("CASCADE_VIS", "1");
+    if (!!(Features & EShaderFeature::ShadowVSM))      AddMacro("SHADOW_MAP_VSM", "1");
 
 	switch (LightingModel)
 	{
@@ -82,3 +83,4 @@ TArray<D3D_SHADER_MACRO> FShaderHelper::BuildVSMBlurCSMacros(EVSMBlurPass Pass)
     Macros.push_back({ nullptr, nullptr });
     return Macros;
 }
+

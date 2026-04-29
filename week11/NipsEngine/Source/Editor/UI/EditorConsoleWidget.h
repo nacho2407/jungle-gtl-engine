@@ -53,6 +53,7 @@ private:
 
 private:
 	void CmdStat(const TArray<FString>& Args);
+    void CmdShadow(const TArray<FString>& Args);
 };
 
 #define UE_LOG(Format, ...) \
