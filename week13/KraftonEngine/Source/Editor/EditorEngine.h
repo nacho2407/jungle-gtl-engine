@@ -52,6 +52,10 @@ public:
 	void RefreshContentBrowser() { MainPanel.RefreshContentBrowser(); }
 	void SetContentBrowserIconSize(float Size) { MainPanel.SetContentBrowserIconSize(Size); }
 	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
+	void HideEditorWindows() { MainPanel.HideEditorWindows(); }
+	void ShowEditorWindows() { MainPanel.ShowEditorWindows(); }
+	void SetShowEditorOnlyComponents(bool bEnable) { MainPanel.SetShowEditorOnlyComponents(bEnable); }
+	bool IsShowingEditorOnlyComponents() const { return MainPanel.IsShowingEditorOnlyComponents(); }
 	bool IsWorldCoordSystem() const { return FEditorSettings::Get().CoordSystem == EEditorCoordSystem::World; }
 	void ToggleCoordSystem();
 	void ApplyTransformSettingsToGizmo();
