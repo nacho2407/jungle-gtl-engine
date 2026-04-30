@@ -21,6 +21,9 @@
 #include <functional>
 #include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
+#include "Component/BoxComponent.h"
+#include "Component/SphereComponent.h"
+#include "Component/CapsuleComponent.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -203,6 +206,33 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 			UPointLightComponent* Comp = Actor->AddComponent<UPointLightComponent>();
 			return Comp;
 		}
+	},
+
+	{ 
+		"Box Component",
+		[](AActor* Actor) -> UActorComponent*
+		{
+			UBoxComponent* Comp = Actor->AddComponent<UBoxComponent>();
+			return Comp;
+		} 
+	},
+
+	{ 
+		"Sphere Component",
+		[](AActor* Actor) -> UActorComponent*
+		{
+			USphereComponent* Comp = Actor->AddComponent<USphereComponent>();
+			return Comp;
+		} 
+	},
+
+	{ 
+		"Capsule Component",
+		[](AActor* Actor) -> UActorComponent*
+		{
+			UCapsuleComponent* Comp = Actor->AddComponent<UCapsuleComponent>();
+			return Comp;
+		} 
 	},
 };
 

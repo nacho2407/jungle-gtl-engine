@@ -35,6 +35,10 @@ enum class EPrimitiveType
 	EPT_Decal,
 	EPT_Fireball,
 	EPT_Arrow,
+	EPT_Shape,
+	EPT_Box,
+	EPT_Sphere,
+	EPT_Capsule,
     MAX
 };
 

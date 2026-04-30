@@ -12,6 +12,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	
 	OutProps.push_back({"Visible", EPropertyType::Bool, &bIsVisible});
 	OutProps.push_back({"Enable Cull", EPropertyType::Bool, &bEnableCull});
+    OutProps.push_back({ "GenerateOverlapEvents", EPropertyType::Bool, &bGenerateOverlapEvents });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -25,6 +26,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	USceneComponent::Serialize(Ar);
 	Ar << "Visible" << bIsVisible;
 	Ar << "Enable Cull" << bEnableCull;
+    Ar << "GenerateOverlapEvents" << bGenerateOverlapEvents;
 }
 
 void UPrimitiveComponent::SetVisibility(bool bVisible)
@@ -106,6 +108,37 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 {
 	USceneComponent::AddWorldOffset(WorldDelta);
 	UpdateWorldAABB();
+}
+
+bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
+{
+	for (UPrimitiveComponent* Comp : CurOverlaps)
+	{
+        if (Comp->Owner == OtherActor)
+            return true;
+	}
+    return false;
+}
+
+void UPrimitiveComponent::ResolveOverlaps()
+{
+    for (auto* B : CurOverlaps)
+    {
+        if (!PrevOverlaps.contains(B))
+        {
+            FHitResult HitResult;
+            OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+        }
+    }
+
+    for (auto* B : PrevOverlaps)
+    {
+        if (!CurOverlaps.contains(B))
+        {
+            FHitResult HitResult;
+            OnComponentEndOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+        }
+    }
 }
 
 void UPrimitiveComponent::OnTransformDirty()
