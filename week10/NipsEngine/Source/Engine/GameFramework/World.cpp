@@ -128,6 +128,7 @@ void UWorld::UpdateOverlaps()
                 UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
 				if (PrimComp)
 				{
+                    PrimComp->SetPrevOverlaps(PrimComp->GetOverlapInfos());
                     PrimComp->ClearOverlaps();
                     if (PrimComp->ShouldGenerateOverlapEvents())
                         CollisionCandidates.push_back(PrimComp);
@@ -136,10 +137,10 @@ void UWorld::UpdateOverlaps()
 		}
         
 		for (int i = 0; i < CollisionCandidates.size(); ++i)
-		{
-            for (int j = 0; j < CollisionCandidates.size(); ++j)
+        {
+            UPrimitiveComponent* A = CollisionCandidates[i];
+            for (int j = i+1; j < CollisionCandidates.size(); ++j)
 			{
-                UPrimitiveComponent* A = CollisionCandidates[i];
                 UPrimitiveComponent* B = CollisionCandidates[j];
                 if (A != B)
 				{
@@ -149,13 +150,10 @@ void UWorld::UpdateOverlaps()
 					{
                         A->AddOverlap(B);
                         B->AddOverlap(A);
-
-						FHitResult HitResult;
-                        A->OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
-                        B->OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
 					}
 				}
 			}
+            A->ResolveOverlaps();
 		}
 	}
 }

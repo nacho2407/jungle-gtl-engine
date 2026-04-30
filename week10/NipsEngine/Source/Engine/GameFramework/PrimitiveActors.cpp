@@ -440,6 +440,7 @@ void ADelegateTestActor::InitDefaultComponents()
 	BoxComponent = AddComponent<UBoxComponent>();
     BoxComponent->AttachToComponent(SceneRoot);
     BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ADelegateTestActor::OnBeginOverlap);
+    BoxComponent->OnComponentEndOverlap.AddDynamic(this, &ADelegateTestActor::OnEndOverlap);
     BoxComponent->OnComponentHit.AddDynamic(this, &ADelegateTestActor::OnHit);
 }
 
@@ -461,5 +462,10 @@ void ADelegateTestActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADelegateTestActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    UE_LOG("On Overlap");
+    UE_LOG("On Begin Overlap");
+}
+
+void ADelegateTestActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("On End Overlap");
 }

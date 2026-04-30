@@ -30,59 +30,64 @@ void OnBeginOverlap(
 );
 */
 DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
+DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 
 class UPrimitiveComponent : public USceneComponent
 {
 public:
-	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+    DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 
-	FOnComponentBeginOverlap OnComponentBeginOverlap;
+    FOnComponentBeginOverlap OnComponentBeginOverlap;
+    FOnComponentEndOverlap OnComponentEndOverlap;
     FOnComponentHit OnComponentHit;
 
-	/* For Property window */
-	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-	void PostEditProperty(const char * PropertyName) override;
+    /* For Property window */
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-	virtual void Serialize(FArchive& Ar) override;
+    virtual void Serialize(FArchive& Ar) override;
 
-	/* Visibility */
-	void SetVisibility(bool bVisible);
-	bool IsVisible() const { return bIsVisible; }
+    /* Visibility */
+    void SetVisibility(bool bVisible);
+    bool IsVisible() const { return bIsVisible; }
 
-	void SetEnableCull(const bool bInEnableCull) { bEnableCull = bInEnableCull; }
-	bool IsEnableCull() const { return bEnableCull; }
+    void SetEnableCull(const bool bInEnableCull) { bEnableCull = bInEnableCull; }
+    bool IsEnableCull() const { return bEnableCull; }
 
-	/* Getter */
-	virtual const FAABB& GetWorldAABB() const 
-	{ 
-		UpdateWorldAABB();
-		return WorldAABB;
-	}
+    /* Getter */
+    virtual const FAABB& GetWorldAABB() const
+    {
+        UpdateWorldAABB();
+        return WorldAABB;
+    }
 
-	/* For Collision(Ray-casting) */
-	virtual void UpdateWorldAABB() const = 0;
-	bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
-	bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1,
-	                       const FVector& V2, float& OutT);
-	virtual bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) = 0;
+    /* For Collision(Ray-casting) */
+    virtual void UpdateWorldAABB() const = 0;
+    bool Raycast(const FRay& Ray, FHitResult& OutHitResult);
+    bool IntersectTriangle(const FVector& RayOrigin, const FVector& RayDir, const FVector& V0, const FVector& V1,
+                           const FVector& V2, float& OutT);
+    virtual bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) = 0;
 
-	/* For Transform */
-	void UpdateWorldMatrix() const override;
-	void AddWorldOffset(const FVector& WorldDelta) override;
-	virtual EPrimitiveType GetPrimitiveType() const = 0;
+    /* For Transform */
+    void UpdateWorldMatrix() const override;
+    void AddWorldOffset(const FVector& WorldDelta) override;
+    virtual EPrimitiveType GetPrimitiveType() const = 0;
 
-	/* For Material */
-	virtual int32 GetNumMaterials() const { return 0; }
-	virtual class UMaterialInterface* GetMaterial(int32 SlotIndex) const { return nullptr; }
-	virtual void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) {}
+    /* For Material */
+    virtual int32 GetNumMaterials() const { return 0; }
+    virtual class UMaterialInterface* GetMaterial(int32 SlotIndex) const { return nullptr; }
+    virtual void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) {}
 
-	virtual bool SupportsOutline() const { return true; }
+    virtual bool SupportsOutline() const { return true; }
 
-	const TSet<UPrimitiveComponent*>& GetOverlapInfos() const { return CurOverlaps; }
+    const TSet<UPrimitiveComponent*>& GetOverlapInfos() const { return CurOverlaps; }
     bool IsOverlappingActor(const AActor* OtherActor) const;
     bool ShouldGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
     void ClearOverlaps() { CurOverlaps.clear(); }
     void AddOverlap(UPrimitiveComponent* OtherComp) { CurOverlaps.insert(OtherComp); }
+    void SetPrevOverlaps(const TSet<UPrimitiveComponent*>& InOverlaps) { PrevOverlaps = InOverlaps; }
+	// Begin, End 체크
+    void ResolveOverlaps();
 
 protected:
     void OnTransformDirty() override;
@@ -95,7 +100,8 @@ protected:
 
     bool bGenerateOverlapEvents = false;
     bool bBlockComponent = false; // ComponentHit
-	TSet<UPrimitiveComponent*> CurOverlaps;
+    TSet<UPrimitiveComponent*> CurOverlaps;
+    TSet<UPrimitiveComponent*> PrevOverlaps;
 };
 
 // struct FMeshData;
