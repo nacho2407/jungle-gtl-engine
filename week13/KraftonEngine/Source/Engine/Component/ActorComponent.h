@@ -47,7 +47,7 @@ public:
 
 	inline bool IsActive() { return bIsActive; }
 
-	void SetOwner(AActor* Actor);
+	virtual void SetOwner(AActor* Actor);
 	AActor* GetOwner() const { return Owner; }
 	UWorld* GetWorld() const;
 

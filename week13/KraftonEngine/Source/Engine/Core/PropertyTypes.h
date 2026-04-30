@@ -22,6 +22,7 @@ enum class EPropertyType : uint8_t
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
 	Enum,
 	Vec3Array,
+	Script,
 };
 
 // 머티리얼 슬롯: 경로를 하나의 단위로 관리
