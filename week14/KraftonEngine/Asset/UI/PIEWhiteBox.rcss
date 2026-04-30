@@ -10,8 +10,11 @@ body
 	top: 40px;
 	width: 160px;
 	height: 100px;
-	background-color: blue;
+	background-color: white;
 	color: black;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 24px;
 	text-align: center;
 	line-height: 100px;
 }

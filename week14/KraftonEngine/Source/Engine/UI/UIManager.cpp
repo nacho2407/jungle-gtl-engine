@@ -44,6 +44,11 @@ namespace
 		UINT IndexCount = 0;
 	};
 
+	struct FRmlTextureD3D11
+	{
+		ID3D11ShaderResourceView* SRV = nullptr;
+	};
+
 	struct FRmlPerFrameCB
 	{
 		float ViewportWidth = 1.0f;
@@ -114,6 +119,7 @@ public:
 
 	~FRmlRenderInterfaceD3D11() override
 	{
+		ReleaseWhiteTexture();
 		if (ScissorRasterizerState)
 		{
 			ScissorRasterizerState->Release();
@@ -198,7 +204,7 @@ public:
 		return reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry);
 	}
 
-	void RenderGeometry(Rml::CompiledGeometryHandle GeometryHandle, Rml::Vector2f Translation, Rml::TextureHandle /*Texture*/) override
+	void RenderGeometry(Rml::CompiledGeometryHandle GeometryHandle, Rml::Vector2f Translation, Rml::TextureHandle Texture) override
 	{
 		if (!Ctx || !GeometryHandle)
 		{
@@ -234,8 +240,13 @@ public:
 		DC->UpdateSubresource(PerFrameCB, 0, nullptr, &CBData, 0, 0);
 		DC->VSSetConstantBuffers(0, 1, &PerFrameCB);
 
-		ID3D11ShaderResourceView* NullSRV = nullptr;
-		DC->PSSetShaderResources(0, 1, &NullSRV);
+		ID3D11ShaderResourceView* SRV = WhiteTextureSRV;
+		if (Texture)
+		{
+			auto* TextureResource = reinterpret_cast<FRmlTextureD3D11*>(Texture);
+			SRV = TextureResource ? TextureResource->SRV : nullptr;
+		}
+		DC->PSSetShaderResources(0, 1, &SRV);
 
 		UINT Stride = sizeof(FRmlVertexD3D11);
 		UINT Offset = 0;
@@ -269,13 +280,58 @@ public:
 		return 0;
 	}
 
-	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> /*Source*/, Rml::Vector2i /*SourceDimensions*/) override
+	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> Source, Rml::Vector2i SourceDimensions) override
 	{
-		return 0;
+		if (!Device || Source.empty() || SourceDimensions.x <= 0 || SourceDimensions.y <= 0)
+		{
+			return 0;
+		}
+
+		D3D11_TEXTURE2D_DESC TextureDesc = {};
+		TextureDesc.Width = static_cast<UINT>(SourceDimensions.x);
+		TextureDesc.Height = static_cast<UINT>(SourceDimensions.y);
+		TextureDesc.MipLevels = 1;
+		TextureDesc.ArraySize = 1;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.SampleDesc.Count = 1;
+		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		D3D11_SUBRESOURCE_DATA InitialData = {};
+		InitialData.pSysMem = Source.data();
+		InitialData.SysMemPitch = static_cast<UINT>(SourceDimensions.x * 4);
+
+		ID3D11Texture2D* Texture = nullptr;
+		if (FAILED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
+		{
+			return 0;
+		}
+
+		ID3D11ShaderResourceView* SRV = nullptr;
+		HRESULT HR = Device->CreateShaderResourceView(Texture, nullptr, &SRV);
+		Texture->Release();
+		if (FAILED(HR))
+		{
+			return 0;
+		}
+
+		auto* TextureResource = new FRmlTextureD3D11();
+		TextureResource->SRV = SRV;
+		return reinterpret_cast<Rml::TextureHandle>(TextureResource);
 	}
 
-	void ReleaseTexture(Rml::TextureHandle /*Texture*/) override
+	void ReleaseTexture(Rml::TextureHandle Texture) override
 	{
+		auto* TextureResource = reinterpret_cast<FRmlTextureD3D11*>(Texture);
+		if (!TextureResource)
+		{
+			return;
+		}
+		if (TextureResource->SRV)
+		{
+			TextureResource->SRV->Release();
+		}
+		delete TextureResource;
 	}
 
 	void EnableScissorRegion(bool Enable) override
@@ -330,6 +386,8 @@ private:
 		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		Device->CreateBuffer(&Desc, nullptr, &PerFrameCB);
 
+		CreateWhiteTexture();
+
 		D3D11_RASTERIZER_DESC RasterDesc = {};
 		RasterDesc.FillMode = D3D11_FILL_SOLID;
 		RasterDesc.CullMode = D3D11_CULL_NONE;
@@ -337,9 +395,45 @@ private:
 		Device->CreateRasterizerState(&RasterDesc, &ScissorRasterizerState);
 	}
 
+	void CreateWhiteTexture()
+	{
+		const uint32 WhitePixel = 0xffffffff;
+
+		D3D11_TEXTURE2D_DESC TextureDesc = {};
+		TextureDesc.Width = 1;
+		TextureDesc.Height = 1;
+		TextureDesc.MipLevels = 1;
+		TextureDesc.ArraySize = 1;
+		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TextureDesc.SampleDesc.Count = 1;
+		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+		D3D11_SUBRESOURCE_DATA InitialData = {};
+		InitialData.pSysMem = &WhitePixel;
+		InitialData.SysMemPitch = sizeof(uint32);
+
+		ID3D11Texture2D* Texture = nullptr;
+		if (SUCCEEDED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
+		{
+			Device->CreateShaderResourceView(Texture, nullptr, &WhiteTextureSRV);
+			Texture->Release();
+		}
+	}
+
+	void ReleaseWhiteTexture()
+	{
+		if (WhiteTextureSRV)
+		{
+			WhiteTextureSRV->Release();
+			WhiteTextureSRV = nullptr;
+		}
+	}
+
 private:
 	ID3D11Device* Device = nullptr;
 	ID3D11Buffer* PerFrameCB = nullptr;
+	ID3D11ShaderResourceView* WhiteTextureSRV = nullptr;
 	ID3D11RasterizerState* ScissorRasterizerState = nullptr;
 	const FPassContext* Ctx = nullptr;
 };
@@ -369,6 +463,12 @@ void UUIManager::Initialize(ID3D11Device* InDevice)
 	if (!RmlContext)
 	{
 		UE_LOG("[RmlUi] Failed to create GameViewport context.");
+	}
+
+	const std::filesystem::path FontPath = ToProjectPath("Asset/Font/Maplestory Bold.ttf");
+	if (!Rml::LoadFontFace(ToRmlPath(FontPath), "Maplestory", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold))
+	{
+		UE_LOG("[RmlUi] Failed to load font: Asset/Font/Maplestory Bold.ttf");
 	}
 }
 
