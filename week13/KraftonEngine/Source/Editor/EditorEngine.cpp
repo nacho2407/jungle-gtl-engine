@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
@@ -9,6 +9,9 @@
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Viewport/GameViewportClient.h"
+#include "GameFramework/PlayerController.h"
+#include "UI/UIManager.h"
+#include "UI/UserWidget.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -330,7 +333,17 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	//MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
 	//ViewportLayout.DisableWorldAxisForPIE(); //PIE 중에는 월드 축 렌더링을 비활성화.
 
-	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
+	// 7) PIE 시작 UI 생성 — 향후 Lua BeginPlay에서 호출할 CreateWidget/AddToViewport의 최소 연결.
+	APlayerController* PlayerController = UObjectManager::Get().CreateObject<APlayerController>(PIEWorld);
+	UUserWidget* StartupWidget = UUIManager::Get().CreateWidget(PlayerController, "Asset/UI/PIEWhiteBox.rml");
+	if (StartupWidget)
+	{
+		StartupWidget->AddToViewport(0);
+	}
+	PlayInEditorSessionInfo->PlayerController = PlayerController;
+	PlayInEditorSessionInfo->StartupWidget = StartupWidget;
+
+	// 8) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
 	//    SpawnActor로 만든 신규 액터도 자동으로 BeginPlay된다.
 	PIEWorld->BeginPlay();
@@ -394,6 +407,12 @@ void UEditorEngine::EndPlayMap()
 		PIEViewportClient->OnEndPIE();
 		UObjectManager::Get().DestroyObject(PIEViewportClient);
 		SetGameViewportClient(nullptr);
+	}
+
+	UUIManager::Get().ClearViewport();
+	if (IsAliveObject(PlayInEditorSessionInfo->PlayerController))
+	{
+		UObjectManager::Get().DestroyObject(PlayInEditorSessionInfo->PlayerController);
 	}
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -515,6 +515,9 @@
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
@@ -716,6 +719,9 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\ShadowMapPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\UIPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderState\BlendStateManager.cpp">
       <Filter>Source\Engine\Render\RenderState</Filter>
     </ClCompile>
@@ -789,6 +795,12 @@
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\SWindow.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\UIManager.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\UserWidget.cpp">
       <Filter>Source\Engine\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp">
@@ -1084,6 +1096,9 @@
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
@@ -1318,6 +1333,9 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\ShadowMapPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\UIPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderState\BlendStateManager.h">
       <Filter>Source\Engine\Render\RenderState</Filter>
     </ClInclude>
@@ -1445,6 +1463,12 @@
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\UI\SWindow.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\UIManager.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\UserWidget.h">
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h">
