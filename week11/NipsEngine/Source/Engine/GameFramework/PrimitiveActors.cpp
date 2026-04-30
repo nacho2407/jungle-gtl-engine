@@ -15,6 +15,7 @@
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
+#include "Core/Debug.h"
 
 namespace
 {
@@ -438,4 +439,18 @@ void ADelegateTestActor::InitDefaultComponents()
 void ADelegateTestActor::Tick(float DeltaTime)
 {
     AActor::Tick(DeltaTime);
+
+	OnTakeDamage.Broadcast(1.f);
+}
+
+void ADelegateTestActor::BeginPlay()
+{
+    AActor::BeginPlay();
+
+	OnTakeDamage.AddDynamic(this, &ADelegateTestActor::HandleTakeDamage);
+}
+
+void ADelegateTestActor::HandleTakeDamage(float InDamage)
+{
+    UE_LOG("On Take Damage : %f", InDamage);
 }
