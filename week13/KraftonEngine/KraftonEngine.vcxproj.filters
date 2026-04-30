@@ -795,6 +795,8 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp" />
+    <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1454,6 +1456,13 @@
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
+    <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
+    <ClInclude Include="ThirdParty\lua\include\lauxlib.h" />
+    <ClInclude Include="ThirdParty\lua\include\lua.h" />
+    <ClInclude Include="ThirdParty\lua\include\lua.hpp" />
+    <ClInclude Include="ThirdParty\lua\include\luaconf.h" />
+    <ClInclude Include="ThirdParty\lua\include\lualib.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
