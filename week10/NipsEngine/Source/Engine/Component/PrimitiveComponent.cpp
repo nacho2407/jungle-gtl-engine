@@ -108,6 +108,16 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 	UpdateWorldAABB();
 }
 
+bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
+{
+	for (UPrimitiveComponent* Comp : CurOverlaps)
+	{
+        if (Comp->Owner == OtherActor)
+            return true;
+	}
+    return false;
+}
+
 void UPrimitiveComponent::OnTransformDirty()
 {
 	NotifySpatialIndexDirty();
