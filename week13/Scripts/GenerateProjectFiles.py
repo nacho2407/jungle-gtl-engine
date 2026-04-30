@@ -72,13 +72,15 @@ INCLUDE_PATHS = [
     "Source",
     "ThirdParty",
     "ThirdParty\\ImGui",
+    "ThirdParty\\RmlUi\\Include",
     "Source\\Editor",
     "Source\\ObjViewer",
     ".",
 ]
 
-# Library paths (relative to project dir)
-LIBRARY_PATHS = []
+ADDITIONAL_DEPENDENCIES = ["rmlui.lib", "rmlui_debugger.lib"]
+RMLUI_DEBUG_DIR = "ThirdParty\\RmlUi\\Debug"
+RMLUI_RELEASE_DIR = "ThirdParty\\RmlUi\\Release"
 
 # NuGet packages (id, version) — restored via packages.config
 NUGET_PACKAGES = [
@@ -250,9 +252,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
     # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
     include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
-    library_path_value = ";".join(LIBRARY_PATHS) + ";$(LibraryPath)" if LIBRARY_PATHS else "$(LibraryPath)"
     for cfg, plat in CONFIGURATIONS:
         cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+        is_x64 = plat == "x64"
+        rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
+        library_paths = [rmlui_dir] if is_x64 else []
+        library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
         ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
@@ -299,6 +304,13 @@ def generate_vcxproj(files: dict[str, list[str]]):
         subsystem = props.get("subsystem", "Windows" if is_x64 else "Console")
         ET.SubElement(link, "SubSystem").text = subsystem
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
+        if ADDITIONAL_DEPENDENCIES and is_x64:
+            ET.SubElement(link, "AdditionalDependencies").text = ";".join(ADDITIONAL_DEPENDENCIES) + ";%(AdditionalDependencies)"
+
+        if is_x64:
+            rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
+            post_build = ET.SubElement(idg, "PostBuildEvent")
+            ET.SubElement(post_build, "Command").text = f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"'
 
     # ClCompile items
     ig = ET.SubElement(proj, "ItemGroup")
