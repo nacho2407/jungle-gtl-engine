@@ -1,4 +1,7 @@
 ﻿#include "GameFramework/World.h"
+#include "Engine/Collision/Collision.h"
+#include "Component/PrimitiveComponent.h"
+#include "Editor/UI/EditorConsoleWidget.h"
 
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
@@ -68,6 +71,7 @@ void UWorld::Tick(float DeltaTime)
 		PersistentLevel->TickGame(DeltaTime);
 
     SyncSpatialIndex();
+    UpdateOverlaps();
 }
 
 void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -110,4 +114,46 @@ void UWorld::NotifyActorDestroyed(AActor* Actor)
             Listener(Actor);
         }
     }
+}
+
+void UWorld::UpdateOverlaps()
+{
+	if (PersistentLevel)
+	{
+        TArray<UPrimitiveComponent*> CollisionCandidates;
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			for (UActorComponent* Comp : Actor->GetComponents())
+			{
+                UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
+				if (PrimComp)
+				{
+                    PrimComp->ClearOverlaps();
+                    if (PrimComp->ShouldGenerateOverlapEvents())
+                        CollisionCandidates.push_back(PrimComp);
+				}
+			}
+		}
+        
+		for (int i = 0; i < CollisionCandidates.size(); ++i)
+		{
+            for (int j = 0; j < CollisionCandidates.size(); ++j)
+			{
+                UPrimitiveComponent* A = CollisionCandidates[i];
+                UPrimitiveComponent* B = CollisionCandidates[j];
+                if (A != B)
+				{
+                    bool bCheckCollision = FCollision::CheckOverlap(A, B);
+
+					if (bCheckCollision)
+					{
+                        A->AddOverlap(B);
+                        B->AddOverlap(A);
+
+						UE_LOG("Collision Occurred");
+					}
+				}
+			}
+		}
+	}
 }

@@ -5,6 +5,7 @@
 #include "Core/Singleton.h"
 #include "Core/PropertyTypes.h"
 #include "Serialization/Archive.h"
+#include "Object/Object.h"
 
 #define DECLARE_CLASS(ClassName, ParentClass)                          \
     static const FTypeInfo s_TypeInfo;                                 \
