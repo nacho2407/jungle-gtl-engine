@@ -175,3 +175,16 @@ public:
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
+
+/**
+ * Delegate 테스트 용 액터 
+ */
+class ADelegateTestActor : public AActor
+{
+public:
+    DECLARE_CLASS(ADelegateTestActor, AActor)
+    ADelegateTestActor() = default;
+
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};

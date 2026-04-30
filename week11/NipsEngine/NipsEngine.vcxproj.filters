@@ -697,6 +697,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1342,5 +1343,6 @@
     <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
     <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
+    <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
   </ItemGroup>
 </Project>
