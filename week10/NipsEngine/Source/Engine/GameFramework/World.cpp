@@ -150,7 +150,9 @@ void UWorld::UpdateOverlaps()
                         A->AddOverlap(B);
                         B->AddOverlap(A);
 
-						UE_LOG("Collision Occurred");
+						FHitResult HitResult;
+                        A->OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+                        B->OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
 					}
 				}
 			}
