@@ -17,6 +17,7 @@
 #include <Component/SubUVComponent.h>
 #include "Core/Debug.h"
 #include "Component/BoxComponent.h"
+#include "Core/CollisionTypes.h"
 
 namespace
 {
@@ -435,23 +436,30 @@ void ADelegateTestActor::InitDefaultComponents()
 
     auto SceneRoot = AddComponent<USceneComponent>();
     SetRootComponent(SceneRoot);
+
+	BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(SceneRoot);
+    BoxComponent->OnComponentBeginOverlap.AddDynamic(this, &ADelegateTestActor::OnBeginOverlap);
+    BoxComponent->OnComponentHit.AddDynamic(this, &ADelegateTestActor::OnHit);
 }
 
 void ADelegateTestActor::Tick(float DeltaTime)
 {
     AActor::Tick(DeltaTime);
-
-	OnTakeDamage.Broadcast(1.f);
 }
 
 void ADelegateTestActor::BeginPlay()
 {
     AActor::BeginPlay();
 
-	OnTakeDamage.AddDynamic(this, &ADelegateTestActor::HandleTakeDamage);
 }
 
-void ADelegateTestActor::HandleTakeDamage(float InDamage)
+void ADelegateTestActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    UE_LOG("On Take Damage : %f", InDamage);
+    UE_LOG("On Hit");
+}
+
+void ADelegateTestActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("On Overlap");
 }

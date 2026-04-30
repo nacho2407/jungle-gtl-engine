@@ -6,11 +6,38 @@
 #include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "Engine/Geometry/AABB.h"
+#include "Core/Delegates/Delegate.h"
+
+/*
+void OnHit(
+    UPrimitiveComponent* HitComponent,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    FVector NormalImpulse,
+    const FHitResult& Hit
+);
+*/
+DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, FVector, const FHitResult&);
+
+/*
+void OnBeginOverlap(
+    UPrimitiveComponent* OverlappedComponent,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex,
+    bool bFromSweep,
+    const FHitResult& SweepResult
+);
+*/
+DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 
 class UPrimitiveComponent : public USceneComponent
 {
 public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+
+	FOnComponentBeginOverlap OnComponentBeginOverlap;
+    FOnComponentHit OnComponentHit;
 
 	/* For Property window */
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
