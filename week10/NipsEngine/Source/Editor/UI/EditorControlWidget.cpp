@@ -136,6 +136,13 @@ void FEditorControlWidget::Render(float DeltaTime)
                 Actor->SetActorLocation(CurSpawnPoint);
                 break;
             }
+            case 12: // ForDelegateTest
+			{
+                ADelegateTestActor* Actor = World->SpawnActor<ADelegateTestActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+			}
 			}
 		}
 		NumberOfSpawnedActors = 1;

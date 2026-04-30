@@ -64,12 +64,18 @@ REGISTER_FACTORY(ALightActor)
 
 DEFINE_CLASS(AAmbientLightActor, ALightActor)
 REGISTER_FACTORY(AAmbientLightActor)
+
 DEFINE_CLASS(ADirectionalLightActor, ALightActor)
 REGISTER_FACTORY(ADirectionalLightActor)
+
 DEFINE_CLASS(APointLightActor, ALightActor)
 REGISTER_FACTORY(APointLightActor)
+
 DEFINE_CLASS(ASpotlightActor, APointLightActor)
 REGISTER_FACTORY(ASpotlightActor)
+
+DEFINE_CLASS(ADelegateTestActor, AActor)
+REGISTER_FACTORY(ADelegateTestActor)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -419,4 +425,17 @@ void ASpotlightActor::Tick(float DeltaTime)
 	{
 		BillboardComp->SetColor(GetLight()->LightColor);
 	}
+}
+
+void ADelegateTestActor::InitDefaultComponents()
+{
+    SetTickInEditor(true);
+
+    auto SceneRoot = AddComponent<USceneComponent>();
+    SetRootComponent(SceneRoot);
+}
+
+void ADelegateTestActor::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
 }
