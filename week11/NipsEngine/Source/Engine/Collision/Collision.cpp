@@ -126,8 +126,8 @@ bool FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereC
     FVector CenterA = A->GetWorldLocation();
     FVector CenterB = B->GetWorldLocation();
 
-    float RadiusA = A->GetSphereRadius();
-    float RadiusB = B->GetSphereRadius();
+    float RadiusA = A->GetScaledSphereRadius();
+    float RadiusB = B->GetScaledSphereRadius();
 
     float DistSq = (CenterA - CenterB).SizeSquared();
     float RadiusSum = RadiusA + RadiusB;
@@ -139,7 +139,7 @@ bool FCollision::IntersectBoxSphere(const UBoxComponent* Box, const USphereCompo
 {
     const FAABB& AABB = Box->GetWorldAABB();
     FVector Center = Sphere->GetWorldLocation();
-    float Radius = Sphere->GetSphereRadius();
+    float Radius = Sphere->GetScaledSphereRadius();
 
     FVector Closest = ClosestPointOnAABB(Center, AABB);
 
@@ -153,11 +153,11 @@ bool FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A, const UCaps
     FVector CenterA = A->GetWorldLocation();
     FVector CenterB = B->GetWorldLocation();
 
-    float HalfA = A->GetCapsuleHalfHeight();
-    float HalfB = B->GetCapsuleHalfHeight();
+    float HalfA = A->GetScaledCapsuleHalfHeight();
+    float HalfB = B->GetScaledCapsuleHalfHeight();
 
-    float RadiusA = A->GetCapsuleRadius();
-    float RadiusB = B->GetCapsuleRadius();
+    float RadiusA = A->GetScaledCapsuleRadius();
+    float RadiusB = B->GetScaledCapsuleRadius();
 
     FVector Up = FVector(0, 0, 1);
 

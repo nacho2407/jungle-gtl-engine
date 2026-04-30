@@ -16,6 +16,7 @@
 #include <format>
 #include <Component/SubUVComponent.h>
 #include "Core/Debug.h"
+#include "Component/BoxComponent.h"
 
 namespace
 {

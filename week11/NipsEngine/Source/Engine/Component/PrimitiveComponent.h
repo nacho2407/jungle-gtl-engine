@@ -54,6 +54,8 @@ public:
 	const TSet<UPrimitiveComponent*>& GetOverlapInfos() const { return CurOverlaps; }
     bool IsOverlappingActor(const AActor* OtherActor) const;
     bool ShouldGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
+    void ClearOverlaps() { CurOverlaps.clear(); }
+    void AddOverlap(UPrimitiveComponent* OtherComp) { CurOverlaps.insert(OtherComp); }
 
 protected:
     void OnTransformDirty() override;
