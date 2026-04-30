@@ -19,7 +19,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     lua.set_function("beep", [&x]
                      { ++x; });
     lua.script("beep()");
-    assert(x == 1);
+    assert(x == 2);
 
 	return Launch(hInstance, nShowCmd);
 }
