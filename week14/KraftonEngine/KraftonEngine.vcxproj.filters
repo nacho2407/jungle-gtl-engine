@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -166,6 +166,42 @@
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{5fdcaaee-156a-a40d-82bd-8b77a5a402df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\RmlUi">
+      <UniqueIdentifier>{6066d5f1-456c-59ef-100e-ddaf00f74497}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include">
+      <UniqueIdentifier>{5529dbbe-ac09-8921-62b4-cb5c2a1a8940}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi">
+      <UniqueIdentifier>{1e650fba-53d7-81f8-dea8-28c8e7bd1a7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Config">
+      <UniqueIdentifier>{c7a0ea54-a8f2-8b48-bbcd-6a24e948e1c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Core">
+      <UniqueIdentifier>{094c5303-285a-95c8-9f5d-6dcdd1e9b3c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers">
+      <UniqueIdentifier>{fe3ac28a-f46f-a197-3f41-b8fe079b00fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib">
+      <UniqueIdentifier>{5d426745-0554-7c73-f70d-92f6b8a68aba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements">
+      <UniqueIdentifier>{0488ca2b-dbc4-a558-796f-680f379f454f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Debugger">
+      <UniqueIdentifier>{7507752a-c5e8-2239-f885-20d173e3594f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Lottie">
+      <UniqueIdentifier>{bae8dbad-44e8-5647-435a-85d95ad35adb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\Lua">
+      <UniqueIdentifier>{af92ca61-d0b8-f518-1e47-907a50fb7799}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\RmlUi\Include\RmlUi\SVG">
+      <UniqueIdentifier>{9879d398-ee5a-8da9-2782-515452a78e49}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{b5b63371-405e-e009-4e4e-e3b5a25ee7bd}</UniqueIdentifier>
     </Filter>
@@ -265,6 +301,9 @@
       <Filter>Shaders\UI</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\UI\OverlayFont.hlsl">
+      <Filter>Shaders\UI</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\RmlUi.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
@@ -1452,6 +1491,405 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h">
       <Filter>ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Config\Config.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Animation.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\BaseXMLParser.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Box.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CallbackTexture.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CompiledFilterShader.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ComputedValues.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Context.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ContextInstancer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ConvolutionFilter.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Core.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataModelHandle.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataStructHandle.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypeRegister.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypes.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataVariable.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Debug.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DecorationTypes.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Decorator.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Dictionary.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EffectSpecification.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementDocument.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementInstancer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementScroll.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementText.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementUtilities.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Event.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventInstancer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListener.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListenerInstancer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Factory.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FileInterface.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Filter.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffect.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffectInstancer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEngineInterface.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontGlyph.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontMetrics.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Geometry.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Header.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ID.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Input.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Log.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Math.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Mesh.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\MeshUtilities.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\NumericValue.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ObserverPtr.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Platform.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Plugin.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Profiling.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertiesIteratorView.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Property.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDefinition.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDictionary.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyIdSet.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyParser.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertySpecification.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Rectangle.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderBox.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterface.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterfaceCompatibility.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderManager.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScriptInterface.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScrollTypes.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Span.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Spritesheet.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StableVector.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Stream.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StreamMemory.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StringUtilities.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheet.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetContainer.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetSpecification.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetTypes.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleTypes.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\SystemInterface.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputContext.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputHandler.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextShapingContext.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Texture.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Traits.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Transform.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TransformPrimitive.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Tween.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Types.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\URL.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\UniqueRenderResource.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Unit.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Utilities.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vertex.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLNodeHandler.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLParser.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\robin_hood.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_map.hpp">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_set.hpp">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementForm.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControl.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlInput.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlSelect.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlTextArea.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementProgress.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementTabSet.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Core\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Debugger.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Header.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lottie\ElementLottie.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lottie</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Header.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\IncludeLua.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Interpreter.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Lua.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.inl">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Utilities.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\SVG\ElementSVG.h">
+      <Filter>ThirdParty\RmlUi\Include\RmlUi\SVG</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp">
       <Filter>ThirdParty\SimpleJSON</Filter>
