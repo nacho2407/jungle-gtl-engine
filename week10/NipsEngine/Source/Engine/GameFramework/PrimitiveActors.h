@@ -2,11 +2,13 @@
 
 #include "AActor.h"
 #include "Core/Delegates/Delegate.h"
+#include "Core/CollisionTypes.h"
 
 class UTextRenderComponent;
 class UDecalComponent;
 class ULightComponent;
 class UBillboardComponent;
+class UBoxComponent;
 
 class ACubeActor : public AActor
 {
@@ -180,7 +182,6 @@ public:
 /**
  * Delegate 테스트 용 액터 
  */
-DECLARE_DELEGATE(FOnTakeDamage, float);
 
 class ADelegateTestActor : public AActor
 {
@@ -193,7 +194,11 @@ public:
 
 	void BeginPlay() override;
 
-	void HandleTakeDamage(float InDamage);
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	FOnTakeDamage OnTakeDamage;
+
+private:
+    UBoxComponent* BoxComponent;
 };

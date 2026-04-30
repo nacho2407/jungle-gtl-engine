@@ -27,7 +27,6 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
-
     // Actor lifecycle
     template<typename T>
     T* SpawnActor()
@@ -91,6 +90,9 @@ public:
 	int32 AddActorDestroyedListener(FActorDestroyedListener Listener);
     void RemoveActorDestroyedListener(int32 ListenerId);
     void NotifyActorDestroyed(AActor* Actor);
+
+	// Component Overlap 체크
+	void UpdateOverlaps();
 
 private:
 	EWorldType WorldType = EWorldType::Editor;

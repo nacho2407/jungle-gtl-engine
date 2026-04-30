@@ -107,6 +107,8 @@ public:
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
+	bool IsOverlappingActor(const AActor* Other) const;
+
 protected:
 	void NotifyComponentRegistered(UActorComponent* Component);
 	void NotifyComponentUnregistered(UActorComponent* Component);
