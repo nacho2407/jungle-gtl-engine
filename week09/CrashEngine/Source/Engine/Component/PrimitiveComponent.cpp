@@ -310,6 +310,21 @@ void UPrimitiveComponent::DestroyRenderState()
     SceneProxy = nullptr;
 }
 
+void UPrimitiveComponent::BroadcastComponentBeginOverlap(AActor* OtherActor)
+{
+    OnComponentBeginOverlap.BroadCast(this, OtherActor);
+}
+
+void UPrimitiveComponent::BroadcastComponentEndOverlap(AActor* OtherActor)
+{
+    OnComponentEndOverlap.BroadCast(this, OtherActor);
+}
+
+void UPrimitiveComponent::BroadcastComponentHit(AActor* OtherActor)
+{
+    OnComponentHit.BroadCast(this, OtherActor);
+}
+
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
     DestroyRenderState();

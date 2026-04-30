@@ -6,6 +6,7 @@
 #include "Render/RHI/D3D11/Common/D3D11API.h"
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
+#include "Core/Delegates/Delegate.h"
 #include "Core/EngineTypes.h"
 #include "Render/RHI/D3D11/Buffers/VertexTypes.h"
 #include "Render/Scene/SceneProxyDirtyFlag.h"
@@ -16,6 +17,7 @@ class FScene;
 class FMeshBuffer;
 class FOctree;
 class UMaterial;
+class AActor;
 
 // UPrimitiveComponent 컴포넌트이다.
 class UPrimitiveComponent : public USceneComponent
@@ -138,6 +140,18 @@ public:
         OctreeNode = nullptr;
         bInOctreeOverflow = false;
     }
+
+    DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*);
+    DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*);
+    DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*);
+
+    FOnComponentBeginOverlap OnComponentBeginOverlap;
+    FOnComponentEndOverlap OnComponentEndOverlap;
+    FOnComponentHit OnComponentHit;
+
+    void BroadcastComponentBeginOverlap(AActor* OtherActor);
+    void BroadcastComponentEndOverlap(AActor* OtherActor);
+    void BroadcastComponentHit(AActor* OtherActor);
 
 protected:
     void OnTransformDirty() override;
