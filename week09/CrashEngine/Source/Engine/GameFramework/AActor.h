@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
+#include "Core/Delegates/Delegate.h"
 #include "Core/TickFunction.h"
 
 class FArchive;
@@ -28,6 +29,12 @@ public:
     virtual void BeginPlay();
     virtual void Tick(float DeltaTime);
     virtual void EndPlay();
+    // Start ----- Delegate Prototype 
+    virtual void TakeDamage(int Damage);
+
+    DECLARE_DELEGATE(FOnTakeDamage, int);
+    FOnTakeDamage OnTakeDamage;
+    // End ----- Delegate Prototype
 
     bool HasActorBegunPlay() const { return bActorHasBegunPlay; }
 

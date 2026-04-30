@@ -282,6 +282,11 @@ void AActor::EndPlay()
     }
 }
 
+void AActor::TakeDamage(int Damage)
+{
+    OnTakeDamage.BroadCast(Damage);
+}
+
 void AActor::Tick(float DeltaTime)
 {
     /*for (UActorComponent* ActorComp : OwnedComponents)

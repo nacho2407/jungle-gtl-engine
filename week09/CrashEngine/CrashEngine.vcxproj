@@ -300,6 +300,7 @@
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\UUIDTextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CoreGlobals.cpp" />
+    <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
@@ -514,6 +515,7 @@
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\CoreGlobals.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
     <ClInclude Include="Source\Engine\Core\Logging\LogMacros.h" />
     <ClInclude Include="Source\Engine\Core\Logging\LogOutputDevice.h" />
