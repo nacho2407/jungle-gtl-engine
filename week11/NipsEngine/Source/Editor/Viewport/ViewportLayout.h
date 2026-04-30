@@ -35,6 +35,23 @@ public:
 private:
 };
 
+enum class EEditorViewportLayoutMode : uint8
+{
+	OnePane,
+	TwoPanesHoriz,
+	TwoPanesVert,
+	ThreePanesLeft,
+	ThreePanesRight,
+	ThreePanesTop,
+	ThreePanesBottom,
+	FourPanes2x2,
+	FourPanesLeft,
+	FourPanesRight,
+	FourPanesTop,
+	FourPanesBottom,
+	Max,
+};
+
 class FEditorViewportLayout : FViewportLayout
 {
 public:
@@ -72,8 +89,13 @@ public:
 	bool  IsSingleViewportMode()        const { return bSingleViewport; }
 	int32 GetSingleViewportIndex()      const { return SingleViewportIndex; }
 	int32 GetLastFocusedViewportIndex() const { return LastFocusedViewportIndex; }
+	EEditorViewportLayoutMode GetLayoutMode() const { return LayoutMode; }
+	int32 GetActiveViewportCount() const;
 	const FViewportRect& GetHostRect() const { return HostRect; }
 	void SetLastFocusedViewportIndex(int32 Index);
+	void SetLayoutMode(EEditorViewportLayoutMode InMode, int32 FocusIndex = -1);
+	void SetLayoutModeAnimated(EEditorViewportLayoutMode InMode, int32 FocusIndex = -1);
+	void ToggleViewportSplit();
 
 	// Viewport Get Set
     FEditorViewportClient* GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
@@ -104,9 +126,24 @@ public:
     }
 
 private:
+	void SetViewportRect(int32 Index, const FViewportRect& Rect);
+	void ApplyPresetViewportRects(const FRect& FullRect);
+	void ComputeLayoutRects(EEditorViewportLayoutMode InMode, int32 InSingleViewportIndex, const FRect& FullRect, FViewportRect (&OutRects)[MaxViewports]) const;
+	void TickLayoutTransition(float DeltaTime);
+	void EndLayoutTransition();
+	static int32 GetLayoutSlotCount(EEditorViewportLayoutMode InMode);
+
+private:
 	// 1개 ↔ 4개 전환 상태
 	bool  bSingleViewport          = false;
 	int32 SingleViewportIndex      = 0;
+	EEditorViewportLayoutMode LayoutMode = EEditorViewportLayoutMode::FourPanes2x2;
+	EEditorViewportLayoutMode LastSplitLayoutMode = EEditorViewportLayoutMode::FourPanes2x2;
+	bool bLayoutTransitionActive = false;
+	float LayoutTransitionElapsed = 0.0f;
+	float LayoutTransitionDuration = 0.16f;
+	FViewportRect LayoutTransitionStartRects[MaxViewports] = {};
+	FViewportRect LayoutTransitionTargetRects[MaxViewports] = {};
 
 	// 마지막으로 카메라 조작(포커스)이 발생한 뷰포트 인덱스
 	// stat 콘솔 명령의 적용 대상으로 사용됩니다.

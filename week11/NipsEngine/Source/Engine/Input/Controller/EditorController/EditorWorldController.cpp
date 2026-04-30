@@ -49,7 +49,7 @@ void FEditorWorldController::Tick(float InDeltaTime)
 // DeltaX/DeltaY parameters are raw mouse movement deltas (pixels since last frame).
 void FEditorWorldController::OnMouseMoveAbsolute(float X, float Y)
 {
-    if (!Gizmo || !Camera)
+    if (!Gizmo || !Gizmo->IsVisible() || !Camera)
         return;
 
     // Update gizmo hover highlight each frame
@@ -60,27 +60,38 @@ void FEditorWorldController::OnMouseMoveAbsolute(float X, float Y)
 
 void FEditorWorldController::OnLeftMouseClick(float X, float Y)
 {
-    // Try gizmo handle first, then actor selection
+    ClearPendingSelectionPress();
+
+    // Try gizmo handle first. Actor selection is committed on release so small
+    // camera/gizmo drags do not accidentally click-select.
     if (!Camera)
         return;
 
     FRay       Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
     FHitResult HitResult{};
 
-    if (Gizmo && FRayCollision::RaycastComponent(Gizmo, Ray, HitResult))
+    if (Gizmo && Gizmo->IsVisible() && FRayCollision::RaycastComponent(Gizmo, Ray, HitResult))
     {
         Gizmo->SetPressedOnHandle(true);
         return;
     }
-    else
+    else if (Gizmo)
     {
         Gizmo->SetPressedOnHandle(false);
 	}
 
-    // Actor selection
+    bHasPendingSelectionPress = true;
+    PendingSelectionPressX = X;
+    PendingSelectionPressY = Y;
+}
+
+void FEditorWorldController::SelectActorAt(float X, float Y)
+{
     if (!World || !SelectionManager)
         return;
 
+    FRay       Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
+    FHitResult HitResult{};
     AActor* BestActor = nullptr;
     float   ClosestDist = FLT_MAX;
 
@@ -114,15 +125,18 @@ void FEditorWorldController::OnLeftMouseClick(float X, float Y)
     }
 
     bool bCtrl = IS.GetKey(VK_CONTROL);
+    bool bShift = IS.GetKey(VK_SHIFT);
     if (!BestActor)
     {
-        if (!bCtrl)
+        if (!bCtrl && !bShift)
             SelectionManager->ClearSelection();
     }
     else
     {
         if (bCtrl)
             SelectionManager->ToggleSelect(BestActor);
+        else if (bShift)
+            SelectionManager->AddSelect(BestActor);
         else
             SelectionManager->Select(BestActor);
     }
@@ -130,7 +144,9 @@ void FEditorWorldController::OnLeftMouseClick(float X, float Y)
 
 void FEditorWorldController::OnLeftMouseDrag(float X, float Y)
 {
-    if (!Gizmo || !Camera)
+    ClearPendingSelectionPress();
+
+    if (!Gizmo || !Gizmo->IsVisible() || !Camera)
         return;
 
     FRay Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
@@ -147,6 +163,7 @@ void FEditorWorldController::OnLeftMouseDragEnd(float X, float Y)
 {
     (void)X;
     (void)Y;
+    ClearPendingSelectionPress();
     if (Gizmo)
         Gizmo->DragEnd();
 }
@@ -155,7 +172,13 @@ void FEditorWorldController::OnLeftMouseButtonUp(float X, float Y)
 {
     (void)X;
     (void)Y;
-    // LMB released without reaching drag threshold — disarm gizmo
+    if (bHasPendingSelectionPress && Camera)
+    {
+        SelectActorAt(PendingSelectionPressX, PendingSelectionPressY);
+    }
+    ClearPendingSelectionPress();
+
+    // LMB released without reaching drag threshold - disarm gizmo
     if (Gizmo)
         Gizmo->SetPressedOnHandle(false);
 }
@@ -201,49 +224,8 @@ void FEditorWorldController::OnRightMouseDrag(float DeltaX, float DeltaY)
 
 void FEditorWorldController::OnKeyPressed(int VK)
 {
-	InputSystem& IS = InputSystem::Get();
-
     switch (VK)
     {
-    case 'D':
-        if (IS.GetKey(VK_CONTROL))
-        {
-            if (World && SelectionManager && !SelectionManager->IsEmpty())
-            {
-                TArray<AActor*> DuplicatedActors;
-                const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
-                for (AActor* OriginalActor : SelectedActors)
-                {
-                    if (!OriginalActor) continue;
-
-                    AActor* NewActor = Cast<AActor>(OriginalActor->Duplicate());
-                    if (NewActor)
-                    {
-                        NewActor->SetWorld(World);
-                        if (World->HasBegunPlay())
-                        {
-                            NewActor->BeginPlay();
-                        }
-                        World->GetPersistentLevel()->AddActor(NewActor);
-                        DuplicatedActors.push_back(NewActor);
-                    }
-                }
-
-                if (!DuplicatedActors.empty())
-                {
-                    SelectionManager->ClearSelection();
-                    for (AActor* NewActor : DuplicatedActors)
-                    {
-                        SelectionManager->AddSelect(NewActor);
-                    }
-                }
-            }
-        }
-        break;
-    case VK_SPACE:
-        if (Gizmo)
-            Gizmo->SetNextMode();
-        break;
     case VK_LEFT:
     case VK_RIGHT:
     case VK_UP:
@@ -392,4 +374,11 @@ void FEditorWorldController::UpdateCameraRotation()
     FQuat NewRotation(RotMat);
     NewRotation.Normalize();
     Camera->SetRotation(NewRotation);
+}
+
+void FEditorWorldController::ClearPendingSelectionPress()
+{
+    bHasPendingSelectionPress = false;
+    PendingSelectionPressX = 0.0f;
+    PendingSelectionPressY = 0.0f;
 }

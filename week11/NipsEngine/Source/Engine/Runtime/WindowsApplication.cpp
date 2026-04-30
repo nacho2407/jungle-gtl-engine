@@ -1,7 +1,9 @@
 ﻿#include "Engine/Runtime/WindowsApplication.h"
 
+#include <vector>
 #include <windowsx.h>
 
+#include "Engine/Input/CursorControl.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "Slate/SWidget.h"
@@ -49,6 +51,34 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
+	case WM_SETCURSOR:
+		if (LOWORD(lParam) == HTCLIENT)
+		{
+			SetCursor(FCursorControl::IsCursorHidden() ? nullptr : LoadCursorW(nullptr, IDC_ARROW));
+			return TRUE;
+		}
+		break;
+	case WM_INPUT:
+	{
+		UINT DataSize = 0;
+		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &DataSize, sizeof(RAWINPUTHEADER)) != 0 || DataSize == 0)
+		{
+			break;
+		}
+
+		std::vector<BYTE> RawData(DataSize);
+		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, RawData.data(), &DataSize, sizeof(RAWINPUTHEADER)) != DataSize)
+		{
+			break;
+		}
+
+		const RAWINPUT* RawInput = reinterpret_cast<const RAWINPUT*>(RawData.data());
+		if (RawInput->header.dwType == RIM_TYPEMOUSE)
+		{
+			InputSystem::Get().AddRawMouseDelta(RawInput->data.mouse.lLastX, RawInput->data.mouse.lLastY);
+		}
+		return 0;
+	}
 	case WM_MOUSEMOVE:
 	{
 		const int32 MX = GET_X_LPARAM(lParam);
@@ -123,7 +153,7 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	WCHAR WindowClass[] = L"JungleWindowClass";
 	WCHAR Title[] = L"Game Tech Lab";
-	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
+	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, HInstance, 0, LoadCursorW(nullptr, IDC_ARROW), 0, 0, WindowClass };
 
 	RegisterClassW(&WndClass);
 
@@ -140,6 +170,13 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 	{
 		return false;
 	}
+
+	RAWINPUTDEVICE RawMouseDevice = {};
+	RawMouseDevice.usUsagePage = 0x01;
+	RawMouseDevice.usUsage = 0x02;
+	RawMouseDevice.dwFlags = RIDEV_INPUTSINK;
+	RawMouseDevice.hwndTarget = HWindow;
+	RegisterRawInputDevices(&RawMouseDevice, 1, sizeof(RAWINPUTDEVICE));
 
 	Window.Initialize(HWindow);
 	return true;

@@ -131,6 +131,99 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	ImGui::End();
 }
 
+void FEditorConsoleWidget::RenderDrawerToolbar()
+{
+	if (ImGui::SmallButton("Clear"))
+	{
+		Clear();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Options"))
+	{
+		ImGui::OpenPopup("ConsoleOptions");
+	}
+	if (ImGui::BeginPopup("ConsoleOptions"))
+	{
+		ImGui::Checkbox("Auto-scroll", &AutoScroll);
+		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine();
+	Filter.Draw("Filter", 220.0f);
+}
+
+void FEditorConsoleWidget::RenderLogContents(float Height)
+{
+	const ImVec2 Size(0.0f, Height);
+	if (ImGui::BeginChild("##ConsoleDrawerScrollingRegion", Size, false, ImGuiWindowFlags_HorizontalScrollbar))
+	{
+		for (auto& Item : Messages)
+		{
+			if (!Filter.PassFilter(Item))
+			{
+				continue;
+			}
+
+			ImVec4 Color;
+			bool bHasColor = false;
+			if (strncmp(Item, "[ERROR]", 7) == 0)
+			{
+				Color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+				bHasColor = true;
+			}
+			else if (strncmp(Item, "[WARN]", 6) == 0)
+			{
+				Color = ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
+				bHasColor = true;
+			}
+			else if (strncmp(Item, "#", 1) == 0)
+			{
+				Color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f);
+				bHasColor = true;
+			}
+
+			if (bHasColor)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, Color);
+			}
+			ImGui::TextUnformatted(Item);
+			if (bHasColor)
+			{
+				ImGui::PopStyleColor();
+			}
+		}
+
+		if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+		{
+			ImGui::SetScrollHereY(1.0f);
+		}
+		ScrollToBottom = false;
+	}
+	ImGui::EndChild();
+}
+
+void FEditorConsoleWidget::RenderInputLine(const char* Id, float Width, bool bRequestFocus)
+{
+	ImGuiInputTextFlags Flags = ImGuiInputTextFlags_EnterReturnsTrue
+		| ImGuiInputTextFlags_EscapeClearsAll
+		| ImGuiInputTextFlags_CallbackHistory
+		| ImGuiInputTextFlags_CallbackCompletion
+		| ImGuiInputTextFlags_CallbackCharFilter;
+
+	ImGui::SetNextItemWidth(Width);
+	if (bRequestFocus)
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
+
+	if (ImGui::InputText(Id, InputBuf, sizeof(InputBuf), Flags, &TextEditCallback, this))
+	{
+		ExecCommand(InputBuf);
+		strcpy_s(InputBuf, "");
+	}
+}
+
 void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn) {
 	Commands[Name] = Fn;
 }

@@ -11,6 +11,8 @@
 #include "Engine/Component/GizmoComponent.h"
 #include "EditorEngine.h"
 
+#include <algorithm>
+
 //  뷰포트 타입 테이블  [인덱스 → EEditorViewportType]
 static constexpr EEditorViewportType kViewportTypes[FEditorViewportLayout::MaxViewports] =
 {
@@ -34,8 +36,16 @@ void FEditorViewportLayout::Init(FWindowsWindow* InWindow, UWorld* World, FSelec
 
 	// Settings 에서 레이아웃 상태 복원
 	const FEditorSettings& S = FEditorSettings::Get();
-	bSingleViewport    = (S.ActiveViewportCount == 1);
 	SingleViewportIndex = S.SingleViewportIndex;
+	const int32 SavedLayoutMode = S.ViewportLayoutMode;
+	LayoutMode = (SavedLayoutMode >= 0 && SavedLayoutMode < static_cast<int32>(EEditorViewportLayoutMode::Max))
+		? static_cast<EEditorViewportLayoutMode>(SavedLayoutMode)
+		: (S.ActiveViewportCount == 1 ? EEditorViewportLayoutMode::OnePane : EEditorViewportLayoutMode::FourPanes2x2);
+	bSingleViewport = (LayoutMode == EEditorViewportLayoutMode::OnePane);
+	if (LayoutMode != EEditorViewportLayoutMode::OnePane)
+	{
+		LastSplitLayoutMode = LayoutMode;
+	}
 
 	// 초기 뷰포트 영역 설정 (SyncViewportRects 에서 최종 덮어씌워짐)
 	InitViewportRect(static_cast<uint32>(Window->GetWidth()),
@@ -197,6 +207,7 @@ void FEditorViewportLayout::UpdateHoverStates()
 
 void FEditorViewportLayout::Tick(float DeltaTime)
 {
+	TickLayoutTransition(DeltaTime);
 	UpdateHoverStates();
 	// bHovered 가 설정된 뷰포트만 입력을 처리합니다.
 	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
@@ -265,7 +276,9 @@ void FEditorViewportLayout::InitViewportRect(uint32 Width, uint32 Height)
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
         ViewportWidgets[i].GetSceneViewport().SetRect(Rects[i]);
-		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Rects[i].Width, Rects[i].Height);
+		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(
+			static_cast<float>(Rects[i].Width),
+			static_cast<float>(Rects[i].Height));
 	}
 }
 
@@ -351,14 +364,112 @@ void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 
 void FEditorViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
 {
-	bSingleViewport     = bSingle;
-	SingleViewportIndex = (Index < 0) ? 0 : (Index >= MaxViewports ? MaxViewports - 1 : Index);
+	SetLayoutMode(bSingle ? EEditorViewportLayoutMode::OnePane : EEditorViewportLayoutMode::FourPanes2x2, Index);
+}
 
-	// Settings 즉시 반영 (Shutdown 의 SaveToFile 에서 파일에 기록됨)
-	FEditorSettings::Get().ActiveViewportCount = bSingleViewport ? 1 : MaxViewports;
+void FEditorViewportLayout::SetLayoutMode(EEditorViewportLayoutMode InMode, int32 FocusIndex)
+{
+	bLayoutTransitionActive = false;
+	LayoutTransitionElapsed = 0.0f;
+
+	if (InMode < EEditorViewportLayoutMode::OnePane || InMode >= EEditorViewportLayoutMode::Max)
+	{
+		InMode = EEditorViewportLayoutMode::FourPanes2x2;
+	}
+
+	if (FocusIndex >= 0)
+	{
+		SingleViewportIndex = (FocusIndex >= MaxViewports) ? MaxViewports - 1 : FocusIndex;
+		SetLastFocusedViewportIndex(SingleViewportIndex);
+	}
+	else if (InMode == EEditorViewportLayoutMode::OnePane)
+	{
+		SingleViewportIndex = LastFocusedViewportIndex;
+	}
+
+	LayoutMode = InMode;
+	bSingleViewport = (LayoutMode == EEditorViewportLayoutMode::OnePane);
+	if (!bSingleViewport)
+	{
+		LastSplitLayoutMode = LayoutMode;
+	}
+
+	FEditorSettings::Get().ViewportLayoutMode = static_cast<int32>(LayoutMode);
+	FEditorSettings::Get().ActiveViewportCount = GetLayoutSlotCount(LayoutMode);
+	FEditorSettings::Get().SingleViewportIndex = SingleViewportIndex;
+	SyncViewportRects();
+}
+
+void FEditorViewportLayout::SetLayoutModeAnimated(EEditorViewportLayoutMode InMode, int32 FocusIndex)
+{
+	if (InMode < EEditorViewportLayoutMode::OnePane || InMode >= EEditorViewportLayoutMode::Max)
+	{
+		InMode = EEditorViewportLayoutMode::FourPanes2x2;
+	}
+
+	if (!RootSplitterV)
+	{
+		SetLayoutMode(InMode, FocusIndex);
+		return;
+	}
+
+	if (InMode == LayoutMode && (InMode != EEditorViewportLayoutMode::OnePane || FocusIndex < 0 || FocusIndex == SingleViewportIndex))
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		LayoutTransitionStartRects[i] = GetSceneViewport(i).GetRect();
+	}
+
+	if (FocusIndex >= 0)
+	{
+		SingleViewportIndex = std::clamp(FocusIndex, 0, MaxViewports - 1);
+		SetLastFocusedViewportIndex(SingleViewportIndex);
+	}
+	else if (InMode == EEditorViewportLayoutMode::OnePane)
+	{
+		SingleViewportIndex = LastFocusedViewportIndex;
+	}
+
+	LayoutMode = InMode;
+	bSingleViewport = (LayoutMode == EEditorViewportLayoutMode::OnePane);
+	if (!bSingleViewport)
+	{
+		LastSplitLayoutMode = LayoutMode;
+	}
+
+	FEditorSettings::Get().ViewportLayoutMode = static_cast<int32>(LayoutMode);
+	FEditorSettings::Get().ActiveViewportCount = GetLayoutSlotCount(LayoutMode);
 	FEditorSettings::Get().SingleViewportIndex = SingleViewportIndex;
 
-	SyncViewportRects();
+	RootSplitterV->UpdateChildRect();
+	ComputeLayoutRects(LayoutMode, SingleViewportIndex, RootSplitterV->GetRect(), LayoutTransitionTargetRects);
+
+	bLayoutTransitionActive = true;
+	LayoutTransitionElapsed = 0.0f;
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		SetViewportRect(i, LayoutTransitionStartRects[i]);
+	}
+}
+
+void FEditorViewportLayout::ToggleViewportSplit()
+{
+	if (LayoutMode == EEditorViewportLayoutMode::OnePane)
+	{
+		SetLayoutModeAnimated(LastSplitLayoutMode);
+	}
+	else
+	{
+		SetLayoutModeAnimated(EEditorViewportLayoutMode::OnePane, LastFocusedViewportIndex);
+	}
+}
+
+int32 FEditorViewportLayout::GetActiveViewportCount() const
+{
+	return GetLayoutSlotCount(LayoutMode);
 }
 
 void FEditorViewportLayout::SetLastFocusedViewportIndex(int32 Index)
@@ -372,10 +483,21 @@ void FEditorViewportLayout::SetLastFocusedViewportIndex(int32 Index)
 
 void FEditorViewportLayout::SyncViewportRects()
 {
-	// 1개 모드: SingleViewportIndex 뷰포트에 전체 영역 할당, 나머지는 크기 0
-	if (bSingleViewport && RootSplitterV)
+	if (!RootSplitterV)
 	{
-		const FRect& Full = RootSplitterV->GetRect();
+		return;
+	}
+
+	if (bLayoutTransitionActive)
+	{
+		return;
+	}
+
+	const FRect& Full = RootSplitterV->GetRect();
+
+	// 1개 모드: SingleViewportIndex 뷰포트에 전체 영역 할당, 나머지는 크기 0
+	if (LayoutMode == EEditorViewportLayoutMode::OnePane)
+	{
 		for (int32 i = 0; i < MaxViewports; ++i)
 		{
 			if (i == SingleViewportIndex)
@@ -385,15 +507,19 @@ void FEditorViewportLayout::SyncViewportRects()
 					static_cast<int32>(Full.Y),
 					static_cast<int32>(Full.Width),
 					static_cast<int32>(Full.Height));
-				ViewportWidgets[i].GetSceneViewport().SetRect(VR);
-				ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(Full.Width, Full.Height);
+				SetViewportRect(i, VR);
 			}
 			else
 			{
-				const FViewportRect ZeroVR(0, 0, 0, 0);
-				ViewportWidgets[i].GetSceneViewport().SetRect(ZeroVR);
+				SetViewportRect(i, FViewportRect(0, 0, 0, 0));
 			}
 		}
+		return;
+	}
+
+	if (LayoutMode != EEditorViewportLayoutMode::FourPanes2x2)
+	{
+		ApplyPresetViewportRects(Full);
 		return;
 	}
 
@@ -412,9 +538,192 @@ void FEditorViewportLayout::SyncViewportRects()
 
 		// 스플리터 드래그로 바뀐 크기를 ViewportState, SceneViewport,
 		// ViewportClient 카메라 종횡비에 모두 반영합니다.
-		ViewportWidgets[i].GetSceneViewport().SetRect(VR);
-		ViewportWidgets[i].GetSceneViewport().GetClient()->SetViewportSize(R.Width, R.Height);
+		SetViewportRect(i, VR);
 	}
+}
+
+void FEditorViewportLayout::SetViewportRect(int32 Index, const FViewportRect& Rect)
+{
+	if (Index < 0 || Index >= MaxViewports)
+	{
+		return;
+	}
+
+	ViewportWidgets[Index].GetSceneViewport().SetRect(Rect);
+	if (Rect.Width > 0 && Rect.Height > 0)
+	{
+		ViewportWidgets[Index].GetSceneViewport().GetClient()->SetViewportSize(
+			static_cast<float>(Rect.Width),
+			static_cast<float>(Rect.Height));
+	}
+}
+
+int32 FEditorViewportLayout::GetLayoutSlotCount(EEditorViewportLayoutMode InMode)
+{
+	switch (InMode)
+	{
+	case EEditorViewportLayoutMode::OnePane:
+		return 1;
+	case EEditorViewportLayoutMode::TwoPanesHoriz:
+	case EEditorViewportLayoutMode::TwoPanesVert:
+		return 2;
+	case EEditorViewportLayoutMode::ThreePanesLeft:
+	case EEditorViewportLayoutMode::ThreePanesRight:
+	case EEditorViewportLayoutMode::ThreePanesTop:
+	case EEditorViewportLayoutMode::ThreePanesBottom:
+		return 3;
+	default:
+		return 4;
+	}
+}
+
+void FEditorViewportLayout::ApplyPresetViewportRects(const FRect& FullRect)
+{
+	FViewportRect Rects[MaxViewports] = {};
+	ComputeLayoutRects(LayoutMode, SingleViewportIndex, FullRect, Rects);
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		SetViewportRect(i, Rects[i]);
+	}
+}
+
+void FEditorViewportLayout::ComputeLayoutRects(EEditorViewportLayoutMode InMode, int32 InSingleViewportIndex, const FRect& FullRect, FViewportRect (&OutRects)[MaxViewports]) const
+{
+	const int32 X = static_cast<int32>(FullRect.X);
+	const int32 Y = static_cast<int32>(FullRect.Y);
+	const int32 W = static_cast<int32>(FullRect.Width);
+	const int32 H = static_cast<int32>(FullRect.Height);
+	const int32 HalfW = W / 2;
+	const int32 HalfH = H / 2;
+	const int32 ThirdW = W / 3;
+	const int32 ThirdH = H / 3;
+
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		OutRects[i] = FViewportRect(0, 0, 0, 0);
+	}
+
+	if (InMode == EEditorViewportLayoutMode::OnePane)
+	{
+		const int32 ClampedSingleViewportIndex = std::clamp(InSingleViewportIndex, 0, MaxViewports - 1);
+		OutRects[ClampedSingleViewportIndex] = FViewportRect(X, Y, W, H);
+		return;
+	}
+
+	if (InMode == EEditorViewportLayoutMode::FourPanes2x2)
+	{
+		for (int32 i = 0; i < MaxViewports; ++i)
+		{
+			const FRect& R = ViewportWidgets[i].GetRect();
+			OutRects[i] = FViewportRect(
+				static_cast<int32>(R.X),
+				static_cast<int32>(R.Y),
+				static_cast<int32>(R.Width),
+				static_cast<int32>(R.Height));
+		}
+		return;
+	}
+
+	switch (InMode)
+	{
+	case EEditorViewportLayoutMode::TwoPanesHoriz:
+		OutRects[0] = FViewportRect(X, Y, HalfW, H);
+		OutRects[1] = FViewportRect(X + HalfW, Y, W - HalfW, H);
+		break;
+	case EEditorViewportLayoutMode::TwoPanesVert:
+		OutRects[0] = FViewportRect(X, Y, W, HalfH);
+		OutRects[1] = FViewportRect(X, Y + HalfH, W, H - HalfH);
+		break;
+	case EEditorViewportLayoutMode::ThreePanesLeft:
+		OutRects[0] = FViewportRect(X, Y, HalfW, H);
+		OutRects[1] = FViewportRect(X + HalfW, Y, W - HalfW, HalfH);
+		OutRects[2] = FViewportRect(X + HalfW, Y + HalfH, W - HalfW, H - HalfH);
+		break;
+	case EEditorViewportLayoutMode::ThreePanesRight:
+		OutRects[0] = FViewportRect(X, Y, HalfW, HalfH);
+		OutRects[1] = FViewportRect(X, Y + HalfH, HalfW, H - HalfH);
+		OutRects[2] = FViewportRect(X + HalfW, Y, W - HalfW, H);
+		break;
+	case EEditorViewportLayoutMode::ThreePanesTop:
+		OutRects[0] = FViewportRect(X, Y, W, HalfH);
+		OutRects[1] = FViewportRect(X, Y + HalfH, HalfW, H - HalfH);
+		OutRects[2] = FViewportRect(X + HalfW, Y + HalfH, W - HalfW, H - HalfH);
+		break;
+	case EEditorViewportLayoutMode::ThreePanesBottom:
+		OutRects[0] = FViewportRect(X, Y, HalfW, HalfH);
+		OutRects[1] = FViewportRect(X + HalfW, Y, W - HalfW, HalfH);
+		OutRects[2] = FViewportRect(X, Y + HalfH, W, H - HalfH);
+		break;
+	case EEditorViewportLayoutMode::FourPanesLeft:
+		OutRects[0] = FViewportRect(X, Y, HalfW, H);
+		OutRects[1] = FViewportRect(X + HalfW, Y, W - HalfW, ThirdH);
+		OutRects[2] = FViewportRect(X + HalfW, Y + ThirdH, W - HalfW, ThirdH);
+		OutRects[3] = FViewportRect(X + HalfW, Y + ThirdH * 2, W - HalfW, H - ThirdH * 2);
+		break;
+	case EEditorViewportLayoutMode::FourPanesRight:
+		OutRects[0] = FViewportRect(X, Y, HalfW, ThirdH);
+		OutRects[1] = FViewportRect(X, Y + ThirdH, HalfW, ThirdH);
+		OutRects[2] = FViewportRect(X, Y + ThirdH * 2, HalfW, H - ThirdH * 2);
+		OutRects[3] = FViewportRect(X + HalfW, Y, W - HalfW, H);
+		break;
+	case EEditorViewportLayoutMode::FourPanesTop:
+		OutRects[0] = FViewportRect(X, Y, W, HalfH);
+		OutRects[1] = FViewportRect(X, Y + HalfH, ThirdW, H - HalfH);
+		OutRects[2] = FViewportRect(X + ThirdW, Y + HalfH, ThirdW, H - HalfH);
+		OutRects[3] = FViewportRect(X + ThirdW * 2, Y + HalfH, W - ThirdW * 2, H - HalfH);
+		break;
+	case EEditorViewportLayoutMode::FourPanesBottom:
+		OutRects[0] = FViewportRect(X, Y, ThirdW, HalfH);
+		OutRects[1] = FViewportRect(X + ThirdW, Y, ThirdW, HalfH);
+		OutRects[2] = FViewportRect(X + ThirdW * 2, Y, W - ThirdW * 2, HalfH);
+		OutRects[3] = FViewportRect(X, Y + HalfH, W, H - HalfH);
+		break;
+	default:
+		break;
+	}
+}
+
+void FEditorViewportLayout::TickLayoutTransition(float DeltaTime)
+{
+	if (!bLayoutTransitionActive)
+	{
+		return;
+	}
+
+	LayoutTransitionElapsed += DeltaTime;
+	const float T = std::clamp(LayoutTransitionElapsed / LayoutTransitionDuration, 0.0f, 1.0f);
+	const float SmoothT = T * T * (3.0f - 2.0f * T);
+
+	auto LerpInt = [SmoothT](int32 A, int32 B)
+	{
+		return static_cast<int32>(static_cast<float>(A) + (static_cast<float>(B - A) * SmoothT) + 0.5f);
+	};
+
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		const FViewportRect& A = LayoutTransitionStartRects[i];
+		const FViewportRect& B = LayoutTransitionTargetRects[i];
+		SetViewportRect(i, FViewportRect(
+			LerpInt(A.X, B.X),
+			LerpInt(A.Y, B.Y),
+			std::max(0, LerpInt(A.Width, B.Width)),
+			std::max(0, LerpInt(A.Height, B.Height))));
+	}
+
+	if (T >= 1.0f)
+	{
+		EndLayoutTransition();
+	}
+}
+
+void FEditorViewportLayout::EndLayoutTransition()
+{
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		SetViewportRect(i, LayoutTransitionTargetRects[i]);
+	}
+	bLayoutTransitionActive = false;
+	LayoutTransitionElapsed = 0.0f;
 }
 
 void FEditorViewportLayout::DestroyViewportLayout()

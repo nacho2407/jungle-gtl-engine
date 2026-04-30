@@ -176,11 +176,6 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 	RenderEditMenu();
 	RenderHelpMenu();
 
-	if (PlayStreamWidget)
-	{
-		PlayStreamWidget->Render(DeltaTime);
-	}
-
 	ImGui::EndMainMenuBar();
 }
 
@@ -246,7 +241,7 @@ void FEditorToolbarWidget::RenderViewMenu()
 		return;
 	}
 
-	if (bShowConsole) ImGui::MenuItem("Console", nullptr, bShowConsole);
+	if (bShowConsole) ImGui::MenuItem("Console Drawer", nullptr, bShowConsole);
 	if (bShowControl) ImGui::MenuItem("Control Panel", nullptr, bShowControl);
 	if (bShowProperty) ImGui::MenuItem("Property", nullptr, bShowProperty);
 	if (bShowSceneManager) ImGui::MenuItem("Scene Manager", nullptr, bShowSceneManager);

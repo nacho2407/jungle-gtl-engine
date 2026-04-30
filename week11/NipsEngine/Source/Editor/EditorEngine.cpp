@@ -23,6 +23,8 @@ REGISTER_FACTORY(UEditorEngine)
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
     UEngine::Init(InWindow);
+    InputSystem::Get().SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
+    EditorInputRouter.SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
     FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 
     MainPanel.Create(Window, Renderer, this);
@@ -77,11 +79,66 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-    InputSystem::Get().Tick();
+    ProcessQueuedPlaySessionRequests();
+
+    const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+    EditorInputRouter.SetImGuiCaptureState(GuiState.bUsingMouse, GuiState.bUsingKeyboard || GuiState.bUsingTextInput);
+    RegisterViewportInputTargets();
+    FViewportInputContext RoutedInputContext;
+    FInteractionBinding RoutedInputBinding;
+    EditorInputRouter.Tick(DeltaTime, RoutedInputContext, RoutedInputBinding);
+    for (int32 Index = 0; Index < FEditorViewportLayout::MaxViewports; ++Index)
+    {
+        if (FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(Index))
+        {
+            ViewportClient->SetLegacyInputSuppressedThisFrame(true);
+        }
+    }
+
     ViewportLayout.Tick(DeltaTime);
     MainPanel.Update();
     WorldTick(DeltaTime);
     Render(DeltaTime);
+}
+
+void UEditorEngine::RegisterViewportInputTargets()
+{
+    EditorInputRouter.ClearTargets();
+
+    for (int32 Index = 0; Index < FEditorViewportLayout::MaxViewports; ++Index)
+    {
+        FSceneViewport& SceneViewport = ViewportLayout.GetSceneViewport(Index);
+        FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(Index);
+        if (!ViewportClient)
+        {
+            continue;
+        }
+
+        EditorInputRouter.RegisterTarget(
+            &SceneViewport,
+            ViewportClient,
+            ViewportClient->GetPlayState() == EViewportPlayState::Playing ? EInteractionDomain::PIE : EInteractionDomain::Editor,
+            [this, Index](FRect& OutRect)
+            {
+                const FViewportRect& ViewportRect = ViewportLayout.GetSceneViewport(Index).GetRect();
+                if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+                {
+                    return false;
+                }
+
+                OutRect = FRect(
+                    static_cast<float>(ViewportRect.X),
+                    static_cast<float>(ViewportRect.Y),
+                    static_cast<float>(ViewportRect.Width),
+                    static_cast<float>(ViewportRect.Height));
+                return true;
+            },
+            [this, Index]()
+            {
+                FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
+                return Client ? Client->GetFocusedWorld() : nullptr;
+            });
+    }
 }
 
 void UEditorEngine::WorldTick(float DeltaTime)
@@ -115,6 +172,41 @@ void UEditorEngine::RenderUI(float DeltaTime)
 void UEditorEngine::StartPlaySession()
 {
     const EViewportPlayState CurrentState = GetEditorState();
+    if (CurrentState == EViewportPlayState::Paused)
+    {
+        ResumePlaySession();
+        return;
+    }
+
+    if (CurrentState == EViewportPlayState::Playing)
+    {
+        return;
+    }
+
+    bStartPlaySessionQueued = true;
+    bStopPlaySessionQueued = false;
+}
+
+void UEditorEngine::ProcessQueuedPlaySessionRequests()
+{
+    if (bStopPlaySessionQueued)
+    {
+        bStopPlaySessionQueued = false;
+        bStartPlaySessionQueued = false;
+        StopPlaySessionNow();
+        return;
+    }
+
+    if (bStartPlaySessionQueued)
+    {
+        bStartPlaySessionQueued = false;
+        StartPlaySessionNow();
+    }
+}
+
+void UEditorEngine::StartPlaySessionNow()
+{
+    const EViewportPlayState CurrentState = GetEditorState();
 
     if (CurrentState == EViewportPlayState::Paused)
     {
@@ -131,6 +223,7 @@ void UEditorEngine::StartPlaySession()
     if (!FocusedWorld) return;
 
     FocusedClient->SaveCameraSnapshot();
+    ActivePIEViewportIndex = FocusedIdx;
 	// 주의! Editor State는 실제 에디터의 상태가 아닌, 현재 에디터가 포커스한 뷰포트의 상태를 의미합니다.
     SetEditorState(EViewportPlayState::Playing); 
 
@@ -164,7 +257,7 @@ void UEditorEngine::PausePlaySession()
     SetEditorState(EViewportPlayState::Paused);
 
     // PIE 컨텍스트를 일시정지 상태로 표시해 WorldTick에서 제외합니다.
-    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    const int32 FocusedIdx = (ActivePIEViewportIndex >= 0) ? ActivePIEViewportIndex : ViewportLayout.GetLastFocusedViewportIndex();
     auto HandleIt = ViewportPIEHandles.find(FocusedIdx);
     if (HandleIt != ViewportPIEHandles.end())
         if (FWorldContext* Ctx = GetWorldContextFromHandle(HandleIt->second))
@@ -173,7 +266,7 @@ void UEditorEngine::PausePlaySession()
 
 void UEditorEngine::ResumePlaySession()
 {
-    const int32 ResumeIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    const int32 ResumeIdx = (ActivePIEViewportIndex >= 0) ? ActivePIEViewportIndex : ViewportLayout.GetLastFocusedViewportIndex();
     auto ResumeIt = ViewportPIEHandles.find(ResumeIdx);
 
     if (ResumeIt != ViewportPIEHandles.end())
@@ -189,10 +282,26 @@ void UEditorEngine::ResumePlaySession()
 
 void UEditorEngine::StopPlaySession()
 {
-    if (GetEditorState() == EViewportPlayState::Editing)
+    if (GetEditorState() == EViewportPlayState::Editing && ViewportPIEHandles.empty())
+    {
+        bStopPlaySessionQueued = false;
+        return;
+    }
+
+    bStopPlaySessionQueued = true;
+    bStartPlaySessionQueued = false;
+}
+
+void UEditorEngine::StopPlaySessionNow()
+{
+    if (GetEditorState() == EViewportPlayState::Editing && ViewportPIEHandles.empty())
         return;
 
-    const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
+    int32 FocusedIdx = (ActivePIEViewportIndex >= 0) ? ActivePIEViewportIndex : ViewportLayout.GetLastFocusedViewportIndex();
+    if (ViewportPIEHandles.find(FocusedIdx) == ViewportPIEHandles.end() && !ViewportPIEHandles.empty())
+    {
+        FocusedIdx = ViewportPIEHandles.begin()->first;
+    }
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
 
     // 기존 PIE 월드를 해제합니다.
@@ -219,9 +328,11 @@ void UEditorEngine::StopPlaySession()
     }
 
     // 원본 에디터 월드로 뷰포트 및 상태를 복구합니다.
+    ViewportLayout.SetLastFocusedViewportIndex(FocusedIdx);
     FocusedClient->EndPIE(EditorWorld);
     SetEditorState(EViewportPlayState::Editing);
     FocusedClient->RestoreCameraSnapshot();
+    ActivePIEViewportIndex = -1;
 
     if (ViewportPIEHandles.empty())
     {

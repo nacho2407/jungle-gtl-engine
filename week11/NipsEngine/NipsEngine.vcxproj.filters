@@ -25,6 +25,9 @@
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{1a34369a-b65d-0692-a150-9209617bbd99}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Input">
+      <UniqueIdentifier>{e3a8efda-45b3-4fe0-92b9-a73b83e3f102}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{bfcd2a84-61fc-3a27-7115-8732c34a60d0}</UniqueIdentifier>
     </Filter>
@@ -215,6 +218,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Input\EditorViewportTools.cpp">
+      <Filter>Source\Editor\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
@@ -416,6 +422,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Geometry\Transform.cpp">
       <Filter>Source\Engine\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Input\InputRouter.cpp">
+      <Filter>Source\Engine\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>
@@ -708,6 +717,15 @@
     <ClInclude Include="Source\Editor\EditorUtils.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorViewportInputContexts.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorViewportInputMapping.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Input\EditorViewportTools.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h">
       <Filter>Source\Editor\Selection</Filter>
     </ClInclude>
@@ -718,6 +736,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorFooterLogSystem.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h">
@@ -990,7 +1011,19 @@
     <ClInclude Include="Source\Engine\Geometry\Triangle.h">
       <Filter>Source\Engine\Geometry</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Input\CursorControl.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\InputBinding.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\InputRouter.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Input\InputSystem.h">
+      <Filter>Source\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Input\InputTypes.h">
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h">
