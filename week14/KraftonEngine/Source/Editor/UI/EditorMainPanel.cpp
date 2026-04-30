@@ -657,6 +657,7 @@ void FEditorMainPanel::Update()
 	}
 	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = bWantKeyboard;
+	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
 
 	// IME는 ImGui가 텍스트 입력을 원할 때만 활성화.
 	if (Window)
@@ -721,6 +722,10 @@ void FEditorMainPanel::ProcessPendingDebugActions()
 void FEditorMainPanel::HandleGlobalShortcuts()
 {
 	if (!EditorEngine)
+	{
+		return;
+	}
+	if (EditorEngine->IsPIEPossessedMode())
 	{
 		return;
 	}
