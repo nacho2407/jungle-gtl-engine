@@ -120,6 +120,27 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
     return false;
 }
 
+void UPrimitiveComponent::ResolveOverlaps()
+{
+    for (auto* B : CurOverlaps)
+    {
+        if (!PrevOverlaps.contains(B))
+        {
+            FHitResult HitResult;
+            OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+        }
+    }
+
+    for (auto* B : PrevOverlaps)
+    {
+        if (!CurOverlaps.contains(B))
+        {
+            FHitResult HitResult;
+            OnComponentEndOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+        }
+    }
+}
+
 void UPrimitiveComponent::OnTransformDirty()
 {
 	NotifySpatialIndexDirty();
