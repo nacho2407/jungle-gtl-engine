@@ -18,6 +18,9 @@ cbuffer UIRenderCB : register(b0)
 	float2 Translation;
 };
 
+Texture2D UITexture : register(t0);
+SamplerState UISampler : register(s0);
+
 VSOutput VS(VSInput Input)
 {
 	VSOutput Output;
@@ -34,5 +37,6 @@ VSOutput VS(VSInput Input)
 
 float4 PS(VSOutput Input) : SV_Target
 {
-	return Input.Color;
+	float4 TextureColor = UITexture.Sample(UISampler, Input.TexCoord);
+	return Input.Color * TextureColor;
 }
