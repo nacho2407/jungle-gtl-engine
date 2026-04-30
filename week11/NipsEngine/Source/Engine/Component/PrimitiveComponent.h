@@ -7,7 +7,6 @@
 #include "Core/CollisionTypes.h"
 #include "Engine/Geometry/AABB.h"
 
-
 class UPrimitiveComponent : public USceneComponent
 {
 public:
@@ -52,6 +51,9 @@ public:
 
 	virtual bool SupportsOutline() const { return true; }
 
+	const TSet<UPrimitiveComponent*>& GetOverlapInfos() const { return CurOverlaps; }
+    bool IsOverlappingActor(const AActor* OtherActor) const;
+
 protected:
     void OnTransformDirty() override;
     void NotifySpatialIndexDirty() const;
@@ -60,6 +62,10 @@ protected:
 	mutable FAABB WorldAABB;
 	bool bIsVisible = true;
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
+
+    bool bGenerateOverlapEvents = false;
+    bool bBlockComponent = false; // ComponentHit
+	TSet<UPrimitiveComponent*> CurOverlaps;
 };
 
 // struct FMeshData;

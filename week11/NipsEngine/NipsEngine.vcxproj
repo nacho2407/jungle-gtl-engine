@@ -240,6 +240,7 @@
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\TextRenderComponent.cpp" />
@@ -254,6 +255,9 @@
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\UBoxComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\UCapsuleComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\USphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
@@ -416,6 +420,7 @@
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
+    <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\TextRenderComponent.h" />
@@ -430,6 +435,9 @@
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\LightComponentBase.h" />
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\PointLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\UBoxComponent.h" />
+    <ClInclude Include="Source\Engine\Component\UCapsuleComponent.h" />
+    <ClInclude Include="Source\Engine\Component\USphereComponent.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
