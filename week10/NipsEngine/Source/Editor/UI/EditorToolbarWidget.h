@@ -20,10 +20,10 @@ public:
 		bool* InShowMaterialEditor,
 		bool* InShowStatProfiler);
 	virtual void Render(float DeltaTime) override;
-
-private:
 	bool OpenSceneFileDialog(FString& OutFilePath) const;
 	bool SaveSceneFileDialog(FString& OutFilePath) const;
+
+private:
 	void RenderFilesMenu();
 	void RenderViewMenu();
 	void RenderEditMenu();

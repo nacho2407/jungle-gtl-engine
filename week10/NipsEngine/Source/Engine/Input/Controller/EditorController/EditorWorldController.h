@@ -57,6 +57,8 @@ class FEditorWorldController : public IBaseEditorController
 
   private:
     void UpdateCameraRotation();
+    void SelectActorAt(float X, float Y);
+    void ClearPendingSelectionPress();
 
   private:
     FSelectionManager* SelectionManager = nullptr;
@@ -69,4 +71,7 @@ class FEditorWorldController : public IBaseEditorController
     float   MoveSpeed = 15.f;
     FVector TargetLocation;
     bool    bTargetLocationInitialized = false;
+    bool    bHasPendingSelectionPress = false;
+    float   PendingSelectionPressX = 0.0f;
+    float   PendingSelectionPressY = 0.0f;
 };

@@ -7,11 +7,50 @@ struct FGuiInputState
 {
     bool bUsingMouse = false;
     bool bUsingKeyboard = false;
+    bool bUsingTextInput = false;
 
     bool          bViewportHostVisible = false;
     FViewportRect ViewportHostRect;
 
     bool IsInViewportHost(int32 X, int32 Y) const { return bViewportHostVisible && ViewportHostRect.Contains(X, Y); }
+};
+
+struct FInputSystemSnapshot
+{
+    bool KeyDown[256] = {};
+    bool KeyPressed[256] = {};
+    bool KeyReleased[256] = {};
+
+    POINT MousePos = { 0, 0 };
+    int   MouseDeltaX = 0;
+    int   MouseDeltaY = 0;
+    int   ScrollDelta = 0;
+
+    bool  bLeftDragStarted = false;
+    bool  bLeftDragging = false;
+    bool  bLeftDragEnded = false;
+    POINT LeftDragVector = { 0, 0 };
+
+    bool  bMiddleDragStarted = false;
+    bool  bMiddleDragging = false;
+    bool  bMiddleDragEnded = false;
+    POINT MiddleDragVector = { 0, 0 };
+
+    bool  bRightDragStarted = false;
+    bool  bRightDragging = false;
+    bool  bRightDragEnded = false;
+    POINT RightDragVector = { 0, 0 };
+
+    bool bUsingRawMouse = false;
+
+    bool IsDown(int VK) const { return VK >= 0 && VK < 256 && KeyDown[VK]; }
+    bool WasPressed(int VK) const { return VK >= 0 && VK < 256 && KeyPressed[VK]; }
+    bool WasReleased(int VK) const { return VK >= 0 && VK < 256 && KeyReleased[VK]; }
+};
+
+enum class EInputFocusLossPolicy : uint8
+{
+    ResetAllInputs
 };
 
 class InputSystem : public TSingleton<InputSystem>
@@ -20,11 +59,31 @@ class InputSystem : public TSingleton<InputSystem>
 
   public:
     void Tick();
+    FInputSystemSnapshot TickAndMakeSnapshot();
+    FInputSystemSnapshot MakeSnapshot() const;
+    void SetUseRawMouse(bool bEnable) { bUseRawMouse = bEnable; }
+    bool IsUsingRawMouse() const { return bUseRawMouse; }
+    void AddRawMouseDelta(int DeltaX, int DeltaY);
 
     // Keyboard
     bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
     bool GetKey(int VK) const { return CurrentStates[VK]; }
     bool GetKeyUp(int VK) const { return !CurrentStates[VK] && PrevStates[VK]; }
+    bool IsAnyMouseButtonDown() const
+    {
+        return GetKey(VK_LBUTTON)
+            || GetKey(VK_RBUTTON)
+            || GetKey(VK_MBUTTON)
+            || GetKey(VK_XBUTTON1)
+            || GetKey(VK_XBUTTON2);
+    }
+    bool IsAnyMouseButtonDownOrDragging() const
+    {
+        return IsAnyMouseButtonDown()
+            || GetLeftDragging()
+            || GetMiddleDragging()
+            || GetRightDragging();
+    }
 
 	// Mouse lock
     void	 SetCursorVisibility(bool bVisible);
@@ -32,8 +91,8 @@ class InputSystem : public TSingleton<InputSystem>
 
     // Mouse position
     POINT GetMousePos() const { return MousePos; }
-    int MouseDeltaX() const { if (bIsMouseLocked) return MousePos.x - LockedCenterScreen.x; return MousePos.x - PrevMousePos.x; }
-	int MouseDeltaY() const { if (bIsMouseLocked) return MousePos.y - LockedCenterScreen.y; return MousePos.y - PrevMousePos.y; }
+    int MouseDeltaX() const { return FrameMouseDeltaX; }
+	int MouseDeltaY() const { return FrameMouseDeltaY; }
     bool  MouseMoved() const { return MouseDeltaX() != 0 || MouseDeltaY() != 0; }
 
     // Left drag
@@ -69,10 +128,14 @@ class InputSystem : public TSingleton<InputSystem>
 
     // Window focus
     void SetOwnerWindow(HWND InHWnd) { OwnerHWnd = InHWnd; }
+    void SetFocusLossPolicy(EInputFocusLossPolicy InPolicy) { FocusLossPolicy = InPolicy; }
 
     // GUI state
     FGuiInputState&       GetGuiInputState() { return GuiState; }
     const FGuiInputState& GetGuiInputState() const { return GuiState; }
+    void SetGuiMouseCapture(bool bCapture) { GuiState.bUsingMouse = bCapture; }
+    void SetGuiKeyboardCapture(bool bCapture) { GuiState.bUsingKeyboard = bCapture; }
+    void SetGuiTextInputCapture(bool bCapture) { GuiState.bUsingTextInput = bCapture; }
 
   private:
     bool CurrentStates[256] = {false};
@@ -81,6 +144,11 @@ class InputSystem : public TSingleton<InputSystem>
     // Mouse members
     POINT MousePos = {0, 0};
     POINT PrevMousePos = {0, 0};
+    int   FrameMouseDeltaX = 0;
+    int   FrameMouseDeltaY = 0;
+    int   RawMouseDeltaAccumX = 0;
+    int   RawMouseDeltaAccumY = 0;
+    bool  bUseRawMouse = false;
     POINT LockedCenterScreen;
 	bool  bIsMouseLocked = false;
     bool  bIsCursorVisible = false;
@@ -113,6 +181,7 @@ class InputSystem : public TSingleton<InputSystem>
 
     // Window handle for focus check
     HWND OwnerHWnd = nullptr;
+    EInputFocusLossPolicy FocusLossPolicy = EInputFocusLossPolicy::ResetAllInputs;
 
     // GUI InputState
     FGuiInputState GuiState{};
@@ -122,4 +191,8 @@ class InputSystem : public TSingleton<InputSystem>
     // Internal drag threshold helper — unified Left/Right logic
     void FilterDragThreshold(bool& bCandidate, bool& bDragging, bool& bJustStarted, const POINT& MouseDownPos,
                              POINT& DragStartPos);
+    void HandleOutOfFocusTick();
+    void ResetAllInputStateOnFocusLoss();
+    void SampleKeyStates();
+    void SampleMouseDelta();
 };

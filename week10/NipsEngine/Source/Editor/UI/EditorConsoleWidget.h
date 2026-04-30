@@ -19,6 +19,9 @@ public:
 	static void AddLog(const char* fmt, ...);
 
 	virtual void Render(float DeltaTime) override;
+	void RenderDrawerToolbar();
+	void RenderLogContents(float Height = 0.0f);
+	void RenderInputLine(const char* Id, float Width, bool bRequestFocus);
 
 	void Clear()
 	{

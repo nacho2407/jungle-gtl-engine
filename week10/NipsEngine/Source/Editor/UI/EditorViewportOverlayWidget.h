@@ -6,11 +6,12 @@ class FEditorViewportOverlayWidget : public FEditorWidget
 {
 private:
 	bool bExpanded = false;
-	bool bShowViewportSettings = true;
+	bool bShowViewportSettings = false;
 	bool bShowShortcutsWindow = false;
 	void RenderViewportSettings(float DeltaTime);
 	void RenderDebugStats(float DeltaTime);
 	void RenderSplitterBar();
+    void RenderViewportFocusOverlay();
     void RenderBoxSelectionOverlay();
     void RenderShortcutsWindow();
     void RenderShadowAtlasPreview();

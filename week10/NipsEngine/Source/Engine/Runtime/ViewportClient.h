@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Core/CoreTypes.h>
 #include "Core/CoreMinimal.h"
+#include "Engine/Input/InputTypes.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
 struct FSceneView;
@@ -46,6 +47,14 @@ public:
 	virtual bool MouseLockTickGuard()                            { return false; }
 	virtual bool OnKeyDown(uint32 Key)                           { return false; }
 	virtual bool OnKeyUp(uint32 Key)                             { return false; }
+
+	/**
+	 * Frame-based input path used by the editor/game input router.
+	 * Legacy event hooks stay available while clients migrate incrementally.
+	 */
+	virtual bool ProcessInput(FViewportInputContext& Context) { return false; }
+	virtual bool WantsRelativeMouseMode(const FViewportInputContext& Context, POINT& OutRestoreScreenPos) const { return false; }
+	virtual bool WantsAbsoluteMouseClip(const FViewportInputContext& Context, RECT& OutClipScreenRect) const { return false; }
 
 protected:
 	FWindowsWindow* Window       = nullptr;

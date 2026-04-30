@@ -2,6 +2,7 @@
 
 #include "Engine/Runtime/Engine.h"
 
+#include "Engine/Input/InputRouter.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Editor/EditorUtils.h"
@@ -56,6 +57,7 @@ public:
 	FEditorMainPanel& GetMainPanel() { return MainPanel; }
 
 	void RenderUI(float DeltaTime);
+	void RegisterViewportInputTargets();
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
@@ -69,15 +71,19 @@ public:
 	// 주의! Editor State가 따로 존재하는 것이 아닙니다. 에디터가 현재 포커스한 뷰포트의 상태를 Get/Set합니다.
 	EViewportPlayState GetEditorState() const
 	{
-        const FEditorViewportClient* FocusedClient =
-            ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+        const int32 StateViewportIndex = (ActivePIEViewportIndex >= 0)
+            ? ActivePIEViewportIndex
+            : ViewportLayout.GetLastFocusedViewportIndex();
+        const FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(StateViewportIndex);
         return FocusedClient ? FocusedClient->GetPlayState() : EViewportPlayState::Editing;
 	}
 
 	void SetEditorState(EViewportPlayState InState)
 	{
-        if (FEditorViewportClient* FocusedClient =
-                ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex()))
+        const int32 StateViewportIndex = (ActivePIEViewportIndex >= 0)
+            ? ActivePIEViewportIndex
+            : ViewportLayout.GetLastFocusedViewportIndex();
+        if (FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(StateViewportIndex))
         {
             FocusedClient->SetPlayState(InState);
         }
@@ -94,10 +100,17 @@ public:
 	FName GetEditorWorldHandle() const;
 
 private:
+	void ProcessQueuedPlaySessionRequests();
+	void StartPlaySessionNow();
+	void StopPlaySessionNow();
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
 	FEditorViewportLayout   ViewportLayout;
+	FInputRouter EditorInputRouter;
 	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
+	int32 ActivePIEViewportIndex = -1;
+	bool bStartPlaySessionQueued = false;
+	bool bStopPlaySessionQueued = false;
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;

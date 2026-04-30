@@ -6,46 +6,11 @@ void InputSystem::Tick()
     // 윈도우 포커스가 없으면 모든 입력 상태 해제
     if (OwnerHWnd && GetForegroundWindow() != OwnerHWnd)
     {
-        for (int i = 0; i < 256; ++i)
-        {
-            PrevStates[i] = CurrentStates[i];
-            CurrentStates[i] = false;
-        }
-        bIsMouseLocked = false;
-
-        bLeftDragJustStarted = false;
-        bMiddleDragJustStarted = false;
-        bRightDragJustStarted = false;
-
-        bLeftDragJustEnded = bLeftDragging;
-        bMiddleDragJustEnded = bMiddleDragging;
-        bRightDragJustEnded = bRightDragging;
-
-        bLeftDragging = false;
-        bMiddleDragging = false;
-        bRightDragging = false;
-        bLeftDragCandidate = false;
-        bMiddleDragCandidate = false;
-        bRightDragCandidate = false;
-        PrevScrollDelta = ScrollDelta;
-        ScrollDelta = 0;
-        // 마우스 위치 동기화 (복귀 시 델타 점프 방지)
-        GetCursorPos(&MousePos);
-        PrevMousePos = MousePos;
+        HandleOutOfFocusTick();
         return;
     }
 
-    // 단 한 번의 API 호출로 모든 키 상태 갱신 (CPU 10% 병목)
-    BYTE keyState[256];
-    if (GetKeyboardState(keyState))
-    {
-        for (int i = 0; i < 256; ++i)
-        {
-            PrevStates[i] = CurrentStates[i];
-            // GetKeyboardState는 최상위 비트(0x80)가 눌림 상태를 나타냄
-            CurrentStates[i] = (keyState[i] & 0x80) != 0;
-        }
-    }
+    SampleKeyStates();
 
     bLeftDragJustStarted = false;
     bMiddleDragJustStarted = false;
@@ -57,13 +22,7 @@ void InputSystem::Tick()
     PrevScrollDelta = ScrollDelta;
     ScrollDelta = 0;
 
-    PrevMousePos = MousePos;
-    GetCursorPos(&MousePos);
-
-    if (bIsMouseLocked)
-    {
-        SetCursorPos(LockedCenterScreen.x, LockedCenterScreen.y);
-    }
+    SampleMouseDelta();
 
     if (GetKeyDown(VK_LBUTTON))
     {
@@ -124,6 +83,136 @@ void InputSystem::Tick()
         bRightDragging = false;
         bRightDragCandidate = false;
     }
+}
+
+FInputSystemSnapshot InputSystem::TickAndMakeSnapshot()
+{
+    Tick();
+    return MakeSnapshot();
+}
+
+FInputSystemSnapshot InputSystem::MakeSnapshot() const
+{
+    FInputSystemSnapshot Snapshot{};
+    for (int VK = 0; VK < 256; ++VK)
+    {
+        Snapshot.KeyDown[VK] = CurrentStates[VK];
+        Snapshot.KeyPressed[VK] = CurrentStates[VK] && !PrevStates[VK];
+        Snapshot.KeyReleased[VK] = !CurrentStates[VK] && PrevStates[VK];
+    }
+
+    Snapshot.MousePos = MousePos;
+    Snapshot.MouseDeltaX = FrameMouseDeltaX;
+    Snapshot.MouseDeltaY = FrameMouseDeltaY;
+    Snapshot.ScrollDelta = PrevScrollDelta;
+
+    Snapshot.bLeftDragStarted = bLeftDragJustStarted;
+    Snapshot.bLeftDragging = bLeftDragging;
+    Snapshot.bLeftDragEnded = bLeftDragJustEnded;
+    Snapshot.LeftDragVector = GetLeftDragVector();
+
+    Snapshot.bMiddleDragStarted = bMiddleDragJustStarted;
+    Snapshot.bMiddleDragging = bMiddleDragging;
+    Snapshot.bMiddleDragEnded = bMiddleDragJustEnded;
+    Snapshot.MiddleDragVector = GetMiddleDragVector();
+
+    Snapshot.bRightDragStarted = bRightDragJustStarted;
+    Snapshot.bRightDragging = bRightDragging;
+    Snapshot.bRightDragEnded = bRightDragJustEnded;
+    Snapshot.RightDragVector = GetRightDragVector();
+
+    Snapshot.bUsingRawMouse = bUseRawMouse;
+    return Snapshot;
+}
+
+void InputSystem::HandleOutOfFocusTick()
+{
+    switch (FocusLossPolicy)
+    {
+    case EInputFocusLossPolicy::ResetAllInputs:
+    default:
+        ResetAllInputStateOnFocusLoss();
+        return;
+    }
+}
+
+void InputSystem::ResetAllInputStateOnFocusLoss()
+{
+    for (int i = 0; i < 256; ++i)
+    {
+        PrevStates[i] = CurrentStates[i];
+        CurrentStates[i] = false;
+    }
+
+    bIsMouseLocked = false;
+    bUseRawMouse = false;
+
+    bLeftDragJustStarted = false;
+    bMiddleDragJustStarted = false;
+    bRightDragJustStarted = false;
+
+    bLeftDragJustEnded = bLeftDragging;
+    bMiddleDragJustEnded = bMiddleDragging;
+    bRightDragJustEnded = bRightDragging;
+
+    bLeftDragging = false;
+    bMiddleDragging = false;
+    bRightDragging = false;
+    bLeftDragCandidate = false;
+    bMiddleDragCandidate = false;
+    bRightDragCandidate = false;
+
+    PrevScrollDelta = ScrollDelta;
+    ScrollDelta = 0;
+    FrameMouseDeltaX = 0;
+    FrameMouseDeltaY = 0;
+    RawMouseDeltaAccumX = 0;
+    RawMouseDeltaAccumY = 0;
+
+    GetCursorPos(&MousePos);
+    PrevMousePos = MousePos;
+}
+
+void InputSystem::SampleKeyStates()
+{
+    // 단 한 번의 API 호출로 모든 키 상태 갱신 (CPU 10% 병목)
+    BYTE KeyState[256];
+    if (GetKeyboardState(KeyState))
+    {
+        for (int i = 0; i < 256; ++i)
+        {
+            PrevStates[i] = CurrentStates[i];
+            CurrentStates[i] = (KeyState[i] & 0x80) != 0;
+        }
+    }
+}
+
+void InputSystem::SampleMouseDelta()
+{
+    PrevMousePos = MousePos;
+    GetCursorPos(&MousePos);
+
+    FrameMouseDeltaX = bIsMouseLocked ? MousePos.x - LockedCenterScreen.x : MousePos.x - PrevMousePos.x;
+    FrameMouseDeltaY = bIsMouseLocked ? MousePos.y - LockedCenterScreen.y : MousePos.y - PrevMousePos.y;
+    if (bUseRawMouse)
+    {
+        FrameMouseDeltaX = RawMouseDeltaAccumX;
+        FrameMouseDeltaY = RawMouseDeltaAccumY;
+    }
+
+    RawMouseDeltaAccumX = 0;
+    RawMouseDeltaAccumY = 0;
+
+    if (bIsMouseLocked)
+    {
+        SetCursorPos(LockedCenterScreen.x, LockedCenterScreen.y);
+    }
+}
+
+void InputSystem::AddRawMouseDelta(int DeltaX, int DeltaY)
+{
+    RawMouseDeltaAccumX += DeltaX;
+    RawMouseDeltaAccumY += DeltaY;
 }
 
 void InputSystem::FilterDragThreshold(bool& bCandidate, bool& bDragging, bool& bJustStarted, const POINT& MouseDownPos,
@@ -203,14 +292,18 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 {
     if (bVisible)
     {
-        while (ShowCursor(true) < 0)
-        {
-        }
+        while (ShowCursor(TRUE) < 0) {}
+        while (ShowCursor(FALSE) >= 0) {}
+        ShowCursor(TRUE);
+        SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+        bIsCursorVisible = true;
     }
     else
     {
-        while (ShowCursor(false) >= 0)
-        {
-        }
+        while (ShowCursor(TRUE) < 0) {}
+        while (ShowCursor(FALSE) >= 0) {}
+        ShowCursor(TRUE);
+        ShowCursor(FALSE);
+        bIsCursorVisible = false;
     }
 }

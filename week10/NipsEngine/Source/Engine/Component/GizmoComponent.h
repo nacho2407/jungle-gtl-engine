@@ -30,6 +30,13 @@ private:
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
 	bool bPressedOnHandle = false;
+	bool bTranslateSnapEnabled = false;
+	bool bRotateSnapEnabled = false;
+	bool bScaleSnapEnabled = false;
+	float TranslateSnapStep = 1.0f;
+	float RotateSnapStepDegrees = 10.0f;
+	float ScaleSnapStep = 0.1f;
+	float PendingSnapDelta = 0.0f;
 
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
 	const FMeshData* GetActiveMeshData() const;
@@ -42,6 +49,7 @@ private:
 
 	void UpdateLinearDrag(const FRay& Ray);
 	void UpdateAngularDrag(const FRay& Ray);
+	float QuantizeDragAmount(float DragAmount);
 
 public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
@@ -57,7 +65,7 @@ public:
 	void RenderGizmo() {}
 	void SetTarget(AActor* NewTarget);
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
-	inline void SetHolding(bool bHold) { bIsHolding = bHold; }
+	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
 	inline bool HasTarget() const { return TargetActor != nullptr; }
@@ -74,6 +82,10 @@ public:
 	void SetTargetLocation(FVector NewLocation);
 	void SetTargetRotation(FVector NewRotation);
 	void SetTargetScale(FVector NewScale);
+
+	void SetTranslateSnap(bool bEnabled, float Step);
+	void SetRotateSnap(bool bEnabled, float DegreesStep);
+	void SetScaleSnap(bool bEnabled, float Step);
 
 	void SetNextMode();
 	void UpdateGizmoMode(EGizmoMode NewMode);

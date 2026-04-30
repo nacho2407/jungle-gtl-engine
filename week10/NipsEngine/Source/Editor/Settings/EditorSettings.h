@@ -22,6 +22,7 @@ public:
 	// Viewport 레이아웃 상태
 	int32 ActiveViewportCount = 4;  // 현재 표시 중인 뷰포트 수 (1 또는 4)
 	int32 SingleViewportIndex = 0;  // ActiveViewportCount == 1 일 때 표시할 뷰포트 인덱스
+	int32 ViewportLayoutMode = 7;   // EEditorViewportLayoutMode::FourPanes2x2
 
 	// Splitter layout
 	float SplitterVRatio = 0.5f;  // RootSplitterV (위:아래)

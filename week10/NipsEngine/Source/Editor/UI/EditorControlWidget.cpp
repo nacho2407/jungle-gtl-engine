@@ -21,6 +21,125 @@ void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 	SelectedPrimitiveType = 0;
 }
 
+const char* FEditorControlWidget::GetPrimitiveTypeLabel(int32 PrimitiveType) const
+{
+	if (PrimitiveType < 0 || PrimitiveType >= GetPrimitiveTypeCount())
+	{
+		return "";
+	}
+	return PrimitiveTypes[PrimitiveType];
+}
+
+bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& SpawnPoint, int32 Count)
+{
+	if (!EditorEngine)
+	{
+		return false;
+	}
+
+	UWorld* World = EditorEngine->GetFocusedWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	Count = MathUtil::Clamp(Count, 1, 100);
+	for (int32 i = 0; i < Count; i++)
+	{
+		switch (PrimitiveType)
+		{
+		case 0:
+		{
+			ASceneActor* Actor = World->SpawnActor<ASceneActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 1:
+		{
+			AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 2:
+		{
+			ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 3:
+		{
+			ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 4:
+		{
+			ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 5:
+		{
+			ADecalActor* Actor = World->SpawnActor<ADecalActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 6:
+		{
+			AFireballActor* Actor = World->SpawnActor<AFireballActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 7:
+		{
+			ADecalSpotLightActor* Actor = World->SpawnActor<ADecalSpotLightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 8:
+		{
+			AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 9:
+		{
+			ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 10:
+		{
+			APointLightActor* Actor = World->SpawnActor<APointLightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 11:
+		{
+			ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		default:
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void FEditorControlWidget::Render(float DeltaTime)
 {
 	(void)DeltaTime;
@@ -41,104 +160,10 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	if (ImGui::Button("Spawn"))
 	{
-		UWorld* World = EditorEngine->GetFocusedWorld();
-		if (!World)
+		if (SpawnPrimitive(SelectedPrimitiveType, CurSpawnPoint, NumberOfSpawnedActors))
 		{
-			ImGui::End();
-			return;
+			NumberOfSpawnedActors = 1;
 		}
-
-		for (int32 i = 0; i < NumberOfSpawnedActors; i++)
-		{
-			switch (SelectedPrimitiveType)
-			{
-			case 0: // Scene (Empty)
-			{
-				ASceneActor* Actor = World->SpawnActor<ASceneActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 1: // StaticMesh
-			{
-				AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 2: // TextRender
-			{
-				ATextRenderActor* Actor = World->SpawnActor<ATextRenderActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 3: // SubUV
-			{
-				ASubUVActor* Actor = World->SpawnActor<ASubUVActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 4: // Billboard
-			{
-				ABillboardActor* Actor = World->SpawnActor<ABillboardActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 5: // Decal
-			{
-				ADecalActor* Actor = World->SpawnActor<ADecalActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-            case 6: // Fireball
-            {
-				AFireballActor* Actor = World->SpawnActor<AFireballActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-			case 7: // Decal Spotlight
-			{
-				ADecalSpotLightActor* Actor = World->SpawnActor<ADecalSpotLightActor>();
-				Actor->InitDefaultComponents();
-				Actor->SetActorLocation(CurSpawnPoint);
-				break;
-			}
-            case 8: // Ambient
-            {
-                AAmbientLightActor* Actor = World->SpawnActor<AAmbientLightActor>();
-                Actor->InitDefaultComponents();
-                Actor->SetActorLocation(CurSpawnPoint);
-                break;
-            }
-            case 9: // Directional
-            {
-                ADirectionalLightActor* Actor = World->SpawnActor<ADirectionalLightActor>();
-                Actor->InitDefaultComponents();
-                Actor->SetActorLocation(CurSpawnPoint);
-                break;
-            }
-            case 10: // Point
-            {
-                APointLightActor* Actor = World->SpawnActor<APointLightActor>();
-                Actor->InitDefaultComponents();
-                Actor->SetActorLocation(CurSpawnPoint);
-                break;
-            }
-            case 11: // Spotlight
-            {
-                ASpotlightActor* Actor = World->SpawnActor<ASpotlightActor>();
-                Actor->InitDefaultComponents();
-                Actor->SetActorLocation(CurSpawnPoint);
-                break;
-            }
-			}
-		}
-		NumberOfSpawnedActors = 1;
 	}
 	ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
 

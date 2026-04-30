@@ -94,19 +94,66 @@ void FEditorViewportOverlayWidget::Render(float DeltaTime)
 	}
 	RenderDebugStats(DeltaTime);
 	RenderSplitterBar();
+	RenderViewportFocusOverlay();
 	RenderBoxSelectionOverlay();
     RenderShortcutsWindow();
 }
 
 void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
 {
+    (void)DeltaTime;
     FEditorSettings& Settings = FEditorSettings::Get();
 
-    if (!ImGui::Begin("Viewport Settings"))
+    ImVec2 OverlayPos(24.0f, 82.0f);
+    ImGuiID OverlayViewportID = 0;
+    if (EditorEngine)
+    {
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        const int32 FocusedIdx = Layout.GetLastFocusedViewportIndex();
+        const FViewportRect& Rect = Layout.GetSceneViewport(FocusedIdx).GetRect();
+        if (Rect.Width > 1 && Rect.Height > 1)
+        {
+            OverlayPos = ImVec2(
+                static_cast<float>(Rect.X + Rect.Width) - 340.0f,
+                static_cast<float>(Rect.Y) + 42.0f);
+        }
+    }
+    if (const ImGuiViewport* MainViewport = ImGui::GetMainViewport())
+    {
+        OverlayViewportID = MainViewport->ID;
+    }
+
+    ImGui::SetNextWindowPos(OverlayPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 80.0f), ImVec2(360.0f, 620.0f));
+    if (OverlayViewportID != 0)
+    {
+        ImGui::SetNextWindowViewport(OverlayViewportID);
+    }
+    ImGui::SetNextWindowBgAlpha(0.92f);
+
+    constexpr ImGuiWindowFlags Flags =
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoFocusOnAppearing;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 10.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.07f, 0.08f, 0.10f, 0.94f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.28f, 0.34f, 0.46f, 0.85f));
+
+    bool bOpen = bShowViewportSettings;
+    if (!ImGui::Begin("Viewport Settings", &bOpen, Flags))
     {
         ImGui::End();
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(3);
+        bShowViewportSettings = bOpen;
         return;
     }
+    bShowViewportSettings = bOpen;
 
     // 위젯 너비를 현재 창 콘텐츠 영역의 50%로 설정하는 람다 또는 변수
     float ItemWidth = ImGui::GetContentRegionAvail().x * 0.5f;
@@ -199,6 +246,8 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     RenderShadowCubeArrayPreview();
 
     ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(3);
 }
 
 void FEditorViewportOverlayWidget::RenderShadowCubeArrayPreview()
@@ -519,7 +568,7 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 	FEditorViewportLayout& ViewportLayout = EditorEngine->GetViewportLayout();
 
 	// 1개 모드일 때는 바를 그리지 않음
-	if (!ViewportLayout.IsSingleViewportMode())
+	if (ViewportLayout.GetLayoutMode() == EEditorViewportLayoutMode::FourPanes2x2)
 	{
 		ImDrawList* DrawList = ImGui::GetForegroundDrawList();
 		constexpr ImU32 BarColor = IM_COL32(80, 80, 80, 220);
@@ -569,6 +618,50 @@ void FEditorViewportOverlayWidget::RenderSplitterBar()
 				ImVec2(CR.X, CR.Y),
 				ImVec2(CR.X + CR.Width, CR.Y + CR.Height),
 				bCrossHovered ? CrossHoverColor : BarColor);
+		}
+	}
+}
+
+void FEditorViewportOverlayWidget::RenderViewportFocusOverlay()
+{
+	if (!EditorEngine)
+	{
+		return;
+	}
+
+	FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+	ImDrawList* DrawList = ImGui::GetForegroundDrawList();
+	const int32 FocusedIndex = Layout.GetLastFocusedViewportIndex();
+
+	for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+	{
+		const FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+		if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+		{
+			continue;
+		}
+
+		const FEditorViewportState& State = Layout.GetViewportState(i);
+		const FEditorViewportClient* Client = Layout.GetViewportClient(i);
+		const float PIEFlashAlpha = Client ? Client->GetPIEStartOutlineFlashAlpha() : 0.0f;
+		const bool bFocused = (i == FocusedIndex);
+		const bool bHovered = State.bHovered;
+		if (!bFocused && !bHovered && PIEFlashAlpha <= 0.0f)
+		{
+			continue;
+		}
+
+		const ImVec2 Min(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
+		const ImVec2 Max(
+			static_cast<float>(ViewportRect.X + ViewportRect.Width),
+			static_cast<float>(ViewportRect.Y + ViewportRect.Height));
+		const ImU32 Color = bFocused ? IM_COL32(82, 168, 255, 235) : IM_COL32(170, 190, 210, 120);
+		const float Thickness = bFocused ? 2.0f : 1.0f;
+		DrawList->AddRect(Min, Max, Color, 0.0f, 0, Thickness);
+		if (PIEFlashAlpha > 0.0f)
+		{
+			const int32 Alpha = static_cast<int32>(220.0f * PIEFlashAlpha);
+			DrawList->AddRect(Min, Max, IM_COL32(120, 255, 150, Alpha), 0.0f, 0, 4.0f);
 		}
 	}
 }

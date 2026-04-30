@@ -16,6 +16,7 @@ namespace EditorKey
 	constexpr const char* SplitterHRatio      = "SplitterHRatio";
 	constexpr const char* ActiveViewportCount = "ActiveViewportCount";
 	constexpr const char* SingleViewportIndex = "SingleViewportIndex";
+	constexpr const char* ViewportLayoutMode  = "ViewportLayoutMode";
 
 	// Viewport
 	constexpr const char* CameraSpeed = "CameraSpeed";
@@ -82,6 +83,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Viewport[EditorKey::SplitterHRatio]      = SplitterHRatio;
 	Viewport[EditorKey::ActiveViewportCount] = ActiveViewportCount;
 	Viewport[EditorKey::SingleViewportIndex] = SingleViewportIndex;
+	Viewport[EditorKey::ViewportLayoutMode]  = ViewportLayoutMode;
 
 	Root[EditorKey::Viewport] = Viewport;
 
@@ -198,6 +200,15 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		{
 			const int32 Idx = Viewport[EditorKey::SingleViewportIndex].ToInt();
 			SingleViewportIndex = (Idx >= 0 && Idx < 4) ? Idx : 0;
+		}
+		if (Viewport.hasKey(EditorKey::ViewportLayoutMode))
+		{
+			const int32 Mode = Viewport[EditorKey::ViewportLayoutMode].ToInt();
+			ViewportLayoutMode = (Mode >= 0 && Mode < 12) ? Mode : ((ActiveViewportCount == 1) ? 0 : 7);
+		}
+		else
+		{
+			ViewportLayoutMode = (ActiveViewportCount == 1) ? 0 : 7;
 		}
 	}
 
