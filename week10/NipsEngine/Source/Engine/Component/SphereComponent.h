@@ -3,5 +3,9 @@
 
 class USphereComponent : public UShapeComponent
 {
+public:
+    float GetSphereRadius() const { return SphereRadius; }
+
+private:
     float SphereRadius;
 };
