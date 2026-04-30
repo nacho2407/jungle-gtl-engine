@@ -67,6 +67,7 @@ void FObjViewerPanel::Update()
 	}
 	InputSystem::Get().GetGuiInputState().bUsingMouse = bWantMouse;
 	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard;
+	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
 }
 
 void FObjViewerPanel::RenderMeshList()

@@ -18,6 +18,7 @@ class FLevelEditorViewportClient;
 class FEditorViewportClient;
 class FOverlayStatSystem;
 class AActor;
+class UGameViewportClient;
 struct FPerspectiveCameraData;
 
 class UEditorEngine : public UEngine
@@ -101,6 +102,15 @@ public:
 
 	void RequestEndPlayMap();
 	bool IsPlayingInEditor() const { return PlayInEditorSessionInfo.has_value(); }
+	enum class EPIEControlMode : uint8
+	{
+		Possessed,
+		Ejected
+	};
+	EPIEControlMode GetPIEControlMode() const { return PIEControlMode; }
+	bool IsPIEPossessedMode() const { return IsPlayingInEditor() && PIEControlMode == EPIEControlMode::Possessed; }
+	bool IsPIEEjectedMode() const { return IsPlayingInEditor() && PIEControlMode == EPIEControlMode::Ejected; }
+	bool TogglePIEControlMode();
 
 	// 즉시 동기 종료 — Save / NewScene / Load 등 에디터 월드를 만지는 작업 직전에 호출.
 	// PIE 중이 아니면 no-op.
@@ -111,6 +121,9 @@ private:
 	void StartQueuedPlaySessionRequest();
 	void StartPlayInEditorSession(const FRequestPlaySessionParams& Params);
 	void EndPlayMap();
+	bool EnterPIEPossessedMode();
+	bool EnterPIEEjectedMode();
+	void SyncGameViewportPIEControlState(bool bPossessedMode);
 	void LoadStartLevel();
 	UCameraComponent* FindSceneViewportCamera() const;
 	void RestoreViewportCamera(const FPerspectiveCameraData& CamData);
@@ -126,6 +139,7 @@ private:
 	std::optional<FPlayInEditorSessionInfo> PlayInEditorSessionInfo;
 	// 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
 	bool bRequestEndPlayMapQueued = false;
+	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
 	FString CurrentLevelFilePath;
 
 };

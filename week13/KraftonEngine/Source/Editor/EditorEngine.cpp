@@ -1,11 +1,14 @@
 ﻿#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
+#include "Core/Notification.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
+#include "Engine/Platform/DirectoryWatcher.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
+#include "Viewport/GameViewportClient.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -125,14 +128,19 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	ApplyTransformSettingsToGizmo();
+	FDirectoryWatcher::Get().ProcessChanges();
+	FNotificationManager::Get().Tick(DeltaTime);
+	InputSystem::Get().Tick();
+	MainPanel.Update();
+	InputSystem::Get().RefreshSnapshot();
 
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{
 		VC->Tick(DeltaTime);
 	}
 
-	MainPanel.Update();
-	UEngine::Tick(DeltaTime);
+	WorldTick(DeltaTime);
+	Render(DeltaTime);
 	SelectionManager.Tick();
 }
 
@@ -228,6 +236,9 @@ void UEditorEngine::StartQueuedPlaySessionRequest()
 
 void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Params)
 {
+	InputSystem::Get().ResetAllKeyStates();
+	InputSystem::Get().ResetTransientState();
+
 	// 1) 현재 에디터 월드를 복제해 PIE 월드 생성 (UE의 CreatePIEWorldByDuplication 대응).
 	UWorld* EditorWorld = GetWorld();
 	if (!EditorWorld)
@@ -292,6 +303,29 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	SelectionManager.ClearSelection();
 	//SelectionManager.SetGizmoEnabled(false); //PIE가 시작되면 gizmo 비활성화
 	SelectionManager.SetWorld(PIEWorld);
+
+	if (!GetGameViewportClient())
+	{
+		UGameViewportClient* PIEViewportClient = UObjectManager::Get().CreateObject<UGameViewportClient>();
+		SetGameViewportClient(PIEViewportClient);
+	}
+	if (UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+	{
+		if (Window)
+		{
+			PIEViewportClient->SetOwnerWindow(Window->GetHWND());
+		}
+		UCameraComponent* InitialTargetCamera = PIEWorld->GetActiveCamera();
+		FViewport* InitialViewport = nullptr;
+		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+		{
+			InitialTargetCamera = ActiveVC->GetCamera() ? ActiveVC->GetCamera() : InitialTargetCamera;
+			InitialViewport = ActiveVC->GetViewport();
+			PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
+		}
+		PIEViewportClient->OnBeginPIE(InitialTargetCamera, InitialViewport);
+	}
+	EnterPIEPossessedMode();
 	
 	//이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
 	//MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
@@ -356,6 +390,13 @@ void UEditorEngine::EndPlayMap()
 	//MainPanel.RestoreEditorWindowsAfterPIE();
 	//ViewportLayout.RestoreWorldAxisAfterPIE();
 
+	if (UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+	{
+		PIEViewportClient->OnEndPIE();
+		UObjectManager::Get().DestroyObject(PIEViewportClient);
+		SetGameViewportClient(nullptr);
+	}
+
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
 
@@ -366,6 +407,85 @@ void UEditorEngine::EndPlayMap()
 	}
 
 	PlayInEditorSessionInfo.reset();
+	PIEControlMode = EPIEControlMode::Possessed;
+	InputSystem::Get().ResetCaptureStateForPIEEnd();
+}
+
+bool UEditorEngine::TogglePIEControlMode()
+{
+	if (!IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	if (PIEControlMode == EPIEControlMode::Possessed)
+	{
+		return EnterPIEEjectedMode();
+	}
+	return EnterPIEPossessedMode();
+}
+
+bool UEditorEngine::EnterPIEPossessedMode()
+{
+	if (!IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	PIEControlMode = EPIEControlMode::Possessed;
+	SyncGameViewportPIEControlState(true);
+	InputSystem::Get().SetUseRawMouse(true);
+	InputSystem::Get().ResetAllKeyStates();
+	InputSystem::Get().ResetTransientState();
+	return true;
+}
+
+bool UEditorEngine::EnterPIEEjectedMode()
+{
+	if (!IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	PIEControlMode = EPIEControlMode::Ejected;
+	SyncGameViewportPIEControlState(false);
+	InputSystem::Get().SetUseRawMouse(false);
+	InputSystem::Get().ResetAllKeyStates();
+	InputSystem::Get().ResetTransientState();
+	return true;
+}
+
+void UEditorEngine::SyncGameViewportPIEControlState(bool bPossessedMode)
+{
+	UGameViewportClient* PIEViewportClient = GetGameViewportClient();
+	if (!PIEViewportClient)
+	{
+		return;
+	}
+
+	PIEViewportClient->SetPIEPossessedInputEnabled(bPossessedMode);
+	if (!bPossessedMode)
+	{
+		return;
+	}
+
+	if (Window)
+	{
+		PIEViewportClient->SetOwnerWindow(Window->GetHWND());
+	}
+
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		PIEViewportClient->Possess(ActiveVC->GetCamera());
+		PIEViewportClient->SetViewport(ActiveVC->GetViewport());
+		PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
+		return;
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		PIEViewportClient->Possess(World->GetActiveCamera());
+	}
 }
 
 // ─── 기존 메서드 ──────────────────────────────────────────
