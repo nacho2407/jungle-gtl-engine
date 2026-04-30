@@ -14,12 +14,5 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	//_CrtSetBreakAlloc(1642);
 #endif
 #endif
-    sol::state lua;
-    int x = 0;
-    lua.set_function("beep", [&x]
-                     { ++x; });
-    lua.script("beep()");
-    assert(x == 2);
-
 	return Launch(hInstance, nShowCmd);
 }
