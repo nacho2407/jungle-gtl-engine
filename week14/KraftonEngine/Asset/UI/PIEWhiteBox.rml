@@ -1,0 +1,8 @@
+<rml>
+<head>
+	<link type="text/rcss" href="PIEWhiteBox.rcss"/>
+</head>
+<body>
+	<div id="white-box">Test</div>
+</body>
+</rml>

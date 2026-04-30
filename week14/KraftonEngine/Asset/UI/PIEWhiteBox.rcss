@@ -1,0 +1,17 @@
+body
+{
+	margin: 0px;
+}
+
+#white-box
+{
+	position: absolute;
+	left: 40px;
+	top: 40px;
+	width: 160px;
+	height: 100px;
+	background-color: blue;
+	color: black;
+	text-align: center;
+	line-height: 100px;
+}
