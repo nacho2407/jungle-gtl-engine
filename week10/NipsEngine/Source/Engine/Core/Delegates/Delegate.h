@@ -33,7 +33,7 @@ public:
     {
 		for (const HandlerType& Handler : Handlers)
 		{
-            Handler(args);
+            Handler(args...);
 		}
     }
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "AActor.h"
+#include "Core/Delegates/Delegate.h"
 
 class UTextRenderComponent;
 class UDecalComponent;
@@ -179,6 +180,8 @@ public:
 /**
  * Delegate 테스트 용 액터 
  */
+DECLARE_DELEGATE(FOnTakeDamage, float);
+
 class ADelegateTestActor : public AActor
 {
 public:
@@ -187,4 +190,10 @@ public:
 
     void InitDefaultComponents() override;
     void Tick(float DeltaTime) override;
+
+	void BeginPlay() override;
+
+	void HandleTakeDamage(float InDamage);
+
+	FOnTakeDamage OnTakeDamage;
 };
