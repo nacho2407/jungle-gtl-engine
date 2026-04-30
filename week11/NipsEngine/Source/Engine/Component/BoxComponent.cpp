@@ -7,7 +7,6 @@ REGISTER_FACTORY(UBoxComponent)
 
 bool UBoxComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-    assert(false && "미구현 상태");
     return false;
 }
 
