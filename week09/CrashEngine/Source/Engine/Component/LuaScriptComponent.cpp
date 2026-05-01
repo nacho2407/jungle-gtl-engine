@@ -1,5 +1,6 @@
 ﻿#include "LuaScriptComponent.h"
 
+#include "Core/Logging/LogMacros.h"
 #include "LuaScript/LuaScriptManager.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -9,12 +10,10 @@ IMPLEMENT_CLASS(ULuaScriptComponent, UActorComponent)
 void ULuaScriptComponent::BeginPlay()
 {
     UActorComponent::BeginPlay();
-    FLuaScriptManager::Get().RegisterComponent(this);
 }
 
 void ULuaScriptComponent::EndPlay()
 {
-    FLuaScriptManager::Get().UnRegisterComponent(this);
     UActorComponent::EndPlay();
 }
 
@@ -48,7 +47,7 @@ void ULuaScriptComponent::PostEditProperty(const char* PropertyName)
 
 void ULuaScriptComponent::ReloadScript()
 {
-    
+    UE_LOG(this, Info, "들어오는중");
 }
 
 void ULuaScriptComponent::Serialize(FArchive& Ar)

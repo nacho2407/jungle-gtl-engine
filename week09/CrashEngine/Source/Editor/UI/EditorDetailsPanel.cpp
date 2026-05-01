@@ -501,12 +501,15 @@ static uint64 HashShadowViewProj(const FMatrix& Matrix)
 
 void LuaScriptEditOpen(const FString& LuaFilePath)
 {
-    std::string FullPath = FPaths::ContentRelativePath("Scripts") +"/" + LuaFilePath;
+    std::string FullPath = FPaths::ContentRelativePath("Scripts") + "/" + LuaFilePath;
     std::string absoluteLuaScriptPath = std::filesystem::absolute(FullPath).string();
-    HINSTANCE hInstance = ShellExecuteA(
+
+    std::wstring WidePath = FPaths::ToWide(absoluteLuaScriptPath);
+
+    HINSTANCE hInstance = ShellExecuteW(
         NULL,
-        "open",
-        absoluteLuaScriptPath.c_str(),
+        L"open",
+        WidePath.c_str(),
         NULL,
         NULL,
         SW_SHOWNORMAL

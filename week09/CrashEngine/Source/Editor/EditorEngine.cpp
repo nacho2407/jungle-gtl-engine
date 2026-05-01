@@ -23,6 +23,9 @@
 
 #include <algorithm>
 
+#include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaScriptManager.h"
+
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
 namespace
@@ -165,6 +168,7 @@ void UEditorEngine::Tick(float DeltaTime)
     MainPanel.Update();
 
     InputSystem::Get().Tick(Window->IsForeground());
+    FDirectoryWatcher::Get().Tick();
 
     const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
     const FGuiInputCaptureState& GuiCapture = MainPanel.GetGuiInputCaptureState();
