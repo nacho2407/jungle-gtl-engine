@@ -6,8 +6,6 @@
 #include "Math/Vector.h"
 #include "Object/FName.h"
 
-class APlayerController;
-class UUserWidget;
 
 // PIE 세션 실행 위치. 현재는 InProcess만 사용.
 enum class EPIESessionDestination : uint8
@@ -48,6 +46,4 @@ struct FPlayInEditorSessionInfo
 	// PIE 시작 직전 활성 월드 핸들 — EndPlayMap에서 원복에 사용.
 	FName PreviousActiveWorldHandle;
 	FPIEViewportCameraSnapshot SavedViewportCamera;
-	APlayerController* PlayerController = nullptr;
-	UUserWidget* StartupWidget = nullptr;
 };

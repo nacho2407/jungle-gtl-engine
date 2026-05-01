@@ -1,0 +1,18 @@
+body {
+	margin: 0px;
+}
+
+#setting-panel {
+	position: absolute;
+	left: 260px;
+	top: 40px;
+	width: 220px;
+	height: 120px;
+	background-color: white;
+	color: black;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 28px;
+	text-align: center;
+	line-height: 120px;
+}
