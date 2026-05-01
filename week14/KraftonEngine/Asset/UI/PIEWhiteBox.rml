@@ -3,6 +3,8 @@
 	<link type="text/rcss" href="PIEWhiteBox.rcss"/>
 </head>
 <body>
-	<div id="white-box">Test</div>
+	<div id="white-box">
+		F2 : 카메라 전환
+	</div>
 </body>
 </rml>

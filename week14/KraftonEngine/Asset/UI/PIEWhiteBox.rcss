@@ -14,7 +14,7 @@ body
 	color: black;
 	font-family: Maplestory;
 	font-weight: bold;
-	font-size: 24px;
+	font-size: 20px;
 	text-align: center;
 	line-height: 100px;
 }
