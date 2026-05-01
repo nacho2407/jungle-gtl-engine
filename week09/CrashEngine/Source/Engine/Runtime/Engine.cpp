@@ -14,6 +14,8 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
+#include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaScriptManager.h"
 #include "Viewport/GameViewportClient.h"
 #include "Viewport/Viewport.h"
 #include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
@@ -55,12 +57,17 @@ void UEngine::Init(FWindowsWindow* InWindow)
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
     FMeshBufferManager::Get().Initialize(Device);
     FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+    FLuaScriptManager::Get().Init();
+    std::wstring ScriptsDirWide = FPaths::Combine(FPaths::ContentDir(), L"Scripts");
+    FDirectoryWatcher::Get().Init(FPaths::ToUtf8(ScriptsDirWide));
+
     UE_LOG(Engine, Info, "Runtime engine initialization completed.");
 }
 
 void UEngine::Shutdown()
 {
     UE_LOG(Engine, Info, "Shutting down runtime engine.");
+    FDirectoryWatcher::Get().Release();
     FResourceManager::Get().ReleaseGPUResources();
     UTexture2D::ReleaseAllGPU();
     FObjManager::ReleaseAllGPU();
@@ -82,6 +89,7 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
+    FDirectoryWatcher::Get().Tick();
     InputSystem::Get().Tick(Window->IsForeground());
     WorldTick(DeltaTime);
     Render(DeltaTime);
