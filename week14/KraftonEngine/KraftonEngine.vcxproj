@@ -310,6 +310,7 @@
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\CameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
@@ -503,6 +504,7 @@
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\CameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />

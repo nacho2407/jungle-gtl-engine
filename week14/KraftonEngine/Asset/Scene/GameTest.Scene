@@ -9,7 +9,7 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "155",
+      "PrimitiveKey" : "124",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
@@ -36,9 +36,24 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "158",
+      "PrimitiveKey" : "127",
       "RootComponent" : {
-        "Children" : [],
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [-0.672160, 0.000000, 0.000000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Cast Shadow" : true,
@@ -49,6 +64,29 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Apple\\apple_mid.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "131",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [20.000000, 20.000000, 0.100000],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -70,7 +108,7 @@
               "Material" : {
                 "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
               },
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -99,29 +137,6 @@
         }
       },
       "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "PrimitiveKey" : "228",
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Cast Shadow" : true,
-          "Element 0" : {
-            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
-          },
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [20.000000, 20.000000, 0.100000],
-          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
-          "Two Sided Shadow" : false,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -130,26 +145,26 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [10.000000, 0.112467, 5.000000],
+    "Location" : [1.723215, 0.590987, 3.295676],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 26.565046, 179.999985]
+    "Rotation" : [-0.000001, 19.365294, -108.900375]
   },
   "Primitives" : {
-    "155" : {
+    "124" : {
       "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "None",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "158" : {
+    "127" : {
       "Location" : [1.884241, -4.783404, 1.469154],
       "ObjStaticMeshAsset" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Apple\\apple_mid.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "228" : {
+    "131" : {
       "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],

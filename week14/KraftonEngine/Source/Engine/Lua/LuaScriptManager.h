@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Input/InputSystem.h"
 #include <sol/sol.hpp>
 
 class FLuaScriptManager
@@ -14,6 +15,8 @@ public:
 
 	static sol::state& GetState();
 	static void RegisterBindings(sol::state& Lua);
+
+	static FInputSystemSnapshot GetLuaInputSnapshot();
 
 private:
 	static void RegisterLuaHelpers(sol::state& Lua);
