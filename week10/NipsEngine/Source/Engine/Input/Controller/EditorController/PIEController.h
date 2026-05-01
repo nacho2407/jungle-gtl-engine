@@ -3,6 +3,7 @@
 #include <functional>
 
 class FViewportCamera;
+class APlayerController;
 
 class FPIEController : public IBaseEditorController
 {
@@ -25,6 +26,9 @@ class FPIEController : public IBaseEditorController
     void SetCamera(FViewportCamera& InCamera);
     void NullifyCamera() { Camera = nullptr; }
     void ResetTargetLocation();
+    void SetPlayerController(APlayerController* InController) { PlayerController = InController; }
+    void ClearPlayerController() { PlayerController = nullptr; }
+    APlayerController* GetPlayerController() const { return PlayerController; }
 
     void SetEndPIECallback(std::function<void()> Callback) { OnRequestEndPIE = std::move(Callback); }
     void ClearEndPIECallback() { OnRequestEndPIE = nullptr; }
@@ -36,6 +40,7 @@ class FPIEController : public IBaseEditorController
 	void UpdateCameraRotation();
   private:
     FViewportCamera*      Camera = nullptr;
+    APlayerController*    PlayerController = nullptr;
     std::function<void()> OnRequestEndPIE;
 
     float                 Yaw = 0.f;

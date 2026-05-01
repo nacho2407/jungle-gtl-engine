@@ -6,6 +6,8 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/SpringArmComponent.h"
 
 #include "Component/PostProcess/Light/AmbientLightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
@@ -41,6 +43,12 @@ REGISTER_FACTORY(AAttachTestActor)
 
 DEFINE_CLASS(ASceneActor, AActor) 
 REGISTER_FACTORY(ASceneActor)
+
+DEFINE_CLASS(ADefaultPlayerActor, AActor)
+REGISTER_FACTORY(ADefaultPlayerActor)
+
+DEFINE_CLASS(APlayerStart, AActor)
+REGISTER_FACTORY(APlayerStart)
 
 DEFINE_CLASS(AFogActor, AActor)
 REGISTER_FACTORY(AFogActor)
@@ -172,6 +180,47 @@ void ASceneActor::InitDefaultComponents()
 	Billboard->AttachToComponent(SceneRoot);
 	Billboard->SetEditorOnly(true);
 	Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
+}
+
+void ADefaultPlayerActor::InitDefaultComponents()
+{
+	auto* SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(SceneRoot);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
+
+	UStaticMeshComponent* DebugBody = AddComponent<UStaticMeshComponent>();
+	DebugBody->AttachToComponent(SceneRoot);
+	DebugBody->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+	DebugBody->SetRelativeLocation(FVector(0.0f, 0.0f, 0.5f));
+	DebugBody->SetRelativeScale(FVector(0.4f, 0.4f, 1.0f));
+	DebugBody->SetEnableCull(false);
+
+	SpringArmComp = AddComponent<USpringArmComponent>();
+	SpringArmComp->AttachToComponent(SceneRoot);
+	SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
+	SpringArmComp->SetTargetArmLength(3.f);
+	SpringArmComp->SetSocketOffset(FVector::ZeroVector);
+
+	CameraComp = AddComponent<UCameraComponent>();
+	CameraComp->AttachToComponent(SpringArmComp);
+	CameraComp->SetRelativeLocation(SpringArmComp->GetSocketLocalLocation());
+	CameraComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+	SpringArmComp->UpdateSocketChildren();
+}
+
+void APlayerStart::InitDefaultComponents()
+{
+	auto* SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(SceneRoot);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
 }
 
 void AFogActor::InitDefaultComponents()

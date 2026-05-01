@@ -724,10 +724,59 @@ void FEditorMainPanel::SetPIEViewportFullscreenEnabled(bool bEnabled)
 
     if (bPIEViewportFullscreenEnabled)
     {
+        if (!bHasSavedPIEPanelVisibility)
+        {
+            SavedPIEPanelVisibility.bShowConsole = bShowConsole;
+            SavedPIEPanelVisibility.bShowControl = bShowControl;
+            SavedPIEPanelVisibility.bShowProperty = bShowProperty;
+            SavedPIEPanelVisibility.bShowSceneManager = bShowSceneManager;
+            SavedPIEPanelVisibility.bShowMaterialEditor = bShowMaterialEditor;
+            SavedPIEPanelVisibility.bShowStatProfiler = bShowStatProfiler;
+            SavedPIEPanelVisibility.bShowPlayStream = bShowPlayStream;
+            SavedPIEPanelVisibility.bShowEditorDebug = bShowEditorDebug;
+            SavedPIEPanelVisibility.bShowContentBrowser = bShowContentBrowser;
+            SavedPIEPanelVisibility.bConsoleDrawerVisible = bConsoleDrawerVisible;
+            SavedPIEPanelVisibility.bViewportSettingsVisible = ViewportOverlayWidget.IsViewportSettingsVisible();
+            SavedPIEPanelVisibility.bGroupedStatOverlayVisible = ViewportOverlayWidget.IsGroupedStatOverlayVisible();
+            bHasSavedPIEPanelVisibility = true;
+        }
+
+        bHideEditorWindowsForPIE = true;
+        bShowConsole = false;
+        bShowControl = false;
+        bShowProperty = false;
+        bShowSceneManager = false;
+        bShowMaterialEditor = false;
+        bShowStatProfiler = false;
+        bShowPlayStream = false;
+        bShowEditorDebug = false;
+        bShowContentBrowser = false;
+        ContentBrowserWidget.SetVisible(false);
+        bConsoleDrawerVisible = false;
+        ViewportOverlayWidget.SetViewportSettingsVisible(false);
+        ViewportOverlayWidget.SetGroupedStatOverlayVisible(false);
         ApplyPIEViewportFullscreen();
     }
     else
     {
+        bHideEditorWindowsForPIE = false;
+        if (bHasSavedPIEPanelVisibility)
+        {
+            bShowConsole = SavedPIEPanelVisibility.bShowConsole;
+            bShowControl = SavedPIEPanelVisibility.bShowControl;
+            bShowProperty = SavedPIEPanelVisibility.bShowProperty;
+            bShowSceneManager = SavedPIEPanelVisibility.bShowSceneManager;
+            bShowMaterialEditor = SavedPIEPanelVisibility.bShowMaterialEditor;
+            bShowStatProfiler = SavedPIEPanelVisibility.bShowStatProfiler;
+            bShowPlayStream = SavedPIEPanelVisibility.bShowPlayStream;
+            bShowEditorDebug = SavedPIEPanelVisibility.bShowEditorDebug;
+            bShowContentBrowser = SavedPIEPanelVisibility.bShowContentBrowser;
+            ContentBrowserWidget.SetVisible(bShowContentBrowser);
+            bConsoleDrawerVisible = SavedPIEPanelVisibility.bConsoleDrawerVisible;
+            ViewportOverlayWidget.SetViewportSettingsVisible(SavedPIEPanelVisibility.bViewportSettingsVisible);
+            ViewportOverlayWidget.SetGroupedStatOverlayVisible(SavedPIEPanelVisibility.bGroupedStatOverlayVisible);
+            bHasSavedPIEPanelVisibility = false;
+        }
         RestorePIEViewportLayout();
     }
 }
@@ -850,7 +899,7 @@ void FEditorMainPanel::RenderEditorToolbar()
         const FVector ToolbarSpawnLocation = FVector(0.0f, 0.0f, 0.0f);
 
         const bool bEditing = EditorEngine->GetEditorState() == EViewportPlayState::Editing;
-        const bool bCanPlaceActor = bEditing && Client != nullptr;
+        const bool bCanPlaceActor = Client && Client->AllowsEditorWorldControl();
         const bool bCanSave = bEditing;
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
@@ -1784,7 +1833,7 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(const FString& PayloadPath
 
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-    if (!Client || Client->GetPlayState() != EViewportPlayState::Editing)
+    if (!Client || !Client->AllowsEditorWorldControl())
     {
         return false;
     }
@@ -1849,7 +1898,7 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
     auto TryDropOnViewport = [&](int32 ViewportIndex) -> bool
     {
         FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
-        if (!Client || Client->GetPlayState() != EViewportPlayState::Editing)
+        if (!Client || !Client->AllowsEditorWorldControl())
         {
             return false;
         }
@@ -2118,6 +2167,18 @@ void FEditorMainPanel::TickViewportContextMenu()
         const int32 ViewportIndex = FindViewportAtClientPoint(MouseClientPos);
         if (ViewportIndex >= 0)
         {
+            if (FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex))
+            {
+                if (Client->IsPIEPossessed())
+                {
+                    ViewportContextMenuState.bRightClickTracking = false;
+                    ViewportContextMenuState.TrackingViewportIndex = -1;
+                    ViewportContextMenuState.RightClickTravelSq = 0.0f;
+                    ViewportContextMenuState.PendingPopupViewportIndex = -1;
+                    return;
+                }
+            }
+
             ViewportContextMenuState.bRightClickTracking = true;
             ViewportContextMenuState.TrackingViewportIndex = ViewportIndex;
             ViewportContextMenuState.RightClickTravelSq = 0.0f;
@@ -2138,6 +2199,18 @@ void FEditorMainPanel::TickViewportContextMenu()
     }
 
     const int32 ReleaseViewportIndex = FindViewportAtClientPoint(MouseClientPos);
+    if (FEditorViewportClient* TrackingClient = Layout.GetViewportClient(ViewportContextMenuState.TrackingViewportIndex))
+    {
+        if (TrackingClient->IsPIEPossessed())
+        {
+            ViewportContextMenuState.bRightClickTracking = false;
+            ViewportContextMenuState.TrackingViewportIndex = -1;
+            ViewportContextMenuState.RightClickTravelSq = 0.0f;
+            ViewportContextMenuState.PendingPopupViewportIndex = -1;
+            return;
+        }
+    }
+
     const bool bClickCandidate =
         ReleaseViewportIndex == ViewportContextMenuState.TrackingViewportIndex
         && ViewportContextMenuState.RightClickTravelSq <= RightClickPopupThresholdSq
@@ -2180,6 +2253,16 @@ void FEditorMainPanel::RenderViewportContextMenu()
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
     if (ViewportContextMenuState.PendingPopupViewportIndex >= 0)
     {
+        if (FEditorViewportClient* PendingClient = Layout.GetViewportClient(ViewportContextMenuState.PendingPopupViewportIndex))
+        {
+            if (PendingClient->IsPIEPossessed())
+            {
+                ViewportContextMenuState.PendingPopupViewportIndex = -1;
+                ViewportContextMenuState.PendingSpawnViewportIndex = -1;
+                return;
+            }
+        }
+
         ImGui::SetNextWindowPos(ViewportContextMenuState.PendingPopupScreenPos, ImGuiCond_Always);
         ImGui::OpenPopup("##ViewportContextMenu");
         ViewportContextMenuState.PendingPopupViewportIndex = -1;
@@ -2194,13 +2277,14 @@ void FEditorMainPanel::RenderViewportContextMenu()
     const int32 FocusedIndex = Layout.GetLastFocusedViewportIndex();
     FEditorViewportClient* Client = Layout.GetViewportClient(FocusedIndex);
     FEditorViewportState& State = Layout.GetViewportState(FocusedIndex);
-    const bool bEditing = Client && Client->GetPlayState() == EViewportPlayState::Editing;
+    const bool bEditorControl = Client && Client->AllowsEditorWorldControl();
+    const bool bPIEActive = Client && Client->IsPIEActive();
     const bool bHasSelection = !EditorEngine->GetSelectionManager().IsEmpty();
 
     ImGui::TextDisabled("%s", GetViewportSlotName(FocusedIndex));
     ImGui::Separator();
 
-    if (ImGui::BeginMenu("Place Actor", bEditing && Client != nullptr))
+    if (ImGui::BeginMenu("Place Actor", bEditorControl && Client != nullptr))
     {
         const int32 SpawnViewportIndex =
             ViewportContextMenuState.PendingSpawnViewportIndex >= 0
@@ -2216,7 +2300,7 @@ void FEditorMainPanel::RenderViewportContextMenu()
         ImGui::EndMenu();
     }
 
-    if (ImGui::MenuItem("Delete", "Del", false, bEditing && Client != nullptr && bHasSelection))
+    if (ImGui::MenuItem("Delete", "Del", false, bEditorControl && Client != nullptr && bHasSelection))
     {
         Client->RequestDeleteSelection();
     }
@@ -2228,9 +2312,9 @@ void FEditorMainPanel::RenderViewportContextMenu()
         Client->FocusSelection();
     }
 
-    if (!bEditing)
+    if (!bEditorControl)
     {
-        if (ImGui::MenuItem("Stop PIE", "Esc"))
+        if (bPIEActive && ImGui::MenuItem("Stop PIE", "Esc"))
         {
             EditorEngine->StopPlaySession();
         }
@@ -2425,14 +2509,15 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         return;
     }
 
-    const bool bEditing = Client->GetPlayState() == EViewportPlayState::Editing;
+    const bool bEditorControl = Client->AllowsEditorWorldControl();
+    const bool bPIEPossessed = Client->IsPIEPossessed();
 
     ImGui::PushID(ViewportIndex);
     constexpr float ToolbarLeftPadding = 8.0f;
     const float CenteredToolbarY = std::max(0.0f, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
     ImGui::SetCursorPos(ImVec2(ToolbarLeftPadding, CenteredToolbarY));
 
-    if (!bEditing)
+    if (bPIEPossessed)
     {
         static constexpr EViewMode PIEViewModes[] = {
             EViewMode::Lit_Gouraud,
@@ -2476,22 +2561,22 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         return;
     }
 
-    if (DrawViewportIconButton("##SelectMode", EViewportToolIcon::Select, "Q", "Select (Q / 1)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Select, bEditing))
+    if (DrawViewportIconButton("##SelectMode", EViewportToolIcon::Select, "Q", "Select (Q / 1)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Select, bEditorControl))
     {
         Client->RequestSetSelectMode();
     }
     ImGui::SameLine();
-    if (DrawViewportIconButton("##TranslateMode", EViewportToolIcon::Translate, "W", "Translate (W / 2)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Translate, bEditing))
+    if (DrawViewportIconButton("##TranslateMode", EViewportToolIcon::Translate, "W", "Translate (W / 2)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Translate, bEditorControl))
     {
         Client->RequestSetTranslateMode();
     }
     ImGui::SameLine();
-    if (DrawViewportIconButton("##RotateMode", EViewportToolIcon::Rotate, "E", "Rotate (E / 3)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Rotate, bEditing))
+    if (DrawViewportIconButton("##RotateMode", EViewportToolIcon::Rotate, "E", "Rotate (E / 3)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Rotate, bEditorControl))
     {
         Client->RequestSetRotateMode();
     }
     ImGui::SameLine();
-    if (DrawViewportIconButton("##ScaleMode", EViewportToolIcon::Scale, "R", "Scale (R / 4)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Scale, bEditing))
+    if (DrawViewportIconButton("##ScaleMode", EViewportToolIcon::Scale, "R", "Scale (R / 4)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Scale, bEditorControl))
     {
         Client->RequestSetScaleMode();
     }
@@ -2510,7 +2595,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
     ImGui::SameLine(0.0f, 10.0f);
     const bool bWorldSpace = !Client->GetGizmo() || Client->GetGizmo()->IsWorldSpace();
-    if (DrawViewportIconButton("##SpaceMode", bWorldSpace ? EViewportToolIcon::WorldSpace : EViewportToolIcon::LocalSpace, bWorldSpace ? "W" : "L", bWorldSpace ? "World Space (X)" : "Local Space (X)", bWorldSpace, bEditing))
+    if (DrawViewportIconButton("##SpaceMode", bWorldSpace ? EViewportToolIcon::WorldSpace : EViewportToolIcon::LocalSpace, bWorldSpace ? "W" : "L", bWorldSpace ? "World Space (X)" : "Local Space (X)", bWorldSpace, bEditorControl))
     {
         Client->RequestToggleCoordinateSpace();
     }
@@ -2540,7 +2625,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
         char ToggleID[48];
         snprintf(ToggleID, sizeof(ToggleID), "##%sSnapToggle", Prefix);
-        const bool bTogglePressed = DrawViewportIconButton(ToggleID, SnapIcon, Prefix, Prefix, false, bEditing, true, false);
+        const bool bTogglePressed = DrawViewportIconButton(ToggleID, SnapIcon, Prefix, Prefix, false, bEditorControl, true, false);
         if (bEnabled)
         {
             ImGui::PopStyleColor(3);

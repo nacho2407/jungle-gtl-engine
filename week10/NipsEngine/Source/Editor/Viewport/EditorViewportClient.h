@@ -40,6 +40,7 @@ class FWindowsWindow;
 class FSelectionManager;
 class FSceneViewport;
 class FViewportCamera;
+class APlayerController;
 struct FEditorViewportState;
 
 /*
@@ -73,6 +74,10 @@ public:
 	// PIE 상태 (뷰포트별 독립)
 	EViewportPlayState GetPlayState() const { return PlayState; }
 	void SetPlayState(EViewportPlayState InState) { PlayState = InState; }
+	bool IsPIEActive() const { return PlayState != EViewportPlayState::Editing; }
+	bool IsPIEPossessed() const { return IsPIEActive() && InputRouter.GetActiveController() == EActiveEditorController::PIEController; }
+	bool IsPIEEditorControlMode() const { return IsPIEActive() && InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController; }
+	bool AllowsEditorWorldControl() const { return InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController; }
 
 	// PIE 시작 전 카메라 상태 저장 / 정지 시 복원
 	void SaveCameraSnapshot();
@@ -107,6 +112,8 @@ public:
 	void ResetCamera();
 	FViewportCamera*       GetCamera()       { return bHasCamera ? &Camera : nullptr; }
 	const FViewportCamera* GetCamera() const { return bHasCamera ? &Camera : nullptr; }
+	FViewportCamera*       GetRenderCamera();
+	const FViewportCamera* GetRenderCamera() const;
 	// 외부에서 카메라 위치를 변경한 후 컨트롤러의 TargetLocation을 동기화할 때 호출
 	void SyncCameraTarget()
 	{
@@ -150,6 +157,8 @@ public:
 	void LockCursorToViewport();
 	void SetEndPIECallback(std::function<void()> Callback) { InputRouter.GetPIEController().SetEndPIECallback(std::move(Callback)); }
 	void ClearEndPIECallback()                             { InputRouter.GetPIEController().ClearEndPIECallback(); }
+	void SetPIEPlayerController(APlayerController* InController) { InputRouter.GetPIEController().SetPlayerController(InController); }
+	void ClearPIEPlayerController() { InputRouter.GetPIEController().ClearPlayerController(); }
 
 private:
 	// ── Tick sub-steps ───────────────────────────────────────────────────────
@@ -192,6 +201,8 @@ private:
 	void ReleasePIEMouseFocus();
 	void ReacquirePIEMouseFocus();
 	bool TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context);
+	void EnterPIEEditorControlMode();
+	void EnterPIEPossessedMode();
 
 private:
 	// Window / Viewport — Window is inherited from FViewportClient
@@ -220,6 +231,7 @@ private:
 	POINT BoxSelectEnd   = { 0, 0 };
 
 	bool  bControlLocked = false;
+	bool  bPIEMouseFocusReleased = false;
 	bool  bRoutedInputProcessedThisFrame = false;
 	bool  bLegacyInputSuppressedThisFrame = false;
 	bool  bGizmoDragUndoCaptured = false;

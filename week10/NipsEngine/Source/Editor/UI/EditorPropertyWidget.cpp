@@ -523,36 +523,6 @@ void FEditorPropertyWidget::RenderSingleSelectionHeader(AActor* PrimaryActor)
 		bOpenDetailsContextMenu = true;
 	}
 	if (bWasActorSelected) ImGui::PopStyleColor();
-
-	ImGui::Spacing();
-	RenderAddComponentPopup(PrimaryActor);
-}
-
-void FEditorPropertyWidget::RenderAddComponentPopup(AActor* PrimaryActor)
-{
-	if (ImGui::Button("Add Component", ImVec2(-1, 0)))
-	{
-		ImGui::OpenPopup("AddComponentPopup");
-	}
-
-	if (ImGui::BeginPopup("AddComponentPopup"))
-	{
-		for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
-		{
-			if (ImGui::Selectable(Entry.DisplayName))
-			{
-				if (EditorEngine)
-				{
-					EditorEngine->CaptureUndoSnapshot("Add Component");
-				}
-				if (UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor))
-				{
-					AttachAndSelectNewComponent(PrimaryActor, NewComp);
-				}
-			}
-		}
-		ImGui::EndPopup();
-	}
 }
 
 void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -568,7 +538,13 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 		return;
 	}
 
-	if (ImGui::BeginMenu("Add Component"))
+	USceneComponent* AddAttachTarget = nullptr;
+	if (!bActorSelected && PrimaryActor && SelectedComponent && SelectedComponent->GetOwner() == PrimaryActor)
+	{
+		AddAttachTarget = Cast<USceneComponent>(SelectedComponent);
+	}
+
+	if (AddAttachTarget && ImGui::BeginMenu("Add Component"))
 	{
 		for (const FComponentMenuEntry& Entry : ComponentMenuRegistry)
 		{
@@ -578,63 +554,9 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 				{
 					EditorEngine->CaptureUndoSnapshot("Add Component");
 				}
-				TArray<AActor*> Targets;
-				if (bActorSelected && !SelectedActors.empty())
+				if (UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor))
 				{
-					Targets = SelectedActors;
-				}
-				else if (PrimaryActor)
-				{
-					Targets.push_back(PrimaryActor);
-				}
-
-				UActorComponent* FirstNewComp = nullptr;
-				for (AActor* TargetActor : Targets)
-				{
-					if (!TargetActor)
-					{
-						continue;
-					}
-
-					if (UActorComponent* NewComp = Entry.CreateAndInitFunc(TargetActor))
-					{
-						if (!FirstNewComp)
-						{
-							FirstNewComp = NewComp;
-						}
-
-						if (USceneComponent* NewSceneComp = Cast<USceneComponent>(NewComp))
-						{
-							USceneComponent* AttachTarget = nullptr;
-							if (!bActorSelected && TargetActor == PrimaryActor)
-							{
-								AttachTarget = Cast<USceneComponent>(SelectedComponent);
-							}
-							if (!AttachTarget)
-							{
-								AttachTarget = TargetActor->GetRootComponent();
-							}
-
-							if (AttachTarget)
-							{
-								NewSceneComp->AttachToComponent(AttachTarget);
-							}
-							else
-							{
-								TargetActor->SetRootComponent(NewSceneComp);
-							}
-						}
-						else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
-						{
-							MoveComp->SetUpdatedComponent(TargetActor->GetRootComponent());
-						}
-					}
-				}
-
-				if (FirstNewComp)
-				{
-					SelectedComponent = FirstNewComp;
-					bActorSelected = false;
+					AttachAndSelectNewComponent(PrimaryActor, NewComp, AddAttachTarget);
 					if (EditorEngine)
 					{
 						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
@@ -1729,13 +1651,16 @@ void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent
 }
 
 
-void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp)
+void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp, USceneComponent* AttachTargetOverride)
 {
 	if (!PrimaryActor || !NewComp) return;
 
 	USceneComponent* AttachTarget = nullptr;
-	// 이제 SelectedComponent 멤버 변수를 정상적으로 사용할 수 있습니다!
-	if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+	if (AttachTargetOverride && AttachTargetOverride->GetOwner() == PrimaryActor)
+	{
+		AttachTarget = AttachTargetOverride;
+	}
+	else if (SelectedComponent && SelectedComponent->IsA<USceneComponent>() && SelectedComponent->GetOwner() == PrimaryActor)
 	{
 		AttachTarget = static_cast<USceneComponent*>(SelectedComponent);
 	}
@@ -1746,8 +1671,14 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 
 	if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComp))
 	{
-		if (AttachTarget) SceneComp->AttachToComponent(AttachTarget);
-		else PrimaryActor->SetRootComponent(SceneComp);
+		if (AttachTarget && SceneComp != AttachTarget)
+		{
+			SceneComp->AttachToComponent(AttachTarget);
+		}
+		else if (!PrimaryActor->GetRootComponent())
+		{
+			PrimaryActor->SetRootComponent(SceneComp);
+		}
 	}
 	else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
 	{

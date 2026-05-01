@@ -9,6 +9,7 @@
 #include "EditorEngine.h"
 
 #include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
@@ -62,22 +63,30 @@ void FEditorViewportClient::SetWorld(UWorld* InWorld)
 void FEditorViewportClient::StartPIE(UWorld* InWorld)
 {
 	World = InWorld;
-    InputRouter.GetPIEController().SetCamera(&Camera); // re-sync Yaw/Pitch
+	InputRouter.GetEditorWorldController().SetWorld(InWorld);
+	InputRouter.GetPIEController().SetCamera(&Camera); // re-sync Yaw/Pitch
     InputRouter.GetPIEController().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
 	InputRouter.SetActiveController(EActiveEditorController::PIEController);
+	bControlLocked = false;
+	bPIEMouseFocusReleased = false;
 	TriggerPIEStartOutlineFlash();
 }
 
 void FEditorViewportClient::EndPIE(UWorld* InWorld)
 {
 	World = InWorld;
-    InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetPIEController().GetTargetLocation());
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	{
+		InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetPIEController().GetTargetLocation());
+	}
 	InputRouter.GetEditorWorldController().SetWorld(InWorld);
 	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
 	InputRouter.GetEditorWorldController().ResetTargetLocation();
 	ClearEndPIECallback();
+	ClearPIEPlayerController();
 	InputSystem::Get().LockMouse(false);
 	bControlLocked = false;
+	bPIEMouseFocusReleased = false;
 }
 
 void FEditorViewportClient::SetSelectionManager(FSelectionManager* InSelectionManager)
@@ -126,6 +135,29 @@ void FEditorViewportClient::ResetCamera()
 		}
 	}
 	InputRouter.GetEditorWorldController().ResetTargetLocation();
+}
+
+FViewportCamera* FEditorViewportClient::GetRenderCamera()
+{
+	if (!bHasCamera)
+	{
+		return nullptr;
+	}
+
+	if (IsPIEPossessed() && World)
+	{
+		if (FViewportCamera* ActiveCamera = World->GetActiveCamera())
+		{
+			return ActiveCamera;
+		}
+	}
+
+	return &Camera;
+}
+
+const FViewportCamera* FEditorViewportClient::GetRenderCamera() const
+{
+	return const_cast<FEditorViewportClient*>(this)->GetRenderCamera();
 }
 
 void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
@@ -281,12 +313,19 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 		return false;
 	}
 
-	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
+	if (Context.bImGuiCapturedMouse || IsPointerInViewportInputDeadZone(Context))
 	{
 		return false;
 	}
 
-	if (Context.bImGuiCapturedMouse || IsPointerInViewportInputDeadZone(Context))
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	{
+		return IsPIEActive()
+			&& !bPIEMouseFocusReleased
+			&& (Context.bFocused || Context.bCaptured || Context.bHovered || Context.bRelativeMouseMode);
+	}
+
+	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
 	{
 		return false;
 	}
@@ -388,20 +427,37 @@ void FEditorViewportClient::BuildSceneView(FSceneView& OutView) const
 {
 	if (!bHasCamera) return;
 
-	OutView.ViewMatrix           = Camera.GetViewMatrix();
-	OutView.ProjectionMatrix     = Camera.GetProjectionMatrix();
+	const FViewportCamera* RenderCamera = GetRenderCamera();
+	if (!RenderCamera)
+	{
+		return;
+	}
+
+	if (Viewport)
+	{
+		const FViewportRect& Rect = Viewport->GetRect();
+		if (Rect.Width > 0 && Rect.Height > 0)
+		{
+			const_cast<FViewportCamera*>(RenderCamera)->OnResize(
+				static_cast<uint32>(Rect.Width),
+				static_cast<uint32>(Rect.Height));
+		}
+	}
+
+	OutView.ViewMatrix           = RenderCamera->GetViewMatrix();
+	OutView.ProjectionMatrix     = RenderCamera->GetProjectionMatrix();
 	OutView.ViewProjectionMatrix = OutView.ViewMatrix * OutView.ProjectionMatrix;
 
-	OutView.CameraPosition = Camera.GetLocation();
-	OutView.CameraForward  = Camera.GetForwardVector();
-	OutView.CameraRight    = Camera.GetRightVector();
-	OutView.CameraUp       = Camera.GetUpVector();
+	OutView.CameraPosition = RenderCamera->GetLocation();
+	OutView.CameraForward  = RenderCamera->GetForwardVector();
+	OutView.CameraRight    = RenderCamera->GetRightVector();
+	OutView.CameraUp       = RenderCamera->GetUpVector();
 
-	OutView.bOrthographic = Camera.IsOrthographic();
+	OutView.bOrthographic = RenderCamera->IsOrthographic();
 
-    OutView.CameraOrthoHeight = Camera.GetOrthoHeight();
+    OutView.CameraOrthoHeight = RenderCamera->GetOrthoHeight();
 
-	OutView.CameraFrustum = Camera.GetFrustum();
+	OutView.CameraFrustum = RenderCamera->GetFrustum();
 
 	if (State)
 	{
@@ -588,6 +644,7 @@ void FEditorViewportClient::TickEditorShortcuts()
 	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
 		return;
 
+	const bool bInPIE = IsPIEActive();
 	const InputSystem& IS        = InputSystem::Get();
 	const bool         bCtrlDown = IS.GetKey(VK_CONTROL);
 	const bool         bAltDown  = IS.GetKey(VK_MENU);
@@ -622,7 +679,7 @@ void FEditorViewportClient::TickEditorShortcuts()
 	if (IS.GetKeyDown('A') && bCtrlDown && !bAltDown)
 		SelectAllActors();
 
-	if (IS.GetKeyDown('Z') && bCtrlDown && !bAltDown && Editor)
+	if (!bInPIE && IS.GetKeyDown('Z') && bCtrlDown && !bAltDown && Editor)
 	{
 		if (bShiftDown)
 			Editor->Redo();
@@ -634,6 +691,7 @@ void FEditorViewportClient::TickEditorShortcuts()
 void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Context)
 {
 	using EEditorViewportAction = EditorViewportInputMapping::EEditorViewportAction;
+	const bool bInPIE = IsPIEActive();
 
 	const bool bMouseNavigationActive =
 		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavLookRightDown)
@@ -698,13 +756,13 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 		FocusPrimarySelection();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
 	{
 		Editor->Undo();
 		return;
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
 	{
 		Editor->Redo();
 		return;
@@ -725,22 +783,22 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 		DuplicateSelection();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NewScene) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NewScene) && Editor)
 	{
 		Editor->GetMainPanel().RequestNewScene();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::LoadScene) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::LoadScene) && Editor)
 	{
 		Editor->GetMainPanel().RequestLoadSceneWithDialog();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveScene) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveScene) && Editor)
 	{
 		Editor->GetMainPanel().RequestSaveScene();
 	}
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveSceneAs) && Editor)
+	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::SaveSceneAs) && Editor)
 	{
 		Editor->GetMainPanel().RequestSaveSceneAsWithDialog();
 	}
@@ -748,7 +806,7 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 
 void FEditorViewportClient::TickPIEShortCuts()
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController) return;
+	if (!IsPIEActive()) return;
 
 	InputSystem& IS = InputSystem::Get();
 
@@ -764,15 +822,11 @@ void FEditorViewportClient::TickPIEShortCuts()
 	{
 		ReleasePIEMouseFocus();
 	}
-	if (bControlLocked && IS.GetKeyDown(VK_LBUTTON) && State && State->bHovered)
-	{
-		ReacquirePIEMouseFocus();
-	}
 }
 
 void FEditorViewportClient::TickPIEShortCuts(const FViewportInputContext& Context)
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController) return;
+	if (!IsPIEActive()) return;
 
 	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::EndPIE) && Editor)
 	{
@@ -825,13 +879,32 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 {
 	using EEditorViewportAction = EditorViewportInputMapping::EEditorViewportAction;
 
-	const bool bIsPIE = InputRouter.GetActiveController() == EActiveEditorController::PIEController;
-	const TArray<EEditorViewportAction> CommandActions = bIsPIE
+	const bool bInPIE = IsPIEActive();
+	const bool bPIEPossessed = IsPIEPossessed();
+	const TArray<EEditorViewportAction> CommandActions = bPIEPossessed
 		? TArray<EEditorViewportAction>
 		{
 			EEditorViewportAction::EndPIE,
 			EEditorViewportAction::TogglePIEPossessEject,
 			EEditorViewportAction::ReleasePIEMouseFocus
+		}
+		: (bInPIE
+		? TArray<EEditorViewportAction>
+		{
+			EEditorViewportAction::EndPIE,
+			EEditorViewportAction::TogglePIEPossessEject,
+			EEditorViewportAction::ReleasePIEMouseFocus,
+			EEditorViewportAction::CycleMode,
+			EEditorViewportAction::SetModeSelect,
+			EEditorViewportAction::CycleGizmoMode,
+			EEditorViewportAction::ToggleCoordinateSpace,
+			EEditorViewportAction::SetModeTranslate,
+			EEditorViewportAction::SetModeRotate,
+			EEditorViewportAction::SetModeScale,
+			EEditorViewportAction::FocusSelection,
+			EEditorViewportAction::DeleteSelection,
+			EEditorViewportAction::SelectAll,
+			EEditorViewportAction::DuplicateSelection
 		}
 		: TArray<EEditorViewportAction>
 		{
@@ -852,7 +925,7 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 			EEditorViewportAction::LoadScene,
 			EEditorViewportAction::SaveScene,
 			EEditorViewportAction::SaveSceneAs
-		};
+		});
 
 	bool bTriggered = false;
 	for (EEditorViewportAction Action : CommandActions)
@@ -865,7 +938,14 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 		return false;
 	}
 
-	if (bIsPIE)
+	if (bPIEPossessed)
+	{
+		TickPIEShortCuts(Context);
+	}
+	else if (bInPIE
+		&& (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::EndPIE)
+			|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::TogglePIEPossessEject)
+			|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::ReleasePIEMouseFocus)))
 	{
 		TickPIEShortCuts(Context);
 	}
@@ -1214,6 +1294,10 @@ bool FEditorViewportClient::HandleAltNavigationInput(const FViewportInputContext
 void FEditorViewportClient::TickMouseInput(float VX, float VY)
 {
 	if (bControlLocked) return;
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && bPIEMouseFocusReleased)
+	{
+		return;
+	}
 	const InputSystem& IS = InputSystem::Get();
 
 	POINT MP = IS.GetMousePos();
@@ -1256,6 +1340,10 @@ void FEditorViewportClient::TickMouseInput(float VX, float VY)
 void FEditorViewportClient::TickMouseInput(const FViewportInputContext& Context)
 {
 	if (bControlLocked) return;
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && bPIEMouseFocusReleased)
+	{
+		return;
+	}
 
 	const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
 	const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
@@ -1683,25 +1771,26 @@ void FEditorViewportClient::DuplicateSelection()
 
 void FEditorViewportClient::TogglePIEPossessEject()
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
+	if (!IsPIEActive())
 		return;
 
-	if (!bControlLocked)
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
 	{
-		ReleasePIEMouseFocus();
+		EnterPIEEditorControlMode();
 	}
 	else
 	{
-		ReacquirePIEMouseFocus();
+		EnterPIEPossessedMode();
 	}
 }
 
 void FEditorViewportClient::ReleasePIEMouseFocus()
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
+	if (!IsPIEPossessed())
 		return;
 
-	bControlLocked = true;
+	bPIEMouseFocusReleased = true;
+	bControlLocked = false;
 	InputSystem& IS = InputSystem::Get();
 	IS.SetCursorVisibility(true);
 	IS.LockMouse(false);
@@ -1709,19 +1798,16 @@ void FEditorViewportClient::ReleasePIEMouseFocus()
 
 void FEditorViewportClient::ReacquirePIEMouseFocus()
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
+	if (!IsPIEActive())
 		return;
 
-	bControlLocked = false;
-	InputSystem& IS = InputSystem::Get();
-	IS.SetCursorVisibility(false);
-	LockCursorToViewport();
+	EnterPIEPossessedMode();
 }
 
 bool FEditorViewportClient::TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context)
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController
-		|| !bControlLocked
+	if (!IsPIEPossessed()
+		|| !bPIEMouseFocusReleased
 		|| !Context.WasPressed(VK_LBUTTON)
 		|| Context.bImGuiCapturedMouse
 		|| IsPointerInViewportInputDeadZone(Context))
@@ -1731,6 +1817,53 @@ bool FEditorViewportClient::TryReacquirePIEMouseFocusOnViewportClick(const FView
 
 	ReacquirePIEMouseFocus();
 	return true;
+}
+
+void FEditorViewportClient::EnterPIEEditorControlMode()
+{
+	if (!IsPIEActive())
+	{
+		return;
+	}
+
+	InputRouter.GetEditorWorldController().SetWorld(World);
+	InputRouter.GetEditorWorldController().SetCamera(&Camera);
+	InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetPIEController().GetTargetLocation());
+	InputRouter.GetEditorWorldController().SetTargetRotation(Camera.GetRotation());
+	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
+	if (World)
+	{
+		World->SetActiveCamera(&Camera);
+	}
+
+	bControlLocked = false;
+	bPIEMouseFocusReleased = false;
+	InputSystem& IS = InputSystem::Get();
+	IS.SetCursorVisibility(true);
+	IS.LockMouse(false);
+}
+
+void FEditorViewportClient::EnterPIEPossessedMode()
+{
+	if (!IsPIEActive())
+	{
+		return;
+	}
+
+	InputRouter.GetPIEController().SetCamera(&Camera);
+	InputRouter.GetPIEController().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
+	InputRouter.SetActiveController(EActiveEditorController::PIEController);
+	if (World)
+	{
+		APlayerController* PlayerController = InputRouter.GetPIEController().GetPlayerController();
+		World->SetActiveCamera(PlayerController ? PlayerController->GetRuntimeCamera() : &Camera);
+	}
+
+	bControlLocked = false;
+	bPIEMouseFocusReleased = false;
+	InputSystem& IS = InputSystem::Get();
+	IS.SetCursorVisibility(false);
+	LockCursorToViewport();
 }
 
 void FEditorViewportClient::SaveCameraSnapshot()

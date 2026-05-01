@@ -31,7 +31,6 @@ private:
 	void RenderActorHeaderRegion(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderMultiSelectionHeader(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors, int32 SelectionCount);
 	void RenderSingleSelectionHeader(AActor* PrimaryActor);
-	void RenderAddComponentPopup(AActor* PrimaryActor);
 	void RenderDetailsContextMenu(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 
 	// 컴포넌트 트리
@@ -49,7 +48,7 @@ private:
 	void RefreshMaterialSlotCache(bool bForce = false);
 
 	// 유틸리티
-	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp);
+	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp, class USceneComponent* AttachTargetOverride = nullptr);
 	bool CanDeleteComponent(AActor* Owner, UActorComponent* Component) const;
 	void DeleteSelectedComponent(AActor* Owner);
 

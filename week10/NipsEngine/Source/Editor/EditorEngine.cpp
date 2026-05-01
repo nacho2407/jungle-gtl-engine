@@ -8,7 +8,9 @@
 #include "Component/GizmoComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "GameFramework/GameJamPlayerController.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Core/Logging/Stats.h"
@@ -25,7 +27,24 @@ REGISTER_FACTORY(UEditorEngine)
 
 namespace
 {
-    void SpawnDefaultSceneLights(UWorld* World)
+    bool HasPlayerStart(UWorld* World)
+    {
+        if (!World)
+        {
+            return false;
+        }
+
+        for (AActor* Actor : World->GetActors())
+        {
+            if (Actor && Actor->IsA<APlayerStart>())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void SpawnDefaultSceneActors(UWorld* World)
     {
         if (!World)
         {
@@ -47,6 +66,17 @@ namespace
             AmbientLight->InitDefaultComponents();
             AmbientLight->SetFName(FName("Ambient Light"));
             AmbientLight->SetActorLocation(FVector(0.0f, 0.0f, 15.0f));
+        }
+
+        if (!HasPlayerStart(World))
+        {
+            APlayerStart* PlayerStart = World->SpawnActor<APlayerStart>();
+            if (PlayerStart)
+            {
+                PlayerStart->InitDefaultComponents();
+                PlayerStart->SetFName(FName("Player Start"));
+                PlayerStart->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+            }
         }
 
         World->SyncSpatialIndex();
@@ -72,7 +102,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     ApplySpatialIndexMaintenanceSettings();
     if (bCreatedStartupWorld)
     {
-        SpawnDefaultSceneLights(WorldList[0].World);
+        SpawnDefaultSceneActors(WorldList[0].World);
     }
 
     // Selection & Gizmo
@@ -188,14 +218,19 @@ void UEditorEngine::RegisterViewportInputTargets()
 
 void UEditorEngine::WorldTick(float DeltaTime)
 {
-    // 포커스된 뷰포트의 카메라를 해당 월드의 ActiveCamera로 설정
+    // 포커스된 뷰포트의 카메라를 해당 월드의 ActiveCamera로 설정합니다.
+    // PIE Possessed 상태에서는 PlayerController의 RuntimeCamera가 게임 카메라를 소유하므로
+    // 여기서 Editor viewport camera로 덮어쓰면 WASD/Mouse Look 결과가 화면에 반영되지 않습니다.
     const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
-    if (UWorld* FocusedWorld = FocusedClient->GetFocusedWorld())
+    if (FocusedClient && FocusedClient->AllowsEditorWorldControl())
     {
-        if (FViewportCamera* Cam = FocusedClient->GetCamera())
+        if (UWorld* FocusedWorld = FocusedClient->GetFocusedWorld())
         {
-            FocusedWorld->SetActiveCamera(Cam);
+            if (FViewportCamera* Cam = FocusedClient->GetCamera())
+            {
+                FocusedWorld->SetActiveCamera(Cam);
+            }
         }
     }
 
@@ -584,7 +619,20 @@ void UEditorEngine::StartPlaySessionNow()
     EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
     SelectionManager.ClearSelection();
 
-    PIEWorld->SetActiveCamera(FocusedClient->GetCamera());
+    AGameJamPlayerController* PlayerController = PIEWorld->SpawnActor<AGameJamPlayerController>();
+    if (PlayerController)
+    {
+        PlayerController->InitDefaultComponents();
+        PlayerController->SetFName(FName("GameJam Player Controller"));
+        PlayerController->ConfigureRuntimeCameraFromViewport(FocusedClient->GetCamera());
+        PlayerController->SpawnDefaultPawn();
+        FocusedClient->SetPIEPlayerController(PlayerController);
+        PIEWorld->SetActiveCamera(PlayerController->GetRuntimeCamera());
+    }
+    else
+    {
+        PIEWorld->SetActiveCamera(FocusedClient->GetCamera());
+    }
     PIEWorld->BeginPlay();
 }
 
@@ -750,7 +798,7 @@ void UEditorEngine::NewScene()
     FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, FName("NewScene"), "New Scene");
     SetActiveWorld(Ctx.ContextHandle);
     ApplySpatialIndexMaintenanceSettings(Ctx.World);
-    SpawnDefaultSceneLights(Ctx.World);
+    SpawnDefaultSceneActors(Ctx.World);
 
     ResetViewport();
 }
