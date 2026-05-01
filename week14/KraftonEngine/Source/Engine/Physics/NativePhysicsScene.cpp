@@ -14,8 +14,11 @@ void FNativePhysicsScene::Initialize(UWorld* InWorld)
 void FNativePhysicsScene::Shutdown()
 {
 	RegisteredComponents.clear();
+	BodyStates.clear();
 	PreviousOverlaps.clear();
 	CurrentOverlaps.clear();
+	PreviousBlockPairs.clear();
+	CurrentBlockPairs.clear();
 	World = nullptr;
 }
 
@@ -28,6 +31,7 @@ void FNativePhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 		if (Existing == Comp) return;
 	}
 	RegisteredComponents.push_back(Comp);
+	BodyStates[Comp] = {};
 }
 
 void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
@@ -37,6 +41,7 @@ void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Comp);
 	if (It == RegisteredComponents.end()) return;
 	RegisteredComponents.erase(It);
+	BodyStates.erase(Comp);
 
 	// PreviousOverlaps에서 이 컴포넌트를 포함하는 쌍 제거 + EndOverlap 발화
 	auto PairIt = PreviousOverlaps.begin();
@@ -69,13 +74,41 @@ void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 		else
 			++CurIt;
 	}
+
+	// BlockPairs에서도 제거
+	auto EraseFromSet = [Comp](std::unordered_set<FOverlapPair>& Set) {
+		auto It = Set.begin();
+		while (It != Set.end())
+		{
+			if (It->A == Comp || It->B == Comp)
+				It = Set.erase(It);
+			else
+				++It;
+		}
+	};
+	EraseFromSet(PreviousBlockPairs);
+	EraseFromSet(CurrentBlockPairs);
 }
 
 void FNativePhysicsScene::Tick(float DeltaTime)
 {
 	if (!World) return;
 
+	// ── 중력 적분: bSimulatePhysics인 컴포넌트에 중력 적용 ──
+	for (UPrimitiveComponent* Comp : RegisteredComponents)
+	{
+		if (!Comp->GetSimulatePhysics()) continue;
+
+		FBodyState& State = BodyStates[Comp];
+		State.Velocity.Z += GravityZ * DeltaTime;
+
+		FVector Pos = Comp->GetWorldLocation();
+		Pos = Pos + State.Velocity * DeltaTime;
+		Comp->SetWorldLocation(Pos);
+	}
+
 	CurrentOverlaps.clear();
+	CurrentBlockPairs.clear();
 
 	// Brute-force O(N²)
 	const int32 Count = static_cast<int32>(RegisteredComponents.size());
@@ -104,19 +137,74 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 
 			if (Resp == ECollisionResponse::Block)
 			{
-				FVector NormalImpulse = Hit.ImpactNormal * Hit.PenetrationDepth;
+				CurrentBlockPairs.insert(FOverlapPair{ A, B });
 
-				FHitResult HitA = Hit;
-				HitA.HitComponent = B;
-				HitA.HitActor = B->GetOwner();
-				A->NotifyComponentHit(A, B->GetOwner(), B, NormalImpulse, HitA);
+				// Hit 이벤트는 첫 접촉 시에만 발화 (PhysX eNOTIFY_TOUCH_FOUND 방식)
+				if (PreviousBlockPairs.find(FOverlapPair{ A, B }) == PreviousBlockPairs.end())
+				{
+					FVector NormalImpulse = Hit.ImpactNormal * Hit.PenetrationDepth;
 
-				FHitResult HitB = Hit;
-				HitB.HitComponent = A;
-				HitB.HitActor = A->GetOwner();
-				HitB.ImpactNormal = Hit.ImpactNormal * -1.0f;
-				HitB.WorldNormal = Hit.WorldNormal * -1.0f;
-				B->NotifyComponentHit(B, A->GetOwner(), A, NormalImpulse * -1.0f, HitB);
+					FHitResult HitA = Hit;
+					HitA.HitComponent = B;
+					HitA.HitActor = B->GetOwner();
+					A->NotifyComponentHit(A, B->GetOwner(), B, NormalImpulse, HitA);
+
+					FHitResult HitB = Hit;
+					HitB.HitComponent = A;
+					HitB.HitActor = A->GetOwner();
+					HitB.ImpactNormal = Hit.ImpactNormal * -1.0f;
+					HitB.WorldNormal = Hit.WorldNormal * -1.0f;
+					B->NotifyComponentHit(B, A->GetOwner(), A, NormalImpulse * -1.0f, HitB);
+				}
+
+				// ── Block 위치 보정 + 속도 보정 ──
+				// TestComponentPair 내부에서 A/B가 swap될 수 있음.
+				// Hit.ImpactNormal은 내부 A→B 방향. Hit.HitComponent가 내부 B.
+				// 따라서 Hit.HitComponent == (우리의)B 면 Normal은 A→B — A를 밀 방향은 반대.
+				//         Hit.HitComponent == (우리의)A 면 swap됐으므로 Normal은 B→A — A를 밀 방향은 그대로.
+				bool bASimulates = A->GetSimulatePhysics();
+				bool bBSimulates = B->GetSimulatePhysics();
+				FVector PushA; // A를 밀어내는 방향 (B에서 멀어지는 방향)
+				if (Hit.HitComponent == B)
+					PushA = Hit.ImpactNormal * -1.0f;
+				else
+					PushA = Hit.ImpactNormal;
+				FVector Normal = PushA;
+				float Depth = Hit.PenetrationDepth;
+
+				if (Depth > 0.0f)
+				{
+					if (bASimulates && bBSimulates)
+					{
+						FVector Correction = Normal * (Depth * 0.5f);
+						A->SetWorldLocation(A->GetWorldLocation() + Correction);
+						B->SetWorldLocation(B->GetWorldLocation() - Correction);
+					}
+					else if (bASimulates)
+					{
+						A->SetWorldLocation(A->GetWorldLocation() + Normal * Depth);
+					}
+					else if (bBSimulates)
+					{
+						B->SetWorldLocation(B->GetWorldLocation() - Normal * Depth);
+					}
+				}
+
+				if (bASimulates)
+				{
+					FBodyState& StateA = BodyStates[A];
+					float VdotN = StateA.Velocity.X * Normal.X + StateA.Velocity.Y * Normal.Y + StateA.Velocity.Z * Normal.Z;
+					if (VdotN < 0.0f)
+						StateA.Velocity = StateA.Velocity - Normal * VdotN;
+				}
+				if (bBSimulates)
+				{
+					FBodyState& StateB = BodyStates[B];
+					FVector NegNormal = Normal * -1.0f;
+					float VdotN = StateB.Velocity.X * NegNormal.X + StateB.Velocity.Y * NegNormal.Y + StateB.Velocity.Z * NegNormal.Z;
+					if (VdotN < 0.0f)
+						StateB.Velocity = StateB.Velocity - NegNormal * VdotN;
+				}
 			}
 			else if (Resp == ECollisionResponse::Overlap)
 			{
@@ -157,4 +245,5 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 	}
 
 	PreviousOverlaps = CurrentOverlaps;
+	PreviousBlockPairs = CurrentBlockPairs;
 }

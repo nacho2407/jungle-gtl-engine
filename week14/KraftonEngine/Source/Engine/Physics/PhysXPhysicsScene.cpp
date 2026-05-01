@@ -22,8 +22,17 @@ public:
 	void reportError(PxErrorCode::Enum code, const char* message,
 		const char* file, int line) override
 	{
-		// TODO: FLog 연동
-		(void)code; (void)message; (void)file; (void)line;
+		const char* severity = "Info";
+		if (code == PxErrorCode::eABORT || code == PxErrorCode::eOUT_OF_MEMORY)
+			severity = "Fatal";
+		else if (code == PxErrorCode::eINTERNAL_ERROR || code == PxErrorCode::eINVALID_OPERATION)
+			severity = "Error";
+		else if (code == PxErrorCode::eINVALID_PARAMETER || code == PxErrorCode::ePERF_WARNING)
+			severity = "Warning";
+		else if (code == PxErrorCode::eDEBUG_WARNING)
+			severity = "Warning";
+
+		UE_LOG("[PhysX %s] %s (%s:%d)", severity, message, file, line);
 	}
 };
 

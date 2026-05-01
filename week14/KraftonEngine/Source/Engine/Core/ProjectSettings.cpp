@@ -14,6 +14,9 @@ namespace PSKey
 	constexpr const char* MaxSpotAtlasPages = "MaxSpotAtlasPages";
 	constexpr const char* MaxPointAtlasPages = "MaxPointAtlasPages";
 
+	constexpr const char* PhysicsSection = "Physics";
+	constexpr const char* Backend = "Backend";
+
 	constexpr const char* GameSection = "Game";
 	constexpr const char* StartLevelName = "StartLevelName";
 }
@@ -32,6 +35,10 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	ShadowObj[PSKey::MaxSpotAtlasPages] = static_cast<int>(Shadow.MaxSpotAtlasPages);
 	ShadowObj[PSKey::MaxPointAtlasPages] = static_cast<int>(Shadow.MaxPointAtlasPages);
 	Root[PSKey::Shadow] = ShadowObj;
+
+	JSON PhysObj = Object();
+	PhysObj[PSKey::Backend] = static_cast<int>(Physics.Backend);
+	Root[PSKey::PhysicsSection] = PhysObj;
 
 	JSON GameObj = Object();
 	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
@@ -58,6 +65,19 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		std::istreambuf_iterator<char>());
 
 	JSON Root = JSON::Load(Content);
+
+	if (Root.hasKey(PSKey::PhysicsSection))
+	{
+		JSON P = Root[PSKey::PhysicsSection];
+		if (P.hasKey(PSKey::Backend))
+		{
+			int v = P[PSKey::Backend].ToInt();
+			if (v == 1)
+				Physics.Backend = EPhysicsBackend::PhysX;
+			else
+				Physics.Backend = EPhysicsBackend::Native;
+		}
+	}
 
 	if (Root.hasKey(PSKey::GameSection))
 	{

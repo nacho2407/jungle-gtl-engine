@@ -1,0 +1,193 @@
+{
+  "Actors" : [{
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_0",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [20.000000, 20.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ASphereActor",
+      "Name" : "ASphereActor_0",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/BasicShape/Sphere.OBJ",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "USphereComponent",
+        "Properties" : {
+          "Cast Shadow" : false,
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-5.834825, -4.602389, 5.636736],
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Sphere Radius" : 1.010000,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "Name" : "ADirectionalLightActor_1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UDirectionalLightComponent",
+        "Properties" : {
+          "Cast Shadows" : true,
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Intensity" : 1.000000,
+          "Location" : [-15.476057, -2.625384, 2.000001],
+          "Rotation" : [45.000000, -45.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shadow Bias" : -0.000100,
+          "Shadow Normal Bias" : -0.002000,
+          "Shadow Resolution Scale" : 1.000000,
+          "Shadow Sharpen" : 0.670000,
+          "Shadow Slope Bias" : 0.000100,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "CollisionTest",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [1.332536, -2.461691, 8.714815],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 26.115065, 176.100082]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

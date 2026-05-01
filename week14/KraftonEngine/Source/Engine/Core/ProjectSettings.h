@@ -3,11 +3,13 @@
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Platform/Paths.h"
+#include "Physics/IPhysicsScene.h"  // EPhysicsBackend
 
 /*
 	FProjectSettings — 프로젝트 전역 설정 (per-viewport가 아닌 전체 공유).
 	Settings/ProjectSettings.ini에 독립 직렬화됩니다.
 */
+
 class FProjectSettings : public TSingleton<FProjectSettings>
 {
 	friend class TSingleton<FProjectSettings>;
@@ -23,6 +25,12 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		uint32 MaxPointAtlasPages  = 4;		// Point Light Atlas 최대 page 수
 	};
 
+	// --- Physics ---
+	struct FPhysicsOption
+	{
+		EPhysicsBackend Backend = EPhysicsBackend::Native;
+	};
+
 	// --- Game ---
 	struct FGameOption
 	{
@@ -31,6 +39,7 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 
 public:
 	FShadowOption Shadow;
+	FPhysicsOption Physics;
 	FGameOption Game;
 
 	// --- 직렬화 ---
