@@ -15,6 +15,7 @@ public:
 	void SetSceneWidget(FEditorSceneWidget* InSceneWidget);
 	void SetPlayStreamWidget(FEditorPlayStreamWidget* InPlayStreamWidget);
 	void SetPIEViewportFullscreenCallback(std::function<void(bool)> InCallback);
+	void SetBuildGameCallback(std::function<void()> InCallback);
 	void SetPanelVisibilityRefs(
 		bool* InShowConsole,
 		bool* InShowControl,
@@ -33,6 +34,7 @@ public:
 private:
 	void RenderFilesMenu();
 	void RenderEditMenu();
+	void RenderBuildMenu();
 	void RenderViewMenu();
 	void RenderSettingsMenu();
 	void RenderHelpMenu();
@@ -52,4 +54,5 @@ private:
 	bool* bShowUndoHistory = nullptr;
 	bool* bPIEViewportFullscreenEnabled = nullptr;
 	std::function<void(bool)> PIEViewportFullscreenCallback;
+	std::function<void()> BuildGameCallback;
 };

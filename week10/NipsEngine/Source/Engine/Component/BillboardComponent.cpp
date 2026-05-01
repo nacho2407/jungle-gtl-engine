@@ -1,7 +1,7 @@
 ﻿#include "BillboardComponent.h"
 #include <cmath>
 #include "GameFramework/World.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"

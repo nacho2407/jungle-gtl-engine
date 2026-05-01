@@ -43,6 +43,8 @@ public:
         return Actor;
     }
 
+    AActor* SpawnActorByTypeName(const FString& TypeName);
+
     void DestroyActor(AActor* Actor) 
 	{
         if (!Actor) return;

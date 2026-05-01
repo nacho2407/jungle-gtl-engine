@@ -13,14 +13,28 @@
 
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "UI/EditorConsoleWidget.h"
+#include "Core/Logging/Log.h"
+#if WITH_EDITOR
 #include "Settings/EditorSettings.h"
+#endif
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 #include "Render/Resource/ObjMtlLoader.h"
 #include "Render/Resource/ShaderCompiler.h"
+
+namespace
+{
+	bool ShouldBuildStaticMeshLODs()
+	{
+#if WITH_EDITOR
+		return FEditorSettings::Get().ShowFlags.bEnableLOD;
+#else
+		return true;
+#endif
+	}
+}
 
 #pragma region __BINARY__
 
@@ -1518,6 +1532,10 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
     }
 
     const FString NormalizedPath = FPaths::Normalize(Path);
+    if (NormalizedPath.empty())
+    {
+        return nullptr;
+    }
 
     if (UTexture* Cached = GetTexture(NormalizedPath))
     {
@@ -1527,6 +1545,7 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
     UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
     if (!Texture->LoadFromFile(NormalizedPath, Device))
     {
+        UObjectManager::Get().DestroyObject(Texture);
         return nullptr;
     }
 
@@ -1660,7 +1679,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 
 		UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 		LoadedMesh->SetMeshData(LoadedMeshData);
-		if (FEditorSettings::Get().ShowFlags.bEnableLOD)
+		if (ShouldBuildStaticMeshLODs())
 		{
 			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
 		}
@@ -1762,7 +1781,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
     LoadedMesh->SetMeshData(LoadedMeshData);
 
-    if (FEditorSettings::Get().ShowFlags.bEnableLOD)
+    if (ShouldBuildStaticMeshLODs())
     {
         const auto LodStart = std::chrono::steady_clock::now();
         FStaticMeshSimplifier::BuildLODs(LoadedMesh);

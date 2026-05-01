@@ -9,7 +9,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
 
 class UGizmoComponent;
@@ -132,19 +132,24 @@ private:
 	void StopPlaySessionNow();
 	FString CaptureSceneSnapshot() const;
 	bool RestoreSceneSnapshot(const FString& Snapshot);
+    
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
 	FEditorViewportLayout   ViewportLayout;
+    
 	FInputRouter EditorInputRouter;
 	TMap<int32, FName> ViewportPIEHandles;  // 뷰포트 인덱스 → PIE 월드 컨텍스트 핸들
+    
 	int32 ActivePIEViewportIndex = -1;
 	bool bStartPlaySessionQueued = false;
 	bool bStopPlaySessionQueued = false;
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;
+    
 	TArray<FUndoSnapshotEntry> UndoHistory;
 	TArray<FUndoSnapshotEntry> RedoHistory;
+    
 	bool bRestoringUndoRedo = false;
 	static constexpr int32 MaxUndoHistory = 50;
 

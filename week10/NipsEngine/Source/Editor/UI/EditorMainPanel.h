@@ -12,7 +12,10 @@
 #include "Editor/UI/EditorStatWidget.h"
 #include "Editor/UI/EditorToolbarWidget.h"
 #include "Editor/UI/EditorPlayStreamWidget.h"
+#include "Editor/Packaging/GamePackager.h"
 #include "Editor/Viewport/ViewportLayout.h"
+
+#include <future>
 
 class FRenderer;
 class UEditorEngine;
@@ -39,6 +42,7 @@ public:
 	bool RequestLoadSceneWithDialog();
 	bool RequestSaveScene();
 	bool RequestSaveSceneAsWithDialog();
+	void RequestBuildGame();
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
 	bool IsPIEViewportFullscreenEnabled() const { return bPIEViewportFullscreenEnabled; }
@@ -89,6 +93,8 @@ private:
 	void RenderFooterOverlay(float DeltaTime);
 	void RenderEditorDebugPanel(float DeltaTime);
 	void RenderUndoHistoryPanel(float DeltaTime);
+	void RenderBuildGameModal();
+	void TickBuildGameTask();
 	void UpdateFooterEventLogs();
 	void OpenConsoleDrawer(bool bFocusInput = true);
 	void CloseConsoleDrawer();
@@ -162,6 +168,15 @@ private:
 	bool bShowEditorDebug = false;
 	bool bShowContentBrowser = false;
 	bool bShowUndoHistory = false;
+	bool bOpenBuildGameModal = false;
+	bool bBuildGameInProgress = false;
+	FGameBuildSettings PendingBuildSettings;
+	std::future<FGamePackageResult> BuildGameFuture;
+	char BuildGameNameBuffer[128] = "NipsGame";
+	char BuildStartupSceneBuffer[MAX_PATH] = "Asset/Scene/Default.scene";
+	char BuildSceneListAddBuffer[MAX_PATH] = "";
+	char BuildPlayerControllerClassBuffer[128] = "AGameJamPlayerController";
+	char BuildOutputDirectoryBuffer[MAX_PATH] = "Builds/Windows/NipsGame";
 	int32 DebugGridPrimitiveType = 1;
 	int32 DebugGridRows = 4;
 	int32 DebugGridCols = 4;

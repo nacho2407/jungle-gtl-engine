@@ -1,7 +1,7 @@
 ﻿#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 #include "Core/Logging/Timer.h"
 
 #include "ImGui/imgui.h"

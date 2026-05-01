@@ -22,17 +22,8 @@ public:
 	void RenderDrawerToolbar();
 	void RenderLogContents(float Height = 0.0f);
 	void RenderInputLine(const char* Id, float Width, bool bRequestFocus);
-
-	void Clear()
-	{
-		for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
-		Messages.clear();
-	}
-	static void ClearHistory()
-	{
-		for (int32 i = 0; i < History.Size; i++) free(History[i]);
-		History.clear();
-	}
+	void Clear();
+	static void ClearHistory();
 
 private:
 	char InputBuf[256]{};
@@ -68,6 +59,3 @@ private:
 	TArray<FString> BuildCommandSuggestions(const FString& Query) const;
 	void RenderCommandSuggestions(const char* Id, const ImVec2& InputMin, const ImVec2& InputSize);
 };
-
-#define UE_LOG(Format, ...) \
-    FEditorConsoleWidget::AddLog(Format, ##__VA_ARGS__)

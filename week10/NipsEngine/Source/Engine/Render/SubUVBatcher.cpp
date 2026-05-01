@@ -1,5 +1,5 @@
 ﻿#include <d3d11.h>
-#include <UI/EditorConsoleWidget.h>
+#include "Core/Logging/Log.h"
 #include "SubUVBatcher.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"

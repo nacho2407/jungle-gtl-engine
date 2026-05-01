@@ -1,7 +1,8 @@
 ﻿#include "CoroutineScheduler.h"
 
+#include "Core/Containers/String.h"
+#include "Core/Logging/Log.h"
 #include "Math/Utils.h"
-#include "UI/EditorConsoleWidget.h"
 
 void FCoroutineScheduler::StartCoroutine(sol::function Function)
 {

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "BaseEditorController.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 
 class FSelectionManager;
 class UGizmoComponent;

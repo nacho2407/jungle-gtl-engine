@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GameFramework/AActor.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 
 class UCameraComponent;
 class ADefaultPlayerActor;
