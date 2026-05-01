@@ -26,9 +26,6 @@ public:
 	const FVector& GetSocketOffset() const { return SocketOffset; }
 	void SetSocketOffset(const FVector& InSocketOffset);
 
-	const FVector& GetTargetOffset() const { return TargetOffset; }
-	void SetTargetOffset(const FVector& InTargetOffset);
-
 	bool IsCameraLagEnabled() const { return bEnableCameraLag; }
 	void SetCameraLagEnabled(bool bEnabled);
 
@@ -47,14 +44,7 @@ private:
 
 private:
 	float TargetArmLength = 5.0f;
-    
-    //  시작 Offset
-	FVector TargetOffset = FVector::ZeroVector;
-    
-    //  끝쪽 Offset
-    FVector SocketOffset = FVector(0.0f, 0.0f, 0.25f);
-    
-    //  카메라 움직임 보간 여부
+	FVector SocketOffset = FVector(0.0f, 0.0f, 0.25f);
 	bool bEnableCameraLag = false;
 	float CameraLagSpeed = 10.0f;
 

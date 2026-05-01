@@ -18,7 +18,6 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 	USceneComponent::Serialize(Ar);
 	Ar << "TargetArmLength" << TargetArmLength;
 	Ar << "SocketOffset" << SocketOffset;
-	Ar << "TargetOffset" << TargetOffset;
 	Ar << "EnableCameraLag" << bEnableCameraLag;
 	Ar << "CameraLagSpeed" << CameraLagSpeed;
 }
@@ -28,7 +27,6 @@ void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	USceneComponent::GetEditableProperties(OutProps);
 	OutProps.push_back({ "Target Arm Length", EPropertyType::Float, &TargetArmLength, 0.0f, 100.0f, 0.1f });
 	OutProps.push_back({ "Socket Offset", EPropertyType::Vec3, &SocketOffset, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Target Offset", EPropertyType::Vec3, &TargetOffset, 0.0f, 0.0f, 0.1f });
 	OutProps.push_back({ "Enable Camera Lag", EPropertyType::Bool, &bEnableCameraLag });
 	OutProps.push_back({ "Camera Lag Speed", EPropertyType::Float, &CameraLagSpeed, 0.01f, 100.0f, 0.1f });
 }
@@ -48,7 +46,6 @@ void USpringArmComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName == nullptr
 		|| std::strcmp(PropertyName, "Target Arm Length") == 0
 		|| std::strcmp(PropertyName, "Socket Offset") == 0
-		|| std::strcmp(PropertyName, "Target Offset") == 0
 		|| std::strcmp(PropertyName, "Enable Camera Lag") == 0)
 	{
 		ResetCameraLag();
@@ -65,7 +62,7 @@ void USpringArmComponent::UpdateWorldMatrix() const
 
 FVector USpringArmComponent::GetSocketLocalLocation() const
 {
-	return TargetOffset + SocketOffset - FVector(TargetArmLength, 0.0f, 0.0f);
+	return SocketOffset - FVector(TargetArmLength, 0.0f, 0.0f);
 }
 
 void USpringArmComponent::UpdateSocketChildren()
@@ -117,14 +114,6 @@ void USpringArmComponent::SetTargetArmLength(float InTargetArmLength)
 void USpringArmComponent::SetSocketOffset(const FVector& InSocketOffset)
 {
 	SocketOffset = InSocketOffset;
-	ResetCameraLag();
-	MarkTransformDirty();
-	UpdateSocketChildren();
-}
-
-void USpringArmComponent::SetTargetOffset(const FVector& InTargetOffset)
-{
-	TargetOffset = InTargetOffset;
 	ResetCameraLag();
 	MarkTransformDirty();
 	UpdateSocketChildren();
