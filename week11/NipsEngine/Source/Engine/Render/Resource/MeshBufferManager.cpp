@@ -30,6 +30,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_Billboard].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, QuadMeshData);
+    MeshBufferMap[EPrimitiveType::EPT_ProceduralMesh].Create(InDevice, QuadMeshData);
 }
 
 
@@ -107,5 +108,21 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     FMeshBuffer& NewBuffer = TargetMap[StaticMeshAsset];
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
     
+    return &NewBuffer;
+}
+
+FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponent::FMeshSection& MeshSection)
+{
+    const TArray<FNormalVertex>& Vertices = MeshSection.Vertices;
+    const TArray<uint32>& Indices = MeshSection.Indices;
+
+    if (Vertices.empty() || Indices.empty())
+    {
+        return nullptr;
+    }
+
+    FMeshBuffer& NewBuffer = MeshBufferMap[EPrimitiveType::EPT_ProceduralMesh];
+    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+
     return &NewBuffer;
 }

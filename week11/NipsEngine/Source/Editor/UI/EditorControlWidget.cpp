@@ -136,6 +136,13 @@ void FEditorControlWidget::Render(float DeltaTime)
                 Actor->SetActorLocation(CurSpawnPoint);
                 break;
             }
+            case 12: // Cube
+            {
+                ACubeActor* Actor = World->SpawnActor<ACubeActor>();
+                Actor->InitDefaultComponents();
+                Actor->SetActorLocation(CurSpawnPoint);
+                break;
+            }
 			}
 		}
 		NumberOfSpawnedActors = 1;
