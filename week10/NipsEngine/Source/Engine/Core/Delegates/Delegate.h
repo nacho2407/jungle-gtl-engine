@@ -22,7 +22,7 @@ public:
     // 일반 함수나 람다 등록
     uint64 Add(const HandlerType& Handler)
     {
-        HandlerId NewId = ++Counter;
+        uint64 NewId = ++Counter;
         DelegateInfos.push_back({ NewId, Handler });
 
 		return NewId;
@@ -33,7 +33,7 @@ public:
     template <typename T>
     uint64 AddDynamic(T* Instance, void (T::*Func)(Args...))
     {
-        HandlerId NewId = ++Counter;
+        uint64 NewId = ++Counter;
 
         DelegateInfos.push_back({ NewId,
 								 [Instance, Func](Args... args)
