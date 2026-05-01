@@ -3,6 +3,8 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 
+#include <filesystem>
+
 DEFINE_CLASS(UMeshComponent, UPrimitiveComponent)
 
 // UpdateWorldAABB 등의 함수를 오버라이드하지 않았기 때문에 UMeshComponent도 추상 클래스가 됩니다.
@@ -59,6 +61,12 @@ void UMeshComponent::Serialize(FArchive& Ar)
 			{
 				MaterialPaths.push_back(FPaths::Normalize(MatInst->GetFilePath()));
 			}
+			else if (UMaterial* BaseMat = Cast<UMaterial>(Mat))
+			{
+				const std::filesystem::path FilePath(FPaths::ToWide(BaseMat->GetFilePath()));
+				const bool bFileBackedMaterial = FilePath.extension() == L".mat";
+				MaterialPaths.push_back(bFileBackedMaterial ? FPaths::Normalize(BaseMat->GetFilePath()) : BaseMat->GetName());
+			}
 			else
 			{
 				MaterialPaths.push_back(Mat ? Mat->GetName() : "");
@@ -81,14 +89,6 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial
 	if (SlotIndex >= static_cast<int32>(Materials.size()))
 	{
 		Materials.resize(SlotIndex + 1, nullptr);
-	}
-
-	if (Materials[SlotIndex] != InMaterial)
-	{
-		if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Materials[SlotIndex]))
-		{
-			delete MatInst;
-		}
 	}
 
 	Materials[SlotIndex] = InMaterial;

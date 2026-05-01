@@ -6,6 +6,8 @@
 class FSelectionManager;
 class UActorComponent;
 class AActor;
+class UMaterialInterface;
+class UStaticMesh;
 
 class FEditorPropertyWidget : public FEditorWidget
 {
@@ -25,14 +27,15 @@ private:
 	void UpdateSelectionState(AActor* PrimaryActor);
 
 	// 헤더 영역
+	void RenderDetailsLockBar(AActor* CurrentSelection, AActor* DisplayActor);
 	void RenderActorHeaderRegion(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderMultiSelectionHeader(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors, int32 SelectionCount);
 	void RenderSingleSelectionHeader(AActor* PrimaryActor);
-	void RenderAddComponentPopup(AActor* PrimaryActor);
+	void RenderDetailsContextMenu(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 
 	// 컴포넌트 트리
 	void RenderComponentTree(AActor* Actor);
-	void RenderSceneComponentNode(AActor* Actor, class USceneComponent* Comp, UActorComponent*& OutCompToDelete);
+	void RenderSceneComponentNode(AActor* Actor, class USceneComponent* Comp);
 
 	// 디테일 패널
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
@@ -41,9 +44,13 @@ private:
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
 	void RenderInterpControlPoints(class UInterpToMovementComponent* Comp);
+	void RenderMaterialPreviewTooltip(UMaterialInterface* Material);
+	void RefreshMaterialSlotCache(bool bForce = false);
 
 	// 유틸리티
-	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp);
+	void AttachAndSelectNewComponent(AActor* PrimaryActor, UActorComponent* NewComp, class USceneComponent* AttachTargetOverride = nullptr);
+	bool CanDeleteComponent(AActor* Owner, UActorComponent* Component) const;
+	void DeleteSelectedComponent(AActor* Owner);
 
 	// 이름 변경 및 UI 렌더링
 	template<typename T>
@@ -53,5 +60,12 @@ private:
 	FSelectionManager* SelectionManager  = nullptr;
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;
+	AActor* LockedDetailsActor = nullptr;
+	UStaticMesh* MaterialSlotPreviewMesh = nullptr;
+	TArray<FString> CachedMaterialSlotNames;
+	TArray<UMaterialInterface*> CachedMaterialSlotMaterials;
+	bool bDetailsLocked = false;
 	bool bActorSelected   = true; // true: Actor details, false: Component details
+	bool bOpenDetailsContextMenu = false;
+	bool bPropertyEditUndoCaptured = false;
 };

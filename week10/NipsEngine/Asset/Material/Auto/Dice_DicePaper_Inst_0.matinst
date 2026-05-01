@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/Dice_DicePaper_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Mesh/Lumine/脸.png"
+          }],
+        "Parent" : "Asset/Material/Auto/Dice_DicePaper.mat"
+      }

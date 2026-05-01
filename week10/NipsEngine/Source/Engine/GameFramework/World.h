@@ -43,6 +43,8 @@ public:
         return Actor;
     }
 
+    AActor* SpawnActorByTypeName(const FString& TypeName);
+
     void DestroyActor(AActor* Actor) 
 	{
         if (!Actor) return;
@@ -57,7 +59,7 @@ public:
         UObjectManager::Get().DestroyObject(Actor);
     }
 
-	TArray<AActor*> GetActors() const { return PersistentLevel->GetActors(); }
+	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
 	ULevel* GetPersistentLevel() const { return PersistentLevel; }
 

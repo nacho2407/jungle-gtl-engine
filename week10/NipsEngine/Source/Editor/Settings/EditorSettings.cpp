@@ -16,6 +16,7 @@ namespace EditorKey
 	constexpr const char* SplitterHRatio      = "SplitterHRatio";
 	constexpr const char* ActiveViewportCount = "ActiveViewportCount";
 	constexpr const char* SingleViewportIndex = "SingleViewportIndex";
+	constexpr const char* ViewportLayoutMode  = "ViewportLayoutMode";
 
 	// Viewport
 	constexpr const char* CameraSpeed = "CameraSpeed";
@@ -23,6 +24,11 @@ namespace EditorKey
 	constexpr const char* CameraZoomSpeed = "CameraZoomSpeed";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* bEnableCameraSmoothing = "bEnableCameraSmoothing";
+	constexpr const char* CameraMoveSmoothSpeed = "CameraMoveSmoothSpeed";
+	constexpr const char* CameraRotateSmoothSpeed = "CameraRotateSmoothSpeed";
+	constexpr const char* CameraDollySpeedScale = "CameraDollySpeedScale";
+	constexpr const char* CameraPanSpeedScale = "CameraPanSpeedScale";
 	constexpr const char* InitViewPos = "InitViewPos";
 	constexpr const char* InitLookAt = "InitLookAt";
 
@@ -56,6 +62,7 @@ namespace EditorKey
 
 	// Paths
 	constexpr const char* DefaultSavePath = "DefaultSavePath";
+	constexpr const char* ContentBrowserPath = "ContentBrowserPath";
 }
 
 void FEditorSettings::SaveToFile(const FString& Path) const
@@ -71,6 +78,11 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Viewport[EditorKey::CameraZoomSpeed] = CameraZoomSpeed;
 	Viewport[EditorKey::CameraMoveSensitivity] = CameraMoveSensitivity;
 	Viewport[EditorKey::CameraRotateSensitivity] = CameraRotateSensitivity;
+	Viewport[EditorKey::bEnableCameraSmoothing] = bEnableCameraSmoothing;
+	Viewport[EditorKey::CameraMoveSmoothSpeed] = CameraMoveSmoothSpeed;
+	Viewport[EditorKey::CameraRotateSmoothSpeed] = CameraRotateSmoothSpeed;
+	Viewport[EditorKey::CameraDollySpeedScale] = CameraDollySpeedScale;
+	Viewport[EditorKey::CameraPanSpeedScale] = CameraPanSpeedScale;
 
 	JSON InitPos = Array(InitViewPos.X, InitViewPos.Y, InitViewPos.Z);
 	Viewport[EditorKey::InitViewPos] = InitPos;
@@ -82,6 +94,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	Viewport[EditorKey::SplitterHRatio]      = SplitterHRatio;
 	Viewport[EditorKey::ActiveViewportCount] = ActiveViewportCount;
 	Viewport[EditorKey::SingleViewportIndex] = SingleViewportIndex;
+	Viewport[EditorKey::ViewportLayoutMode]  = ViewportLayoutMode;
 
 	Root[EditorKey::Viewport] = Viewport;
 
@@ -119,6 +132,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	// Paths
 	JSON PathsObj = Object();
 	PathsObj[EditorKey::DefaultSavePath] = DefaultSavePath;
+	PathsObj[EditorKey::ContentBrowserPath] = ContentBrowserPath;
 	Root[EditorKey::Paths] = PathsObj;
 
 	// Ensure directory exists
@@ -165,6 +179,16 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			CameraMoveSensitivity = static_cast<float>(Viewport[EditorKey::CameraMoveSensitivity].ToFloat());
 		if (Viewport.hasKey(EditorKey::CameraRotateSensitivity))
 			CameraRotateSensitivity = static_cast<float>(Viewport[EditorKey::CameraRotateSensitivity].ToFloat());
+		if (Viewport.hasKey(EditorKey::bEnableCameraSmoothing))
+			bEnableCameraSmoothing = Viewport[EditorKey::bEnableCameraSmoothing].ToBool();
+		if (Viewport.hasKey(EditorKey::CameraMoveSmoothSpeed))
+			CameraMoveSmoothSpeed = static_cast<float>(Viewport[EditorKey::CameraMoveSmoothSpeed].ToFloat());
+		if (Viewport.hasKey(EditorKey::CameraRotateSmoothSpeed))
+			CameraRotateSmoothSpeed = static_cast<float>(Viewport[EditorKey::CameraRotateSmoothSpeed].ToFloat());
+		if (Viewport.hasKey(EditorKey::CameraDollySpeedScale))
+			CameraDollySpeedScale = std::clamp(static_cast<float>(Viewport[EditorKey::CameraDollySpeedScale].ToFloat()), 0.05f, 5.0f);
+		if (Viewport.hasKey(EditorKey::CameraPanSpeedScale))
+			CameraPanSpeedScale = std::clamp(static_cast<float>(Viewport[EditorKey::CameraPanSpeedScale].ToFloat()), 0.05f, 10.0f);
 
 		if (Viewport.hasKey(EditorKey::InitViewPos))
 		{
@@ -198,6 +222,15 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		{
 			const int32 Idx = Viewport[EditorKey::SingleViewportIndex].ToInt();
 			SingleViewportIndex = (Idx >= 0 && Idx < 4) ? Idx : 0;
+		}
+		if (Viewport.hasKey(EditorKey::ViewportLayoutMode))
+		{
+			const int32 Mode = Viewport[EditorKey::ViewportLayoutMode].ToInt();
+			ViewportLayoutMode = (Mode >= 0 && Mode < 12) ? Mode : ((ActiveViewportCount == 1) ? 0 : 7);
+		}
+		else
+		{
+			ViewportLayoutMode = (ActiveViewportCount == 1) ? 0 : 7;
 		}
 	}
 
@@ -296,5 +329,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 
 		if (PathsObj.hasKey(EditorKey::DefaultSavePath))
 			DefaultSavePath = PathsObj[EditorKey::DefaultSavePath].ToString();
+		if (PathsObj.hasKey(EditorKey::ContentBrowserPath))
+			ContentBrowserPath = PathsObj[EditorKey::ContentBrowserPath].ToString();
 	}
 }

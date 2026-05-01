@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include "Component/ActorComponent.h"
+#include "Core/Logging/Log.h"
+#include "Runtime/Script/CoroutineScheduler.h"
 #include "ThirdParty/sol/sol.hpp"
-#include "UI/EditorConsoleWidget.h"
 
 class UScriptComponent : public UActorComponent
 {
@@ -21,6 +22,7 @@ public:
     bool LoadScript();
     bool HotReloadScript();
     void ClearScript();
+    void StartCoroutine(sol::function Function);
 
 	virtual void OnUnregister() override;
 
@@ -37,7 +39,8 @@ private:
     void ClearLoadedState();
 
 	FString ScriptName;
-	sol::environment ScriptEnv;
+    sol::environment ScriptEnv;
+    FCoroutineScheduler CoroutineScheduler;
 
     bool bScriptRegistered = false;
     bool bScriptLoaded = false;

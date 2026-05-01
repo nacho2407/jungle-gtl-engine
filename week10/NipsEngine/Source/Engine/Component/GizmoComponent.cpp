@@ -22,6 +22,21 @@ const FMeshData* UGizmoComponent::GetActiveMeshData() const
 	return GizmoMeshData;
 }
 
+void UGizmoComponent::SetHolding(bool bHold)
+{
+	if (bIsHolding == bHold)
+	{
+		return;
+	}
+
+	if (bHold)
+	{
+		PendingSnapDelta = 0.0f;
+	}
+
+	bIsHolding = bHold;
+}
+
 void UGizmoComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
@@ -102,6 +117,12 @@ bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& 
 
 void UGizmoComponent::HandleDrag(float DragAmount)
 {
+	DragAmount = QuantizeDragAmount(DragAmount);
+	if (std::abs(DragAmount) < 1e-6f)
+	{
+		return;
+	}
+
 	switch (CurMode)
 	{
 	case EGizmoMode::Translate:
@@ -118,6 +139,81 @@ void UGizmoComponent::HandleDrag(float DragAmount)
 	}
 
 	UpdateGizmoTransform();
+}
+
+void UGizmoComponent::SetTranslateSnap(bool bEnabled, float Step)
+{
+	bTranslateSnapEnabled = bEnabled;
+	if (Step > 0.0f)
+	{
+		TranslateSnapStep = Step;
+	}
+}
+
+void UGizmoComponent::SetRotateSnap(bool bEnabled, float DegreesStep)
+{
+	bRotateSnapEnabled = bEnabled;
+	if (DegreesStep > 0.0f)
+	{
+		RotateSnapStepDegrees = DegreesStep;
+	}
+}
+
+void UGizmoComponent::SetScaleSnap(bool bEnabled, float Step)
+{
+	bScaleSnapEnabled = bEnabled;
+	if (Step > 0.0f)
+	{
+		ScaleSnapStep = Step;
+	}
+}
+
+float UGizmoComponent::QuantizeDragAmount(float DragAmount)
+{
+	float Step = 0.0f;
+	switch (CurMode)
+	{
+	case EGizmoMode::Translate:
+		if (!bTranslateSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = TranslateSnapStep;
+		break;
+	case EGizmoMode::Rotate:
+		if (!bRotateSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = RotateSnapStepDegrees * MathUtil::DEG_TO_RAD;
+		break;
+	case EGizmoMode::Scale:
+		if (!bScaleSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = ScaleSnapStep;
+		break;
+	default:
+		return DragAmount;
+	}
+
+	if (Step <= 1e-6f)
+	{
+		return DragAmount;
+	}
+
+	PendingSnapDelta += DragAmount;
+	const float StepsFloat = PendingSnapDelta / Step;
+	const float StepsWhole = (StepsFloat >= 0.0f) ? std::floor(StepsFloat) : std::ceil(StepsFloat);
+	if (std::abs(StepsWhole) < 1e-6f)
+	{
+		return 0.0f;
+	}
+
+	const float SnappedDelta = StepsWhole * Step;
+	PendingSnapDelta -= SnappedDelta;
+	return SnappedDelta;
 }
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
@@ -146,11 +242,18 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
+	RotationAxis.NormalizeSafe();
 	FQuat DeltaQuat(RotationAxis, DragAmount);
+	const FVector Pivot = TargetActor->GetActorLocation();
 
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
+			if (Actor != TargetActor)
+			{
+				const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
+				Actor->SetActorLocation(Pivot + DeltaQuat.RotateVector(OffsetFromPivot));
+			}
 			FQuat CurQuat = FQuat::MakeFromEuler(Actor->GetActorRotation());
 			FQuat NewQuat = CurQuat * DeltaQuat;
 			Actor->SetActorRotation(NewQuat.Euler());
@@ -174,10 +277,23 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	float ScaleDelta = DragAmount * ScaleSensitivity;
+	const FVector Pivot = TargetActor->GetActorLocation();
+	FVector ScaleAxis = GetVectorForAxis(SelectedAxis);
+	ScaleAxis.NormalizeSafe();
+	const float PivotScaleFactor = std::max(0.001f, 1.0f + ScaleDelta);
 
 	auto ApplyScale = [&](AActor* Actor)
 		{
 			if (!Actor) return;
+			if (AllSelectedActors && Actor != TargetActor && !ScaleAxis.IsNearlyZero())
+			{
+				const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
+				const float AxisDistance = OffsetFromPivot.DotProduct(ScaleAxis);
+				const FVector AxisOffset = ScaleAxis * AxisDistance;
+				const FVector PerpendicularOffset = OffsetFromPivot - AxisOffset;
+				Actor->SetActorLocation(Pivot + PerpendicularOffset + AxisOffset * PivotScaleFactor);
+			}
+
 			FVector NewScale = Actor->GetActorScale();
 			switch (SelectedAxis)
 			{
@@ -185,6 +301,9 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 			case 1: NewScale.Y += ScaleDelta; break;
 			case 2: NewScale.Z += ScaleDelta; break;
 			}
+			NewScale.X = std::max(0.001f, NewScale.X);
+			NewScale.Y = std::max(0.001f, NewScale.Y);
+			NewScale.Z = std::max(0.001f, NewScale.Z);
 			Actor->SetActorScale(NewScale);
 		};
 

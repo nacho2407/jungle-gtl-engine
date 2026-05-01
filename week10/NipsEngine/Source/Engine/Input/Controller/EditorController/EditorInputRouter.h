@@ -41,7 +41,7 @@ class FEditorInputRouter
     void RouteKeyboardInput(EKeyInputType Type, int VK);
     void RouteMouseInput(EMouseInputType Type, float DeltaX, float DeltaY);
 
-    EActiveEditorController GetActiveController() { return ActiveEditorControllerState; }
+    EActiveEditorController GetActiveController() const { return ActiveEditorControllerState; }
     void                    SetActiveController(EActiveEditorController);
     void                    SetViewportDim(float X, float Y, float Width, float Height);
 

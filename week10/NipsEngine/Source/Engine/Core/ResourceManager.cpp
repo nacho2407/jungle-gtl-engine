@@ -7,18 +7,34 @@
 #include <fstream>
 #include <filesystem>
 #include <chrono>
+#include <cwctype>
+#include <unordered_set>
 #include "Asset/FileUtils.h"
 
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
-#include "UI/EditorConsoleWidget.h"
+#include "Core/Logging/Log.h"
+#if WITH_EDITOR
 #include "Settings/EditorSettings.h"
+#endif
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 #include "Render/Resource/ObjMtlLoader.h"
 #include "Render/Resource/ShaderCompiler.h"
+
+namespace
+{
+	bool ShouldBuildStaticMeshLODs()
+	{
+#if WITH_EDITOR
+		return FEditorSettings::Get().ShowFlags.bEnableLOD;
+#else
+		return true;
+#endif
+	}
+}
 
 #pragma region __BINARY__
 
@@ -148,7 +164,8 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		}
 
 		const fs::path& FilePath = Entry.path();
-		const std::wstring Extension = FilePath.extension().wstring();
+		std::wstring Extension = FilePath.extension().wstring();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 
 		if (Extension == L".meta")
 		{
@@ -265,7 +282,8 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			}
 
 			const fs::path& FilePath = Entry.path();
-			const std::wstring Extension = FilePath.extension().wstring();
+			std::wstring Extension = FilePath.extension().wstring();
+			std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
 
 			if (Extension == L".meta" || Extension == L".bin")
 			{
@@ -293,6 +311,10 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mat")
 			{
 				MaterialFilePaths.push_back(RelativePath);
+				DeserializeMaterial(RelativePath);
+			}
+			else if (Extension == L".matinst")
+			{
 				DeserializeMaterial(RelativePath);
 			}
 			else if (
@@ -427,6 +449,15 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 				{
 					Meta.Rows = std::max(1, static_cast<int32>(Root[ResourceKey::Rows].ToInt()));
 				}
+			}
+		}
+
+		if (Meta.Type == EAssetMetaType::None)
+		{
+			const std::wstring ParentDir = FilePath.parent_path().filename().wstring();
+			if (ParentDir == L"Texture")
+			{
+				Meta.Type = EAssetMetaType::Texture;
 			}
 		}
 
@@ -595,39 +626,36 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 
 void FResourceManager::ReleaseGPUResources()
 {
+    std::unordered_set<UObject*> DestroyedObjects;
+    auto DestroyUniqueObject = [&DestroyedObjects](UObject* Object)
+    {
+        if (Object && DestroyedObjects.insert(Object).second)
+        {
+            UObjectManager::Get().DestroyObject(Object);
+        }
+    };
+
 	for (auto& [Key, Texture] : Textures)
 	{
-		if (Texture)
-		{
-			UObjectManager::Get().DestroyObject(Texture);
-		}
+		DestroyUniqueObject(Texture);
 	}
 	Textures.clear();
 
 	for (auto& [Key, Material] : Materials)
 	{
-		if (Material)
-		{
-			UObjectManager::Get().DestroyObject(Material);
-		}
+		DestroyUniqueObject(Material);
 	}
 	Materials.clear();
 
 	for (auto& [Key, MaterialInst] : MaterialInstances)
 	{
-		if (MaterialInst)
-		{
-			UObjectManager::Get().DestroyObject(MaterialInst);
-		}
+		DestroyUniqueObject(MaterialInst);
 	}
 	MaterialInstances.clear();
 
 	for (auto& [Key, Shader] : Shaders)
 	{
-		if (Shader)
-		{
-			UObjectManager::Get().DestroyObject(Shader);
-		}
+		DestroyUniqueObject(Shader);
 	}
 	Shaders.clear();
 
@@ -643,25 +671,19 @@ void FResourceManager::ReleaseGPUResources()
 
 	for (auto& [Key, Font] : FontResources)
 	{
-		if (Font.Texture)
-		{
-			UObjectManager::Get().DestroyObject(Font.Texture);
-		}
+		DestroyUniqueObject(Font.Texture);
 	}
 	FontResources.clear();
 
 	for (auto& [Key, Particle] : ParticleResources)
 	{
-		if (Particle.Texture)
-		{
-			UObjectManager::Get().DestroyObject(Particle.Texture);
-		}
+		DestroyUniqueObject(Particle.Texture);
 	}
 	ParticleResources.clear();
 
 	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
 	{
-		UObjectManager::Get().DestroyObject(StaticMeshAsset);
+		DestroyUniqueObject(StaticMeshAsset);
 	}
 	StaticMeshes.clear();
 	StaticMeshRegistry.clear();
@@ -852,10 +874,50 @@ TArray<FString> FResourceManager::GetMaterialNames() const
 	return Names;
 }
 
+TArray<FString> FResourceManager::GetMaterialInterfaceNames() const
+{
+	TArray<FString> Names;
+	Names.reserve(Materials.size() + MaterialInstances.size());
+	for (const auto& [Name, Mat] : Materials)
+	{
+		if (Mat)
+		{
+			const std::filesystem::path FilePath(FPaths::ToWide(Mat->GetFilePath()));
+			const bool bFileBackedMaterial = FilePath.extension() == L".mat";
+			Names.push_back(bFileBackedMaterial ? FPaths::Normalize(Mat->GetFilePath()) : Name);
+		}
+	}
+	for (const auto& [Path, MatInst] : MaterialInstances)
+	{
+		if (MatInst)
+		{
+			Names.push_back(FPaths::Normalize(MatInst->GetFilePath().empty() ? Path : MatInst->GetFilePath()));
+		}
+	}
+	return Names;
+}
+
 UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 {
+	const FString NormalizedName = FPaths::Normalize(MaterialName);
 	auto It = Materials.find(MaterialName);
-	return (It != Materials.end()) ? It->second : nullptr;
+	if (It != Materials.end())
+	{
+		return It->second;
+	}
+	It = Materials.find(NormalizedName);
+	if (It != Materials.end())
+	{
+		return It->second;
+	}
+	for (const auto& [Name, Material] : Materials)
+	{
+		if (Material && FPaths::Normalize(Material->GetFilePath()) == NormalizedName)
+		{
+			return Material;
+		}
+	}
+	return nullptr;
 }
 
 // 매개변수 없이 가장 간단한 Material을 생성
@@ -926,9 +988,35 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 		Parsed["DefaultWhite"] = GetMaterial("DefaultWhite");
 	}
 
+	const fs::path SourceMtlPath(FPaths::ToWide(NormalizedMtlFilePath));
+	const bool bCanPromoteMtlToMaterialAssets = SourceMtlPath.extension() == L".mtl";
+	const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
+	auto SanitizeAssetToken = [](FString Token)
+	{
+		for (char& Ch : Token)
+		{
+			const bool bAlphaNum = (Ch >= '0' && Ch <= '9') || (Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z');
+			if (!bAlphaNum && Ch != '_' && Ch != '-')
+			{
+				Ch = '_';
+			}
+		}
+		return Token.empty() ? FString("Material") : Token;
+	};
+
 	for (auto& [Name, Mat] : Parsed)
 	{
-		Mat->FilePath = NormalizedMtlFilePath;
+		FString MaterialAssetPath = NormalizedMtlFilePath;
+		if (bCanPromoteMtlToMaterialAssets)
+		{
+			const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
+			const FString MaterialName = SanitizeAssetToken(Name);
+			const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(SourceStem + "_" + MaterialName + ".mat");
+			MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+			Mat->Name = SourceStem + "_" + MaterialName;
+		}
+
+		Mat->FilePath = MaterialAssetPath;
 		Mat->SetShader(Shader);
 
 		if (Materials.find(Name) != Materials.end())
@@ -938,6 +1026,14 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 		else
 		{
 			Materials[Name] = Mat;
+		}
+
+		if (bCanPromoteMtlToMaterialAssets && !MaterialAssetPath.empty())
+		{
+			const fs::path AbsoluteMatPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(MaterialAssetPath);
+			std::error_code Ec;
+			fs::create_directories(AbsoluteMatPath.parent_path(), Ec);
+			SerializeMaterial(MaterialAssetPath, Mat);
 		}
 	}
 
@@ -1039,19 +1135,31 @@ bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMate
 		{
 			const FVector2& Vec = std::get<FVector2>(ParamValue.Value);
 			Param["Type"] = "Vector2";
-			Param["Value"] = {Vec.X, Vec.Y};
+			JSON Value = JSON::Make(JSON::Class::Array);
+			Value.append(Vec.X);
+			Value.append(Vec.Y);
+			Param["Value"] = Value;
 		}
 		else if (std::holds_alternative<FVector>(ParamValue.Value))
 		{
 			const FVector& Vec = std::get<FVector>(ParamValue.Value);
 			Param["Type"] = "Vector3";
-			Param["Value"] = {Vec.X, Vec.Y, Vec.Z};
+			JSON Value = JSON::Make(JSON::Class::Array);
+			Value.append(Vec.X);
+			Value.append(Vec.Y);
+			Value.append(Vec.Z);
+			Param["Value"] = Value;
 		}
 		else if (std::holds_alternative<FVector4>(ParamValue.Value))
 		{
 			const FVector4& Vec = std::get<FVector4>(ParamValue.Value);
 			Param["Type"] = "Vector4";
-			Param["Value"] = { Vec.X, Vec.Y, Vec.Z, Vec.W };
+			JSON Value = JSON::Make(JSON::Class::Array);
+			Value.append(Vec.X);
+			Value.append(Vec.Y);
+			Value.append(Vec.Z);
+			Value.append(Vec.W);
+			Param["Value"] = Value;
 		}
 		else if (std::holds_alternative<FMatrix>(ParamValue.Value))
 		{
@@ -1096,7 +1204,9 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 
 	// 이름에는 이제 파일 경로를 넣는 것으로 통일. 파일 경로가 없으면 기존 방식대로 이름을 넣음
 	Root["Name"] = MaterialInstance->GetFilePath().empty() ? NormalizedMatInstFilePath : FPaths::Normalize(MaterialInstance->GetFilePath());
-	Root["Parent"] = MaterialInstance->Parent->Name;
+	Root["Parent"] = (MaterialInstance->Parent && !MaterialInstance->Parent->GetFilePath().empty())
+		? FPaths::Normalize(MaterialInstance->Parent->GetFilePath())
+		: (MaterialInstance->Parent ? MaterialInstance->Parent->Name : "");
 	JSON Params = JSON::Make(JSON::Class::Array);
 	for (const auto& [ParamName, ParamValue] : MaterialInstance->OverridedParams)
 	{
@@ -1174,6 +1284,8 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 		Params.append(Param);
 	}
 	Root["OverridedParams"] = Params;
+	std::error_code Ec;
+	fs::create_directories(fs::path(FPaths::ToWide(NormalizedMatInstFilePath)).parent_path(), Ec);
 	std::ofstream OutFile(FPaths::ToWide(NormalizedMatInstFilePath));
 	if (!OutFile.is_open())
 	{
@@ -1242,14 +1354,14 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 				float Value = static_cast<float>(Param["Value"].ToFloat());
 				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
 			}
-			else if (Type == "Vector2")
+			else if (Type == "Vector2" || Type == "FVector2")
 			{
 				FVector2 Value(
 					static_cast<float>(Param["Value"][0].ToFloat()),
 					static_cast<float>(Param["Value"][1].ToFloat()));
 				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
 			}
-			else if (Type == "Vector3")
+			else if (Type == "Vector3" || Type == "FVector3")
 			{
 				FVector Value(
 					static_cast<float>(Param["Value"][0].ToFloat()),
@@ -1257,7 +1369,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 					static_cast<float>(Param["Value"][2].ToFloat()));
 				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
 			}
-			else if (Type == "Vector4")
+			else if (Type == "Vector4" || Type == "FVector4")
 			{
 				FVector4 Value(
 					static_cast<float>(Param["Value"][0].ToFloat()),
@@ -1296,6 +1408,13 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 	FString MatName = Root["Name"].ToString();
 	FString ShaderPath = Root["Shader"].ToString();
 	UMaterial* Material = GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
+	Material->SetParam("AmbientColor", FMaterialParamValue(Material->MaterialData.AmbientColor));
+	Material->SetParam("DiffuseColor", FMaterialParamValue(Material->MaterialData.DiffuseColor));
+	Material->SetParam("SpecularColor", FMaterialParamValue(Material->MaterialData.SpecularColor));
+	Material->SetParam("EmissiveColor", FMaterialParamValue(Material->MaterialData.EmissiveColor));
+	Material->SetParam("Shininess", FMaterialParamValue(Material->MaterialData.Shininess));
+	Material->SetParam("Opacity", FMaterialParamValue(Material->MaterialData.Opacity));
+	Material->SetParam("ScrollUV", FMaterialParamValue(FVector2(0.0f, 0.0f)));
 
 	for (auto& Param : Root["Params"].ArrayRange())
 	{
@@ -1322,14 +1441,14 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 			float Value = static_cast<float>(Param["Value"].ToFloat());
 			Material->SetParam(ParamName, FMaterialParamValue(Value));
 		}
-		else if (Type == "Vector2")
+		else if (Type == "Vector2" || Type == "FVector2")
 		{
 			FVector2 Value(
 				static_cast<float>(Param["Value"][0].ToFloat()),
 				static_cast<float>(Param["Value"][1].ToFloat()));
 			Material->SetParam(ParamName, FMaterialParamValue(Value));
 		}
-		else if (Type == "Vector3")
+		else if (Type == "Vector3" || Type == "FVector3")
 		{
 			FVector Value(
 				static_cast<float>(Param["Value"][0].ToFloat()),
@@ -1337,7 +1456,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 				static_cast<float>(Param["Value"][2].ToFloat()));
 			Material->SetParam(ParamName, FMaterialParamValue(Value));
 		}
-		else if (Type == "Vector4")
+		else if (Type == "Vector4" || Type == "FVector4")
 		{
 			FVector4 Value(
 				static_cast<float>(Param["Value"][0].ToFloat()),
@@ -1365,6 +1484,30 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 			if (Texture)
 			{
 				Material->SetParam(ParamName, FMaterialParamValue(Texture));
+				if (ParamName == "DiffuseMap")
+				{
+					Material->MaterialData.DiffuseTexPath = FPaths::Normalize(TexPath);
+					Material->MaterialData.bHasDiffuseTexture = true;
+					Material->SetParam("bHasDiffuseMap", FMaterialParamValue(true));
+				}
+				else if (ParamName == "SpecularMap")
+				{
+					Material->MaterialData.SpecularTexPath = FPaths::Normalize(TexPath);
+					Material->MaterialData.bHasSpecularTexture = true;
+					Material->SetParam("bHasSpecularMap", FMaterialParamValue(true));
+				}
+				else if (ParamName == "AmbientMap")
+				{
+					Material->MaterialData.AmbientTexPath = FPaths::Normalize(TexPath);
+					Material->MaterialData.bHasAmbientTexture = true;
+					Material->SetParam("bHasAmbientMap", FMaterialParamValue(true));
+				}
+				else if (ParamName == "BumpMap")
+				{
+					Material->MaterialData.BumpTexPath = FPaths::Normalize(TexPath);
+					Material->MaterialData.bHasBumpTexture = true;
+					Material->SetParam("bHasBumpMap", FMaterialParamValue(true));
+				}
 			}
 		}
 	}
@@ -1389,6 +1532,10 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
     }
 
     const FString NormalizedPath = FPaths::Normalize(Path);
+    if (NormalizedPath.empty())
+    {
+        return nullptr;
+    }
 
     if (UTexture* Cached = GetTexture(NormalizedPath))
     {
@@ -1398,6 +1545,7 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
     UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
     if (!Texture->LoadFromFile(NormalizedPath, Device))
     {
+        UObjectManager::Get().DestroyObject(Texture);
         return nullptr;
     }
 
@@ -1494,6 +1642,63 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		return FoundMesh;
 	}
 
+	fs::path RequestedFsPath(FPaths::ToWide(NormalizedPath));
+	std::wstring RequestedExt = RequestedFsPath.extension().wstring();
+	std::transform(RequestedExt.begin(), RequestedExt.end(), RequestedExt.begin(), ::towlower);
+	if (RequestedExt == L".bin")
+	{
+		const auto BinaryStart = std::chrono::steady_clock::now();
+		FStaticMesh* LoadedMeshData = new FStaticMesh();
+		if (!BinarySerializer.LoadStaticMesh(NormalizedPath, *LoadedMeshData))
+		{
+			delete LoadedMeshData;
+			UE_LOG("[StaticMeshLoad] Failed binary cache drop | Path=%s", NormalizedPath.c_str());
+			return nullptr;
+		}
+
+		const FString SourcePath = FPaths::Normalize(LoadedMeshData->PathFileName);
+		if (!SourcePath.empty())
+		{
+			if (UStaticMesh* FoundSourceMesh = FindStaticMesh(SourcePath))
+			{
+				delete LoadedMeshData;
+				StaticMeshes[NormalizedPath] = FoundSourceMesh;
+				return FoundSourceMesh;
+			}
+			LoadMaterial(SourcePath, "Shaders/UberLit.hlsl");
+		}
+
+		for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
+		{
+			Slot.Material = GetMaterial(Slot.SlotName);
+			if (Slot.Material == nullptr)
+			{
+				Slot.Material = GetMaterial("DefaultWhite");
+			}
+		}
+
+		UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+		LoadedMesh->SetMeshData(LoadedMeshData);
+		if (ShouldBuildStaticMeshLODs())
+		{
+			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
+		}
+
+		StaticMeshes[NormalizedPath] = LoadedMesh;
+		if (!SourcePath.empty())
+		{
+			StaticMeshes[SourcePath] = LoadedMesh;
+		}
+
+		const auto BinaryEnd = std::chrono::steady_clock::now();
+		const double BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
+		UE_LOG("[StaticMeshLoad] Source=BinaryDrop | Path=%s | BinarySec=%.6f | Source=%s",
+		       NormalizedPath.c_str(),
+		       BinaryLoadSec,
+		       SourcePath.c_str());
+		return LoadedMesh;
+	}
+
  	LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
 
 	FStaticMeshLoadOptions LoadOptions = {};
@@ -1576,7 +1781,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
     LoadedMesh->SetMeshData(LoadedMeshData);
 
-    if (FEditorSettings::Get().ShowFlags.bEnableLOD)
+    if (ShouldBuildStaticMeshLODs())
     {
         const auto LodStart = std::chrono::steady_clock::now();
         FStaticMeshSimplifier::BuildLODs(LoadedMesh);

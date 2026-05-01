@@ -1,11 +1,21 @@
 ﻿#include "PIEController.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 #include "Engine/Input/InputSystem.h"
+#include "GameFramework/PlayerController.h"
 
 #include <windows.h>
 
 void FPIEController::Tick(float InDeltaTime) {
 	DeltaTime = InDeltaTime;
+    if (PlayerController)
+    {
+        if (const FViewportCamera* RuntimeCamera = PlayerController->GetRuntimeCamera())
+        {
+            TargetLocation = RuntimeCamera->GetLocation();
+            bTargetLocationInitialized = true;
+        }
+        return;
+    }
     if (!Camera)
         return;
     if (!bTargetLocationInitialized)
@@ -21,6 +31,12 @@ void FPIEController::Tick(float InDeltaTime) {
 
 void FPIEController::OnMouseMove(float DeltaX, float DeltaY)
 {
+    if (PlayerController)
+    {
+        PlayerController->HandleMouseMove(DeltaX, DeltaY);
+        return;
+    }
+
 	if (!Camera)
         return;
 
@@ -86,11 +102,21 @@ void FPIEController::OnKeyPressed(int VK)
         if (OnRequestEndPIE)
             OnRequestEndPIE();
         break;
+    default:
+        if (PlayerController)
+            PlayerController->HandleKeyPressed(VK);
+        break;
     }
 }
 
 void FPIEController::OnKeyDown(int VK)
 {
+    if (PlayerController)
+    {
+        PlayerController->HandleKeyDown(VK);
+        return;
+    }
+
     // WASD continuous movement + arrow key rotation (called every frame the key is held)
     if (!Camera)
         return;
@@ -184,7 +210,10 @@ void FPIEController::OnKeyDown(int VK)
 
 void FPIEController::OnKeyReleased(int VK)
 {
-    // Nothing to do here for now
+    if (PlayerController)
+    {
+        PlayerController->HandleKeyReleased(VK);
+    }
 }
 
 void FPIEController::OnWheelScrolled(float Notch)

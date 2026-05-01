@@ -11,7 +11,7 @@
 #include "Core/CoreTypes.h"
 #include "Object/Object.h"
 
-#include "UI/EditorConsoleWidget.h"
+#include "Core/Logging/Log.h"
 
 struct FShaderVariableInfo
 {

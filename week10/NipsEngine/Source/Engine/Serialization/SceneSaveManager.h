@@ -37,6 +37,10 @@ public:
 					 const FEditorCameraState* CameraState = nullptr);
 	static void Load(const FString& FilePath, FWorldContext& OutWorldContext,
 					 FEditorCameraState* OutCameraState = nullptr);
+	static FString SaveToString(FWorldContext& WorldContext,
+								const FEditorCameraState* CameraState = nullptr);
+	static void LoadFromString(const FString& Snapshot, FWorldContext& OutWorldContext,
+							   FEditorCameraState* OutCameraState = nullptr);
 
 private:
 	static FString GetCurrentTimeStamp();

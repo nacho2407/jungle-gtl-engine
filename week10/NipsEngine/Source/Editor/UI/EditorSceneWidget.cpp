@@ -1,18 +1,54 @@
 ﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Core/Common.h"
 #include "GameFramework/WorldContext.h"
+#include "GameFramework/PrimitiveActors.h"
 
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
 
+#include <Windows.h>
+#include <commdlg.h>
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 #include "Core/ResourceManager.h"
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
+
+namespace
+{
+	FString TrimActorName(const FString& Name)
+	{
+		const auto First = std::find_if_not(Name.begin(), Name.end(), [](unsigned char Ch) { return std::isspace(Ch) != 0; });
+		const auto Last = std::find_if_not(Name.rbegin(), Name.rend(), [](unsigned char Ch) { return std::isspace(Ch) != 0; }).base();
+		if (First >= Last)
+		{
+			return "";
+		}
+		return FString(First, Last);
+	}
+
+	FString ToLowerCopy(FString Value)
+	{
+		std::transform(Value.begin(), Value.end(), Value.begin(), [](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+		return Value;
+	}
+
+	bool ContainsCaseInsensitive(const FString& Text, const char* Filter)
+	{
+		if (!Filter || Filter[0] == '\0')
+		{
+			return true;
+		}
+		return ToLowerCopy(Text).find(ToLowerCopy(Filter)) != FString::npos;
+	}
+}
 
 void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {
@@ -26,14 +62,34 @@ void FEditorSceneWidget::NewScene()
 		return;
 	}
 
+	if (!PromptSaveIfDirty())
+	{
+		return;
+	}
+
 	EditorEngine->GetMainPanel().ResetWidgetSelections();
 	EditorEngine->NewScene();
+	EditorEngine->ClearUndoHistory();
+	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), "Untitled", _TRUNCATE);
+	CurrentSceneFilePath.clear();
+	bSceneDirty = true;
+	EditorEngine->GetMainPanel().PushFooterLog("New level created");
 	NewSceneNotificationTimer = common::constants::ImGui::NotificationTimer;
 }
 
-void FEditorSceneWidget::SaveScene()
+bool FEditorSceneWidget::SaveScene()
 {
-	SaveSceneToFilePath(SceneName);
+	if (CurrentSceneFilePath.empty())
+	{
+		FString PickedPath;
+		if (!PromptSaveSceneAs(PickedPath))
+		{
+			return false;
+		}
+		return SaveSceneToFilePath(PickedPath);
+	}
+
+	return SaveSceneToFilePath(CurrentSceneFilePath);
 }
 
 void FEditorSceneWidget::LoadScene()
@@ -48,11 +104,11 @@ void FEditorSceneWidget::LoadScene()
 	LoadSceneFromFilePath(FPaths::ToUtf8(ScenePath.wstring()));
 }
 
-void FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
+bool FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 {
 	if (!EditorEngine)
 	{
-		return;
+		return false;
 	}
 
 	std::filesystem::path TargetPath = std::filesystem::path(FPaths::ToWide(FilePath));
@@ -99,14 +155,27 @@ void FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 		}
 	}
 
+	const std::filesystem::path StoredPath = bNameOnlySave
+		? (std::filesystem::path(FSceneSaveManager::GetSceneDirectory()) / (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension))
+		: TargetPath;
+	SetCurrentScenePath(FPaths::ToUtf8(StoredPath.wstring()));
+	bSceneDirty = false;
+	EditorEngine->ClearUndoHistory();
+	EditorEngine->GetMainPanel().PushFooterLog("Level saved");
 	SceneSaveNotificationTimer = common::constants::ImGui::NotificationTimer;
+	return true;
 }
 
-void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
+bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPromptSave)
 {
 	if (!EditorEngine)
 	{
-		return;
+		return false;
+	}
+
+	if (bPromptSave && !PromptSaveIfDirty())
+	{
+		return false;
 	}
 
 	EditorEngine->GetMainPanel().ResetWidgetSelections();
@@ -140,12 +209,103 @@ void FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath)
 		}
 	}
 
+	SetCurrentScenePath(FilePath);
+	bSceneDirty = false;
+	EditorEngine->ClearUndoHistory();
+	EditorEngine->GetMainPanel().PushFooterLog("Level loaded");
 	SceneLoadNotificationTimer = common::constants::ImGui::NotificationTimer;
+	return LoadCtx.World != nullptr;
 }
 
 void FEditorSceneWidget::RefreshSceneAndAssets()
 {
 	FResourceManager::Get().RefreshFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
+}
+
+FString FEditorSceneWidget::GetCurrentSceneDisplayPath() const
+{
+	if (CurrentSceneFilePath.empty())
+	{
+		return bSceneDirty ? "Unsaved *" : "Unsaved";
+	}
+
+	std::filesystem::path SceneDir = std::filesystem::path(FSceneSaveManager::GetSceneDirectory()).lexically_normal();
+	std::filesystem::path ScenePath = std::filesystem::path(FPaths::ToWide(CurrentSceneFilePath)).lexically_normal();
+	std::error_code Ec;
+	std::filesystem::path RelativePath = std::filesystem::relative(ScenePath, SceneDir.parent_path(), Ec);
+	FString Display = Ec ? FPaths::ToUtf8(ScenePath.filename().wstring()) : FPaths::ToUtf8(RelativePath.wstring());
+	std::replace(Display.begin(), Display.end(), '/', '\\');
+	return bSceneDirty ? Display + " *" : Display;
+}
+
+bool FEditorSceneWidget::PromptSaveIfDirty()
+{
+	if (!bSceneDirty)
+	{
+		return true;
+	}
+
+	HWND Owner = EditorEngine && EditorEngine->GetWindow() ? EditorEngine->GetWindow()->GetHWND() : nullptr;
+	const int Result = MessageBoxW(
+		Owner,
+		L"Current level has unsaved changes. Save before continuing?",
+		L"Unsaved Level",
+		MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON1);
+
+	if (Result == IDCANCEL)
+	{
+		return false;
+	}
+	if (Result == IDNO)
+	{
+		return true;
+	}
+	return SaveScene();
+}
+
+bool FEditorSceneWidget::PromptSaveSceneAs(FString& OutFilePath) const
+{
+	OutFilePath.clear();
+
+	WCHAR FileBuffer[MAX_PATH] = {};
+	std::filesystem::path SceneDir(FSceneSaveManager::GetSceneDirectory());
+	SceneDir = SceneDir.lexically_normal();
+	if (!SceneDir.is_absolute())
+	{
+		SceneDir = std::filesystem::path(FPaths::ToAbsolute(SceneDir.wstring()));
+	}
+	SceneDir.make_preferred();
+	std::error_code CreateDirEc;
+	std::filesystem::create_directories(SceneDir, CreateDirEc);
+
+	const std::wstring InitialDir = SceneDir.wstring();
+	const std::wstring DefaultFile = (SceneDir / L"Untitled.Scene").wstring();
+	wcsncpy_s(FileBuffer, MAX_PATH, DefaultFile.c_str(), _TRUNCATE);
+
+	OPENFILENAMEW DialogDesc = {};
+	DialogDesc.lStructSize = sizeof(DialogDesc);
+	DialogDesc.hwndOwner = EditorEngine && EditorEngine->GetWindow() ? EditorEngine->GetWindow()->GetHWND() : nullptr;
+	DialogDesc.lpstrFilter = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
+	DialogDesc.lpstrFile = FileBuffer;
+	DialogDesc.nMaxFile = MAX_PATH;
+	DialogDesc.lpstrInitialDir = InitialDir.c_str();
+	DialogDesc.lpstrDefExt = L"Scene";
+	DialogDesc.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+
+	if (!GetSaveFileNameW(&DialogDesc))
+	{
+		return false;
+	}
+
+	OutFilePath = FPaths::ToUtf8(FileBuffer);
+	return true;
+}
+
+void FEditorSceneWidget::SetCurrentScenePath(const FString& FilePath)
+{
+	CurrentSceneFilePath = FPaths::Normalize(FilePath);
+	const FString FinalSceneName = FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(CurrentSceneFilePath)).stem().wstring());
+	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), FinalSceneName.c_str(), _TRUNCATE);
 }
 
 void FEditorSceneWidget::Render(float DeltaTime)
@@ -167,12 +327,128 @@ void FEditorSceneWidget::Render(float DeltaTime)
     }
 
     ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
-    ImGui::Begin("Scene Manager");
+    ImGui::Begin("Outliner");
 
-    ImGui::Text("Actors (%d)", static_cast<int32>(Actors.size()));
+    TArray<int32> VisibleActorIndices;
+    VisibleActorIndices.reserve(Actors.size());
+    for (int32 ActorIndex = 0; ActorIndex < static_cast<int32>(Actors.size()); ++ActorIndex)
+    {
+        AActor* Actor = Actors[ActorIndex];
+        if (!Actor)
+        {
+            continue;
+        }
+
+        FString ActorName = Actor->GetFName().ToString();
+        if (ActorName.empty())
+        {
+            ActorName = Actor->GetTypeInfo()->name;
+        }
+
+        const FString SearchText = ActorName + " " + Actor->GetTypeInfo()->name;
+        if (ContainsCaseInsensitive(SearchText, OutlinerSearchText))
+        {
+            VisibleActorIndices.push_back(ActorIndex);
+        }
+    }
+
+    ImGui::Text("Actors (%d/%d)", static_cast<int32>(VisibleActorIndices.size()), static_cast<int32>(Actors.size()));
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::InputTextWithHint("##OutlinerSearch", "Search actors...", OutlinerSearchText, IM_ARRAYSIZE(OutlinerSearchText));
     ImGui::Separator();
 
     FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+
+    auto IsActorNameTaken = [&](AActor* TargetActor, const FString& CandidateName)
+    {
+        for (AActor* Actor : Actors)
+        {
+            if (!Actor || Actor == TargetActor)
+            {
+                continue;
+            }
+            if (Actor->GetFName() == FName(CandidateName))
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto MakeUniqueActorName = [&](AActor* TargetActor, const FString& RequestedName)
+    {
+        FString BaseName = TrimActorName(RequestedName);
+        if (BaseName.empty())
+        {
+            BaseName = TargetActor ? TargetActor->GetTypeInfo()->name : "Actor";
+        }
+
+        if (!IsActorNameTaken(TargetActor, BaseName))
+        {
+            return BaseName;
+        }
+
+        int32 Suffix = 1;
+        FString Candidate;
+        do
+        {
+            Candidate = BaseName + " (" + std::to_string(Suffix++) + ")";
+        }
+        while (IsActorNameTaken(TargetActor, Candidate));
+        return Candidate;
+    };
+
+    auto DeleteSelectedActors = [&]()
+    {
+        TArray<AActor*> ActorsToDelete = Selection.GetSelectedActors();
+        if (ActorsToDelete.empty())
+        {
+            return;
+        }
+
+        if (EditorEngine->DeleteActors(ActorsToDelete) > 0)
+        {
+            LastClickedActorIndex = -1;
+        }
+    };
+
+    auto DrawOutlinerContextMenu = [&]()
+    {
+        const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+        AActor* RenameTarget = SelectedActors.size() == 1 ? SelectedActors.front() : nullptr;
+
+        ImGui::BeginDisabled(RenameTarget == nullptr);
+        if (ImGui::MenuItem("Rename", "F2"))
+        {
+            PendingRenameActor = RenameTarget;
+            const FString CurrentName = PendingRenameActor ? PendingRenameActor->GetFName().ToString() : FString();
+            strncpy_s(RenameActorName, IM_ARRAYSIZE(RenameActorName), CurrentName.c_str(), _TRUNCATE);
+            bOpenRenameActorPopup = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::Separator();
+        if (ImGui::BeginMenu("Place Actor"))
+        {
+            if (EditorEngine->GetMainPanel().GetControlWidget().DrawPlaceActorMenu(FVector(0.0f, 0.0f, 0.0f), true))
+            {
+                LastClickedActorIndex = -1;
+                World->RebuildSpatialIndex();
+                MarkSceneDirty();
+                EditorEngine->GetMainPanel().PushFooterLog("Actor placed from Outliner");
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::Separator();
+        ImGui::BeginDisabled(Selection.IsEmpty());
+        if (ImGui::MenuItem("Delete", "Del"))
+        {
+            DeleteSelectedActors();
+        }
+        ImGui::EndDisabled();
+    };
 
     // ctrl 클릭, ctrl + shift 클릭, shift 클릭, 기본 클릭 4가지 상태에 따라 각각 처리하는 람다 함수입니다.
     auto HandleActorSelection = [&](AActor* SelectedActor, int32 CurrentIndex)
@@ -253,37 +529,158 @@ void FEditorSceneWidget::Render(float DeltaTime)
     // UI 렌더링 영역
     ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
-    ImGuiListClipper Clipper;
-    Clipper.Begin(static_cast<int>(Actors.size()));
-
-    while (Clipper.Step())
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+        && !ImGui::GetIO().WantTextInput
+        && ImGui::GetIO().KeyCtrl
+        && ImGui::IsKeyPressed(ImGuiKey_A, false))
     {
-        for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; i++)
+        Selection.ClearSelection();
+        for (int32 ActorIndex : VisibleActorIndices)
         {
-            AActor* Actor = Actors[i];
-            if (!Actor) continue;
-
-            FString ActorName = Actor->GetFName().ToString();
-            if (ActorName.empty())
+            if (AActor* Actor = Actors[ActorIndex])
             {
-                ActorName = Actor->GetTypeInfo()->name;
+                Selection.AddSelect(Actor);
             }
-
-            ImGui::PushID(i);
-
-            bool bIsSelected = Selection.IsSelected(Actor);
-            
-            // Selectable이 클릭되었을 때만 로직 호출
-            if (ImGui::Selectable(ActorName.c_str(), bIsSelected))
-            {
-                HandleActorSelection(Actor, i);
-            }
-
-            ImGui::PopID();
         }
+        LastClickedActorIndex = VisibleActorIndices.empty() ? -1 : VisibleActorIndices.front();
     }
 
-    Clipper.End();
+    const ImGuiTableFlags TableFlags =
+        ImGuiTableFlags_BordersInnerV |
+        ImGuiTableFlags_BordersOuterH |
+        ImGuiTableFlags_RowBg |
+        ImGuiTableFlags_Resizable |
+        ImGuiTableFlags_SizingStretchProp;
+    if (ImGui::BeginTable("##OutlinerActorTable", 2, TableFlags))
+    {
+        ImGui::TableSetupColumn("Item Label", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+        ImGui::TableHeadersRow();
+
+        ImGuiListClipper Clipper;
+        Clipper.Begin(static_cast<int>(VisibleActorIndices.size()));
+
+        while (Clipper.Step())
+        {
+            for (int VisibleIndex = Clipper.DisplayStart; VisibleIndex < Clipper.DisplayEnd; VisibleIndex++)
+            {
+                const int32 i = VisibleActorIndices[VisibleIndex];
+                AActor* Actor = Actors[i];
+                if (!Actor) continue;
+
+                FString ActorName = Actor->GetFName().ToString();
+                if (ActorName.empty())
+                {
+                    ActorName = Actor->GetTypeInfo()->name;
+                }
+                const FString ActorType = Actor->GetTypeInfo()->name;
+
+                ImGui::PushID(i);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+
+                const bool bIsSelected = Selection.IsSelected(Actor);
+                const bool bClicked = ImGui::Selectable(
+                    ActorName.c_str(),
+                    bIsSelected,
+                    ImGuiSelectableFlags_SpanAllColumns);
+                const bool bHovered = ImGui::IsItemHovered();
+                const bool bRightClicked = ImGui::IsItemClicked(ImGuiMouseButton_Right);
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::TextDisabled("%s", ActorType.c_str());
+
+                if (bClicked)
+                {
+                    HandleActorSelection(Actor, i);
+                }
+                if (bHovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    Selection.Select(Actor);
+                    LastClickedActorIndex = i;
+                    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+                    const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
+                    if (FEditorViewportClient* Client = Layout.GetViewportClient(FocusedViewportIndex))
+                    {
+                        Client->FocusSelection();
+                    }
+                }
+
+                if (bRightClicked)
+                {
+                    if (!Selection.IsSelected(Actor))
+                    {
+                        Selection.Select(Actor);
+                        LastClickedActorIndex = i;
+                    }
+                    bOpenOutlinerContextMenu = true;
+                }
+
+                ImGui::PopID();
+            }
+        }
+
+        Clipper.End();
+        ImGui::EndTable();
+    }
+    if (!ImGui::IsAnyItemHovered()
+        && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)
+        && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        bOpenOutlinerContextMenu = true;
+    }
+    if (bOpenOutlinerContextMenu)
+    {
+        ImGui::OpenPopup("##OutlinerContextMenu");
+        bOpenOutlinerContextMenu = false;
+    }
+    if (ImGui::BeginPopup("##OutlinerContextMenu"))
+    {
+        DrawOutlinerContextMenu();
+        ImGui::EndPopup();
+    }
+
+    if (bOpenRenameActorPopup)
+    {
+        ImGui::OpenPopup("Rename Actor");
+        bOpenRenameActorPopup = false;
+    }
+
+    const bool bRenameTargetAlive = PendingRenameActor
+        && std::find(Actors.begin(), Actors.end(), PendingRenameActor) != Actors.end();
+    if (!bRenameTargetAlive)
+    {
+        PendingRenameActor = nullptr;
+    }
+
+    if (ImGui::BeginPopupModal("Rename Actor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("Actor Name");
+        ImGui::SetNextItemWidth(260.0f);
+        const bool bCommitByEnter = ImGui::InputText("##RenameActorName", RenameActorName, IM_ARRAYSIZE(RenameActorName), ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::Spacing();
+
+        const bool bApplyClicked = ImGui::Button("Apply", ImVec2(90.0f, 0.0f));
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(90.0f, 0.0f)))
+        {
+            PendingRenameActor = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+
+        if ((bCommitByEnter || bApplyClicked) && PendingRenameActor)
+        {
+            const FString UniqueName = MakeUniqueActorName(PendingRenameActor, RenameActorName);
+            EditorEngine->CaptureUndoSnapshot("Rename Actor");
+            PendingRenameActor->SetFName(FName(UniqueName));
+            MarkSceneDirty();
+            EditorEngine->GetMainPanel().PushFooterLog("Actor renamed");
+            PendingRenameActor = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
     ImGui::EndChild();
-    ImGui::End(); // Begin("Scene Manager")에 대한 End
+    ImGui::End(); // Begin("Outliner")에 대한 End
 }
