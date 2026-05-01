@@ -22,34 +22,33 @@ void UCapsuleComponent::Serialize(FArchive& Ar)
 
 void UCapsuleComponent::UpdateWorldAABB() const
 {
-    const FVector Center = GetWorldLocation();
+    FTransform T = GetWorldTransform();
 
-    // scale 반영 (비균일 대응)
-    const float Radius = GetScaledCapsuleRadius();
+    FVector Center = T.GetLocation();
+    FVector Axis = T.GetUnitAxis(EAxis::Z);
 
-    const float HalfHeight = GetScaledCapsuleHalfHeight();
+    float HalfHeight = GetScaledCapsuleHalfHeight();
+    float Radius = GetScaledCapsuleRadius();
 
-    // capsule segment endpoints (Z-up 기준)
-    const FVector Up = FVector(0, 0, 1);
+    FVector A = Center + Axis * HalfHeight;
+    FVector B = Center - Axis * HalfHeight;
 
-    FVector A = Center + Up * HalfHeight;
-    FVector B = Center - Up * HalfHeight;
-
-    // segment AABB 먼저 만들고 radius expand
-    FVector Min = FVector(
+    FVector Min(
         std::min(A.X, B.X),
         std::min(A.Y, B.Y),
         std::min(A.Z, B.Z));
 
-    FVector Max = FVector(
+    FVector Max(
         std::max(A.X, B.X),
         std::max(A.Y, B.Y),
         std::max(A.Z, B.Z));
 
-    FVector R(Radius, Radius, Radius);
+    // radius expansion (AABB padding)
+    Min -= FVector(Radius, Radius, Radius);
+    Max += FVector(Radius, Radius, Radius);
 
-    WorldAABB.Min = Min - R;
-    WorldAABB.Max = Max + R;
+    WorldAABB.Min = Min;
+    WorldAABB.Max = Max;
 }
 
 bool UCapsuleComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)

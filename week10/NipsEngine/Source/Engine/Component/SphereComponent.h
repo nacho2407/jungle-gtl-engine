@@ -17,7 +17,7 @@ public:
     void Serialize(FArchive& Ar) override;
 
 private:
-    float SphereRadius = 1.0f;
+    float SphereRadius = 0.5f;
 
     // UShapeComponent을(를) 통해 상속됨
     void UpdateWorldAABB() const override;
