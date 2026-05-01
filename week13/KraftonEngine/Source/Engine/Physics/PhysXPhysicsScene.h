@@ -14,6 +14,8 @@ namespace physx
 	class PxRigidActor;
 }
 
+class FPhysXSimulationCallback;
+
 // ============================================================
 // FPhysXPhysicsScene — PhysX 4.1 기반 물리 시스템
 //
@@ -39,6 +41,7 @@ private:
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 	physx::PxMaterial* DefaultMaterial = nullptr;
+	FPhysXSimulationCallback* EventCallback = nullptr;
 
 	// Component ↔ PhysX body 매핑
 	struct FBodyMapping

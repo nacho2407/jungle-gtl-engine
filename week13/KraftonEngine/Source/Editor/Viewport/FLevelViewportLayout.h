@@ -81,7 +81,10 @@ public:
 		AmbientLight,
 		DirectionalLight,
 		PointLight,
-		SpotLight
+		SpotLight,
+		BoxCollider,
+		SphereCollider,
+		CapsuleCollider
 	};
 
 	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);
