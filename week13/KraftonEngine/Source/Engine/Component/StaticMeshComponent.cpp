@@ -261,13 +261,14 @@ void UStaticMeshComponent::PostDuplicate()
 void UStaticMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, &StaticMeshPath });
+	OutProps.push_back({ "Static Mesh", EPropertyType::StaticMeshRef, "Mesh", &StaticMeshPath });
 
 	for (int32 i = 0; i < (int32)MaterialSlots.size(); ++i)
 	{
 		FPropertyDescriptor Desc;
 		Desc.Name = "Element " + std::to_string(i);
 		Desc.Type = EPropertyType::MaterialSlot;
+		Desc.Category = "Materials";
 		Desc.ValuePtr = &MaterialSlots[i];
 		OutProps.push_back(Desc);
 	}

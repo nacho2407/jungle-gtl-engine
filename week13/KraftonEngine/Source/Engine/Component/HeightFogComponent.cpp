@@ -55,14 +55,12 @@ void UHeightFogComponent::PushToScene()
 void UHeightFogComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
-
-	//                                                                     Min      Max        Speed
-	OutProps.push_back({ "Fog Density",       EPropertyType::Float,  &FogDensity,        0.0f, 0.05f,     0.001f });
-	OutProps.push_back({ "Height Falloff",    EPropertyType::Float,  &FogHeightFalloff,  0.001f, 5.0f,    0.01f });
-	OutProps.push_back({ "Start Distance",    EPropertyType::Float,  &StartDistance,     0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Cutoff Distance",   EPropertyType::Float,  &FogCutoffDistance, 0.0f, 100000.0f, 1.0f });
-	OutProps.push_back({ "Max Opacity",       EPropertyType::Float,  &FogMaxOpacity,     0.0f, 1.0f,      0.01f });
-	OutProps.push_back({ "Inscattering Color", EPropertyType::Color4, &FogInscatteringColor });
+	OutProps.push_back({ "Fog Density",       EPropertyType::Float,  "Fog", &FogDensity,        0.0f, 0.05f,     0.001f });
+	OutProps.push_back({ "Height Falloff",    EPropertyType::Float,  "Fog", &FogHeightFalloff,  0.001f, 5.0f,    0.01f });
+	OutProps.push_back({ "Start Distance",    EPropertyType::Float,  "Fog", &StartDistance,     0.0f, 100000.0f, 1.0f });
+	OutProps.push_back({ "Cutoff Distance",   EPropertyType::Float,  "Fog", &FogCutoffDistance, 0.0f, 100000.0f, 1.0f });
+	OutProps.push_back({ "Max Opacity",       EPropertyType::Float,  "Fog", &FogMaxOpacity,     0.0f, 1.0f,      0.01f });
+	OutProps.push_back({ "Inscattering Color", EPropertyType::Color4, "Fog", &FogInscatteringColor });
 }
 
 void UHeightFogComponent::PostEditProperty(const char* PropertyName)

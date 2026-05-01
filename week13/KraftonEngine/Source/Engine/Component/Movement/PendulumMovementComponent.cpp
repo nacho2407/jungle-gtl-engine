@@ -55,11 +55,11 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 void UPendulumMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Swing Axis",      EPropertyType::Vec3,    &Axis });
-	OutProps.push_back({ "Amplitude (deg)", EPropertyType::Float,   &Amplitude,  0.0f, 180.0f, 0.5f });
-	OutProps.push_back({ "Frequency (Hz)",  EPropertyType::Float,   &Frequency,  0.01f, 10.0f, 0.01f });
-	OutProps.push_back({ "Phase (deg)",     EPropertyType::Float,   &Phase,      0.0f, 360.0f, 1.0f });
-	OutProps.push_back({ "Angle Offset (deg)", EPropertyType::Float, &AngleOffset, -180.0f, 180.0f, 0.5f });
+	OutProps.push_back({ "Swing Axis",      EPropertyType::Vec3,    "Movement", &Axis });
+	OutProps.push_back({ "Amplitude (deg)", EPropertyType::Float,   "Movement", &Amplitude,  0.0f, 180.0f, 0.5f });
+	OutProps.push_back({ "Frequency (Hz)",  EPropertyType::Float,   "Movement", &Frequency,  0.01f, 10.0f, 0.01f });
+	OutProps.push_back({ "Phase (deg)",     EPropertyType::Float,   "Movement", &Phase,      0.0f, 360.0f, 1.0f });
+	OutProps.push_back({ "Angle Offset (deg)", EPropertyType::Float, "Movement", &AngleOffset, -180.0f, 180.0f, 0.5f });
 }
 
 void UPendulumMovementComponent::Serialize(FArchive& Ar)

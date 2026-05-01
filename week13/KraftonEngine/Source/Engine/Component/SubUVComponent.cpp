@@ -82,11 +82,11 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	// UPrimitiveComponent로 직접 올라가 공통 트랜스폼 등만 가져온 뒤,
 	// Width/Height(상속 멤버)와 SubUV 고유 프로퍼티만 노출한다.
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Particle",  EPropertyType::Name,  &ParticleName });
-	OutProps.push_back({ "Width",     EPropertyType::Float, &Width,  0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Height",    EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
-	OutProps.push_back({ "bLoop",     EPropertyType::Bool,  &bLoop });
+	OutProps.push_back({ "Particle",  EPropertyType::Name,  "Particle", &ParticleName });
+	OutProps.push_back({ "Width",     EPropertyType::Float, "Particle", &Width,  0.1f, 100.0f, 0.1f });
+	OutProps.push_back({ "Height",    EPropertyType::Float, "Particle", &Height, 0.1f, 100.0f, 0.1f });
+	OutProps.push_back({ "Play Rate", EPropertyType::Float, "Particle", &PlayRate, 1.0f, 120.0f, 1.0f });
+	OutProps.push_back({ "bLoop",     EPropertyType::Bool,  "Particle", &bLoop });
 }
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)

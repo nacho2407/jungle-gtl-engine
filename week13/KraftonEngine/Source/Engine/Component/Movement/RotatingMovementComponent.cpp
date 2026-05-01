@@ -84,7 +84,7 @@ void URotatingMovementComponent::Serialize(FArchive& Ar)
 void URotatingMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UMovementComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Rotation Rate", EPropertyType::Rotator, &RotationRate, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation In Local Space", EPropertyType::Bool, &bRotationInLocalSpace, 0.0f, 0.0f, 0.0f });
-	OutProps.push_back({ "Pivot Translation", EPropertyType::Vec3, &PivotTranslation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation Rate", EPropertyType::Rotator, "Movement", &RotationRate, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation In Local Space", EPropertyType::Bool, "Movement", &bRotationInLocalSpace, 0.0f, 0.0f, 0.0f });
+	OutProps.push_back({ "Pivot Translation", EPropertyType::Vec3, "Movement", &PivotTranslation, 0.0f, 0.0f, 0.1f });
 }

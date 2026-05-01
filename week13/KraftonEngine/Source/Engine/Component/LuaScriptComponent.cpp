@@ -90,7 +90,7 @@ void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
 	EnsureDefaultScriptFile();
 	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "ScriptFile", EPropertyType::Script, &ScriptFile });
+	OutProps.push_back({ "ScriptFile", EPropertyType::Script, "Script", &ScriptFile });
 }
 
 void ULuaScriptComponent::Serialize(FArchive& Ar)

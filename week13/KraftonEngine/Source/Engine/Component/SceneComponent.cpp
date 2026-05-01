@@ -60,9 +60,9 @@ void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 		CachedEditRotator = RelativeTransform.GetRotator();
 		bCachedEulerDirty = false;
 	}
-	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Rotation", EPropertyType::Rotator, &CachedEditRotator, 0.0f, 0.0f, 0.1f });
-	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Location", EPropertyType::Vec3, "Transform", &RelativeTransform.Location, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &CachedEditRotator, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &RelativeTransform.Scale, 0.0f, 0.0f, 0.1f });
 }
 
 void USceneComponent::PostEditProperty(const char* PropertyName)

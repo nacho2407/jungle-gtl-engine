@@ -23,7 +23,7 @@ void UCylindricalBillboardComponent::Serialize(FArchive& Ar)
 void UCylindricalBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UBillboardComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "BillboardAxis", EPropertyType::Vec3, &BillboardAxis });
+	OutProps.push_back({ "BillboardAxis", EPropertyType::Vec3, "Rendering", &BillboardAxis });
 }
 
 void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

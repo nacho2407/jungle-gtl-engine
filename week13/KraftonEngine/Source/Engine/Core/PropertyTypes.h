@@ -42,6 +42,7 @@ struct FPropertyDescriptor
 {
 	std::string   Name;
 	EPropertyType Type = EPropertyType::Bool;
+	std::string   Category;      // 에디터 카테고리 (같은 문자열끼리 그룹화)
 	void*         ValuePtr = nullptr;
 
 	// float 범위 힌트 (DragFloat 등에서 사용)

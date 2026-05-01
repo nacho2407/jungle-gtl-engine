@@ -124,8 +124,8 @@ void UCapsuleComponent::UpdateWorldAABB() const
 void UCapsuleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Capsule Radius", EPropertyType::Float, &CapsuleRadius, 0.01f, 10000.0f, 1.0f });
-	OutProps.push_back({ "Capsule Half Height", EPropertyType::Float, &CapsuleHalfHeight, 0.01f, 10000.0f, 1.0f });
+	OutProps.push_back({ "Capsule Radius", EPropertyType::Float, "Shape", &CapsuleRadius, 0.01f, 10000.0f, 1.0f });
+	OutProps.push_back({ "Capsule Half Height", EPropertyType::Float, "Shape", &CapsuleHalfHeight, 0.01f, 10000.0f, 1.0f });
 }
 
 void UCapsuleComponent::PostEditProperty(const char* PropertyName)

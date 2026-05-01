@@ -86,11 +86,11 @@ void UActorComponent::SetOwner(AActor* Actor)
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-	//OutProps.push_back({ "Active", EPropertyType::Bool, &bIsActive });
-	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, &bAutoActivate });
-	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, &bCanEverTick });
-	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, &bTickEnable });
-	OutProps.push_back({ "bEditorOnly", EPropertyType::Bool, &bEditorOnly });
+	//OutProps.push_back({ "Active", EPropertyType::Bool, "Component", &bIsActive });
+	//OutProps.push_back({ "Auto Activate", EPropertyType::Bool, "Component", &bAutoActivate });
+	//OutProps.push_back({ "Can Ever Tick", EPropertyType::Bool, "Component", &bCanEverTick });
+	OutProps.push_back({ "bTickEnable", EPropertyType::Bool, "Component", &bTickEnable });
+	OutProps.push_back({ "bEditorOnly", EPropertyType::Bool, "Component", &bEditorOnly });
 }
 
 void UActorComponent::PostEditProperty(const char* PropertyName)
