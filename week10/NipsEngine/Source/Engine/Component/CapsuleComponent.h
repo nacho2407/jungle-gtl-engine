@@ -23,6 +23,9 @@ public:
 											std::abs(Scale.Z));
     }
 
+    void PostDuplicate(UObject* Original) override;
+    void Serialize(FArchive& Ar) override;
+
 private:
     float CapsuleHalfHeight = 1.0f;
     float CapsuleRadius = 1.0f;

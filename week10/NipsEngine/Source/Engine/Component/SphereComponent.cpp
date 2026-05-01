@@ -4,6 +4,20 @@
 DEFINE_CLASS(USphereComponent, UShapeComponent)
 REGISTER_FACTORY(USphereComponent)
 
+void USphereComponent::PostDuplicate(UObject* Original)
+{
+    UShapeComponent::PostDuplicate(Original);
+
+	USphereComponent* SphereComp = Cast<USphereComponent>(Original);
+    SphereRadius = SphereComp->SphereRadius;
+}
+
+void USphereComponent::Serialize(FArchive& Ar)
+{
+    UShapeComponent::Serialize(Ar);
+    Ar << "SphereRadius" << SphereRadius;
+}
+
 void USphereComponent::UpdateWorldAABB() const
 {
     const FVector Center = GetWorldLocation();

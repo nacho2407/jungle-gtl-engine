@@ -432,8 +432,6 @@ void ASpotlightActor::Tick(float DeltaTime)
 
 void ADelegateTestActor::InitDefaultComponents()
 {
-    SetTickInEditor(true);
-
     auto SceneRoot = AddComponent<USceneComponent>();
     SetRootComponent(SceneRoot);
 
