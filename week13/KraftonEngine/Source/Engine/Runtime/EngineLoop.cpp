@@ -5,6 +5,8 @@
 #include "ObjViewer/ObjViewerEngine.h"
 #elif WITH_EDITOR
 #include "Editor/EditorEngine.h"
+#elif WITH_STANDALONE
+#include "Game/GameEngine.h"
 #endif
 
 void FEngineLoop::CreateEngine()
@@ -13,6 +15,8 @@ void FEngineLoop::CreateEngine()
 	GEngine = UObjectManager::Get().CreateObject<UObjViewerEngine>();
 #elif WITH_EDITOR
 	GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
+#elif WITH_STANDALONE
+	GEngine = UObjectManager::Get().CreateObject<UGameEngine>();
 #else
 	GEngine = UObjectManager::Get().CreateObject<UEngine>();
 #endif

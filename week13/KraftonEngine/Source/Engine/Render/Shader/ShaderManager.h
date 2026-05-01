@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Singleton.h"
 #include "Render/Shader/Shader.h"
@@ -85,6 +85,7 @@ namespace EShaderPath
 	inline constexpr const char* ShadowDepth = "Shaders/Lighting/ShadowDepth.hlsl";
 	inline constexpr const char* VSMBlur = "Shaders/Lighting/VSMBlur.hlsl";
 	inline constexpr const char* ShadowMapVis = "Shaders/PostProcess/ShadowMapVis.hlsl";
+	inline constexpr const char* Blit = "Shaders/PostProcess/Blit.hlsl";
 }
 
 namespace EUberLitDefines
