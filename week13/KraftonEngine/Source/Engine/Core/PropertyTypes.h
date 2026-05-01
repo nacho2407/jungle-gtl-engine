@@ -23,6 +23,7 @@ enum class EPropertyType : uint8_t
 	Enum,
 	Vec3Array,
 	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성
+	Script,
 };
 
 // 머티리얼 슬롯: 경로를 하나의 단위로 관리
