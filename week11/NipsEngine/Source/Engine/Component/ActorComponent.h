@@ -45,6 +45,9 @@ public:
 	void SetEditorOnly(bool bInEditorOnly) { bIsEditorOnly = bInEditorOnly; }
 	bool IsEditorOnly() const { return bIsEditorOnly; }
 
+	virtual void OnRegister() {}
+    virtual void OnUnregister() {}
+
 protected:
 	virtual void TickComponent(float DeltaTime) {}
 

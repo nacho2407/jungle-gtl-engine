@@ -3,7 +3,8 @@
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
 #include "Engine/GameFramework/WorldContext.h"
-
+#include "Component/ShapeComponent.h"
+#include "Core/Delegates/Delegate.h"
 #include <type_traits>
 
 class UWorld;
@@ -107,6 +108,15 @@ public:
 
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 
+	bool IsOverlappingActor(const AActor* Other) const;
+
+	virtual void PostComponentRegistered(UActorComponent* Comp);
+    virtual void PostComponentUnregistered(UActorComponent* Comp);
+
+	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {}
+    virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
+    virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
+
 protected:
 	void NotifyComponentRegistered(UActorComponent* Component);
 	void NotifyComponentUnregistered(UActorComponent* Component);
@@ -126,4 +136,8 @@ protected:
 	// 렌더링용 캐시
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
 	mutable bool bPrimitiveCacheDirty = true;
+
+	uint64 OnComponentBeginOverlapHandleId = 0;
+    uint64 OnComponentEndOverlapHandleId = 0;
+    uint64 OnComponentHitHandleId = 0;
 };
