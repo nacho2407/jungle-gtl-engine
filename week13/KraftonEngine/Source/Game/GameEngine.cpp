@@ -3,6 +3,7 @@
 #include "Game/GameRenderPipeline.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Viewport/Viewport.h"
+#include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
@@ -21,6 +22,14 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 		static_cast<uint32>(InWindow->GetWidth()),
 		static_cast<uint32>(InWindow->GetHeight()));
 
+	GameViewportClient = UObjectManager::Get().CreateObject<UGameViewportClient>();
+	GameViewportClient->SetOwnerWindow(InWindow->GetHWND());
+
+	FRect ViewportRect{ 0, 0, static_cast<float>(InWindow->GetWidth()), static_cast<float>(InWindow->GetHeight()) };
+	GameViewportClient->SetCursorClipRect(ViewportRect);
+	GameViewportClient->OnBeginPIE(StandaloneViewport);
+	GameViewportClient->SetPIEPossessedInputEnabled(true);
+
 	LoadStartLevel();
 
 	SetRenderPipeline(std::make_unique<FGameRenderPipeline>(this, Renderer));
@@ -37,6 +46,19 @@ void UGameEngine::Shutdown()
 	UEngine::Shutdown();
 }
 
+void UGameEngine::Tick(float DeltaTime)
+{
+	UEngine::Tick(DeltaTime);
+
+	InputSystem& Input = InputSystem::Get();
+	const FInputSystemSnapshot InputSnapshot = Input.MakeSnapshot();
+
+	if (GameViewportClient)
+	{
+		GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
+	}
+}
+
 void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 {
 	UEngine::OnWindowResized(Width, Height);
@@ -44,6 +66,9 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 	if (StandaloneViewport)
 	{
 		StandaloneViewport->RequestResize(Width, Height);
+	
+		FRect ViewportRect{ 0, 0, static_cast<float>(Width), static_cast<float>(Height) };
+		GameViewportClient->SetCursorClipRect(ViewportRect);
 	}
 }
 
