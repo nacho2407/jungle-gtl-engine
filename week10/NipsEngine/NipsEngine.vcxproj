@@ -208,6 +208,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
@@ -385,6 +386,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />

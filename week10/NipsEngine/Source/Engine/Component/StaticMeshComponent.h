@@ -28,6 +28,8 @@ public:
 
 	bool ConsumeRenderStateDirty();
 
+	void GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const;
+
 private:
 	void MarkBoundsDirty();
 	void MarkRenderStateDirty();

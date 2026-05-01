@@ -6,6 +6,7 @@
 #include "Render/Resource/Buffer.h"
 
 #include "Render/Mesh/MeshManager.h"
+#include "Component/ProceduralMeshComponent.h"
 
 class UStaticMesh;
 
@@ -33,5 +34,6 @@ public:
 	void Release();
 
 	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
-	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
+    FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
+    FMeshBuffer* GetProcMeshBuffer(const UProceduralMeshComponent::FMeshSection& MeshSection);
 };
