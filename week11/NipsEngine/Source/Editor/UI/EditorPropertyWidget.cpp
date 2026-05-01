@@ -115,12 +115,8 @@ namespace
 
         if (Actor)
         {
-            ActorName = Actor->GetFName().ToString();
-
-            if (ActorName.empty())
-            {
-                ActorName = Actor->GetTypeInfo() ? Actor->GetName() : "Actor";
-            }
+            const FTypeInfo* TypeInfo = Actor->GetTypeInfo();
+            ActorName = TypeInfo ? TypeInfo->name : "Actor";
         }
 
         return ValidSceneName + "_" + ActorName;
@@ -1035,16 +1031,15 @@ void FEditorPropertyWidget::RenderComponentProperties()
     }
     else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
     {
+        FScriptManager& ScriptMgr = FScriptManager::Get();
         if (ImGui::Button("Create Script"))
 		{
-            FString ScriptPath = ScriptComp->GetScriptPath();
-			FScriptManager& ScriptMgr = FScriptManager::Get();
+            FString ScriptPath = ScriptComp->GetScriptName();
             ScriptMgr.CreateScript(ScriptPath);
         }
         if (ImGui::Button("Edit Script"))
 		{
-            FString ScriptPath = ScriptComp->GetScriptPath();
-			FScriptManager& ScriptMgr = FScriptManager::Get();
+            FString ScriptPath = ScriptComp->GetScriptName();
             ScriptMgr.EditScript(ScriptPath);
         }
 	}
@@ -1185,7 +1180,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 				}
 			}
 		}
-		else if (strcmp(Prop.Name, "ScriptPath") == 0)
+		else if (strcmp(Prop.Name, "ScriptName") == 0)
 		{
             TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
                 FScriptManager::Get().GetScriptArray();
@@ -1687,14 +1682,14 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 
 	if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(NewComp))
 	{
-		if (ScriptComp->GetScriptPath().empty())
+        if (ScriptComp->GetScriptName().empty())
 		{
 			FString SceneName = "Default";
 			if (EditorEngine)
 			{
 				SceneName = EditorEngine->GetMainPanel().GetSceneWidget().GetSceneName();
 			}
-			ScriptComp->SetScript(MakeDefaultScriptName(SceneName, PrimaryActor));
+            ScriptComp->SetScriptName(MakeDefaultScriptName(SceneName, PrimaryActor));
 		}
 	}
 

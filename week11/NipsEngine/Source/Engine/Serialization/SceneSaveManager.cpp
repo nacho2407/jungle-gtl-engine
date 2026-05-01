@@ -117,6 +117,14 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 			{
 				Writer << SceneKeys::ActorClass << Actor->GetTypeInfo()->name;
 			}
+			if (!Comp->IsA<USceneComponent>())
+			{
+				if (USceneComponent* OwnerRoot = Actor->GetRootComponent())
+				{
+					uint32 OwnerRootUUID = OwnerRoot->GetUUID();
+					Writer << SceneKeys::OwnerRootUUID << OwnerRootUUID;
+				}
+			}
 			Writer.EndObject();
 		}
 	}
