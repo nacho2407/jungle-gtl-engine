@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "ShapeComponent.h"
+#include "Geometry/OBB.h"
 
 class UBoxComponent : public UShapeComponent
 {
@@ -33,7 +34,13 @@ public:
         WorldAABB.Min = Center - AbsExtent;
         WorldAABB.Max = Center + AbsExtent;
     }
-	
+
+	FOBB GetWorldOBB() const
+	{
+        const FTransform& T = GetWorldTransform();
+        return FOBB(GetWorldLocation(), Extent * 0.5f, T.GetRotation().ToMatrix());
+	}
+		
     void PostDuplicate(UObject* Original) override;
     void Serialize(FArchive& Ar) override;
 

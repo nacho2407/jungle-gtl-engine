@@ -10,7 +10,7 @@ public:
 	virtual void Render(float DeltaTime) override;
 
 private:
-    const char* PrimitiveTypes[13] = { "Scene",
+    const char* PrimitiveTypes[12] = { "Scene",
                                        "StaticMesh",
                                        "TextRender",
                                        "SubUV",
