@@ -204,6 +204,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		Actor.SetActorLocation(Location);
 	}
 	),
+		"Rotation", sol::property(
+		[](AActor& Actor)
+	{
+		return Actor.GetActorRotation().ToVector();
+	},
+		[](AActor& Actor, const FVector& Rotation)
+	{
+		Actor.SetActorRotation(Rotation);
+	}
+	),
 
 		"Scale", sol::property(
 		[](AActor& Actor)
@@ -215,6 +225,23 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		Actor.SetActorScale(Scale);
 	}
 	),
+
+		"Forward", sol::property([](AActor& Actor)
+	{
+		return Actor.GetActorForward();
+	}
+	),
+		
+		"Right", sol::property([](AActor& Actor)
+	{
+		return Actor.GetActorRight();
+	}
+	),
+
+		"AddWorldOffset", [](AActor& Actor, const FVector& Offset)
+	{
+		Actor.AddActorWorldOffset(Offset);
+	},
 
 		"UUID", sol::property([](AActor& Actor)
 	{

@@ -16,18 +16,61 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "124",
+      "PrimitiveKey" : "232",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Cast Shadow" : false,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
           "Location" : [0.000000, 0.000000, 0.000000],
+          "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "None",
           "Two Sided Shadow" : false,
           "Visible" : false,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "235",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [124.168167, 138.491608, 0.100000],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
@@ -43,34 +86,131 @@
             "bTickEnable" : true
           }
         }],
-      "PrimitiveKey" : "127",
+      "PrimitiveKey" : "237",
       "RootComponent" : {
         "Children" : [{
-            "Children" : [],
-            "ClassName" : "UCameraComponent",
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UCameraComponent",
+                "Properties" : {
+                  "FOV" : 1.047198,
+                  "Far Z" : 1000.000000,
+                  "Location" : [-0.352707, -0.125767, 1.106135],
+                  "Near Z" : 0.100000,
+                  "Ortho Width" : 10.000000,
+                  "Orthographic" : false,
+                  "Rotation" : [0.000000, -90.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UStaticMeshComponent",
             "Properties" : {
-              "FOV" : 1.047198,
-              "Far Z" : 1000.000000,
-              "Location" : [-0.672160, 0.000000, 0.000000],
-              "Near Z" : 0.100000,
-              "Ortho Width" : 10.000000,
-              "Orthographic" : false,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Body.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Decals.001.mat"
+              },
+              "Element 10" : {
+                "Path" : "Asset/Materials/Auto/Material.001.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Interior.001.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Trim.001.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Chassis.mat"
+              },
+              "Element 9" : {
+                "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [1.766444, -0.000000, 0.339625],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 90.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
+              "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\Truck.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
-          "Cast Shadow" : true,
-          "Element 0" : {
-            "Path" : "Asset/Materials/Auto/MatID_1.mat"
+          "Cast Shadow" : false,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
           },
-          "Location" : [1.884241, -4.783404, 1.469154],
+          "Generate Overlap Events" : false,
+          "Location" : [-3.345327, -7.230491, 0.054130],
+          "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Apple\\apple_mid.obj",
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : false,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "239",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [1.788812, -27.293573, 2.142893],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -81,18 +221,61 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "PrimitiveKey" : "131",
+      "PrimitiveKey" : "241",
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
           "Element 0" : {
             "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
           },
-          "Location" : [0.000000, 0.000000, 0.000000],
+          "Generate Overlap Events" : false,
+          "Location" : [23.061638, -1.490465, 2.242893],
+          "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [20.000000, 20.000000, 0.100000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "243",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [13.863365, -18.510315, 2.580450],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
           "Static Mesh" : "Data/BasicShape/Cube.OBJ",
           "Two Sided Shadow" : false,
           "Visible" : true,
@@ -110,11 +293,21 @@
             "ClassName" : "UBillboardComponent",
             "Properties" : {
               "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
               "Height" : 1.000000,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Material" : {
                 "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
               },
+              "Object Type" : 0,
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Two Sided Shadow" : false,
@@ -133,11 +326,209 @@
           "Location" : [0.331949, -2.234032, 4.218276],
           "Rotation" : [45.000000, -45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Bias" : -0.000100,
+          "Shadow Bias" : 0.000000,
           "Shadow Normal Bias" : -0.002000,
           "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.670000,
+          "Shadow Sharpen" : 0.000000,
           "Shadow Slope Bias" : 0.000100,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "883",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-1.174299, 22.534607, 2.680450],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "885",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [8.123974, 39.654457, 2.442893],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "887",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-1.074299, -52.221313, 2.780450],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "889",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [8.323974, -35.001457, 2.642893],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "891",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-30.796024, -18.410315, 2.680450],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "893",
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-21.497751, -1.290465, 2.442893],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 3.419333],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
           "bTickEnable" : true
@@ -152,30 +543,93 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [1.723215, 0.590987, 3.295676],
+    "Location" : [-13.756693, -17.346102, 4.712898],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000001, 19.365294, -108.900375]
+    "Rotation" : [0.000000, 21.316498, 36.596893]
   },
   "Primitives" : {
-    "124" : {
+    "232" : {
       "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "None",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "127" : {
-      "Location" : [1.884241, -4.783404, 1.469154],
-      "ObjStaticMeshAsset" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Apple\\apple_mid.obj",
+    "235" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [124.168167, 138.491608, 0.100000],
+      "Type" : "StaticMeshComp"
+    },
+    "237" : {
+      "Location" : [-3.345327, -7.230491, 0.054130],
+      "ObjStaticMeshAsset" : "None",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "131" : {
-      "Location" : [0.000000, 0.000000, 0.000000],
+    "239" : {
+      "Location" : [1.788812, -27.293573, 2.142893],
       "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [20.000000, 20.000000, 0.100000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "241" : {
+      "Location" : [23.061638, -1.490465, 2.242893],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "243" : {
+      "Location" : [13.863365, -18.510315, 2.580450],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "883" : {
+      "Location" : [-1.174299, 22.534607, 2.680450],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "885" : {
+      "Location" : [8.123974, 39.654457, 2.442893],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "887" : {
+      "Location" : [-1.074299, -52.221313, 2.780450],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "889" : {
+      "Location" : [8.323974, -35.001457, 2.642893],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "891" : {
+      "Location" : [-30.796024, -18.410315, 2.680450],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
+      "Type" : "StaticMeshComp"
+    },
+    "893" : {
+      "Location" : [-21.497751, -1.290465, 2.442893],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 3.419333],
       "Type" : "StaticMeshComp"
     }
   },
