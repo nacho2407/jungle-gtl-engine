@@ -172,8 +172,8 @@ void UCameraComponent::AddPitchInput(float DeltaPitchDegrees)
 
 FVector UCameraComponent::GetForwardVector() const
 {
-	const float PitchRad = MathUtil::RadiansToDegrees(GetPitchDegrees());
-	const float YawRad = MathUtil::RadiansToDegrees(GetYawDegrees());
+	const float PitchRad = MathUtil::DegreesToRadians(GetPitchDegrees());
+	const float YawRad = MathUtil::DegreesToRadians(GetYawDegrees());
 
 	const float CosPitch = std::cos(PitchRad);
 	const float SinPitch = std::sin(PitchRad);
@@ -194,7 +194,7 @@ FVector UCameraComponent::GetRightVector() const
 {
 	// Keep right vector level with world-up for editor-like behavior.
 	// This prevents strange strafe tilt when looking up/down.
-	const float YawRad = MathUtil::RadiansToDegrees(GetYawDegrees());
+	const float YawRad = MathUtil::DegreesToRadians(GetYawDegrees());
 
 	FVector Right(
 		-std::sin(YawRad),

@@ -2,8 +2,8 @@
 #include "ScriptComponent.h"
 #include <Windows.h>
 #include <shellapi.h>
-#include <UI/EditorConsoleWidget.h>
 
+#include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
 #include "Component/ActorComponent.h"
 #include "Component/MeshComponent.h"
@@ -436,7 +436,7 @@ void FScriptManager::initializeLuaState()
         sol::lib::bit32,
         sol::lib::utf8);
 
-	
+
 	RefreshLuaScriptFiles();
 	BindLuaState();
 }

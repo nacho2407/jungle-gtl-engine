@@ -2,7 +2,7 @@
 #include "Misc/ObjViewer/ObjViewerEngine.h"
 #include "Misc/ObjViewer/Viewport/ObjViewerViewportClient.h"
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
-#include "Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 #include "Engine/Geometry/Transform.h"
 #include "ImGui/imgui.h"
 

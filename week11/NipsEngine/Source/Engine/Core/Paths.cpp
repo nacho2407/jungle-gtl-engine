@@ -80,6 +80,18 @@ std::wstring FPaths::ToWide(const std::string& Utf8Str)
 {
 	if (Utf8Str.empty()) return {};
 	int32_t Size = MultiByteToWideChar(CP_UTF8, 0, Utf8Str.c_str(), -1, nullptr, 0);
+	if (Size <= 0)
+	{
+		Size = MultiByteToWideChar(CP_ACP, 0, Utf8Str.c_str(), -1, nullptr, 0);
+		if (Size <= 0)
+		{
+			return {};
+		}
+
+		std::wstring Result(Size - 1, L'\0');
+		MultiByteToWideChar(CP_ACP, 0, Utf8Str.c_str(), -1, &Result[0], Size);
+		return Result;
+	}
 	std::wstring Result(Size - 1, L'\0');
 	MultiByteToWideChar(CP_UTF8, 0, Utf8Str.c_str(), -1, &Result[0], Size);
 	return Result;

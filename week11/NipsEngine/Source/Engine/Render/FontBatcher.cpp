@@ -14,6 +14,15 @@ void FFontBatcher::Create(ID3D11Device* InDevice)
 	CreateBuffers();
 
 	UMaterial* Mat = FResourceManager::Get().GetMaterial("FontMat");
+	if (!Mat)
+	{
+		Mat = FResourceManager::Get().GetOrCreateMaterial("FontMat", "Asset/Material/FontMat.mat", "Shaders/ShaderFont.hlsl");
+	}
+	if (!Mat)
+	{
+		Release();
+		return;
+	}
 	Mat->BlendType = EBlendType::Opaque;
 	Mat->DepthStencilType = EDepthStencilType::Default;
 	Mat->RasterizerType = ERasterizerType::SolidNoCull;

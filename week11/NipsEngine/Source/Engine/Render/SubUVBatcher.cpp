@@ -1,5 +1,5 @@
 ﻿#include <d3d11.h>
-#include <UI/EditorConsoleWidget.h>
+#include "Core/Logging/Log.h"
 #include "SubUVBatcher.h"
 #include "Core/CoreTypes.h"
 #include "Core/ResourceManager.h"
@@ -13,6 +13,15 @@ void FSubUVBatcher::Create(ID3D11Device* InDevice)
     CreateBuffers();
 
 	UMaterial* SubUVMaterial = FResourceManager::Get().GetMaterial("SubUVMat");
+	if (!SubUVMaterial)
+	{
+		SubUVMaterial = FResourceManager::Get().GetOrCreateMaterial("SubUVMat", "Asset/Material/SubUVMat.mat", "Shaders/ShaderSubUV.hlsl");
+	}
+	if (!SubUVMaterial)
+	{
+		Release();
+		return;
+	}
 	SubUVMaterial->DepthStencilType = EDepthStencilType::Default;
 	SubUVMaterial->BlendType = EBlendType::AlphaBlend;
 	SubUVMaterial->RasterizerType = ERasterizerType::SolidBackCull;

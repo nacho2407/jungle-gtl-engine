@@ -1,6 +1,5 @@
 ﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
-#include <UI/EditorConsoleWidget.h>
 #include "GameFramework/AActor.h"
 
 #include "Core/Paths.h"
@@ -8,6 +7,40 @@
 
 DEFINE_CLASS(UScriptComponent, UActorComponent)
 REGISTER_FACTORY(UScriptComponent)
+
+namespace
+{
+    void BindCoroutineHelpers(sol::environment& Env, UScriptComponent* ScriptComponent)
+    {
+        if (!Env.valid() || !ScriptComponent)
+        {
+            return;
+        }
+
+        Env["StartCoroutine"] = [ScriptComponent](sol::function Function)
+        {
+            ScriptComponent->StartCoroutine(Function);
+        };
+
+        Env["WaitForSeconds"] = [](sol::this_state State, float Seconds)
+        {
+            sol::state_view Lua(State);
+            sol::table Table = Lua.create_table();
+            Table["type"] = "seconds";
+            Table["value"] = Seconds;
+            return Table;
+        };
+
+        Env["WaitForFrames"] = [](sol::this_state State, int Frames)
+        {
+            sol::state_view Lua(State);
+            sol::table Table = Lua.create_table();
+            Table["type"] = "frames";
+            Table["value"] = Frames;
+            return Table;
+        };
+    }
+}
 
 void UScriptComponent::PostDuplicate(UObject* Original)
 {
@@ -100,10 +133,12 @@ bool UScriptComponent::LoadScript()
 
     sol::environment NewEnv = std::move(*LoadedEnv);
 
+    CoroutineScheduler.StopAll();
     ScriptEnv = std::move(NewEnv);
+    BindCoroutineHelpers(ScriptEnv, this);
     bScriptLoaded = true;
 
-    RegisterScript(); 
+    RegisterScript();
 
     return true;
 }
@@ -125,10 +160,23 @@ bool UScriptComponent::HotReloadScript()
 
     sol::environment NewEnv = std::move(*LoadedEnv);
 
+    CoroutineScheduler.StopAll();
     ScriptEnv = std::move(NewEnv);
+    BindCoroutineHelpers(ScriptEnv, this);
     bScriptLoaded = true;
 
     return true;
+}
+
+void UScriptComponent::StartCoroutine(sol::function Function)
+{
+    if (!Function.valid())
+    {
+        UE_LOG("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
+        return;
+    }
+
+    CoroutineScheduler.StartCoroutine(Function);
 }
 
 void UScriptComponent::OnUnregister()
@@ -163,6 +211,7 @@ void UScriptComponent::TickComponent(float DeltaTime)
     }
 
     CallScriptFunction("Tick", DeltaTime);
+    CoroutineScheduler.Tick(DeltaTime);
 }
 
 void UScriptComponent::EndPlay()
@@ -170,15 +219,18 @@ void UScriptComponent::EndPlay()
     UActorComponent::EndPlay();
 	if (!ScriptEnv.valid())
 	{
+        CoroutineScheduler.StopAll();
 		return;
 	}
 
     CallScriptFunction("EndPlay");
+    CoroutineScheduler.StopAll();
 }
 
 void UScriptComponent::ClearLoadedState()
 {
     bScriptLoaded = false;
+    CoroutineScheduler.StopAll();
 
     // 굳이 ScriptEnv.clear() 하지 마라.
     // invalid env에서 clear를 부르면 다시 사고 날 수 있다.

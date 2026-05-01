@@ -8,7 +8,10 @@ class UTextRenderComponent;
 class UDecalComponent;
 class ULightComponent;
 class UBillboardComponent;
+class UHeightFogComponent;
 class UBoxComponent;
+class UCameraComponent;
+class USpringArmComponent;
 
 class ACubeActor : public AActor
 {
@@ -57,6 +60,46 @@ public:
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
     void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
     void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+};
+
+//  PIE 용 임시 액터
+class ADefaultPlayerActor : public ASceneActor
+{
+public:
+	DECLARE_CLASS(ADefaultPlayerActor, AActor)
+	ADefaultPlayerActor() = default;
+
+	void InitDefaultComponents() override;
+	UCameraComponent* GetCameraComponent() const { return CameraComp; }
+	USpringArmComponent* GetSpringArmComponent() const { return SpringArmComp; }
+
+private:
+	USpringArmComponent* SpringArmComp = nullptr;
+	UCameraComponent* CameraComp = nullptr;
+};
+
+class APlayerStart : public AActor
+{
+public:
+	DECLARE_CLASS(APlayerStart, AActor)
+	APlayerStart() = default;
+
+	void InitDefaultComponents() override;
+};
+
+class AFogActor : public AActor
+{
+public:
+	DECLARE_CLASS(AFogActor, AActor)
+	AFogActor() = default;
+
+	void InitDefaultComponents();
+
+	UHeightFogComponent* GetFogComponent() const { return FogComp; }
+
+private:
+	UHeightFogComponent* FogComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
 };
 
 class AStaticMeshActor : public AActor

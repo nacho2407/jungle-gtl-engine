@@ -1,4 +1,6 @@
-﻿#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
+
+#include <cmath>
 
 void FViewportCamera::SetLocation(const FVector& InLocation)
 {
@@ -39,7 +41,6 @@ FVector FViewportCamera::GetEffectiveRight() const
 {
     if (bHasCustomLookDir)
     {
-        // ViewMatrix 와 동일한 기준: Right = Cross(ViewUp, Forward)
         return FVector::CrossProduct(ViewUp, CustomLookDir).GetSafeNormal();
     }
     return GetRightVector();
@@ -131,12 +132,6 @@ FRay FViewportCamera::DeprojectScreenToWorld(float ScreenX, float ScreenY, float
 
     const float NdcX = (2.0f * ScreenX) / ScreenWidth - 1.0f;
     const float NdcY = 1.0f - (2.0f * ScreenY) / ScreenHeight;
-
-    // The viewport camera uses the same conventional D3D clip-space depth
-    // mapping as the rest of the engine: near = 0, far = 1.
-    // A previous reverse-Z experiment left these endpoints flipped, which
-    // built rays from the far plane back toward the camera and caused picking
-    // to prefer the farthest object along the view direction.
     const FVector NdcNear(NdcX, NdcY, 0.0f);
     const FVector NdcFar(NdcX, NdcY, 1.0f);
 
@@ -151,9 +146,7 @@ FRay FViewportCamera::DeprojectScreenToWorld(float ScreenX, float ScreenY, float
         Direction = GetForwardVector().GetSafeNormal();
     }
 
-    FRay Ray = FRay(Origin, Direction);
-
-    return Ray;
+    return FRay(Origin, Direction);
 }
 
 void FViewportCamera::SetProjectionType(EViewportProjectionType InType)
@@ -190,7 +183,9 @@ void FViewportCamera::SetLookAt(const FVector& Target)
 {
     FVector Forward = (Target - Location).GetSafeNormal();
     if (Forward.IsNearlyZero())
+    {
         return;
+    }
 
     FVector UpRef = FVector::UpVector;
     if (std::abs(Forward.DotProduct(UpRef)) > 0.99f)

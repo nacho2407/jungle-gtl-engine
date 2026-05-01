@@ -2,9 +2,12 @@
 
 #include "Component/FireballComponent.h"
 #include "Component/DecalComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/SpringArmComponent.h"
 
 #include "Component/PostProcess/Light/AmbientLightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
@@ -40,6 +43,15 @@ REGISTER_FACTORY(AAttachTestActor)
 
 DEFINE_CLASS(ASceneActor, AActor) 
 REGISTER_FACTORY(ASceneActor)
+
+DEFINE_CLASS(ADefaultPlayerActor, AActor)
+REGISTER_FACTORY(ADefaultPlayerActor)
+
+DEFINE_CLASS(APlayerStart, AActor)
+REGISTER_FACTORY(APlayerStart)
+
+DEFINE_CLASS(AFogActor, AActor)
+REGISTER_FACTORY(AFogActor)
 
 DEFINE_CLASS(AStaticMeshActor, AActor) 
 REGISTER_FACTORY(AStaticMeshActor)
@@ -163,6 +175,72 @@ void ASceneActor::InitDefaultComponents()
 {
 	auto SceneRoot = AddComponent<USceneComponent>();
 	SetRootComponent(SceneRoot);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(SceneRoot);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
+}
+
+void ADefaultPlayerActor::InitDefaultComponents()
+{
+	auto* SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(SceneRoot);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
+
+	UStaticMeshComponent* DebugBody = AddComponent<UStaticMeshComponent>();
+	DebugBody->AttachToComponent(SceneRoot);
+	DebugBody->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+	DebugBody->SetRelativeLocation(FVector(0.0f, 0.0f, 0.5f));
+	DebugBody->SetRelativeScale(FVector(0.4f, 0.4f, 1.0f));
+	DebugBody->SetEnableCull(false);
+
+	SpringArmComp = AddComponent<USpringArmComponent>();
+	SpringArmComp->AttachToComponent(SceneRoot);
+	SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
+	SpringArmComp->SetTargetArmLength(3.f);
+	SpringArmComp->SetSocketOffset(FVector::ZeroVector);
+
+	CameraComp = AddComponent<UCameraComponent>();
+	CameraComp->AttachToComponent(SpringArmComp);
+	CameraComp->SetRelativeLocation(SpringArmComp->GetSocketLocalLocation());
+	CameraComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+	SpringArmComp->UpdateSocketChildren();
+}
+
+void APlayerStart::InitDefaultComponents()
+{
+	auto* SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(SceneRoot);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
+}
+
+void AFogActor::InitDefaultComponents()
+{
+	UHeightFogComponent* Fog = AddComponent<UHeightFogComponent>();
+	Fog->SetFogDensity(0.02f);
+	Fog->SetHeightFalloff(0.2f);
+	Fog->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
+	Fog->SetFogHeight(0.0f);
+	Fog->SetFogStartDistance(0.0f);
+	Fog->SetFogCutoffDistance(10000.0f);
+	Fog->SetFogMaxOpacity(1.0f);
+	SetRootComponent(Fog);
+	FogComp = Fog;
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(Fog);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName("Asset/Texture/ExpoHeightFog_64x.png");
+	BillboardComp = Billboard;
 }
 
 void ASceneActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

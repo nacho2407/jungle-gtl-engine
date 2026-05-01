@@ -406,6 +406,14 @@ bool FBinarySerializer::ReadVertices(std::ifstream& In, FStaticMesh& OutData, ui
 		{
 			return false;
 		}
+
+		// Tangent
+		if (!ReadFloatLE(In, Vertex.Tangent.X) ||
+			!ReadFloatLE(In, Vertex.Tangent.Y) ||
+			!ReadFloatLE(In, Vertex.Tangent.Z))
+		{
+			return false;
+		}
 	}
 
 	return In.good();
@@ -522,7 +530,7 @@ bool FBinarySerializer::SaveStaticMesh(const FString& BinaryPath, const FString&
 
 bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& OutData)
 {
-	std::ifstream In(BinaryPath, std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;
@@ -598,7 +606,7 @@ bool FBinarySerializer::LoadStaticMesh(const FString& BinaryPath, FStaticMesh& O
 
 bool FBinarySerializer::ReadStaticMeshHeader(const FString& BinaryPath, FStaticMeshBinaryHeader& OutHeader) const
 {
-	std::ifstream In(BinaryPath, std::ios::binary);
+	std::ifstream In(std::filesystem::path(FPaths::ToWide(BinaryPath)), std::ios::binary);
 	if (!In.is_open())
 	{
 		return false;

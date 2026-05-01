@@ -19,17 +19,11 @@ public:
 	static void AddLog(const char* fmt, ...);
 
 	virtual void Render(float DeltaTime) override;
-
-	void Clear()
-	{
-		for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
-		Messages.clear();
-	}
-	static void ClearHistory()
-	{
-		for (int32 i = 0; i < History.Size; i++) free(History[i]);
-		History.clear();
-	}
+	void RenderDrawerToolbar();
+	void RenderLogContents(float Height = 0.0f);
+	void RenderInputLine(const char* Id, float Width, bool bRequestFocus);
+	void Clear();
+	static void ClearHistory();
 
 private:
 	char InputBuf[256]{};
@@ -46,15 +40,22 @@ private:
 	//Command Dispatch System
 	using CommandFn = std::function<void(const TArray<FString>& args)>;
 	TMap<FString, CommandFn> Commands;
+	TMap<FString, FString> CommandDescriptions;
 
 	void RegisterCommand(const FString& Name, CommandFn Fn);
+	void RegisterCommand(const FString& Name, const FString& Description, CommandFn Fn);
 	void ExecCommand(const char* CommandLine);
 	static int32 TextEditCallback(ImGuiInputTextCallbackData* Data);
 
 private:
+	void CmdHelp(const TArray<FString>& Args);
+	void CmdCommands(const TArray<FString>& Args);
+	void CmdSuggest(const TArray<FString>& Args);
 	void CmdStat(const TArray<FString>& Args);
     void CmdShadow(const TArray<FString>& Args);
+	void PrintHistoryStats();
+	void PrintCommandList(const FString& Prefix = "");
+	FString FindClosestCommand(const FString& Query) const;
+	TArray<FString> BuildCommandSuggestions(const FString& Query) const;
+	void RenderCommandSuggestions(const char* Id, const ImVec2& InputMin, const ImVec2& InputSize);
 };
-
-#define UE_LOG(Format, ...) \
-    FEditorConsoleWidget::AddLog(Format, ##__VA_ARGS__)

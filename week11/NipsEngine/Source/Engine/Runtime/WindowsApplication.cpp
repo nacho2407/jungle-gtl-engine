@@ -1,7 +1,9 @@
 ﻿#include "Engine/Runtime/WindowsApplication.h"
 
+#include <vector>
 #include <windowsx.h>
 
+#include "Engine/Input/CursorControl.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "Slate/SWidget.h"
@@ -46,9 +48,44 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 	// Slate가 ImGui 아래로 들어가기 때문에 imgui 관련 예외를 모두 처리합니다.
 	switch (Msg)
 	{
+	case WM_CLOSE:
+		if (OnCloseRequestedCallback && !OnCloseRequestedCallback())
+		{
+			return 0;
+		}
+		DestroyWindow(hWnd);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
+	case WM_SETCURSOR:
+		if (LOWORD(lParam) == HTCLIENT)
+		{
+			SetCursor(FCursorControl::IsCursorHidden() ? nullptr : LoadCursorW(nullptr, IDC_ARROW));
+			return TRUE;
+		}
+		break;
+	case WM_INPUT:
+	{
+		UINT DataSize = 0;
+		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &DataSize, sizeof(RAWINPUTHEADER)) != 0 || DataSize == 0)
+		{
+			break;
+		}
+
+		std::vector<BYTE> RawData(DataSize);
+		if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, RawData.data(), &DataSize, sizeof(RAWINPUTHEADER)) != DataSize)
+		{
+			break;
+		}
+
+		const RAWINPUT* RawInput = reinterpret_cast<const RAWINPUT*>(RawData.data());
+		if (RawInput->header.dwType == RIM_TYPEMOUSE)
+		{
+			InputSystem::Get().AddRawMouseDelta(RawInput->data.mouse.lLastX, RawInput->data.mouse.lLastY);
+		}
+		return 0;
+	}
 	case WM_MOUSEMOVE:
 	{
 		const int32 MX = GET_X_LPARAM(lParam);
@@ -123,7 +160,8 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	WCHAR WindowClass[] = L"JungleWindowClass";
 	WCHAR Title[] = L"Game Tech Lab";
-	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
+	HICON WindowIcon = LoadIconW(HInstance, MAKEINTRESOURCEW(101));
+	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, HInstance, WindowIcon, LoadCursorW(nullptr, IDC_ARROW), 0, 0, WindowClass };
 
 	RegisterClassW(&WndClass);
 
@@ -140,6 +178,19 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 	{
 		return false;
 	}
+
+	if (WindowIcon)
+	{
+		SendMessageW(HWindow, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(WindowIcon));
+		SendMessageW(HWindow, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(WindowIcon));
+	}
+
+	RAWINPUTDEVICE RawMouseDevice = {};
+	RawMouseDevice.usUsagePage = 0x01;
+	RawMouseDevice.usUsage = 0x02;
+	RawMouseDevice.dwFlags = RIDEV_INPUTSINK;
+	RawMouseDevice.hwndTarget = HWindow;
+	RegisterRawInputDevices(&RawMouseDevice, 1, sizeof(RAWINPUTDEVICE));
 
 	Window.Initialize(HWindow);
 	return true;

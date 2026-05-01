@@ -16,6 +16,7 @@
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Core/Logging/Log.h"
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -117,6 +118,12 @@ void FRenderer::CreateResources()
 void FRenderer::Release()
 {
 	InvalidateSceneFinalTargets();
+	ReleasePreviewResource();
+    ReleaseRenderResource(GameFrameResource);
+	for (int32 i = 0; i < 4; ++i)
+	{
+		ReleaseViewportResource(nullptr, i);
+	}
 
 	RenderPipeline.Release();
     RenderPassContext.reset();
@@ -206,6 +213,54 @@ void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
 #endif
 }
 
+FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)
+{
+    static bool bLoggedGameFrameTargets = false;
+
+    FViewportRenderResource& Res = GameFrameResource;
+    if (Device.GetDevice() == nullptr || Width == 0 || Height == 0)
+    {
+        ReleaseRenderResource(Res);
+        UseBackBufferRenderTargets();
+        return CurrentRenderTargets;
+    }
+
+    const bool bSameSize = (Res.Width == Width) && (Res.Height == Height);
+    const bool bResourcesValid =
+        (Res.ColorRTV != nullptr) &&
+        (Res.NormalRTV != nullptr) &&
+        (Res.LightRTV != nullptr) &&
+        (Res.FogRTV != nullptr) &&
+        (Res.WorldPosRTV != nullptr) &&
+        (Res.FXAARTV != nullptr) &&
+        (Res.SelectionMaskRTV != nullptr) &&
+        (Res.DepthStencilView != nullptr);
+
+    if (!bSameSize || !bResourcesValid)
+    {
+        ReleaseRenderResource(Res);
+        InitializeRenderResource(Res, Width, Height);
+        bLoggedGameFrameTargets = false;
+    }
+
+    FRenderTargetSet Targets = Res.GetView();
+    BeginViewportFrame(Targets);
+
+    if (!bLoggedGameFrameTargets)
+    {
+        UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d",
+               Width, Height,
+               Targets.SceneColorRTV != nullptr,
+               Targets.SceneLightRTV != nullptr,
+               Targets.SceneFogRTV != nullptr,
+               Targets.SceneFXAARTV != nullptr,
+               Targets.SceneDepthSRV != nullptr);
+        bLoggedGameFrameTargets = true;
+    }
+
+    return Targets;
+}
+
 void FRenderer::UseBackBufferRenderTargets()
 {
 	CurrentRenderTargets = Device.GetBackBufferRenderTargets();
@@ -272,6 +327,70 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
 }
 
+void FRenderer::CompositeCurrentSceneToBackBuffer()
+{
+    ID3D11ShaderResourceView* SourceSRV = SceneFinalSRV.Get();
+    ID3D11RenderTargetView* BackBufferRTV = Device.GetFrameBufferRTV();
+    ID3D11DeviceContext* Context = Device.GetDeviceContext();
+
+    if (!SourceSRV || !BackBufferRTV || !Context)
+    {
+        static bool bLoggedMissingCompositeSource = false;
+        if (!bLoggedMissingCompositeSource)
+        {
+            UE_LOG("[GameRender] Backbuffer composite skipped. SourceSRV=%d BackBufferRTV=%d Context=%d",
+                   SourceSRV != nullptr, BackBufferRTV != nullptr, Context != nullptr);
+            bLoggedMissingCompositeSource = true;
+        }
+        UseBackBufferRenderTargets();
+        return;
+    }
+
+    ID3D11RenderTargetView* RTVs[1] = { BackBufferRTV };
+    Context->OMSetRenderTargets(1, RTVs, nullptr);
+    Device.SetSubViewport(
+        0,
+        0,
+        static_cast<int32>(Device.GetViewportWidth()),
+        static_cast<int32>(Device.GetViewportHeight()));
+
+    FFXAAConstants Constants = {};
+    Constants.InvResolution[0] = (Device.GetViewportWidth() > 0.0f) ? (1.0f / Device.GetViewportWidth()) : 0.0f;
+    Constants.InvResolution[1] = (Device.GetViewportHeight() > 0.0f) ? (1.0f / Device.GetViewportHeight()) : 0.0f;
+    Constants.bEnabled = 0;
+    Resources.FXAAConstantBuffer.Update(Context, &Constants, sizeof(Constants));
+    ID3D11Buffer* FXAACB = Resources.FXAAConstantBuffer.GetBuffer();
+    Context->PSSetConstantBuffers(10, 1, &FXAACB);
+
+    UShader* BlitShader = FResourceManager::Get().GetShader("Shaders/Multipass/FXAAPass.hlsl");
+    if (!BlitShader)
+    {
+        static bool bLoggedMissingBlitShader = false;
+        if (!bLoggedMissingBlitShader)
+        {
+            UE_LOG("[GameRender] Backbuffer composite failed. FXAA blit shader is missing.");
+            bLoggedMissingBlitShader = true;
+        }
+        UseBackBufferRenderTargets();
+        return;
+    }
+
+    ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+    Context->PSSetSamplers(0, 1, &Sampler);
+    Context->PSSetShaderResources(0, 1, &SourceSRV);
+
+    BlitShader->Bind(Context);
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->Draw(3, 0);
+
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context->PSSetShaderResources(0, 1, &NullSRV);
+    UseBackBufferRenderTargets();
+}
+
 FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
 {
     assert(Index < 4 && "Index Out of Bound");
@@ -308,7 +427,48 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, 
 void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
 {
     FViewportRenderResource& Res = ViewportResources[Index];
+	InitializeRenderResource(Res, Width, Height);
+}
 
+void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+{
+    assert(Index < 4 && "Index Out of Bound");
+
+    FViewportRenderResource& Res = ViewportResources[Index];
+	ReleaseRenderResource(Res);
+}
+
+FViewportRenderResource& FRenderer::AcquirePreviewResource(uint32 Width, uint32 Height)
+{
+	if (Device.GetDevice() == nullptr || Width == 0 || Height == 0)
+	{
+		ReleasePreviewResource();
+		return PreviewResource;
+	}
+
+	const bool bSameSize = (PreviewResource.Width == Width) && (PreviewResource.Height == Height);
+	const bool bResourcesValid =
+		(PreviewResource.ColorRTV != nullptr) &&
+		(PreviewResource.SelectionMaskRTV != nullptr) &&
+		(PreviewResource.DepthStencilView != nullptr);
+
+	if (bSameSize && bResourcesValid)
+	{
+		return PreviewResource;
+	}
+
+	ReleasePreviewResource();
+	InitializeRenderResource(PreviewResource, Width, Height);
+	return PreviewResource;
+}
+
+void FRenderer::ReleasePreviewResource()
+{
+	ReleaseRenderResource(PreviewResource);
+}
+
+void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Width, uint32 Height)
+{
     FRenderTarget RT;
 
     Res.Width = Width;
@@ -358,12 +518,8 @@ void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uin
     Res.DepthStencilSRV = DSR.SRV;
 }
 
-void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
 {
-    assert(Index < 4 && "Index Out of Bound");
-
-    FViewportRenderResource& Res = ViewportResources[Index];
-
     Res.SelectionMaskSRV.Reset();
     Res.SelectionMaskRTV.Reset();
     Res.SelectionMaskTex.Reset();
@@ -383,6 +539,10 @@ void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
     Res.DepthStencilView.Reset();
     Res.DepthTex.Reset();
     Res.DepthStencilSRV.Reset();
+
+	Res.VSMDepthStencilSRV.Reset();
+	Res.VSMDepthStencilView.Reset();
+	Res.VSMDepthTexture.Reset();
 
     Res.FogTex.Reset();
     Res.FogRTV.Reset();
