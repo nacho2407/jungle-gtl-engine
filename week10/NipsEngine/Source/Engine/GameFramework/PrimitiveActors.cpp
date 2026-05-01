@@ -16,6 +16,9 @@
 #include "Core/ResourceManager.h"
 #include <format>
 #include <Component/SubUVComponent.h>
+#include "Core/Debug.h"
+#include "Component/BoxComponent.h"
+#include "Core/CollisionTypes.h"
 
 namespace
 {
@@ -68,10 +71,13 @@ REGISTER_FACTORY(ALightActor)
 
 DEFINE_CLASS(AAmbientLightActor, ALightActor)
 REGISTER_FACTORY(AAmbientLightActor)
+
 DEFINE_CLASS(ADirectionalLightActor, ALightActor)
 REGISTER_FACTORY(ADirectionalLightActor)
+
 DEFINE_CLASS(APointLightActor, ALightActor)
 REGISTER_FACTORY(APointLightActor)
+
 DEFINE_CLASS(ASpotlightActor, APointLightActor)
 REGISTER_FACTORY(ASpotlightActor)
 
@@ -186,6 +192,21 @@ void AFogActor::InitDefaultComponents()
 	Billboard->SetEditorOnly(true);
 	Billboard->SetTextureName("Asset/Texture/ExpoHeightFog_64x.png");
 	BillboardComp = Billboard;
+}
+
+void ASceneActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    UE_LOG("%s: On Hit", GetFName().ToString().c_str());
+}
+
+void ASceneActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("%s: On Begin Overlap", GetFName().ToString().c_str());
+}
+
+void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("%s: On End Overlap", GetFName().ToString().c_str());
 }
 
 void AStaticMeshActor::InitDefaultComponents()

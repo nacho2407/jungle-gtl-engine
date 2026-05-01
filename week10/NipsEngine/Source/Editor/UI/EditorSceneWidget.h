@@ -17,6 +17,7 @@ public:
 	bool LoadSceneFromFilePath(const FString& FilePath, bool bPromptSave = true);
 	void RefreshSceneAndAssets();
 	FString GetCurrentSceneDisplayPath() const;
+	const char* GetSceneName() const { return SceneName; }
 	bool HasCurrentSceneFilePath() const { return !CurrentSceneFilePath.empty(); }
 	bool IsSceneDirty() const { return bSceneDirty; }
 	bool PromptSaveIfDirty();
