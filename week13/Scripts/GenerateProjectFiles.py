@@ -29,6 +29,8 @@ CONFIGURATIONS = [
     ("Release", "Win32"),
     ("Debug", "x64"),
     ("Release", "x64"),
+    ("Game", "Win32"),
+    ("Game", "x64"),
     ("ObjViewDebug", "x64"),
     ("Demo", "x64"),
 ]
@@ -38,6 +40,10 @@ CONFIGURATIONS = [
 #   "extra_defines" : additional preprocessor definitions
 #   "subsystem"     : override link subsystem (default: per-platform)
 CONFIG_PROPS = {
+    "Game": {
+        "release_like": True,
+        "extra_defines": ["WITH_EDITOR=0", "WITH_STANDALONE=1", "STATS=0"],
+    },
     "ObjViewDebug": {
         "release_like": True,
         "extra_defines": ["IS_OBJ_VIEWER=1"],
@@ -75,6 +81,7 @@ INCLUDE_PATHS = [
     "ThirdParty\\RmlUi\\Include",
     "Source\\Editor",
     "Source\\ObjViewer",
+    "Source\\Game",
     "ThirdParty\\lua\\include",
     "ThirdParty\\sol2\\include",
     ".",
@@ -299,8 +306,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
         if is_win32:
             base_defs.append("WIN32")
         base_defs.append("NDEBUG" if is_release else "_DEBUG")
-        base_defs.extend(["_CONSOLE", "WITH_EDITOR=1"])
-        base_defs.extend(props.get("extra_defines", []))
+        base_defs.append("_CONSOLE")
+        extra_defs = props.get("extra_defines", [])
+        # WITH_EDITOR defaults to 1 unless explicitly overridden in extra_defines
+        if not any(d.startswith("WITH_EDITOR=") for d in extra_defs):
+            base_defs.append("WITH_EDITOR=1")
+        base_defs.extend(extra_defs)
         base_defs.append("%(PreprocessorDefinitions)")
         ET.SubElement(cl, "PreprocessorDefinitions").text = ";".join(base_defs)
 

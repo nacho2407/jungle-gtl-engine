@@ -163,6 +163,9 @@
     <Filter Include="Source\Engine\Viewport">
       <UniqueIdentifier>{b95fbad5-2f3a-0600-c7ff-db94055fd64b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game">
+      <UniqueIdentifier>{7b75b017-e44b-6189-2a88-30dc16a5724f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\ObjViewer">
       <UniqueIdentifier>{3e63d691-bd37-40d8-2cea-c874f8e3a95b}</UniqueIdentifier>
     </Filter>
@@ -305,6 +308,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\Lighting\VSMBlur.hlsl">
       <Filter>Shaders\Lighting</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\Blit.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
       <Filter>Shaders\PostProcess</Filter>
@@ -892,6 +898,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp">
       <Filter>Source\Engine\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\GameEngine.cpp">
+      <Filter>Source\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\GameRenderPipeline.cpp">
+      <Filter>Source\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp">
       <Filter>Source\ObjViewer</Filter>
@@ -1606,6 +1618,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h">
       <Filter>Source\Engine\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameEngine.h">
+      <Filter>Source\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameRenderPipeline.h">
+      <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h">
       <Filter>Source\ObjViewer</Filter>

@@ -1,5 +1,6 @@
 ﻿#include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Core/ProjectSettings.h"
+#include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
 
 void EditorProjectSettingsWidget::Render()
@@ -14,6 +15,38 @@ void EditorProjectSettingsWidget::Render()
 	}
 
 	FProjectSettings& PS = FProjectSettings::Get();
+
+	if (ImGui::CollapsingHeader("Game", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		// Scene 파일 목록을 콤보박스로 표시
+		TArray<FString> SceneFiles = FSceneSaveManager::GetSceneFileList();
+
+		int CurrentIdx = -1;
+		for (int i = 0; i < static_cast<int>(SceneFiles.size()); ++i)
+		{
+			if (SceneFiles[i] == PS.Game.StartLevelName)
+			{
+				CurrentIdx = i;
+				break;
+			}
+		}
+
+		const char* Preview = CurrentIdx >= 0 ? SceneFiles[CurrentIdx].c_str() : "(None)";
+		if (ImGui::BeginCombo("Start Level", Preview))
+		{
+			for (int i = 0; i < static_cast<int>(SceneFiles.size()); ++i)
+			{
+				bool bSelected = (i == CurrentIdx);
+				if (ImGui::Selectable(SceneFiles[i].c_str(), bSelected))
+				{
+					PS.Game.StartLevelName = SceneFiles[i];
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+	}
 
 	if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_DefaultOpen))
 	{
