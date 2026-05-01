@@ -1,6 +1,7 @@
 ﻿#include "UI/UIManager.h"
 
 #include "Core/Log.h"
+#include "Input/InputSystem.h"
 #include "Object/Object.h"
 #include "Platform/Paths.h"
 #include "Render/Command/DrawCommandList.h"
@@ -8,6 +9,7 @@
 #include "Render/RenderPass/RenderPassBase.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Shader/ShaderManager.h"
+#include "Render/Types/FrameContext.h"
 #include "UI/UserWidget.h"
 
 #ifdef GetNextSibling
@@ -115,6 +117,31 @@ FRmlRenderInterfaceD3D11::~FRmlRenderInterfaceD3D11()
 		PerFrameCB->Release();
 		PerFrameCB = nullptr;
 	}
+}
+
+void FRmlRenderInterfaceD3D11::BeginFrame(const FPassContext& InCtx)
+{
+	Ctx = &InCtx;
+
+	ID3D11DeviceContext* DC = Ctx->Device.GetDeviceContext();
+	if (!DC)
+	{
+		return;
+	}
+
+	D3D11_VIEWPORT Viewport = {};
+	Viewport.TopLeftX = 0.0f;
+	Viewport.TopLeftY = 0.0f;
+	Viewport.Width = Ctx->Frame.ViewportWidth;
+	Viewport.Height = Ctx->Frame.ViewportHeight;
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+	DC->RSSetViewports(1, &Viewport);
+}
+
+void FRmlRenderInterfaceD3D11::EndFrame()
+{
+	Ctx = nullptr;
 }
 
 Rml::CompiledGeometryHandle FRmlRenderInterfaceD3D11::CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices)
@@ -496,6 +523,21 @@ void UUIManager::AddToViewport(UUserWidget* Widget, int32 /*ZOrder*/)
 
 void UUIManager::RemoveFromViewport(UUserWidget* Widget)
 {
+	if (bDispatchingRmlEvents)
+	{
+		if (Widget && std::find(PendingRemoveWidgets.begin(), PendingRemoveWidgets.end(), Widget) == PendingRemoveWidgets.end())
+		{
+			PendingRemoveWidgets.push_back(Widget);
+			Widget->MarkRemovedFromViewport();
+		}
+		return;
+	}
+
+	RemoveFromViewportImmediate(Widget);
+}
+
+void UUIManager::RemoveFromViewportImmediate(UUserWidget* Widget)
+{
 	ViewportWidgets.erase(std::remove(ViewportWidgets.begin(), ViewportWidgets.end(), Widget), ViewportWidgets.end());
 	CloseDocument(Widget);
 	if (Widget)
@@ -506,6 +548,8 @@ void UUIManager::RemoveFromViewport(UUserWidget* Widget)
 
 void UUIManager::ClearViewport()
 {
+	PendingRemoveWidgets.clear();
+
 	for (UUserWidget* Widget : ViewportWidgets)
 	{
 		CloseDocument(Widget);
@@ -562,6 +606,7 @@ bool UUIManager::LoadDocument(UUserWidget* Widget)
 
 	Document->Show();
 	Widget->MarkDocumentLoaded(Document);
+	Widget->RegisterEventListeners();
 	return true;
 }
 
@@ -572,6 +617,7 @@ void UUIManager::CloseDocument(UUserWidget* Widget)
 		return;
 	}
 
+	Widget->ClearEventListeners();
 	Widget->GetDocument()->Close();
 	Widget->ClearDocument();
 }
@@ -588,8 +634,68 @@ void UUIManager::Render(const FPassContext& Ctx)
 		static_cast<int>(Ctx.Frame.ViewportHeight)
 	});
 
+	ProcessInput(Ctx.Frame);
+	FlushDeferredViewportRemovals();
+	if (ViewportWidgets.empty())
+	{
+		return;
+	}
+
 	RmlContext->Update();
 	RenderInterface->BeginFrame(Ctx);
 	RmlContext->Render();
 	RenderInterface->EndFrame();
+}
+
+void UUIManager::ProcessInput(const FFrameContext& Frame)
+{
+	if (!RmlContext)
+	{
+		return;
+	}
+
+	InputSystem& Input = InputSystem::Get();
+	const int KeyModifierState = 0;
+
+	int MouseX = 0;
+	int MouseY = 0;
+	if (Frame.CursorViewportX != UINT32_MAX && Frame.CursorViewportY != UINT32_MAX)
+	{
+		MouseX = static_cast<int>(Frame.CursorViewportX);
+		MouseY = static_cast<int>(Frame.CursorViewportY);
+	}
+	else
+	{
+		const POINT MousePos = Input.GetMousePos();
+		MouseX = MousePos.x;
+		MouseY = MousePos.y;
+	}
+
+	bDispatchingRmlEvents = true;
+	RmlContext->ProcessMouseMove(MouseX, MouseY, KeyModifierState);
+	if (Input.GetKeyDown(VK_LBUTTON))
+	{
+		RmlContext->ProcessMouseButtonDown(0, KeyModifierState);
+	}
+	if (Input.GetKeyUp(VK_LBUTTON))
+	{
+		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
+	}
+	bDispatchingRmlEvents = false;
+}
+
+void UUIManager::FlushDeferredViewportRemovals()
+{
+	if (PendingRemoveWidgets.empty())
+	{
+		return;
+	}
+
+	TArray<UUserWidget*> WidgetsToRemove = PendingRemoveWidgets;
+	PendingRemoveWidgets.clear();
+
+	for (UUserWidget* Widget : WidgetsToRemove)
+	{
+		RemoveFromViewportImmediate(Widget);
+	}
 }

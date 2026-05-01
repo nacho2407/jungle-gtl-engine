@@ -245,7 +245,11 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		Widget.AddToViewport();
 	},
 		"hide", &UUserWidget::RemoveFromParent,
-		"IsInViewport", &UUserWidget::IsInViewport);
+		"IsInViewport", &UUserWidget::IsInViewport,
+		"bind_click", [](UUserWidget& Widget, const FString& ElementId, sol::protected_function Callback)
+	{
+		Widget.BindClick(ElementId, Callback);
+	});
 
 	sol::table UI = Lua.create_named_table("UI");
 	UI.set_function("CreateWidget", [](const FString& DocumentPath)
