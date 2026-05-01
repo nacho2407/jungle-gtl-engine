@@ -1,4 +1,4 @@
-#include "UI/UIManager.h"
+﻿#include "UI/UIManager.h"
 
 #include "Core/Log.h"
 #include "Object/Object.h"
@@ -27,14 +27,9 @@ namespace
 {
 	struct FRmlVertexD3D11
 	{
-		float X;
-		float Y;
-		float R;
-		float G;
-		float B;
-		float A;
-		float U;
-		float V;
+		float X, Y;
+		float R, G, B, A;
+		float U, V;
 	};
 
 	struct FRmlGeometryD3D11
@@ -75,368 +70,339 @@ namespace
 	}
 }
 
-class FRmlSystemInterface final : public Rml::SystemInterface
+double FRmlSystemInterface::GetElapsedTime()
 {
-public:
-	double GetElapsedTime() override
-	{
-		using namespace std::chrono;
-		const auto Now = steady_clock::now();
-		return duration<double>(Now - StartTime).count();
-	}
+	using namespace std::chrono;
+	const auto Now = steady_clock::now();
+	return duration<double>(Now - StartTime).count();
+}
 
-	void JoinPath(Rml::String& TranslatedPath, const Rml::String& DocumentPath, const Rml::String& Path) override
-	{
-		std::filesystem::path ResourcePath(FPaths::ToWide(Path));
-		if (!ResourcePath.is_relative())
-		{
-			TranslatedPath = ToRmlPath(ResourcePath);
-			return;
-		}
-
-		std::filesystem::path BasePath(FPaths::ToWide(DocumentPath));
-		TranslatedPath = ToRmlPath(BasePath.parent_path() / ResourcePath);
-	}
-
-	bool LogMessage(Rml::Log::Type Type, const Rml::String& Message) override
-	{
-		UE_LOG("[RmlUi] %s", Message.c_str());
-		return Type != Rml::Log::LT_ASSERT;
-	}
-
-private:
-	std::chrono::steady_clock::time_point StartTime = std::chrono::steady_clock::now();
-};
-
-class FRmlRenderInterfaceD3D11 final : public Rml::RenderInterface
+void FRmlSystemInterface::JoinPath(Rml::String& TranslatedPath, const Rml::String& DocumentPath, const Rml::String& Path)
 {
-public:
-	explicit FRmlRenderInterfaceD3D11(ID3D11Device* InDevice)
-		: Device(InDevice)
+	std::filesystem::path ResourcePath(FPaths::ToWide(Path));
+	if (!ResourcePath.is_relative())
 	{
-		CreateConstantBuffer();
+		TranslatedPath = ToRmlPath(ResourcePath);
+		return;
 	}
 
-	~FRmlRenderInterfaceD3D11() override
+	std::filesystem::path BasePath(FPaths::ToWide(DocumentPath));
+	TranslatedPath = ToRmlPath(BasePath.parent_path() / ResourcePath);
+}
+
+bool FRmlSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& Message)
+{
+	UE_LOG("[RmlUi] %s", Message.c_str());
+	return Type != Rml::Log::LT_ASSERT;
+}
+
+FRmlRenderInterfaceD3D11::FRmlRenderInterfaceD3D11(ID3D11Device* InDevice)
+	: Device(InDevice)
+{
+	CreateConstantBuffer();
+}
+
+FRmlRenderInterfaceD3D11::~FRmlRenderInterfaceD3D11()
+{
+	ReleaseWhiteTexture();
+	if (ScissorRasterizerState)
 	{
-		ReleaseWhiteTexture();
-		if (ScissorRasterizerState)
-		{
-			ScissorRasterizerState->Release();
-			ScissorRasterizerState = nullptr;
-		}
-		if (PerFrameCB)
-		{
-			PerFrameCB->Release();
-			PerFrameCB = nullptr;
-		}
+		ScissorRasterizerState->Release();
+		ScissorRasterizerState = nullptr;
 	}
-
-	void BeginFrame(const FPassContext& InCtx)
+	if (PerFrameCB)
 	{
-		Ctx = &InCtx;
+		PerFrameCB->Release();
+		PerFrameCB = nullptr;
 	}
+}
 
-	void EndFrame()
+Rml::CompiledGeometryHandle FRmlRenderInterfaceD3D11::CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices)
+{
+	if (!Device || Vertices.empty() || Indices.empty())
 	{
-		Ctx = nullptr;
-	}
-
-	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices) override
-	{
-		if (!Device || Vertices.empty() || Indices.empty())
-		{
-			return 0;
-		}
-
-		TArray<FRmlVertexD3D11> ConvertedVertices;
-		ConvertedVertices.reserve(Vertices.size());
-		for (const Rml::Vertex& Vertex : Vertices)
-		{
-			ConvertedVertices.push_back({
-				Vertex.position.x,
-				Vertex.position.y,
-				Vertex.colour.red / 255.0f,
-				Vertex.colour.green / 255.0f,
-				Vertex.colour.blue / 255.0f,
-				Vertex.colour.alpha / 255.0f,
-				Vertex.tex_coord.x,
-				Vertex.tex_coord.y,
-			});
-		}
-
-		TArray<uint32> ConvertedIndices;
-		ConvertedIndices.reserve(Indices.size());
-		for (int Index : Indices)
-		{
-			ConvertedIndices.push_back(static_cast<uint32>(Index));
-		}
-
-		auto* Geometry = new FRmlGeometryD3D11();
-		Geometry->IndexCount = static_cast<UINT>(ConvertedIndices.size());
-
-		D3D11_BUFFER_DESC VBDesc = {};
-		VBDesc.Usage = D3D11_USAGE_DEFAULT;
-		VBDesc.ByteWidth = static_cast<UINT>(sizeof(FRmlVertexD3D11) * ConvertedVertices.size());
-		VBDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-		D3D11_SUBRESOURCE_DATA VBData = {};
-		VBData.pSysMem = ConvertedVertices.data();
-		if (FAILED(Device->CreateBuffer(&VBDesc, &VBData, &Geometry->VertexBuffer)))
-		{
-			delete Geometry;
-			return 0;
-		}
-
-		D3D11_BUFFER_DESC IBDesc = {};
-		IBDesc.Usage = D3D11_USAGE_DEFAULT;
-		IBDesc.ByteWidth = static_cast<UINT>(sizeof(uint32) * ConvertedIndices.size());
-		IBDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-		D3D11_SUBRESOURCE_DATA IBData = {};
-		IBData.pSysMem = ConvertedIndices.data();
-		if (FAILED(Device->CreateBuffer(&IBDesc, &IBData, &Geometry->IndexBuffer)))
-		{
-			ReleaseGeometry(reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry));
-			return 0;
-		}
-
-		return reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry);
-	}
-
-	void RenderGeometry(Rml::CompiledGeometryHandle GeometryHandle, Rml::Vector2f Translation, Rml::TextureHandle Texture) override
-	{
-		if (!Ctx || !GeometryHandle)
-		{
-			return;
-		}
-
-		auto* Geometry = reinterpret_cast<FRmlGeometryD3D11*>(GeometryHandle);
-		ID3D11DeviceContext* DC = Ctx->Device.GetDeviceContext();
-		if (!DC || !Geometry->VertexBuffer || !Geometry->IndexBuffer)
-		{
-			return;
-		}
-
-		FShader* Shader = FShaderManager::Get().GetOrCreate(UIShaderPath);
-		if (!Shader || !Shader->IsValid())
-		{
-			return;
-		}
-
-		Ctx->Resources.SetDepthStencilState(Ctx->Device, EDepthStencilState::NoDepth);
-		Ctx->Resources.SetBlendState(Ctx->Device, EBlendState::AlphaBlend);
-		Ctx->Resources.SetRasterizerState(Ctx->Device, ERasterizerState::SolidNoCull);
-
-		DC->OMSetRenderTargets(1, &Ctx->Cache.RTV, Ctx->Cache.DSV);
-		DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Shader->Bind(DC);
-
-		FRmlPerFrameCB CBData;
-		CBData.ViewportWidth = Ctx->Frame.ViewportWidth;
-		CBData.ViewportHeight = Ctx->Frame.ViewportHeight;
-		CBData.TranslationX = Translation.x;
-		CBData.TranslationY = Translation.y;
-		DC->UpdateSubresource(PerFrameCB, 0, nullptr, &CBData, 0, 0);
-		DC->VSSetConstantBuffers(0, 1, &PerFrameCB);
-
-		ID3D11ShaderResourceView* SRV = WhiteTextureSRV;
-		if (Texture)
-		{
-			auto* TextureResource = reinterpret_cast<FRmlTextureD3D11*>(Texture);
-			SRV = TextureResource ? TextureResource->SRV : nullptr;
-		}
-		DC->PSSetShaderResources(0, 1, &SRV);
-
-		UINT Stride = sizeof(FRmlVertexD3D11);
-		UINT Offset = 0;
-		DC->IASetVertexBuffers(0, 1, &Geometry->VertexBuffer, &Stride, &Offset);
-		DC->IASetIndexBuffer(Geometry->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		DC->DrawIndexed(Geometry->IndexCount, 0, 0);
-	}
-
-	void ReleaseGeometry(Rml::CompiledGeometryHandle GeometryHandle) override
-	{
-		auto* Geometry = reinterpret_cast<FRmlGeometryD3D11*>(GeometryHandle);
-		if (!Geometry)
-		{
-			return;
-		}
-
-		if (Geometry->VertexBuffer)
-		{
-			Geometry->VertexBuffer->Release();
-		}
-		if (Geometry->IndexBuffer)
-		{
-			Geometry->IndexBuffer->Release();
-		}
-		delete Geometry;
-	}
-
-	Rml::TextureHandle LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String& /*Source*/) override
-	{
-		TextureDimensions = { 0, 0 };
 		return 0;
 	}
 
-	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> Source, Rml::Vector2i SourceDimensions) override
+	TArray<FRmlVertexD3D11> ConvertedVertices;
+	ConvertedVertices.reserve(Vertices.size());
+	for (const Rml::Vertex& Vertex : Vertices)
 	{
-		if (!Device || Source.empty() || SourceDimensions.x <= 0 || SourceDimensions.y <= 0)
-		{
-			return 0;
-		}
-
-		D3D11_TEXTURE2D_DESC TextureDesc = {};
-		TextureDesc.Width = static_cast<UINT>(SourceDimensions.x);
-		TextureDesc.Height = static_cast<UINT>(SourceDimensions.y);
-		TextureDesc.MipLevels = 1;
-		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		TextureDesc.SampleDesc.Count = 1;
-		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-		D3D11_SUBRESOURCE_DATA InitialData = {};
-		InitialData.pSysMem = Source.data();
-		InitialData.SysMemPitch = static_cast<UINT>(SourceDimensions.x * 4);
-
-		ID3D11Texture2D* Texture = nullptr;
-		if (FAILED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
-		{
-			return 0;
-		}
-
-		ID3D11ShaderResourceView* SRV = nullptr;
-		HRESULT HR = Device->CreateShaderResourceView(Texture, nullptr, &SRV);
-		Texture->Release();
-		if (FAILED(HR))
-		{
-			return 0;
-		}
-
-		auto* TextureResource = new FRmlTextureD3D11();
-		TextureResource->SRV = SRV;
-		return reinterpret_cast<Rml::TextureHandle>(TextureResource);
+		ConvertedVertices.push_back({
+			Vertex.position.x,
+			Vertex.position.y,
+			Vertex.colour.red / 255.0f,
+			Vertex.colour.green / 255.0f,
+			Vertex.colour.blue / 255.0f,
+			Vertex.colour.alpha / 255.0f,
+			Vertex.tex_coord.x,
+			Vertex.tex_coord.y,
+		});
 	}
 
-	void ReleaseTexture(Rml::TextureHandle Texture) override
+	TArray<uint32> ConvertedIndices;
+	ConvertedIndices.reserve(Indices.size());
+	for (int Index : Indices)
+	{
+		ConvertedIndices.push_back(static_cast<uint32>(Index));
+	}
+
+	auto* Geometry = new FRmlGeometryD3D11();
+	Geometry->IndexCount = static_cast<UINT>(ConvertedIndices.size());
+
+	D3D11_BUFFER_DESC VBDesc = {};
+	VBDesc.Usage = D3D11_USAGE_DEFAULT;
+	VBDesc.ByteWidth = static_cast<UINT>(sizeof(FRmlVertexD3D11) * ConvertedVertices.size());
+	VBDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA VBData = {};
+	VBData.pSysMem = ConvertedVertices.data();
+	if (FAILED(Device->CreateBuffer(&VBDesc, &VBData, &Geometry->VertexBuffer)))
+	{
+		delete Geometry;
+		return 0;
+	}
+
+	D3D11_BUFFER_DESC IBDesc = {};
+	IBDesc.Usage = D3D11_USAGE_DEFAULT;
+	IBDesc.ByteWidth = static_cast<UINT>(sizeof(uint32) * ConvertedIndices.size());
+	IBDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA IBData = {};
+	IBData.pSysMem = ConvertedIndices.data();
+	if (FAILED(Device->CreateBuffer(&IBDesc, &IBData, &Geometry->IndexBuffer)))
+	{
+		ReleaseGeometry(reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry));
+		return 0;
+	}
+
+	return reinterpret_cast<Rml::CompiledGeometryHandle>(Geometry);
+}
+
+void FRmlRenderInterfaceD3D11::RenderGeometry(Rml::CompiledGeometryHandle GeometryHandle, Rml::Vector2f Translation, Rml::TextureHandle Texture)
+{
+	if (!Ctx || !GeometryHandle)
+	{
+		return;
+	}
+
+	auto* Geometry = reinterpret_cast<FRmlGeometryD3D11*>(GeometryHandle);
+	ID3D11DeviceContext* DC = Ctx->Device.GetDeviceContext();
+	if (!DC || !Geometry->VertexBuffer || !Geometry->IndexBuffer)
+	{
+		return;
+	}
+
+	FShader* Shader = FShaderManager::Get().GetOrCreate(UIShaderPath);
+	if (!Shader || !Shader->IsValid())
+	{
+		return;
+	}
+
+	Ctx->Resources.SetDepthStencilState(Ctx->Device, EDepthStencilState::NoDepth);
+	Ctx->Resources.SetBlendState(Ctx->Device, EBlendState::AlphaBlend);
+	Ctx->Resources.SetRasterizerState(Ctx->Device, ERasterizerState::SolidNoCull);
+
+	DC->OMSetRenderTargets(1, &Ctx->Cache.RTV, Ctx->Cache.DSV);
+	DC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Shader->Bind(DC);
+
+	FRmlPerFrameCB CBData;
+	CBData.ViewportWidth = Ctx->Frame.ViewportWidth;
+	CBData.ViewportHeight = Ctx->Frame.ViewportHeight;
+	CBData.TranslationX = Translation.x;
+	CBData.TranslationY = Translation.y;
+	DC->UpdateSubresource(PerFrameCB, 0, nullptr, &CBData, 0, 0);
+	DC->VSSetConstantBuffers(0, 1, &PerFrameCB);
+
+	ID3D11ShaderResourceView* SRV = WhiteTextureSRV;
+	if (Texture)
 	{
 		auto* TextureResource = reinterpret_cast<FRmlTextureD3D11*>(Texture);
-		if (!TextureResource)
-		{
-			return;
-		}
-		if (TextureResource->SRV)
-		{
-			TextureResource->SRV->Release();
-		}
-		delete TextureResource;
+		SRV = TextureResource ? TextureResource->SRV : nullptr;
 	}
+	DC->PSSetShaderResources(0, 1, &SRV);
 
-	void EnableScissorRegion(bool Enable) override
+	UINT Stride = sizeof(FRmlVertexD3D11);
+	UINT Offset = 0;
+	DC->IASetVertexBuffers(0, 1, &Geometry->VertexBuffer, &Stride, &Offset);
+	DC->IASetIndexBuffer(Geometry->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	DC->DrawIndexed(Geometry->IndexCount, 0, 0);
+}
+
+void FRmlRenderInterfaceD3D11::ReleaseGeometry(Rml::CompiledGeometryHandle GeometryHandle)
+{
+	auto* Geometry = reinterpret_cast<FRmlGeometryD3D11*>(GeometryHandle);
+	if (!Geometry)
 	{
-		if (!Ctx)
-		{
-			return;
-		}
-
-		ID3D11DeviceContext* DC = Ctx->Device.GetDeviceContext();
-		if (Enable && ScissorRasterizerState)
-		{
-			DC->RSSetState(ScissorRasterizerState);
-		}
-		else
-		{
-			Ctx->Resources.SetRasterizerState(Ctx->Device, ERasterizerState::SolidNoCull);
-		}
-
-		if (!Enable)
-		{
-			DC->RSSetScissorRects(0, nullptr);
-		}
+		return;
 	}
 
-	void SetScissorRegion(Rml::Rectanglei Region) override
+	if (Geometry->VertexBuffer)
 	{
-		if (!Ctx)
-		{
-			return;
-		}
-
-		D3D11_RECT Rect = {};
-		Rect.left = Region.Left();
-		Rect.top = Region.Top();
-		Rect.right = Region.Right();
-		Rect.bottom = Region.Bottom();
-		Ctx->Device.GetDeviceContext()->RSSetScissorRects(1, &Rect);
+		Geometry->VertexBuffer->Release();
 	}
-
-private:
-	void CreateConstantBuffer()
+	if (Geometry->IndexBuffer)
 	{
-		if (!Device)
-		{
-			return;
-		}
-
-		D3D11_BUFFER_DESC Desc = {};
-		Desc.Usage = D3D11_USAGE_DEFAULT;
-		Desc.ByteWidth = sizeof(FRmlPerFrameCB);
-		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		Device->CreateBuffer(&Desc, nullptr, &PerFrameCB);
-
-		CreateWhiteTexture();
-
-		D3D11_RASTERIZER_DESC RasterDesc = {};
-		RasterDesc.FillMode = D3D11_FILL_SOLID;
-		RasterDesc.CullMode = D3D11_CULL_NONE;
-		RasterDesc.ScissorEnable = TRUE;
-		Device->CreateRasterizerState(&RasterDesc, &ScissorRasterizerState);
+		Geometry->IndexBuffer->Release();
 	}
+	delete Geometry;
+}
 
-	void CreateWhiteTexture()
+Rml::TextureHandle FRmlRenderInterfaceD3D11::LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String& /*Source*/)
+{
+	TextureDimensions = { 0, 0 };
+	return 0;
+}
+
+Rml::TextureHandle FRmlRenderInterfaceD3D11::GenerateTexture(Rml::Span<const Rml::byte> Source, Rml::Vector2i SourceDimensions)
+{
+	if (!Device || Source.empty() || SourceDimensions.x <= 0 || SourceDimensions.y <= 0)
 	{
-		const uint32 WhitePixel = 0xffffffff;
-
-		D3D11_TEXTURE2D_DESC TextureDesc = {};
-		TextureDesc.Width = 1;
-		TextureDesc.Height = 1;
-		TextureDesc.MipLevels = 1;
-		TextureDesc.ArraySize = 1;
-		TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		TextureDesc.SampleDesc.Count = 1;
-		TextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-		D3D11_SUBRESOURCE_DATA InitialData = {};
-		InitialData.pSysMem = &WhitePixel;
-		InitialData.SysMemPitch = sizeof(uint32);
-
-		ID3D11Texture2D* Texture = nullptr;
-		if (SUCCEEDED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
-		{
-			Device->CreateShaderResourceView(Texture, nullptr, &WhiteTextureSRV);
-			Texture->Release();
-		}
+		return 0;
 	}
 
-	void ReleaseWhiteTexture()
+	D3D11_TEXTURE2D_DESC TextureDesc = {};
+	TextureDesc.Width = static_cast<UINT>(SourceDimensions.x);
+	TextureDesc.Height = static_cast<UINT>(SourceDimensions.y);
+	TextureDesc.MipLevels = 1;
+	TextureDesc.ArraySize = 1;
+	TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TextureDesc.SampleDesc.Count = 1;
+	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	D3D11_SUBRESOURCE_DATA InitialData = {};
+	InitialData.pSysMem = Source.data();
+	InitialData.SysMemPitch = static_cast<UINT>(SourceDimensions.x * 4);
+
+	ID3D11Texture2D* Texture = nullptr;
+	if (FAILED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
 	{
-		if (WhiteTextureSRV)
-		{
-			WhiteTextureSRV->Release();
-			WhiteTextureSRV = nullptr;
-		}
+		return 0;
 	}
 
-private:
-	ID3D11Device* Device = nullptr;
-	ID3D11Buffer* PerFrameCB = nullptr;
-	ID3D11ShaderResourceView* WhiteTextureSRV = nullptr;
-	ID3D11RasterizerState* ScissorRasterizerState = nullptr;
-	const FPassContext* Ctx = nullptr;
-};
+	ID3D11ShaderResourceView* SRV = nullptr;
+	HRESULT HR = Device->CreateShaderResourceView(Texture, nullptr, &SRV);
+	Texture->Release();
+	if (FAILED(HR))
+	{
+		return 0;
+	}
+
+	auto* TextureResource = new FRmlTextureD3D11();
+	TextureResource->SRV = SRV;
+	return reinterpret_cast<Rml::TextureHandle>(TextureResource);
+}
+
+void FRmlRenderInterfaceD3D11::ReleaseTexture(Rml::TextureHandle Texture)
+{
+	auto* TextureResource = reinterpret_cast<FRmlTextureD3D11*>(Texture);
+	if (!TextureResource)
+	{
+		return;
+	}
+	if (TextureResource->SRV)
+	{
+		TextureResource->SRV->Release();
+	}
+	delete TextureResource;
+}
+
+void FRmlRenderInterfaceD3D11::EnableScissorRegion(bool Enable)
+{
+	if (!Ctx)
+	{
+		return;
+	}
+
+	ID3D11DeviceContext* DC = Ctx->Device.GetDeviceContext();
+	if (Enable && ScissorRasterizerState)
+	{
+		DC->RSSetState(ScissorRasterizerState);
+	}
+	else
+	{
+		Ctx->Resources.SetRasterizerState(Ctx->Device, ERasterizerState::SolidNoCull);
+	}
+
+	if (!Enable)
+	{
+		DC->RSSetScissorRects(0, nullptr);
+	}
+}
+
+void FRmlRenderInterfaceD3D11::SetScissorRegion(Rml::Rectanglei Region)
+{
+	if (!Ctx)
+	{
+		return;
+	}
+
+	D3D11_RECT Rect = {};
+	Rect.left = Region.Left();
+	Rect.top = Region.Top();
+	Rect.right = Region.Right();
+	Rect.bottom = Region.Bottom();
+	Ctx->Device.GetDeviceContext()->RSSetScissorRects(1, &Rect);
+}
+
+void FRmlRenderInterfaceD3D11::CreateConstantBuffer()
+{
+	if (!Device)
+	{
+		return;
+	}
+
+	D3D11_BUFFER_DESC Desc = {};
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.ByteWidth = sizeof(FRmlPerFrameCB);
+	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	Device->CreateBuffer(&Desc, nullptr, &PerFrameCB);
+
+	CreateWhiteTexture();
+
+	D3D11_RASTERIZER_DESC RasterDesc = {};
+	RasterDesc.FillMode = D3D11_FILL_SOLID;
+	RasterDesc.CullMode = D3D11_CULL_NONE;
+	RasterDesc.ScissorEnable = TRUE;
+	Device->CreateRasterizerState(&RasterDesc, &ScissorRasterizerState);
+}
+
+void FRmlRenderInterfaceD3D11::CreateWhiteTexture()
+{
+	const uint32 WhitePixel = 0xffffffff;
+
+	D3D11_TEXTURE2D_DESC TextureDesc = {};
+	TextureDesc.Width = 1;
+	TextureDesc.Height = 1;
+	TextureDesc.MipLevels = 1;
+	TextureDesc.ArraySize = 1;
+	TextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TextureDesc.SampleDesc.Count = 1;
+	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	D3D11_SUBRESOURCE_DATA InitialData = {};
+	InitialData.pSysMem = &WhitePixel;
+	InitialData.SysMemPitch = sizeof(uint32);
+
+	ID3D11Texture2D* Texture = nullptr;
+	if (SUCCEEDED(Device->CreateTexture2D(&TextureDesc, &InitialData, &Texture)))
+	{
+		Device->CreateShaderResourceView(Texture, nullptr, &WhiteTextureSRV);
+		Texture->Release();
+	}
+}
+
+void FRmlRenderInterfaceD3D11::ReleaseWhiteTexture()
+{
+	if (WhiteTextureSRV)
+	{
+		WhiteTextureSRV->Release();
+		WhiteTextureSRV = nullptr;
+	}
+}
 
 void UUIManager::Initialize(ID3D11Device* InDevice)
 {
