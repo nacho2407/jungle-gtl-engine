@@ -29,6 +29,7 @@ namespace SceneKeys
 	static constexpr const char* Version            = "Version";
 	static constexpr const char* Name               = "Name";
 	static constexpr const char* ClassName          = "ClassName";
+	static constexpr const char* ActorClass         = "ActorClass";
 	static constexpr const char* WorldType          = "WorldType";
 	static constexpr const char* ContextName        = "ContextName";
 	static constexpr const char* ContextHandle      = "ContextHandle";
@@ -112,6 +113,10 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 			
 			Writer.BeginObject(std::to_string(Comp->GetUUID()));
 			Comp->Serialize(Writer);
+			if (Comp == Actor->GetRootComponent())
+			{
+				Writer << SceneKeys::ActorClass << Actor->GetTypeInfo()->name;
+			}
 			Writer.EndObject();
 		}
 	}
@@ -244,8 +249,12 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 		return Type;
 	};
 
-	auto InferActorClass = [](const FString& CompType) -> FString
+	auto InferActorClass = [&](json::JSON& RootCompData, const FString& CompType) -> FString
 	{
+		if (RootCompData.hasKey(SceneKeys::ActorClass))
+		{
+			return RootCompData[SceneKeys::ActorClass].ToString();
+		}
 		if (CompType == "StaticMeshComp" || CompType == "UStaticMeshComponent") return "AStaticMeshActor";
 		if (CompType.length() > 10 && CompType.substr(CompType.size() - 9) == "Component")
 		{
@@ -305,9 +314,10 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 	// 2단계: Actor 생성 및 컴포넌트 매핑 (InitDefaultComponents 호출 후 UUID 매칭)
 	for (uint32 RootUUID : RootUUIDs)
 	{
-		FString CompType = PrimitivesNode[std::to_string(RootUUID)][SceneKeys::Type].ToString();
+		json::JSON& RootCompData = PrimitivesNode[std::to_string(RootUUID)];
+		FString CompType = RootCompData[SceneKeys::Type].ToString();
 		
-		FString ClassName = InferActorClass(CompType);
+		FString ClassName = InferActorClass(RootCompData, CompType);
 		AActor* NewActor = Cast<AActor>(FObjectFactory::Get().Create(ClassName));
 		if (NewActor)
 		{

@@ -15,6 +15,26 @@
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
+namespace
+{
+	bool HasPlayerStart(UWorld* World)
+	{
+		if (!World)
+		{
+			return false;
+		}
+
+		for (AActor* Actor : World->GetActors())
+		{
+			if (Actor && Actor->IsA<APlayerStart>())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
 void FEditorControlWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
@@ -60,6 +80,8 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	DrawSpawnItem(9, "Directional Light");
 	DrawSpawnItem(10, "Point Light");
 	DrawSpawnItem(11, "Spot Light");
+	ImGui::Separator();
+	DrawSpawnItem(13, "Player Start");
 	return bSpawned;
 }
 
@@ -77,6 +99,16 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 	}
 
 	Count = MathUtil::Clamp(Count, 1, 100);
+	if (PrimitiveType == 13)
+	{
+		Count = 1;
+		if (HasPlayerStart(World))
+		{
+			EditorEngine->GetMainPanel().PushFooterLog("Player Start already exists");
+			return false;
+		}
+	}
+
 	EditorEngine->CaptureUndoSnapshot("Place Actor");
 	for (int32 i = 0; i < Count; i++)
 	{
@@ -170,6 +202,14 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		{
 			AFogActor* Actor = World->SpawnActor<AFogActor>();
 			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 13:
+		{
+			APlayerStart* Actor = World->SpawnActor<APlayerStart>();
+			Actor->InitDefaultComponents();
+			Actor->SetFName(FName("Player Start"));
 			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}

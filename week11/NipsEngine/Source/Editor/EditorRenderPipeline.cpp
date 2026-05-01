@@ -92,7 +92,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const FShowFlags&      ShowFlags = Settings.ShowFlags;
     const EViewMode        ViewMode = SceneView.ViewMode;
 
-    const FViewportCamera* Camera = VC->GetCamera();
+    const FViewportCamera* Camera = VC->GetRenderCamera();
     if (Camera == nullptr)
         return;
 
@@ -111,8 +111,9 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
     Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
 
-    // 이 뷰포트가 편집 모드일 때만 기즈모·선택 오버레이를 그립니다.
-    if (VC->GetPlayState() == EViewportPlayState::Editing)
+    // Editor controller가 활성화된 뷰포트에서 기즈모·선택 오버레이를 그립니다.
+    // PIE Eject 상태도 PIE World를 대상으로 편집 컨트롤을 사용할 수 있어야 합니다.
+    if (VC->AllowsEditorWorldControl())
     {
         if (UGizmoComponent* Gizmo = Editor->GetGizmo())
         {
