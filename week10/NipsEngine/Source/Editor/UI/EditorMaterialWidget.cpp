@@ -17,6 +17,23 @@
 
 namespace
 {
+	bool ActorOwnsComponent(AActor* Actor, UActorComponent* Component)
+	{
+		if (!Actor || !Component)
+		{
+			return false;
+		}
+
+		for (UActorComponent* OwnedComponent : Actor->GetComponents())
+		{
+			if (OwnedComponent == Component)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
 #define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
@@ -37,22 +54,39 @@ void FEditorMaterialWidget::Render(float DeltaTime)
     ImGui::Begin("Material Editor");
 
 	FEditorPropertyWidget& PropWidget = EditorEngine->GetMainPanel().GetPropertyWidget();
-	
-	UActorComponent* ActorComp = PropWidget.GetSelectedComponent();
-	
-	if (ActorComp == nullptr)
+
+	AActor* PrimaryActor = EditorEngine->GetSelectionManager().GetPrimarySelection();
+	if (!PrimaryActor)
 	{
+		ResetSelection();
 		ImGui::End();
 		return;
 	}
 
-	USceneComponent* CurrentComp = Cast<USceneComponent>(ActorComp);
+	if (SelectedComponent && !ActorOwnsComponent(PrimaryActor, SelectedComponent))
+	{
+		ResetSelection();
+	}
+
+	USceneComponent* CurrentComp = nullptr;
 
 	// 만약 액터가 선택되어 있고 루트 컴포넌트가 있다면 그것을 기본으로 사용
 	if (PropWidget.IsActorSelected())
 	{
-		AActor* PrimaryActor = EditorEngine->GetSelectionManager().GetPrimarySelection();
 		CurrentComp = PrimaryActor ? PrimaryActor->GetRootComponent() : nullptr;
+	}
+	else
+	{
+		UActorComponent* ActorComp = PropWidget.GetSelectedComponent();
+		if (!ActorOwnsComponent(PrimaryActor, ActorComp))
+		{
+			PropWidget.ResetSelection();
+			ResetSelection();
+			ImGui::End();
+			return;
+		}
+
+		CurrentComp = Cast<USceneComponent>(ActorComp);
 	}
 
 	if (CurrentComp && CurrentComp != SelectedComponent)

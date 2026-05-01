@@ -115,6 +115,14 @@ void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContex
 			
 			Writer.BeginObject(std::to_string(Comp->GetUUID()));
 			Comp->Serialize(Writer);
+			if (!Comp->IsA<USceneComponent>())
+			{
+				if (USceneComponent* OwnerRoot = Actor->GetRootComponent())
+				{
+					uint32 OwnerRootUUID = OwnerRoot->GetUUID();
+					Writer << SceneKeys::OwnerRootUUID << OwnerRootUUID;
+				}
+			}
 			Writer.EndObject();
 		}
 	}

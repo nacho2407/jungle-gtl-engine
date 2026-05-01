@@ -10,6 +10,7 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Runtime/Script/ScriptManager.h"
 
 #include "GameFramework/PrimitiveActors.h"
 
@@ -211,6 +212,11 @@ void FEditorControlWidget::Render(float DeltaTime)
 	if (ImGui::Button("Rotate")) EditorEngine->GetGizmo()->SetRotateMode();
 	ImGui::SameLine();
 	if (ImGui::Button("Scale")) EditorEngine->GetGizmo()->SetScaleMode();
+
+    if (ImGui::Button("Hot Reload"))
+    {
+        FScriptManager::Get().HotReloadScripts();
+    }
 
 	ImGui::End();
 }
