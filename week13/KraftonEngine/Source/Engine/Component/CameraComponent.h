@@ -24,6 +24,9 @@ public:
 
 	UCameraComponent() = default;
 
+	void BeginPlay() override;
+	void EndPlay() override;
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	void LookAt(const FVector& Target);

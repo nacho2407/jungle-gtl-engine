@@ -4,6 +4,7 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Scene/FScene.h"
 #include "Viewport/Viewport.h"
+#include "Viewport/GameViewportClient.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
@@ -93,6 +94,7 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer)
 {
 	UCameraComponent* Camera = VC->GetCamera();
+
 	if (!Camera) return;
 
 	FViewport* VP = VC->GetViewport();
@@ -103,6 +105,27 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
+
+	bool bShouldUseGameCamera = false;
+	if (Editor && Editor->IsPIEPossessedMode())
+	{
+		if (UGameViewportClient* GVC = Editor->GetGameViewportClient())
+		{
+			bShouldUseGameCamera = GVC->GetViewport() == VP;
+		}
+	}
+
+	if (bShouldUseGameCamera)
+	{
+		UCameraManager* CamManager = World->GetCameraManager();
+		if (CamManager)
+		{
+			if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
+			{
+				Camera = ActiveCamera;
+			}
+		}
+	}
 
 	FGPUOcclusionCulling& GPUOcclusion = GetOcclusionForViewport(VC);
 

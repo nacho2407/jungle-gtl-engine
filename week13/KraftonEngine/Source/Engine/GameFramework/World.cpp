@@ -182,6 +182,8 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 
 FLODUpdateContext UWorld::PrepareLODContext()
 {
+	UCameraComponent* ActiveCamera = GetActiveCamera();
+
 	if (!ActiveCamera) return {};
 
 	const FVector CameraPos = ActiveCamera->GetWorldLocation();
@@ -220,6 +222,8 @@ void UWorld::InitWorld()
 	Partition.Reset(FBoundingBox());
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
 	PersistentLevel->SetWorld(this);
+
+	CameraManager = UObjectManager::Get().CreateObject<UCameraManager>(this);
 }
 
 void UWorld::BeginPlay()
@@ -229,6 +233,12 @@ void UWorld::BeginPlay()
 	if (PersistentLevel)
 	{
 		PersistentLevel->BeginPlay();
+	}
+
+	// BeginPlay에서 CameraComponent의 register 이후 Possess 시도
+	if (CameraManager)
+	{
+		CameraManager->AutoPossessDefaultCamera();
 	}
 }
 

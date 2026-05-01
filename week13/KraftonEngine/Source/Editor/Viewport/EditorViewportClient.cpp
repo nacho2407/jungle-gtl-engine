@@ -162,7 +162,6 @@ void FEditorViewportClient::Tick(float DeltaTime)
 			{
 				if (UGameViewportClient* GameViewportClient = EditorEngine->GetGameViewportClient())
 				{
-					GameViewportClient->SetDrivingCamera(Camera);
 					GameViewportClient->SetViewport(Viewport);
 					GameViewportClient->ProcessPIEInput(InputSnapshot, DeltaTime);
 				}
