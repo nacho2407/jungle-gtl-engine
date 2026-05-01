@@ -1,6 +1,7 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
@@ -72,9 +73,20 @@ sol::state& FLuaScriptManager::GetState()
 
 void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 {
+	RegisterLuaHelpers(Lua);
+	RegisterCoreBindings(Lua);
+	RegisterMathBindings(Lua);
+	RegisterActorBindings(Lua);
+}
+
+void FLuaScriptManager::RegisterLuaHelpers(sol::state& Lua)
+{
 	FString CoroutineManagerPath = ResolveScriptPath("CoroutineManager.lua");
 	Lua.safe_script_file(CoroutineManagerPath, sol::script_pass_on_error);
+}
 
+void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
+{
 	Lua.set_function("print", [](sol::variadic_args Args)
 	{
 		FString Message;
@@ -92,6 +104,49 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		UE_LOG("[Lua] %s", Message.c_str());
 	});
 
+	sol::table Input = Lua.create_named_table("Input");
+	Input.set_function("GetKeyDown", sol::overload(
+		[](int VK)
+	{
+		return InputSystem::Get().GetKeyDown(VK);
+	},
+		[](const FString& Key)
+	{
+		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
+		return VK != -1 && InputSystem::Get().GetKeyDown(VK);
+	}));
+	Input.set_function("GetKey", sol::overload(
+		[](int VK)
+	{
+		return InputSystem::Get().GetKey(VK);
+	},
+		[](const FString& Key)
+	{
+		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
+		return VK != -1 && InputSystem::Get().GetKey(VK);
+	}));
+	Input.set_function("GetKeyUp", sol::overload(
+		[](int VK)
+	{
+		return InputSystem::Get().GetKeyUp(VK);
+	},
+		[](const FString& Key)
+	{
+		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
+		return VK != -1 && InputSystem::Get().GetKeyUp(VK);
+	}));
+
+	sol::table Key = Lua.create_named_table("Key");
+	Key["W"] = 'W';
+	Key["A"] = 'A';
+	Key["S"] = 'S';
+	Key["D"] = 'D';
+	Key["Space"] = VK_SPACE;
+	Key["Escape"] = VK_ESCAPE;
+}
+
+void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
+{
 	Lua.new_usertype<FVector>("Vector",
 		sol::constructors<FVector(), FVector(float, float, float)>(),
 		"X", &FVector::X,
@@ -129,7 +184,10 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		"XAxis", []() { return FVector::XAxisVector; },
 		"YAxis", []() { return FVector::YAxisVector; },
 		"ZAxis", []() { return FVector::ZAxisVector; });
+}
 
+void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
+{
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(
 		[](AActor& Actor)
@@ -167,6 +225,5 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 	{
 		FVector Location = Actor.GetActorLocation();
 		UE_LOG("[Lua] Actor Location: %.2f %.2f %.2f", Location.X, Location.Y, Location.Z);
-	}
-	);
+	});
 }

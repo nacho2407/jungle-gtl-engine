@@ -16,5 +16,11 @@ public:
 	static void RegisterBindings(sol::state& Lua);
 
 private:
+	static void RegisterLuaHelpers(sol::state& Lua);
+	static void RegisterCoreBindings(sol::state& Lua);
+	static void RegisterMathBindings(sol::state& Lua);
+	static void RegisterActorBindings(sol::state& Lua);
+
+private:
 	static std::unique_ptr<sol::state> Lua;
 };
