@@ -34,6 +34,8 @@
 #include <filesystem>
 #include <functional>
 
+#include "Component/LuaScriptComponent.h"
+#include "Core/Logging/LogMacros.h"
 #include "Materials/MaterialManager.h"
 #include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/RenderPassRegistry.h"
@@ -496,6 +498,48 @@ static uint64 HashShadowViewProj(const FMatrix& Matrix)
     return Hash;
 }
 
+void LuaScriptEditOpen(const FString& LuaFilePath)
+{
+    std::string absoluteLuaScriptPath = std::filesystem::absolute(LuaFilePath).string();
+    HINSTANCE hInstance = ShellExecuteA(
+        NULL,
+        "open",
+        absoluteLuaScriptPath.c_str(),
+        NULL,
+        NULL,
+        SW_SHOWNORMAL
+    );
+
+    if ((INT_PTR)hInstance <= 32)
+    {
+        UE_LOG(UI, Error, "Error: Failed to open script file: %s\n", LuaFilePath.c_str());
+    }
+}
+
+static FString CreateLuaScript(AActor* TargetActor)
+{
+    std::string scriptsPath = FPaths::ContentRelativePath("Scripts") + "/";
+    int index = 0;
+    std::string levelName = TargetActor->GetLevel()->GetFName().ToString();
+    std::string actorName = TargetActor->GetFName().ToString();
+    std::string fileName = levelName + "_" + actorName;
+
+    std::string newFilePath = scriptsPath + fileName + std::to_string(index) + ".lua";
+    while (std::filesystem::exists(newFilePath))
+    {
+        index++;
+        newFilePath = scriptsPath + fileName + std::to_string(index) + ".lua";
+    }
+
+    std::string templatePath = FPaths::ContentRelativePath("Scripts/Template.lua");
+    if (std::filesystem::exists(templatePath))
+    {
+        std::filesystem::copy_file(templatePath, newFilePath, std::filesystem::copy_options::overwrite_existing);
+    }
+
+    return newFilePath;
+}
+
 static bool CompareShadowMapDataStable(const FShadowMapData& A, const FShadowMapData& B)
 {
     if (A.AtlasPageIndex != B.AtlasPageIndex)
@@ -846,6 +890,12 @@ void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
         }
     }
 
+    if (!ComponentClasses.empty() && ImGui::Button("Create Script"))
+    {
+        // ULuaScriptComponent 구현 시 추가적으로 기능 구현
+        CreateLuaScript(Actor);
+    }
+
     ImGui::SameLine();
     // ImGui::SetNextItemWidth(-1.0f);
     if (ImGui::BeginCombo("Type", Preview))
@@ -965,6 +1015,10 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     {
         return Name == "Cast Shadows" || Name == "Depth Bias" || Name == "Slope Bias" || Name == "Normal Bias" || Name == "Shadow Sharpen" || Name == "ESM Exponent" || Name == "Cascade Count" || Name == "CSM Max Distance" || Name == "Cascade Distribution" || Name == "bAffectsWorld";
     };
+    auto IsLuaProp = [](const FString& Name, EPropertyType Type)
+    {
+        return Type == EPropertyType::LuaScriptRef || Name == "Create Script" || Name == "Edit Script" || Name == "Reload Script";
+    };
 
     bool bIsRoot = false;
     if (SelectedComponent->IsA<USceneComponent>())
@@ -1071,6 +1125,32 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
         ImGui::Unindent();
     }
     EndEditorSection(bVisibilityOpen);
+
+    const bool bIsLuaScriptComponent = SelectedComponent->IsA<ULuaScriptComponent>();
+    const bool bLuaScriptOpen = bIsLuaScriptComponent && BeginEditorSection("Lua Script");
+    if (bLuaScriptOpen)
+    {
+        ULuaScriptComponent* LuaScriptComponent = Cast<ULuaScriptComponent>(SelectedComponent);
+        bool bHasScript = LuaScriptComponent->HasScript();
+
+        if (!bHasScript)
+        {
+            if (ImGui::Button("Create Script"))
+            {
+                FString FileName = CreateLuaScript(Actor);
+                LuaScriptComponent->SetScriptFileName(FileName);
+            }
+        }
+        if (ImGui::Button("Edit Script"))
+        {
+            LuaScriptEditOpen(LuaScriptComponent->GetScriptFileName());
+        }
+        if (ImGui::Button("Reload Script"))
+        {
+            
+        }
+    }
+    EndEditorSection("Lua Script");
 
     const char* PropertySectionLabel = "Component";
     if (bIsLightComponent)
@@ -1752,20 +1832,20 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
                 TArray<FEntry> Entries;
                 std::function<void(USceneComponent*, const FString&, int32)> Collect =
                     [&](USceneComponent* Comp, const FString& CurPath, int32 Depth)
-                {
-                    if (!Comp)
-                        return;
-                    FString Indent(static_cast<size_t>(Depth * 2), ' ');
-                    Entries.push_back({ CurPath, Indent + Comp->GetClass()->GetName() });
-                    const TArray<USceneComponent*>& Ch = Comp->GetChildren();
-                    for (int32 ci = 0; ci < static_cast<int32>(Ch.size()); ++ci)
                     {
-                        FString ChildPath = (CurPath == "Root")
-                                                ? std::to_string(ci)
-                                                : (CurPath + "/" + std::to_string(ci));
-                        Collect(Ch[ci], ChildPath, Depth + 1);
-                    }
-                };
+                        if (!Comp)
+                            return;
+                        FString Indent(static_cast<size_t>(Depth * 2), ' ');
+                        Entries.push_back({ CurPath, Indent + Comp->GetClass()->GetName() });
+                        const TArray<USceneComponent*>& Ch = Comp->GetChildren();
+                        for (int32 ci = 0; ci < static_cast<int32>(Ch.size()); ++ci)
+                        {
+                            FString ChildPath = (CurPath == "Root")
+                                ? std::to_string(ci)
+                                : (CurPath + "/" + std::to_string(ci));
+                            Collect(Ch[ci], ChildPath, Depth + 1);
+                        }
+                    };
                 Collect(RefActor->GetRootComponent(), "Root", 0);
 
                 for (const FEntry& Entry : Entries)
@@ -1904,6 +1984,11 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         break;
     }
     }
+    /*
+    case EPropertyType::LuaScriptRef:
+
+    }
+    */
 
     if (bChanged && SelectedComponent)
     {
