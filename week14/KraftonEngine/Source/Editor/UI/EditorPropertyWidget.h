@@ -14,6 +14,7 @@ public:
 	bool IsShowingEditorOnlyComponents() const { return bShowEditorOnlyComponents; }
 
 private:
+	void RenameActor(AActor* PrimaryActor);
 	void RenderComponentTree(AActor* Actor);
 	void RenderSceneComponentNode(class USceneComponent* Comp);
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
@@ -29,4 +30,7 @@ private:
 	AActor* LastSelectedActor = nullptr;
 	bool bActorSelected = true; // true: Actor details, false: Component details
 	bool bShowEditorOnlyComponents = false;
+
+	char RenameBuffer[256] = {};
+	bool bShowDuplicateWarning = false;
 };
