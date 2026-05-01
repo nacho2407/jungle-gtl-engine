@@ -4,15 +4,17 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Platform/Paths.h"
+#include "Core/Delegates/Delegate.h"
 #include "Object/ObjectIterator.h"
 
 void FLuaScriptManager::Init()
 {
-    FDirectoryWatcher::Get().RegisterWatch(
-        [this](const FString& FileName) {
-            this->OnLuaFileChanged(FileName);
-        }
-    );
+    FDirectoryWatcher::Get().OnDirectoryChanged.AddDynamic(this, &FLuaScriptManager::OnLuaFileChanged);
+}
+
+void FLuaScriptManager::Release()
+{
+    FDirectoryWatcher::Get().OnDirectoryChanged.RemoveAll(this);
 }
 
 FString FLuaScriptManager::CreateScript(class AActor* TargetActor)

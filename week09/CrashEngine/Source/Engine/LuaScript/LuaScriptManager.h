@@ -8,6 +8,7 @@ class FLuaScriptManager : public TSingleton<FLuaScriptManager>
 
 public:
     void Init();
+    void Release();
 
     FString CreateScript(class AActor* TargetActor);
     bool DeleteScript(const FString& FileName);
