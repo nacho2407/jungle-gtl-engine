@@ -122,7 +122,7 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
 
 void UPrimitiveComponent::ResolveOverlaps()
 {
-    for (auto* B : CurOverlaps)
+    for (auto* B : CurOverlaps) 
     {
         if (!PrevOverlaps.contains(B))
         {

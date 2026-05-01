@@ -3,6 +3,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
+#include "Core/Delegates/Delegate.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -284,6 +285,7 @@ void AActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AActor::NotifyComponentRegistered(UActorComponent* Component)
 {
+    PostComponentRegistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
         return;
@@ -361,4 +363,16 @@ bool AActor::IsOverlappingActor(const AActor* Other) const
 	}
 
     return false;
+}
+
+void AActor::PostComponentRegistered(UActorComponent* Comp)
+{
+    UShapeComponent* ShapeComp = Cast<UShapeComponent>(Comp);
+
+    if (ShapeComp)
+    {
+        ShapeComp->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+        ShapeComp->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
+        ShapeComp->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
+    }
 }
