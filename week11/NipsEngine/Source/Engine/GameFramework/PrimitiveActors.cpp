@@ -81,8 +81,8 @@ REGISTER_FACTORY(ASpotlightActor)
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
-    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Lumine/LumineModel.obj"));
-    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Lumine/LumineModel.obj"));
+    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
 	SetRootComponent(Cube);
 
 	// Text
