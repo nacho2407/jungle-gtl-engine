@@ -12,7 +12,8 @@
 #include "Render/Types/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
-#include <Collision/CollisionSystem.h>
+#include "Physics/IPhysicsScene.h"
+#include <memory>
 
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -95,10 +96,10 @@ private:
 	FTickManager TickManager;
 
 	FSpatialPartition Partition;
-	FCollisionSystem CollisionSystem;
+	std::unique_ptr<IPhysicsScene> PhysicsScene;
 
 public:
-	FCollisionSystem& GetCollisionSystem() { return CollisionSystem; }
+	IPhysicsScene* GetPhysicsScene() const { return PhysicsScene.get(); }
 };
 
 template<typename T>

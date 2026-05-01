@@ -3,7 +3,7 @@
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
-#include "Collision/CollisionSystem.h"
+#include "Physics/IPhysicsScene.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 #include "Render/Scene/FScene.h"
@@ -43,7 +43,7 @@ UPrimitiveComponent::~UPrimitiveComponent()
 	{
 		if (UWorld* World = Owner->GetWorld())
 		{
-			World->GetCollisionSystem().UnregisterComponent(this);
+			World->GetPhysicsScene()->UnregisterComponent(this);
 		}
 	}
 	DestroyRenderState();
@@ -60,7 +60,7 @@ void UPrimitiveComponent::BeginPlay()
 		{
 			if (UWorld* World = Owner->GetWorld())
 			{
-				World->GetCollisionSystem().RegisterComponent(this);
+				World->GetPhysicsScene()->RegisterComponent(this);
 			}
 		}
 	}
@@ -204,11 +204,11 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 			{
 				if (IsQueryCollisionEnabled())
 				{
-					World->GetCollisionSystem().RegisterComponent(this);
+					World->GetPhysicsScene()->RegisterComponent(this);
 				}
 				else
 				{
-					World->GetCollisionSystem().UnregisterComponent(this);
+					World->GetPhysicsScene()->UnregisterComponent(this);
 				}
 			}
 		}
@@ -383,11 +383,11 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 
 	if (bIsQuery)
 	{
-		World->GetCollisionSystem().RegisterComponent(this);
+		World->GetPhysicsScene()->RegisterComponent(this);
 	}
 	else
 	{
-		World->GetCollisionSystem().UnregisterComponent(this);
+		World->GetPhysicsScene()->UnregisterComponent(this);
 	}
 }
 
