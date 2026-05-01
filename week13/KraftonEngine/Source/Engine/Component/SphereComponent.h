@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
@@ -19,5 +19,5 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
-	float SphereRadius = 50.0f;
+	float SphereRadius = 2.0f;
 };

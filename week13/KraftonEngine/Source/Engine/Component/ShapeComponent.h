@@ -16,7 +16,10 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 	bool SupportsOutline() const override { return false; }
-	FPrimitiveSceneProxy* CreateSceneProxy() override { return nullptr; }
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
+
+	bool IsDrawOnlyIfSelected() const { return bDrawOnlyIfSelected; }
+	const FVector4& GetShapeColorVec4() const { return ShapeColor; }
 
 protected:
 	FColor GetShapeColor() const
@@ -30,5 +33,5 @@ protected:
 	}
 
 	FVector4 ShapeColor = { 0.0f, 1.0f, 0.0f, 1.0f }; // Green
-	bool bDrawOnlyIfSelected = true;
+	bool bDrawOnlyIfSelected = false;
 };

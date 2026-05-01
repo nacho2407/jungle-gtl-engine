@@ -27,6 +27,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	{
 		Frame.SetCameraInfo(Camera);
 
+		Frame.WorldType = World->GetWorldType();
+
 		FViewportRenderOptions Opts;
 		Opts.ViewMode = EViewMode::Lit_Phong;
 		Frame.SetRenderOptions(Opts);

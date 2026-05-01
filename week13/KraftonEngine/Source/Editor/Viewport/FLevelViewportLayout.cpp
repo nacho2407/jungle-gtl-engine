@@ -1581,6 +1581,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::Checkbox("Shadows", &FProjectSettings::Get().Shadow.bEnabled);
 					ImGui::TableNextColumn();
 					ImGui::Checkbox("Shadow Frustum", &Opts.ShowFlags.bShowShadowFrustum);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Collision", &Opts.ShowFlags.bCollision);
 
 					ImGui::EndTable();
 				}
