@@ -26,8 +26,10 @@ mono_crash.*
 # Build results
 [Dd]ebug/
 !**/Source/**/[Dd]ebug/
+!**/ThirdParty/**/[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+!**/ThirdParty/**/[Rr]elease/
 [Rr]eleases/
 ObjView*Debug/
 **/Build/
