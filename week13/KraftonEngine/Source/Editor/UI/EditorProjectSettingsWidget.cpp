@@ -48,6 +48,17 @@ void EditorProjectSettingsWidget::Render()
 		}
 	}
 
+	if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		static const char* kBackendLabels[] = { "Native", "PhysX" };
+		int CurrentBackend = static_cast<int>(PS.Physics.Backend);
+		if (ImGui::Combo("Backend", &CurrentBackend, kBackendLabels, 2))
+		{
+			PS.Physics.Backend = static_cast<EPhysicsBackend>(CurrentBackend);
+		}
+		ImGui::TextDisabled("Requires scene reload to take effect.");
+	}
+
 	if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ImGui::Checkbox("Shadows", &PS.Shadow.bEnabled);

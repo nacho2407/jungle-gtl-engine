@@ -7,7 +7,7 @@ void ABoxActor::InitDefaultComponents()
 {
 	BoxComponent = AddComponent<UBoxComponent>();
 	SetRootComponent(BoxComponent);
-	BoxComponent->SetBoxExtent(FVector(0.5f, 0.5f, 0.5f));
+	BoxComponent->SetBoxExtent(FVector(1.0f, 1.0f, 1.0f));
 	BoxComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	BoxComponent->SetCollisionObjectType(ECollisionChannel::WorldDynamic);
 }

@@ -21,4 +21,12 @@ void ASphereActor::PostDuplicate()
 void ASphereActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (SphereComponent)
+	{
+		SphereComponent->OnComponentHit.AddLambda([this](UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, const FVector& NormalImpulse, const FHitResult& Hit)
+		{
+			UE_LOG("ASphereActor was hit by %s", OtherActor->GetName().c_str());
+		});
+	}
 }

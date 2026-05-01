@@ -6,6 +6,7 @@
 #include "Render/Types/LODContext.h"
 #include "Physics/NativePhysicsScene.h"
 #include "Physics/PhysXPhysicsScene.h"
+#include "Core/ProjectSettings.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
 
@@ -227,8 +228,11 @@ void UWorld::InitWorld()
 
 	CameraManager = UObjectManager::Get().CreateObject<UCameraManager>(this);
 
-	// 물리 시스템 초기화 — PhysX 4.1 백엔드
-	PhysicsScene = std::make_unique<FPhysXPhysicsScene>();
+	// 물리 시스템 초기화 — ProjectSettings 백엔드 선택
+	if (FProjectSettings::Get().Physics.Backend == EPhysicsBackend::PhysX)
+		PhysicsScene = std::make_unique<FPhysXPhysicsScene>();
+	else
+		PhysicsScene = std::make_unique<FNativePhysicsScene>();
 	PhysicsScene->Initialize(this);
 }
 
