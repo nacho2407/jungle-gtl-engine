@@ -12,6 +12,8 @@ public:
 	DECLARE_CLASS(AStaticMeshActor, AActor)
 	AStaticMeshActor() {}
 
+	void BeginPlay() override;
+
 	void InitDefaultComponents(const FString& UStaticMeshFileName = "Data/BasicShape/Cylinder.obj");
 
 private:

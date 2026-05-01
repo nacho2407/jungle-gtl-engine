@@ -86,6 +86,7 @@ public:
 
 	// FName
 	FName GetFName() const { return ObjectName; }
+	FString GetName() const { return ObjectName.ToString(); }
 	void SetFName(const FName& InName) { ObjectName = InName; }
 
 	// RTTI

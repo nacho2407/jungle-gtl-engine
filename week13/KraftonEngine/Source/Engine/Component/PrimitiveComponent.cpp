@@ -3,6 +3,7 @@
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
+#include "Collision/CollisionSystem.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
 #include "Render/Scene/FScene.h"
@@ -37,7 +38,32 @@ HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
+	// CollisionSystem에서 안전하게 해제 (dangling pointer 방지)
+	if (Owner)
+	{
+		if (UWorld* World = Owner->GetWorld())
+		{
+			World->GetCollisionSystem().UnregisterComponent(this);
+		}
+	}
 	DestroyRenderState();
+}
+
+void UPrimitiveComponent::BeginPlay()
+{
+	USceneComponent::BeginPlay();
+
+	// 직렬화나 생성자에서 CollisionEnabled가 이미 설정된 경우 등록
+	if (IsQueryCollisionEnabled())
+	{
+		if (Owner)
+		{
+			if (UWorld* World = Owner->GetWorld())
+			{
+				World->GetCollisionSystem().RegisterComponent(this);
+			}
+		}
+	}
 }
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
@@ -53,6 +79,9 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	Ar << bCastShadow;
 	Ar << bCastShadowAsTwoSided;
 	Ar << bGenerateOverlapEvents;
+	Ar << CollisionEnabled;
+	Ar << ObjectType;
+	Ar << ResponseContainer;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -109,6 +138,37 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
 	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, &bCastShadowAsTwoSided });
 	OutProps.push_back({ "Generate Overlap Events", EPropertyType::Bool, &bGenerateOverlapEvents });
+
+	{
+		FPropertyDescriptor Desc;
+		Desc.Name = "Collision Enabled";
+		Desc.Type = EPropertyType::Enum;
+		Desc.ValuePtr = &CollisionEnabled;
+		Desc.EnumNames = GCollisionEnabledNames;
+		Desc.EnumCount = static_cast<uint32>(ECollisionEnabled::COUNT);
+		Desc.EnumSize = sizeof(ECollisionEnabled);
+		OutProps.push_back(Desc);
+	}
+
+	{
+		FPropertyDescriptor Desc;
+		Desc.Name = "Object Type";
+		Desc.Type = EPropertyType::Enum;
+		Desc.ValuePtr = &ObjectType;
+		Desc.EnumNames = GCollisionChannelNames;
+		Desc.EnumCount = static_cast<uint32>(ECollisionChannel::ActiveCount);
+		Desc.EnumSize = sizeof(ECollisionChannel);
+		OutProps.push_back(Desc);
+	}
+
+	{
+		FPropertyDescriptor Desc;
+		Desc.Name = "Collision Responses";
+		Desc.Type = EPropertyType::Struct;
+		Desc.ValuePtr = &ResponseContainer;
+		Desc.StructFunc = &FCollisionResponseContainer::DescribeProperties;
+		OutProps.push_back(Desc);
+	}
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -128,6 +188,25 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	else if (strcmp(PropertyName, "Two Sided Shadow") == 0)
 	{
 		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "Collision Enabled") == 0)
+	{
+		// 에디터에서 직접 enum 값을 변경한 경우 — 이미 CollisionEnabled 필드가 갱신된 상태
+		// Register/Unregister를 수동으로 처리
+		if (Owner)
+		{
+			if (UWorld* World = Owner->GetWorld())
+			{
+				if (IsQueryCollisionEnabled())
+				{
+					World->GetCollisionSystem().RegisterComponent(this);
+				}
+				else
+				{
+					World->GetCollisionSystem().UnregisterComponent(this);
+				}
+			}
+		}
 	}
 }
 
@@ -281,6 +360,64 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 	{
 		UpdateWorldAABB();
 	}
+}
+
+// --- Collision Channel / Response ---
+
+void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
+{
+	bool bWasQuery = IsQueryCollisionEnabled();
+	CollisionEnabled = InEnabled;
+	bool bIsQuery = IsQueryCollisionEnabled();
+
+	if (bWasQuery == bIsQuery) return;
+
+	if (!Owner) return;
+	UWorld* World = Owner->GetWorld();
+	if (!World) return;
+
+	if (bIsQuery)
+	{
+		World->GetCollisionSystem().RegisterComponent(this);
+	}
+	else
+	{
+		World->GetCollisionSystem().UnregisterComponent(this);
+	}
+}
+
+bool UPrimitiveComponent::IsQueryCollisionEnabled() const
+{
+	return CollisionEnabled == ECollisionEnabled::QueryOnly
+		|| CollisionEnabled == ECollisionEnabled::QueryAndPhysics;
+}
+
+void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
+{
+	ObjectType = InChannel;
+}
+
+void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
+{
+	ResponseContainer.SetResponse(Channel, Response);
+}
+
+void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
+{
+	ResponseContainer.SetAllChannels(Response);
+}
+
+ECollisionResponse UPrimitiveComponent::GetCollisionResponseToChannel(ECollisionChannel Channel) const
+{
+	return ResponseContainer.GetResponse(Channel);
+}
+
+ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent* A, const UPrimitiveComponent* B)
+{
+	// 양쪽의 응답 중 더 제한적인(= 숫자가 작은) 쪽을 채택
+	ECollisionResponse RespAtoB = A->GetCollisionResponseToChannel(B->GetCollisionObjectType());
+	ECollisionResponse RespBtoA = B->GetCollisionResponseToChannel(A->GetCollisionObjectType());
+	return (RespAtoB < RespBtoA) ? RespAtoB : RespBtoA;
 }
 
 // --- Overlap / Hit ---

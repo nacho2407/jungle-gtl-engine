@@ -22,6 +22,7 @@ enum class EPropertyType : uint8_t
 	MaterialSlot,  // FMaterialSlot — 머티리얼 경로
 	Enum,
 	Vec3Array,
+	Struct,    // 자기기술 구조체 — StructFunc로 Children 생성
 };
 
 // 머티리얼 슬롯: 경로를 하나의 단위로 관리
@@ -30,12 +31,17 @@ struct FMaterialSlot
 	std::string Path;
 };
 
+struct FPropertyDescriptor;
+
+// 구조체 자기기술 함수: 구조체 포인터로부터 하위 프로퍼티를 생성
+using FStructPropertyFunc = void(*)(void* StructPtr, std::vector<FPropertyDescriptor>& OutProps);
+
 // 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
 struct FPropertyDescriptor
 {
 	std::string   Name;
-	EPropertyType Type;
-	void*         ValuePtr;
+	EPropertyType Type = EPropertyType::Bool;
+	void*         ValuePtr = nullptr;
 
 	// float 범위 힌트 (DragFloat 등에서 사용)
 	float Min   = 0.0f;
@@ -45,4 +51,8 @@ struct FPropertyDescriptor
 	// Enum Metadata
 	const char** EnumNames = nullptr;
 	uint32		 EnumCount = 0;
+	uint32		 EnumSize  = sizeof(int32); // underlying type 크기 (uint8 enum은 1)
+
+	// Struct Metadata
+	FStructPropertyFunc StructFunc = nullptr;
 };

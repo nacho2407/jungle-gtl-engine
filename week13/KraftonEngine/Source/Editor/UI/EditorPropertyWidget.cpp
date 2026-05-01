@@ -863,8 +863,30 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 				case EPropertyType::StaticMeshRef:  *static_cast<FString*>(DstProp.ValuePtr) = *static_cast<FString*>(SrcProp->ValuePtr); break;
 				case EPropertyType::Name:           *static_cast<FName*>(DstProp.ValuePtr) = *static_cast<FName*>(SrcProp->ValuePtr); break;
 				case EPropertyType::MaterialSlot:   *static_cast<FMaterialSlot*>(DstProp.ValuePtr) = *static_cast<FMaterialSlot*>(SrcProp->ValuePtr); break;
-				case EPropertyType::Enum:           Size = sizeof(int32); break;
+				case EPropertyType::Enum:           Size = SrcProp->EnumSize; break;
 				case EPropertyType::Vec3Array:      *static_cast<TArray<FVector>*>(DstProp.ValuePtr) = *static_cast<TArray<FVector>*>(SrcProp->ValuePtr); break;
+				case EPropertyType::Struct:
+				{
+					// Struct 자식 프로퍼티를 개별적으로 복사
+					if (SrcProp->StructFunc && DstProp.StructFunc)
+					{
+						TArray<FPropertyDescriptor> SrcChildren, DstChildren;
+						SrcProp->StructFunc(SrcProp->ValuePtr, SrcChildren);
+						DstProp.StructFunc(DstProp.ValuePtr, DstChildren);
+						for (size_t si = 0; si < SrcChildren.size() && si < DstChildren.size(); ++si)
+						{
+							if (SrcChildren[si].Type == DstChildren[si].Type)
+							{
+								size_t ChildSize = 0;
+								if (SrcChildren[si].Type == EPropertyType::Enum)
+									ChildSize = SrcChildren[si].EnumSize;
+								if (ChildSize > 0)
+									memcpy(DstChildren[si].ValuePtr, SrcChildren[si].ValuePtr, ChildSize);
+							}
+						}
+					}
+					break;
+				}
 				}
 				if (Size > 0)
 					memcpy(DstProp.ValuePtr, SrcProp->ValuePtr, Size);
@@ -1202,16 +1224,18 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 	case EPropertyType::Enum:
 	{
 		if (!Prop.EnumNames || Prop.EnumCount == 0) break;
-		int32* Val = static_cast<int32*>(Prop.ValuePtr);
-		const char* Preview = ((uint32)*Val < Prop.EnumCount) ? Prop.EnumNames[*Val] : "Unknown";
+		int32 Val = 0;
+		memcpy(&Val, Prop.ValuePtr, Prop.EnumSize);
+		const char* Preview = ((uint32)Val < Prop.EnumCount) ? Prop.EnumNames[Val] : "Unknown";
 		if (ImGui::BeginCombo(Prop.Name.c_str(), Preview))
 		{
 			for (uint32 i = 0; i < Prop.EnumCount; ++i)
 			{
-				bool bSelected = (*Val == (int32)i);
+				bool bSelected = (Val == (int32)i);
 				if (ImGui::Selectable(Prop.EnumNames[i], bSelected))
 				{
-					*Val = (int32)i;
+					int32 NewVal = (int32)i;
+					memcpy(Prop.ValuePtr, &NewVal, Prop.EnumSize);
 					bChanged = true;
 				}
 				if (bSelected) ImGui::SetItemDefaultFocus();
@@ -1249,6 +1273,49 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		{
 			Arr->push_back(FVector(0.0f, 0.0f, 0.0f));
 			bChanged = true;
+		}
+		break;
+	}
+	case EPropertyType::Struct:
+	{
+		if (!Prop.StructFunc || !Prop.ValuePtr) break;
+		if (ImGui::TreeNodeEx(Prop.Name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			TArray<FPropertyDescriptor> ChildProps;
+			Prop.StructFunc(Prop.ValuePtr, ChildProps);
+			for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
+			{
+				ImGui::PushID(ci);
+				FPropertyDescriptor& ChildProp = ChildProps[ci];
+				// Struct 자식 프로퍼티는 재귀적으로 같은 위젯 렌더링 함수를 사용
+				// 단, SelectedComponent의 PostEditProperty는 부모 Struct 이름으로 호출
+				int32 ChildIdx = ci;
+
+				// Enum 위젯 인라인 렌더링 (가장 빈번한 자식 타입)
+				if (ChildProp.Type == EPropertyType::Enum && ChildProp.EnumNames && ChildProp.EnumCount > 0)
+				{
+					int32 Val = 0;
+					memcpy(&Val, ChildProp.ValuePtr, ChildProp.EnumSize);
+					const char* Preview = ((uint32)Val < ChildProp.EnumCount) ? ChildProp.EnumNames[Val] : "Unknown";
+					if (ImGui::BeginCombo(ChildProp.Name.c_str(), Preview))
+					{
+						for (uint32 ei = 0; ei < ChildProp.EnumCount; ++ei)
+						{
+							bool bSel = (Val == (int32)ei);
+							if (ImGui::Selectable(ChildProp.EnumNames[ei], bSel))
+							{
+								int32 NewVal = (int32)ei;
+								memcpy(ChildProp.ValuePtr, &NewVal, ChildProp.EnumSize);
+								bChanged = true;
+							}
+							if (bSel) ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+				}
+				ImGui::PopID();
+			}
+			ImGui::TreePop();
 		}
 		break;
 	}

@@ -52,6 +52,8 @@ public:
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
 	~UPrimitiveComponent() override;
 
+	void BeginPlay() override;
+
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override;
 
@@ -115,6 +117,24 @@ public:
 		bInOctreeOverflow = false;
 	}
 
+	// --- Collision Channel / Response ---
+
+	void SetCollisionEnabled(ECollisionEnabled InEnabled);
+	ECollisionEnabled GetCollisionEnabled() const { return CollisionEnabled; }
+	bool IsCollisionEnabled() const { return CollisionEnabled != ECollisionEnabled::NoCollision; }
+	bool IsQueryCollisionEnabled() const;
+
+	void SetCollisionObjectType(ECollisionChannel InChannel);
+	ECollisionChannel GetCollisionObjectType() const { return ObjectType; }
+
+	void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response);
+	void SetCollisionResponseToAllChannels(ECollisionResponse Response);
+	ECollisionResponse GetCollisionResponseToChannel(ECollisionChannel Channel) const;
+	const FCollisionResponseContainer& GetCollisionResponseContainer() const { return ResponseContainer; }
+
+	// 두 컴포넌트 간 최소(=더 제한적인) 응답을 반환
+	static ECollisionResponse GetMinResponse(const UPrimitiveComponent* A, const UPrimitiveComponent* B);
+
 	// --- Overlap / Hit ---
 
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
@@ -160,6 +180,9 @@ protected:
 	bool bCastShadow = true;
 	bool bCastShadowAsTwoSided = false;
 	bool bGenerateOverlapEvents = false;
+	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
+	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
+	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 
 	FOctree* OctreeNode = nullptr;
