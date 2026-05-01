@@ -1,0 +1,18 @@
+<rml>
+<head>
+	<link type="text/rcss" href="ContributorWidget.rcss"/>
+</head>
+<body>
+	<div id="contributor-panel">
+		<div id="contributor-title">contributor</div>
+
+		<div id="contributor-name-list">
+			심우진<br/>
+			성원희<br/>
+			국동진
+		</div>
+		
+		<div id="contributor-close-button">Close</div>
+	</div>
+</body>
+</rml>

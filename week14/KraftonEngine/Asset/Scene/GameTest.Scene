@@ -8,6 +8,13 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "UIManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "PrimitiveKey" : "124",
       "RootComponent" : {

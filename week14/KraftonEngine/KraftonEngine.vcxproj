@@ -99,14 +99,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -180,14 +180,17 @@
       <ExceptionHandling>Async</ExceptionHandling>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\RmlUi\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(ProjectDir)ThirdParty\RmlUi\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -201,11 +204,17 @@
       <ExceptionHandling>Async</ExceptionHandling>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\RmlUi\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\RmlUi\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <ClCompile>
@@ -223,7 +232,11 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <ClCompile>
@@ -241,7 +254,11 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
@@ -314,6 +331,7 @@
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp" />
@@ -382,6 +400,7 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\ShadowMapPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\UIPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderState\BlendStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderState\DepthStencilStateManager.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderState\RasterizerStateManager.cpp" />
@@ -407,6 +426,8 @@
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\UI\SWindow.cpp" />
+    <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
+    <ClCompile Include="Source\Engine\UI\UserWidget.cpp" />
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
@@ -508,6 +529,7 @@
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\World.h" />
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
@@ -587,6 +609,7 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\ShadowMapPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\UIPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderState\BlendStateManager.h" />
     <ClInclude Include="Source\Engine\Render\RenderState\DepthStencilStateManager.h" />
     <ClInclude Include="Source\Engine\Render\RenderState\RasterizerStateManager.h" />
@@ -630,6 +653,8 @@
     <ClInclude Include="Source\Engine\UI\SSplitter.h" />
     <ClInclude Include="Source\Engine\UI\SWidget.h" />
     <ClInclude Include="Source\Engine\UI\SWindow.h" />
+    <ClInclude Include="Source\Engine\UI\UIManager.h" />
+    <ClInclude Include="Source\Engine\UI\UserWidget.h" />
     <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h" />
     <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
@@ -650,6 +675,139 @@
     <ClInclude Include="ThirdParty\lua\include\lua.hpp" />
     <ClInclude Include="ThirdParty\lua\include\luaconf.h" />
     <ClInclude Include="ThirdParty\lua\include\lualib.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Config\Config.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Animation.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\BaseXMLParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Box.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CallbackTexture.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CompiledFilterShader.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ComputedValues.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Context.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ContextInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ConvolutionFilter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Core.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataModelHandle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataStructHandle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypeRegister.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataVariable.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Debug.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DecorationTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Decorator.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Dictionary.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EffectSpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementDocument.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementScroll.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementText.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Event.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListener.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListenerInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Factory.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FileInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Filter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffect.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffectInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEngineInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontGlyph.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontMetrics.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Geometry.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ID.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Input.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Log.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Math.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Mesh.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\MeshUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\NumericValue.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ObserverPtr.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Platform.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Plugin.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Profiling.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertiesIteratorView.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Property.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDefinition.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDictionary.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyIdSet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertySpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Rectangle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderBox.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterfaceCompatibility.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderManager.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScriptInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScrollTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Span.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Spritesheet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StableVector.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Stream.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StreamMemory.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StringUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetContainer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetSpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\SystemInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputContext.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputHandler.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextShapingContext.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Texture.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Traits.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Transform.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TransformPrimitive.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Tween.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Types.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\URL.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\UniqueRenderResource.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Unit.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Utilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vertex.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLNodeHandler.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\robin_hood.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_map.hpp" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_set.hpp" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementForm.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControl.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlInput.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlSelect.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlTextArea.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementProgress.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementTabSet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Debugger.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lottie\ElementLottie.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\IncludeLua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Interpreter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Lua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Utilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\SVG\ElementSVG.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -840,6 +998,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\UI\OverlayFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\RmlUi.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
