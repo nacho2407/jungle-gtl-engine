@@ -281,6 +281,15 @@ class TMulticastDelegate<RetVal(ParamTypes...)>
 #define DECLARE_DELEGATE_ThreeParams(Name, P1, P2, P3) \
 	using Name = TDelegate<void(P1, P2, P3)>
 
+#define DECLARE_DELEGATE_FourParams(Name, P1, P2, P3, P4) \
+	using Name = TDelegate<void(P1, P2, P3, P4)>
+
+#define DECLARE_DELEGATE_FiveParams(Name, P1, P2, P3, P4, P5) \
+	using Name = TDelegate<void(P1, P2, P3, P4, P5)>
+
+#define DECLARE_DELEGATE_SixParams(Name, P1, P2, P3, P4, P5, P6) \
+	using Name = TDelegate<void(P1, P2, P3, P4, P5, P6)>
+
 #define DECLARE_DELEGATE_RetVal(RetVal, Name) \
 	using Name = TDelegate<RetVal()>
 
@@ -292,6 +301,15 @@ class TMulticastDelegate<RetVal(ParamTypes...)>
 
 #define DECLARE_DELEGATE_RetVal_ThreeParams(RetVal, Name, P1, P2, P3) \
 	using Name = TDelegate<RetVal(P1, P2, P3)>
+
+#define DECLARE_DELEGATE_RetVal_FourParams(RetVal, Name, P1, P2, P3, P4) \
+	using Name = TDelegate<RetVal(P1, P2, P3, P4)>
+
+#define DECLARE_DELEGATE_RetVal_FiveParams(RetVal, Name, P1, P2, P3, P4, P5) \
+	using Name = TDelegate<RetVal(P1, P2, P3, P4, P5)>
+
+#define DECLARE_DELEGATE_RetVal_SixParams(RetVal, Name, P1, P2, P3, P4, P5, P6) \
+	using Name = TDelegate<RetVal(P1, P2, P3, P4, P5, P6)>
 
 // ============================================================
 // DECLARE_MULTICAST_DELEGATE 매크로
@@ -307,3 +325,12 @@ class TMulticastDelegate<RetVal(ParamTypes...)>
 
 #define DECLARE_MULTICAST_DELEGATE_ThreeParams(Name, P1, P2, P3) \
 	using Name = TMulticastDelegate<void(P1, P2, P3)>
+
+#define DECLARE_MULTICAST_DELEGATE_FourParams(Name, P1, P2, P3, P4) \
+	using Name = TMulticastDelegate<void(P1, P2, P3, P4)>
+
+#define DECLARE_MULTICAST_DELEGATE_FiveParams(Name, P1, P2, P3, P4, P5) \
+	using Name = TMulticastDelegate<void(P1, P2, P3, P4, P5)>
+
+#define DECLARE_MULTICAST_DELEGATE_SixParams(Name, P1, P2, P3, P4, P5, P6) \
+	using Name = TMulticastDelegate<void(P1, P2, P3, P4, P5, P6)>

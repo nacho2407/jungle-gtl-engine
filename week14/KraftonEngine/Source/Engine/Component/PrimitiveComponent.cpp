@@ -52,6 +52,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	Ar << bIsVisible;
 	Ar << bCastShadow;
 	Ar << bCastShadowAsTwoSided;
+	Ar << bGenerateOverlapEvents;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -107,6 +108,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
 	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
 	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, &bCastShadowAsTwoSided });
+	OutProps.push_back({ "Generate Overlap Events", EPropertyType::Bool, &bGenerateOverlapEvents });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -279,4 +281,41 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 	{
 		UpdateWorldAABB();
 	}
+}
+
+// --- Overlap / Hit ---
+
+void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)
+{
+	bGenerateOverlapEvents = bInGenerateOverlapEvents;
+}
+
+void UPrimitiveComponent::NotifyComponentBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	OnComponentBeginOverlap.Broadcast(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void UPrimitiveComponent::NotifyComponentEndOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	OnComponentEndOverlap.Broadcast(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+}
+
+void UPrimitiveComponent::NotifyComponentHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse,
+	const FHitResult& HitResult)
+{
+	OnComponentHit.Broadcast(HitComponent, OtherActor, OtherComp, NormalImpulse, HitResult);
 }
