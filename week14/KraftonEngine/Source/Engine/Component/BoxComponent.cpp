@@ -73,7 +73,7 @@ void UBoxComponent::UpdateWorldAABB() const
 void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Box Extent", EPropertyType::Vec3, &BoxExtent, 0.01f, 0.0f, 0.1f });
+	OutProps.push_back({ "Box Extent", EPropertyType::Vec3, "Shape", &BoxExtent, 0.01f, 0.0f, 0.1f });
 }
 
 void UBoxComponent::PostEditProperty(const char* PropertyName)

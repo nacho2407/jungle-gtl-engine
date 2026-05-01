@@ -765,46 +765,48 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		bIsRoot = (SceneComp->GetParent() == nullptr);
 	}
 
-	// Transform 프로퍼티 이름 목록
-	auto IsTransformProp = [](const FString& Name) {
-		return Name == "Location"
-			|| Name == "Rotation"
-			|| Name == "Scale";
-		};
+	// 카테고리 순서 수집 (등장 순 유지)
+	TArray<std::string> CategoryOrder;
+	for (const auto& P : Props)
+	{
+		bool bFound = false;
+		for (const auto& C : CategoryOrder)
+		{
+			if (C == P.Category) { bFound = true; break; }
+		}
+		if (!bFound) CategoryOrder.push_back(P.Category);
+	}
 
 	bool bAnyChanged = false;
 
-	// Pass 1: Transform 프로퍼티 먼저 (Root가 아닐 때만)
-	if (!bIsRoot)
+	for (const auto& Cat : CategoryOrder)
 	{
-		for (int32 i = 0; i < (int32)Props.size(); ++i)
-		{
-			if (IsTransformProp(Props[i].Name))
-			{
-				if (RenderPropertyWidget(Props, i))
-				{
-					bAnyChanged = true;
-					PropagatePropertyChange(Props[i].Name, SelectedActors);
-				}
-			}
-		}
-		ImGui::Separator();
-	}
-
-	// Pass 2: 나머지 프로퍼티
-	for (int32 i = 0; i < (int32)Props.size(); ++i)
-	{
-		if (IsTransformProp(Props[i].Name))
+		// Root 컴포넌트는 Transform 카테고리 스킵
+		if (bIsRoot && Cat == "Transform")
 			continue;
 
-		bool bChanged = RenderPropertyWidget(Props, i);
-		if (bChanged)
+		// 카테고리 헤더 (빈 문자열이면 헤더 없이 렌더)
+		bool bInTreeNode = false;
+		if (!Cat.empty())
 		{
-			bAnyChanged = true;
-			PropagatePropertyChange(Props[i].Name, SelectedActors);
+			if (!ImGui::CollapsingHeader(Cat.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+				continue;
+		}
 
-			if (Props[i].Type == EPropertyType::StaticMeshRef)
-				break;
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
+		{
+			if (Props[i].Category != Cat)
+				continue;
+
+			bool bChanged = RenderPropertyWidget(Props, i);
+			if (bChanged)
+			{
+				bAnyChanged = true;
+				PropagatePropertyChange(Props[i].Name, SelectedActors);
+
+				if (Props[i].Type == EPropertyType::StaticMeshRef)
+					break;
+			}
 		}
 	}
 

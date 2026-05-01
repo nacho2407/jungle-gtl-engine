@@ -36,12 +36,12 @@ FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
 void UDecalComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, &MaterialSlot });
-	OutProps.push_back({ "Color", EPropertyType::Vec4, &Color });
-	OutProps.push_back({ "FadeInDelay", EPropertyType::Float, &FadeInDelay });
-	OutProps.push_back({ "FadeInDuration", EPropertyType::Float, &FadeInDuration });
-	OutProps.push_back({ "FadeOutDelay", EPropertyType::Float, &FadeOutDelay });
-	OutProps.push_back({ "FadeOutDuration", EPropertyType::Float, &FadeOutDuration });
+	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
+	OutProps.push_back({ "Color", EPropertyType::Vec4, "Rendering", &Color });
+	OutProps.push_back({ "FadeInDelay", EPropertyType::Float, "Rendering", &FadeInDelay });
+	OutProps.push_back({ "FadeInDuration", EPropertyType::Float, "Rendering", &FadeInDuration });
+	OutProps.push_back({ "FadeOutDelay", EPropertyType::Float, "Rendering", &FadeOutDelay });
+	OutProps.push_back({ "FadeOutDuration", EPropertyType::Float, "Rendering", &FadeOutDuration });
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)

@@ -59,9 +59,9 @@ void UBillboardComponent::SetMaterial(UMaterial* InMaterial)
 void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UPrimitiveComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, &MaterialSlot });
-	OutProps.push_back({ "Width",  EPropertyType::Float, &Width,  0.1f, 100.0f, 0.1f });
-	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
+	OutProps.push_back({ "Material", EPropertyType::MaterialSlot, "Rendering", &MaterialSlot });
+	OutProps.push_back({ "Width",  EPropertyType::Float, "Rendering", &Width,  0.1f, 100.0f, 0.1f });
+	OutProps.push_back({ "Height", EPropertyType::Float, "Rendering", &Height, 0.1f, 100.0f, 0.1f });
 }
 
 void UBillboardComponent::PostEditProperty(const char* PropertyName)

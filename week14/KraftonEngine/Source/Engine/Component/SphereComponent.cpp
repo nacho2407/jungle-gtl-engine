@@ -75,7 +75,7 @@ void USphereComponent::UpdateWorldAABB() const
 void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UShapeComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Sphere Radius", EPropertyType::Float, &SphereRadius, 0.01f, 10000.0f, 1.0f });
+	OutProps.push_back({ "Sphere Radius", EPropertyType::Float, "Shape", &SphereRadius, 0.01f, 10000.0f, 1.0f });
 }
 
 void USphereComponent::PostEditProperty(const char* PropertyName)

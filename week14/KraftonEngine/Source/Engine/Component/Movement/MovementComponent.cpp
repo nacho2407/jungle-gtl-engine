@@ -47,8 +47,8 @@ void UMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 void UMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	UActorComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Auto Register Updated", EPropertyType::Bool, &bAutoRegisterUpdatedComponent });
-	OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, &UpdatedComponentPath });
+	OutProps.push_back({ "Auto Register Updated", EPropertyType::Bool, "Movement", &bAutoRegisterUpdatedComponent });
+	OutProps.push_back({ "Updated Component", EPropertyType::SceneComponentRef, "Movement", &UpdatedComponentPath });
 }
 
 void UMovementComponent::Serialize(FArchive& Ar)

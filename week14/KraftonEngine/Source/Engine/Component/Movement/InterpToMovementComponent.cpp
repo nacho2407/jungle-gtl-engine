@@ -50,13 +50,12 @@ void UInterpToMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 void UInterpToMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {
 	UMovementComponent::GetEditableProperties(OutProps);
-
-	OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 &bAutoActivate });
-	OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 &bFaceTargetDir });
-	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      &Duration,       0.1f, 2048.0f, 0.1f });
+	OutProps.push_back({ "Auto Activate",		  EPropertyType::Bool,		 "Movement", &bAutoActivate });
+	OutProps.push_back({ "Orient To Movement",	  EPropertyType::Bool,		 "Movement", &bFaceTargetDir });
+	OutProps.push_back({ "Interp Duration",		  EPropertyType::Float,      "Movement", &Duration,       0.1f, 2048.0f, 0.1f });
 	static const char* InterpBehaviourNames[] = { "One Shot", "One Shot Reverse", "Loop", "Ping-Pong" };
-	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4 });
-	OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  &ControlPoints });
+	OutProps.push_back({ "Interp Mode",			  EPropertyType::Enum,		 "Movement", &InterpBehaviour, 0,0,0, InterpBehaviourNames, 4 });
+	OutProps.push_back({ "Control Points",		  EPropertyType::Vec3Array,  "Movement", &ControlPoints });
 }
 
 void UInterpToMovementComponent::Serialize(FArchive& Ar)

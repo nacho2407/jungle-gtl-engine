@@ -134,15 +134,18 @@ void UPrimitiveComponent::MarkRenderVisibilityDirty()
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
-	OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
-	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
-	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, &bCastShadowAsTwoSided });
-	OutProps.push_back({ "Generate Overlap Events", EPropertyType::Bool, &bGenerateOverlapEvents });
+
+	OutProps.push_back({ "Visible", EPropertyType::Bool, "Rendering", &bIsVisible });
+	OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, "Rendering", &bCastShadow });
+	OutProps.push_back({ "Two Sided Shadow", EPropertyType::Bool, "Rendering", &bCastShadowAsTwoSided });
+
+	OutProps.push_back({ "Generate Overlap Events", EPropertyType::Bool, "Collision", &bGenerateOverlapEvents });
 
 	{
 		FPropertyDescriptor Desc;
 		Desc.Name = "Collision Enabled";
 		Desc.Type = EPropertyType::Enum;
+		Desc.Category = "Collision";
 		Desc.ValuePtr = &CollisionEnabled;
 		Desc.EnumNames = GCollisionEnabledNames;
 		Desc.EnumCount = static_cast<uint32>(ECollisionEnabled::COUNT);
@@ -154,6 +157,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 		FPropertyDescriptor Desc;
 		Desc.Name = "Object Type";
 		Desc.Type = EPropertyType::Enum;
+		Desc.Category = "Collision";
 		Desc.ValuePtr = &ObjectType;
 		Desc.EnumNames = GCollisionChannelNames;
 		Desc.EnumCount = static_cast<uint32>(ECollisionChannel::ActiveCount);
@@ -165,6 +169,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 		FPropertyDescriptor Desc;
 		Desc.Name = "Collision Responses";
 		Desc.Type = EPropertyType::Struct;
+		Desc.Category = "Collision";
 		Desc.ValuePtr = &ResponseContainer;
 		Desc.StructFunc = &FCollisionResponseContainer::DescribeProperties;
 		OutProps.push_back(Desc);
