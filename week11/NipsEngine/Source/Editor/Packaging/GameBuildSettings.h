@@ -15,6 +15,9 @@ struct FGameBuildSettings
     TArray<FString> IncludedScenes;
     FString PlayerControllerClass = "AGameJamPlayerController";
     FString OutputDirectory = "Builds/Windows/NipsGame";
+    FString IconPath;
+    FString SplashImagePath;
+    float SplashMinSeconds = 3.0f;
     EGameBuildConfiguration Configuration = EGameBuildConfiguration::Development;
     bool bCleanOutput = true;
     bool bRunAfterBuild = false;

@@ -6,6 +6,8 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -14,6 +16,9 @@ namespace
 {
     constexpr const wchar_t* MSBuildPath =
         L"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe";
+
+    void EmitBuildLog(const FString& Message);
+    void EmitBuildLogWidePath(const char* Prefix, const std::filesystem::path& Path);
 
     const char* GetConfigurationName(EGameBuildConfiguration Configuration)
     {
@@ -68,6 +73,95 @@ namespace
             ? std::filesystem::path(FPaths::RootDir())
             : SolutionRoot;
         return (Base / Result).lexically_normal();
+    }
+
+    std::filesystem::path ResolvePackageInputPath(const FString& Path)
+    {
+        std::filesystem::path Result(FPaths::ToWide(Path));
+        if (Result.is_absolute())
+        {
+            return Result.lexically_normal();
+        }
+
+        const std::filesystem::path EngineRoot(FPaths::RootDir());
+        const std::filesystem::path EngineRelative = (EngineRoot / Result).lexically_normal();
+        if (std::filesystem::exists(EngineRelative))
+        {
+            return EngineRelative;
+        }
+
+        return ResolveAgainstProjectRoot(Path);
+    }
+
+    FString NormalizePackagePath(const std::filesystem::path& Path)
+    {
+        return FPaths::ToUtf8(Path.lexically_normal().generic_wstring());
+    }
+
+    FString EscapeRcPath(std::filesystem::path Path)
+    {
+        FString Result = FPaths::ToUtf8(Path.lexically_normal().wstring());
+        for (size_t Index = 0; Index < Result.size(); ++Index)
+        {
+            if (Result[Index] == '\\')
+            {
+                Result.insert(Result.begin() + static_cast<std::ptrdiff_t>(Index), '\\');
+                ++Index;
+            }
+            else if (Result[Index] == '"')
+            {
+                Result.insert(Result.begin() + static_cast<std::ptrdiff_t>(Index), '\\');
+                ++Index;
+            }
+        }
+        return Result;
+    }
+
+    FString ToLowerAscii(FString Value)
+    {
+        for (char& Ch : Value)
+        {
+            Ch = static_cast<char>(std::tolower(static_cast<unsigned char>(Ch)));
+        }
+        return Value;
+    }
+
+    bool HasExtension(const FString& Path, std::initializer_list<const char*> Extensions)
+    {
+        const FString Ext = ToLowerAscii(FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(Path)).extension().generic_wstring()));
+        for (const char* Allowed : Extensions)
+        {
+            if (Ext == Allowed)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool ValidateOptionalBrandingFile(const FString& Path, std::initializer_list<const char*> Extensions, const char* Label, FString& OutMessage)
+    {
+        if (Path.empty())
+        {
+            return true;
+        }
+
+        if (!HasExtension(Path, Extensions))
+        {
+            OutMessage = FString(Label) + " has an unsupported extension: " + Path;
+            EmitBuildLog(OutMessage);
+            return false;
+        }
+
+        const std::filesystem::path ResolvedPath = ResolvePackageInputPath(Path);
+        if (!std::filesystem::exists(ResolvedPath))
+        {
+            OutMessage = FString(Label) + " not found: " + Path;
+            EmitBuildLog(OutMessage);
+            return false;
+        }
+
+        return true;
     }
 
     FString NormalizeSceneForPackage(const FString& Scene)
@@ -296,12 +390,24 @@ FGamePackageResult FGamePackager::BuildAndPackage(const FGameBuildSettings& Sett
         return Result;
     }
 
-    if (!RunMSBuild(Settings, Message))
+    if (!PrepareBrandingResources(Settings, Message))
     {
         Result.Message = Message;
         UE_LOG("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
+
+    if (!RunMSBuild(Settings, Message))
+    {
+        FString IgnoredResetMessage;
+        PrepareBrandingResources(FGameBuildSettings{}, IgnoredResetMessage);
+        Result.Message = Message;
+        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        return Result;
+    }
+
+    FString IgnoredResetMessage;
+    PrepareBrandingResources(FGameBuildSettings{}, IgnoredResetMessage);
 
     if (!CopyPackageFiles(Settings, Message))
     {
@@ -314,6 +420,52 @@ FGamePackageResult FGamePackager::BuildAndPackage(const FGameBuildSettings& Sett
     Result.Message = "Game package created";
     UE_LOG("[Build] Build Complete");
     return Result;
+}
+
+bool FGamePackager::PrepareBrandingResources(const FGameBuildSettings& Settings, FString& OutMessage)
+{
+    if (!ValidateOptionalBrandingFile(Settings.IconPath, { ".ico" }, "Game icon", OutMessage))
+    {
+        return false;
+    }
+    if (!ValidateOptionalBrandingFile(Settings.SplashImagePath, { ".png", ".jpg", ".jpeg", ".bmp" }, "Splash image", OutMessage))
+    {
+        return false;
+    }
+
+    const std::filesystem::path EngineRoot(FPaths::RootDir());
+    const std::filesystem::path GeneratedDir = EngineRoot / L"Source" / L"Engine" / L"Runtime";
+    const std::filesystem::path RcPath = GeneratedDir / L"GameBranding.rc";
+    std::error_code Ec;
+    std::filesystem::create_directories(GeneratedDir, Ec);
+    if (Ec)
+    {
+        OutMessage = "Failed to create branding resource directory";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+
+    std::ofstream RcFile(RcPath, std::ios::trunc);
+    if (!RcFile.is_open())
+    {
+        OutMessage = "Failed to write GameBranding.rc";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+
+    RcFile << "// Auto-generated by Packaging. Do not edit by hand.\n";
+    if (!Settings.IconPath.empty())
+    {
+        const std::filesystem::path IconPath = ResolvePackageInputPath(Settings.IconPath);
+        RcFile << "#define IDI_GAME_ICON 101\n";
+        RcFile << "IDI_GAME_ICON ICON \"" << EscapeRcPath(IconPath) << "\"\n";
+        EmitBuildLogWidePath("Generated exe icon resource = ", IconPath);
+    }
+    else
+    {
+        EmitBuildLog("Generated empty branding resource. No game icon selected.");
+    }
+    return true;
 }
 
 bool FGamePackager::RunMSBuild(const FGameBuildSettings& Settings, FString& OutMessage)
@@ -500,6 +652,50 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     if (!CopyDirectoryIfExists(EngineRoot / L"LuaScript", OutputRoot / L"LuaScript", OutMessage)) return false;
     EmitBuildLog("Copied LuaScript directory");
 
+    FString PackagedIconPath;
+    FString PackagedSplashPath;
+    if (!Settings.IconPath.empty() || !Settings.SplashImagePath.empty())
+    {
+        const std::filesystem::path BrandingDir = OutputRoot / L"Branding";
+        std::filesystem::create_directories(BrandingDir, Ec);
+        if (Ec)
+        {
+            OutMessage = "Failed to create Branding directory";
+            EmitBuildLog(OutMessage);
+            return false;
+        }
+
+        if (!Settings.IconPath.empty())
+        {
+            const std::filesystem::path SourceIcon = ResolvePackageInputPath(Settings.IconPath);
+            const std::filesystem::path DestIcon = BrandingDir / SourceIcon.filename();
+            std::filesystem::copy_file(SourceIcon, DestIcon, std::filesystem::copy_options::overwrite_existing, Ec);
+            if (Ec)
+            {
+                OutMessage = "Failed to copy game icon";
+                EmitBuildLog(OutMessage);
+                return false;
+            }
+            PackagedIconPath = NormalizePackagePath(std::filesystem::path(L"Branding") / SourceIcon.filename());
+            EmitBuildLog("Copied game icon");
+        }
+
+        if (!Settings.SplashImagePath.empty())
+        {
+            const std::filesystem::path SourceSplash = ResolvePackageInputPath(Settings.SplashImagePath);
+            const std::filesystem::path DestSplash = BrandingDir / SourceSplash.filename();
+            std::filesystem::copy_file(SourceSplash, DestSplash, std::filesystem::copy_options::overwrite_existing, Ec);
+            if (Ec)
+            {
+                OutMessage = "Failed to copy splash image";
+                EmitBuildLog(OutMessage);
+                return false;
+            }
+            PackagedSplashPath = NormalizePackagePath(std::filesystem::path(L"Branding") / SourceSplash.filename());
+            EmitBuildLog("Copied splash image");
+        }
+    }
+
     std::filesystem::create_directories(OutputRoot / L"Settings", Ec);
     std::filesystem::create_directories(OutputRoot / L"Saves", Ec);
 
@@ -521,6 +717,10 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     {
         GameIni << "Scene" << SceneIndex << "=" << IncludedScenes[SceneIndex] << "\n";
     }
+    GameIni << "\n[Branding]\n";
+    GameIni << "Icon=" << PackagedIconPath << "\n";
+    GameIni << "Splash=" << PackagedSplashPath << "\n";
+    GameIni << "SplashMinSeconds=" << std::max(3.0f, Settings.SplashMinSeconds) << "\n";
     GameIni.close();
     EmitBuildLog("Wrote Settings/Game.ini");
 

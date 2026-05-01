@@ -160,7 +160,8 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	WCHAR WindowClass[] = L"JungleWindowClass";
 	WCHAR Title[] = L"Game Tech Lab";
-	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, HInstance, 0, LoadCursorW(nullptr, IDC_ARROW), 0, 0, WindowClass };
+	HICON WindowIcon = LoadIconW(HInstance, MAKEINTRESOURCEW(101));
+	WNDCLASSW WndClass = { 0, StaticWndProc, 0, 0, HInstance, WindowIcon, LoadCursorW(nullptr, IDC_ARROW), 0, 0, WindowClass };
 
 	RegisterClassW(&WndClass);
 
@@ -176,6 +177,12 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 	if (!HWindow)
 	{
 		return false;
+	}
+
+	if (WindowIcon)
+	{
+		SendMessageW(HWindow, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(WindowIcon));
+		SendMessageW(HWindow, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(WindowIcon));
 	}
 
 	RAWINPUTDEVICE RawMouseDevice = {};

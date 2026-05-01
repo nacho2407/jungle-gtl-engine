@@ -15,6 +15,7 @@ public:
     static FGamePackageResult BuildAndPackage(const FGameBuildSettings& Settings);
 
 private:
+    static bool PrepareBrandingResources(const FGameBuildSettings& Settings, FString& OutMessage);
     static bool RunMSBuild(const FGameBuildSettings& Settings, FString& OutMessage);
     static bool CopyPackageFiles(const FGameBuildSettings& Settings, FString& OutMessage);
 };

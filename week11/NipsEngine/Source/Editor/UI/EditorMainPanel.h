@@ -177,6 +177,8 @@ private:
 	char BuildSceneListAddBuffer[MAX_PATH] = "";
 	char BuildPlayerControllerClassBuffer[128] = "AGameJamPlayerController";
 	char BuildOutputDirectoryBuffer[MAX_PATH] = "Builds/Windows/NipsGame";
+	char BuildIconPathBuffer[MAX_PATH] = "";
+	char BuildSplashImagePathBuffer[MAX_PATH] = "";
 	int32 DebugGridPrimitiveType = 1;
 	int32 DebugGridRows = 4;
 	int32 DebugGridCols = 4;

@@ -769,6 +769,7 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameSplashScreen.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BoxComponent.cpp" />
@@ -1494,11 +1495,15 @@
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameSplashScreen.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
     <ClInclude Include="Source\Engine\Component\BoxComponent.h" />
     <ClInclude Include="Source\Engine\Component\CapsuleComponent.h" />
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
   </ItemGroup>
 </Project>

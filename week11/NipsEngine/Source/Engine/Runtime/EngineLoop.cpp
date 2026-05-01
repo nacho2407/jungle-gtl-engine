@@ -32,6 +32,10 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		return false;
 	}
 
+#if !WITH_EDITOR && !IS_OBJ_VIEWER
+	GameSplashScreen.ShowOverWindow(hInstance, Application.GetWindow().GetHWND());
+#endif
+
 	Application.SetOnSizingCallback([this]()
 		{
 			Timer.Tick();
@@ -65,6 +69,10 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 		});
 	GEngine->BeginPlay();
 
+#if !WITH_EDITOR && !IS_OBJ_VIEWER
+	GameSplashScreen.Close();
+#endif
+
 	Timer.Initialize();
 
 	return true;
@@ -94,6 +102,8 @@ int FEngineLoop::Run()
 
 void FEngineLoop::Shutdown()
 {
+	GameSplashScreen.Close();
+
 	if (GEngine)
 	{
 		GEngine->Shutdown();

@@ -18,6 +18,8 @@
 #include "ImGui/imgui_internal.h"
 #include "WICTextureLoader.h"
 
+#include <commdlg.h>
+
 #include "Render/Renderer/Renderer.h"
 #include "Render/Resource/Shader.h"
 #include "Engine/Input/InputSystem.h"
@@ -28,6 +30,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cfloat>
+#include <cwctype>
 #include <cstring>
 #include <cmath>
 #include <filesystem>
@@ -405,6 +408,48 @@ bool AddUniquePackagingScene(TArray<FString>& Scenes, const FString& ScenePath)
 
     Scenes.push_back(NormalizedScene);
     return true;
+}
+
+bool OpenPackagingAssetFileDialog(const wchar_t* Filter, FString& OutFilePath)
+{
+    OutFilePath.clear();
+
+    WCHAR FileBuffer[MAX_PATH] = {};
+    OPENFILENAMEW DialogDesc = {};
+    DialogDesc.lStructSize = sizeof(DialogDesc);
+    DialogDesc.hwndOwner = ImGui::GetMainViewport()
+        ? static_cast<HWND>(ImGui::GetMainViewport()->PlatformHandleRaw)
+        : nullptr;
+    DialogDesc.lpstrFilter = Filter;
+    DialogDesc.lpstrFile = FileBuffer;
+    DialogDesc.nMaxFile = MAX_PATH;
+    DialogDesc.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+    const std::filesystem::path PrevCwd = std::filesystem::current_path();
+    const BOOL bPicked = GetOpenFileNameW(&DialogDesc);
+    std::error_code RestoreEc;
+    std::filesystem::current_path(PrevCwd, RestoreEc);
+    if (!bPicked)
+    {
+        return false;
+    }
+
+    OutFilePath = FPaths::ToRelativeString(FileBuffer);
+    if (OutFilePath.empty())
+    {
+        OutFilePath = FPaths::ToUtf8(FileBuffer);
+    }
+    return true;
+}
+
+std::wstring ToLowerPathExtension(const FString& Path)
+{
+    std::wstring Ext = std::filesystem::path(FPaths::ToWide(Path)).extension().wstring();
+    std::transform(Ext.begin(), Ext.end(), Ext.begin(), [](wchar_t Ch)
+    {
+        return static_cast<wchar_t>(std::towlower(Ch));
+    });
+    return Ext;
 }
 } // namespace
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
@@ -1888,6 +1933,9 @@ void FEditorMainPanel::RequestBuildGame()
     PendingBuildSettings.OutputDirectory = "Builds/Windows/" + PendingBuildSettings.GameName;
     PendingBuildSettings.PlayerControllerClass = "AGameJamPlayerController";
     PendingBuildSettings.Configuration = EGameBuildConfiguration::Development;
+    PendingBuildSettings.IconPath.clear();
+    PendingBuildSettings.SplashImagePath.clear();
+    PendingBuildSettings.SplashMinSeconds = 3.0f;
     PendingBuildSettings.bCleanOutput = true;
     PendingBuildSettings.bRunAfterBuild = false;
     PendingBuildSettings.IncludedScenes.clear();
@@ -1898,6 +1946,8 @@ void FEditorMainPanel::RequestBuildGame()
     strncpy_s(BuildSceneListAddBuffer, "", _TRUNCATE);
     strncpy_s(BuildPlayerControllerClassBuffer, PendingBuildSettings.PlayerControllerClass.c_str(), _TRUNCATE);
     strncpy_s(BuildOutputDirectoryBuffer, PendingBuildSettings.OutputDirectory.c_str(), _TRUNCATE);
+    strncpy_s(BuildIconPathBuffer, PendingBuildSettings.IconPath.c_str(), _TRUNCATE);
+    strncpy_s(BuildSplashImagePathBuffer, PendingBuildSettings.SplashImagePath.c_str(), _TRUNCATE);
 
     bOpenBuildGameModal = true;
 }
@@ -1927,7 +1977,7 @@ void FEditorMainPanel::RenderBuildGameModal()
         bOpenBuildGameModal = false;
     }
 
-    ImGui::SetNextWindowSize(ImVec2(640.0f, 0.0f), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(760.0f, 0.0f), ImGuiCond_Appearing);
     if (!ImGui::BeginPopupModal(PackagingPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         return;
@@ -1980,6 +2030,50 @@ void FEditorMainPanel::RenderBuildGameModal()
         ImGui::TableSetColumnIndex(1);
         ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputText("##PackageOutputDirectory", BuildOutputDirectoryBuffer, IM_ARRAYSIZE(BuildOutputDirectoryBuffer));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Game Icon");
+        ImGui::TableSetColumnIndex(1);
+        const float BrandingBrowseWidth = 76.0f;
+        ImGui::SetNextItemWidth(-(BrandingBrowseWidth + ImGui::GetStyle().ItemSpacing.x));
+        ImGui::InputText("##PackageGameIcon", BuildIconPathBuffer, IM_ARRAYSIZE(BuildIconPathBuffer));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse##PackageGameIcon", ImVec2(BrandingBrowseWidth, 0.0f)))
+        {
+            FString PickedPath;
+            if (OpenPackagingAssetFileDialog(L"Icon Files (*.ico)\0*.ico\0All Files (*.*)\0*.*\0", PickedPath))
+            {
+                strncpy_s(BuildIconPathBuffer, PickedPath.c_str(), _TRUNCATE);
+            }
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Splash Image");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-(BrandingBrowseWidth + ImGui::GetStyle().ItemSpacing.x));
+        ImGui::InputText("##PackageSplashImage", BuildSplashImagePathBuffer, IM_ARRAYSIZE(BuildSplashImagePathBuffer));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse##PackageSplashImage", ImVec2(BrandingBrowseWidth, 0.0f)))
+        {
+            FString PickedPath;
+            if (OpenPackagingAssetFileDialog(L"Image Files (*.png;*.jpg;*.jpeg;*.bmp)\0*.png;*.jpg;*.jpeg;*.bmp\0All Files (*.*)\0*.*\0", PickedPath))
+            {
+                strncpy_s(BuildSplashImagePathBuffer, PickedPath.c_str(), _TRUNCATE);
+            }
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Splash Seconds");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(160.0f);
+        ImGui::DragFloat("##PackageSplashSeconds", &PendingBuildSettings.SplashMinSeconds, 0.05f, 3.0f, 10.0f, "%.2f");
+        PendingBuildSettings.SplashMinSeconds = MathUtil::Clamp(PendingBuildSettings.SplashMinSeconds, 3.0f, 10.0f);
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -2059,10 +2153,17 @@ void FEditorMainPanel::RenderBuildGameModal()
     const FString StartupScene = FPaths::Normalize(BuildStartupSceneBuffer);
     const FString PlayerControllerClass = FPaths::Normalize(BuildPlayerControllerClassBuffer);
     const FString OutputDirectory = FPaths::Normalize(BuildOutputDirectoryBuffer);
+    const FString IconPath = FPaths::Normalize(BuildIconPathBuffer);
+    const FString SplashImagePath = FPaths::Normalize(BuildSplashImagePathBuffer);
     const bool bValidGameName = !GameName.empty();
     const bool bValidScene = !StartupScene.empty() && std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(StartupScene)));
     const bool bValidPlayerController = !PlayerControllerClass.empty();
     const bool bValidOutput = !OutputDirectory.empty();
+    const std::wstring IconExt = ToLowerPathExtension(IconPath);
+    const std::wstring SplashExt = ToLowerPathExtension(SplashImagePath);
+    const bool bValidIcon = IconPath.empty() || (std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(IconPath))) && IconExt == L".ico");
+    const bool bValidSplashExt = SplashImagePath.empty() || SplashExt == L".png" || SplashExt == L".jpg" || SplashExt == L".jpeg" || SplashExt == L".bmp";
+    const bool bValidSplash = SplashImagePath.empty() || (std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(SplashImagePath))) && bValidSplashExt);
     bool bValidIncludedScenes = true;
     for (const FString& IncludedScene : PendingBuildSettings.IncludedScenes)
     {
@@ -2080,6 +2181,8 @@ void FEditorMainPanel::RenderBuildGameModal()
             : "Shipping -> GameClientRelease|x64");
     ImGui::Text("Output Exe: %s", "NipsGame.exe");
     ImGui::Text("Scenes to Copy: %d", static_cast<int32>(PendingBuildSettings.IncludedScenes.size()));
+    ImGui::Text("Icon: %s", IconPath.empty() ? "(none)" : IconPath.c_str());
+    ImGui::Text("Splash: %s", SplashImagePath.empty() ? "(none)" : SplashImagePath.c_str());
 
     if (bValidScene)
     {
@@ -2101,6 +2204,14 @@ void FEditorMainPanel::RenderBuildGameModal()
     {
         ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Output directory is empty.");
     }
+    if (!bValidIcon)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Game icon must be an existing .ico file.");
+    }
+    if (!bValidSplash)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Splash must be an existing png, jpg, jpeg, or bmp file.");
+    }
     if (!bValidIncludedScenes)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "One or more scenes to copy do not exist.");
@@ -2111,8 +2222,9 @@ void FEditorMainPanel::RenderBuildGameModal()
     }
 
     ImGui::Separator();
-    const bool bCanBuild = bValidGameName && bValidScene && bValidPlayerController && bValidOutput && bValidIncludedScenes;
-    if (!bCanBuild || bBuildGameInProgress)
+    const bool bCanBuild = bValidGameName && bValidScene && bValidPlayerController && bValidOutput && bValidIcon && bValidSplash && bValidIncludedScenes;
+    const bool bDisablePackageButton = !bCanBuild || bBuildGameInProgress;
+    if (bDisablePackageButton)
     {
         ImGui::BeginDisabled();
     }
@@ -2122,6 +2234,9 @@ void FEditorMainPanel::RenderBuildGameModal()
         PendingBuildSettings.StartupScene = StartupScene;
         PendingBuildSettings.PlayerControllerClass = PlayerControllerClass;
         PendingBuildSettings.OutputDirectory = OutputDirectory;
+        PendingBuildSettings.IconPath = IconPath;
+        PendingBuildSettings.SplashImagePath = SplashImagePath;
+        PendingBuildSettings.SplashMinSeconds = MathUtil::Clamp(PendingBuildSettings.SplashMinSeconds, 3.0f, 10.0f);
         AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, StartupScene);
         PushFooterLog("Packaging game...");
         bBuildGameInProgress = true;
@@ -2131,7 +2246,7 @@ void FEditorMainPanel::RenderBuildGameModal()
         });
         ImGui::CloseCurrentPopup();
     }
-    if (!bCanBuild || bBuildGameInProgress)
+    if (bDisablePackageButton)
     {
         ImGui::EndDisabled();
     }
