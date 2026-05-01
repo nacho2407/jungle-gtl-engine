@@ -259,7 +259,8 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 	{
 		FString CompType = PrimitivesNode[std::to_string(RootUUID)][SceneKeys::Type].ToString();
 		
-		AActor* NewActor = Cast<AActor>(FObjectFactory::Get().Create(InferActorClass(CompType)));
+		FString ClassName = InferActorClass(CompType);
+		AActor* NewActor = Cast<AActor>(FObjectFactory::Get().Create(ClassName));
 		if (NewActor)
 		{
 			NewActor->InitDefaultComponents();

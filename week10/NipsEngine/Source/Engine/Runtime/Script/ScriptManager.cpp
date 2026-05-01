@@ -221,7 +221,7 @@ bool UScriptManager::CreateScript(const FName& LuaScriptName)
     }
 	
 	if (ScriptArray.find(ScriptName) != ScriptArray.end())
-    {
+{
         ScriptArray[ScriptName].ScriptPath = ScriptPath;
         ScriptArray[ScriptName].LastWriteTime = fs::last_write_time(ScriptPath);
     }

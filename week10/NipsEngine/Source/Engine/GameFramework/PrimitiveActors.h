@@ -2,11 +2,13 @@
 
 #include "AActor.h"
 #include "Core/Delegates/Delegate.h"
+#include "Core/CollisionTypes.h"
 
 class UTextRenderComponent;
 class UDecalComponent;
 class ULightComponent;
 class UBillboardComponent;
+class UBoxComponent;
 
 class ACubeActor : public AActor
 {
@@ -51,6 +53,10 @@ public:
 	ASceneActor() = default;
 
 	void InitDefaultComponents();
+
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 };
 
 class AStaticMeshActor : public AActor
@@ -175,25 +181,4 @@ public:
 	DECLARE_CLASS(ASpotlightActor, APointLightActor)
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
-};
-
-/**
- * Delegate 테스트 용 액터 
- */
-DECLARE_DELEGATE(FOnTakeDamage, float);
-
-class ADelegateTestActor : public AActor
-{
-public:
-    DECLARE_CLASS(ADelegateTestActor, AActor)
-    ADelegateTestActor() = default;
-
-    void InitDefaultComponents() override;
-    void Tick(float DeltaTime) override;
-
-	void BeginPlay() override;
-
-	void HandleTakeDamage(float InDamage);
-
-	FOnTakeDamage OnTakeDamage;
 };
