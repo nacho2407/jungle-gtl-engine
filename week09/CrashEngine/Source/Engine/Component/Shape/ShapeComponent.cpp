@@ -8,13 +8,7 @@ IMPLEMENT_CLASS(UShapeComponent, UPrimitiveComponent)
 
 UShapeComponent::UShapeComponent()
 {
-    if (UWorld* World = GetWorld()) // (주의: GetWorld() 등 엔진 구조에 맞게 월드를 가져오세요)
-    {
-        if (FCollisionManager* CollisionMgr = World->GetCollisionManager())
-        {
-            CollisionMgr->RegisterComponent(this);
-        }
-    }
+
 }
 UShapeComponent::~UShapeComponent()
 {
@@ -41,4 +35,9 @@ void UShapeComponent::OnTransformDirty()
 FShapeProxy* UShapeComponent::CreateShapeProxy()
 {
     return nullptr;
+}
+
+void UShapeComponent::OnOwnerChanged()
+{
+
 }

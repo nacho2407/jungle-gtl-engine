@@ -1,6 +1,8 @@
 ﻿#include "BoxComponent.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Shape/BoxProxy.h"
+#include "Physics/CollisionManager.h"
+#include "GameFrameWork/World.h"
 
 IMPLEMENT_CLASS(UBoxComponent, UShapeComponent)
 
@@ -9,6 +11,7 @@ UBoxComponent::UBoxComponent()
     : BoxExtent(0.5f, 0.5f, 0.5f), 
       BoxCollision(FOBB(FVector(0.0f, 0.0f, 0.0f), FVector(0.5f, 0.5f, 0.5f), FRotator(0.0f, 0.0f, 0.0f)))
 {
+
 }
 
 void UBoxComponent::Serialize(FArchive& Ar)

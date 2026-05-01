@@ -22,6 +22,8 @@ public:
 
 	virtual FShapeProxy* CreateShapeProxy();
 
+	virtual void OnOwnerChanged() override;
+
 protected:
     FColor ShapeColor = { 0, 255, 0, 1 };
     bool bDrawOnlyIfSelected;

@@ -80,40 +80,8 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
                 CompA->OnComponentOverlap(CompB);
                 CompB->OnComponentOverlap(CompA);
 
-                // ⭐️ 충돌한 녀석들의 색상을 빨간색으로 변경!
-                DebugColors[i] = FColor(255, 0, 0);
-                DebugColors[j] = FColor(255, 0, 0);
 
                 UE_LOG(Console, Info, "Collision!");
-            }
-        }
-    }
-
-    // 3. 디버그 박스 렌더링 (Scene이 유효할 때만)
-    if (Scene)
-    {
-        for (int i = 0; i < RegisteredComponents.size(); i++)
-        {
-            UShapeComponent* ShapeComp = static_cast<UShapeComponent*>(RegisteredComponents[i]);
-            FCollision* Col = ShapeComp->GetCollision();
-
-            if (!Col)
-                continue;
-
-            // 타입에 맞춰서 디버그 도형을 그립니다.
-            if (Col->GetType() == ECollisionType::Box)
-            {
-                FBoxCollision* BoxCol = static_cast<FBoxCollision*>(Col);
-                DrawDebugOBB(Scene, BoxCol->Bounds, DebugColors[i]);
-            }
-            else if (Col->GetType() == ECollisionType::Sphere)
-            {
-                // TODO: Sphere를 그리는 함수가 큐에 있다면 호출 (ex: AddSphere)
-                // 지금은 구현이 없다면 임시로 OBB처럼 그리거나 생략할 수 있습니다.
-            }
-            else if (Col->GetType() == ECollisionType::Capsule)
-            {
-                // TODO: Capsule 그리기
             }
         }
     }

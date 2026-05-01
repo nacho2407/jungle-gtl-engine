@@ -53,13 +53,13 @@ void UWorld::DestroyActor(AActor* Actor)
         return;
 
 	//충돌체 해재
-	/*for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
+	for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
     {
         if (Comp->IsA<UShapeComponent>())
         {
             CollisionManager->UnregisterComponent(static_cast<UShapeComponent*>(Comp));
         }
-    }*/
+    }
 
     Actor->EndPlay();
     // Remove from actor list
@@ -263,7 +263,7 @@ void UWorld::BeginPlay()
     {
         PersistentLevel->BeginPlay();
 
-		/*for (auto Actor : PersistentLevel->GetActors())
+		for (auto Actor : PersistentLevel->GetActors())
         {
             for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
             {
@@ -272,7 +272,7 @@ void UWorld::BeginPlay()
                     CollisionManager->RegisterComponent(static_cast<UShapeComponent*>(Comp));
                 }
             }
-        }*/
+        }
     }
     
 
