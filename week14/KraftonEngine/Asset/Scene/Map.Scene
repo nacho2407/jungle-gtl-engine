@@ -1,0 +1,295 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Map",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/Level1Sea_Material.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/Level1Street_Material.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/Level1Buildings_Material.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/Level1Opaque_Material.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/Level1Waves_Material.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/Level1Transparent_Material.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/Level1Misc_Material.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-351.636444, 399.615936, 0.000000],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\City\\CityRoad.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "Name" : "GlobalLight",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UDirectionalLightComponent",
+        "Properties" : {
+          "Cast Shadows" : true,
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Intensity" : 1.000000,
+          "Location" : [0.035111, 0.000000, 5.313506],
+          "Rotation" : [89.899994, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shadow Bias" : -0.000100,
+          "Shadow Normal Bias" : -0.002000,
+          "Shadow Resolution Scale" : 1.000000,
+          "Shadow Sharpen" : 0.670000,
+          "Shadow Slope Bias" : 0.000100,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Car",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CameraManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UCameraComponent",
+                "Properties" : {
+                  "FOV" : 1.047198,
+                  "Far Z" : 1000.000000,
+                  "Location" : [-0.500000, 0.000000, 1.100000],
+                  "Near Z" : 0.100000,
+                  "Ortho Width" : 10.000000,
+                  "Orthographic" : false,
+                  "Rotation" : [0.000000, -90.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [],
+                "ClassName" : "UCameraComponent",
+                "Properties" : {
+                  "FOV" : 1.047198,
+                  "Far Z" : 1000.000000,
+                  "Location" : [0.000001, 8.606369, 4.433311],
+                  "Near Z" : 0.100000,
+                  "Ortho Width" : 10.000000,
+                  "Orthographic" : false,
+                  "Rotation" : [13.348434, -90.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Body.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Decals.001.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Interior.001.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Trim.001.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Chassis.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 90.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\TruckBody.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-114.333984, 110.275604, 6.010643],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 84.539978, 0.000000],
+          "Scale" : [0.500000, 0.500000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_21",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GlobalManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "UIManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-113.357124, 120.826729, 7.370364],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "Map",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [-121.119400, 106.499619, 14.228756],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 21.105484, 15.511383]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
