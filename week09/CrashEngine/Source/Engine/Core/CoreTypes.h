@@ -54,11 +54,11 @@ using TQueue = std::queue<T>;
 
 // ===== Assert =====
 #ifdef _DEBUG
-#define check(expr) assert(expr)
-#define checkf(expr, msg) assert((expr) && (msg))
+#define ENGINE_CHECK(expr) assert(expr)
+#define ENGINE_CHECK_FORMATTED(expr, msg) assert((expr) && (msg))
 #else
-#define check(expr) ((void)0)
-#define checkf(expr, msg) ((void)0)
+#define ENGINE_CHECK(expr) ((void)0)
+#define ENGINE_CHECK_FORMATTED(expr, msg) ((void)0)
 #endif
 
 #ifndef ARRAY_SIZE

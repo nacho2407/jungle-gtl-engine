@@ -9,11 +9,18 @@
 
 void FLuaScriptManager::Init()
 {
+    if (bWatcherRegistered)
+    {
+        return;
+    }
+
     FDirectoryWatcher::Get().RegisterWatch(
-        [this](const FString& FileName) {
+        [this](const FString& FileName)
+        {
             this->OnLuaFileChanged(FileName);
-        }
-    );
+        });
+
+    bWatcherRegistered = true;
 }
 
 FString FLuaScriptManager::CreateScript(class AActor* TargetActor)
@@ -83,7 +90,7 @@ bool FLuaScriptManager::DeleteScript(const FString& FileName)
             ULuaScriptComponent* Component = *It;
             if (Component && Component->GetScriptPath() == FileName)
             {
-                Component->clearScript();
+                Component->ClearScript();
             }
         }
         return true;

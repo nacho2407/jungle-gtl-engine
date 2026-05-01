@@ -15,6 +15,7 @@
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
 #include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaRuntime.h"
 #include "LuaScript/LuaScriptManager.h"
 #include "Viewport/GameViewportClient.h"
 #include "Viewport/Viewport.h"
@@ -57,9 +58,13 @@ void UEngine::Init(FWindowsWindow* InWindow)
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
     FMeshBufferManager::Get().Initialize(Device);
     FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
-    FLuaScriptManager::Get().Init();
+
+    FLuaRuntime::Get().Initialize();
+
     std::wstring ScriptsDirWide = FPaths::Combine(FPaths::ContentDir(), L"Scripts");
+    FPaths::CreateDir(ScriptsDirWide); // 혹시 Scripts 폴더가 없을 경우 DirectoryWatcher 초기화와 CreateScript가 실패하는 상황을 줄이기
     FDirectoryWatcher::Get().Init(FPaths::ToUtf8(ScriptsDirWide));
+    FLuaScriptManager::Get().Init();
 
     UE_LOG(Engine, Info, "Runtime engine initialization completed.");
 }
@@ -67,7 +72,10 @@ void UEngine::Init(FWindowsWindow* InWindow)
 void UEngine::Shutdown()
 {
     UE_LOG(Engine, Info, "Shutting down runtime engine.");
+
     FDirectoryWatcher::Get().Release();
+    FLuaRuntime::Get().Shutdown();
+
     FResourceManager::Get().ReleaseGPUResources();
     UTexture2D::ReleaseAllGPU();
     FObjManager::ReleaseAllGPU();

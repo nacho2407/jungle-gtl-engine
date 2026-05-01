@@ -331,6 +331,7 @@
     <ClCompile Include="Source\Engine\Component\HeightFogComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\LightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp" />
@@ -348,6 +349,7 @@
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
+    <ClCompile Include="Source\Engine\Core\Watcher\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
@@ -362,6 +364,8 @@
     <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Input\ViewportInputRouter.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaRuntime.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
@@ -471,8 +475,7 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
-    <ClCompile Include="Source\Engine\Script\LuaGameObjectProxy.cpp" />
-    <ClCompile Include="Source\Engine\Script\LuaIncludes.h" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaGameObjectProxy.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
     <ClCompile Include="Source\Engine\UI\SSplitter.cpp" />
@@ -544,6 +547,7 @@
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LightComponent.h" />
     <ClInclude Include="Source\Engine\Component\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h" />
@@ -571,6 +575,7 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
     <ClInclude Include="Source\Engine\Core\TickFunction.h" />
+    <ClInclude Include="Source\Engine\Core\Watcher\DirectoryWatcher.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
@@ -587,6 +592,9 @@
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Input\InputTypes.h" />
     <ClInclude Include="Source\Engine\Input\ViewportInputRouter.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaIncludes.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaRuntime.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaScriptManager.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
@@ -752,7 +760,7 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\resource.h" />
-    <ClInclude Include="Source\Engine\Script\LuaGameObjectProxy.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaGameObjectProxy.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />

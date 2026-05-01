@@ -1180,22 +1180,31 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
-            if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name) || IsBehaviorProp(Props[i].Name))
+            if (IsTransformProp(Props[i].Name) ||
+                IsStaticMeshProp(Props[i].Name, Props[i].Type) ||
+                IsMaterialProp(Props[i].Name, Props[i].Type) ||
+                IsVisibilityProp(Props[i].Name) ||
+                IsBehaviorProp(Props[i].Name) ||
+                IsLuaProp(Props[i].Name, Props[i].Type))
             {
                 continue;
             }
+
             if (LightComponent && IsShadowProp(Props[i].Name))
             {
                 continue;
             }
+
             if (LightComponent && Props[i].Name == "bAffectsWorld")
             {
                 continue;
             }
+
             if (LightComponent && !LightComponent->AffectsWorld())
             {
                 continue;
             }
+
             RenderDetailsPanel(Props, i);
         }
     }
@@ -1960,7 +1969,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
             std::wstring FullPath = FPaths::Combine(FPaths::ContentDir(), L"Scripts\\" + FPaths::ToWide(LuaScriptComponent->GetScriptPath()));
             if (!std::filesystem::exists(FullPath))
             {
-                LuaScriptComponent->clearScript();
+                LuaScriptComponent->ClearScript();
                 bChanged = true;
             }
         }
@@ -1978,7 +1987,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         {
             if (ImGui::Selectable("None", CurrentScript.empty()))
             {
-                LuaScriptComponent->clearScript();
+                LuaScriptComponent->ClearScript();
                 bChanged = true;
             }
             ImGui::Separator();
@@ -1996,7 +2005,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
                 {
                     if (CurrentScript != ScriptName)
                     {
-                        if (!CurrentScript.empty()) LuaScriptComponent->clearScript();
+                        if (!CurrentScript.empty()) LuaScriptComponent->ClearScript();
                         LuaScriptComponent->SetScriptPath(ScriptName);
                         bChanged = true;
                     }
@@ -2022,7 +2031,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
             FString FileName = FLuaScriptManager::Get().CreateScript(SelectedComponent->GetOwner());
             if (!FileName.empty())
             {
-                if (!CurrentScript.empty()) LuaScriptComponent->clearScript();
+                if (!CurrentScript.empty()) LuaScriptComponent->ClearScript();
                 LuaScriptComponent->SetScriptPath(FileName);
                 bChanged = true;
             }
