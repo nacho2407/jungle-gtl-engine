@@ -22,6 +22,11 @@ void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 {
     UActorComponent::GetEditableProperties(OutProps);
 
+    FPropertyDescriptor Prop;
+    Prop.Name = "Script File";                 
+    Prop.Type = EPropertyType::LuaScriptRef;
+    Prop.ValuePtr = &LuaScriptPath;            
+    OutProps.push_back(Prop);
 }
 
 void ULuaScriptComponent::PostEditProperty(const char* PropertyName)

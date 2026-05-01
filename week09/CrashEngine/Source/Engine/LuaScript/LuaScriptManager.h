@@ -19,6 +19,8 @@ public:
 
     void RegisterComponent(ULuaScriptComponent* Component);
     void UnRegisterComponent(ULuaScriptComponent* Component);
+    bool DeleteScript(const FString& FileName);
+    bool RenameScript(const FString& OldName, const FString& NewName);
 
     TArray<FString> GetAvailableScripts() const;
 
