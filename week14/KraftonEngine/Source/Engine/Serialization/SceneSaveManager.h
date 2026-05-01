@@ -59,11 +59,7 @@ private:
 	static json::JSON SerializeCamera(UCameraComponent* Cam);
 	static void DeserializeCamera(json::JSON& CamJSON, FPerspectiveCameraData& OutCam);
 
-	// ---- Primitives ----
-	static void DeserializePrimitives(json::JSON& Primitives, UWorld* World, std::unordered_map<string, AActor*>& OutCreatedActors);
-
 	// ---- Deserialization helpers ----
-	static void DeserializeSceneComponentIntoExisting(USceneComponent* Existing, json::JSON& Node, AActor* Owner);
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
 	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
 	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
