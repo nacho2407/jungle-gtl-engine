@@ -19,12 +19,12 @@ function BeginPlay()
 end
 
 function EndPlay()
-    if contributorWidget ~= nil then
-        contributorWidget:hide()
-    end
-    if whiteBox ~= nil then
-        whiteBox:hide()
-    end
+    -- if contributorWidget ~= nil then
+    --     contributorWidget:hide()
+    -- end
+    -- if whiteBox ~= nil then
+    --     whiteBox:hide()
+    -- end
 end
 
 function OnOverlap(OtherActor)
