@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
@@ -9,6 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Viewport/GameViewportClient.h"
+#include "UI/UIManager.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -395,6 +396,8 @@ void UEditorEngine::EndPlayMap()
 		UObjectManager::Get().DestroyObject(PIEViewportClient);
 		SetGameViewportClient(nullptr);
 	}
+
+	UUIManager::Get().ClearViewport();
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
