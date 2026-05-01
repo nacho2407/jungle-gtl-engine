@@ -14,6 +14,24 @@
 
 class UGizmoComponent;
 class FEditorRenderPipeline;
+class AActor;
+
+struct FUndoSnapshotEntry
+{
+	FString Label;
+	FString Snapshot;
+};
+
+struct FUndoHistoryStats
+{
+	int32 UndoCount = 0;
+	int32 RedoCount = 0;
+	int32 MaxEntries = 0;
+	size_t LogicalBytes = 0;
+	size_t ReservedBytes = 0;
+	size_t EntryOverheadBytes = 0;
+	size_t ApproxTotalBytes = 0;
+};
 
 class UEditorEngine : public UEngine
 {
@@ -38,6 +56,15 @@ public:
 	const FViewportCamera* GetCamera() const;
 
 	void ClearScene();
+	int32 DeleteActors(const TArray<AActor*>& Actors);
+	bool CaptureUndoSnapshot(const char* Reason = nullptr);
+	bool Undo();
+	bool Redo();
+	bool RestoreUndoHistoryIndex(int32 Index);
+	void ClearUndoHistory();
+	const TArray<FUndoSnapshotEntry>& GetUndoHistory() const { return UndoHistory; }
+	const TArray<FUndoSnapshotEntry>& GetRedoHistory() const { return RedoHistory; }
+	FUndoHistoryStats GetUndoHistoryStats() const;
 	void ResetViewport();
 	void CloseScene();
 	void NewScene();
@@ -103,6 +130,8 @@ private:
 	void ProcessQueuedPlaySessionRequests();
 	void StartPlaySessionNow();
 	void StopPlaySessionNow();
+	FString CaptureSceneSnapshot() const;
+	bool RestoreSceneSnapshot(const FString& Snapshot);
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
 	FEditorViewportLayout   ViewportLayout;
@@ -114,6 +143,10 @@ private:
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;
+	TArray<FUndoSnapshotEntry> UndoHistory;
+	TArray<FUndoSnapshotEntry> RedoHistory;
+	bool bRestoringUndoRedo = false;
+	static constexpr int32 MaxUndoHistory = 50;
 
 private:
     void HandleActorDestroyed(AActor* Actor);

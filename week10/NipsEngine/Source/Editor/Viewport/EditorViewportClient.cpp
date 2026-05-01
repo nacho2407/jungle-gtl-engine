@@ -22,6 +22,29 @@
 #include <cmath>
 #include <unordered_set>
 
+namespace
+{
+bool IsEditorCameraKeyboardKey(int VK)
+{
+	switch (VK)
+	{
+	case 'W':
+	case 'A':
+	case 'S':
+	case 'D':
+	case 'Q':
+	case 'E':
+	case VK_LEFT:
+	case VK_RIGHT:
+	case VK_UP:
+	case VK_DOWN:
+		return true;
+	default:
+		return false;
+	}
+}
+}
+
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor)
 {
 	FViewportClient::Initialize(InWindow);
@@ -275,12 +298,6 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 	}
 
 	bool bGizmoBlocksLeftRelativeDrag = Gizmo && Gizmo->IsHovered();
-	const bool bLeftLookChord = Context.Frame.IsDown(VK_LBUTTON) && !Context.Frame.IsAltDown() && !Context.Frame.IsCtrlDown();
-	if (Context.bRelativeMouseMode && bLeftLookChord)
-	{
-		return true;
-	}
-
 	if (!bGizmoBlocksLeftRelativeDrag && Gizmo && Viewport && Context.Frame.IsDown(VK_LBUTTON))
 	{
 		const FViewportRect& Rect = Viewport->GetRect();
@@ -294,14 +311,23 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 		}
 	}
 
+	const bool bPlainPerspectiveLeftLookChord =
+		!Camera.IsOrthographic()
+		&& TransformMode != ETransformMode::Select
+		&& !bBoxSelecting
+		&& !IsBoxSelectionChordActive(Context)
+		&& Context.Frame.IsDown(VK_LBUTTON)
+		&& !Context.Frame.IsAltDown()
+		&& !Context.Frame.IsCtrlDown()
+		&& !Context.Frame.IsShiftDown();
 	const bool bLeftGesture =
 		Context.Frame.bLeftDragging
 		|| Context.WasPointerDragStarted(EPointerButton::Left)
-		|| Context.WasPointerDragEnded(EPointerButton::Left);
-	const bool bLeftRelativeDrag =
-		bLeftLookChord
-		&& !bGizmoBlocksLeftRelativeDrag
-		&& bLeftGesture;
+		|| Context.bRelativeMouseMode;
+	const bool bLeftLookDrag =
+		bPlainPerspectiveLeftLookChord
+		&& bLeftGesture
+		&& !bGizmoBlocksLeftRelativeDrag;
 	const bool bRightLookDrag =
 		Context.Frame.IsDown(VK_RBUTTON)
 		&& (Context.Frame.bRightDragging || Context.WasPointerDragStarted(EPointerButton::Right) || Context.bRelativeMouseMode);
@@ -315,7 +341,7 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 		|| Context.Frame.IsDown(VK_MBUTTON)
 		|| (Context.Frame.IsDown(VK_LBUTTON) && Context.Frame.IsAltDown() && !Context.Frame.IsCtrlDown())
 		|| Context.Frame.bMiddleDragging
-		|| bLeftRelativeDrag;
+		|| bLeftLookDrag;
 }
 
 bool FEditorViewportClient::WantsAbsoluteMouseClip(const FViewportInputContext& Context, RECT& OutClipScreenRect) const
@@ -475,6 +501,11 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 
 	InputRouter.SetViewportDim(VX, VY, WindowWidth, WindowHeight);
 	InputRouter.Tick(Context.DeltaSeconds);
+	if (TryReacquirePIEMouseFocusOnViewportClick(Context))
+	{
+		bRoutedInputProcessedThisFrame = true;
+		return;
+	}
 	TickInputContexts(Context);
 }
 
@@ -506,8 +537,17 @@ void FEditorViewportClient::TickKeyboardInput()
 
 	if (bControlLocked) return;
 	const InputSystem& IS = InputSystem::Get();
+	const bool bEditorWorld = InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
+	const bool bKeyboardNavigationChord =
+		IS.GetKey(VK_RBUTTON)
+		|| (IS.GetKey(VK_LBUTTON) && !IS.GetKey(VK_CONTROL) && !IS.GetKey(VK_MENU))
+		|| IS.GetKey(VK_MBUTTON);
 	for (int VK : WatchKeys)
 	{
+		if (bEditorWorld && IsEditorCameraKeyboardKey(VK) && !bKeyboardNavigationChord)
+		{
+			continue;
+		}
 		if (IS.GetKeyDown(VK)) InputRouter.RouteKeyboardInput(EKeyInputType::KeyPressed,  VK);
 		if (IS.GetKey(VK))     InputRouter.RouteKeyboardInput(EKeyInputType::KeyDown,     VK);
 		if (IS.GetKeyUp(VK))   InputRouter.RouteKeyboardInput(EKeyInputType::KeyReleased, VK);
@@ -523,9 +563,19 @@ void FEditorViewportClient::TickKeyboardInput(const FViewportInputContext& Conte
 	};
 
 	if (bControlLocked) return;
+	const bool bEditorWorld = InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
+	const bool bKeyboardNavigationChord =
+		Context.Frame.IsDown(VK_RBUTTON)
+		|| (Context.Frame.IsDown(VK_LBUTTON) && !Context.Frame.IsCtrlDown() && !Context.Frame.IsAltDown())
+		|| Context.Frame.IsDown(VK_MBUTTON)
+		|| Context.bRelativeMouseMode;
 
 	for (int VK : WatchKeys)
 	{
+		if (bEditorWorld && IsEditorCameraKeyboardKey(VK) && !bKeyboardNavigationChord)
+		{
+			continue;
+		}
 		if (Context.WasPressed(VK)) InputRouter.RouteKeyboardInput(EKeyInputType::KeyPressed, VK);
 		if (Context.Frame.IsDown(VK)) InputRouter.RouteKeyboardInput(EKeyInputType::KeyDown, VK);
 		if (Context.WasReleased(VK)) InputRouter.RouteKeyboardInput(EKeyInputType::KeyReleased, VK);
@@ -541,10 +591,11 @@ void FEditorViewportClient::TickEditorShortcuts()
 	const InputSystem& IS        = InputSystem::Get();
 	const bool         bCtrlDown = IS.GetKey(VK_CONTROL);
 	const bool         bAltDown  = IS.GetKey(VK_MENU);
+	const bool         bShiftDown = IS.GetKey(VK_SHIFT);
 	const bool         bMouseNavigationActive =
 		IS.GetRightDragging()
 		|| IS.GetMiddleDragging()
-		|| (IS.GetKey(VK_LBUTTON) && bAltDown && !bCtrlDown);
+		|| (IS.GetKey(VK_LBUTTON) && !bCtrlDown);
 
 	if (!bMouseNavigationActive)
 	{
@@ -570,6 +621,14 @@ void FEditorViewportClient::TickEditorShortcuts()
 
 	if (IS.GetKeyDown('A') && bCtrlDown && !bAltDown)
 		SelectAllActors();
+
+	if (IS.GetKeyDown('Z') && bCtrlDown && !bAltDown && Editor)
+	{
+		if (bShiftDown)
+			Editor->Redo();
+		else
+			Editor->Undo();
+	}
 }
 
 void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Context)
@@ -579,6 +638,7 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 	const bool bMouseNavigationActive =
 		EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavLookRightDown)
 		|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavLookMiddleDown)
+		|| (Context.Frame.IsDown(VK_LBUTTON) && !Context.Frame.IsCtrlDown() && !Context.Frame.IsAltDown())
 		|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavOrbitAltLeftDown)
 		|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavDollyAltRightDown)
 		|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavPanAltMiddleDown);
@@ -593,6 +653,10 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::TogglePIEPossessEject))
 		{
 			TogglePIEPossessEject();
+		}
+		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::ReleasePIEMouseFocus))
+		{
+			ReleasePIEMouseFocus();
 		}
 		return;
 	}
@@ -632,6 +696,18 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::FocusSelection))
 	{
 		FocusPrimarySelection();
+	}
+
+	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
+	{
+		Editor->Undo();
+		return;
+	}
+
+	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
+	{
+		Editor->Redo();
+		return;
 	}
 
 	if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::DeleteSelection))
@@ -676,9 +752,21 @@ void FEditorViewportClient::TickPIEShortCuts()
 
 	InputSystem& IS = InputSystem::Get();
 
-	if (IS.GetKeyDown(VK_F4) || IS.GetKeyDown(VK_F8))
+	if (IS.GetKeyDown(VK_ESCAPE) && Editor)
+	{
+		Editor->StopPlaySession();
+	}
+	if (IS.GetKeyDown(VK_F8))
 	{
 		TogglePIEPossessEject();
+	}
+	if (IS.GetKeyDown(VK_F1) && IS.GetKey(VK_SHIFT))
+	{
+		ReleasePIEMouseFocus();
+	}
+	if (bControlLocked && IS.GetKeyDown(VK_LBUTTON) && State && State->bHovered)
+	{
+		ReacquirePIEMouseFocus();
 	}
 }
 
@@ -686,10 +774,17 @@ void FEditorViewportClient::TickPIEShortCuts(const FViewportInputContext& Contex
 {
 	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController) return;
 
-	if (Context.WasPressed(VK_F4)
-		|| EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::TogglePIEPossessEject))
+	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::EndPIE) && Editor)
+	{
+		Editor->StopPlaySession();
+	}
+	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::TogglePIEPossessEject))
 	{
 		TogglePIEPossessEject();
+	}
+	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::ReleasePIEMouseFocus))
+	{
+		ReleasePIEMouseFocus();
 	}
 }
 
@@ -735,7 +830,8 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 		? TArray<EEditorViewportAction>
 		{
 			EEditorViewportAction::EndPIE,
-			EEditorViewportAction::TogglePIEPossessEject
+			EEditorViewportAction::TogglePIEPossessEject,
+			EEditorViewportAction::ReleasePIEMouseFocus
 		}
 		: TArray<EEditorViewportAction>
 		{
@@ -747,6 +843,8 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 			EEditorViewportAction::SetModeRotate,
 			EEditorViewportAction::SetModeScale,
 			EEditorViewportAction::FocusSelection,
+			EEditorViewportAction::Undo,
+			EEditorViewportAction::Redo,
 			EEditorViewportAction::DeleteSelection,
 			EEditorViewportAction::SelectAll,
 			EEditorViewportAction::DuplicateSelection,
@@ -767,8 +865,14 @@ bool FEditorViewportClient::HandleCommandInput(const FViewportInputContext& Cont
 		return false;
 	}
 
-	TickEditorShortcuts(Context);
-	TickPIEShortCuts(Context);
+	if (bIsPIE)
+	{
+		TickPIEShortCuts(Context);
+	}
+	else
+	{
+		TickEditorShortcuts(Context);
+	}
 	return true;
 }
 
@@ -779,17 +883,23 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		return false;
 	}
 
+	const bool bGizmoDragArmed = Gizmo && (Gizmo->IsPressedOnHandle() || Gizmo->IsHolding());
 	if (IsPointerInViewportInputDeadZone(Context)
 		|| !Gizmo
 		|| !Gizmo->IsVisible()
 		|| TransformMode == ETransformMode::Select
-		|| IsBoxSelectionChordActive(Context))
+		|| (IsBoxSelectionChordActive(Context) && !bGizmoDragArmed))
 	{
 		return false;
 	}
 
-	if (Context.Frame.bLeftDragging && (Gizmo->IsPressedOnHandle() || Gizmo->IsHolding()))
+	if (Context.Frame.bLeftDragging && bGizmoDragArmed)
 	{
+		if (!bGizmoDragUndoCaptured && Editor)
+		{
+			Editor->CaptureUndoSnapshot("Transform Actors");
+			bGizmoDragUndoCaptured = true;
+		}
 		const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
 		const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
 		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragged, LocalX, LocalY);
@@ -801,7 +911,13 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 		const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
 		const float LocalY = static_cast<float>(Context.MouseLocalPos.y);
 		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragEnded, LocalX, LocalY);
+		bGizmoDragUndoCaptured = false;
 		return true;
+	}
+
+	if (Context.WasReleased(VK_LBUTTON))
+	{
+		bGizmoDragUndoCaptured = false;
 	}
 
 	return false;
@@ -819,8 +935,72 @@ bool FEditorViewportClient::HandleSelectionInput(const FViewportInputContext& Co
 		return false;
 	}
 
-	if (IsBoxSelectionChordActive(Context))
+	const bool bLeftReleased =
+		Context.WasPointerDragEnded(EPointerButton::Left) ||
+		Context.WasReleased(VK_LBUTTON);
+	const bool bLeftActive =
+		Context.Frame.IsDown(VK_LBUTTON) ||
+		Context.Frame.bLeftDragging ||
+		Context.WasPointerDragStarted(EPointerButton::Left);
+	const bool bLeftDragBeyondThreshold =
+		Context.Frame.bLeftDragging ||
+		Context.WasPointerDragStarted(EPointerButton::Left);
+	const bool bSelectModePlainDrag =
+		TransformMode == ETransformMode::Select
+		&& Context.Frame.IsDown(VK_LBUTTON)
+		&& !Context.Frame.IsAltDown()
+		&& !Context.Frame.IsCtrlDown()
+		&& !Context.Frame.IsShiftDown()
+		&& bLeftDragBeyondThreshold;
+	const bool bBoxSelectionChord = IsBoxSelectionChordActive(Context) || bSelectModePlainDrag;
+	const auto GetClampedLocalPoint = [&](float InLocalX, float InLocalY) -> POINT
 	{
+		const float ClampedX = MathUtil::Clamp(
+			InLocalX,
+			0.0f,
+			std::max(0.0f, WindowWidth - 1.0f));
+		const float ClampedY = MathUtil::Clamp(
+			InLocalY,
+			0.0f,
+			std::max(0.0f, WindowHeight - 1.0f));
+		return POINT{ static_cast<LONG>(ClampedX), static_cast<LONG>(ClampedY) };
+	};
+	const auto GetCurrentLocalPoint = [&]() -> POINT
+	{
+		return GetClampedLocalPoint(
+			static_cast<float>(Context.MouseLocalPos.x),
+			static_cast<float>(Context.MouseLocalPos.y));
+	};
+	const auto GetDragStartLocalPoint = [&]() -> POINT
+	{
+		return GetClampedLocalPoint(
+			static_cast<float>(Context.MouseLocalPos.x - Context.Frame.LeftDragVector.x),
+			static_cast<float>(Context.MouseLocalPos.y - Context.Frame.LeftDragVector.y));
+	};
+
+	if (bBoxSelecting)
+	{
+		BoxSelectEnd = GetCurrentLocalPoint();
+		if (bLeftReleased)
+		{
+			HandleBoxSelection();
+			bBoxSelecting = false;
+		}
+		else if (!bLeftActive)
+		{
+			bBoxSelecting = false;
+		}
+		return true;
+	}
+
+	if (bBoxSelectionChord)
+	{
+		if (bLeftDragBeyondThreshold)
+		{
+			bBoxSelecting = true;
+			BoxSelectStart = GetDragStartLocalPoint();
+			BoxSelectEnd = GetCurrentLocalPoint();
+		}
 		return true;
 	}
 
@@ -829,7 +1009,20 @@ bool FEditorViewportClient::HandleSelectionInput(const FViewportInputContext& Co
 
 bool FEditorViewportClient::HandleNavigationInput(const FViewportInputContext& Context)
 {
+	if (InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController
+		&& Context.Frame.IsDown(VK_RBUTTON)
+		&& !MathUtil::IsNearlyZero(Context.Frame.WheelNotches))
+	{
+		const float WheelScale = std::pow(1.15f, static_cast<float>(Context.Frame.WheelNotches));
+		SetMoveSpeed(MathUtil::Clamp(GetMoveSpeed() * WheelScale, 0.1f, 5000.0f));
+		return true;
+	}
+
 	if (HandleAltNavigationInput(Context))
+	{
+		return true;
+	}
+	if (HandleLeftNavigationInput(Context))
 	{
 		return true;
 	}
@@ -837,6 +1030,92 @@ bool FEditorViewportClient::HandleNavigationInput(const FViewportInputContext& C
 	TickKeyboardInput(Context);
 	TickPIEShortCuts(Context);
 	TickMouseInput(Context);
+	return true;
+}
+
+bool FEditorViewportClient::HandleLeftNavigationInput(const FViewportInputContext& Context)
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController || bControlLocked || !bHasCamera)
+	{
+		return false;
+	}
+	if (IsPointerInViewportInputDeadZone(Context) || Context.bImGuiCapturedMouse || Camera.IsOrthographic())
+	{
+		return false;
+	}
+
+	const bool bLeftNavigationChord =
+		TransformMode != ETransformMode::Select
+		&& !bBoxSelecting
+		&& !IsBoxSelectionChordActive(Context)
+		&& Context.Frame.IsDown(VK_LBUTTON)
+		&& !Context.Frame.IsCtrlDown()
+		&& !Context.Frame.IsAltDown()
+		&& !Context.Frame.IsShiftDown();
+	if (!bLeftNavigationChord)
+	{
+		return false;
+	}
+
+	if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle() || Gizmo->IsHovered()))
+	{
+		return false;
+	}
+
+	const bool bLeftGesture =
+		Context.Frame.bLeftDragging
+		|| Context.WasPointerDragStarted(EPointerButton::Left)
+		|| Context.bRelativeMouseMode;
+	if (!bLeftGesture)
+	{
+		return false;
+	}
+
+	float DeltaX = static_cast<float>(Context.Frame.MouseDelta.x);
+	float DeltaY = static_cast<float>(Context.Frame.MouseDelta.y);
+	if (MathUtil::IsNearlyZero(DeltaX) && MathUtil::IsNearlyZero(DeltaY))
+	{
+		DeltaX = static_cast<float>(Context.MouseLocalDelta.x);
+		DeltaY = static_cast<float>(Context.MouseLocalDelta.y);
+	}
+	if (MathUtil::IsNearlyZero(DeltaX) && MathUtil::IsNearlyZero(DeltaY))
+	{
+		return true;
+	}
+
+	const FVector Forward = Camera.GetForwardVector().GetSafeNormal();
+	float Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.0f, 1.0f)));
+	float Yaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
+
+	const FEditorSettings& Settings = FEditorSettings::Get();
+	const float RotationSpeed = Settings.CameraRotationSpeed / 400.0f;
+	Yaw += DeltaX * RotationSpeed;
+	const float PitchRad = MathUtil::DegreesToRadians(Pitch);
+	const float YawRad = MathUtil::DegreesToRadians(Yaw);
+	FVector NextForward(
+		std::cos(PitchRad) * std::cos(YawRad),
+		std::cos(PitchRad) * std::sin(YawRad),
+		std::sin(PitchRad));
+	NextForward = NextForward.GetSafeNormal();
+
+	FVector Right = FVector::CrossProduct(FVector::UpVector, NextForward).GetSafeNormal();
+	FQuat AppliedRotation = Camera.GetRotation();
+	if (!Right.IsNearlyZero())
+	{
+		FVector Up = FVector::CrossProduct(NextForward, Right).GetSafeNormal();
+		FMatrix RotMat = FMatrix::Identity;
+		RotMat.SetAxes(NextForward, Right, Up);
+		FQuat NextRotation(RotMat);
+		NextRotation.Normalize();
+		Camera.SetRotation(NextRotation);
+		AppliedRotation = NextRotation;
+	}
+
+	const float ForwardScale = GetMoveSpeed() * Settings.CameraDollySpeedScale * 0.01f;
+	const FVector NextLocation = Camera.GetLocation() + NextForward * (-DeltaY * ForwardScale);
+	Camera.SetLocation(NextLocation);
+	InputRouter.GetEditorWorldController().SetTargetLocation(NextLocation);
+	InputRouter.GetEditorWorldController().SetTargetRotation(AppliedRotation);
 	return true;
 }
 
@@ -866,12 +1145,13 @@ bool FEditorViewportClient::HandleAltNavigationInput(const FViewportInputContext
 
 	if (bAltPan)
 	{
+		const FEditorSettings& Settings = FEditorSettings::Get();
 		const float PanScale = Camera.IsOrthographic()
-			? Camera.GetOrthoHeight() * 0.002f
-			: GetMoveSpeed() * 0.002f;
+			? Camera.GetOrthoHeight() * 0.002f * Settings.CameraPanSpeedScale
+			: GetMoveSpeed() * 0.002f * Settings.CameraPanSpeedScale;
 		const FVector Right = Camera.GetEffectiveRight();
 		const FVector Up = Camera.GetEffectiveUp();
-		Camera.SetLocation(Camera.GetLocation() + Right * (-DeltaX * PanScale) + Up * (DeltaY * PanScale));
+		Camera.SetLocation(Camera.GetLocation() + Right * (DeltaX * PanScale) + Up * (-DeltaY * PanScale));
 		SyncCameraTarget();
 		return true;
 	}
@@ -885,7 +1165,7 @@ bool FEditorViewportClient::HandleAltNavigationInput(const FViewportInputContext
 		}
 		else
 		{
-			const float DollyScale = GetMoveSpeed() * 0.01f;
+			const float DollyScale = GetMoveSpeed() * FEditorSettings::Get().CameraDollySpeedScale * 0.01f;
 			Camera.SetLocation(Camera.GetLocation() + Camera.GetForwardVector().GetSafeNormal() * (-DeltaY * DollyScale));
 			SyncCameraTarget();
 		}
@@ -995,9 +1275,9 @@ void FEditorViewportClient::TickMouseInput(const FViewportInputContext& Context)
 
 	if (Context.WasPressed(VK_RBUTTON))
 		InputRouter.RouteMouseInput(EMouseInputType::E_RightMouseClicked, DX, DY);
-	if (Context.Frame.bRightDragging)
+	if (Context.Frame.bRightDragging || (Context.bRelativeMouseMode && Context.Frame.IsDown(VK_RBUTTON)))
 		InputRouter.RouteMouseInput(EMouseInputType::E_RightMouseDragged, DX, DY);
-	if (Context.Frame.bMiddleDragging)
+	if (Context.Frame.bMiddleDragging || (Context.bRelativeMouseMode && Context.Frame.IsDown(VK_MBUTTON)))
 		InputRouter.RouteMouseInput(EMouseInputType::E_MiddleMouseDragged, DX, DY);
 	if (!MathUtil::IsNearlyZero(Context.Frame.WheelNotches))
 		InputRouter.RouteMouseInput(EMouseInputType::E_MouseWheelScrolled, Context.Frame.WheelNotches, 0.f);
@@ -1020,6 +1300,15 @@ bool FEditorViewportClient::IsBoxSelectionChordActive(const FViewportInputContex
 	if (IsPointerInViewportInputDeadZone(Context))
 	{
 		return false;
+	}
+
+	if (Camera.IsOrthographic()
+		&& Context.Frame.IsDown(VK_LBUTTON)
+		&& Context.Frame.bLeftDragging
+		&& !Context.Frame.IsAltDown()
+		&& !Context.Frame.IsCtrlDown())
+	{
+		return true;
 	}
 
 	return Context.Frame.IsCtrlDown()
@@ -1145,6 +1434,11 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	if (!World || !SelectionManager)
 		return;
 
+	if (bRoutedInputProcessedThisFrame)
+	{
+		return;
+	}
+
 	// ── Box selection (Ctrl+Alt+LMB drag) ────────────────────────────────────
 	POINT MousePoint = InputSystem::Get().GetMousePos();
 
@@ -1174,11 +1468,24 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	const bool         bCtrlDown = IS.GetKey(VK_CONTROL);
 	const bool         bAltDown  = IS.GetKey(VK_MENU);
 
-	if (IS.GetKeyDown(VK_LBUTTON) && bCtrlDown && bAltDown)
+	const bool bLeftDragBeyondThreshold = IS.GetLeftDragging();
+	const bool bBoxSelectionChord =
+		bLeftDragBeyondThreshold
+		&& ((bCtrlDown && bAltDown)
+			|| (Camera.IsOrthographic() && !bCtrlDown && !bAltDown));
+
+	if (!bBoxSelecting && bBoxSelectionChord)
 	{
+		const POINT DragVector = IS.GetLeftDragVector();
 		bBoxSelecting  = true;
-		BoxSelectStart = POINT{ static_cast<LONG>(LocalX), static_cast<LONG>(LocalY) };
-		BoxSelectEnd   = BoxSelectStart;
+		BoxSelectStart = POINT{
+			static_cast<LONG>(MathUtil::Clamp(LocalX - static_cast<float>(DragVector.x), 0.0f, std::max(0.0f, WindowWidth - 1.0f))),
+			static_cast<LONG>(MathUtil::Clamp(LocalY - static_cast<float>(DragVector.y), 0.0f, std::max(0.0f, WindowHeight - 1.0f)))
+		};
+		BoxSelectEnd = POINT{
+			static_cast<LONG>(MathUtil::Clamp(LocalX, 0.0f, std::max(0.0f, WindowWidth - 1.0f))),
+			static_cast<LONG>(MathUtil::Clamp(LocalY, 0.0f, std::max(0.0f, WindowHeight - 1.0f)))
+		};
 		return;
 	}
 
@@ -1307,14 +1614,13 @@ void FEditorViewportClient::DeleteSelectedActors()
 		return;
 
 	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
-	for (AActor* Actor : SelectedActors)
+	if (SelectedActors.empty())
+		return;
+
+	if (Editor)
 	{
-		if (!Actor)
-			continue;
-		if (UWorld* ActorWorld = Actor->GetFocusedWorld())
-			ActorWorld->DestroyActor(Actor);
+		Editor->DeleteActors(SelectedActors);
 	}
-	SelectionManager->ClearSelection();
 }
 
 void FEditorViewportClient::SelectAllActors()
@@ -1338,6 +1644,11 @@ void FEditorViewportClient::DuplicateSelection()
 	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
 	if (SelectedActors.empty())
 		return;
+
+	if (Editor)
+	{
+		Editor->CaptureUndoSnapshot("Duplicate Actors");
+	}
 
 	TArray<AActor*> NewSelection;
 	for (AActor* SourceActor : SelectedActors)
@@ -1375,19 +1686,51 @@ void FEditorViewportClient::TogglePIEPossessEject()
 	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
 		return;
 
-	InputSystem& IS = InputSystem::Get();
 	if (!bControlLocked)
 	{
-		bControlLocked = true;
-		IS.SetCursorVisibility(true);
-		IS.LockMouse(false);
+		ReleasePIEMouseFocus();
 	}
 	else
 	{
-		bControlLocked = false;
-		IS.SetCursorVisibility(false);
-		LockCursorToViewport();
+		ReacquirePIEMouseFocus();
 	}
+}
+
+void FEditorViewportClient::ReleasePIEMouseFocus()
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
+		return;
+
+	bControlLocked = true;
+	InputSystem& IS = InputSystem::Get();
+	IS.SetCursorVisibility(true);
+	IS.LockMouse(false);
+}
+
+void FEditorViewportClient::ReacquirePIEMouseFocus()
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController)
+		return;
+
+	bControlLocked = false;
+	InputSystem& IS = InputSystem::Get();
+	IS.SetCursorVisibility(false);
+	LockCursorToViewport();
+}
+
+bool FEditorViewportClient::TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context)
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::PIEController
+		|| !bControlLocked
+		|| !Context.WasPressed(VK_LBUTTON)
+		|| Context.bImGuiCapturedMouse
+		|| IsPointerInViewportInputDeadZone(Context))
+	{
+		return false;
+	}
+
+	ReacquirePIEMouseFocus();
+	return true;
 }
 
 void FEditorViewportClient::SaveCameraSnapshot()

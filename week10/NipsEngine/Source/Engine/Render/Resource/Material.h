@@ -126,10 +126,62 @@ public:
 	const FString& GetFilePath() const override { return FilePath; }
 	FString& GetFilePathRef() override { return FilePath; }
 
-	bool HasDiffuseMap() const override { return MaterialData.bHasDiffuseTexture; }
-	bool HasNormalMap() const override { return MaterialData.bHasBumpTexture; }
-	bool HasSpecularMap() const override { return MaterialData.bHasSpecularTexture; }
-	bool HasEmissiveMap() const override { return MaterialData.bHasAmbientTexture; }
+	bool HasDiffuseMap() const override
+	{
+		if (auto It = MaterialParams.find("bHasDiffuseMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+		{
+			return std::get<bool>(It->second.Value);
+		}
+		if (auto It = MaterialParams.find("DiffuseMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+		{
+			return std::get<UTexture*>(It->second.Value) != nullptr;
+		}
+		return MaterialData.bHasDiffuseTexture;
+	}
+	bool HasNormalMap() const override
+	{
+		if (auto It = MaterialParams.find("bHasBumpMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+		{
+			return std::get<bool>(It->second.Value);
+		}
+		if (auto It = MaterialParams.find("BumpMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+		{
+			return std::get<UTexture*>(It->second.Value) != nullptr;
+		}
+		return MaterialData.bHasBumpTexture;
+	}
+	bool HasSpecularMap() const override
+	{
+		if (auto It = MaterialParams.find("bHasSpecularMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+		{
+			return std::get<bool>(It->second.Value);
+		}
+		if (auto It = MaterialParams.find("SpecularMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+		{
+			return std::get<UTexture*>(It->second.Value) != nullptr;
+		}
+		return MaterialData.bHasSpecularTexture;
+	}
+	bool HasEmissiveMap() const override
+	{
+		if (auto It = MaterialParams.find("bHasAmbientMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+		{
+			return std::get<bool>(It->second.Value);
+		}
+		if (auto It = MaterialParams.find("AmbientMap"); It != MaterialParams.end()
+			&& It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+		{
+			return std::get<UTexture*>(It->second.Value) != nullptr;
+		}
+		return MaterialData.bHasAmbientTexture;
+	}
 	bool HasAlphaMask() const override { return false; }
 
 	void SetShader(UShader* InShader)
@@ -183,7 +235,24 @@ public:
 	const FString& GetFilePath() const override { return FilePath; }
 	FString& GetFilePathRef() override { return FilePath; }
 
-	bool HasDiffuseMap() const override { return Parent ? Parent->HasDiffuseMap() : false; }
+	bool HasDiffuseMap() const override
+	{
+		if (auto It = OverridedParams.find("bHasDiffuseMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+			{
+				return std::get<bool>(It->second.Value);
+			}
+		}
+		if (auto It = OverridedParams.find("DiffuseMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+			{
+				return std::get<UTexture*>(It->second.Value) != nullptr;
+			}
+		}
+		return Parent ? Parent->HasDiffuseMap() : false;
+	}
 	bool HasNormalMap() const override
 	{
 		if (auto It = OverridedParams.find("bHasBumpMap"); It != OverridedParams.end())
@@ -204,8 +273,42 @@ public:
 
 		return Parent ? Parent->HasNormalMap() : false;
 	}
-	bool HasSpecularMap() const override { return Parent ? Parent->HasSpecularMap() : false; }
-	bool HasEmissiveMap() const override { return Parent ? Parent->HasEmissiveMap() : false; }
+	bool HasSpecularMap() const override
+	{
+		if (auto It = OverridedParams.find("bHasSpecularMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+			{
+				return std::get<bool>(It->second.Value);
+			}
+		}
+		if (auto It = OverridedParams.find("SpecularMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+			{
+				return std::get<UTexture*>(It->second.Value) != nullptr;
+			}
+		}
+		return Parent ? Parent->HasSpecularMap() : false;
+	}
+	bool HasEmissiveMap() const override
+	{
+		if (auto It = OverridedParams.find("bHasAmbientMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
+			{
+				return std::get<bool>(It->second.Value);
+			}
+		}
+		if (auto It = OverridedParams.find("AmbientMap"); It != OverridedParams.end())
+		{
+			if (It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
+			{
+				return std::get<UTexture*>(It->second.Value) != nullptr;
+			}
+		}
+		return Parent ? Parent->HasEmissiveMap() : false;
+	}
 	bool HasAlphaMask() const override { return Parent ? Parent->HasAlphaMask() : false; }
 
 	static UMaterialInstance* Create(UMaterial* Material)

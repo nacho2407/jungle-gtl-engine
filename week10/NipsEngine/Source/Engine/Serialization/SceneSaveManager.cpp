@@ -70,15 +70,12 @@ static EWorldType StringToWorldType(const FString& Str)
 	return EWorldType::Editor;
 }
 
-void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContext, const FEditorCameraState* CameraState)
+static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext& WorldContext, const FEditorCameraState* CameraState)
 {
 	json::JSON Root = json::Object();
 	FJsonWriter Writer(Root);
 
-	FString FinalName = FilePath.empty() ? "Save_" + GetCurrentTimeStamp() : FilePath;
-	std::wstring SceneDir = GetSceneDirectory();
-	std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
-	std::filesystem::create_directories(SceneDir);
+	FString FinalName = SceneName.empty() ? "Snapshot" : SceneName;
 
 	int32 Version = 4;
 	uint32 NextUUID = EngineStatics::GetNextUUID();
@@ -120,6 +117,17 @@ void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContex
 	}
 	Writer.EndObject();
 
+	return Root;
+}
+
+void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContext, const FEditorCameraState* CameraState)
+{
+	FString FinalName = FilePath.empty() ? "Save_" + GetCurrentTimeStamp() : FilePath;
+	std::wstring SceneDir = GetSceneDirectory();
+	std::filesystem::path FileDestination = std::filesystem::path(SceneDir) / (FPaths::ToWide(FinalName) + SceneExtension);
+	std::filesystem::create_directories(SceneDir);
+
+	json::JSON Root = BuildSceneSnapshotJson(FinalName, WorldContext, CameraState);
 
 	std::ofstream File(FileDestination);
 	if (File.is_open()) {
@@ -127,6 +135,42 @@ void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContex
 		File.flush();
 		File.close();
 	}
+}
+
+FString FSceneSaveManager::SaveToString(FWorldContext& WorldContext, const FEditorCameraState* CameraState)
+{
+	if (!WorldContext.World)
+	{
+		return "";
+	}
+
+	json::JSON Root = BuildSceneSnapshotJson("UndoSnapshot", WorldContext, CameraState);
+	return Root.dump();
+}
+
+void FSceneSaveManager::LoadFromString(const FString& Snapshot, FWorldContext& OutWorldContext, FEditorCameraState* OutCameraState)
+{
+	if (Snapshot.empty())
+	{
+		return;
+	}
+
+	std::filesystem::path TempPath = std::filesystem::temp_directory_path()
+		/ (L"NipsEngine_UndoRedo_" + FPaths::ToWide(GetCurrentTimeStamp()) + L".Scene");
+
+	{
+		std::ofstream TempFile(TempPath);
+		if (!TempFile.is_open())
+		{
+			return;
+		}
+		TempFile << Snapshot;
+	}
+
+	Load(FPaths::ToUtf8(TempPath.wstring()), OutWorldContext, OutCameraState);
+
+	std::error_code Ec;
+	std::filesystem::remove(TempPath, Ec);
 }
 
 void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldContext, FEditorCameraState* OutCameraState)
@@ -152,18 +196,22 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 	// Perspective 카메라 상태 복원
 	if (OutCameraState)
 	{
-		FVector CamRotation;
+		OutCameraState->bValid = false;
+		if (Root.hasKey(SceneKeys::PerspectiveCamera))
+		{
+			FVector CamRotation = FVector::ZeroVector;
 
-		Reader.BeginObject(SceneKeys::PerspectiveCamera);
-		Reader << SceneKeys::Location << OutCameraState->Location;
-		Reader << SceneKeys::Rotation << CamRotation;
-		Reader << SceneKeys::FarClip << OutCameraState->FarClip;
-		Reader << SceneKeys::NearClip << OutCameraState->NearClip;
-		Reader << SceneKeys::FOV << OutCameraState->FOV;
-		Reader.EndObject();
+			Reader.BeginObject(SceneKeys::PerspectiveCamera);
+			Reader << SceneKeys::Location << OutCameraState->Location;
+			Reader << SceneKeys::Rotation << CamRotation;
+			Reader << SceneKeys::FarClip << OutCameraState->FarClip;
+			Reader << SceneKeys::NearClip << OutCameraState->NearClip;
+			Reader << SceneKeys::FOV << OutCameraState->FOV;
+			Reader.EndObject();
 
-		OutCameraState->Rotation = FRotator::MakeFromEuler(CamRotation);
-		OutCameraState->bValid = true;
+			OutCameraState->Rotation = FRotator::MakeFromEuler(CamRotation);
+			OutCameraState->bValid = true;
+		}
 	}
 
 	json::JSON& PrimitivesNode = Root[SceneKeys::Primitives];

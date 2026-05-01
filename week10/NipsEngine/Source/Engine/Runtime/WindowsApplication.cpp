@@ -48,6 +48,13 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 	// Slate가 ImGui 아래로 들어가기 때문에 imgui 관련 예외를 모두 처리합니다.
 	switch (Msg)
 	{
+	case WM_CLOSE:
+		if (OnCloseRequestedCallback && !OnCloseRequestedCallback())
+		{
+			return 0;
+		}
+		DestroyWindow(hWnd);
+		return 0;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;

@@ -145,8 +145,13 @@ public:
 	FViewportRenderResource& AcquireViewportResource(FSceneViewport* VP, uint32 W, uint32 H, int32 Index);
     void InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index);
     void ReleaseViewportResource(FSceneViewport* VP, int32 Index);
+	FViewportRenderResource& AcquirePreviewResource(uint32 W, uint32 H);
+	void ReleasePreviewResource();
 
 private:
+	void InitializeRenderResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
+	void ReleaseRenderResource(FViewportRenderResource& Res);
+
 	void InitializePassRenderStates();
 	void InitializePassBatchers();
 
@@ -197,5 +202,6 @@ private:
 
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
+	FViewportRenderResource PreviewResource;
 };
 

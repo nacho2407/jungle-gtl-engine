@@ -90,6 +90,7 @@ public:
 	int32 GetSingleViewportIndex()      const { return SingleViewportIndex; }
 	int32 GetLastFocusedViewportIndex() const { return LastFocusedViewportIndex; }
 	EEditorViewportLayoutMode GetLayoutMode() const { return LayoutMode; }
+	bool IsLayoutTransitionActive() const { return bLayoutTransitionActive; }
 	int32 GetActiveViewportCount() const;
 	const FViewportRect& GetHostRect() const { return HostRect; }
 	void SetLastFocusedViewportIndex(int32 Index);
@@ -131,6 +132,7 @@ private:
 	void ComputeLayoutRects(EEditorViewportLayoutMode InMode, int32 InSingleViewportIndex, const FRect& FullRect, FViewportRect (&OutRects)[MaxViewports]) const;
 	void TickLayoutTransition(float DeltaTime);
 	void EndLayoutTransition();
+	void UpdateSlateSplitterAttachment();
 	static int32 GetLayoutSlotCount(EEditorViewportLayoutMode InMode);
 
 private:
@@ -141,7 +143,7 @@ private:
 	EEditorViewportLayoutMode LastSplitLayoutMode = EEditorViewportLayoutMode::FourPanes2x2;
 	bool bLayoutTransitionActive = false;
 	float LayoutTransitionElapsed = 0.0f;
-	float LayoutTransitionDuration = 0.16f;
+	float LayoutTransitionDuration = 0.18f;
 	FViewportRect LayoutTransitionStartRects[MaxViewports] = {};
 	FViewportRect LayoutTransitionTargetRects[MaxViewports] = {};
 

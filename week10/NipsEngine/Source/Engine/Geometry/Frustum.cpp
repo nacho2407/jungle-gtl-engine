@@ -50,13 +50,18 @@ void FFrustum::UpdateFromCamera(const FMatrix& ViewProjection)
     const FMatrix InverseViewProjection = ViewProjection.GetInverse();
     const FVector TestPoint =
         InverseViewProjection.TransformPosition(FVector(0.0f, 0.0f, 0.5f));
+    const bool bHasFiniteTestPoint =
+        std::isfinite(TestPoint.X) &&
+        std::isfinite(TestPoint.Y) &&
+        std::isfinite(TestPoint.Z);
 
     // Safety net: if conventions drift, make sure all planes still face inward.
+    if (bHasFiniteTestPoint)
     {
         for (FPlane& Plane : Planes)
         {
             const float Distance = Plane.GetSignedDistanceToPoint(TestPoint);
-            if (Distance < 0.0f)
+            if (std::isfinite(Distance) && Distance < 0.0f)
             {
                 Plane.Flip();
             }
@@ -65,11 +70,12 @@ void FFrustum::UpdateFromCamera(const FMatrix& ViewProjection)
 
 #if defined (_DEBUG)
     // Debug check: a point in the middle of the frustum (NDC z=0.5) should be inside all planes.
+    if (bHasFiniteTestPoint)
     {
         for (const FPlane& Plane : Planes)
         {
             const float Distance = Plane.GetSignedDistanceToPoint(TestPoint);
-            assert(Distance >= -MathUtil::Epsilon);
+            assert(!std::isfinite(Distance) || Distance >= -MathUtil::Epsilon);
         }
     }
 #endif

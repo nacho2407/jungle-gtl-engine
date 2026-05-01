@@ -8,6 +8,8 @@ struct FGuiInputState
     bool bUsingMouse = false;
     bool bUsingKeyboard = false;
     bool bUsingTextInput = false;
+    bool bBlockViewportMouse = false;
+    bool bAllowViewportMouseFocus = false;
 
     bool          bViewportHostVisible = false;
     FViewportRect ViewportHostRect;
@@ -136,6 +138,8 @@ class InputSystem : public TSingleton<InputSystem>
     void SetGuiMouseCapture(bool bCapture) { GuiState.bUsingMouse = bCapture; }
     void SetGuiKeyboardCapture(bool bCapture) { GuiState.bUsingKeyboard = bCapture; }
     void SetGuiTextInputCapture(bool bCapture) { GuiState.bUsingTextInput = bCapture; }
+    void SetGuiViewportMouseBlock(bool bBlock) { GuiState.bBlockViewportMouse = bBlock; }
+    void SetGuiViewportMouseFocusAllowed(bool bAllow) { GuiState.bAllowViewportMouseFocus = bAllow; }
 
   private:
     bool CurrentStates[256] = {false};
@@ -150,7 +154,9 @@ class InputSystem : public TSingleton<InputSystem>
     int   RawMouseDeltaAccumY = 0;
     bool  bUseRawMouse = false;
     POINT LockedCenterScreen;
+    POINT MouseLockRestoreScreen = {0, 0};
 	bool  bIsMouseLocked = false;
+    bool  bHasMouseLockRestoreScreen = false;
     bool  bIsCursorVisible = false;
 
     bool bLeftDragCandidate = false;

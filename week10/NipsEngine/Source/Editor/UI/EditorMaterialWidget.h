@@ -4,35 +4,41 @@
 #include "Render/Resource/Material.h"
 #include <functional>
 
-class USceneComponent;
 class UPrimitiveComponent;
 class UStaticMesh;
-class UStaticMeshComponent;
-class UDecalComponent;
+class AActor;
 
 /**
- * @brief 섹션 기준 머테리얼 편집 패널.
- *
- * 레이아웃:
- *   왼쪽 패널 - 섹션 목록 (각 섹션이 참조하는 머테리얼 슬롯 표시)
- *   오른쪽 패널 - 선택된 섹션의 머테리얼 복사본 편집
+ * @brief 단일 머테리얼/머테리얼 인스턴스 편집 패널.
  */
 class FEditorMaterialWidget : public FEditorWidget
 {
 public:
     void Render(float DeltaTime) override;
     void ResetSelection();
+	void OpenMaterialAsset(UMaterialInterface* Material);
+	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
+	void OnActorDestroyed(AActor* Actor);
 
 private:
-	void RenderMaterialEditor(UPrimitiveComponent* PrimitiveComp);
-
-    void RenderSectionList(UPrimitiveComponent* PrimitiveComp);
-    void RenderMaterialDetails(UPrimitiveComponent* PrimitiveComp);
+	void RenderSingleMaterialEditor(UPrimitiveComponent* SlotOwnerComp);
+	void RenderAssetMaterialEditor();
+	void RenderMaterialDetails(UPrimitiveComponent* SlotOwnerComp);
+	void RenderMaterialPreviewSummary();
+	void RenderMaterialPreview(UPrimitiveComponent* PrimitiveComp);
 	void RenderMaterialProperties();
+	UStaticMesh* ResolvePreviewMesh(UPrimitiveComponent* PrimitiveComp);
+	void RefreshEditingMaterialFromSlot();
+	bool CreateInstanceForCurrentMaterial();
 
 private:
-    int32 SelectedSectionIndex    = -1;
-    UMaterialInterface* SelectedMaterialPtr = nullptr;  // 원본 포인터 (Apply 대상)
-
-	USceneComponent* SelectedComponent = nullptr;
+	int32 EditingSlotIndex = -1;
+	UMaterialInterface* SelectedMaterialPtr = nullptr;
+	UPrimitiveComponent* EditingSlotOwner = nullptr;
+	UMaterialInterface* AssetEditingMaterialPtr = nullptr;
+	UStaticMesh* PreviewMesh = nullptr;
+	float PreviewYawRad = 0.8f;
+	float PreviewPitchRad = 0.25f;
+	float PreviewDistance = 4.0f;
+	bool bFocusWindowNextFrame = false;
 };

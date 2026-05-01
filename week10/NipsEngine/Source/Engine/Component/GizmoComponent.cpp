@@ -242,11 +242,18 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
+	RotationAxis.NormalizeSafe();
 	FQuat DeltaQuat(RotationAxis, DragAmount);
+	const FVector Pivot = TargetActor->GetActorLocation();
 
 	auto ApplyRotation = [&](AActor* Actor)
 		{
 			if (!Actor || !Actor->GetRootComponent()) return;
+			if (Actor != TargetActor)
+			{
+				const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
+				Actor->SetActorLocation(Pivot + DeltaQuat.RotateVector(OffsetFromPivot));
+			}
 			FQuat CurQuat = FQuat::MakeFromEuler(Actor->GetActorRotation());
 			FQuat NewQuat = CurQuat * DeltaQuat;
 			Actor->SetActorRotation(NewQuat.Euler());
@@ -270,10 +277,23 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	if (!TargetActor || !TargetActor->GetRootComponent()) return;
 
 	float ScaleDelta = DragAmount * ScaleSensitivity;
+	const FVector Pivot = TargetActor->GetActorLocation();
+	FVector ScaleAxis = GetVectorForAxis(SelectedAxis);
+	ScaleAxis.NormalizeSafe();
+	const float PivotScaleFactor = std::max(0.001f, 1.0f + ScaleDelta);
 
 	auto ApplyScale = [&](AActor* Actor)
 		{
 			if (!Actor) return;
+			if (AllSelectedActors && Actor != TargetActor && !ScaleAxis.IsNearlyZero())
+			{
+				const FVector OffsetFromPivot = Actor->GetActorLocation() - Pivot;
+				const float AxisDistance = OffsetFromPivot.DotProduct(ScaleAxis);
+				const FVector AxisOffset = ScaleAxis * AxisDistance;
+				const FVector PerpendicularOffset = OffsetFromPivot - AxisOffset;
+				Actor->SetActorLocation(Pivot + PerpendicularOffset + AxisOffset * PivotScaleFactor);
+			}
+
 			FVector NewScale = Actor->GetActorScale();
 			switch (SelectedAxis)
 			{
@@ -281,6 +301,9 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 			case 1: NewScale.Y += ScaleDelta; break;
 			case 2: NewScale.Z += ScaleDelta; break;
 			}
+			NewScale.X = std::max(0.001f, NewScale.X);
+			NewScale.Y = std::max(0.001f, NewScale.Y);
+			NewScale.Z = std::max(0.001f, NewScale.Z);
 			Actor->SetActorScale(NewScale);
 		};
 

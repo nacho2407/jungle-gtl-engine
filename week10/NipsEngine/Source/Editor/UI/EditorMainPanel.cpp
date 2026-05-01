@@ -3,10 +3,13 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Component/GizmoComponent.h"
+#include "Engine/Component/StaticMeshComponent.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Core/Paths.h"
+#include "Core/ResourceManager.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -17,12 +20,15 @@
 #include "Render/Renderer/Renderer.h"
 #include "Render/Resource/Shader.h"
 #include "Engine/Input/InputSystem.h"
+#include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/World.h"
 #include "Math/Utils.h"
 
 #include <algorithm>
 #include <cfloat>
 #include <cstring>
 #include <cmath>
+#include <filesystem>
 namespace
 {
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
@@ -122,6 +128,44 @@ const char* GetViewportSlotName(int32 Index)
     }
 }
 
+FString FormatHistoryBytes(size_t Bytes)
+{
+    char Buffer[64];
+    const double Value = static_cast<double>(Bytes);
+    if (Bytes >= 1024ull * 1024ull)
+    {
+        snprintf(Buffer, sizeof(Buffer), "%.2f MB", Value / (1024.0 * 1024.0));
+    }
+    else if (Bytes >= 1024ull)
+    {
+        snprintf(Buffer, sizeof(Buffer), "%.2f KB", Value / 1024.0);
+    }
+    else
+    {
+        snprintf(Buffer, sizeof(Buffer), "%zu B", Bytes);
+    }
+    return Buffer;
+}
+
+float GetCameraBaseSpeed()
+{
+    return std::max(0.1f, FEditorSettings::Get().CameraSpeed);
+}
+
+float GetCameraSpeedMultiplier(FEditorViewportClient* Client)
+{
+    return Client ? Client->GetMoveSpeed() / GetCameraBaseSpeed() : 1.0f;
+}
+
+void SetCameraSpeedMultiplier(FEditorViewportClient* Client, float Multiplier)
+{
+    if (!Client)
+    {
+        return;
+    }
+    Client->SetMoveSpeed(MathUtil::Clamp(GetCameraBaseSpeed() * Multiplier, 0.1f, 5000.0f));
+}
+
 const wchar_t* GetViewportToolIconFileName(FEditorMainPanel::EViewportToolIcon Icon)
 {
     switch (Icon)
@@ -208,16 +252,119 @@ FVector ComputePlacementLocation(FEditorViewportClient* Client, float LocalX, fl
         static_cast<float>(Rect.Width),
         static_cast<float>(Rect.Height));
 
-    if (std::fabs(Ray.Direction.Z) > 0.0001f)
+    if (Camera->IsOrthographic())
     {
-        const float T = -Ray.Origin.Z / Ray.Direction.Z;
+        FVector PlaneNormal = FVector::UpVector;
+        switch (Client->GetViewportType())
+        {
+        case EVT_OrthoTop:
+        case EVT_OrthoBottom:
+            PlaneNormal = FVector::UpVector;
+            break;
+        case EVT_OrthoFront:
+        case EVT_OrthoBack:
+            PlaneNormal = FVector::ForwardVector;
+            break;
+        case EVT_OrthoLeft:
+        case EVT_OrthoRight:
+            PlaneNormal = FVector::RightVector;
+            break;
+        default:
+            PlaneNormal = Camera->GetEffectiveForward().GetSafeNormal();
+            break;
+        }
+
+        const float Denom = FVector::DotProduct(Ray.Direction, PlaneNormal);
+        if (std::fabs(Denom) > 0.0001f)
+        {
+            const float T = FVector::DotProduct(-Ray.Origin, PlaneNormal) / Denom;
+            if (T >= 0.0f)
+            {
+                return Ray.Origin + Ray.Direction * T;
+            }
+        }
+
+        FVector Projected = Ray.Origin;
+        switch (Client->GetViewportType())
+        {
+        case EVT_OrthoTop:
+        case EVT_OrthoBottom:
+            Projected.Z = 0.0f;
+            break;
+        case EVT_OrthoFront:
+        case EVT_OrthoBack:
+            Projected.X = 0.0f;
+            break;
+        case EVT_OrthoLeft:
+        case EVT_OrthoRight:
+            Projected.Y = 0.0f;
+            break;
+        default:
+            break;
+        }
+        return Projected;
+    }
+
+    const FVector Forward = Camera->GetEffectiveForward().GetSafeNormal();
+    const FVector PlanePoint = Camera->GetLocation() + Forward * 10.0f;
+    const float Denom = FVector::DotProduct(Ray.Direction, Forward);
+    if (std::fabs(Denom) > 0.0001f)
+    {
+        const float T = FVector::DotProduct(PlanePoint - Ray.Origin, Forward) / Denom;
         if (T > 0.0f)
         {
             return Ray.Origin + Ray.Direction * T;
         }
     }
 
-    return Ray.Origin + Ray.Direction.GetSafeNormal() * 10.0f;
+    return PlanePoint;
+}
+
+bool HasParentDirectoryReference(const std::filesystem::path& Path)
+{
+    for (const std::filesystem::path& Part : Path)
+    {
+        if (Part == L"..")
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::wstring GetLowerExtension(const std::filesystem::path& Path)
+{
+    std::wstring Extension = Path.extension().wstring();
+    std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+    return Extension;
+}
+
+FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
+{
+    std::filesystem::path Path(FPaths::ToWide(PayloadPath));
+    const std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+    if (!Path.is_absolute())
+    {
+        Path = RootPath / Path;
+    }
+    Path = Path.lexically_normal();
+
+    const std::filesystem::path RelativePath = Path.lexically_relative(RootPath);
+    if (RelativePath.empty() || HasParentDirectoryReference(RelativePath))
+    {
+        return {};
+    }
+
+    const std::wstring Extension = GetLowerExtension(Path);
+    if (Extension == L".obj")
+    {
+        return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+    }
+    if (Extension == L".bin")
+    {
+        return FPaths::Normalize(FPaths::ToUtf8(Path.generic_wstring()));
+    }
+    return {};
 }
 } // namespace
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
@@ -302,6 +449,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     LoadViewportToolIcons(InRenderer.GetFD3DDevice().GetDevice());
 
     ConsoleWidget.Initialize(InEditorEngine);
+    ContentBrowserWidget.Initialize(InEditorEngine);
     ControlWidget.Initialize(InEditorEngine);
     MaterialWidget.Initialize(InEditorEngine);
     PropertyWidget.Initialize(InEditorEngine);
@@ -313,8 +461,10 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
     ToolbarWidget.SetSceneWidget(&SceneWidget);
     ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
+    ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
     ToolbarWidget.SetPanelVisibilityRefs(&bShowConsole, &bShowControl, &bShowProperty, &bShowSceneManager,
-                                         &bShowMaterialEditor, &bShowStatProfiler);
+                                         &bShowMaterialEditor, &bShowStatProfiler, &bShowEditorDebug,
+                                         &bShowContentBrowser, &bShowUndoHistory, &bPIEViewportFullscreenEnabled);
 }
 
 void FEditorMainPanel::Release()
@@ -349,6 +499,11 @@ void FEditorMainPanel::LoadViewportToolIcons(ID3D11Device* Device)
     {
         const std::wstring AddActorIconPath = IconDir + L"Add_Actor.png";
         DirectX::CreateWICTextureFromFile(Device, AddActorIconPath.c_str(), nullptr, &AddActorIconSRV);
+    }
+    if (!SaveIconSRV)
+    {
+        const std::wstring SaveIconPath = IconDir + L"Save.png";
+        DirectX::CreateWICTextureFromFile(Device, SaveIconPath.c_str(), nullptr, &SaveIconSRV);
     }
 
     const std::wstring LayoutIconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
@@ -388,6 +543,11 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
         AddActorIconSRV->Release();
         AddActorIconSRV = nullptr;
     }
+    if (SaveIconSRV)
+    {
+        SaveIconSRV->Release();
+        SaveIconSRV = nullptr;
+    }
 }
 
 void FEditorMainPanel::Render(float DeltaTime)
@@ -396,23 +556,48 @@ void FEditorMainPanel::Render(float DeltaTime)
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+    const ImGuiIO& IO = ImGui::GetIO();
+    if (!IO.WantTextInput && IO.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Space, false))
+    {
+        ToggleContentBrowser();
+    }
+    else
+    {
+        ContentBrowserWidget.SetVisible(bShowContentBrowser);
+    }
+
+    const bool bContentBrowserVisibleBeforeMenu = bShowContentBrowser;
     ToolbarWidget.Render(DeltaTime);
+    if (!bContentBrowserVisibleBeforeMenu && bShowContentBrowser)
+    {
+        OpenContentBrowser();
+    }
+    else if (bContentBrowserVisibleBeforeMenu && !bShowContentBrowser)
+    {
+        CloseContentBrowser();
+    }
     RenderEditorToolbar();
     RenderDockSpace();
 
     RenderViewportHostWindow();
+    ViewportOverlayWidget.RenderViewportFrameOverlays(DeltaTime);
 
-    if (bShowControl)
+    const bool bDrawEditorPanels = !bHideEditorWindowsForPIE;
+    if (bDrawEditorPanels && bShowControl)
         ControlWidget.Render(DeltaTime);
-    if (bShowMaterialEditor)
+    if (bDrawEditorPanels && bShowMaterialEditor)
         MaterialWidget.Render(DeltaTime);
-    if (bShowProperty)
+    if (bDrawEditorPanels && bShowProperty)
         PropertyWidget.Render(DeltaTime);
-    if (bShowSceneManager)
+    if (bDrawEditorPanels && bShowSceneManager)
         SceneWidget.Render(DeltaTime);
-    if (bShowStatProfiler)
+    if (bDrawEditorPanels && bShowStatProfiler)
         StatWidget.Render(DeltaTime);
-    ViewportOverlayWidget.Render(DeltaTime);
+    if (bDrawEditorPanels)
+        RenderEditorDebugPanel(DeltaTime);
+    if (bDrawEditorPanels)
+        RenderUndoHistoryPanel(DeltaTime);
+    ViewportOverlayWidget.RenderFloatingOverlays(DeltaTime);
 
     float EffectiveDeltaTime = DeltaTime;
     if (EffectiveDeltaTime <= 0.0f)
@@ -442,11 +627,143 @@ void FEditorMainPanel::Render(float DeltaTime)
 
     UpdateFooterEventLogs();
     FooterLogSystem.Tick(EffectiveDeltaTime);
+    if (bDrawEditorPanels)
+    {
+        ContentBrowserWidget.Render(DeltaTime);
+        bShowContentBrowser = ContentBrowserWidget.IsVisible();
+        HandleContentBrowserViewportDrop();
+    }
     RenderConsoleDrawer(DeltaTime);
     RenderFooterOverlay(DeltaTime);
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void FEditorMainPanel::HideEditorWindowsForPIE()
+{
+    if (!bHasSavedPIEPanelVisibility)
+    {
+        SavedPIEPanelVisibility.bShowConsole = bShowConsole;
+        SavedPIEPanelVisibility.bShowControl = bShowControl;
+        SavedPIEPanelVisibility.bShowProperty = bShowProperty;
+        SavedPIEPanelVisibility.bShowSceneManager = bShowSceneManager;
+        SavedPIEPanelVisibility.bShowMaterialEditor = bShowMaterialEditor;
+        SavedPIEPanelVisibility.bShowStatProfiler = bShowStatProfiler;
+        SavedPIEPanelVisibility.bShowPlayStream = bShowPlayStream;
+        SavedPIEPanelVisibility.bShowEditorDebug = bShowEditorDebug;
+        SavedPIEPanelVisibility.bShowContentBrowser = bShowContentBrowser;
+        SavedPIEPanelVisibility.bConsoleDrawerVisible = bConsoleDrawerVisible;
+        SavedPIEPanelVisibility.bViewportSettingsVisible = ViewportOverlayWidget.IsViewportSettingsVisible();
+        SavedPIEPanelVisibility.bGroupedStatOverlayVisible = ViewportOverlayWidget.IsGroupedStatOverlayVisible();
+        bHasSavedPIEPanelVisibility = true;
+    }
+
+    bHideEditorWindowsForPIE = true;
+    if (bPIEViewportFullscreenEnabled)
+    {
+        bShowConsole = false;
+        bShowControl = false;
+        bShowProperty = false;
+        bShowSceneManager = false;
+        bShowMaterialEditor = false;
+        bShowStatProfiler = false;
+        bShowPlayStream = false;
+        bShowEditorDebug = false;
+        bShowContentBrowser = false;
+        ContentBrowserWidget.SetVisible(false);
+        bConsoleDrawerVisible = false;
+        ViewportOverlayWidget.SetViewportSettingsVisible(false);
+        ViewportOverlayWidget.SetGroupedStatOverlayVisible(false);
+        ApplyPIEViewportFullscreen();
+    }
+    else
+    {
+        bHideEditorWindowsForPIE = false;
+    }
+}
+
+void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
+{
+    bHideEditorWindowsForPIE = false;
+    if (!bHasSavedPIEPanelVisibility)
+    {
+        RestorePIEViewportLayout();
+        return;
+    }
+
+    bShowConsole = SavedPIEPanelVisibility.bShowConsole;
+    bShowControl = SavedPIEPanelVisibility.bShowControl;
+    bShowProperty = SavedPIEPanelVisibility.bShowProperty;
+    bShowSceneManager = SavedPIEPanelVisibility.bShowSceneManager;
+    bShowMaterialEditor = SavedPIEPanelVisibility.bShowMaterialEditor;
+    bShowStatProfiler = SavedPIEPanelVisibility.bShowStatProfiler;
+    bShowPlayStream = SavedPIEPanelVisibility.bShowPlayStream;
+    bShowEditorDebug = SavedPIEPanelVisibility.bShowEditorDebug;
+    bShowContentBrowser = SavedPIEPanelVisibility.bShowContentBrowser;
+    ContentBrowserWidget.SetVisible(bShowContentBrowser);
+    bConsoleDrawerVisible = SavedPIEPanelVisibility.bConsoleDrawerVisible;
+    ViewportOverlayWidget.SetViewportSettingsVisible(SavedPIEPanelVisibility.bViewportSettingsVisible);
+    ViewportOverlayWidget.SetGroupedStatOverlayVisible(SavedPIEPanelVisibility.bGroupedStatOverlayVisible);
+    bHasSavedPIEPanelVisibility = false;
+    RestorePIEViewportLayout();
+}
+
+void FEditorMainPanel::SetPIEViewportFullscreenEnabled(bool bEnabled)
+{
+    if (bPIEViewportFullscreenEnabled == bEnabled)
+    {
+        return;
+    }
+
+    bPIEViewportFullscreenEnabled = bEnabled;
+    if (!EditorEngine || EditorEngine->GetEditorState() == EViewportPlayState::Editing)
+    {
+        return;
+    }
+
+    if (bPIEViewportFullscreenEnabled)
+    {
+        ApplyPIEViewportFullscreen();
+    }
+    else
+    {
+        RestorePIEViewportLayout();
+    }
+}
+
+void FEditorMainPanel::ApplyPIEViewportFullscreen()
+{
+    if (!EditorEngine || !bPIEViewportFullscreenEnabled)
+    {
+        return;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    const int32 FocusedIndex = Layout.GetLastFocusedViewportIndex();
+
+    if (!SavedPIEViewportLayout.bValid)
+    {
+        SavedPIEViewportLayout.bValid = true;
+        SavedPIEViewportLayout.LayoutMode = Layout.GetLayoutMode();
+        SavedPIEViewportLayout.SingleViewportIndex = Layout.GetSingleViewportIndex();
+        SavedPIEViewportLayout.LastFocusedViewportIndex = FocusedIndex;
+    }
+
+    Layout.SetLayoutModeAnimated(EEditorViewportLayoutMode::OnePane, FocusedIndex);
+}
+
+void FEditorMainPanel::RestorePIEViewportLayout()
+{
+    if (!EditorEngine || !SavedPIEViewportLayout.bValid)
+    {
+        return;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    Layout.SetLayoutMode(SavedPIEViewportLayout.LayoutMode, SavedPIEViewportLayout.SingleViewportIndex);
+    Layout.SetLastFocusedViewportIndex(SavedPIEViewportLayout.LastFocusedViewportIndex);
+    SavedPIEViewportLayout = FPIEViewportLayoutSnapshot{};
 }
 
 void FEditorMainPanel::RenderDockSpace()
@@ -530,24 +847,64 @@ void FEditorMainPanel::RenderEditorToolbar()
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedIndex = Layout.GetLastFocusedViewportIndex();
         FEditorViewportClient* Client = Layout.GetViewportClient(FocusedIndex);
-        const FViewportRect& FocusedRect = Layout.GetSceneViewport(FocusedIndex).GetRect();
-        const float SpawnLocalX = FocusedRect.Width > 0 ? static_cast<float>(FocusedRect.Width) * 0.5f : 0.0f;
-        const float SpawnLocalY = FocusedRect.Height > 0 ? static_cast<float>(FocusedRect.Height) * 0.5f : 0.0f;
-        const FVector ToolbarSpawnLocation = ComputePlacementLocation(Client, SpawnLocalX, SpawnLocalY);
+        const FVector ToolbarSpawnLocation = FVector(0.0f, 0.0f, 0.0f);
 
         const bool bEditing = EditorEngine->GetEditorState() == EViewportPlayState::Editing;
         const bool bCanPlaceActor = bEditing && Client != nullptr;
+        const bool bCanSave = bEditing;
+        ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+        ImGui::SetCursorPos(ImVec2(10.0f, 5.0f));
+        if (!bCanSave)
+        {
+            ImGui::BeginDisabled();
+        }
+        const bool bSaveClicked = ImGui::InvisibleButton("##ToolbarSaveScene", ImVec2(ButtonSize, ButtonSize));
+        const ImVec2 SaveMin = ImGui::GetItemRectMin();
+        const ImVec2 SaveMax = ImGui::GetItemRectMax();
+        const bool bSaveHovered = bCanSave && ImGui::IsItemHovered();
+        const ImU32 SaveBg = ImGui::GetColorU32(bSaveHovered ? ImVec4(0.22f, 0.25f, 0.32f, 1.0f) : ImVec4(0.15f, 0.17f, 0.21f, 1.0f));
+        const ImU32 SaveBorder = ImGui::GetColorU32(bCanSave ? ImVec4(0.40f, 0.44f, 0.58f, 1.0f) : ImVec4(0.29f, 0.31f, 0.36f, 1.0f));
+        DrawList->AddRectFilled(SaveMin, SaveMax, SaveBg, 5.0f);
+        DrawList->AddRect(SaveMin, SaveMax, SaveBorder, 5.0f);
+        if (SaveIconSRV)
+        {
+            DrawList->AddImage(
+                reinterpret_cast<ImTextureID>(SaveIconSRV),
+                ImVec2(SaveMin.x + 5.0f, SaveMin.y + 5.0f),
+                ImVec2(SaveMax.x - 5.0f, SaveMax.y - 5.0f),
+                ImVec2(0.0f, 0.0f),
+                ImVec2(1.0f, 1.0f),
+                ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, bCanSave ? 1.0f : 0.45f)));
+        }
+        else
+        {
+            const ImU32 IconColor = ImGui::GetColorU32(ImVec4(0.84f, 0.88f, 0.96f, bCanSave ? 1.0f : 0.45f));
+            DrawList->AddRect(ImVec2(SaveMin.x + 8.0f, SaveMin.y + 7.0f), ImVec2(SaveMax.x - 8.0f, SaveMax.y - 7.0f), IconColor, 2.0f, 0, 1.7f);
+            DrawList->AddLine(ImVec2(SaveMin.x + 11.0f, SaveMax.y - 12.0f), ImVec2(SaveMax.x - 11.0f, SaveMax.y - 12.0f), IconColor, 1.7f);
+        }
+        if (bSaveHovered)
+        {
+            ImGui::SetTooltip("Save Scene");
+        }
+        if (bSaveClicked && bCanSave)
+        {
+            RequestSaveScene();
+        }
+        if (!bCanSave)
+        {
+            ImGui::EndDisabled();
+        }
 
         if (!bCanPlaceActor)
         {
             ImGui::BeginDisabled();
         }
 
-        ImGui::SetCursorPos(ImVec2(10.0f, 5.0f));
+        ImGui::SetCursorPos(ImVec2(46.0f, 5.0f));
         const bool bAddClicked = ImGui::InvisibleButton("##ToolbarAddActor", ImVec2(ButtonSize, ButtonSize));
         const ImVec2 AddMin = ImGui::GetItemRectMin();
         const ImVec2 AddMax = ImGui::GetItemRectMax();
-        ImDrawList* DrawList = ImGui::GetWindowDrawList();
         const bool bAddHovered = bCanPlaceActor && ImGui::IsItemHovered();
         const ImU32 AddBg = ImGui::GetColorU32(bAddHovered ? ImVec4(0.22f, 0.25f, 0.32f, 1.0f) : ImVec4(0.15f, 0.17f, 0.21f, 1.0f));
         const ImU32 AddBorder = ImGui::GetColorU32(bCanPlaceActor ? ImVec4(0.40f, 0.44f, 0.58f, 1.0f) : ImVec4(0.29f, 0.31f, 0.36f, 1.0f));
@@ -578,13 +935,7 @@ void FEditorMainPanel::RenderEditorToolbar()
         }
         if (ImGui::BeginPopup("##ToolbarPlaceActorPopup"))
         {
-            for (int32 i = 0; i < ControlWidget.GetPrimitiveTypeCount(); ++i)
-            {
-                if (ImGui::MenuItem(ControlWidget.GetPrimitiveTypeLabel(i)))
-                {
-                    ControlWidget.SpawnPrimitive(i, ToolbarSpawnLocation, 1);
-                }
-            }
+            ControlWidget.DrawPlaceActorMenu(ToolbarSpawnLocation);
             ImGui::EndPopup();
         }
 
@@ -662,6 +1013,37 @@ void FEditorMainPanel::RenderEditorToolbar()
         {
             ImGui::EndDisabled();
         }
+
+        ImGui::SetCursorPos(ImVec2(CenterX + ButtonSize + Gap * 1.5f, ButtonY));
+        const bool bFullscreenOn = IsPIEViewportFullscreenEnabled();
+        const bool bFullscreenClicked = ImGui::InvisibleButton("##ToolbarPIEFullscreen", ImVec2(ButtonSize, ButtonSize));
+        const ImVec2 FullMin = ImGui::GetItemRectMin();
+        const ImVec2 FullMax = ImGui::GetItemRectMax();
+        const bool bFullHovered = ImGui::IsItemHovered();
+        const ImVec4 FullBgColor = bFullscreenOn
+            ? (bFullHovered ? ImVec4(0.20f, 0.31f, 0.46f, 1.0f) : ImVec4(0.15f, 0.24f, 0.37f, 1.0f))
+            : (bFullHovered ? ImVec4(0.24f, 0.26f, 0.31f, 1.0f) : ImVec4(0.18f, 0.20f, 0.24f, 1.0f));
+        DrawList->AddRectFilled(FullMin, FullMax, ImGui::GetColorU32(FullBgColor), 5.0f);
+        DrawList->AddRect(FullMin, FullMax, ImGui::GetColorU32(bFullscreenOn ? ImVec4(0.36f, 0.57f, 0.86f, 1.0f) : ImVec4(0.38f, 0.40f, 0.46f, 1.0f)), 5.0f);
+        const ImU32 FullIconColor = ImGui::GetColorU32(bFullscreenOn ? ImVec4(0.64f, 0.82f, 1.00f, 1.0f) : ImVec4(0.72f, 0.76f, 0.84f, 1.0f));
+        const float Pad = 8.0f;
+        const float Corner = 6.0f;
+        DrawList->AddLine(ImVec2(FullMin.x + Pad, FullMin.y + Pad), ImVec2(FullMin.x + Pad + Corner, FullMin.y + Pad), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMin.x + Pad, FullMin.y + Pad), ImVec2(FullMin.x + Pad, FullMin.y + Pad + Corner), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMax.x - Pad, FullMin.y + Pad), ImVec2(FullMax.x - Pad - Corner, FullMin.y + Pad), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMax.x - Pad, FullMin.y + Pad), ImVec2(FullMax.x - Pad, FullMin.y + Pad + Corner), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMin.x + Pad, FullMax.y - Pad), ImVec2(FullMin.x + Pad + Corner, FullMax.y - Pad), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMin.x + Pad, FullMax.y - Pad), ImVec2(FullMin.x + Pad, FullMax.y - Pad - Corner), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMax.x - Pad, FullMax.y - Pad), ImVec2(FullMax.x - Pad - Corner, FullMax.y - Pad), FullIconColor, 1.8f);
+        DrawList->AddLine(ImVec2(FullMax.x - Pad, FullMax.y - Pad), ImVec2(FullMax.x - Pad, FullMax.y - Pad - Corner), FullIconColor, 1.8f);
+        if (bFullHovered)
+        {
+            ImGui::SetTooltip(bFullscreenOn ? "PIE Fullscreen Viewport: On" : "PIE Fullscreen Viewport: Off");
+        }
+        if (bFullscreenClicked)
+        {
+            SetPIEViewportFullscreenEnabled(!bFullscreenOn);
+        }
     }
     ImGui::End();
 
@@ -730,6 +1112,80 @@ void FEditorMainPanel::RenderConsoleDrawer(float DeltaTime)
     ImGui::PopStyleVar(3);
 }
 
+void FEditorMainPanel::OpenConsoleDrawer(bool bFocusInput)
+{
+    bConsoleDrawerVisible = true;
+    ConsoleBacktickCycleState = 2;
+    bBringConsoleDrawerToFrontNextFrame = true;
+    bFocusConsoleInputNextFrame = bFocusInput;
+    CloseContentBrowser();
+}
+
+void FEditorMainPanel::CloseConsoleDrawer()
+{
+    bConsoleDrawerVisible = false;
+    ConsoleBacktickCycleState = 0;
+    bFocusConsoleInputNextFrame = false;
+}
+
+void FEditorMainPanel::OpenContentBrowser()
+{
+    bShowContentBrowser = true;
+    ContentBrowserWidget.OpenAssetRoot();
+    ContentBrowserWidget.SetVisible(true);
+    CloseConsoleDrawer();
+}
+
+void FEditorMainPanel::CloseContentBrowser()
+{
+    bShowContentBrowser = false;
+    ContentBrowserWidget.SetVisible(false);
+}
+
+void FEditorMainPanel::ToggleContentBrowser()
+{
+    if (bShowContentBrowser)
+    {
+        CloseContentBrowser();
+    }
+    else
+    {
+        OpenContentBrowser();
+    }
+}
+
+void FEditorMainPanel::OpenMaterialAsset(UMaterialInterface* Material)
+{
+    if (!Material)
+    {
+        return;
+    }
+
+    bShowMaterialEditor = true;
+    MaterialWidget.OpenMaterialAsset(Material);
+}
+
+void FEditorMainPanel::OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex)
+{
+    if (!PrimitiveComp)
+    {
+        return;
+    }
+
+    bShowMaterialEditor = true;
+    MaterialWidget.OpenMaterialSlot(PrimitiveComp, SlotIndex);
+}
+
+void FEditorMainPanel::PushFooterLog(const FString& Message)
+{
+    FooterLogSystem.Push(Message, 5.0f);
+}
+
+bool FEditorMainPanel::CanCloseEditor()
+{
+    return SceneWidget.PromptSaveIfDirty();
+}
+
 void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 {
     (void)DeltaTime;
@@ -778,22 +1234,28 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
                 ConsoleBacktickCycleState = 1;
                 bConsoleDrawerVisible = false;
                 bFocusConsoleInputNextFrame = true;
+                CloseContentBrowser();
                 break;
             case 1:
-                ConsoleBacktickCycleState = 2;
-                bConsoleDrawerVisible = true;
-                bBringConsoleDrawerToFrontNextFrame = true;
-                bFocusConsoleInputNextFrame = true;
+                OpenConsoleDrawer(true);
                 break;
             default:
-                ConsoleBacktickCycleState = 0;
-                bConsoleDrawerVisible = false;
+                CloseConsoleDrawer();
                 bFocusConsoleInputNextFrame = false;
                 bFocusConsoleButtonNextFrame = true;
                 break;
             }
         }
 
+        const char* ContentLabel = bShowContentBrowser
+            ? (ContentBrowserWidget.IsDrawerMode() ? "Content ▼" : "Content Window")
+            : "Content ▲";
+        if (ImGui::Button(ContentLabel))
+        {
+            ToggleContentBrowser();
+        }
+
+        ImGui::SameLine();
         const bool bDrawerOpen = ConsoleDrawerAnim > 0.5f;
         if (!bShowConsole)
         {
@@ -808,16 +1270,13 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
             }
             if (ImGui::Button(bDrawerOpen ? "Console ▼" : "Console ▲"))
             {
-                bConsoleDrawerVisible = !bConsoleDrawerVisible;
-                if (bConsoleDrawerVisible)
+                if (!bConsoleDrawerVisible)
                 {
-                    ConsoleBacktickCycleState = 2;
-                    bBringConsoleDrawerToFrontNextFrame = true;
-                    bFocusConsoleInputNextFrame = true;
+                    OpenConsoleDrawer(true);
                 }
                 else
                 {
-                    ConsoleBacktickCycleState = 0;
+                    CloseConsoleDrawer();
                     bFocusConsoleButtonNextFrame = true;
                 }
             }
@@ -833,39 +1292,266 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
         }
 
         ImGui::SameLine();
-        const EViewportPlayState CurrentState = EditorEngine->GetEditorState();
-        const char* Domain = CurrentState == EViewportPlayState::Editing
-            ? "Editor"
-            : (CurrentState == EViewportPlayState::Paused ? "PIE Paused" : "PIE");
-        ImGui::Text("Domain: %s", Domain);
-
-        const char* LayoutLabel = GetViewportLayoutLabel(EditorEngine->GetViewportLayout().GetLayoutMode());
-        char RightLabel[128];
-        snprintf(RightLabel, sizeof(RightLabel), "Layout: %s", LayoutLabel);
-        const float RightWidth = ImGui::CalcTextSize(RightLabel).x;
-        const float RightX = OverlaySize.x - ImGui::GetStyle().WindowPadding.x - RightWidth;
+        const FString SceneLabel = FString("Level: ") + SceneWidget.GetCurrentSceneDisplayPath();
+        ImGui::TextDisabled("%s", SceneLabel.c_str());
 
         if (!ActiveLogs.empty())
         {
-            const FString& LatestLog = ActiveLogs.back();
-            const float LogWidth = ImGui::CalcTextSize(LatestLog.c_str()).x;
-            float LogX = RightX - 16.0f - LogWidth;
-            const float MinLogX = ImGui::GetCursorPosX() + 8.0f;
-            if (LogX < MinLogX)
+            const FString& LatestFooterLog = ActiveLogs.back();
+            const float LogWidth = ImGui::CalcTextSize(LatestFooterLog.c_str()).x;
+            const float RightX = OverlaySize.x - ImGui::GetStyle().WindowPadding.x - LogWidth;
+            const float MinRightX = ImGui::GetCursorPosX() + 16.0f;
+            ImGui::SameLine(std::max(MinRightX, RightX));
+            ImGui::TextUnformatted(LatestFooterLog.c_str());
+            if (ImGui::IsItemHovered())
             {
-                LogX = MinLogX;
+                ImGui::SetTooltip("%s", LatestFooterLog.c_str());
             }
-            ImGui::SameLine(LogX);
-            ImGui::TextUnformatted(LatestLog.c_str());
         }
-
-        ImGui::SameLine(RightX);
-        ImGui::TextUnformatted(RightLabel);
     }
     ImGui::End();
 
     ImGui::PopStyleColor(2);
     ImGui::PopStyleVar(3);
+}
+
+void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
+{
+    (void)DeltaTime;
+    if (!bShowUndoHistory || !EditorEngine)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(360.0f, 420.0f), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Undo History", &bShowUndoHistory))
+    {
+        ImGui::End();
+        return;
+    }
+
+    const TArray<FUndoSnapshotEntry>& UndoEntries = EditorEngine->GetUndoHistory();
+    const TArray<FUndoSnapshotEntry>& RedoEntries = EditorEngine->GetRedoHistory();
+    const FUndoHistoryStats HistoryStats = EditorEngine->GetUndoHistoryStats();
+
+    const bool bCanUndo = !UndoEntries.empty();
+    const bool bCanRedo = !RedoEntries.empty();
+    ImGui::BeginDisabled(!bCanUndo);
+    if (ImGui::Button("Undo", ImVec2(86.0f, 0.0f)))
+    {
+        EditorEngine->Undo();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!bCanRedo);
+    if (ImGui::Button("Redo", ImVec2(86.0f, 0.0f)))
+    {
+        EditorEngine->Redo();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!bCanUndo && !bCanRedo);
+    if (ImGui::Button("Clear", ImVec2(86.0f, 0.0f)))
+    {
+        EditorEngine->ClearUndoHistory();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::Separator();
+    if (ImGui::CollapsingHeader("Stat History", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Text("Entries: %d / %d", HistoryStats.UndoCount + HistoryStats.RedoCount, HistoryStats.MaxEntries);
+        ImGui::TextDisabled("Undo %d, Redo %d", HistoryStats.UndoCount, HistoryStats.RedoCount);
+        ImGui::Text("Snapshot Data: %s", FormatHistoryBytes(HistoryStats.LogicalBytes).c_str());
+        ImGui::Text("Reserved Memory: %s", FormatHistoryBytes(HistoryStats.ReservedBytes).c_str());
+        ImGui::TextDisabled("Approx Total: %s", FormatHistoryBytes(HistoryStats.ApproxTotalBytes).c_str());
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Approx Total = string reserved capacity + entry storage. Scene restore also creates a temporary world only while undo/redo is executing.");
+        }
+    }
+    ImGui::Separator();
+    ImGui::TextDisabled("Undo");
+    ImGui::BeginChild("##UndoHistoryList", ImVec2(0.0f, ImGui::GetContentRegionAvail().y * 0.62f), true);
+    if (UndoEntries.empty())
+    {
+        ImGui::TextDisabled("No undo history.");
+    }
+    else
+    {
+        for (int32 Index = static_cast<int32>(UndoEntries.size()) - 1; Index >= 0; --Index)
+        {
+            ImGui::PushID(Index);
+            const FString Label = UndoEntries[Index].Label.empty() ? FString("Scene Edit") : UndoEntries[Index].Label;
+            if (ImGui::Selectable(Label.c_str()))
+            {
+                EditorEngine->RestoreUndoHistoryIndex(Index);
+            }
+            ImGui::PopID();
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::TextDisabled("Redo");
+    ImGui::BeginChild("##RedoHistoryList", ImVec2(0.0f, 0.0f), true);
+    if (RedoEntries.empty())
+    {
+        ImGui::TextDisabled("No redo history.");
+    }
+    else
+    {
+        for (int32 Index = static_cast<int32>(RedoEntries.size()) - 1; Index >= 0; --Index)
+        {
+            const FString Label = RedoEntries[Index].Label.empty() ? FString("Scene Edit") : RedoEntries[Index].Label;
+            ImGui::TextUnformatted(Label.c_str());
+        }
+    }
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
+{
+    (void)DeltaTime;
+    if (!bShowEditorDebug || !EditorEngine)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(500.0f, 430.0f), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Editor Debug", &bShowEditorDebug))
+    {
+        ImGui::End();
+        return;
+    }
+
+    FEditorSettings& Settings = FEditorSettings::Get();
+    if (ImGui::CollapsingHeader("Viewport", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::DragFloat("Camera Base Speed", &Settings.CameraSpeed, 0.1f, 0.1f, 100.0f, "%.1f");
+        ImGui::DragFloat("Camera Rotate Speed", &Settings.CameraRotationSpeed, 1.0f, 1.0f, 720.0f, "%.0f");
+        ImGui::DragFloat("Camera Zoom Speed", &Settings.CameraZoomSpeed, 1.0f, 10.0f, 5000.0f, "%.0f");
+        ImGui::DragFloat("Dolly Speed Scale", &Settings.CameraDollySpeedScale, 0.01f, 0.05f, 5.0f, "%.2fx");
+        ImGui::DragFloat("Pan Speed Scale", &Settings.CameraPanSpeedScale, 0.05f, 0.05f, 10.0f, "%.2fx");
+        ImGui::Checkbox("Camera Smoothing", &Settings.bEnableCameraSmoothing);
+        ImGui::BeginDisabled(!Settings.bEnableCameraSmoothing);
+        ImGui::DragFloat("Move Smooth Speed", &Settings.CameraMoveSmoothSpeed, 0.05f, 0.1f, 40.0f, "%.2f");
+        ImGui::DragFloat("Rotate Smooth Speed", &Settings.CameraRotateSmoothSpeed, 0.05f, 0.1f, 40.0f, "%.2f");
+        ImGui::EndDisabled();
+
+        FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+        if (FEditorViewportClient* FocusedClient = Layout.GetViewportClient(Layout.GetLastFocusedViewportIndex()))
+        {
+            float SpeedMultiplier = GetCameraSpeedMultiplier(FocusedClient);
+            if (ImGui::DragFloat("Focused Speed Multiplier", &SpeedMultiplier, 0.05f, 0.01f, 500.0f, "%.2fx"))
+            {
+                SetCameraSpeedMultiplier(FocusedClient, SpeedMultiplier);
+            }
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Show Flags", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Checkbox("Primitives", &Settings.ShowFlags.bPrimitives);
+        ImGui::Checkbox("BillboardText", &Settings.ShowFlags.bBillboardText);
+        ImGui::Checkbox("Axis", &Settings.ShowFlags.bAxis);
+        ImGui::Checkbox("Grid", &Settings.ShowFlags.bGrid);
+        ImGui::Checkbox("Gizmo", &Settings.ShowFlags.bGizmo);
+        ImGui::Checkbox("Bounding Volume", &Settings.ShowFlags.bBoundingVolume);
+        if (Settings.ShowFlags.bBoundingVolume)
+        {
+            ImGui::Indent();
+            ImGui::Checkbox("BVH Bounding Volume", &Settings.ShowFlags.bBVHBoundingVolume);
+            ImGui::Unindent();
+        }
+        ImGui::Checkbox("Enable LOD", &Settings.ShowFlags.bEnableLOD);
+        ImGui::Checkbox("Decals", &Settings.ShowFlags.bDecals);
+        ImGui::Checkbox("Fog", &Settings.ShowFlags.bFog);
+        ImGui::Checkbox("Shadow", &Settings.ShowFlags.bShadow);
+        ImGui::Checkbox("FXAA", &Settings.bEnableFXAA);
+    }
+
+    if (ImGui::CollapsingHeader("Place Actors (Grid)", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        const int32 PrimitiveCount = ControlWidget.GetPrimitiveTypeCount();
+        DebugGridPrimitiveType = MathUtil::Clamp(DebugGridPrimitiveType, 0, PrimitiveCount - 1);
+
+        if (ImGui::BeginCombo("Actor Type", ControlWidget.GetPrimitiveTypeLabel(DebugGridPrimitiveType)))
+        {
+            for (int32 i = 0; i < PrimitiveCount; ++i)
+            {
+                const bool bSelected = (DebugGridPrimitiveType == i);
+                if (ImGui::Selectable(ControlWidget.GetPrimitiveTypeLabel(i), bSelected))
+                {
+                    DebugGridPrimitiveType = i;
+                }
+                if (bSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::DragInt("Rows", &DebugGridRows, 1.0f, 1, 128, "%d");
+        ImGui::DragInt("Cols", &DebugGridCols, 1.0f, 1, 128, "%d");
+        ImGui::DragInt("Layers", &DebugGridLayers, 1.0f, 1, 32, "%d");
+        ImGui::DragFloat("Grid Spacing", &DebugGridSpacing, 0.1f, 0.1f, 1000.0f, "%.2f");
+        ImGui::Checkbox("Center Grid Around Origin", &bDebugGridCenter);
+        ImGui::DragFloat3("Origin", &DebugGridOrigin.X, 0.1f, -100000.0f, 100000.0f, "%.2f");
+
+        DebugGridRows = MathUtil::Clamp(DebugGridRows, 1, 128);
+        DebugGridCols = MathUtil::Clamp(DebugGridCols, 1, 128);
+        DebugGridLayers = MathUtil::Clamp(DebugGridLayers, 1, 32);
+        DebugGridSpacing = std::max(0.1f, DebugGridSpacing);
+
+        const int32 TotalActors = DebugGridRows * DebugGridCols * DebugGridLayers;
+        ImGui::Text("Total Actors: %d", TotalActors);
+        if (TotalActors > 2048)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.2f, 1.0f), "Large grid; spawn is capped at 2048 per click.");
+        }
+
+        if (ImGui::Button("Spawn Grid Actors"))
+        {
+            const float RowOffset = bDebugGridCenter ? static_cast<float>(DebugGridRows - 1) * 0.5f : 0.0f;
+            const float ColOffset = bDebugGridCenter ? static_cast<float>(DebugGridCols - 1) * 0.5f : 0.0f;
+            const float LayerOffset = bDebugGridCenter ? static_cast<float>(DebugGridLayers - 1) * 0.5f : 0.0f;
+            const int32 SpawnLimit = std::min(TotalActors, 2048);
+            int32 SpawnedCount = 0;
+
+            for (int32 Layer = 0; Layer < DebugGridLayers && SpawnedCount < SpawnLimit; ++Layer)
+            {
+                for (int32 Row = 0; Row < DebugGridRows && SpawnedCount < SpawnLimit; ++Row)
+                {
+                    for (int32 Col = 0; Col < DebugGridCols && SpawnedCount < SpawnLimit; ++Col)
+                    {
+                        const FVector Location(
+                            DebugGridOrigin.X + (static_cast<float>(Col) - ColOffset) * DebugGridSpacing,
+                            DebugGridOrigin.Y + (static_cast<float>(Row) - RowOffset) * DebugGridSpacing,
+                            DebugGridOrigin.Z + (static_cast<float>(Layer) - LayerOffset) * DebugGridSpacing);
+                        if (ControlWidget.SpawnPrimitive(DebugGridPrimitiveType, Location, 1))
+                        {
+                            ++SpawnedCount;
+                        }
+                    }
+                }
+            }
+
+            if (UWorld* World = EditorEngine->GetFocusedWorld())
+            {
+                World->RebuildSpatialIndex();
+            }
+            FEditorConsoleWidget::AddLog(
+                "Editor Debug grid spawned %d %s actors\n",
+                SpawnedCount,
+                ControlWidget.GetPrimitiveTypeLabel(DebugGridPrimitiveType));
+        }
+    }
+
+    ImGui::End();
 }
 
 void FEditorMainPanel::UpdateFooterEventLogs()
@@ -917,7 +1603,8 @@ void FEditorMainPanel::Update()
     ImGuiIO& IO = ImGui::GetIO();
 
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    bool bViewportOperationActive = Layout.HasActiveOperationViewport();
+    const bool bMouseOverContentBrowser = ContentBrowserWidget.IsMouseOverBrowser();
+    bool bViewportOperationActive = Layout.HasActiveOperationViewport() && !bMouseOverContentBrowser;
 
     if (bViewportOperationActive)
     {
@@ -934,6 +1621,7 @@ void FEditorMainPanel::Update()
     const bool bAnyUIItemActive = ImGui::IsAnyItemActive();
     const bool bAnyUIItemHovered = ImGui::IsAnyItemHovered();
     const bool bAnyPopupOpen = ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+    const bool bAnyDragDropActive = ImGui::GetDragDropPayload() != nullptr;
     const bool bAnyWindowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
     const bool bAnyWindowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
 
@@ -969,20 +1657,32 @@ void FEditorMainPanel::Update()
     if (!bHoveredViewportContentWindow
         && bMouseOverViewportRect
         && !bHoveredNonViewportWindow
+        && !bMouseOverContentBrowser
         && !bAnyUIItemActive
-        && !bAnyUIItemHovered
         && !bAnyPopupOpen)
     {
         bHoveredViewportContentWindow = true;
     }
 
+    if (bMouseOverContentBrowser)
+    {
+        bHoveredViewportContentWindow = false;
+        bHoveredNonViewportWindow = true;
+    }
+
     const bool bReleaseMouseToViewport =
         bMouseOverViewportRect
         && !bHoveredNonViewportWindow
+        && !bAnyUIItemActive
+        && !bAnyDragDropActive
         && !bAnyPopupOpen;
     const bool bNonViewportImGuiInteraction =
-        bHoveredNonViewportWindow
-        && (bAnyWindowHovered || bAnyWindowFocused || bAnyUIItemActive || bAnyUIItemHovered || bAnyPopupOpen || bWantTextInput || bWantKeyboard);
+        bMouseOverContentBrowser
+        ||
+        (bHoveredNonViewportWindow && (bAnyWindowHovered || bAnyWindowFocused || bAnyUIItemActive || bAnyUIItemHovered || bAnyPopupOpen || bWantTextInput || bWantKeyboard))
+        || bAnyUIItemActive
+        || bAnyDragDropActive
+        || bAnyPopupOpen;
 
     if (bNonViewportImGuiInteraction)
     {
@@ -997,6 +1697,18 @@ void FEditorMainPanel::Update()
     InputSystem::Get().SetGuiMouseCapture(bWantMouse);
     InputSystem::Get().SetGuiKeyboardCapture(bWantKeyboard);
     InputSystem::Get().SetGuiTextInputCapture(bWantTextInput);
+    const bool bAllowViewportMouseFocus =
+        bMouseOverViewportRect &&
+        !bHoveredNonViewportWindow &&
+        !bAnyPopupOpen &&
+        !bAnyDragDropActive &&
+        !bWantTextInput;
+    InputSystem::Get().SetGuiViewportMouseBlock(
+        bAnyDragDropActive ||
+        bAnyPopupOpen ||
+        bMouseOverContentBrowser ||
+        bHoveredNonViewportWindow);
+    InputSystem::Get().SetGuiViewportMouseFocusAllowed(bAllowViewportMouseFocus);
 
     //	Focus는 MainPanel에서 입력 받음
     if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
@@ -1033,20 +1745,23 @@ bool FEditorMainPanel::RequestNewScene()
 
 bool FEditorMainPanel::RequestLoadSceneWithDialog()
 {
+    if (!SceneWidget.PromptSaveIfDirty())
+    {
+        return false;
+    }
+
     FString PickedPath;
     if (!ToolbarWidget.OpenSceneFileDialog(PickedPath))
     {
         return false;
     }
 
-    SceneWidget.LoadSceneFromFilePath(PickedPath);
-    return true;
+    return SceneWidget.LoadSceneFromFilePath(PickedPath, false);
 }
 
 bool FEditorMainPanel::RequestSaveScene()
 {
-    SceneWidget.SaveScene();
-    return true;
+    return SceneWidget.SaveScene();
 }
 
 bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
@@ -1057,8 +1772,117 @@ bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
         return false;
     }
 
-    SceneWidget.SaveSceneToFilePath(PickedPath);
+    return SceneWidget.SaveSceneToFilePath(PickedPath);
+}
+
+bool FEditorMainPanel::SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY)
+{
+    if (!EditorEngine)
+    {
+        return false;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+    if (!Client || Client->GetPlayState() != EViewportPlayState::Editing)
+    {
+        return false;
+    }
+
+    const FString MeshLoadPath = ResolveStaticMeshDropLoadPath(PayloadPath);
+    if (MeshLoadPath.empty())
+    {
+        PushFooterLog("Unsupported static mesh drop");
+        return false;
+    }
+
+    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh(MeshLoadPath);
+    if (!Mesh || !Mesh->HasValidMeshData())
+    {
+        PushFooterLog("Failed to load dropped static mesh");
+        return false;
+    }
+
+    UWorld* World = EditorEngine->GetFocusedWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    EditorEngine->CaptureUndoSnapshot("Place Static Mesh");
+    AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+    if (!Actor)
+    {
+        return false;
+    }
+
+    Actor->InitDefaultComponents();
+    Actor->SetActorLocation(ComputePlacementLocation(Client, LocalX, LocalY));
+    if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Actor->GetRootComponent()))
+    {
+        StaticMeshComp->SetStaticMesh(Mesh);
+    }
+
+    Layout.SetLastFocusedViewportIndex(ViewportIndex);
+    EditorEngine->GetSelectionManager().Select(Actor);
+    SceneWidget.MarkSceneDirty();
+    PushFooterLog("StaticMesh actor placed from Content Browser");
     return true;
+}
+
+void FEditorMainPanel::HandleContentBrowserViewportDrop()
+{
+    FString PayloadType;
+    FString PayloadPath;
+    if (!ContentBrowserWidget.ConsumeReleasedDragPayload(PayloadType, PayloadPath))
+    {
+        return;
+    }
+    if (PayloadType != "ObjectContentItem" || ContentBrowserWidget.IsMouseOverBrowser())
+    {
+        return;
+    }
+
+    const ImVec2 MousePos = ImGui::GetIO().MousePos;
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
+    auto TryDropOnViewport = [&](int32 ViewportIndex) -> bool
+    {
+        FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+        if (!Client || Client->GetPlayState() != EViewportPlayState::Editing)
+        {
+            return false;
+        }
+
+        const FViewportRect& Rect = Layout.GetSceneViewport(ViewportIndex).GetRect();
+        if (Rect.Width <= 0 || Rect.Height <= 0)
+        {
+            return false;
+        }
+        if (MousePos.x < static_cast<float>(Rect.X)
+            || MousePos.x >= static_cast<float>(Rect.X + Rect.Width)
+            || MousePos.y < static_cast<float>(Rect.Y)
+            || MousePos.y >= static_cast<float>(Rect.Y + Rect.Height))
+        {
+            return false;
+        }
+
+        const float LocalX = MathUtil::Clamp(MousePos.x - static_cast<float>(Rect.X), 0.0f, std::max(0.0f, static_cast<float>(Rect.Width - 1)));
+        const float LocalY = MathUtil::Clamp(MousePos.y - static_cast<float>(Rect.Y), 0.0f, std::max(0.0f, static_cast<float>(Rect.Height - 1)));
+        return SpawnStaticMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
+    };
+
+    if (FocusedViewportIndex >= 0 && FocusedViewportIndex < FEditorViewportLayout::MaxViewports && TryDropOnViewport(FocusedViewportIndex))
+    {
+        return;
+    }
+    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+    {
+        if (i != FocusedViewportIndex && TryDropOnViewport(i))
+        {
+            return;
+        }
+    }
 }
 
 // ImGui로 Viewport 가 차지할 영역을 계산하고 만든다.
@@ -1093,13 +1917,14 @@ void FEditorMainPanel::RenderViewportHostWindow()
         EditorEngine->GetViewportLayout().SetHostRect(HostRect);
 
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+        const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
+        auto DrawSceneViewport = [&](int32 ViewportIndex)
         {
-            auto& VP = Layout.GetSceneViewport(i);
+            auto& VP = Layout.GetSceneViewport(ViewportIndex);
             const FViewportRect ViewportRect = VP.GetRect();
             if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
             {
-                continue;
+                return;
             }
 
             const ID3D11ShaderResourceView* SceneColorSRV = VP.GetOutSRV();
@@ -1110,11 +1935,11 @@ void FEditorMainPanel::RenderViewportHostWindow()
             ImGui::SetCursorScreenPos(ImVec2(
                 static_cast<float>(ViewportRect.X),
                 static_cast<float>(ViewportRect.Y)));
+            ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
             if (SceneColorSRV)
             {
                 ID3D11DeviceContext* DeviceContext = EditorEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
-                ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
                 DrawList->AddCallback(SetOpaqueBlendStateCallback, DeviceContext);
                 ImGui::Image(reinterpret_cast<ImTextureID>(SceneColorSRV), Size);
@@ -1124,21 +1949,63 @@ void FEditorMainPanel::RenderViewportHostWindow()
             {
                 ImGui::Dummy(Size);
             }
+
+            FEditorViewportClient* DropClient = Layout.GetViewportClient(ViewportIndex);
+            const FEditorViewportState& State = Layout.GetViewportState(ViewportIndex);
+            const float PIEFlashAlpha = DropClient ? DropClient->GetPIEStartOutlineFlashAlpha() : 0.0f;
+            const bool bFocused = ViewportIndex == FocusedViewportIndex;
+            const bool bHovered = State.bHovered;
+            if (bFocused || bHovered || PIEFlashAlpha > 0.0f)
+            {
+                const ImVec2 OutlineMin(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
+                const ImVec2 OutlineMax(
+                    static_cast<float>(ViewportRect.X + ViewportRect.Width),
+                    static_cast<float>(ViewportRect.Y + ViewportRect.Height));
+                const ImU32 OutlineColor = bFocused ? IM_COL32(82, 168, 255, 235) : IM_COL32(170, 190, 210, 120);
+                DrawList->AddRect(OutlineMin, OutlineMax, OutlineColor, 0.0f, 0, bFocused ? 2.0f : 1.0f);
+                if (PIEFlashAlpha > 0.0f)
+                {
+                    const int32 Alpha = static_cast<int32>(220.0f * PIEFlashAlpha);
+                    DrawList->AddRect(OutlineMin, OutlineMax, IM_COL32(120, 255, 150, Alpha), 0.0f, 0, 4.0f);
+                }
+            }
+        };
+
+		for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+        {
+            if (i != FocusedViewportIndex)
+            {
+                DrawSceneViewport(i);
+            }
         }
+        if (FocusedViewportIndex >= 0 && FocusedViewportIndex < FEditorViewportLayout::MaxViewports)
+        {
+            DrawSceneViewport(FocusedViewportIndex);
+        }
+        ViewportOverlayWidget.RenderSplitterBar(ImGui::GetWindowDrawList());
 
         // 뷰포트별 독립 메뉴바 오버레이
         {
             FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
             constexpr float MenuBarH = 34.0f;
+            const bool bOnlyFocusedToolbar = Layout.IsLayoutTransitionActive();
 
             for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
             {
-                if (FEditorViewportClient* Client = Layout.GetViewportClient(i))
+                const int32 DrawIndex = (i == FEditorViewportLayout::MaxViewports - 1)
+                    ? FocusedViewportIndex
+                    : (i < FocusedViewportIndex ? i : i + 1);
+                if (DrawIndex < 0 || DrawIndex >= FEditorViewportLayout::MaxViewports)
+                    continue;
+                if (bOnlyFocusedToolbar && DrawIndex != FocusedViewportIndex)
+                    continue;
+
+                if (FEditorViewportClient* Client = Layout.GetViewportClient(DrawIndex))
                 {
                     Client->SetViewportInputDeadZoneTop(MenuBarH);
                 }
 
-                FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
+                FViewportRect ViewportRect = Layout.GetSceneViewport(DrawIndex).GetRect();
                 if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
                     continue;
 
@@ -1150,7 +2017,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                 ImGui::SetCursorScreenPos(ImVec2(ContentPos.x + LocalX, ContentPos.y + LocalY));
 
                 char ChildID[32];
-                snprintf(ChildID, sizeof(ChildID), "##VPMenu%d", i);
+                snprintf(ChildID, sizeof(ChildID), "##VPMenu%d", DrawIndex);
 
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 4.0f));
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
@@ -1168,8 +2035,8 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
                 if (ImGui::BeginChild(ChildID, ImVec2(static_cast<float>(ViewportRect.Width), MenuBarH), false, OverlayFlags))
                 {
-                    ImGui::PushID(i);
-                    RenderViewportIconToolbarForIndex(i);
+                    ImGui::PushID(DrawIndex);
+                    RenderViewportIconToolbarForIndex(DrawIndex);
                     ImGui::PopID();
                 }
                 ImGui::EndChild();
@@ -1198,7 +2065,24 @@ void FEditorMainPanel::TickViewportContextMenu()
         return;
     }
 
+    if (ContentBrowserWidget.IsVisible() && ContentBrowserWidget.IsMouseOverBrowser())
+    {
+        ViewportContextMenuState.bRightClickTracking = false;
+        ViewportContextMenuState.TrackingViewportIndex = -1;
+        ViewportContextMenuState.RightClickTravelSq = 0.0f;
+        return;
+    }
+
     InputSystem& IS = InputSystem::Get();
+    const FGuiInputState& GuiState = IS.GetGuiInputState();
+    if (GuiState.bBlockViewportMouse && !GuiState.bAllowViewportMouseFocus)
+    {
+        ViewportContextMenuState.bRightClickTracking = false;
+        ViewportContextMenuState.TrackingViewportIndex = -1;
+        ViewportContextMenuState.RightClickTravelSq = 0.0f;
+        return;
+    }
+
     POINT MouseScreenPos = IS.GetMousePos();
     POINT MouseClientPos = Window->ScreenToClientPoint(MouseScreenPos);
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
@@ -1311,6 +2195,7 @@ void FEditorMainPanel::RenderViewportContextMenu()
     FEditorViewportClient* Client = Layout.GetViewportClient(FocusedIndex);
     FEditorViewportState& State = Layout.GetViewportState(FocusedIndex);
     const bool bEditing = Client && Client->GetPlayState() == EViewportPlayState::Editing;
+    const bool bHasSelection = !EditorEngine->GetSelectionManager().IsEmpty();
 
     ImGui::TextDisabled("%s", GetViewportSlotName(FocusedIndex));
     ImGui::Separator();
@@ -1327,25 +2212,18 @@ void FEditorMainPanel::RenderViewportContextMenu()
             ViewportContextMenuState.PendingSpawnLocalX,
             ViewportContextMenuState.PendingSpawnLocalY);
 
-        for (int32 i = 0; i < ControlWidget.GetPrimitiveTypeCount(); ++i)
-        {
-            if (ImGui::MenuItem(ControlWidget.GetPrimitiveTypeLabel(i)))
-            {
-                ControlWidget.SpawnPrimitive(i, SpawnLocation, 1);
-                ImGui::CloseCurrentPopup();
-            }
-        }
+        ControlWidget.DrawPlaceActorMenu(SpawnLocation, true);
         ImGui::EndMenu();
     }
 
-    if (ImGui::MenuItem("Delete", "Del", false, bEditing && Client != nullptr))
+    if (ImGui::MenuItem("Delete", "Del", false, bEditing && Client != nullptr && bHasSelection))
     {
         Client->RequestDeleteSelection();
     }
 
     ImGui::Separator();
 
-    if (ImGui::MenuItem("Focus Selection", "F", false, Client != nullptr))
+    if (ImGui::MenuItem("Focus Selection", "F", false, Client != nullptr && bHasSelection))
     {
         Client->FocusSelection();
     }
@@ -1372,8 +2250,7 @@ void FEditorMainPanel::RenderViewportContextMenu()
     if (ImGui::BeginMenu("Selection"))
     {
         if (ImGui::MenuItem("Select All", "Ctrl+A")) Client->RequestSelectAllActors();
-        if (ImGui::MenuItem("Duplicate", "Ctrl+D")) Client->RequestDuplicateSelection();
-        if (ImGui::MenuItem("Delete", "Delete")) Client->RequestDeleteSelection();
+        if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, bHasSelection)) Client->RequestDuplicateSelection();
         ImGui::EndMenu();
     }
 
@@ -1473,7 +2350,7 @@ bool FEditorMainPanel::DrawViewportTextButton(const char* Id, const char* Label,
     return bPressed;
 }
 
-bool FEditorMainPanel::DrawViewportIconButton(const char* Id, EViewportToolIcon Icon, const char* FallbackLabel, const char* Tooltip, bool bSelected, bool bEnabled)
+bool FEditorMainPanel::DrawViewportIconButton(const char* Id, EViewportToolIcon Icon, const char* FallbackLabel, const char* Tooltip, bool bSelected, bool bEnabled, bool bPairFirst, bool bPairSecond)
 {
     if (!bEnabled)
     {
@@ -1482,16 +2359,16 @@ bool FEditorMainPanel::DrawViewportIconButton(const char* Id, EViewportToolIcon 
 
     if (bSelected)
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.34f, 0.62f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.24f, 0.42f, 0.72f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.30f, 0.50f, 0.82f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.33f, 0.46f, 0.63f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.37f, 0.52f, 0.70f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.27f, 0.39f, 0.54f, 1.0f));
     }
 
     ID3D11ShaderResourceView* SRV = ViewportToolIcons[static_cast<int32>(Icon)];
     bool bPressed = false;
     if (!SRV)
     {
-        bPressed = DrawViewportTextButton(Id, FallbackLabel);
+        bPressed = DrawViewportTextButton(Id, FallbackLabel, bPairFirst, bPairSecond);
     }
     else
     {
@@ -1504,7 +2381,16 @@ bool FEditorMainPanel::DrawViewportIconButton(const char* Id, EViewportToolIcon 
         const bool bHovered = ImGui::IsItemHovered();
         const bool bHeld = ImGui::IsItemActive();
         const ImU32 BgColor = ImGui::GetColorU32(bHeld ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
-        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding);
+        ImDrawFlags RoundFlags = ImDrawFlags_RoundCornersAll;
+        if (bPairFirst)
+        {
+            RoundFlags = ImDrawFlags_RoundCornersLeft;
+        }
+        if (bPairSecond)
+        {
+            RoundFlags = ImDrawFlags_RoundCornersRight;
+        }
+        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding, RoundFlags);
         ImGui::GetWindowDrawList()->AddImage(
             reinterpret_cast<ImTextureID>(SRV),
             ImVec2(Min.x + Padding.x, Min.y + (ButtonSize.y - IconSize.y) * 0.5f),
@@ -1545,6 +2431,51 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
     constexpr float ToolbarLeftPadding = 8.0f;
     const float CenteredToolbarY = std::max(0.0f, (ImGui::GetWindowHeight() - ImGui::GetFrameHeight()) * 0.5f);
     ImGui::SetCursorPos(ImVec2(ToolbarLeftPadding, CenteredToolbarY));
+
+    if (!bEditing)
+    {
+        static constexpr EViewMode PIEViewModes[] = {
+            EViewMode::Lit_Gouraud,
+            EViewMode::Unlit,
+            EViewMode::Wireframe,
+            EViewMode::Depth,
+            EViewMode::Normal,
+        };
+
+        char PIEViewPopupID[48];
+        snprintf(PIEViewPopupID, sizeof(PIEViewPopupID), "##PIEViewportViewPopup_%d", ViewportIndex);
+        char PIEViewButtonLabel[80];
+        snprintf(PIEViewButtonLabel, sizeof(PIEViewButtonLabel), "View Mode: %s ▼", GetViewModeName(Client->GetViewportState()->ViewMode));
+
+        if (DrawViewportTextButton("##PIEViewportViewButton", PIEViewButtonLabel))
+        {
+            ImGui::OpenPopup(PIEViewPopupID);
+        }
+        if (ImGui::BeginPopup(PIEViewPopupID))
+        {
+            for (EViewMode Mode : PIEViewModes)
+            {
+                if (ImGui::MenuItem(GetViewModeName(Mode), nullptr, Client->GetViewportState()->ViewMode == Mode))
+                {
+                    Client->GetViewportState()->ViewMode = Mode;
+                }
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::SameLine(0.0f, 8.0f);
+        const char* PIEStateLabel = (Client->GetPlayState() == EViewportPlayState::Paused) ? "PIE Paused" : "PIE";
+        ImGui::TextDisabled("%s", PIEStateLabel);
+        ImGui::SameLine(0.0f, 8.0f);
+        bool bFullscreen = IsPIEViewportFullscreenEnabled();
+        if (ImGui::Checkbox("Fullscreen", &bFullscreen))
+        {
+            SetPIEViewportFullscreenEnabled(bFullscreen);
+        }
+        ImGui::PopID();
+        return;
+    }
+
     if (DrawViewportIconButton("##SelectMode", EViewportToolIcon::Select, "Q", "Select (Q / 1)", Client->GetTransformMode() == FEditorViewportClient::ETransformMode::Select, bEditing))
     {
         Client->RequestSetSelectMode();
@@ -1609,7 +2540,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
         char ToggleID[48];
         snprintf(ToggleID, sizeof(ToggleID), "##%sSnapToggle", Prefix);
-        const bool bTogglePressed = DrawViewportIconButton(ToggleID, SnapIcon, Prefix, Prefix, false, bEditing);
+        const bool bTogglePressed = DrawViewportIconButton(ToggleID, SnapIcon, Prefix, Prefix, false, bEditing, true, false);
         if (bEnabled)
         {
             ImGui::PopStyleColor(3);
@@ -1658,22 +2589,21 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         Client->GetGizmo()->SetScaleSnap(GScaleSnapEnabled[ViewportIndex], ScaleSnapValues[GScaleSnapIndex[ViewportIndex]]);
     }
 
-    ImGui::SameLine();
-    if (DrawViewportIconButton("##FrameSelection", EViewportToolIcon::Camera, "F", "Focus Selection (F)", false, true))
-    {
-        Client->FocusSelection();
-    }
+    const ImVec2 WindowScreenPos = ImGui::GetWindowPos();
+    const float LeftGroupEndX = ImGui::GetItemRectMax().x - WindowScreenPos.x;
 
     char TypePopupID[48];
     snprintf(TypePopupID, sizeof(TypePopupID), "##ViewportTypePopup_%d", ViewportIndex);
     char TypeButtonLabel[64];
     snprintf(TypeButtonLabel, sizeof(TypeButtonLabel), "%s ▼", GetViewportTypeName(Client->GetViewportType()));
+    char CameraPopupID[48];
+    snprintf(CameraPopupID, sizeof(CameraPopupID), "##ViewportCameraSpeedPopup_%d", ViewportIndex);
+    char CameraButtonLabel[48];
+    snprintf(CameraButtonLabel, sizeof(CameraButtonLabel), "Cam %.1fx ▼", GetCameraSpeedMultiplier(Client));
     char ViewPopupID[48];
     snprintf(ViewPopupID, sizeof(ViewPopupID), "##ViewportViewPopup_%d", ViewportIndex);
     char ViewButtonLabel[80];
     snprintf(ViewButtonLabel, sizeof(ViewButtonLabel), "%s ▼", GetViewModeName(Client->GetViewportState()->ViewMode));
-    char StatsPopupID[48];
-    snprintf(StatsPopupID, sizeof(StatsPopupID), "##ViewportStatsPopup_%d", ViewportIndex);
 
     const ImVec2 FramePadding = ImGui::GetStyle().FramePadding;
     auto CalcTextButtonWidth = [&](const char* Label) -> float
@@ -1693,16 +2623,19 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         ++RightItemCount;
     };
     AddRightItemWidth(CalcTextButtonWidth(TypeButtonLabel));
+    if (Layout.GetLayoutMode() == EEditorViewportLayoutMode::OnePane)
+    {
+        AddRightItemWidth(CalcTextButtonWidth(CameraButtonLabel));
+    }
     AddRightItemWidth(CalcTextButtonWidth(ViewButtonLabel));
-    AddRightItemWidth(CalcTextButtonWidth("Stats ▼"));
     AddRightItemWidth(IconButtonWidth);
     AddRightItemWidth(IconButtonWidth);
     AddRightItemWidth(IconButtonWidth);
 
-    const float RightStartX = ImGui::GetWindowContentRegionMax().x - RightGroupWidth;
-    const float CurrentCursorX = ImGui::GetCursorPosX();
-    const bool bUseOverflowMenu = RightStartX <= CurrentCursorX + 8.0f;
-    const ImVec2 WindowScreenPos = ImGui::GetWindowPos();
+    const float ContentRightX = ImGui::GetWindowContentRegionMax().x;
+    const float RightStartX = ContentRightX - RightGroupWidth;
+    const float MinRightGroupStartX = LeftGroupEndX + ImGui::GetStyle().ItemSpacing.x + 12.0f;
+    const bool bUseOverflowMenu = RightStartX <= MinRightGroupStartX;
     auto SetToolbarItemScreenPos = [&](float LocalX)
     {
         ImGui::SetCursorScreenPos(ImVec2(WindowScreenPos.x + std::max(0.0f, LocalX), WindowScreenPos.y + CenteredToolbarY));
@@ -1710,7 +2643,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
     if (bUseOverflowMenu)
     {
-        const float OverflowStartX = ImGui::GetWindowContentRegionMax().x - IconButtonWidth;
+        const float OverflowStartX = ContentRightX - IconButtonWidth;
         SetToolbarItemScreenPos(OverflowStartX);
         if (DrawViewportIconButton("##ViewportToolbarOverflow", EViewportToolIcon::Menu, "...", "Viewport Toolbar", false, true))
         {
@@ -1742,6 +2675,16 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
                     }
                 }
                 ImGui::EndMenu();
+            }
+
+            if (Layout.GetLayoutMode() == EEditorViewportLayoutMode::OnePane)
+            {
+                float SpeedMultiplier = GetCameraSpeedMultiplier(Client);
+                if (ImGui::SliderFloat("Camera Speed", &SpeedMultiplier, 0.01f, 500.0f, "%.2fx"))
+                {
+                    SetCameraSpeedMultiplier(Client, SpeedMultiplier);
+                }
+                ImGui::Separator();
             }
 
             if (ImGui::BeginMenu("View"))
@@ -1781,17 +2724,6 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
                     }
                     ImGui::EndMenu();
                 }
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Stats"))
-            {
-                FEditorViewportState* ViewportState = Client->GetViewportState();
-                ImGui::MenuItem("FPS", nullptr, &ViewportState->bShowStatFPS);
-                ImGui::MenuItem("Memory", nullptr, &ViewportState->bShowStatMemory);
-                ImGui::MenuItem("Cascade Vis", nullptr, &ViewportState->bShowCascadeVis);
-                ImGui::MenuItem("Light", nullptr, &ViewportState->bShowLight);
-                ImGui::MenuItem("Shadow", nullptr, &ViewportState->bShowShadow);
                 ImGui::EndMenu();
             }
 
@@ -1880,6 +2812,24 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         ImGui::EndPopup();
     }
 
+    if (Layout.GetLayoutMode() == EEditorViewportLayoutMode::OnePane)
+    {
+        ImGui::SameLine();
+        if (DrawViewportTextButton("##ViewportCameraSpeedButton", CameraButtonLabel))
+        {
+            ImGui::OpenPopup(CameraPopupID);
+        }
+        if (ImGui::BeginPopup(CameraPopupID))
+        {
+            float SpeedMultiplier = GetCameraSpeedMultiplier(Client);
+            if (ImGui::SliderFloat("Speed", &SpeedMultiplier, 0.01f, 500.0f, "%.2fx"))
+            {
+                SetCameraSpeedMultiplier(Client, SpeedMultiplier);
+            }
+            ImGui::EndPopup();
+        }
+    }
+
     ImGui::SameLine();
     if (DrawViewportTextButton("##ViewportViewButton", ViewButtonLabel))
     {
@@ -1926,35 +2876,20 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
     }
 
     ImGui::SameLine();
-    if (DrawViewportTextButton("##ViewportStatsButton", "Stats ▼"))
-    {
-        ImGui::OpenPopup(StatsPopupID);
-    }
-    if (ImGui::BeginPopup(StatsPopupID))
-    {
-        FEditorViewportState* ViewportState = Client->GetViewportState();
-        ImGui::MenuItem("FPS", nullptr, &ViewportState->bShowStatFPS);
-        ImGui::MenuItem("Memory", nullptr, &ViewportState->bShowStatMemory);
-        ImGui::MenuItem("Cascade Vis", nullptr, &ViewportState->bShowCascadeVis);
-        ImGui::MenuItem("Light", nullptr, &ViewportState->bShowLight);
-        ImGui::MenuItem("Shadow", nullptr, &ViewportState->bShowShadow);
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
     if (DrawViewportIconButton("##ViewportSettings", EViewportToolIcon::Setting, "S", "Viewport Settings", ViewportOverlayWidget.IsViewportSettingsVisible(), true))
     {
         ViewportOverlayWidget.SetViewportSettingsVisible(!ViewportOverlayWidget.IsViewportSettingsVisible());
     }
 
     ImGui::SameLine();
-    if (DrawViewportIconButton("##LayoutIconMenu", EViewportToolIcon::Menu, "L", "Layout Presets", false, true))
+    if (DrawViewportIconButton("##LayoutIconMenu", EViewportToolIcon::Menu, "L", "Layout Presets", false, true, true, false))
     {
         ImGui::OpenPopup("##LayoutIconPopup");
     }
 
     if (ImGui::BeginPopup("##LayoutIconPopup"))
     {
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
         constexpr int32 Columns = 4;
         constexpr ImVec2 IconSize(32.0f, 32.0f);
         const EEditorViewportLayoutMode CurrentMode = Layout.GetLayoutMode();
@@ -1965,9 +2900,9 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
             const bool bSelected = (Mode == CurrentMode);
             if (bSelected)
             {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.34f, 0.62f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.24f, 0.42f, 0.72f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.30f, 0.50f, 0.82f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.33f, 0.46f, 0.63f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.37f, 0.52f, 0.70f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.27f, 0.39f, 0.54f, 1.0f));
             }
 
             bool bPressed = false;
@@ -1990,7 +2925,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
             }
             if (bPressed)
             {
-                    Layout.SetLayoutModeAnimated(Mode, Mode == EEditorViewportLayoutMode::OnePane ? ViewportIndex : -1);
+                Layout.SetLayoutModeAnimated(Mode, Mode == EEditorViewportLayoutMode::OnePane ? ViewportIndex : -1);
                 ImGui::CloseCurrentPopup();
             }
 
@@ -2000,10 +2935,11 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
             }
             ImGui::PopID();
         }
+        ImGui::PopStyleVar();
         ImGui::EndPopup();
     }
 
-    ImGui::SameLine();
+    ImGui::SameLine(0.0f, 0.0f);
     const EEditorViewportLayoutMode CurrentLayout = Layout.GetLayoutMode();
     const EEditorViewportLayoutMode ToggleLayout =
         CurrentLayout == EEditorViewportLayoutMode::OnePane
@@ -2027,7 +2963,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         const bool bHovered = ImGui::IsItemHovered();
         const bool bHeld = ImGui::IsItemActive();
         const ImU32 BgColor = ImGui::GetColorU32(bHeld ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
-        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding);
+        ImGui::GetWindowDrawList()->AddRectFilled(Min, Max, BgColor, ImGui::GetStyle().FrameRounding, ImDrawFlags_RoundCornersRight);
         ImGui::GetWindowDrawList()->AddImage(
             reinterpret_cast<ImTextureID>(ToggleIcon),
             ImVec2(Min.x + Padding.x, Min.y + (ButtonSize.y - IconSize.y) * 0.5f),
@@ -2035,7 +2971,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
     }
     else
     {
-        bTogglePressed = DrawViewportTextButton("##SplitMergeViewportText", CurrentLayout == EEditorViewportLayoutMode::OnePane ? "Split" : "Merge");
+        bTogglePressed = DrawViewportTextButton("##SplitMergeViewportText", CurrentLayout == EEditorViewportLayoutMode::OnePane ? "Split" : "Merge", false, true);
     }
     if (ImGui::IsItemHovered())
     {

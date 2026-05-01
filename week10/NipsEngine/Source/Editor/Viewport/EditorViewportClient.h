@@ -108,7 +108,14 @@ public:
 	FViewportCamera*       GetCamera()       { return bHasCamera ? &Camera : nullptr; }
 	const FViewportCamera* GetCamera() const { return bHasCamera ? &Camera : nullptr; }
 	// 외부에서 카메라 위치를 변경한 후 컨트롤러의 TargetLocation을 동기화할 때 호출
-	void SyncCameraTarget() { InputRouter.GetEditorWorldController().ResetTargetLocation(); }
+	void SyncCameraTarget()
+	{
+		InputRouter.GetEditorWorldController().ResetTargetLocation();
+		if (bHasCamera)
+		{
+			InputRouter.GetEditorWorldController().SetTargetRotation(Camera.GetRotation());
+		}
+	}
 
 	void Tick(float DeltaTime) override;
 	void BuildSceneView(FSceneView& OutView) const override;
@@ -164,6 +171,7 @@ private:
 	bool HandleSelectionInput(const FViewportInputContext& Context);
 	bool HandleNavigationInput(const FViewportInputContext& Context);
 	bool HandleAltNavigationInput(const FViewportInputContext& Context);
+	bool HandleLeftNavigationInput(const FViewportInputContext& Context);
 	bool IsBoxSelectionChordActive(const FViewportInputContext& Context) const;
 	bool IsPointerInViewportInputDeadZone(const FViewportInputContext& Context) const;
 	void SetTransformMode(ETransformMode InMode);
@@ -181,6 +189,9 @@ private:
 	void SelectAllActors();
 	void DuplicateSelection();
 	void TogglePIEPossessEject();
+	void ReleasePIEMouseFocus();
+	void ReacquirePIEMouseFocus();
+	bool TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context);
 
 private:
 	// Window / Viewport — Window is inherited from FViewportClient
@@ -211,6 +222,7 @@ private:
 	bool  bControlLocked = false;
 	bool  bRoutedInputProcessedThisFrame = false;
 	bool  bLegacyInputSuppressedThisFrame = false;
+	bool  bGizmoDragUndoCaptured = false;
 	ETransformMode TransformMode = ETransformMode::Translate;
 	float ViewportInputDeadZoneTop = 0.0f;
 	float PIEStartOutlineFlashRemaining = 0.0f;
