@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
 #include "Platform/Paths.h"
+#include "Core/Delegates/Delegate.h"
 #include "Object/ObjectIterator.h"
 
 void FLuaScriptManager::Init()
@@ -31,6 +32,7 @@ void FLuaScriptManager::Release()
 	}
 	
 	bWatcherRegistered = false;
+    FDirectoryWatcher::Get().OnDirectoryChanged.RemoveAll(this);
 }
 
 FString FLuaScriptManager::CreateScript(class AActor* TargetActor)

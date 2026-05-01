@@ -1,5 +1,6 @@
 ﻿#include "DirectoryWatcher.h"
 #include "Platform/Paths.h"
+#include "Core/Delegates/Delegate.h"
 
 void FDirectoryWatcher::Init(const FString& InDirectoryToWatch)
 {
@@ -48,6 +49,7 @@ void FDirectoryWatcher::Tick()
         FString ChangedFile = TempQueue.front();
         TempQueue.pop();
 
+        OnDirectoryChanged.BroadCast(ChangedFile);
         for (const auto& Listener : Listeners)
         {
             if (Listener)

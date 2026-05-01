@@ -73,6 +73,7 @@ void UEngine::Shutdown()
 {
     UE_LOG(Engine, Info, "Shutting down runtime engine.");
 
+    FLuaScriptManager::Get().Release();
     FDirectoryWatcher::Get().Release();
     FLuaRuntime::Get().Shutdown();
 
