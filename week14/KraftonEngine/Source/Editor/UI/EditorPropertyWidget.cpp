@@ -17,6 +17,7 @@
 #include "Component/HeightFogComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
+#include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
 #include "Object/ObjectIterator.h"
@@ -1317,6 +1318,27 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 			}
 			ImGui::TreePop();
 		}
+		break;
+	}
+	case EPropertyType::Script:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+		char Buf[256];
+		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+		if (ImGui::InputText(Prop.Name.c_str(), Buf, sizeof(Buf)))
+		{
+			*Val = Buf;
+			bChanged = true;
+		}
+
+		if (ImGui::Button("Edit Script"))
+		{
+			if (!FLuaScriptManager::OpenOrCreateScript(*Val))
+			{
+				UE_LOG("Failed to open script file: %s", Val->c_str());
+			}
+		}
+
 		break;
 	}
 	}
