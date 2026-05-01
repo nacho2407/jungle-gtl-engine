@@ -12,7 +12,7 @@ std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 void FLuaScriptManager::Initialize()
 {
 	Lua = std::make_unique<sol::state>();
-	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
+	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::coroutine);
 	RegisterBindings(*Lua);
 }
 
@@ -32,10 +32,26 @@ bool FLuaScriptManager::OpenOrCreateScript(const FString& ScriptFile)
 	std::wstring FullPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
 	if (!std::filesystem::exists(FullPath))
 	{
-		std::ofstream Out(FullPath);
-		if (!Out)
+		FPaths::CreateDir(FPaths::ScriptDir());
+
+		const std::wstring TemplatePath = FPaths::Combine(FPaths::ScriptDir(), L"template.lua");
+		std::error_code Error;
+		if (std::filesystem::exists(TemplatePath))
 		{
-			return false;
+			std::filesystem::copy_file(TemplatePath, FullPath, std::filesystem::copy_options::none, Error);
+			if (Error)
+			{
+				UE_LOG("Failed to copy Lua script template: %s", Error.message().c_str());
+			}
+		}
+
+		if (!std::filesystem::exists(FullPath))
+		{
+			std::ofstream Out(FullPath);
+			if (!Out)
+			{
+				return false;
+			}
 		}
 	}
 
@@ -56,6 +72,9 @@ sol::state& FLuaScriptManager::GetState()
 
 void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 {
+	FString CoroutineManagerPath = ResolveScriptPath("CoroutineManager.lua");
+	Lua.safe_script_file(CoroutineManagerPath, sol::script_pass_on_error);
+
 	Lua.set_function("print", [](sol::variadic_args Args)
 	{
 		FString Message;
