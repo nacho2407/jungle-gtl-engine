@@ -12,6 +12,8 @@ Global
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 		ObjViewer|x64 = ObjViewer|x64
+		GameClientDebug|x64 = GameClientDebug|x64
+		GameClientRelease|x64 = GameClientRelease|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Debug|x86.ActiveCfg = Debug|Win32
@@ -24,6 +26,10 @@ Global
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Release|x64.Build.0 = Release|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.ObjViewer|x64.ActiveCfg = ObjViewer|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.ObjViewer|x64.Build.0 = ObjViewer|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameClientDebug|x64.ActiveCfg = GameClientDebug|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameClientDebug|x64.Build.0 = GameClientDebug|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameClientRelease|x64.ActiveCfg = GameClientRelease|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameClientRelease|x64.Build.0 = GameClientRelease|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
