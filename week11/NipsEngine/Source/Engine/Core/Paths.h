@@ -19,12 +19,14 @@ public:
 	static std::wstring DumpDir();        // Saves/Dump/
 	static std::wstring SettingsDir();    // Settings/
 	static std::wstring MaterialTextureDir(); //Model/Texture/
+    static std::wstring ScriptDir();        // Lua/
 
 	// 주요 파일 경로
 	static std::wstring ShaderFilePath(); // Shaders/ShaderW0.hlsl
 	static std::wstring SettingsFilePath();  // Settings/Editor.ini
 	static std::wstring ViewerSettingsFilePath(); // Settings/ObjViewer.ini
 	static std::wstring AssetDirectoryPath();  // Settings/Resource.ini
+    static std::wstring LuaTemplatePath();        // LuaScripts/Template.lua
 	static std::wstring ResourceDefaultMaterialTexture(); // Asset/Mesh/Default.png
 	static std::wstring ToRelative(const std::wstring& AbsolutePath);
 	static std::wstring ToAbsolute(const std::wstring& RelativePath);
