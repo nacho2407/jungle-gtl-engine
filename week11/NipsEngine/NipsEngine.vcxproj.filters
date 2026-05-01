@@ -10,6 +10,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{a2c655c5-b907-4abe-9c4e-0ae260b05ced}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game">
+      <UniqueIdentifier>{41726a56-b1ce-4c90-aef5-1d55cf8fbb13}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{01c06a87-3b33-f1be-c238-04f144aa4c78}</UniqueIdentifier>
     </Filter>
@@ -28,8 +31,14 @@
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{1a34369a-b65d-0692-a150-9209617bbd99}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Packaging">
+      <UniqueIdentifier>{c3f50f29-df59-453e-a95a-5489aef4eb23}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{bfcd2a84-61fc-3a27-7115-8732c34a60d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Camera">
+      <UniqueIdentifier>{a9d7a8e1-f9c4-4c77-9f82-8d7b2a6e44c1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{4defec5c-eaae-b334-ca2c-12fdd0abe386}</UniqueIdentifier>
@@ -233,6 +242,9 @@
     <ClCompile Include="Source\Editor\Input\EditorViewportTools.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Packaging\GamePackager.cpp">
+      <Filter>Source\Editor\Packaging</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
     </ClCompile>
@@ -281,8 +293,8 @@
     <ClCompile Include="Source\Editor\Viewport\FSceneViewport.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Viewport\ViewportCamera.cpp">
-      <Filter>Source\Editor\Viewport</Filter>
+    <ClCompile Include="Source\Engine\Camera\ViewportCamera.cpp">
+      <Filter>Source\Engine\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\ViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
@@ -407,6 +419,9 @@
     <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Logging\Log.cpp">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
@@ -416,8 +431,8 @@
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameJamPlayerController.cpp">
-      <Filter>Source\Engine\GameFramework</Filter>
+    <ClCompile Include="Source\Game\GameJamPlayerController.cpp">
+      <Filter>Source\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
@@ -635,6 +650,9 @@
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
@@ -759,6 +777,12 @@
     <ClInclude Include="Source\Editor\EditorUtils.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Packaging\GameBuildSettings.h">
+      <Filter>Source\Editor\Packaging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Packaging\GamePackager.h">
+      <Filter>Source\Editor\Packaging</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Input\EditorViewportInputContexts.h">
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
@@ -825,8 +849,8 @@
     <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h">
-      <Filter>Source\Editor\Viewport</Filter>
+    <ClInclude Include="Source\Engine\Camera\ViewportCamera.h">
+      <Filter>Source\Engine\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h">
       <Filter>Source\Editor\Viewport</Filter>
@@ -1014,6 +1038,9 @@
     <ClInclude Include="Source\Engine\Core\Logging\GPUProfiler.h">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Logging\Log.h">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h">
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
@@ -1023,8 +1050,8 @@
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameJamPlayerController.h">
-      <Filter>Source\Engine\GameFramework</Filter>
+    <ClInclude Include="Source\Game\GameJamPlayerController.h">
+      <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
       <Filter>Source\Engine\GameFramework</Filter>
@@ -1300,6 +1327,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\GameEngine.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\Launch.h">

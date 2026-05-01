@@ -8,7 +8,6 @@
 #include "Component/GizmoComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "GameFramework/GameJamPlayerController.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
@@ -619,11 +618,13 @@ void UEditorEngine::StartPlaySessionNow()
     EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
     SelectionManager.ClearSelection();
 
-    AGameJamPlayerController* PlayerController = PIEWorld->SpawnActor<AGameJamPlayerController>();
+    constexpr const char* DefaultPIEPlayerControllerClass = "AGameJamPlayerController";
+    APlayerController* PlayerController = Cast<APlayerController>(
+        PIEWorld->SpawnActorByTypeName(DefaultPIEPlayerControllerClass));
     if (PlayerController)
     {
         PlayerController->InitDefaultComponents();
-        PlayerController->SetFName(FName("GameJam Player Controller"));
+        PlayerController->SetFName(FName(DefaultPIEPlayerControllerClass));
         PlayerController->ConfigureRuntimeCameraFromViewport(FocusedClient->GetCamera());
         PlayerController->SpawnDefaultPawn();
         FocusedClient->SetPIEPlayerController(PlayerController);

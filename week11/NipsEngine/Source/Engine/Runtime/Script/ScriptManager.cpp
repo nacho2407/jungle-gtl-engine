@@ -1,8 +1,8 @@
 ﻿#include "ScriptManager.h"
 #include <Windows.h>
 #include <shellapi.h>
-#include <UI/EditorConsoleWidget.h>
 
+#include "Core/Logging/Log.h"
 #include "GameFramework/AActor.h"
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"

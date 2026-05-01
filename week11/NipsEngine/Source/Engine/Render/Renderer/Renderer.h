@@ -127,7 +127,9 @@ public:
 	void BeginFrame();
 	// Viewport 로부터 RTV, SRV 등 정보를 받아서 세팅
     void BeginViewportFrame(FRenderTargetSet InRenderTargetSet);
+    FRenderTargetSet BeginGameFrame(uint32 Width, uint32 Height);
 	void Render(const FRenderBus& InRenderBus);
+    void CompositeCurrentSceneToBackBuffer();
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	
@@ -203,5 +205,5 @@ private:
 	// 지금은 4개 Viewport 고정 존재 상황이라 다음과 같이 처리
 	FViewportRenderResource ViewportResources[4];
 	FViewportRenderResource PreviewResource;
+    FViewportRenderResource GameFrameResource;
 };
-

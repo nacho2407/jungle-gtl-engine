@@ -1,7 +1,8 @@
 ﻿#include "GameFramework/World.h"
 #include "Engine/Collision/Collision.h"
 #include "Component/PrimitiveComponent.h"
-#include "Editor/UI/EditorConsoleWidget.h"
+#include "Core/Logging/Log.h"
+#include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
@@ -58,6 +59,30 @@ void UWorld::BeginPlay()
     bHasBegunPlay = true;
     PersistentLevel->BeginPlay();
     RebuildSpatialIndex();
+}
+
+AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
+{
+    UObject* Object = FObjectFactory::Get().Create(TypeName);
+    AActor* Actor = Cast<AActor>(Object);
+    if (!Actor)
+    {
+        if (Object)
+        {
+            UObjectManager::Get().DestroyObject(Object);
+        }
+        UE_LOG("[World] Failed to spawn actor by type name: %s", TypeName.c_str());
+        return nullptr;
+    }
+
+    Actor->SetWorld(this);
+    if (bHasBegunPlay)
+    {
+        Actor->BeginPlay();
+    }
+    PersistentLevel->AddActor(Actor);
+    SpatialIndex.FlushDirtyBounds();
+    return Actor;
 }
 
 void UWorld::Tick(float DeltaTime)

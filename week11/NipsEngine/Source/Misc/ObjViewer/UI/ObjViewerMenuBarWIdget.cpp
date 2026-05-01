@@ -6,7 +6,7 @@
 
 #include "Misc/ObjViewer/ObjViewerEngine.h"
 #include "Misc/ObjViewer/Settings/ObjViewerSettings.h"
-#include "Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 #include "Component/StaticMeshComponent.h"
 
 #include "Serialization/SceneSaveManager.h"

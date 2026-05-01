@@ -2,6 +2,7 @@
 
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
+#include "Core/Logging/Log.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 
@@ -71,6 +72,9 @@ void APlayerController::BeginPlay()
 	{
 		World->SetActiveCamera(&RuntimeCamera);
 	}
+	UE_LOG("[PlayerController] BeginPlay. Possessed=%s Camera=%s",
+		PossessedActor ? PossessedActor->GetFName().ToString().c_str() : "None",
+		ViewTargetCamera ? ViewTargetCamera->GetName().c_str() : "None");
 }
 
 void APlayerController::Tick(float DeltaTime)
@@ -124,6 +128,8 @@ AActor* APlayerController::SpawnDefaultPawn()
 
 	Possess(Pawn);
 	SetViewTarget(Pawn);
+	UE_LOG("[PlayerController] Spawned default pawn at (%.2f, %.2f, %.2f).",
+		SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 	return Pawn;
 }
 

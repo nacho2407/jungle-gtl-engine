@@ -8,7 +8,7 @@
 #include "Spatial/WorldSpatialIndex.h"
 #include "Editor/EditorUtils.h"
 #include "Editor/Input/EditorViewportTools.h"
-#include "Editor/Viewport/ViewportCamera.h"
+#include "Camera/ViewportCamera.h"
 
 #include <memory>
 

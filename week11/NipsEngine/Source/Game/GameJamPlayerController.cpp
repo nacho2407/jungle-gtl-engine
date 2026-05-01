@@ -1,4 +1,4 @@
-#include "GameFramework/GameJamPlayerController.h"
+#include "Game/GameJamPlayerController.h"
 
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"

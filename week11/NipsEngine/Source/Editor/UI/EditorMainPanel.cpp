@@ -3,6 +3,7 @@
 #include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Packaging/GamePackager.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Component/GizmoComponent.h"
@@ -25,12 +26,16 @@
 #include "Math/Utils.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cfloat>
 #include <cstring>
 #include <cmath>
 #include <filesystem>
+#include <future>
 namespace
 {
+constexpr const char* PackagingPopupName = "Packaging Settings";
+
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
     ID3D11DeviceContext* DeviceContext = static_cast<ID3D11DeviceContext*>(Cmd->UserCallbackData);
@@ -366,6 +371,41 @@ FString ResolveStaticMeshDropLoadPath(const FString& PayloadPath)
     }
     return {};
 }
+
+FString NormalizePackagingScenePath(const FString& ScenePath)
+{
+    if (ScenePath.empty())
+    {
+        return {};
+    }
+
+    std::filesystem::path Path(FPaths::ToWide(ScenePath));
+    if (Path.is_absolute())
+    {
+        return FPaths::Normalize(FPaths::ToRelativeString(Path.wstring()));
+    }
+    return FPaths::Normalize(ScenePath);
+}
+
+bool AddUniquePackagingScene(TArray<FString>& Scenes, const FString& ScenePath)
+{
+    const FString NormalizedScene = NormalizePackagingScenePath(ScenePath);
+    if (NormalizedScene.empty())
+    {
+        return false;
+    }
+
+    for (const FString& Existing : Scenes)
+    {
+        if (FPaths::Normalize(Existing) == NormalizedScene)
+        {
+            return false;
+        }
+    }
+
+    Scenes.push_back(NormalizedScene);
+    return true;
+}
 } // namespace
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
 {
@@ -462,6 +502,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     ToolbarWidget.SetSceneWidget(&SceneWidget);
     ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
     ToolbarWidget.SetPIEViewportFullscreenCallback([this](bool bEnabled) { SetPIEViewportFullscreenEnabled(bEnabled); });
+    ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });
     ToolbarWidget.SetPanelVisibilityRefs(&bShowConsole, &bShowControl, &bShowProperty, &bShowSceneManager,
                                          &bShowMaterialEditor, &bShowStatProfiler, &bShowEditorDebug,
                                          &bShowContentBrowser, &bShowUndoHistory, &bPIEViewportFullscreenEnabled);
@@ -555,6 +596,7 @@ void FEditorMainPanel::Render(float DeltaTime)
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+    TickBuildGameTask();
 
     const ImGuiIO& IO = ImGui::GetIO();
     if (!IO.WantTextInput && IO.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Space, false))
@@ -597,6 +639,7 @@ void FEditorMainPanel::Render(float DeltaTime)
         RenderEditorDebugPanel(DeltaTime);
     if (bDrawEditorPanels)
         RenderUndoHistoryPanel(DeltaTime);
+    RenderBuildGameModal();
     ViewportOverlayWidget.RenderFloatingOverlays(DeltaTime);
 
     float EffectiveDeltaTime = DeltaTime;
@@ -1822,6 +1865,283 @@ bool FEditorMainPanel::RequestSaveSceneAsWithDialog()
     }
 
     return SceneWidget.SaveSceneToFilePath(PickedPath);
+}
+
+void FEditorMainPanel::RequestBuildGame()
+{
+    if (bBuildGameInProgress)
+    {
+        PushFooterLog("Packaging already in progress");
+        return;
+    }
+
+    if (SceneWidget.IsSceneDirty() && !SceneWidget.PromptSaveIfDirty())
+    {
+        PushFooterLog("Packaging canceled");
+        return;
+    }
+
+    PendingBuildSettings.GameName = "NipsGame";
+    PendingBuildSettings.StartupScene = SceneWidget.HasCurrentSceneFilePath()
+        ? SceneWidget.GetCurrentSceneFilePath()
+        : "Asset/Scene/Default.scene";
+    PendingBuildSettings.OutputDirectory = "Builds/Windows/" + PendingBuildSettings.GameName;
+    PendingBuildSettings.PlayerControllerClass = "AGameJamPlayerController";
+    PendingBuildSettings.Configuration = EGameBuildConfiguration::Development;
+    PendingBuildSettings.bCleanOutput = true;
+    PendingBuildSettings.bRunAfterBuild = false;
+    PendingBuildSettings.IncludedScenes.clear();
+    AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, PendingBuildSettings.StartupScene);
+
+    strncpy_s(BuildGameNameBuffer, PendingBuildSettings.GameName.c_str(), _TRUNCATE);
+    strncpy_s(BuildStartupSceneBuffer, PendingBuildSettings.StartupScene.c_str(), _TRUNCATE);
+    strncpy_s(BuildSceneListAddBuffer, "", _TRUNCATE);
+    strncpy_s(BuildPlayerControllerClassBuffer, PendingBuildSettings.PlayerControllerClass.c_str(), _TRUNCATE);
+    strncpy_s(BuildOutputDirectoryBuffer, PendingBuildSettings.OutputDirectory.c_str(), _TRUNCATE);
+
+    bOpenBuildGameModal = true;
+}
+
+void FEditorMainPanel::TickBuildGameTask()
+{
+    if (!bBuildGameInProgress || !BuildGameFuture.valid())
+    {
+        return;
+    }
+
+    if (BuildGameFuture.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+    {
+        return;
+    }
+
+    const FGamePackageResult Result = BuildGameFuture.get();
+    bBuildGameInProgress = false;
+    PushFooterLog(Result.bSucceeded ? "Game package created" : Result.Message);
+}
+
+void FEditorMainPanel::RenderBuildGameModal()
+{
+    if (bOpenBuildGameModal)
+    {
+        ImGui::OpenPopup(PackagingPopupName);
+        bOpenBuildGameModal = false;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(640.0f, 0.0f), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(PackagingPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        return;
+    }
+
+    if (ImGui::BeginTable("##PackagingSettingsTable", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+        ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 132.0f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Game Name");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText("##PackageGameName", BuildGameNameBuffer, IM_ARRAYSIZE(BuildGameNameBuffer));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Startup Scene");
+        ImGui::TableSetColumnIndex(1);
+        const float BrowseButtonWidth = 76.0f;
+        ImGui::SetNextItemWidth(-(BrowseButtonWidth + ImGui::GetStyle().ItemSpacing.x));
+        ImGui::InputText("##PackageStartupScene", BuildStartupSceneBuffer, IM_ARRAYSIZE(BuildStartupSceneBuffer));
+        ImGui::SameLine();
+        if (ImGui::Button("Browse##StartupScene", ImVec2(BrowseButtonWidth, 0.0f)))
+        {
+            FString PickedPath;
+            if (ToolbarWidget.OpenSceneFileDialog(PickedPath))
+            {
+                const FString RelativePath = FPaths::ToRelativeString(FPaths::ToWide(PickedPath));
+                strncpy_s(BuildStartupSceneBuffer, RelativePath.c_str(), _TRUNCATE);
+            }
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Player Controller");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText("##PackagePlayerController", BuildPlayerControllerClassBuffer, IM_ARRAYSIZE(BuildPlayerControllerClassBuffer));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Output Directory");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText("##PackageOutputDirectory", BuildOutputDirectoryBuffer, IM_ARRAYSIZE(BuildOutputDirectoryBuffer));
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Configuration");
+        ImGui::TableSetColumnIndex(1);
+        int BuildConfigIndex = PendingBuildSettings.Configuration == EGameBuildConfiguration::Development ? 0 : 1;
+        const char* ConfigItems[] = { "Development (GameClientDebug)", "Shipping (GameClientRelease)" };
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::Combo("##PackageConfiguration", &BuildConfigIndex, ConfigItems, IM_ARRAYSIZE(ConfigItems)))
+        {
+            PendingBuildSettings.Configuration = BuildConfigIndex == 0
+                ? EGameBuildConfiguration::Development
+                : EGameBuildConfiguration::Shipping;
+        }
+
+        ImGui::EndTable();
+    }
+
+    ImGui::SeparatorText("Scenes to Copy");
+    ImGui::TextDisabled("Startup scene is always included. Add extra scenes that should be copied with the package.");
+    const float SceneButtonWidth = 76.0f;
+    const float SceneAddButtonWidth = 52.0f;
+    ImGui::SetNextItemWidth(-(SceneButtonWidth + SceneAddButtonWidth + ImGui::GetStyle().ItemSpacing.x * 2.0f));
+    ImGui::InputText("##PackageSceneToAdd", BuildSceneListAddBuffer, IM_ARRAYSIZE(BuildSceneListAddBuffer));
+    ImGui::SameLine();
+    if (ImGui::Button("Browse##PackageSceneToAdd", ImVec2(SceneButtonWidth, 0.0f)))
+    {
+        FString PickedPath;
+        if (ToolbarWidget.OpenSceneFileDialog(PickedPath))
+        {
+            const FString RelativePath = FPaths::ToRelativeString(FPaths::ToWide(PickedPath));
+            strncpy_s(BuildSceneListAddBuffer, RelativePath.c_str(), _TRUNCATE);
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Add##PackageSceneToAdd", ImVec2(SceneAddButtonWidth, 0.0f)))
+    {
+        if (AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, BuildSceneListAddBuffer))
+        {
+            strncpy_s(BuildSceneListAddBuffer, "", _TRUNCATE);
+        }
+    }
+    if (ImGui::Button("Add Startup Scene"))
+    {
+        AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, BuildStartupSceneBuffer);
+    }
+
+    const float SceneListHeight = 118.0f;
+    if (ImGui::BeginChild("##PackageSceneList", ImVec2(0.0f, SceneListHeight), true, ImGuiWindowFlags_HorizontalScrollbar))
+    {
+        if (PendingBuildSettings.IncludedScenes.empty())
+        {
+            ImGui::TextDisabled("No extra scenes added.");
+        }
+        for (int32 SceneIndex = 0; SceneIndex < static_cast<int32>(PendingBuildSettings.IncludedScenes.size()); ++SceneIndex)
+        {
+            ImGui::PushID(SceneIndex);
+            ImGui::TextUnformatted(PendingBuildSettings.IncludedScenes[SceneIndex].c_str());
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 58.0f);
+            if (ImGui::SmallButton("Remove"))
+            {
+                PendingBuildSettings.IncludedScenes.erase(PendingBuildSettings.IncludedScenes.begin() + SceneIndex);
+                --SceneIndex;
+            }
+            ImGui::PopID();
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::SeparatorText("Options");
+    ImGui::Checkbox("Clean Output", &PendingBuildSettings.bCleanOutput);
+    ImGui::SameLine();
+    ImGui::Checkbox("Run After Packaging", &PendingBuildSettings.bRunAfterBuild);
+
+    const FString GameName = FPaths::Normalize(BuildGameNameBuffer);
+    const FString StartupScene = FPaths::Normalize(BuildStartupSceneBuffer);
+    const FString PlayerControllerClass = FPaths::Normalize(BuildPlayerControllerClassBuffer);
+    const FString OutputDirectory = FPaths::Normalize(BuildOutputDirectoryBuffer);
+    const bool bValidGameName = !GameName.empty();
+    const bool bValidScene = !StartupScene.empty() && std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(StartupScene)));
+    const bool bValidPlayerController = !PlayerControllerClass.empty();
+    const bool bValidOutput = !OutputDirectory.empty();
+    bool bValidIncludedScenes = true;
+    for (const FString& IncludedScene : PendingBuildSettings.IncludedScenes)
+    {
+        if (IncludedScene.empty() || !std::filesystem::exists(FPaths::ToAbsolute(FPaths::ToWide(IncludedScene))))
+        {
+            bValidIncludedScenes = false;
+            break;
+        }
+    }
+
+    ImGui::SeparatorText("Validation");
+    ImGui::Text("Configuration: %s",
+        PendingBuildSettings.Configuration == EGameBuildConfiguration::Development
+            ? "Development -> GameClientDebug|x64"
+            : "Shipping -> GameClientRelease|x64");
+    ImGui::Text("Output Exe: %s", "NipsGame.exe");
+    ImGui::Text("Scenes to Copy: %d", static_cast<int32>(PendingBuildSettings.IncludedScenes.size()));
+
+    if (bValidScene)
+    {
+        ImGui::TextColored(ImVec4(0.42f, 0.78f, 0.48f, 1.0f), "Startup scene found.");
+    }
+    if (!bValidScene)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Startup scene does not exist.");
+    }
+    if (!bValidGameName)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Game name is empty.");
+    }
+    if (!bValidPlayerController)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Player controller class is empty.");
+    }
+    if (!bValidOutput)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Output directory is empty.");
+    }
+    if (!bValidIncludedScenes)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "One or more scenes to copy do not exist.");
+    }
+    if (bBuildGameInProgress)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.58f, 0.18f, 1.0f), "Packaging is running. Check Console for live output.");
+    }
+
+    ImGui::Separator();
+    const bool bCanBuild = bValidGameName && bValidScene && bValidPlayerController && bValidOutput && bValidIncludedScenes;
+    if (!bCanBuild || bBuildGameInProgress)
+    {
+        ImGui::BeginDisabled();
+    }
+    if (ImGui::Button("Package", ImVec2(120.0f, 0.0f)))
+    {
+        PendingBuildSettings.GameName = GameName;
+        PendingBuildSettings.StartupScene = StartupScene;
+        PendingBuildSettings.PlayerControllerClass = PlayerControllerClass;
+        PendingBuildSettings.OutputDirectory = OutputDirectory;
+        AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, StartupScene);
+        PushFooterLog("Packaging game...");
+        bBuildGameInProgress = true;
+        BuildGameFuture = std::async(std::launch::async, [Settings = PendingBuildSettings]()
+        {
+            return FGamePackager::BuildAndPackage(Settings);
+        });
+        ImGui::CloseCurrentPopup();
+    }
+    if (!bCanBuild || bBuildGameInProgress)
+    {
+        ImGui::EndDisabled();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f)))
+    {
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 bool FEditorMainPanel::SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY)

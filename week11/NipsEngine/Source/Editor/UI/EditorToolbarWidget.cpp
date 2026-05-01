@@ -121,6 +121,11 @@ void FEditorToolbarWidget::SetPIEViewportFullscreenCallback(std::function<void(b
 	PIEViewportFullscreenCallback = std::move(InCallback);
 }
 
+void FEditorToolbarWidget::SetBuildGameCallback(std::function<void()> InCallback)
+{
+	BuildGameCallback = std::move(InCallback);
+}
+
 void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bool* InShowConsole,
 	bool* InShowControl,
@@ -198,6 +203,7 @@ void FEditorToolbarWidget::Render(float DeltaTime)
 
 	RenderFilesMenu();
 	RenderEditMenu();
+	RenderBuildMenu();
 	RenderViewMenu();
 	RenderSettingsMenu();
 	RenderHelpMenu();
@@ -263,6 +269,24 @@ void FEditorToolbarWidget::RenderFilesMenu()
 		ImGui::Separator();
 		ImGui::MenuItem("Reload Asset From Disk", nullptr, false, false);
 		ImGui::MenuItem("Open Asset Folder", nullptr, false, false);
+	}
+
+	ImGui::EndMenu();
+}
+
+void FEditorToolbarWidget::RenderBuildMenu()
+{
+	if (!ImGui::BeginMenu("Build"))
+	{
+		return;
+	}
+
+	if (ImGui::MenuItem("Packaging...", nullptr, false, BuildGameCallback != nullptr))
+	{
+		if (BuildGameCallback)
+		{
+			BuildGameCallback();
+		}
 	}
 
 	ImGui::EndMenu();

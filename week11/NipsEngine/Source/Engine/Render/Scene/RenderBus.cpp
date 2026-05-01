@@ -1,5 +1,4 @@
 ﻿#include "RenderBus.h"
-#include <UI/EditorConsoleWidget.h>
 
 void FRenderBus::Clear()
 {

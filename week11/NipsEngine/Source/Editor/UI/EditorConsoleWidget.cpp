@@ -8,6 +8,7 @@
 
 #include <cctype>
 #include <limits>
+#include <mutex>
 
 namespace
 {
@@ -66,11 +67,18 @@ FString FormatBytes(size_t Bytes)
 	}
 	return Buffer;
 }
+
+std::mutex GConsoleLogMutex;
 }
 
 // 콘솔 초기화 시점에 입력될 명령어를 등록한다.
 FEditorConsoleWidget::FEditorConsoleWidget() 
 {
+	FLog::SetSink([](const char* Message)
+	{
+		FEditorConsoleWidget::AddLog("%s", Message);
+	});
+
 	// 임의의 명령어 문자열이 들어왔을 때 뒤의 함수를 실행하도록 분기한다.
 	RegisterCommand("clear", "Clear console output.", [this](const TArray<FString>& Args)
 	{
@@ -102,8 +110,23 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
+
+	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 	Messages.push_back(_strdup(buf));
 	if (AutoScroll) ScrollToBottom = true;
+}
+
+void FEditorConsoleWidget::Clear()
+{
+	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
+	for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
+	Messages.clear();
+}
+
+void FEditorConsoleWidget::ClearHistory()
+{
+	for (int32 i = 0; i < History.Size; i++) free(History[i]);
+	History.clear();
 }
 
 void FEditorConsoleWidget::Render(float DeltaTime)
@@ -146,6 +169,7 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 
 	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar)) {
+		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 		for (auto& Item : Messages) {
 			if (!Filter.PassFilter(Item)) continue;
 
@@ -161,6 +185,10 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 			}
 			else if (strncmp(Item, "#", 1) == 0) {
 				Color = ImVec4(1, 0.8f, 0.6f, 1);
+				bHasColor = true;
+			}
+			else if (strncmp(Item, "[Build]", 7) == 0) {
+				Color = ImVec4(1.0f, 0.58f, 0.18f, 1.0f);
 				bHasColor = true;
 			}
 
@@ -234,6 +262,7 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 	const ImVec2 Size(0.0f, Height);
 	if (ImGui::BeginChild("##ConsoleDrawerScrollingRegion", Size, false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
+		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 		for (auto& Item : Messages)
 		{
 			if (!Filter.PassFilter(Item))
@@ -256,6 +285,11 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 			else if (strncmp(Item, "#", 1) == 0)
 			{
 				Color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f);
+				bHasColor = true;
+			}
+			else if (strncmp(Item, "[Build]", 7) == 0)
+			{
+				Color = ImVec4(1.0f, 0.58f, 0.18f, 1.0f);
 				bHasColor = true;
 			}
 
