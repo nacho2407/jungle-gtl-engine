@@ -4,6 +4,22 @@
 DEFINE_CLASS(UCapsuleComponent, UShapeComponent)
 REGISTER_FACTORY(UCapsuleComponent)
 
+void UCapsuleComponent::PostDuplicate(UObject* Original)
+{
+    UShapeComponent::PostDuplicate(Original);
+
+	UCapsuleComponent* CapsuleComp = Cast<UCapsuleComponent>(Original);
+    CapsuleHalfHeight = CapsuleComp->CapsuleHalfHeight;
+    CapsuleRadius = CapsuleComp->CapsuleRadius;
+}
+
+void UCapsuleComponent::Serialize(FArchive& Ar)
+{
+    UShapeComponent::Serialize(Ar);
+    Ar << "CapsuleHalfHeight" << CapsuleHalfHeight;
+    Ar << "CapsuleRadius" << CapsuleRadius;
+}
+
 void UCapsuleComponent::UpdateWorldAABB() const
 {
     const FVector Center = GetWorldLocation();

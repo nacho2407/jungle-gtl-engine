@@ -200,5 +200,5 @@ public:
 
 
 private:
-    UBoxComponent* BoxComponent;
+    UBoxComponent* BoxComponent = nullptr;
 };

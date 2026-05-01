@@ -6,6 +6,9 @@ class UShapeComponent : public UPrimitiveComponent
 public:
     DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
 
+    void PostDuplicate(UObject* Original) override;
+    void Serialize(FArchive& Ar) override;
+
 private:
 	FColor ShapeColor;
     bool bDrawOnlyIfSelected;

@@ -13,6 +13,9 @@ public:
         return SphereRadius * std::max(std::max(std::abs(Scale.X), std::abs(Scale.Y)), std::abs(Scale.Z));
 	}
 
+    void PostDuplicate(UObject* Original) override;
+    void Serialize(FArchive& Ar) override;
+
 private:
     float SphereRadius = 1.0f;
 

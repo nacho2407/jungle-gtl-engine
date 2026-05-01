@@ -33,6 +33,9 @@ public:
         WorldAABB.Min = Center - AbsExtent;
         WorldAABB.Max = Center + AbsExtent;
     }
+	
+    void PostDuplicate(UObject* Original) override;
+    void Serialize(FArchive& Ar) override;
 
 private:
     FVector Extent = FVector(1, 1, 1);
