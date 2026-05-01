@@ -8,30 +8,35 @@ public:
     float GetCapsuleHalfHeight() const { return CapsuleHalfHeight; }
     float GetCapsuleRadius() const { return CapsuleRadius; }
 
+	void UpdateWorldAABB() const override;
+
     float GetScaledCapsuleHalfHeight() const 
 	{
+        FVector Axis = GetWorldTransform().GetUnitAxis(EAxis::Z);
         FVector Scale = GetWorldScale();
-		return CapsuleHalfHeight * std::abs(Scale.Z); 
+        float UpAxisScale = std::sqrt(
+            Axis.X * Axis.X * Scale.X * Scale.X +
+            Axis.Y * Axis.Y * Scale.Y * Scale.Y +
+            Axis.Z * Axis.Z * Scale.Z * Scale.Z);
+		return CapsuleHalfHeight * UpAxisScale; 
 	}
     
 	float GetScaledCapsuleRadius() const
     {
+        FVector Axis = GetWorldTransform().GetUnitAxis(EAxis::Z);
         FVector Scale = GetWorldScale();
-        return CapsuleRadius * std::max(std::max(
-                                            std::abs(Scale.X),
-                                            std::abs(Scale.Y)),
-											std::abs(Scale.Z));
+
+		// Capsule Axis = Z 일 때, X/Y 만 보면 됨
+        return CapsuleRadius * std::max(std::abs(Scale.X), std::abs(Scale.Y));
     }
 
     void PostDuplicate(UObject* Original) override;
     void Serialize(FArchive& Ar) override;
 
 private:
-    float CapsuleHalfHeight = 1.0f;
-    float CapsuleRadius = 1.0f;
+    float CapsuleHalfHeight = 0.5f;
+    float CapsuleRadius = 0.5f;
 
-    // UShapeComponent을(를) 통해 상속됨
-    void UpdateWorldAABB() const override;
     bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
     EPrimitiveType GetPrimitiveType() const override;
 };
