@@ -43,6 +43,9 @@ public:
 	bool Tick(float DeltaTime, const FInputSystemSnapshot& Snapshot);
 	bool ProcessPIEInput(const FInputSystemSnapshot& Snapshot, float DeltaTime);
 
+	// Standalone에서의 ProcessInput
+	bool ProcessInput(const FInputSystemSnapshot& Snapshot, float DeltaTime);
+
 	const FInputSystemSnapshot& GetGameInputSnapshot() const { return GameInputSnapshot; }
 
 private:

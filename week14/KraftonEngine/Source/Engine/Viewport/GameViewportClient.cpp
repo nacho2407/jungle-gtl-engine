@@ -35,6 +35,12 @@ bool UGameViewportClient::ProcessPIEInput(const FInputSystemSnapshot& Snapshot, 
 	return Tick(DeltaTime, Snapshot);
 }
 
+bool UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, float DeltaTime)
+{
+	SetGameInputSnapshot(Snapshot);
+	return Tick(DeltaTime, Snapshot);
+}
+
 void UGameViewportClient::SetPIEPossessedInputEnabled(bool bEnabled)
 {
 	SetPossessed(bEnabled);
