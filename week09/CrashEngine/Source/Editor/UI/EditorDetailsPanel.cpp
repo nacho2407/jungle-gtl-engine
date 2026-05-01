@@ -499,54 +499,6 @@ static uint64 HashShadowViewProj(const FMatrix& Matrix)
     return Hash;
 }
 
-void LuaScriptEditOpen(const FString& LuaFilePath)
-{
-    std::string FullPath = FPaths::ContentRelativePath("Scripts") + "/" + LuaFilePath;
-    std::string absoluteLuaScriptPath = std::filesystem::absolute(FullPath).string();
-
-    std::wstring WidePath = FPaths::ToWide(absoluteLuaScriptPath);
-
-    HINSTANCE hInstance = ShellExecuteW(
-        NULL,
-        L"open",
-        WidePath.c_str(),
-        NULL,
-        NULL,
-        SW_SHOWNORMAL
-    );
-
-    if ((INT_PTR)hInstance <= 32)
-    {
-        UE_LOG(UI, Error, "Error: Failed to open script file: %s\n", LuaFilePath.c_str());
-    }
-}
-
-static FString CreateLuaScript(AActor* TargetActor)
-{
-    std::string scriptsPath = FPaths::ContentRelativePath("Scripts") + "/";
-    int index = 0;
-    std::string levelName = TargetActor->GetLevel()->GetFName().ToString();
-    std::string actorName = TargetActor->GetFName().ToString();
-
-    std::string fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
-
-    std::string fullPath = scriptsPath + fileName;
-    while (std::filesystem::exists(fullPath))
-    {
-        index++;
-        fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
-        fullPath = scriptsPath + fileName;
-    }
-
-    std::string templatePath = FPaths::ContentRelativePath("Scripts/Template.lua");
-    if (std::filesystem::exists(templatePath))
-    {
-        std::filesystem::copy_file(templatePath, fullPath, std::filesystem::copy_options::overwrite_existing);
-    }
-
-    return fileName;
-}
-
 static bool CompareShadowMapDataStable(const FShadowMapData& A, const FShadowMapData& B)
 {
     if (A.AtlasPageIndex != B.AtlasPageIndex)
@@ -2045,7 +1997,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         ImGui::SameLine();
         if (ImGui::Button("Create", ImVec2(CreateBtnWidth, 0.0f)))
         {
-            FString FileName = CreateLuaScript(SelectedComponent->GetOwner());
+            FString FileName = FLuaScriptManager::Get().CreateScript(SelectedComponent->GetOwner());
             if (!FileName.empty())
             {
                 if (!CurrentScript.empty()) LuaScriptComponent->clearScript();
@@ -2086,7 +2038,7 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
 
             if (ImGui::Button("Edit", ImVec2(ButtonWidth, 0.0f)))
             {
-                LuaScriptEditOpen(CurrentScript);
+                FLuaScriptManager::Get().OpenScriptInEditor(CurrentScript);
             }
             ImGui::SameLine();
             if (ImGui::Button("Reload", ImVec2(ButtonWidth, 0.0f)))

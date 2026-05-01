@@ -9,8 +9,10 @@ class FLuaScriptManager : public TSingleton<FLuaScriptManager>
 public:
     void Init();
 
+    FString CreateScript(class AActor* TargetActor);
     bool DeleteScript(const FString& FileName);
     bool RenameScript(const FString& OldName, const FString& NewName);
+    void OpenScriptInEditor(const FString& FileName);
     TArray<FString> GetAvailableScripts() const;
 
 private:

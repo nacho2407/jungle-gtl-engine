@@ -1,6 +1,8 @@
 ﻿#include "LuaScriptManager.h"
 #include "Component/LuaScriptComponent.h"
 #include "Core/Watcher/DirectoryWatcher.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Level.h"
 #include "Platform/Paths.h"
 #include "Object/ObjectIterator.h"
 
@@ -11,6 +13,35 @@ void FLuaScriptManager::Init()
             this->OnLuaFileChanged(FileName);
         }
     );
+}
+
+FString FLuaScriptManager::CreateScript(class AActor* TargetActor)
+{
+    if (!TargetActor) return "";
+
+    std::string scriptsPath = FPaths::ContentRelativePath("Scripts") + "/";
+    int index = 0;
+
+    std::string levelName = TargetActor->GetLevel()->GetFName().ToString();
+    std::string actorName = TargetActor->GetFName().ToString();
+
+    std::string fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
+    std::string fullPath = scriptsPath + fileName;
+
+    while (std::filesystem::exists(fullPath))
+    {
+        index++;
+        fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
+        fullPath = scriptsPath + fileName;
+    }
+
+    std::string templatePath = FPaths::ContentRelativePath("Scripts/Template.lua");
+    if (std::filesystem::exists(templatePath))
+    {
+        std::filesystem::copy_file(templatePath, fullPath, std::filesystem::copy_options::overwrite_existing);
+    }
+
+    return FString(fileName.c_str());
 }
 
 void FLuaScriptManager::OnLuaFileChanged(const FString& FileName)
@@ -85,6 +116,30 @@ bool FLuaScriptManager::RenameScript(const FString& OldName, const FString& NewN
     }
 
     return true;
+}
+
+void FLuaScriptManager::OpenScriptInEditor(const FString& FileName)
+{
+    if (FileName.empty() || FileName == "None") return;
+
+    std::string FullPath = FPaths::ContentRelativePath("Scripts") + "/" + FileName;
+    std::string absoluteLuaScriptPath = std::filesystem::absolute(FullPath).string();
+
+    std::wstring WidePath = FPaths::ToWide(absoluteLuaScriptPath);
+
+    HINSTANCE hInstance = ShellExecuteW(
+        NULL,
+        L"open",
+        WidePath.c_str(),
+        NULL,
+        NULL,
+        SW_SHOWNORMAL
+    );
+
+    if ((INT_PTR)hInstance <= 32)
+    {
+        printf("Error: Failed to open script file: %s\n", FileName.c_str());
+    }
 }
 
 TArray<FString> FLuaScriptManager::GetAvailableScripts() const
