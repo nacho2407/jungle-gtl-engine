@@ -3,7 +3,7 @@
 #include "Math/Utils.h"
 #include "UI/EditorConsoleWidget.h"
 
-void FCoroutineScheduler::Start(sol::function Function)
+void FCoroutineScheduler::StartCoroutine(sol::function Function)
 {
     FCoroutine NewCoroutine = MakeCoroutine(Function);
     
@@ -87,6 +87,7 @@ void FCoroutineScheduler::StopAll()
     PendingCoroutines.clear();
 }
 
+//  코루틴 생성
 FCoroutine FCoroutineScheduler::MakeCoroutine(sol::function Function)
 {
     sol::state_view Lua(Function.lua_state());
@@ -110,6 +111,7 @@ void FCoroutineScheduler::Resume(FCoroutine& Coroutine)
 {
     sol::protected_function_result Result = Coroutine.Routine();
     
+    //  에러 확인
     if (!Result.valid())
     {
         sol::error Error = Result;
@@ -120,7 +122,7 @@ void FCoroutineScheduler::Resume(FCoroutine& Coroutine)
         return;
     }
     
-    //  함수가 끝난 것
+    //  함수가 끝난 것 (코루틴 끝)
     if (Coroutine.Routine.status() == sol::call_status::ok)
     {
         Coroutine.bFinished = true;
@@ -130,6 +132,7 @@ void FCoroutineScheduler::Resume(FCoroutine& Coroutine)
     ProcessYieldResult(Coroutine, Result);
 }
 
+//  Lua 쪽의 wait 자체를 C++로 바꿔주는 함수
 void FCoroutineScheduler::ProcessYieldResult(FCoroutine& Coroutine, const sol::protected_function_result& Result)
 {
     if (Result.return_count() <= 0)
