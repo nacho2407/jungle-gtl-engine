@@ -13,7 +13,6 @@ IMPLEMENT_CLASS(AFakeLightActor, AActor)
 
 AFakeLightActor::AFakeLightActor()
 {
-    SetActorTickEnabled(true);
     bTickInEditor = true;
 }
 
