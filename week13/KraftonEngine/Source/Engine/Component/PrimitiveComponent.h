@@ -6,6 +6,7 @@
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
 #include "Core/EngineTypes.h"
+#include "Core/Delegate.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 
@@ -13,6 +14,37 @@ class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
 class FOctree;
+
+// Overlap/Hit 델리게이트 시그니처
+// OnComponentBeginOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
+DECLARE_MULTICAST_DELEGATE_SixParams(
+	FComponentBeginOverlapSignature,
+	UPrimitiveComponent* /*OverlappedComponent*/,
+	AActor* /*OtherActor*/,
+	UPrimitiveComponent* /*OtherComp*/,
+	int32 /*OtherBodyIndex*/,
+	bool /*bFromSweep*/,
+	const FHitResult& /*SweepResult*/
+);
+
+// OnComponentEndOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex)
+DECLARE_MULTICAST_DELEGATE_FourParams(
+	FComponentEndOverlapSignature,
+	UPrimitiveComponent* /*OverlappedComponent*/,
+	AActor* /*OtherActor*/,
+	UPrimitiveComponent* /*OtherComp*/,
+	int32 /*OtherBodyIndex*/
+);
+
+// OnComponentHit(HitComponent, OtherActor, OtherComp, NormalImpulse, HitResult)
+DECLARE_MULTICAST_DELEGATE_FiveParams(
+	FComponentHitSignature,
+	UPrimitiveComponent* /*HitComponent*/,
+	AActor* /*OtherActor*/,
+	UPrimitiveComponent* /*OtherComp*/,
+	FVector /*NormalImpulse*/,
+	const FHitResult& /*HitResult*/
+);
 
 class UPrimitiveComponent : public USceneComponent
 {
@@ -83,6 +115,38 @@ public:
 		bInOctreeOverflow = false;
 	}
 
+	// --- Overlap / Hit ---
+
+	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
+	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
+
+	// 서브클래스가 오버라이드할 수 있는 가상 함수 — 델리게이트 브로드캐스트 전에 호출됨
+	virtual void NotifyComponentBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	virtual void NotifyComponentEndOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
+
+	virtual void NotifyComponentHit(
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		FVector NormalImpulse,
+		const FHitResult& HitResult);
+
+	// 멀티캐스트 델리게이트 — 외부 바인딩용
+	FComponentBeginOverlapSignature OnComponentBeginOverlap;
+	FComponentEndOverlapSignature OnComponentEndOverlap;
+	FComponentHitSignature OnComponentHit;
+
 protected:
 	void OnTransformDirty() override;
 	void EnsureWorldAABBUpdated() const;
@@ -95,8 +159,9 @@ protected:
 	bool bIsVisible = true;
 	bool bCastShadow = true;
 	bool bCastShadowAsTwoSided = false;
+	bool bGenerateOverlapEvents = false;
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
-	
+
 	FOctree* OctreeNode = nullptr;
 	bool bInOctreeOverflow = false;
 };
