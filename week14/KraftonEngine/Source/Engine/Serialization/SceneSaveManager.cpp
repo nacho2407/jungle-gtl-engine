@@ -169,6 +169,8 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 
 	for (AActor* Actor : World->GetActors()) {
 		if (!Actor) continue;
+		// Primitives 블록은 AStaticMeshActor 전용 — 다른 Actor의 자식 StaticMeshComponent는 제외
+		if (!Actor->IsA<AStaticMeshActor>()) continue;
 
 		for (UActorComponent* Comp : Actor->GetComponents()) {
 			if (!Comp) continue;

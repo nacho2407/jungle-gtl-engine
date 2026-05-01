@@ -26,6 +26,9 @@
 #include "Component/Light/LightComponentBase.h"
 
 #include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/BoxActor.h"
+#include "GameFramework/SphereActor.h"
+#include "GameFramework/CapsuleActor.h"
 
 #include <algorithm>
 
@@ -1827,6 +1830,10 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
 		PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
 		PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
+		ImGui::Separator();
+		PlaceActorMenuItem("Box Collider", EViewportPlaceActorType::BoxCollider);
+		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
+		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 
 		ImGui::EndMenu();
 	}
@@ -2014,6 +2021,36 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
 			SpawnLocation.Z += 1.0f;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::BoxCollider:
+	{
+		ABoxActor* Actor = World->SpawnActor<ABoxActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::SphereCollider:
+	{
+		ASphereActor* Actor = World->SpawnActor<ASphereActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::CapsuleCollider:
+	{
+		ACapsuleActor* Actor = World->SpawnActor<ACapsuleActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
 		}
 		break;
 	}

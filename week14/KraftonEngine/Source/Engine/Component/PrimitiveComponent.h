@@ -137,6 +137,9 @@ public:
 
 	// --- Overlap / Hit ---
 
+	void SetSimulatePhysics(bool bInSimulate) { bSimulatePhysics = bInSimulate; }
+	bool GetSimulatePhysics() const { return bSimulatePhysics; }
+
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 
@@ -179,6 +182,7 @@ protected:
 	bool bIsVisible = true;
 	bool bCastShadow = true;
 	bool bCastShadowAsTwoSided = false;
+	bool bSimulatePhysics = false;
 	bool bGenerateOverlapEvents = false;
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;

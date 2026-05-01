@@ -6,6 +6,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Math/Quat.h"
+#include "Core/Log.h"
 
 // PhysX headers
 #include <PxPhysicsAPI.h>
@@ -28,6 +29,141 @@ public:
 
 static FPhysXErrorCallback GPhysXErrorCallback;
 static PxDefaultAllocator GPhysXAllocator;
+
+// ============================================================
+// PhysX Foundation/Physics 싱글턴
+// PxCreateFoundation은 프로세스당 1회만 허용 — 복수 Scene에서 공유
+// ============================================================
+static PxFoundation* GSharedFoundation = nullptr;
+static PxPhysics* GSharedPhysics = nullptr;
+static int32 GSharedRefCount = 0;
+
+static void AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhysics)
+{
+	if (GSharedRefCount == 0)
+	{
+		GSharedFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, GPhysXAllocator, GPhysXErrorCallback);
+		if (GSharedFoundation)
+		{
+			GSharedPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *GSharedFoundation, PxTolerancesScale());
+		}
+	}
+	++GSharedRefCount;
+	OutFoundation = GSharedFoundation;
+	OutPhysics = GSharedPhysics;
+}
+
+static void ReleaseSharedPhysX()
+{
+	if (--GSharedRefCount <= 0)
+	{
+		if (GSharedPhysics) { GSharedPhysics->release(); GSharedPhysics = nullptr; }
+		if (GSharedFoundation) { GSharedFoundation->release(); GSharedFoundation = nullptr; }
+		GSharedRefCount = 0;
+	}
+}
+
+// ============================================================
+// PhysX Simulation Event Callback
+// ============================================================
+class FPhysXSimulationCallback : public PxSimulationEventCallback
+{
+public:
+	// Block 접촉 → NotifyComponentHit
+	void onContact(const PxContactPairHeader& PairHeader,
+		const PxContactPair* Pairs, PxU32 Count) override
+	{
+		if (PairHeader.flags & PxContactPairHeaderFlag::eREMOVED_ACTOR_0
+			|| PairHeader.flags & PxContactPairHeaderFlag::eREMOVED_ACTOR_1)
+			return;
+
+		auto* CompA = static_cast<UPrimitiveComponent*>(PairHeader.actors[0]->userData);
+		auto* CompB = static_cast<UPrimitiveComponent*>(PairHeader.actors[1]->userData);
+		if (!CompA || !CompB) return;
+
+		for (PxU32 i = 0; i < Count; ++i)
+		{
+			const PxContactPair& CP = Pairs[i];
+			if (!(CP.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)) continue;
+
+			// Contact point 추출
+			PxContactPairPoint ContactPoints[1];
+			PxU32 NumPoints = CP.extractContacts(ContactPoints, 1);
+
+			FVector ContactPos(0, 0, 0);
+			FVector ContactNormal(0, 0, 1);
+			float Penetration = 0.0f;
+
+			if (NumPoints > 0)
+			{
+				ContactPos = FVector(ContactPoints[0].position.x, ContactPoints[0].position.y, ContactPoints[0].position.z);
+				ContactNormal = FVector(ContactPoints[0].normal.x, ContactPoints[0].normal.y, ContactPoints[0].normal.z);
+				Penetration = ContactPoints[0].separation; // 음수 = 관통
+			}
+
+			FVector NormalImpulse = ContactNormal * Penetration;
+
+			// A → Hit 통지
+			FHitResult HitA;
+			HitA.bHit = true;
+			HitA.HitComponent = CompB;
+			HitA.HitActor = CompB->GetOwner();
+			HitA.WorldHitLocation = ContactPos;
+			HitA.ImpactNormal = ContactNormal;
+			HitA.WorldNormal = ContactNormal;
+			HitA.PenetrationDepth = -Penetration;
+			CompA->NotifyComponentHit(CompA, CompB->GetOwner(), CompB, NormalImpulse, HitA);
+
+			// B → Hit 통지 (법선 반전)
+			FHitResult HitB;
+			HitB.bHit = true;
+			HitB.HitComponent = CompA;
+			HitB.HitActor = CompA->GetOwner();
+			HitB.WorldHitLocation = ContactPos;
+			HitB.ImpactNormal = ContactNormal * -1.0f;
+			HitB.WorldNormal = ContactNormal * -1.0f;
+			HitB.PenetrationDepth = -Penetration;
+			CompB->NotifyComponentHit(CompB, CompA->GetOwner(), CompA, NormalImpulse * -1.0f, HitB);
+		}
+	}
+
+	// Trigger 진입/이탈 → BeginOverlap / EndOverlap
+	void onTrigger(PxTriggerPair* Pairs, PxU32 Count) override
+	{
+		for (PxU32 i = 0; i < Count; ++i)
+		{
+			const PxTriggerPair& TP = Pairs[i];
+
+			if (TP.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
+				continue;
+
+			auto* TriggerComp = static_cast<UPrimitiveComponent*>(TP.triggerActor->userData);
+			auto* OtherComp = static_cast<UPrimitiveComponent*>(TP.otherActor->userData);
+			if (!TriggerComp || !OtherComp) continue;
+
+			if (TP.status == PxPairFlag::eNOTIFY_TOUCH_FOUND)
+			{
+				FHitResult DummyHit;
+				if (TriggerComp->GetGenerateOverlapEvents())
+					TriggerComp->NotifyComponentBeginOverlap(TriggerComp, OtherComp->GetOwner(), OtherComp, 0, false, DummyHit);
+				if (OtherComp->GetGenerateOverlapEvents())
+					OtherComp->NotifyComponentBeginOverlap(OtherComp, TriggerComp->GetOwner(), TriggerComp, 0, false, DummyHit);
+			}
+			else if (TP.status == PxPairFlag::eNOTIFY_TOUCH_LOST)
+			{
+				if (TriggerComp->GetGenerateOverlapEvents())
+					TriggerComp->NotifyComponentEndOverlap(TriggerComp, OtherComp->GetOwner(), OtherComp, 0);
+				if (OtherComp->GetGenerateOverlapEvents())
+					OtherComp->NotifyComponentEndOverlap(OtherComp, TriggerComp->GetOwner(), TriggerComp, 0);
+			}
+		}
+	}
+
+	void onConstraintBreak(PxConstraintInfo*, PxU32) override {}
+	void onWake(PxActor**, PxU32) override {}
+	void onSleep(PxActor**, PxU32) override {}
+	void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) override {}
+};
 
 // ============================================================
 // Transform 변환 유틸
@@ -139,26 +275,38 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 {
 	World = InWorld;
 
-	// Foundation
-	Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, GPhysXAllocator, GPhysXErrorCallback);
-	if (!Foundation) return;
-
-	// Physics
-	Physics = PxCreatePhysics(PX_PHYSICS_VERSION, *Foundation, PxTolerancesScale());
-	if (!Physics) return;
+	// Foundation / Physics — 프로세스 싱글턴 공유
+	AcquireSharedPhysX(Foundation, Physics);
+	if (!Foundation || !Physics)
+	{
+		UE_LOG("[PhysX] Failed to create Foundation or Physics");
+		return;
+	}
 
 	// CPU Dispatcher
 	Dispatcher = PxDefaultCpuDispatcherCreate(2);
 
+	// Event callback
+	EventCallback = new FPhysXSimulationCallback();
+
 	// Scene
 	PxSceneDesc SceneDesc(Physics->getTolerancesScale());
-	SceneDesc.gravity = PxVec3(0.0f, 0.0f, -981.0f); // Z-up, cm 단위
+	SceneDesc.gravity = PxVec3(0.0f, 0.0f, -9.81f); // Z-up, m 단위
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = KraftonFilterShader;
+	SceneDesc.simulationEventCallback = EventCallback;
 	Scene = Physics->createScene(SceneDesc);
+
+	if (!Scene)
+	{
+		UE_LOG("[PhysX] Failed to create Scene");
+		return;
+	}
 
 	// Default material (static friction, dynamic friction, restitution)
 	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.3f);
+
+	UE_LOG("[PhysX] Initialized successfully (Scene=%p)", Scene);
 }
 
 void FPhysXPhysicsScene::Shutdown()
@@ -176,9 +324,13 @@ void FPhysXPhysicsScene::Shutdown()
 
 	if (DefaultMaterial) { DefaultMaterial->release(); DefaultMaterial = nullptr; }
 	if (Scene) { Scene->release(); Scene = nullptr; }
+	if (EventCallback) { delete EventCallback; EventCallback = nullptr; }
 	if (Dispatcher) { Dispatcher->release(); Dispatcher = nullptr; }
-	if (Physics) { Physics->release(); Physics = nullptr; }
-	if (Foundation) { Foundation->release(); Foundation = nullptr; }
+
+	// Foundation/Physics는 공유 싱글턴 — release 카운트 감소만
+	Foundation = nullptr;
+	Physics = nullptr;
+	ReleaseSharedPhysX();
 
 	World = nullptr;
 }
@@ -317,8 +469,8 @@ PxRigidActor* FPhysXPhysicsScene::CreateBodyForComponent(UPrimitiveComponent* Co
 	PxTransform BodyTransform = GetPxTransform(Comp);
 	PxRigidActor* Body = nullptr;
 
-	bool bSimulate = (Comp->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics);
-	if (bSimulate)
+	bool bDynamic = Comp->GetSimulatePhysics();
+	if (bDynamic)
 	{
 		PxRigidDynamic* Dynamic = Physics->createRigidDynamic(BodyTransform);
 		PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Dynamic, Geom.any(), *DefaultMaterial);
