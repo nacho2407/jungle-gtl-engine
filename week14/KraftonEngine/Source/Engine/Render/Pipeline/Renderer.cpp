@@ -137,3 +137,24 @@ void FRenderer::EndFrame()
 {
 	Device.Present();
 }
+
+void FRenderer::BlitToBackBuffer(ID3D11ShaderResourceView* SourceSRV)
+{
+	if (!SourceSRV)
+	{
+		return;
+	}
+
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
+	FShader* Shader = FShaderManager::Get().FindOrCreate(EShaderPath::Blit);
+	Shader->Bind(Ctx);
+
+	Ctx->PSSetShaderResources(0, 1, &SourceSRV);
+
+	Ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Ctx->Draw(3, 0);
+
+	ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
+	Ctx->PSSetShaderResources(0, 1, NullSRV);
+}
