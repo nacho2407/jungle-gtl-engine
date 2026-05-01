@@ -23,6 +23,16 @@ void FLuaScriptManager::Init()
     bWatcherRegistered = true;
 }
 
+void FLuaScriptManager::Release()
+{
+	if (!bWatcherRegistered)
+	{
+		return;
+	}
+	
+	bWatcherRegistered = false;
+}
+
 FString FLuaScriptManager::CreateScript(class AActor* TargetActor)
 {
     if (!TargetActor) return "";
