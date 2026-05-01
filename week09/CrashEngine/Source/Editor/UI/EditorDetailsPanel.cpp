@@ -798,7 +798,29 @@ void FEditorDetailsPanel::RenderActorProperties(AActor* PrimaryActor, const TArr
     bool bVisible = PrimaryActor->IsVisible();
     if (ImGui::Checkbox("Visible", &bVisible))
     {
-        PrimaryActor->SetVisible(bVisible);
+        for (AActor* Actor : SelectedActors)
+        {
+            if (Actor)
+            {
+                Actor->SetVisible(bVisible);
+            }
+        }
+    }
+
+	ImGui::Separator();
+    ImGui::Text("Tick");
+    ImGui::Spacing();
+
+    bool bActorTickEnabled = PrimaryActor->IsActorTickEnabled();
+    if (ImGui::Checkbox("Actor Tick Enabled", &bActorTickEnabled))
+    {
+        for (AActor* Actor : SelectedActors)
+        {
+            if (Actor)
+            {
+                Actor->SetActorTickEnabled(bActorTickEnabled);
+            }
+        }
     }
 }
 

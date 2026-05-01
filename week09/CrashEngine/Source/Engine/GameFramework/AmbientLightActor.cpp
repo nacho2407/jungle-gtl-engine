@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(AAmbientLightActor, AActor)
 
 AAmbientLightActor::AAmbientLightActor()
 {
-    bNeedsTick = false;
+    SetActorTickEnabled(false);
     bTickInEditor = false;
 }
 

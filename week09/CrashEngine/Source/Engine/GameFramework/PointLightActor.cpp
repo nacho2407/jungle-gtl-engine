@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(APointLightActor, AActor)
 
 APointLightActor::APointLightActor()
 {
-    bNeedsTick = false;
+    SetActorTickEnabled(false);
     bTickInEditor = false;
 }
 

@@ -10,7 +10,7 @@ IMPLEMENT_CLASS(AFireballActor, AActor);
 
 AFireballActor::AFireballActor()
 {
-    bNeedsTick = true;
+    SetActorTickEnabled(true);
     bTickInEditor = true;
 }
 
