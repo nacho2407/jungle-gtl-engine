@@ -5,6 +5,8 @@
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/CameraManager.h"
+#include "GameFramework/World.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
 #include "UI/UIManager.h"
@@ -148,6 +150,29 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;
 	Key["F1"] = VK_F1;
+	Key["F2"] = VK_F2;
+
+	sol::table CameraManager = Lua.create_named_table("CameraManager");
+	CameraManager.set_function("ToggleActorCamera", [](const FString& ActorName)
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return false;
+		}
+
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		return Manager ? Manager->ToggleActiveCameraForActor(ActorName) : false;
+	});
+	CameraManager.set_function("ToggleOwnerCamera", [](AActor* Actor)
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return false;
+		}
+
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		return Manager ? Manager->ToggleActiveCameraForActor(Actor) : false;
+	});
 }
 
 void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
