@@ -316,6 +316,10 @@ void UPrimitiveComponent::MarkRenderStateDirty()
     CreateRenderState();
 }
 
+void UPrimitiveComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
+{
+}
+
 void UPrimitiveComponent::OnTransformDirty()
 {
     bWorldAABBDirty = true;

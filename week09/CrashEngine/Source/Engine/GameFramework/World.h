@@ -16,13 +16,14 @@
 
 class UCameraComponent;
 class UPrimitiveComponent;
+class FCollisionManager;
 
-// UWorld는 월드 실행 상태와 레벨 구성을 관리합니다.
+    // UWorld는 월드 실행 상태와 레벨 구성을 관리합니다.
 class UWorld : public UObject
 {
 public:
     DECLARE_CLASS(UWorld, UObject)
-    UWorld() = default;
+    UWorld();
     ~UWorld() override;
 
     // PIE 월드 복제용 — 자체 Actor 리스트를 순회하며 각 Actor를 새 World로 Duplicate.
@@ -73,6 +74,8 @@ public:
     EWorldType GetWorldType() const { return WorldType; }
     void UpdateActorInOctree(AActor* actor);
 
+	FCollisionManager* GetCollisionManager() { return CollisionManager.get(); }
+
 private:
     // TArray<AActor*> Actors;
     ULevel* PersistentLevel;
@@ -93,6 +96,8 @@ private:
 
     FSpatialPartition Partition;
     EWorldType WorldType = EWorldType::Editor;
+
+	std::unique_ptr<FCollisionManager> CollisionManager;
 };
 
 template <typename T>

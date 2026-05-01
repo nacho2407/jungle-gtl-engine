@@ -1,4 +1,4 @@
-// 수학 영역에서 공유되는 교차 판정 유틸리티입니다.
+﻿// 수학 영역에서 공유되는 교차 판정 유틸리티입니다.
 #pragma once
 
 #include <algorithm>
@@ -209,4 +209,160 @@ inline bool IntersectOBBAABB(const FVector& Center, const FVector& Extent, const
 
     return true;
 }
+// OBB vs OBB 임시
+inline bool IntersectOBBOBB(
+    const FVector& CenterA, const FVector& ExtentA, const FRotator& RotA,
+    const FVector& CenterB, const FVector& ExtentB, const FRotator& RotB)
+{
+    FVector AxisA[3];
+    AxisA[0] = RotA.GetForwardVector();
+    AxisA[1] = RotA.GetRightVector();
+    AxisA[2] = RotA.GetUpVector();
+
+    FVector AxisB[3];
+    AxisB[0] = RotB.GetForwardVector();
+    AxisB[1] = RotB.GetRightVector();
+    AxisB[2] = RotB.GetUpVector();
+
+    float ExtA[3] = { ExtentA.X, ExtentA.Y, ExtentA.Z };
+    float ExtB[3] = { ExtentB.X, ExtentB.Y, ExtentB.Z };
+
+    // -------------------------------------------------------------------------
+    // 2. 거리 벡터 및 내적 캐싱
+    // -------------------------------------------------------------------------
+    // 두 중심점 간의 벡터를 구하고, 이를 A의 로컬 공간으로 투영합니다.
+    FVector V = CenterB - CenterA;
+    float T[3] = { V.Dot(AxisA[0]), V.Dot(AxisA[1]), V.Dot(AxisA[2]) };
+
+    float R[3][3];
+    float AbsR[3][3];
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            R[i][j] = AxisA[i].Dot(AxisB[j]);
+            AbsR[i][j] = std::abs(R[i][j]) + EPSILON;
+        }
+    }
+
+    float ra, rb;
+
+    // -------------------------------------------------------------------------
+    // 3. 분리축 정리 (SAT) - 15개 축 테스트
+    // -------------------------------------------------------------------------
+
+    // Test 1~3: A의 로컬 축 3개
+    for (int i = 0; i < 3; i++)
+    {
+        ra = ExtA[i];
+        rb = ExtB[0] * AbsR[i][0] + ExtB[1] * AbsR[i][1] + ExtB[2] * AbsR[i][2];
+        if (std::abs(T[i]) > ra + rb)
+            return false;
+    }
+
+    // Test 4~6: B의 로컬 축 3개
+    for (int i = 0; i < 3; i++)
+    {
+        ra = ExtA[0] * AbsR[0][i] + ExtA[1] * AbsR[1][i] + ExtA[2] * AbsR[2][i];
+        rb = ExtB[i];
+        if (std::abs(V.Dot(AxisB[i])) > ra + rb)
+            return false;
+    }
+
+    // Test 7~15: A의 축 3개 x B의 축 3개를 외적(Cross Product)하여 나오는 9개의 직교 축
+    // (연산 최적화를 위해 외적 공식을 스칼라 연산으로 미리 풀어서 하드코딩된 상태입니다)
+
+    // 7. A0 x B0
+    ra = ExtA[1] * AbsR[2][0] + ExtA[2] * AbsR[1][0];
+    rb = ExtB[1] * AbsR[0][2] + ExtB[2] * AbsR[0][1];
+    if (std::abs(T[2] * R[1][0] - T[1] * R[2][0]) > ra + rb)
+        return false;
+
+    // 8. A0 x B1
+    ra = ExtA[1] * AbsR[2][1] + ExtA[2] * AbsR[1][1];
+    rb = ExtB[0] * AbsR[0][2] + ExtB[2] * AbsR[0][0];
+    if (std::abs(T[2] * R[1][1] - T[1] * R[2][1]) > ra + rb)
+        return false;
+
+    // 9. A0 x B2
+    ra = ExtA[1] * AbsR[2][2] + ExtA[2] * AbsR[1][2];
+    rb = ExtB[0] * AbsR[0][1] + ExtB[1] * AbsR[0][0];
+    if (std::abs(T[2] * R[1][2] - T[1] * R[2][2]) > ra + rb)
+        return false;
+
+    // 10. A1 x B0
+    ra = ExtA[0] * AbsR[2][0] + ExtA[2] * AbsR[0][0];
+    rb = ExtB[1] * AbsR[1][2] + ExtB[2] * AbsR[1][1];
+    if (std::abs(T[0] * R[2][0] - T[2] * R[0][0]) > ra + rb)
+        return false;
+
+    // 11. A1 x B1
+    ra = ExtA[0] * AbsR[2][1] + ExtA[2] * AbsR[0][1];
+    rb = ExtB[0] * AbsR[1][2] + ExtB[2] * AbsR[1][0];
+    if (std::abs(T[0] * R[2][1] - T[2] * R[0][1]) > ra + rb)
+        return false;
+
+    // 12. A1 x B2
+    ra = ExtA[0] * AbsR[2][2] + ExtA[2] * AbsR[0][2];
+    rb = ExtB[0] * AbsR[1][1] + ExtB[1] * AbsR[1][0];
+    if (std::abs(T[0] * R[2][2] - T[2] * R[0][2]) > ra + rb)
+        return false;
+
+    // 13. A2 x B0
+    ra = ExtA[0] * AbsR[1][0] + ExtA[1] * AbsR[0][0];
+    rb = ExtB[1] * AbsR[2][2] + ExtB[2] * AbsR[2][1];
+    if (std::abs(T[1] * R[0][0] - T[0] * R[1][0]) > ra + rb)
+        return false;
+
+    // 14. A2 x B1
+    ra = ExtA[0] * AbsR[1][1] + ExtA[1] * AbsR[0][1];
+    rb = ExtB[0] * AbsR[2][2] + ExtB[2] * AbsR[2][0];
+    if (std::abs(T[1] * R[0][1] - T[0] * R[1][1]) > ra + rb)
+        return false;
+
+    // 15. A2 x B2
+    ra = ExtA[0] * AbsR[1][2] + ExtA[1] * AbsR[0][2];
+    rb = ExtB[0] * AbsR[2][1] + ExtB[1] * AbsR[2][0];
+    if (std::abs(T[1] * R[0][2] - T[0] * R[1][2]) > ra + rb)
+        return false;
+
+    // 위 15개의 분리축 테스트를 모두 통과했다면, 그림자가 겹치지 않는 공간이 없다는 뜻!
+    // 즉, 두 OBB는 교차(충돌)하고 있습니다.
+    return true;
+}
+
+// Sphere vs OBB 임시
+inline bool IntersectSphereOBB(
+    const FVector& SphereCenter, float SphereRadius,
+    const FVector& BoxCenter, const FVector& BoxExtent, const FRotator& BoxRot)
+{
+    return true;
+}
+
+// OBB vs Capsule 임시
+inline bool IntersectOBBCapsule(
+    const FVector& BoxCenter, const FVector& BoxExtent, const FRotator& BoxRot,
+    const FVector& CapCenter, float CapHalfHeight, float CapRadius, const FVector& CapUpVector)
+{
+    return true;
+}
+
+// 선분과 점 사이의 최단거리 점 임시 (컴파일을 위해 대상 Point를 그대로 반환)
+inline FVector ClosestPointOnSegment(
+    const FVector& Point, const FVector& LineStart, const FVector& LineEnd)
+{
+    return Point;
+}
+
+// 선분과 선분 사이의 최단거리 점 두 개 임시 (컴파일을 위해 각 선분의 시작점을 반환)
+inline void ClosestPointsBetweenSegments(
+    const FVector& Line1Start, const FVector& Line1End,
+    const FVector& Line2Start, const FVector& Line2End,
+    FVector& OutPoint1, FVector& OutPoint2)
+{
+    OutPoint1 = Line1Start;
+    OutPoint2 = Line2Start;
+}
+
 } // namespace FMath

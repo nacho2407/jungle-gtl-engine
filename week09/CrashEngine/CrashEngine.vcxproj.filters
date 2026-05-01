@@ -1056,6 +1056,16 @@
     <ClCompile Include="Source\Editor\Input\EditorViewportTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
+    <ClCompile Include="Source\Engine\Core\CoreGlobals.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\ShapeComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
+    <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp" />
+    <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1691,9 +1701,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h">
-      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h">
       <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
@@ -1886,8 +1893,37 @@
     <ClInclude Include="Source\Editor\Input\EditorViewportTool.h">
       <Filter>Source\Editor\Input</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
+    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
+    <ClInclude Include="Source\Engine\Core\CoreGlobals.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\LogMacros.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\LogOutputDevice.h" />
+    <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowMapSettings.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\ShapeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\CollisionManager.h" />
+    <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

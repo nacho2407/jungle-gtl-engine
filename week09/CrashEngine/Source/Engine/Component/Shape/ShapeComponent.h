@@ -1,0 +1,28 @@
+﻿#pragma once
+#include "Engine/Component/PrimitiveComponent.h"
+
+class FShapeProxy;
+
+class UShapeComponent : public UPrimitiveComponent
+{
+public:
+    DECLARE_CLASS(UShapeComponent, UPrimitiveComponent)
+    UShapeComponent();
+    ~UShapeComponent();
+
+    //void BeginPlay() override;
+
+    //void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    //void PostEditProperty(const char* PropertyName) override;
+    void Serialize(FArchive& Ar) override;
+
+    virtual void OnTransformDirty() override;
+
+	FColor GetColor(){  return ShapeColor;  }
+
+	virtual FShapeProxy* CreateShapeProxy();
+
+protected:
+    FColor ShapeColor = { 0, 255, 0, 1 };
+    bool bDrawOnlyIfSelected;
+};
