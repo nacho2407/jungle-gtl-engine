@@ -1344,5 +1344,6 @@
     <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
+    <ClInclude Include="ThirdParty\Lua\include\lua.h" />
   </ItemGroup>
 </Project>
