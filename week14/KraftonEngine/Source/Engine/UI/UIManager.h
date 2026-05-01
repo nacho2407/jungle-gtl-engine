@@ -16,6 +16,7 @@
 
 class APlayerController;
 class UUserWidget;
+struct FFrameContext;
 struct FPassContext;
 struct ID3D11Buffer;
 struct ID3D11Device;
@@ -39,8 +40,8 @@ public:
 	explicit FRmlRenderInterfaceD3D11(ID3D11Device* InDevice);
 	~FRmlRenderInterfaceD3D11() override;
 
-	void BeginFrame(const FPassContext& InCtx) { Ctx = &InCtx; }
-	void EndFrame() { Ctx = nullptr; }
+	void BeginFrame(const FPassContext& InCtx);
+	void EndFrame();
 
 	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices) override;
 	void RenderGeometry(Rml::CompiledGeometryHandle GeometryHandle, Rml::Vector2f Translation, Rml::TextureHandle Texture) override;
@@ -86,14 +87,19 @@ private:
 
 	bool LoadDocument(UUserWidget* Widget);
 	void CloseDocument(UUserWidget* Widget);
+	void ProcessInput(const FFrameContext& Frame);
+	void RemoveFromViewportImmediate(UUserWidget* Widget);
+	void FlushDeferredViewportRemovals();
 
 private:
 	TArray<UUserWidget*> ViewportWidgets;
 	TArray<UUserWidget*> CreatedWidgets;
+	TArray<UUserWidget*> PendingRemoveWidgets;
 
 	ID3D11Device* CachedDevice = nullptr;
 	FRmlSystemInterface* SystemInterface = nullptr;
 	FRmlRenderInterfaceD3D11* RenderInterface = nullptr;
 	Rml::Context* RmlContext = nullptr;
 	bool bRmlInitialized = false;
+	bool bDispatchingRmlEvents = false;
 };

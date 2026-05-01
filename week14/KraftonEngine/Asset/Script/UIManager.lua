@@ -1,6 +1,6 @@
 local whiteBox = nil
-local settingPanel = nil
-local settingPanelVisible = false
+local contributorWidget = nil
+local contributorWidgetVisible = false
 
 function BeginPlay()
     whiteBox = UI.CreateWidget("Asset/UI/PIEWhiteBox.rml")
@@ -8,13 +8,19 @@ function BeginPlay()
         whiteBox:show()
     end
 
-    settingPanel = UI.CreateWidget("Asset/UI/SettingPanel.rml")
-    settingPanelVisible = false
+    contributorWidget = UI.CreateWidget("Asset/UI/ContributorWidget.rml")
+    if contributorWidget ~= nil then
+        contributorWidget:bind_click("contributor-close-button", function()
+            contributorWidgetVisible = false
+            contributorWidget:hide()
+        end)
+    end
+    contributorWidgetVisible = false
 end
 
 function EndPlay()
-    if settingPanel ~= nil then
-        settingPanel:hide()
+    if contributorWidget ~= nil then
+        contributorWidget:hide()
     end
     if whiteBox ~= nil then
         whiteBox:hide()
@@ -25,12 +31,12 @@ function OnOverlap(OtherActor)
 end
 
 function Tick(dt)
-    if Input.GetKeyDown(Key.F1) and settingPanel ~= nil then
-        settingPanelVisible = not settingPanelVisible
-        if settingPanelVisible then
-            settingPanel:show()
+    if Input.GetKeyDown(Key.F1) and contributorWidget ~= nil then
+        contributorWidgetVisible = not contributorWidgetVisible
+        if contributorWidgetVisible then
+            contributorWidget:show()
         else
-            settingPanel:hide()
+            contributorWidget:hide()
         end
     end
 end
