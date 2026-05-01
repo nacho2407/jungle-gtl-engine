@@ -32,8 +32,14 @@ public:
     // Getter
     const TArray<FMeshSection>& GetSections() const { return Sections; }
 
+    /* For Material */
+    int32 GetNumMaterials() const override { return Materials.size(); }
+    class UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
+    void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) override;
+
 private:
     TArray<FMeshSection> Sections;
+    TArray<UMaterialInterface*> Materials;
 };
 
 struct FSliceMeshData
@@ -41,7 +47,6 @@ struct FSliceMeshData
     TArray<FNormalVertex> Vertices;
     TArray<uint32> Indices;
 };
-
 
 class FMeshSlicer
 {

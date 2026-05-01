@@ -750,9 +750,9 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
         for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
         {
             const UProceduralMeshComponent::FMeshSection& Section = Sections[SectionIdx];
-            // FMeshBuffer* MeshBuffer = MeshBufferManager.GetProcMeshBuffer(Section);
             FMeshBuffer* MeshBuffer = nullptr;
-
+			MeshBuffer = MeshBufferManager.GetProcMeshBuffer(Section);
+            
 			if (!MeshBuffer)
                 break;
 

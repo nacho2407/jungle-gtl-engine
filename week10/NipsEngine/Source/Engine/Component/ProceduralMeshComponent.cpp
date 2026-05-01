@@ -64,10 +64,44 @@ EPrimitiveType UProceduralMeshComponent::GetPrimitiveType() const
     return EPrimitiveType::EPT_ProceduralMesh;
 }
 
+UMaterialInterface* UProceduralMeshComponent::GetMaterial(int32 SlotIndex) const
+{
+    if (SlotIndex < 0 || SlotIndex >= static_cast<int32>(Materials.size()))
+    {
+        return nullptr;
+    }
+
+    return Materials[SlotIndex];
+}
+
+void UProceduralMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
+{
+    if (SlotIndex < 0)
+    {
+        return;
+    }
+
+    if (SlotIndex >= static_cast<int32>(Materials.size()))
+    {
+        Materials.resize(SlotIndex + 1, nullptr);
+    }
+
+    if (Materials[SlotIndex] != InMaterial)
+    {
+        if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Materials[SlotIndex]))
+        {
+            delete MatInst;
+        }
+    }
+
+    Materials[SlotIndex] = InMaterial;
+}
+
 void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSliceMeshData& OutFront, FSliceMeshData& OutBack)
 {
     for (int i = 0; i < InMesh.Indices.size(); i += 3)
     {
+		// 삼각형 단위로 처리
         int i0 = InMesh.Indices[i];
         int i1 = InMesh.Indices[i + 1];
         int i2 = InMesh.Indices[i + 2];
@@ -168,6 +202,10 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                 AddTriangle(OutFront, VF1, VF2, I1);
                 AddTriangle(OutFront, VF2, I2, I1);
             }
+			else
+			{
+                assert(false && "Unknown Case");
+			}
 		}
 
     }
@@ -195,6 +233,7 @@ void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane&
 
 		for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
         {
+            UMaterialInterface* Mat = InComponent->GetMaterial(i);
             OutFront->SetMaterial(i, InComponent->GetMaterial(i));
 		}
 
