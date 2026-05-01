@@ -24,6 +24,8 @@ public:
 	void BeginFrame();
 	void Render(const FFrameContext& Frame, FScene& Scene);
 	void EndFrame();
+	
+	void BlitToBackBuffer(ID3D11ShaderResourceView* SourceSRV);
 
 	FD3DDevice& GetFD3DDevice() { return Device; }
 

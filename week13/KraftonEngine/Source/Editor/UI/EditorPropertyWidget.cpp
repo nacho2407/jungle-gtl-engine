@@ -164,6 +164,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		SelectedComponent = nullptr;
 		LastSelectedActor = PrimaryActor;
 		bActorSelected = true;
+		bShowDuplicateWarning = false;
 	}
 
 	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
@@ -240,6 +241,21 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			ImGui::End();
 			return;
 		}
+
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 70.0f);
+		ImGui::InputText("##Rename", RenameBuffer, sizeof(RenameBuffer));
+		ImGui::SameLine();
+		if (ImGui::Button("Rename"))
+		{
+			RenameActor(PrimaryActor);
+		}
+	}
+
+	if (bShowDuplicateWarning)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+		ImGui::Text("이미 사용 중인 이름입니다.");
+		ImGui::PopStyleColor();
 	}
 
 	// ========== 고정 영역: Component Tree ==========
@@ -260,6 +276,44 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::EndChild();
 
 	ImGui::End();
+}
+
+void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
+{
+	FString NewName(RenameBuffer);
+	FString CurrentName = PrimaryActor->GetFName().ToString();
+
+	// 현재 이름과 동일하면 스킵
+	if (NewName == CurrentName)
+	{
+		RenameBuffer[0] = '\0';
+		return;
+	}
+		
+	// 월드의 모든 Actor를 순회하며 중복 이름 체크
+	bShowDuplicateWarning = false;
+	UWorld* World = EditorEngine->GetWorld();
+	if (World)
+	{
+		for (AActor* Actor : World->GetActors()) 
+		{
+			if (Actor == PrimaryActor) continue;
+			if (Actor->GetFName().ToString() == NewName)
+			{
+				bShowDuplicateWarning = true;
+				break;
+			}
+		}
+	}
+
+	if (!bShowDuplicateWarning)
+	{
+		PrimaryActor->SetFName(FName(NewName));
+		strncpy_s(RenameBuffer, sizeof(RenameBuffer),
+			NewName.c_str(), _TRUNCATE);
+	}
+
+	RenameBuffer[0] = '\0';
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
