@@ -12,11 +12,6 @@ bool FCollision::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
     if (!A || !B)
         return false;
 
-	/*
-    if (!A->IsValid() || !B->IsValid())
-        return false;
-	*/
-
     if (!A->ShouldGenerateOverlapEvents() || !B->ShouldGenerateOverlapEvents())
         return false;
 
