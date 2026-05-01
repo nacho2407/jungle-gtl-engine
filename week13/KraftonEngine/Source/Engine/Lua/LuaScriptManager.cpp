@@ -7,6 +7,8 @@
 #include "GameFramework/AActor.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
+#include "UI/UIManager.h"
+#include "UI/UserWidget.h"
 #include <filesystem>
 #include <fstream>
 
@@ -79,6 +81,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 	RegisterCoreBindings(Lua);
 	RegisterMathBindings(Lua);
 	RegisterActorBindings(Lua);
+	RegisterUIBindings(Lua);
 }
 
 FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
@@ -144,6 +147,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["D"] = static_cast<int32>('D');
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;
+	Key["F1"] = VK_F1;
 }
 
 void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
@@ -221,4 +225,31 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		return Actor.GetFName().ToString();
 	}));
+}
+
+void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
+{
+	Lua.new_usertype<UUserWidget>("UserWidget",
+		"AddToViewport", [](UUserWidget& Widget)
+	{
+		Widget.AddToViewport();
+	},
+		"RemoveFromParent", &UUserWidget::RemoveFromParent,
+		"Show", [](UUserWidget& Widget)
+	{
+		Widget.AddToViewport();
+	},
+		"Hide", &UUserWidget::RemoveFromParent,
+		"show", [](UUserWidget& Widget)
+	{
+		Widget.AddToViewport();
+	},
+		"hide", &UUserWidget::RemoveFromParent,
+		"IsInViewport", &UUserWidget::IsInViewport);
+
+	sol::table UI = Lua.create_named_table("UI");
+	UI.set_function("CreateWidget", [](const FString& DocumentPath)
+	{
+		return UUIManager::Get().CreateWidget(nullptr, DocumentPath);
+	});
 }

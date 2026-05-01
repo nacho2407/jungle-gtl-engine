@@ -1,0 +1,8 @@
+<rml>
+<head>
+	<link type="text/rcss" href="SettingPanel.rcss"/>
+</head>
+<body>
+	<div id="setting-panel">Setting</div>
+</body>
+</rml>
