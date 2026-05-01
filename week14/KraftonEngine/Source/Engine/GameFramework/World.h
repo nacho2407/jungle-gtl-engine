@@ -11,6 +11,7 @@
 #include "Render/Types/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
+#include <Collision/CollisionSystem.h>
 
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -91,6 +92,10 @@ private:
 	FTickManager TickManager;
 
 	FSpatialPartition Partition;
+	FCollisionSystem CollisionSystem;
+
+public:
+	FCollisionSystem& GetCollisionSystem() { return CollisionSystem; }
 };
 
 template<typename T>

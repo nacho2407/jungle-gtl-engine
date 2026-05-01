@@ -241,6 +241,12 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 
+	if (bHasBegunPlay)
+	{
+		SCOPE_STAT_CAT("CollisionSystem", "1_WorldTick");
+		CollisionSystem.Tick(this, DeltaTime);
+	}
+
 	TickManager.Tick(this, DeltaTime, TickType);
 }
 

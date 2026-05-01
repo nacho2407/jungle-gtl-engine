@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <cstring>
 #include <unordered_map>
 
 #include "SimpleJSON/json.hpp"
@@ -363,8 +364,11 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 	case EPropertyType::Name:
 		return JSON(static_cast<FName*>(Prop.ValuePtr)->ToString());
 
-	case EPropertyType::Enum:
-		return JSON(*static_cast<int32*>(Prop.ValuePtr));
+	case EPropertyType::Enum: {
+		int32 Val = 0;
+		memcpy(&Val, Prop.ValuePtr, Prop.EnumSize);
+		return JSON(Val);
+	}
 
 	case EPropertyType::Vec3Array: {
 		const TArray<FVector>* Arr = static_cast<const TArray<FVector>*>(Prop.ValuePtr);
@@ -377,6 +381,17 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 			outer.append(inner);
 		}
 		return outer;
+	}
+
+	case EPropertyType::Struct: {
+		if (!Prop.StructFunc || !Prop.ValuePtr) return JSON();
+		TArray<FPropertyDescriptor> Children;
+		Prop.StructFunc(Prop.ValuePtr, Children);
+		JSON obj = json::Object();
+		for (const auto& Child : Children) {
+			obj[Child.Name] = SerializePropertyValue(Child);
+		}
+		return obj;
 	}
 
 	default:
@@ -765,9 +780,11 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 		*static_cast<FName*>(Prop.ValuePtr) = FName(Value.ToString());
 		break;
 
-	case EPropertyType::Enum:
-		*static_cast<int32*>(Prop.ValuePtr) = Value.ToInt();
+	case EPropertyType::Enum: {
+		int32 Val = Value.ToInt();
+		memcpy(Prop.ValuePtr, &Val, Prop.EnumSize);
 		break;
+	}
 
 	case EPropertyType::Vec3Array: {
 		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
@@ -782,6 +799,18 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
 				++i;
 			}
 			Arr->push_back(v);
+		}
+		break;
+	}
+
+	case EPropertyType::Struct: {
+		if (!Prop.StructFunc || !Prop.ValuePtr) break;
+		TArray<FPropertyDescriptor> Children;
+		Prop.StructFunc(Prop.ValuePtr, Children);
+		for (auto& Child : Children) {
+			if (!Value.hasKey(Child.Name.c_str())) continue;
+			json::JSON& ChildVal = Value[Child.Name.c_str()];
+			DeserializePropertyValue(Child, ChildVal);
 		}
 		break;
 	}

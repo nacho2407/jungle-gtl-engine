@@ -58,6 +58,19 @@ public:
 
 	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
 
+	// 특정 클래스의 컴포넌트를 검색하여 반환 (없으면 nullptr)
+	template<typename T>
+	T* GetComponentByClass() const {
+		static_assert(std::is_base_of_v<UActorComponent, T>,
+			"GetComponentByClass<T>: T must derive from UActorComponent");
+		for (UActorComponent* Comp : OwnedComponents) {
+			if (T* Casted = Cast<T>(Comp)) {
+				return Casted;
+			}
+		}
+		return nullptr;
+	}
+
 	// Transform — Location
 	FVector GetActorLocation() const;
 	void SetActorLocation(const FVector& Location);
