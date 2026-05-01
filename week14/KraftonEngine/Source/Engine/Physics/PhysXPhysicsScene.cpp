@@ -42,6 +42,16 @@ static PxQuat ToPxQuat(const FQuat& Q)
 	return PxQuat(Q.X, Q.Y, Q.Z, Q.W);
 }
 
+static FVector ToFVector(const PxVec3& V)
+{
+	return FVector(V.x, V.y, V.z);
+}
+
+static FQuat ToFQuat(const PxQuat& Q)
+{
+	return FQuat(Q.x, Q.y, Q.z, Q.w);
+}
+
 static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 {
 	FVector Pos = Comp->GetWorldLocation();
@@ -143,12 +153,53 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
 	if (!Scene || DeltaTime <= 0.0f) return;
 
-	// TODO: Transform 동기화 (Engine → PhysX)
-	// TODO: Simulate
-	// Scene->simulate(DeltaTime);
-	// Scene->fetchResults(true);
-	// TODO: Transform 동기화 (PhysX → Engine)
-	// TODO: Collision callback → Overlap/Hit 이벤트 브릿지
+	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
+	for (auto& Mapping : BodyMappings)
+	{
+		if (!Mapping.Component || !Mapping.Actor) continue;
+
+		PxTransform NewPose = GetPxTransform(Mapping.Component);
+
+		if (Mapping.Actor->is<PxRigidDynamic>())
+		{
+			PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>();
+			// Kinematic이면 target으로, 아니면 직접 pose 설정은 하지 않음
+			// (Dynamic은 PhysX가 시뮬레이션으로 이동시킴)
+			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+			{
+				Dynamic->setKinematicTarget(NewPose);
+			}
+		}
+		else if (Mapping.Actor->is<PxRigidStatic>())
+		{
+			// Static body — 에디터에서 움직인 경우 위치 갱신
+			Mapping.Actor->setGlobalPose(NewPose);
+		}
+	}
+
+	// ── Simulate ──
+	Scene->simulate(DeltaTime);
+	Scene->fetchResults(true);
+
+	// ── Post-simulate: PhysX → Engine Transform 동기화 ──
+	for (auto& Mapping : BodyMappings)
+	{
+		if (!Mapping.Component || !Mapping.Actor) continue;
+
+		PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>();
+		if (!Dynamic) continue;
+		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) continue;
+		if (Dynamic->isSleeping()) continue;
+
+		PxTransform Pose = Dynamic->getGlobalPose();
+		FVector NewPos = ToFVector(Pose.p);
+		FQuat NewRot = ToFQuat(Pose.q);
+
+		// Root component에 월드 Transform 적용
+		UPrimitiveComponent* Comp = Mapping.Component;
+		Comp->SetWorldLocation(NewPos);
+		Comp->SetRelativeRotation(NewRot);
+	}
 }
 
 // ============================================================
