@@ -3,6 +3,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/Movement/MovementComponent.h"
 #include "GameFramework/World.h"
+#include "Core/Delegates/Delegate.h"
 
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
@@ -15,9 +16,11 @@ AActor::~AActor()
         OwningWorld = nullptr;
     }
 
-    for (auto* Comp : OwnedComponents)
+	TArray<UActorComponent*> CopyComponents = OwnedComponents;
+
+    for (auto* Comp : CopyComponents)
     {
-        UObjectManager::Get().DestroyObject(Comp);
+        RemoveComponent(Comp);
     }
 
     OwnedComponents.clear();
@@ -115,6 +118,12 @@ void AActor::PostDuplicate(UObject* Original)
     }
 
     bPrimitiveCacheDirty = true;
+
+	// Editor World -> PIE World 복사 후 다시 Register
+	for (UActorComponent* Comp : OwnedComponents)
+    {
+        NotifyComponentRegistered(Comp);
+    }
 }
 
 void AActor::Serialize(FArchive& Ar)
@@ -284,6 +293,8 @@ void AActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AActor::NotifyComponentRegistered(UActorComponent* Component)
 {
+    Component->OnRegister();
+    PostComponentRegistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
         return;
@@ -301,6 +312,8 @@ void AActor::NotifyComponentRegistered(UActorComponent* Component)
 
 void AActor::NotifyComponentUnregistered(UActorComponent* Component)
 {
+    Component->OnUnregister();
+    PostComponentUnregistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
         return;
@@ -343,4 +356,46 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
         bPrimitiveCacheDirty = false;
     }
     return PrimitiveCache;
+}
+
+
+bool AActor::IsOverlappingActor(const AActor* Other) const
+{
+	for (UActorComponent* OwnedComp : OwnedComponents)
+    {
+        if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(OwnedComp))
+        {
+            if ((PrimComp->GetOverlapInfos().size() > 0) && PrimComp->IsOverlappingActor(Other))
+            {
+                // found one, finished
+                return true;
+            }
+        }
+	}
+
+    return false;
+}
+
+void AActor::PostComponentRegistered(UActorComponent* Comp)
+{
+    UShapeComponent* ShapeComp = Cast<UShapeComponent>(Comp);
+
+    if (ShapeComp)
+    {
+		OnComponentHitHandleId = ShapeComp->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+		OnComponentBeginOverlapHandleId = ShapeComp->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
+		OnComponentEndOverlapHandleId = ShapeComp->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
+    }
+}
+
+void AActor::PostComponentUnregistered(UActorComponent* Comp)
+{
+    UShapeComponent* ShapeComp = Cast<UShapeComponent>(Comp);
+
+    if (ShapeComp)
+    {
+        ShapeComp->OnComponentHit.Remove(OnComponentHitHandleId);
+        ShapeComp->OnComponentBeginOverlap.Remove(OnComponentBeginOverlapHandleId);
+        ShapeComp->OnComponentEndOverlap.Remove(OnComponentEndOverlapHandleId);
+    }
 }
