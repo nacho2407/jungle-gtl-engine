@@ -500,7 +500,8 @@ static uint64 HashShadowViewProj(const FMatrix& Matrix)
 
 void LuaScriptEditOpen(const FString& LuaFilePath)
 {
-    std::string absoluteLuaScriptPath = std::filesystem::absolute(LuaFilePath).string();
+    std::string FullPath = FPaths::ContentRelativePath("Scripts") +"/" + LuaFilePath;
+    std::string absoluteLuaScriptPath = std::filesystem::absolute(FullPath).string();
     HINSTANCE hInstance = ShellExecuteA(
         NULL,
         "open",
@@ -522,22 +523,24 @@ static FString CreateLuaScript(AActor* TargetActor)
     int index = 0;
     std::string levelName = TargetActor->GetLevel()->GetFName().ToString();
     std::string actorName = TargetActor->GetFName().ToString();
-    std::string fileName = levelName + "_" + actorName;
 
-    std::string newFilePath = scriptsPath + fileName + std::to_string(index) + ".lua";
-    while (std::filesystem::exists(newFilePath))
+    std::string fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
+
+    std::string fullPath = scriptsPath + fileName;
+    while (std::filesystem::exists(fullPath))
     {
         index++;
-        newFilePath = scriptsPath + fileName + std::to_string(index) + ".lua";
+        fileName = levelName + "_" + actorName + "_" + std::to_string(index) + ".lua";
+        fullPath = scriptsPath + fileName;
     }
 
     std::string templatePath = FPaths::ContentRelativePath("Scripts/Template.lua");
     if (std::filesystem::exists(templatePath))
     {
-        std::filesystem::copy_file(templatePath, newFilePath, std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(templatePath, fullPath, std::filesystem::copy_options::overwrite_existing);
     }
 
-    return newFilePath;
+    return fileName;
 }
 
 static bool CompareShadowMapDataStable(const FShadowMapData& A, const FShadowMapData& B)
@@ -890,12 +893,6 @@ void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
         }
     }
 
-    if (!ComponentClasses.empty() && ImGui::Button("Create Script"))
-    {
-        // ULuaScriptComponent 구현 시 추가적으로 기능 구현
-        CreateLuaScript(Actor);
-    }
-
     ImGui::SameLine();
     // ImGui::SetNextItemWidth(-1.0f);
     if (ImGui::BeginCombo("Type", Preview))
@@ -1131,26 +1128,47 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     if (bLuaScriptOpen)
     {
         ULuaScriptComponent* LuaScriptComponent = Cast<ULuaScriptComponent>(SelectedComponent);
-        bool bHasScript = LuaScriptComponent->HasScript();
 
+        ImGui::Text("File: ");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "%s", LuaScriptComponent->GetScriptPath().c_str());
+
+        bool bHasScript = LuaScriptComponent->HasScript();
         if (!bHasScript)
         {
-            if (ImGui::Button("Create Script"))
+            if (ImGui::Button("Create Script", ImVec2(-1.0f, 0.0f)))
             {
                 FString FileName = CreateLuaScript(Actor);
-                LuaScriptComponent->SetScriptFileName(FileName);
+                LuaScriptComponent->SetScriptPath(FileName);
             }
         }
-        if (ImGui::Button("Edit Script"))
+        else
         {
-            LuaScriptEditOpen(LuaScriptComponent->GetScriptFileName());
-        }
-        if (ImGui::Button("Reload Script"))
-        {
-            
+
+            ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+            float Spacing = ImGui::GetStyle().ItemSpacing.x;
+            float ButtonWidth = (ImGui::GetContentRegionAvail().x - (Spacing * 2.0f)) / 3.0f;
+
+            if (ImGui::Button("Edit", ImVec2(ButtonWidth, 0.0f)))
+            {
+                LuaScriptEditOpen(LuaScriptComponent->GetScriptPath());
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Reload", ImVec2(ButtonWidth, 0.0f)))
+            {
+                LuaScriptComponent->ReloadScript();
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Clear", ImVec2(ButtonWidth, 0.0f)))
+            {
+                LuaScriptComponent->clearScript();
+            }
         }
     }
-    EndEditorSection("Lua Script");
+    EndEditorSection(bLuaScriptOpen);
 
     const char* PropertySectionLabel = "Component";
     if (bIsLightComponent)
@@ -1984,11 +2002,6 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         break;
     }
     }
-    /*
-    case EPropertyType::LuaScriptRef:
-
-    }
-    */
 
     if (bChanged && SelectedComponent)
     {
