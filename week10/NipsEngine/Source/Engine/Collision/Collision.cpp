@@ -37,12 +37,21 @@ bool FCollision::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
     if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Capsule)
         return IntersectCapsuleCapsule((UCapsuleComponent*)A, (UCapsuleComponent*)B);
 
-    return false;
-}
+	// Capsule vs Sphere
+    if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Sphere)
+        return IntersectCapsuleSphere((UCapsuleComponent*)A, (USphereComponent*)B);
 
-FVector FCollision::ClosestPointOnAABB(const FVector& P, const FAABB& AABB)
-{
-    return FVector(std::clamp(P.X, AABB.Min.X, AABB.Max.X), std::clamp(P.Y, AABB.Min.Y, AABB.Max.Y), std::clamp(P.Z, AABB.Min.Z, AABB.Max.Z));
+    if (TypeA == EPrimitiveType::EPT_Sphere && TypeB == EPrimitiveType::EPT_Capsule)
+        return IntersectCapsuleSphere((UCapsuleComponent*)B, (USphereComponent*)A);
+
+	// Capsule vs Box
+    if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Box)
+        return IntersectCapsuleBox((UCapsuleComponent*)A, (UBoxComponent*)B);
+
+    if (TypeA == EPrimitiveType::EPT_Box && TypeB == EPrimitiveType::EPT_Capsule)
+        return IntersectCapsuleBox((UCapsuleComponent*)B, (UBoxComponent*)A);
+
+    return false;
 }
 
 float FCollision::SegmentSegmentDistSq(
@@ -108,12 +117,110 @@ float FCollision::SegmentSegmentDistSq(
 
 bool FCollision::IntersectBoxBox(const UBoxComponent* A, const UBoxComponent* B)
 {
-    const FAABB& AABB_A = A->GetWorldAABB();
-    const FAABB& AABB_B = B->GetWorldAABB();
+	const FOBB OBB_A = A->GetWorldOBB();
+    const FOBB OBB_B = B->GetWorldOBB();
 
-    return (AABB_A.Min.X <= AABB_B.Max.X && AABB_A.Max.X >= AABB_B.Min.X) &&
-           (AABB_A.Min.Y <= AABB_B.Max.Y && AABB_A.Max.Y >= AABB_B.Min.Y) &&
-           (AABB_A.Min.Z <= AABB_B.Max.Z && AABB_A.Max.Z >= AABB_B.Min.Z);
+    return IntersectOBB(OBB_A, OBB_B);
+}
+
+bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
+{
+    FVector AAxis[3], BAxis[3];
+    A.GetAxes(AAxis[0], AAxis[1], AAxis[2]);
+    B.GetAxes(BAxis[0], BAxis[1], BAxis[2]);
+
+    const FVector& EA = A.Extents;
+    const FVector& EB = B.Extents;
+
+    FVector T = B.Center - A.Center;
+
+    float R[3][3], AbsR[3][3];
+
+    // rotation matrix A->B
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+        {
+            R[i][j] = AAxis[i].DotProduct(BAxis[j]);
+            AbsR[i][j] = MathUtil::Abs(R[i][j]) + KINDA_SMALL_NUMBER;
+        }
+
+    // A axes
+    for (int i = 0; i < 3; i++)
+    {
+        float ra = EA[i];
+        float rb =
+            EB.X * AbsR[i][0] +
+            EB.Y * AbsR[i][1] +
+            EB.Z * AbsR[i][2];
+
+        if (MathUtil::Abs(T.DotProduct(AAxis[i])) > ra + rb)
+            return false;
+    }
+
+    // B axes
+    for (int i = 0; i < 3; i++)
+    {
+        float ra =
+            EA.X * AbsR[0][i] +
+            EA.Y * AbsR[1][i] +
+            EA.Z * AbsR[2][i];
+
+        float rb = EB[i];
+
+        if (MathUtil::Abs(T.DotProduct(BAxis[i])) > ra + rb)
+            return false;
+    }
+
+    // cross products
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+        {
+            FVector axis = AAxis[i].CrossProduct(BAxis[j]);
+
+            if (axis.SizeSquared() < KINDA_SMALL_NUMBER)
+                continue;
+
+            axis.Normalize();
+
+            float ra =
+                EA[(i + 1) % 3] * MathUtil::Abs(AAxis[(i + 1) % 3].DotProduct(axis)) +
+                EA[(i + 2) % 3] * MathUtil::Abs(AAxis[(i + 2) % 3].DotProduct(axis));
+
+            float rb =
+                EB[(j + 1) % 3] * MathUtil::Abs(BAxis[(j + 1) % 3].DotProduct(axis)) +
+                EB[(j + 2) % 3] * MathUtil::Abs(BAxis[(j + 2) % 3].DotProduct(axis));
+
+            float t =
+                MathUtil::Abs((B.Center - A.Center).DotProduct(axis));
+
+            if (t > ra + rb)
+                return false;
+        }
+
+    return true;
+}
+
+FVector FCollision::ClosestPointOnOBB(const FVector& P, const FOBB& Box)
+{
+    FVector d = P - Box.Center;
+
+    FVector X, Y, Z;
+    Box.GetAxes(X, Y, Z);
+
+    FVector result = Box.Center;
+
+    FVector axis[3] = { X, Y, Z };
+
+    for (int i = 0; i < 3; i++)
+    {
+        float dist = d.DotProduct(axis[i]);
+
+        dist = std::clamp(dist, -Box.Extents[i], Box.Extents[i]);
+
+        result += axis[i] * dist;
+    }
+
+    return result;
 }
 
 bool FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereComponent* B)
@@ -132,11 +239,12 @@ bool FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereC
 
 bool FCollision::IntersectBoxSphere(const UBoxComponent* Box, const USphereComponent* Sphere)
 {
-    const FAABB& AABB = Box->GetWorldAABB();
+    const FOBB OBB = Box->GetWorldOBB();
+
     FVector Center = Sphere->GetWorldLocation();
     float Radius = Sphere->GetScaledSphereRadius();
 
-    FVector Closest = ClosestPointOnAABB(Center, AABB);
+    FVector Closest = ClosestPointOnOBB(Center, OBB);
 
     float DistSq = (Center - Closest).SizeSquared();
 
@@ -154,16 +262,91 @@ bool FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A, const UCaps
     float RadiusA = A->GetScaledCapsuleRadius();
     float RadiusB = B->GetScaledCapsuleRadius();
 
-    FVector Up = FVector(0, 0, 1);
+    FVector UpA = A->GetWorldTransform().GetUnitAxis(EAxis::Z);
+    FVector UpB = B->GetWorldTransform().GetUnitAxis(EAxis::Z);
 
-    FVector A0 = CenterA - Up * HalfA;
-    FVector A1 = CenterA + Up * HalfA;
+    FVector A0 = CenterA - UpA * HalfA;
+    FVector A1 = CenterA + UpA * HalfA;
 
-    FVector B0 = CenterB - Up * HalfB;
-    FVector B1 = CenterB + Up * HalfB;
+    FVector B0 = CenterB - UpB * HalfB;
+    FVector B1 = CenterB + UpB * HalfB;
 
     float DistSq = SegmentSegmentDistSq(A0, A1, B0, B1);
     float RadiusSum = RadiusA + RadiusB;
 
-    return DistSq <= RadiusSum * RadiusSum;
+	return DistSq <= RadiusSum * RadiusSum;
+}
+
+bool FCollision::IntersectCapsuleSphere(
+    const UCapsuleComponent* A,
+    const USphereComponent* B)
+{
+    FVector CenterA = A->GetWorldLocation();
+    FVector UpA = A->GetWorldTransform().GetUnitAxis(EAxis::Z);
+    float HalfA = A->GetScaledCapsuleHalfHeight();
+
+    FVector A0 = CenterA - UpA * HalfA;
+    FVector A1 = CenterA + UpA * HalfA;
+
+    FVector P = B->GetWorldLocation();
+
+    float RadiusA = A->GetScaledCapsuleRadius();
+    float RadiusB = B->GetScaledSphereRadius();
+
+    float DistSq = PointSegmentDistSq(P, A0, A1);
+
+    float R = RadiusA + RadiusB;
+
+    return DistSq <= R * R;
+}
+
+bool FCollision::IntersectCapsuleBox(
+    const UCapsuleComponent* Cap,
+    const UBoxComponent* Box)
+{
+    FVector C = Cap->GetWorldLocation();
+    FVector Axis = Cap->GetWorldTransform().GetUnitAxis(EAxis::Z);
+    float Half = Cap->GetScaledCapsuleHalfHeight();
+
+    FVector A0 = C - Axis * Half;
+    FVector A1 = C + Axis * Half;
+
+    FOBB OBB = Box->GetWorldOBB();
+
+    // 박스 표면 위 후보점 → 캡슐 세그먼트까지 실제 최단거리
+    FVector C0 = ClosestPointOnOBB(A0, OBB);
+    FVector C1 = ClosestPointOnOBB(A1, OBB);
+
+    // 각 박스 후보점에서 캡슐 세그먼트까지 거리
+    float Dist0 = PointSegmentDistSq(C0, A0, A1);
+    float Dist1 = PointSegmentDistSq(C1, A0, A1);
+
+    float DistSq = std::min(Dist0, Dist1);
+    float R = Cap->GetScaledCapsuleRadius();
+
+    return DistSq <= R * R;
+}
+
+FVector FCollision::ClosestOnBoxToSegment(FVector P0, FVector P1, const FOBB& Box)
+{
+    FVector C0 = ClosestPointOnOBB(P0, Box);
+    FVector C1 = ClosestPointOnOBB(P1, Box);
+
+    // segment end 중 더 가까운 것 선택 (근사)
+    float d0 = (P0 - C0).SizeSquared();
+    float d1 = (P1 - C1).SizeSquared();
+
+    return (d0 < d1) ? C0 : C1;
+}
+
+float FCollision::PointSegmentDistSq(const FVector& P, const FVector& A, const FVector& B)
+{
+    FVector AB = B - A;
+    FVector AP = P - A;
+
+    float t = AP.DotProduct(AB) / AB.DotProduct(AB);
+    t = std::clamp(t, 0.0f, 1.0f);
+
+    FVector Closest = A + AB * t;
+    return (P - Closest).SizeSquared();
 }
