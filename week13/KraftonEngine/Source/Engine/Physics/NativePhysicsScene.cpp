@@ -172,30 +172,39 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 				FVector Normal = PushA;
 				float Depth = Hit.PenetrationDepth;
 
-				if (Depth > 0.0f)
+				// Baumgarte stabilization + slop
+				constexpr float Slop = 0.01f;
+				constexpr float BaumgarteBeta = 0.2f;
+				float CorrectionDepth = (std::max)(0.0f, Depth - Slop);
+
+				if (CorrectionDepth > 0.0f)
 				{
+					float BiasVelocity = (BaumgarteBeta / DeltaTime) * CorrectionDepth;
+
 					if (bASimulates && bBSimulates)
 					{
-						FVector Correction = Normal * (Depth * 0.5f);
+						FVector Correction = Normal * (BiasVelocity * DeltaTime * 0.5f);
 						A->SetWorldLocation(A->GetWorldLocation() + Correction);
 						B->SetWorldLocation(B->GetWorldLocation() - Correction);
 					}
 					else if (bASimulates)
 					{
-						A->SetWorldLocation(A->GetWorldLocation() + Normal * Depth);
+						A->SetWorldLocation(A->GetWorldLocation() + Normal * (BiasVelocity * DeltaTime));
 					}
 					else if (bBSimulates)
 					{
-						B->SetWorldLocation(B->GetWorldLocation() - Normal * Depth);
+						B->SetWorldLocation(B->GetWorldLocation() - Normal * (BiasVelocity * DeltaTime));
 					}
 				}
 
+				// 속도 반사: (1 + e) 로 반발계수 적용 (e=0 완전비탄성, e=1 완전탄성)
+				constexpr float Restitution = 0.2f;
 				if (bASimulates)
 				{
 					FBodyState& StateA = BodyStates[A];
 					float VdotN = StateA.Velocity.X * Normal.X + StateA.Velocity.Y * Normal.Y + StateA.Velocity.Z * Normal.Z;
 					if (VdotN < 0.0f)
-						StateA.Velocity = StateA.Velocity - Normal * VdotN;
+						StateA.Velocity = StateA.Velocity - Normal * (VdotN * (1.0f + Restitution));
 				}
 				if (bBSimulates)
 				{
@@ -203,7 +212,7 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 					FVector NegNormal = Normal * -1.0f;
 					float VdotN = StateB.Velocity.X * NegNormal.X + StateB.Velocity.Y * NegNormal.Y + StateB.Velocity.Z * NegNormal.Z;
 					if (VdotN < 0.0f)
-						StateB.Velocity = StateB.Velocity - NegNormal * VdotN;
+						StateB.Velocity = StateB.Velocity - NegNormal * (VdotN * (1.0f + Restitution));
 				}
 			}
 			else if (Resp == ECollisionResponse::Overlap)
