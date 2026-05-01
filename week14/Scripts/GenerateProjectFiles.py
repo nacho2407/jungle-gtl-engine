@@ -74,11 +74,21 @@ INCLUDE_PATHS = [
     "ThirdParty\\ImGui",
     "Source\\Editor",
     "Source\\ObjViewer",
+    "ThirdParty\\lua\\include",
+    "ThirdParty\\sol2\\include",
     ".",
 ]
 
 # Library paths (relative to project dir)
 LIBRARY_PATHS = []
+
+# Additional linker settings
+ADDITIONAL_LIB_DIRS = [
+    "$(ProjectDir)ThirdParty\\lua\\lib",
+]
+ADDITIONAL_DEPENDENCIES = [
+    "lua.lib",
+]
 
 # NuGet packages (id, version) — restored via packages.config
 NUGET_PACKAGES = [
@@ -299,6 +309,14 @@ def generate_vcxproj(files: dict[str, list[str]]):
         subsystem = props.get("subsystem", "Windows" if is_x64 else "Console")
         ET.SubElement(link, "SubSystem").text = subsystem
         ET.SubElement(link, "GenerateDebugInformation").text = "true"
+        if ADDITIONAL_LIB_DIRS:
+            ET.SubElement(link, "AdditionalLibraryDirectories").text = (
+                ";".join(ADDITIONAL_LIB_DIRS) + ";%(AdditionalLibraryDirectories)"
+            )
+        if ADDITIONAL_DEPENDENCIES:
+            ET.SubElement(link, "AdditionalDependencies").text = (
+                ";".join(ADDITIONAL_DEPENDENCIES) + ";%(AdditionalDependencies)"
+            )
 
     # ClCompile items
     ig = ET.SubElement(proj, "ItemGroup")
