@@ -17,6 +17,12 @@ void FLuaScriptManager::OnLuaFileChanged(const FString& FileName)
 {
     if (FileName.find(".lua") == std::string::npos) return;
 
+    if (FileName.find("Template.lua") != std::string::npos ||
+        FileName.find("template.lua") != std::string::npos)
+    {
+        return;
+    }
+
     for (TObjectIterator<ULuaScriptComponent> It; It; ++It)
     {
         ULuaScriptComponent* Component = *It;
