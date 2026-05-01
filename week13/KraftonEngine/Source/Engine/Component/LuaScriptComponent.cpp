@@ -60,6 +60,7 @@ void ULuaScriptComponent::BeginPlay()
 
 void ULuaScriptComponent::EndPlay()
 {
+	UActorComponent::EndPlay();
 	if (LuaEndPlay)
 	{
 		sol::protected_function_result Result = LuaEndPlay();
@@ -69,7 +70,6 @@ void ULuaScriptComponent::EndPlay()
 			UE_LOG("Lua EndPlay error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
-	UActorComponent::EndPlay();
 }
 
 void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
@@ -84,12 +84,6 @@ void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			UE_LOG("Lua Tick error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
-}
-
-void ULuaScriptComponent::SetOwner(AActor* Actor)
-{
-	UActorComponent::SetOwner(Actor);
-	EnsureDefaultScriptFile();
 }
 
 void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

@@ -16,7 +16,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay() override;
 
-	void SetOwner(AActor* Actor) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	void Serialize(FArchive& Ar) override;
