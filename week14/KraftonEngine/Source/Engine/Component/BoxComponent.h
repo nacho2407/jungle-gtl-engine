@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
@@ -19,5 +19,5 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
-	FVector BoxExtent = { 0.5f, 0.5f, 0.5f };
+	FVector BoxExtent = { 1.0f, 1.0f, 1.0f };
 };
