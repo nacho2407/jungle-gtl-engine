@@ -6,6 +6,7 @@
 #include <mutex>
 #include <queue>
 #include <functional>
+#include "Core/Delegates/Delegate.h"
 
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -13,6 +14,10 @@
 class FDirectoryWatcher : public TSingleton<FDirectoryWatcher>
 {
     friend class TSingleton<FDirectoryWatcher>;
+public:
+    DECLARE_DELEGATE(FOnDirectoryChanged, const FString&);
+    FOnDirectoryChanged OnDirectoryChanged;
+
 public:
     void Init(const FString& DirectoryToWatch);
     void Release();
