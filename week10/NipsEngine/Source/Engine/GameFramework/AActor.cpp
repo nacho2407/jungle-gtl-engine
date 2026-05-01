@@ -116,6 +116,12 @@ void AActor::PostDuplicate(UObject* Original)
     }
 
     bPrimitiveCacheDirty = true;
+
+	// Editor World -> PIE World 복사 후 다시 Register
+	for (UActorComponent* Comp : OwnedComponents)
+    {
+        NotifyComponentRegistered(Comp);
+    }
 }
 
 void AActor::Serialize(FArchive& Ar)
@@ -303,6 +309,7 @@ void AActor::NotifyComponentRegistered(UActorComponent* Component)
 
 void AActor::NotifyComponentUnregistered(UActorComponent* Component)
 {
+    PostComponentUnregistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
         return;
@@ -374,5 +381,15 @@ void AActor::PostComponentRegistered(UActorComponent* Comp)
         ShapeComp->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
         ShapeComp->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
         ShapeComp->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
+    }
+}
+
+void AActor::PostComponentUnregistered(UActorComponent* Comp)
+{
+    UShapeComponent* ShapeComp = Cast<UShapeComponent>(Comp);
+
+    if (ShapeComp)
+    {
+
     }
 }

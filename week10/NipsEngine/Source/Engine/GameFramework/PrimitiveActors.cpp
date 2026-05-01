@@ -168,6 +168,21 @@ void ASceneActor::InitDefaultComponents()
 	SetRootComponent(SceneRoot);
 }
 
+void ASceneActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    UE_LOG("%s: On Hit", GetFName().ToString().c_str());
+}
+
+void ASceneActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("%s: On Begin Overlap", GetFName().ToString().c_str());
+}
+
+void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("%s: On End Overlap", GetFName().ToString().c_str());
+}
+
 void AStaticMeshActor::InitDefaultComponents()
 {
 	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
