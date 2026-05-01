@@ -1,18 +1,15 @@
 function BeginPlay()
-    print([BeginPlay]  .. obj.UUID)
-    objPrintLocation()
+    Log("[BeginPlay]"  .. Actor.UUID)
 end
 
 function EndPlay()
-    print([EndPlay]  .. obj.UUID)
-    objPrintLocation()
+    Log("[EndPlay]"  .. Actor.UUID)
 end
 
 function OnOverlap(OtherActor)
-    OtherActorPrintLocation();
+    Log("[OnOverlap]"  .. Actor.UUID)
 end
 
 function Tick(dt)
-    obj.Location = obj.Location + obj.Velocity  dt
-    objPrintLocation()
+    --Log("[OnOverlap]"  .. Actor.UUID)
 end

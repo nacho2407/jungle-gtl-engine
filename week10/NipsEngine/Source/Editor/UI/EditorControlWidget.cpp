@@ -10,6 +10,7 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
+#include "Runtime/Script/ScriptManager.h"
 
 #include "GameFramework/PrimitiveActors.h"
 
@@ -263,6 +264,13 @@ void FEditorControlWidget::Render(float DeltaTime)
 	}
 
 	ImGui::PopItemWidth();
+
+	SEPARATOR();
+
+    if (ImGui::Button("Hot Reload"))
+    {
+        FScriptManager::Get().HotReloadScripts();
+    }
 
 	ImGui::End();
 }

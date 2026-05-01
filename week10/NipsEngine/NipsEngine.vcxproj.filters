@@ -766,6 +766,14 @@
     <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
+    <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\BoxComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1482,5 +1490,15 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="ThirdParty\Lua\include\lua.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
+    <ClInclude Include="Source\Engine\Collision\Collision.h" />
+    <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\BoxComponent.h" />
+    <ClInclude Include="Source\Engine\Component\CapsuleComponent.h" />
+    <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
   </ItemGroup>
 </Project>
