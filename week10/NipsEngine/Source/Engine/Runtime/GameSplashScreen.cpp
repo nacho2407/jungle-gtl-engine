@@ -343,7 +343,18 @@ void FGameSplashScreen::RenderLayeredSplash(float LogoOpacity)
     }
 
     HDC ScreenDC = GetDC(nullptr);
+    if (!ScreenDC)
+    {
+        return;
+    }
+
     HDC MemoryDC = CreateCompatibleDC(ScreenDC);
+    if (!MemoryDC)
+    {
+        ReleaseDC(nullptr, ScreenDC);
+        return;
+    }
+
     BITMAPINFO BitmapInfo = {};
     BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     BitmapInfo.bmiHeader.biWidth = Width;
@@ -354,7 +365,21 @@ void FGameSplashScreen::RenderLayeredSplash(float LogoOpacity)
 
     void* Bits = nullptr;
     HBITMAP BackBuffer = CreateDIBSection(ScreenDC, &BitmapInfo, DIB_RGB_COLORS, &Bits, nullptr, 0);
+    if (!BackBuffer)
+    {
+        DeleteDC(MemoryDC);
+        ReleaseDC(nullptr, ScreenDC);
+        return;
+    }
+
     HGDIOBJ OldBitmap = SelectObject(MemoryDC, BackBuffer);
+    if (!OldBitmap)
+    {
+        DeleteObject(BackBuffer);
+        DeleteDC(MemoryDC);
+        ReleaseDC(nullptr, ScreenDC);
+        return;
+    }
 
     Gdiplus::Graphics Graphics(MemoryDC);
     Graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
