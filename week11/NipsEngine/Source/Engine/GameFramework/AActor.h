@@ -136,4 +136,8 @@ protected:
 	// 렌더링용 캐시
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
 	mutable bool bPrimitiveCacheDirty = true;
+
+	uint64 OnComponentBeginOverlapHandleId = 0;
+    uint64 OnComponentEndOverlapHandleId = 0;
+    uint64 OnComponentHitHandleId = 0;
 };

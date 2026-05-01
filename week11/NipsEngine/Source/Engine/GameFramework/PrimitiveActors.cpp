@@ -77,9 +77,6 @@ REGISTER_FACTORY(APointLightActor)
 DEFINE_CLASS(ASpotlightActor, APointLightActor)
 REGISTER_FACTORY(ASpotlightActor)
 
-DEFINE_CLASS(ADelegateTestActor, AActor)
-REGISTER_FACTORY(ADelegateTestActor)
-
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -443,35 +440,4 @@ void ASpotlightActor::Tick(float DeltaTime)
 	{
 		BillboardComp->SetColor(GetLight()->LightColor);
 	}
-}
-
-void ADelegateTestActor::InitDefaultComponents()
-{
-    auto SceneRoot = AddComponent<USceneComponent>();
-    SetRootComponent(SceneRoot);
-}
-
-void ADelegateTestActor::Tick(float DeltaTime)
-{
-    AActor::Tick(DeltaTime);
-}
-
-void ADelegateTestActor::BeginPlay()
-{
-    AActor::BeginPlay();
-}
-
-void ADelegateTestActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-    UE_LOG("%s: On Hit", GetFName().ToString().c_str());
-}
-
-void ADelegateTestActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-    UE_LOG("%s: On Begin Overlap", GetFName().ToString().c_str());
-}
-
-void ADelegateTestActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-    UE_LOG("%s: On End Overlap", GetFName().ToString().c_str());
 }

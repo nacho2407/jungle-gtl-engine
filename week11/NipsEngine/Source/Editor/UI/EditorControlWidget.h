@@ -21,8 +21,7 @@ private:
                                        "Ambient",
                                        "Directional",
                                        "Point",
-                                       "Spotlight",
-                                       "ForDelegateTest" };
+                                       "Spotlight"};
 	int32 SelectedPrimitiveType = 0;
 	int32 NumberOfSpawnedActors = 1;
 	FVector CurSpawnPoint = { 0.f, 0.f, 0.f };

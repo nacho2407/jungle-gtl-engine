@@ -16,9 +16,11 @@ AActor::~AActor()
         OwningWorld = nullptr;
     }
 
-    for (auto* Comp : OwnedComponents)
+	TArray<UActorComponent*> CopyComponents = OwnedComponents;
+
+    for (auto* Comp : CopyComponents)
     {
-        UObjectManager::Get().DestroyObject(Comp);
+        RemoveComponent(Comp);
     }
 
     OwnedComponents.clear();
@@ -291,6 +293,7 @@ void AActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AActor::NotifyComponentRegistered(UActorComponent* Component)
 {
+    Component->OnRegister();
     PostComponentRegistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
@@ -309,6 +312,7 @@ void AActor::NotifyComponentRegistered(UActorComponent* Component)
 
 void AActor::NotifyComponentUnregistered(UActorComponent* Component)
 {
+    Component->OnUnregister();
     PostComponentUnregistered(Component);
     if (Component == nullptr || OwningWorld == nullptr)
     {
@@ -378,9 +382,9 @@ void AActor::PostComponentRegistered(UActorComponent* Comp)
 
     if (ShapeComp)
     {
-        ShapeComp->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
-        ShapeComp->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
-        ShapeComp->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
+		OnComponentHitHandleId = ShapeComp->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+		OnComponentBeginOverlapHandleId = ShapeComp->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnBeginOverlap);
+		OnComponentEndOverlapHandleId = ShapeComp->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
     }
 }
 
@@ -390,6 +394,8 @@ void AActor::PostComponentUnregistered(UActorComponent* Comp)
 
     if (ShapeComp)
     {
-
+        ShapeComp->OnComponentHit.Remove(OnComponentHitHandleId);
+        ShapeComp->OnComponentBeginOverlap.Remove(OnComponentBeginOverlapHandleId);
+        ShapeComp->OnComponentEndOverlap.Remove(OnComponentEndOverlapHandleId);
     }
 }
