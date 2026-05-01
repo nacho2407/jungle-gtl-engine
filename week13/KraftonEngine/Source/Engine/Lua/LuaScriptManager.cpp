@@ -1,6 +1,8 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Runtime/Engine.h"
+#include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "Platform/Paths.h"
@@ -79,6 +81,20 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 	RegisterActorBindings(Lua);
 }
 
+FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
+{
+	if (GEngine)
+	{
+		if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+		{
+			FInputSystemSnapshot Snapshot = GameViewportClient->GetGameInputSnapshot();
+			return Snapshot;
+		}
+	}
+
+	return InputSystem::Get().MakeSnapshot();
+}
+
 void FLuaScriptManager::RegisterLuaHelpers(sol::state& Lua)
 {
 	FString CoroutineManagerPath = ResolveScriptPath("CoroutineManager.lua");
@@ -108,39 +124,24 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Input.set_function("GetKeyDown", sol::overload(
 		[](int VK)
 	{
-		return InputSystem::Get().GetKeyDown(VK);
-	},
-		[](const FString& Key)
-	{
-		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
-		return VK != -1 && InputSystem::Get().GetKeyDown(VK);
+		return GetLuaInputSnapshot().WasPressed(VK);
 	}));
 	Input.set_function("GetKey", sol::overload(
 		[](int VK)
 	{
-		return InputSystem::Get().GetKey(VK);
-	},
-		[](const FString& Key)
-	{
-		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
-		return VK != -1 && InputSystem::Get().GetKey(VK);
+		return GetLuaInputSnapshot().IsDown(VK);
 	}));
 	Input.set_function("GetKeyUp", sol::overload(
 		[](int VK)
 	{
-		return InputSystem::Get().GetKeyUp(VK);
-	},
-		[](const FString& Key)
-	{
-		const int VK = VkKeyScanW(Key.empty() ? L'\0' : Key[0]);
-		return VK != -1 && InputSystem::Get().GetKeyUp(VK);
+		return GetLuaInputSnapshot().WasReleased(VK);
 	}));
 
 	sol::table Key = Lua.create_named_table("Key");
-	Key["W"] = 'W';
-	Key["A"] = 'A';
-	Key["S"] = 'S';
-	Key["D"] = 'D';
+	Key["W"] = static_cast<int32>('W');
+	Key["A"] = static_cast<int32>('A');
+	Key["S"] = static_cast<int32>('S');
+	Key["D"] = static_cast<int32>('D');
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;
 }
@@ -219,11 +220,5 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"Name", sol::property([](AActor& Actor)
 	{
 		return Actor.GetFName().ToString();
-	}),
-
-		"PrintLocation", [](AActor& Actor)
-	{
-		FVector Location = Actor.GetActorLocation();
-		UE_LOG("[Lua] Actor Location: %.2f %.2f %.2f", Location.X, Location.Y, Location.Z);
-	});
+	}));
 }

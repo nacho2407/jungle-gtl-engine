@@ -323,7 +323,10 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 		UWorld* World = Editor->GetWorld();
 		if (World && ActiveViewportClient->GetCamera())
 		{
-			World->SetActiveCamera(ActiveViewportClient->GetCamera());
+			if (!Editor->IsPlayingInEditor())
+			{
+				World->SetActiveCamera(ActiveViewportClient->GetCamera());
+			}
 		}
 	}
 }
