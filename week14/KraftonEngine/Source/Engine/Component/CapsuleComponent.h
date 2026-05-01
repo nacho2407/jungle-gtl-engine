@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #pragma once
 
 #include "ShapeComponent.h"
@@ -21,6 +21,6 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 protected:
-	float CapsuleRadius = 22.0f;
-	float CapsuleHalfHeight = 44.0f;
+	float CapsuleRadius = 1.8f;
+	float CapsuleHalfHeight = 3.0f;
 };

@@ -28,7 +28,7 @@
                 "WorldDynamic" : 1,
                 "WorldStatic" : 2
               },
-              "Draw Only If Selected" : true,
+              "Draw Only If Selected" : false,
               "Generate Overlap Events" : true,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Object Type" : 1,
@@ -120,7 +120,7 @@
                 "WorldDynamic" : 1,
                 "WorldStatic" : 2
               },
-              "Draw Only If Selected" : true,
+              "Draw Only If Selected" : false,
               "Generate Overlap Events" : true,
               "Location" : [0.000000, 0.000000, 0.000000],
               "Object Type" : 1,
@@ -566,9 +566,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [1.167705, -10.051023, 5.739682],
+    "Location" : [-1.479746, -10.000077, 7.031409],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 23.566877, 81.004150]
+    "Rotation" : [-0.000001, 27.916899, 84.154167]
   },
   "Primitives" : {
     "74" : {

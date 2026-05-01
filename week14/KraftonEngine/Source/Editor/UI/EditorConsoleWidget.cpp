@@ -1,5 +1,6 @@
 ﻿#include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
 #include "Render/Types/ShadowSettings.h"
@@ -218,6 +219,8 @@ void FEditorConsoleWidget::RegisterEditorCommands()
 		"Editor", "show editor only", "Shows editor-only components in the property component tree.");
 	RegisterCommand("hide editor only", [this](const TArray<FString>& Args) { HandleHideEditorOnly(Args); },
 		"Editor", "hide editor only", "Hides editor-only components in the property component tree.");
+	RegisterCommand("show collision shape", [this](const TArray<FString>& Args) { HandleShowCollisionShape(Args); },
+		"Editor", "show collision shape", "Toggles collision shape wireframe visibility in PIE/Game viewports.");
 	RegisterCommand("cb refresh", [this](const TArray<FString>& Args) { HandleContentBrowserRefresh(Args); },
 		"Editor", "cb refresh", "Refreshes the content browser.");
 	RegisterCommand("cb icon size", [this](const TArray<FString>& Args) { HandleContentBrowserIconSize(Args); },
@@ -683,6 +686,30 @@ void FEditorConsoleWidget::HandleHideEditorOnly(const TArray<FString>& Args)
 
 	EditorEngine->SetShowEditorOnlyComponents(false);
 	AddLog("Property component tree: editor-only components hidden.\n");
+}
+
+void FEditorConsoleWidget::HandleShowCollisionShape(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	for (FLevelEditorViewportClient* VC : EditorEngine->GetLevelViewportClients())
+	{
+		if (!VC) continue;
+		bool& Flag = VC->GetRenderOptions().ShowFlags.bShowCollisionShape;
+		Flag = !Flag;
+	}
+
+	// 토글 결과는 첫 뷰포트 기준으로 출력
+	const auto& Clients = EditorEngine->GetLevelViewportClients();
+	bool bEnabled = !Clients.empty() && Clients[0]
+		? Clients[0]->GetRenderOptions().ShowFlags.bShowCollisionShape
+		: false;
+	AddLog("Collision shape wireframe: %s\n", bEnabled ? "ON" : "OFF");
 }
 
 void FEditorConsoleWidget::HandleContentBrowserRefresh(const TArray<FString>& Args)

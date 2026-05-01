@@ -6,6 +6,7 @@
 #include "Render/Types/ViewTypes.h"
 #include "Render/Types/LODContext.h"
 #include "Collision/ConvexVolume.h"
+#include "GameFramework/WorldContext.h"
 
 #include <d3d11.h>
 
@@ -33,6 +34,7 @@ struct FFrameContext
 
 	bool  bIsOrtho     = false;
 	bool  bIsLightView = false;
+	EWorldType WorldType = EWorldType::Editor;
 	float OrthoWidth = 10.0f;
 
 	// Viewport

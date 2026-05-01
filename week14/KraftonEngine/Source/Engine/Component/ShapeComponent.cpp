@@ -2,6 +2,7 @@
 #include "ShapeComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "Render/Proxy/ShapeSceneProxy.h"
 
 #include <cstring>
 
@@ -11,6 +12,11 @@ HIDE_FROM_COMPONENT_LIST(UShapeComponent)
 UShapeComponent::UShapeComponent()
 {
 	bCastShadow = false;
+}
+
+FPrimitiveSceneProxy* UShapeComponent::CreateSceneProxy()
+{
+	return new FShapeSceneProxy(this);
 }
 
 void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -23,6 +29,11 @@ void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 void UShapeComponent::PostEditProperty(const char* PropertyName)
 {
 	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "Shape Color") == 0 || strcmp(PropertyName, "Draw Only If Selected") == 0)
+	{
+		MarkRenderStateDirty();
+	}
 }
 
 void UShapeComponent::Serialize(FArchive& Ar)

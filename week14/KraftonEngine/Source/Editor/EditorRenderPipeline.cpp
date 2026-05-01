@@ -179,6 +179,7 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 	}
 
 	Frame.bIsLightView = VC->IsViewingFromLight();
+	Frame.WorldType = World->GetWorldType();
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
