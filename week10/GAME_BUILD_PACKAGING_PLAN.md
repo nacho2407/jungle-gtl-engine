@@ -487,9 +487,9 @@ becomes a project-file operation instead of a combined code-boundary and project
 
 ## Current Status
 
-Active Batch: Batch 16 - Build menu and scene copy list
+Active Batch: Batch 17 - Game branding icon and splash
 
-Last Verified Build: Debug|x64, GameClientDebug|x64, and GameClientRelease|x64 passed on 2026-05-02 after Batch 16.
+Last Verified Build: Debug|x64, GameClientDebug|x64, and GameClientRelease|x64 passed on 2026-05-02 after Batch 17.
 
 Last Edited Files:
 
@@ -502,6 +502,10 @@ Last Edited Files:
 - `NipsEngine/Source/Editor/Packaging/GamePackager.cpp`
 - `NipsEngine/Source/Editor/UI/EditorMainPanel.h`
 - `NipsEngine/Source/Editor/UI/EditorMainPanel.cpp`
+- `NipsEngine/Source/Engine/Runtime/GameSplashScreen.h`
+- `NipsEngine/Source/Engine/Runtime/GameSplashScreen.cpp`
+- `NipsEngine/Source/Engine/Runtime/WindowsApplication.cpp`
+- `NipsEngine/Source/Engine/Runtime/GameBranding.rc`
 - `NipsEngine/Source/Editor/UI/EditorSceneWidget.h`
 - `NipsEngine/Source/Editor/UI/EditorToolbarWidget.h`
 - `NipsEngine/Source/Editor/UI/EditorToolbarWidget.cpp`
@@ -535,11 +539,47 @@ Open Risks:
 - Visible scene QA passed after the runtime render target fix.
 - Visible camera/input QA passed for WASD/E/Q and mouse look.
 - Missing-startup-scene behavior is now recorded in `Saves/Logs/Game.log`, but still has no visible in-window error screen.
+- Game branding now writes a generated `.rc`; packaging must regenerate it before MSBuild so stale icons do not remain.
 
 Next Step:
 
 - Keep PIE and Standalone behavior aligned without making PIE launch the packaged GameClient exe.
 - Optional: add a visible GameClient fatal/error screen for startup scene failures.
+
+### 2026-05-02 Batch 17 - Game Branding Icon and Splash Started
+
+Purpose:
+
+- Let Packaging assign a game executable icon and startup splash image, similar to Unity-style branding.
+- Keep the implementation package-driven so future project separation can reuse the same `Game.ini` branding section.
+
+Implemented:
+
+- Added `IconPath`, `SplashImagePath`, and `SplashMinSeconds` to `FGameBuildSettings`.
+- Added Packaging Settings rows for:
+  - Game Icon (`.ico`)
+  - Splash Image (`.png`, `.jpg`, `.jpeg`, `.bmp`)
+  - Splash Seconds
+- Added optional branding validation before MSBuild.
+- Added `Source/Engine/Runtime/GameBranding.rc`.
+- Packager now regenerates `Source/Engine/Runtime/GameBranding.rc` before MSBuild:
+  - selected icon -> resource id `101`
+  - no icon -> empty rc file to avoid stale icon reuse
+- Packager resets `GameBranding.rc` back to the empty default after MSBuild, so local absolute icon paths do not linger in the worktree.
+- Packager copies selected icon/splash into package `Branding/`.
+- Packager writes `[Branding]` to `Settings/Game.ini`.
+- `FWindowsApplication` loads resource id `101` as window/taskbar icon when available.
+- `GameBranding.rc` is excluded from Editor Debug/Release and included for GameClient configs only.
+- Added `FGameSplashScreen`, a GameClient runtime splash window using GDI+.
+- `FEngineLoop` shows the splash in GameClient before the main window/engine initialization and closes it after `BeginPlay`.
+
+Validation to run:
+
+- [x] `Debug|x64`
+- [x] `GameClientDebug|x64`
+- [x] `GameClientRelease|x64`
+- Package with no icon/splash to verify fallback path.
+- Package with `.ico` and `.png` to verify exe icon and startup splash.
 
 ## Work Log
 
@@ -1201,3 +1241,35 @@ Manual QA:
   - modal closes immediately after pressing Build
   - Console receives orange `[Build]` output during MSBuild
   - Footer displays final build result
+
+### 2026-05-02 Batch 17 - Splash Overlay Window
+
+Purpose:
+
+- Replace the first splash implementation that created a separate image-sized popup before the game window.
+- Make splash behave like a loading cover over the real GameClient window.
+
+Result:
+
+- GameClient now creates its main window first, then shows the splash overlay on top of that window.
+- The splash overlay uses the target game window outer rect, including the title bar area.
+- The overlay no longer paints a black background; it is a layered transparent cover that draws only the splash image.
+- Fade-in/out applies to the logo image only.
+- The overlay uses `SW_SHOWNOACTIVATE` / `WS_EX_NOACTIVATE` so it does not steal input focus from the game window.
+- Splash seconds now defaults to 3 seconds and the Packaging UI clamps it to the supported 3-10 second range.
+
+Manual QA:
+
+- Package with a PNG splash image.
+- Run the GameClient and confirm:
+  - the game window appears first
+  - splash covers the whole game window area
+  - no black patch is painted behind the splash
+  - the logo is centered and not stretched across the whole window
+  - splash closes after at least the configured minimum seconds
+
+Verified:
+
+- `MSBuild NipsEngine.sln /m /p:Configuration=Debug /p:Platform=x64 /v:minimal` passed.
+- `MSBuild NipsEngine.sln /p:Configuration=GameClientDebug /p:Platform=x64 /v:minimal` passed.
+- `MSBuild NipsEngine.sln /m /p:Configuration=GameClientRelease /p:Platform=x64 /v:minimal` passed.

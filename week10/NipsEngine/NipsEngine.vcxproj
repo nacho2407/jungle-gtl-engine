@@ -208,7 +208,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -229,7 +229,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">
@@ -266,7 +266,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">
@@ -287,7 +287,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -514,6 +514,7 @@
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameSplashScreen.cpp" />
     <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp" />
@@ -775,6 +776,7 @@
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameSplashScreen.h" />
     <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\SceneView.h" />
@@ -824,6 +826,12 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\Lua\include\lua.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common.hlsl">
