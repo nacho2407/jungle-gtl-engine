@@ -23,8 +23,15 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		uint32 MaxPointAtlasPages  = 4;		// Point Light Atlas 최대 page 수
 	};
 
+	// --- Game ---
+	struct FGameOption
+	{
+		FString StartLevelName; // Scene 파일 이름 (확장자 제외)
+	};
+
 public:
 	FShadowOption Shadow;
+	FGameOption Game;
 
 	// --- 직렬화 ---
 	void SaveToFile(const FString& Path) const;

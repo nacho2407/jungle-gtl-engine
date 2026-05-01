@@ -13,6 +13,9 @@ namespace PSKey
 	constexpr const char* PointAtlasResolution = "PointAtlasResolution";
 	constexpr const char* MaxSpotAtlasPages = "MaxSpotAtlasPages";
 	constexpr const char* MaxPointAtlasPages = "MaxPointAtlasPages";
+
+	constexpr const char* GameSection = "Game";
+	constexpr const char* StartLevelName = "StartLevelName";
 }
 
 void FProjectSettings::SaveToFile(const FString& Path) const
@@ -29,6 +32,10 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	ShadowObj[PSKey::MaxSpotAtlasPages] = static_cast<int>(Shadow.MaxSpotAtlasPages);
 	ShadowObj[PSKey::MaxPointAtlasPages] = static_cast<int>(Shadow.MaxPointAtlasPages);
 	Root[PSKey::Shadow] = ShadowObj;
+
+	JSON GameObj = Object();
+	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
+	Root[PSKey::GameSection] = GameObj;
 
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
 	if (FilePath.has_parent_path())
@@ -51,6 +58,13 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		std::istreambuf_iterator<char>());
 
 	JSON Root = JSON::Load(Content);
+
+	if (Root.hasKey(PSKey::GameSection))
+	{
+		JSON G = Root[PSKey::GameSection];
+		if (G.hasKey(PSKey::StartLevelName))
+			Game.StartLevelName = G[PSKey::StartLevelName].ToString();
+	}
 
 	if (Root.hasKey(PSKey::Shadow))
 	{

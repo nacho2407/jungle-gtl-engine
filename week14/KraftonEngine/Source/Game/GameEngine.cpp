@@ -4,6 +4,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Viewport/Viewport.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Core/ProjectSettings.h"
 #include "Core/Log.h"
 
 IMPLEMENT_CLASS(UGameEngine, UEngine)
@@ -11,6 +12,8 @@ IMPLEMENT_CLASS(UGameEngine, UEngine)
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
 	UEngine::Init(InWindow);
+
+	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
 	StandaloneViewport = new FViewport();
 	StandaloneViewport->Initialize(
@@ -46,10 +49,10 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UGameEngine::LoadStartLevel()
 {
-	// Default Scene 하드코딩
-	const FString& StartLevel = "GameTest";
+	const FString& StartLevel = FProjectSettings::Get().Game.StartLevelName;
 	if (StartLevel.empty())
 	{
+		UE_LOG("[GameEngine] No StartLevelName set in ProjectSettings");
 		return;
 	}
 
