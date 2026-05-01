@@ -1,4 +1,4 @@
-﻿#include "Editor/EditorEngine.h"
+#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
@@ -9,6 +9,7 @@
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
 #include "Viewport/GameViewportClient.h"
+#include "UI/UIManager.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -295,6 +296,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
 		{
 			PIEWorld->SetActiveCamera(VCCamera);
+			PIEWorld->GetCameraManager()->Possess(VCCamera);
 		}
 	}
 
@@ -315,15 +317,13 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		{
 			PIEViewportClient->SetOwnerWindow(Window->GetHWND());
 		}
-		UCameraComponent* InitialTargetCamera = PIEWorld->GetActiveCamera();
 		FViewport* InitialViewport = nullptr;
 		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 		{
-			InitialTargetCamera = ActiveVC->GetCamera() ? ActiveVC->GetCamera() : InitialTargetCamera;
 			InitialViewport = ActiveVC->GetViewport();
 			PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
 		}
-		PIEViewportClient->OnBeginPIE(InitialTargetCamera, InitialViewport);
+		PIEViewportClient->OnBeginPIE(InitialViewport);
 	}
 	EnterPIEPossessedMode();
 	
@@ -397,6 +397,8 @@ void UEditorEngine::EndPlayMap()
 		SetGameViewportClient(nullptr);
 	}
 
+	UUIManager::Get().ClearViewport();
+
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
 
@@ -435,7 +437,6 @@ bool UEditorEngine::EnterPIEPossessedMode()
 	PIEControlMode = EPIEControlMode::Possessed;
 	SyncGameViewportPIEControlState(true);
 	InputSystem::Get().SetUseRawMouse(true);
-	InputSystem::Get().ResetAllKeyStates();
 	InputSystem::Get().ResetTransientState();
 	return true;
 }
@@ -450,7 +451,6 @@ bool UEditorEngine::EnterPIEEjectedMode()
 	PIEControlMode = EPIEControlMode::Ejected;
 	SyncGameViewportPIEControlState(false);
 	InputSystem::Get().SetUseRawMouse(false);
-	InputSystem::Get().ResetAllKeyStates();
 	InputSystem::Get().ResetTransientState();
 	return true;
 }
@@ -476,15 +476,9 @@ void UEditorEngine::SyncGameViewportPIEControlState(bool bPossessedMode)
 
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
-		PIEViewportClient->Possess(ActiveVC->GetCamera());
 		PIEViewportClient->SetViewport(ActiveVC->GetViewport());
 		PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
 		return;
-	}
-
-	if (UWorld* World = GetWorld())
-	{
-		PIEViewportClient->Possess(World->GetActiveCamera());
 	}
 }
 

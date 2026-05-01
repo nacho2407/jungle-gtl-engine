@@ -1,24 +1,23 @@
-#include "Viewport/GameViewportClient.h"
+﻿#include "Viewport/GameViewportClient.h"
 
 #include "Component/CameraComponent.h"
 #include "Engine/Input/InputSystem.h"
 #include "Math/MathUtils.h"
+#include "Core/Log.h"
 
 #include <windows.h>
 
 DEFINE_CLASS(UGameViewportClient, UObject)
 
-void UGameViewportClient::OnBeginPIE(UCameraComponent* InitialTarget, FViewport* InViewport)
+void UGameViewportClient::OnBeginPIE(FViewport* InViewport)
 {
 	Viewport = InViewport;
-	Possess(InitialTarget);
 	ResetInputState();
 }
 
 void UGameViewportClient::OnEndPIE()
 {
 	SetPossessed(false);
-	UnPossess();
 	ResetInputState();
 	bHasCursorClipRect = false;
 	Viewport = nullptr;
@@ -26,6 +25,13 @@ void UGameViewportClient::OnEndPIE()
 
 bool UGameViewportClient::ProcessPIEInput(const FInputSystemSnapshot& Snapshot, float DeltaTime)
 {
+	if (!bPIEPossessedInputEnabled)
+	{
+		ClearGameInputSnapshot();
+		return false;
+	}
+
+	SetGameInputSnapshot(Snapshot);
 	return Tick(DeltaTime, Snapshot);
 }
 
@@ -71,25 +77,6 @@ void UGameViewportClient::SetPossessed(bool bPossessed)
 	ResetInputState();
 }
 
-void UGameViewportClient::Possess(UCameraComponent* TargetCamera)
-{
-	if (PossessedCamera == TargetCamera)
-	{
-		return;
-	}
-
-	PossessedCamera = TargetCamera;
-	ResetInputState();
-}
-
-void UGameViewportClient::UnPossess()
-{
-	PossessedCamera = nullptr;
-	SetCursorCaptured(false);
-	InputSystem::Get().SetUseRawMouse(false);
-	ResetInputState();
-}
-
 void UGameViewportClient::ResetInputState()
 {
 	InputSystem::Get().ResetMouseDelta();
@@ -98,7 +85,7 @@ void UGameViewportClient::ResetInputState()
 
 bool UGameViewportClient::Tick(float DeltaTime, const FInputSystemSnapshot& Snapshot)
 {
-	if (!bPIEPossessedInputEnabled || !HasPossessedTarget())
+	if (!bPIEPossessedInputEnabled)
 	{
 		return false;
 	}
@@ -113,92 +100,8 @@ bool UGameViewportClient::Tick(float DeltaTime, const FInputSystemSnapshot& Snap
 
 	InputSystem::Get().SetUseRawMouse(true);
 	SetCursorCaptured(true);
-	return ApplyInputToCameraOrActor(DeltaTime, Snapshot);
-}
 
-bool UGameViewportClient::ApplyInputToCameraOrActor(float DeltaTime, const FInputSystemSnapshot& Snapshot)
-{
-	if (!HasPossessedTarget())
-	{
-		return false;
-	}
-
-	const bool bMoved = ApplyMovementInput(DeltaTime, Snapshot);
-	const bool bLooked = ApplyLookInput(Snapshot);
-	return bMoved || bLooked;
-}
-
-bool UGameViewportClient::ApplyMovementInput(float DeltaTime, const FInputSystemSnapshot& Snapshot)
-{
-	if (!HasPossessedTarget())
-	{
-		return false;
-	}
-
-	if (!Snapshot.bGuiUsingKeyboard && !Snapshot.bGuiUsingTextInput)
-	{
-		FVector MoveInput(0.0f, 0.0f, 0.0f);
-		if (Snapshot.IsDown('W')) MoveInput.X += 1.0f;
-		if (Snapshot.IsDown('S')) MoveInput.X -= 1.0f;
-		if (Snapshot.IsDown('A')) MoveInput.Y -= 1.0f;
-		if (Snapshot.IsDown('D')) MoveInput.Y += 1.0f;
-		if (Snapshot.IsDown('E') || Snapshot.IsDown(VK_SPACE)) MoveInput.Z += 1.0f;
-		if (Snapshot.IsDown('Q') || Snapshot.IsDown(VK_CONTROL)) MoveInput.Z -= 1.0f;
-
-		if (!MoveInput.IsNearlyZero())
-		{
-			MoveInput = MoveInput.Normalized();
-
-			UCameraComponent* TargetCamera = GetPossessedTarget();
-			FVector FlatForward = TargetCamera->GetForwardVector();
-			FVector FlatRight = TargetCamera->GetRightVector();
-			FlatForward.Z = 0.0f;
-			FlatRight.Z = 0.0f;
-			if (!FlatForward.IsNearlyZero())
-			{
-				FlatForward = FlatForward.Normalized();
-			}
-			if (!FlatRight.IsNearlyZero())
-			{
-				FlatRight = FlatRight.Normalized();
-			}
-
-			const float SafeDeltaTime = (DeltaTime > 0.0f) ? DeltaTime : (1.0f / 60.0f);
-			const float SpeedBoost = Snapshot.IsDown(VK_SHIFT) ? InputSettings.SprintMultiplier : 1.0f;
-			const FVector WorldDelta = (FlatForward * MoveInput.X + FlatRight * MoveInput.Y + FVector::UpVector * MoveInput.Z)
-				* (InputSettings.MoveSpeed * SpeedBoost * SafeDeltaTime);
-			TargetCamera->SetWorldLocation(TargetCamera->GetWorldLocation() + WorldDelta);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool UGameViewportClient::ApplyLookInput(const FInputSystemSnapshot& Snapshot)
-{
-	if (!HasPossessedTarget())
-	{
-		return false;
-	}
-
-	// PIE possessed mode owns mouse look. If ImGui explicitly captures mouse, skip look
-	// so UI interactions do not leak into the controller.
-	if (!Snapshot.bGuiUsingMouse && (Snapshot.MouseDeltaX != 0 || Snapshot.MouseDeltaY != 0))
-	{
-		UCameraComponent* TargetCamera = GetPossessedTarget();
-		FRotator Rotation = TargetCamera->GetRelativeRotation();
-		Rotation.Yaw += static_cast<float>(Snapshot.MouseDeltaX) * InputSettings.LookSensitivity;
-		Rotation.Pitch = Clamp(
-			Rotation.Pitch + static_cast<float>(Snapshot.MouseDeltaY) * InputSettings.LookSensitivity,
-			InputSettings.MinPitch,
-			InputSettings.MaxPitch);
-		Rotation.Roll = 0.0f;
-		TargetCamera->SetRelativeRotation(Rotation);
-		return true;
-	}
-
-	return false;
+	return true;
 }
 
 void UGameViewportClient::SetCursorCaptured(bool bCaptured)
@@ -253,4 +156,16 @@ void UGameViewportClient::ApplyCursorClip()
 	{
 		::ClipCursor(&ScreenRect);
 	}
+}
+
+void UGameViewportClient::SetGameInputSnapshot(const FInputSystemSnapshot& Snapshot)
+{
+	GameInputSnapshot = Snapshot;
+	bHasGameInputSnapshot = true;
+}
+
+void UGameViewportClient::ClearGameInputSnapshot()
+{
+	GameInputSnapshot = FInputSystemSnapshot{};
+	bHasGameInputSnapshot = false;
 }

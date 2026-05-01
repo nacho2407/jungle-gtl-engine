@@ -1,9 +1,29 @@
 ﻿#include "Component/CameraComponent.h"
 #include "Object/ObjectFactory.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include <cmath>
 
 IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
-HIDE_FROM_COMPONENT_LIST(UCameraComponent)
+
+void UCameraComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (UWorld* World = GetOwner()->GetWorld())
+	{
+		World->GetCameraManager()->RegisterCamera(this);
+	}
+}
+
+void UCameraComponent::EndPlay()
+{
+	Super::EndPlay();
+	if (UWorld* World = GetOwner()->GetWorld())
+	{
+		World->GetCameraManager()->UnregisterCamera(this);
+	}
+}
 
 FMatrix UCameraComponent::GetViewMatrix() const
 {

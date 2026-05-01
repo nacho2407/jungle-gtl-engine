@@ -1,4 +1,4 @@
-﻿#include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
 #include "Core/Log.h"
@@ -17,6 +17,7 @@
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
 #include "Lua/LuaScriptManager.h"
+#include "UI/UIManager.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -76,6 +77,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 		SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
 	}
 
+	UUIManager::Get().Initialize(Device);
+
 	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();
 	FLuaScriptManager::Initialize();
@@ -86,6 +89,7 @@ void UEngine::Shutdown()
 	FLuaScriptManager::Shutdown();
 	FDirectoryWatcher::Get().Shutdown();
 	FLogManager::Get().Shutdown();
+	UUIManager::Get().Shutdown();
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
 	UTexture2D::ReleaseAllGPU();
