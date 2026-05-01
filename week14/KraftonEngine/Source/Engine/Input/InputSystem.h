@@ -83,6 +83,15 @@ public:
 
     // Mouse position
     POINT GetMousePos() const { return MousePos; }
+    POINT GetMouseClientPos() const
+    {
+        POINT ClientPos = MousePos;
+        if (OwnerHWnd)
+        {
+            ScreenToClient(OwnerHWnd, &ClientPos);
+        }
+        return ClientPos;
+    }
     int MouseDeltaX() const { return FrameMouseDeltaX; }
     int MouseDeltaY() const { return FrameMouseDeltaY; }
     bool MouseMoved() const { return MouseDeltaX() != 0 || MouseDeltaY() != 0; }

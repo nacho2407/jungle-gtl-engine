@@ -666,7 +666,7 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 	}
 	else
 	{
-		const POINT MousePos = Input.GetMousePos();
+		const POINT MousePos = Input.GetMouseClientPos();
 		MouseX = MousePos.x;
 		MouseY = MousePos.y;
 	}

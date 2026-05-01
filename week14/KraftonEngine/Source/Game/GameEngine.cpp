@@ -34,6 +34,16 @@ void UGameEngine::Shutdown()
 	UEngine::Shutdown();
 }
 
+void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
+{
+	UEngine::OnWindowResized(Width, Height);
+
+	if (StandaloneViewport)
+	{
+		StandaloneViewport->RequestResize(Width, Height);
+	}
+}
+
 void UGameEngine::LoadStartLevel()
 {
 	// Default Scene 하드코딩

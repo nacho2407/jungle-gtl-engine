@@ -1,6 +1,7 @@
 ﻿#include "Game/GameRenderPipeline.h"
 
 #include "Game/GameEngine.h"
+#include "Input/InputSystem.h"
 #include "Viewport/Viewport.h"
 
 FGameRenderPipeline::FGameRenderPipeline(UGameEngine* InGame, FRenderer& InRenderer)
@@ -70,6 +71,20 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FS
 	Frame.ClearViewportResources();
 	Frame.SetCameraInfo(Camera);
 	Frame.SetViewportInfo(VP);
+
+	const POINT MousePos = InputSystem::Get().GetMouseClientPos();
+	if (MousePos.x >= 0 && MousePos.y >= 0
+		&& MousePos.x < static_cast<LONG>(Frame.ViewportWidth)
+		&& MousePos.y < static_cast<LONG>(Frame.ViewportHeight))
+	{
+		Frame.CursorViewportX = static_cast<uint32>(MousePos.x);
+		Frame.CursorViewportY = static_cast<uint32>(MousePos.y);
+	}
+	else
+	{
+		Frame.CursorViewportX = UINT32_MAX;
+		Frame.CursorViewportY = UINT32_MAX;
+	}
 }
 
 void FGameRenderPipeline::CollectCommands(FScene* Scene, FRenderer& Renderer, FCollectOutput& Output)
