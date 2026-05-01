@@ -24,6 +24,8 @@
 #include "Component/BoxComponent.h"
 #include "Component/SphereComponent.h"
 #include "Component/CapsuleComponent.h"
+#include "Runtime/Script/ScriptManager.h"
+#include <Runtime/Script/ScriptComponent.h>
 
 #define SEPARATOR(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); ImGui::Spacing();
 
@@ -102,7 +104,25 @@ namespace
         }
         return DefaultName;
     }
-}
+
+	static FString MakeDefaultScriptName(const FString& SceneName, AActor* Actor)
+    {
+        FString ActorName = "Actor";
+        FString ValidSceneName = SceneName.empty() ? "Default" : SceneName;
+
+        if (Actor)
+        {
+            ActorName = Actor->GetFName().ToString();
+
+            if (ActorName.empty())
+            {
+                ActorName = Actor->GetTypeInfo() ? Actor->GetName() : "Actor";
+            }
+        }
+
+        return ValidSceneName + "_" + ActorName;
+    }
+ }
 
 // 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
 struct FComponentMenuEntry
@@ -231,6 +251,14 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		[](AActor* Actor) -> UActorComponent*
 		{
 			UCapsuleComponent* Comp = Actor->AddComponent<UCapsuleComponent>();
+			return Comp;
+		} 
+	},
+	{
+		"Script Component",
+		[](AActor* Actor) -> UActorComponent*
+		{
+            UScriptComponent* Comp = Actor->AddComponent<UScriptComponent>();
 			return Comp;
 		} 
 	},
@@ -797,6 +825,21 @@ void FEditorPropertyWidget::RenderComponentProperties()
 				Camera->SetRotation(LightComp->GetRelativeQuat());
 			}
 		}
+    }
+    else if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent))
+    {
+        if (ImGui::Button("Create Script"))
+		{
+            FString ScriptPath = ScriptComp->GetScriptPath();
+			FScriptManager& ScriptMgr = FScriptManager::Get();
+            ScriptMgr.CreateScript(ScriptPath);
+        }
+        if (ImGui::Button("Edit Script"))
+		{
+            FString ScriptPath = ScriptComp->GetScriptPath();
+			FScriptManager& ScriptMgr = FScriptManager::Get();
+            ScriptMgr.EditScript(ScriptPath);
+        }
 	}
 	ImGui::Separator();
 
@@ -930,6 +973,45 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					ImGui::EndCombo();
 				}
 			}
+		}
+		else if (strcmp(Prop.Name, "ScriptPath") == 0)
+		{
+            TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
+                FScriptManager::Get().GetScriptArray();
+
+            ImGui::PushID(Val);
+            char Buffer[512] = {};
+            strncpy_s(Buffer, (*Val).c_str(), sizeof(Buffer) - 1);
+
+            if (ImGui::InputText("##ScriptPathInput", Buffer, sizeof(Buffer)))
+            {
+                *Val = Buffer;
+                bChanged = true;
+            }
+
+            ImGui::SameLine();
+
+            const FString Current = *Val;
+			if (ImGui::BeginCombo("##ScriptPathCombo", "SelectScript"))
+            {
+                for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+                {
+                    const FString Path = ScriptName.ToString();
+                    const bool bSelected = (Current == Path);
+                    if (ImGui::Selectable(Path.c_str(), bSelected))
+                    {
+                        *Val = Path;
+                        bChanged = true;
+                    }
+                    if (bSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::PopID();
 		}
 		else
 		{
@@ -1127,6 +1209,19 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 	else if (UMovementComponent* MoveComp = Cast<UMovementComponent>(NewComp))
 	{
 		if (AttachTarget) MoveComp->SetUpdatedComponent(AttachTarget);
+	}
+
+	if (UScriptComponent* ScriptComp = Cast<UScriptComponent>(NewComp))
+	{
+		if (ScriptComp->GetScriptPath().empty())
+		{
+			FString SceneName = "Default";
+			if (EditorEngine)
+			{
+				SceneName = EditorEngine->GetMainPanel().GetSceneWidget().GetSceneName();
+			}
+			ScriptComp->SetScript(MakeDefaultScriptName(SceneName, PrimaryActor));
+		}
 	}
 
 	SelectedComponent = NewComp;

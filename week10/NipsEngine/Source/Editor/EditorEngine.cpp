@@ -11,6 +11,7 @@
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Core/Logging/Stats.h"
+#include "Runtime/Script/ScriptManager.h"
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Settings/EditorSettings.h"
@@ -44,6 +45,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
     // Editor용 렌더 파이프라인 세팅
     SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
+
+	FScriptManager::Get().initializeLuaState();
 }
 
 void UEditorEngine::Shutdown()

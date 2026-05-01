@@ -25,6 +25,7 @@ public:
 
 	FEditorPropertyWidget& GetPropertyWidget() { return PropertyWidget; }
 	FEditorMaterialWidget& GetMaterialWidget() { return MaterialWidget; }
+	FEditorSceneWidget& GetSceneWidget() { return SceneWidget; }
 
 	void ResetWidgetSelections()
 	{

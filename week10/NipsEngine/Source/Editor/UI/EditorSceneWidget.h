@@ -14,6 +14,7 @@ public:
 	void SaveSceneToFilePath(const FString& FilePath);
 	void LoadSceneFromFilePath(const FString& FilePath);
 	void RefreshSceneAndAssets();
+	const char* GetSceneName() const { return SceneName; }
 
 private:
 	char SceneName[128] = "Default";

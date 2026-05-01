@@ -61,7 +61,7 @@ std::wstring FPaths::ShaderFilePath() { return RootDir() + L"Shaders/ShaderW0.hl
 std::wstring FPaths::SettingsFilePath() { return RootDir() + L"Settings/Editor.ini"; }
 std::wstring FPaths::ViewerSettingsFilePath() { return RootDir() + L"Settings/ObjViewer.ini"; }
 std::wstring FPaths::AssetDirectoryPath(){ return RootDir() + L"Asset";}
-std::wstring FPaths::LuaTemplatePath(){ return RootDir() + L"LuaScripts/Template.lua"; } 
+std::wstring FPaths::LuaTemplatePath(){ return RootDir() + L"LuaScript/Template.lua"; } 
 std::wstring FPaths::ResourceDefaultMaterialTexture() { return RootDir() + L"Asset/Mesh/Default.png"; }
 
 std::wstring FPaths::Combine(const std::wstring& Base, const std::wstring& Child)
