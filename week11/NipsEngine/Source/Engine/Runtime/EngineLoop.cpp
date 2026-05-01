@@ -44,6 +44,14 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 	CreateEngine();
 	GEngine->Init(&Application.GetWindow());
 	GEngine->SetTimer(&Timer);
+	Application.SetOnCloseRequestedCallback([]()
+		{
+			if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
+			{
+				return EditorEngine->GetMainPanel().CanCloseEditor();
+			}
+			return true;
+		});
 	GEngine->BeginPlay();
 
 	Timer.Initialize();

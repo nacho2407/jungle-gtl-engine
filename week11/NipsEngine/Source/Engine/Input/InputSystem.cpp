@@ -138,13 +138,18 @@ void InputSystem::HandleOutOfFocusTick()
 
 void InputSystem::ResetAllInputStateOnFocusLoss()
 {
+    if (bIsMouseLocked)
+    {
+        LockMouse(false);
+    }
+    SetCursorVisibility(true);
+
     for (int i = 0; i < 256; ++i)
     {
         PrevStates[i] = CurrentStates[i];
         CurrentStates[i] = false;
     }
 
-    bIsMouseLocked = false;
     bUseRawMouse = false;
 
     bLeftDragJustStarted = false;
@@ -278,14 +283,49 @@ float InputSystem::GetRightDragDistance() const
 // --- Mouse lock ------------------------------------------------
 void InputSystem::LockMouse(bool bLock, float x, float y, float w, float h)
 {
-    bIsMouseLocked = bLock;
-    if (bIsMouseLocked)
+    if (bLock)
     {
+        if (!bIsMouseLocked)
+        {
+            GetCursorPos(&MouseLockRestoreScreen);
+            bHasMouseLockRestoreScreen = true;
+        }
+
+        bIsMouseLocked = true;
         auto WarpX = x + w * 0.5f;
 		auto WarpY = y + h * 0.5f;
         LockedCenterScreen = {(LONG)WarpX, (LONG)WarpY};
         SetCursorPos(LockedCenterScreen.x, LockedCenterScreen.y);
+        MousePos = LockedCenterScreen;
+        PrevMousePos = LockedCenterScreen;
+        FrameMouseDeltaX = 0;
+        FrameMouseDeltaY = 0;
+        RawMouseDeltaAccumX = 0;
+        RawMouseDeltaAccumY = 0;
+        return;
     }
+
+    const bool bWasLocked = bIsMouseLocked;
+    bIsMouseLocked = false;
+    ClipCursor(nullptr);
+
+    if (bWasLocked && bHasMouseLockRestoreScreen)
+    {
+        SetCursorPos(MouseLockRestoreScreen.x, MouseLockRestoreScreen.y);
+        MousePos = MouseLockRestoreScreen;
+        PrevMousePos = MouseLockRestoreScreen;
+    }
+    else
+    {
+        GetCursorPos(&MousePos);
+        PrevMousePos = MousePos;
+    }
+
+    bHasMouseLockRestoreScreen = false;
+    FrameMouseDeltaX = 0;
+    FrameMouseDeltaY = 0;
+    RawMouseDeltaAccumX = 0;
+    RawMouseDeltaAccumY = 0;
 }
 
 void InputSystem::SetCursorVisibility(bool bVisible)

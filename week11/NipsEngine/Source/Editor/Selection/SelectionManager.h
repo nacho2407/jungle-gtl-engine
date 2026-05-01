@@ -17,6 +17,8 @@ public:
 	void ToggleSelect(AActor* Actor);
 	void Deselect(AActor* Actor);
 	void ClearSelection();
+	void BeginBatchUpdate();
+	void EndBatchUpdate();
 
 	bool IsSelected(AActor* Actor) const
 	{
@@ -25,7 +27,7 @@ public:
 
 	AActor* GetPrimarySelection() const
 	{
-		return SelectedActors.empty() ? nullptr : SelectedActors.front();
+		return SelectedActors.empty() ? nullptr : SelectedActors.back();
 	}
 
 	const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
@@ -36,8 +38,11 @@ public:
 	void OnActorDestroyed(AActor* Actor);
 
 private:
+	void RequestGizmoSync();
 	void SyncGizmo();
 
 	TArray<AActor*> SelectedActors;
 	UGizmoComponent* Gizmo = nullptr;
+	int32 BatchUpdateDepth = 0;
+	bool bPendingGizmoSync = false;
 };

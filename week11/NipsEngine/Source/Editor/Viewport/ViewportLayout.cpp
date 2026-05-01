@@ -123,6 +123,21 @@ void FEditorViewportLayout::UpdateHoverStates()
 	// 6. 현재 마우스가 viewport host 안에 있는지 확인합니다.
 	const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
     const bool bInViewportHost = GuiState.IsInViewportHost(MouseX, MouseY);
+    const bool bViewportMouseBlockedByUI = GuiState.bBlockViewportMouse && !GuiState.bAllowViewportMouseFocus;
+
+    if (bViewportMouseBlockedByUI)
+    {
+        ActiveOperationViewportIndex = -1;
+        if (bOperationPressed)
+        {
+            bBlockViewportOperationUntilRelease = true;
+        }
+        for (int32 i = 0; i < MaxViewports; ++i)
+        {
+            GetViewportState(i).bHovered = false;
+        }
+        return;
+    }
 
     // 7. 우클릭/중클릭이 눌린 순간의 시작 위치를 먼저 기록합니다.
     //    뷰포트 위에서 시작한 조작이면 해당 뷰포트를 고정하고,
@@ -335,7 +350,6 @@ void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 	if (RootWindow)
 	{
 		RootWindow->SetRect({ 0.f, 0.f, static_cast<float>(Width), static_cast<float>(Height) });
-		RootWindow->SetChild(RootSplitterV);
 	}
 
 	// 초기 크기 → 자식 영역 재귀 계산
@@ -360,6 +374,7 @@ void FEditorViewportLayout::BuildViewportLayout(int32 Width, int32 Height)
 
 	// SViewport(FRect) → FSceneViewport::SetRect(FViewportRect) 동기화
 	SyncViewportRects();
+	UpdateSlateSplitterAttachment();
 }
 
 void FEditorViewportLayout::SetSingleViewportMode(bool bSingle, int32 Index)
@@ -398,6 +413,7 @@ void FEditorViewportLayout::SetLayoutMode(EEditorViewportLayoutMode InMode, int3
 	FEditorSettings::Get().ActiveViewportCount = GetLayoutSlotCount(LayoutMode);
 	FEditorSettings::Get().SingleViewportIndex = SingleViewportIndex;
 	SyncViewportRects();
+	UpdateSlateSplitterAttachment();
 }
 
 void FEditorViewportLayout::SetLayoutModeAnimated(EEditorViewportLayoutMode InMode, int32 FocusIndex)
@@ -421,6 +437,22 @@ void FEditorViewportLayout::SetLayoutModeAnimated(EEditorViewportLayoutMode InMo
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		LayoutTransitionStartRects[i] = GetSceneViewport(i).GetRect();
+	}
+	const FViewportRect AnchorSourceRect = LayoutTransitionStartRects[0];
+	const FRect RootRect = RootSplitterV->GetRect();
+	const int32 TransitionAnchorX = AnchorSourceRect.Width > 0 ? AnchorSourceRect.X : static_cast<int32>(RootRect.X);
+	const int32 TransitionAnchorY = AnchorSourceRect.Height > 0 ? AnchorSourceRect.Y : static_cast<int32>(RootRect.Y);
+	auto AnchorHiddenRect = [TransitionAnchorX, TransitionAnchorY](FViewportRect& Rect)
+	{
+		if (Rect.Width <= 0 || Rect.Height <= 0)
+		{
+			Rect.X = TransitionAnchorX;
+			Rect.Y = TransitionAnchorY;
+		}
+	};
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		AnchorHiddenRect(LayoutTransitionStartRects[i]);
 	}
 
 	if (FocusIndex >= 0)
@@ -446,9 +478,14 @@ void FEditorViewportLayout::SetLayoutModeAnimated(EEditorViewportLayoutMode InMo
 
 	RootSplitterV->UpdateChildRect();
 	ComputeLayoutRects(LayoutMode, SingleViewportIndex, RootSplitterV->GetRect(), LayoutTransitionTargetRects);
+	for (int32 i = 0; i < MaxViewports; ++i)
+	{
+		AnchorHiddenRect(LayoutTransitionTargetRects[i]);
+	}
 
 	bLayoutTransitionActive = true;
 	LayoutTransitionElapsed = 0.0f;
+	UpdateSlateSplitterAttachment();
 	for (int32 i = 0; i < MaxViewports; ++i)
 	{
 		SetViewportRect(i, LayoutTransitionStartRects[i]);
@@ -724,6 +761,22 @@ void FEditorViewportLayout::EndLayoutTransition()
 	}
 	bLayoutTransitionActive = false;
 	LayoutTransitionElapsed = 0.0f;
+	UpdateSlateSplitterAttachment();
+}
+
+void FEditorViewportLayout::UpdateSlateSplitterAttachment()
+{
+	SWindow* RootWindow = FSlateApplication::Get().GetRootWindow();
+	if (!RootWindow)
+	{
+		return;
+	}
+
+	const bool bShouldAttachSplitter =
+		RootSplitterV != nullptr
+		&& !bLayoutTransitionActive
+		&& LayoutMode == EEditorViewportLayoutMode::FourPanes2x2;
+	RootWindow->SetChild(bShouldAttachSplitter ? RootSplitterV : nullptr);
 }
 
 void FEditorViewportLayout::DestroyViewportLayout()

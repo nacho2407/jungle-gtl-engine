@@ -45,6 +45,17 @@ FRect GetInsetRect(const FRect& Rect, float Inset)
     return Out;
 }
 
+POINT ClampPointToRect(POINT Point, const RECT& Rect)
+{
+    const LONG MinX = Rect.left;
+    const LONG MinY = Rect.top;
+    const LONG MaxX = std::max(Rect.left, Rect.right - 1);
+    const LONG MaxY = std::max(Rect.top, Rect.bottom - 1);
+    Point.x = std::clamp(Point.x, MinX, MaxX);
+    Point.y = std::clamp(Point.y, MinY, MaxY);
+    return Point;
+}
+
 void AppendKeyEvents(const FInputSystemSnapshot& Snapshot, const POINT& MouseScreenPos, const POINT& MouseDelta, TArray<FInputEvent>& OutEvents)
 {
     for (int32 VK = 0; VK < 256; ++VK)
@@ -248,6 +259,39 @@ void FInputRouter::SetImGuiCaptureState(bool bCaptureMouse, bool bCaptureKeyboar
     bImGuiCaptureKeyboard = bCaptureKeyboard;
 }
 
+void FInputRouter::SetForceViewportMouseBlock(bool bEnable, bool bAllowFocusPress)
+{
+    bForceViewportMouseBlock = bEnable;
+    bAllowViewportFocusPress = bAllowFocusPress;
+    if (bForceViewportMouseBlock && !bAllowViewportFocusPress)
+    {
+        ClearViewportFocus();
+    }
+}
+
+void FInputRouter::ClearViewportFocus()
+{
+    FocusedViewport = nullptr;
+    CapturedViewport = nullptr;
+    HoveredViewport = nullptr;
+    DeactivateAllMouseControl();
+    FCursorControl::Clear();
+}
+
+void FInputRouter::ForceViewportFocus(FViewport* InViewport)
+{
+    if (!InViewport)
+    {
+        ClearViewportFocus();
+        return;
+    }
+
+    FocusedViewport = InViewport;
+    CapturedViewport = nullptr;
+    HoveredViewport = InViewport;
+    bBlockViewportMouseUntilRelease = false;
+}
+
 void FInputRouter::ClearTargets()
 {
     Targets.clear();
@@ -279,23 +323,9 @@ bool FInputRouter::Tick(float DeltaTime, FViewportInputContext& OutContext, FInt
 {
     const FInputSystemSnapshot InputSnapshot = InputSystem::Get().TickAndMakeSnapshot();
     FPointerButtonsState PointerButtonsState = ComputePointerButtonsState(InputSnapshot);
-    if (bImGuiCaptureMouse && PointerButtonsState.bAnyDown)
-    {
-        bBlockViewportMouseUntilRelease = true;
-    }
     if (!PointerButtonsState.bAnyDown)
     {
         bBlockViewportMouseUntilRelease = false;
-    }
-
-    const bool bHardBlockMouse = bForceViewportMouseBlock || bBlockViewportMouseUntilRelease;
-    if (bHardBlockMouse && bRelativeMouseModeActive)
-    {
-        DeactivateRelativeMouseMode();
-    }
-    if (bHardBlockMouse && bAbsoluteMouseClipActive)
-    {
-        DeactivateAbsoluteMouseClip();
     }
 
     if (!EnsureRoutingEnvironmentReady())
@@ -313,6 +343,23 @@ bool FInputRouter::Tick(float DeltaTime, FViewportInputContext& OutContext, FInt
 
     HoveredViewport = HoveredEntry ? HoveredEntry->Viewport : nullptr;
 
+    const bool bMouseCanBelongToViewport = HoveredEntry != nullptr || CapturedViewport != nullptr || bRelativeMouseModeActive;
+    if (bImGuiCaptureMouse && PointerButtonsState.bAnyDown && !bMouseCanBelongToViewport)
+    {
+        bBlockViewportMouseUntilRelease = true;
+    }
+
+    const bool bViewportFocusPress = bAllowViewportFocusPress && HoveredEntry != nullptr && PointerButtonsState.bAnyPressed;
+    const bool bHardBlockMouse = (bForceViewportMouseBlock && !bViewportFocusPress) || bBlockViewportMouseUntilRelease;
+    if (bHardBlockMouse && bRelativeMouseModeActive)
+    {
+        DeactivateRelativeMouseMode();
+    }
+    if (bHardBlockMouse && bAbsoluteMouseClipActive)
+    {
+        DeactivateAbsoluteMouseClip();
+    }
+
     UpdatePointerTrackingState(HoveredEntry, PointerButtonsState.bAnyPressed, PointerButtonsState.bAnyDown, bHardBlockMouse);
 
     FRect TargetRect = {};
@@ -325,8 +372,17 @@ bool FInputRouter::Tick(float DeltaTime, FViewportInputContext& OutContext, FInt
     }
     PopulateDispatchContext(InputSnapshot, DeltaTime, MouseClientPos, TargetEntry, TargetRect, OutContext, OutBinding);
 
-    UpdateRelativeMouseModeState(TargetEntry, TargetRect, InputSnapshot, MouseScreenPos, OutContext);
-    if (!OutContext.bRelativeMouseMode)
+    if (!bHardBlockMouse)
+    {
+        UpdateRelativeMouseModeState(TargetEntry, TargetRect, InputSnapshot, MouseScreenPos, OutContext);
+    }
+    else
+    {
+        OutContext.bRelativeMouseMode = false;
+        OutContext.bImGuiCapturedMouse = bImGuiCaptureMouse;
+    }
+
+    if (!OutContext.bRelativeMouseMode && !bHardBlockMouse)
     {
         UpdateAbsoluteClipState(TargetEntry, OutContext);
     }
@@ -396,7 +452,11 @@ void FInputRouter::PopulateDispatchContext(
     OutContext.bHovered = (HoveredViewport == TargetEntry->Viewport);
     OutContext.bFocused = (FocusedViewport == TargetEntry->Viewport);
     OutContext.bCaptured = (CapturedViewport == TargetEntry->Viewport);
-    OutContext.bImGuiCapturedMouse = bImGuiCaptureMouse;
+    const bool bViewportPointerTarget =
+        OutContext.bHovered ||
+        OutContext.bCaptured ||
+        OutContext.bRelativeMouseMode;
+    OutContext.bImGuiCapturedMouse = bImGuiCaptureMouse && !bViewportPointerTarget;
     OutContext.bImGuiCapturedKeyboard = bImGuiCaptureKeyboard;
     OutContext.bRelativeMouseMode = bRelativeMouseModeActive && (RelativeMouseModeViewport == TargetEntry->Viewport);
 
@@ -467,7 +527,13 @@ void FInputRouter::UpdateRelativeMouseModeState(
         DeactivateAbsoluteMouseClip();
     }
 
-    const POINT CenterScreenPos = GetTargetRectScreenCenter(TargetRect);
+    POINT LockScreenPos = GetTargetRectScreenCenter(TargetRect);
+    const FCursorControlState CursorState = FCursorControl::GetState();
+    if (CursorState.bLockToScreenPos)
+    {
+        LockScreenPos = CursorState.LockScreenPos;
+    }
+
     InOutContext.Frame.MouseInputMode = EMouseInputMode::Relative;
     if (bActivatedRelativeMouseModeThisFrame)
     {
@@ -476,17 +542,17 @@ void FInputRouter::UpdateRelativeMouseModeState(
     }
     else if (!InputSnapshot.bUsingRawMouse)
     {
-        InOutContext.Frame.MouseDelta.x = MouseScreenPos.x - CenterScreenPos.x;
-        InOutContext.Frame.MouseDelta.y = MouseScreenPos.y - CenterScreenPos.y;
+        InOutContext.Frame.MouseDelta.x = MouseScreenPos.x - LockScreenPos.x;
+        InOutContext.Frame.MouseDelta.y = MouseScreenPos.y - LockScreenPos.y;
         InOutContext.MouseLocalDelta = InOutContext.Frame.MouseDelta;
     }
 
-    InOutContext.Frame.MouseScreenPos = CenterScreenPos;
-    POINT CenterClientPos = CenterScreenPos;
-    ScreenToClient(OwnerWindow, &CenterClientPos);
-    InOutContext.MouseClientPos = CenterClientPos;
-    InOutContext.MouseLocalPos.x = CenterClientPos.x - static_cast<LONG>(TargetRect.X);
-    InOutContext.MouseLocalPos.y = CenterClientPos.y - static_cast<LONG>(TargetRect.Y);
+    InOutContext.Frame.MouseScreenPos = LockScreenPos;
+    POINT LockClientPos = LockScreenPos;
+    ScreenToClient(OwnerWindow, &LockClientPos);
+    InOutContext.MouseClientPos = LockClientPos;
+    InOutContext.MouseLocalPos.x = LockClientPos.x - static_cast<LONG>(TargetRect.X);
+    InOutContext.MouseLocalPos.y = LockClientPos.y - static_cast<LONG>(TargetRect.Y);
     FCursorControl::Apply();
 }
 
@@ -548,7 +614,8 @@ void FInputRouter::UpdatePointerTrackingState(FTargetEntry* HoveredEntry, bool& 
 {
     ValidateTrackedViewports();
 
-    if (bImGuiCaptureMouse || bHardBlockMouse)
+    const bool bViewportCanOwnPointer = HoveredEntry != nullptr;
+    if (bHardBlockMouse || (bImGuiCaptureMouse && !bViewportCanOwnPointer))
     {
         bAnyPointerPressed = false;
         bAnyPointerDown = false;
@@ -579,14 +646,27 @@ void FInputRouter::FinalizeAndDispatchInput(
     AppendWheelEvent(InOutContext.Frame.WheelNotches, MouseScreenPos, InOutContext.Events);
     AppendDragEvents(InputSnapshot, MouseScreenPos, InOutContext.Events);
 
-    const bool bBlockMouseForViewport = bHardBlockMouse || bImGuiCaptureMouse;
-    ApplyViewportBlockMask(InOutContext.bImGuiCapturedKeyboard, bBlockMouseForViewport, InOutContext);
+    const bool bViewportPointerTarget =
+        InOutContext.bHovered ||
+        InOutContext.bCaptured ||
+        InOutContext.bRelativeMouseMode;
+    const bool bBlockKeyboardForViewport = InOutContext.bImGuiCapturedKeyboard || !InOutContext.bFocused;
+    const bool bBlockMouseForViewport =
+        bHardBlockMouse ||
+        !InOutContext.bFocused ||
+        (bImGuiCaptureMouse && !bViewportPointerTarget);
+    ApplyViewportBlockMask(bBlockKeyboardForViewport, bBlockMouseForViewport, InOutContext);
 
     InOutContext.bConsumed = TargetEntry->Client->ProcessInput(InOutContext);
     if (InOutContext.bRelativeMouseMode)
     {
-        const POINT CenterScreenPos = GetTargetRectScreenCenter(TargetRect);
-        SetCursorPos(CenterScreenPos.x, CenterScreenPos.y);
+        POINT LockScreenPos = GetTargetRectScreenCenter(TargetRect);
+        const FCursorControlState CursorState = FCursorControl::GetState();
+        if (CursorState.bLockToScreenPos)
+        {
+            LockScreenPos = CursorState.LockScreenPos;
+        }
+        SetCursorPos(LockScreenPos.x, LockScreenPos.y);
     }
 }
 
@@ -720,8 +800,7 @@ void FInputRouter::ActivateRelativeMouseMode(FViewport* InViewport, const POINT&
     CursorState.OwnerWindow = OwnerWindow;
     CursorState.bHideInClient = true;
     CursorState.bLockToScreenPos = true;
-    CursorState.LockScreenPos.x = (ClipScreenRect.left + ClipScreenRect.right) / 2;
-    CursorState.LockScreenPos.y = (ClipScreenRect.top + ClipScreenRect.bottom) / 2;
+    CursorState.LockScreenPos = ClampPointToRect(RestoreScreenPos, ClipScreenRect);
     FCursorControl::SetState(CursorState);
 
     if (OwnerWindow)

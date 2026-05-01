@@ -30,6 +30,39 @@ const char* FEditorControlWidget::GetPrimitiveTypeLabel(int32 PrimitiveType) con
 	return PrimitiveTypes[PrimitiveType];
 }
 
+bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bClosePopupOnSpawn)
+{
+	bool bSpawned = false;
+	auto DrawSpawnItem = [&](int32 PrimitiveType, const char* Label)
+	{
+		if (ImGui::MenuItem(Label))
+		{
+			bSpawned = SpawnPrimitive(PrimitiveType, SpawnPoint, 1) || bSpawned;
+			if (bSpawned && bClosePopupOnSpawn)
+			{
+				ImGui::CloseCurrentPopup();
+			}
+		}
+	};
+
+	DrawSpawnItem(0, "Empty Actor");
+	ImGui::Separator();
+	DrawSpawnItem(1, "Static Mesh");
+	DrawSpawnItem(2, "Text Render");
+	DrawSpawnItem(3, "SubUV");
+	DrawSpawnItem(4, "Billboard");
+	DrawSpawnItem(5, "Decal");
+	DrawSpawnItem(12, "Fog");
+	DrawSpawnItem(6, "Fireball");
+	DrawSpawnItem(7, "Decal Spotlight");
+	ImGui::Separator();
+	DrawSpawnItem(8, "Ambient Light");
+	DrawSpawnItem(9, "Directional Light");
+	DrawSpawnItem(10, "Point Light");
+	DrawSpawnItem(11, "Spot Light");
+	return bSpawned;
+}
+
 bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& SpawnPoint, int32 Count)
 {
 	if (!EditorEngine)
@@ -44,6 +77,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 	}
 
 	Count = MathUtil::Clamp(Count, 1, 100);
+	EditorEngine->CaptureUndoSnapshot("Place Actor");
 	for (int32 i = 0; i < Count; i++)
 	{
 		switch (PrimitiveType)
@@ -132,6 +166,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}
+		case 12:
+		{
+			AFogActor* Actor = World->SpawnActor<AFogActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
 		default:
 			return false;
 		}
@@ -149,25 +190,11 @@ void FEditorControlWidget::Render(float DeltaTime)
 	}
 
 	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(500.0f, 480.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(360.0f, 180.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Jungle Control Panel");
 	
 	ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-
-	// Spawn
-	ImGui::Combo("Actor", &SelectedPrimitiveType, PrimitiveTypes, IM_ARRAYSIZE(PrimitiveTypes));
-
-	if (ImGui::Button("Spawn"))
-	{
-		if (SpawnPrimitive(SelectedPrimitiveType, CurSpawnPoint, NumberOfSpawnedActors))
-		{
-			NumberOfSpawnedActors = 1;
-		}
-	}
-	ImGui::InputInt("Number of Spawn", &NumberOfSpawnedActors, 1, 10);
-
-	SEPARATOR();
 
 	// Camera
 	FViewportCamera* Camera = EditorEngine->GetCamera();
@@ -175,24 +202,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 	{
 		ImGui::End();
 		return;
-	}
-
-	bool bIsOrtho = (Camera->GetProjectionType() == EViewportProjectionType::Orthographic);
-	if (ImGui::Checkbox("Orthographic", &bIsOrtho))
-	{
-		Camera->SetProjectionType(bIsOrtho ? EViewportProjectionType::Orthographic : EViewportProjectionType::Perspective);
-	}
-
-	float CameraFOV_Deg = MathUtil::RadiansToDegrees(Camera->GetFOV());
-	if (ImGui::DragFloat("Camera FOV", &CameraFOV_Deg, 0.5f, 1.0f, 90.0f))
-	{
-		Camera->SetFOV(MathUtil::DegreesToRadians(CameraFOV_Deg));
-	}
-
-	float OrthoHeight = Camera->GetOrthoHeight();
-	if (ImGui::DragFloat("Ortho Height", &OrthoHeight, 0.1f, 0.1f, 1000.0f))
-	{
-		Camera->SetOrthoHeight(MathUtil::Clamp(OrthoHeight, 0.1f, 1000.0f));
 	}
 
 	FVector CamPos = Camera->GetLocation();
@@ -214,28 +223,6 @@ void FEditorControlWidget::Render(float DeltaTime)
 	}
 
 	ImGui::PopItemWidth();
-
-	SEPARATOR();
-
-	// Gizmo Space / Mode
-	int32 SelectedSpace = EditorEngine->GetGizmo()->IsWorldSpace() ? 0 : 1;
-	if (ImGui::RadioButton("World", &SelectedSpace, 0))
-	{
-		EditorEngine->GetGizmo()->SetWorldSpace(true);
-	}
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Local", &SelectedSpace, 1))
-	{
-		EditorEngine->GetGizmo()->SetWorldSpace(false);
-	}
-
-	SEPARATOR();
-
-	if (ImGui::Button("Translate")) EditorEngine->GetGizmo()->SetTranslateMode();
-	ImGui::SameLine();
-	if (ImGui::Button("Rotate")) EditorEngine->GetGizmo()->SetRotateMode();
-	ImGui::SameLine();
-	if (ImGui::Button("Scale")) EditorEngine->GetGizmo()->SetScaleMode();
 
 	ImGui::End();
 }

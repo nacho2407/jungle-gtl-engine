@@ -18,6 +18,11 @@ public:
 	float CameraZoomSpeed = 300.f;
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
+	bool bEnableCameraSmoothing = true;
+	float CameraMoveSmoothSpeed = 4.0f;
+	float CameraRotateSmoothSpeed = 2.0f;
+	float CameraDollySpeedScale = 0.6f;
+	float CameraPanSpeedScale = 3.0f;
 
 	// Viewport 레이아웃 상태
 	int32 ActiveViewportCount = 4;  // 현재 표시 중인 뷰포트 수 (1 또는 4)
@@ -51,6 +56,7 @@ public:
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());
+	FString ContentBrowserPath = "Asset";
 
 	void SaveToFile(const FString& Path) const;
 	void LoadFromFile(const FString& Path);

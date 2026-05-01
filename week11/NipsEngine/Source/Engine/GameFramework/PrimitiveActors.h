@@ -6,6 +6,7 @@ class UTextRenderComponent;
 class UDecalComponent;
 class ULightComponent;
 class UBillboardComponent;
+class UHeightFogComponent;
 
 class ACubeActor : public AActor
 {
@@ -50,6 +51,21 @@ public:
 	ASceneActor() = default;
 
 	void InitDefaultComponents();
+};
+
+class AFogActor : public AActor
+{
+public:
+	DECLARE_CLASS(AFogActor, AActor)
+	AFogActor() = default;
+
+	void InitDefaultComponents();
+
+	UHeightFogComponent* GetFogComponent() const { return FogComp; }
+
+private:
+	UHeightFogComponent* FogComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
 };
 
 class AStaticMeshActor : public AActor

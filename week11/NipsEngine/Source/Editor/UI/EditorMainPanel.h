@@ -2,6 +2,7 @@
 
 #include "ImGui/imgui.h"
 #include "Editor/UI/EditorConsoleWidget.h"
+#include "Editor/UI/EditorContentBrowserWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
 #include "Editor/UI/EditorFooterLogSystem.h"
 #include "Editor/UI/EditorMaterialWidget.h"
@@ -15,6 +16,8 @@
 
 class FRenderer;
 class UEditorEngine;
+class UMaterialInterface;
+class UPrimitiveComponent;
 class FWindowsWindow;
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;
@@ -30,11 +33,20 @@ public:
 	FEditorPropertyWidget& GetPropertyWidget() { return PropertyWidget; }
 	FEditorMaterialWidget& GetMaterialWidget() { return MaterialWidget; }
 	FEditorSceneWidget& GetSceneWidget() { return SceneWidget; }
+	FEditorControlWidget& GetControlWidget() { return ControlWidget; }
 
 	bool RequestNewScene();
 	bool RequestLoadSceneWithDialog();
 	bool RequestSaveScene();
 	bool RequestSaveSceneAsWithDialog();
+	void HideEditorWindowsForPIE();
+	void RestoreEditorWindowsAfterPIE();
+	bool IsPIEViewportFullscreenEnabled() const { return bPIEViewportFullscreenEnabled; }
+	void SetPIEViewportFullscreenEnabled(bool bEnabled);
+	void OpenMaterialAsset(UMaterialInterface* Material);
+	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
+	void PushFooterLog(const FString& Message);
+	bool CanCloseEditor();
 
 	void ResetWidgetSelections()
 	{
@@ -65,15 +77,24 @@ private:
 	void RenderViewportHostWindow();
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
+	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
+	void HandleContentBrowserViewportDrop();
 	bool DrawViewportTextButton(const char* Id, const char* Label, bool bPairFirst = false, bool bPairSecond = false);
-	bool DrawViewportIconButton(const char* Id, EViewportToolIcon Icon, const char* FallbackLabel, const char* Tooltip, bool bSelected = false, bool bEnabled = true);
+	bool DrawViewportIconButton(const char* Id, EViewportToolIcon Icon, const char* FallbackLabel, const char* Tooltip, bool bSelected = false, bool bEnabled = true, bool bPairFirst = false, bool bPairSecond = false);
 	void LoadViewportToolIcons(ID3D11Device* Device);
 	void ReleaseViewportToolIcons();
 	void TickViewportContextMenu();
 	void RenderViewportContextMenu();
 	void RenderConsoleDrawer(float DeltaTime);
 	void RenderFooterOverlay(float DeltaTime);
+	void RenderEditorDebugPanel(float DeltaTime);
+	void RenderUndoHistoryPanel(float DeltaTime);
 	void UpdateFooterEventLogs();
+	void OpenConsoleDrawer(bool bFocusInput = true);
+	void CloseConsoleDrawer();
+	void OpenContentBrowser();
+	void CloseContentBrowser();
+	void ToggleContentBrowser();
 
 private:
 	struct FViewportContextMenuState
@@ -89,11 +110,39 @@ private:
 		float PendingSpawnLocalY = 0.0f;
 	};
 
+	struct FPIEPanelVisibilitySnapshot
+	{
+		bool bShowConsole = true;
+		bool bShowControl = true;
+		bool bShowProperty = true;
+		bool bShowSceneManager = true;
+		bool bShowMaterialEditor = true;
+		bool bShowStatProfiler = true;
+		bool bShowPlayStream = true;
+		bool bShowEditorDebug = false;
+		bool bShowContentBrowser = false;
+		bool bConsoleDrawerVisible = false;
+		bool bViewportSettingsVisible = false;
+		bool bGroupedStatOverlayVisible = false;
+	};
+
+	struct FPIEViewportLayoutSnapshot
+	{
+		bool bValid = false;
+		EEditorViewportLayoutMode LayoutMode = EEditorViewportLayoutMode::FourPanes2x2;
+		int32 SingleViewportIndex = 0;
+		int32 LastFocusedViewportIndex = 0;
+	};
+
+	void ApplyPIEViewportFullscreen();
+	void RestorePIEViewportLayout();
+
 	FWindowsWindow* Window = nullptr;
 	UEditorEngine* EditorEngine = nullptr;
 
 	ImVector<ImWchar> FontGlyphRanges; // 폰트 아틀라스 빌드 전까지 수명 유지 필요
 	FEditorConsoleWidget ConsoleWidget;
+	FEditorContentBrowserWidget ContentBrowserWidget;
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
@@ -104,12 +153,22 @@ private:
 	FEditorPlayStreamWidget PlayStreamWidget;
 
 	bool bShowConsole = true;
-	bool bShowControl = true;
+	bool bShowControl = false;
 	bool bShowProperty = true;
 	bool bShowSceneManager = true;
 	bool bShowMaterialEditor = true;
-	bool bShowStatProfiler = true;
+	bool bShowStatProfiler = false;
 	bool bShowPlayStream = true;
+	bool bShowEditorDebug = false;
+	bool bShowContentBrowser = false;
+	bool bShowUndoHistory = false;
+	int32 DebugGridPrimitiveType = 1;
+	int32 DebugGridRows = 4;
+	int32 DebugGridCols = 4;
+	int32 DebugGridLayers = 1;
+	float DebugGridSpacing = 2.0f;
+	bool bDebugGridCenter = true;
+	FVector DebugGridOrigin = FVector(0.0f, 0.0f, 0.0f);
 	bool bConsoleDrawerVisible = false;
 	bool bBringConsoleDrawerToFrontNextFrame = false;
 	bool bFocusConsoleInputNextFrame = false;
@@ -119,9 +178,15 @@ private:
 	bool bFooterEventStateInitialized = false;
 	bool bPrevPIEPlaying = false;
 	EViewportPlayState PrevEditorState = EViewportPlayState::Editing;
+	bool bHideEditorWindowsForPIE = false;
+	bool bHasSavedPIEPanelVisibility = false;
+	bool bPIEViewportFullscreenEnabled = true;
+	FPIEPanelVisibilitySnapshot SavedPIEPanelVisibility;
+	FPIEViewportLayoutSnapshot SavedPIEViewportLayout;
 	FViewportContextMenuState ViewportContextMenuState;
 	FEditorFooterLogSystem FooterLogSystem;
 	ID3D11ShaderResourceView* ViewportToolIcons[static_cast<int32>(EViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* ViewportLayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
+	ID3D11ShaderResourceView* SaveIconSRV = nullptr;
 	ID3D11ShaderResourceView* AddActorIconSRV = nullptr;
 };

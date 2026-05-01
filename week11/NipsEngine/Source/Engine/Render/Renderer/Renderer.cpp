@@ -117,6 +117,11 @@ void FRenderer::CreateResources()
 void FRenderer::Release()
 {
 	InvalidateSceneFinalTargets();
+	ReleasePreviewResource();
+	for (int32 i = 0; i < 4; ++i)
+	{
+		ReleaseViewportResource(nullptr, i);
+	}
 
 	RenderPipeline.Release();
     RenderPassContext.reset();
@@ -308,7 +313,48 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, 
 void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
 {
     FViewportRenderResource& Res = ViewportResources[Index];
+	InitializeRenderResource(Res, Width, Height);
+}
 
+void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+{
+    assert(Index < 4 && "Index Out of Bound");
+
+    FViewportRenderResource& Res = ViewportResources[Index];
+	ReleaseRenderResource(Res);
+}
+
+FViewportRenderResource& FRenderer::AcquirePreviewResource(uint32 Width, uint32 Height)
+{
+	if (Device.GetDevice() == nullptr || Width == 0 || Height == 0)
+	{
+		ReleasePreviewResource();
+		return PreviewResource;
+	}
+
+	const bool bSameSize = (PreviewResource.Width == Width) && (PreviewResource.Height == Height);
+	const bool bResourcesValid =
+		(PreviewResource.ColorRTV != nullptr) &&
+		(PreviewResource.SelectionMaskRTV != nullptr) &&
+		(PreviewResource.DepthStencilView != nullptr);
+
+	if (bSameSize && bResourcesValid)
+	{
+		return PreviewResource;
+	}
+
+	ReleasePreviewResource();
+	InitializeRenderResource(PreviewResource, Width, Height);
+	return PreviewResource;
+}
+
+void FRenderer::ReleasePreviewResource()
+{
+	ReleaseRenderResource(PreviewResource);
+}
+
+void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Width, uint32 Height)
+{
     FRenderTarget RT;
 
     Res.Width = Width;
@@ -358,12 +404,8 @@ void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uin
     Res.DepthStencilSRV = DSR.SRV;
 }
 
-void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
 {
-    assert(Index < 4 && "Index Out of Bound");
-
-    FViewportRenderResource& Res = ViewportResources[Index];
-
     Res.SelectionMaskSRV.Reset();
     Res.SelectionMaskRTV.Reset();
     Res.SelectionMaskTex.Reset();
@@ -383,6 +425,10 @@ void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
     Res.DepthStencilView.Reset();
     Res.DepthTex.Reset();
     Res.DepthStencilSRV.Reset();
+
+	Res.VSMDepthStencilSRV.Reset();
+	Res.VSMDepthStencilView.Reset();
+	Res.VSMDepthTexture.Reset();
 
     Res.FogTex.Reset();
     Res.FogRTV.Reset();

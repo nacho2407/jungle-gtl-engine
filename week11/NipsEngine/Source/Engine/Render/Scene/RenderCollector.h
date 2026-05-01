@@ -61,6 +61,10 @@ public:
 	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus);
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
+	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0)
+	{
+		return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel);
+	}
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
 	const FDecalStats& GetLastDecalStats() const { return LastDecalStats; }
     const FLightStats& GetLastLightStats() const { return LastLightStats; }

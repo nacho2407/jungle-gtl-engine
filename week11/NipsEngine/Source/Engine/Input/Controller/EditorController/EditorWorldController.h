@@ -42,11 +42,23 @@ class FEditorWorldController : public IBaseEditorController
     float GetMoveSpeed() const { return MoveSpeed; }
     void  SetMoveSpeed(float InSpeed) { MoveSpeed = InSpeed; }
     FVector GetTargetLocation() const { return TargetLocation; }
-    void  SetTargetLocation(FVector InTargetLoc) { TargetLocation = InTargetLoc; }
+    void  SetTargetLocation(FVector InTargetLoc)
+    {
+        TargetLocation = InTargetLoc;
+        bTargetLocationInitialized = true;
+    }
+    void SetTargetRotation(const FQuat& InTargetRotation)
+    {
+        TargetRotation = InTargetRotation;
+        bTargetRotationInitialized = true;
+    }
     void  ResetTargetLocation()
     {
         if (Camera)
+        {
             TargetLocation = Camera->GetLocation();
+            bTargetLocationInitialized = true;
+        }
     }
     void SetWorld(UWorld* InWorld)
     {
@@ -70,7 +82,9 @@ class FEditorWorldController : public IBaseEditorController
     float   Pitch = 0.f;
     float   MoveSpeed = 15.f;
     FVector TargetLocation;
+    FQuat   TargetRotation = FQuat::Identity;
     bool    bTargetLocationInitialized = false;
+    bool    bTargetRotationInitialized = false;
     bool    bHasPendingSelectionPress = false;
     float   PendingSelectionPressX = 0.0f;
     float   PendingSelectionPressY = 0.0f;

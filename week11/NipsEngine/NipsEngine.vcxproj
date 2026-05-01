@@ -208,6 +208,7 @@
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorContentBrowserWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMaterialWidget.cpp" />
@@ -290,11 +291,6 @@
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Render\FontBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\LineBatcher.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
-    <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
     <ClCompile Include="Source\Engine\Render\Mesh\MeshManager.cpp" />
@@ -316,8 +312,10 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SelectionMaskRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SubUVRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\TranslucentRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
@@ -330,6 +328,9 @@
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShaderCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShaderHelper.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
@@ -382,6 +383,7 @@
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorContentBrowserWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorFooterLogSystem.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
@@ -498,17 +500,12 @@
     <ClInclude Include="Source\Engine\Object\Object.h" />
     <ClInclude Include="Source\Engine\Object\ObjectFactory.h" />
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
-    <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />
     <ClInclude Include="Source\Engine\Render\FontBatcher.h" />
     <ClInclude Include="Source\Engine\Render\LineBatcher.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
-    <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
     <ClInclude Include="Source\Engine\Render\Common\RenderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />
     <ClInclude Include="Source\Engine\Render\Common\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
     <ClInclude Include="Source\Engine\Render\Mesh\MeshManager.h" />
@@ -531,8 +528,10 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPassContext.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SelectionMaskRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ShadowPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SubUVRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\TranslucentRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.h" />
@@ -546,6 +545,9 @@
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderCompiler.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShaderHelper.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\ShadowAtlasManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
@@ -553,7 +555,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
-    <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\SceneView.h" />
     <ClInclude Include="Source\Engine\Runtime\Viewport.h" />
@@ -561,6 +562,7 @@
     <ClInclude Include="Source\Engine\Runtime\ViewportRect.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowMessageHandler.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
+    <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsPlatformTime.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h" />
@@ -682,12 +684,27 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Shadow.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\ShadowFunction.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\UberLit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\VSMBlurComputeShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\VSMShadow.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>

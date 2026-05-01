@@ -8,6 +8,13 @@
 #include "Core/Logging/GPUProfiler.h"
 #include "Runtime/SceneView.h"
 #include "Engine/Component/GizmoComponent.h"
+#include "Asset/StaticMesh.h"
+#include "Render/Resource/Buffer.h"
+#include "Render/Resource/Material.h"
+#include "Render/Scene/RenderCommand.h"
+#include "Math/Utils.h"
+
+#include <algorithm>
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
@@ -158,4 +165,108 @@ const FRenderCollector::FLightStats& FEditorRenderPipeline::GetViewportLightStat
 	}
 
 	return ViewportLightStats[ViewportIndex];
+}
+
+ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
+	FRenderer& Renderer,
+	UStaticMesh* Mesh,
+	UMaterialInterface* Material,
+	uint32 Width,
+	uint32 Height,
+	float YawRad,
+	float PitchRad,
+	float Distance)
+{
+	if (Mesh == nullptr || Material == nullptr || !Mesh->HasValidMeshData() || Width == 0 || Height == 0)
+	{
+		return nullptr;
+	}
+
+	FMeshBuffer* MeshBuffer = Collector.GetStaticMeshBuffer(Mesh, 0);
+	const FStaticMesh* MeshData = Mesh->GetMeshData(0);
+	if (MeshBuffer == nullptr || MeshData == nullptr || MeshData->Indices.empty())
+	{
+		return nullptr;
+	}
+
+	FViewportRenderResource& PreviewTarget = Renderer.AcquirePreviewResource(Width, Height);
+	if (!PreviewTarget.GetView().IsValid())
+	{
+		return nullptr;
+	}
+
+	Renderer.BeginViewportFrame(PreviewTarget.GetView());
+
+	Bus.Clear();
+	Bus.SetRenderSettings(EViewMode::Lit_BlinnPhong, FShowFlags{});
+	Bus.SetLightCullMode(ELightCullMode::None);
+	Bus.SetViewportSize(FVector2(static_cast<float>(Width), static_cast<float>(Height)));
+	Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
+	Bus.SetFXAAEnabled(true);
+
+	const float ClampedPitch = MathUtil::Clamp(PitchRad, -1.35f, 1.35f);
+	const float SafeDistance = std::max(Distance, 0.8f);
+	const FVector Eye(SafeDistance, -SafeDistance, SafeDistance * 0.45f);
+	const FVector Target = FVector::ZeroVector;
+	const FMatrix View = FMatrix::MakeViewLookAtLH(Eye, Target, FVector::UpVector);
+	const FMatrix Proj = FMatrix::MakePerspectiveFovLH(MathUtil::DegreesToRadians(45.0f),
+		static_cast<float>(Width) / static_cast<float>(Height), 0.05f, 100.0f);
+	Bus.SetViewProjection(View, Proj, 0.05f, 100.0f);
+
+	Bus.AmbientLightInfo.Color = FVector(1.0f, 1.0f, 1.0f);
+	Bus.AmbientLightInfo.Intensity = 0.25f;
+	Bus.DirectionalLightInfo.Color = FVector(1.0f, 0.96f, 0.90f);
+	Bus.DirectionalLightInfo.Intensity = 1.5f;
+	Bus.DirectionalLightInfo.Direction = FVector(-0.55f, -0.35f, -0.75f).GetSafeNormal();
+
+	const FAABB& Bounds = Mesh->GetLocalBounds();
+	const FVector Center = Bounds.GetCenter();
+	const FVector Extent = Bounds.GetExtent();
+	const float MaxExtent = std::max(0.01f, std::max(Extent.X, std::max(Extent.Y, Extent.Z)));
+	const float Scale = 1.35f / MaxExtent;
+	const FMatrix CenterToOrigin = FMatrix::MakeTranslationMatrix(FVector(-Center.X, -Center.Y, -Center.Z));
+	const FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(Scale, Scale, Scale));
+	const FMatrix Rotation = FMatrix::MakeRotationY(ClampedPitch) * FMatrix::MakeRotationZ(YawRad);
+	const FMatrix World = CenterToOrigin * ScaleMatrix * Rotation;
+
+	if (!MeshData->Sections.empty())
+	{
+		for (const FStaticMeshSection& Section : MeshData->Sections)
+		{
+			if (Section.IndexCount == 0)
+			{
+				continue;
+			}
+
+			FRenderCommand Cmd = {};
+			Cmd.Type = ERenderCommandType::StaticMesh;
+			Cmd.MeshBuffer = MeshBuffer;
+			Cmd.Material = Material;
+			Cmd.SectionIndexStart = Section.StartIndex;
+			Cmd.SectionIndexCount = Section.IndexCount;
+			Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
+			Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
+			Bus.AddCommand(ERenderPass::Opaque, Cmd);
+		}
+	}
+	else
+	{
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::StaticMesh;
+		Cmd.MeshBuffer = MeshBuffer;
+		Cmd.Material = Material;
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = static_cast<uint32>(MeshData->Indices.size());
+		Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
+		Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
+		Bus.AddCommand(ERenderPass::Opaque, Cmd);
+	}
+
+	Renderer.PrepareBatchers(Bus);
+	Renderer.Render(Bus);
+
+	ID3D11ShaderResourceView* PreviewSRV =
+		const_cast<ID3D11ShaderResourceView*>(Renderer.GetCurrentSceneSRV());
+	Renderer.UseBackBufferRenderTargets();
+	return PreviewSRV;
 }

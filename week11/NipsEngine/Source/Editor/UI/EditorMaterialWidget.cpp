@@ -1,15 +1,14 @@
 ﻿#include "Editor/UI/EditorMaterialWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Editor/Selection/SelectionManager.h"
+#include "Editor/EditorRenderPipeline.h"
 
 #include "Component/PrimitiveComponent.h"
-#include "Component/DecalComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Asset/StaticMesh.h"
-#include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
 #include "Object/ObjectIterator.h"
+#include "Math/Utils.h"
 #include <algorithm>
 #include <filesystem>
 
@@ -17,276 +16,413 @@
 
 namespace
 {
+ImU32 ToColorU32(const FVector& Color, float Alpha = 1.0f)
+{
+	return ImGui::GetColorU32(ImVec4(
+		MathUtil::Clamp(Color.X, 0.0f, 1.0f),
+		MathUtil::Clamp(Color.Y, 0.0f, 1.0f),
+		MathUtil::Clamp(Color.Z, 0.0f, 1.0f),
+		MathUtil::Clamp(Alpha, 0.0f, 1.0f)));
+}
+
+const UMaterial* ResolveBaseMaterial(UMaterialInterface* Material)
+{
+	if (const UMaterial* BaseMaterial = Cast<UMaterial>(Material))
+	{
+		return BaseMaterial;
+	}
+	if (const UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+	{
+		return Instance->Parent;
+	}
+	return nullptr;
+}
+
+const char* GetMaterialParamTypeName(EMaterialParamType Type)
+{
+	switch (Type)
+	{
+	case EMaterialParamType::Bool: return "Bool";
+	case EMaterialParamType::Int: return "Int";
+	case EMaterialParamType::UInt: return "UInt";
+	case EMaterialParamType::Float: return "Float";
+	case EMaterialParamType::Vector2: return "Vector2";
+	case EMaterialParamType::Vector3: return "Vector3";
+	case EMaterialParamType::Vector4: return "Vector4";
+	case EMaterialParamType::Matrix4: return "Matrix4";
+	case EMaterialParamType::Texture: return "Texture";
+	default: return "Unknown";
+	}
+}
+
+FString SanitizeAssetStem(FString Name)
+{
+	for (char& Ch : Name)
+	{
+		if (Ch == '\\' || Ch == '/' || Ch == ':' || Ch == '*' || Ch == '?' || Ch == '"' || Ch == '<' || Ch == '>' || Ch == '|')
+		{
+			Ch = '_';
+		}
+	}
+	return Name.empty() ? "Material" : Name;
+}
+
+std::filesystem::path ResolveMaterialInstanceDirectory(const UMaterial* BaseMaterial)
+{
+	std::filesystem::path MatPath = std::filesystem::path(BaseMaterial ? FPaths::ToWide(BaseMaterial->GetFilePath()) : L"");
+	if (!MatPath.empty() && MatPath.has_parent_path() && MatPath.extension() != L".mtl")
+	{
+		return MatPath.parent_path();
+	}
+	return std::filesystem::path("Asset") / "Material" / "Instances";
+}
+
+FString ResolveMaterialInstanceStem(const UMaterial* BaseMaterial)
+{
+	if (!BaseMaterial)
+	{
+		return "Material";
+	}
+
+	std::filesystem::path MatPath = std::filesystem::path(FPaths::ToWide(BaseMaterial->GetFilePath()));
+	if (!MatPath.empty() && MatPath.has_stem() && MatPath.extension() != L".mtl")
+	{
+		return SanitizeAssetStem(FPaths::ToString(MatPath.stem().wstring()));
+	}
+
+	return SanitizeAssetStem(BaseMaterial->GetName());
+}
 }
 
 #define MAT_SEPARATOR() ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
 void FEditorMaterialWidget::ResetSelection()
 {
-	SelectedComponent = nullptr;
-	SelectedSectionIndex = -1;
 	SelectedMaterialPtr = nullptr;
+	EditingSlotOwner = nullptr;
+	EditingSlotIndex = -1;
+	AssetEditingMaterialPtr = nullptr;
 }
 
-// -----------------------------------------------------------------------
-// Render (진입점)
-// -----------------------------------------------------------------------
+void FEditorMaterialWidget::OpenMaterialAsset(UMaterialInterface* Material)
+{
+	if (!Material)
+	{
+		return;
+	}
+
+	AssetEditingMaterialPtr = Material;
+	EditingSlotOwner = nullptr;
+	EditingSlotIndex = -1;
+	SelectedMaterialPtr = Material;
+	bFocusWindowNextFrame = true;
+}
+
+void FEditorMaterialWidget::OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex)
+{
+	if (!PrimitiveComp || SlotIndex < 0 || SlotIndex >= PrimitiveComp->GetNumMaterials())
+	{
+		return;
+	}
+
+	AssetEditingMaterialPtr = nullptr;
+	EditingSlotOwner = PrimitiveComp;
+	EditingSlotIndex = SlotIndex;
+	SelectedMaterialPtr = PrimitiveComp->GetMaterial(SlotIndex);
+	bFocusWindowNextFrame = true;
+}
+
+void FEditorMaterialWidget::OnActorDestroyed(AActor* Actor)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	if (EditingSlotOwner && EditingSlotOwner->GetOwner() == Actor)
+	{
+		ResetSelection();
+	}
+}
+
 void FEditorMaterialWidget::Render(float DeltaTime)
 {
-    ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(500.0f, 400.0f), ImGuiCond_Once);
+	if (bFocusWindowNextFrame)
+	{
+		ImGui::SetNextWindowFocus();
+		bFocusWindowNextFrame = false;
+	}
     ImGui::Begin("Material Editor");
 
-	FEditorPropertyWidget& PropWidget = EditorEngine->GetMainPanel().GetPropertyWidget();
-	
-	UActorComponent* ActorComp = PropWidget.GetSelectedComponent();
-	
-	if (ActorComp == nullptr)
+	if (EditingSlotOwner && EditingSlotIndex >= 0)
 	{
+		RefreshEditingMaterialFromSlot();
+		RenderSingleMaterialEditor(EditingSlotOwner);
 		ImGui::End();
 		return;
 	}
 
-	USceneComponent* CurrentComp = Cast<USceneComponent>(ActorComp);
-
-	// 만약 액터가 선택되어 있고 루트 컴포넌트가 있다면 그것을 기본으로 사용
-	if (PropWidget.IsActorSelected())
+	if (AssetEditingMaterialPtr)
 	{
-		AActor* PrimaryActor = EditorEngine->GetSelectionManager().GetPrimarySelection();
-		CurrentComp = PrimaryActor ? PrimaryActor->GetRootComponent() : nullptr;
+		RenderAssetMaterialEditor();
+		ImGui::End();
+		return;
 	}
 
-	if (CurrentComp && CurrentComp != SelectedComponent)
-	{
-		SelectedComponent = CurrentComp;
-		SelectedSectionIndex = -1;
-		SelectedMaterialPtr = nullptr;
-	}
-
-	if (!SelectedComponent)
-	{
-		ImGui::TextDisabled("Select an actor with PrimitiveComponent to edit materials.");
-	}
-	else 
-	{	
-		if (UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(SelectedComponent))
-		{
-			if (SelectedMaterialPtr != PrimitiveComp->GetMaterial(SelectedSectionIndex))
-			{
-				SelectedSectionIndex = -1;
-				SelectedMaterialPtr = nullptr;
-			}
-
-			RenderMaterialEditor(PrimitiveComp);
-		}
-		else
-		{
-			ImGui::TextDisabled("Selected component is not a PrimitiveComponent.");
-		}
-	}
+	ImGui::TextDisabled("Open a material asset, or press Edit on a StaticMesh material slot.");
 	
 	ImGui::End();
 }
 
-void FEditorMaterialWidget::RenderMaterialEditor(UPrimitiveComponent* PrimitiveComp)
+void FEditorMaterialWidget::RenderAssetMaterialEditor()
 {
-	int32 NumMaterials = PrimitiveComp->GetNumMaterials();
-	if (NumMaterials <= 0)
+	SelectedMaterialPtr = AssetEditingMaterialPtr;
+	if (!SelectedMaterialPtr)
 	{
-		ImGui::TextDisabled("No material slots found.");
+		ImGui::TextDisabled("No material asset selected.");
 		return;
 	}
 
-	// 최초 진입 시 첫 번째 섹션 자동 선택
-	if (SelectedSectionIndex < 0 || SelectedSectionIndex >= NumMaterials)
-	{
-		SelectedSectionIndex = 0;
-		SelectedMaterialPtr = PrimitiveComp->GetMaterial(0);
-	}
+	ImGui::TextDisabled("Asset Material");
+	ImGui::TextWrapped("%s", SelectedMaterialPtr->GetName().c_str());
 
-	const float SectionPanelWidth = 160.0f;
-
-	// 왼쪽: 섹션 목록
-	ImGui::BeginChild("##SectionList", ImVec2(SectionPanelWidth, 0), true);
-	RenderSectionList(PrimitiveComp);
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	// 오른쪽: 선택 섹션의 머테리얼 복사본 편집
-	ImGui::BeginChild("##MaterialDetails", ImVec2(0, 0), true);
-	RenderMaterialDetails(PrimitiveComp);
-	ImGui::EndChild();
+	MAT_SEPARATOR();
+	RenderMaterialPreviewSummary();
+	MAT_SEPARATOR();
+	RenderMaterialDetails(nullptr);
 }
 
-// -----------------------------------------------------------------------
-// 왼쪽: 섹션 목록
-// -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderSectionList(UPrimitiveComponent* PrimitiveComp)
+void FEditorMaterialWidget::RenderSingleMaterialEditor(UPrimitiveComponent* SlotOwnerComp)
 {
-	int32 NumMaterials = PrimitiveComp->GetNumMaterials();
-    ImGui::Text("Materials (%d)", NumMaterials);
-    ImGui::Separator();
-
-	UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
-	UStaticMesh* MeshAsset = MeshComp ? MeshComp->GetStaticMesh() : nullptr;
-
-    for (int32 i = 0; i < NumMaterials; ++i)
+	if (!SlotOwnerComp || EditingSlotIndex < 0 || EditingSlotIndex >= SlotOwnerComp->GetNumMaterials())
 	{
-		// 슬롯 이름 가져오기
-		FString SlotName = "Slot";
-		if (MeshAsset)
-		{
-			const TArray<FStaticMeshSection>& Sections = MeshAsset->GetSections();
-			const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshAsset->GetMaterialSlots();
-			if (i < static_cast<int32>(Sections.size()))
-			{
-				int32 SlotIdx = Sections[i].MaterialSlotIndex;
-				if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
-					SlotName = MatSlots[SlotIdx].SlotName;
-			}
-		}
+		ImGui::TextDisabled("The edited material slot is no longer valid.");
+		return;
+	}
 
-		UMaterialInterface* Material = PrimitiveComp->GetMaterial(i);
-		bool bMissing = (Material == nullptr);
+	ImGui::TextDisabled("StaticMesh Material Slot");
+	ImGui::Text("Slot [%d]", EditingSlotIndex);
+	ImGui::TextWrapped("%s", SelectedMaterialPtr ? SelectedMaterialPtr->GetName().c_str() : "(None)");
 
-        char Label[128];
-        snprintf(Label, sizeof(Label), "[%d] %s%s", i, SlotName.c_str(), bMissing ? " (!)" : "");
-
-        bool bSelected = (SelectedSectionIndex == i);
-		if (bMissing)
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
-
-        if (ImGui::Selectable(Label, bSelected, 0, ImVec2(0, 20)))
-        {
-			if (!bSelected)
-			{
-				SelectedSectionIndex = i;
-				SelectedMaterialPtr = PrimitiveComp->GetMaterial(i);
-			}
-        }
-
-		if (bMissing)
-			ImGui::PopStyleColor();
-    }
+	MAT_SEPARATOR();
+	RenderMaterialPreviewSummary();
+	MAT_SEPARATOR();
+	RenderMaterialDetails(SlotOwnerComp);
 }
 
-// -----------------------------------------------------------------------
-// 오른쪽: 머테리얼 상세 (복사본 편집)
-// -----------------------------------------------------------------------
-void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* PrimitiveComp)
+void FEditorMaterialWidget::RenderMaterialDetails(UPrimitiveComponent* SlotOwnerComp)
 {
-    if (SelectedSectionIndex < 0 || SelectedSectionIndex >= PrimitiveComp->GetNumMaterials())
-    {
-        ImGui::TextDisabled("Select a slot to edit.");
-        return;
-    }
-
-	// 슬롯 이름 표시
-	UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
-	UStaticMesh* MeshAsset = MeshComp ? MeshComp->GetStaticMesh() : nullptr;
-	FString SlotName = "Slot";
-	if (MeshAsset) 
-	{
-		const TArray<FStaticMeshSection>& Sections = MeshAsset->GetSections();
-		const TArray<FStaticMeshMaterialSlot>& MatSlots = MeshAsset->GetMaterialSlots();
-		if (SelectedSectionIndex < static_cast<int32>(Sections.size())) 
-		{
-			int32 SlotIdx = Sections[SelectedSectionIndex].MaterialSlotIndex;
-			if (SlotIdx >= 0 && SlotIdx < static_cast<int32>(MatSlots.size()))
-				SlotName = MatSlots[SlotIdx].SlotName;
-		}
-	}
-	ImGui::Text("Slot [%d]  |  Name: %s", SelectedSectionIndex, SlotName.c_str());
-
-	// MTL 못 읽어 머테리얼 없는 경우 경고
 	if (!SelectedMaterialPtr)
 	{
-		ImGui::Spacing();
-		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Material not loaded. Assign one below.");
-		ImGui::Spacing();
+		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "No material assigned. Assign one from the component Material Slot.");
+		return;
 	}
 
 	if (ImGui::Button("Create Instance"))
 	{
-		UMaterial* BaseMat = Cast<UMaterial>(SelectedMaterialPtr);
-		if (BaseMat)
-		{
-			std::filesystem::path MatPath = std::filesystem::path(BaseMat->FilePath);
-			std::filesystem::path MatDir = MatPath.parent_path();
-			FString PureName = MatPath.stem().string();
-
-			int32 Index = 0;
-			std::filesystem::path FinalPath;
-			do
-			{
-				FString NewName = PureName + "_Inst_" + std::to_string(Index) + ".matinst";
-				FinalPath = MatDir / NewName;
-				Index++;
-			} while (std::filesystem::exists(FinalPath));
-
-			FString InstancePath = FPaths::Normalize(FinalPath.string());
-
-			UMaterialInstance* NewInstance = FResourceManager::Get().CreateMaterialInstance(InstancePath, BaseMat);
-			if (NewInstance)
-			{
-				PrimitiveComp->SetMaterial(SelectedSectionIndex, NewInstance);
-				SelectedMaterialPtr = NewInstance;
-
-				FResourceManager::Get().SerializeMaterialInstance(InstancePath, NewInstance);
-			}
-		}
+		CreateInstanceForCurrentMaterial();
 	}
 
-    // ---- 머테리얼 교체 콤보박스 (항상 표시) ----
-	TArray<UMaterialInterface*> Materials;
-	for (TObjectIterator<UMaterialInterface> It; It; ++It)
-	{
-		UMaterialInterface* Mat = *It;
-		if (Mat)
-		{
-			Materials.push_back(Mat);
-		}
-	}
-
-    int32 CurrentIdx = -1;
-	if (SelectedMaterialPtr)
-	{
-		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
-		{
-			if (Materials[i]->GetName()  == SelectedMaterialPtr->GetName())
-			{
-				CurrentIdx = i;
-				break;
-			}
-		}
-	}
-
-    const char* PreviewLabel = (CurrentIdx >= 0) ? Materials[CurrentIdx]->GetName().c_str() : "(none)";
-    ImGui::SetNextItemWidth(-1);
-    if (ImGui::BeginCombo("##MaterialCombo", PreviewLabel))
-    {
-        for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
-        {
-            bool bIsSelected = (i == CurrentIdx);
-            if (ImGui::Selectable(Materials[i]->GetName().c_str(), bIsSelected))
-            {
-				PrimitiveComp->SetMaterial(SelectedSectionIndex, Materials[i]);
-				SelectedMaterialPtr = Materials[i];
-				break;
-            }
-
-            if (bIsSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
-	// 머테리얼이 없으면 색상/텍스처 편집 불가
-	if (!SelectedMaterialPtr)
-		return;
-
-	MAT_SEPARATOR();
 	RenderMaterialProperties();
+}
+
+void FEditorMaterialWidget::RefreshEditingMaterialFromSlot()
+{
+	if (!EditingSlotOwner || EditingSlotIndex < 0 || EditingSlotIndex >= EditingSlotOwner->GetNumMaterials())
+	{
+		SelectedMaterialPtr = nullptr;
+		return;
+	}
+
+	SelectedMaterialPtr = EditingSlotOwner->GetMaterial(EditingSlotIndex);
+}
+
+bool FEditorMaterialWidget::CreateInstanceForCurrentMaterial()
+{
+	UMaterial* BaseMat = Cast<UMaterial>(SelectedMaterialPtr);
+	if (!BaseMat)
+	{
+		if (SelectedMaterialPtr && SelectedMaterialPtr->IsA<UMaterialInstance>())
+		{
+			EditorEngine->GetMainPanel().PushFooterLog("Material is already an instance");
+		}
+		return false;
+	}
+
+	const std::filesystem::path InstanceDir = ResolveMaterialInstanceDirectory(BaseMat);
+	std::error_code Ec;
+	std::filesystem::create_directories(InstanceDir, Ec);
+
+	const FString PureName = ResolveMaterialInstanceStem(BaseMat);
+	int32 Index = 0;
+	std::filesystem::path FinalPath;
+	do
+	{
+		const FString NewName = PureName + "_Inst_" + std::to_string(Index) + ".matinst";
+		FinalPath = InstanceDir / NewName;
+		Index++;
+	} while (std::filesystem::exists(FinalPath));
+
+	const FString InstancePath = FPaths::Normalize(FPaths::ToString(FinalPath.generic_wstring()));
+	UMaterialInstance* NewInstance = FResourceManager::Get().CreateMaterialInstance(InstancePath, BaseMat);
+	if (!NewInstance)
+	{
+		return false;
+	}
+
+	if (!FResourceManager::Get().SerializeMaterialInstance(InstancePath, NewInstance))
+	{
+		return false;
+	}
+
+	SelectedMaterialPtr = NewInstance;
+	if (EditingSlotOwner && EditingSlotIndex >= 0 && EditingSlotIndex < EditingSlotOwner->GetNumMaterials())
+	{
+		EditingSlotOwner->SetMaterial(EditingSlotIndex, NewInstance);
+		EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+	}
+	else
+	{
+		AssetEditingMaterialPtr = NewInstance;
+	}
+
+	EditorEngine->GetMainPanel().PushFooterLog("Material instance created");
+	return true;
+}
+
+UStaticMesh* FEditorMaterialWidget::ResolvePreviewMesh(UPrimitiveComponent* PrimitiveComp)
+{
+	if (PreviewMesh == nullptr)
+	{
+		PreviewMesh = FResourceManager::Get().LoadStaticMesh("Asset\\Mesh\\PreviewSphere.obj");
+	}
+
+	if (PreviewMesh && PreviewMesh->HasValidMeshData())
+	{
+		return PreviewMesh;
+	}
+
+	UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimitiveComp);
+	UStaticMesh* SelectedMesh = MeshComp ? MeshComp->GetStaticMesh() : nullptr;
+	return (SelectedMesh && SelectedMesh->HasValidMeshData()) ? SelectedMesh : nullptr;
+}
+
+void FEditorMaterialWidget::RenderMaterialPreviewSummary()
+{
+	if (!SelectedMaterialPtr)
+	{
+		ImGui::TextDisabled("No material preview.");
+		return;
+	}
+
+	const bool bInstance = SelectedMaterialPtr->IsA<UMaterialInstance>();
+	ImGui::TextDisabled(bInstance ? "Editable Material Instance" : "Read-only Material");
+	if (!SelectedMaterialPtr->GetFilePath().empty())
+	{
+		ImGui::TextWrapped("%s", FPaths::Normalize(SelectedMaterialPtr->GetFilePath()).c_str());
+	}
+
+	const UMaterial* BaseMaterial = ResolveBaseMaterial(SelectedMaterialPtr);
+	if (!BaseMaterial)
+	{
+		return;
+	}
+
+	const FMaterial& MaterialData = BaseMaterial->MaterialData;
+	ImGui::Spacing();
+	ImGui::TextDisabled("Material Colors");
+	ImGui::ColorButton("Diffuse##MaterialSummary", ImVec4(MaterialData.DiffuseColor.X, MaterialData.DiffuseColor.Y, MaterialData.DiffuseColor.Z, MaterialData.Opacity), ImGuiColorEditFlags_NoTooltip, ImVec2(42.0f, 22.0f));
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Diffuse");
+	ImGui::ColorButton("Specular##MaterialSummary", ImVec4(MaterialData.SpecularColor.X, MaterialData.SpecularColor.Y, MaterialData.SpecularColor.Z, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(42.0f, 22.0f));
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Specular");
+	ImGui::ColorButton("Emissive##MaterialSummary", ImVec4(MaterialData.EmissiveColor.X, MaterialData.EmissiveColor.Y, MaterialData.EmissiveColor.Z, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(42.0f, 22.0f));
+	ImGui::SameLine();
+	ImGui::TextUnformatted("Emissive");
+}
+
+void FEditorMaterialWidget::RenderMaterialPreview(UPrimitiveComponent* PrimitiveComp)
+{
+	if (!SelectedMaterialPtr)
+	{
+		return;
+	}
+
+	const bool bInstance = SelectedMaterialPtr->IsA<UMaterialInstance>();
+	ImGui::TextDisabled(bInstance ? "Editable Material Instance" : "Read-only Material");
+	const UMaterial* BaseMaterial = ResolveBaseMaterial(SelectedMaterialPtr);
+
+	const float PreviewWidth = std::max(180.0f, ImGui::GetContentRegionAvail().x);
+	const ImVec2 PreviewSize(PreviewWidth, 180.0f);
+	UStaticMesh* Mesh = ResolvePreviewMesh(PrimitiveComp);
+	ID3D11ShaderResourceView* PreviewSRV = nullptr;
+
+	if (FEditorRenderPipeline* RenderPipeline = EditorEngine->GetEditorRenderPipeline())
+	{
+		PreviewSRV = RenderPipeline->RenderMaterialPreview(
+			EditorEngine->GetRenderer(),
+			Mesh,
+			SelectedMaterialPtr,
+			static_cast<uint32>(PreviewSize.x),
+			static_cast<uint32>(PreviewSize.y),
+			PreviewYawRad,
+			PreviewPitchRad,
+			PreviewDistance);
+	}
+
+	const ImVec2 PreviewMin = ImGui::GetCursorScreenPos();
+	if (PreviewSRV)
+	{
+		ImGui::Image(reinterpret_cast<ImTextureID>(PreviewSRV), PreviewSize);
+	}
+	else
+	{
+		const ImVec2 PreviewMax(PreviewMin.x + PreviewSize.x, PreviewMin.y + PreviewSize.y);
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImU32 PreviewBg = ImGui::GetColorU32(ImVec4(0.09f, 0.10f, 0.12f, 1.0f));
+		DrawList->AddRectFilled(PreviewMin, PreviewMax, PreviewBg, 6.0f);
+		DrawList->AddRect(PreviewMin, PreviewMax, ImGui::GetColorU32(ImVec4(0.25f, 0.28f, 0.34f, 1.0f)), 6.0f);
+		DrawList->AddText(ImVec2(PreviewMin.x + 12.0f, PreviewMin.y + 12.0f),
+			ImGui::GetColorU32(ImGuiCol_TextDisabled), "3D preview unavailable.");
+		ImGui::Dummy(PreviewSize);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		const ImGuiIO& IO = ImGui::GetIO();
+		if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+		{
+			PreviewYawRad += IO.MouseDelta.x * 0.01f;
+			PreviewPitchRad = MathUtil::Clamp(PreviewPitchRad + IO.MouseDelta.y * 0.01f, -1.35f, 1.35f);
+		}
+		if (IO.MouseWheel != 0.0f)
+		{
+			PreviewDistance = MathUtil::Clamp(PreviewDistance - IO.MouseWheel * 0.35f, 1.5f, 10.0f);
+		}
+	}
+
+	const ImVec2 PreviewMax(PreviewMin.x + PreviewSize.x, PreviewMin.y + PreviewSize.y);
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRect(PreviewMin, PreviewMax, ImGui::GetColorU32(ImVec4(0.25f, 0.28f, 0.34f, 1.0f)), 6.0f);
+
+	if (BaseMaterial)
+	{
+		const FMaterial& MaterialData = BaseMaterial->MaterialData;
+		const ImVec2 SwatchSize(34.0f, 18.0f);
+		const ImVec2 SwatchMin(PreviewMin.x + 8.0f, PreviewMax.y - 28.0f);
+		DrawList->AddRectFilled(SwatchMin, ImVec2(SwatchMin.x + SwatchSize.x, SwatchMin.y + SwatchSize.y),
+			ToColorU32(MaterialData.DiffuseColor, MaterialData.Opacity), 3.0f);
+		const ImVec2 SpecMin(SwatchMin.x + 42.0f, SwatchMin.y);
+		DrawList->AddRectFilled(SpecMin, ImVec2(SpecMin.x + SwatchSize.x, SpecMin.y + SwatchSize.y),
+			ToColorU32(MaterialData.SpecularColor), 3.0f);
+		const ImVec2 EmissiveMin(SpecMin.x + 42.0f, SpecMin.y);
+		DrawList->AddRectFilled(EmissiveMin, ImVec2(EmissiveMin.x + SwatchSize.x, EmissiveMin.y + SwatchSize.y),
+			ToColorU32(MaterialData.EmissiveColor), 3.0f);
+	}
+
+	ImGui::TextDisabled("Drag preview to rotate the material sphere. Wheel zooms.");
 }
 
 void FEditorMaterialWidget::RenderMaterialProperties()
@@ -298,6 +434,7 @@ void FEditorMaterialWidget::RenderMaterialProperties()
 
 	if (!bIsInstanced)
 	{
+		ImGui::TextDisabled("Create Instance to edit material parameters.");
 		ImGui::BeginDisabled();
 	}
 
