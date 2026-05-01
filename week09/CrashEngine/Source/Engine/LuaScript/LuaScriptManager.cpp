@@ -1,4 +1,5 @@
 ﻿#include "LuaScriptManager.h"
+
 #include "Component/LuaScriptComponent.h"
 #include "Core/Watcher/DirectoryWatcher.h"
 #include "GameFramework/AActor.h"
@@ -9,11 +10,28 @@
 
 void FLuaScriptManager::Init()
 {
-    FDirectoryWatcher::Get().OnDirectoryChanged.AddDynamic(this, &FLuaScriptManager::OnLuaFileChanged);
+    if (bWatcherRegistered)
+    {
+        return;
+    }
+
+    FDirectoryWatcher::Get().RegisterWatch(
+        [this](const FString& FileName)
+        {
+            this->OnLuaFileChanged(FileName);
+        });
+
+    bWatcherRegistered = true;
 }
 
 void FLuaScriptManager::Release()
 {
+	if (!bWatcherRegistered)
+	{
+		return;
+	}
+	
+	bWatcherRegistered = false;
     FDirectoryWatcher::Get().OnDirectoryChanged.RemoveAll(this);
 }
 
@@ -84,7 +102,7 @@ bool FLuaScriptManager::DeleteScript(const FString& FileName)
             ULuaScriptComponent* Component = *It;
             if (Component && Component->GetScriptPath() == FileName)
             {
-                Component->clearScript();
+                Component->ClearScript();
             }
         }
         return true;

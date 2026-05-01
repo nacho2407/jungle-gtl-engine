@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(ADirectionalLightActor, AActor)
 
 ADirectionalLightActor::ADirectionalLightActor()
 {
-    bNeedsTick = false;
+    SetActorTickEnabled(false);
     bTickInEditor = false;
 }
 

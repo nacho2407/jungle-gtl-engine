@@ -31,11 +31,11 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
     TextureResources.clear();
 
     std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)));
-    checkf(File.is_open(), "Failed to open Settings/Resource.ini");
+    ENGINE_CHECK_FORMATTED(File.is_open(), "Failed to open Settings/Resource.ini");
 
     FString Content((std::istreambuf_iterator<char>(File)),
                     std::istreambuf_iterator<char>());
-    checkf(!Content.empty(), "Settings/Resource.ini is empty");
+    ENGINE_CHECK_FORMATTED(!Content.empty(), "Settings/Resource.ini is empty");
 
     JSON Root = JSON::Load(Content);
 
@@ -47,9 +47,9 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
         {
             JSON Entry = Pair.second;
 
-            checkf(Entry.hasKey(ResourceKey::Path), "Font entry is missing Path");
-            checkf(Entry.hasKey(ResourceKey::Columns), "Font entry is missing Columns");
-            checkf(Entry.hasKey(ResourceKey::Rows), "Font entry is missing Rows");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Path), "Font entry is missing Path");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Columns), "Font entry is missing Columns");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Rows), "Font entry is missing Rows");
 
             FFontResource Resource;
             Resource.Name = FName(Pair.first.c_str());
@@ -58,7 +58,7 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
             Resource.SRV = nullptr;
 
-            checkf(!Resource.Path.empty(), "Font resource path is empty");
+            ENGINE_CHECK_FORMATTED(!Resource.Path.empty(), "Font resource path is empty");
             FontResources[Pair.first] = Resource;
         }
     }
@@ -71,9 +71,9 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
         {
             JSON Entry = Pair.second;
 
-            checkf(Entry.hasKey(ResourceKey::Path), "Particle entry is missing Path");
-            checkf(Entry.hasKey(ResourceKey::Columns), "Particle entry is missing Columns");
-            checkf(Entry.hasKey(ResourceKey::Rows), "Particle entry is missing Rows");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Path), "Particle entry is missing Path");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Columns), "Particle entry is missing Columns");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Rows), "Particle entry is missing Rows");
 
             FParticleResource Resource;
             Resource.Name = FName(Pair.first.c_str());
@@ -82,7 +82,7 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             Resource.Rows = static_cast<uint32>(Entry[ResourceKey::Rows].ToInt());
             Resource.SRV = nullptr;
 
-            checkf(!Resource.Path.empty(), "Particle resource path is empty");
+            ENGINE_CHECK_FORMATTED(!Resource.Path.empty(), "Particle resource path is empty");
             ParticleResources[Pair.first] = Resource;
         }
     }
@@ -95,7 +95,7 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
         {
             JSON Entry = Pair.second;
 
-            checkf(Entry.hasKey(ResourceKey::Path), "Texture entry is missing Path");
+            ENGINE_CHECK_FORMATTED(Entry.hasKey(ResourceKey::Path), "Texture entry is missing Path");
 
             FTextureResource Resource;
             Resource.Name = FName(Pair.first.c_str());
@@ -104,12 +104,12 @@ void FResourceManager::LoadFromFile(const FString& Path, ID3D11Device* InDevice)
             Resource.Rows = 1;
             Resource.SRV = nullptr;
 
-            checkf(!Resource.Path.empty(), "Texture resource path is empty");
+            ENGINE_CHECK_FORMATTED(!Resource.Path.empty(), "Texture resource path is empty");
             TextureResources[Pair.first] = Resource;
         }
     }
 
-    checkf(LoadGPUResources(InDevice), "Failed to create GPU resources from Settings/Resource.ini");
+    ENGINE_CHECK_FORMATTED(LoadGPUResources(InDevice), "Failed to create GPU resources from Settings/Resource.ini");
     UE_LOG(Resource, Info, "Resources loaded. Fonts=%u Particles=%u Textures=%u",
            static_cast<uint32>(FontResources.size()),
            static_cast<uint32>(ParticleResources.size()),

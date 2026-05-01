@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "Core/CoreTypes.h"
 #include "Core/Singleton.h"
 
@@ -21,4 +22,7 @@ private:
     ~FLuaScriptManager() = default;
 
     void OnLuaFileChanged(const FString& FileName);
+
+private:
+    bool bWatcherRegistered = false;
 };
