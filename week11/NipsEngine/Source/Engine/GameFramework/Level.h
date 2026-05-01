@@ -28,7 +28,6 @@ public:
 	void TickEditor(float DeltaTime);   // bTickInEditor == true 인 액터만 틱
 	void TickGame(float DeltaTime);     // 활성화된 모든 액터를 틱 (PIE / Game)
 	void EndPlay(EEndPlayReason::Type EndPlayReason);
-
 private:
 	TArray<AActor*> Actors;
 };

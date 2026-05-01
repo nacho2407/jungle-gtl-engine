@@ -12,16 +12,17 @@ class UScriptComponent;
 struct FLuaScriptInfo
 {
     FWString ScriptPath;
-    TArray<std::shared_ptr<UScriptComponent>> ScriptComponents;
+    TArray<UScriptComponent*> ScriptComponents;
     std::filesystem::file_time_type LastWriteTime;
 };
 
-class UScriptManager : public TSingleton<UScriptManager>
+class FScriptManager : public TSingleton<FScriptManager>
 {
-    friend class TSingleton<UScriptManager>;
+    friend class TSingleton<FScriptManager>;
 
 public:
-    void intializeLuaState();
+    void initializeLuaState();
+    void CheckAllLuaScripts();
     void BindLuaState();
     void ShutdownLuaState() { GLuaState.reset(); }
 
@@ -32,7 +33,11 @@ public:
     bool EditScript(const FName& name);
 
 	void RegisterScriptComponents(const FString& name, UScriptComponent* ScriptComponent);
-    void UnregisterScriptComponents(const FString& name);
+    void UnregisterScriptComponents(const FString& name, UScriptComponent* ScriptComponent);
+    void UnregisterScriptComponentAll(UScriptComponent* ScriptComponent);
+
+    auto GetScriptInfo(const FName& name) -> FLuaScriptInfo*;
+    auto GetScriptArray() -> TMap<FName, FLuaScriptInfo, FName::Hash>& { return ScriptArray; }
 
 private:
 	std::unique_ptr<sol::state> GLuaState;
