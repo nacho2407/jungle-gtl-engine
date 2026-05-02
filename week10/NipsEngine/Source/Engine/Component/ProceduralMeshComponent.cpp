@@ -7,7 +7,7 @@
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)
 
-void UProceduralMeshComponent::CreateFromStaticMesh(UStaticMesh* StaticMesh)
+void UProceduralMeshComponent::CreateFrom(UStaticMesh* StaticMesh)
 {
 	if (StaticMesh)
 	{
@@ -17,6 +17,19 @@ void UProceduralMeshComponent::CreateFromStaticMesh(UStaticMesh* StaticMesh)
             UMaterialInterface* Mat = StaticMesh->GetMaterialSlots()[i].Material;
             SetMaterial(i, Mat);
 		}
+	}
+}
+
+void UProceduralMeshComponent::CreateFrom(UProceduralMeshComponent* ProcMeshComp)
+{
+	if (ProcMeshComp)
+	{
+        CreateSection(0, ProcMeshComp->GetSections()[0].Vertices, ProcMeshComp->GetSections()[0].Indices);
+        for (size_t i = 0; i < ProcMeshComp->GetNumMaterials(); i++)
+        {
+            UMaterialInterface* Mat = ProcMeshComp->GetMaterial(i);
+            SetMaterial(i, Mat);
+        }
 	}
 }
 
@@ -262,15 +275,12 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
     BuildCapMesh(CapLoop, -Plane.Normal, false, OutFront.Vertices, OutFront.Indices);
 }
 
-void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane& Plane, UProceduralMeshComponent*& OutFront, UProceduralMeshComponent*& OutBack)
+void FMeshSlicer::SliceComponent(UStaticMeshComponent* InComponent, const FPlane& Plane, UProceduralMeshComponent*& OutFront, UProceduralMeshComponent*& OutBack)
 {
-    // 데이터 복사
-    UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(InComponent);
-
-    if (StaticMeshComp)
+    if (InComponent)
     {
         FSliceMeshData Src;
-        StaticMeshComp->GetMeshData(Src.Vertices, Src.Indices);
+        InComponent->GetMeshData(Src.Vertices, Src.Indices);
 
         FSliceMeshData Front;
         FSliceMeshData Back;
@@ -279,14 +289,14 @@ void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane&
 
         // ProceduralMesh 생성
         OutFront->CreateSection(0, Front.Vertices, Front.Indices);
-		// 테스트용
+        // 테스트용
         OutFront->SetWorldLocation(FVector(0, 0, 1));
 
-		for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
+        for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
         {
             UMaterialInterface* Mat = InComponent->GetMaterial(i);
             OutFront->SetMaterial(i, InComponent->GetMaterial(i));
-		}
+        }
 
         OutBack->CreateSection(0, Back.Vertices, Back.Indices);
         OutBack->SetWorldLocation(FVector(0, 0, -1));
@@ -295,10 +305,45 @@ void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane&
             OutBack->SetMaterial(i, InComponent->GetMaterial(i));
         }
 
-		// 기존 Static Mesh 제거 or 숨김
+        // 기존 Static Mesh 제거 or 숨김
         InComponent->SetVisibility(false);
     }
+}
 
+void FMeshSlicer::SliceComponent(UProceduralMeshComponent* InComponent, const FPlane& Plane, UProceduralMeshComponent*& OutFront, UProceduralMeshComponent*& OutBack)
+{
+    if (InComponent)
+    {
+        FSliceMeshData Src;
+        Src.Vertices = InComponent->GetSections()[0].Vertices;
+        Src.Indices = InComponent->GetSections()[0].Indices;
+
+        FSliceMeshData Front;
+        FSliceMeshData Back;
+
+        Slice(Src, Plane, Front, Back);
+
+        // ProceduralMesh 생성
+        OutFront->CreateSection(0, Front.Vertices, Front.Indices);
+        // 테스트용
+        OutFront->SetWorldLocation(FVector(0, 0, 1));
+
+        for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
+        {
+            UMaterialInterface* Mat = InComponent->GetMaterial(i);
+            OutFront->SetMaterial(i, InComponent->GetMaterial(i));
+        }
+
+        OutBack->CreateSection(0, Back.Vertices, Back.Indices);
+        OutBack->SetWorldLocation(FVector(0, 0, -1));
+        for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
+        {
+            OutBack->SetMaterial(i, InComponent->GetMaterial(i));
+        }
+
+        // 기존 Static Mesh 제거 or 숨김
+        InComponent->SetVisibility(false);
+    }
 }
 
 void FMeshSlicer::AddTriangle(FSliceMeshData& Mesh, const FNormalVertex& A, const FNormalVertex& B, const FNormalVertex& C)
