@@ -6,6 +6,7 @@
 #include "Core/Logging/LogMacros.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 namespace
 {
 constexpr float kPi = 3.14159265f;
@@ -105,7 +106,8 @@ void DrawDebugOBB(FScene* Scene, const FOBB& OBB, const FColor& Color)
 
 void FCollisionManager::RegisterComponent(UPrimitiveComponent* Component)
 {
-    RegisteredComponents.push_back(Component);
+    if (RegisteredComponents.size()== 0 || RegisteredComponents.back() != Component)
+		RegisteredComponents.push_back(Component);
 }
 
 void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
@@ -124,6 +126,12 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
 
 void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
 {
+    if (bNeedsBVHRebuild)
+    {
+        BuildBVH();
+        bNeedsBVHRebuild = false; // 갱신 완료! 깃발 내림
+    }
+
     // 1. 디버그 드로우용 색상 배열 (기본값: 모두 초록색)
     std::vector<FColor> DebugColors(RegisteredComponents.size(), FColor(0, 255, 0));
 
@@ -240,6 +248,23 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
             }
         }
     }
+}
+
+void FCollisionManager::BuildBVH()
+{
+    auto GetBounds = [](UPrimitiveComponent* Comp) -> FBoundingBox
+    {
+        return Comp->GetWorldBoundingBox();
+    };
+
+    auto GetStableKey = [](UPrimitiveComponent* Comp) -> uint64_t
+    {
+        return reinterpret_cast<uint64_t>(Comp);
+    };
+
+    // std::vector -> TArray로 변환 후 Build 호출
+    TArray<UPrimitiveComponent*> Leaves(RegisteredComponents.begin(), RegisteredComponents.end());
+    CollisionTree.Build(Leaves, GetBounds, GetStableKey);
 }
 
 bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)

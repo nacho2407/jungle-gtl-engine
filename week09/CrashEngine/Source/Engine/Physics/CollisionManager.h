@@ -1,10 +1,15 @@
 ﻿#pragma once
 #include "Engine/Core/CoreTypes.h"
+#include "Collision/BVH/BVH.h"
+
 
 class UPrimitiveComponent;
 class FScenePrimitiveBVH;
 class UShapeComponent;
 class FScene;
+
+using FCollisionBVH = TBVH<UPrimitiveComponent*, 8, 16>;
+
 struct FOverlapPair
 {
     UPrimitiveComponent* A;
@@ -27,9 +32,12 @@ public:
 
 	void Reset() { RegisteredComponents.clear(); }
 
+	    void BuildBVH();
+    void UpdateCollisionInBVH(UPrimitiveComponent* Component){ if (Component) bNeedsBVHRebuild = true;}
+
 private:
     // BVH 루트 노드
-    FScenePrimitiveBVH* RootNode;
+    FCollisionBVH CollisionTree;
 
     // 등록된 모든 콜리전 컴포넌트들
     TArray<UPrimitiveComponent*> RegisteredComponents;
@@ -47,5 +55,8 @@ private:
 
     // BVH 업데이트 및 충돌 쿼리 로직
     // void UpdateBVH();
+
     bool CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B);
+    
+	bool bNeedsBVHRebuild = true;
 };
