@@ -24,6 +24,7 @@ private:
 	ID3D11Device* Device = nullptr;
 	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
 	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
+    TMap<const UProceduralMeshComponent*, FMeshBuffer> ProcMeshBufferMap;
 
 public:
 
@@ -35,5 +36,5 @@ public:
 
 	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
-    FMeshBuffer* GetProcMeshBuffer(const UProceduralMeshComponent::FMeshSection& MeshSection);
+    FMeshBuffer* GetProcMeshBuffer(const UProceduralMeshComponent* ProcMeshComp, const UProceduralMeshComponent::FMeshSection& MeshSection);
 };
