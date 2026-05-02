@@ -314,6 +314,7 @@ bool UScriptComponent::LoadScript()
         return false;
     }
 
+    BindCoroutineHelpers(Loaded->Env, this);
 	auto Instance = CreateScriptInstance(*Loaded);
     if (!Instance)
     {
@@ -345,6 +346,7 @@ bool UScriptComponent::HotReloadScript()
         return false;
     }
 
+    BindCoroutineHelpers(Loaded->Env, this);
     auto Instance = CreateScriptInstance(*Loaded);
     if (!Instance)
     {

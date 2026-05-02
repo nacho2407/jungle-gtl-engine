@@ -35,6 +35,15 @@ end
 --LifeCycle
 function Script:BeginPlay()
     Log("[BeginPlay] " .. tostring(self.owner.UUID))
+
+    StartCoroutine(function()
+        Log("Coroutine Start")
+
+        coroutine.yield(WaitForSeconds(1.0))
+
+        Log("1 seconds later")
+    end
+    )
 end
 
 function Script:Tick(dt)
