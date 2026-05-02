@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Core/RayTypes.h"
+#include "Core/CollisionTypes.h"
 
 class UWorld;
 class AActor;
@@ -58,5 +59,11 @@ public:
 	virtual FVector GetCenterOfMass(UPrimitiveComponent* Comp) const = 0;
 
 	// --- Raycast ---
-	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor = nullptr) const = 0;
+	// TraceChannel: shape의 응답이 이 채널에 대해 Block일 때만 hit으로 인정 (UE 패턴).
+	//   예: WorldStatic 채널로 trace → 응답이 WorldStatic Block인 shape만 hit.
+	//   trigger flag가 set된 shape는 PhysX 측에서 자동 제외됨.
+	// IgnoreActor: 자기 자신/소유 액터를 제외할 때 사용.
+	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const = 0;
 };

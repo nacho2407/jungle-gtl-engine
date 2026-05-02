@@ -31,13 +31,16 @@ local function spawnOne()
     local m = World.SpawnActor("AMeteor")
     if m == nil then return end
 
-    local center = obj.Location
+    -- obj.Location은 by-value getter라 카피된 userdata. X/Y/Z는 mutable이므로
+    -- Vector 글로벌 호출 없이 멤버 set으로 새 위치를 만든 뒤 m.Location에 대입.
+    -- (sol::environment에서 Vector lookup이 실패하는 경우 회피용)
+    local pos = obj.Location
     local angle = math.random() * 2 * math.pi
     local r = math.random() * SPAWN_RADIUS
-    m.Location = Vector(
-        center.X + math.cos(angle) * r,
-        center.Y + math.sin(angle) * r,
-        center.Z + SPAWN_HEIGHT)
+    pos.X = pos.X + math.cos(angle) * r
+    pos.Y = pos.Y + math.sin(angle) * r
+    pos.Z = pos.Z + SPAWN_HEIGHT
+    m.Location = pos
 
     table.insert(meteors, m)
 end
@@ -48,11 +51,6 @@ function BeginPlay()
 end
 
 function EndPlay()
-    -- 페이즈 종료/씬 종료 시 활성 운석 정리
-    for _, m in ipairs(meteors) do
-        if m:IsValid() then m:Destroy() end
-    end
-    meteors = {}
 end
 
 function Tick(dt)

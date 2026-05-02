@@ -374,7 +374,8 @@ FVector FNativePhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
 // Raycast — brute-force AABB ray test
 // ============================================================
 
-bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor) const
+bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {
 	// Inverse direction for slab test
 	FVector InvDir;
@@ -388,6 +389,10 @@ bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, floa
 	for (UPrimitiveComponent* Comp : RegisteredComponents)
 	{
 		if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
+
+		// Channel filter: 응답이 TraceChannel에 대해 Block이 아니면 skip
+		// (overlap/ignore 응답인 trigger volume 등은 raycast 결과에서 제외)
+		if (Comp->GetCollisionResponseToChannel(TraceChannel) != ECollisionResponse::Block) continue;
 
 		FBoundingBox Box = Comp->GetWorldBoundingBox();
 

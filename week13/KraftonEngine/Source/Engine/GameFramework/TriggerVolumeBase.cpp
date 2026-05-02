@@ -35,13 +35,26 @@ void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutP
 
 void ATriggerVolumeBase::BeginPlay()
 {
-	Super::BeginPlay();
-
 	// 직렬화 경로(씬 로드)에서 PostDuplicate가 안 거쳐졌을 수 있어 한 번 더 잡는다.
 	if (!TriggerBox)
 	{
 		TriggerBox = Cast<UBoxComponent>(GetRootComponent());
 	}
+
+	// 씬에 잘못 직렬화된 값(GenerateOverlapEvents=false 등)이 있으면 PhysX가 trigger flag
+	// 대신 simulation shape로 등록 → Pawn과 일반 충돌 발생 → trigger 표면에서 튕김.
+	// Super::BeginPlay 전에 강제 보정해야 PrimitiveComponent::BeginPlay → PhysX
+	// RegisterComponent 시점에 trigger 셋업이 반영된다.
+	if (TriggerBox)
+	{
+		TriggerBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		TriggerBox->SetCollisionObjectType(ECollisionChannel::Trigger);
+		TriggerBox->SetCollisionResponseToAllChannels(ECollisionResponse::Overlap);
+		TriggerBox->SetGenerateOverlapEvents(true);
+		TriggerBox->SetSimulatePhysics(false);
+	}
+
+	Super::BeginPlay();
 
 	if (TriggerBox)
 	{
