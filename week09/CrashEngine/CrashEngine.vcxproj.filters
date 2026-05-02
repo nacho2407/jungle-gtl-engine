@@ -1063,6 +1063,7 @@
     <ClCompile Include="Source\Engine\LuaScript\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaGameObjectProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaRuntime.cpp" />
+    <ClCompile Include="Source\Engine\Core\Watcher\DirectoryWatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1911,6 +1912,10 @@
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaGameObjectProxy.h" />
+    <ClInclude Include="Source\Engine\Core\Watcher\DirectoryWatcher.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
