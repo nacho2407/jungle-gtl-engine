@@ -397,6 +397,7 @@ xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
@@ -616,6 +617,7 @@ xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
+    <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\Physics\CollisionManager.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />

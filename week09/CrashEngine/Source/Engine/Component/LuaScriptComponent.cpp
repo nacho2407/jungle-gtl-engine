@@ -144,6 +144,39 @@ void ULuaScriptComponent::SetScriptPath(const FString& ScriptPath)
     ClearScriptRuntime();
 }
 
+void ULuaScriptComponent::StartCoroutine(const FString& FunctionName)
+{
+    if (!bScriptLoaded)
+    {
+        UE_LOG(Lua, Warning, "Cannot start coroutine. Script is not loaded.");
+        return;
+    }
+
+    sol::state& Lua = FLuaRuntime::Get().GetState();
+
+    sol::object Candidate = Env[FunctionName.c_str()];
+
+    if (Candidate.get_type() != sol::type::function)
+    {
+        UE_LOG(Lua, Warning, "Cannot start coroutine. Function '%s' not found or is not a function.", FunctionName.c_str());
+        return;
+    }
+
+    sol::thread CoroutineThread = sol::thread::create(Lua.lua_state());
+    lua_State* L = CoroutineThread.thread_state();
+
+    Candidate.push(L);
+
+    int nresults = 0;
+    int ResumeResult = lua_resume(L, nullptr, 0, &nresults);
+
+    if (ResumeResult != 0 && ResumeResult != LUA_YIELD)
+    {
+        const char* ErrorMsg = lua_tostring(L, -1);
+        UE_LOG(Lua, Error, "Coroutine '%s' failed on start: %s", FunctionName.c_str(), ErrorMsg);
+    }
+}
+
 void ULuaScriptComponent::ClearScript()
 {
     LuaScriptPath = "None";
@@ -187,6 +220,11 @@ bool ULuaScriptComponent::LoadScript()
 
     ObjProxy.SetActor(OwnerActor);
     Env["obj"] = &ObjProxy;
+
+    Env["StartCoroutine"] = [this](const std::string& FunctionName)
+        {
+            this->StartCoroutine(FString(FunctionName.c_str()));
+        };
 
     const FString FullPathUtf8 = FPaths::FromPath(FullPath);
 

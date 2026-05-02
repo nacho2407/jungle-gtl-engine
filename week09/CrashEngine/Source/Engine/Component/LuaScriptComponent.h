@@ -17,6 +17,8 @@ public:
     void SetScriptPath(const FString& ScriptPath);
     const FString& GetScriptPath() const { return LuaScriptPath; }
 
+    void StartCoroutine(const FString& FunctionName);
+
     void ClearScript();
 
     bool LoadScript();
