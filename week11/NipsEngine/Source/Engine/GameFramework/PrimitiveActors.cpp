@@ -82,8 +82,8 @@ void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
     // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Lumine/LumineModel.obj"));
-    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
+    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
 	SetRootComponent(Cube);
 
 	// Text
@@ -99,7 +99,7 @@ void ACubeActor::InitDefaultComponents()
     UProceduralMeshComponent* ProcMeshComp2 = AddComponent<UProceduralMeshComponent>();
     
 	FPlane Plane;
-    Plane.Normal = FVector(0, 0, 1);
+    Plane.Normal = FVector(0, 1, 1);
     Plane.D = 0;
     FMeshSlicer::SliceComponent(Cube, Plane, ProcMeshComp1, ProcMeshComp2);
 	

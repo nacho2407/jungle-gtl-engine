@@ -115,6 +115,7 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     FMeshBuffer& NewBuffer = TargetMap[StaticMeshAsset];
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
     
+
     return &NewBuffer;
 }
 

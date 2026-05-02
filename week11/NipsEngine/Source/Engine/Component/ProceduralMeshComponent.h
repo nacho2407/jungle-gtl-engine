@@ -66,5 +66,12 @@ public:
 	static void AddTriangle(FSliceMeshData& Mesh, const FNormalVertex& A, const FNormalVertex& B, const FNormalVertex& C);
 
 	static FNormalVertex Intersect(const FNormalVertex& A, const FNormalVertex& B, float dA, float dB);
+
+	static void BuildCapMesh(
+							TArray<FNormalVertex> CapLoop, // 값 복사로 받기
+							const FVector& Normal,
+							bool bFlipWinding,
+							TArray<FNormalVertex>& OutVertices,
+							TArray<uint32>& OutIndices);
 };
 
