@@ -36,6 +36,44 @@ struct FInputModifiers
     bool bShift = false;
 };
 
+enum class EGamepadButton : uint8
+{
+    A,
+    B,
+    X,
+    Y,
+    LeftShoulder,
+    RightShoulder,
+    Back,
+    Start,
+    LeftThumb,
+    RightThumb,
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
+    Count
+};
+
+struct FGamepadSnapshot
+{
+    bool bConnected = false;
+
+    bool ButtonDown[static_cast<int32>(EGamepadButton::Count)] = {};
+    bool ButtonPressed[static_cast<int32>(EGamepadButton::Count)] = {};
+    bool ButtonReleased[static_cast<int32>(EGamepadButton::Count)] = {};
+
+    float LeftX = 0.0f;
+    float LeftY = 0.0f;
+    float RightX = 0.0f;
+    float RightY = 0.0f;
+    float LeftTrigger = 0.0f;
+    float RightTrigger = 0.0f;
+};
+
+// 연결 가능한 최대 게임패드 개수. XInput 최대 지원 개수는 4개
+constexpr int32 MaxGamepadCount = 4;
+
 /**
  * @brief 한 프레임 동안 수집한 원본 입력 상태 묶음
  */
@@ -53,6 +91,8 @@ struct FInputSnapshot
     float WheelNotches = 0.0f; // WheelDelta를 휠이 몇 칸(노치) 움직였는지로 변환한 값. 관례적으로 한 노치는 120으로 계산
 
 	// 드래그 관련 정보는 raw 입력 상태라기 보다 해석된 정보에 가깝기 때문에, InputSnapshot에 두지 않고 ViewportInputRouter쪽에서 처리합니다
+
+	FGamepadSnapshot Gamepads[MaxGamepadCount];
 
     FInputModifiers Modifiers;
 };
@@ -76,13 +116,12 @@ enum class EInputAxis : uint8
     MouseY,
     MouseWheel,
 
-	// TODO: Milestone 3에서 Gamepad 입력을 추가하면서 추가될 예정
-    //GamepadLeftX,
-    //GamepadLeftY,
-    //GamepadRightX,
-    //GamepadRightY,
-    //GamepadLeftTrigger,
-    //GamepadRightTrigger
+    GamepadLeftX,
+    GamepadLeftY,
+    GamepadRightX,
+    GamepadRightY,
+    GamepadLeftTrigger,
+    GamepadRightTrigger
 };
 
 /**
@@ -94,8 +133,7 @@ struct FViewportAxisEvent
     float Value = 0.0f;
     float DeltaTime = 0.0f;
 
-	// TODO: 마찬가지로 Milestone 3에서 Gamepad 입력이 추가되면, 이 구분 축도 추가될 예정
-	//int32 ContollerId = 0;
+	int32 ContollerId = 0;
 
     FInputModifiers Modifiers;
 };

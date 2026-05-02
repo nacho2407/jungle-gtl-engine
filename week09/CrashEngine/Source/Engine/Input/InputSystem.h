@@ -19,6 +19,7 @@ private:
     void SampleKeyboard();
     void SampleMouse();
     void SampleWheel();
+    void SampleGamepads();
     void UpdateModifiers();
     void ClearInputOnFocusLost();
 
