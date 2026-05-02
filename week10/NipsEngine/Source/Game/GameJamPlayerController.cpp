@@ -1,8 +1,9 @@
-#include "Game/GameJamPlayerController.h"
+﻿#include "Game/GameJamPlayerController.h"
 
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(AGameJamPlayerController, APlayerController)
 REGISTER_FACTORY(AGameJamPlayerController)
@@ -54,8 +55,26 @@ void AGameJamPlayerController::HandleMouseMoveAbsolute(float X, float Y)
 
 void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
 {
-    UE_LOG("Hello!");
 	APlayerController::HandleMouseButtonPressed(VK, X, Y);
+
+    switch (VK)
+    {
+    case VK_LBUTTON:
+    {
+        if (PossessedActor)
+        {
+            UWorld* World = PossessedActor->GetFocusedWorld();
+            if (World)
+            {
+                ABullet* Bullet = World->SpawnActor<ABullet>();
+                Bullet->InitDefaultComponents();
+                Bullet->SetActorLocation(PossessedActor->GetActorLocation());
+                Bullet->SetProjectileVelocity(PossessedActor->GetActorForward() * 40);
+            }
+        }
+        break;
+    }
+    }
 }
 
 void AGameJamPlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)
