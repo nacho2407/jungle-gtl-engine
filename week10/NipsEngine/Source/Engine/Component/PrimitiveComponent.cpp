@@ -112,9 +112,9 @@ void UPrimitiveComponent::AddWorldOffset(const FVector& WorldDelta)
 
 bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
 {
-	for (UPrimitiveComponent* Comp : CurOverlaps)
+	for (const auto& It : CurOverlaps)
 	{
-        if (Comp->Owner == OtherActor)
+        if (It.first->GetOwner() == OtherActor)
             return true;
 	}
     return false;
@@ -122,21 +122,25 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
 
 void UPrimitiveComponent::ResolveOverlaps()
 {
-    for (auto* B : CurOverlaps) 
+    for (const auto& It : CurOverlaps) 
     {
-        if (!PrevOverlaps.contains(B))
+        if (!PrevOverlaps.contains(It.first))
         {
             FHitResult HitResult;
-            OnComponentBeginOverlap.Broadcast(this, B->GetOwner(), B, 0, false, HitResult);
+            HitResult.bHit = true;
+            HitResult.Location = It.second.HitPoint;
+            OnComponentBeginOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
         }
     }
 
-    for (auto* B : PrevOverlaps)
+    for (const auto& It : PrevOverlaps)
     {
-        if (!CurOverlaps.contains(B))
+        if (!CurOverlaps.contains(It.first))
         {
             FHitResult HitResult;
-            OnComponentEndOverlap.Broadcast(this, B->GetOwner(), B, 0, false, HitResult);
+            HitResult.bHit = true;
+            HitResult.Location = It.second.HitPoint;
+            OnComponentEndOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
         }
     }
 }

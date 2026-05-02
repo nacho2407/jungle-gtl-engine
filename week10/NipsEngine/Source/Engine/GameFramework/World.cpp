@@ -173,8 +173,8 @@ void UWorld::UpdateOverlaps()
 
 					if (CollisionResult.bHit)
 					{
-                        A->AddOverlap(B);
-                        B->AddOverlap(A);
+                        A->AddOverlap(B, CollisionResult);
+                        B->AddOverlap(A, CollisionResult);
 					}
 				}
 			}
