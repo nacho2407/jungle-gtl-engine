@@ -99,6 +99,9 @@ REGISTER_FACTORY(ABullet)
 DEFINE_CLASS(ADestructibleActor, AActor)
 REGISTER_FACTORY(ADestructibleActor)
 
+DEFINE_CLASS(ABladeSlash, AActor)
+REGISTER_FACTORY(ABladeSlash)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -225,7 +228,7 @@ void ADefaultPlayerActor::InitDefaultComponents()
 	SpringArmComp = AddComponent<USpringArmComponent>();
 	SpringArmComp->AttachToComponent(SceneRoot);
 	SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
-	SpringArmComp->SetTargetArmLength(3.f);
+	SpringArmComp->SetTargetArmLength(0.f);
 	SpringArmComp->SetSocketOffset(FVector::ZeroVector);
 
 	CameraComp = AddComponent<UCameraComponent>();
@@ -616,38 +619,41 @@ void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    UProceduralMeshComponent* ProcMeshComp1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
-    UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
-
-    FPlane Plane;
-
-	FVector N = SweepResult.Normal;   // 반드시 normalize
-    FVector P = SweepResult.Location; // plane 위의 점
-    float D = FVector::DotProduct(N, P);
-
-    FVector SplitDir;	
-	SplitDir = FVector::CrossProduct(N, FVector::UpVector);
-	if (SplitDir.IsNearlyZero())
+	if (OtherActor->IsA<ABladeSlash>())
 	{
-        SplitDir = FVector::CrossProduct(N, FVector::RightVector);
+        UProceduralMeshComponent* ProcMeshComp1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+        UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+
+        FPlane Plane;
+
+        FVector N = SweepResult.Normal;   // 반드시 normalize
+        FVector P = SweepResult.Location; // plane 위의 점
+        float D = FVector::DotProduct(N, P);
+
+        FVector SplitDir;
+        SplitDir = FVector::CrossProduct(N, FVector::UpVector);
+        if (SplitDir.IsNearlyZero())
+        {
+            SplitDir = FVector::CrossProduct(N, FVector::RightVector);
+        }
+
+        Plane.Normal = SplitDir;
+        Plane.D = 0;
+
+        FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
+
+        UWorld* World = OtherActor->GetFocusedWorld();
+        ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
+        ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
+
+        Actor1->InitDestructibleActor(ProcMeshComp1);
+        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
+
+        Actor2->InitDestructibleActor(ProcMeshComp2);
+        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
+
+        SetVisible(false);
 	}
-
-	Plane.Normal = SplitDir;
-    Plane.D = 0;
-
-    FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
-
-	UWorld* World = OtherActor->GetFocusedWorld();
-    ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
-    ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
-
-	Actor1->InitDestructibleActor(ProcMeshComp1);
-    Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
-	
-	Actor2->InitDestructibleActor(ProcMeshComp2);
-    Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
-
-	SetVisible(false);
 }
 
 void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -676,4 +682,16 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
         }
         if (ProcMeshComp && BoxComponent) break;
     }
+}
+
+void ABladeSlash::InitDefaultComponents()
+{
+    auto* Root = AddComponent<UBoxComponent>();
+    Root->SetGenerateOverlapEvents(true);
+    SetRootComponent(Root);
+}
+
+void ABladeSlash::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
 }
