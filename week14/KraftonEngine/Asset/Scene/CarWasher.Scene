@@ -1,0 +1,618 @@
+{
+  "Actors" : [{
+      "ClassName" : "ACapsuleActor",
+      "Name" : "Player",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarWasherPlayer.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [0.000000, 0.000000, 1.712443],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, -180.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Element 0" : {
+                    "Path" : "Asset/Materials/Auto/top.mat"
+                  },
+                  "Generate Overlap Events" : false,
+                  "Location" : [-0.416978, 0.000000, 0.131648],
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [0.200000, 0.020000, 0.020000],
+                  "Simulate Physics" : false,
+                  "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+                  "Two Sided Shadow" : false,
+                  "Visible" : false,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/yellow.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/green.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/lambert1.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/orange.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/white.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-1.861480, -0.981201, 0.418669],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [5.000000, 5.000000, 5.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\WaterGun\\WaterGun.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UCapsuleComponent",
+        "Properties" : {
+          "Capsule Half Height" : 3.000000,
+          "Capsule Radius" : 1.800000,
+          "Cast Shadow" : false,
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.048823, -0.406745, 2.229708],
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "System",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GlobalManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [1.595953, -5.344582, 2.240409],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Car",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.000000, 0.523431, -0.213056],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [0.100000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.001285, -0.496085, -0.194542],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [0.100000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.000000, -1.286837, -0.181530],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [0.100000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [-0.260766, 0.598452, 0.547193],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, -91.648254, 0.000000],
+                  "Scale" : [1.016665, 1.000000, 0.414993],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [-0.443676, -0.455720, 0.476215],
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, -90.431602, 0.747101],
+                  "Scale" : [0.993631, 1.000000, 0.352314],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UCarDirtComponent",
+            "Properties" : {
+              "Location" : [0.939280, 0.881902, 0.972183],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/MI_Body.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/Decals.001.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/Interior.001.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/Trim.001.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/Chassis.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-8.125187, -1.884955, 0.884545],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [3.000000, 3.000000, 3.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\TruckBody.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "Name" : "ADirectionalLightActor_1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/DirectionalLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UDirectionalLightComponent",
+        "Properties" : {
+          "Cast Shadows" : true,
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Intensity" : 1.000000,
+          "Location" : [-3.937794, -4.427315, 8.093152],
+          "Rotation" : [89.899994, -45.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shadow Bias" : -0.000100,
+          "Shadow Normal Bias" : -0.002000,
+          "Shadow Resolution Scale" : 1.000000,
+          "Shadow Sharpen" : 0.670000,
+          "Shadow Slope Bias" : 0.000100,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "CarWasher",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [1.552224, -0.613752, 6.240169],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 27.315109, 178.052719]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

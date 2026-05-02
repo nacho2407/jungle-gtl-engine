@@ -504,7 +504,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		if (PPShader)
 		{
 			FOutlinePostProcessConstants ppConstants;
-			ppConstants.OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+			ppConstants.OutlineColor = FVector4(1.0f, 1.0f, 0.0f, 1.0f);
 			ppConstants.OutlineThickness = 3.0f;
 			OutlineCB.Update(Ctx, &ppConstants, sizeof(ppConstants));
 
