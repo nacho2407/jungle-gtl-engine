@@ -38,7 +38,7 @@ public:
 	FOBB GetWorldOBB() const
 	{
         const FTransform& T = GetWorldTransform();
-        return FOBB(GetWorldLocation(), Extent * 0.5f, T.GetRotation().ToMatrix());
+        return FOBB(GetWorldLocation(), Extent * 0.5f * T.GetScale3D(), T.GetRotation().ToMatrix());
 	}
 		
     void PostDuplicate(UObject* Original) override;

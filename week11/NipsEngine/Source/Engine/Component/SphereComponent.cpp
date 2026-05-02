@@ -4,6 +4,12 @@
 DEFINE_CLASS(USphereComponent, UShapeComponent)
 REGISTER_FACTORY(USphereComponent)
 
+void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UShapeComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "Sphere Radius", EPropertyType::Float, &SphereRadius });
+}
+
 void USphereComponent::PostDuplicate(UObject* Original)
 {
     UShapeComponent::PostDuplicate(Original);
