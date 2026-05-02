@@ -2,6 +2,7 @@
 #include "StaticMeshComponent.h"
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include <algorithm>
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 
@@ -99,6 +100,8 @@ void UProceduralMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* 
 
 void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSliceMeshData& OutFront, FSliceMeshData& OutBack)
 {
+    TArray<FNormalVertex> CapLoop;
+
     for (int i = 0; i < InMesh.Indices.size(); i += 3)
     {
 		// 삼각형 단위로 처리
@@ -167,6 +170,8 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
 
                 FNormalVertex I1 = Intersect(VF, VB1, dF, dB1);
                 FNormalVertex I2 = Intersect(VF, VB2, dF, dB2);
+                CapLoop.push_back(I1);
+                CapLoop.push_back(I2);
 
                 // Front
                 AddTriangle(OutFront, VF, I1, I2);
@@ -204,6 +209,8 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
 
                 FNormalVertex I1 = Intersect(VF1, VB, dF1, dB);
                 FNormalVertex I2 = Intersect(VF2, VB, dF2, dB);
+                CapLoop.push_back(I1);
+                CapLoop.push_back(I2);
 
                 // Back
                 AddTriangle(OutBack, VB, I1, I2);
@@ -217,8 +224,13 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                 assert(false && "Unknown Case");
 			}
 		}
-
     }
+
+    // Back (정상 방향)
+    BuildCapMesh(CapLoop, Plane.Normal, false, OutBack.Vertices, OutBack.Indices);
+
+    // Front (뒤집기)
+    BuildCapMesh(CapLoop, -Plane.Normal, false, OutFront.Vertices, OutFront.Indices);
 }
 
 void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane& Plane, UProceduralMeshComponent*& OutFront, UProceduralMeshComponent*& OutBack)
@@ -256,6 +268,7 @@ void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane&
 
 		// 기존 Static Mesh 제거 or 숨김
     }
+
 }
 
 void FMeshSlicer::AddTriangle(FSliceMeshData& Mesh, const FNormalVertex& A, const FNormalVertex& B, const FNormalVertex& C)
@@ -285,4 +298,100 @@ FNormalVertex FMeshSlicer::Intersect(const FNormalVertex& A, const FNormalVertex
     R.Position = A.Position + (B.Position - A.Position) * t;
     R.Normal = (A.Normal + (B.Normal - A.Normal) * t).GetSafeNormal();
     return R;
+}
+
+void FMeshSlicer::BuildCapMesh(
+    TArray<FNormalVertex> CapLoop, // 값 복사로 받기
+    const FVector& Normal,
+    bool bFlipWinding,
+    TArray<FNormalVertex>& OutVertices,
+    TArray<uint32>& OutIndices)
+{
+    if (CapLoop.size() < 3)
+        return;
+
+    // ---------------------------------
+    // 1. dedup (중복 제거)
+    // ---------------------------------
+    const float MergeEps = 1e-4f;
+    TArray<FNormalVertex> Unique;
+
+    for (const auto& V : CapLoop)
+    {
+        bool found = false;
+        for (const auto& U : Unique)
+        {
+            if ((V.Position - U.Position).SizeSquared() < MergeEps * MergeEps)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            Unique.push_back(V);
+    }
+
+    if (Unique.size() < 3)
+        return;
+
+    // ---------------------------------
+    // 2. center
+    // ---------------------------------
+    FVector Center = FVector::ZeroVector;
+    for (auto& V : Unique)
+        Center += V.Position;
+    Center /= Unique.size();
+
+    // ---------------------------------
+    // 3. basis
+    // ---------------------------------
+    FVector N = Normal.GetSafeNormal();
+    FVector T = FVector::CrossProduct(N, FVector::UpVector);
+    if (T.SizeSquared() < 1e-6f)
+        T = FVector::CrossProduct(N, FVector::RightVector);
+    T.Normalize();
+    FVector B = FVector::CrossProduct(N, T);
+
+    // ---------------------------------
+    // 4. sort
+    // ---------------------------------
+    std::sort(Unique.begin(), Unique.end(),
+              [&](const FNormalVertex& A, const FNormalVertex& Bv)
+              {
+                  FVector DA = A.Position - Center;
+                  FVector DB = Bv.Position - Center;
+
+                  float a = atan2(FVector::DotProduct(DA, B), FVector::DotProduct(DA, T));
+                  float b = atan2(FVector::DotProduct(DB, B), FVector::DotProduct(DB, T));
+                  return a < b;
+              });
+
+    // ---------------------------------
+    // 5. winding flip
+    // ---------------------------------
+    if (bFlipWinding)
+    {
+        std::reverse(Unique.begin(), Unique.end());
+    }
+
+    // ---------------------------------
+    // 6. normal 설정
+    // ---------------------------------
+    for (auto& V : Unique)
+        V.Normal = N;
+
+    // ---------------------------------
+    // 7. triangulation (convex 가정)
+    // ---------------------------------
+    int base = OutVertices.size();
+
+    for (auto& V : Unique)
+        OutVertices.push_back(V);
+
+    for (int i = 1; i < Unique.size() - 1; i++)
+    {
+        OutIndices.push_back(base + 0);
+        OutIndices.push_back(base + i);
+        OutIndices.push_back(base + i + 1);
+    }
 }
