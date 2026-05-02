@@ -23,6 +23,8 @@
 #include "Core/CollisionTypes.h"
 #include "Component/ProceduralMeshComponent.h"
 #include "Component/Movement/ProjectileMovementComponent.h"
+#include "GameFramework/World.h"
+
 
 namespace
 {
@@ -573,19 +575,77 @@ void ABullet::SetProjectileVelocity(FVector NewVelocity)
 	    ProjectileComp->SetVelocity(NewVelocity);
 }
 
-void ADestructibleActor::InitDefaultComponents()
+void ADestructibleActor::InitDestructibleActor(UStaticMesh* InStaticMesh)
 {
-    auto* Root = AddComponent<UProceduralMeshComponent>();
-	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
-    Root->CreateFromStaticMesh(Mesh);
-    SetRootComponent(Root);
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(InStaticMesh);
+    SetRootComponent(ProcMeshComp);
 
-	auto* BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent = AddComponent<UBoxComponent>();
     BoxComponent->AttachToComponent(GetRootComponent());
     BoxComponent->SetGenerateOverlapEvents(true);
+}
+
+void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp)
+{
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(InProcMeshComp);
+    UObjectManager::Get().DestroyObject(InProcMeshComp);
+    SetRootComponent(ProcMeshComp);
+
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+	// 잘린 애들을 무한히 자를 수 없게 제한
+    BoxComponent->SetGenerateOverlapEvents(false);
+}
+
+void ADestructibleActor::InitDefaultComponents()
+{
+	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    InitDestructibleActor(Mesh);
 }
 
 void ADestructibleActor::Tick(float DeltaTime)
 {
     AActor::Tick(DeltaTime);
+}
+
+void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+}
+
+void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UProceduralMeshComponent* ProcMeshComp1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+    UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+
+    FPlane Plane;
+    Plane.Normal = FVector(0, 1, 1);
+    Plane.D = 0;
+    FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
+
+	UWorld* World = OtherActor->GetFocusedWorld();
+    ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
+    ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
+
+	Actor1->InitDestructibleActor(ProcMeshComp1);
+    Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
+	
+	Actor2->InitDestructibleActor(ProcMeshComp2);
+    Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
+
+	SetVisible(false);
+}
+
+void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+}
+
+void ADestructibleActor::PostDuplicate(UObject* Original)
+{
+    AActor::PostDuplicate(Original);
+
+	ADestructibleActor* Actor = Cast<ADestructibleActor>(Original);
+	ProcMeshComp = Actor->ProcMeshComp;
+    BoxComponent = Actor->BoxComponent;
 }

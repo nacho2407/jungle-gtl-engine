@@ -5,6 +5,7 @@
 #include "Render/Common/RenderTypes.h"
 
 class UStaticMesh;
+class UStaticMeshComponent;
 
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
@@ -18,7 +19,8 @@ public:
     };
 
 public:
-    void CreateFromStaticMesh(UStaticMesh* StaticMesh);
+    void CreateFrom(UStaticMesh* StaticMesh);
+    void CreateFrom(UProceduralMeshComponent* ProcMeshComp);
 
     void CreateSection(int32 SectionIndex,
                        const TArray<FNormalVertex>& InVertices,
@@ -65,7 +67,13 @@ public:
         FSliceMeshData& OutBack);
 
 	static void SliceComponent(
-        UPrimitiveComponent* InComponent,
+        UStaticMeshComponent* InComponent,
+        const FPlane& Plane,
+        UProceduralMeshComponent*& OutFront,
+        UProceduralMeshComponent*& OutBack);
+
+	static void SliceComponent(
+        UProceduralMeshComponent* InComponent,
         const FPlane& Plane,
         UProceduralMeshComponent*& OutFront,
         UProceduralMeshComponent*& OutBack);

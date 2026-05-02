@@ -13,6 +13,8 @@ class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
 class UProjectileMovementComponent;
+class UProceduralMeshComponent;
+class UStaticMesh;
 
 class ACubeActor : public AActor
 {
@@ -246,6 +248,21 @@ public:
     DECLARE_CLASS(ADestructibleActor, AActor)
     ADestructibleActor() = default;
 
+	// 데이터를 입력으로 받아 초기화
+	void InitDestructibleActor(UStaticMesh* StaticMesh);
+    void InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp);
+
+	// 따로 StaticMesh 지정 안할 시 임의의 StaticMesh 로 초기화
     void InitDefaultComponents() override;
     void Tick(float DeltaTime) override;
+
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+
+	void PostDuplicate(UObject* Original) override;
+
+private:
+    UProceduralMeshComponent* ProcMeshComp = nullptr;
+    UBoxComponent* BoxComponent = nullptr;
 };
