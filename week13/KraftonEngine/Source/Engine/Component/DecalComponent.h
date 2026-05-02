@@ -27,7 +27,11 @@ public:
 	void PostDuplicate() override;
 
 	// Color (with Color)
-	void SetColor(FVector4 InColor) { Color = InColor; }
+	void SetColor(FVector4 InColor)
+	{
+		Color = InColor;
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
 	FVector4 GetColor() const;
 
 	// --- Material ---
@@ -41,6 +45,9 @@ public:
 	const TArray<UStaticMeshComponent*>& GetReceivers() const { return Receivers; }
 
 	class UBillboardComponent* EnsureEditorBillboard();
+
+protected:
+	virtual bool ShouldReceivePrimitive(UPrimitiveComponent* PrimitiveComp) const;
 
 private:
 	void HandleFade(float DeltaTime);

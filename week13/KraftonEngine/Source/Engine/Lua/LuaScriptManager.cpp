@@ -5,6 +5,7 @@
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
+#include "Component/DirtComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/CameraManager.h"
 #include "GameFramework/World.h"
@@ -278,6 +279,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetCarMovement", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UCarMovementComponent>();
+	},
+
+		"FireCarWashRay", [](AActor& Actor)
+	{
+		return UDirtComponent::FireCarWashRay(Actor);
+	},
+
+		"SetCarWashStreamVisible", [](AActor& Actor, bool bVisible)
+	{
+		UDirtComponent::SetCarWashStreamVisible(Actor, bVisible);
 	},
 
 		"UUID", sol::property([](AActor& Actor)

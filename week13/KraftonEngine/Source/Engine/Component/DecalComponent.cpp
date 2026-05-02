@@ -128,6 +128,11 @@ void UDecalComponent::OnTransformDirty()
 	UpdateReceivers();
 }
 
+bool UDecalComponent::ShouldReceivePrimitive(UPrimitiveComponent* PrimitiveComp) const
+{
+	return PrimitiveComp && PrimitiveComp != this && PrimitiveComp->GetOwner() != GetOwner();
+}
+
 void UDecalComponent::HandleFade(float DeltaTime)
 {
 	FadeTimer += DeltaTime;
@@ -188,7 +193,7 @@ void UDecalComponent::UpdateReceivers()
 
 	for (UPrimitiveComponent* PrimitiveComp : OverlappingPrimitives)
 	{
-		if (PrimitiveComp == this || PrimitiveComp->GetOwner() == GetOwner())
+		if (!ShouldReceivePrimitive(PrimitiveComp))
 		{
 			continue;
 		}
