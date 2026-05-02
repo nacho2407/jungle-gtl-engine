@@ -4,14 +4,16 @@
 #include <filesystem>
 #include <utility>
 
+#include "GameFramework/World.h"
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/WorldContext.h"
 #include "LuaScript/LuaRuntime.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(ULuaScriptComponent, UActorComponent)
+IMPLEMENT_COMPONENT_CLASS(ULuaScriptComponent, UActorComponent, EEditorComponentCategory::Scripts)
 
 namespace
 {
@@ -83,7 +85,10 @@ bool CallLuaFunction(const char* FunctionName, sol::protected_function& Function
 void ULuaScriptComponent::BeginPlay()
 {
     UActorComponent::BeginPlay();
-
+    if (GetWorld()->GetWorldType() == EWorldType::Editor)
+    {
+        return;
+    }
     if (!HasScript())
     {
         return;
@@ -224,8 +229,6 @@ bool ULuaScriptComponent::ReloadScript()
 
     if (LoadScript())
     {
-        CallLuaFunction("BeginPlay", BeginPlayFunc, LastError);
-
         return true;
     }
 

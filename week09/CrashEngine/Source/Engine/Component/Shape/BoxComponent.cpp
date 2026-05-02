@@ -3,7 +3,7 @@
 
 #include "GameFrameWork/World.h"
 
-IMPLEMENT_CLASS(UBoxComponent, UShapeComponent)
+IMPLEMENT_COMPONENT_CLASS(UBoxComponent, UShapeComponent, EEditorComponentCategory::Shapes)
 
 
 static void NotifyColliderBVHChanged(UShapeComponent* Comp)

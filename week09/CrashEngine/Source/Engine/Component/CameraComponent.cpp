@@ -3,7 +3,7 @@
 #include "Object/ObjectFactory.h"
 #include <cmath>
 
-IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
+IMPLEMENT_ABSTRACT_CLASS(UCameraComponent, USceneComponent)
 
 FMatrix UCameraComponent::GetViewMatrix() const
 {

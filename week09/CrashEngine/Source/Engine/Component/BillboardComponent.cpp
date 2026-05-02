@@ -51,7 +51,7 @@ FMatrix BuildStableBillboardMatrix(
 }
 } // namespace
 
-IMPLEMENT_CLASS(UBillboardComponent, UPrimitiveComponent)
+IMPLEMENT_COMPONENT_CLASS(UBillboardComponent, UPrimitiveComponent, EEditorComponentCategory::Basic)
 
 FPrimitiveProxy* UBillboardComponent::CreateSceneProxy()
 {

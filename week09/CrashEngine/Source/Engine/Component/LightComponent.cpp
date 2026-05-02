@@ -7,7 +7,7 @@
 #include "GameFramework/World.h"
 #include <cstring>
 
-IMPLEMENT_CLASS(ULightComponent, ULightComponentBase)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(ULightComponent, ULightComponentBase)
 
 void ULightComponent::Serialize(FArchive& Ar)
 {

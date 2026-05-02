@@ -13,7 +13,7 @@
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
+IMPLEMENT_COMPONENT_CLASS(UStaticMeshComponent, UMeshComponent, EEditorComponentCategory::Basic)
 
 FPrimitiveProxy* UStaticMeshComponent::CreateSceneProxy()
 {

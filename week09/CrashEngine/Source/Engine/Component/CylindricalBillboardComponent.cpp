@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS(UCylindricalBillboardComponent, UBillboardComponent)
+IMPLEMENT_COMPONENT_CLASS(UCylindricalBillboardComponent, UBillboardComponent, EEditorComponentCategory::Basic)
 
 FPrimitiveProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 {

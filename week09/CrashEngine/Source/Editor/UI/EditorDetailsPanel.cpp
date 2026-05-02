@@ -29,7 +29,9 @@
 
 #include <Windows.h>
 #include <commdlg.h>
+#include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <cmath>
 #include <filesystem>
 #include <functional>
@@ -837,32 +839,84 @@ void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
     TArray<UClass*> ComponentClasses;
     for (UClass* Cls : AllClasses)
     {
-        if (Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_Abstract))
-            ComponentClasses.push_back(Cls);
+        if (!Cls ||
+            !Cls->IsA(UActorComponent::StaticClass()) ||
+            Cls->HasAnyClassFlags(CF_Abstract) ||
+            Cls->GetEditorComponentCategory() == EEditorComponentCategory::Hidden)
+        {
+            continue;
+        }
+
+        ComponentClasses.push_back(Cls);
     }
 
-    static int SelectedIndex = 0;
-    if (ComponentClasses.empty())
+    auto SortClassesByName = [](TArray<UClass*>& Classes)
     {
-        SelectedIndex = 0;
-    }
-    else if (SelectedIndex >= static_cast<int>(ComponentClasses.size()))
+        std::sort(Classes.begin(), Classes.end(), [](const UClass* A, const UClass* B)
+        {
+            return std::strcmp(A->GetName(), B->GetName()) < 0;
+        });
+    };
+    SortClassesByName(ComponentClasses);
+
+    struct FComponentPickerCategoryButton
     {
-        SelectedIndex = static_cast<int>(ComponentClasses.size()) - 1;
+        EEditorComponentCategory Category;
+        const char* Label;
+        bool bShowAll = false;
+    };
+
+    static EEditorComponentCategory SelectedCategory = EEditorComponentCategory::Basic;
+    static bool bShowAllCategories = false;
+    static UClass* SelectedClass = nullptr;
+
+    auto MatchesCategory = [&](UClass* Cls)
+    {
+        if (!Cls || Cls->HasAnyClassFlags(CF_Abstract) || Cls->GetEditorComponentCategory() == EEditorComponentCategory::Hidden)
+        {
+            return false;
+        }
+
+        if (bShowAllCategories)
+        {
+            return true;
+        }
+
+        return Cls->GetEditorComponentCategory() == SelectedCategory;
+    };
+
+    const bool bSelectedClassValid =
+        SelectedClass &&
+        SelectedClass->IsA(UActorComponent::StaticClass()) &&
+        !SelectedClass->HasAnyClassFlags(CF_Abstract) &&
+        SelectedClass->GetEditorComponentCategory() != EEditorComponentCategory::Hidden &&
+        MatchesCategory(SelectedClass);
+
+    if (!bSelectedClassValid)
+    {
+        SelectedClass = nullptr;
+        for (UClass* Cls : ComponentClasses)
+        {
+            if (MatchesCategory(Cls))
+            {
+                SelectedClass = Cls;
+                break;
+            }
+        }
     }
-    const char* Preview = ComponentClasses.empty() ? "None" : ComponentClasses[SelectedIndex]->GetName();
+    const char* Preview = SelectedClass ? SelectedClass->GetName() : "None";
 
     USceneComponent* Root = Actor->GetRootComponent();
 
-    if (!ComponentClasses.empty() && ImGui::Button("Add"))
+    if (SelectedClass && ImGui::Button("Add"))
     {
-        UActorComponent* Comp = Actor->AddComponentByClass(ComponentClasses[SelectedIndex]);
+        UActorComponent* Comp = Actor->AddComponentByClass(SelectedClass);
         if (!Comp)
         {
             return;
         }
 
-        if (ComponentClasses[SelectedIndex]->IsA(USceneComponent::StaticClass()))
+        if (SelectedClass->IsA(USceneComponent::StaticClass()))
         {
             if (SelectedComponent != nullptr && SelectedComponent->GetClass()->IsA(USceneComponent::StaticClass()))
                 Cast<USceneComponent>(Comp)->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
@@ -872,25 +926,66 @@ void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
     }
 
     ImGui::SameLine();
-    // ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::BeginCombo("Type", Preview))
+    ImGui::Text("Type: %s", Preview);
+
+    ImGui::BeginChild("##ComponentPicker", ImVec2(0.0f, 170.0f), true);
     {
-        for (int i = 0; i < (int)ComponentClasses.size(); ++i)
+        const FComponentPickerCategoryButton CategoryButtons[] = {
+            { EEditorComponentCategory::Basic, "Basic" },
+            { EEditorComponentCategory::Lights, "Lights" },
+            { EEditorComponentCategory::Shapes, "Shapes" },
+            { EEditorComponentCategory::Movement, "Move" },
+            { EEditorComponentCategory::Visual, "Visual" },
+            { EEditorComponentCategory::Scripts, "Script" },
+            { EEditorComponentCategory::Hidden, "All", true },
+        };
+
+        ImGui::BeginChild("##ComponentCategoryRail", ImVec2(72.0f, 0.0f), true);
+        for (const FComponentPickerCategoryButton& Button : CategoryButtons)
         {
-            bool bSelected = (SelectedIndex == i);
-            if (ImGui::Selectable(ComponentClasses[i]->GetName(), bSelected))
-                SelectedIndex = i;
-            if (bSelected)
-                ImGui::SetItemDefaultFocus();
+            const bool bCategorySelected = Button.bShowAll ? bShowAllCategories : (!bShowAllCategories && SelectedCategory == Button.Category);
+            if (ImGui::Selectable(Button.Label, bCategorySelected, 0, ImVec2(0.0f, 24.0f)))
+            {
+                bShowAllCategories = Button.bShowAll;
+                if (!Button.bShowAll)
+                {
+                    SelectedCategory = Button.Category;
+                }
+            }
         }
-        ImGui::EndCombo();
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        ImGui::BeginChild("##ComponentClassList", ImVec2(0.0f, 0.0f), false);
+        for (UClass* Cls : ComponentClasses)
+        {
+            if (!MatchesCategory(Cls))
+            {
+                continue;
+            }
+
+            const bool bSelected = (SelectedClass == Cls);
+            if (ImGui::Selectable(Cls->GetName(), bSelected))
+            {
+                SelectedClass = Cls;
+            }
+            if (bSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     ImGui::Separator();
 
+    UActorComponent* ComponentToRemove = nullptr;
+
     if (Root)
     {
-        RenderSceneComponentNode(Root);
+        RenderSceneComponentNode(Root, ComponentToRemove);
     }
 
     // Non-scene ActorComponents
@@ -914,11 +1009,28 @@ void FEditorDetailsPanel::RenderComponentTree(AActor* Actor)
             SelectedComponent = Comp;
             bActorSelected = false;
         }
+
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Delete Component"))
+            {
+                ComponentToRemove = Comp;
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::Unindent(12.0f);
+    }
+
+    if (ComponentToRemove)
+    {
+        SelectedComponent = nullptr;
+        bActorSelected = true;
+        Actor->RemoveComponent(ComponentToRemove);
     }
 }
 
-void FEditorDetailsPanel::RenderSceneComponentNode(USceneComponent* Comp)
+void FEditorDetailsPanel::RenderSceneComponentNode(USceneComponent* Comp, UActorComponent*& OutComponentToRemove)
 {
     if (!Comp)
         return;
@@ -946,11 +1058,26 @@ void FEditorDetailsPanel::RenderSceneComponentNode(USceneComponent* Comp)
         bActorSelected = false;
     }
 
+    if (ImGui::BeginPopupContextItem())
+    {
+        if (bIsRoot)
+        {
+            ImGui::BeginDisabled();
+            ImGui::MenuItem("Delete Component");
+            ImGui::EndDisabled();
+        }
+        else if (ImGui::MenuItem("Delete Component"))
+        {
+            OutComponentToRemove = Comp;
+        }
+        ImGui::EndPopup();
+    }
+
     if (bOpen)
     {
         for (USceneComponent* Child : Children)
         {
-            RenderSceneComponentNode(Child);
+            RenderSceneComponentNode(Child, OutComponentToRemove);
         }
         ImGui::TreePop();
     }

@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-IMPLEMENT_ABSTRACT_CLASS(ULightComponentBase, USceneComponent)
+IMPLEMENT_ABSTRACT_COMPONENT_CLASS(ULightComponentBase, USceneComponent)
 
 // 조명은 일반적으로 Tick을 필요로 하지 않으므로 bTickEnable을 꺼 둔다.
 ULightComponentBase::ULightComponentBase()
