@@ -9,6 +9,7 @@
 #include "Engine/Component/GizmoComponent.h"
 #include "Engine/Component/StaticMeshComponent.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Engine/Runtime/Script/ScriptManager.h"
 #include "Engine/Core/Paths.h"
 #include "Core/ResourceManager.h"
 
@@ -591,6 +592,11 @@ void FEditorMainPanel::LoadViewportToolIcons(ID3D11Device* Device)
         const std::wstring SaveIconPath = IconDir + L"Save.png";
         DirectX::CreateWICTextureFromFile(Device, SaveIconPath.c_str(), nullptr, &SaveIconSRV);
     }
+    if (!HotReloadIconSRV)
+    {
+        const std::wstring HotReloadIconPath = IconDir + L"HotReload.png";
+        DirectX::CreateWICTextureFromFile(Device, HotReloadIconPath.c_str(), nullptr, &HotReloadIconSRV);
+    }
 
     const std::wstring LayoutIconDir = FPaths::Combine(FPaths::RootDir(), L"Asset/Editor/Icons/");
     for (int32 i = 0; i < static_cast<int32>(EEditorViewportLayoutMode::Max); ++i)
@@ -633,6 +639,11 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
     {
         SaveIconSRV->Release();
         SaveIconSRV = nullptr;
+    }
+    if (HotReloadIconSRV)
+    {
+        HotReloadIconSRV->Release();
+        HotReloadIconSRV = nullptr;
     }
 }
 
@@ -1432,6 +1443,28 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
         const FString SceneLabel = FString("Level: ") + SceneWidget.GetCurrentSceneDisplayPath();
         ImGui::TextDisabled("%s", SceneLabel.c_str());
 
+		ImGui::SameLine();
+
+		{ // Hot Reload button with icon
+            const char* Label = "Hot Reload";
+
+            ImGuiStyle& Style = ImGui::GetStyle();
+
+            float IconSize = 18.0f;
+            float ButtonWidth = 120.0f;
+            float TotalWidth = IconSize + Style.ItemSpacing.x + ButtonWidth;
+
+            float RightX = ImGui::GetWindowContentRegionMax().x;
+            ImGui::SetCursorPosX(RightX - TotalWidth);
+
+            ImGui::Image((ImTextureID)HotReloadIconSRV, ImVec2(IconSize, IconSize));
+            ImGui::SameLine();
+
+            if (ImGui::Button(Label))
+            {
+                FScriptManager::Get().HotReloadScripts();
+            }
+        }
         if (!ActiveLogs.empty())
         {
             const FString& LatestFooterLog = ActiveLogs.back();
@@ -1446,6 +1479,7 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
             }
         }
     }
+
     ImGui::End();
 
     ImGui::PopStyleColor(2);

@@ -12,6 +12,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/DecalComponent.h"
 #include "Asset/StaticMesh.h"
 #include "Math/Vector.h"
 #include "ThirdParty/sol/sol.hpp"
@@ -149,7 +150,7 @@ void FScriptManager::BindMathTypes() {
     // FVector
     // ============================================================
 
-    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector, "Vector", []()
+    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector, "Vector3", []()
                            { return FVector(); }, [](float X, float Y, float Z)
                            { return FVector(X, Y, Z); })
     LUA_FIELD(X, X);
@@ -282,13 +283,8 @@ void FScriptManager::BindMathTypes() {
 void FScriptManager::BindObjectTypes()
 {
     LUA_BEGIN_TYPE_NO_CTOR(GLuaState, UObject, "Object")
-    LUA_METHOD(GetUUID, GetUUID);
-    LUA_SET(GetName, &LuaGetObjectName);
-    LUA_SET(GetType, &LuaGetObjectType);
-
     LUA_RO_PROPERTY(UUID, GetUUID);
-    LUA_PROPERTY(Name, &LuaGetObjectName);
-    LUA_PROPERTY(Type, &LuaGetObjectType);
+    LUA_METHOD(GetUUID, GetUUID);
     LUA_END_TYPE();
 }
 
@@ -323,13 +319,13 @@ void FScriptManager::BindComponentTypes()
 
 void FScriptManager::BindActorTypes()
 {
-    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, AActor, "AActor", UObject)
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, AActor, "Actor", UObject)
     LUA_PROPERTY(Name, [](AActor& Actor) -> FString
                  { return Actor.GetName(); });
     LUA_RW_PROPERTY(Location, GetActorLocation, SetActorLocation);
     LUA_RW_PROPERTY(Rotation, GetActorRotation, SetActorRotation);
     LUA_RW_PROPERTY(Scale, GetActorScale, SetActorScale);
-    LUA_RO_PROPERTY(UID, GetUUID);
+    LUA_RO_PROPERTY(UUID, GetUUID);
     LUA_RO_PROPERTY(RootComponent, GetRootComponent);
     LUA_RW_PROPERTY(Active, IsActive, SetActive);
     LUA_RW_PROPERTY(Visible, IsVisible, SetVisible);
@@ -351,10 +347,9 @@ void FScriptManager::BindStaticMeshTypes()
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UStaticMesh, "StaticMesh", UObject)
     LUA_METHOD(GetAssetPath, GetAssetPathFileName);
     LUA_METHOD(HasValidMesh, HasValidMeshData);
-    LUA_METHOD(GetValidLODCount, GetValidLODCount);
     LUA_END_TYPE();
 
-	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UStaticMeshComponent, "StaticMeshComponent", UMeshComponent, UActorComponent, UObject)
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UStaticMeshComponent, "StaticMeshComponent", UMeshComponent, UPrimitiveComponent, USceneComponent, UActorComponent, UObject)
     LUA_METHOD(GetStaticMesh, GetStaticMesh);
     LUA_METHOD(SetStaticMesh, SetStaticMesh);
     LUA_METHOD(HasValidMesh, HasValidMesh);
@@ -418,6 +413,34 @@ void FScriptManager::BindPrimitiveTypes()
 
     LUA_METHOD(is_overlapping_actor, IsOverlappingActor);
     LUA_METHOD(clear_overlaps, ClearOverlaps);
+
+    LUA_END_TYPE();
+}
+
+void FScriptManager::BindDecalTypes()
+{
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UDecalComponent, "DecalComponent",
+                                UPrimitiveComponent,
+                                USceneComponent,
+                                UActorComponent,
+                                UObject)
+    LUA_METHOD(SetSize, SetSize);
+
+    LUA_METHOD(SetFadeIn, SetFadeIn);
+    LUA_METHOD(SetFadeOut, SetFadeOut);
+
+    LUA_METHOD(GetDecalMatrix, GetDecalMatrix);
+    LUA_METHOD(GetDecalColor, GetDecalColor);
+
+    LUA_SET(GetMaterial, [](UDecalComponent& Self)
+            { return Self.GetMaterial(); });
+
+    LUA_SET(SetMaterial, [](UDecalComponent& Self, UMaterialInterface* Material)
+            { Self.SetMaterial(Material); });
+
+    LUA_RO_PROPERTY(DecalMatrix, GetDecalMatrix);
+    LUA_RO_PROPERTY(DecalColor, GetDecalColor);
+    LUA_RO_PROPERTY(NumMaterials, GetNumMaterials);
 
     LUA_END_TYPE();
 }

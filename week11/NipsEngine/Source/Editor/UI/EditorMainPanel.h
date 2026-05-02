@@ -205,5 +205,6 @@ private:
 	ID3D11ShaderResourceView* ViewportToolIcons[static_cast<int32>(EViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* ViewportLayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
 	ID3D11ShaderResourceView* SaveIconSRV = nullptr;
+    ID3D11ShaderResourceView* HotReloadIconSRV = nullptr;
 	ID3D11ShaderResourceView* AddActorIconSRV = nullptr;
 };

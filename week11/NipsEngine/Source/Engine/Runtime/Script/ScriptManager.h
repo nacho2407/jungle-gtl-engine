@@ -28,6 +28,7 @@ public:
     void BindBillboardTypes();
     void BindCameraTypes();
     void BindPrimitiveTypes();
+    void BindDecalTypes();
     //void BindEngineFunctions();
 
 public:
