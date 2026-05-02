@@ -4,6 +4,7 @@
 #include "Component/SceneComponent.h"
 #include "Engine/GameFramework/WorldContext.h"
 #include "Component/ShapeComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
 #include "Core/Delegates/Delegate.h"
 #include <type_traits>
 
