@@ -242,6 +242,14 @@ private:
     UProjectileMovementComponent* ProjectileComp = nullptr;
 };
 
+class ABladeSlash : public AActor
+{
+public:
+    DECLARE_CLASS(ABladeSlash, AActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
 class ADestructibleActor : public AActor
 {
 public:
