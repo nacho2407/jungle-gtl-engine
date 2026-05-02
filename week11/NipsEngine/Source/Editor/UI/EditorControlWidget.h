@@ -11,10 +11,10 @@ public:
 	bool SpawnPrimitive(int32 PrimitiveType, const FVector& SpawnPoint, int32 Count = 1);
 	bool DrawPlaceActorMenu(const FVector& SpawnPoint, bool bClosePopupOnSpawn = false);
 	const char* GetPrimitiveTypeLabel(int32 PrimitiveType) const;
-	int32 GetPrimitiveTypeCount() const { return 15; }
+	int32 GetPrimitiveTypeCount() const { return 16; }
 
 private:
-    const char* PrimitiveTypes[15] = { "Scene",
+    const char* PrimitiveTypes[16] = { "Scene",
                                        "StaticMesh",
                                        "TextRender",
                                        "SubUV",
@@ -25,7 +25,8 @@ private:
                                        "Ambient",
                                        "Directional",
                                        "Point",
-                                       "Cube"
+                                       "Cube",
+                                       "Destructible",
                                        "Spotlight",
                                        "Fog",
                                        "PlayerStart" };

@@ -8,11 +8,10 @@ public:
     float GetSphereRadius() const { return SphereRadius; }
 	float GetScaledSphereRadius() const
 	{
-        FVector Scale = GetWorldScale();
-        // Sphere는 방향 영향 없음 → 가장 큰 축 기준으로 보수적으로 처리
-        return SphereRadius * std::max(std::max(std::abs(Scale.X), std::abs(Scale.Y)), std::abs(Scale.Z));
+        return SphereRadius;
 	}
 
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostDuplicate(UObject* Original) override;
     void Serialize(FArchive& Ar) override;
 
