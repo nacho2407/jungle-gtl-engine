@@ -84,7 +84,13 @@ public:
 		SpotLight,
 		BoxCollider,
 		SphereCollider,
-		CapsuleCollider
+		CapsuleCollider,
+		// ⚠ 의존성 주의: CarPawn은 Source/Game/Pawn/CarPawn.h에 정의되어 있어
+		// 이 항목을 처리하는 .cpp가 Game 모듈을 직접 include한다 (Editor → Game 결합).
+		// 일반적으로 Editor가 Game-specific 클래스를 알아선 안 되지만, 자동차 게임
+		// 전용 에디터 메뉴 노출을 위해 의도적으로 허용. 다른 게임 모드가 추가되면
+		// 게임-특화 spawn은 별도 등록 패턴(plugin / class registry)으로 분리 권장.
+		CarPawn,
 	};
 
 	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);

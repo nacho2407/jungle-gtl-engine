@@ -176,6 +176,206 @@
         }
       },
       "bVisible" : true
+    }, {
+      "ClassName" : "ACarPawn",
+      "Name" : "ACarPawn_0",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Body.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Decals.001.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Interior.001.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Trim.001.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Chassis.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Object Type" : 0,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckBody.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Collision Enabled" : 3,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [0.800000, 1.300000, -0.500000],
+              "Object Type" : 2,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Collision Enabled" : 3,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [0.950066, -1.333906, -0.500000],
+              "Object Type" : 2,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Collision Enabled" : 3,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [-0.873111, 1.284141, -0.500000],
+              "Object Type" : 2,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Collision Enabled" : 3,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [-0.870678, -1.362330, -0.410123],
+              "Object Type" : 2,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 2.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-13.450994, 2.071935, 5.692372],
+          "Object Type" : 2,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -184,9 +384,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [1.332536, -2.461691, 8.714815],
+    "Location" : [-13.239101, 5.841169, 8.157618],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 26.115065, 176.100082]
+    "Rotation" : [-0.000001, 28.515316, -84.000854]
   },
   "Version" : 2,
   "WorldType" : "Editor"

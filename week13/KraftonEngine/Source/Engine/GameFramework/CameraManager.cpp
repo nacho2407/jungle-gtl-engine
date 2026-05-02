@@ -38,6 +38,11 @@ void UCameraManager::UnregisterCamera(UCameraComponent* Camera)
 
 void UCameraManager::AutoPossessDefaultCamera()
 {
+	// 이미 누가 ActiveCamera를 설정했으면(예: APawn::PossessedBy에서 자기 카메라 지정)
+	// 첫 등록 카메라로 덮어쓰지 않는다. World::BeginPlay 흐름상 GameMode->StartMatch가
+	// 먼저 호출되어 Pawn 카메라가 설정될 수 있고, 그 후 본 함수가 호출되기 때문.
+	if (ActiveCamera) return;
+
 	if (!RegisteredCameraOrder.empty())
 	{
 		SetActiveCamera(RegisteredCameraOrder.front());

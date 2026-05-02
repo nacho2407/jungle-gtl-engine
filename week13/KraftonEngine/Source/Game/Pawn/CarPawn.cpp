@@ -1,0 +1,94 @@
+#include "Game/Pawn/CarPawn.h"
+#include "Component/BoxComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Component/SphereComponent.h"
+#include "Component/LuaScriptComponent.h"
+#include "Component/CameraComponent.h"
+#include "Engine/Runtime/Engine.h"
+#include "Mesh/ObjManager.h"
+#include "Core/CollisionTypes.h"
+#include "Math/Rotator.h"
+
+IMPLEMENT_CLASS(ACarPawn, APawn)
+
+void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile)
+{
+	// 1) Root = 차체 Box (충돌만 — 시뮬레이션은 끄고 Lua가 트랜스폼 직접 조작)
+	// SimulatePhysics=true로 두면 NativePhysicsScene의 중력/속도 적분과 Lua의
+	// 트랜스폼 setter가 매 Tick 충돌하므로, MVP에선 false. 추후 AddForce 기반으로
+	// Lua를 재작성하면 다시 켤 수 있다.
+	CollisionBox = AddComponent<UBoxComponent>();
+	SetRootComponent(CollisionBox);
+	CollisionBox->SetBoxExtent(FVector(2.0f, 1.0f, 0.5f));
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionBox->SetCollisionObjectType(ECollisionChannel::Pawn);
+	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
+	CollisionBox->SetSimulatePhysics(false);
+
+	// 2) 차체 메시 (Box 자식 — 시각만, 충돌은 Box가 담당)
+	Mesh = AddComponent<UStaticMeshComponent>();
+	Mesh->AttachToComponent(CollisionBox);
+	if (GEngine)
+	{
+		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+		if (UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device))
+			Mesh->SetStaticMesh(Asset);
+	}
+
+	// 3) 바퀴 4개 (Box 자식, 4코너) — Pawn 채널 Block, 시뮬레이션은 Box가 담당하므로 자체 SimulatePhysics는 끔
+	const FVector WheelOffsets[4] = {
+		FVector( 1.5f,  0.8f, -0.5f),  // 전 우
+		FVector( 1.5f, -0.8f, -0.5f),  // 전 좌
+		FVector(-1.5f,  0.8f, -0.5f),  // 후 우
+		FVector(-1.5f, -0.8f, -0.5f),  // 후 좌
+	};
+	for (int i = 0; i < 4; ++i)
+	{
+		Wheels[i] = AddComponent<USphereComponent>();
+		Wheels[i]->AttachToComponent(CollisionBox);
+		Wheels[i]->SetRelativeLocation(WheelOffsets[i]);
+		Wheels[i]->SetSphereRadius(0.4f);
+		Wheels[i]->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Wheels[i]->SetCollisionObjectType(ECollisionChannel::Pawn);
+		Wheels[i]->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
+	}
+
+	// 4) 3인칭 카메라 (Box 자식 — 차량 회전/이동에 자동 따라감)
+	// APawn::PossessedBy에서 자동으로 ActiveCamera로 설정된다.
+	Camera = AddComponent<UCameraComponent>();
+	Camera->AttachToComponent(CollisionBox);
+	Camera->SetRelativeLocation(FVector(-5.0f, 0.0f, 3.0f));   // 차량 뒤 위쪽
+	Camera->SetRelativeRotation(FRotator(0.0f, -15.0f, 0.0f)); // Pitch -15° 살짝 내려보기
+
+	// 5) Lua 스크립트 — Tick에서 입력 읽고 차량 제어
+	LuaScript = AddComponent<ULuaScriptComponent>();
+	if (!LuaScriptFile.empty())
+	{
+		LuaScript->SetScriptFile(LuaScriptFile);
+	}
+}
+
+void ACarPawn::PostDuplicate()
+{
+	Super::PostDuplicate();
+
+	CollisionBox = Cast<UBoxComponent>(GetRootComponent());
+	Mesh = GetComponentByClass<UStaticMeshComponent>();
+	LuaScript = GetComponentByClass<ULuaScriptComponent>();
+	Camera = GetComponentByClass<UCameraComponent>();
+
+	// Wheels — 컴포넌트 순회 순서대로 캐싱 (InitDefaultComponents 추가 순서 또는 직렬화 순서가 보존된다고 가정)
+	int Idx = 0;
+	for (UActorComponent* C : GetComponents())
+	{
+		if (USphereComponent* S = Cast<USphereComponent>(C))
+		{
+			if (Idx < 4) Wheels[Idx++] = S;
+		}
+	}
+}
+
+USphereComponent* ACarPawn::GetWheel(int Index) const
+{
+	return (Index >= 0 && Index < 4) ? Wheels[Index] : nullptr;
+}

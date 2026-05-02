@@ -172,6 +172,9 @@
     <Filter Include="Source\Game\GameState">
       <UniqueIdentifier>{28248026-b2c1-326a-d8fc-c6a454813320}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Pawn">
+      <UniqueIdentifier>{00a43d1b-bdbc-c88e-5b8e-b7bdfdf08663}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\PlayerController">
       <UniqueIdentifier>{98f08a21-3450-b417-9a82-c35be6aaeec5}</UniqueIdentifier>
     </Filter>
@@ -935,6 +938,9 @@
     <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp">
       <Filter>Source\Game\GameState</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Pawn\CarPawn.cpp">
+      <Filter>Source\Game\Pawn</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp">
       <Filter>Source\Game\PlayerController</Filter>
     </ClCompile>
@@ -1678,6 +1684,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h">
       <Filter>Source\Game\GameState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Pawn\CarPawn.h">
+      <Filter>Source\Game\Pawn</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h">
       <Filter>Source\Game\PlayerController</Filter>

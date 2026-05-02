@@ -30,6 +30,12 @@
 #include "GameFramework/SphereActor.h"
 #include "GameFramework/CapsuleActor.h"
 
+// ⚠ 의존성 주의: 본 헤더는 Source/Game/Pawn에 위치 — Editor 모듈이 Game 모듈을
+// 직접 include하는 결합을 만든다. 자동차 게임 전용 에디터 spawn 메뉴 지원을
+// 위해 의도적으로 허용하지만, 다른 게임 모드가 추가되면 plugin / class registry
+// 패턴으로 분리하여 이 결합을 제거하는 것이 바람직하다.
+#include "Game/Pawn/CarPawn.h"
+
 #include <algorithm>
 
 namespace
@@ -1835,6 +1841,10 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
 		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 
+		// ⚠ 게임-특화 spawn — Editor 모듈이 Game/CarPawn에 의존하게 됨. 위 enum 정의 주석 참고.
+		ImGui::Separator();
+		PlaceActorMenuItem("Car Pawn", EViewportPlaceActorType::CarPawn);
+
 		ImGui::EndMenu();
 	}
 
@@ -2047,6 +2057,17 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	case EViewportPlaceActorType::CapsuleCollider:
 	{
 		ACapsuleActor* Actor = World->SpawnActor<ACapsuleActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::CarPawn:
+	{
+		// ⚠ Editor → Game 결합 — 위 include / enum 정의 주석 참고.
+		ACarPawn* Actor = World->SpawnActor<ACarPawn>();
 		if (Actor)
 		{
 			Actor->InitDefaultComponents();
