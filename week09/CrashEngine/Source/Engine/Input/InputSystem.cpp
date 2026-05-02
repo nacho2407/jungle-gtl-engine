@@ -94,7 +94,7 @@ void InputSystem::Tick(bool IsWindowFocused)
         return;
     }
 
-    SampleKeyboard();
+    SampleVirtualKeys();
     SampleMouse();
     SampleWheel();
     SampleGamepads();
@@ -106,7 +106,7 @@ void InputSystem::AddScrollDelta(int Delta)
     PendingWheelDelta += Delta;
 }
 
-void InputSystem::SampleKeyboard()
+void InputSystem::SampleVirtualKeys()
 {
     for (int VK = 0; VK < 256; VK++)
 	{

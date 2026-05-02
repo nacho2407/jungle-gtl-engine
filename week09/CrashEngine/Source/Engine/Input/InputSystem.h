@@ -16,7 +16,7 @@ public:
     void AddScrollDelta(int Delta);
 
 private:
-    void SampleKeyboard();
+    void SampleVirtualKeys();
     void SampleMouse();
     void SampleWheel();
     void SampleGamepads();
