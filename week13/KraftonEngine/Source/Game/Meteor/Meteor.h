@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/AActor.h"
 
@@ -33,13 +33,13 @@ public:
 	void Tick(float DeltaTime) override;
 
 	// 코드 spawn 시 호출 — 직렬화 경로에선 PostDuplicate가 캐시 다시 잡음
-	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/BasicShape/Sphere.obj");
+	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/meteor/meteor.obj");
 	void PostDuplicate() override;
 
 	USphereComponent* GetCollisionSphere() const { return CollisionSphere; }
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 
-	float Lifetime = 5.0f;       // 초 — 만료 시 자기 destroy
+	float Lifetime = 10.0f;       // 초 — 만료 시 자기 destroy
 	float DamagePerHit = 10.0f;  // 차량과 충돌 시 가하는 데미지
 
 private:

@@ -36,6 +36,16 @@ void FNativePhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 	State.CenterOfMassLocal = Comp->GetCenterOfMass();
 }
 
+void FNativePhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return; // 등록 안 됨 — skip
+	// Native는 SimulatePhysics/ObjectType/Response를 매 Tick에서 컴포넌트로부터 직접 읽으므로
+	// BodyState의 Mass/COM만 갱신.
+	It->second.Mass = (Comp->GetMass() > 0.0f) ? Comp->GetMass() : 1.0f;
+	It->second.CenterOfMassLocal = Comp->GetCenterOfMass();
+}
+
 void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 {
 	if (!Comp) return;

@@ -374,8 +374,12 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 		{
 			if (vis[i] == 0)
 			{
+				// 안전망: staging proxy가 destroy 후 다른 객체가 들어와 ProxyId가 캡처 시
+				// MaxProxyId보다 클 수 있다. 범위 초과 시 skip (다음 frame staging 갱신).
 				uint32 id = proxies[i]->GetProxyId();
-				OccludedBits[id >> 5] |= (1u << (id & 31));
+				const uint32 word = id >> 5;
+				if (word >= wordCount) continue;
+				OccludedBits[word] |= (1u << (id & 31));
 			}
 		}
 
