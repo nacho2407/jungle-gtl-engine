@@ -381,72 +381,18 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		ImGui::Text("Transform");
 		ImGui::Spacing();
 
-		FVector Pos = PrimaryActor->GetActorLocation();
-		float PosArray[3] = { Pos.X, Pos.Y, Pos.Z };
+		TArray<FPropertyDescriptor> Props;
+		PrimaryActor->GetEditableProperties(Props);
 
-		USceneComponent* RootComp = PrimaryActor->GetRootComponent();
-
-		FVector Scale = PrimaryActor->GetActorScale();
-		float ScaleArray[3] = { Scale.X, Scale.Y, Scale.Z };
-
-		if (ImGui::DragFloat3("Location", PosArray, 0.1f))
+		for (int32 i = 0; i < (int32)Props.size(); ++i)
 		{
-			FVector Delta = FVector(PosArray[0], PosArray[1], PosArray[2]) - Pos;
-			for (AActor* Actor : SelectedActors)
+			bool bChanged = RenderPropertyWidget(Props, i);
+			if (bChanged)
 			{
-				if (Actor) Actor->AddActorWorldOffset(Delta);
-			}
-			EditorEngine->GetGizmo()->UpdateGizmoTransform();
-		}
-		{
-			// Rotation: CachedEditRotator를 X=Roll(X축), Y=Pitch(Y축), Z=Yaw(Z축)로 노출
-			FRotator& CachedRot = RootComp->GetCachedEditRotator();
-			FRotator PrevRot = CachedRot;
-			float RotXYZ[3] = { CachedRot.Roll, CachedRot.Pitch, CachedRot.Yaw };
-
-			if (ImGui::DragFloat3("Rotation", RotXYZ, 0.1f))
-			{
-				CachedRot.Roll = RotXYZ[0];
-				CachedRot.Pitch = RotXYZ[1];
-				CachedRot.Yaw = RotXYZ[2];
-
-				if (SelectedActors.size() > 1)
-				{
-					FRotator Delta = CachedRot - PrevRot;
-					for (AActor* Actor : SelectedActors)
-					{
-						if (!Actor || Actor == PrimaryActor) continue;
-						USceneComponent* Root = Actor->GetRootComponent();
-						if (Root)
-						{
-							FRotator Other = Root->GetCachedEditRotator();
-							Root->SetRelativeRotation(Other + Delta);
-						}
-					}
-				}
-				RootComp->ApplyCachedEditRotator();
-				EditorEngine->GetGizmo()->UpdateGizmoTransform();
+				PrimaryActor->PostEditProperty(Props[i].Name.c_str());
 			}
 		}
-		if (ImGui::DragFloat3("Scale", ScaleArray, 0.1f))
-		{
-			FVector Delta = FVector(ScaleArray[0], ScaleArray[1], ScaleArray[2]) - Scale;
-			for (AActor* Actor : SelectedActors)
-			{
-				if (Actor) Actor->SetActorScale(Actor->GetActorScale() + Delta);
-			}
-		}
-
-
 	}
-
-	ImGui::Separator();
-	bool bVisible = PrimaryActor->IsVisible();
-	if (ImGui::Checkbox("Visible", &bVisible))
-	{
-		PrimaryActor->SetVisible(bVisible);
-	}
-
 }
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
