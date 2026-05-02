@@ -12,7 +12,7 @@
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UTextRenderComponent, UPrimitiveComponent)
+IMPLEMENT_COMPONENT_CLASS(UTextRenderComponent, UPrimitiveComponent, EEditorComponentCategory::Basic)
 
 FPrimitiveProxy* UTextRenderComponent::CreateSceneProxy()
 {

@@ -6,7 +6,7 @@
 #include "Render/Scene/Scene.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UHeightFogComponent, USceneComponent)
+IMPLEMENT_COMPONENT_CLASS(UHeightFogComponent, USceneComponent, EEditorComponentCategory::Visual)
 
 UHeightFogComponent::UHeightFogComponent()
 {

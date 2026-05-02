@@ -11,7 +11,7 @@
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(USubUVComponent, UBillboardComponent)
+IMPLEMENT_COMPONENT_CLASS(USubUVComponent, UBillboardComponent, EEditorComponentCategory::Visual)
 
 FPrimitiveProxy* USubUVComponent::CreateSceneProxy()
 {

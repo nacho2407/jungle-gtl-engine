@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cstring>
 
-IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
+IMPLEMENT_COMPONENT_CLASS(UDecalComponent, UPrimitiveComponent, EEditorComponentCategory::Visual)
 
 void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {

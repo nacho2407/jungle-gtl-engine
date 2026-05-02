@@ -1,5 +1,5 @@
 ﻿#include "CapsuleComponent.h"
-IMPLEMENT_CLASS(UCapsuleComponent, UShapeComponent)
+IMPLEMENT_COMPONENT_CLASS(UCapsuleComponent, UShapeComponent, EEditorComponentCategory::Shapes)
 
 UCapsuleComponent::UCapsuleComponent()
     : CapsuleHalfHeight(1.0f),

@@ -9,7 +9,7 @@
 
 #include <cmath>
 
-IMPLEMENT_CLASS(UPendulumMovementComponent, UMovementComponent)
+IMPLEMENT_COMPONENT_CLASS(UPendulumMovementComponent, UMovementComponent, EEditorComponentCategory::Movement)
 
 void UPendulumMovementComponent::BeginPlay()
 {

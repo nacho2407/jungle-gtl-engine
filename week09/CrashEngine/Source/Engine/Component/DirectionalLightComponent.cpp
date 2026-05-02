@@ -8,7 +8,7 @@
 
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
 
-IMPLEMENT_CLASS(UDirectionalLightComponent, ULightComponent)
+IMPLEMENT_COMPONENT_CLASS(UDirectionalLightComponent, ULightComponent, EEditorComponentCategory::Lights)
 
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
