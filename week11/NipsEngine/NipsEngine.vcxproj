@@ -292,6 +292,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
+    <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -581,6 +582,7 @@
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
+    <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />

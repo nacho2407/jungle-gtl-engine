@@ -30,6 +30,7 @@ void FMeshBufferManager::Create(ID3D11Device* InDevice)
 	MeshBufferMap[EPrimitiveType::EPT_Billboard].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_SubUV].Create(InDevice, QuadMeshData);
 	MeshBufferMap[EPrimitiveType::EPT_Text].Create(InDevice, QuadMeshData);
+    MeshBufferMap[EPrimitiveType::EPT_ProceduralMesh].Create(InDevice, QuadMeshData);
 }
 
 
@@ -49,6 +50,13 @@ void FMeshBufferManager::Release()
         }
         StaticMeshBufferMap[i].clear();
     }
+
+	for (auto& pair : ProcMeshBufferMap)
+	{
+        pair.second.Release();
+	}
+
+	ProcMeshBufferMap.clear();
     
     Device = nullptr;
 }
@@ -107,5 +115,28 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     FMeshBuffer& NewBuffer = TargetMap[StaticMeshAsset];
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
     
+
+    return &NewBuffer;
+}
+
+FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponent* ProcMeshComp, const UProceduralMeshComponent::FMeshSection& MeshSection)
+{
+    auto It = ProcMeshBufferMap.find(ProcMeshComp);
+	if (It != ProcMeshBufferMap.end())
+	{
+        return &It->second;
+	}
+
+    const TArray<FNormalVertex>& Vertices = MeshSection.Vertices;
+    const TArray<uint32>& Indices = MeshSection.Indices;
+
+    if (Vertices.empty() || Indices.empty())
+    {
+        return nullptr;
+    }
+
+    FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshComp];
+    NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
+
     return &NewBuffer;
 }

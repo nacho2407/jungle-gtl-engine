@@ -275,6 +275,19 @@ bool UStaticMeshComponent::ConsumeRenderStateDirty()
     return bWasDirty;
 }
 
+void UStaticMeshComponent::GetMeshData(TArray<FNormalVertex>& OutVertices, TArray<uint32>& OutIndices) const
+{
+    for (const FNormalVertex& Vertex : StaticMeshAsset->GetVertices())
+	{
+        OutVertices.push_back(Vertex);
+	}
+
+	for (uint32 Index : StaticMeshAsset->GetIndices())
+	{
+        OutIndices.push_back(Index);
+	}
+}
+
 void UStaticMeshComponent::MarkBoundsDirty()
 {
     bBoundsDirty = true;
