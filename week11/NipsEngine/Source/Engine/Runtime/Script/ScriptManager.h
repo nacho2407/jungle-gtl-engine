@@ -36,6 +36,7 @@ public:
     void BindCameraTypes();
     void BindPrimitiveTypes();
     void BindDecalTypes();
+    void BindEngineAPI();
     //void BindEngineFunctions();
 
 public:
@@ -48,7 +49,7 @@ public:
 	bool CreateScript(const FName& name);
     bool EditScript(const FName& name);
     bool HasScript(const FName& name);
-	
+
 	bool ResolveScriptPath(const FString& ScriptName, FString& OutPath);
 
 	void HotReloadScripts();
@@ -70,6 +71,8 @@ public:
     auto GetScriptArray() -> TMap<FName, FLuaScriptInfo, FName::Hash>& { return ScriptArray; }
 
 private:
+    void ConfigureLuaPackagePath();
+
 	std::unique_ptr<sol::state> GLuaState;
     TMap<FName, FLuaScriptInfo, FName::Hash> ScriptArray;
 };

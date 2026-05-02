@@ -1,0 +1,18 @@
+{
+  "Lua.workspace.library": [
+    "${workspaceFolder}/NipsEngine/LuaDefinitions"
+  ],
+  "Lua.workspace.checkThirdParty": false,
+  "Lua.diagnostics.globals": [
+    "Engine",
+    "Vector",
+    "Quat",
+    "Transform",
+    "FName",
+    "Self",
+    "Actor",
+    "Log",
+    "LogWarning",
+    "LogError"
+  ]
+}

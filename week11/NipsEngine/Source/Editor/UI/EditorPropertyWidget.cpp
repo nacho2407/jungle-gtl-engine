@@ -29,6 +29,8 @@
 #include "Component/BoxComponent.h"
 #include "Component/SphereComponent.h"
 #include "Component/CapsuleComponent.h"
+#include "Component/CameraComponent.h"
+#include "Component/SpringArmComponent.h"
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 
@@ -76,6 +78,22 @@ namespace
 
 		ImGui::PopID();
 		return bClicked;
+	}
+
+	static void DrawDetailsSeparator()
+	{
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+	}
+
+	static void DrawDetailsSectionLabel(const char* Label)
+	{
+		ImVec2 Pos = ImGui::GetCursorScreenPos();
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImU32 Color = ImGui::GetColorU32(ImGuiCol_Text);
+		DrawList->AddText(ImVec2(Pos.x + 0.75f, Pos.y), Color, Label);
+		ImGui::TextUnformatted(Label);
 	}
 
 	// 컴포넌트 포인터를 ImGui PushID 용 문자열로 변환
@@ -168,6 +186,21 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		[](AActor* Actor) -> UActorComponent* {
 			UBillboardComponent* Comp = Actor->AddComponent<UBillboardComponent>();
 			Comp->SetTextureName("Asset/Texture/Pawn_64x.png");
+			return Comp;
+		}
+	},
+	{
+		"SpringArm Component",
+		[](AActor* Actor) -> UActorComponent* {
+			USpringArmComponent* Comp = Actor->AddComponent<USpringArmComponent>();
+			Comp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
+			return Comp;
+		}
+	},
+	{
+		"Camera Component",
+		[](AActor* Actor) -> UActorComponent* {
+			UCameraComponent* Comp = Actor->AddComponent<UCameraComponent>();
 			return Comp;
 		}
 	},
@@ -367,8 +400,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	// 디테일 프로퍼티 영역
 	SEPARATOR();
-	ImGui::Text("Details");
-	ImGui::Separator();
+	DrawDetailsSectionLabel("Details");
+	DrawDetailsSeparator();
 
 	float ScrollHeight = std::max(UIConstants::MinScrollHeight, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginChild("##Details", ImVec2(0, ScrollHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
@@ -450,7 +483,7 @@ void FEditorPropertyWidget::RenderDetailsLockBar(AActor* CurrentSelection, AActo
 		ImGui::TextDisabled("Unlocked");
 	}
 
-	ImGui::Separator();
+	DrawDetailsSeparator();
 }
 
 void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
@@ -563,7 +596,7 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 		ImGui::EndMenu();
 	}
 
-	ImGui::Separator();
+	DrawDetailsSeparator();
 	if (bActorSelected)
 	{
 		ImGui::BeginDisabled(SelectedActors.empty());
@@ -599,8 +632,8 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
-    ImGui::Text("Components");
-    ImGui::Separator();
+    DrawDetailsSectionLabel("Components");
+    DrawDetailsSeparator();
 
     float TreeHeight = std::max(100.0f, ImGui::GetContentRegionAvail().y * 0.4f);
     
@@ -860,8 +893,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 	if (PrimaryActor->GetRootComponent())
 	{
-		ImGui::Separator();
-		ImGui::Text("Transform");
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel("Transform");
 		ImGui::Spacing();
 
 		// FVector(위치, 회전, 크기)를 읽어서 Properties를 그려 주는 단순한 친구입니다.
@@ -890,7 +923,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		DrawTransformField("Scale",    PrimaryActor->GetActorScale(),    [](AActor* A, FVector D) { A->SetActorScale(A->GetActorScale() + D); });
 	}
 
-	ImGui::Separator();
+	DrawDetailsSeparator();
 	bool bVisible = PrimaryActor->IsVisible();
 	const bool bVisibleEdited = ImGui::Checkbox("Visible", &bVisible);
 	if (ImGui::IsItemActivated() && EditorEngine)
@@ -902,7 +935,9 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		PrimaryActor->SetVisible(bVisible);
 	}
 
-	ImGui::Separator();
+	RenderActorTags(PrimaryActor, SelectedActors);
+
+	DrawDetailsSeparator();
 	// Billboard 타입 체크
 	if (UBillboardComponent* BillboardComp = dynamic_cast<UBillboardComponent*>(PrimaryActor->GetRootComponent()))
 	{
@@ -910,8 +945,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		{
 			return;
 		}
-		ImGui::Separator();
-		ImGui::Text("Sprite Texture");
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel("Sprite Texture");
 
 		const TArray<FString>& TextureList = FResourceManager::Get().GetTextureFilePath();
 		const FString CurrentName = BillboardComp->GetTextureName();
@@ -948,8 +983,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	if (PrimaryActor->IsA<ADecalSpotLightActor>())
 	{
 		ADecalSpotLightActor* SpotActor = static_cast<ADecalSpotLightActor*>(PrimaryActor);
-		ImGui::Separator();
-		ImGui::Text("Spot Light Properties");
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel("Spot Light Properties");
 		float Range = SpotActor->GetRange();
 		const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
 		if (ImGui::IsItemActivated() && EditorEngine)
@@ -985,12 +1020,104 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	}
 }
 
+void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+{
+	if (!PrimaryActor)
+	{
+		return;
+	}
+
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Actor Tags");
+	if (SelectedActors.size() > 1)
+	{
+		ImGui::TextDisabled("Tag edits apply to selected actors.");
+	}
+
+	const TArray<FString> Tags = PrimaryActor->GetTags();
+	if (Tags.empty())
+	{
+		ImGui::TextDisabled("No tags.");
+	}
+	else
+	{
+		for (int32 TagIndex = 0; TagIndex < static_cast<int32>(Tags.size()); ++TagIndex)
+		{
+			const FString& Tag = Tags[TagIndex];
+			ImGui::PushID(TagIndex);
+			ImGui::AlignTextToFramePadding();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.70f, 0.76f, 0.84f, 1.0f));
+			ImGui::TextUnformatted(Tag.c_str());
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Remove"))
+			{
+				bool bChanged = false;
+				for (AActor* Actor : SelectedActors)
+				{
+					if (Actor && Actor->HasTag(Tag))
+					{
+						if (!bChanged && EditorEngine)
+						{
+							EditorEngine->CaptureUndoSnapshot("Remove Actor Tag");
+						}
+						Actor->RemoveTag(Tag);
+						bChanged = true;
+					}
+				}
+				if (bChanged && EditorEngine)
+				{
+					EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+				}
+			}
+			ImGui::PopID();
+		}
+	}
+
+	ImGui::Spacing();
+	ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - 58.0f));
+	const bool bAddByEnter = ImGui::InputTextWithHint(
+		"##NewActorTag",
+		"New tag",
+		NewActorTagBuffer,
+		IM_ARRAYSIZE(NewActorTagBuffer),
+		ImGuiInputTextFlags_EnterReturnsTrue);
+	ImGui::SameLine();
+	const bool bAddByButton = ImGui::Button("Add", ImVec2(52.0f, 0.0f));
+
+	if ((bAddByEnter || bAddByButton) && NewActorTagBuffer[0] != '\0')
+	{
+		const FString NewTag = NewActorTagBuffer;
+		bool bChanged = false;
+		for (AActor* Actor : SelectedActors)
+		{
+			if (Actor && !Actor->HasTag(NewTag))
+			{
+				if (!bChanged && EditorEngine)
+				{
+					EditorEngine->CaptureUndoSnapshot("Add Actor Tag");
+				}
+				Actor->AddTag(NewTag);
+				bChanged = true;
+			}
+		}
+		if (bChanged)
+		{
+			NewActorTagBuffer[0] = '\0';
+			if (EditorEngine)
+			{
+				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			}
+		}
+	}
+}
+
 void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	RenderEditableName("Name##Component", SelectedComponent); // 편집 가능한 UI
 
-	ImGui::Separator();
+	DrawDetailsSeparator();
 
 	// PropertyDescriptor 기반 자동 위젯 렌더링
 	TArray<FPropertyDescriptor> Props;
@@ -1311,9 +1438,8 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		RefreshMaterialSlotCache();
 
-		ImGui::Separator();
-		ImGui::Spacing();
-		ImGui::Text("%s", Prop.Name);
+		DrawDetailsSeparator();
+		DrawDetailsSectionLabel(Prop.Name);
 		ImGui::PushID(Prop.Name);
 		for (int32 SlotIndex = 0; SlotIndex < static_cast<int32>(Slots->size()); ++SlotIndex)
 		{
@@ -1633,9 +1759,8 @@ void FEditorPropertyWidget::RenderMaterialPreviewTooltip(UMaterialInterface* Mat
 void FEditorPropertyWidget::RenderInterpControlPoints(UInterpToMovementComponent* Comp)
 {
 	// --- Playback actions -----------------------------------------------
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Text("Playback");
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Playback");
 	ImGui::Spacing();
 
 	float HalfWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;

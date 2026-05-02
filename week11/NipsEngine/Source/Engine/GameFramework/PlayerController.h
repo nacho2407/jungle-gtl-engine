@@ -22,6 +22,7 @@ public:
 
 	void SetViewTarget(AActor* InActor);
 	void SetViewTargetCamera(UCameraComponent* InCamera);
+	void NotifyObservedActorDestroyed(AActor* DestroyedActor);
 
 	virtual void HandleKeyPressed(int VK);
 	virtual void HandleKeyDown(int VK);
@@ -44,9 +45,14 @@ public:
 protected:
 	UCameraComponent* FindCameraComponent(AActor* Actor) const;
 	virtual AActor* FindPlayerStart() const;
+	virtual AActor* FindPlacedPlayerActor() const;
+	bool IsActorInCurrentWorld(const AActor* Actor) const;
+	void ClearInvalidViewTarget();
 
+	// 기본 PlayerController는 GameClient/PIE 시작 시 플레이어 Pawn과 Camera를 보장하는 bootstrap 역할만 담당합니다.
+	// 게임별 이동/공격/상호작용 입력은 Lua가 Engine.API.Input(InputSystem)을 통해 직접 읽고 처리합니다.
 	virtual void ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
-	void AddMoveInput(float ForwardScale, float RightScale, float UpScale = 0.0f);
+	virtual void ApplyPlayerStartTransform(AActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
 
 	virtual void UpdatePossessedActorMovement(float DeltaTime);
 	virtual void UpdateRuntimeCameraFromViewTarget();
@@ -60,8 +66,4 @@ protected:
 	UCameraComponent* ViewTargetCamera = nullptr;
 
 	FViewportCamera RuntimeCamera;
-	FVector PendingMoveInput = FVector::ZeroVector;
-
-	float MoveSpeed = 10.0f;
-	float LookSensitivity = 0.15f;
 };

@@ -150,6 +150,7 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
+    UpdateTimeState(DeltaTime);
     ProcessQueuedPlaySessionRequests();
 
     const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
@@ -584,7 +585,13 @@ void UEditorEngine::StartPlaySessionNow()
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
     UWorld* FocusedWorld = GetFocusedWorld();
 
-    if (!FocusedWorld) return;
+    if (!FocusedClient || !FocusedWorld) return;
+    if (!HasPlayerStart(FocusedWorld))
+    {
+        UE_LOG("[PIE] Cannot start Play In Editor: Player Start is missing.");
+        MainPanel.PushFooterLog("PIE failed: Player Start is missing");
+        return;
+    }
 
     FocusedClient->SaveCameraSnapshot();
     ActivePIEViewportIndex = FocusedIdx;
@@ -618,7 +625,7 @@ void UEditorEngine::StartPlaySessionNow()
     EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
     SelectionManager.ClearSelection();
 
-    constexpr const char* DefaultPIEPlayerControllerClass = "AGameJamPlayerController";
+    constexpr const char* DefaultPIEPlayerControllerClass = "APlayerController";
     APlayerController* PlayerController = Cast<APlayerController>(
         PIEWorld->SpawnActorByTypeName(DefaultPIEPlayerControllerClass));
     if (PlayerController)
@@ -626,7 +633,6 @@ void UEditorEngine::StartPlaySessionNow()
         PlayerController->InitDefaultComponents();
         PlayerController->SetFName(FName(DefaultPIEPlayerControllerClass));
         PlayerController->ConfigureRuntimeCameraFromViewport(FocusedClient->GetCamera());
-        PlayerController->SpawnDefaultPawn();
         FocusedClient->SetPIEPlayerController(PlayerController);
         PIEWorld->SetActiveCamera(PlayerController->GetRuntimeCamera());
     }

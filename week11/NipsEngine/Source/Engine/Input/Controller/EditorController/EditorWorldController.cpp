@@ -19,19 +19,27 @@ void FEditorWorldController::SetCamera(FViewportCamera* InCamera)
     if (!InCamera)
         return;
     Camera = InCamera;
-    TargetLocation = InCamera->GetLocation();
-    TargetRotation = InCamera->GetRotation();
-    bTargetLocationInitialized = true;
-    bTargetRotationInitialized = true;
+    ResetTargetFromCamera();
 }
 
 void FEditorWorldController::SetCamera(FViewportCamera& InCamera)
 {
     Camera = &InCamera;
-    TargetLocation = InCamera.GetLocation();
-    TargetRotation = InCamera.GetRotation();
+    ResetTargetFromCamera();
+}
+
+void FEditorWorldController::ResetTargetFromCamera()
+{
+    if (!Camera)
+    {
+        return;
+    }
+
+    TargetLocation = Camera->GetLocation();
+    TargetRotation = Camera->GetRotation();
     bTargetLocationInitialized = true;
     bTargetRotationInitialized = true;
+    SeedYawPitchFromCamera();
 }
 
 void FEditorWorldController::Tick(float InDeltaTime)
@@ -208,9 +216,7 @@ void FEditorWorldController::OnRightMouseClick(float DeltaX, float DeltaY)
     // Seed Yaw/Pitch from current camera orientation so the first drag doesn't snap
     if (!Camera)
         return;
-    const FVector Forward = Camera->GetForwardVector().GetSafeNormal();
-    Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.f, 1.f)));
-    Yaw   = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
+    SeedYawPitchFromCamera();
 }
 
 void FEditorWorldController::OnRightMouseDrag(float DeltaX, float DeltaY)
@@ -256,9 +262,7 @@ void FEditorWorldController::OnKeyPressed(int VK)
     case VK_DOWN:
         if (Camera)
         {
-            const FVector Forward = Camera->GetForwardVector().GetSafeNormal();
-            Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.f, 1.f)));
-            Yaw   = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
+            SeedYawPitchFromCamera();
         }
         break;
     }
@@ -418,6 +422,18 @@ void FEditorWorldController::UpdateCameraRotation()
     {
         Camera->SetRotation(NewRotation);
     }
+}
+
+void FEditorWorldController::SeedYawPitchFromCamera()
+{
+    if (!Camera)
+    {
+        return;
+    }
+
+    const FVector Forward = Camera->GetForwardVector().GetSafeNormal();
+    Pitch = MathUtil::RadiansToDegrees(std::asin(MathUtil::Clamp(Forward.Z, -1.f, 1.f)));
+    Yaw = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
 }
 
 void FEditorWorldController::ClearPendingSelectionPress()

@@ -26,6 +26,7 @@ public:
 		bool* InShowEditorDebug,
 		bool* InShowContentBrowser,
 		bool* InShowUndoHistory,
+		bool* InShowRuntimeUIPreview,
 		bool* InPIEViewportFullscreenEnabled);
 	virtual void Render(float DeltaTime) override;
 	bool OpenSceneFileDialog(FString& OutFilePath) const;
@@ -52,6 +53,7 @@ private:
 	bool* bShowEditorDebug = nullptr;
 	bool* bShowContentBrowser = nullptr;
 	bool* bShowUndoHistory = nullptr;
+	bool* bShowRuntimeUIPreview = nullptr;
 	bool* bPIEViewportFullscreenEnabled = nullptr;
 	std::function<void(bool)> PIEViewportFullscreenCallback;
 	std::function<void()> BuildGameCallback;

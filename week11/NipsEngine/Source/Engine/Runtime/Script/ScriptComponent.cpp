@@ -41,7 +41,7 @@ namespace
             return Table;
         };
     }
-	
+
 	EPropertyType ParseLuaScriptPropertyType(const FString& TypeName)
     {
         if (TypeName == "Int")

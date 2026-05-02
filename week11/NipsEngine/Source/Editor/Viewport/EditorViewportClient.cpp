@@ -81,7 +81,7 @@ void FEditorViewportClient::EndPIE(UWorld* InWorld)
 	}
 	InputRouter.GetEditorWorldController().SetWorld(InWorld);
 	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
-	InputRouter.GetEditorWorldController().ResetTargetLocation();
+	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 	ClearEndPIECallback();
 	ClearPIEPlayerController();
 	InputSystem::Get().LockMouse(false);
@@ -102,7 +102,7 @@ void FEditorViewportClient::CreateCamera()
 	Camera.OnResize(static_cast<uint32>(WindowWidth), static_cast<uint32>(WindowHeight));
 	InputRouter.GetEditorWorldController().SetCamera(&Camera);
 	InputRouter.GetPIEController().SetCamera(&Camera);
-	InputRouter.GetEditorWorldController().ResetTargetLocation();
+	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 	InputRouter.GetPIEController().ResetTargetLocation();
 }
 
@@ -134,7 +134,7 @@ void FEditorViewportClient::ResetCamera()
 			Camera.SetRotation(NewRotation);
 		}
 	}
-	InputRouter.GetEditorWorldController().ResetTargetLocation();
+	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 }
 
 FViewportCamera* FEditorViewportClient::GetRenderCamera()
@@ -525,7 +525,7 @@ void FEditorViewportClient::ApplyCameraMode()
 
 	// Reset lerp target immediately so accumulated TargetLocation doesn't
 	// move the camera on the next Tick after a mode switch.
-	InputRouter.GetEditorWorldController().ResetTargetLocation();
+	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 }
 
 // ── Input tick sub-steps ──────────────────────────────────────────────────────
@@ -1693,7 +1693,7 @@ void FEditorViewportClient::FocusPrimarySelection()
 		Camera.SetLookAt(Target);
 	}
 
-	InputRouter.GetEditorWorldController().ResetTargetLocation();
+	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 }
 
 void FEditorViewportClient::DeleteSelectedActors()

@@ -60,6 +60,7 @@ class FEditorWorldController : public IBaseEditorController
             bTargetLocationInitialized = true;
         }
     }
+    void ResetTargetFromCamera();
     void SetWorld(UWorld* InWorld)
     {
         if (InWorld)
@@ -69,6 +70,7 @@ class FEditorWorldController : public IBaseEditorController
 
   private:
     void UpdateCameraRotation();
+    void SeedYawPitchFromCamera();
     void SelectActorAt(float X, float Y);
     void ClearPendingSelectionPress();
 

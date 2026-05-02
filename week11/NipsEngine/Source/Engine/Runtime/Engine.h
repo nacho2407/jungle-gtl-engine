@@ -1,16 +1,25 @@
 ﻿#pragma once
 
 #include "Object/Object.h"
+#include "Audio/AudioSystem.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Renderer/IRenderPipeline.h"
+#include "UI/RuntimeUISystem.h"
 
 #include <memory>
 
 class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
+
+enum class ERuntimeInputMode : uint8
+{
+	GameOnly,
+	UIOnly,
+	GameAndUI
+};
 
 class UEngine : public UObject
 {
@@ -27,6 +36,7 @@ public:
 	virtual void Tick(float DeltaTime);
 
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
+	virtual bool RequestQuitGame();
 
 	// World context management
 	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
@@ -53,8 +63,24 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
+	FRuntimeUISystem& GetRuntimeUI() { return RuntimeUI; }
+	const FRuntimeUISystem& GetRuntimeUI() const { return RuntimeUI; }
+	FAudioSystem& GetAudioSystem() { return AudioSystem; }
+	const FAudioSystem& GetAudioSystem() const { return AudioSystem; }
+	void SetRuntimeInputMode(ERuntimeInputMode InMode);
+	ERuntimeInputMode GetRuntimeInputMode() const { return RuntimeInputMode; }
+	void SetRuntimeCursorVisible(bool bVisible);
+	bool IsRuntimeCursorVisible() const { return bRuntimeCursorVisible; }
+	void SetTimeScale(float InTimeScale);
+	float GetTimeScale() const { return TimeScale; }
+	float GetDeltaTime() const { return LastDeltaTime; }
+	float GetUnscaledDeltaTime() const { return LastUnscaledDeltaTime; }
+	double GetGameTime() const { return GameTimeSeconds; }
+	double GetRealTime() const { return RealTimeSeconds; }
+	virtual void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) {}
 
 protected:
+	void UpdateTimeState(float DeltaTime);
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
 	virtual void WorldTick(float DeltaTime);
@@ -68,6 +94,15 @@ protected:
 	FTimer* Timer = nullptr;
 
 	FRenderer Renderer;
+	FRuntimeUISystem RuntimeUI;
+	FAudioSystem AudioSystem;
+	ERuntimeInputMode RuntimeInputMode = ERuntimeInputMode::GameOnly;
+	bool bRuntimeCursorVisible = false;
+	float TimeScale = 1.0f;
+	float LastDeltaTime = 0.0f;
+	float LastUnscaledDeltaTime = 0.0f;
+	double GameTimeSeconds = 0.0;
+	double RealTimeSeconds = 0.0;
 
 private:
 	std::unique_ptr<IRenderPipeline> RenderPipeline;

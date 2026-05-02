@@ -13,7 +13,7 @@ struct FGameBuildSettings
     FString GameName = "NipsGame";
     FString StartupScene = "Asset/Scene/Default.scene";
     TArray<FString> IncludedScenes;
-    FString PlayerControllerClass = "AGameJamPlayerController";
+    FString PlayerControllerClass = "APlayerController";
     FString OutputDirectory = "Builds/Windows/NipsGame";
     FString IconPath;
     FString SplashImagePath;
