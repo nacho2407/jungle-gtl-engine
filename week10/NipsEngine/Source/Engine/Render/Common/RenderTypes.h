@@ -39,6 +39,7 @@ enum class EPrimitiveType
 	EPT_Box,
 	EPT_Sphere,
 	EPT_Capsule,
+	EPT_ProceduralMesh,
     MAX
 };
 

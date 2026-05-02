@@ -21,6 +21,7 @@
 #include "Core/Debug.h"
 #include "Component/BoxComponent.h"
 #include "Core/CollisionTypes.h"
+#include "Component/ProceduralMeshComponent.h"
 
 namespace
 {
@@ -92,8 +93,10 @@ REGISTER_FACTORY(ASpotlightActor)
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
-	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-	SetRootComponent(Cube);
+    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Lumine/LumineModel.obj"));
+    // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
+    SetRootComponent(Cube);
 
 	// Text
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
@@ -103,6 +106,17 @@ void ACubeActor::InitDefaultComponents()
 	Text->SetTransient(true);
 	Text->SetEditorOnly(true);
 	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	UProceduralMeshComponent* ProcMeshComp1 = AddComponent<UProceduralMeshComponent>();
+    UProceduralMeshComponent* ProcMeshComp2 = AddComponent<UProceduralMeshComponent>();
+    
+	FPlane Plane;
+    Plane.Normal = FVector(0, 1, 1);
+    Plane.D = 0;
+    FMeshSlicer::SliceComponent(Cube, Plane, ProcMeshComp1, ProcMeshComp2);
+	
+	ProcMeshComp1->AttachToComponent(Cube);
+    ProcMeshComp2->AttachToComponent(Cube);
 }
 
 void ASphereActor::InitDefaultComponents()

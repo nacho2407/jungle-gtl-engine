@@ -75,7 +75,8 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 	DrawSpawnItem(5, "Decal");
 	DrawSpawnItem(12, "Fog");
 	DrawSpawnItem(6, "Fireball");
-	DrawSpawnItem(7, "Decal Spotlight");
+    DrawSpawnItem(7, "Decal Spotlight");
+    DrawSpawnItem(14, "Cube");
 	ImGui::Separator();
 	DrawSpawnItem(8, "Ambient Light");
 	DrawSpawnItem(9, "Directional Light");
@@ -212,6 +213,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			Actor->InitDefaultComponents();
 			Actor->SetFName(FName("Player Start"));
 			Actor->SetActorLocation(SpawnPoint);
+			break;
+		}
+		case 14:
+		{
+			ACubeActor* Actor = World->SpawnActor<ACubeActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(CurSpawnPoint);
 			break;
 		}
 		default:

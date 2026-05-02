@@ -919,8 +919,8 @@ void FRenderer::DrawPostProcessOutline(ID3D11DeviceContext* InDeviceContext)
 
 	auto DepthStencilState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
 	auto BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
-	auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
-
+    auto RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+    
 	InDeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	InDeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 	InDeviceContext->RSSetState(RasterizerState);
