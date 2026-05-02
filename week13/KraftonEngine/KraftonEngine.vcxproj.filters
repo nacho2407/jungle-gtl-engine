@@ -52,6 +52,9 @@
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{d0b56061-5521-9f21-3d03-1e11f47e99a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Audio">
+      <UniqueIdentifier>{60f7fb11-d80b-bf66-98c3-689d6f8326ab}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{0a1ac0a6-fa86-45a3-c38e-91b60c7ce3cf}</UniqueIdentifier>
     </Filter>
@@ -225,6 +228,12 @@
     </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{b5b63371-405e-e009-4e4e-e3b5a25ee7bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\fmod">
+      <UniqueIdentifier>{213e7772-3235-9729-b329-4e68cdec4130}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\fmod\include">
+      <UniqueIdentifier>{caff592a-3ac4-8555-af6c-51cad0db929a}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty\lua">
       <UniqueIdentifier>{32805c5f-f28a-ba2b-e982-3383e5ffc164}</UniqueIdentifier>
@@ -443,6 +452,9 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\AudioManager.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -482,10 +494,10 @@
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CarDirtComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp">
+    <ClCompile Include="Source\Engine\Component\CarDirtComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\CompletionOutlineComponent.cpp">
@@ -550,6 +562,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\CarMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\InterpToMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -1079,6 +1094,9 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Audio\AudioManager.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\CollisionMath.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
@@ -1121,10 +1139,10 @@
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CarDirtComponent.h">
+    <ClInclude Include="Source\Engine\Component\CapsuleComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CapsuleComponent.h">
+    <ClInclude Include="Source\Engine\Component\CarDirtComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CompletionOutlineComponent.h">
@@ -1189,6 +1207,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\CarMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\InterpToMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -1720,6 +1741,30 @@
     </ClInclude>
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h">
       <Filter>Source\ObjViewer</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod.hpp">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_codec.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_common.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp_effects.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_errors.h">
+      <Filter>ThirdParty\fmod\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\fmod\include\fmod_output.h">
+      <Filter>ThirdParty\fmod\include</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>

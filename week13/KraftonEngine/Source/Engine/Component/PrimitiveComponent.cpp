@@ -83,6 +83,8 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	Ar << CollisionEnabled;
 	Ar << ObjectType;
 	Ar << ResponseContainer;
+	Ar << Mass;
+	Ar << CenterOfMassOffset;
 	// LocalExtents는 메시 등에서 재계산되므로 직렬화 제외.
 }
 
@@ -176,6 +178,10 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 		Desc.StructFunc = &FCollisionResponseContainer::DescribeProperties;
 		OutProps.push_back(Desc);
 	}
+
+	// 물리 파라미터 — RootComponent에 한해 백엔드에 적용된다 (compound shape).
+	OutProps.push_back({ "Mass (kg)", EPropertyType::Float, "Physics", &Mass });
+	OutProps.push_back({ "Center Of Mass Offset", EPropertyType::Vec3, "Physics", &CenterOfMassOffset });
 }
 
 void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
@@ -214,6 +220,15 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 				}
 			}
 		}
+	}
+	else if (strcmp(PropertyName, "Mass (kg)") == 0)
+	{
+		// 에디터 슬라이더로 값을 바꾼 경우 백엔드에 즉시 반영.
+		SetMass(Mass);
+	}
+	else if (strcmp(PropertyName, "Center Of Mass Offset") == 0)
+	{
+		SetCenterOfMass(CenterOfMassOffset);
 	}
 }
 
@@ -489,21 +504,35 @@ void UPrimitiveComponent::SetAngularVelocity(const FVector& Vel)
 				PS->SetAngularVelocity(this, Vel);
 }
 
-void UPrimitiveComponent::SetMass(float Mass)
+void UPrimitiveComponent::SetMass(float NewMass)
 {
+	Mass = NewMass;
 	if (Owner)
 		if (UWorld* W = Owner->GetWorld())
 			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->SetMass(this, Mass);
+				PS->SetMass(this, NewMass);
+}
+
+void UPrimitiveComponent::SetCenterOfMass(const FVector& LocalOffset)
+{
+	CenterOfMassOffset = LocalOffset;
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->SetCenterOfMass(this, LocalOffset);
+}
+
+FVector UPrimitiveComponent::GetCenterOfMass() const
+{
+	// 멤버 직접 반환 — 백엔드의 BodyState/Px와 SetCenterOfMass에서 동기화된다.
+	// (백엔드 query를 거치면 RegisterComponent 내부에서 사용 시 fallback 루프 위험)
+	return CenterOfMassOffset;
 }
 
 float UPrimitiveComponent::GetMass() const
 {
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				return PS->GetMass(const_cast<UPrimitiveComponent*>(this));
-	return 1.0f;
+	// 멤버 직접 반환 (위 GetCenterOfMass와 동일 이유).
+	return Mass;
 }
 
 void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)

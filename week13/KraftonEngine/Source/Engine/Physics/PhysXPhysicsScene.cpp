@@ -206,6 +206,17 @@ static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 	return PxTransform(ToPxVec3(Pos), ToPxQuat(Rot));
 }
 
+// Compound body의 mass와 center-of-mass를 RootComponent의 값으로 갱신.
+// shape 추가/제거 후 inertia 재계산이 필요하므로 RegisterComponent /
+// UnregisterComponent 끝에서 호출된다.
+static void ApplyRootMassAndCOM(PxRigidDynamic* Dyn, UPrimitiveComponent* Root)
+{
+	if (!Dyn || !Root) return;
+	const float MassKg = (Root->GetMass() > 0.0f) ? Root->GetMass() : 1.0f;
+	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, MassKg);
+	Dyn->setCMassLocalPose(PxTransform(ToPxVec3(Root->GetCenterOfMass())));
+}
+
 // ============================================================
 // Collision Filtering
 // ============================================================
@@ -405,10 +416,10 @@ void FPhysXPhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 	if (!Shape) return;
 	Mapping->Components.push_back(Comp);
 
-	// Dynamic이면 mass/inertia 재계산 (shape 추가 시마다)
+	// Dynamic이면 RootComp의 Mass / CenterOfMass로 갱신 (shape 추가될 때마다 inertia 재계산).
 	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
 	{
-		PxRigidBodyExt::updateMassAndInertia(*Dyn, 1.0f);
+		ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
 	}
 }
 
@@ -442,10 +453,10 @@ void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 		return;
 	}
 
-	// 남은 shape가 있으면 mass 재계산
+	// 남은 shape가 있으면 mass/inertia 재계산
 	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
 	{
-		PxRigidBodyExt::updateMassAndInertia(*Dyn, 1.0f);
+		ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
 	}
 }
 
@@ -725,13 +736,18 @@ void FPhysXPhysicsScene::SetAngularVelocity(UPrimitiveComponent* Comp, const FVe
 // Mass
 // ============================================================
 
-void FPhysXPhysicsScene::SetMass(UPrimitiveComponent* Comp, float Mass)
+void FPhysXPhysicsScene::SetMass(UPrimitiveComponent* Comp, float NewMass)
 {
 	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
-	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, Mass);
+
+	// setMassAndUpdateInertia(rigid, mass, com=NULL)는 COM을 shape 분포로
+	// 자동 재계산하면서 이전 setCMassLocalPose를 덮어쓴다. RootComp의
+	// CenterOfMassOffset을 명시 전달해 보존.
+	PxVec3 LocalCOM = M->RootComp ? ToPxVec3(M->RootComp->GetCenterOfMass()) : PxVec3(0);
+	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, NewMass, &LocalCOM);
 }
 
 float FPhysXPhysicsScene::GetMass(UPrimitiveComponent* Comp) const
@@ -741,6 +757,24 @@ float FPhysXPhysicsScene::GetMass(UPrimitiveComponent* Comp) const
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return 1.0f;
 	return Dyn->getMass();
+}
+
+void FPhysXPhysicsScene::SetCenterOfMass(UPrimitiveComponent* Comp, const FVector& LocalOffset)
+{
+	FBodyMapping* M = FindMappingByComponent(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	Dyn->setCMassLocalPose(PxTransform(ToPxVec3(LocalOffset)));
+}
+
+FVector FPhysXPhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
+{
+	const FBodyMapping* M = FindMappingByComponent(Comp);
+	if (!M || !M->Actor) return { 0, 0, 0 };
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return { 0, 0, 0 };
+	return ToFVector(Dyn->getCMassLocalPose().p);
 }
 
 // ============================================================
