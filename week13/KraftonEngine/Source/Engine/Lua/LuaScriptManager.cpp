@@ -2,7 +2,9 @@
 
 #include "Core/Log.h"
 #include "Component/Movement/CarMovementComponent.h"
+#include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CarGasComponent.h"
+#include "Component/CameraComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -185,6 +187,23 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		return Manager ? Manager->ToggleActiveCameraForActor(Actor) : false;
 	});
+	CameraManager.set_function("PossessCamera", [](UCameraComponent* Camera)
+	{
+		if (!GEngine || !GEngine->GetWorld() || !Camera)
+		{
+			return false;
+		}
+
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		if (!Manager)
+		{
+			return false;
+		}
+
+		Manager->SetActiveCamera(Camera);
+		Manager->Possess(Camera);
+		return true;
+	});
 	CameraManager.set_function("GetActiveCameraOwner", []() -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld())
@@ -250,9 +269,16 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 
 void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 {
+	Lua.new_usertype<UFloatingPawnMovementComponent>("FloatingPawnMovementComponent",
+		"SetMoveInput", &UFloatingPawnMovementComponent::SetMoveInput,
+		"SetRotationInput", &UFloatingPawnMovementComponent::SetRotationInput);
+
+	Lua.new_usertype<UCameraComponent>("CameraComponent");
+
 	Lua.new_usertype<UCarMovementComponent>("CarMovementComponent",
 		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
 		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
+		"StopImmediately", &UCarMovementComponent::StopImmediately,
 		"GetForwardSpeed", &UCarMovementComponent::GetForwardSpeed);
 
 	Lua.new_usertype<UCarGasComponent>("CarGasComponent",
@@ -336,6 +362,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor.GetComponentByClass<UCarGasComponent>();
 	},
 
+		"GetFloatingPawnMovement", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UFloatingPawnMovementComponent>();
+	},
+
+		"GetCamera", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UCameraComponent>();
+	},
+
 		"AsCarPawn", [](AActor& Actor)
 	{
 		return Cast<ACarPawn>(&Actor);
@@ -395,12 +431,30 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	Lua.new_enum("ECarGamePhase",
 		"None",         ECarGamePhase::None,
 		"CarWash",      ECarGamePhase::CarWash,
+		"CarGas",       ECarGamePhase::CarGas,
 		"EscapePolice", ECarGamePhase::EscapePolice,
 		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
 		"Finished",     ECarGamePhase::Finished);
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
-		"GetPhase", &AGameStateCarGame::GetPhase);
+		"GetPhase", &AGameStateCarGame::GetPhase,
+		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
+	{
+		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable
+		{
+			if (!Callback.valid())
+			{
+				return;
+			}
+
+			sol::protected_function_result Result = Callback(NewPhase);
+			if (!Result.valid())
+			{
+				sol::error Err = Result;
+				UE_LOG("[Lua] Phase changed callback error: %s", Err.what());
+			}
+		});
+	});
 
 	Lua["GetGameState"] = []() -> AGameStateCarGame*
 	{
@@ -416,6 +470,10 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"AddToViewport", [](UUserWidget& Widget)
 	{
 		Widget.AddToViewport();
+	},
+		"AddToViewportZ", [](UUserWidget& Widget, int32 ZOrder)
+	{
+		Widget.AddToViewport(ZOrder);
 	},
 		"RemoveFromParent", &UUserWidget::RemoveFromParent,
 		"Show", [](UUserWidget& Widget)
@@ -433,7 +491,10 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 	{
 		Widget.BindClick(ElementId, Callback);
 	},
-		"SetText", &UUserWidget::SetText);
+		"SetText", &UUserWidget::SetText,
+		"set_text", &UUserWidget::SetText,
+		"SetProperty", &UUserWidget::SetProperty,
+		"set_property", &UUserWidget::SetProperty);
 
 	sol::table UI = Lua.create_named_table("UI");
 	UI.set_function("CreateWidget", [](const FString& DocumentPath)

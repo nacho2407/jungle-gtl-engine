@@ -1,3 +1,5 @@
+local ObjRegistry = require("ObjRegistry")
+
 local car = nil
 local movement = nil
 
@@ -7,6 +9,7 @@ function BeginPlay()
         return
     end
 
+    ObjRegistry.RegisterCar(car)
     movement = car:GetCarMovement()
 end
 
@@ -18,6 +21,16 @@ end
 
 function Tick(dt)
     if car == nil or movement == nil then
+        return
+    end
+
+    local gs = GetGameState()
+    if gs == nil then return false end
+
+    if gs:GetPhase() == ECarGamePhase.CarWash or gs:GetPhase() == ECarGamePhase.CarGas then
+        movement:StopImmediately()
+        movement:SetThrottleInput(0)
+        movement:SetSteeringInput(0)
         return
     end
 

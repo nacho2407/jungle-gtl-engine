@@ -102,3 +102,20 @@ void UUserWidget::SetText(const FString& ElementId, const FString& Text)
 
 	Element->SetInnerRML(Text.c_str());
 }
+
+bool UUserWidget::SetProperty(const FString& ElementId, const FString& PropertyName, const FString& Value)
+{
+	if (!Document)
+	{
+		return false;
+	}
+
+	Rml::Element* Element = Document->GetElementById(ElementId);
+	if (!Element)
+	{
+		UE_LOG("[RmlUi] Property target not found: %s", ElementId.c_str());
+		return false;
+	}
+
+	return Element->SetProperty(PropertyName.c_str(), Value.c_str());
+}

@@ -35,4 +35,5 @@ private:
 	sol::protected_function LuaBeginPlay;
 	sol::protected_function LuaTick;
 	sol::protected_function LuaEndPlay;
+	sol::protected_function LuaOnOverlap;
 };
