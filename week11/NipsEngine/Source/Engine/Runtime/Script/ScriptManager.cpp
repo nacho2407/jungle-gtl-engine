@@ -95,24 +95,6 @@ namespace
 
         return Components;
     }
-
-	static std::string FileTimeToString(std::filesystem::file_time_type FileTime)
-    {
-        using namespace std::chrono;
-
-        auto SystemTime = time_point_cast<system_clock::duration>(
-            FileTime - std::filesystem::file_time_type::clock::now() + system_clock::now());
-
-        std::time_t Time = system_clock::to_time_t(SystemTime);
-
-        std::tm LocalTime{};
-        localtime_s(&LocalTime, &Time);
-
-        std::ostringstream Oss;
-        Oss << std::put_time(&LocalTime, "%Y-%m-%d %H:%M:%S");
-
-        return Oss.str();
-    }
 }
 
 void FScriptManager::BindMathTypes() {
@@ -319,6 +301,9 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(SetRelativeLocation, SetRelativeLocation);
     LUA_RW_PROPERTY(Location, GetRelativeLocation, SetRelativeLocation);
     LUA_RO_PROPERTY(Forward, GetForwardVector);
+    LUA_END_TYPE();
+
+	LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UScriptComponent, "ScriptComponent", UActorComponent, UObject)
     LUA_END_TYPE();
 }
 
@@ -598,6 +583,34 @@ bool FScriptManager::HasScript(const FName& name)
     return true;
 }
 
+bool FScriptManager::ResolveScriptPath(const FString& ScriptName, FString& OutPath)
+{
+    if (ScriptName.empty())
+    {
+        return false;
+    }
+
+    FString FileName = ScriptName;
+
+    if (!FileName.ends_with(".lua"))
+    {
+        FileName += ".lua";
+    }
+
+    FWString Path = FPaths::Combine(
+        FPaths::ScriptDir(),
+        FPaths::ToWide(FileName));
+
+    if (!fs::exists(std::filesystem::path(Path)))
+    {
+        UE_LOG("[ScriptManager] Script file not found: %s", FPaths::ToUtf8(Path).c_str());
+        return false;
+    }
+
+    OutPath = FPaths::ToUtf8(Path);
+    return true;
+}
+
 void FScriptManager::HotReloadScripts()
 {
     RefreshLuaScriptFiles();
@@ -715,58 +728,80 @@ void FScriptManager::UnregisterScriptComponentAll(UScriptComponent* ScriptCompon
     }
 }
 
-std::optional<sol::environment> FScriptManager::LoadLuaEnvironment(UScriptComponent* ScriptComponent, const FString& ScriptName)
+std::optional<FLuaScriptLoadResult> FScriptManager::LoadScriptClass(
+    UScriptComponent* Component,
+    const FString& ScriptName)
 {
-    if (!GLuaState)
+    FString ScriptPath;
+    if (!ResolveScriptPath(ScriptName, ScriptPath))
     {
-        UE_LOG("[LuaManager] Lua state is not initialized.");
-        return std::nullopt;
-    }
-
-    //스크립트가 추가되었을 수 있으므로 한번 초기화
-    RefreshLuaScriptFiles();
-
-    const FName ScriptKey = MakeLuaScriptKey(ScriptName);
-    auto It = ScriptArray.find(ScriptKey);
-    if (It == ScriptArray.end())
-    {
-        UE_LOG("[LuaManager] 스크립트를 찾을 수 없습니다: %s", ScriptName.c_str());
-        return std::nullopt;
-    }
-
-	//ScriptPath 저장
-    FWString ScriptPath = It->second.ScriptPath;
-    if (ScriptPath.empty() || !fs::exists(ScriptPath))
-    {
-        UE_LOG("[LuaManager] 스크립트 파일이 존재하지 않습니다: %s", ScriptPath.c_str());
+        UE_LOG("[ScriptManager] Script not found: %s", ScriptName.c_str());
         return std::nullopt;
     }
 
     sol::environment Env(*GLuaState, sol::create, GLuaState->globals());
 
-    if (ScriptComponent)
-    {
-        Env["Self"] = ScriptComponent;
-        Env["Actor"] = ScriptComponent->GetOwner();
-    }
+    Env["Component"] = Component;
+    Env["Actor"] = Component ? Component->GetOwner() : nullptr;
+    Env["Owner"] = Component ? Component->GetOwner() : nullptr;
 
-    auto Result = GLuaState->safe_script_file(
-        FPaths::ToUtf8(ScriptPath),
-        Env,
-        sol::script_pass_on_error);
+    sol::protected_function_result Result =
+        GLuaState->safe_script_file(ScriptPath, Env);
 
     if (!Result.valid())
     {
         sol::error Err = Result;
-
-        UE_LOG("[Lua Load Error] Script: %s, Error: %s",
-               ScriptName.c_str(),
-               Err.what());
-
+        UE_LOG("[ScriptManager] Lua load error: %s", Err.what());
         return std::nullopt;
     }
 
-    return Env;
+    sol::object ReturnObj = Result;
+    if (!ReturnObj.valid() || ReturnObj.get_type() != sol::type::table)
+    {
+        UE_LOG("[ScriptManager] Script must return table: %s", ScriptName.c_str());
+        return std::nullopt;
+    }
+
+    FLuaScriptLoadResult Loaded;
+    Loaded.Env = std::move(Env);
+    Loaded.ScriptClass = ReturnObj.as<sol::table>();
+    return Loaded;
+}
+
+std::optional<sol::table> FScriptManager::LoadScriptClassForProperties(
+    const FString& ScriptName)
+{
+    FString ScriptPath;
+    if (!ResolveScriptPath(ScriptName, ScriptPath))
+    {
+        return std::nullopt;
+    }
+
+    sol::environment TempEnv(*GLuaState, sol::create, GLuaState->globals());
+
+    sol::protected_function_result Result =
+        GLuaState->safe_script_file(ScriptPath, TempEnv);
+
+    if (!Result.valid())
+    {
+        sol::error Err = Result;
+        UE_LOG("[ScriptManager] Lua property load error: %s", Err.what());
+        return std::nullopt;
+    }
+
+    sol::object ReturnObj = Result;
+    if (!ReturnObj.valid() || ReturnObj.get_type() != sol::type::table)
+    {
+        return std::nullopt;
+    }
+
+    return ReturnObj.as<sol::table>();
+}
+
+FWString FScriptManager::GetScriptPathByName(const FName& name)
+{
+    auto Info = GetScriptInfo(name);
+    return Info->ScriptPath;
 }
 
 auto FScriptManager::GetScriptInfo(const FName& name) -> FLuaScriptInfo*
@@ -780,3 +815,4 @@ auto FScriptManager::GetScriptInfo(const FName& name) -> FLuaScriptInfo*
 
     return &It->second;
 }
+
