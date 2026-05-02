@@ -19,6 +19,7 @@ namespace PSKey
 
 	constexpr const char* GameSection = "Game";
 	constexpr const char* StartLevelName = "StartLevelName";
+	constexpr const char* GameModeClassName = "GameModeClassName";
 }
 
 void FProjectSettings::SaveToFile(const FString& Path) const
@@ -42,6 +43,7 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 
 	JSON GameObj = Object();
 	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
+	GameObj[PSKey::GameModeClassName] = Game.GameModeClassName;
 	Root[PSKey::GameSection] = GameObj;
 
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -84,6 +86,8 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		JSON G = Root[PSKey::GameSection];
 		if (G.hasKey(PSKey::StartLevelName))
 			Game.StartLevelName = G[PSKey::StartLevelName].ToString();
+		if (G.hasKey(PSKey::GameModeClassName))
+			Game.GameModeClassName = G[PSKey::GameModeClassName].ToString();
 	}
 
 	if (Root.hasKey(PSKey::Shadow))

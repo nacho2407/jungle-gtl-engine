@@ -1,6 +1,8 @@
 ﻿#include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Core/ProjectSettings.h"
 #include "Serialization/SceneSaveManager.h"
+#include "GameFramework/GameModeBase.h"
+#include "Object/UClass.h"
 #include "ImGui/imgui.h"
 
 void EditorProjectSettingsWidget::Render()
@@ -46,6 +48,44 @@ void EditorProjectSettingsWidget::Render()
 			}
 			ImGui::EndCombo();
 		}
+
+		// GameMode 클래스 — UClass 레지스트리에서 AGameModeBase 파생만 필터링.
+		// 첫 항목은 "(Default)"로, 빈 문자열에 매핑 — GameEngine이 코드 디폴트 사용.
+		TArray<UClass*> GameModeClasses;
+		GameModeClasses.push_back(nullptr); // sentinel for "(Default)"
+		for (UClass* C : UClass::GetAllClasses())
+		{
+			if (C && C->IsA(AGameModeBase::StaticClass()))
+				GameModeClasses.push_back(C);
+		}
+
+		int GMIdx = 0;
+		for (int i = 1; i < static_cast<int>(GameModeClasses.size()); ++i)
+		{
+			if (PS.Game.GameModeClassName == GameModeClasses[i]->GetName())
+			{
+				GMIdx = i;
+				break;
+			}
+		}
+
+		const char* GMPreview = (GMIdx == 0) ? "(Default)" : GameModeClasses[GMIdx]->GetName();
+		if (ImGui::BeginCombo("GameMode Class", GMPreview))
+		{
+			for (int i = 0; i < static_cast<int>(GameModeClasses.size()); ++i)
+			{
+				const char* Label = (i == 0) ? "(Default)" : GameModeClasses[i]->GetName();
+				bool bSelected = (i == GMIdx);
+				if (ImGui::Selectable(Label, bSelected))
+				{
+					PS.Game.GameModeClassName = (i == 0) ? FString() : FString(GameModeClasses[i]->GetName());
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::TextDisabled("Requires scene reload to take effect.");
 	}
 
 	if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
