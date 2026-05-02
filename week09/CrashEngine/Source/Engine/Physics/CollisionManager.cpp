@@ -4,7 +4,7 @@
 #include "Engine/Collision/CollisionSystem.h"
 #include "Engine/Render/Scene/Scene.h"
 #include "Core/Logging/LogMacros.h"
-#include <algorithm> 
+#include <algorithm>
 #include <cmath>
 namespace
 {
@@ -101,7 +101,7 @@ void DrawDebugOBB(FScene* Scene, const FOBB& OBB, const FColor& Color)
     // 0.0f = 1프레임 동안만 렌더링 (매 프레임 호출하므로 선이 남지 않음)
     Scene->GetDebugPrimitiveQueue().AddBox(P0, P1, P2, P3, P4, P5, P6, P7, Color, 0.0f);
 }
-}
+} // namespace
 
 void FCollisionManager::RegisterComponent(UPrimitiveComponent* Component)
 {
@@ -127,6 +127,11 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
     // 1. 디버그 드로우용 색상 배열 (기본값: 모두 초록색)
     std::vector<FColor> DebugColors(RegisteredComponents.size(), FColor(0, 255, 0));
 
+    // 이번 프레임을 위한 큐와 현재 상태 배열 초기화
+    CurrentFrameOverlaps.clear();
+    PendingBeginOverlaps.clear();
+    PendingEndOverlaps.clear();
+
     // 2. 충돌 검사
     for (int i = 0; i < RegisteredComponents.size(); i++)
     {
@@ -135,8 +140,8 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
         for (int j = i + 1; j < RegisteredComponents.size(); j++)
         {
             UPrimitiveComponent* CompB = RegisteredComponents[j];
-			
-			if (CompA == CompB)
+
+            if (CompA == CompB)
                 continue;
 
             if (!CompB /* || !CompB->bIsCollisionEnabled */)
@@ -145,20 +150,68 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
             // 겹침 판정
             if (CheckOverlap(CompA, CompB))
             {
-                // 충돌 이벤트를 날림
+                // 충돌 중인 쌍을 CurrentFrameOverlaps에 기록합니다.
+                FOverlapPair Pair{ CompA, CompB };
+                CurrentFrameOverlaps.push_back(Pair);
+
                 CompA->OnComponentOverlap(CompB);
                 CompB->OnComponentOverlap(CompA);
 
                 // ⭐️ 충돌한 녀석들의 색상을 빨간색으로 변경!
                 DebugColors[i] = FColor(255, 0, 0);
                 DebugColors[j] = FColor(255, 0, 0);
-
-                UE_LOG(Console, Info, "Collision!");
             }
         }
     }
 
-    // 3. 디버그 박스 렌더링 (Scene이 유효할 때만)
+    // 3. Begin / End 판별 로직
+    // [Begin Overlap] 이번 프레임엔 충돌했는데, 이전 프레임 장부엔 없는 경우
+    for (const auto& CurrentPair : CurrentFrameOverlaps)
+    {
+        auto it = std::find(PreviousFrameOverlaps.begin(), PreviousFrameOverlaps.end(), CurrentPair);
+        if (it == PreviousFrameOverlaps.end())
+        {
+            PendingBeginOverlaps.push_back(CurrentPair);
+        }
+    }
+
+    // [End Overlap] 이전 프레임 장부엔 있었는데, 이번 프레임엔 없는 경우
+    for (const auto& PrevPair : PreviousFrameOverlaps)
+    {
+        auto it = std::find(CurrentFrameOverlaps.begin(), CurrentFrameOverlaps.end(), PrevPair);
+        if (it == CurrentFrameOverlaps.end())
+        {
+            PendingEndOverlaps.push_back(PrevPair);
+        }
+    }
+
+    // 4. 지연된 이벤트 및 로그 한꺼번에 발생
+    for (const auto& Pair : PendingBeginOverlaps)
+    {
+        UE_LOG(Console, Info, "Collision %s and Collision %s Begin Collision!", 
+			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
+
+        // 나중에 BeginOverlap 이벤트를 구현한다면 
+        // Pair.A->OnComponentBeginOverlap(Pair.B);
+        // Pair.B->OnComponentBeginOverlap(Pair.A);
+    }
+
+    for (const auto& Pair : PendingEndOverlaps)
+    {
+        UE_LOG(Console, Info, "Collision %s and Collision %s End Collision!", 
+			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
+
+        // 나중에 EndOverlap 이벤트를 구현한다면 
+        // Pair.A->OnComponentEndOverlap(Pair.B);
+        // Pair.B->OnComponentEndOverlap(Pair.A);
+    }
+
+    // 5. 다음 프레임 비교를 위해 장부 덮어쓰기
+    PreviousFrameOverlaps = CurrentFrameOverlaps;
+
+    // ---------------------------------------------------------
+    // 6. 디버그 박스 렌더링 (Scene이 유효할 때만)
+    // ---------------------------------------------------------
     if (Scene)
     {
         for (int i = 0; i < RegisteredComponents.size(); i++)
@@ -187,7 +240,6 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
             }
         }
     }
-
 }
 
 bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
@@ -195,11 +247,8 @@ bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent
     if (!A->IsA<UShapeComponent>() || !B->IsA<UShapeComponent>())
         return false;
 
-	FCollision* CollisionA = static_cast<UShapeComponent*>(A)->GetCollision();
+    FCollision* CollisionA = static_cast<UShapeComponent*>(A)->GetCollision();
     FCollision* CollisionB = static_cast<UShapeComponent*>(B)->GetCollision();
 
     return CollisionA->IsOverlapping(CollisionB); // Intersect 함수는 수학 라이브러리에 구현
-
 }
-
-
