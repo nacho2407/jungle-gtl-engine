@@ -239,3 +239,13 @@ public:
 private:
     UProjectileMovementComponent* ProjectileComp = nullptr;
 };
+
+class ADestructibleActor : public AActor
+{
+public:
+    DECLARE_CLASS(ADestructibleActor, AActor)
+    ADestructibleActor() = default;
+
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
