@@ -7,6 +7,9 @@
 #include "Physics/NativePhysicsScene.h"
 #include "Physics/PhysXPhysicsScene.h"
 #include "Core/ProjectSettings.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
+#include "Object/UClass.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
 
@@ -76,6 +79,23 @@ void UWorld::DestroyActor(AActor* Actor)
 
 	// Mark for garbage collection
 	UObjectManager::Get().DestroyObject(Actor);
+}
+
+AActor* UWorld::SpawnActorByClass(UClass* Class)
+{
+	if (!Class) return nullptr;
+
+	UObject* Created = FObjectFactory::Get().Create(Class->GetName(), PersistentLevel);
+	AActor* Actor = Cast<AActor>(Created);
+	if (!Actor) return nullptr;
+
+	AddActor(Actor);
+	return Actor;
+}
+
+AGameStateBase* UWorld::GetGameState() const
+{
+	return GameMode ? GameMode->GetGameState() : nullptr;
 }
 
 void UWorld::AddActor(AActor* Actor)
@@ -247,9 +267,24 @@ void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 
+	// GameMode spawn — Editor 월드에서는 생성하지 않는다.
+	// Level::BeginPlay 이전에 spawn하면 그 루프에서 GameMode/GameState도 BeginPlay된다.
+	if (WorldType != EWorldType::Editor && GameModeClass)
+	{
+		AActor* Spawned = SpawnActorByClass(GameModeClass);
+		GameMode = Cast<AGameModeBase>(Spawned);
+	}
+
 	if (PersistentLevel)
 	{
 		PersistentLevel->BeginPlay();
+	}
+
+	// 모든 액터 BeginPlay 완료 후 매치 시작 — 페이즈 변경 브로드캐스트가
+	// 이때 모든 리스너에게 안전하게 도달한다.
+	if (GameMode)
+	{
+		GameMode->StartMatch();
 	}
 
 	// BeginPlay에서 CameraComponent의 register 이후 Possess 시도
@@ -279,6 +314,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 void UWorld::EndPlay()
 {
+	if (GameMode)
+	{
+		GameMode->EndMatch();
+	}
+
 	bHasBegunPlay = false;
 	TickManager.Reset();
 
@@ -300,6 +340,7 @@ void UWorld::EndPlay()
 	Partition.Reset(FBoundingBox());
 
 	PersistentLevel->Clear();
+	GameMode = nullptr; // 액터 리스트가 비워지면서 dangling 되므로 명시적으로 해제
 	MarkWorldPrimitivePickingBVHDirty();
 
 	// PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음

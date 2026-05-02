@@ -425,6 +425,8 @@
     <ClCompile Include="Source\Engine\GameFramework\CameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
@@ -637,6 +639,8 @@
     <ClInclude Include="Source\Engine\GameFramework\CameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
