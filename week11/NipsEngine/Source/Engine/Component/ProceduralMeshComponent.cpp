@@ -5,6 +5,20 @@
 #include <algorithm>
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
+REGISTER_FACTORY(UProceduralMeshComponent)
+
+void UProceduralMeshComponent::CreateFromStaticMesh(UStaticMesh* StaticMesh)
+{
+	if (StaticMesh)
+	{
+        CreateSection(0, StaticMesh->GetMeshData()->Vertices, StaticMesh->GetMeshData()->Indices);
+		for (size_t i = 0; i < StaticMesh->GetMaterialSlots().size(); i++)
+		{
+            UMaterialInterface* Mat = StaticMesh->GetMaterialSlots()[i].Material;
+            SetMaterial(i, Mat);
+		}
+	}
+}
 
 void UProceduralMeshComponent::CreateSection(int32 SectionIndex, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices)
 {
@@ -96,6 +110,21 @@ void UProceduralMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* 
     }
 
     Materials[SlotIndex] = InMaterial;
+}
+
+void UProceduralMeshComponent::PostDuplicate(UObject* Original)
+{
+    UPrimitiveComponent::PostDuplicate(Original);
+
+	UProceduralMeshComponent* ProcMeshComp = Cast<UProceduralMeshComponent>(Original);
+
+	Sections = ProcMeshComp->Sections;
+	Materials = ProcMeshComp->Materials;
+}
+
+void UProceduralMeshComponent::Serialize(FArchive& Ar)
+{
+    UPrimitiveComponent::Serialize(Ar);
 }
 
 void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSliceMeshData& OutFront, FSliceMeshData& OutBack)

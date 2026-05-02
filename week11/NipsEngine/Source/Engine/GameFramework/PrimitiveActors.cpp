@@ -94,6 +94,9 @@ REGISTER_FACTORY(ASpotlightActor)
 DEFINE_CLASS(ABullet, AActor)
 REGISTER_FACTORY(ABullet)
 
+DEFINE_CLASS(ADestructibleActor, AActor)
+REGISTER_FACTORY(ADestructibleActor)
+
 void ACubeActor::InitDefaultComponents()
 {
 	auto* Cube = AddComponent<UStaticMeshComponent>();
@@ -282,7 +285,7 @@ void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 void AStaticMeshActor::InitDefaultComponents()
 {
-	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
+	auto* StaticMesh = AddComponent<UStaticMeshComponent>();
 	SetRootComponent(StaticMesh);
 
 	// Text attached directly to Root
@@ -549,6 +552,10 @@ void ABullet::InitDefaultComponents()
     Sphere->SetRelativeScale(FVector(0.5, 0.5, 0.5));
     SetRootComponent(Sphere);
 
+	auto* BoxComp = AddComponent<UBoxComponent>();
+    BoxComp->AttachToComponent(GetRootComponent());
+    BoxComp->SetGenerateOverlapEvents(true);
+
     ProjectileComp = AddComponent<UProjectileMovementComponent>();
     ProjectileComp->SetInitialSpeed(10);
     ProjectileComp->SetComponentTickEnabled(true);
@@ -564,4 +571,21 @@ void ABullet::SetProjectileVelocity(FVector NewVelocity)
 {
     if (ProjectileComp)
 	    ProjectileComp->SetVelocity(NewVelocity);
+}
+
+void ADestructibleActor::InitDefaultComponents()
+{
+    auto* Root = AddComponent<UProceduralMeshComponent>();
+	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    Root->CreateFromStaticMesh(Mesh);
+    SetRootComponent(Root);
+
+	auto* BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+    BoxComponent->SetGenerateOverlapEvents(true);
+}
+
+void ADestructibleActor::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
 }

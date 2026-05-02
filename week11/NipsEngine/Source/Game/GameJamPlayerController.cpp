@@ -72,7 +72,6 @@ void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y
                 Bullet->SetProjectileVelocity(PossessedActor->GetActorForward() * 40);
             }
         }
-
         break;
     }
     }
