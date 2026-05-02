@@ -1966,15 +1966,6 @@
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />

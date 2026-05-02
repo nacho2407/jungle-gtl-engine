@@ -144,9 +144,6 @@ public:
 	virtual void OnComponentOverlap(UPrimitiveComponent* Other) const;
 	virtual class FCollision* GetCollision() const { return nullptr; }
 
-	TArray<FOverlapInfo> GetOverlapInfos() { return OverlapInfos; }
-    //bool IsOverLappingActor(const AActor* Other);
-
     DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*);
@@ -187,6 +184,5 @@ protected:
 	**/
 	bool bGenerateOverlapEvents;
     bool bBlockComponent; //물리적 차단 / Hit 이벤트 여부
-    TArray<FOverlapInfo> OverlapInfos;
 };
 
