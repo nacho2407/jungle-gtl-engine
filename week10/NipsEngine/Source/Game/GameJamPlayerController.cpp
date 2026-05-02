@@ -16,25 +16,6 @@ AActor* AGameJamPlayerController::SpawnDefaultPawn()
 void AGameJamPlayerController::HandleKeyPressed(int VK)
 {
 	APlayerController::HandleKeyPressed(VK);
-
-    switch (VK)
-    {
-    case 'E':
-    {
-        if (PossessedActor)
-        {
-            UWorld* World = PossessedActor->GetFocusedWorld();
-            if (World)
-            {
-                ABullet* Bullet = World->SpawnActor<ABullet>();
-                Bullet->InitDefaultComponents();
-                Bullet->SetActorLocation(PossessedActor->GetActorLocation());
-            }
-        }
-
-        break;
-    }
-    }
 }
 
 void AGameJamPlayerController::HandleKeyDown(int VK)
@@ -74,8 +55,27 @@ void AGameJamPlayerController::HandleMouseMoveAbsolute(float X, float Y)
 
 void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
 {
-    UE_LOG("Hello!");
 	APlayerController::HandleMouseButtonPressed(VK, X, Y);
+
+    switch (VK)
+    {
+    case VK_LBUTTON:
+    {
+        if (PossessedActor)
+        {
+            UWorld* World = PossessedActor->GetFocusedWorld();
+            if (World)
+            {
+                ABullet* Bullet = World->SpawnActor<ABullet>();
+                Bullet->InitDefaultComponents();
+                Bullet->SetActorLocation(PossessedActor->GetActorLocation());
+                Bullet->SetProjectileVelocity(PossessedActor->GetActorForward() * 40);
+            }
+        }
+
+        break;
+    }
+    }
 }
 
 void AGameJamPlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)

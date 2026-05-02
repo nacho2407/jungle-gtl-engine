@@ -546,11 +546,11 @@ void ABullet::InitDefaultComponents()
 {
     auto* Sphere = AddComponent<UStaticMeshComponent>();
     Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/sphere.obj"));
+    Sphere->SetRelativeScale(FVector(0.5, 0.5, 0.5));
     SetRootComponent(Sphere);
 
-    auto ProjectileComp = AddComponent<UProjectileMovementComponent>();
+    ProjectileComp = AddComponent<UProjectileMovementComponent>();
     ProjectileComp->SetInitialSpeed(10);
-    ProjectileComp->SetVelocity(FVector(1, 0, 0));
     ProjectileComp->SetComponentTickEnabled(true);
     ProjectileComp->SetUpdatedComponent(GetRootComponent());
 }
@@ -558,4 +558,10 @@ void ABullet::InitDefaultComponents()
 void ABullet::Tick(float DeltaTime)
 {
     AActor::Tick(DeltaTime);
+}
+
+void ABullet::SetProjectileVelocity(FVector NewVelocity)
+{
+    if (ProjectileComp)
+	    ProjectileComp->SetVelocity(NewVelocity);
 }
