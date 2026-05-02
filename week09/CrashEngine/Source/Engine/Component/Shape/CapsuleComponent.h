@@ -10,8 +10,12 @@ public:
     UCapsuleComponent();
 
     void Serialize(FArchive& Ar) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
-    virtual FCollision* GetCollision() const override  {   return (FCollision*)&CapsuleCollision; }
+    virtual void OnComponentOverlap(UPrimitiveComponent* Other) const override;
+
+    virtual FCollision* GetCollision() const override { return (FCollision*)&CapsuleCollision; }
 
     virtual void OnTransformDirty() override;
 

@@ -216,6 +216,11 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
     Partition.UpdateActor(Actor);
 }
 
+void UWorld::UpdateCollisionInBVH(UPrimitiveComponent* Comp)
+{
+    //CollisionManager->UpdateCollisionInBVH(Comp);
+}
+
 FLODUpdateContext UWorld::PrepareLODContext()
 {
     if (!ActiveCamera)

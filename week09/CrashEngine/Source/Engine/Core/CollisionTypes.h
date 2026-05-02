@@ -2,6 +2,23 @@
 #pragma once
 #include "Math/Vector.h" // 필요한 최소한의 수학 라이브러리만
 
+class AActor;
+class UPrimitiveComponent;
+
+struct FOverlapInfo
+{
+    AActor* OverlapActor;
+
+	UPrimitiveComponent* OverlapComponent;
+
+	UPrimitiveComponent* MyComponent;
+
+	bool operator==(const FOverlapInfo& Other) const
+    {
+        return OverlapActor == Other.OverlapActor &&
+               OverlapComponent == Other.OverlapComponent;
+    }
+};
 // FHitResult는 엔진 처리에 필요한 데이터를 묶는 구조체입니다.
 struct FHitResult
 {
