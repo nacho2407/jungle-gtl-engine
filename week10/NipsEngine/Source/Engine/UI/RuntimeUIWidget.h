@@ -119,7 +119,12 @@ public:
     void SetHovered(bool bInHovered) { bHovered = bInHovered; }
     void SetPressed(bool bInPressed) { bPressed = bInPressed; }
 
-    void ComputeLayout(const FRuntimeUIRect& ParentRect, bool bParentVisible, bool bParentEnabled, float ParentAlpha);
+    void ComputeLayout(
+        const FRuntimeUIRect& ParentRect,
+        bool bParentVisible,
+        bool bParentEnabled,
+        float ParentAlpha,
+        float LayoutScale = 1.0f);
 
 private:
     FString Id;

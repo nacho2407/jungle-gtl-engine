@@ -391,7 +391,13 @@ void FRuntimeUISystem::UpdateLayout(const FRuntimeUIRenderContext& Context)
             FRuntimeUIWidget* RootWidget = FindWidget(RootWidgetId);
             if (RootWidget)
             {
-                ComputeWidgetTree(*RootWidget, Canvas.GetComputedRect(), bCanvasVisible, Canvas.IsEnabled(), 1.0f);
+                ComputeWidgetTree(
+                    *RootWidget,
+                    Canvas.GetComputedRect(),
+                    bCanvasVisible,
+                    Canvas.IsEnabled(),
+                    1.0f,
+                    Canvas.GetComputedScale());
             }
         }
     }
@@ -562,9 +568,10 @@ void FRuntimeUISystem::ComputeWidgetTree(
     const FRuntimeUIRect& ParentRect,
     bool bParentVisible,
     bool bParentEnabled,
-    float ParentAlpha)
+    float ParentAlpha,
+    float LayoutScale)
 {
-    Widget.ComputeLayout(ParentRect, bParentVisible, bParentEnabled, ParentAlpha);
+    Widget.ComputeLayout(ParentRect, bParentVisible, bParentEnabled, ParentAlpha, LayoutScale);
 
     TArray<FString> Children = Widget.GetChildren();
     std::sort(
@@ -589,7 +596,8 @@ void FRuntimeUISystem::ComputeWidgetTree(
                 Widget.GetComputedRect(),
                 Widget.IsComputedVisible(),
                 Widget.IsComputedEnabled(),
-                Widget.GetComputedAlpha());
+                Widget.GetComputedAlpha(),
+                LayoutScale);
         }
     }
 }

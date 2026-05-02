@@ -706,6 +706,13 @@ void UEditorEngine::StopPlaySessionNow()
         ViewportPIEHandles.erase(HandleIt);
         
         UnregisterWorld(PIEHandle);
+
+        // PIE에서 Lua Audio API로 직접 재생한 전역 사운드는 Actor EndPlay 소유가 아니므로
+        // 마지막 PIE 세션이 끝날 때 명시적으로 정리합니다.
+        if (ViewportPIEHandles.empty())
+        {
+            GetAudioSystem().StopAll();
+        }
     }
 
     // 원본 에디터 월드를 검색합니다.

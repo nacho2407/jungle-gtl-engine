@@ -133,6 +133,39 @@ Component:SetComponentTickEnabled(enabled)
 
 Common component `typeName` values include `"ScriptComponent"`, `"CameraComponent"`, `"StaticMeshComponent"`, `"PrimitiveComponent"`, `"SoundComponent"`, `"DecalComponent"`, `"BillboardComponent"`, `"SubUVComponent"`, `"BoxComponent"`, `"SphereComponent"`, and `"CapsuleComponent"`.
 
+Common patterns:
+
+```lua
+-- Find one tagged player and attach a script component if missing.
+local player = Engine.API.World.FindActorByTag("Player")
+if player then
+    local script = player:GetComponent("ScriptComponent")
+    if not script then
+        script = player:AddComponent("ScriptComponent")
+    end
+    script:SetScriptName("PlayerRuntime")
+    script:LoadScript()
+end
+```
+
+```lua
+-- Toggle every primitive-like component on an actor.
+local actor = Engine.API.World.FindActorByName("Enemy_01")
+if actor then
+    for _, component in ipairs(actor:GetComponentsByType("PrimitiveComponent")) do
+        component:SetActive(false)
+    end
+end
+```
+
+```lua
+-- Spawn from prefab, then tag it for later manager-side lookup.
+local enemy = Engine.API.World.SpawnActorFromPrefab("Enemy.prefab")
+if enemy then
+    enemy:AddTag("Enemy")
+end
+```
+
 ## Time
 
 ```lua
@@ -220,8 +253,18 @@ Engine.API.World.GetAllActors()
 Engine.API.World.GetActorCount()
 Engine.API.World.IsValidActor(actor)
 Engine.API.World.SpawnActor(typeName)
+Engine.API.World.SpawnActorFromPrefab(relativePath)
 Engine.API.World.DestroyActor(actor)
 ```
+
+Prefab paths are constrained under `Asset/`. If only a file name is passed, the engine looks under `Asset/Prefab/`.
+
+```lua
+local enemy = Engine.API.World.SpawnActorFromPrefab("Enemy.prefab")
+local blade = Engine.API.World.SpawnActorFromPrefab("Asset/Prefab/BladePickup.prefab")
+```
+
+Spawned prefabs do not preserve saved UUIDs, so the same prefab can be spawned multiple times safely. Actor names are made unique automatically when there is a collision.
 
 ## Audio
 
@@ -291,6 +334,16 @@ Engine.API.UI.PollActionEvents()
 `SetSpriteFrame` cuts a texture atlas by grid. `SetSpriteFrameByMeta` uses registered Particle/SubUV atlas meta data and also applies the atlas image path to the widget.
 Animation `easing` accepts `"Linear"`, `"EaseIn"`, `"EaseOut"`, `"EaseInOut"`, or `"SmoothStep"`. Omit it to keep the old linear interpolation.
 Font face switching is not exposed yet; `SetFontScale` controls runtime UI text size using the current ImGui font.
+Anchors and pivot are applied during layout. With the default scale-with-screen canvas, local position and size are scaled from the reference resolution while anchors stay relative to the current viewport.
+
+```lua
+-- Center a panel and keep it centered while the window resizes.
+Engine.API.UI.SetWidgetAnchors("PausePanel", 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
+
+-- Stretch a bar across the bottom. Size is an offset added after stretch.
+Engine.API.UI.SetWidgetAnchors("BottomBar", 0.0, 1.0, 1.0, 1.0, 0.0, 1.0)
+Engine.API.UI.SetWidgetTransform("BottomBar", 0, 0, 0, 64)
+```
 
 For menu/pause screens in GameClient, switch input mode while the UI is open:
 

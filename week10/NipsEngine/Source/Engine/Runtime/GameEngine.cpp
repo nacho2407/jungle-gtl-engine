@@ -67,8 +67,32 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 
 void UGameEngine::Shutdown()
 {
+    // Lua VM을 내리기 전에 Game World EndPlay를 먼저 호출해야 ScriptComponent::EndPlay가 안전하게 실행됩니다.
+    for (FWorldContext& Context : WorldList)
+    {
+        if (Context.World)
+        {
+            Context.World->EndPlay(EEndPlayReason::Type::Quit);
+        }
+    }
+
+    // Lua Audio API로 재생한 전역 사운드는 특정 SoundComponent 소유가 아니므로 별도로 정리합니다.
+    GetAudioSystem().StopAll();
+
     FScriptManager::Get().ShutdownLuaState();
     ShutdownRuntimeUIBackend();
+
+    for (FWorldContext& Context : WorldList)
+    {
+        if (Context.World)
+        {
+            UObjectManager::Get().DestroyObject(Context.World);
+        }
+    }
+    WorldList.clear();
+    ActiveWorldHandle = FName::None;
+    PlayerController = nullptr;
+
     UEngine::Shutdown();
 }
 

@@ -10,6 +10,7 @@
 #include "ImGui/imgui.h"
 #include "Component/GizmoComponent.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Serialization/PrefabManager.h"
 
 #include <Windows.h>
 #include <commdlg.h>
@@ -301,6 +302,49 @@ bool FEditorSceneWidget::PromptSaveSceneAs(FString& OutFilePath) const
 	return true;
 }
 
+bool FEditorSceneWidget::PromptSavePrefabAs(const AActor* Actor, FString& OutFilePath) const
+{
+	OutFilePath.clear();
+	if (!Actor)
+	{
+		return false;
+	}
+
+	WCHAR FileBuffer[MAX_PATH] = {};
+	std::filesystem::path PrefabDir(FPrefabManager::GetPrefabDirectory());
+	PrefabDir = PrefabDir.lexically_normal();
+	std::error_code CreateDirEc;
+	std::filesystem::create_directories(PrefabDir, CreateDirEc);
+
+	FString ActorName = Actor->GetName();
+	if (ActorName.empty())
+	{
+		ActorName = Actor->GetTypeInfo() ? Actor->GetTypeInfo()->name : "Actor";
+	}
+
+	const std::wstring DefaultFile = (PrefabDir / (FPaths::ToWide(ActorName) + FPrefabManager::PrefabExtension)).wstring();
+	const std::wstring InitialDir = PrefabDir.wstring();
+	wcsncpy_s(FileBuffer, MAX_PATH, DefaultFile.c_str(), _TRUNCATE);
+
+	OPENFILENAMEW DialogDesc = {};
+	DialogDesc.lStructSize = sizeof(DialogDesc);
+	DialogDesc.hwndOwner = EditorEngine && EditorEngine->GetWindow() ? EditorEngine->GetWindow()->GetHWND() : nullptr;
+	DialogDesc.lpstrFilter = L"Prefab Files (*.prefab)\0*.prefab\0All Files (*.*)\0*.*\0";
+	DialogDesc.lpstrFile = FileBuffer;
+	DialogDesc.nMaxFile = MAX_PATH;
+	DialogDesc.lpstrInitialDir = InitialDir.c_str();
+	DialogDesc.lpstrDefExt = L"prefab";
+	DialogDesc.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+
+	if (!GetSaveFileNameW(&DialogDesc))
+	{
+		return false;
+	}
+
+	OutFilePath = FPaths::ToUtf8(FileBuffer);
+	return true;
+}
+
 void FEditorSceneWidget::SetCurrentScenePath(const FString& FilePath)
 {
 	CurrentSceneFilePath = FPaths::Normalize(FilePath);
@@ -424,6 +468,23 @@ void FEditorSceneWidget::Render(float DeltaTime)
             const FString CurrentName = PendingRenameActor ? PendingRenameActor->GetFName().ToString() : FString();
             strncpy_s(RenameActorName, IM_ARRAYSIZE(RenameActorName), CurrentName.c_str(), _TRUNCATE);
             bOpenRenameActorPopup = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::Separator();
+        ImGui::BeginDisabled(RenameTarget == nullptr);
+        if (ImGui::MenuItem("Prefabication..."))
+        {
+            FString PrefabPath;
+            if (PromptSavePrefabAs(RenameTarget, PrefabPath) && FPrefabManager::SaveActorPrefab(RenameTarget, PrefabPath))
+            {
+                EditorEngine->GetMainPanel().PushFooterLog("Prefab saved");
+            }
+            else
+            {
+                EditorEngine->GetMainPanel().PushFooterLog("Prefab save canceled or failed");
+            }
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndDisabled();

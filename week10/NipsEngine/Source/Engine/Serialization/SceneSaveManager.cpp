@@ -21,6 +21,7 @@
 #include "Core/ResourceManager.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonWriter.h"
+#include "Serialization/ActorSerialization.h"
 
 namespace SceneKeys
 {
@@ -67,66 +68,6 @@ static EWorldType StringToWorldType(const FString& Str)
 	return EWorldType::Editor;
 }
 
-static FString GetNormalizedType(FString Type)
-{
-	if (Type == "StaticMeshComp")
-	{
-		return "UStaticMeshComponent";
-	}
-	return Type;
-}
-
-static FString GetJsonString(json::JSON& Object, const char* Key, const FString& DefaultValue = "")
-{
-	return Object.hasKey(Key) ? Object[Key].ToString() : DefaultValue;
-}
-
-static uint32 GetJsonUInt(json::JSON& Object, const char* Key, uint32 DefaultValue = 0)
-{
-	return Object.hasKey(Key) ? static_cast<uint32>(Object[Key].ToInt()) : DefaultValue;
-}
-
-static json::JSON BuildComponentJson(UActorComponent* Component)
-{
-	json::JSON ComponentJson = json::Object();
-	FJsonWriter ComponentWriter(ComponentJson);
-	Component->Serialize(ComponentWriter);
-
-	ComponentJson[SceneKeys::UUID] = static_cast<int32>(Component->GetUUID());
-	ComponentJson[SceneKeys::ClassName] = Component->GetTypeInfo()->name;
-	return ComponentJson;
-}
-
-static json::JSON BuildActorJson(AActor* Actor)
-{
-	json::JSON ActorJson = json::Object();
-	ActorJson[SceneKeys::UUID] = static_cast<int32>(Actor->GetUUID());
-	ActorJson[SceneKeys::ClassName] = Actor->GetTypeInfo()->name;
-	ActorJson[SceneKeys::Name] = Actor->GetName();
-	ActorJson[SceneKeys::Visible] = Actor->IsVisible();
-	ActorJson["EditorOnly"] = Actor->ShouldTickInEditor();
-	ActorJson[SceneKeys::RootComponent] = Actor->GetRootComponent()
-		? static_cast<int32>(Actor->GetRootComponent()->GetUUID())
-		: 0;
-
-	FJsonWriter ActorWriter(ActorJson);
-	TArray<FString> ActorTags = Actor->GetTags();
-	ActorWriter << SceneKeys::Tags << ActorTags;
-
-	ActorJson[SceneKeys::Components] = json::Array();
-	for (UActorComponent* Component : Actor->GetComponents())
-	{
-		if (!Component || Component->IsTransient())
-		{
-			continue;
-		}
-
-		ActorJson[SceneKeys::Components].append(BuildComponentJson(Component));
-	}
-
-	return ActorJson;
-}
-
 static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext& WorldContext, const FEditorCameraState* CameraState)
 {
 	json::JSON Root = json::Object();
@@ -162,7 +103,7 @@ static json::JSON BuildSceneSnapshotJson(const FString& SceneName, FWorldContext
 	{
 		if (!Actor) continue;
 
-		Root[SceneKeys::Actors].append(BuildActorJson(Actor));
+		Root[SceneKeys::Actors].append(FActorSerialization::BuildActorJson(Actor));
 	}
 
 	return Root;
@@ -268,154 +209,12 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 		for (int32 ActorIndex = 0; ActorIndex < static_cast<int32>(ActorsNode.length()); ++ActorIndex)
 		{
 			json::JSON& ActorData = ActorsNode.at(ActorIndex);
-			const FString ActorClass = GetJsonString(ActorData, SceneKeys::ClassName, "AActor");
-			AActor* NewActor = Cast<AActor>(FObjectFactory::Get().Create(ActorClass));
-			if (!NewActor)
-			{
-				continue;
-			}
-
-			NewActor->InitDefaultComponents();
-			NewActor->SetUUID(GetJsonUInt(ActorData, SceneKeys::UUID, NewActor->GetUUID()));
-			const FString ActorName = GetJsonString(ActorData, SceneKeys::Name);
-			if (!ActorName.empty())
-			{
-				NewActor->SetFName(FName(ActorName));
-			}
-			if (ActorData.hasKey(SceneKeys::Visible))
-			{
-				NewActor->SetVisible(ActorData[SceneKeys::Visible].ToBool());
-			}
-			if (ActorData.hasKey("EditorOnly"))
-			{
-				NewActor->SetTickInEditor(ActorData["EditorOnly"].ToBool());
-			}
-			if (ActorData.hasKey(SceneKeys::Tags))
-			{
-				TArray<FString> ActorTags;
-				FJsonReader ActorReader(ActorData);
-				ActorReader << SceneKeys::Tags << ActorTags;
-				NewActor->ClearTags();
-				for (const FString& Tag : ActorTags)
-				{
-					NewActor->AddTag(Tag);
-				}
-			}
-
-			NewActor->SetWorld(World);
-			if (ULevel* Level = World->GetPersistentLevel())
-			{
-				Level->AddActor(NewActor);
-			}
-
-			json::JSON& ComponentsNode = ActorData[SceneKeys::Components];
-			const uint32 RootUUID = GetJsonUInt(ActorData, SceneKeys::RootComponent);
-			TMap<uint32, UActorComponent*> UUIDToComp;
-			TArray<UActorComponent*> UnusedDefaultComponents = NewActor->GetComponents();
-
-			auto TakeDefaultComponent = [&](const FString& TypeName) -> UActorComponent*
-			{
-				for (auto It = UnusedDefaultComponents.begin(); It != UnusedDefaultComponents.end(); ++It)
-				{
-					UActorComponent* Candidate = *It;
-					if (Candidate && GetNormalizedType(Candidate->GetTypeInfo()->name) == TypeName)
-					{
-						UnusedDefaultComponents.erase(It);
-						return Candidate;
-					}
-				}
-				return nullptr;
-			};
-
-			auto MarkDefaultComponentUsed = [&](UActorComponent* Component)
-			{
-				auto It = std::find(UnusedDefaultComponents.begin(), UnusedDefaultComponents.end(), Component);
-				if (It != UnusedDefaultComponents.end())
-				{
-					UnusedDefaultComponents.erase(It);
-				}
-			};
-
-			for (int32 CompIndex = 0; CompIndex < static_cast<int32>(ComponentsNode.length()); ++CompIndex)
-			{
-				json::JSON& CompData = ComponentsNode.at(CompIndex);
-				const uint32 CompUUID = GetJsonUInt(CompData, SceneKeys::UUID);
-				const FString Type = GetNormalizedType(GetJsonString(CompData, SceneKeys::ClassName, GetJsonString(CompData, SceneKeys::Type)));
-				if (CompUUID == 0 || Type.empty())
-				{
-					continue;
-				}
-
-				UActorComponent* Component = nullptr;
-				if (CompUUID == RootUUID && NewActor->GetRootComponent()
-					&& GetNormalizedType(NewActor->GetRootComponent()->GetTypeInfo()->name) == Type)
-				{
-					Component = NewActor->GetRootComponent();
-					MarkDefaultComponentUsed(Component);
-				}
-				if (!Component)
-				{
-					Component = TakeDefaultComponent(Type);
-				}
-				if (!Component)
-				{
-					UObject* NewObj = FObjectFactory::Get().Create(Type);
-					Component = Cast<UActorComponent>(NewObj);
-					if (!Component)
-					{
-						UObjectManager::Get().DestroyObject(NewObj);
-						continue;
-					}
-					NewActor->RegisterComponent(Component);
-				}
-
-				Component->SetUUID(CompUUID);
-				UUIDToComp[CompUUID] = Component;
-				if (CompUUID == RootUUID)
-				{
-					if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
-					{
-						NewActor->SetRootComponent(SceneComponent);
-					}
-				}
-			}
-
-			for (int32 CompIndex = 0; CompIndex < static_cast<int32>(ComponentsNode.length()); ++CompIndex)
-			{
-				json::JSON& CompData = ComponentsNode.at(CompIndex);
-				const uint32 CompUUID = GetJsonUInt(CompData, SceneKeys::UUID);
-				const uint32 ParentUUID = GetJsonUInt(CompData, SceneKeys::ParentUUID);
-				if (ParentUUID == 0)
-				{
-					continue;
-				}
-
-				USceneComponent* SceneComponent = Cast<USceneComponent>(UUIDToComp[CompUUID]);
-				USceneComponent* ParentComponent = Cast<USceneComponent>(UUIDToComp[ParentUUID]);
-				if (SceneComponent && ParentComponent)
-				{
-					SceneComponent->AttachToComponent(ParentComponent);
-				}
-			}
-
-			for (int32 CompIndex = 0; CompIndex < static_cast<int32>(ComponentsNode.length()); ++CompIndex)
-			{
-				json::JSON& CompData = ComponentsNode.at(CompIndex);
-				const uint32 CompUUID = GetJsonUInt(CompData, SceneKeys::UUID);
-				UActorComponent* Component = UUIDToComp[CompUUID];
-				if (!Component)
-				{
-					continue;
-				}
-
-				FJsonReader ComponentReader(CompData);
-				Component->Serialize(ComponentReader);
-				Component->PostEditProperty("Rotation");
-				if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
-				{
-					SceneComponent->MarkTransformDirty();
-				}
-			}
+			FActorLoadOptions Options;
+			Options.bPreserveUUIDs = true;
+			Options.bPreserveName = true;
+			Options.bMakeNameUnique = false;
+			Options.bCallBeginPlayIfWorldBegunPlay = false;
+			FActorSerialization::SpawnActorFromJson(World, ActorData, Options);
 		}
 	}
 
