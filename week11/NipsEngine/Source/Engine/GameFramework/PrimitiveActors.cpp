@@ -22,6 +22,7 @@
 #include "Component/BoxComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
 
 namespace
 {
@@ -89,6 +90,9 @@ REGISTER_FACTORY(APointLightActor)
 
 DEFINE_CLASS(ASpotlightActor, APointLightActor)
 REGISTER_FACTORY(ASpotlightActor)
+
+DEFINE_CLASS(ABullet, AActor)
+REGISTER_FACTORY(ABullet)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -536,4 +540,22 @@ void ASpotlightActor::Tick(float DeltaTime)
 	{
 		BillboardComp->SetColor(GetLight()->LightColor);
 	}
+}
+
+void ABullet::InitDefaultComponents()
+{
+    auto* Sphere = AddComponent<UStaticMeshComponent>();
+    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/sphere.obj"));
+    SetRootComponent(Sphere);
+
+    auto ProjectileComp = AddComponent<UProjectileMovementComponent>();
+    ProjectileComp->SetInitialSpeed(10);
+    ProjectileComp->SetVelocity(FVector(1, 0, 0));
+    ProjectileComp->SetComponentTickEnabled(true);
+    ProjectileComp->SetUpdatedComponent(GetRootComponent());
+}
+
+void ABullet::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
 }
