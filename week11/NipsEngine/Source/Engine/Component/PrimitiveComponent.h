@@ -7,6 +7,7 @@
 #include "Core/CollisionTypes.h"
 #include "Engine/Geometry/AABB.h"
 #include "Core/Delegates/Delegate.h"
+#include "Collision/Collision.h"
 
 /*
 	아직 미사용
@@ -72,12 +73,12 @@ public:
 
     virtual bool SupportsOutline() const { return true; }
 
-    const TSet<UPrimitiveComponent*>& GetOverlapInfos() const { return CurOverlaps; }
+    const TMap<UPrimitiveComponent*, FCollisionResult>& GetOverlapInfos() const { return CurOverlaps; }
     bool IsOverlappingActor(const AActor* OtherActor) const;
     bool ShouldGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
     void ClearOverlaps() { CurOverlaps.clear(); }
-    void AddOverlap(UPrimitiveComponent* OtherComp) { CurOverlaps.insert(OtherComp); }
-    void SetPrevOverlaps(const TSet<UPrimitiveComponent*>& InOverlaps) { PrevOverlaps = InOverlaps; }
+    void AddOverlap(UPrimitiveComponent* OtherComp, const FCollisionResult& CollisionResult) { CurOverlaps[OtherComp] = CollisionResult; }
+    void SetPrevOverlaps(const TMap<UPrimitiveComponent*, FCollisionResult>& InOverlaps) { PrevOverlaps = InOverlaps; }
 	// Begin, End 체크
     void ResolveOverlaps();
 
@@ -92,8 +93,8 @@ protected:
 
     bool bGenerateOverlapEvents = false;
     bool bBlockComponent = false; // ComponentHit
-    TSet<UPrimitiveComponent*> CurOverlaps;
-    TSet<UPrimitiveComponent*> PrevOverlaps;
+    TMap<UPrimitiveComponent*, FCollisionResult> CurOverlaps;
+    TMap<UPrimitiveComponent*, FCollisionResult> PrevOverlaps;
 };
 
 // struct FMeshData;
