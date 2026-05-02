@@ -156,6 +156,12 @@ public:
     void BroadcastComponentEndOverlap(AActor* OtherActor);
     void BroadcastComponentHit(AActor* OtherActor);
 
+	TArray<FOverlapInfo> GetOverlapInfos() { return OverlapInfos; }
+    bool IsOverLappingActor(const AActor* Other);
+    void AddOverlapInfo(UPrimitiveComponent* OtherComp);
+    void RemoveOverlapInfo(UPrimitiveComponent* OtherComp);
+
+
 protected:
     void OnTransformDirty() override;
     void EnsureWorldAABBUpdated() const;
@@ -184,5 +190,6 @@ protected:
 	**/
 	bool bGenerateOverlapEvents;
     bool bBlockComponent; //물리적 차단 / Hit 이벤트 여부
+    TArray<FOverlapInfo> OverlapInfos;
 };
 

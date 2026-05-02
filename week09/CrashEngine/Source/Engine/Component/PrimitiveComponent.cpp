@@ -325,6 +325,55 @@ void UPrimitiveComponent::BroadcastComponentHit(AActor* OtherActor)
     OnComponentHit.BroadCast(this, OtherActor);
 }
 
+bool UPrimitiveComponent::IsOverLappingActor(const AActor* Other)
+{
+    if (!Other)
+        return false;
+
+    // 현재 겹쳐있는 대상들의 목록을 순회하면서, 상대방 액터가 내가 찾는 액터인지 검사
+    for (const FOverlapInfo& Info : OverlapInfos)
+    {
+        if (Info.OverlapActor == Other)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void UPrimitiveComponent::AddOverlapInfo(UPrimitiveComponent* OtherComp)
+{
+    if (!OtherComp)
+        return;
+
+    FOverlapInfo NewInfo;
+    // 상대 컴포넌트가 소속된 액터를 가져옵니다. (언리얼의 GetOwner() 같은 함수가 있다고 가정)
+    NewInfo.OverlapActor = OtherComp->GetOwner();
+    NewInfo.OverlapComponent = OtherComp;
+
+    // 중복 추가 방지 (혹시 모를 예외 처리)
+    auto it = std::find(OverlapInfos.begin(), OverlapInfos.end(), NewInfo);
+    if (it == OverlapInfos.end())
+    {
+        OverlapInfos.push_back(NewInfo); // TArray라면 Add()
+    }
+}
+
+void UPrimitiveComponent::RemoveOverlapInfo(UPrimitiveComponent* OtherComp)
+{
+    if (!OtherComp)
+        return;
+
+    // OtherComp와 일치하는 정보만 배열에서 찾아서 삭제합니다.
+    OverlapInfos.erase(
+        std::remove_if(OverlapInfos.begin(), OverlapInfos.end(),
+                       [OtherComp](const FOverlapInfo& Info)
+                       {
+                           return Info.OverlapComponent == OtherComp;
+                       }),
+        OverlapInfos.end());
+}
+
 void UPrimitiveComponent::MarkRenderStateDirty()
 {
     DestroyRenderState();
@@ -349,4 +398,3 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
         UpdateWorldAABB();
     }
 }
-

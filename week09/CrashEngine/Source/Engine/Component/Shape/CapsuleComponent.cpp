@@ -13,6 +13,7 @@ void UCapsuleComponent::Serialize(FArchive& Ar)
     UShapeComponent::Serialize(Ar);
     Ar << CapsuleHalfHeight;
     Ar << CapsuleRadius;
+    Ar << CapsuleCollision;
 }
 
 void UCapsuleComponent::OnTransformDirty()
