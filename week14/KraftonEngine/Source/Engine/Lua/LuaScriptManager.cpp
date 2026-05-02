@@ -1,6 +1,7 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Component/Movement/CarMovementComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -20,6 +21,7 @@ void FLuaScriptManager::Initialize()
 {
 	Lua = std::make_unique<sol::state>();
 	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::coroutine);
+	(*Lua)["package"]["path"] = FPaths::ToUtf8(FPaths::Combine(FPaths::ScriptDir(), L"?.lua").c_str());
 	RegisterBindings(*Lua);
 }
 
@@ -218,6 +220,11 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 
 void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 {
+	Lua.new_usertype<UCarMovementComponent>("CarMovementComponent",
+		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
+		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
+		"GetForwardSpeed", &UCarMovementComponent::GetForwardSpeed);
+
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(
 		[](AActor& Actor)
@@ -268,6 +275,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		Actor.AddActorWorldOffset(Offset);
 	},
 
+		"GetCarMovement", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UCarMovementComponent>();
+	},
+
 		"UUID", sol::property([](AActor& Actor)
 	{
 		return Actor.GetUUID();
@@ -301,7 +313,8 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"bind_click", [](UUserWidget& Widget, const FString& ElementId, sol::protected_function Callback)
 	{
 		Widget.BindClick(ElementId, Callback);
-	});
+	},
+		"SetText", &UUserWidget::SetText);
 
 	sol::table UI = Lua.create_named_table("UI");
 	UI.set_function("CreateWidget", [](const FString& DocumentPath)

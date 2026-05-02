@@ -85,3 +85,20 @@ void UUserWidget::ClearEventListeners()
 	}
 	ClickListeners.clear();
 }
+
+void UUserWidget::SetText(const FString& ElementId, const FString& Text)
+{
+	if (!Document)
+	{
+		return;
+	}
+
+	Rml::Element* Element = Document->GetElementById(ElementId);
+	if (!Element)
+	{
+		UE_LOG("[RmlUi] Text target not found: %s", ElementId.c_str());
+		return;
+	}
+
+	Element->SetInnerRML(Text.c_str());
+}
