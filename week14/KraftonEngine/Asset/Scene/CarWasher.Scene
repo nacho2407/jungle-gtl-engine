@@ -1,0 +1,208 @@
+{
+  "Actors" : [{
+      "ClassName" : "ACapsuleActor",
+      "Name" : "Player",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [0.000000, 0.000000, 1.712443],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, -180.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/yellow.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/green.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/lambert1.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/orange.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/white.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-1.861480, -0.981201, 0.418669],
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [5.000000, 5.000000, 5.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\WaterGun\\WaterGun.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UCapsuleComponent",
+        "Properties" : {
+          "Capsule Half Height" : 3.000000,
+          "Capsule Radius" : 1.800000,
+          "Cast Shadow" : false,
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.048823, -0.406745, 2.229708],
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "System",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GlobalManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [1.595953, -5.344582, 2.240409],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Car",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/MI_Body.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/Decals.001.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/Interior.001.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/Trim.001.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/Chassis.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-8.125187, -1.884955, 0.884545],
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [3.000000, 3.000000, 3.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\TruckBody.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "NewScene",
+  "ContextName" : "New Scene",
+  "Name" : "CarWasher",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [0.841812, 3.696185, 5.113649],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 26.865280, -148.648087]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
