@@ -166,6 +166,15 @@
     <Filter Include="Source\Game">
       <UniqueIdentifier>{7b75b017-e44b-6189-2a88-30dc16a5724f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\GameMode">
+      <UniqueIdentifier>{180756f8-cd60-823a-2895-cf41347cb361}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\GameState">
+      <UniqueIdentifier>{28248026-b2c1-326a-d8fc-c6a454813320}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\PlayerController">
+      <UniqueIdentifier>{98f08a21-3450-b417-9a82-c35be6aaeec5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\ObjViewer">
       <UniqueIdentifier>{3e63d691-bd37-40d8-2cea-c874f8e3a95b}</UniqueIdentifier>
     </Filter>
@@ -917,14 +926,17 @@
     <ClCompile Include="Source\Game\GameEngine.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\GameModeCarGame.cpp">
-      <Filter>Source\Game</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\GameStateCarGame.cpp">
-      <Filter>Source\Game</Filter>
+    <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp">
+      <Filter>Source\Game\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp">
+      <Filter>Source\Game\GameState</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp">
+      <Filter>Source\Game\PlayerController</Filter>
     </ClCompile>
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp">
       <Filter>Source\ObjViewer</Filter>
@@ -1658,14 +1670,17 @@
     <ClInclude Include="Source\Game\GameEngine.h">
       <Filter>Source\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\GameModeCarGame.h">
-      <Filter>Source\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\GameRenderPipeline.h">
       <Filter>Source\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\GameStateCarGame.h">
-      <Filter>Source\Game</Filter>
+    <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h">
+      <Filter>Source\Game\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameState\GameStateCarGame.h">
+      <Filter>Source\Game\GameState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h">
+      <Filter>Source\Game\PlayerController</Filter>
     </ClInclude>
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h">
       <Filter>Source\ObjViewer</Filter>

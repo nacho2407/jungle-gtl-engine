@@ -8,9 +8,9 @@ class ATriggerVolumeBase;
 // ============================================================
 // AGameModeCarGame — 자동차 게임의 페이즈 전이 주체
 //
-// 시작 시 Phase = CarWash로 진입.
-// 트리거 진입 시 TriggerTag 기반으로 현재 페이즈를 None으로 리셋한다.
-// 다음 페이즈 진입은 별도 트리거/외부 로직이 처리.
+// 시작 시 Phase = None.
+// 트리거 진입 시 TriggerTag(CarWash/EscapePolice/DodgeMeteor)에 해당하는
+// 페이즈로 진입하고, 트리거 이탈 시 그 페이즈가 활성 상태이면 None으로 리셋한다.
 // ============================================================
 class AGameModeCarGame : public AGameModeBase
 {
@@ -22,4 +22,5 @@ public:
 
 	void StartMatch() override;
 	void OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger, APawn* Pawn) override;
+	void OnPossessedPawnExitedTrigger(ATriggerVolumeBase* Trigger, APawn* Pawn) override;
 };
