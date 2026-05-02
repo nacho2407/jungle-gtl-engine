@@ -2,14 +2,16 @@
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/Shape/ShapeComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Engine/Component/CameraComponent.h"
 #include "Render/Visibility/LOD/LODContext.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
+#include "Engine/Physics/CollisionManager.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
-
+UWorld::UWorld() = default;
 UWorld::~UWorld()
 {
     if (PersistentLevel && !PersistentLevel->GetActors().empty())
@@ -24,6 +26,8 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
     // 새 UWorld를 만들고, 소스의 Actor들을 하나씩 복제해 NewWorld를 Outer로 삼아 등록한다.
     // AActor::Duplicate 내부에서 Dup->GetTypedOuter<UWorld>() 경유 AddActor가 호출되므로
     // 여기서는 World 단위 상태만 챙기면 된다.
+
+
     UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
     if (!NewWorld)
     {
@@ -49,6 +53,16 @@ void UWorld::DestroyActor(AActor* Actor)
     // remove and clean up
     if (!Actor)
         return;
+
+	//충돌체 해재
+	for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
+    {
+        if (Comp->IsA<UShapeComponent>())
+        {
+            CollisionManager->UnregisterComponent(static_cast<UShapeComponent*>(Comp));
+        }
+    }
+
     Actor->EndPlay();
     // Remove from actor list
     PersistentLevel->RemoveActor(Actor);
@@ -85,6 +99,15 @@ void UWorld::AddActor(AActor* Actor)
 
     InsertActorToOctree(Actor);
     MarkEditorPickingAndScenePrimitiveBVHsDirty();
+
+	//충돌체 등록
+	//for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
+ //   {
+ //       if (Comp->IsA<UShapeComponent>())
+ //       {
+ //           CollisionManager->RegisterComponent(static_cast<UShapeComponent*>(Comp));
+ //       }
+ //   }
 
     // PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
     if (bHasBegunPlay && !Actor->HasActorBegunPlay())
@@ -230,6 +253,8 @@ void UWorld::InitWorld()
     Partition.Reset(FBoundingBox());
     PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
     PersistentLevel->SetWorld(this);
+
+	CollisionManager = std::make_unique<FCollisionManager>();
 }
 
 void UWorld::BeginPlay()
@@ -239,7 +264,22 @@ void UWorld::BeginPlay()
     if (PersistentLevel)
     {
         PersistentLevel->BeginPlay();
+
+
+
+		/*for (auto Actor : PersistentLevel->GetActors())
+        {
+            for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
+            {
+                if (Comp->IsA<UShapeComponent>())
+                {
+                    CollisionManager->RegisterComponent(static_cast<UShapeComponent*>(Comp));
+                }
+            }
+        }*/
     }
+    
+
 }
 
 void UWorld::Tick(float DeltaTime, ELevelTick TickType)
@@ -253,6 +293,7 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
     Scene.GetDebugPrimitiveQueue().ClearOneFramePrimitives();
     Scene.GetDebugPrimitiveQueue().Tick(DeltaTime);
 
+	CollisionManager->TickCollision(DeltaTime, &Scene);
 
     TickManager.Tick(this, DeltaTime, TickType);
 }

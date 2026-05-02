@@ -73,6 +73,7 @@ void UActorComponent::SetOwner(AActor* Actor)
     PrimaryComponentTick.bCanEverTick = true;
     PrimaryComponentTick.bTickEnabled = bTickEnable;
     PrimaryComponentTick.bStartWithTickEnabled = true;
+    OnOwnerChanged();
 }
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
