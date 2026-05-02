@@ -604,7 +604,7 @@ void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcM
 
 void ADestructibleActor::InitDefaultComponents()
 {
-	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
     InitDestructibleActor(Mesh);
 }
 
@@ -647,12 +647,14 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
 
         Actor1->InitDestructibleActor(ProcMeshComp1);
-        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
+        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, -1) * GetActorScale().Size() / 2);
+        Actor1->SetActorScale(GetActorScale());
+        Actor1->SetActorRotation(GetActorRotation());
 
         Actor2->InitDestructibleActor(ProcMeshComp2);
-        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
-
-        MarkPendingKill();
+        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, 1) * GetActorScale().Size() / 2);
+        Actor2->SetActorScale(GetActorScale());
+        Actor2->SetActorRotation(GetActorRotation());
 	}
 }
 

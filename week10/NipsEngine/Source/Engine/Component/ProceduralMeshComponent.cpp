@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include <algorithm>
+#include "GameFramework/AActor.h"
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)
@@ -310,8 +311,7 @@ void FMeshSlicer::SliceComponent(UStaticMeshComponent* InComponent, const FPlane
             OutBack->SetMaterial(i, InComponent->GetMaterial(i));
         }
 
-        // 기존 Static Mesh 제거 or 숨김
-        InComponent->SetVisibility(false);
+		InComponent->GetOwner()->MarkPendingKill();
     }
 }
 
@@ -346,8 +346,7 @@ void FMeshSlicer::SliceComponent(UProceduralMeshComponent* InComponent, const FP
             OutBack->SetMaterial(i, InComponent->GetMaterial(i));
         }
 
-        // 기존 Static Mesh 제거 or 숨김
-        InComponent->SetVisibility(false);
+		InComponent->GetOwner()->MarkPendingKill();
     }
 }
 
