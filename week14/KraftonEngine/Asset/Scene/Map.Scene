@@ -111,283 +111,6 @@
       },
       "bVisible" : true
     }, {
-      "ClassName" : "ACarPawn",
-      "Name" : "Car",
-      "NonSceneComponents" : [{
-          "ClassName" : "ULuaScriptComponent",
-          "Properties" : {
-            "ScriptFile" : "CarController.lua",
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }, {
-          "ClassName" : "UCarMovementComponent",
-          "Properties" : {
-            "AccelForce" : 20000.000000,
-            "Air Steering Scale" : 0.150000,
-            "Auto Register Updated" : true,
-            "BrakeForce" : 50000.000000,
-            "Disable Wheel Collision" : true,
-            "Ground Angular Damping" : 8000.000000,
-            "LateralGrip" : 8000.000000,
-            "Max Suspension Force" : 25000.000000,
-            "MaxSpeed" : 100.000000,
-            "ReverseAccelForce" : 15000.000000,
-            "ReverseMaxSpeed" : -80.000000,
-            "RollingDrag" : 800.000000,
-            "SteeringPower" : 15000.000000,
-            "Suspension Damping" : 3500.000000,
-            "Suspension Rest Length" : 0.600000,
-            "Suspension Spring Strength" : 12000.000000,
-            "Updated Component" : "",
-            "Use Raycast Suspension" : true,
-            "Wheel Forward Offset" : 1.500000,
-            "Wheel Half Track" : 0.800000,
-            "Wheel Radius" : 0.400000,
-            "Wheel Root Z" : 0.000000,
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }, {
-          "ClassName" : "ULuaScriptComponent",
-          "Properties" : {
-            "ScriptFile" : "CameraManager.lua",
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }],
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UStaticMeshComponent",
-            "Properties" : {
-              "Cast Shadow" : true,
-              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 0,
-              "Collision Responses" : {
-                "Pawn" : 2,
-                "Projectile" : 2,
-                "Trigger" : 2,
-                "WorldDynamic" : 2,
-                "WorldStatic" : 2
-              },
-              "Element 0" : {
-                "Path" : "Asset/Materials/Auto/MI_Body.mat"
-              },
-              "Element 1" : {
-                "Path" : "Asset/Materials/Auto/Decals.001.mat"
-              },
-              "Element 2" : {
-                "Path" : "Asset/Materials/Auto/Interior.001.mat"
-              },
-              "Element 3" : {
-                "Path" : "Asset/Materials/Auto/Trim.001.mat"
-              },
-              "Element 4" : {
-                "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
-              },
-              "Element 5" : {
-                "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
-              },
-              "Element 6" : {
-                "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
-              },
-              "Element 7" : {
-                "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
-              },
-              "Element 8" : {
-                "Path" : "Asset/Materials/Auto/Chassis.mat"
-              },
-              "Generate Overlap Events" : false,
-              "Location" : [0.155000, 0.000000, -0.607000],
-              "Mass (kg)" : 1.000000,
-              "Object Type" : 0,
-              "Rotation" : [0.000000, 90.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Simulate Physics" : false,
-              "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\TruckBody.obj",
-              "Two Sided Shadow" : false,
-              "Visible" : true,
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "USphereComponent",
-            "Properties" : {
-              "Cast Shadow" : false,
-              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 0,
-              "Collision Responses" : {
-                "Pawn" : 2,
-                "Projectile" : 2,
-                "Trigger" : 2,
-                "WorldDynamic" : 2,
-                "WorldStatic" : 2
-              },
-              "Draw Only If Selected" : false,
-              "Generate Overlap Events" : false,
-              "Location" : [1.500000, 0.800000, -0.500000],
-              "Mass (kg)" : 1.000000,
-              "Object Type" : 2,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
-              "Sphere Radius" : 0.400000,
-              "Two Sided Shadow" : false,
-              "Visible" : true,
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "USphereComponent",
-            "Properties" : {
-              "Cast Shadow" : false,
-              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 0,
-              "Collision Responses" : {
-                "Pawn" : 2,
-                "Projectile" : 2,
-                "Trigger" : 2,
-                "WorldDynamic" : 2,
-                "WorldStatic" : 2
-              },
-              "Draw Only If Selected" : false,
-              "Generate Overlap Events" : false,
-              "Location" : [1.500000, -0.800000, -0.500000],
-              "Mass (kg)" : 1.000000,
-              "Object Type" : 2,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
-              "Sphere Radius" : 0.400000,
-              "Two Sided Shadow" : false,
-              "Visible" : true,
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "USphereComponent",
-            "Properties" : {
-              "Cast Shadow" : false,
-              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 0,
-              "Collision Responses" : {
-                "Pawn" : 2,
-                "Projectile" : 2,
-                "Trigger" : 2,
-                "WorldDynamic" : 2,
-                "WorldStatic" : 2
-              },
-              "Draw Only If Selected" : false,
-              "Generate Overlap Events" : false,
-              "Location" : [-1.500000, 0.800000, -0.500000],
-              "Mass (kg)" : 1.000000,
-              "Object Type" : 2,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
-              "Sphere Radius" : 0.400000,
-              "Two Sided Shadow" : false,
-              "Visible" : true,
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "USphereComponent",
-            "Properties" : {
-              "Cast Shadow" : false,
-              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 0,
-              "Collision Responses" : {
-                "Pawn" : 2,
-                "Projectile" : 2,
-                "Trigger" : 2,
-                "WorldDynamic" : 2,
-                "WorldStatic" : 2
-              },
-              "Draw Only If Selected" : false,
-              "Generate Overlap Events" : false,
-              "Location" : [-1.500000, -0.800000, -0.500000],
-              "Mass (kg)" : 1.000000,
-              "Object Type" : 2,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
-              "Sphere Radius" : 0.400000,
-              "Two Sided Shadow" : false,
-              "Visible" : true,
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "UCameraComponent",
-            "Properties" : {
-              "FOV" : 1.047198,
-              "Far Z" : 1000.000000,
-              "Location" : [-5.000000, 0.000000, 3.000000],
-              "Near Z" : 0.100000,
-              "Ortho Width" : 10.000000,
-              "Orthographic" : false,
-              "Rotation" : [0.000000, -15.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "UCameraComponent",
-            "Properties" : {
-              "FOV" : 1.047198,
-              "Far Z" : 1000.000000,
-              "Location" : [-0.126343, 0.000000, 0.536746],
-              "Near Z" : 0.100000,
-              "Ortho Width" : 10.000000,
-              "Orthographic" : false,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "bEditorOnly" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UBoxComponent",
-        "Properties" : {
-          "Box Extent" : [2.000000, 1.000000, 0.500000],
-          "Cast Shadow" : false,
-          "Center Of Mass Offset" : [0.000000, 0.000000, -0.300000],
-          "Collision Enabled" : 3,
-          "Collision Responses" : {
-            "Pawn" : 2,
-            "Projectile" : 2,
-            "Trigger" : 2,
-            "WorldDynamic" : 2,
-            "WorldStatic" : 2
-          },
-          "Draw Only If Selected" : false,
-          "Generate Overlap Events" : false,
-          "Location" : [-78.408997, 106.884583, 5.834274],
-          "Mass (kg)" : 1500.000000,
-          "Object Type" : 2,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-          "Simulate Physics" : true,
-          "Two Sided Shadow" : false,
-          "Visible" : true,
-          "bEditorOnly" : false,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
       "ClassName" : "ABoxActor",
       "Name" : "MapCollider",
       "NonSceneComponents" : [],
@@ -477,7 +200,7 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Road\\Road.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Road\\Road.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1002,7 +725,7 @@
           "Rotation" : [0.000000, -9.244751, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1095,7 +818,7 @@
           "Rotation" : [0.000000, 81.377350, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1131,7 +854,7 @@
           "Rotation" : [0.000000, -10.137451, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1167,7 +890,7 @@
           "Rotation" : [0.000000, -8.135162, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1203,7 +926,7 @@
           "Rotation" : [0.000000, 81.365997, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1296,7 +1019,7 @@
           "Rotation" : [0.000000, 81.709412, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1446,7 +1169,7 @@
           "Rotation" : [0.000000, -9.308701, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1482,7 +1205,7 @@
           "Rotation" : [0.000000, 3.963837, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1575,7 +1298,7 @@
           "Rotation" : [0.000000, 81.645569, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1611,7 +1334,7 @@
           "Rotation" : [0.000000, -8.199051, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1647,7 +1370,7 @@
           "Rotation" : [0.000000, -10.201355, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1683,7 +1406,7 @@
           "Rotation" : [0.000000, -101.054420, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1716,10 +1439,10 @@
           "Location" : [-78.705887, -375.854645, 1.942000],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [-0.000000, 178.366257, 0.000000],
+          "Rotation" : [0.000000, 178.366272, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1755,7 +1478,7 @@
           "Rotation" : [0.000000, -101.054420, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1791,7 +1514,7 @@
           "Rotation" : [0.000000, -10.201355, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1884,7 +1607,7 @@
           "Rotation" : [0.000000, 81.709412, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1920,7 +1643,7 @@
           "Rotation" : [0.000000, 81.365997, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1956,7 +1679,7 @@
           "Rotation" : [0.000000, -101.054420, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -1992,7 +1715,7 @@
           "Rotation" : [0.000000, 22.295364, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -2693,7 +2416,7 @@
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [300.000000, 300.000000, 200.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Sky\\Sky.obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Sky\\Sky.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -2780,7 +2503,7 @@
           "Rotation" : [0.000000, -98.215637, 0.000000],
           "Scale" : [1.500000, 1.500000, 1.500000],
           "Simulate Physics" : false,
-          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\GasStation\\GASSTATION .obj",
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\GasStation\\GASSTATION .obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -2866,7 +2589,7 @@
           "Location" : [262.657837, 11.516552, 7.276886],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [10.000000, 350.000000, 200.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2901,7 +2624,7 @@
           "Location" : [25.209410, 321.417877, 34.233711],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [-0.000000, 71.926521, 0.000000],
+          "Rotation" : [0.000000, 71.926514, 0.000000],
           "Scale" : [10.000000, 300.000000, 200.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2936,7 +2659,7 @@
           "Location" : [-210.151001, 11.616552, 7.376886],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [10.000000, 350.000000, 200.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2971,10 +2694,398 @@
           "Location" : [25.309410, -294.699707, 34.333710],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [-0.000000, 71.926521, 0.000000],
+          "Rotation" : [0.000000, 71.926514, 0.000000],
           "Scale" : [10.000000, 300.000000, 200.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "CarWashTrigger",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [19.900000, 24.700001, 8.300000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [143.543884, -98.167198, 9.621486],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [0.000000, -10.974365, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ACapsuleActor",
+      "Name" : "Man",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "ManController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UFloatingPawnMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "RotationSpeed" : 30.000000,
+            "Speed" : 5.000000,
+            "Updated Component" : "",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UCapsuleComponent",
+        "Properties" : {
+          "Capsule Half Height" : 3.000000,
+          "Capsule Radius" : 1.800000,
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [141.138245, -82.717323, 5.420357],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ACarPawn",
+      "Name" : "ACarPawn_1",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CameraManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UCarMovementComponent",
+          "Properties" : {
+            "AccelForce" : 20000.000000,
+            "Air Steering Scale" : 0.150000,
+            "Auto Register Updated" : true,
+            "BrakeForce" : 50000.000000,
+            "Disable Wheel Collision" : true,
+            "Ground Angular Damping" : 8000.000000,
+            "LateralGrip" : 8000.000000,
+            "Max Suspension Force" : 25000.000000,
+            "MaxSpeed" : 100.000000,
+            "ReverseAccelForce" : 15000.000000,
+            "ReverseMaxSpeed" : -80.000000,
+            "RollingDrag" : 800.000000,
+            "SteeringPower" : 15000.000000,
+            "Suspension Damping" : 3500.000000,
+            "Suspension Rest Length" : 0.600000,
+            "Suspension Spring Strength" : 12000.000000,
+            "Updated Component" : "",
+            "Use Raycast Suspension" : true,
+            "Wheel Forward Offset" : 1.500000,
+            "Wheel Half Track" : 0.800000,
+            "Wheel Radius" : 0.400000,
+            "Wheel Root Z" : 0.000000,
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UCarGasComponent",
+          "Properties" : {
+            "Gas" : 100.000000,
+            "MaxGas" : 100.000000,
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Body.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Decals.001.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Interior.001.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Trim.001.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Chassis.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.155000, 0.000000, -0.607000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 90.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Truck\\TruckBody.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [1.500000, 0.800000, -0.500000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 2,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [1.500000, -0.800000, -0.500000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 2,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [-1.500000, 0.800000, -0.500000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 2,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "Cast Shadow" : false,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : false,
+              "Location" : [-1.500000, -0.800000, -0.500000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 2,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Sphere Radius" : 0.400000,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [0.286000, -0.318000, 0.697000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [15.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [-4.500000, 0.000000, 2.500000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [2.000000, 1.000000, 0.500000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.300000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-77.506592, 101.352142, 3.741713],
+          "Mass (kg)" : 1500.000000,
+          "Object Type" : 2,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -2990,9 +3101,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-83.515411, 113.741364, 8.236558],
+    "Location" : [-80.090340, 111.250587, 7.598104],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 11.056366, -57.239285]
+    "Rotation" : [0.000000, 21.856583, -72.088356]
   },
   "Version" : 2,
   "WorldType" : "Editor"

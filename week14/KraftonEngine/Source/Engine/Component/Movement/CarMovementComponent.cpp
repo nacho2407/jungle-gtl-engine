@@ -106,6 +106,25 @@ float UCarMovementComponent::GetForwardSpeed() const
 	return Forward.Dot(Velocity);
 }
 
+void UCarMovementComponent::StopImmediately()
+{
+	ThrottleInput = 0.0f;
+	SteeringInput = 0.0f;
+
+	if (!UpdatedPrimitive)
+	{
+		UpdatedPrimitive = Cast<UPrimitiveComponent>(GetUpdatedComponent());
+	}
+
+	if (!UpdatedPrimitive)
+	{
+		return;
+	}
+
+	UpdatedPrimitive->SetLinearVelocity(FVector::ZeroVector);
+	UpdatedPrimitive->SetAngularVelocity(FVector::ZeroVector);
+}
+
 bool UCarMovementComponent::ApplyWheelSuspension(float DeltaTime)
 {
 	if (!UpdatedPrimitive) return false;

@@ -1,0 +1,9 @@
+<rml>
+<head>
+	<title>Fade</title>
+	<link type="text/rcss" href="FadeWidget.rcss"/>
+</head>
+<body>
+	<div id="fade-screen"></div>
+</body>
+</rml>
