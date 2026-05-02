@@ -60,6 +60,24 @@ void FScriptManager::BindMathTypes()
         UE_LOG_ERROR(("[Lua Error] " + Msg + "\n").c_str());
     });
 
+    GLuaState->set_function("WaitForSeconds", [](sol::this_state State, float Seconds)
+    {
+        sol::state_view Lua(State);
+        sol::table Table = Lua.create_table();
+        Table["type"] = "seconds";
+        Table["value"] = Seconds;
+        return Table;
+    });
+
+    GLuaState->set_function("WaitForFrames", [](sol::this_state State, int Frames)
+    {
+        sol::state_view Lua(State);
+        sol::table Table = Lua.create_table();
+        Table["type"] = "frames";
+        Table["value"] = Frames;
+        return Table;
+    });
+
     LUA_BEGIN_TYPE_FACTORY(GLuaState, FName, "FName", []()
                            { return FName(); }, [](const char* Str)
                            { return FName(Str); }, [](const std::string& Str)

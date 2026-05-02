@@ -727,3 +727,11 @@ function LogWarning(message) end
 
 ---@param message string
 function LogError(message) end
+
+---@param seconds number
+---@return table
+function WaitForSeconds(seconds) end
+
+---@param frames integer
+---@return table
+function WaitForFrames(frames) end
