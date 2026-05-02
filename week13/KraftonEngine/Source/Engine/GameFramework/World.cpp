@@ -98,6 +98,11 @@ AGameStateBase* UWorld::GetGameState() const
 	return GameMode ? GameMode->GetGameState() : nullptr;
 }
 
+APlayerController* UWorld::GetFirstPlayerController() const
+{
+	return GameMode ? GameMode->GetPlayerController() : nullptr;
+}
+
 void UWorld::AddActor(AActor* Actor)
 {
 	if (!Actor)

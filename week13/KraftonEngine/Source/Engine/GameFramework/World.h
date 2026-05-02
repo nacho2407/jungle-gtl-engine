@@ -19,6 +19,7 @@ class UCameraComponent;
 class UPrimitiveComponent;
 class AGameModeBase;
 class AGameStateBase;
+class APlayerController;
 class UClass;
 
 class UWorld : public UObject {
@@ -118,6 +119,7 @@ public:
 	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }
 	AGameModeBase* GetGameMode() const { return GameMode; }
 	AGameStateBase* GetGameState() const;
+	APlayerController* GetFirstPlayerController() const;
 };
 
 template<typename T>
