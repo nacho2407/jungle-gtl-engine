@@ -112,7 +112,7 @@ public:
 	IPhysicsScene* GetPhysicsScene() const { return PhysicsScene.get(); }
 
 	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
-	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const;
+	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor = nullptr) const;
 
 	// --- Game flow ---
 	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.

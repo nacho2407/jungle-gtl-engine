@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Pawn.h"
 
@@ -7,6 +7,7 @@ class UStaticMeshComponent;
 class USphereComponent;
 class ULuaScriptComponent;
 class UCameraComponent;
+class UCarMovementComponent;
 
 // ============================================================
 // ACarPawn — 자동차 게임의 플레이어 차량 Pawn
@@ -46,4 +47,5 @@ private:
 	USphereComponent* Wheels[4] = {};
 	ULuaScriptComponent* LuaScript = nullptr;
 	UCameraComponent* Camera = nullptr;
+	UCarMovementComponent* Movement = nullptr;
 };

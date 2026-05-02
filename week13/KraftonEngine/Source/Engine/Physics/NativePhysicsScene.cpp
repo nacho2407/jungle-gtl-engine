@@ -374,7 +374,7 @@ FVector FNativePhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
 // Raycast — brute-force AABB ray test
 // ============================================================
 
-bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const
+bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor) const
 {
 	// Inverse direction for slab test
 	FVector InvDir;
@@ -387,6 +387,8 @@ bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, floa
 
 	for (UPrimitiveComponent* Comp : RegisteredComponents)
 	{
+		if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
+
 		FBoundingBox Box = Comp->GetWorldBoundingBox();
 
 		// Ray-AABB slab test
