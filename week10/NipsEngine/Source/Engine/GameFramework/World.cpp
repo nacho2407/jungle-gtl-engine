@@ -2,6 +2,7 @@
 #include "Engine/Collision/Collision.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/Logging/Log.h"
+#include "GameFramework/PlayerController.h"
 #include "Object/ObjectFactory.h"
 
 DEFINE_CLASS(UWorld, UObject)
@@ -76,6 +77,7 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
     }
 
     Actor->SetWorld(this);
+    Actor->InitDefaultComponents();
     if (bHasBegunPlay)
     {
         Actor->BeginPlay();
@@ -132,6 +134,19 @@ void UWorld::RemoveActorDestroyedListener(int32 ListenerId)
 
 void UWorld::NotifyActorDestroyed(AActor* Actor)
 {
+    if (Actor)
+    {
+        TArray<AActor*> Actors = PersistentLevel ? PersistentLevel->GetActors() : TArray<AActor*>();
+        for (AActor* WorldActor : Actors)
+        {
+            APlayerController* Controller = Cast<APlayerController>(WorldActor);
+            if (Controller && Controller != Actor)
+            {
+                Controller->NotifyObservedActorDestroyed(Actor);
+            }
+        }
+    }
+
     for (auto& [Id, Listener] : ActorDestroyedListeners)
     {
         if (Listener)

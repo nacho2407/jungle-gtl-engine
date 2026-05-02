@@ -322,19 +322,19 @@ namespace
 
         FString SceneJson((std::istreambuf_iterator<char>(SceneFile)), std::istreambuf_iterator<char>());
         json::JSON Root = json::JSON::Load(SceneJson);
-        if (!Root.hasKey("Primitives"))
+        if (!Root.hasKey("Actors"))
         {
-            OutMessage = "Startup scene is invalid: Primitives section missing";
+            OutMessage = "Startup scene is invalid: Actors section missing";
             EmitBuildLog(OutMessage);
             return false;
         }
 
         int32 PlayerStartCount = 0;
-        json::JSON& Primitives = Root["Primitives"];
-        for (auto& [UUID, Data] : Primitives.ObjectRange())
+        json::JSON& Actors = Root["Actors"];
+        for (int32 Index = 0; Index < static_cast<int32>(Actors.length()); ++Index)
         {
-            (void)UUID;
-            if (Data.hasKey("ActorClass") && Data["ActorClass"].ToString() == "APlayerStart")
+            json::JSON& Data = Actors.at(Index);
+            if (Data.hasKey("ClassName") && Data["ClassName"].ToString() == "APlayerStart")
             {
                 ++PlayerStartCount;
             }

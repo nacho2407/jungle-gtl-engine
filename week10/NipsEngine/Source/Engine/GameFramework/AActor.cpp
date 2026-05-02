@@ -6,6 +6,9 @@
 #include "Core/Delegates/Delegate.h"
 #include <Runtime/Script/ScriptComponent.h>
 
+#include <algorithm>
+#include <cctype>
+
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
 
@@ -74,6 +77,7 @@ void AActor::PostDuplicate(UObject* Original)
     AActor* OrigActor = static_cast<AActor*>(Original);
 
     OwnedComponents.clear();
+    Tags = OrigActor->Tags;
 
     // MovementComponent 등 일반 컴포넌트들의 참조를 복원하기 위한 맵을 선언합니다.
     TMap<USceneComponent*, USceneComponent*> ComponentMap;
@@ -133,6 +137,7 @@ void AActor::Serialize(FArchive& Ar)
 	UObject::Serialize(Ar);
 	Ar << "Visible" << bVisible;
 	Ar << "Editor Only" << bTickInEditor;
+    Ar << "Tags" << Tags;
 	Ar.EndObject();
 
 	for (UActorComponent* Comp : OwnedComponents)
@@ -211,6 +216,88 @@ void AActor::SetVisible(bool Visible)
 
     bVisible = Visible;
     MarkPrimitiveComponentsDirty();
+}
+
+namespace
+{
+    FString TrimActorTag(const FString& Value)
+    {
+        const auto IsSpace = [](unsigned char Ch)
+        {
+            return std::isspace(Ch) != 0;
+        };
+
+        auto Begin = std::find_if_not(Value.begin(), Value.end(), IsSpace);
+        auto End = std::find_if_not(Value.rbegin(), Value.rend(), IsSpace).base();
+        if (Begin >= End)
+        {
+            return {};
+        }
+        return FString(Begin, End);
+    }
+}
+
+void AActor::AddTag(const FString& Tag)
+{
+    const FString CleanTag = TrimActorTag(Tag);
+    if (CleanTag.empty() || HasTag(CleanTag))
+    {
+        return;
+    }
+
+    Tags.push_back(CleanTag);
+}
+
+void AActor::RemoveTag(const FString& Tag)
+{
+    const FString CleanTag = TrimActorTag(Tag);
+    Tags.erase(
+        std::remove(Tags.begin(), Tags.end(), CleanTag),
+        Tags.end());
+}
+
+bool AActor::HasTag(const FString& Tag) const
+{
+    const FString CleanTag = TrimActorTag(Tag);
+    return std::find(Tags.begin(), Tags.end(), CleanTag) != Tags.end();
+}
+
+void AActor::ClearTags()
+{
+    Tags.clear();
+}
+
+FString AActor::GetTagsText() const
+{
+    FString Result;
+    for (size_t Index = 0; Index < Tags.size(); ++Index)
+    {
+        if (Index > 0)
+        {
+            Result += ", ";
+        }
+        Result += Tags[Index];
+    }
+    return Result;
+}
+
+void AActor::SetTagsFromText(const FString& InTagsText)
+{
+    Tags.clear();
+
+    size_t Start = 0;
+    while (Start <= InTagsText.size())
+    {
+        const size_t Comma = InTagsText.find(',', Start);
+        const size_t End = (Comma == FString::npos) ? InTagsText.size() : Comma;
+        AddTag(InTagsText.substr(Start, End - Start));
+
+        if (Comma == FString::npos)
+        {
+            break;
+        }
+        Start = Comma + 1;
+    }
 }
 
 void AActor::SetWorld(UWorld* World)

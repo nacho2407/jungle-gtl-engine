@@ -8,7 +8,10 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
 #include "Render/Renderer/DefaultRenderPipeline.h"
+#include "Camera/ViewportCamera.h"
 #include "GameFramework/World.h"
+
+#include <algorithm>
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -24,6 +27,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 	Renderer.Create(Window->GetHWND());
+	AudioSystem.Initialize();
 
 	FResourceManager::Get().LoadFromAssetDirectory(FPaths::ToUtf8(FPaths::AssetDirectoryPath()));
 
@@ -34,6 +38,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 void UEngine::Shutdown()
 {
+	AudioSystem.Shutdown();
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
 	Renderer.Release();
@@ -53,8 +58,10 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
+	UpdateTimeState(DeltaTime);
 	InputSystem::Get().Tick();
 	WorldTick(DeltaTime);
+	AudioSystem.Tick(DeltaTime);
 	Render(DeltaTime);
 }
 
@@ -83,12 +90,58 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
 }
 
+bool UEngine::RequestQuitGame()
+{
+#if WITH_EDITOR
+	UE_LOG("[Engine] RequestQuitGame is ignored in editor builds.");
+	return false;
+#else
+	if (!Window || !Window->GetHWND())
+	{
+		return false;
+	}
+
+	::PostMessageW(Window->GetHWND(), WM_CLOSE, 0, 0);
+	return true;
+#endif
+}
+
+void UEngine::SetTimeScale(float InTimeScale)
+{
+	TimeScale = std::max(0.0f, InTimeScale);
+}
+
+void UEngine::UpdateTimeState(float DeltaTime)
+{
+	LastUnscaledDeltaTime = std::max(0.0f, DeltaTime);
+
+	const UWorld* World = GetWorld();
+	const bool bScaleWorldTime =
+		World &&
+		(World->GetWorldType() == EWorldType::Game ||
+		 World->GetWorldType() == EWorldType::PIE);
+
+	LastDeltaTime = bScaleWorldTime ? LastUnscaledDeltaTime * TimeScale : LastUnscaledDeltaTime;
+	RealTimeSeconds += LastUnscaledDeltaTime;
+	GameTimeSeconds += LastDeltaTime;
+}
+
 void UEngine::WorldTick(float DeltaTime)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		World->Tick(DeltaTime);
+		const bool bScaleWorldTime =
+			World->GetWorldType() == EWorldType::Game ||
+			World->GetWorldType() == EWorldType::PIE;
+		World->Tick(bScaleWorldTime ? DeltaTime * TimeScale : DeltaTime);
+		if (FViewportCamera* ActiveCamera = World->GetActiveCamera())
+		{
+			AudioSystem.SetListener(
+				ActiveCamera->GetLocation(),
+				ActiveCamera->GetEffectiveForward(),
+				ActiveCamera->GetEffectiveUp());
+		}
 	}
 }
 
@@ -166,4 +219,14 @@ FWorldContext* UEngine::GetWorldContextFromWorld(const UWorld* World)
 void UEngine::SetActiveWorld(const FName& Handle)
 {
 	ActiveWorldHandle = Handle;
+}
+
+void UEngine::SetRuntimeInputMode(ERuntimeInputMode InMode)
+{
+	RuntimeInputMode = InMode;
+}
+
+void UEngine::SetRuntimeCursorVisible(bool bVisible)
+{
+	bRuntimeCursorVisible = bVisible;
 }

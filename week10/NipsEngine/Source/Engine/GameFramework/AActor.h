@@ -103,6 +103,14 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
 
+	void AddTag(const FString& Tag);
+	void RemoveTag(const FString& Tag);
+	bool HasTag(const FString& Tag) const;
+	void ClearTags();
+	const TArray<FString>& GetTags() const { return Tags; }
+	FString GetTagsText() const;
+	void SetTagsFromText(const FString& InTagsText);
+
 	// 프로퍼티 시스템 — UObject 에서 상속
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 	void PostEditProperty(const char* PropertyName) override {}
@@ -133,6 +141,7 @@ protected:
     bool bTickInEditor = false;
 
 	TArray<UActorComponent*> OwnedComponents;
+	TArray<FString> Tags;
 
 	// 렌더링용 캐시
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;

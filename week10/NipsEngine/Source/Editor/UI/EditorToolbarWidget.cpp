@@ -136,6 +136,7 @@ void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bool* InShowEditorDebug,
 	bool* InShowContentBrowser,
 	bool* InShowUndoHistory,
+	bool* InShowRuntimeUIPreview,
 	bool* InPIEViewportFullscreenEnabled)
 {
 	bShowConsole = InShowConsole;
@@ -147,6 +148,7 @@ void FEditorToolbarWidget::SetPanelVisibilityRefs(
 	bShowEditorDebug = InShowEditorDebug;
 	bShowContentBrowser = InShowContentBrowser;
 	bShowUndoHistory = InShowUndoHistory;
+	bShowRuntimeUIPreview = InShowRuntimeUIPreview;
 	bPIEViewportFullscreenEnabled = InPIEViewportFullscreenEnabled;
 }
 
@@ -337,6 +339,7 @@ void FEditorToolbarWidget::RenderViewMenu()
 	if (bShowMaterialEditor) ImGui::MenuItem("Material Editor", nullptr, bShowMaterialEditor);
 	if (bShowStatProfiler) ImGui::MenuItem("Stat Profiler", nullptr, bShowStatProfiler);
 	if (bShowContentBrowser) ImGui::MenuItem("Content Browser", "Ctrl+Space", bShowContentBrowser);
+	if (bShowRuntimeUIPreview) ImGui::MenuItem("Runtime UI Preview", nullptr, bShowRuntimeUIPreview);
 
 	ImGui::EndMenu();
 }

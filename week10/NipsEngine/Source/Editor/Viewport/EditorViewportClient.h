@@ -117,11 +117,7 @@ public:
 	// 외부에서 카메라 위치를 변경한 후 컨트롤러의 TargetLocation을 동기화할 때 호출
 	void SyncCameraTarget()
 	{
-		InputRouter.GetEditorWorldController().ResetTargetLocation();
-		if (bHasCamera)
-		{
-			InputRouter.GetEditorWorldController().SetTargetRotation(Camera.GetRotation());
-		}
+		InputRouter.GetEditorWorldController().ResetTargetFromCamera();
 	}
 
 	void Tick(float DeltaTime) override;

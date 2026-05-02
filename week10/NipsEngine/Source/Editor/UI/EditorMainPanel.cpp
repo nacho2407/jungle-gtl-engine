@@ -23,6 +23,7 @@
 
 #include "Render/Renderer/Renderer.h"
 #include "Render/Resource/Shader.h"
+#include "Render/Resource/Texture.h"
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
@@ -544,6 +545,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     StatWidget.Initialize(InEditorEngine);
     PlayStreamWidget.Initialize(InEditorEngine);
     ToolbarWidget.Initialize(InEditorEngine);
+    RuntimeUIPreviewWidget.Initialize(InEditorEngine);
     ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
     ToolbarWidget.SetSceneWidget(&SceneWidget);
     ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
@@ -551,7 +553,13 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     ToolbarWidget.SetBuildGameCallback([this]() { RequestBuildGame(); });
     ToolbarWidget.SetPanelVisibilityRefs(&bShowConsole, &bShowControl, &bShowProperty, &bShowSceneManager,
                                          &bShowMaterialEditor, &bShowStatProfiler, &bShowEditorDebug,
-                                         &bShowContentBrowser, &bShowUndoHistory, &bPIEViewportFullscreenEnabled);
+                                         &bShowContentBrowser, &bShowUndoHistory, &bShowRuntimeUIPreview,
+                                         &bPIEViewportFullscreenEnabled);
+    RuntimeUIBackend.SetImageResolver(
+        [this](const FString& ImagePath)
+        {
+            return ResolveRuntimeUIImage(ImagePath);
+        });
 }
 
 void FEditorMainPanel::Release()
@@ -695,6 +703,8 @@ void FEditorMainPanel::Render(float DeltaTime)
         RenderEditorDebugPanel(DeltaTime);
     if (bDrawEditorPanels)
         RenderUndoHistoryPanel(DeltaTime);
+    if (bDrawEditorPanels && bShowRuntimeUIPreview)
+        RuntimeUIPreviewWidget.Render(DeltaTime);
     RenderBuildGameModal();
     ViewportOverlayWidget.RenderFloatingOverlays(DeltaTime);
 
@@ -1965,7 +1975,7 @@ void FEditorMainPanel::RequestBuildGame()
         ? SceneWidget.GetCurrentSceneFilePath()
         : "Asset/Scene/Default.scene";
     PendingBuildSettings.OutputDirectory = "Builds/Windows/" + PendingBuildSettings.GameName;
-    PendingBuildSettings.PlayerControllerClass = "AGameJamPlayerController";
+    PendingBuildSettings.PlayerControllerClass = "APlayerController";
     PendingBuildSettings.Configuration = EGameBuildConfiguration::Development;
     PendingBuildSettings.IconPath.clear();
     PendingBuildSettings.SplashImagePath.clear();
@@ -2468,6 +2478,11 @@ void FEditorMainPanel::RenderViewportHostWindow()
                 ImGui::Dummy(Size);
             }
 
+            if (EditorEngine->GetEditorState() != EViewportPlayState::Editing && ViewportIndex == FocusedViewportIndex)
+            {
+                RenderRuntimeUIForPIEViewport(ViewportRect, ImGui::GetIO().DeltaTime);
+            }
+
             FEditorViewportClient* DropClient = Layout.GetViewportClient(ViewportIndex);
             const FEditorViewportState& State = Layout.GetViewportState(ViewportIndex);
             const float PIEFlashAlpha = DropClient ? DropClient->GetPIEStartOutlineFlashAlpha() : 0.0f;
@@ -2574,6 +2589,97 @@ void FEditorMainPanel::RenderViewportHostWindow()
     }
 
     ImGui::End();
+}
+
+void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime)
+{
+    if (!EditorEngine || ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+    {
+        return;
+    }
+
+    FRuntimeUIRenderContext Context;
+    Context.RenderMode = ERuntimeUIRenderMode::PIE;
+    Context.ViewportMin = FRuntimeUIVector2(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
+    Context.ViewportSize = FRuntimeUIVector2(static_cast<float>(ViewportRect.Width), static_cast<float>(ViewportRect.Height));
+    Context.DeltaTime = DeltaTime;
+
+    EditorEngine->GetRuntimeUI().Render(RuntimeUIBackend, Context);
+
+    const ImGuiIO& IO = ImGui::GetIO();
+    const bool bMouseInViewport =
+        IO.MousePos.x >= static_cast<float>(ViewportRect.X) &&
+        IO.MousePos.y >= static_cast<float>(ViewportRect.Y) &&
+        IO.MousePos.x <= static_cast<float>(ViewportRect.X + ViewportRect.Width) &&
+        IO.MousePos.y <= static_cast<float>(ViewportRect.Y + ViewportRect.Height);
+
+    bool bRuntimeUIConsumed = false;
+    if (bMouseInViewport || !EditorEngine->GetRuntimeUI().GetPressedWidgetId().empty())
+    {
+        FRuntimeUIInputEvent Event;
+        Event.ScreenPosition = FRuntimeUIVector2(IO.MousePos.x, IO.MousePos.y);
+
+        Event.Type = ERuntimeUIInputEventType::MouseMove;
+        bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
+
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+            Event.Type = ERuntimeUIInputEventType::MouseButtonDown;
+            Event.MouseButton = ERuntimeUIMouseButton::Left;
+            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
+        }
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            Event.Type = ERuntimeUIInputEventType::MouseButtonUp;
+            Event.MouseButton = ERuntimeUIMouseButton::Left;
+            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
+        }
+        if (IO.MouseWheel != 0.0f)
+        {
+            Event.Type = ERuntimeUIInputEventType::MouseWheel;
+            Event.MouseButton = ERuntimeUIMouseButton::None;
+            Event.WheelDelta = IO.MouseWheel;
+            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
+        }
+    }
+
+    if (bRuntimeUIConsumed)
+    {
+        InputSystem::Get().SetGuiMouseCapture(true);
+        InputSystem::Get().SetGuiViewportMouseBlock(true);
+    }
+}
+
+FRuntimeUIResolvedImage FEditorMainPanel::ResolveRuntimeUIImage(const FString& ImagePath) const
+{
+    UTexture* Texture = FResourceManager::Get().LoadTexture(ImagePath);
+    if (!Texture || !Texture->GetSRV())
+    {
+        return {};
+    }
+
+    FRuntimeUIResolvedImage Result;
+    Result.TextureId = Texture->GetSRV();
+    Result.Width = 1.0f;
+    Result.Height = 1.0f;
+
+    ID3D11Resource* Resource = nullptr;
+    Texture->GetSRV()->GetResource(&Resource);
+    if (Resource)
+    {
+        ID3D11Texture2D* Texture2D = nullptr;
+        if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D))) && Texture2D)
+        {
+            D3D11_TEXTURE2D_DESC Desc = {};
+            Texture2D->GetDesc(&Desc);
+            Result.Width = static_cast<float>(Desc.Width);
+            Result.Height = static_cast<float>(Desc.Height);
+            Texture2D->Release();
+        }
+        Resource->Release();
+    }
+
+    return Result;
 }
 
 void FEditorMainPanel::TickViewportContextMenu()

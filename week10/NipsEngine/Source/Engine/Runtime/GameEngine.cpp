@@ -2,14 +2,21 @@
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+#include "Render/Resource/Texture.h"
+#include "Runtime/Script/ScriptManager.h"
 #include "Serialization/SceneSaveManager.h"
 
 #include <algorithm>
 #include <cctype>
+#include <d3d11.h>
 #include <filesystem>
 #include <fstream>
 #include <windows.h>
@@ -52,8 +59,17 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
     UE_LOG("[GameEngine] GameClient boot started.");
 
     UEngine::Init(InWindow);
+    FScriptManager::Get().initializeLuaState();
+    InitializeRuntimeUIBackend();
     LoadGameSettings();
     LoadStartupWorld();
+}
+
+void UGameEngine::Shutdown()
+{
+    FScriptManager::Get().ShutdownLuaState();
+    ShutdownRuntimeUIBackend();
+    UEngine::Shutdown();
 }
 
 void UGameEngine::BeginPlay()
@@ -66,12 +82,22 @@ void UGameEngine::BeginPlay()
 
 void UGameEngine::Tick(float DeltaTime)
 {
+    UpdateTimeState(DeltaTime);
     InputSystem& Input = InputSystem::Get();
     MaintainGameInputCapture(Input);
     Input.Tick();
+    Input.SetGuiMouseCapture(false);
+    Input.SetGuiKeyboardCapture(false);
+    Input.SetGuiTextInputCapture(false);
+    Input.SetGuiViewportMouseBlock(false);
 
-    PumpPlayerInput(Input);
+    const bool bRuntimeUIConsumedInput = PumpRuntimeUIInput(Input);
+    if (GetRuntimeInputMode() != ERuntimeInputMode::UIOnly && !bRuntimeUIConsumedInput)
+    {
+        PumpPlayerInput(Input);
+    }
     WorldTick(DeltaTime);
+    GetAudioSystem().Tick(DeltaTime);
     Render(DeltaTime);
 }
 
@@ -88,6 +114,23 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
     }
 
     InputSystem::Get().SetUseRawMouse(false);
+}
+
+void UGameEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
+{
+    if (!bRuntimeUIBackendInitialized)
+    {
+        return;
+    }
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    GetRuntimeUI().Render(RuntimeUIBackend, Context);
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 void UGameEngine::LoadGameSettings()
@@ -131,6 +174,74 @@ void UGameEngine::LoadGameSettings()
             StartupSettings.PlayerControllerClass = Value;
         }
     }
+}
+
+void UGameEngine::InitializeRuntimeUIBackend()
+{
+    if (bRuntimeUIBackendInitialized || !Window)
+    {
+        return;
+    }
+
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplWin32_Init(reinterpret_cast<void*>(Window->GetHWND()));
+    ImGui_ImplDX11_Init(
+        Renderer.GetFD3DDevice().GetDevice(),
+        Renderer.GetFD3DDevice().GetDeviceContext());
+
+    RuntimeUIBackend.SetImageResolver(
+        [this](const FString& ImagePath)
+        {
+            return ResolveRuntimeUIImage(ImagePath);
+        });
+
+    bRuntimeUIBackendInitialized = true;
+}
+
+void UGameEngine::ShutdownRuntimeUIBackend()
+{
+    if (!bRuntimeUIBackendInitialized)
+    {
+        return;
+    }
+
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    bRuntimeUIBackendInitialized = false;
+}
+
+FRuntimeUIResolvedImage UGameEngine::ResolveRuntimeUIImage(const FString& ImagePath) const
+{
+    UTexture* Texture = FResourceManager::Get().LoadTexture(ImagePath);
+    if (!Texture || !Texture->GetSRV())
+    {
+        return {};
+    }
+
+    FRuntimeUIResolvedImage Result;
+    Result.TextureId = Texture->GetSRV();
+    Result.Width = 1.0f;
+    Result.Height = 1.0f;
+
+    ID3D11Resource* Resource = nullptr;
+    Texture->GetSRV()->GetResource(&Resource);
+    if (Resource)
+    {
+        ID3D11Texture2D* Texture2D = nullptr;
+        if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D))) && Texture2D)
+        {
+            D3D11_TEXTURE2D_DESC Desc = {};
+            Texture2D->GetDesc(&Desc);
+            Result.Width = static_cast<float>(Desc.Width);
+            Result.Height = static_cast<float>(Desc.Height);
+            Texture2D->Release();
+        }
+        Resource->Release();
+    }
+
+    return Result;
 }
 
 void UGameEngine::LoadStartupWorld()
@@ -214,6 +325,15 @@ void UGameEngine::MaintainGameInputCapture(InputSystem& Input)
         return;
     }
 
+    const ERuntimeInputMode InputMode = GetRuntimeInputMode();
+    if (InputMode != ERuntimeInputMode::GameOnly || IsRuntimeCursorVisible())
+    {
+        Input.SetUseRawMouse(false);
+        Input.LockMouse(false);
+        Input.SetCursorVisibility(true);
+        return;
+    }
+
     if (Input.IsUsingRawMouse())
     {
         return;
@@ -244,6 +364,72 @@ void UGameEngine::MaintainGameInputCapture(InputSystem& Input)
         UE_LOG("[GameEngine] Game input captured. Keyboard and raw mouse are routed to PlayerController.");
         bLoggedInputCapture = true;
     }
+}
+
+bool UGameEngine::PumpRuntimeUIInput(InputSystem& Input)
+{
+    if (!Window || !Window->GetHWND())
+    {
+        return false;
+    }
+
+    POINT ClientMousePos = Input.GetMousePos();
+    ::ScreenToClient(Window->GetHWND(), &ClientMousePos);
+
+    FRuntimeUIRenderContext Context;
+    Context.RenderMode = ERuntimeUIRenderMode::GameClient;
+    Context.ViewportMin = FRuntimeUIVector2(0.0f, 0.0f);
+    Context.ViewportSize = FRuntimeUIVector2(
+        Window ? static_cast<float>(Window->GetWidth()) : 0.0f,
+        Window ? static_cast<float>(Window->GetHeight()) : 0.0f);
+    Context.DeltaTime = 0.0f;
+    GetRuntimeUI().UpdateLayout(Context);
+
+    bool bConsumed = false;
+    FRuntimeUIInputEvent Event;
+    Event.ScreenPosition = FRuntimeUIVector2(static_cast<float>(ClientMousePos.x), static_cast<float>(ClientMousePos.y));
+
+    if (Input.MouseMoved())
+    {
+        Event.Type = ERuntimeUIInputEventType::MouseMove;
+        Event.MouseButton = ERuntimeUIMouseButton::None;
+        bConsumed = GetRuntimeUI().HandleInput(Event) || bConsumed;
+    }
+
+    auto PumpMouseButton = [&](int VK, ERuntimeUIMouseButton Button)
+    {
+        Event.MouseButton = Button;
+        if (Input.GetKeyDown(VK))
+        {
+            Event.Type = ERuntimeUIInputEventType::MouseButtonDown;
+            bConsumed = GetRuntimeUI().HandleInput(Event) || bConsumed;
+        }
+        if (Input.GetKeyUp(VK))
+        {
+            Event.Type = ERuntimeUIInputEventType::MouseButtonUp;
+            bConsumed = GetRuntimeUI().HandleInput(Event) || bConsumed;
+        }
+    };
+
+    PumpMouseButton(VK_LBUTTON, ERuntimeUIMouseButton::Left);
+    PumpMouseButton(VK_RBUTTON, ERuntimeUIMouseButton::Right);
+    PumpMouseButton(VK_MBUTTON, ERuntimeUIMouseButton::Middle);
+
+    if (Input.GetScrollDelta() != 0)
+    {
+        Event.Type = ERuntimeUIInputEventType::MouseWheel;
+        Event.MouseButton = ERuntimeUIMouseButton::None;
+        Event.WheelDelta = Input.GetScrollNotches();
+        bConsumed = GetRuntimeUI().HandleInput(Event) || bConsumed;
+    }
+
+    if (bConsumed)
+    {
+        Input.SetGuiMouseCapture(true);
+        Input.SetGuiViewportMouseBlock(true);
+    }
+
+    return bConsumed;
 }
 
 void UGameEngine::PumpPlayerInput(InputSystem& Input)

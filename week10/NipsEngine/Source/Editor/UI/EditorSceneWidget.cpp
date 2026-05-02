@@ -545,6 +545,20 @@ void FEditorSceneWidget::Render(float DeltaTime)
         LastClickedActorIndex = VisibleActorIndices.empty() ? -1 : VisibleActorIndices.front();
     }
 
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+        && !ImGui::GetIO().WantTextInput
+        && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+    {
+        const bool bHadSelection = !Selection.IsEmpty();
+        DeleteSelectedActors();
+        if (bHadSelection)
+        {
+            ImGui::EndChild();
+            ImGui::End();
+            return;
+        }
+    }
+
     const ImGuiTableFlags TableFlags =
         ImGuiTableFlags_BordersInnerV |
         ImGuiTableFlags_BordersOuterH |

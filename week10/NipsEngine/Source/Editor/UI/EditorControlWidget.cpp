@@ -11,6 +11,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Core/ResourceManager.h"
 #include "Runtime/Script/ScriptManager.h"
+#include "Runtime/Script/ScriptComponent.h"
 
 #include "GameFramework/PrimitiveActors.h"
 
@@ -28,6 +29,23 @@ namespace
 		for (AActor* Actor : World->GetActors())
 		{
 			if (Actor && Actor->IsA<APlayerStart>())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool HasPlacedPlayer(UWorld* World)
+	{
+		if (!World)
+		{
+			return false;
+		}
+
+		for (AActor* Actor : World->GetActors())
+		{
+			if (Actor && Actor->HasTag("Player"))
 			{
 				return true;
 			}
@@ -68,6 +86,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 
 	DrawSpawnItem(0, "Empty Actor");
 	ImGui::Separator();
+	DrawSpawnItem(16, "Player");
 	DrawSpawnItem(1, "Static Mesh");
 	DrawSpawnItem(2, "Text Render");
 	DrawSpawnItem(3, "SubUV");
@@ -108,6 +127,15 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		if (HasPlayerStart(World))
 		{
 			EditorEngine->GetMainPanel().PushFooterLog("Player Start already exists");
+			return false;
+		}
+	}
+	if (PrimitiveType == 16)
+	{
+		Count = 1;
+		if (HasPlacedPlayer(World))
+		{
+			EditorEngine->GetMainPanel().PushFooterLog("Player actor already exists");
 			return false;
 		}
 	}
@@ -220,15 +248,25 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		{
 			ACubeActor* Actor = World->SpawnActor<ACubeActor>();
 			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(CurSpawnPoint);
+			Actor->SetActorLocation(SpawnPoint);
 			break;
 		}
-        case 15:
+		case 15:
         {
             ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
             Actor->InitDefaultComponents();
-            Actor->SetActorLocation(CurSpawnPoint);
+            Actor->SetActorLocation(SpawnPoint);
             break;
+		}
+		case 16:
+		{
+			ADefaultPlayerActor* Actor = World->SpawnActor<ADefaultPlayerActor>();
+			Actor->InitDefaultComponents();
+			Actor->SetFName(FName("Player"));
+			Actor->AddTag("Player");
+			Actor->SetActorLocation(SpawnPoint);
+			Actor->AddComponent<UScriptComponent>();
+			break;
 		}
 		default:
 			return false;

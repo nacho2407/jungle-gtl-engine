@@ -37,6 +37,9 @@
     <Filter Include="Source\Engine">
       <UniqueIdentifier>{bfcd2a84-61fc-3a27-7115-8732c34a60d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Audio">
+      <UniqueIdentifier>{d43e716f-b7f0-4f52-8c4f-20a99dc3fdf8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Camera">
       <UniqueIdentifier>{a9d7a8e1-f9c4-4c77-9f82-8d7b2a6e44c1}</UniqueIdentifier>
     </Filter>
@@ -124,6 +127,12 @@
     <Filter Include="Source\Engine\Runtime\Stats">
       <UniqueIdentifier>{b73b3ffd-cc3e-3e73-cd5e-4c862ce12d43}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\UI">
+      <UniqueIdentifier>{93bfe338-2d3f-4f30-93b8-b17b8b563810}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\UI\Backends">
+      <UniqueIdentifier>{277d3098-fef3-4ec0-a97a-9ce7d69b43ea}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Serialization">
       <UniqueIdentifier>{2da23669-dc56-0f8c-0400-ac456128f1fa}</UniqueIdentifier>
     </Filter>
@@ -156,6 +165,18 @@
     </Filter>
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{60f3c5d4-2dd4-3746-7c69-104344277d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\SoLoud">
+      <UniqueIdentifier>{f0d2e6d3-25ec-4b7f-a9a1-6c55899c22f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\SoLoud\Core">
+      <UniqueIdentifier>{9f7088b7-15f7-496c-956f-1a6d4671e71a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\SoLoud\AudioSource">
+      <UniqueIdentifier>{a8ad7c78-3ccb-4595-b4cc-d1fe93993e18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\SoLoud\Backend">
+      <UniqueIdentifier>{8ee1bf9d-48ab-45d5-b579-0f8d1e9fa2ac}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -233,6 +254,84 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_audiosource.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_bus.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_3d.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_basicops.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_faderops.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_filterops.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_getters.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_setters.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voicegroup.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voiceops.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fader.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft_lut.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_file.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_filter.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_misc.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_queue.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_thread.cpp">
+      <Filter>ThirdParty\SoLoud\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\dr_impl.cpp">
+      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\stb_vorbis.c">
+      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wav.cpp">
+      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wavstream.cpp">
+      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\SoLoud\src\backend\miniaudio\soloud_miniaudio.cpp">
+      <Filter>ThirdParty\SoLoud\Backend</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
@@ -270,6 +369,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorRuntimeUIPreviewWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp">
@@ -317,6 +419,9 @@
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -360,6 +465,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SoundComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\SubUVComponent.cpp">
@@ -430,9 +538,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\GameJamPlayerController.cpp">
-      <Filter>Source\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
@@ -671,6 +776,27 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.cpp">
+      <Filter>Source\Engine\UI\Backends</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUICanvas.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUIFacade.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUIScreen.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUISampleScreens.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUISystem.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\RuntimeUIWidget.cpp">
+      <Filter>Source\Engine\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
@@ -769,6 +895,21 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerComponentBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerEngineBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaApplicationAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaAudioAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaAssetAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaDebugAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaEffectAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaInputAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaRandomAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSaveAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaTimeAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\GameSplashScreen.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -777,6 +918,9 @@
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\EditorEngine.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
@@ -831,6 +975,9 @@
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorRuntimeUIPreviewWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -865,6 +1012,9 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\AssetQueryService.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FileUtils.h">
@@ -934,6 +1084,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SoundComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SubUVComponent.h">
@@ -1014,6 +1167,9 @@
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Random\EngineRandom.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Singleton.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -1058,9 +1214,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\GameJamPlayerController.h">
-      <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
       <Filter>Source\Engine\GameFramework</Filter>
@@ -1374,6 +1527,39 @@
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h">
       <Filter>Source\Engine\Runtime\Stats</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.h">
+      <Filter>Source\Engine\UI\Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIBackend.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUICanvas.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIFacade.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIInput.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIScreen.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUISampleScreens.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUISystem.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIStyle.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RuntimeUIWidget.h">
+      <Filter>Source\Engine\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Archive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
@@ -1494,6 +1680,7 @@
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\Runtime\Script\API\LuaEngineAPIBindings.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
     <ClInclude Include="Source\Engine\Runtime\GameSplashScreen.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />

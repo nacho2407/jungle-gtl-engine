@@ -7,6 +7,7 @@
 #include "Editor/UI/EditorFooterLogSystem.h"
 #include "Editor/UI/EditorMaterialWidget.h"
 #include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorRuntimeUIPreviewWidget.h"
 #include "Editor/UI/EditorSceneWidget.h"
 #include "Editor/UI/EditorViewportOverlayWidget.h"
 #include "Editor/UI/EditorStatWidget.h"
@@ -14,6 +15,7 @@
 #include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Editor/Packaging/GamePackager.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "UI/Backends/ImGuiRuntimeUIBackend.h"
 
 #include <future>
 
@@ -79,6 +81,8 @@ private:
 	void RenderEditorToolbar();
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
+	void RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime);
+	FRuntimeUIResolvedImage ResolveRuntimeUIImage(const FString& ImagePath) const;
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
 	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
@@ -157,6 +161,8 @@ private:
 	FEditorStatWidget StatWidget;
 	FEditorToolbarWidget ToolbarWidget;
 	FEditorPlayStreamWidget PlayStreamWidget;
+	FEditorRuntimeUIPreviewWidget RuntimeUIPreviewWidget;
+	FImGuiRuntimeUIBackend RuntimeUIBackend;
 
 	bool bShowConsole = true;
 	bool bShowControl = false;
@@ -168,6 +174,7 @@ private:
 	bool bShowEditorDebug = false;
 	bool bShowContentBrowser = false;
 	bool bShowUndoHistory = false;
+	bool bShowRuntimeUIPreview = false;
 	bool bOpenBuildGameModal = false;
 	bool bBuildGameInProgress = false;
 	FGameBuildSettings PendingBuildSettings;
@@ -175,7 +182,7 @@ private:
 	char BuildGameNameBuffer[128] = "NipsGame";
 	char BuildStartupSceneBuffer[MAX_PATH] = "Asset/Scene/Default.scene";
 	char BuildSceneListAddBuffer[MAX_PATH] = "";
-	char BuildPlayerControllerClassBuffer[128] = "AGameJamPlayerController";
+	char BuildPlayerControllerClassBuffer[128] = "APlayerController";
 	char BuildOutputDirectoryBuffer[MAX_PATH] = "Builds/Windows/NipsGame";
 	char BuildIconPathBuffer[MAX_PATH] = "";
 	char BuildSplashImagePathBuffer[MAX_PATH] = "";

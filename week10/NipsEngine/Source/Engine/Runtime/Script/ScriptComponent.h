@@ -66,10 +66,10 @@ public:
 	const FString& GetScriptName() const { return ScriptName; }
 
 	//LuaScript Class의 인스턴스를 반환
-    sol::optional<sol::table> CreateScriptInstance(const FLuaScriptLoadResult& Loaded);        
+    sol::optional<sol::table> CreateScriptInstance(const FLuaScriptLoadResult& Loaded);
     void ReloadLuaProperties();
 	sol::table MakeRuntimePropertyTable(sol::state& Lua);
-	
+
 	template <typename... Args>
     void CallScriptFunction(const FString& FunctionName, Args&&... args);
 

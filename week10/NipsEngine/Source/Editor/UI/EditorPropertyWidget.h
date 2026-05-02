@@ -40,6 +40,7 @@ private:
 	// 디테일 패널
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
+	void RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentProperties();
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
@@ -68,4 +69,5 @@ private:
 	bool bActorSelected   = true; // true: Actor details, false: Component details
 	bool bOpenDetailsContextMenu = false;
 	bool bPropertyEditUndoCaptured = false;
+	char NewActorTagBuffer[128] = "";
 };

@@ -88,5 +88,10 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.BeginGameFrame(FrameWidth, FrameHeight);
 	Renderer.Render(Bus);
 	Renderer.CompositeCurrentSceneToBackBuffer();
+	Engine->RenderRuntimeUI(FRuntimeUIRenderContext{
+		ERuntimeUIRenderMode::GameClient,
+		FRuntimeUIVector2(0.0f, 0.0f),
+		FRuntimeUIVector2(static_cast<float>(FrameWidth), static_cast<float>(FrameHeight)),
+		DeltaTime});
 	Renderer.EndFrame();
 }
