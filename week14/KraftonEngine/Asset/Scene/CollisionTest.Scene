@@ -178,11 +178,27 @@
       "bVisible" : true
     }, {
       "ClassName" : "ACarPawn",
-      "Name" : "ACarPawn_0",
+      "Name" : "ACarPawn_1",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UCarMovementComponent",
+          "Properties" : {
+            "AccelForce" : 300.000000,
+            "Auto Register Updated" : true,
+            "BrakeForce" : 40.000000,
+            "LateralGrip" : 8.000000,
+            "MaxSpeed" : 20.000000,
+            "ReverseAccelForce" : 300.000000,
+            "ReverseMaxSpeed" : -15.000000,
+            "RollingDrag" : 2.000000,
+            "SteeringPower" : 90.000000,
+            "Updated Component" : "",
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -229,9 +245,9 @@
                 "Path" : "Asset/Materials/Auto/Chassis.mat"
               },
               "Generate Overlap Events" : false,
-              "Location" : [0.000000, 0.000000, -0.500000],
+              "Location" : [-0.156215, 0.002640, -0.642434],
               "Object Type" : 0,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 89.032349, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Simulate Physics" : false,
               "Static Mesh" : "Data/Truck/TruckBody.obj",
@@ -255,12 +271,12 @@
               },
               "Draw Only If Selected" : false,
               "Generate Overlap Events" : false,
-              "Location" : [0.800000, 1.300000, -0.500000],
+              "Location" : [1.500000, 0.800000, -0.500000],
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
+              "Simulate Physics" : true,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -282,12 +298,12 @@
               },
               "Draw Only If Selected" : false,
               "Generate Overlap Events" : false,
-              "Location" : [0.950066, -1.333906, -0.500000],
+              "Location" : [1.500000, -0.800000, -0.500000],
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
+              "Simulate Physics" : true,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -309,12 +325,12 @@
               },
               "Draw Only If Selected" : false,
               "Generate Overlap Events" : false,
-              "Location" : [-0.873111, 1.284141, -0.500000],
+              "Location" : [-1.500000, 0.800000, -0.500000],
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
+              "Simulate Physics" : true,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -336,22 +352,37 @@
               },
               "Draw Only If Selected" : false,
               "Generate Overlap Events" : false,
-              "Location" : [-0.870678, -1.362330, -0.410123],
+              "Location" : [-1.500000, -0.800000, -0.500000],
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : false,
+              "Simulate Physics" : true,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [-5.000000, 0.000000, 3.000000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, -15.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UBoxComponent",
         "Properties" : {
-          "Box Extent" : [1.000000, 2.000000, 1.000000],
+          "Box Extent" : [2.000000, 1.000000, 0.500000],
           "Cast Shadow" : false,
           "Collision Enabled" : 3,
           "Collision Responses" : {
@@ -363,9 +394,9 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [-13.450994, 2.071935, 5.692372],
+          "Location" : [-8.273662, -3.966848, 2.783308],
           "Object Type" : 2,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -384,9 +415,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-13.239101, 5.841169, 8.157618],
+    "Location" : [-8.584056, 1.809753, 2.821473],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000001, 28.515316, -84.000854]
+    "Rotation" : [0.000001, 20.265671, -84.900719]
   },
   "Version" : 2,
   "WorldType" : "Editor"
