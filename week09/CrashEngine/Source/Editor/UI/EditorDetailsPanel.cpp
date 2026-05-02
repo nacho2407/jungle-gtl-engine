@@ -672,19 +672,17 @@ void FEditorDetailsPanel::Render(float DeltaTime)
     if (PrimaryName.empty())
         PrimaryName = PrimaryActor->GetClass()->GetName();
 
-    if (bActorSelected)
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+    FString ActorNameLabel;
     if (SelectionCount > 1)
     {
-        ImGui::Text("Name: %s (+%d)", PrimaryName.c_str(), SelectionCount - 1);
+        ActorNameLabel = "Name: " + PrimaryName + " (+" + std::to_string(SelectionCount - 1) + ")";
     }
     else
     {
-        ImGui::Text("Name: %s", PrimaryName.c_str());
+        ActorNameLabel = "Name: " + PrimaryName;
     }
-    if (bActorSelected)
-        ImGui::PopStyleColor();
-    if (ImGui::IsItemClicked())
+
+    if (ImGui::Selectable(ActorNameLabel.c_str(), bActorSelected))
     {
         bActorSelected = true;
         SelectedComponent = nullptr;

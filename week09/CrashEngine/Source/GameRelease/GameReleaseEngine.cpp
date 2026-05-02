@@ -1,6 +1,8 @@
 ﻿#include "GameReleaseEngine.h"
 
 #include "Component/CameraComponent.h"
+#include "Component/LightComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Logging/LogOutputDevice.h"
 #include "GameFramework/AActor.h"
@@ -68,6 +70,7 @@ FWorldContext& UGameReleaseEngine::LoadStartupWorld()
 
     WorldList.push_back(LoadedContext);
     FWorldContext& WorldContext = WorldList.back();
+    RefreshLoadedWorldForGame(WorldContext.World);
     EnsureActiveCamera(WorldContext.World, CameraData.bValid ? &CameraData : nullptr);
     return WorldContext;
 }
@@ -111,11 +114,12 @@ UCameraComponent* UGameReleaseEngine::CreateFallbackCamera(UWorld* World, const 
         return nullptr;
     }
 
-    UCameraComponent* Camera = CameraActor->AddComponent<UCameraComponent>();
+    UCameraComponent* Camera = UObjectManager::Get().CreateObject<UCameraComponent>(CameraActor);
     if (!Camera)
     {
         return nullptr;
     }
+    CameraActor->RegisterComponent(Camera);
     CameraActor->SetRootComponent(Camera);
 
     if (CameraData)
@@ -158,6 +162,35 @@ void UGameReleaseEngine::EnsureActiveCamera(UWorld* World, const FPerspectiveCam
     if (Camera)
     {
         World->SetActiveCamera(Camera);
+    }
+}
+
+void UGameReleaseEngine::RefreshLoadedWorldForGame(UWorld* World)
+{
+    if (!World)
+    {
+        return;
+    }
+
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor)
+        {
+            continue;
+        }
+
+        for (UActorComponent* Component : Actor->GetComponents())
+        {
+            if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component))
+            {
+                Primitive->MarkRenderStateDirty();
+            }
+            else if (ULightComponent* Light = Cast<ULightComponent>(Component))
+            {
+                Light->DestroyRenderState();
+                Light->CreateRenderState();
+            }
+        }
     }
 }
 

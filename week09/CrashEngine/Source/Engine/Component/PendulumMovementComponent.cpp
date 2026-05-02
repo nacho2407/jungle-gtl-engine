@@ -9,6 +9,8 @@
 
 #include <cmath>
 
+#include "Input/InputSystem.h"
+
 IMPLEMENT_COMPONENT_CLASS(UPendulumMovementComponent, UMovementComponent, EEditorComponentCategory::Movement)
 
 void UPendulumMovementComponent::BeginPlay()
@@ -51,6 +53,11 @@ void UPendulumMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
     FQuat FinalQuat = InitialRelativeRotation * SwingQuat;
 
     Target->SetRelativeRotation(FinalQuat);
+    
+    if (InputSystem::Get().GetSnapshot().KeyDown['D'])
+    {
+        Target->SetWorldLocation(Target->GetWorldLocation() + FVector(0.0f, 1.0f, 0.0f)*DeltaTime);
+    }
 }
 
 void UPendulumMovementComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

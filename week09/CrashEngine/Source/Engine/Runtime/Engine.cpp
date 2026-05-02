@@ -159,6 +159,7 @@ void UEngine::Render(float DeltaTime)
 
         Renderer.CollectWorld(World, CollectContext);
         Renderer.CollectDebugRender(*Scene);
+
     }
     else
     {
@@ -175,6 +176,7 @@ void UEngine::Render(float DeltaTime)
                 Renderer.AcquireViewModeSurfaces(Viewport, Viewport->GetWidth(), Viewport->GetHeight());
         }
         Renderer.BuildDrawCommands(PipelineContext);
+
         Renderer.RenderFrame(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
     }
 
