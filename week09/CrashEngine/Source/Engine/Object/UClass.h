@@ -15,12 +15,23 @@ enum EClassFlags : uint32
     CF_Abstract = 1 << 3,
 };
 
+enum class EEditorComponentCategory : uint8
+{
+    Basic,
+    Lights,
+    Shapes,
+    Movement,
+    Visual,
+    Scripts,
+    Hidden,
+};
+
 // UClass는 오브젝트 영역의 핵심 동작을 담당합니다.
 class UClass
 {
 public:
-    UClass(const char* InName, UClass* InSuperClass, size_t InSize, uint32 InFlags = CF_None)
-        : Name(InName), SuperClass(InSuperClass), Size(InSize), ClassFlags(InFlags)
+    UClass(const char* InName, UClass* InSuperClass, size_t InSize, uint32 InFlags = CF_None, EEditorComponentCategory InEditorComponentCategory = EEditorComponentCategory::Basic)
+        : Name(InName), SuperClass(InSuperClass), Size(InSize), ClassFlags(InFlags), EditorComponentCategory(InEditorComponentCategory)
     {
     }
 
@@ -28,6 +39,7 @@ public:
     UClass* GetSuperClass() const { return SuperClass; }
     size_t GetSize() const { return Size; }
     uint32 GetClassFlags() const { return ClassFlags; }
+    EEditorComponentCategory GetEditorComponentCategory() const { return EditorComponentCategory; }
 
     bool IsA(const UClass* Other) const
     {
@@ -56,6 +68,7 @@ private:
     UClass* SuperClass = nullptr;
     size_t Size = 0;
     uint32 ClassFlags = CF_None;
+    EEditorComponentCategory EditorComponentCategory = EEditorComponentCategory::Basic;
 };
 
 // static initializer 에서 UClass를 전역 레지스트리에 등록

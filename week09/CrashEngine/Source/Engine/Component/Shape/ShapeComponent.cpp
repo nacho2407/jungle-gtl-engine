@@ -3,7 +3,7 @@
 #include "GameFrameWork/World.h"
 #include "Physics/CollisionManager.h"
 
-IMPLEMENT_CLASS(UShapeComponent, UPrimitiveComponent)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(UShapeComponent, UPrimitiveComponent)
 
 
 UShapeComponent::UShapeComponent()
@@ -25,6 +25,18 @@ void UShapeComponent::Serialize(FArchive& Ar)
     UPrimitiveComponent::Serialize(Ar);
     Ar << ShapeColor;
     Ar << bDrawOnlyIfSelected;
+}
+
+void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UPrimitiveComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "ShapeColor", EPropertyType::Color4, &ShapeColor});
+    OutProps.push_back({ "AlwaysDrawCollider", EPropertyType::Bool, &bDrawOnlyIfSelected });
+}
+
+void UShapeComponent::PostEditProperty(const char* PropertyName)
+{
+    UPrimitiveComponent::PostEditProperty(PropertyName);
 }
 
 void UShapeComponent::PostDuplicate()

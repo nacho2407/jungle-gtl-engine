@@ -1,0 +1,241 @@
+GameRelease diagnostics
+Frame 0 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 0 DrawCommands=12 OpaqueCommands=0
+Frame 1 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 1 DrawCommands=12 OpaqueCommands=0
+Frame 2 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 2 DrawCommands=12 OpaqueCommands=0
+Frame 3 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 3 DrawCommands=12 OpaqueCommands=0
+Frame 4 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 4 DrawCommands=12 OpaqueCommands=0
+Frame 5 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 5 DrawCommands=12 OpaqueCommands=0
+Frame 6 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 6 DrawCommands=12 OpaqueCommands=0
+Frame 7 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 7 DrawCommands=12 OpaqueCommands=0
+Frame 8 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 8 DrawCommands=12 OpaqueCommands=0
+Frame 9 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 9 DrawCommands=12 OpaqueCommands=0
+Frame 10 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 10 DrawCommands=12 OpaqueCommands=0
+Frame 11 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 11 DrawCommands=12 OpaqueCommands=0
+Frame 12 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 12 DrawCommands=12 OpaqueCommands=0
+Frame 13 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 13 DrawCommands=12 OpaqueCommands=0
+Frame 14 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 14 DrawCommands=12 OpaqueCommands=0
+Frame 15 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 15 DrawCommands=12 OpaqueCommands=0
+Frame 16 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 16 DrawCommands=12 OpaqueCommands=0
+Frame 17 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 17 DrawCommands=12 OpaqueCommands=0
+Frame 18 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 18 DrawCommands=12 OpaqueCommands=0
+Frame 19 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 19 DrawCommands=12 OpaqueCommands=0
+Frame 20 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 20 DrawCommands=12 OpaqueCommands=0
+Frame 21 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 21 DrawCommands=12 OpaqueCommands=0
+Frame 22 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 22 DrawCommands=12 OpaqueCommands=0
+Frame 23 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 23 DrawCommands=12 OpaqueCommands=0
+Frame 24 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 24 DrawCommands=12 OpaqueCommands=0
+Frame 25 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 25 DrawCommands=12 OpaqueCommands=0
+Frame 26 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 26 DrawCommands=12 OpaqueCommands=0
+Frame 27 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 27 DrawCommands=12 OpaqueCommands=0
+Frame 28 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 28 DrawCommands=12 OpaqueCommands=0
+Frame 29 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 29 DrawCommands=12 OpaqueCommands=0
+Frame 30 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 30 DrawCommands=12 OpaqueCommands=0
+Frame 31 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 31 DrawCommands=12 OpaqueCommands=0
+Frame 32 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 32 DrawCommands=12 OpaqueCommands=0
+Frame 33 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 33 DrawCommands=12 OpaqueCommands=0
+Frame 34 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 34 DrawCommands=12 OpaqueCommands=0
+Frame 35 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 35 DrawCommands=12 OpaqueCommands=0
+Frame 36 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 36 DrawCommands=12 OpaqueCommands=0
+Frame 37 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 37 DrawCommands=12 OpaqueCommands=0
+Frame 38 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 38 DrawCommands=12 OpaqueCommands=0
+Frame 39 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 39 DrawCommands=12 OpaqueCommands=0
+Frame 40 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 40 DrawCommands=12 OpaqueCommands=0
+Frame 41 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 41 DrawCommands=12 OpaqueCommands=0
+Frame 42 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 42 DrawCommands=12 OpaqueCommands=0
+Frame 43 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 43 DrawCommands=12 OpaqueCommands=0
+Frame 44 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 44 DrawCommands=12 OpaqueCommands=0
+Frame 45 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 45 DrawCommands=12 OpaqueCommands=0
+Frame 46 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 46 DrawCommands=12 OpaqueCommands=0
+Frame 47 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 47 DrawCommands=12 OpaqueCommands=0
+Frame 48 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 48 DrawCommands=12 OpaqueCommands=0
+Frame 49 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 49 DrawCommands=12 OpaqueCommands=0
+Frame 50 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 50 DrawCommands=12 OpaqueCommands=0
+Frame 51 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 51 DrawCommands=12 OpaqueCommands=0
+Frame 52 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 52 DrawCommands=12 OpaqueCommands=0
+Frame 53 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 53 DrawCommands=12 OpaqueCommands=0
+Frame 54 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 54 DrawCommands=12 OpaqueCommands=0
+Frame 55 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 55 DrawCommands=12 OpaqueCommands=0
+Frame 56 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 56 DrawCommands=12 OpaqueCommands=0
+Frame 57 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 57 DrawCommands=12 OpaqueCommands=0
+Frame 58 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 58 DrawCommands=12 OpaqueCommands=0
+Frame 59 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 59 DrawCommands=12 OpaqueCommands=0
+Frame 60 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 60 DrawCommands=12 OpaqueCommands=0
+Frame 61 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 61 DrawCommands=12 OpaqueCommands=0
+Frame 62 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 62 DrawCommands=12 OpaqueCommands=0
+Frame 63 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 63 DrawCommands=12 OpaqueCommands=0
+Frame 64 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 64 DrawCommands=12 OpaqueCommands=0
+Frame 65 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 65 DrawCommands=12 OpaqueCommands=0
+Frame 66 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 66 DrawCommands=12 OpaqueCommands=0
+Frame 67 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 67 DrawCommands=12 OpaqueCommands=0
+Frame 68 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 68 DrawCommands=12 OpaqueCommands=0
+Frame 69 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 69 DrawCommands=12 OpaqueCommands=0
+Frame 70 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 70 DrawCommands=12 OpaqueCommands=0
+Frame 71 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 71 DrawCommands=12 OpaqueCommands=0
+Frame 72 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 72 DrawCommands=12 OpaqueCommands=0
+Frame 73 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 73 DrawCommands=12 OpaqueCommands=0
+Frame 74 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 74 DrawCommands=12 OpaqueCommands=0
+Frame 75 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 75 DrawCommands=12 OpaqueCommands=0
+Frame 76 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 76 DrawCommands=12 OpaqueCommands=0
+Frame 77 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 77 DrawCommands=12 OpaqueCommands=0
+Frame 78 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 78 DrawCommands=12 OpaqueCommands=0
+Frame 79 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 79 DrawCommands=12 OpaqueCommands=0
+Frame 80 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 80 DrawCommands=12 OpaqueCommands=0
+Frame 81 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 81 DrawCommands=12 OpaqueCommands=0
+Frame 82 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 82 DrawCommands=12 OpaqueCommands=0
+Frame 83 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 83 DrawCommands=12 OpaqueCommands=0
+Frame 84 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 84 DrawCommands=12 OpaqueCommands=0
+Frame 85 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 85 DrawCommands=12 OpaqueCommands=0
+Frame 86 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 86 DrawCommands=12 OpaqueCommands=0
+Frame 87 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 87 DrawCommands=12 OpaqueCommands=0
+Frame 88 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 88 DrawCommands=12 OpaqueCommands=0
+Frame 89 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 89 DrawCommands=12 OpaqueCommands=0
+Frame 90 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 90 DrawCommands=12 OpaqueCommands=0
+Frame 91 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 91 DrawCommands=12 OpaqueCommands=0
+Frame 92 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 92 DrawCommands=12 OpaqueCommands=0
+Frame 93 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 93 DrawCommands=12 OpaqueCommands=0
+Frame 94 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 94 DrawCommands=12 OpaqueCommands=0
+Frame 95 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 95 DrawCommands=12 OpaqueCommands=0
+Frame 96 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 96 DrawCommands=12 OpaqueCommands=0
+Frame 97 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 97 DrawCommands=12 OpaqueCommands=0
+Frame 98 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 98 DrawCommands=12 OpaqueCommands=0
+Frame 99 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 99 DrawCommands=12 OpaqueCommands=0
+Frame 100 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 100 DrawCommands=12 OpaqueCommands=0
+Frame 101 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 101 DrawCommands=12 OpaqueCommands=0
+Frame 102 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 102 DrawCommands=12 OpaqueCommands=0
+Frame 103 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 103 DrawCommands=12 OpaqueCommands=0
+Frame 104 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 104 DrawCommands=12 OpaqueCommands=0
+Frame 105 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 105 DrawCommands=12 OpaqueCommands=0
+Frame 106 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 106 DrawCommands=12 OpaqueCommands=0
+Frame 107 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 107 DrawCommands=12 OpaqueCommands=0
+Frame 108 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 108 DrawCommands=12 OpaqueCommands=0
+Frame 109 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 109 DrawCommands=12 OpaqueCommands=0
+Frame 110 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 110 DrawCommands=12 OpaqueCommands=0
+Frame 111 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 111 DrawCommands=12 OpaqueCommands=0
+Frame 112 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 112 DrawCommands=12 OpaqueCommands=0
+Frame 113 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 113 DrawCommands=12 OpaqueCommands=0
+Frame 114 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 114 DrawCommands=12 OpaqueCommands=0
+Frame 115 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 115 DrawCommands=12 OpaqueCommands=0
+Frame 116 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 116 DrawCommands=12 OpaqueCommands=0
+Frame 117 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 117 DrawCommands=12 OpaqueCommands=0
+Frame 118 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 118 DrawCommands=12 OpaqueCommands=0
+Frame 119 World=000001956FFAAA00 Camera=00000195667D84D0 Actors=4 SceneProxies=7 LightProxies=1 Visible=2 Opaque=2 Transparent=0
+Frame 119 DrawCommands=12 OpaqueCommands=0

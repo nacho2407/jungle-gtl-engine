@@ -34,6 +34,7 @@ public:
     // Actor lifecycle
     template <typename T>
     T* SpawnActor();
+    AActor* SpawnActorByClassName(const FString& ActorClassName);
     void DestroyActor(AActor* Actor);
     void AddActor(AActor* Actor);
     void MarkEditorPickingAndScenePrimitiveBVHsDirty();
@@ -75,6 +76,8 @@ public:
     void UpdateActorInOctree(AActor* actor);
 
 	FCollisionManager* GetCollisionManager() { return CollisionManager.get(); }
+    void UpdateCollisionInBVH(UPrimitiveComponent* Comp);
+
 
 private:
     // TArray<AActor*> Actors;

@@ -4,7 +4,7 @@
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(USceneComponent, UActorComponent)
+IMPLEMENT_COMPONENT_CLASS(USceneComponent, UActorComponent, EEditorComponentCategory::Basic)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 {

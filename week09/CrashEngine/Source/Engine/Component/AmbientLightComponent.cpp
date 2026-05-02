@@ -4,7 +4,7 @@
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Light/AmbientLightSceneProxy.h"
 
-IMPLEMENT_CLASS(UAmbientLightComponent, ULightComponent)
+IMPLEMENT_COMPONENT_CLASS(UAmbientLightComponent, ULightComponent, EEditorComponentCategory::Lights)
 
 UAmbientLightComponent::UAmbientLightComponent()
 {

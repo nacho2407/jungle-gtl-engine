@@ -31,7 +31,7 @@ FMatrix BuildStableUUIDTextBillboardMatrix(const FVector& CameraForward, const F
 }
 } // namespace
 
-IMPLEMENT_CLASS(UUUIDTextRenderComponent, UTextRenderComponent)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(UUUIDTextRenderComponent, UTextRenderComponent)
 
 void UUUIDTextRenderComponent::UpdateWorldMatrix() const
 {

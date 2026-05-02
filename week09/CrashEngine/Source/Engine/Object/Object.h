@@ -33,6 +33,15 @@ class FArchive;
         FlagsValue);                                                \
     FClassRegistrar ClassName::s_Registrar(&ClassName::StaticClassInstance);
 
+#define DEFINE_CLASS_WITH_FLAGS_AND_CATEGORY(ClassName, ParentClass, FlagsValue, EditorCategoryValue) \
+    UClass ClassName::StaticClassInstance(                                                            \
+        #ClassName,                                                                                   \
+        &ParentClass::StaticClassInstance,                                                            \
+        sizeof(ClassName),                                                                            \
+        FlagsValue,                                                                                   \
+        EditorCategoryValue);                                                                         \
+    FClassRegistrar ClassName::s_Registrar(&ClassName::StaticClassInstance);
+
 #define DEFINE_CLASS(ClassName, ParentClass) \
     DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_None)
 
