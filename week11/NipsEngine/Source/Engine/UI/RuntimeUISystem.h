@@ -91,7 +91,13 @@ public:
 
 private:
     void TickAnimations(float DeltaTime);
-    void ComputeWidgetTree(FRuntimeUIWidget& Widget, const FRuntimeUIRect& ParentRect, bool bParentVisible, bool bParentEnabled, float ParentAlpha);
+    void ComputeWidgetTree(
+        FRuntimeUIWidget& Widget,
+        const FRuntimeUIRect& ParentRect,
+        bool bParentVisible,
+        bool bParentEnabled,
+        float ParentAlpha,
+        float LayoutScale = 1.0f);
     void RenderWidgetTree(IRuntimeUIBackend& Backend, const FRuntimeUIWidget& Widget) const;
     void DrawWidget(IRuntimeUIBackend& Backend, const FRuntimeUIWidget& Widget) const;
     FRuntimeUIWidget* HitTest(const FRuntimeUIVector2& ScreenPosition);

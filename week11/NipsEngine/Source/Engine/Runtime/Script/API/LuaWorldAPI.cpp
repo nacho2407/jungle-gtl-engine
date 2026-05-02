@@ -3,6 +3,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Serialization/PrefabManager.h"
 
 namespace
 {
@@ -236,6 +237,17 @@ namespace FLuaEngineAPI
                 ActiveWorld->SyncSpatialIndex();
             }
             return Actor;
+        };
+
+        World["SpawnActorFromPrefab"] = [](const FString& RelativePath) -> AActor*
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld)
+            {
+                return nullptr;
+            }
+
+            return FPrefabManager::SpawnActorFromPrefab(ActiveWorld, RelativePath);
         };
 
         World["DestroyActor"] = [](AActor* Actor)

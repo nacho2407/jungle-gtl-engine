@@ -26,6 +26,7 @@ public:
 
 private:
 	bool PromptSaveSceneAs(FString& OutFilePath) const;
+	bool PromptSavePrefabAs(const AActor* Actor, FString& OutFilePath) const;
 	void SetCurrentScenePath(const FString& FilePath);
 
 private:

@@ -579,8 +579,10 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsFileWatcher.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsPlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\ActorSerialization.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonReader.cpp" />
     <ClCompile Include="Source\Engine\Serialization\JsonWriter.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\PrefabManager.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitter.cpp" />
     <ClCompile Include="Source\Engine\Slate\SSplitterCross.cpp" />
@@ -863,10 +865,12 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsPlatformTime.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsWindow.h" />
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h" />
+    <ClInclude Include="Source\Engine\Serialization\ActorSerialization.h" />
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
+    <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />

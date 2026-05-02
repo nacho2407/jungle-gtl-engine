@@ -197,6 +197,10 @@ function EngineAPIWorld.IsValidActor(actor) end
 ---@return AActor|nil
 function EngineAPIWorld.SpawnActor(typeName) end
 
+---@param relativePath string
+---@return AActor|nil
+function EngineAPIWorld.SpawnActorFromPrefab(relativePath) end
+
 ---@param actor AActor
 function EngineAPIWorld.DestroyActor(actor) end
 

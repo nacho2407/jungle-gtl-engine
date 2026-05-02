@@ -93,25 +93,28 @@ void FRuntimeUIWidget::ComputeLayout(
     const FRuntimeUIRect& ParentRect,
     bool bParentVisible,
     bool bParentEnabled,
-    float ParentAlpha)
+    float ParentAlpha,
+    float LayoutScale)
 {
     const FRuntimeUIVector2 ParentSize = ParentRect.Size;
     const FRuntimeUIVector2 AnchorPoint(
         ParentRect.Min.X + ParentSize.X * AnchorMin.X,
         ParentRect.Min.Y + ParentSize.Y * AnchorMin.Y);
 
-    FRuntimeUIVector2 ComputedSize = Size;
+    const FRuntimeUIVector2 ScaledPosition = Position * LayoutScale;
+    const FRuntimeUIVector2 ScaledSize = Size * LayoutScale;
+    FRuntimeUIVector2 ComputedSize = ScaledSize;
     if (AnchorMin.X != AnchorMax.X)
     {
-        ComputedSize.X = ParentSize.X * (AnchorMax.X - AnchorMin.X) + Size.X;
+        ComputedSize.X = ParentSize.X * (AnchorMax.X - AnchorMin.X) + ScaledSize.X;
     }
     if (AnchorMin.Y != AnchorMax.Y)
     {
-        ComputedSize.Y = ParentSize.Y * (AnchorMax.Y - AnchorMin.Y) + Size.Y;
+        ComputedSize.Y = ParentSize.Y * (AnchorMax.Y - AnchorMin.Y) + ScaledSize.Y;
     }
 
     const FRuntimeUIVector2 PivotOffset(ComputedSize.X * Pivot.X, ComputedSize.Y * Pivot.Y);
-    ComputedRect = FRuntimeUIRect(AnchorPoint + Position - PivotOffset, ComputedSize);
+    ComputedRect = FRuntimeUIRect(AnchorPoint + ScaledPosition - PivotOffset, ComputedSize);
     ComputedAlpha = ParentAlpha * RuntimeUIClamp01(Style.Alpha);
     bComputedVisible = bParentVisible && bVisible && ComputedAlpha > 0.0f;
     bComputedEnabled = bParentEnabled && bEnabled;
