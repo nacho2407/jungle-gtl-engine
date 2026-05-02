@@ -27,6 +27,12 @@ void ATriggerVolumeBase::PostDuplicate()
 	TriggerBox = Cast<UBoxComponent>(GetRootComponent());
 }
 
+void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+	OutProps.push_back({ "TriggerTag", EPropertyType::Name, "Trigger", &TriggerTag });
+}
+
 void ATriggerVolumeBase::BeginPlay()
 {
 	Super::BeginPlay();

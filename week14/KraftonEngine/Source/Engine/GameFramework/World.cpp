@@ -192,10 +192,10 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
 }
 
-bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const
+bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor) const
 {
 	if (PhysicsScene)
-		return PhysicsScene->Raycast(Start, Dir, MaxDist, OutHit);
+		return PhysicsScene->Raycast(Start, Dir, MaxDist, OutHit, IgnoreActor);
 	return false;
 }
 

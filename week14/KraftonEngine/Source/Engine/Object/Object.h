@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "Profiling/MemoryStats.h"
 #include "Object/FName.h"
 #include "Core/Singleton.h"
+#include "Core/PropertyTypes.h"
 #include "Object/UClass.h"
 
 class FArchive;
@@ -64,6 +65,9 @@ public:
 	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
 	virtual void Serialize(FArchive& Ar);
 	virtual void PostDuplicate() {}
+
+	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps);
+	virtual void PostEditProperty(const char* PropertyName);
 
 	static void* operator new(size_t Size)
 	{
