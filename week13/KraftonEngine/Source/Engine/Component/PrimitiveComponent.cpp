@@ -53,7 +53,9 @@ void UPrimitiveComponent::BeginPlay()
 {
 	USceneComponent::BeginPlay();
 
-	// 직렬화나 생성자에서 CollisionEnabled가 이미 설정된 경우 등록
+	// 직렬화나 InitDefaultComponents에서 CollisionEnabled가 이미 설정된 경우 등록.
+	// 이 시점에 SimulatePhysics/ObjectType/Response/Mass/COM 등 모든 셋업이 끝나있어
+	// PhysX/Native가 정확한 값으로 body를 생성한다.
 	if (IsQueryCollisionEnabled())
 	{
 		if (Owner)
@@ -64,6 +66,49 @@ void UPrimitiveComponent::BeginPlay()
 			}
 		}
 	}
+
+	// flag는 등록 흐름이 끝난 직후에만 true. 이후 setter들이 PhysicsScene::RebuildBody 호출.
+	bComponentHasBegunPlay = true;
+}
+
+void UPrimitiveComponent::EndPlay()
+{
+	// World->DestroyActor → Actor::EndPlay → 컴포넌트 EndPlay 흐름. PhysX/Native에서 안전하게
+	// 제거하지 않으면 다음 frame simulate가 stale PxActor를 참조하다 crash 한다.
+	// dtor에도 같은 호출이 있지만 (raw 포인터라 OwnedComponents의 컴포넌트들이 자동 delete되지
+	// 않아) dtor가 안 불릴 수 있어 EndPlay에서 명시적으로 보장한다. 이중 호출은 mapping 부재로 noop.
+	if (Owner)
+	{
+		if (UWorld* World = Owner->GetWorld())
+		{
+			if (IPhysicsScene* PS = World->GetPhysicsScene())
+			{
+				PS->UnregisterComponent(this);
+			}
+		}
+	}
+	bComponentHasBegunPlay = false;
+
+	USceneComponent::EndPlay();
+}
+
+void UPrimitiveComponent::NotifyPhysicsBodyDirty()
+{
+	if (!bComponentHasBegunPlay) return;
+	if (!Owner) return;
+	UWorld* World = Owner->GetWorld();
+	if (!World) return;
+	if (IPhysicsScene* PS = World->GetPhysicsScene())
+	{
+		PS->RebuildBody(this);
+	}
+}
+
+void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulate)
+{
+	if (bSimulatePhysics == bInSimulate) return;
+	bSimulatePhysics = bInSimulate;
+	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
@@ -392,19 +437,25 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 	CollisionEnabled = InEnabled;
 	bool bIsQuery = IsQueryCollisionEnabled();
 
-	if (bWasQuery == bIsQuery) return;
+	// 컴포넌트 BeginPlay 전이면 멤버만 변경. BeginPlay에서 한 번 등록되며 그 시점엔
+	// SimulatePhysics 등 다른 셋업이 모두 완료된 상태.
+	if (!bComponentHasBegunPlay) return;
 
 	if (!Owner) return;
 	UWorld* World = Owner->GetWorld();
 	if (!World) return;
 
-	if (bIsQuery)
+	if (bWasQuery != bIsQuery)
 	{
-		World->GetPhysicsScene()->RegisterComponent(this);
+		if (bIsQuery)
+			World->GetPhysicsScene()->RegisterComponent(this);
+		else
+			World->GetPhysicsScene()->UnregisterComponent(this);
 	}
-	else
+	else if (bWasQuery && bIsQuery)
 	{
-		World->GetPhysicsScene()->UnregisterComponent(this);
+		// 이미 등록된 상태에서 enabled 종류 변경 (예: QueryOnly ↔ QueryAndPhysics) — 재구성
+		NotifyPhysicsBodyDirty();
 	}
 }
 
@@ -416,17 +467,21 @@ bool UPrimitiveComponent::IsQueryCollisionEnabled() const
 
 void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 {
+	if (ObjectType == InChannel) return;
 	ObjectType = InChannel;
+	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
 {
 	ResponseContainer.SetResponse(Channel, Response);
+	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
 {
 	ResponseContainer.SetAllChannels(Response);
+	NotifyPhysicsBodyDirty();
 }
 
 ECollisionResponse UPrimitiveComponent::GetCollisionResponseToChannel(ECollisionChannel Channel) const

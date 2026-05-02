@@ -38,6 +38,7 @@ public:
 
 	void RegisterComponent(UPrimitiveComponent* Comp) override;
 	void UnregisterComponent(UPrimitiveComponent* Comp) override;
+	void RebuildBody(UPrimitiveComponent* Comp) override;
 
 	void Tick(float DeltaTime) override;
 
