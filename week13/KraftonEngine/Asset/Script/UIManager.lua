@@ -29,6 +29,7 @@ function UIManager.Init()
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
     UIManager.Register("gameOverlay", UI.CreateWidget("Asset/UI/GameOverlayWidget.rml"))
+    UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
     UIManager.Register("gameOver", UI.CreateWidget("Asset/UI/GameOverWidget.rml"))
 end
 

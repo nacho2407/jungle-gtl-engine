@@ -71,6 +71,11 @@ void AGameModeCarGame::OnPossessedPawnExitedTrigger(ATriggerVolumeBase* Trigger,
 		GS->SetPhase(ECarGamePhase::None);
 		UE_LOG("[CarGame] CarWash exit — Phase = None");
 	}
+	else if (Tag == FName("CarGas") && Cur == ECarGamePhase::CarGas)
+	{
+		GS->SetPhase(ECarGamePhase::None);
+		UE_LOG("[CarGame] CarGas exit — Phase = None");
+	}
 	else if (Tag == FName("EscapePolice") && Cur == ECarGamePhase::EscapePolice)
 	{
 		GS->SetPhase(ECarGamePhase::None);

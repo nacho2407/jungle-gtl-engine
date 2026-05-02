@@ -8,6 +8,7 @@ class USphereComponent;
 class ULuaScriptComponent;
 class UCameraComponent;
 class UCarMovementComponent;
+class UCarGasComponent;
 
 // ============================================================
 // ACarPawn — 자동차 게임의 플레이어 차량 Pawn
@@ -32,26 +33,34 @@ public:
 
 	// 코드 spawn 시 호출 — 직렬화 경로에선 PostDuplicate가 캐시 포인터를 다시 잡는다.
 	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/Truck/TruckBody.obj",
-	                           const FString& LuaScriptFile = "CarController.lua");
+	                           const FString& LuaScriptFile = "CarController.lua",
+							   const FString& LuaCameraScriptFile = "CameraManager.lua");
 	void PostDuplicate() override;
 
 	UBoxComponent* GetCollisionBox() const { return CollisionBox; }
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	USphereComponent* GetWheel(int Index) const;
 	ULuaScriptComponent* GetLuaScript() const { return LuaScript; }
-	UCameraComponent* GetCamera() const { return Camera; }
+	UCameraComponent* GetFirstPersonCamera() const { return FirstPersonCamera; }
+	UCameraComponent* GetThirdPersonCamera() const { return ThirdPersonCamera; }
+	UCarGasComponent* GetGas() const { return Gas; }
 
 	// --- Health / Damage ---
 	void TakeDamage(float Amount);
 	float GetHealth() const { return Health; }
+
+	bool IsFirstPersonView() const;
 
 private:
 	UBoxComponent* CollisionBox = nullptr;
 	UStaticMeshComponent* Mesh = nullptr;
 	USphereComponent* Wheels[4] = {};
 	ULuaScriptComponent* LuaScript = nullptr;
-	UCameraComponent* Camera = nullptr;
+	ULuaScriptComponent* LuaCameraScript = nullptr;
+	UCameraComponent* FirstPersonCamera = nullptr;
+	UCameraComponent* ThirdPersonCamera = nullptr;
 	UCarMovementComponent* Movement = nullptr;
+	UCarGasComponent* Gas = nullptr;
 
 	float Health = 100.0f;  // 0 이하 시 사망 처리는 후속 — 현재는 로그만
 };

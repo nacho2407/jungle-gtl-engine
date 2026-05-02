@@ -2,11 +2,13 @@
 
 #include "Core/Log.h"
 #include "Component/Movement/CarMovementComponent.h"
+#include "Component/CarGasComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "Component/DirtComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/CameraManager.h"
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
@@ -19,6 +21,7 @@
 // Lua API 노출을 위해 의도적으로 허용. 다른 게임 모드가 추가되면 게임-특화 binding은
 // 별도 등록 시점(GameEngine::Init 등)으로 분리하는 것을 권장.
 #include "Game/GameState/GameStateCarGame.h"
+#include "Game/Pawn/CarPawn.h"
 #include <filesystem>
 #include <fstream>
 
@@ -182,6 +185,26 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		return Manager ? Manager->ToggleActiveCameraForActor(Actor) : false;
 	});
+	CameraManager.set_function("GetActiveCameraOwner", []() -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return nullptr;
+		}
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		UCameraComponent* ActiveCamera = Manager ? Manager->GetActiveCamera() : nullptr;
+		return ActiveCamera ? ActiveCamera->GetOwner() : nullptr;
+	});
+	CameraManager.set_function("GetPossessedCamera", []() -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return nullptr;
+		}
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		UCameraComponent* PossessedCamera = Manager ? Manager->GetPossessedCamera() : nullptr;
+		return PossessedCamera ? PossessedCamera->GetOwner() : nullptr;
+	});
 }
 
 void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
@@ -231,6 +254,15 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
 		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
 		"GetForwardSpeed", &UCarMovementComponent::GetForwardSpeed);
+
+	Lua.new_usertype<UCarGasComponent>("CarGasComponent",
+		"SetGas", &UCarGasComponent::SetGas,
+		"AddGas", &UCarGasComponent::AddGas,
+		"ConsumeGas", &UCarGasComponent::ConsumeGas,
+		"GetGas", &UCarGasComponent::GetGas,
+		"GetMaxGas", &UCarGasComponent::GetMaxGas,
+		"GetGasRatio", &UCarGasComponent::GetGasRatio,
+		"HasGas", &UCarGasComponent::HasGas);
 
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(
@@ -299,6 +331,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor.GetComponentByClass<UCarMovementComponent>();
 	},
 
+		"GetCarGas", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UCarGasComponent>();
+	},
+
+		"AsCarPawn", [](AActor& Actor)
+	{
+		return Cast<ACarPawn>(&Actor);
+	},
+
 		"FireCarWashRay", [](AActor& Actor)
 	{
 		return UDirtComponent::FireCarWashRay(Actor);
@@ -318,6 +360,24 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		return Actor.GetFName().ToString();
 	}));
+
+	Lua.new_usertype<APawn>("Pawn",
+		sol::base_classes, sol::bases<AActor>(),
+		"IsPossessed", &APawn::IsPossessed,
+		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
+		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer);
+
+	Lua.new_usertype<ACarPawn>("CarPawn",
+		sol::base_classes, sol::bases<APawn, AActor>(),
+		"GetCarMovement", [](ACarPawn& Pawn)
+	{
+		return Pawn.GetComponentByClass<UCarMovementComponent>();
+	},
+		"GetCarGas", &ACarPawn::GetGas,
+		"GetGas", &ACarPawn::GetGas,
+		"TakeDamage", &ACarPawn::TakeDamage,
+		"GetHealth", &ACarPawn::GetHealth,
+		"IsFirstPersonView", &ACarPawn::IsFirstPersonView);
 
 	// --- World binding — 런타임 액터 spawn 용 ---
 	sol::table World = Lua.create_named_table("World");

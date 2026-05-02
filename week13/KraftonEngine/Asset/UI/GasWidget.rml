@@ -1,0 +1,14 @@
+<rml>
+<head>
+	<title>Gas Widget</title>
+	<link type="text/rcss" href="GasWidget.rcss"/>
+</head>
+<body>
+	<div id="gas-root">
+		<div id="gas-panel">
+			<div class="gas-label">GAS</div>
+			<div id="gas-value" class="gas-value">100 / 100</div>
+		</div>
+	</div>
+</body>
+</rml>
