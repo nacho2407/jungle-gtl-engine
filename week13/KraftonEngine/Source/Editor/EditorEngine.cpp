@@ -8,6 +8,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
 #include "UI/UIManager.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -330,6 +331,14 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	//이 코드와 대응되는 게 아래 EndPlayMap()에 있음.
 	//MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
 	//ViewportLayout.DisableWorldAxisForPIE(); //PIE 중에는 월드 축 렌더링을 비활성화.
+
+	// PIE 월드에도 ProjectSettings의 GameMode 클래스 적용.
+	// Editor 모듈은 Game-specific 디폴트를 알 수 없으므로, ProjectSettings에
+	// 지정된 경우에만 GameMode가 spawn된다. 비어있으면 미생성 (회귀 안전).
+	if (UClass* GMClass = AGameModeBase::ResolveClassFromProjectSettings(nullptr))
+	{
+		PIEWorld->SetGameModeClass(GMClass);
+	}
 
 	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중

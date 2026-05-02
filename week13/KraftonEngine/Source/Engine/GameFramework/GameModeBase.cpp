@@ -5,6 +5,7 @@
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
 #include "Core/Log.h"
+#include "Core/ProjectSettings.h"
 
 IMPLEMENT_CLASS(AGameModeBase, AActor)
 
@@ -54,6 +55,26 @@ void AGameModeBase::EndMatch()
 	{
 		PlayerController->UnPossess();
 	}
+}
+
+UClass* AGameModeBase::ResolveClassFromProjectSettings(UClass* InDefault)
+{
+	UClass* Result = InDefault;
+	const FString& ConfiguredName = FProjectSettings::Get().Game.GameModeClassName;
+	if (ConfiguredName.empty())
+	{
+		return Result;
+	}
+
+	UClass* Found = UClass::FindByName(ConfiguredName.c_str());
+	if (Found && Found->IsA(AGameModeBase::StaticClass()))
+	{
+		return Found;
+	}
+
+	UE_LOG("[GameMode] GameModeClassName '%s' not found or not a AGameModeBase subclass — using default %s",
+		ConfiguredName.c_str(), Result ? Result->GetName() : "(null)");
+	return Result;
 }
 
 void AGameModeBase::AutoPossessFirstPawn()

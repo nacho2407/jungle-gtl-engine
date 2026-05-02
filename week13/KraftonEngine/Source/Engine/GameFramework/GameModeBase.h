@@ -45,6 +45,11 @@ public:
 	APlayerController* GetPlayerController() const { return PlayerController; }
 	UClass* GetPlayerControllerClass() const { return PlayerControllerClass; }
 
+	// ProjectSettings.Game.GameModeClassName을 룩업·검증해서 적합하면 반환,
+	// 비어있거나 잘못된 이름이면 InDefault를 그대로 반환한다.
+	// GameEngine/EditorEngine 양쪽에서 동일 정책으로 GameModeClass를 결정하기 위한 공통 진입점.
+	static UClass* ResolveClassFromProjectSettings(UClass* InDefault);
+
 protected:
 	// StartMatch가 호출 — 씬에서 bAutoPossessPlayer = true인 첫 APawn을 찾아 Possess 한다.
 	void AutoPossessFirstPawn();
