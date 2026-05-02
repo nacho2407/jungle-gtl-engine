@@ -5,9 +5,77 @@
 #include "Engine/Render/Scene/Scene.h"
 #include "Core/Logging/LogMacros.h"
 #include <algorithm> 
-
+#include <cmath>
 namespace
 {
+constexpr float kPi = 3.14159265f;
+constexpr float kTwoPi = 2.0f * kPi;
+
+void DrawDebugUnityCapsule(FScene* Scene, const FVector& Center, float HalfHeight, float Radius, const FVector& UpVector, const FColor& Color)
+{
+    if (!Scene)
+        return;
+
+    FVector Up = UpVector.Normalized();
+    FVector Right(1.0f, 0.0f, 0.0f);
+    if (std::abs(Up.Dot(Right)) > 0.98f)
+    {
+        Right = FVector(0.0f, 1.0f, 0.0f);
+    }
+    FVector Forward = Up.Cross(Right).Normalized();
+    Right = Forward.Cross(Up).Normalized();
+
+    FVector TopCenter = Center + Up * HalfHeight;
+    FVector BottomCenter = Center - Up * HalfHeight;
+
+    int32 Segments = 16;
+    int32 HalfSegments = Segments / 2;
+
+    // 1. 원통 상/하단 뚜껑 (가로 원 2개)
+    for (int32 i = 0; i < Segments; ++i)
+    {
+        float A1 = kTwoPi * i / Segments;
+        float A2 = kTwoPi * (i + 1) / Segments;
+
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            TopCenter + Right * (std::cos(A1) * Radius) + Forward * (std::sin(A1) * Radius),
+            TopCenter + Right * (std::cos(A2) * Radius) + Forward * (std::sin(A2) * Radius), Color, 0.0f);
+
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            BottomCenter + Right * (std::cos(A1) * Radius) + Forward * (std::sin(A1) * Radius),
+            BottomCenter + Right * (std::cos(A2) * Radius) + Forward * (std::sin(A2) * Radius), Color, 0.0f);
+    }
+
+    // 2. 뚜껑의 반구 돔 (세로 아치 4개)
+    for (int32 i = 0; i < HalfSegments; ++i)
+    {
+        float A1 = kPi * i / HalfSegments;
+        float A2 = kPi * (i + 1) / HalfSegments;
+
+        // 상단 아치 2개
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            TopCenter + Right * (std::cos(A1) * Radius) + Up * (std::sin(A1) * Radius),
+            TopCenter + Right * (std::cos(A2) * Radius) + Up * (std::sin(A2) * Radius), Color, 0.0f);
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            TopCenter + Forward * (std::cos(A1) * Radius) + Up * (std::sin(A1) * Radius),
+            TopCenter + Forward * (std::cos(A2) * Radius) + Up * (std::sin(A2) * Radius), Color, 0.0f);
+
+        // 하단 아치 2개 (-Up 사용)
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            BottomCenter + Right * (std::cos(A1) * Radius) - Up * (std::sin(A1) * Radius),
+            BottomCenter + Right * (std::cos(A2) * Radius) - Up * (std::sin(A2) * Radius), Color, 0.0f);
+        Scene->GetDebugPrimitiveQueue().AddLine(
+            BottomCenter + Forward * (std::cos(A1) * Radius) - Up * (std::sin(A1) * Radius),
+            BottomCenter + Forward * (std::cos(A2) * Radius) - Up * (std::sin(A2) * Radius), Color, 0.0f);
+    }
+
+    // 3. 기둥 세로 선 4개
+    Scene->GetDebugPrimitiveQueue().AddLine(TopCenter + Right * Radius, BottomCenter + Right * Radius, Color, 0.0f);
+    Scene->GetDebugPrimitiveQueue().AddLine(TopCenter - Right * Radius, BottomCenter - Right * Radius, Color, 0.0f);
+    Scene->GetDebugPrimitiveQueue().AddLine(TopCenter + Forward * Radius, BottomCenter + Forward * Radius, Color, 0.0f);
+    Scene->GetDebugPrimitiveQueue().AddLine(TopCenter - Forward * Radius, BottomCenter - Forward * Radius, Color, 0.0f);
+}
+
 void DrawDebugOBB(FScene* Scene, const FOBB& OBB, const FColor& Color)
 {
     if (!Scene)
@@ -69,6 +137,9 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
         for (int j = i + 1; j < RegisteredComponents.size(); j++)
         {
             UPrimitiveComponent* CompB = RegisteredComponents[j];
+			
+			if (CompA == CompB)
+                continue;
 
             if (!CompB /* || !CompB->bIsCollisionEnabled */)
                 continue;
@@ -80,11 +151,45 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
                 CompA->OnComponentOverlap(CompB);
                 CompB->OnComponentOverlap(CompA);
 
+                // ⭐️ 충돌한 녀석들의 색상을 빨간색으로 변경!
+                DebugColors[i] = FColor(255, 0, 0);
+                DebugColors[j] = FColor(255, 0, 0);
 
                 UE_LOG(Console, Info, "Collision!");
             }
         }
     }
+
+    // 3. 디버그 박스 렌더링 (Scene이 유효할 때만)
+    if (Scene)
+    {
+        for (int i = 0; i < RegisteredComponents.size(); i++)
+        {
+            UShapeComponent* ShapeComp = static_cast<UShapeComponent*>(RegisteredComponents[i]);
+            FCollision* Col = ShapeComp->GetCollision();
+
+            if (!Col)
+                continue;
+
+            // 타입에 맞춰서 디버그 도형을 그립니다.
+            if (Col->GetType() == ECollisionType::Box)
+            {
+                FBoxCollision* BoxCol = static_cast<FBoxCollision*>(Col);
+                DrawDebugOBB(Scene, BoxCol->Bounds, DebugColors[i]);
+            }
+            else if (Col->GetType() == ECollisionType::Sphere)
+            {
+                FSphereCollision* SphereCol = static_cast<FSphereCollision*>(Col);
+                Scene->GetDebugPrimitiveQueue().AddSphere(SphereCol->Sphere.Center, SphereCol->Sphere.Radius, 16, DebugColors[i], 0.0f);
+            }
+            else if (Col->GetType() == ECollisionType::Capsule)
+            {
+                FCapsuleCollision* CapsuleCol = static_cast<FCapsuleCollision*>(Col);
+                DrawDebugUnityCapsule(Scene, CapsuleCol->Center, CapsuleCol->HalfHeight, CapsuleCol->Radius, CapsuleCol->UpVector, DebugColors[i]);
+            }
+        }
+    }
+
 }
 
 bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)

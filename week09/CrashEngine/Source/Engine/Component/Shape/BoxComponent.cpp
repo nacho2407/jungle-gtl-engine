@@ -1,7 +1,7 @@
 ﻿#include "BoxComponent.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Shape/BoxProxy.h"
-#include "Physics/CollisionManager.h"
+
 #include "GameFrameWork/World.h"
 
 IMPLEMENT_CLASS(UBoxComponent, UShapeComponent)
@@ -32,9 +32,4 @@ void UBoxComponent::OnTransformDirty()
 	BoxExtent = BoxCollision.Bounds.Extent;
     // (선택) 4. 만약 나중에 BVH나 Octree를 쓴다면 매니저에게 위치가 변했다고 알려줍니다.
     // EnsureWorldAABBUpdated();
-}
-
-FShapeProxy* UBoxComponent::CreateShapeProxy()
-{
-    return new FBoxProxy(this);
 }

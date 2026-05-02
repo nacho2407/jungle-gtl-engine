@@ -26,6 +26,8 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
     // 새 UWorld를 만들고, 소스의 Actor들을 하나씩 복제해 NewWorld를 Outer로 삼아 등록한다.
     // AActor::Duplicate 내부에서 Dup->GetTypedOuter<UWorld>() 경유 AddActor가 호출되므로
     // 여기서는 World 단위 상태만 챙기면 된다.
+
+
     UWorld* NewWorld = UObjectManager::Get().CreateObject<UWorld>();
     if (!NewWorld)
     {
@@ -263,7 +265,9 @@ void UWorld::BeginPlay()
     {
         PersistentLevel->BeginPlay();
 
-		for (auto Actor : PersistentLevel->GetActors())
+
+
+		/*for (auto Actor : PersistentLevel->GetActors())
         {
             for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
             {
@@ -272,7 +276,7 @@ void UWorld::BeginPlay()
                     CollisionManager->RegisterComponent(static_cast<UShapeComponent*>(Comp));
                 }
             }
-        }
+        }*/
     }
     
 

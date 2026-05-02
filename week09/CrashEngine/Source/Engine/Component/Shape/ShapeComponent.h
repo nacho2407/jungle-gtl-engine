@@ -15,12 +15,11 @@ public:
     //void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     //void PostEditProperty(const char* PropertyName) override;
     void Serialize(FArchive& Ar) override;
+    void PostDuplicate() override;
 
     virtual void OnTransformDirty() override;
 
 	FColor GetColor(){  return ShapeColor;  }
-
-	virtual FShapeProxy* CreateShapeProxy();
 
 	virtual void OnOwnerChanged() override;
 

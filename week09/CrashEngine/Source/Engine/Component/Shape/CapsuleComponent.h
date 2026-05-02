@@ -6,15 +6,15 @@
 class UCapsuleComponent : public UShapeComponent
 {
 public:
-    DECLARE_CLASS(UBoxComponent, UShapeComponent)
+    DECLARE_CLASS(UCapsuleComponent, UShapeComponent)
     UCapsuleComponent();
 
-    virtual FCollision* GetCollision() const override
-    {
-        return (FCollision*)&CapsuleCollision; // 내 충돌체를 매니저에게 던져줌
-    }
+    void Serialize(FArchive& Ar) override;
 
-	FShapeProxy* CreateShapeProxy() override;
+    virtual FCollision* GetCollision() const override  {   return (FCollision*)&CapsuleCollision; }
+
+    virtual void OnTransformDirty() override;
+
 
 private:
     float CapsuleHalfHeight;

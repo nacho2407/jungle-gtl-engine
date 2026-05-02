@@ -8,19 +8,16 @@ public:
     DECLARE_CLASS(UBoxComponent, UShapeComponent)
     UBoxComponent();
 
-    //void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
-    //void PostEditProperty(const char* PropertyName) override;
+    // void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    // void PostEditProperty(const char* PropertyName) override;
 
     void Serialize(FArchive& Ar) override;
 
-    virtual FCollision* GetCollision() const override  {    return (FCollision*)&BoxCollision; }
+    virtual FCollision* GetCollision() const override { return (FCollision*)&BoxCollision; }
 
     virtual void OnTransformDirty() override;
 
-	FOBB GetOBB() { return BoxCollision.Bounds;  }
-
-	FShapeProxy* CreateShapeProxy() override;
-
+    FOBB GetOBB() { return BoxCollision.Bounds; }
 
 private:
     FVector BoxExtent;

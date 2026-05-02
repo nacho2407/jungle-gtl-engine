@@ -2,13 +2,29 @@
 IMPLEMENT_CLASS(USphereComponent, UShapeComponent)
 
 USphereComponent::USphereComponent()
-    : SphereRadius(50.0f),
-      SphereCollision(FSphere(FVector(0.0f, 0.0f, 0.0f), 50.0f))
+    : SphereRadius(1.0f),
+      SphereCollision(FSphere(FVector(0.0f, 0.0f, 0.0f), 1.0f))
 {
-     //ShapeColor = FColor(0, 255, 0);
 }
 
-FShapeProxy* USphereComponent::CreateShapeProxy()
+void USphereComponent::Serialize(FArchive& Ar)
 {
-    return nullptr;
+    UShapeComponent::Serialize(Ar);
+    Ar << SphereRadius;
+    Ar << SphereCollision;
+}
+
+void USphereComponent::OnTransformDirty()
+{
+    UShapeComponent::OnTransformDirty();
+
+    const FMatrix& WorldMat = GetWorldMatrix();
+
+    SphereCollision.Sphere.Center = WorldMat.GetLocation();
+
+    FVector Scale = WorldMat.GetScale();
+
+    float MaxScale = std::max({ Scale.X, Scale.Y, Scale.Z });
+
+    SphereCollision.Sphere.Radius = SphereRadius * MaxScale;
 }

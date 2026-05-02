@@ -11,6 +11,96 @@
 
 namespace FMath
 {
+
+	
+// 선분과 점 사이의 최단거리 점 임시 (컴파일을 위해 대상 Point를 그대로 반환)
+inline FVector ClosestPointOnSegment(
+    const FVector& Point, const FVector& LineStart, const FVector& LineEnd)
+{
+    FVector SegmentDir = LineEnd - LineStart;
+    float SegmentLengthSq = SegmentDir.LengthSquared();
+
+    // 선분의 길이가 0인 경우 (점인 경우)
+    if (SegmentLengthSq < 1e-6f)
+    {
+        return LineStart;
+    }
+
+    // 선분 방향으로 Point를 투영 (t는 0.0 ~ 1.0 사이로 제한)
+    float t = (Point - LineStart).Dot(SegmentDir) / SegmentLengthSq;
+    t = std::clamp(t, 0.0f, 1.0f);
+
+    return LineStart + SegmentDir * t;
+}
+
+// 선분과 선분 사이의 최단거리 점 두 개 임시 (컴파일을 위해 각 선분의 시작점을 반환)
+inline void ClosestPointsBetweenSegments(
+    const FVector& Line1Start, const FVector& Line1End,
+    const FVector& Line2Start, const FVector& Line2End,
+    FVector& OutPoint1, FVector& OutPoint2)
+{
+    FVector d1 = Line1End - Line1Start;
+    FVector d2 = Line2End - Line2Start;
+    FVector r = Line1Start - Line2Start;
+
+    float a = d1.LengthSquared();
+    float e = d2.LengthSquared();
+    float f = d2.Dot(r);
+
+    float s = 0.0f;
+    float t = 0.0f;
+
+    if (a <= 1e-6f && e <= 1e-6f)
+    {
+        OutPoint1 = Line1Start;
+        OutPoint2 = Line2Start;
+        return;
+    }
+
+    if (a <= 1e-6f)
+    {
+        s = 0.0f;
+        t = std::clamp(f / e, 0.0f, 1.0f);
+    }
+    else
+    {
+        float c = d1.Dot(r);
+        if (e <= 1e-6f)
+        {
+            t = 0.0f;
+            s = std::clamp(-c / a, 0.0f, 1.0f);
+        }
+        else
+        {
+            float b = d1.Dot(d2);
+            float denom = a * e - b * b;
+
+            if (denom != 0.0f)
+            {
+                s = std::clamp((b * f - c * e) / denom, 0.0f, 1.0f);
+            }
+            else
+            {
+                s = 0.0f;
+            }
+
+            t = (b * s + f) / e;
+            if (t < 0.0f)
+            {
+                t = 0.0f;
+                s = std::clamp(-c / a, 0.0f, 1.0f);
+            }
+            else if (t > 1.0f)
+            {
+                t = 1.0f;
+                s = std::clamp((b - c) / a, 0.0f, 1.0f);
+            }
+        }
+    }
+
+    OutPoint1 = Line1Start + d1 * s;
+    OutPoint2 = Line2Start + d2 * t;
+}
 inline bool IntersectRayAABB(const FRay& Ray, const FVector& AABBMin, const FVector& AABBMax, float& OutTMin, float& OutTMax)
 {
     float tMin = -INFINITY;
@@ -337,7 +427,32 @@ inline bool IntersectSphereOBB(
     const FVector& SphereCenter, float SphereRadius,
     const FVector& BoxCenter, const FVector& BoxExtent, const FRotator& BoxRot)
 {
-    return true;
+    // 1. 구의 중심을 BoxCenter 기준으로 평행이동
+    FVector LocalCenter = SphereCenter - BoxCenter;
+
+    // 2. OBB의 3개 축
+    FVector BoxAxes[3] = {
+        BoxRot.GetForwardVector(),
+        BoxRot.GetRightVector(),
+        BoxRot.GetUpVector()
+    };
+
+    // 3. 로컬 공간에서의 중심 좌표 계산 (각 축에 투영)
+    float DistX = LocalCenter.Dot(BoxAxes[0]);
+    float DistY = LocalCenter.Dot(BoxAxes[1]);
+    float DistZ = LocalCenter.Dot(BoxAxes[2]);
+
+    // 4. BoxExtent 범위로 클램핑하여 가장 가까운 점(Closest Point) 찾기
+    float ClosestX = std::clamp(DistX, -BoxExtent.X, BoxExtent.X);
+    float ClosestY = std::clamp(DistY, -BoxExtent.Y, BoxExtent.Y);
+    float ClosestZ = std::clamp(DistZ, -BoxExtent.Z, BoxExtent.Z);
+
+    // 5. 가장 가까운 점의 월드 좌표 복원
+    FVector ClosestPoint = BoxCenter + BoxAxes[0] * ClosestX + BoxAxes[1] * ClosestY + BoxAxes[2] * ClosestZ;
+
+    // 6. 구의 중심과 가장 가까운 점 사이의 거리가 반지름보다 작으면 충돌
+    float DistanceSq = (ClosestPoint - SphereCenter).LengthSquared();
+    return DistanceSq <= (SphereRadius * SphereRadius);
 }
 
 // OBB vs Capsule 임시
@@ -345,24 +460,19 @@ inline bool IntersectOBBCapsule(
     const FVector& BoxCenter, const FVector& BoxExtent, const FRotator& BoxRot,
     const FVector& CapCenter, float CapHalfHeight, float CapRadius, const FVector& CapUpVector)
 {
-    return true;
+    FVector CapDir = CapUpVector.Normalized();
+
+    // 캡슐 내부의 중심 선분 양 끝점
+    FVector CapSegmentStart = CapCenter - CapDir * CapHalfHeight;
+    FVector CapSegmentEnd = CapCenter + CapDir * CapHalfHeight;
+
+    // BoxCenter에서 캡슐 선분 중 가장 가까운 지점을 찾음
+    FVector ClosestOnCapsuleSegment = ClosestPointOnSegment(BoxCenter, CapSegmentStart, CapSegmentEnd);
+
+    // 해당 지점을 중심으로 하고 캡슐의 반지름을 가지는 가상의 구(Sphere)와 OBB를 충돌 검사
+    return IntersectSphereOBB(ClosestOnCapsuleSegment, CapRadius, BoxCenter, BoxExtent, BoxRot);
+
 }
 
-// 선분과 점 사이의 최단거리 점 임시 (컴파일을 위해 대상 Point를 그대로 반환)
-inline FVector ClosestPointOnSegment(
-    const FVector& Point, const FVector& LineStart, const FVector& LineEnd)
-{
-    return Point;
-}
-
-// 선분과 선분 사이의 최단거리 점 두 개 임시 (컴파일을 위해 각 선분의 시작점을 반환)
-inline void ClosestPointsBetweenSegments(
-    const FVector& Line1Start, const FVector& Line1End,
-    const FVector& Line2Start, const FVector& Line2End,
-    FVector& OutPoint1, FVector& OutPoint2)
-{
-    OutPoint1 = Line1Start;
-    OutPoint2 = Line2Start;
-}
 
 } // namespace FMath

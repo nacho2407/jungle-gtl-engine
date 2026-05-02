@@ -7,19 +7,19 @@ class USphereComponent : public UShapeComponent
 {
 public:
     DECLARE_CLASS(USphereComponent, UShapeComponent)
-    USphereComponent() ;
+    USphereComponent();
+
+    void Serialize(FArchive& Ar) override;
 
 
-	void SetRadius(float Radius) { SphereCollision.Sphere.Radius = Radius; }
+    void SetRadius(float Radius) { SphereCollision.Sphere.Radius = Radius; }
 
-    virtual FCollision* GetCollision() const override
-    {
-        return (FCollision*)&SphereCollision; // 내 충돌체를 매니저에게 던져줌
-    }
-    FShapeProxy* CreateShapeProxy() override;
+    virtual FCollision* GetCollision() const override { return (FCollision*)&SphereCollision; }
+
+    virtual void OnTransformDirty() override;
 
 private:
     float SphereRadius;
 
-	FSphereCollision SphereCollision;
+    FSphereCollision SphereCollision;
 };

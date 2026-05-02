@@ -27,17 +27,29 @@ void UShapeComponent::Serialize(FArchive& Ar)
     Ar << bDrawOnlyIfSelected;
 }
 
+void UShapeComponent::PostDuplicate()
+{
+    UPrimitiveComponent::PostDuplicate();
+    OnOwnerChanged();
+    MarkWorldBoundsDirty();
+}
+
 void UShapeComponent::OnTransformDirty()
 {
     UPrimitiveComponent::OnTransformDirty();
 }
 
-FShapeProxy* UShapeComponent::CreateShapeProxy()
-{
-    return nullptr;
-}
-
 void UShapeComponent::OnOwnerChanged()
 {
+    AActor* actor = GetOwner();
 
+	if (!actor)
+        return;
+
+    UWorld* world = actor->GetWorld();
+
+	if (!world)
+        return;
+
+    world->GetCollisionManager()->RegisterComponent(this);
 }

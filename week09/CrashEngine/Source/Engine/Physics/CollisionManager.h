@@ -25,6 +25,8 @@ public:
 
     void TickCollision(float DeltaTime, FScene* Scene = nullptr);
 
+	void Reset() { RegisteredComponents.clear(); }
+
 private:
     // BVH 루트 노드
     FScenePrimitiveBVH* RootNode;
