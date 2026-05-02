@@ -29,6 +29,7 @@ private:
 	void CreateRotationGizmo();
 	void CreateScaleGizmo();
 	void CreateQuad();
+	void CreateQuestArrow();
 	void CreateTexturedQuad();
 
 	// CPU 메시 데이터

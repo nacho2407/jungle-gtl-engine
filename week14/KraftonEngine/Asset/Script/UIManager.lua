@@ -11,6 +11,8 @@ local fade = {
     onComplete = nil,
     hideWhenDone = false
 }
+local onCarWashQuestOk = nil
+local onGasQuestOk = nil
 
 local function Clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -36,6 +38,14 @@ function UIManager.SetStartGameCallback(callback)
     onStartGame = callback
 end
 
+function UIManager.SetCarWashQuestOkCallback(callback)
+    onCarWashQuestOk = callback
+end
+
+function UIManager.SetGasQuestOkCallback(callback)
+    onGasQuestOk = callback
+end
+
 function UIManager.Init()
     local introWidget = UI.CreateWidget("Asset/UI/IntroWidget.rml")
     introWidget:bind_click("start-button", function()
@@ -58,10 +68,30 @@ function UIManager.Init()
         UIManager.Hide("contributor")
     end)
 
+    local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
+    carWashQuestWidget:bind_click("car-wash-quest-ok-button", function()
+        UIManager.Hide("carWashQuest")
+
+        if onCarWashQuestOk ~= nil then
+            onCarWashQuestOk()
+        end
+    end)
+
+    local gasQuestWidget = UI.CreateWidget("Asset/UI/GasQuestWidget.rml")
+    gasQuestWidget:bind_click("gas-quest-ok-button", function()
+        UIManager.Hide("gasQuest")
+
+        if onGasQuestOk ~= nil then
+            onGasQuestOk()
+        end
+    end)
+
     UIManager.Register("intro", introWidget)
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
     UIManager.Register("gameOverlay", UI.CreateWidget("Asset/UI/GameOverlayWidget.rml"))
+    UIManager.Register("carWashQuest", carWashQuestWidget)
+    UIManager.Register("gasQuest", gasQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
     UIManager.Register("gameOver", UI.CreateWidget("Asset/UI/GameOverWidget.rml"))
     UIManager.Register("fade", UI.CreateWidget("Asset/UI/FadeWidget.rml"))

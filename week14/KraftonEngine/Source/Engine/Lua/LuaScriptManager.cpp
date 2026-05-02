@@ -1,8 +1,9 @@
-﻿#include "LuaScriptManager.h"
+#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/QuestArrowComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -316,6 +317,13 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		Actor.AddActorWorldOffset(Offset);
 	},
 
+	"AddQuestArrowComponent", [](AActor& Actor)
+	{
+		UQuestArrowComponent* Arrow = Actor.AddComponent<UQuestArrowComponent>();
+		Arrow->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
+		return Arrow;
+	},
+
 		"Destroy", [](AActor& Actor)
 	{
 		// World->DestroyActor가 EndPlay + 정리. Lua는 호출 후 해당 액터를 더 참조하지 말 것.
@@ -364,6 +372,32 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		UClass* Cls = UClass::FindByName(ClassName.c_str());
 		if (!Cls) return nullptr;
 		return W->SpawnActorByClass(Cls);
+	});
+	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld()) return nullptr;
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (Actor && Actor->GetFName().ToString() == ActorName)
+			{
+				return Actor;
+			}
+		}
+		return nullptr;
+	});
+	World.set_function("FindFirstActorByClass", [](const FString& ClassName) -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld()) return nullptr;
+		UClass* Cls = UClass::FindByName(ClassName.c_str());
+		if (!Cls) return nullptr;
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (Actor && Actor->GetClass()->IsA(Cls))
+			{
+				return Actor;
+			}
+		}
+		return nullptr;
 	});
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
