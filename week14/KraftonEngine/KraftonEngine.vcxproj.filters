@@ -503,6 +503,9 @@
     <ClCompile Include="Source\Engine\Component\CarDirtComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\CarGasComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\CompletionOutlineComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -1149,6 +1152,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CarDirtComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\CarGasComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\CompletionOutlineComponent.h">

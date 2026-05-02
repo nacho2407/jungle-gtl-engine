@@ -396,6 +396,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CarDirtComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\CarGasComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CompletionOutlineComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
@@ -614,6 +615,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CapsuleComponent.h" />
     <ClInclude Include="Source\Engine\Component\CarDirtComponent.h" />
+    <ClInclude Include="Source\Engine\Component\CarGasComponent.h" />
     <ClInclude Include="Source\Engine\Component\CompletionOutlineComponent.h" />
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />

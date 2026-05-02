@@ -244,12 +244,130 @@
       },
       "bVisible" : true
     }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "ATriggerVolumeBase_0",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [7.934844, 25.304354, 0.000000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Logic",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GameManager.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [11.410707, 40.044601, 0.000000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : false,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "FuelNozzle",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GaspumpNozzle_MTL.001.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [6.627083, 27.786182, 0.873830],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, -180.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Users\\jungle\\source\\repos\\Jungle_Week9_Team5\\KraftonEngine\\Data\\FuelNozzle\\fuel_nozzle.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
       "ClassName" : "ACarPawn",
       "Name" : "ACarPawn_1",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "CarController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CameraManager.lua",
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -278,6 +396,14 @@
             "Wheel Half Track" : 0.800000,
             "Wheel Radius" : 0.400000,
             "Wheel Root Z" : 0.000000,
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UCarGasComponent",
+          "Properties" : {
+            "Gas" : 100.000000,
+            "MaxGas" : 100.000000,
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -356,7 +482,7 @@
               "Location" : [1.500000, 0.800000, -0.500000],
               "Mass (kg)" : 1.000000,
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
               "Simulate Physics" : false,
@@ -385,7 +511,7 @@
               "Location" : [1.500000, -0.800000, -0.500000],
               "Mass (kg)" : 1.000000,
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
               "Simulate Physics" : false,
@@ -414,7 +540,7 @@
               "Location" : [-1.500000, 0.800000, -0.500000],
               "Mass (kg)" : 1.000000,
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
               "Simulate Physics" : false,
@@ -443,7 +569,7 @@
               "Location" : [-1.500000, -0.800000, -0.500000],
               "Mass (kg)" : 1.000000,
               "Object Type" : 2,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
               "Simulate Physics" : false,
@@ -459,11 +585,26 @@
             "Properties" : {
               "FOV" : 1.047198,
               "Far Z" : 1000.000000,
-              "Location" : [-5.000000, 0.000000, 3.000000],
+              "Location" : [0.286000, -0.318000, 0.697000],
               "Near Z" : 0.100000,
               "Ortho Width" : 10.000000,
               "Orthographic" : false,
-              "Rotation" : [0.000000, -15.000000, 0.000000],
+              "Rotation" : [15.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [-4.500000, 0.000000, 2.500000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bEditorOnly" : false,
               "bTickEnable" : true
@@ -484,10 +625,10 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [1.468193, 24.996820, 1.255625],
+          "Location" : [3.898548, 31.401814, 2.532221],
           "Mass (kg)" : 1500.000000,
           "Object Type" : 2,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -506,9 +647,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [2.011419, 20.286469, 1.035876],
+    "Location" : [1.203045, 21.664640, 2.256356],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 11.589278, 85.795708]
+    "Rotation" : [0.000000, 19.389143, 76.499275]
   },
   "Version" : 2,
   "WorldType" : "Editor"

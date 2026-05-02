@@ -1,7 +1,13 @@
+local car = nil
 local movement = nil
 
 function BeginPlay()
-    movement = obj:GetCarMovement()
+    car = obj:AsCarPawn()
+    if car == nil then
+        return
+    end
+
+    movement = car:GetCarMovement()
 end
 
 function EndPlay()
@@ -11,6 +17,10 @@ function OnOverlap(OtherActor)
 end
 
 function Tick(dt)
+    if car == nil or movement == nil then
+        return
+    end
+
     local throttle = 0
     if Input.GetKey(Key.W) then throttle = throttle + 1 end
     if Input.GetKey(Key.S) then throttle = throttle - 1 end
