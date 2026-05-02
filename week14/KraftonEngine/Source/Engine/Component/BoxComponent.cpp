@@ -3,6 +3,7 @@
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Render/Scene/FScene.h"
+#include "Math/Quat.h"
 
 #include <cstring>
 #include <cmath>
@@ -28,16 +29,20 @@ void UBoxComponent::ContributeSelectedVisuals(FScene& Scene) const
 	const FVector Center = GetWorldLocation();
 	const FVector Ext = GetScaledBoxExtent();
 	const FColor Color = GetShapeColor();
+	// World rotation을 local 코너 오프셋에 적용 — 그러지 않으면 박스가 항상
+	// 월드 축 정렬로 그려져 컴포넌트가 회전된 경우 자식들과 시각상 어긋난다.
+	const FQuat WorldRot = GetWorldMatrix().ToQuat();
 
-	// 8 corners
+	// 8 corners (회전 반영)
 	FVector Corners[8];
 	for (int32 i = 0; i < 8; ++i)
 	{
-		Corners[i] = Center + FVector(
+		FVector LocalOffset(
 			(i & 1) ? Ext.X : -Ext.X,
 			(i & 2) ? Ext.Y : -Ext.Y,
 			(i & 4) ? Ext.Z : -Ext.Z
 		);
+		Corners[i] = Center + WorldRot.RotateVector(LocalOffset);
 	}
 
 	// 12 edges: bottom 4, top 4, vertical 4
@@ -58,16 +63,6 @@ void UBoxComponent::ContributeSelectedVisuals(FScene& Scene) const
 	Scene.AddDebugLine(Corners[1], Corners[5], Color);
 	Scene.AddDebugLine(Corners[2], Corners[6], Color);
 	Scene.AddDebugLine(Corners[3], Corners[7], Color);
-}
-
-void UBoxComponent::UpdateWorldAABB() const
-{
-	FVector Center = GetWorldLocation();
-	FVector ScaledExt = GetScaledBoxExtent();
-	WorldAABBMinLocation = Center - ScaledExt;
-	WorldAABBMaxLocation = Center + ScaledExt;
-	bWorldAABBDirty = false;
-	bHasValidWorldAABB = true;
 }
 
 void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
