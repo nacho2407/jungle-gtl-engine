@@ -309,16 +309,18 @@
       <ExceptionHandling>Async</ExceptionHandling>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\jungle\source\repos\Jungle_Week9_Team8\CrashEngine\ThirdParty\FMOD\inc;$(VcpkgInstalledDir)$(VcpkgTriplet)\include\luajit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\ThirdParty\FMOD\inc;$(VcpkgInstalledDir)$(VcpkgTriplet)\include\luajit;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VcpkgInstalledDir)$(VcpkgTriplet)\lib;$(ProjectDir)\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y /D "$(ProjectDir)ThirdParty\FMOD\lib\fmod.dll" "$(TargetDir)"
+xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GameRelease|x64'">
