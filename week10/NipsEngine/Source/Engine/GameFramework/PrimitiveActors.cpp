@@ -84,7 +84,7 @@ void ACubeActor::InitDefaultComponents()
     // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Lumine/LumineModel.obj"));
     // Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
     Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj"));
-	SetRootComponent(Cube);
+    SetRootComponent(Cube);
 
 	// Text
 	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
