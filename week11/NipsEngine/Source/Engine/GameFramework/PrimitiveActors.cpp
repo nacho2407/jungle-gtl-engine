@@ -593,18 +593,18 @@ void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcM
 {
     ProcMeshComp = AddComponent<UProceduralMeshComponent>();
     ProcMeshComp->CreateFrom(InProcMeshComp);
-    UObjectManager::Get().DestroyObject(InProcMeshComp);
     SetRootComponent(ProcMeshComp);
 
     BoxComponent = AddComponent<UBoxComponent>();
     BoxComponent->AttachToComponent(GetRootComponent());
 	// 잘린 애들을 무한히 자를 수 없게 제한
-    BoxComponent->SetGenerateOverlapEvents(false);
+    BoxComponent->SetGenerateOverlapEvents(true);
 }
 
 void ADestructibleActor::InitDefaultComponents()
 {
     UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    // UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice_centered.obj");
     InitDestructibleActor(Mesh);
 }
 
@@ -619,43 +619,105 @@ void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->IsA<ABladeSlash>())
+    // 이미 처리 중이거나 칼날이 아니면 리턴
+    if (OtherActor->IsPendingKill() || !OtherActor->IsA<ABladeSlash>())
+        return;
+
+	const FTransform& BladeTransform = OtherComp->GetWorldTransform();
+    FVector N_World = BladeTransform.GetUnitAxis(EAxis::Z);
+    N_World.Normalize();
+
+    FVector P_World = OtherComp->GetWorldTransform().GetLocation(); // 칼날 중심점
+
+    // 메쉬 로컬 공간으로 변환
+    FMatrix MeshInvMatrix = ProcMeshComp->GetWorldMatrix().GetInverse();
+
+    FVector N_Local = MeshInvMatrix.TransformVector(N_World).GetSafeNormal();
+    FVector P_Local = MeshInvMatrix.TransformPosition(P_World);
+
+    FPlane SlicePlane;
+    SlicePlane.Normal = N_Local;
+    SlicePlane.D = -FVector::DotProduct(N_Local, P_Local);
+
+    // 2. 절단된 메쉬를 담을 임시 컴포넌트 생성
+    UProceduralMeshComponent* TempMesh1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+    UProceduralMeshComponent* TempMesh2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+
+    // 슬라이스 실행
+    FMeshSlicer::SliceComponent(ProcMeshComp, SlicePlane, TempMesh1, TempMesh2);
+
+	bool bFirstMeshEmpty = (TempMesh1->GetSections().empty() || TempMesh1->GetSections()[0].Vertices.empty());
+    bool bSecondMeshEmpty = (TempMesh2->GetSections().empty() || TempMesh2->GetSections()[0].Vertices.empty());
+
+    UWorld* World = GetFocusedWorld();
+
+	if (bFirstMeshEmpty && bSecondMeshEmpty)
 	{
-        UProceduralMeshComponent* ProcMeshComp1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
-        UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
 
-        FPlane Plane;
+	}
+	else if (bFirstMeshEmpty)
+	{
+        ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
 
-        FVector N = SweepResult.Normal;   // 반드시 normalize
-        FVector P = SweepResult.Location; // plane 위의 점
-        float D = FVector::DotProduct(N, P);
+        // 슬라이스 결과물 적용
+        Actor->InitDestructibleActor(TempMesh2);
 
-        FVector SplitDir;
-        SplitDir = FVector::CrossProduct(N, FVector::ForwardVector);
-        if (SplitDir.IsNearlyZero())
-        {
-            SplitDir = FVector::CrossProduct(N, FVector::RightVector);
-        }
+        // 원본의 트랜스폼 복사
+        Actor->SetActorLocation(GetActorLocation());
+        Actor->SetActorRotation(GetActorRotation());
+        Actor->SetActorScale(GetActorScale());
 
-        Plane.Normal = SplitDir;
-        Plane.D = 0;
+        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
+        float SeparateDistance = 1.0f; // 벌릴 간격
+        Actor->AddActorWorldOffset(N_World * SeparateDistance);
+        Actor->AddActorWorldOffset(N_World * -SeparateDistance);
+	}
+	else if (bSecondMeshEmpty)
+	{
+        ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
 
-        FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
+        // 슬라이스 결과물 적용
+        Actor->InitDestructibleActor(TempMesh1);
 
-        UWorld* World = OtherActor->GetFocusedWorld();
+        // 원본의 트랜스폼 복사
+        Actor->SetActorLocation(GetActorLocation());
+        Actor->SetActorRotation(GetActorRotation());
+        Actor->SetActorScale(GetActorScale());
+
+        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
+        float SeparateDistance = 1.0f; // 벌릴 간격
+        Actor->AddActorWorldOffset(N_World * SeparateDistance);
+        Actor->AddActorWorldOffset(N_World * -SeparateDistance);
+	}
+	else
+	{
         ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
         ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
 
-        Actor1->InitDestructibleActor(ProcMeshComp1);
-        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, -1) * GetActorScale().Size() / 2);
-        Actor1->SetActorScale(GetActorScale());
-        Actor1->SetActorRotation(GetActorRotation());
+        // 슬라이스 결과물 적용
+        Actor1->InitDestructibleActor(TempMesh1);
+        Actor2->InitDestructibleActor(TempMesh2);
 
-        Actor2->InitDestructibleActor(ProcMeshComp2);
-        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, 1) * GetActorScale().Size() / 2);
-        Actor2->SetActorScale(GetActorScale());
+        // 원본의 트랜스폼 복사
+        Actor1->SetActorLocation(GetActorLocation());
+        Actor1->SetActorRotation(GetActorRotation());
+        Actor1->SetActorScale(GetActorScale());
+
+        Actor2->SetActorLocation(GetActorLocation());
         Actor2->SetActorRotation(GetActorRotation());
+        Actor2->SetActorScale(GetActorScale());
+
+        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
+        float SeparateDistance = 1.0f; // 벌릴 간격
+        Actor1->AddActorWorldOffset(N_World * SeparateDistance);
+        Actor2->AddActorWorldOffset(N_World * -SeparateDistance);
 	}
+
+    UObjectManager::Get().DestroyObject(TempMesh1);
+    UObjectManager::Get().DestroyObject(TempMesh2);
+
+    OtherActor->MarkPendingKill(); // 칼날 제거 (연속 절단 방지)
+    this->MarkPendingKill();       // 원본 제거
 }
 
 void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
