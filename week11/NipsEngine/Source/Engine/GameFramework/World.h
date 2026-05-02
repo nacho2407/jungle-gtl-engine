@@ -95,6 +95,7 @@ public:
 
 	// Component Overlap 체크
 	void UpdateOverlaps();
+    void CheckPendingKill();
 
 private:
 	EWorldType WorldType = EWorldType::Editor;
