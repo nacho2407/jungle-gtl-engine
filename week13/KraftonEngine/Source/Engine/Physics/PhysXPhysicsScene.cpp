@@ -781,12 +781,40 @@ FVector FPhysXPhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
 // Raycast
 // ============================================================
 
-bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const
+bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor) const
 {
 	if (!Scene) return false;
 
+	struct FIgnoreActorRaycastFilter : PxQueryFilterCallback
+	{
+		const AActor* IgnoreActor = nullptr;
+
+		explicit FIgnoreActorRaycastFilter(const AActor* InIgnoreActor)
+			: IgnoreActor(InIgnoreActor)
+		{
+		}
+
+		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape*, const PxRigidActor* Actor, PxHitFlags&) override
+		{
+			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			{
+				return PxQueryHitType::eNONE;
+			}
+			return PxQueryHitType::eBLOCK;
+		}
+
+		PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&) override
+		{
+			return PxQueryHitType::eBLOCK;
+		}
+	};
+
 	PxRaycastBuffer Hit;
-	bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, Hit);
+	PxQueryFilterData FilterData;
+	FilterData.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+	FIgnoreActorRaycastFilter FilterCallback(IgnoreActor);
+
+	bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, Hit, PxHitFlag::eDEFAULT, FilterData, &FilterCallback);
 	if (!bStatus || !Hit.hasBlock) return false;
 
 	const PxRaycastHit& Block = Hit.block;
@@ -796,10 +824,14 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 	OutHit.ImpactNormal = ToFVector(Block.normal);
 	OutHit.WorldNormal = OutHit.ImpactNormal;
 
-	if (Block.actor && Block.actor->userData)
+	if (Block.shape && Block.shape->userData)
 	{
-		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.actor->userData);
+		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
 		OutHit.HitActor = OutHit.HitComponent->GetOwner();
+	}
+	else if (Block.actor && Block.actor->userData)
+	{
+		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
 	}
 
 	return true;

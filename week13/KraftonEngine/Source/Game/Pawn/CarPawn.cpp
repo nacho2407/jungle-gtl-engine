@@ -1,9 +1,10 @@
-#include "Game/Pawn/CarPawn.h"
+﻿#include "Game/Pawn/CarPawn.h"
 #include "Component/BoxComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SphereComponent.h"
 #include "Component/LuaScriptComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/Movement/CarMovementComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/ObjManager.h"
 #include "Core/CollisionTypes.h"
@@ -24,7 +25,7 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionBox->SetCollisionObjectType(ECollisionChannel::Pawn);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
-	CollisionBox->SetSimulatePhysics(false);
+	CollisionBox->SetSimulatePhysics(true);
 
 	// 차량 1.5톤, mass center를 차체 아래(-Z) 30cm로 — 회전 안정성 향상.
 	// 코너링/경사로에서 차량이 쉽게 뒤집히지 않도록 무게중심을 낮춘다.
@@ -40,6 +41,8 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 		if (UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device))
 			Mesh->SetStaticMesh(Asset);
 	}
+	Mesh->SetRelativeLocation(FVector(0.155f, 0.0f, -0.607f));
+	Mesh->SetRelativeRotation(FRotator(0.0f, 90.0f, 00.0f));
 
 	// 3) 바퀴 4개 (Box 자식, 4코너) — Pawn 채널 Block, 시뮬레이션은 Box가 담당하므로 자체 SimulatePhysics는 끔
 	const FVector WheelOffsets[4] = {
@@ -54,7 +57,7 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 		Wheels[i]->AttachToComponent(CollisionBox);
 		Wheels[i]->SetRelativeLocation(WheelOffsets[i]);
 		Wheels[i]->SetSphereRadius(0.4f);
-		Wheels[i]->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Wheels[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Wheels[i]->SetCollisionObjectType(ECollisionChannel::Pawn);
 		Wheels[i]->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
 	}
@@ -72,6 +75,9 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 	{
 		LuaScript->SetScriptFile(LuaScriptFile);
 	}
+
+	// 6) 차량 물리/이동 컴포넌트 — Lua에서 Throttle/Steering 입력을 받아서 Box에 힘과 토크를 가한다.
+	Movement = AddComponent<UCarMovementComponent>();
 }
 
 void ACarPawn::PostDuplicate()
