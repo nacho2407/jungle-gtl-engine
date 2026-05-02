@@ -76,6 +76,8 @@ public:
     void UpdateActorInOctree(AActor* actor);
 
 	FCollisionManager* GetCollisionManager() { return CollisionManager.get(); }
+    void UpdateCollisionInBVH(UPrimitiveComponent* Comp);
+
 
 private:
     // TArray<AActor*> Actors;

@@ -339,8 +339,8 @@ xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\packages\lua51</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VcpkgInstalledDir)$(VcpkgTriplet)\lib;$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmod_vc.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)ThirdParty\FMOD\lib\fmod.dll" "$(OutDir)"

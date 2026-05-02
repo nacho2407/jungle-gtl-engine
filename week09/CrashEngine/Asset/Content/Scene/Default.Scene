@@ -1,7 +1,19 @@
 {
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "UPendulumMovementComponent",
+          "Properties" : {
+            "Amplitude (deg)" : 30.000000,
+            "Angle Offset (deg)" : 0.000000,
+            "Auto Register Updated" : true,
+            "Frequency (Hz)" : 0.500000,
+            "Phase (deg)" : 0.000000,
+            "Swing Axis" : [0.000000, 1.000000, 0.000000],
+            "Updated Component" : "",
+            "bTickEnable" : true
+          }
+        }],
       "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
@@ -30,7 +42,7 @@
           "Is Editor Helper" : false,
           "Location" : [0.000000, -3.070420, 0.000000],
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Scale" : [10.329418, 7.413994, 7.082432],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
           "Visible In Editor" : true,
@@ -104,7 +116,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 18",
+              "Text" : "UUID : 20",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -159,16 +171,16 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-1.079843, 7.874301, 12.891180],
+    "Location" : [-10.094619, -1.442157, 7.680788],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 57.759731, -75.266418]
+    "Rotation" : [-0.000000, 42.639748, -0.926514]
   },
   "Primitives" : {
     "12" : {
       "Location" : [0.000000, -3.070420, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Scale" : [10.329418, 7.413994, 7.082432],
       "Type" : "StaticMeshComp"
     },
     "15" : {

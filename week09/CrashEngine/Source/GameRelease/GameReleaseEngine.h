@@ -22,6 +22,7 @@ private:
     UCameraComponent* FindCameraInWorld(UWorld* World) const;
     UCameraComponent* CreateFallbackCamera(UWorld* World, const FPerspectiveCameraData* CameraData = nullptr);
     void EnsureActiveCamera(UWorld* World, const FPerspectiveCameraData* CameraData = nullptr);
+    void RefreshLoadedWorldForGame(UWorld* World);
     void DestroyWorlds();
 
     FViewport GameViewport;

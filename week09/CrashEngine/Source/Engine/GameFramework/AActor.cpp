@@ -263,17 +263,17 @@ void AActor::BeginPlay()
 
 bool AActor::IsOverlappingActor(const AActor* Other) const
 {
-    //for (UActorComponent* OwnedComp : OwnedComponents)
-    //{
-    //    if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(OwnedComp))
-    //    {
-    //        if ((PrimComp->GetOverlapInfos().Num() > 0) && PrimComp->IsOverlappingActor(Other))
-    //        {
-    //            // found one, finished
-    //            return true;
-    //        }
-    //    }
-    //}
+    for (UActorComponent* OwnedComp : OwnedComponents)
+    {
+        if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(OwnedComp))
+        {
+            if ((PrimComp->GetOverlapInfos().size() > 0) && PrimComp->IsOverLappingActor(Other))
+            {
+                // found one, finished
+                return true;
+            }
+        }
+    }
     return false;
 }
 
