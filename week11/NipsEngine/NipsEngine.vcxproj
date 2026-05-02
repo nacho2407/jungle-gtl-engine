@@ -454,7 +454,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\PIEController.cpp">
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameController.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -707,7 +707,7 @@
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\PIEController.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
     <ClInclude Include="Source\Engine\Math\Color.h" />
     <ClInclude Include="Source\Engine\Math\Edge.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />

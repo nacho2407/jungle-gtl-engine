@@ -34,6 +34,15 @@ namespace
     {
         return Line.empty() || Line[0] == ';' || Line[0] == '#' || Line[0] == '[';
     }
+
+    bool IsMouseButtonVK(int VK)
+    {
+        return VK == VK_LBUTTON
+            || VK == VK_RBUTTON
+            || VK == VK_MBUTTON
+            || VK == VK_XBUTTON1
+            || VK == VK_XBUTTON2;
+    }
 }
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
@@ -246,6 +255,24 @@ void UGameEngine::PumpPlayerInput(InputSystem& Input)
 
     for (int VK = 0; VK < 256; ++VK)
     {
+        if (IsMouseButtonVK(VK))
+        {
+            const POINT MousePos = Input.GetMousePos();
+            if (Input.GetKeyDown(VK))
+            {
+                PlayerController->HandleMouseButtonPressed(VK, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
+            }
+            if (Input.GetKey(VK))
+            {
+                PlayerController->HandleMouseButtonDown(VK, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
+            }
+            if (Input.GetKeyUp(VK))
+            {
+                PlayerController->HandleMouseButtonReleased(VK, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
+            }
+            continue;
+        }
+
         if (Input.GetKeyDown(VK))
         {
             PlayerController->HandleKeyPressed(VK);
@@ -273,6 +300,38 @@ void UGameEngine::PumpPlayerInput(InputSystem& Input)
             UE_LOG("[GameEngine] First mouse input received: dx=%d dy=%d", Input.MouseDeltaX(), Input.MouseDeltaY());
             bLoggedFirstInput = true;
         }
+    }
+
+    if (Input.GetLeftDragging())
+    {
+        PlayerController->HandleMouseDrag(VK_LBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
+    }
+    if (Input.GetLeftDragEnd())
+    {
+        const POINT MousePos = Input.GetMousePos();
+        PlayerController->HandleMouseDragEnd(VK_LBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
+    }
+    if (Input.GetMiddleDragging())
+    {
+        PlayerController->HandleMouseDrag(VK_MBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
+    }
+    if (Input.GetMiddleDragEnd())
+    {
+        const POINT MousePos = Input.GetMousePos();
+        PlayerController->HandleMouseDragEnd(VK_MBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
+    }
+    if (Input.GetRightDragging())
+    {
+        PlayerController->HandleMouseDrag(VK_RBUTTON, static_cast<float>(Input.MouseDeltaX()), static_cast<float>(Input.MouseDeltaY()));
+    }
+    if (Input.GetRightDragEnd())
+    {
+        const POINT MousePos = Input.GetMousePos();
+        PlayerController->HandleMouseDragEnd(VK_RBUTTON, static_cast<float>(MousePos.x), static_cast<float>(MousePos.y));
+    }
+    if (Input.GetScrollDelta() != 0)
+    {
+        PlayerController->HandleMouseWheel(Input.GetScrollNotches());
     }
 }
 
