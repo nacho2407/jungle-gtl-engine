@@ -1,6 +1,7 @@
 ﻿#include "MeshBufferManager.h"
 
 #include "Asset/StaticMesh.h"
+#include "Component/ProceduralMeshComponent.h"
 
 namespace
 {
@@ -119,23 +120,32 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     return &NewBuffer;
 }
 
-FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponent* ProcMeshComp, const UProceduralMeshComponent::FMeshSection& MeshSection)
+FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices)
 {
-    auto It = ProcMeshBufferMap.find(ProcMeshComp);
-	if (It != ProcMeshBufferMap.end())
-	{
-        return &It->second;
-	}
-
-    const TArray<FNormalVertex>& Vertices = MeshSection.Vertices;
-    const TArray<uint32>& Indices = MeshSection.Indices;
-
     if (Vertices.empty() || Indices.empty())
     {
         return nullptr;
     }
 
-    FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshComp];
+    auto It = ProcMeshBufferMap.find(ProcMeshCompUUID);
+    if (It != ProcMeshBufferMap.end())
+    {
+        FMeshBuffer& Existing = It->second;
+        if (Existing.IsValid())
+        {
+            const uint32 ExistingVertexCount = Existing.GetVertexBuffer().GetVertexCount();
+            const uint32 ExistingIndexCount = Existing.GetIndexBuffer().GetIndexCount();
+			// Size 달라짐을 통해 유효 여부 확인
+            if (ExistingVertexCount == static_cast<uint32>(Vertices.size()) && ExistingIndexCount == static_cast<uint32>(Indices.size()))
+            {
+                return &Existing;
+            }
+            // recreate if size differs
+            Existing.Release();
+        }
+    }
+
+    FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshCompUUID];
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
 
     return &NewBuffer;
