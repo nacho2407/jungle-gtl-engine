@@ -4,6 +4,7 @@
 #include "Math/Vector.h"
 
 class UPrimitiveComponent;
+class USphereComponent;
 
 class UCarMovementComponent : public UMovementComponent
 {
@@ -24,26 +25,41 @@ public:
 	float GetForwardSpeed() const;
 
 private:
-	void ApplyDriveForce(float DeltaTime);
-	void ApplySteering(float DeltaTime);
-	void ApplyLateralGrip(float DeltaTime);
+	bool ApplyWheelSuspension(float DeltaTime);
+	void ApplyAirSteering(float DeltaTime);
+	void ApplyRigidBodyMovement(float DeltaTime);
+	void CacheWheelComponents();
 
 	FVector GetPlaneNormal() const;
 
 private:
 	UPrimitiveComponent* UpdatedPrimitive = nullptr;
+	TArray<USphereComponent*> WheelComponents;
 
 	float ThrottleInput = 0.0f;
 	float SteeringInput = 0.0f;
 
-	float MaxSpeed = 20.0f;
-	float ReverseMaxSpeed = -15.0f;
+	float MaxSpeed = 100.0f;
+	float ReverseMaxSpeed = -80.0f;
 
-	float AccelForce = 15.0f;
-	float ReverseAccelForce = 10.0f;
-	float BrakeForce = 40.0f;
+	float AccelForce = 20000.0f;
+	float ReverseAccelForce = 15000.0f;
+	float BrakeForce = 50000.0f;
 
-	float SteeringPower = 90.0f;
-	float LateralGrip = 8.0f;
-	float RollingDrag = 2.0f;
+	float SteeringPower = 15000.0f;
+	float LateralGrip = 8000.0f;
+	float RollingDrag = 800.0f;
+
+	bool bUseRaycastSuspension = true;
+	bool bDisableWheelCollision = true;
+	float SuspensionRestLength = 0.6f;
+	float SuspensionSpringStrength = 12000.0f;
+	float SuspensionDamping = 3500.0f;
+	float MaxSuspensionForce = 25000.0f;
+	float GroundAngularDamping = 8000.0f;
+	float WheelRadius = 0.4f;
+	float WheelForwardOffset = 1.5f;
+	float WheelHalfTrack = 0.8f;
+	float WheelRootZ = 0.0f;
+	float AirSteeringScale = 0.15f;
 };

@@ -5,6 +5,7 @@
 #include "Core/RayTypes.h"
 
 class UWorld;
+class AActor;
 class UPrimitiveComponent;
 struct FHitResult;
 
@@ -57,5 +58,5 @@ public:
 	virtual FVector GetCenterOfMass(UPrimitiveComponent* Comp) const = 0;
 
 	// --- Raycast ---
-	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const = 0;
+	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor = nullptr) const = 0;
 };
