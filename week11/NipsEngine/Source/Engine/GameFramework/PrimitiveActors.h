@@ -263,6 +263,6 @@ public:
 	void PostDuplicate(UObject* Original) override;
 
 private:
-    UProceduralMeshComponent* ProcMeshComp = nullptr;
+	UProceduralMeshComponent* ProcMeshComp = nullptr;
     UBoxComponent* BoxComponent = nullptr;
 };

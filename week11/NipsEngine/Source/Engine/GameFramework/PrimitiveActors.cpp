@@ -620,8 +620,21 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
     UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
 
     FPlane Plane;
-    Plane.Normal = FVector(0, 1, 1);
+
+	FVector N = SweepResult.Normal;   // 반드시 normalize
+    FVector P = SweepResult.Location; // plane 위의 점
+    float D = FVector::DotProduct(N, P);
+
+    FVector SplitDir;	
+	SplitDir = FVector::CrossProduct(N, FVector::UpVector);
+	if (SplitDir.IsNearlyZero())
+	{
+        SplitDir = FVector::CrossProduct(N, FVector::RightVector);
+	}
+
+	Plane.Normal = SplitDir;
     Plane.D = 0;
+
     FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
 
 	UWorld* World = OtherActor->GetFocusedWorld();
@@ -646,6 +659,10 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
     AActor::PostDuplicate(Original);
 
 	ADestructibleActor* Actor = Cast<ADestructibleActor>(Original);
-	ProcMeshComp = Actor->ProcMeshComp;
-    BoxComponent = Actor->BoxComponent;
+
+	ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+	// Property 에 있는 건 자동으로 옮겨주고, 거기에 없는 Sections 정보 등만 옮기기
+    ProcMeshComp->CreateFrom(Actor->ProcMeshComp);
+    
+	BoxComponent = AddComponent<UBoxComponent>();
 }
