@@ -1,5 +1,5 @@
 ﻿#include "SphereComponent.h"
-IMPLEMENT_CLASS(USphereComponent, UShapeComponent)
+IMPLEMENT_COMPONENT_CLASS(USphereComponent, UShapeComponent, EEditorComponentCategory::Shapes)
 
 USphereComponent::USphereComponent()
     : SphereRadius(1.0f),

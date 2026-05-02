@@ -34,7 +34,7 @@ private:
 
     void FocusComponentDetails(UActorComponent* Component, int32 CascadeIndex = -1, int32 FaceIndex = -1);
     void RenderComponentTree(AActor* Actor);
-    void RenderSceneComponentNode(class USceneComponent* Comp);
+    void RenderSceneComponentNode(class USceneComponent* Comp, UActorComponent*& OutComponentToRemove);
     void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
     void RenderComponentProperties(AActor* Actor);
     void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);

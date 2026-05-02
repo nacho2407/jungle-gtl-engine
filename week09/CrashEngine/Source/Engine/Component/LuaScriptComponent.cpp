@@ -13,7 +13,7 @@
 #include "Platform/Paths.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(ULuaScriptComponent, UActorComponent)
+IMPLEMENT_COMPONENT_CLASS(ULuaScriptComponent, UActorComponent, EEditorComponentCategory::Scripts)
 
 namespace
 {

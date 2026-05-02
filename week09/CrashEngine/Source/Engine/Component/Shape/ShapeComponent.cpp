@@ -3,7 +3,7 @@
 #include "GameFrameWork/World.h"
 #include "Physics/CollisionManager.h"
 
-IMPLEMENT_CLASS(UShapeComponent, UPrimitiveComponent)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(UShapeComponent, UPrimitiveComponent)
 
 
 UShapeComponent::UShapeComponent()

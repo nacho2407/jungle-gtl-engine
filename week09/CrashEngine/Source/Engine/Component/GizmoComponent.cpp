@@ -12,7 +12,7 @@
 #include "Render/Scene/Scene.h"
 #include <cfloat>
 
-IMPLEMENT_CLASS(UGizmoComponent, UPrimitiveComponent)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(UGizmoComponent, UPrimitiveComponent)
 
 
 FPrimitiveProxy* UGizmoComponent::CreateSceneProxy()

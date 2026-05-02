@@ -33,7 +33,7 @@ bool HasSameTransformBasis(const FMatrix& A, const FMatrix& B)
 }
 } // namespace
 
-IMPLEMENT_CLASS(UPrimitiveComponent, USceneComponent)
+IMPLEMENT_HIDDEN_COMPONENT_CLASS(UPrimitiveComponent, USceneComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {

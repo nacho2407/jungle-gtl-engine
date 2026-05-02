@@ -25,8 +25,20 @@
     DEFINE_CLASS(ClassName, ParentClass)        \
     REGISTER_FACTORY(ClassName)
 
+#define IMPLEMENT_COMPONENT_CLASS(ClassName, ParentClass, EditorCategoryValue) \
+    DEFINE_CLASS_WITH_FLAGS_AND_CATEGORY(ClassName, ParentClass, CF_Component, EditorCategoryValue) \
+    REGISTER_FACTORY(ClassName)
+
+#define IMPLEMENT_HIDDEN_COMPONENT_CLASS(ClassName, ParentClass) \
+    DEFINE_CLASS_WITH_FLAGS_AND_CATEGORY(ClassName, ParentClass, CF_Component, EEditorComponentCategory::Hidden) \
+    REGISTER_FACTORY(ClassName)
+
 #define IMPLEMENT_ABSTRACT_CLASS(ClassName, ParentClass)         \
     DEFINE_CLASS_WITH_FLAGS(ClassName, ParentClass, CF_Abstract) \
+    REGISTER_FACTORY(ClassName)
+
+#define IMPLEMENT_ABSTRACT_COMPONENT_CLASS(ClassName, ParentClass) \
+    DEFINE_CLASS_WITH_FLAGS_AND_CATEGORY(ClassName, ParentClass, CF_Component | CF_Abstract, EEditorComponentCategory::Hidden) \
     REGISTER_FACTORY(ClassName)
 
 // FObjectFactory는 오브젝트 영역의 핵심 동작을 담당합니다.

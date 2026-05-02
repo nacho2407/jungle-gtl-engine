@@ -4,7 +4,7 @@
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
 
-IMPLEMENT_CLASS(UActorComponent, UObject)
+IMPLEMENT_ABSTRACT_COMPONENT_CLASS(UActorComponent, UObject)
 
 void UActorComponent::BeginPlay()
 {

@@ -7,7 +7,7 @@
 #include "Serialization/Archive.h"
 
 // Base movement logic only; concrete movement types should be added instead.
-IMPLEMENT_ABSTRACT_CLASS(UMovementComponent, UActorComponent)
+IMPLEMENT_ABSTRACT_COMPONENT_CLASS(UMovementComponent, UActorComponent)
 
 // ============================================================
 // 경로 헬퍼 (파일 스코프)

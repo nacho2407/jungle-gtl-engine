@@ -5,7 +5,7 @@
 #include "SceneComponent.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(URotatingMovementComponent, UMovementComponent)
+IMPLEMENT_COMPONENT_CLASS(URotatingMovementComponent, UMovementComponent, EEditorComponentCategory::Movement)
 
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {

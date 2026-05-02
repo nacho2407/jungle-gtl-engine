@@ -9,7 +9,7 @@
 #include "Render/Scene/Scene.h"
 #include "Serialization/Archive.h"
 
-IMPLEMENT_CLASS(UProjectileMovementComponent, UMovementComponent)
+IMPLEMENT_COMPONENT_CLASS(UProjectileMovementComponent, UMovementComponent, EEditorComponentCategory::Movement)
 
 void UProjectileMovementComponent::BeginPlay()
 {

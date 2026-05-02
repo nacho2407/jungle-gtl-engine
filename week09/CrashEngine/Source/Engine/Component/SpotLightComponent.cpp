@@ -4,7 +4,7 @@
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Light/SpotLightSceneProxy.h"
 
-IMPLEMENT_CLASS(USpotLightComponent, UPointLightComponent)
+IMPLEMENT_COMPONENT_CLASS(USpotLightComponent, UPointLightComponent, EEditorComponentCategory::Lights)
 
 void USpotLightComponent::Serialize(FArchive& Ar)
 {
