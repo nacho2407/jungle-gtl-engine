@@ -147,7 +147,7 @@ public:
     DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*);
-
+    
     FOnComponentBeginOverlap OnComponentBeginOverlap;
     FOnComponentEndOverlap OnComponentEndOverlap;
     FOnComponentHit OnComponentHit;
