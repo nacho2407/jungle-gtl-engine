@@ -112,10 +112,8 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
 {
     auto it = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
 
-    // 2. 찾았다면 삭제를 진행합니다.
     if (it != RegisteredComponents.end())
     {
-
         *it = RegisteredComponents.back();
         RegisteredComponents.pop_back();
 

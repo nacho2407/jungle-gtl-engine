@@ -4,8 +4,6 @@
 #include "Sphere.h"
 #include "Serialization/Archive.h"
 
-//#include "Math/Box.h"
-
 // 전방 선언
 class FCollision;
 class FSphereCollision;

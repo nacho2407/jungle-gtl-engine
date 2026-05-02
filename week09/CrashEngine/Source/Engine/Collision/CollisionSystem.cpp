@@ -17,8 +17,6 @@ bool FSphereCollision::IntersectWithSphere(const FSphereCollision& Other) const
 
 bool FSphereCollision::IntersectWithBox(const FBoxCollision& Box) const
 {
-    // 구 vs OBB (수학 라이브러리 위임 권장)
-    // 일반적으로 OBB의 로컬 좌표계로 구의 중심을 변환한 뒤, AABB와 구의 충돌로 계산합니다.
     return FMath::IntersectSphereOBB(
         Sphere.Center, Sphere.Radius,
         Box.Bounds.Center, Box.Bounds.Extent, Box.Bounds.Rotation);
@@ -30,7 +28,7 @@ bool FSphereCollision::IntersectWithCapsule(const FCapsuleCollision& Capsule) co
     FVector CapsuleStart = Capsule.Center + Capsule.UpVector * Capsule.HalfHeight;
     FVector CapsuleEnd = Capsule.Center - Capsule.UpVector * Capsule.HalfHeight;
 
-    // 선분과 점 사이의 가장 가까운 점을 찾는 수학 함수가 필요합니다.
+    // 선분과 점 사이의 가장 가까운 점을 찾는 함수
     FVector ClosestPoint = FMath::ClosestPointOnSegment(Sphere.Center, CapsuleStart, CapsuleEnd);
 
     FVector Diff = Sphere.Center - ClosestPoint;
@@ -46,13 +44,11 @@ bool FSphereCollision::IntersectWithCapsule(const FCapsuleCollision& Capsule) co
 
 bool FBoxCollision::IntersectWithSphere(const FSphereCollision& Sphere) const
 {
-    // Box vs Sphere는 이미 구현된 Sphere vs Box와 결과가 같으므로 그대로 반대로 호출합니다
     return Sphere.IntersectWithBox(*this);
 }
 
 bool FBoxCollision::IntersectWithBox(const FBoxCollision& Other) const
 {
-    // OBB vs OBB: 보통 분리축 정리(SAT, Separating Axis Theorem) 알고리즘을 사용합니다.
     return FMath::IntersectOBBOBB(
         Bounds.Center, Bounds.Extent, Bounds.Rotation,
         Other.Bounds.Center, Other.Bounds.Extent, Other.Bounds.Rotation);
@@ -72,13 +68,11 @@ bool FBoxCollision::IntersectWithCapsule(const FCapsuleCollision& Capsule) const
 
 bool FCapsuleCollision::IntersectWithSphere(const FSphereCollision& Sphere) const
 {
-    // Capsule vs Sphere -> 위임
     return Sphere.IntersectWithCapsule(*this);
 }
 
 bool FCapsuleCollision::IntersectWithBox(const FBoxCollision& Box) const
 {
-    // Capsule vs Box -> 위임
     return Box.IntersectWithCapsule(*this);
 }
 
@@ -92,7 +86,7 @@ bool FCapsuleCollision::IntersectWithCapsule(const FCapsuleCollision& Other) con
     FVector BEnd = Other.Center - Other.UpVector * Other.HalfHeight;
 
     FVector ClosestPointA, ClosestPointB;
-    // 두 3D 선분(Segment) 사이의 가장 가까운 두 점을 계산하는 함수가 필요합니다.
+    // 두 3D 선분(Segment) 사이의 가장 가까운 두 점을 계산하는 함수
     FMath::ClosestPointsBetweenSegments(AStart, AEnd, BStart, BEnd, ClosestPointA, ClosestPointB);
 
     FVector Diff = ClosestPointA - ClosestPointB;
