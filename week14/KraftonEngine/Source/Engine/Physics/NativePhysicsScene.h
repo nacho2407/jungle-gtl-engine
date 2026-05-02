@@ -35,6 +35,8 @@ public:
 
 	void SetMass(UPrimitiveComponent* Comp, float Mass) override;
 	float GetMass(UPrimitiveComponent* Comp) const override;
+	void SetCenterOfMass(UPrimitiveComponent* Comp, const FVector& LocalOffset) override;
+	FVector GetCenterOfMass(UPrimitiveComponent* Comp) const override;
 
 	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const override;
 
@@ -50,6 +52,7 @@ private:
 		FVector AccumulatedForce = { 0, 0, 0 };
 		FVector AccumulatedTorque = { 0, 0, 0 };
 		float Mass = 1.0f;
+		FVector CenterOfMassLocal = { 0, 0, 0 }; // 컴포넌트 local 좌표계 offset
 	};
 	std::unordered_map<UPrimitiveComponent*, FBodyState> BodyStates;
 

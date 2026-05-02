@@ -31,7 +31,9 @@ void FNativePhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 		if (Existing == Comp) return;
 	}
 	RegisteredComponents.push_back(Comp);
-	BodyStates[Comp] = {};
+	FBodyState& State = BodyStates[Comp];
+	State.Mass = Comp->GetMass() > 0.0f ? Comp->GetMass() : 1.0f;
+	State.CenterOfMassLocal = Comp->GetCenterOfMass();
 }
 
 void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
@@ -286,9 +288,10 @@ void FNativePhysicsScene::AddForceAtLocation(UPrimitiveComponent* Comp, const FV
 
 	It->second.AccumulatedForce = It->second.AccumulatedForce + Force;
 
-	// Torque = (Location - COM) x Force
-	FVector COM = Comp->GetWorldLocation();
-	FVector R = WorldLocation - COM;
+	// COM = Comp의 world origin + 컴포넌트 회전 적용한 local offset
+	FVector COMWorld = Comp->GetWorldLocation()
+		+ Comp->GetWorldMatrix().ToQuat().RotateVector(It->second.CenterOfMassLocal);
+	FVector R = WorldLocation - COMWorld;
 	FVector Torque;
 	Torque.X = R.Y * Force.Z - R.Z * Force.Y;
 	Torque.Y = R.Z * Force.X - R.X * Force.Z;
@@ -351,6 +354,20 @@ float FNativePhysicsScene::GetMass(UPrimitiveComponent* Comp) const
 	auto It = BodyStates.find(Comp);
 	if (It == BodyStates.end()) return 1.0f;
 	return It->second.Mass;
+}
+
+void FNativePhysicsScene::SetCenterOfMass(UPrimitiveComponent* Comp, const FVector& LocalOffset)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.CenterOfMassLocal = LocalOffset;
+}
+
+FVector FNativePhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return { 0, 0, 0 };
+	return It->second.CenterOfMassLocal;
 }
 
 // ============================================================

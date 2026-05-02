@@ -48,9 +48,13 @@ public:
 	virtual FVector GetAngularVelocity(UPrimitiveComponent* Comp) const = 0;
 	virtual void SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel) = 0;
 
-	// --- Mass ---
+	// --- Mass / Center of Mass ---
 	virtual void SetMass(UPrimitiveComponent* Comp, float Mass) = 0;
 	virtual float GetMass(UPrimitiveComponent* Comp) const = 0;
+	// CenterOfMass는 RootComponent의 local 좌표계 기준 offset.
+	// 차량처럼 mass center를 차체 아래로 내리면 회전 안정성↑.
+	virtual void SetCenterOfMass(UPrimitiveComponent* Comp, const FVector& LocalOffset) = 0;
+	virtual FVector GetCenterOfMass(UPrimitiveComponent* Comp) const = 0;
 
 	// --- Raycast ---
 	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const = 0;

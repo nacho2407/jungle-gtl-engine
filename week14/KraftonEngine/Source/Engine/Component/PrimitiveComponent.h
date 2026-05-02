@@ -148,8 +148,14 @@ public:
 	void SetLinearVelocity(const FVector& Vel);
 	FVector GetAngularVelocity() const;
 	void SetAngularVelocity(const FVector& Vel);
-	void SetMass(float Mass);
+
+	// --- Mass / Center of Mass ---
+	// Compound shape에선 RootComponent의 값만 백엔드에 적용된다.
+	// 자식 컴포넌트의 Mass / CenterOfMassOffset은 직렬화는 되지만 무시.
+	void SetMass(float NewMass);
 	float GetMass() const;
+	void SetCenterOfMass(const FVector& LocalOffset);
+	FVector GetCenterOfMass() const;
 
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
@@ -195,6 +201,10 @@ protected:
 	bool bCastShadowAsTwoSided = false;
 	bool bSimulatePhysics = false;
 	bool bGenerateOverlapEvents = false;
+
+	// 물리 파라미터 — RootComponent의 값만 백엔드에 적용 (compound shape 정책).
+	float Mass = 1.0f;                          // kg
+	FVector CenterOfMassOffset = { 0, 0, 0 };   // RootComponent local 좌표계 offset
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block

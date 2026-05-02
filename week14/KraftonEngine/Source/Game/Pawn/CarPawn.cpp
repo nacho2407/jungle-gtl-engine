@@ -25,6 +25,11 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
 	CollisionBox->SetSimulatePhysics(false);
 
+	// 차량 1.5톤, mass center를 차체 아래(-Z) 30cm로 — 회전 안정성 향상.
+	// 코너링/경사로에서 차량이 쉽게 뒤집히지 않도록 무게중심을 낮춘다.
+	CollisionBox->SetMass(1500.0f);
+	CollisionBox->SetCenterOfMass(FVector(0.0f, 0.0f, -0.3f));
+
 	// 2) 차체 메시 (Box 자식 — 시각만, 충돌은 Box가 담당)
 	Mesh = AddComponent<UStaticMeshComponent>();
 	Mesh->AttachToComponent(CollisionBox);

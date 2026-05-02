@@ -84,6 +84,7 @@ INCLUDE_PATHS = [
     "Source\\Game",
     "ThirdParty\\lua\\include",
     "ThirdParty\\sol2\\include",
+    "ThirdParty\\fmod\\include",
     ".",
 ]
 
