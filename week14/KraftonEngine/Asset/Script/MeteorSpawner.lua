@@ -4,7 +4,7 @@
 -- 운석 자체의 충돌/lifetime/destroy는 cpp의 AMeteor가 담당.
 
 -- 튜닝 파라미터 (디자이너가 lua에서 직접 수정 — 빌드 불필요)
-local SPAWN_INTERVAL    = 1.0    -- 초당 1마리
+local SPAWN_INTERVAL    = 0.2    -- 초당 1마리
 local SPAWN_RADIUS      = 50.0   -- spawner 위치 기준 반경 (XY)
 local SPAWN_HEIGHT      = 30.0   -- spawn 시작 Z 오프셋 (위에서 떨어뜨림)
 local MAX_CONCURRENT    = 30     -- 동시 활성 운석 한도

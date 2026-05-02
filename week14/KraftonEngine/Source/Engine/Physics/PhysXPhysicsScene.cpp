@@ -392,8 +392,6 @@ void FPhysXPhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 
 	if (!Mapping)
 	{
-		// 액터의 첫 등록 — PxRigidActor 생성. RootComponent가 PrimitiveComponent면 그걸,
-		// 아니면 fallback으로 들어온 Comp를 RootComp로 사용.
 		UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent());
 		if (!RootPrim) RootPrim = Comp;
 
@@ -462,6 +460,32 @@ void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
 	{
 		ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
+	}
+}
+
+void FPhysXPhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
+{
+	// SimulatePhysics 변경(Dynamic ↔ Static)은 PxActor type 변경이라 actor를 통째 재생성해야 한다.
+	// 또한 ObjectType/Response 변경은 shape filterData도 새로 계산해야 정확.
+	// 단순화 위해 같은 액터의 모든 컴포넌트를 unregister + register로 일괄 재구성.
+	if (!Comp || !Scene) return;
+
+	AActor* OwnerActor = Comp->GetOwner();
+	if (!OwnerActor) return;
+
+	FBodyMapping* Mapping = FindMappingByActor(OwnerActor);
+	if (!Mapping) return; // 등록 안 됨 — skip
+
+	// 같은 actor의 모든 컴포넌트 캐시 (unregister가 mapping을 제거할 수 있어 미리 복사)
+	TArray<UPrimitiveComponent*> CompList = Mapping->Components;
+
+	for (UPrimitiveComponent* C : CompList)
+	{
+		UnregisterComponent(C);
+	}
+	for (UPrimitiveComponent* C : CompList)
+	{
+		RegisterComponent(C);
 	}
 }
 
