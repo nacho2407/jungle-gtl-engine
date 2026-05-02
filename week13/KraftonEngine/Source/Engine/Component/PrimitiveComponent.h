@@ -140,6 +140,17 @@ public:
 	void SetSimulatePhysics(bool bInSimulate) { bSimulatePhysics = bInSimulate; }
 	bool GetSimulatePhysics() const { return bSimulatePhysics; }
 
+	// --- Physics Force/Velocity API ---
+	void AddForce(const FVector& Force);
+	void AddForceAtLocation(const FVector& Force, const FVector& Location);
+	void AddTorque(const FVector& Torque);
+	FVector GetLinearVelocity() const;
+	void SetLinearVelocity(const FVector& Vel);
+	FVector GetAngularVelocity() const;
+	void SetAngularVelocity(const FVector& Vel);
+	void SetMass(float Mass);
+	float GetMass() const;
+
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 

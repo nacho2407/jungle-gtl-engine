@@ -542,3 +542,133 @@ FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMapping(UPrimitiveComp
 	}
 	return nullptr;
 }
+
+const FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMapping(UPrimitiveComponent* Comp) const
+{
+	for (const auto& M : BodyMappings)
+	{
+		if (M.Component == Comp) return &M;
+	}
+	return nullptr;
+}
+
+// ============================================================
+// Force / Torque
+// ============================================================
+
+void FPhysXPhysicsScene::AddForce(UPrimitiveComponent* Comp, const FVector& Force)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	Dyn->addForce(ToPxVec3(Force));
+}
+
+void FPhysXPhysicsScene::AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	PxRigidBodyExt::addForceAtPos(*Dyn, ToPxVec3(Force), ToPxVec3(WorldLocation));
+}
+
+void FPhysXPhysicsScene::AddTorque(UPrimitiveComponent* Comp, const FVector& Torque)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	Dyn->addTorque(ToPxVec3(Torque));
+}
+
+// ============================================================
+// Velocity
+// ============================================================
+
+FVector FPhysXPhysicsScene::GetLinearVelocity(UPrimitiveComponent* Comp) const
+{
+	const FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return { 0, 0, 0 };
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return { 0, 0, 0 };
+	return ToFVector(Dyn->getLinearVelocity());
+}
+
+void FPhysXPhysicsScene::SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	Dyn->setLinearVelocity(ToPxVec3(Vel));
+}
+
+FVector FPhysXPhysicsScene::GetAngularVelocity(UPrimitiveComponent* Comp) const
+{
+	const FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return { 0, 0, 0 };
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return { 0, 0, 0 };
+	return ToFVector(Dyn->getAngularVelocity());
+}
+
+void FPhysXPhysicsScene::SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	Dyn->setAngularVelocity(ToPxVec3(Vel));
+}
+
+// ============================================================
+// Mass
+// ============================================================
+
+void FPhysXPhysicsScene::SetMass(UPrimitiveComponent* Comp, float Mass)
+{
+	FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return;
+	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, Mass);
+}
+
+float FPhysXPhysicsScene::GetMass(UPrimitiveComponent* Comp) const
+{
+	const FBodyMapping* M = FindMapping(Comp);
+	if (!M || !M->Actor) return 1.0f;
+	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
+	if (!Dyn) return 1.0f;
+	return Dyn->getMass();
+}
+
+// ============================================================
+// Raycast
+// ============================================================
+
+bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const
+{
+	if (!Scene) return false;
+
+	PxRaycastBuffer Hit;
+	bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, Hit);
+	if (!bStatus || !Hit.hasBlock) return false;
+
+	const PxRaycastHit& Block = Hit.block;
+	OutHit.bHit = true;
+	OutHit.Distance = Block.distance;
+	OutHit.WorldHitLocation = ToFVector(Block.position);
+	OutHit.ImpactNormal = ToFVector(Block.normal);
+	OutHit.WorldNormal = OutHit.ImpactNormal;
+
+	if (Block.actor && Block.actor->userData)
+	{
+		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.actor->userData);
+		OutHit.HitActor = OutHit.HitComponent->GetOwner();
+	}
+
+	return true;
+}

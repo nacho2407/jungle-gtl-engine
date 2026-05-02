@@ -32,6 +32,20 @@ public:
 
 	void Tick(float DeltaTime) override;
 
+	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
+	void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) override;
+	void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) override;
+
+	FVector GetLinearVelocity(UPrimitiveComponent* Comp) const override;
+	void SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel) override;
+	FVector GetAngularVelocity(UPrimitiveComponent* Comp) const override;
+	void SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel) override;
+
+	void SetMass(UPrimitiveComponent* Comp, float Mass) override;
+	float GetMass(UPrimitiveComponent* Comp) const override;
+
+	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const override;
+
 private:
 	UWorld* World = nullptr;
 
@@ -55,4 +69,5 @@ private:
 	physx::PxRigidActor* CreateBodyForComponent(UPrimitiveComponent* Comp);
 	void RemoveBody(physx::PxRigidActor* Body);
 	FBodyMapping* FindMapping(UPrimitiveComponent* Comp);
+	const FBodyMapping* FindMapping(UPrimitiveComponent* Comp) const;
 };

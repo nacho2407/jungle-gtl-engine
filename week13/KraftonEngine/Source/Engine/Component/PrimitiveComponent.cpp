@@ -429,6 +429,83 @@ ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent
 
 // --- Overlap / Hit ---
 
+// --- Physics Force/Velocity API ---
+
+void UPrimitiveComponent::AddForce(const FVector& Force)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->AddForce(this, Force);
+}
+
+void UPrimitiveComponent::AddForceAtLocation(const FVector& Force, const FVector& Location)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->AddForceAtLocation(this, Force, Location);
+}
+
+void UPrimitiveComponent::AddTorque(const FVector& Torque)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->AddTorque(this, Torque);
+}
+
+FVector UPrimitiveComponent::GetLinearVelocity() const
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				return PS->GetLinearVelocity(const_cast<UPrimitiveComponent*>(this));
+	return { 0, 0, 0 };
+}
+
+void UPrimitiveComponent::SetLinearVelocity(const FVector& Vel)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->SetLinearVelocity(this, Vel);
+}
+
+FVector UPrimitiveComponent::GetAngularVelocity() const
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				return PS->GetAngularVelocity(const_cast<UPrimitiveComponent*>(this));
+	return { 0, 0, 0 };
+}
+
+void UPrimitiveComponent::SetAngularVelocity(const FVector& Vel)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->SetAngularVelocity(this, Vel);
+}
+
+void UPrimitiveComponent::SetMass(float Mass)
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->SetMass(this, Mass);
+}
+
+float UPrimitiveComponent::GetMass() const
+{
+	if (Owner)
+		if (UWorld* W = Owner->GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				return PS->GetMass(const_cast<UPrimitiveComponent*>(this));
+	return 1.0f;
+}
+
 void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)
 {
 	bGenerateOverlapEvents = bInGenerateOverlapEvents;
