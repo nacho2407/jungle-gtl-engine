@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include "LuaActionLibrary.h"
+#include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Sound/SoundManager.h"
 #include "LuaScript/LuaGameObjectProxy.h"
@@ -101,7 +103,7 @@ void FLuaRuntime::Shutdown()
     {
         return;
     }
-
+    
     if (Lua)
     {
         Lua->collect_garbage();
@@ -229,4 +231,7 @@ void FLuaRuntime::BindEngineTypes()
 
 	// sol2를 이용하여 Lua 전역 테이블에 Input 추가
     (*Lua)["Input"] = &GLuaInputProxy;
+
+    // Coroutine 관련 함수 바인딩
+    LuaActionLibrary::Bind(*Lua);
 }

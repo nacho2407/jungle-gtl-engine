@@ -157,6 +157,28 @@ void ULuaScriptComponent::SetScriptPath(const FString& ScriptPath)
     ClearScriptRuntime();
 }
 
+void ULuaScriptComponent::StartCoroutine(const FString& FunctionName, sol::variadic_args Args)
+{
+    if (!bScriptLoaded) return;
+
+    sol::state& Lua = FLuaRuntime::Get().GetState();
+    sol::object Candidate = Env[FunctionName.c_str()];
+
+    if (Candidate.get_type() != sol::type::function) return;
+
+    sol::thread CoroutineThread = sol::thread::create(Lua.lua_state());
+
+    sol::coroutine Co(CoroutineThread.state(), Candidate);
+
+    sol::protected_function_result Result = Co(Args);
+
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        UE_LOG(Lua, Error, "Coroutine '%s' failed: %s", FunctionName.c_str(), Error.what());
+    }
+}
+
 void ULuaScriptComponent::ClearScript()
 {
     LuaScriptPath = "None";
@@ -201,6 +223,10 @@ bool ULuaScriptComponent::LoadScript()
     ObjProxy.SetActor(OwnerActor);
     Env["obj"] = &ObjProxy;
 
+    Env["StartCoroutine"] = [this](const std::string& Name, sol::variadic_args Args)
+        {
+            this->StartCoroutine(FString(Name.c_str()), Args);
+        };
 	WorldProxy.SetWorld(OwnerActor->GetWorld());
 
     sol::table WorldTable = Lua.create_table();

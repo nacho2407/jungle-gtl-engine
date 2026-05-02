@@ -14,6 +14,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
+#include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
 #include "LuaScript/LuaRuntime.h"
@@ -77,6 +78,8 @@ void UEngine::Shutdown()
 
     FLuaScriptManager::Get().Release();
     FDirectoryWatcher::Get().Release();
+    // coroutinescheduler가 luaruntime보다 먼저 clear되어야 함.
+    FLuaCoroutineScheduler::Get().Clear();
     FLuaRuntime::Get().Shutdown();
 
     FSoundManager::Get().Release();
