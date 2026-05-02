@@ -93,7 +93,7 @@ bool UScriptComponent::CallScriptFunction(const FString& FunctionName, Args&&...
         UE_LOG(
             "[Lua Runtime Error] Script: %s, Function: %s, Error: %s",
             ScriptName.c_str(),
-            FunctionName,
+            FunctionName.c_str(),
             Err.what());
 
         return false;
