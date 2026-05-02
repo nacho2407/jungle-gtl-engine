@@ -133,7 +133,7 @@ struct FViewportAxisEvent
     float Value = 0.0f;
     float DeltaTime = 0.0f;
 
-	int32 ContollerId = 0;
+	int32 ControllerId = 0;
 
     FInputModifiers Modifiers;
 };

@@ -82,12 +82,21 @@ bool CallLuaFunction(const char* FunctionName, sol::protected_function& Function
 
     return true;
 }
+
+bool IsMouseButtonVK(int32 VK)
+{
+    return VK == VK_LBUTTON 
+		|| VK == VK_RBUTTON 
+		|| VK == VK_MBUTTON 
+		|| VK == VK_XBUTTON1 
+		|| VK == VK_XBUTTON2;
+}
 } // namespace
 
 void ULuaScriptComponent::BeginPlay()
 {
     UActorComponent::BeginPlay();
-    if (GetWorld()->GetWorldType() == EWorldType::Editor)
+    if (!GetWorld() || GetWorld()->GetWorldType() == EWorldType::Editor)
     {
         return;
     }
@@ -192,6 +201,18 @@ bool ULuaScriptComponent::LoadScript()
     ObjProxy.SetActor(OwnerActor);
     Env["obj"] = &ObjProxy;
 
+	WorldProxy.SetWorld(OwnerActor->GetWorld());
+
+    sol::table WorldTable = Lua.create_table();
+    WorldTable.set_function("IsValid", [this]()
+                            { return WorldProxy.IsValid(); });
+    WorldTable.set_function("SpawnActor", [this](const FString& ActorClassName)
+                            { return WorldProxy.SpawnActor(ActorClassName); });
+    WorldTable.set_function("DestroyActor", [this](const FLuaGameObjectProxy& ActorProxy)
+                            { return WorldProxy.DestroyActor(ActorProxy); });
+
+    Env["World"] = WorldTable;
+
     const FString FullPathUtf8 = FPaths::FromPath(FullPath);
 
     sol::load_result Loaded = Lua.load_file(FullPathUtf8);
@@ -293,11 +314,15 @@ void ULuaScriptComponent::ClearScriptRuntime()
 	OnKeyPressedFunc = sol::protected_function();
     OnKeyReleasedFunc = sol::protected_function();
 
+	OnMouseButtonPressedFunc = sol::protected_function();
+    OnMouseButtonReleasedFunc = sol::protected_function();
+
     OnGamepadButtonPressedFunc = sol::protected_function();
     OnGamepadButtonReleasedFunc = sol::protected_function();
 
     Env = sol::environment();
     ObjProxy.SetActor(nullptr);
+    WorldProxy.SetWorld(nullptr);
 
     bScriptLoaded = false;
 }
@@ -310,6 +335,9 @@ void ULuaScriptComponent::CacheScriptFunctions()
 
 	OnKeyPressedFunc = GetOptionalLuaFunction(Env, "OnKeyPressed", LastError);
     OnKeyReleasedFunc = GetOptionalLuaFunction(Env, "OnKeyReleased", LastError);
+
+	OnMouseButtonPressedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonPressed", LastError);
+    OnMouseButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonReleased", LastError);
 
     OnGamepadButtonPressedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonPressed", LastError);
     OnGamepadButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonReleased", LastError);
@@ -330,21 +358,59 @@ void ULuaScriptComponent::DispatchInputEvents()
 
 void ULuaScriptComponent::DispatchVirtualKeyEvents(const FInputSnapshot& Input)
 {
-    for (int32 VK = 0; VK < 256; VK++)
+    for (int32 VK = 0; VK < 256; ++VK)
     {
-        if (Input.KeyPressed[VK])
+        if (!Input.KeyPressed[VK] && !Input.KeyReleased[VK])
         {
-            const FString KeyName = LuaKeyNameFromVK(VK);
-            CallLuaFunction("OnKeyPressed", OnKeyPressedFunc, LastError, KeyName);
+            continue;
         }
 
-        if (Input.KeyReleased[VK])
+        if (IsMouseButtonVK(VK))
         {
-            const FString KeyName = LuaKeyNameFromVK(VK);
-            CallLuaFunction("OnKeyReleased", OnKeyReleasedFunc, LastError, KeyName);
+            DispatchMouseButtonEvent(Input, VK);
         }
+        else
+        {
+            DispatchKeyboardEvent(Input, VK);
+        }
+    }
+}
 
-        // KeyRepeated는 현재 지원하지 않음
+void ULuaScriptComponent::DispatchKeyboardEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString KeyName = LuaKeyNameFromVK(VK);
+    if (KeyName.empty() || KeyName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnKeyPressed", OnKeyPressedFunc, LastError, KeyName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnKeyReleased", OnKeyReleasedFunc, LastError, KeyName);
+    }
+}
+
+void ULuaScriptComponent::DispatchMouseButtonEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString ButtonName = LuaMouseButtonNameFromVK(VK);
+    if (ButtonName.empty() || ButtonName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnMouseButtonPressed", OnMouseButtonPressedFunc, LastError, ButtonName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnMouseButtonReleased", OnMouseButtonReleasedFunc, LastError, ButtonName);
     }
 }
 

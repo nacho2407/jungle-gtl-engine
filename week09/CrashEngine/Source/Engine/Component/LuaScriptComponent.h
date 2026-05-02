@@ -4,6 +4,7 @@
 #include "Input/InputTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaIncludes.h"
+#include "LuaScript/LuaWorldProxy.h"
 
 class ULuaScriptComponent : public UActorComponent
 {
@@ -42,6 +43,8 @@ private:
 
 	void DispatchInputEvents();
     void DispatchVirtualKeyEvents(const FInputSnapshot& Input);
+    void DispatchKeyboardEvent(const FInputSnapshot& Input, int32 VK);
+    void DispatchMouseButtonEvent(const FInputSnapshot& Input, int32 VK);
     void DispatchGamepadEvents(const FInputSnapshot& Input);
 
 private:
@@ -58,10 +61,15 @@ private:
     sol::protected_function EndPlayFunc;
 
     FLuaGameObjectProxy ObjProxy;
+    FLuaWorldProxy WorldProxy;
 
 	// Input Delegate 함수들
 	sol::protected_function OnKeyPressedFunc;
     sol::protected_function OnKeyReleasedFunc;
+
+	
+	sol::protected_function OnMouseButtonPressedFunc;
+    sol::protected_function OnMouseButtonReleasedFunc;
 
     sol::protected_function OnGamepadButtonPressedFunc;
     sol::protected_function OnGamepadButtonReleasedFunc;

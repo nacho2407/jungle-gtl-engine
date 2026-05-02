@@ -305,8 +305,37 @@ FString LuaKeyNameFromVK(int32 VK)
     }
 }
 
+FString LuaMouseButtonNameFromVK(int32 VK)
+{
+    switch (VK)
+    {
+    case VK_LBUTTON:
+        return "LeftMouseButton";
+
+    case VK_RBUTTON:
+        return "RightMouseButton";
+
+    case VK_MBUTTON:
+        return "MiddleMouseButton";
+
+    case VK_XBUTTON1:
+        return "MouseX1";
+
+    case VK_XBUTTON2:
+        return "MouseX2";
+
+    default:
+        return "";
+    }
+}
+
 FString LuaGamepadButtonNameFromIndex(int32 ButtonIndex)
 {
+    if (ButtonIndex < 0 || ButtonIndex >= static_cast<int32>(EGamepadButton::Count))
+    {
+        return "";
+    }
+
     const EGamepadButton Button = static_cast<EGamepadButton>(ButtonIndex);
 
     switch (Button)

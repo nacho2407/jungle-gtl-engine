@@ -26,4 +26,5 @@ public:
  */
 
 FString LuaKeyNameFromVK(int32 VK);
+FString LuaMouseButtonNameFromVK(int32 VK);
 FString LuaGamepadButtonNameFromIndex(int32 ButtonIndex);
