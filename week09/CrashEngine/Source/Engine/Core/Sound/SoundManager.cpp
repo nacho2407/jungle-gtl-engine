@@ -1,7 +1,11 @@
 ﻿#include "SoundManager.h"
-#include "Core/Logging/LogMacros.h"
 
-void USoundManager::Init()
+#include <filesystem>
+
+#include "Core/Logging/LogMacros.h"
+#include "Platform/Paths.h"
+
+void FSoundManager::Init()
 {
     FMOD::System_Create(&System);
 
@@ -17,7 +21,7 @@ void USoundManager::Init()
     UE_LOG(Sound, Info, "SoundManager Initialized with FMOD.");
 }
 
-void USoundManager::Update()
+void FSoundManager::Tick()
 {
     if (System)
     {
@@ -25,7 +29,7 @@ void USoundManager::Update()
     }
 }
 
-void USoundManager::Release()
+void FSoundManager::Release()
 {
     for (auto& Pair : SoundCache)
     {
@@ -44,7 +48,7 @@ void USoundManager::Release()
     }
 }
 
-bool USoundManager::LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM)
+bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM)
 {
     if (SoundCache.find(SoundID) != SoundCache.end())
     {
@@ -66,7 +70,37 @@ bool USoundManager::LoadSound(const FString& SoundID, const FString& FilePath, b
     return true;
 }
 
-void USoundManager::PlayBGM(const FString& SoundID)
+void FSoundManager::LoadSoundsFromDirectory(const FString& RelativeDirPath, bool bIsBGM)
+{
+    std::wstring WideDirPath = FPaths::Combine(FPaths::ContentDir(), FPaths::ToWide(RelativeDirPath));
+
+    if (!std::filesystem::exists(WideDirPath))
+    {
+        UE_LOG(Sound, Warning, "Directory does not exist: %s", RelativeDirPath.c_str());
+        return;
+    }
+
+    for (const auto& Entry : std::filesystem::directory_iterator(WideDirPath))
+    {
+        if (Entry.is_regular_file())
+        {
+            std::string Extension = Entry.path().extension().string();
+
+            if (Extension == ".wav" || Extension == ".mp3" || Extension == ".ogg")
+            {
+                std::string SoundID = Entry.path().stem().string();
+
+                std::string FullFilePath = Entry.path().string();
+                if (LoadSound(SoundID.c_str(), FullFilePath.c_str(), bIsBGM))
+                {
+                    UE_LOG(Sound, Info, "Auto-loaded sound: [%s]", SoundID.c_str());
+                }
+            }
+        }
+    }
+}
+
+void FSoundManager::PlayBGM(const FString& SoundID)
 {
     if (SoundCache.find(SoundID) == SoundCache.end()) return;
 
@@ -75,7 +109,7 @@ void USoundManager::PlayBGM(const FString& SoundID)
     System->playSound(SoundCache[SoundID], BgmGroup, false, &CurrentBgmChannel);
 }
 
-void USoundManager::StopBGM()
+void FSoundManager::StopBGM()
 {
     if (CurrentBgmChannel)
     {
@@ -89,14 +123,14 @@ void USoundManager::StopBGM()
     }
 }
 
-void USoundManager::PlaySFX(const FString& SoundID)
+void FSoundManager::PlaySFX(const FString& SoundID)
 {
     if (SoundCache.find(SoundID) == SoundCache.end()) return;
 
     System->playSound(SoundCache[SoundID], SfxGroup, false, nullptr);
 }
 
-void USoundManager::StopAllSFX()
+void FSoundManager::StopAllSFX()
 {
     if (SfxGroup)
     {
@@ -104,7 +138,7 @@ void USoundManager::StopAllSFX()
     }
 }
 
-void USoundManager::SetMasterVolume(float Volume)
+void FSoundManager::SetMasterVolume(float Volume)
 {
     if (MasterGroup)
     {
@@ -112,12 +146,12 @@ void USoundManager::SetMasterVolume(float Volume)
     }
 }
 
-void USoundManager::SetBGMVolume(float Volume)
+void FSoundManager::SetBGMVolume(float Volume)
 {
     if (BgmGroup) BgmGroup->setVolume(Volume);
 }
 
-void USoundManager::SetSFXVolume(float Volume)
+void FSoundManager::SetSFXVolume(float Volume)
 {
     if (SfxGroup) SfxGroup->setVolume(Volume);
 }

@@ -14,6 +14,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
+#include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
 #include "LuaScript/LuaRuntime.h"
 #include "LuaScript/LuaScriptManager.h"
@@ -58,6 +59,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
     FMeshBufferManager::Get().Initialize(Device);
     FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+    FSoundManager::Get().Init();
 
     FLuaRuntime::Get().Initialize();
 
@@ -77,6 +79,7 @@ void UEngine::Shutdown()
     FDirectoryWatcher::Get().Release();
     FLuaRuntime::Get().Shutdown();
 
+    FSoundManager::Get().Release();
     FResourceManager::Get().ReleaseGPUResources();
     UTexture2D::ReleaseAllGPU();
     FObjManager::ReleaseAllGPU();

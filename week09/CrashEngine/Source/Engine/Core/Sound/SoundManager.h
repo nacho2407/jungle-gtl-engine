@@ -4,16 +4,17 @@
 #include "Core/CoreTypes.h"
 #include "fmod.hpp"
 
-class USoundManager : public TSingleton<USoundManager>
+class FSoundManager : public TSingleton<FSoundManager>
 {
-    friend class TSingleton<USoundManager>;
+    friend class TSingleton<FSoundManager>;
 
 public:
     void Init();
-    void Update();
+    void Tick();
     void Release();
 
     bool LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM);
+    void LoadSoundsFromDirectory(const FString& RelativeDirPath, bool bIsBGM);
 
     void PlayBGM(const FString& SoundID);
     void StopBGM();
@@ -26,8 +27,8 @@ public:
     void SetSFXVolume(float Volume);
 
 private:
-    USoundManager() = default;
-    ~USoundManager() = default;
+    FSoundManager() = default;
+    ~FSoundManager() = default;
 
 private:
     FMOD::System* System = nullptr;
