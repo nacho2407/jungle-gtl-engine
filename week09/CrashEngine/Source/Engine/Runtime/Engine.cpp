@@ -172,7 +172,7 @@ void UEngine::Render(float DeltaTime)
                 Renderer.AcquireViewModeSurfaces(Viewport, Viewport->GetWidth(), Viewport->GetHeight());
         }
         Renderer.BuildDrawCommands(PipelineContext);
-        Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
+        Renderer.RenderFrame(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
     }
 
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))

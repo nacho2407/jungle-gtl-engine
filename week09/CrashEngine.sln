@@ -11,6 +11,8 @@ Global
 		Debug|x86 = Debug|x86
 		Demo|x64 = Demo|x64
 		Demo|x86 = Demo|x86
+		GameRelease|x64 = GameRelease|x64
+		GameRelease|x86 = GameRelease|x86
 		ObjViewDebug|x64 = ObjViewDebug|x64
 		ObjViewDebug|x86 = ObjViewDebug|x86
 		Release|x64 = Release|x64
@@ -25,6 +27,10 @@ Global
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x64.Build.0 = Demo|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x86.ActiveCfg = Demo|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.Demo|x86.Build.0 = Demo|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameRelease|x64.ActiveCfg = GameRelease|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameRelease|x64.Build.0 = GameRelease|x64
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameRelease|x86.ActiveCfg = GameRelease|Win32
+		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.GameRelease|x86.Build.0 = GameRelease|Win32
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.ObjViewDebug|x64.ActiveCfg = ObjViewDebug|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.ObjViewDebug|x64.Build.0 = ObjViewDebug|x64
 		{55068E81-C0A0-49F9-AB7B-54AEA968722B}.ObjViewDebug|x86.ActiveCfg = ObjViewDebug|x64
