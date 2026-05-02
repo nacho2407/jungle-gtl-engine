@@ -7,51 +7,47 @@
 
 #define KINDA_SMALL_NUMBER 1e-6
 
-bool FCollision::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
+FCollisionResult FCollision::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
 {
+    FCollisionResult Empty;
+
     if (!A || !B)
-        return false;
+        return Empty;
 
     if (!A->ShouldGenerateOverlapEvents() || !B->ShouldGenerateOverlapEvents())
-        return false;
+        return Empty;
 
     auto TypeA = A->GetPrimitiveType();
     auto TypeB = B->GetPrimitiveType();
 
-    // Box vs Box
     if (TypeA == EPrimitiveType::EPT_Box && TypeB == EPrimitiveType::EPT_Box)
         return IntersectBoxBox((UBoxComponent*)A, (UBoxComponent*)B);
 
-    // Sphere vs Sphere
     if (TypeA == EPrimitiveType::EPT_Sphere && TypeB == EPrimitiveType::EPT_Sphere)
         return IntersectSphereSphere((USphereComponent*)A, (USphereComponent*)B);
 
-    // Box vs Sphere
     if (TypeA == EPrimitiveType::EPT_Box && TypeB == EPrimitiveType::EPT_Sphere)
         return IntersectBoxSphere((UBoxComponent*)A, (USphereComponent*)B);
 
     if (TypeA == EPrimitiveType::EPT_Sphere && TypeB == EPrimitiveType::EPT_Box)
         return IntersectBoxSphere((UBoxComponent*)B, (USphereComponent*)A);
 
-    // Capsule vs Capsule
     if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Capsule)
         return IntersectCapsuleCapsule((UCapsuleComponent*)A, (UCapsuleComponent*)B);
 
-	// Capsule vs Sphere
     if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Sphere)
         return IntersectCapsuleSphere((UCapsuleComponent*)A, (USphereComponent*)B);
 
     if (TypeA == EPrimitiveType::EPT_Sphere && TypeB == EPrimitiveType::EPT_Capsule)
         return IntersectCapsuleSphere((UCapsuleComponent*)B, (USphereComponent*)A);
 
-	// Capsule vs Box
     if (TypeA == EPrimitiveType::EPT_Capsule && TypeB == EPrimitiveType::EPT_Box)
         return IntersectCapsuleBox((UCapsuleComponent*)A, (UBoxComponent*)B);
 
     if (TypeA == EPrimitiveType::EPT_Box && TypeB == EPrimitiveType::EPT_Capsule)
         return IntersectCapsuleBox((UCapsuleComponent*)B, (UBoxComponent*)A);
 
-    return false;
+    return Empty;
 }
 
 float FCollision::SegmentSegmentDistSq(
@@ -115,16 +111,18 @@ float FCollision::SegmentSegmentDistSq(
     return (C1 - C2).SizeSquared();
 }
 
-bool FCollision::IntersectBoxBox(const UBoxComponent* A, const UBoxComponent* B)
+FCollisionResult FCollision::IntersectBoxBox(const UBoxComponent* A, const UBoxComponent* B)
 {
-	const FOBB OBB_A = A->GetWorldOBB();
+    const FOBB OBB_A = A->GetWorldOBB();
     const FOBB OBB_B = B->GetWorldOBB();
 
     return IntersectOBB(OBB_A, OBB_B);
 }
 
-bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
+FCollisionResult FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
 {
+    FCollisionResult Result;
+
     FVector AAxis[3], BAxis[3];
     A.GetAxes(AAxis[0], AAxis[1], AAxis[2]);
     B.GetAxes(BAxis[0], BAxis[1], BAxis[2]);
@@ -136,7 +134,6 @@ bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
 
     float R[3][3], AbsR[3][3];
 
-    // rotation matrix A->B
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
         {
@@ -144,7 +141,6 @@ bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
             AbsR[i][j] = MathUtil::Abs(R[i][j]) + KINDA_SMALL_NUMBER;
         }
 
-    // A axes
     for (int i = 0; i < 3; i++)
     {
         float ra = EA[i];
@@ -154,10 +150,9 @@ bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
             EB.Z * AbsR[i][2];
 
         if (MathUtil::Abs(T.DotProduct(AAxis[i])) > ra + rb)
-            return false;
+            return Result;
     }
 
-    // B axes
     for (int i = 0; i < 3; i++)
     {
         float ra =
@@ -168,10 +163,9 @@ bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
         float rb = EB[i];
 
         if (MathUtil::Abs(T.DotProduct(BAxis[i])) > ra + rb)
-            return false;
+            return Result;
     }
 
-    // cross products
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
         {
@@ -194,10 +188,12 @@ bool FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
                 MathUtil::Abs((B.Center - A.Center).DotProduct(axis));
 
             if (t > ra + rb)
-                return false;
+                return Result;
         }
 
-    return true;
+    Result.bHit = true;
+    Result.HitPoint = (A.Center + B.Center) * 0.5f;
+    return Result;
 }
 
 FVector FCollision::ClosestPointOnOBB(const FVector& P, const FOBB& Box)
@@ -214,17 +210,17 @@ FVector FCollision::ClosestPointOnOBB(const FVector& P, const FOBB& Box)
     for (int i = 0; i < 3; i++)
     {
         float dist = d.DotProduct(axis[i]);
-
         dist = std::clamp(dist, -Box.Extents[i], Box.Extents[i]);
-
         result += axis[i] * dist;
     }
 
     return result;
 }
 
-bool FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereComponent* B)
+FCollisionResult FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereComponent* B)
 {
+    FCollisionResult Result;
+
     FVector CenterA = A->GetWorldLocation();
     FVector CenterB = B->GetWorldLocation();
 
@@ -234,11 +230,24 @@ bool FCollision::IntersectSphereSphere(const USphereComponent* A, const USphereC
     float DistSq = (CenterA - CenterB).SizeSquared();
     float RadiusSum = RadiusA + RadiusB;
 
-    return DistSq <= RadiusSum * RadiusSum;
+    if (DistSq <= RadiusSum * RadiusSum)
+    {
+        Result.bHit = true;
+        // 두 구 중심 사이 중간점 (반지름 비율로 보간)
+        float Dist = std::sqrt(DistSq);
+        FVector Dir = (Dist > KINDA_SMALL_NUMBER)
+                          ? (CenterB - CenterA) / Dist
+                          : FVector(0, 0, 1);
+        Result.HitPoint = CenterA + Dir * RadiusA;
+    }
+
+    return Result;
 }
 
-bool FCollision::IntersectBoxSphere(const UBoxComponent* Box, const USphereComponent* Sphere)
+FCollisionResult FCollision::IntersectBoxSphere(const UBoxComponent* Box, const USphereComponent* Sphere)
 {
+    FCollisionResult Result;
+
     const FOBB OBB = Box->GetWorldOBB();
 
     FVector Center = Sphere->GetWorldLocation();
@@ -248,11 +257,19 @@ bool FCollision::IntersectBoxSphere(const UBoxComponent* Box, const USphereCompo
 
     float DistSq = (Center - Closest).SizeSquared();
 
-    return DistSq <= Radius * Radius;
+    if (DistSq <= Radius * Radius)
+    {
+        Result.bHit = true;
+        Result.HitPoint = Closest;
+    }
+
+    return Result;
 }
 
-bool FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A, const UCapsuleComponent* B)
+FCollisionResult FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A, const UCapsuleComponent* B)
 {
+    FCollisionResult Result;
+
     FVector CenterA = A->GetWorldLocation();
     FVector CenterB = B->GetWorldLocation();
 
@@ -274,13 +291,21 @@ bool FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A, const UCaps
     float DistSq = SegmentSegmentDistSq(A0, A1, B0, B1);
     float RadiusSum = RadiusA + RadiusB;
 
-	return DistSq <= RadiusSum * RadiusSum;
+    if (DistSq <= RadiusSum * RadiusSum)
+    {
+        Result.bHit = true;
+        Result.HitPoint = (CenterA + CenterB) * 0.5f;
+    }
+
+    return Result;
 }
 
-bool FCollision::IntersectCapsuleSphere(
+FCollisionResult FCollision::IntersectCapsuleSphere(
     const UCapsuleComponent* A,
     const USphereComponent* B)
 {
+    FCollisionResult Result;
+
     FVector CenterA = A->GetWorldLocation();
     FVector UpA = A->GetWorldTransform().GetUnitAxis(EAxis::Z);
     float HalfA = A->GetScaledCapsuleHalfHeight();
@@ -297,13 +322,24 @@ bool FCollision::IntersectCapsuleSphere(
 
     float R = RadiusA + RadiusB;
 
-    return DistSq <= R * R;
+    if (DistSq <= R * R)
+    {
+        Result.bHit = true;
+        // 세그먼트 위 최근접점
+        FVector AB = A1 - A0;
+        float t = std::clamp((P - A0).DotProduct(AB) / AB.DotProduct(AB), 0.0f, 1.0f);
+        Result.HitPoint = A0 + AB * t;
+    }
+
+    return Result;
 }
 
-bool FCollision::IntersectCapsuleBox(
+FCollisionResult FCollision::IntersectCapsuleBox(
     const UCapsuleComponent* Cap,
     const UBoxComponent* Box)
 {
+    FCollisionResult Result;
+
     FVector C = Cap->GetWorldLocation();
     FVector Axis = Cap->GetWorldTransform().GetUnitAxis(EAxis::Z);
     float Half = Cap->GetScaledCapsuleHalfHeight();
@@ -313,18 +349,22 @@ bool FCollision::IntersectCapsuleBox(
 
     FOBB OBB = Box->GetWorldOBB();
 
-    // 박스 표면 위 후보점 → 캡슐 세그먼트까지 실제 최단거리
     FVector C0 = ClosestPointOnOBB(A0, OBB);
     FVector C1 = ClosestPointOnOBB(A1, OBB);
 
-    // 각 박스 후보점에서 캡슐 세그먼트까지 거리
     float Dist0 = PointSegmentDistSq(C0, A0, A1);
     float Dist1 = PointSegmentDistSq(C1, A0, A1);
 
     float DistSq = std::min(Dist0, Dist1);
     float R = Cap->GetScaledCapsuleRadius();
 
-    return DistSq <= R * R;
+    if (DistSq <= R * R)
+    {
+        Result.bHit = true;
+        Result.HitPoint = (Dist0 < Dist1) ? C0 : C1;
+    }
+
+    return Result;
 }
 
 FVector FCollision::ClosestOnBoxToSegment(FVector P0, FVector P1, const FOBB& Box)
@@ -332,7 +372,6 @@ FVector FCollision::ClosestOnBoxToSegment(FVector P0, FVector P1, const FOBB& Bo
     FVector C0 = ClosestPointOnOBB(P0, Box);
     FVector C1 = ClosestPointOnOBB(P1, Box);
 
-    // segment end 중 더 가까운 것 선택 (근사)
     float d0 = (P0 - C0).SizeSquared();
     float d1 = (P1 - C1).SizeSquared();
 

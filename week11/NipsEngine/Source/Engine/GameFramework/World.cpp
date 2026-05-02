@@ -169,9 +169,9 @@ void UWorld::UpdateOverlaps()
                 UPrimitiveComponent* B = CollisionCandidates[j];
                 if (A != B)
 				{
-                    bool bCheckCollision = FCollision::CheckOverlap(A, B);
+					FCollisionResult CollisionResult = FCollision::CheckOverlap(A, B);
 
-					if (bCheckCollision)
+					if (CollisionResult.bHit)
 					{
                         A->AddOverlap(B);
                         B->AddOverlap(A);
