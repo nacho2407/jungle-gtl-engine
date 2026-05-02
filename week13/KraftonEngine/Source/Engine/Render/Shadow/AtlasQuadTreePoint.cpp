@@ -37,7 +37,7 @@ TArray<FAtlasRegion> FAtlasQuadTreePoint::CommitBatch() {
 		auto desired_res = std::min(Batch[OrigIdx].Resolution, AtlasSize);
 		desired_res = static_cast<float>(RoundToNearestPowerOfTwo(static_cast<uint32>(desired_res)));
 		desired_res = desired_res > MinShadowMapResolution ? desired_res : MinShadowMapResolution;
-		FAtlasRegion AtlasRegion = AllocateNode(0, desired_res, Batch[OrigIdx].LightIdx, Batch[OrigIdx].Light.CubeMapOrientation);
+		FAtlasRegion AtlasRegion = AllocateNode(0, (int32)desired_res, Batch[OrigIdx].LightIdx, Batch[OrigIdx].Light.CubeMapOrientation);
 		Results[OrigIdx] = AtlasRegion;
 	}
 
