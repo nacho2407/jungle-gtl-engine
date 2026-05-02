@@ -5,6 +5,7 @@
 class AGameStateBase;
 class ATriggerVolumeBase;
 class APawn;
+class APlayerController;
 class UClass;
 
 // ============================================================
@@ -40,11 +41,18 @@ public:
 	// --- Accessors ---
 	AGameStateBase* GetGameState() const { return GameState; }
 	UClass* GetGameStateClass() const { return GameStateClass; }
+	APlayerController* GetPlayerController() const { return PlayerController; }
+	UClass* GetPlayerControllerClass() const { return PlayerControllerClass; }
 
 protected:
+	// StartMatch가 호출 — 씬에서 bAutoPossessPlayer = true인 첫 APawn을 찾아 Possess 한다.
+	void AutoPossessFirstPawn();
+
 	// 서브클래스 생성자에서 지정 — null이면 AGameStateBase가 spawn된다.
 	UClass* GameStateClass = nullptr;
+	UClass* PlayerControllerClass = nullptr;
 
-	// GameMode가 BeginPlay에서 spawn하여 소유.
+	// GameMode가 BeginPlay/StartMatch에서 spawn하여 소유.
 	AGameStateBase* GameState = nullptr;
+	APlayerController* PlayerController = nullptr;
 };

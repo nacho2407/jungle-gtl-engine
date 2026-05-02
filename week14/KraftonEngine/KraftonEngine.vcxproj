@@ -429,6 +429,8 @@
     <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PawnStaticMesh.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
@@ -643,6 +645,8 @@
     <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PawnStaticMesh.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
