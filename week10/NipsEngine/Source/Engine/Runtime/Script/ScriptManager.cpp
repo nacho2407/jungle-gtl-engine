@@ -150,7 +150,7 @@ void FScriptManager::BindMathTypes() {
     // FVector
     // ============================================================
 
-    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector, "Vector3", []()
+    LUA_BEGIN_TYPE_FACTORY(GLuaState, FVector, "Vector", []()
                            { return FVector(); }, [](float X, float Y, float Z)
                            { return FVector(X, Y, Z); })
     LUA_FIELD(X, X);
@@ -160,6 +160,11 @@ void FScriptManager::BindMathTypes() {
     LUA_FIELD(x, X);
     LUA_FIELD(y, Y);
     LUA_FIELD(z, Z);
+
+	LUA_METHOD(Size, Size);
+	LUA_OVERLOAD(Normalized, [](const FVector& Self)
+					 { return Self.Normalized(); }, [](const FVector& Self, float Tolerance)
+					 { return Self.Normalized(Tolerance); });
 
     LUA_META(equal_to, [](const FVector& A, const FVector& B)
              { return A == B; });

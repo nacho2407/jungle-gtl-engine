@@ -260,29 +260,17 @@ void UScriptComponent::EndPlay()
 
 void UScriptComponent::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    UE_LOG("[C++] AActor::OnHit called");
-	if (!CallScriptFunction("OnHit", HitComponent, OtherActor, OtherComp, NormalImpulse, Hit))
-    {
-        UE_LOG("fail");
-	}
+	CallScriptFunction("OnHit", HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
 
 void UScriptComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    UE_LOG("[C++] AActor::OnBeginOverlap called");
-    if(!CallScriptFunction("OnBeginOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult))
-    {
-        UE_LOG("fail");
-    }
+    CallScriptFunction("OnBeginOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void UScriptComponent::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    UE_LOG("[C++] AActor::OnEndOverlap called");
-	if(!CallScriptFunction("OnEndOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult))
-    {
-        UE_LOG("fail");
-    }
+    CallScriptFunction("OnEndOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void UScriptComponent::ClearLoadedState()
