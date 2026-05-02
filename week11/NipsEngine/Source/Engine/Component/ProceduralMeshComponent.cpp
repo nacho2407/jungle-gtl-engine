@@ -267,6 +267,7 @@ void FMeshSlicer::SliceComponent(UPrimitiveComponent* InComponent, const FPlane&
         }
 
 		// 기존 Static Mesh 제거 or 숨김
+        InComponent->SetVisibility(false);
     }
 
 }
@@ -297,6 +298,7 @@ FNormalVertex FMeshSlicer::Intersect(const FNormalVertex& A, const FNormalVertex
     FNormalVertex R;
     R.Position = A.Position + (B.Position - A.Position) * t;
     R.Normal = (A.Normal + (B.Normal - A.Normal) * t).GetSafeNormal();
+    R.UVs = A.UVs + (B.UVs - A.UVs) * t;
     return R;
 }
 
@@ -385,8 +387,11 @@ void FMeshSlicer::BuildCapMesh(
     // ---------------------------------
     int base = OutVertices.size();
 
-    for (auto& V : Unique)
+	for (auto& V : Unique)
+	{
+        V.UVs = FVector2(0, 0);
         OutVertices.push_back(V);
+	}
 
     for (int i = 1; i < Unique.size() - 1; i++)
     {
