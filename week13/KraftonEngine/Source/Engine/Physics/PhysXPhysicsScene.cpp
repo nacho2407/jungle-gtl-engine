@@ -211,7 +211,9 @@ static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 //   word0 = 자신의 ObjectType (ECollisionChannel)
 //   word1 = Block 비트마스크 (해당 채널에 Block 응답인 비트)
 //   word2 = Overlap 비트마스크 (해당 채널에 Overlap 응답인 비트)
-//   word3 = 예약
+//   word3 = 소유 액터 UUID — 같은 액터의 두 컴포넌트끼리 충돌을 무시하기 위함
+//           (Native 측 O(N²) 루프의 `if (A->GetOwner() == B->GetOwner()) continue;` 가드와 동일 의미)
+//           Owner가 없거나 UUID가 0이면 가드 미적용.
 
 static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
 {
@@ -219,7 +221,7 @@ static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
 	Filter.word0 = static_cast<PxU32>(Comp->GetCollisionObjectType());
 	Filter.word1 = 0;
 	Filter.word2 = 0;
-	Filter.word3 = 0;
+	Filter.word3 = Comp->GetOwner() ? Comp->GetOwner()->GetUUID() : 0;
 
 	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
 	{
@@ -239,6 +241,14 @@ static PxFilterFlags KraftonFilterShader(
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
 	PxPairFlags& pairFlags, const void* /*constantBlock*/, PxU32 /*constantBlockSize*/)
 {
+	// 같은 액터(같은 owner UUID)의 두 컴포넌트끼리는 충돌 무시.
+	// Native 측 O(N²) 루프의 same-owner 가드와 동일 의미. 차량 차체-바퀴처럼
+	// 한 액터가 여러 콜라이더를 가질 때 자기끼리 충돌 시뮬레이션되는 문제를 막는다.
+	if (filterData0.word3 != 0 && filterData0.word3 == filterData1.word3)
+	{
+		return PxFilterFlag::eKILL;
+	}
+
 	// 트리거 처리 — 한쪽이라도 트리거면 오버랩 통지만
 	if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
 	{
