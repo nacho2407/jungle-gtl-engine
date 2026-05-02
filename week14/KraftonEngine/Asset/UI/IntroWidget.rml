@@ -1,0 +1,21 @@
+<rml>
+<head>
+	<title>게임 제목</title>
+	<link type="text/rcss" href="IntroWidget.rcss"/>
+</head>
+<body>
+	<div id="intro-frame">
+		<div id="intro-top-line"></div>
+
+		<div id="intro-kicker">TEAM 5 PROJECT</div>
+		<div id="intro-title">게임 제목</div>
+		<div id="intro-subtitle">A NEW ADVENTURE BEGINS</div>
+
+		<button id="start-button">게임 시작</button>
+		<button id="exit-button">종료</button>
+
+		<div id="intro-bottom-line"></div>
+		<div id="intro-footer">PRESS START TO PLAY</div>
+	</div>
+</body>
+</rml>

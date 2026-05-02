@@ -1,0 +1,22 @@
+<rml>
+<head>
+	<title>Game Over</title>
+	<link type="text/rcss" href="GameOverWidget.rcss"/>
+</head>
+<body>
+	<div id="game-over-frame">
+		<div id="game-over-top-line"></div>
+
+		<div id="game-over-kicker">GAME RESULT</div>
+		<div id="game-over-title">GAME OVER</div>
+		<div id="game-over-subtitle">FINAL SCORE</div>
+		<div id="final-score-value">000000</div>
+
+		<button id="restart-button">RESTART</button>
+		<button id="game-over-exit-button">EXIT</button>
+
+		<div id="game-over-bottom-line"></div>
+		<div id="game-over-footer">THANKS FOR PLAYING</div>
+	</div>
+</body>
+</rml>

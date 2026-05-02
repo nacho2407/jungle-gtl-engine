@@ -1,0 +1,129 @@
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	background-color: #15171c;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	text-align: center;
+}
+
+#intro-frame {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #15171c;
+}
+
+#intro-top-line {
+	position: absolute;
+	left: 8%;
+	top: 8%;
+	width: 84%;
+	height: 4dp;
+	background-color: #f0c85a;
+}
+
+#intro-bottom-line {
+	position: absolute;
+	left: 8%;
+	top: 92%;
+	width: 84%;
+	height: 4dp;
+	background-color: #f0c85a;
+}
+
+#intro-kicker {
+	position: absolute;
+	left: 0%;
+	top: 17%;
+	width: 100%;
+	height: 32dp;
+	color: #f0c85a;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 20dp;
+	line-height: 32dp;
+	text-align: center;
+}
+
+#intro-title {
+	position: absolute;
+	left: 0%;
+	top: 27%;
+	width: 100%;
+	height: 96dp;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 64dp;
+	line-height: 96dp;
+	text-align: center;
+}
+
+#intro-subtitle {
+	position: absolute;
+	left: 0%;
+	top: 43%;
+	width: 100%;
+	height: 32dp;
+	color: #aeb6c8;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 18dp;
+	line-height: 32dp;
+	text-align: center;
+}
+
+#start-button {
+	position: absolute;
+	left: 50%;
+	top: 56%;
+	width: 300dp;
+	height: 58dp;
+	margin-left: -150dp;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	background-color: #252a34;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 24dp;
+	line-height: 52dp;
+	text-align: center;
+}
+
+#exit-button {
+	position: absolute;
+	left: 50%;
+	top: 68%;
+	width: 300dp;
+	height: 58dp;
+	margin-left: -150dp;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	background-color: #252a34;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 24dp;
+	line-height: 52dp;
+	text-align: center;
+}
+
+#intro-footer {
+	position: absolute;
+	left: 0%;
+	top: 86%;
+	width: 100%;
+	height: 28dp;
+	color: #747d91;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 16dp;
+	line-height: 28dp;
+	text-align: center;
+}
