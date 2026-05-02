@@ -9,25 +9,17 @@
 #include "Core/Delegates/Delegate.h"
 
 /*
-void OnHit(
-    UPrimitiveComponent* HitComponent,
-    AActor* OtherActor,
-    UPrimitiveComponent* OtherComp,
-    FVector NormalImpulse,
-    const FHitResult& Hit
-);
+	아직 미사용
 */
 DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, FVector, const FHitResult&);
 
 /*
-void OnBeginOverlap(
-    UPrimitiveComponent* OverlappedComponent,
-    AActor* OtherActor,
-    UPrimitiveComponent* OtherComp,
-    int32 OtherBodyIndex,
-    bool bFromSweep,
-    const FHitResult& SweepResult
-);
+	OverlappedComponent  // 이벤트를 받은 주체 (내 쪽)
+	OtherActor           // 겹친 상대 Actor
+	OtherComp            // 겹친 상대 Component
+	OtherBodyIndex       // (멀티 바디용) 상대의 바디 인덱스
+	bFromSweep           // Sweep으로 인해 발생했는지
+	SweepResult          // Sweep 충돌 상세 정보
 */
 DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)
 DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*, UPrimitiveComponent*, int32, bool, const FHitResult&)

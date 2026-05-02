@@ -127,7 +127,7 @@ void UPrimitiveComponent::ResolveOverlaps()
         if (!PrevOverlaps.contains(B))
         {
             FHitResult HitResult;
-            OnComponentBeginOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+            OnComponentBeginOverlap.Broadcast(this, B->GetOwner(), B, 0, false, HitResult);
         }
     }
 
@@ -136,7 +136,7 @@ void UPrimitiveComponent::ResolveOverlaps()
         if (!CurOverlaps.contains(B))
         {
             FHitResult HitResult;
-            OnComponentEndOverlap.Broadcast(nullptr, nullptr, nullptr, 0, false, HitResult);
+            OnComponentEndOverlap.Broadcast(this, B->GetOwner(), B, 0, false, HitResult);
         }
     }
 }
