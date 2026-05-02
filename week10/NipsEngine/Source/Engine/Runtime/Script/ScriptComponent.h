@@ -4,6 +4,9 @@
 #include "Runtime/Script/CoroutineScheduler.h"
 #include "ThirdParty/sol/sol.hpp"
 
+class UPrimitiveComponent;
+struct FHitResult;
+
 class UScriptComponent : public UActorComponent
 {
 public:
@@ -32,11 +35,19 @@ public:
 
 	const FString& GetScriptName() const { return ScriptName; }
 
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
 	template <typename... Args>
-    bool CallScriptFunction(const char* FunctionName, Args&&... args);
+    bool CallScriptFunction(const FString& FunctionName, Args&&... args);
 
 private:
     void ClearLoadedState();
+	
+    uint64 OnComponentBeginOverlapHandleId = 0;
+    uint64 OnComponentEndOverlapHandleId = 0;
+    uint64 OnComponentHitHandleId = 0;
 
 	FString ScriptName;
     sol::environment ScriptEnv;
@@ -47,7 +58,7 @@ private:
 };
 
 template <typename... Args>
-bool UScriptComponent::CallScriptFunction(const char* FunctionName, Args&&... args)
+bool UScriptComponent::CallScriptFunction(const FString& FunctionName, Args&&... args)
 {
     if (!bScriptLoaded || !ScriptEnv.valid())
     {

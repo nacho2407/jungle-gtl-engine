@@ -1,6 +1,8 @@
 ﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
 #include "GameFramework/AActor.h"
+#include "Component/PrimitiveComponent.h"
+#include <Core/CollisionTypes.h>
 
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
@@ -193,11 +195,28 @@ void UScriptComponent::BeginPlay()
 {
     UActorComponent::BeginPlay();
 
+	for (auto Comp : Owner->GetComponents())
+	{
+		if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
+		{
+            OnComponentBeginOverlapHandleId = Prim->OnComponentBeginOverlap.AddDynamic(
+				this,
+				&UScriptComponent::OnBeginOverlap);
+			
+			OnComponentEndOverlapHandleId = Prim->OnComponentEndOverlap.AddDynamic(
+				this,
+				&UScriptComponent::OnEndOverlap);
+
+			OnComponentHitHandleId = Prim->OnComponentHit.AddDynamic(
+				this,
+				&UScriptComponent::OnHit);
+		}
+    }
+
     if (!bScriptLoaded)
     {
         LoadScript();
     }
-
 	CallScriptFunction("BeginPlay");
 }
 
@@ -217,6 +236,18 @@ void UScriptComponent::TickComponent(float DeltaTime)
 void UScriptComponent::EndPlay()
 {
     UActorComponent::EndPlay();
+
+	for (auto Comp : Owner->GetComponents())
+    {
+        if (UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Comp))
+        {
+            Prim->OnComponentBeginOverlap.Remove(OnComponentBeginOverlapHandleId);
+            Prim->OnComponentEndOverlap.Remove(OnComponentEndOverlapHandleId);
+            Prim->OnComponentHit.Remove(OnComponentHitHandleId);
+        }
+    }
+
+
 	if (!ScriptEnv.valid())
 	{
         CoroutineScheduler.StopAll();
@@ -225,6 +256,33 @@ void UScriptComponent::EndPlay()
 
     CallScriptFunction("EndPlay");
     CoroutineScheduler.StopAll();
+}
+
+void UScriptComponent::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    UE_LOG("[C++] AActor::OnHit called");
+	if (!CallScriptFunction("OnHit", HitComponent, OtherActor, OtherComp, NormalImpulse, Hit))
+    {
+        UE_LOG("fail");
+	}
+}
+
+void UScriptComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("[C++] AActor::OnBeginOverlap called");
+    if(!CallScriptFunction("OnBeginOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult))
+    {
+        UE_LOG("fail");
+    }
+}
+
+void UScriptComponent::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    UE_LOG("[C++] AActor::OnEndOverlap called");
+	if(!CallScriptFunction("OnEndOverlap", OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult))
+    {
+        UE_LOG("fail");
+    }
 }
 
 void UScriptComponent::ClearLoadedState()
