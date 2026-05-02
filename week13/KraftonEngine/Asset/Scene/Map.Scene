@@ -63,7 +63,7 @@
       }
     }, {
       "ClassName" : "AStaticMeshActor",
-      "Name" : "AStaticMeshActor_21",
+      "Name" : "System",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
@@ -2977,7 +2977,7 @@
       }
     }, {
       "ClassName" : "ABoxActor",
-      "Name" : "ABoxActor_23",
+      "Name" : "MapBound4",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [25.309410, -294.699707, 34.333710],
@@ -3131,7 +3131,7 @@
       }
     }, {
       "ClassName" : "ACarPawn",
-      "Name" : "ACarPawn_1",
+      "Name" : "ACarPawn",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
