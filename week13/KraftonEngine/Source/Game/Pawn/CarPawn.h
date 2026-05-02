@@ -40,10 +40,16 @@ public:
 	ULuaScriptComponent* GetLuaScript() const { return LuaScript; }
 	UCameraComponent* GetCamera() const { return Camera; }
 
+	// --- Health / Damage ---
+	void TakeDamage(float Amount);
+	float GetHealth() const { return Health; }
+
 private:
 	UBoxComponent* CollisionBox = nullptr;
 	UStaticMeshComponent* Mesh = nullptr;
 	USphereComponent* Wheels[4] = {};
 	ULuaScriptComponent* LuaScript = nullptr;
 	UCameraComponent* Camera = nullptr;
+
+	float Health = 100.0f;  // 0 이하 시 사망 처리는 후속 — 현재는 로그만
 };

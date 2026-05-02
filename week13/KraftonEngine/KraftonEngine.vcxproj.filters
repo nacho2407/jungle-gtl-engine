@@ -175,6 +175,9 @@
     <Filter Include="Source\Game\GameState">
       <UniqueIdentifier>{28248026-b2c1-326a-d8fc-c6a454813320}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Meteor">
+      <UniqueIdentifier>{afb4ecc1-8505-3209-a55f-fb5c9de1f78d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Pawn">
       <UniqueIdentifier>{00a43d1b-bdbc-c88e-5b8e-b7bdfdf08663}</UniqueIdentifier>
     </Filter>
@@ -962,6 +965,9 @@
     <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp">
       <Filter>Source\Game\GameState</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Meteor\Meteor.cpp">
+      <Filter>Source\Game\Meteor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Pawn\CarPawn.cpp">
       <Filter>Source\Game\Pawn</Filter>
     </ClCompile>
@@ -1723,6 +1729,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h">
       <Filter>Source\Game\GameState</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Meteor\Meteor.h">
+      <Filter>Source\Game\Meteor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Pawn\CarPawn.h">
       <Filter>Source\Game\Pawn</Filter>

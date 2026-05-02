@@ -9,10 +9,16 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/CameraManager.h"
 #include "GameFramework/World.h"
+#include "Object/UClass.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
+// ⚠ 의존성 주의: Engine 모듈의 Lua binding이 Game 모듈의 클래스(GameStateCarGame 등)를
+// 직접 참조한다. 일반적으로 Engine→Game 결합은 피해야 하지만, 자동차 게임 전용
+// Lua API 노출을 위해 의도적으로 허용. 다른 게임 모드가 추가되면 게임-특화 binding은
+// 별도 등록 시점(GameEngine::Init 등)으로 분리하는 것을 권장.
+#include "Game/GameState/GameStateCarGame.h"
 #include <filesystem>
 #include <fstream>
 
@@ -276,6 +282,18 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		Actor.AddActorWorldOffset(Offset);
 	},
 
+		"Destroy", [](AActor& Actor)
+	{
+		// World->DestroyActor가 EndPlay + 정리. Lua는 호출 후 해당 액터를 더 참조하지 말 것.
+		if (UWorld* W = Actor.GetWorld()) W->DestroyActor(&Actor);
+	},
+
+		"IsValid", [](AActor* Actor)
+	{
+		// Lua가 보유한 actor 핸들이 cpp 측에서 destroy됐는지 확인. nil/destroyed면 false.
+		return Actor != nullptr && IsAliveObject(Actor);
+	},
+
 		"GetCarMovement", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UCarMovementComponent>();
@@ -300,6 +318,36 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		return Actor.GetFName().ToString();
 	}));
+
+	// --- World binding — 런타임 액터 spawn 용 ---
+	sol::table World = Lua.create_named_table("World");
+	World.set_function("SpawnActor", [](const FString& ClassName) -> AActor*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		if (!W) return nullptr;
+		UClass* Cls = UClass::FindByName(ClassName.c_str());
+		if (!Cls) return nullptr;
+		return W->SpawnActorByClass(Cls);
+	});
+
+	// --- ECarGamePhase enum + AGameStateCarGame — Lua에서 페이즈 분기 ---
+	Lua.new_enum("ECarGamePhase",
+		"None",         ECarGamePhase::None,
+		"CarWash",      ECarGamePhase::CarWash,
+		"EscapePolice", ECarGamePhase::EscapePolice,
+		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
+		"Finished",     ECarGamePhase::Finished);
+
+	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
+		"GetPhase", &AGameStateCarGame::GetPhase);
+
+	Lua["GetGameState"] = []() -> AGameStateCarGame*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		return W ? Cast<AGameStateCarGame>(W->GetGameState()) : nullptr;
+	};
 }
 
 void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)

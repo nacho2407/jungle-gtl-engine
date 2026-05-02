@@ -7,6 +7,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/ObjManager.h"
 #include "Core/CollisionTypes.h"
+#include "Core/Log.h"
 #include "Math/Rotator.h"
 
 IMPLEMENT_CLASS(ACarPawn, APawn)
@@ -96,4 +97,11 @@ void ACarPawn::PostDuplicate()
 USphereComponent* ACarPawn::GetWheel(int Index) const
 {
 	return (Index >= 0 && Index < 4) ? Wheels[Index] : nullptr;
+}
+
+void ACarPawn::TakeDamage(float Amount)
+{
+	Health -= Amount;
+	UE_LOG("[Car] Damage %.1f, Health=%.1f", Amount, Health);
+	// 사망 처리(페이즈 종료, 게임오버 UI 등)는 후속 작업
 }
