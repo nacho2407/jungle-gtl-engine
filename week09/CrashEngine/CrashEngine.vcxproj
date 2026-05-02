@@ -390,8 +390,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
@@ -610,8 +608,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.h" />
-    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Physics\CollisionManager.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
