@@ -275,10 +275,5 @@ void FEditorControlWidget::Render(float DeltaTime)
 
 	SEPARATOR();
 
-    if (ImGui::Button("Hot Reload"))
-    {
-        FScriptManager::Get().HotReloadScripts();
-    }
-
 	ImGui::End();
 }

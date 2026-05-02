@@ -1,4 +1,5 @@
 function BeginPlay()
+    CameraComponent.NearPlane = 1
     Log("[BeginPlay]"  .. Actor.UUID)
 end
 
@@ -11,6 +12,5 @@ function OnOverlap(OtherActor)
 end
 
 function Tick(dt)
-
-    Actor.Location = Actor.Location + Vector3(0, 0, 0.1) * dt
+    Actor.Location = Actor.Location + Vector(dt, 0 ,0)
 end
