@@ -1,5 +1,7 @@
 ﻿// 게임 프레임워크 영역의 세부 동작을 구현합니다.
-#include "GameFramework/World.h"
+#include "World.h"
+
+#include "Core/Logging/LogMacros.h"
 #include "Object/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Shape/ShapeComponent.h"
@@ -11,6 +13,7 @@
 #include "Engine/Physics/CollisionManager.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
+
 UWorld::UWorld() = default;
 UWorld::~UWorld()
 {
@@ -18,6 +21,28 @@ UWorld::~UWorld()
     {
         EndPlay();
     }
+}
+
+AActor* UWorld::SpawnActorByClassName(const FString& ClassName)
+{
+    if (!PersistentLevel)
+    {
+        return nullptr;
+    }
+
+    UObject* Obj = FObjectFactory::Get().Create(ClassName, PersistentLevel);
+    AActor* Actor = Cast<AActor>(Obj);
+    if (!Actor)
+    {
+        if (Obj)
+        {
+            UObjectManager::Get().DestroyObject(Obj);
+        }
+        return nullptr;
+    }
+
+    AddActor(Actor);
+    return Actor;
 }
 
 UObject* UWorld::Duplicate(UObject* NewOuter) const
