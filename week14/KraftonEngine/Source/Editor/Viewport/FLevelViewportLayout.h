@@ -91,6 +91,7 @@ public:
 		// 전용 에디터 메뉴 노출을 위해 의도적으로 허용. 다른 게임 모드가 추가되면
 		// 게임-특화 spawn은 별도 등록 패턴(plugin / class registry)으로 분리 권장.
 		CarPawn,
+		TriggerVolume,
 	};
 
 	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);

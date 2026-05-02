@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/GameStateBase.h"
 #include "Core/Delegate.h"
@@ -8,8 +8,9 @@ enum class ECarGamePhase : uint8
 {
 	None = 0,
 	CarWash,        // 1) 세차
-	EscapePolice,   // 2) 경찰차 따돌리기
-	DodgeMeteor,    // 3) 운석 피하기
+	CarGas,			// 2) 주유
+	EscapePolice,   // 3) 경찰차 따돌리기
+	DodgeMeteor,    // 4) 운석 피하기
 	Finished,
 };
 

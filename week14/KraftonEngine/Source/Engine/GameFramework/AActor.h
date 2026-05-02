@@ -31,6 +31,9 @@ public:
 	void Serialize(FArchive& Ar) override;
 	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
 
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
+
 	// 컴포넌트 생성 + Owner 설정 + 등록 + 렌더 상태 생성
 	template<typename T>
 	T* AddComponent() {
@@ -112,6 +115,10 @@ protected:
 	USceneComponent* RootComponent = nullptr;
 
 	FVector PendingActorLocation = FVector(0, 0, 0);
+	FRotator PendingActorRotation = FRotator(0, 0, 0);
+	FVector PendingActorScale = FVector(1, 1, 1);
+	bool PendingActorVisible = true;
+
 	bool bVisible = true;
 
 	TArray<UActorComponent*> OwnedComponents;

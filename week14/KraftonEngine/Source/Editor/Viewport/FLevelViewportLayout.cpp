@@ -9,6 +9,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/DecalActor.h"
 #include "GameFramework/HeightFogActor.h"
+#include "GameFramework/TriggerVolumeBase.h"
 #include "GameFramework/Light/AmbientLightActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/Light/PointLightActor.h"
@@ -1844,6 +1845,7 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		// ⚠ 게임-특화 spawn — Editor 모듈이 Game/CarPawn에 의존하게 됨. 위 enum 정의 주석 참고.
 		ImGui::Separator();
 		PlaceActorMenuItem("Car Pawn", EViewportPlaceActorType::CarPawn);
+		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
 
 		ImGui::EndMenu();
 	}
@@ -2068,6 +2070,16 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	{
 		// ⚠ Editor → Game 결합 — 위 include / enum 정의 주석 참고.
 		ACarPawn* Actor = World->SpawnActor<ACarPawn>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::TriggerVolume:
+	{
+		ATriggerVolumeBase* Actor = World->SpawnActor<ATriggerVolumeBase>();
 		if (Actor)
 		{
 			Actor->InitDefaultComponents();
