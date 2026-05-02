@@ -8,6 +8,7 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <shellapi.h>
 
@@ -17,6 +18,30 @@ void Log(const std::string& Msg);
 
 namespace
 {
+    FWString AssetScriptDir()
+    {
+        return FPaths::Combine(FPaths::RootDir(), L"Asset/Script");
+    }
+
+    TArray<FWString> GetScriptSearchDirs()
+    {
+        TArray<FWString> Dirs;
+        Dirs.push_back(FPaths::ScriptDir());
+        Dirs.push_back(AssetScriptDir());
+        return Dirs;
+    }
+
+    bool IsBlankString(const FString& Value)
+    {
+        return std::all_of(
+            Value.begin(),
+            Value.end(),
+            [](unsigned char Ch)
+            {
+                return std::isspace(Ch) != 0;
+            });
+    }
+
     FName MakeLuaScriptKey(const FString& ScriptName)
     {
         std::filesystem::path ScriptPath(FPaths::ToWide(ScriptName));
@@ -32,7 +57,82 @@ namespace
     {
         FString Result = FPaths::ToUtf8(Path);
         std::replace(Result.begin(), Result.end(), '\\', '/');
+        if (!Result.empty() && Result.back() != '/')
+        {
+            Result += "/";
+        }
         return Result;
+    }
+
+    FString MakeRelativeScriptDisplayPath(const fs::path& Path)
+    {
+        return FPaths::ToRelativeString(Path.wstring());
+    }
+
+    fs::path MakeScriptCreatePath(FString ScriptName)
+    {
+        if (!ScriptName.ends_with(".lua"))
+        {
+            ScriptName += ".lua";
+        }
+
+        fs::path RequestedPath(FPaths::ToWide(ScriptName));
+        if (!RequestedPath.has_parent_path())
+        {
+            RequestedPath = fs::path(AssetScriptDir()) / RequestedPath;
+        }
+        else if (!RequestedPath.is_absolute())
+        {
+            RequestedPath = fs::path(FPaths::RootDir()) / RequestedPath;
+        }
+
+        return RequestedPath.lexically_normal();
+    }
+
+    bool TryResolveExistingScriptPath(const FString& ScriptName, fs::path& OutPath)
+    {
+        if (ScriptName.empty() || IsBlankString(ScriptName))
+        {
+            return false;
+        }
+
+        FString FileName = ScriptName;
+        if (!FileName.ends_with(".lua"))
+        {
+            FileName += ".lua";
+        }
+
+        fs::path RequestedPath(FPaths::ToWide(FileName));
+        if (RequestedPath.is_absolute())
+        {
+            RequestedPath = RequestedPath.lexically_normal();
+            if (fs::exists(RequestedPath) && fs::is_regular_file(RequestedPath))
+            {
+                OutPath = RequestedPath;
+                return true;
+            }
+        }
+        else if (RequestedPath.has_parent_path())
+        {
+            RequestedPath = (fs::path(FPaths::RootDir()) / RequestedPath).lexically_normal();
+            if (fs::exists(RequestedPath) && fs::is_regular_file(RequestedPath))
+            {
+                OutPath = RequestedPath;
+                return true;
+            }
+        }
+
+        for (const FWString& SearchDir : GetScriptSearchDirs())
+        {
+            fs::path Candidate = (fs::path(SearchDir) / FPaths::ToWide(FileName)).lexically_normal();
+            if (fs::exists(Candidate) && fs::is_regular_file(Candidate))
+            {
+                OutPath = Candidate;
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -56,6 +156,29 @@ void FScriptManager::initializeLuaState()
     BindLuaState();
 }
 
+void FScriptManager::ShutdownLuaState()
+{
+    if (!GLuaState)
+    {
+        return;
+    }
+
+    for (auto& Pair : ScriptArray)
+    {
+        FLuaScriptInfo& ScriptInfo = Pair.second;
+        for (UScriptComponent* ScriptComponent : ScriptInfo.ScriptComponents)
+        {
+            if (ScriptComponent)
+            {
+                ScriptComponent->ReleaseLuaStateReferences();
+            }
+        }
+        ScriptInfo.ScriptComponents.clear();
+    }
+
+    GLuaState.reset();
+}
+
 void FScriptManager::ConfigureLuaPackagePath()
 {
     if (!GLuaState)
@@ -63,13 +186,16 @@ void FScriptManager::ConfigureLuaPackagePath()
         return;
     }
 
-    const FString ScriptDir = NormalizeLuaPath(FPaths::ScriptDir());
     sol::table Package = (*GLuaState)["package"];
     const FString CurrentPath = Package["path"].get_or(FString());
 
     FString ExtraPath;
-    ExtraPath += ScriptDir + "?.lua;";
-    ExtraPath += ScriptDir + "?/init.lua;";
+    for (const FWString& ScriptDir : GetScriptSearchDirs())
+    {
+        const FString NormalizedDir = NormalizeLuaPath(ScriptDir);
+        ExtraPath += NormalizedDir + "?.lua;";
+        ExtraPath += NormalizedDir + "?/init.lua;";
+    }
 
     if (CurrentPath.find(ExtraPath) == FString::npos)
     {
@@ -100,23 +226,16 @@ void Log(const std::string& Msg)
 
 bool FScriptManager::CreateScript(const FName& LuaScriptName)
 {
-    FString ScriptName;
-    if (!LuaScriptName.IsValid())
+    if (!LuaScriptName.IsValid() || IsBlankString(LuaScriptName.ToString()))
     {
-        ScriptName = "Actor.lua";
+        UE_LOG("[LuaManager] Script name is empty.");
+        return false;
     }
-    else
-    {
-        ScriptName = LuaScriptName.ToString();
 
-        if (!ScriptName.ends_with(".lua"))
-        {
-            ScriptName += ".lua";
-        }
-    }
+    FString ScriptName = LuaScriptName.ToString();
 
     FWString TemplatePath = FPaths::LuaTemplatePath();
-    FWString ScriptPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptName));
+    fs::path ScriptPath = MakeScriptCreatePath(ScriptName);
 
     if (!fs::exists(TemplatePath))
     {
@@ -133,6 +252,7 @@ bool FScriptManager::CreateScript(const FName& LuaScriptName)
 
     try
     {
+        fs::create_directories(ScriptPath.parent_path());
         fs::copy_file(
             TemplatePath,
             ScriptPath,
@@ -144,12 +264,11 @@ bool FScriptManager::CreateScript(const FName& LuaScriptName)
         return false;
     }
 
-    const FName ScriptKey = MakeLuaScriptKey(ScriptName);
-    if (ScriptArray.find(ScriptKey) != ScriptArray.end())
-    {
-        ScriptArray[ScriptKey].ScriptPath = ScriptPath;
-        ScriptArray[ScriptKey].LastWriteTime = fs::last_write_time(ScriptPath);
-    }
+    const FString RelativeScriptPath = MakeRelativeScriptDisplayPath(ScriptPath);
+    const FName ScriptKey = MakeLuaScriptKey(RelativeScriptPath);
+    FLuaScriptInfo& Info = ScriptArray[ScriptKey];
+    Info.ScriptPath = ScriptPath.wstring();
+    Info.LastWriteTime = fs::last_write_time(ScriptPath);
 
     RefreshLuaScriptFiles();
     UE_LOG("[LuaManager] 스크립트 생성 완료: %s", ScriptPath.c_str());
@@ -164,22 +283,13 @@ bool FScriptManager::EditScript(const FName& LuaScriptName)
         return false;
     }
 
-    FWString ScriptPath;
-    const FName ScriptKey = MakeLuaScriptKey(LuaScriptName.ToString());
-    if (ScriptArray.find(ScriptKey) != ScriptArray.end())
+    FString ResolvedPathText;
+    if (!ResolveScriptPath(LuaScriptName.ToString(), ResolvedPathText))
     {
-        ScriptPath = ScriptArray[ScriptKey].ScriptPath;
+        UE_LOG("[LuaManager] Script file not found: %s", LuaScriptName.ToString().c_str());
+        return false;
     }
-    else
-    {
-        FString ScriptName = LuaScriptName.ToString();
-        if (!ScriptName.ends_with(".lua"))
-        {
-            ScriptName += ".lua";
-        }
-
-        ScriptPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptName));
-    }
+    FWString ScriptPath = FPaths::ToWide(ResolvedPathText);
 
     HINSTANCE InstanceHandle = ShellExecute(nullptr, L"open", ScriptPath.data(),
                                              nullptr, nullptr, SW_SHOWNORMAL);
@@ -195,13 +305,16 @@ bool FScriptManager::EditScript(const FName& LuaScriptName)
 
 bool FScriptManager::HasScript(const FName& name)
 {
-    auto It = ScriptArray.find(MakeLuaScriptKey(name.ToString()));
-
-    if (It == ScriptArray.end())
+    fs::path ResolvedPath;
+    if (TryResolveExistingScriptPath(name.ToString(), ResolvedPath))
     {
-        return false;
+        return true;
     }
-    return true;
+
+    auto It = ScriptArray.find(MakeLuaScriptKey(name.ToString()));
+    return It != ScriptArray.end()
+        && !It->second.ScriptPath.empty()
+        && fs::exists(It->second.ScriptPath);
 }
 
 bool FScriptManager::ResolveScriptPath(const FString& ScriptName, FString& OutPath)
@@ -211,25 +324,23 @@ bool FScriptManager::ResolveScriptPath(const FString& ScriptName, FString& OutPa
         return false;
     }
 
-    FString FileName = ScriptName;
-
-    if (!FileName.ends_with(".lua"))
+    fs::path ResolvedPath;
+    if (TryResolveExistingScriptPath(ScriptName, ResolvedPath))
     {
-        FileName += ".lua";
+        OutPath = FPaths::ToUtf8(ResolvedPath.wstring());
+        return true;
     }
 
-    FWString Path = FPaths::Combine(
-        FPaths::ScriptDir(),
-        FPaths::ToWide(FileName));
-
-    if (!fs::exists(std::filesystem::path(Path)))
+    const FName ScriptKey = MakeLuaScriptKey(ScriptName);
+    auto It = ScriptArray.find(ScriptKey);
+    if (It != ScriptArray.end() && !It->second.ScriptPath.empty() && fs::exists(It->second.ScriptPath))
     {
-        UE_LOG("[ScriptManager] Script file not found: %s", FPaths::ToUtf8(Path).c_str());
-        return false;
+        OutPath = FPaths::ToUtf8(It->second.ScriptPath);
+        return true;
     }
 
-    OutPath = FPaths::ToUtf8(Path);
-    return true;
+    UE_LOG("[ScriptManager] Script file not found: %s", ScriptName.c_str());
+    return false;
 }
 
 void FScriptManager::HotReloadScripts()
@@ -268,24 +379,38 @@ void FScriptManager::HotReloadScripts()
 
 void FScriptManager::RefreshLuaScriptFiles()
 {
-    FWString ScriptDir = FPaths::ScriptDir();
-    if (!fs::exists(ScriptDir))
+    for (auto It = ScriptArray.begin(); It != ScriptArray.end();)
     {
-        return;
+        if (!It->second.ScriptPath.empty() && !fs::exists(It->second.ScriptPath))
+        {
+            It = ScriptArray.erase(It);
+            continue;
+        }
+        ++It;
     }
 
-    for (const auto& Entry : fs::directory_iterator(ScriptDir))
+    for (const FWString& ScriptDir : GetScriptSearchDirs())
     {
-        if (Entry.is_regular_file() && Entry.path().extension() == ".lua")
+        std::error_code Ec;
+        fs::create_directories(ScriptDir, Ec);
+        if (!fs::exists(ScriptDir) || !fs::is_directory(ScriptDir))
         {
-            FString ScriptName = FPaths::ToUtf8(Entry.path().stem().generic_wstring());
-            FName ScriptKey = MakeLuaScriptKey(ScriptName);
+            continue;
+        }
 
-            FLuaScriptInfo& Info = ScriptArray[ScriptKey];
-            Info.ScriptPath = Entry.path().wstring();
-            if (Info.LastWriteTime == fs::file_time_type::min())
+        for (const auto& Entry : fs::recursive_directory_iterator(ScriptDir))
+        {
+            if (Entry.is_regular_file() && Entry.path().extension() == ".lua")
             {
-                Info.LastWriteTime = fs::last_write_time(Entry.path());
+                FString ScriptName = MakeRelativeScriptDisplayPath(Entry.path());
+                FName ScriptKey = MakeLuaScriptKey(ScriptName);
+
+                FLuaScriptInfo& Info = ScriptArray[ScriptKey];
+                Info.ScriptPath = Entry.path().wstring();
+                if (Info.LastWriteTime == fs::file_time_type::min())
+                {
+                    Info.LastWriteTime = fs::last_write_time(Entry.path());
+                }
             }
         }
     }
@@ -304,8 +429,11 @@ void FScriptManager::RegisterScriptComponents(const FString& name, UScriptCompon
 
     if (ScriptInfo.ScriptPath.empty())
     {
-        FString FileName = name.ends_with(".lua") ? name : name + ".lua";
-        ScriptInfo.ScriptPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(FileName));
+        FString ResolvedPath;
+        if (ResolveScriptPath(name, ResolvedPath))
+        {
+            ScriptInfo.ScriptPath = FPaths::ToWide(ResolvedPath);
+        }
     }
 
     auto& Components = ScriptInfo.ScriptComponents;

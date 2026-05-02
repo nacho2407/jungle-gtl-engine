@@ -13,6 +13,7 @@
 class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
+class APlayerController;
 
 enum class ERuntimeInputMode : uint8
 {
@@ -63,6 +64,7 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
+	virtual APlayerController* GetPrimaryPlayerController() const;
 	FRuntimeUISystem& GetRuntimeUI() { return RuntimeUI; }
 	const FRuntimeUISystem& GetRuntimeUI() const { return RuntimeUI; }
 	FAudioSystem& GetAudioSystem() { return AudioSystem; }

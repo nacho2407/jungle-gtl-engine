@@ -85,6 +85,7 @@ public:
 
 	void RenderUI(float DeltaTime);
 	void RegisterViewportInputTargets();
+	void RequestPIEViewportInputFocus(int32 FrameCount = 3);
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
@@ -143,6 +144,7 @@ private:
 	int32 ActivePIEViewportIndex = -1;
 	bool bStartPlaySessionQueued = false;
 	bool bStopPlaySessionQueued = false;
+	int32 PendingPIEViewportFocusFrames = 0;
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;

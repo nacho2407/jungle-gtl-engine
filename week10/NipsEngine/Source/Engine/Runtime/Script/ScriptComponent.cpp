@@ -142,6 +142,12 @@ void UScriptComponent::PostDuplicate(UObject* Original)
     }
 }
 
+UScriptComponent::~UScriptComponent()
+{
+    UnregisterScript();
+    ReleaseLuaStateReferences();
+}
+
 void UScriptComponent::Serialize(FArchive& Ar)
 {
     UActorComponent::Serialize(Ar);
@@ -284,6 +290,12 @@ void UScriptComponent::ClearScript()
     UnregisterScript();
 
     ScriptName.clear();
+    ClearLoadedState();
+}
+
+void UScriptComponent::ReleaseLuaStateReferences()
+{
+    bScriptRegistered = false;
     ClearLoadedState();
 }
 

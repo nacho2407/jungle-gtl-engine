@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <algorithm>
 
 #include "SimpleJSON/json.hpp"
 #include "GameFramework/World.h"
@@ -50,6 +51,122 @@ namespace SceneKeys
 	static constexpr const char* Type               = "Type";
 	static constexpr const char* NextUUID           = "NextUUID";
 	static constexpr const char* ParentUUID         = "ParentUUID";
+}
+
+namespace
+{
+	FString GetJsonString(json::JSON& Object, const char* Key, const FString& DefaultValue = "")
+	{
+		return Object.hasKey(Key) ? Object[Key].ToString() : DefaultValue;
+	}
+
+	uint32 GetJsonUInt(json::JSON& Object, const char* Key, uint32 DefaultValue = 0)
+	{
+		return Object.hasKey(Key) ? static_cast<uint32>(Object[Key].ToInt()) : DefaultValue;
+	}
+
+	int32 ParseJsonKeyAsInt(const FString& Key)
+	{
+		try
+		{
+			return std::stoi(Key);
+		}
+		catch (...)
+		{
+			return 0;
+		}
+	}
+
+	void CollectLegacyComponentIds(
+		const FString& RootUUID,
+		const TMap<FString, TArray<FString>>& ChildrenByParent,
+		TArray<FString>& OutIds)
+	{
+		OutIds.push_back(RootUUID);
+
+		auto It = ChildrenByParent.find(RootUUID);
+		if (It == ChildrenByParent.end())
+		{
+			return;
+		}
+
+		for (const FString& ChildUUID : It->second)
+		{
+			CollectLegacyComponentIds(ChildUUID, ChildrenByParent, OutIds);
+		}
+	}
+
+	json::JSON ConvertLegacyPrimitivesToActors(json::JSON& PrimitivesNode)
+	{
+		json::JSON Actors = json::Array();
+		TArray<FString> RootUUIDs;
+		TMap<FString, TArray<FString>> ChildrenByParent;
+
+		for (auto& Entry : PrimitivesNode.ObjectRange())
+		{
+			json::JSON& ComponentData = Entry.second;
+			if (ComponentData.hasKey(SceneKeys::ParentUUID))
+			{
+				const FString ParentUUID = std::to_string(GetJsonUInt(ComponentData, SceneKeys::ParentUUID));
+				ChildrenByParent[ParentUUID].push_back(Entry.first);
+			}
+			else
+			{
+				RootUUIDs.push_back(Entry.first);
+			}
+		}
+
+		std::sort(
+			RootUUIDs.begin(),
+			RootUUIDs.end(),
+			[](const FString& A, const FString& B)
+			{
+				return ParseJsonKeyAsInt(A) < ParseJsonKeyAsInt(B);
+			});
+
+		int32 ActorIndex = 1;
+		for (const FString& RootUUID : RootUUIDs)
+		{
+			json::JSON& RootComponentData = PrimitivesNode[RootUUID];
+			TArray<FString> ComponentIds;
+			CollectLegacyComponentIds(RootUUID, ChildrenByParent, ComponentIds);
+
+			FString ActorClass = GetJsonString(RootComponentData, "ActorClass", "ASceneActor");
+			for (const FString& ComponentId : ComponentIds)
+			{
+				json::JSON& ComponentData = PrimitivesNode[ComponentId];
+				if (ComponentData.hasKey("ActorClass"))
+				{
+					ActorClass = ComponentData["ActorClass"].ToString();
+					break;
+				}
+			}
+
+			json::JSON ActorJson = json::Object();
+			const uint32 RootComponentUUID = static_cast<uint32>(ParseJsonKeyAsInt(RootUUID));
+			ActorJson[SceneKeys::UUID] = static_cast<int32>(RootComponentUUID);
+			ActorJson[SceneKeys::ClassName] = ActorClass;
+			ActorJson[SceneKeys::Name] = ActorClass + "_" + std::to_string(ActorIndex++);
+			ActorJson[SceneKeys::Visible] = RootComponentData.hasKey(SceneKeys::Visible) ? RootComponentData[SceneKeys::Visible].ToBool() : true;
+			ActorJson["EditorOnly"] = RootComponentData.hasKey("Editor Only") ? RootComponentData["Editor Only"].ToBool() : false;
+			ActorJson[SceneKeys::RootComponent] = static_cast<int32>(RootComponentUUID);
+			ActorJson[SceneKeys::Tags] = json::Array();
+			ActorJson[SceneKeys::Components] = json::Array();
+
+			for (const FString& ComponentId : ComponentIds)
+			{
+				json::JSON ComponentJson = PrimitivesNode[ComponentId];
+				const uint32 ComponentUUID = static_cast<uint32>(ParseJsonKeyAsInt(ComponentId));
+				ComponentJson[SceneKeys::UUID] = static_cast<int32>(ComponentUUID);
+				ComponentJson[SceneKeys::ClassName] = GetJsonString(ComponentJson, SceneKeys::ClassName, GetJsonString(ComponentJson, SceneKeys::Type, "USceneComponent"));
+				ActorJson[SceneKeys::Components].append(ComponentJson);
+			}
+
+			Actors.append(ActorJson);
+		}
+
+		return Actors;
+	}
 }
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -201,6 +318,11 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 			OutCameraState->Rotation = FRotator::MakeFromEuler(CamRotation);
 			OutCameraState->bValid = true;
 		}
+	}
+
+	if (!Root.hasKey(SceneKeys::Actors) && Root.hasKey(SceneKeys::Primitives))
+	{
+		Root[SceneKeys::Actors] = ConvertLegacyPrimitivesToActors(Root[SceneKeys::Primitives]);
 	}
 
 	if (Root.hasKey(SceneKeys::Actors))

@@ -97,6 +97,20 @@ public:
 		return FVector(0, 0, 1);
 	}
 
+	FVector GetActorRight() const
+	{
+		if (RootComponent)
+			return RootComponent->GetRightVector();
+		return FVector(0, 1, 0);
+	}
+
+	FVector GetActorUp() const
+	{
+		if (RootComponent)
+			return RootComponent->GetUpVector();
+		return FVector(0, 0, 1);
+	}
+
 	void SetWorld(UWorld* World);
 	UWorld* GetFocusedWorld() const { return OwningWorld; }
 

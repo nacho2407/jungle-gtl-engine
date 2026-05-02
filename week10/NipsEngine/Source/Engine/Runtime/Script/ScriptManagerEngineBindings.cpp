@@ -18,6 +18,11 @@ void FScriptManager::BindEngineAPI()
     FLuaEngineAPI::BindSave(*GLuaState, API);
     FLuaEngineAPI::BindDebug(*GLuaState, API);
     FLuaEngineAPI::BindWorld(*GLuaState, API);
+    sol::table World = API["World"];
+    API["GetPlayerController"] = World["GetPlayerController"];
+    API["GetPossessedActor"] = World["GetPossessedActor"];
+    API["GetViewTargetActor"] = World["GetViewTargetActor"];
+    API["GetViewTargetCamera"] = World["GetViewTargetCamera"];
     FLuaEngineAPI::BindAudio(*GLuaState, API);
     FLuaEngineAPI::BindUI(*GLuaState, API);
     FLuaEngineAPI::BindAsset(*GLuaState, API);

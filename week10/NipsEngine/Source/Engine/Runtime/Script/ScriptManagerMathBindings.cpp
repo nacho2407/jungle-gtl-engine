@@ -52,12 +52,12 @@ void FScriptManager::BindMathTypes()
 
     GLuaState->set_function("LogWarning", [](const std::string& Msg)
     {
-        UE_LOG(("[Lua Warning] " + Msg + "\n").c_str());
+        UE_LOG_WARNING(("[Lua Warning] " + Msg + "\n").c_str());
     });
 
     GLuaState->set_function("LogError", [](const std::string& Msg)
     {
-        UE_LOG(("[Lua Error] " + Msg + "\n").c_str());
+        UE_LOG_ERROR(("[Lua Error] " + Msg + "\n").c_str());
     });
 
     LUA_BEGIN_TYPE_FACTORY(GLuaState, FName, "FName", []()
@@ -79,9 +79,64 @@ void FScriptManager::BindMathTypes()
     LUA_FIELD(y, Y);
     LUA_FIELD(z, Z);
     LUA_METHOD(Size, Size);
+    LUA_METHOD(SizeSquared, SizeSquared);
+    LUA_METHOD(Size2D, Size2D);
+    LUA_METHOD(SizeSquared2D, SizeSquared2D);
+    LUA_SET(Length, [](const FVector& Self)
+            { return Self.Size(); });
+    LUA_SET(LengthSquared, [](const FVector& Self)
+            { return Self.SizeSquared(); });
+    LUA_OVERLOAD(Normalize, [](FVector& Self)
+                 { return Self.Normalize(); }, [](FVector& Self, float Tolerance)
+                 { return Self.Normalize(Tolerance); });
+    LUA_OVERLOAD(GetSafeNormal, [](const FVector& Self)
+                 { return Self.GetSafeNormal(); }, [](const FVector& Self, float Tolerance)
+                 { return Self.GetSafeNormal(Tolerance); });
     LUA_OVERLOAD(Normalized, [](const FVector& Self)
                  { return Self.Normalized(); }, [](const FVector& Self, float Tolerance)
                  { return Self.Normalized(Tolerance); });
+    LUA_OVERLOAD(GetSafeNormal2D, [](const FVector& Self)
+                 { return Self.GetSafeNormal2D(); }, [](const FVector& Self, float Tolerance)
+                 { return Self.GetSafeNormal2D(Tolerance); });
+    LUA_OVERLOAD(Normalized2D, [](const FVector& Self)
+                 { return Self.GetSafeNormal2D(); }, [](const FVector& Self, float Tolerance)
+                 { return Self.GetSafeNormal2D(Tolerance); });
+    LUA_SET(Dot, [](const FVector& Self, const FVector& Other)
+            { return Self.DotProduct(Other); });
+    LUA_SET(DotProduct, [](const FVector& Self, const FVector& Other)
+            { return Self.DotProduct(Other); });
+    LUA_SET(Cross, [](const FVector& Self, const FVector& Other)
+            { return Self.CrossProduct(Other); });
+    LUA_SET(CrossProduct, [](const FVector& Self, const FVector& Other)
+            { return Self.CrossProduct(Other); });
+    LUA_SET(DistanceTo, [](const FVector& Self, const FVector& Other)
+            { return FVector::Dist(Self, Other); });
+    LUA_SET(DistanceSquaredTo, [](const FVector& Self, const FVector& Other)
+            { return FVector::DistSquared(Self, Other); });
+    LUA_SET(Distance, [](const FVector& A, const FVector& B)
+            { return FVector::Dist(A, B); });
+    LUA_SET(Dist, [](const FVector& A, const FVector& B)
+            { return FVector::Dist(A, B); });
+    LUA_SET(DistSquared, [](const FVector& A, const FVector& B)
+            { return FVector::DistSquared(A, B); });
+    LUA_SET(Lerp, [](const FVector& A, const FVector& B, float T)
+            { return FVector::Lerp(A, B, T); });
+    LUA_SET(Zero, []()
+            { return FVector::ZeroVector; });
+    LUA_SET(One, []()
+            { return FVector::OneVector; });
+    LUA_SET(Forward, []()
+            { return FVector::ForwardVector; });
+    LUA_SET(Backward, []()
+            { return FVector::BackwardVector; });
+    LUA_SET(Right, []()
+            { return FVector::RightVector; });
+    LUA_SET(Left, []()
+            { return FVector::LeftVector; });
+    LUA_SET(Up, []()
+            { return FVector::UpVector; });
+    LUA_SET(Down, []()
+            { return FVector::DownVector; });
     LUA_META(equal_to, [](const FVector& A, const FVector& B)
              { return A == B; });
     LUA_META(addition, [](const FVector& A, const FVector& B)

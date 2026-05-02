@@ -28,6 +28,7 @@
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
+#include "Serialization/PrefabManager.h"
 
 #include <algorithm>
 #include <chrono>
@@ -705,6 +706,8 @@ void FEditorMainPanel::Render(float DeltaTime)
         RenderUndoHistoryPanel(DeltaTime);
     if (bDrawEditorPanels && bShowRuntimeUIPreview)
         RuntimeUIPreviewWidget.Render(DeltaTime);
+    if (bDrawEditorPanels && bShowConsole && ConsoleWidget.IsFloatingWindowMode())
+        ConsoleWidget.Render(DeltaTime);
     RenderBuildGameModal();
     ViewportOverlayWidget.RenderFloatingOverlays(DeltaTime);
 
@@ -1212,6 +1215,10 @@ void FEditorMainPanel::RenderEditorToolbar()
 void FEditorMainPanel::RenderConsoleDrawer(float DeltaTime)
 {
     (void)DeltaTime;
+    if (ConsoleWidget.IsFloatingWindowMode())
+    {
+        return;
+    }
     constexpr float FooterHeight = 32.0f;
     constexpr float DrawerMaxHeight = 320.0f;
     if (ConsoleDrawerAnim <= 0.001f)
@@ -1339,6 +1346,14 @@ void FEditorMainPanel::PushFooterLog(const FString& Message)
     FooterLogSystem.Push(Message, 5.0f);
 }
 
+void FEditorMainPanel::RequestPIEViewportInputFocus()
+{
+    PendingPIEViewportInputFocusFrames = 3;
+    bConsoleDrawerVisible = false;
+    bFocusConsoleInputNextFrame = false;
+    bFocusConsoleButtonNextFrame = false;
+}
+
 bool FEditorMainPanel::CanCloseEditor()
 {
     return SceneWidget.PromptSaveIfDirty();
@@ -1426,9 +1441,17 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
                 ImGui::SetKeyboardFocusHere();
                 bFocusConsoleButtonNextFrame = false;
             }
-            if (ImGui::Button(bDrawerOpen ? "Console ▼" : "Console ▲"))
+            const char* ConsoleLabel = ConsoleWidget.IsFloatingWindowMode()
+                ? "Console Window"
+                : (bDrawerOpen ? "Console ▼" : "Console ▲");
+            if (ImGui::Button(ConsoleLabel))
             {
-                if (!bConsoleDrawerVisible)
+                if (ConsoleWidget.IsFloatingWindowMode())
+                {
+                    ConsoleWidget.SetPresentationMode(FEditorConsoleWidget::EPresentationMode::Drawer);
+                    OpenConsoleDrawer(true);
+                }
+                else if (!bConsoleDrawerVisible)
                 {
                     OpenConsoleDrawer(true);
                 }
@@ -1455,37 +1478,39 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 
 		ImGui::SameLine();
 
-		{ // Hot Reload button with icon
+        {
             const char* Label = "Hot Reload";
-
             ImGuiStyle& Style = ImGui::GetStyle();
+            const float IconSize = 18.0f;
+            const float ButtonWidth = 120.0f;
+            const float TotalWidth = IconSize + Style.ItemSpacing.x + ButtonWidth;
+            const float RightX = ImGui::GetWindowContentRegionMax().x;
+            const float ButtonStartX = RightX - TotalWidth;
 
-            float IconSize = 18.0f;
-            float ButtonWidth = 120.0f;
-            float TotalWidth = IconSize + Style.ItemSpacing.x + ButtonWidth;
+            if (!ActiveLogs.empty())
+            {
+                const FString& LatestFooterLog = ActiveLogs.back();
+                const float LogWidth = ImGui::CalcTextSize(LatestFooterLog.c_str()).x;
+                const float MinLogX = ImGui::GetCursorPosX() + 16.0f;
+                const float LogRightPadding = 18.0f;
+                const float LogX = std::max(MinLogX, ButtonStartX - LogRightPadding - LogWidth);
+                ImGui::SetCursorPosX(LogX);
+                ImGui::TextUnformatted(LatestFooterLog.c_str());
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("%s", LatestFooterLog.c_str());
+                }
+                ImGui::SameLine();
+            }
 
-            float RightX = ImGui::GetWindowContentRegionMax().x;
-            ImGui::SetCursorPosX(RightX - TotalWidth);
-
+            ImGui::SetCursorPosX(ButtonStartX);
             ImGui::Image((ImTextureID)HotReloadIconSRV, ImVec2(IconSize, IconSize));
             ImGui::SameLine();
 
-            if (ImGui::Button(Label))
+            if (ImGui::Button(Label, ImVec2(ButtonWidth, 0.0f)))
             {
                 FScriptManager::Get().HotReloadScripts();
-            }
-        }
-        if (!ActiveLogs.empty())
-        {
-            const FString& LatestFooterLog = ActiveLogs.back();
-            const float LogWidth = ImGui::CalcTextSize(LatestFooterLog.c_str()).x;
-            const float RightX = OverlaySize.x - ImGui::GetStyle().WindowPadding.x - LogWidth;
-            const float MinRightX = ImGui::GetCursorPosX() + 16.0f;
-            ImGui::SameLine(std::max(MinRightX, RightX));
-            ImGui::TextUnformatted(LatestFooterLog.c_str());
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("%s", LatestFooterLog.c_str());
+                PushFooterLog("Lua scripts hot reloaded");
             }
         }
     }
@@ -1851,6 +1876,11 @@ void FEditorMainPanel::Update()
         bHoveredNonViewportWindow = true;
     }
 
+    const bool bForcePIEViewportInputFocus =
+        PendingPIEViewportInputFocusFrames > 0
+        && EditorEngine
+        && EditorEngine->GetEditorState() == EViewportPlayState::Playing;
+
     const bool bReleaseMouseToViewport =
         bMouseOverViewportRect
         && !bHoveredNonViewportWindow
@@ -1875,21 +1905,34 @@ void FEditorMainPanel::Update()
         bWantKeyboard = false;
     }
 
+    if (bForcePIEViewportInputFocus)
+    {
+        bWantMouse = false;
+        bWantKeyboard = false;
+    }
+
     InputSystem::Get().SetGuiMouseCapture(bWantMouse);
     InputSystem::Get().SetGuiKeyboardCapture(bWantKeyboard);
-    InputSystem::Get().SetGuiTextInputCapture(bWantTextInput);
+    InputSystem::Get().SetGuiTextInputCapture(bForcePIEViewportInputFocus ? false : bWantTextInput);
     const bool bAllowViewportMouseFocus =
-        bMouseOverViewportRect &&
+        (bForcePIEViewportInputFocus || bMouseOverViewportRect) &&
         !bHoveredNonViewportWindow &&
         !bAnyPopupOpen &&
         !bAnyDragDropActive &&
         !bWantTextInput;
     InputSystem::Get().SetGuiViewportMouseBlock(
-        bAnyDragDropActive ||
-        bAnyPopupOpen ||
-        bMouseOverContentBrowser ||
-        bHoveredNonViewportWindow);
+        bForcePIEViewportInputFocus
+            ? false
+            : (bAnyDragDropActive ||
+               bAnyPopupOpen ||
+               bMouseOverContentBrowser ||
+               bHoveredNonViewportWindow));
     InputSystem::Get().SetGuiViewportMouseFocusAllowed(bAllowViewportMouseFocus);
+
+    if (bForcePIEViewportInputFocus)
+    {
+        --PendingPIEViewportInputFocusFrames;
+    }
 
     //	Focus는 MainPanel에서 입력 받음
     if (EditorEngine && InputSystem::Get().GetKeyUp('F') && !IO.WantTextInput)
@@ -2358,6 +2401,88 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(const FString& PayloadPath
     return true;
 }
 
+bool FEditorMainPanel::SpawnPrefabFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY)
+{
+    if (!EditorEngine)
+    {
+        return false;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    FEditorViewportClient* Client = Layout.GetViewportClient(ViewportIndex);
+    if (!Client || !Client->AllowsEditorWorldControl())
+    {
+        return false;
+    }
+
+    UWorld* World = EditorEngine->GetFocusedWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    std::filesystem::path PrefabPath;
+    std::error_code PrefabEc;
+    if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) || !std::filesystem::is_regular_file(PrefabPath, PrefabEc))
+    {
+        PushFooterLog("Failed to find prefab");
+        return false;
+    }
+
+    EditorEngine->CaptureUndoSnapshot("Place Prefab");
+    AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
+    if (!Actor)
+    {
+        PushFooterLog("Failed to spawn prefab");
+        return false;
+    }
+
+    Actor->SetActorLocation(ComputePlacementLocation(Client, LocalX, LocalY));
+    World->SyncSpatialIndex();
+    Layout.SetLastFocusedViewportIndex(ViewportIndex);
+    EditorEngine->GetSelectionManager().Select(Actor);
+    SceneWidget.MarkSceneDirty();
+    PushFooterLog("Prefab actor placed from Content Browser");
+    return true;
+}
+
+bool FEditorMainPanel::SpawnPrefabAtOrigin(const FString& PayloadPath)
+{
+    if (!EditorEngine)
+    {
+        return false;
+    }
+
+    UWorld* World = EditorEngine->GetFocusedWorld();
+    if (!World)
+    {
+        return false;
+    }
+
+    std::filesystem::path PrefabPath;
+    std::error_code PrefabEc;
+    if (!FPrefabManager::ResolvePrefabPath(PayloadPath, PrefabPath, false) || !std::filesystem::is_regular_file(PrefabPath, PrefabEc))
+    {
+        PushFooterLog("Failed to find prefab");
+        return false;
+    }
+
+    EditorEngine->CaptureUndoSnapshot("Place Prefab");
+    AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
+    if (!Actor)
+    {
+        PushFooterLog("Failed to spawn prefab");
+        return false;
+    }
+
+    Actor->SetActorLocation(FVector::ZeroVector);
+    World->SyncSpatialIndex();
+    EditorEngine->GetSelectionManager().Select(Actor);
+    SceneWidget.MarkSceneDirty();
+    PushFooterLog("Prefab actor placed at origin");
+    return true;
+}
+
 void FEditorMainPanel::HandleContentBrowserViewportDrop()
 {
     FString PayloadType;
@@ -2366,7 +2491,7 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
     {
         return;
     }
-    if (PayloadType != "ObjectContentItem" || ContentBrowserWidget.IsMouseOverBrowser())
+    if ((PayloadType != "ObjectContentItem" && PayloadType != "PrefabContentItem") || ContentBrowserWidget.IsMouseOverBrowser())
     {
         return;
     }
@@ -2397,6 +2522,10 @@ void FEditorMainPanel::HandleContentBrowserViewportDrop()
 
         const float LocalX = MathUtil::Clamp(MousePos.x - static_cast<float>(Rect.X), 0.0f, std::max(0.0f, static_cast<float>(Rect.Width - 1)));
         const float LocalY = MathUtil::Clamp(MousePos.y - static_cast<float>(Rect.Y), 0.0f, std::max(0.0f, static_cast<float>(Rect.Height - 1)));
+        if (PayloadType == "PrefabContentItem")
+        {
+            return SpawnPrefabFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
+        }
         return SpawnStaticMeshFromContentPath(PayloadPath, ViewportIndex, LocalX, LocalY);
     };
 

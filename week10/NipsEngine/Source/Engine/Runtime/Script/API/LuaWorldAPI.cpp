@@ -1,7 +1,9 @@
 #include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
 #include "Engine/Runtime/Engine.h"
+#include "Component/CameraComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Serialization/PrefabManager.h"
 
@@ -221,6 +223,29 @@ namespace FLuaEngineAPI
                 }
             }
             return false;
+        };
+
+        World["GetPlayerController"] = []() -> APlayerController*
+        {
+            return GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+        };
+
+        World["GetPossessedActor"] = []() -> AActor*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetPossessedActor() : nullptr;
+        };
+
+        World["GetViewTargetActor"] = []() -> AActor*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetViewTargetActor() : nullptr;
+        };
+
+        World["GetViewTargetCamera"] = []() -> UCameraComponent*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetViewTargetCamera() : nullptr;
         };
 
         World["SpawnActor"] = [](const FString& TypeName) -> AActor*

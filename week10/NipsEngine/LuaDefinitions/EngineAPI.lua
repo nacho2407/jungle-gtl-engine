@@ -17,6 +17,7 @@ function Object:GetType() end
 function Object:IsA(typeName) end
 
 ---@class ActorComponent: Object
+---@field TypeName string
 local ActorComponent = {}
 ---@return Actor
 function ActorComponent:GetOwner() end
@@ -42,6 +43,49 @@ function SceneComponent:GetRelativeLocation() end
 ---@param location Vector
 function SceneComponent:SetRelativeLocation(location) end
 
+---@class MovementComponent: ActorComponent
+---@field Velocity Vector
+---@field PendingInputVector Vector
+---@field PlaneConstraintNormal Vector
+local MovementComponent = {}
+---@param component SceneComponent
+function MovementComponent:SetUpdatedComponent(component) end
+---@return SceneComponent|nil
+function MovementComponent:GetUpdatedComponent() end
+---@param direction Vector
+---@param scale? number
+function MovementComponent:AddInputVector(direction, scale) end
+---@return Vector
+function MovementComponent:ConsumeInputVector() end
+---@return number
+function MovementComponent:GetMaxSpeed() end
+function MovementComponent:StopMovementImmediately() end
+
+---@class ProjectileMovementComponent: MovementComponent
+---@field InitialSpeed number
+---@field MaxSpeed number
+---@field GravityScale number
+---@field RotationFollowsVelocity boolean
+local ProjectileMovementComponent = {}
+
+---@class RotatingMovementComponent: MovementComponent
+---@field RotationRate Vector
+---@field PivotTranslation Vector
+---@field RotationInLocalSpace boolean
+local RotatingMovementComponent = {}
+
+---@class InterpToMovementComponent: MovementComponent
+---@field Duration number
+---@field AutoActivate boolean
+local InterpToMovementComponent = {}
+---@param point Vector
+function InterpToMovementComponent:AddControlPoint(point) end
+---@param index integer
+function InterpToMovementComponent:RemoveControlPoint(index) end
+function InterpToMovementComponent:Initiate() end
+function InterpToMovementComponent:Reset() end
+function InterpToMovementComponent:ResetAndHalt() end
+
 ---@class ScriptComponent: ActorComponent
 local ScriptComponent = {}
 ---@param scriptName string
@@ -55,6 +99,7 @@ function ScriptComponent:HotReloadScript() end
 function ScriptComponent:ClearScript() end
 
 ---@class Actor: Object
+---@field TypeName string
 local Actor = {}
 ---@return SceneComponent
 function Actor:GetRootComponent() end
@@ -82,6 +127,25 @@ function Actor:RemoveTag(tag) end
 function Actor:HasTag(tag) end
 ---@return string[]
 function Actor:GetTags() end
+
+---@class PlayerController: Actor
+---@field PossessedActor Actor|nil
+---@field ViewTargetActor Actor|nil
+---@field ViewTargetCamera CameraComponent|nil
+local PlayerController = {}
+---@param actor Actor
+function PlayerController:Possess(actor) end
+function PlayerController:UnPossess() end
+---@param actor Actor
+function PlayerController:SetViewTarget(actor) end
+---@param camera CameraComponent
+function PlayerController:SetViewTargetCamera(camera) end
+---@return Actor|nil
+function PlayerController:GetPossessedActor() end
+---@return Actor|nil
+function PlayerController:GetViewTargetActor() end
+---@return CameraComponent|nil
+function PlayerController:GetViewTargetCamera() end
 
 ---@class EngineAPITime
 local EngineAPITime = {}
@@ -192,6 +256,18 @@ function EngineAPIWorld.GetActorCount() end
 ---@param actor AActor
 ---@return boolean
 function EngineAPIWorld.IsValidActor(actor) end
+
+---@return PlayerController|nil
+function EngineAPIWorld.GetPlayerController() end
+
+---@return AActor|nil
+function EngineAPIWorld.GetPossessedActor() end
+
+---@return AActor|nil
+function EngineAPIWorld.GetViewTargetActor() end
+
+---@return CameraComponent|nil
+function EngineAPIWorld.GetViewTargetCamera() end
 
 ---@param typeName string
 ---@return AActor|nil
@@ -626,6 +702,18 @@ local EngineAPIEffect = {}
 ---@field Application EngineAPIApplication
 ---@field Effect EngineAPIEffect
 local EngineAPI = {}
+
+---@return PlayerController|nil
+function EngineAPI.GetPlayerController() end
+
+---@return AActor|nil
+function EngineAPI.GetPossessedActor() end
+
+---@return AActor|nil
+function EngineAPI.GetViewTargetActor() end
+
+---@return CameraComponent|nil
+function EngineAPI.GetViewTargetCamera() end
 
 ---@class EngineGlobal
 ---@field API EngineAPI

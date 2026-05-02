@@ -9,6 +9,7 @@
 #include "Core/ResourceManager.h"
 #include "Render/Renderer/DefaultRenderPipeline.h"
 #include "Camera/ViewportCamera.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 
 #include <algorithm>
@@ -149,6 +150,24 @@ UWorld* UEngine::GetWorld() const
 {
 	const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
 	return Context ? Context->World : nullptr;
+}
+
+APlayerController* UEngine::GetPrimaryPlayerController() const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+		{
+			return PlayerController;
+		}
+	}
+	return nullptr;
 }
 
 FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name)

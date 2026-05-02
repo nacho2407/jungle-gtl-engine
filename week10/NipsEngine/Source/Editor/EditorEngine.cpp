@@ -159,6 +159,25 @@ void UEditorEngine::Tick(float DeltaTime)
     EditorInputRouter.SetImGuiCaptureState(GuiState.bUsingMouse, bGuiKeyboardCaptureForViewport);
     EditorInputRouter.SetForceViewportMouseBlock(GuiState.bBlockViewportMouse, GuiState.bAllowViewportMouseFocus);
     RegisterViewportInputTargets();
+    if (PendingPIEViewportFocusFrames > 0 && GetEditorState() == EViewportPlayState::Playing)
+    {
+        const int32 FocusedIdx = (ActivePIEViewportIndex >= 0)
+            ? ActivePIEViewportIndex
+            : ViewportLayout.GetLastFocusedViewportIndex();
+        if (FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx))
+        {
+            ViewportLayout.SetLastFocusedViewportIndex(FocusedIdx);
+            EditorInputRouter.SetImGuiCaptureState(false, false);
+            EditorInputRouter.SetForceViewportMouseBlock(false, true);
+            EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
+        }
+        InputSystem::Get().SetGuiMouseCapture(false);
+        InputSystem::Get().SetGuiKeyboardCapture(false);
+        InputSystem::Get().SetGuiTextInputCapture(false);
+        InputSystem::Get().SetGuiViewportMouseBlock(false);
+        InputSystem::Get().SetGuiViewportMouseFocusAllowed(true);
+        --PendingPIEViewportFocusFrames;
+    }
     FViewportInputContext RoutedInputContext;
     FInteractionBinding RoutedInputBinding;
     EditorInputRouter.Tick(DeltaTime, RoutedInputContext, RoutedInputBinding);
@@ -174,6 +193,12 @@ void UEditorEngine::Tick(float DeltaTime)
     MainPanel.Update();
     WorldTick(DeltaTime);
     Render(DeltaTime);
+}
+
+void UEditorEngine::RequestPIEViewportInputFocus(int32 FrameCount)
+{
+    PendingPIEViewportFocusFrames = std::max(PendingPIEViewportFocusFrames, FrameCount);
+    MainPanel.RequestPIEViewportInputFocus();
 }
 
 void UEditorEngine::RegisterViewportInputTargets()
@@ -623,6 +648,7 @@ void UEditorEngine::StartPlaySessionNow()
     EditorInputRouter.SetImGuiCaptureState(false, false);
     EditorInputRouter.SetForceViewportMouseBlock(false, true);
     EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
+    RequestPIEViewportInputFocus(3);
     SelectionManager.ClearSelection();
 
     constexpr const char* DefaultPIEPlayerControllerClass = "APlayerController";

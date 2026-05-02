@@ -15,12 +15,12 @@ namespace FLuaEngineAPI
 
         Debug["Warn"] = [](const FString& Message)
         {
-            UE_LOG("[Lua Warning] %s", Message.c_str());
+            UE_LOG_WARNING("[Lua Warning] %s", Message.c_str());
         };
 
         Debug["Error"] = [](const FString& Message)
         {
-            UE_LOG("[Lua Error] %s", Message.c_str());
+            UE_LOG_ERROR("[Lua Error] %s", Message.c_str());
         };
 
         API["Debug"] = Debug;

@@ -42,7 +42,7 @@ class UScriptComponent : public UActorComponent
 public:
 	DECLARE_CLASS(UScriptComponent, UActorComponent)
 	UScriptComponent() = default;
-	~UScriptComponent() override = default;
+	~UScriptComponent() override;
 
 	void PostDuplicate(UObject* Original) override;
 	void Serialize(FArchive& Ar) override;
@@ -55,6 +55,7 @@ public:
     bool LoadScript();
     bool HotReloadScript();
     void ClearScript();
+    void ReleaseLuaStateReferences();
     void StartCoroutine(sol::function Function);
 
 	virtual void OnUnregister() override;
@@ -137,6 +138,6 @@ void UScriptComponent::CallScriptFunction(const FString& FunctionName, Args&&...
     if (!Result.valid())
     {
         sol::error Err = Result;
-        UE_LOG("[ScriptComponent] Lua Error in %s: %s", FunctionName.c_str(), Err.what());
+        UE_LOG_ERROR("[ScriptComponent] Lua Error in %s: %s", FunctionName.c_str(), Err.what());
     }
 }

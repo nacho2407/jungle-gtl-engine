@@ -17,6 +17,7 @@ public:
     void Tick(float DeltaTime) override;
     void OnWindowResized(uint32 Width, uint32 Height) override;
     void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) override;
+    APlayerController* GetPrimaryPlayerController() const override { return PlayerController; }
 
     APlayerController* GetPlayerController() const { return PlayerController; }
 

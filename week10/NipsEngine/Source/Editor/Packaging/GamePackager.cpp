@@ -1,5 +1,8 @@
 #include "Editor/Packaging/GamePackager.h"
 
+#include "Asset/BinarySerializer.h"
+#include "Asset/ObjLoader.h"
+#include "Asset/StaticMeshTypes.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "SimpleJSON/json.hpp"
@@ -10,6 +13,8 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <set>
 #include <vector>
 
 namespace
@@ -19,6 +24,16 @@ namespace
 
     void EmitBuildLog(const FString& Message);
     void EmitBuildLogWidePath(const char* Prefix, const std::filesystem::path& Path);
+
+    struct FPackageCookContext
+    {
+        std::filesystem::path EngineRoot;
+        std::filesystem::path OutputRoot;
+        std::set<FString> FilesToCopy;
+        std::set<FString> CopiedFiles;
+        std::map<FString, FString> CookedMeshPathBySource;
+        TArray<FString> ManifestLines;
+    };
 
     const char* GetConfigurationName(EGameBuildConfiguration Configuration)
     {
@@ -139,6 +154,11 @@ namespace
         return false;
     }
 
+    FString GetLowerExtension(const FString& Path)
+    {
+        return ToLowerAscii(FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(Path)).extension().generic_wstring()));
+    }
+
     bool ValidateOptionalBrandingFile(const FString& Path, std::initializer_list<const char*> Extensions, const char* Label, FString& OutMessage)
     {
         if (Path.empty())
@@ -172,6 +192,487 @@ namespace
             return FPaths::ToRelativeString(ScenePath.wstring());
         }
         return FPaths::Normalize(Scene);
+    }
+
+    FString NormalizeAssetPathForPackage(const FString& Path)
+    {
+        std::filesystem::path AssetPath(FPaths::ToWide(Path));
+        if (AssetPath.is_absolute())
+        {
+            return FPaths::ToRelativeString(AssetPath.lexically_normal().wstring());
+        }
+        return FPaths::Normalize(Path);
+    }
+
+    std::filesystem::path ResolveProjectFilePath(const FString& Path)
+    {
+        std::filesystem::path Candidate(FPaths::ToWide(Path));
+        if (Candidate.is_absolute())
+        {
+            return Candidate.lexically_normal();
+        }
+        return (std::filesystem::path(FPaths::RootDir()) / Candidate).lexically_normal();
+    }
+
+    bool FileExistsForPackage(const FString& Path)
+    {
+        const std::filesystem::path Resolved = ResolveProjectFilePath(Path);
+        return std::filesystem::exists(Resolved) && std::filesystem::is_regular_file(Resolved);
+    }
+
+    bool IsRuntimeCopyExtension(const FString& Extension)
+    {
+        return Extension == ".bin"
+            || Extension == ".mat"
+            || Extension == ".matinst"
+            || Extension == ".png"
+            || Extension == ".jpg"
+            || Extension == ".jpeg"
+            || Extension == ".dds"
+            || Extension == ".bmp"
+            || Extension == ".wav"
+            || Extension == ".mp3"
+            || Extension == ".ogg"
+            || Extension == ".lua"
+            || Extension == ".prefab"
+            || Extension == ".meta"
+            || Extension == ".ttf"
+            || Extension == ".otf";
+    }
+
+    FString MakeCookedMeshRelativePath(const FString& SourceRelativePath)
+    {
+        std::filesystem::path SourcePath(FPaths::ToWide(SourceRelativePath));
+        std::filesystem::path SubPath = SourcePath.filename();
+        const std::filesystem::path AssetMeshRoot = std::filesystem::path(L"Asset") / L"Mesh";
+        const std::filesystem::path RelativeToMesh = SourcePath.lexically_normal().lexically_relative(AssetMeshRoot);
+        if (!RelativeToMesh.empty())
+        {
+            bool bHasParentReference = false;
+            for (const std::filesystem::path& Part : RelativeToMesh)
+            {
+                if (Part == L"..")
+                {
+                    bHasParentReference = true;
+                    break;
+                }
+            }
+            if (!bHasParentReference)
+            {
+                SubPath = RelativeToMesh;
+            }
+        }
+
+        SubPath.replace_extension(L".bin");
+        return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
+    }
+
+    void AddManifest(FPackageCookContext& Context, const FString& Line)
+    {
+        Context.ManifestLines.push_back(Line);
+        EmitBuildLog(Line);
+    }
+
+    bool ResolveMaterialNameToFiles(const FString& MaterialName, TArray<FString>& OutMaterialFiles)
+    {
+        if (MaterialName.empty() || MaterialName.find('/') != FString::npos || MaterialName.find('\\') != FString::npos)
+        {
+            return false;
+        }
+
+        const std::filesystem::path MaterialRoot = std::filesystem::path(FPaths::RootDir()) / L"Asset" / L"Material";
+        if (!std::filesystem::exists(MaterialRoot))
+        {
+            return false;
+        }
+
+        const FString LowerName = ToLowerAscii(MaterialName);
+        for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(MaterialRoot))
+        {
+            if (!Entry.is_regular_file())
+            {
+                continue;
+            }
+
+            const FString Extension = ToLowerAscii(FPaths::ToUtf8(Entry.path().extension().generic_wstring()));
+            if (Extension != ".mat" && Extension != ".matinst")
+            {
+                continue;
+            }
+
+            const FString Stem = FPaths::ToUtf8(Entry.path().stem().generic_wstring());
+            const FString LowerStem = ToLowerAscii(Stem);
+            if (LowerStem == LowerName || LowerStem.ends_with("_" + LowerName))
+            {
+                OutMaterialFiles.push_back(FPaths::ToRelativeString(Entry.path().wstring()));
+            }
+        }
+
+        return !OutMaterialFiles.empty();
+    }
+
+    bool AddFileDependency(FPackageCookContext& Context, const FString& Path, FString& OutMessage);
+    std::filesystem::path ResolveStartupSceneForValidation(const FString& StartupScene);
+
+    void CollectAssetStringsFromTextFile(FPackageCookContext& Context, const std::filesystem::path& SourceFile)
+    {
+        std::ifstream In(SourceFile, std::ios::binary);
+        if (!In.is_open())
+        {
+            return;
+        }
+
+        const FString Text((std::istreambuf_iterator<char>(In)), std::istreambuf_iterator<char>());
+        constexpr const char* Prefixes[] = { "Asset/", "LuaScript/", "Shaders/" };
+        for (const char* Prefix : Prefixes)
+        {
+            size_t SearchPos = 0;
+            while ((SearchPos = Text.find(Prefix, SearchPos)) != FString::npos)
+            {
+                size_t EndPos = SearchPos;
+                while (EndPos < Text.size())
+                {
+                    const char Ch = Text[EndPos];
+                    if (Ch == '"' || Ch == '\'' || Ch == ')' || Ch == ',' || Ch == ';' || std::isspace(static_cast<unsigned char>(Ch)))
+                    {
+                        break;
+                    }
+                    ++EndPos;
+                }
+
+                if (EndPos > SearchPos)
+                {
+                    FString Candidate = Text.substr(SearchPos, EndPos - SearchPos);
+                    FString IgnoredMessage;
+                    AddFileDependency(Context, Candidate, IgnoredMessage);
+                }
+                SearchPos = EndPos;
+            }
+        }
+    }
+
+    bool CookStaticMeshDependency(FPackageCookContext& Context, const FString& SourcePath, FString& OutCookedPath, FString& OutMessage)
+    {
+        const FString NormalizedSource = NormalizeAssetPathForPackage(SourcePath);
+        const FString Extension = GetLowerExtension(NormalizedSource);
+        if (Extension == ".bin")
+        {
+            if (!FileExistsForPackage(NormalizedSource))
+            {
+                OutMessage = "Static mesh binary not found: " + NormalizedSource;
+                return false;
+            }
+            Context.FilesToCopy.insert(NormalizedSource);
+            OutCookedPath = NormalizedSource;
+            return true;
+        }
+
+        if (Extension != ".obj")
+        {
+            OutMessage = "Unsupported static mesh source: " + NormalizedSource;
+            return false;
+        }
+
+        auto Found = Context.CookedMeshPathBySource.find(NormalizedSource);
+        if (Found != Context.CookedMeshPathBySource.end())
+        {
+            OutCookedPath = Found->second;
+            return true;
+        }
+
+        const std::filesystem::path SourceAbs = ResolveProjectFilePath(NormalizedSource);
+        if (!std::filesystem::exists(SourceAbs) || !std::filesystem::is_regular_file(SourceAbs))
+        {
+            OutMessage = "Static mesh source not found: " + NormalizedSource;
+            return false;
+        }
+
+        const FString CookedRelativePath = MakeCookedMeshRelativePath(NormalizedSource);
+        const std::filesystem::path CookedAbs = (Context.OutputRoot / std::filesystem::path(FPaths::ToWide(CookedRelativePath))).lexically_normal();
+        std::error_code Ec;
+        std::filesystem::create_directories(CookedAbs.parent_path(), Ec);
+        if (Ec)
+        {
+            OutMessage = "Failed to create cooked mesh directory: " + CookedRelativePath;
+            return false;
+        }
+
+        FObjLoader ObjLoader;
+        FStaticMeshLoadOptions LoadOptions = {};
+        FStaticMesh* MeshData = ObjLoader.Load(FPaths::ToUtf8(SourceAbs.wstring()), LoadOptions);
+        if (!MeshData)
+        {
+            OutMessage = "Failed to cook static mesh: " + NormalizedSource;
+            return false;
+        }
+
+        FBinarySerializer Serializer;
+        const bool bSaved = Serializer.SaveStaticMesh(
+            FPaths::ToUtf8(CookedAbs.wstring()),
+            FPaths::ToUtf8(SourceAbs.wstring()),
+            *MeshData);
+        delete MeshData;
+
+        if (!bSaved)
+        {
+            OutMessage = "Failed to write cooked mesh: " + CookedRelativePath;
+            return false;
+        }
+
+        Context.CookedMeshPathBySource[NormalizedSource] = CookedRelativePath;
+        OutCookedPath = CookedRelativePath;
+        AddManifest(Context, "Cooked mesh: " + NormalizedSource + " -> " + CookedRelativePath);
+        return true;
+    }
+
+    bool CollectJsonDependenciesAndRewrite(json::JSON& Node, FPackageCookContext& Context, bool bInMaterialArray, FString& OutMessage)
+    {
+        switch (Node.JSONType())
+        {
+        case json::JSON::Class::String:
+        {
+            FString Value = Node.ToString();
+            if (Value.empty())
+            {
+                return true;
+            }
+
+            if (bInMaterialArray)
+            {
+                TArray<FString> MaterialFiles;
+                if (ResolveMaterialNameToFiles(Value, MaterialFiles))
+                {
+                    for (const FString& MaterialFile : MaterialFiles)
+                    {
+                        if (!AddFileDependency(Context, MaterialFile, OutMessage))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            const FString Extension = GetLowerExtension(Value);
+            if (Extension == ".obj" || Extension == ".bin")
+            {
+                FString CookedPath;
+                if (!CookStaticMeshDependency(Context, Value, CookedPath, OutMessage))
+                {
+                    return false;
+                }
+                Node = CookedPath;
+                return true;
+            }
+
+            return AddFileDependency(Context, Value, OutMessage);
+        }
+        case json::JSON::Class::Object:
+        {
+            for (auto& Pair : Node.ObjectRange())
+            {
+                const bool bChildInMaterialArray = bInMaterialArray || Pair.first == "Materials";
+                if (!CollectJsonDependenciesAndRewrite(Pair.second, Context, bChildInMaterialArray, OutMessage))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        case json::JSON::Class::Array:
+        {
+            for (auto& Child : Node.ArrayRange())
+            {
+                if (!CollectJsonDependenciesAndRewrite(Child, Context, bInMaterialArray, OutMessage))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        default:
+            return true;
+        }
+    }
+
+    bool AddFileDependency(FPackageCookContext& Context, const FString& Path, FString& OutMessage)
+    {
+        if (Path.empty())
+        {
+            return true;
+        }
+
+        const FString NormalizedPath = NormalizeAssetPathForPackage(Path);
+        const FString Extension = GetLowerExtension(NormalizedPath);
+
+        if (Extension == ".obj" || Extension == ".bin")
+        {
+            FString IgnoredCookedPath;
+            return CookStaticMeshDependency(Context, NormalizedPath, IgnoredCookedPath, OutMessage);
+        }
+
+        if (Extension.empty() || Extension == ".scene" || !IsRuntimeCopyExtension(Extension))
+        {
+            return true;
+        }
+
+        if (NormalizedPath.rfind("Shaders/", 0) == 0)
+        {
+            return true;
+        }
+
+        if (!FileExistsForPackage(NormalizedPath))
+        {
+            return true;
+        }
+
+        const bool bInserted = Context.FilesToCopy.insert(NormalizedPath).second;
+        if (!bInserted)
+        {
+            return true;
+        }
+
+        const std::filesystem::path SourceAbs = ResolveProjectFilePath(NormalizedPath);
+        if (Extension == ".mat" || Extension == ".matinst" || Extension == ".prefab")
+        {
+            std::ifstream In(SourceAbs);
+            if (In.is_open())
+            {
+                FString JsonText((std::istreambuf_iterator<char>(In)), std::istreambuf_iterator<char>());
+                json::JSON Root = json::JSON::Load(JsonText);
+                if (Root.JSONType() == json::JSON::Class::Object || Root.JSONType() == json::JSON::Class::Array)
+                {
+                    if (!CollectJsonDependenciesAndRewrite(Root, Context, false, OutMessage))
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+        else if (Extension == ".lua")
+        {
+            CollectAssetStringsFromTextFile(Context, SourceAbs);
+        }
+
+        return true;
+    }
+
+    bool WriteCookedScene(FPackageCookContext& Context, const FString& Scene, FString& OutMessage)
+    {
+        const std::filesystem::path SourceScene = ResolveStartupSceneForValidation(Scene);
+        std::ifstream SceneFile(SourceScene);
+        if (!SceneFile.is_open())
+        {
+            OutMessage = "Scene not found for cooking: " + Scene;
+            return false;
+        }
+
+        FString SceneJson((std::istreambuf_iterator<char>(SceneFile)), std::istreambuf_iterator<char>());
+        json::JSON Root = json::JSON::Load(SceneJson);
+        if (!CollectJsonDependenciesAndRewrite(Root, Context, false, OutMessage))
+        {
+            return false;
+        }
+
+        const std::filesystem::path RelativeScene(FPaths::ToWide(NormalizeSceneForPackage(Scene)));
+        const std::filesystem::path DestScene = (Context.OutputRoot / RelativeScene).lexically_normal();
+        std::error_code Ec;
+        std::filesystem::create_directories(DestScene.parent_path(), Ec);
+        if (Ec)
+        {
+            OutMessage = "Failed to create cooked scene directory";
+            return false;
+        }
+
+        std::ofstream OutScene(DestScene, std::ios::trunc);
+        if (!OutScene.is_open())
+        {
+            OutMessage = "Failed to write cooked scene: " + NormalizeSceneForPackage(Scene);
+            return false;
+        }
+
+        OutScene << Root.dump(1, "  ");
+        AddManifest(Context, "Cooked scene: " + NormalizeSceneForPackage(Scene));
+        return true;
+    }
+
+    bool CopyDependencyFiles(FPackageCookContext& Context, FString& OutMessage)
+    {
+        std::error_code Ec;
+        for (const FString& RelativeFile : Context.FilesToCopy)
+        {
+            if (Context.CopiedFiles.find(RelativeFile) != Context.CopiedFiles.end())
+            {
+                continue;
+            }
+
+            const std::filesystem::path Source = ResolveProjectFilePath(RelativeFile);
+            const std::filesystem::path Dest = (Context.OutputRoot / std::filesystem::path(FPaths::ToWide(RelativeFile))).lexically_normal();
+            if (!std::filesystem::exists(Source, Ec))
+            {
+                continue;
+            }
+
+            std::filesystem::create_directories(Dest.parent_path(), Ec);
+            if (Ec)
+            {
+                OutMessage = "Failed to create asset package directory: " + RelativeFile;
+                return false;
+            }
+
+            std::filesystem::copy_file(Source, Dest, std::filesystem::copy_options::overwrite_existing, Ec);
+            if (Ec)
+            {
+                OutMessage = "Failed to copy asset: " + RelativeFile;
+                return false;
+            }
+
+            Context.CopiedFiles.insert(RelativeFile);
+            AddManifest(Context, "Copied asset: " + RelativeFile);
+        }
+        return true;
+    }
+
+    bool CookAndCopyPackageAssets(const FGameBuildSettings& Settings, const std::filesystem::path& OutputRoot, const TArray<FString>& IncludedScenes, FString& OutMessage)
+    {
+        FPackageCookContext Context;
+        Context.EngineRoot = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+        Context.OutputRoot = OutputRoot.lexically_normal();
+
+        AddManifest(Context, "Packaging cook started");
+        for (const FString& Scene : IncludedScenes)
+        {
+            if (!WriteCookedScene(Context, Scene, OutMessage))
+            {
+                return false;
+            }
+        }
+
+        if (!CopyDependencyFiles(Context, OutMessage))
+        {
+            return false;
+        }
+
+        const std::filesystem::path ManifestPath = Context.OutputRoot / L"Settings" / L"PackageManifest.txt";
+        std::error_code Ec;
+        std::filesystem::create_directories(ManifestPath.parent_path(), Ec);
+        if (!Ec)
+        {
+            std::ofstream Manifest(ManifestPath, std::ios::trunc);
+            for (const FString& Line : Context.ManifestLines)
+            {
+                Manifest << Line << "\n";
+            }
+            Manifest << "CopiedAssetCount=" << Context.CopiedFiles.size() << "\n";
+            Manifest << "CookedMeshCount=" << Context.CookedMeshPathBySource.size() << "\n";
+            Manifest << "IncludedSceneCount=" << IncludedScenes.size() << "\n";
+            Manifest << "StartupScene=" << NormalizeSceneForPackage(Settings.StartupScene) << "\n";
+        }
+
+        UE_LOG("[Build] Cook summary: Scenes=%d, Assets=%zu, Meshes=%zu",
+            static_cast<int32>(IncludedScenes.size()),
+            Context.CopiedFiles.size(),
+            Context.CookedMeshPathBySource.size());
+        return true;
     }
 
     TArray<FString> BuildIncludedSceneList(const FGameBuildSettings& Settings)
@@ -623,34 +1124,10 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
         EmitBuildLog("Copied NipsGame.pdb");
     }
 
-    if (!CopyDirectoryIfExists(EngineRoot / L"Asset", OutputRoot / L"Asset", OutMessage)) return false;
-    EmitBuildLog("Copied Asset directory");
     const TArray<FString> IncludedScenes = BuildIncludedSceneList(Settings);
-    for (const FString& Scene : IncludedScenes)
-    {
-        const std::filesystem::path SourceScene = ResolveStartupSceneForValidation(Scene);
-        const std::filesystem::path RelativeScene(FPaths::ToWide(NormalizeSceneForPackage(Scene)));
-        const std::filesystem::path DestScene = (OutputRoot / RelativeScene).lexically_normal();
-        std::filesystem::create_directories(DestScene.parent_path(), Ec);
-        if (Ec)
-        {
-            OutMessage = "Failed to create scene package directory";
-            EmitBuildLog(OutMessage);
-            return false;
-        }
-        std::filesystem::copy_file(SourceScene, DestScene, std::filesystem::copy_options::overwrite_existing, Ec);
-        if (Ec)
-        {
-            OutMessage = "Failed to copy scene: " + Scene;
-            EmitBuildLog(OutMessage);
-            return false;
-        }
-        UE_LOG("[Build] Copied scene = %s", Scene.c_str());
-    }
+    if (!CookAndCopyPackageAssets(Settings, OutputRoot, IncludedScenes, OutMessage)) return false;
     if (!CopyDirectoryIfExists(EngineRoot / L"Shaders", OutputRoot / L"Shaders", OutMessage)) return false;
     EmitBuildLog("Copied Shaders directory");
-    if (!CopyDirectoryIfExists(EngineRoot / L"LuaScript", OutputRoot / L"LuaScript", OutMessage)) return false;
-    EmitBuildLog("Copied LuaScript directory");
 
     FString PackagedIconPath;
     FString PackagedSplashPath;
