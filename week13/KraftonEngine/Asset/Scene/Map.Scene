@@ -1716,7 +1716,7 @@
           "Location" : [-78.705887, -375.854645, 1.942000],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 179.448578, 0.000000],
+          "Rotation" : [-0.000000, 178.366257, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
@@ -2021,7 +2021,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [-105.580467, -138.408600, 15.896111],
+          "Location" : [-106.563385, -138.445251, 15.896111],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
           "Rotation" : [0.000000, -10.012436, 0.000000],
@@ -2231,7 +2231,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [-76.085510, -165.814606, 16.496113],
+          "Location" : [-72.581436, -169.578049, 16.496113],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
           "Rotation" : [0.000000, 84.254120, 0.000000],
@@ -2687,13 +2687,294 @@
             "Path" : "Asset/Materials/Auto/M_Sky_Panning_Clouds2.mat"
           },
           "Generate Overlap Events" : false,
-          "Location" : [0.000000, 0.000000, 4.566345],
+          "Location" : [387.980988, 0.000000, 4.566345],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [10.000000, 10.000000, 10.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [300.000000, 300.000000, 200.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Sky\\Sky.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "GasStation",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/Object001_mtl.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/Object002_mtl.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/ALUCOBON_BLEU.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/ALU.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/ALU_ROUGE.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/BLACK_SCREEN.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/Material.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/Material.001.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/total-3-logo-png-transparent.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/asphalt_cracked.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/ROF.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/ALUCOBON_BLEU.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/Office_Ceiling.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/Material_8.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/Dirty_Tiles.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/Dirty_Old_Walls_Texture.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/Cracked_Concrete_Sidewalk.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/ALUCOBON_GRIS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [150.440903, -124.145973, 1.505331],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -98.215637, 0.000000],
+          "Scale" : [1.500000, 1.500000, 1.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\GasStation\\GASSTATION .obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AHeightFogActor",
+      "Name" : "AHeightFogActor_0",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/HeightFog.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UHeightFogComponent",
+        "Properties" : {
+          "Cutoff Distance" : 0.000000,
+          "Fog Density" : 0.001000,
+          "Height Falloff" : 0.010000,
+          "Inscattering Color" : [0.422617, 0.511933, 0.603376, 0.941176],
+          "Location" : [-395.902466, -47.921600, 130.874191],
+          "Max Opacity" : 1.000000,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Start Distance" : 0.000000,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "MapBound1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [262.657837, 11.516552, 7.276886],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [10.000000, 350.000000, 200.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "MapBound2",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [25.209410, 321.417877, 34.233711],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [-0.000000, 71.926521, 0.000000],
+          "Scale" : [10.000000, 300.000000, 200.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "MapBound3",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-210.151001, 11.616552, 7.376886],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [10.000000, 350.000000, 200.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_23",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [25.309410, -294.699707, 34.333710],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [-0.000000, 71.926521, 0.000000],
+          "Scale" : [10.000000, 300.000000, 200.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -2709,9 +2990,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [49.863804, -326.483612, 404.052704],
+    "Location" : [-83.515411, 113.741364, 8.236558],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000002, 35.656002, 98.611374]
+    "Rotation" : [0.000000, 11.056366, -57.239285]
   },
   "Version" : 2,
   "WorldType" : "Editor"
