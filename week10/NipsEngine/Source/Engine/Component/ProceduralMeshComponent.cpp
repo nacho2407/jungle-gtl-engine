@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include <algorithm>
+#include "GameFramework/AActor.h"
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)
@@ -294,8 +295,6 @@ void FMeshSlicer::SliceComponent(UStaticMeshComponent* InComponent, const FPlane
 
         // ProceduralMesh 생성
         OutFront->CreateSection(0, Front.Vertices, Front.Indices);
-        // 테스트용
-        OutFront->SetWorldLocation(FVector(0, 0, 1));
 
         for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
         {
@@ -309,9 +308,6 @@ void FMeshSlicer::SliceComponent(UStaticMeshComponent* InComponent, const FPlane
         {
             OutBack->SetMaterial(i, InComponent->GetMaterial(i));
         }
-
-        // 기존 Static Mesh 제거 or 숨김
-        InComponent->SetVisibility(false);
     }
 }
 
@@ -340,14 +336,10 @@ void FMeshSlicer::SliceComponent(UProceduralMeshComponent* InComponent, const FP
         }
 
         OutBack->CreateSection(0, Back.Vertices, Back.Indices);
-        OutBack->SetWorldLocation(FVector(0, 0, -1));
         for (int32 i = 0; i < InComponent->GetNumMaterials(); i++)
         {
             OutBack->SetMaterial(i, InComponent->GetMaterial(i));
         }
-
-        // 기존 Static Mesh 제거 or 숨김
-        InComponent->SetVisibility(false);
     }
 }
 

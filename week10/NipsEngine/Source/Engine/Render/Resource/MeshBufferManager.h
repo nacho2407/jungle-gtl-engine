@@ -6,7 +6,8 @@
 #include "Render/Resource/Buffer.h"
 
 #include "Render/Mesh/MeshManager.h"
-#include "Component/ProceduralMeshComponent.h"
+#include <cstdint>
+class UProceduralMeshComponent;
 
 class UStaticMesh;
 
@@ -24,7 +25,7 @@ private:
 	ID3D11Device* Device = nullptr;
 	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
 	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
-    TMap<const UProceduralMeshComponent*, FMeshBuffer> ProcMeshBufferMap;
+    TMap<uint32, FMeshBuffer> ProcMeshBufferMap;
 
 public:
 
@@ -36,5 +37,6 @@ public:
 
 	FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
-    FMeshBuffer* GetProcMeshBuffer(const UProceduralMeshComponent* ProcMeshComp, const UProceduralMeshComponent::FMeshSection& MeshSection);
+    // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
+    FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
 };
