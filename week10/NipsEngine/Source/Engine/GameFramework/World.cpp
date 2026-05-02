@@ -169,11 +169,14 @@ void UWorld::UpdateOverlaps()
                 UPrimitiveComponent* B = CollisionCandidates[j];
                 if (A != B)
 				{
+					// Normal 의 경우 A -> B 방향
 					FCollisionResult CollisionResult = FCollision::CheckOverlap(A, B);
 
 					if (CollisionResult.bHit)
-					{
+                    {
                         A->AddOverlap(B, CollisionResult);
+                        // B -> A 방향으로 바꿔주기
+                        CollisionResult.HitNormal *= -1;
                         B->AddOverlap(A, CollisionResult);
 					}
 				}
