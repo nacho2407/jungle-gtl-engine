@@ -118,6 +118,9 @@ public:
     virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
     virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {}
 
+	void MarkPendingKill() { bPendingKill = true; }
+    bool IsPendingKill() const { return bPendingKill; }
+
 protected:
 	void NotifyComponentRegistered(UActorComponent* Component);
 	void NotifyComponentUnregistered(UActorComponent* Component);
@@ -141,4 +144,6 @@ protected:
 	uint64 OnComponentBeginOverlapHandleId = 0;
     uint64 OnComponentEndOverlapHandleId = 0;
     uint64 OnComponentHitHandleId = 0;
+
+	bool bPendingKill = false;
 };

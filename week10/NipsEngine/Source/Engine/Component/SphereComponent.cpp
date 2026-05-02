@@ -28,9 +28,6 @@ void USphereComponent::UpdateWorldAABB() const
 {
     const FVector Center = GetWorldLocation();
 
-    // World scale 반영 (비균일 스케일까지 고려)
-    const FVector Scale = GetWorldScale();
-
     const float ScaledRadius = GetScaledSphereRadius();
     WorldAABB.Min = Center - FVector(ScaledRadius, ScaledRadius, ScaledRadius);
     WorldAABB.Max = Center + FVector(ScaledRadius, ScaledRadius, ScaledRadius);

@@ -97,6 +97,7 @@ void UWorld::Tick(float DeltaTime)
 
     SyncSpatialIndex();
     UpdateOverlaps();
+    CheckPendingKill();
 }
 
 void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
@@ -183,5 +184,23 @@ void UWorld::UpdateOverlaps()
 			}
             A->ResolveOverlaps();
 		}
+	}
+}
+
+void UWorld::CheckPendingKill()
+{
+	if (PersistentLevel)
+	{
+        TArray<AActor*> PendingKillActors;
+		for (AActor* Actor : PersistentLevel->GetActors())
+		{
+			if (Actor->IsPendingKill())
+			{
+                PendingKillActors.push_back(Actor);
+			}
+		}
+
+		for (AActor* Actor : PendingKillActors)
+            DestroyActor(Actor);
 	}
 }

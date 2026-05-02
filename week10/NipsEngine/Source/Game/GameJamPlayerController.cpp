@@ -69,6 +69,8 @@ void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y
                 ABladeSlash* Slash = World->SpawnActor<ABladeSlash>();
                 Slash->InitDefaultComponents();
                 Slash->SetActorLocation(PossessedActor->GetActorLocation());
+                Slash->SetActorRotation(PossessedActor->GetActorRotation());
+                Slash->SetActorScale(FVector(10, 1, 1));
             }
         }
         break;

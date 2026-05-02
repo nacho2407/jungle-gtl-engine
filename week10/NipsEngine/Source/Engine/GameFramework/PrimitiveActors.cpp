@@ -631,7 +631,7 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         float D = FVector::DotProduct(N, P);
 
         FVector SplitDir;
-        SplitDir = FVector::CrossProduct(N, FVector::UpVector);
+        SplitDir = FVector::CrossProduct(N, FVector::ForwardVector);
         if (SplitDir.IsNearlyZero())
         {
             SplitDir = FVector::CrossProduct(N, FVector::RightVector);
@@ -647,12 +647,12 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
 
         Actor1->InitDestructibleActor(ProcMeshComp1);
-        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
+        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
 
         Actor2->InitDestructibleActor(ProcMeshComp2);
-        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
+        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
 
-        SetVisible(false);
+        MarkPendingKill();
 	}
 }
 
