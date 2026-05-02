@@ -1,4 +1,5 @@
 function BeginPlay()
+    obj:SetCarWashStreamVisible(false)
 end
 
 function EndPlay()
@@ -8,7 +9,10 @@ function OnOverlap(OtherActor)
 end
 
 function Tick(dt)
-    if Input.GetKey(Key.Space) then
+    local isSpraying = Input.GetKey(Key.Space)
+    obj:SetCarWashStreamVisible(isSpraying)
+
+    if isSpraying then
         obj:FireCarWashRay()
     end
 end

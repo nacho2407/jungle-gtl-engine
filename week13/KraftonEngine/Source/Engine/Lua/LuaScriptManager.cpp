@@ -1,14 +1,11 @@
-#include "LuaScriptManager.h"
+﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
 #include "Component/Movement/CarMovementComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
-#include "Component/CameraComponent.h"
 #include "Component/DirtComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Debug/DrawDebugHelpers.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/CameraManager.h"
 #include "GameFramework/World.h"
@@ -104,81 +101,6 @@ FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
 	}
 
 	return InputSystem::Get().MakeSnapshot();
-}
-
-namespace
-{
-	UStaticMeshComponent* FindHeldStaticMesh(AActor& Actor)
-	{
-		UStaticMeshComponent* FirstStaticMesh = nullptr;
-		USceneComponent* RootComponent = Actor.GetRootComponent();
-
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(Component);
-			if (!StaticMesh)
-			{
-				continue;
-			}
-
-			if (!FirstStaticMesh)
-			{
-				FirstStaticMesh = StaticMesh;
-			}
-
-			if (StaticMesh != RootComponent && StaticMesh->GetParent() == RootComponent)
-			{
-				return StaticMesh;
-			}
-		}
-
-		return FirstStaticMesh;
-	}
-
-	UCameraComponent* FindOwnedCamera(AActor& Actor)
-	{
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			if (UCameraComponent* Camera = Cast<UCameraComponent>(Component))
-			{
-				return Camera;
-			}
-		}
-
-		return nullptr;
-	}
-
-	bool FireCarWashRay(AActor& Actor)
-	{
-		UWorld* World = Actor.GetWorld();
-		if (!World)
-		{
-			return false;
-		}
-
-		UStaticMeshComponent* HeldMesh = FindHeldStaticMesh(Actor);
-		const FVector Start = HeldMesh ? HeldMesh->GetWorldLocation() : Actor.GetActorLocation();
-
-		FVector Direction = Actor.GetActorForward();
-		if (UCameraComponent* ActiveCamera = World->GetActiveCamera())
-		{
-			Direction = ActiveCamera->GetForwardVector();
-		}
-		else if (UCameraComponent* OwnedCamera = FindOwnedCamera(Actor))
-		{
-			Direction = OwnedCamera->GetForwardVector();
-		}
-
-		if (Direction.IsNearlyZero())
-		{
-			return false;
-		}
-
-		Direction.Normalize();
-		constexpr float RayLength = 100.0f;
-		DrawDebugLine(World, Start, Start + Direction * RayLength, FColor::Red(), 0.0f);
-		return UDirtComponent::WashFirstHitDirt(World, Start, Direction, RayLength);
-	}
 }
 
 void FLuaScriptManager::RegisterLuaHelpers(sol::state& Lua)
@@ -361,7 +283,12 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 		"FireCarWashRay", [](AActor& Actor)
 	{
-		return FireCarWashRay(Actor);
+		return UDirtComponent::FireCarWashRay(Actor);
+	},
+
+		"SetCarWashStreamVisible", [](AActor& Actor, bool bVisible)
+	{
+		UDirtComponent::SetCarWashStreamVisible(Actor, bVisible);
 	},
 
 		"UUID", sol::property([](AActor& Actor)
