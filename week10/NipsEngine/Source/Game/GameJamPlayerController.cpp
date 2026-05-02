@@ -1,8 +1,9 @@
-#include "Game/GameJamPlayerController.h"
+﻿#include "Game/GameJamPlayerController.h"
 
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
 #include "GameFramework/PrimitiveActors.h"
+#include "GameFramework/World.h"
 
 DEFINE_CLASS(AGameJamPlayerController, APlayerController)
 REGISTER_FACTORY(AGameJamPlayerController)
@@ -15,6 +16,25 @@ AActor* AGameJamPlayerController::SpawnDefaultPawn()
 void AGameJamPlayerController::HandleKeyPressed(int VK)
 {
 	APlayerController::HandleKeyPressed(VK);
+
+    switch (VK)
+    {
+    case 'E':
+    {
+        if (PossessedActor)
+        {
+            UWorld* World = PossessedActor->GetFocusedWorld();
+            if (World)
+            {
+                ABullet* Bullet = World->SpawnActor<ABullet>();
+                Bullet->InitDefaultComponents();
+                Bullet->SetActorLocation(PossessedActor->GetActorLocation());
+            }
+        }
+
+        break;
+    }
+    }
 }
 
 void AGameJamPlayerController::HandleKeyDown(int VK)

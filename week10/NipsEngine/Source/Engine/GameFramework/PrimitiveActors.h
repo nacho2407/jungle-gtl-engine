@@ -225,3 +225,11 @@ public:
 	void InitDefaultComponents() override;
 	void Tick(float DeltaTime) override;
 };
+
+class ABullet : public AActor
+{
+public:
+    DECLARE_CLASS(ABullet, AActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
