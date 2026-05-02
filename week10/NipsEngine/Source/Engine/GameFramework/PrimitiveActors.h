@@ -246,7 +246,6 @@ class ADestructibleActor : public AActor
 {
 public:
     DECLARE_CLASS(ADestructibleActor, AActor)
-    ADestructibleActor() = default;
 
 	// 데이터를 입력으로 받아 초기화
 	void InitDestructibleActor(UStaticMesh* StaticMesh);

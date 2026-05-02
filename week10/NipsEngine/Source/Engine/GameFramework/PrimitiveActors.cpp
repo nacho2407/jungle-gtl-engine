@@ -656,13 +656,24 @@ void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, 
 
 void ADestructibleActor::PostDuplicate(UObject* Original)
 {
+	// 해당 함수에서 모든 걸 복사하기 때문에 추가로 복사를 고려할 필요 없음
     AActor::PostDuplicate(Original);
 
-	ADestructibleActor* Actor = Cast<ADestructibleActor>(Original);
+	// 복사된 것중 필요한 Comp 만 연결하는 과정
+    ProcMeshComp = nullptr;
+    BoxComponent = nullptr;
 
-	ProcMeshComp = AddComponent<UProceduralMeshComponent>();
-	// Property 에 있는 건 자동으로 옮겨주고, 거기에 없는 Sections 정보 등만 옮기기
-    ProcMeshComp->CreateFrom(Actor->ProcMeshComp);
-    
-	BoxComponent = AddComponent<UBoxComponent>();
+    for (UActorComponent* Comp : GetComponents())
+    {
+        if (!Comp) continue;
+        if (ProcMeshComp == nullptr && Comp->IsA<UProceduralMeshComponent>())
+        {
+            ProcMeshComp = static_cast<UProceduralMeshComponent*>(Comp);
+        }
+        else if (BoxComponent == nullptr && Comp->IsA<UBoxComponent>())
+        {
+            BoxComponent = static_cast<UBoxComponent*>(Comp);
+        }
+        if (ProcMeshComp && BoxComponent) break;
+    }
 }
