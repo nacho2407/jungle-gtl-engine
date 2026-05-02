@@ -208,5 +208,6 @@ void FLuaRuntime::BindEngineTypes()
         return FSoundManager::Get();
         });
 
+    // Coroutine관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
 }
