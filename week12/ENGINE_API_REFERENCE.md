@@ -91,6 +91,59 @@ The workspace `.vscode/settings.json` includes this folder through:
 
 When `Engine.API` expands, update both this reference and the matching stub files.
 
+## Vector
+
+`Vector(x, y, z)` creates an engine `FVector`. Arithmetic operators are bound, so Lua code can use `+`, `-`, unary `-`, `* scalar`, and `/ scalar`.
+
+Common helpers:
+
+```lua
+local move = Vector(1, 1, 0)
+local dir = move:Normalized()
+local len = move:Size()
+local flatDir = move:Normalized2D()
+
+local dot = dir:Dot(Actor:GetActorForwardVector())
+local cross = dir:Cross(Vector(0, 0, 1))
+local distance = Actor.Location:DistanceTo(target.Location)
+local pos = Vector.Lerp(Actor.Location, target.Location, 0.5)
+local forward = Vector.Forward()
+```
+
+Available methods:
+
+```lua
+Vector:Size()
+Vector:Length()
+Vector:SizeSquared()
+Vector:LengthSquared()
+Vector:Size2D()
+Vector:SizeSquared2D()
+Vector:Normalize([tolerance]) -- mutates self, returns success
+Vector:GetSafeNormal([tolerance])
+Vector:Normalized([tolerance])
+Vector:GetSafeNormal2D([tolerance])
+Vector:Normalized2D([tolerance])
+Vector:Dot(other)
+Vector:DotProduct(other)
+Vector:Cross(other)
+Vector:CrossProduct(other)
+Vector:DistanceTo(other)
+Vector:DistanceSquaredTo(other)
+Vector.Distance(a, b)
+Vector.Dist(a, b)
+Vector.DistSquared(a, b)
+Vector.Lerp(a, b, t)
+Vector.Zero()
+Vector.One()
+Vector.Forward()
+Vector.Backward()
+Vector.Right()
+Vector.Left()
+Vector.Up()
+Vector.Down()
+```
+
 ## Object, Actor, Component
 
 These are object userdata methods, not `Engine.API` globals. A script attached to an actor receives `Actor`, `Owner`, and `Component` in its environment.
@@ -252,9 +305,29 @@ Engine.API.World.FindActorsByType(typeName)
 Engine.API.World.GetAllActors()
 Engine.API.World.GetActorCount()
 Engine.API.World.IsValidActor(actor)
+Engine.API.World.GetPlayerController()
+Engine.API.World.GetPossessedActor()
+Engine.API.World.GetViewTargetActor()
+Engine.API.World.GetViewTargetCamera()
 Engine.API.World.SpawnActor(typeName)
 Engine.API.World.SpawnActorFromPrefab(relativePath)
 Engine.API.World.DestroyActor(actor)
+```
+
+`GetPlayerController` works in both GameClient and PIE by returning the engine's primary runtime controller when one exists. This is the preferred bridge when Lua needs the possessed player actor or current gameplay camera.
+
+```lua
+local controller = Engine.API.World.GetPlayerController()
+local player = Engine.API.World.GetPossessedActor()
+local camera = Engine.API.World.GetViewTargetCamera()
+
+if controller and player and camera then
+    local mouse = Engine.API.Input.GetMouseDelta()
+    local rot = player.Rotation
+    rot.Z = rot.Z + mouse.X * 0.003
+    player.Rotation = rot
+    camera:add_pitch_input(-mouse.Y * 0.003)
+end
 ```
 
 Prefab paths are constrained under `Asset/`. If only a file name is passed, the engine looks under `Asset/Prefab/`.
@@ -265,6 +338,21 @@ local blade = Engine.API.World.SpawnActorFromPrefab("Asset/Prefab/BladePickup.pr
 ```
 
 Spawned prefabs do not preserve saved UUIDs, so the same prefab can be spawned multiple times safely. Actor names are made unique automatically when there is a collision.
+
+Prefab instances are intentionally treated as normal scene actors after spawn. The scene saves the actor/component data directly; it does not keep a live link back to the `.prefab` file, and there is no apply/revert override model yet. In the editor, `.prefab` files can be spawned from the Content Browser by dragging them into a viewport or by using `Spawn Prefab at Origin`.
+
+Actor/component bindings expose enough of the player-controller and movement surface for Lua gameplay:
+
+```lua
+local projectile = Engine.API.World.SpawnActor("ABullet")
+local movement = projectile and projectile:GetComponent("ProjectileMovementComponent")
+if movement then
+    movement.Velocity = player:GetActorForwardVector() * 40.0
+    movement.MaxSpeed = 100.0
+end
+```
+
+`Actor:GetComponent(typeName)` and `Actor:AddComponent(typeName[, attachToRoot])` accept both native names such as `UProjectileMovementComponent` and Lua-style names such as `ProjectileMovementComponent`. The game-facing component set currently includes scene, primitive, shape/collider, mesh, camera, spring arm, sound, script, movement/projectile/rotating/interp/pursuit, decal, fog, light, billboard, SubUV, text render, fireball, and the common box/sphere/capsule collider components. Editor-only components should still be avoided in game Lua.
 
 ## Audio
 
