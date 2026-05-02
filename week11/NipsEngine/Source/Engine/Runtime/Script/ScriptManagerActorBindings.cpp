@@ -9,6 +9,17 @@
 #include "Component/FireballComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/MeshComponent.h"
+#include "Component/Movement/InterpToMovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
+#include "Component/Movement/PursuitMovementComponent.h"
+#include "Component/Movement/RotatingMovementComponent.h"
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/LightComponent.h"
+#include "Component/PostProcess/Light/LightComponentBase.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Component/PostProcess/Light/SpotlightComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ProceduralMeshComponent.h"
 #include "Component/SceneComponent.h"
@@ -20,6 +31,7 @@
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/PlayerController.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "Runtime/Script/ScriptUtils.h"
 #include "ThirdParty/sol/sol.hpp"
@@ -50,6 +62,17 @@ namespace
         if (MatchLuaTypeName(TypeName, "UDecalComponent", "DecalComponent")) return &UDecalComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UFireballComponent", "FireballComponent")) return &UFireballComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UHeightFogComponent", "HeightFogComponent")) return &UHeightFogComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UMovementComponent", "MovementComponent")) return &UMovementComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UProjectileMovementComponent", "ProjectileMovementComponent")) return &UProjectileMovementComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UPursuitMovementComponent", "PursuitMovementComponent")) return &UPursuitMovementComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UInterpToMovementComponent", "InterpToMovementComponent")) return &UInterpToMovementComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "URotatingMovementComponent", "RotatingMovementComponent")) return &URotatingMovementComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "ULightComponentBase", "LightComponentBase")) return &ULightComponentBase::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "ULightComponent", "LightComponent")) return &ULightComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UAmbientLightComponent", "AmbientLightComponent")) return &UAmbientLightComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UDirectionalLightComponent", "DirectionalLightComponent")) return &UDirectionalLightComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UPointLightComponent", "PointLightComponent")) return &UPointLightComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "USpotlightComponent", "SpotlightComponent")) return &USpotlightComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UBoxComponent", "BoxComponent")) return &UBoxComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "USphereComponent", "SphereComponent")) return &USphereComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UCapsuleComponent", "CapsuleComponent")) return &UCapsuleComponent::s_TypeInfo;
@@ -170,6 +193,8 @@ void FScriptManager::BindActorTypes()
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, AActor, "Actor", UObject)
     LUA_PROPERTY(Name, [](AActor& Actor) -> FString
                  { return Actor.GetName(); });
+    LUA_PROPERTY(TypeName, [](AActor& Actor) -> FString
+                 { return Actor.GetTypeInfo() && Actor.GetTypeInfo()->name ? Actor.GetTypeInfo()->name : ""; });
     LUA_RW_PROPERTY(Location, GetActorLocation, SetActorLocation);
     LUA_RW_PROPERTY(Rotation, GetActorRotation, SetActorRotation);
     LUA_RW_PROPERTY(Scale, GetActorScale, SetActorScale);
@@ -180,6 +205,8 @@ void FScriptManager::BindActorTypes()
     LUA_RW_PROPERTY(TickInEditor, ShouldTickInEditor, SetTickInEditor);
     LUA_METHOD(Duplicate, Duplicate);
     LUA_METHOD(GetActorForwardVector, GetActorForward);
+    LUA_METHOD(GetActorRightVector, GetActorRight);
+    LUA_METHOD(GetActorUpVector, GetActorUp);
     LUA_METHOD(AddTag, AddTag);
     LUA_METHOD(RemoveTag, RemoveTag);
     LUA_METHOD(HasTag, HasTag);
@@ -187,6 +214,8 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(GetRootComponent, GetRootComponent);
     LUA_METHOD(Add_Actor_World_Offset, AddActorWorldOffset);
     LUA_METHOD(Get_Actor_Forward, GetActorForward);
+    LUA_METHOD(Get_Actor_Right, GetActorRight);
+    LUA_METHOD(Get_Actor_Up, GetActorUp);
     LUA_SET(GetComponents, &GetComponents);
     LUA_SET(Get_Components, &GetComponents);
     LUA_SET(GetComponent, &GetComponentByType);
@@ -198,5 +227,18 @@ void FScriptManager::BindActorTypes()
     LUA_SET(GetTags, &ActorTagsToLuaTable);
     LUA_SET(Get_Static_Mesh_Component, [](AActor& Actor)
             { return Cast<UStaticMeshComponent>(GetComponentByType(Actor, "StaticMeshComponent")); });
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, APlayerController, "PlayerController", AActor, UObject)
+    LUA_METHOD(Possess, Possess);
+    LUA_METHOD(UnPossess, UnPossess);
+    LUA_METHOD(SetViewTarget, SetViewTarget);
+    LUA_METHOD(SetViewTargetCamera, SetViewTargetCamera);
+    LUA_METHOD(GetPossessedActor, GetPossessedActor);
+    LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
+    LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);
+    LUA_RO_PROPERTY(PossessedActor, GetPossessedActor);
+    LUA_RO_PROPERTY(ViewTargetActor, GetViewTargetActor);
+    LUA_RO_PROPERTY(ViewTargetCamera, GetViewTargetCamera);
     LUA_END_TYPE();
 }

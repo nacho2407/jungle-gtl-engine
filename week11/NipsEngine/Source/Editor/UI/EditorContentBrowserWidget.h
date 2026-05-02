@@ -95,6 +95,7 @@ private:
 	bool IsProjectRootPath(const std::filesystem::path& Path) const;
 	bool IsPreviewableImage(const FString& Extension) const;
 	bool IsMaterialAsset(const FString& Extension) const;
+	bool IsPrefabAsset(const FString& Extension) const;
 	FString MakeRelativeProjectPath(const std::filesystem::path& Path) const;
 
 private:

@@ -21,6 +21,113 @@ Vector = {}
 ---@return Vector
 function Vector(x, y, z) end
 
+---@return number
+function Vector:Size() end
+
+---@return number
+function Vector:Length() end
+
+---@return number
+function Vector:SizeSquared() end
+
+---@return number
+function Vector:LengthSquared() end
+
+---@return number
+function Vector:Size2D() end
+
+---@return number
+function Vector:SizeSquared2D() end
+
+---@param tolerance? number
+---@return boolean
+function Vector:Normalize(tolerance) end
+
+---@param tolerance? number
+---@return Vector
+function Vector:GetSafeNormal(tolerance) end
+
+---@param tolerance? number
+---@return Vector
+function Vector:Normalized(tolerance) end
+
+---@param tolerance? number
+---@return Vector
+function Vector:GetSafeNormal2D(tolerance) end
+
+---@param tolerance? number
+---@return Vector
+function Vector:Normalized2D(tolerance) end
+
+---@param other Vector
+---@return number
+function Vector:Dot(other) end
+
+---@param other Vector
+---@return number
+function Vector:DotProduct(other) end
+
+---@param other Vector
+---@return Vector
+function Vector:Cross(other) end
+
+---@param other Vector
+---@return Vector
+function Vector:CrossProduct(other) end
+
+---@param other Vector
+---@return number
+function Vector:DistanceTo(other) end
+
+---@param other Vector
+---@return number
+function Vector:DistanceSquaredTo(other) end
+
+---@param a Vector
+---@param b Vector
+---@return number
+function Vector.Distance(a, b) end
+
+---@param a Vector
+---@param b Vector
+---@return number
+function Vector.Dist(a, b) end
+
+---@param a Vector
+---@param b Vector
+---@return number
+function Vector.DistSquared(a, b) end
+
+---@param a Vector
+---@param b Vector
+---@param t number
+---@return Vector
+function Vector.Lerp(a, b, t) end
+
+---@return Vector
+function Vector.Zero() end
+
+---@return Vector
+function Vector.One() end
+
+---@return Vector
+function Vector.Forward() end
+
+---@return Vector
+function Vector.Backward() end
+
+---@return Vector
+function Vector.Right() end
+
+---@return Vector
+function Vector.Left() end
+
+---@return Vector
+function Vector.Up() end
+
+---@return Vector
+function Vector.Down() end
+
 ---@class Quat
 ---@field X number
 ---@field Y number
@@ -68,6 +175,7 @@ function Object:GetName() end
 function Object:GetType() end
 
 ---@class ActorComponent: Object
+---@field TypeName string
 ---@field Owner AActor
 ---@field Active boolean
 ---@field AutoActivate boolean
@@ -115,6 +223,56 @@ function SceneComponent:GetRelativeLocation() end
 
 ---@param location Vector
 function SceneComponent:SetRelativeLocation(location) end
+
+---@class MovementComponent: ActorComponent
+---@field Velocity Vector
+---@field PendingInputVector Vector
+---@field PlaneConstraintNormal Vector
+local MovementComponent = {}
+
+---@param component SceneComponent
+function MovementComponent:SetUpdatedComponent(component) end
+
+---@return SceneComponent|nil
+function MovementComponent:GetUpdatedComponent() end
+
+---@param direction Vector
+---@param scale? number
+function MovementComponent:AddInputVector(direction, scale) end
+
+---@return Vector
+function MovementComponent:ConsumeInputVector() end
+
+---@return number
+function MovementComponent:GetMaxSpeed() end
+
+function MovementComponent:StopMovementImmediately() end
+
+---@class ProjectileMovementComponent: MovementComponent
+---@field InitialSpeed number
+---@field MaxSpeed number
+---@field GravityScale number
+---@field RotationFollowsVelocity boolean
+local ProjectileMovementComponent = {}
+
+---@class RotatingMovementComponent: MovementComponent
+---@field RotationRate Vector
+---@field PivotTranslation Vector
+---@field RotationInLocalSpace boolean
+local RotatingMovementComponent = {}
+
+---@class InterpToMovementComponent: MovementComponent
+---@field Duration number
+---@field AutoActivate boolean
+local InterpToMovementComponent = {}
+
+---@param point Vector
+function InterpToMovementComponent:AddControlPoint(point) end
+---@param index integer
+function InterpToMovementComponent:RemoveControlPoint(index) end
+function InterpToMovementComponent:Initiate() end
+function InterpToMovementComponent:Reset() end
+function InterpToMovementComponent:ResetAndHalt() end
 
 ---@class SoundComponent: SceneComponent
 ---@field Sound string
@@ -214,8 +372,93 @@ function PrimitiveComponent:is_overlapping_actor(other) end
 
 function PrimitiveComponent:clear_overlaps() end
 
+---@class ShapeComponent: PrimitiveComponent
+local ShapeComponent = {}
+
+---@class BoxComponent: ShapeComponent
+local BoxComponent = {}
+
+---@class SphereComponent: ShapeComponent
+---@field SphereRadius number
+local SphereComponent = {}
+
+---@return number
+function SphereComponent:GetSphereRadius() end
+
+---@class CapsuleComponent: ShapeComponent
+---@field CapsuleHalfHeight number
+---@field CapsuleRadius number
+local CapsuleComponent = {}
+
+---@return number
+function CapsuleComponent:GetCapsuleHalfHeight() end
+---@return number
+function CapsuleComponent:GetCapsuleRadius() end
+
+---@class FireballComponent: PrimitiveComponent
+---@field Intensity number
+---@field Radius number
+---@field RadiusFallOff number
+local FireballComponent = {}
+
+---@class HeightFogComponent: PrimitiveComponent
+---@field FogDensity number
+---@field HeightFalloff number
+---@field FogHeight number
+---@field FogStartDistance number
+---@field FogCutoffDistance number
+---@field FogMaxOpacity number
+local HeightFogComponent = {}
+
+---@class SubUVComponent: BillboardComponent
+---@field FrameIndex integer
+---@field Loop boolean
+local SubUVComponent = {}
+
+---@param particleName string
+function SubUVComponent:SetParticle(particleName) end
+---@param fps number
+function SubUVComponent:SetFrameRate(fps) end
+function SubUVComponent:Play() end
+
+---@class TextRenderComponent: PrimitiveComponent
+---@field Text string
+---@field FontSize number
+local TextRenderComponent = {}
+
+---@param fontName string
+function TextRenderComponent:SetFont(fontName) end
+---@param x number
+---@param y number
+function TextRenderComponent:SetScreenPosition(x, y) end
+
+---@class LightComponentBase: SceneComponent
+---@field Intensity number
+---@field CastShadows boolean
+local LightComponentBase = {}
+
+---@class LightComponent: LightComponentBase
+local LightComponent = {}
+
+---@class AmbientLightComponent: LightComponent
+local AmbientLightComponent = {}
+
+---@class DirectionalLightComponent: LightComponent
+local DirectionalLightComponent = {}
+
+---@class PointLightComponent: LightComponent
+---@field AttenuationRadius number
+---@field LightFalloffExponent number
+local PointLightComponent = {}
+
+---@class SpotlightComponent: PointLightComponent
+---@field InnerConeAngle number
+---@field OuterConeAngle number
+local SpotlightComponent = {}
+
 ---@class AActor: Object
 ---@field Name string
+---@field TypeName string
 ---@field Location Vector
 ---@field Rotation Vector
 ---@field Scale Vector
@@ -231,6 +474,12 @@ function AActor:Duplicate() end
 
 ---@return Vector
 function AActor:GetActorForwardVector() end
+
+---@return Vector
+function AActor:GetActorRightVector() end
+
+---@return Vector
+function AActor:GetActorUpVector() end
 
 ---@param tag string
 function AActor:AddTag(tag) end
@@ -250,6 +499,12 @@ function AActor:Add_Actor_World_Offset(offset) end
 ---@return Vector
 function AActor:Get_Actor_Forward() end
 
+---@return Vector
+function AActor:Get_Actor_Right() end
+
+---@return Vector
+function AActor:Get_Actor_Up() end
+
 ---@return ActorComponent[]
 function AActor:Get_Components() end
 
@@ -262,6 +517,26 @@ function AActor:Get_Component_By_Type(typeName) end
 
 ---@return StaticMeshComponent|nil
 function AActor:Get_Static_Mesh_Component() end
+
+---@class PlayerController: AActor
+---@field PossessedActor AActor|nil
+---@field ViewTargetActor AActor|nil
+---@field ViewTargetCamera CameraComponent|nil
+local PlayerController = {}
+
+---@param actor AActor
+function PlayerController:Possess(actor) end
+function PlayerController:UnPossess() end
+---@param actor AActor
+function PlayerController:SetViewTarget(actor) end
+---@param camera CameraComponent
+function PlayerController:SetViewTargetCamera(camera) end
+---@return AActor|nil
+function PlayerController:GetPossessedActor() end
+---@return AActor|nil
+function PlayerController:GetViewTargetActor() end
+---@return CameraComponent|nil
+function PlayerController:GetViewTargetCamera() end
 
 ---@class ScriptSelf: ActorComponent
 local ScriptSelf = {}

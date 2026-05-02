@@ -916,6 +916,9 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaTimeAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
+    <ClCompile Include="Source\Game\GameJamPlayerController.cpp">
+      <Filter>Source\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\GameSplashScreen.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -1586,6 +1589,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameJamPlayerController.h">
+      <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h">
       <Filter>Source\Engine\Slate</Filter>

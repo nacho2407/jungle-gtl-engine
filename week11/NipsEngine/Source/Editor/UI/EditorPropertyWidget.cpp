@@ -23,6 +23,9 @@
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Object/FName.h"
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
 #include <functional>
 #include "Component/HeightFogComponent.h"
 #include "Selection/SelectionManager.h"
@@ -139,6 +142,32 @@ namespace
 
         return ValidSceneName + "_" + ActorName;
     }
+
+	static bool IsBlankString(const FString& Value)
+	{
+		return std::all_of(
+			Value.begin(),
+			Value.end(),
+			[](unsigned char Ch)
+			{
+				return std::isspace(Ch) != 0;
+			});
+	}
+
+	static FString MakeScriptReferenceFromPath(const FString& PathText)
+	{
+		if (PathText.empty())
+		{
+			return {};
+		}
+
+		std::filesystem::path ScriptPath(FPaths::ToWide(PathText));
+		if (ScriptPath.is_absolute())
+		{
+			return FPaths::ToRelativeString(ScriptPath.lexically_normal().wstring());
+		}
+		return FPaths::Normalize(PathText);
+	}
  }
 
 // 1. 메뉴 항목의 이름과, 해당 컴포넌트를 생성&초기화할 함수(람다)를 담는 구조체
@@ -1162,12 +1191,36 @@ void FEditorPropertyWidget::RenderComponentProperties()
         if (ImGui::Button("Create Script"))
 		{
             FString ScriptPath = ScriptComp->GetScriptName();
-            ScriptMgr.CreateScript(ScriptPath);
+            if (ScriptPath.empty() || IsBlankString(ScriptPath))
+            {
+                if (EditorEngine)
+                {
+                    EditorEngine->GetMainPanel().PushFooterLog("Script name is empty");
+                }
+            }
+            else if (ScriptMgr.CreateScript(ScriptPath))
+            {
+                ScriptComp->ReloadLuaProperties();
+                if (EditorEngine)
+                {
+                    EditorEngine->GetMainPanel().PushFooterLog("Script created");
+                }
+            }
         }
         if (ImGui::Button("Edit Script"))
 		{
             FString ScriptPath = ScriptComp->GetScriptName();
-            ScriptMgr.EditScript(ScriptPath);
+            if (ScriptPath.empty() || IsBlankString(ScriptPath))
+            {
+                if (EditorEngine)
+                {
+                    EditorEngine->GetMainPanel().PushFooterLog("No script selected");
+                }
+            }
+            else if (!ScriptMgr.EditScript(ScriptPath) && EditorEngine)
+            {
+                EditorEngine->GetMainPanel().PushFooterLog("Script file not found");
+            }
         }
 	}
 	ImGui::Separator();
@@ -1309,6 +1362,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		}
 		else if (strcmp(Prop.Name, "ScriptName") == 0)
 		{
+            FScriptManager::Get().RefreshLuaScriptFiles();
             TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
                 FScriptManager::Get().GetScriptArray();
 
@@ -1321,6 +1375,19 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
                 *Val = Buffer;
                 bChanged = true;
             }
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("LuaScriptContentItem"))
+                {
+                    const char* PayloadPath = static_cast<const char*>(Payload->Data);
+                    if (PayloadPath)
+                    {
+                        *Val = MakeScriptReferenceFromPath(PayloadPath);
+                        bChanged = true;
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
 
             ImGui::SameLine();
 
@@ -1329,11 +1396,16 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
             {
                 for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
                 {
-                    const FString Path = ScriptName.ToString();
-                    const bool bSelected = (Current == Path);
-                    if (ImGui::Selectable(Path.c_str(), bSelected))
+                    if (ScriptInfo.ScriptPath.empty() || !std::filesystem::exists(ScriptInfo.ScriptPath))
                     {
-                        *Val = Path;
+                        continue;
+                    }
+                    const FString Key = ScriptName.ToString();
+                    const FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+                    const bool bSelected = (Current == Key || Current == RelativePath);
+                    if (ImGui::Selectable(RelativePath.c_str(), bSelected))
+                    {
+                        *Val = RelativePath;
                         bChanged = true;
                     }
                     if (bSelected)
@@ -1342,6 +1414,17 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
                     }
                 }
                 ImGui::EndCombo();
+            }
+
+            if (!Current.empty() && !FScriptManager::Get().HasScript(FName(Current)))
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Missing script file.");
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Clear##MissingScript"))
+                {
+                    Val->clear();
+                    bChanged = true;
+                }
             }
 
             ImGui::PopID();

@@ -79,8 +79,10 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
 	RootPath = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+	std::error_code CreateScriptDirEc;
+	std::filesystem::create_directories(RootPath / L"Asset/Script", CreateScriptDirEc);
 	BrowserRootPaths.clear();
-	for (const wchar_t* RootName : { L"Asset", L"Shaders" })
+	for (const wchar_t* RootName : { L"Asset", L"LuaScript", L"Shaders" })
 	{
 		std::filesystem::path Candidate = (RootPath / RootName).lexically_normal();
 		std::error_code Ec;
@@ -725,6 +727,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		{
 			EditorEngine->GetMainPanel().GetSceneWidget().LoadSceneFromFilePath(FPaths::ToUtf8(Item.Path.wstring()));
 		}
+		else if (IsPrefabAsset(Item.Extension))
+		{
+			EditorEngine->GetMainPanel().PushFooterLog("Prefab selected. Drag to viewport or right-click to spawn.");
+		}
 		else
 		{
 			ShellExecuteW(nullptr, L"open", Item.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -772,6 +778,12 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 
 	ImGui::Separator();
 	ImGui::BeginDisabled(!bHasSelectedItem || SelectedPath.empty());
+	const FString SelectedExtension = ToLower(FPaths::ToUtf8(SelectedPath.extension().wstring()));
+	if (ImGui::MenuItem("Spawn Prefab at Origin", nullptr, false, IsPrefabAsset(SelectedExtension)))
+	{
+		EditorEngine->GetMainPanel().SpawnPrefabAtOrigin(FPaths::ToUtf8(SelectedPath.wstring()));
+		ImGui::CloseCurrentPopup();
+	}
 	if (ImGui::MenuItem("Rename", "F2"))
 	{
 		RequestRenameSelectedItem();
@@ -1150,6 +1162,19 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 		{
 			ImGui::TextDisabled("No texture parameter preview.");
 		}
+		return;
+	}
+
+	if (IsPrefabAsset(Extension))
+	{
+		ImGui::Spacing();
+		ImGui::TextDisabled("Prefab Template");
+		ImGui::TextWrapped("Spawns a normal independent actor. Scene saves the spawned actor, not a prefab link.");
+		ImGui::Spacing();
+		if (ImGui::Button("Spawn at Origin"))
+		{
+			EditorEngine->GetMainPanel().SpawnPrefabAtOrigin(RelativePath);
+		}
 	}
 }
 
@@ -1379,6 +1404,14 @@ FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) co
 	{
 		return "MaterialContentItem";
 	}
+	if (Item.Extension == ".prefab")
+	{
+		return "PrefabContentItem";
+	}
+	if (Item.Extension == ".lua")
+	{
+		return "LuaScriptContentItem";
+	}
 	if (Item.Extension == ".png")
 	{
 		return "PNGElement";
@@ -1407,6 +1440,14 @@ ImU32 FEditorContentBrowserWidget::GetItemColor(const FContentItem& Item) const
 	if (Item.Extension == ".mat" || Item.Extension == ".matinst")
 	{
 		return ImGui::GetColorU32(ImVec4(0.65f, 0.44f, 0.72f, 1.0f));
+	}
+	if (Item.Extension == ".prefab")
+	{
+		return ImGui::GetColorU32(ImVec4(0.58f, 0.72f, 0.92f, 1.0f));
+	}
+	if (Item.Extension == ".lua")
+	{
+		return ImGui::GetColorU32(ImVec4(0.52f, 0.72f, 0.58f, 1.0f));
 	}
 	if (Item.Extension == ".png")
 	{
@@ -1446,6 +1487,11 @@ bool FEditorContentBrowserWidget::IsPreviewableImage(const FString& Extension) c
 bool FEditorContentBrowserWidget::IsMaterialAsset(const FString& Extension) const
 {
 	return Extension == ".mat" || Extension == ".matinst";
+}
+
+bool FEditorContentBrowserWidget::IsPrefabAsset(const FString& Extension) const
+{
+	return Extension == ".prefab";
 }
 
 FString FEditorContentBrowserWidget::MakeRelativeProjectPath(const std::filesystem::path& Path) const

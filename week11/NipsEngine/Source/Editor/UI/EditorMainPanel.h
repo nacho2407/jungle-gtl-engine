@@ -52,6 +52,8 @@ public:
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
 	void PushFooterLog(const FString& Message);
+	void RequestPIEViewportInputFocus();
+	bool SpawnPrefabAtOrigin(const FString& PayloadPath);
 	bool CanCloseEditor();
 
 	void ResetWidgetSelections()
@@ -86,6 +88,7 @@ private:
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
 	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
+	bool SpawnPrefabFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
 	void HandleContentBrowserViewportDrop();
 	bool DrawViewportTextButton(const char* Id, const char* Label, bool bPairFirst = false, bool bPairSecond = false);
 	bool DrawViewportIconButton(const char* Id, EViewportToolIcon Icon, const char* FallbackLabel, const char* Tooltip, bool bSelected = false, bool bEnabled = true, bool bPairFirst = false, bool bPairSecond = false);
@@ -198,6 +201,7 @@ private:
 	bool bFocusConsoleInputNextFrame = false;
 	bool bFocusConsoleButtonNextFrame = false;
 	int32 ConsoleBacktickCycleState = 0;
+	int32 PendingPIEViewportInputFocusFrames = 0;
 	float ConsoleDrawerAnim = 0.0f;
 	bool bFooterEventStateInitialized = false;
 	bool bPrevPIEPlaying = false;

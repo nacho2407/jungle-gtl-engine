@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Core/CoreMinimal.h"
+#include "Core/Logging/Log.h"
 #include <cstdarg>
 #include <functional>
 #include <sstream>
@@ -13,10 +14,17 @@
 class FEditorConsoleWidget : public FEditorWidget
 {
 public:
+	enum class EPresentationMode
+	{
+		Drawer,
+		FloatingWindow,
+	};
+
 	FEditorConsoleWidget();
 	~FEditorConsoleWidget();
 
 	static void AddLog(const char* fmt, ...);
+	static void AddLog(ELogVerbosity Verbosity, const char* fmt, ...);
 
 	virtual void Render(float DeltaTime) override;
 	void RenderDrawerToolbar();
@@ -24,15 +32,24 @@ public:
 	void RenderInputLine(const char* Id, float Width, bool bRequestFocus);
 	void Clear();
 	static void ClearHistory();
+	void SetPresentationMode(EPresentationMode InMode) { PresentationMode = InMode; }
+	EPresentationMode GetPresentationMode() const { return PresentationMode; }
+	bool IsDrawerMode() const { return PresentationMode == EPresentationMode::Drawer; }
+	bool IsFloatingWindowMode() const { return PresentationMode == EPresentationMode::FloatingWindow; }
+	static bool bShowInfoLogs;
+	static bool bShowWarningLogs;
+	static bool bShowErrorLogs;
 
 private:
 	char InputBuf[256]{};
 	static ImVector<char*> Messages;
+	static ImVector<ELogVerbosity> MessageLevels;
 	static ImVector<char*> History;
 	int32 HistoryPos = -1;
 	ImGuiTextFilter Filter;
 	static bool AutoScroll;
 	static bool ScrollToBottom;
+	EPresentationMode PresentationMode = EPresentationMode::Drawer;
 
 	// 백틱(`) 키로 포커스 요청 시 true — 다음 InputText 렌더링 직전에 SetKeyboardFocusHere 호출
 	bool bRequestFocusInput = false;

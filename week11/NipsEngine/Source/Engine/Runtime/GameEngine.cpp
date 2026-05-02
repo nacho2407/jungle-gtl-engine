@@ -79,9 +79,6 @@ void UGameEngine::Shutdown()
     // Lua Audio API로 재생한 전역 사운드는 특정 SoundComponent 소유가 아니므로 별도로 정리합니다.
     GetAudioSystem().StopAll();
 
-    FScriptManager::Get().ShutdownLuaState();
-    ShutdownRuntimeUIBackend();
-
     for (FWorldContext& Context : WorldList)
     {
         if (Context.World)
@@ -92,6 +89,9 @@ void UGameEngine::Shutdown()
     WorldList.clear();
     ActiveWorldHandle = FName::None;
     PlayerController = nullptr;
+
+    FScriptManager::Get().ShutdownLuaState();
+    ShutdownRuntimeUIBackend();
 
     UEngine::Shutdown();
 }

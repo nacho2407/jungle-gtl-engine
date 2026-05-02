@@ -7,6 +7,7 @@
 #include "Engine/Object/FName.h"
 
 #include <cctype>
+#include <cstring>
 #include <limits>
 #include <mutex>
 
@@ -68,15 +69,77 @@ FString FormatBytes(size_t Bytes)
 	return Buffer;
 }
 
+bool StartsWith(const char* Text, const char* Prefix)
+{
+	return Text && Prefix && strncmp(Text, Prefix, strlen(Prefix)) == 0;
+}
+
+FString LowerText(const char* Text)
+{
+	return Text ? ToLowerCopy(Text) : FString();
+}
+
+ELogVerbosity InferLogVerbosity(const char* Text)
+{
+	const FString Lower = LowerText(Text);
+	if (StartsWith(Text, "[ERROR]") || Lower.find("lua error") != FString::npos || Lower.find("[lua error]") != FString::npos)
+	{
+		return ELogVerbosity::Error;
+	}
+	if (StartsWith(Text, "[WARN]") || Lower.find("warning") != FString::npos || Lower.find("[lua warning]") != FString::npos)
+	{
+		return ELogVerbosity::Warning;
+	}
+	return ELogVerbosity::Log;
+}
+
+bool IsLogLevelVisible(ELogVerbosity Verbosity)
+{
+	switch (Verbosity)
+	{
+	case ELogVerbosity::Warning:
+		return FEditorConsoleWidget::bShowWarningLogs;
+	case ELogVerbosity::Error:
+		return FEditorConsoleWidget::bShowErrorLogs;
+	case ELogVerbosity::Log:
+	default:
+		return FEditorConsoleWidget::bShowInfoLogs;
+	}
+}
+
+ImVec4 GetConsoleLogColor(const char* Text, ELogVerbosity Verbosity, bool& bOutHasColor)
+{
+	bOutHasColor = true;
+	if (Verbosity == ELogVerbosity::Error)
+	{
+		return ImVec4(1.0f, 0.35f, 0.35f, 1.0f);
+	}
+	if (Verbosity == ELogVerbosity::Warning)
+	{
+		return ImVec4(1.0f, 0.82f, 0.22f, 1.0f);
+	}
+	if (StartsWith(Text, "#"))
+	{
+		return ImVec4(1.0f, 0.8f, 0.6f, 1.0f);
+	}
+	if (StartsWith(Text, "[Build]"))
+	{
+		return ImVec4(1.0f, 0.58f, 0.18f, 1.0f);
+	}
+
+	bOutHasColor = false;
+	return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
 std::mutex GConsoleLogMutex;
 }
 
 // 콘솔 초기화 시점에 입력될 명령어를 등록한다.
 FEditorConsoleWidget::FEditorConsoleWidget() 
 {
-	FLog::SetSink([](const char* Message)
+	FLog::SetDetailedSink([](ELogVerbosity Verbosity, const char* Message)
 	{
-		FEditorConsoleWidget::AddLog("%s", Message);
+		FEditorConsoleWidget::AddLog(Verbosity, "%s", Message);
 	});
 
 	// 임의의 명령어 문자열이 들어왔을 때 뒤의 함수를 실행하도록 분기한다.
@@ -113,6 +176,21 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...) {
 
 	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 	Messages.push_back(_strdup(buf));
+	MessageLevels.push_back(InferLogVerbosity(buf));
+	if (AutoScroll) ScrollToBottom = true;
+}
+
+void FEditorConsoleWidget::AddLog(ELogVerbosity Verbosity, const char* fmt, ...)
+{
+	char buf[1024];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+
+	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
+	Messages.push_back(_strdup(buf));
+	MessageLevels.push_back(Verbosity == ELogVerbosity::Log ? InferLogVerbosity(buf) : Verbosity);
 	if (AutoScroll) ScrollToBottom = true;
 }
 
@@ -121,6 +199,7 @@ void FEditorConsoleWidget::Clear()
 	std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
 	for (int32 i = 0; i < Messages.Size; i++) free(Messages[i]);
 	Messages.clear();
+	MessageLevels.clear();
 }
 
 void FEditorConsoleWidget::ClearHistory()
@@ -149,6 +228,11 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	}
 
 	if (ImGui::SmallButton("Clear")) { Clear(); }
+	ImGui::SameLine();
+	if (ImGui::SmallButton("Drawer Mode"))
+	{
+		PresentationMode = EPresentationMode::Drawer;
+	}
 
 	ImGui::Separator();
 
@@ -156,6 +240,10 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	if (ImGui::BeginPopup("Options"))
 	{
 		ImGui::Checkbox("Auto-scroll", &AutoScroll);
+		ImGui::Separator();
+		ImGui::Checkbox("Info", &bShowInfoLogs);
+		ImGui::Checkbox("Warning", &bShowWarningLogs);
+		ImGui::Checkbox("Error", &bShowErrorLogs);
 		ImGui::EndPopup();
 	}
 
@@ -170,27 +258,14 @@ void FEditorConsoleWidget::Render(float DeltaTime)
 	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, -FooterHeight), false, ImGuiWindowFlags_HorizontalScrollbar)) {
 		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-		for (auto& Item : Messages) {
+		for (int32 i = 0; i < Messages.Size; ++i) {
+			char* Item = Messages[i];
+			const ELogVerbosity Verbosity = i < MessageLevels.Size ? MessageLevels[i] : InferLogVerbosity(Item);
+			if (!IsLogLevelVisible(Verbosity)) continue;
 			if (!Filter.PassFilter(Item)) continue;
 
-			ImVec4 Color;
 			bool bHasColor = false;
-			if (strncmp(Item, "[ERROR]", 7) == 0) {
-				Color = ImVec4(1, 0.4f, 0.4f, 1);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "[WARN]", 6) == 0) {
-				Color = ImVec4(1, 0.8f, 0.2f, 1);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "#", 1) == 0) {
-				Color = ImVec4(1, 0.8f, 0.6f, 1);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "[Build]", 7) == 0) {
-				Color = ImVec4(1.0f, 0.58f, 0.18f, 1.0f);
-				bHasColor = true;
-			}
+			ImVec4 Color = GetConsoleLogColor(Item, Verbosity, bHasColor);
 
 			if (bHasColor) {
 				ImGui::PushStyleColor(ImGuiCol_Text, Color);
@@ -250,7 +325,17 @@ void FEditorConsoleWidget::RenderDrawerToolbar()
 	if (ImGui::BeginPopup("ConsoleOptions"))
 	{
 		ImGui::Checkbox("Auto-scroll", &AutoScroll);
+		ImGui::Separator();
+		ImGui::Checkbox("Info", &bShowInfoLogs);
+		ImGui::Checkbox("Warning", &bShowWarningLogs);
+		ImGui::Checkbox("Error", &bShowErrorLogs);
 		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::SmallButton(IsDrawerMode() ? "Window Mode" : "Drawer Mode"))
+	{
+		PresentationMode = IsDrawerMode() ? EPresentationMode::FloatingWindow : EPresentationMode::Drawer;
 	}
 
 	ImGui::SameLine();
@@ -263,35 +348,21 @@ void FEditorConsoleWidget::RenderLogContents(float Height)
 	if (ImGui::BeginChild("##ConsoleDrawerScrollingRegion", Size, false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
 		std::lock_guard<std::mutex> Lock(GConsoleLogMutex);
-		for (auto& Item : Messages)
+		for (int32 i = 0; i < Messages.Size; ++i)
 		{
+			char* Item = Messages[i];
+			const ELogVerbosity Verbosity = i < MessageLevels.Size ? MessageLevels[i] : InferLogVerbosity(Item);
+			if (!IsLogLevelVisible(Verbosity))
+			{
+				continue;
+			}
 			if (!Filter.PassFilter(Item))
 			{
 				continue;
 			}
 
-			ImVec4 Color;
 			bool bHasColor = false;
-			if (strncmp(Item, "[ERROR]", 7) == 0)
-			{
-				Color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "[WARN]", 6) == 0)
-			{
-				Color = ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "#", 1) == 0)
-			{
-				Color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "[Build]", 7) == 0)
-			{
-				Color = ImVec4(1.0f, 0.58f, 0.18f, 1.0f);
-				bHasColor = true;
-			}
+			ImVec4 Color = GetConsoleLogColor(Item, Verbosity, bHasColor);
 
 			if (bHasColor)
 			{
@@ -804,7 +875,11 @@ void FEditorConsoleWidget::CmdShadow(const TArray<FString>& Args)
 }
 
 ImVector<char*> FEditorConsoleWidget::Messages;
+ImVector<ELogVerbosity> FEditorConsoleWidget::MessageLevels;
 ImVector<char*> FEditorConsoleWidget::History;
 
 bool FEditorConsoleWidget::AutoScroll = true;
 bool FEditorConsoleWidget::ScrollToBottom = true;
+bool FEditorConsoleWidget::bShowInfoLogs = true;
+bool FEditorConsoleWidget::bShowWarningLogs = true;
+bool FEditorConsoleWidget::bShowErrorLogs = true;

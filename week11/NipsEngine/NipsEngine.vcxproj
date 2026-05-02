@@ -330,6 +330,7 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaTimeAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
+    <ClCompile Include="Source\Game\GameJamPlayerController.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
@@ -872,6 +873,7 @@
     <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
+    <ClInclude Include="Source\Game\GameJamPlayerController.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterCross.h" />

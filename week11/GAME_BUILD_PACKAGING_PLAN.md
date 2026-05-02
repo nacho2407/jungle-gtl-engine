@@ -20,10 +20,16 @@ produce a standalone game package:
 Builds/Windows/GameName/
   GameName.exe
   Asset/
+    Scene/              cooked scene copies
+    Cooked/Mesh/        cooked static mesh binary files
+    Material/           referenced materials/material instances
+    Texture/            referenced textures/images
+    Script/             referenced Asset/Script lua files
   Shaders/
-  LuaScript/
+  LuaScript/            only referenced legacy LuaScript files, when needed
   Settings/
     Game.ini
+    PackageManifest.txt
   Saves/
 ```
 
@@ -189,17 +195,47 @@ Build Game flow:
 1. Prompt save if current scene is dirty.
 2. If current scene has no file path, force Save As.
 3. Select or confirm Startup Scene.
-4. Write package `Settings/Game.ini`.
+4. Validate startup scene contains exactly one `APlayerStart`.
 5. Run MSBuild with `GameClientDebug|x64` or `GameClientRelease|x64`.
-6. Create package output directory.
-7. Copy game exe.
-8. Copy `Asset/`.
-9. Copy `Shaders/`.
-10. Copy `LuaScript/`.
-11. Copy `Settings/Game.ini`.
-12. Create `Saves/` directory.
-13. Show footer log / result popup.
-14. Optionally open package folder or run game.
+6. Create/clean package output directory.
+7. Copy game exe/PDB.
+8. Cook scenes into package output.
+   - Walk scene JSON strings.
+   - Collect referenced runtime assets.
+   - Convert `.obj` static meshes to package-local `.bin`.
+   - Rewrite scene mesh paths from `.obj` to cooked `.bin`.
+9. Copy dependency assets only.
+   - `.mat`, `.matinst`, textures, audio, fonts, lua, prefab/meta files.
+   - Material JSON is scanned recursively for texture/shader references.
+   - Lua text is scanned for `Asset/`, `LuaScript/`, `Shaders/` string paths.
+10. Copy `Shaders/` as a whole for now.
+11. Write `Settings/Game.ini`.
+12. Write `Settings/PackageManifest.txt`.
+13. Create `Saves/` directory.
+14. Show footer log / result popup.
+15. Optionally open package folder or run game.
+
+## Packaging Cook Status
+
+Implemented first cook pass:
+
+- `Asset/` is no longer copied wholesale during Packaging.
+- Included scenes are written as cooked scene copies into the package.
+- Scene `.obj` references are baked to `Asset/Cooked/Mesh/**/*.bin`.
+- Scene mesh paths are rewritten to the cooked `.bin` paths.
+- Referenced `.bin` meshes are copied as-is.
+- Referenced `.mat`, `.matinst`, image, sound, font, lua, prefab, and meta files are copied on demand.
+- `Materials` slot names in scenes are resolved against `Asset/Material/**/*.mat|*.matinst` when possible.
+- Material/prefab JSON and Lua scripts are scanned recursively for additional asset path strings.
+- `Shaders/` is still copied wholesale for stability.
+- `Settings/PackageManifest.txt` records copied/cooked files and counts.
+
+Known limitations:
+
+- Dependency collection is string/path based, not a full typed asset graph yet.
+- Lua dynamic path construction cannot be discovered unless the literal asset path appears in the script text.
+- Material slot name resolution is heuristic for legacy OBJ/MTL-derived names.
+- Shaders are intentionally not dependency-pruned yet.
 
 ## Engine Structure Regression Scan
 
