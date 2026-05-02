@@ -50,6 +50,13 @@ void FMeshBufferManager::Release()
         }
         StaticMeshBufferMap[i].clear();
     }
+
+	for (auto& pair : ProcMeshBufferMap)
+	{
+        pair.second.Release();
+	}
+
+	ProcMeshBufferMap.clear();
     
     Device = nullptr;
 }
@@ -111,8 +118,14 @@ FMeshBuffer* FMeshBufferManager::GetStaticMeshBuffer(const UStaticMesh* StaticMe
     return &NewBuffer;
 }
 
-FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponent::FMeshSection& MeshSection)
+FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponent* ProcMeshComp, const UProceduralMeshComponent::FMeshSection& MeshSection)
 {
+    auto It = ProcMeshBufferMap.find(ProcMeshComp);
+	if (It != ProcMeshBufferMap.end())
+	{
+        return &It->second;
+	}
+
     const TArray<FNormalVertex>& Vertices = MeshSection.Vertices;
     const TArray<uint32>& Indices = MeshSection.Indices;
 
@@ -121,7 +134,7 @@ FMeshBuffer* FMeshBufferManager::GetProcMeshBuffer(const UProceduralMeshComponen
         return nullptr;
     }
 
-    FMeshBuffer& NewBuffer = MeshBufferMap[EPrimitiveType::EPT_ProceduralMesh];
+    FMeshBuffer& NewBuffer = ProcMeshBufferMap[ProcMeshComp];
     NewBuffer.CreateForStaticMesh(Device, Vertices, Indices);
 
     return &NewBuffer;

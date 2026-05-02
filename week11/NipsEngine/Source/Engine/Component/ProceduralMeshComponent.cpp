@@ -152,6 +152,11 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                         b2i = k;
                 }
 
+				if (f == 1)
+				{
+                    std::swap(b1i, b2i);
+				}
+
                 const FNormalVertex& VF = V[f];
                 const FNormalVertex& VB1 = V[b1i];
                 const FNormalVertex& VB2 = V[b2i];
@@ -167,8 +172,8 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                 AddTriangle(OutFront, VF, I1, I2);
 
                 // Back (quad → 2 triangles)
-                AddTriangle(OutBack, VB1, VB2, I1);
-                AddTriangle(OutBack, VB1, I1, I2);
+                AddTriangle(OutBack, VB1, VB2, I2);
+                AddTriangle(OutBack, VB1, I2, I1);
             }
             else if (frontCount == 2)
             {
@@ -183,6 +188,11 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                     else
                         f2 = k;
                 }
+
+				if (bIdx == 1)
+				{
+                    std::swap(f1, f2);
+				}
 
                 const FNormalVertex& VB = V[bIdx];
                 const FNormalVertex& VF1 = V[f1];
@@ -199,8 +209,8 @@ void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSlic
                 AddTriangle(OutBack, VB, I1, I2);
 
                 // Front (quad → 2 triangles)
-                AddTriangle(OutFront, VF1, VF2, I1);
-                AddTriangle(OutFront, VF2, I2, I1);
+                AddTriangle(OutFront, VF1, VF2, I2);
+                AddTriangle(OutFront, VF1, I2, I1);
             }
 			else
 			{
