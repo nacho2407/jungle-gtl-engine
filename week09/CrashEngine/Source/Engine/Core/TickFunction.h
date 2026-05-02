@@ -157,3 +157,16 @@ public:
     // FTickFunction을(를) 통해 상속됨
     const char* GetDebugName() const override;
 };
+
+// FCollisionTickFunction는 엔진 처리에 필요한 데이터를 묶는 구조체(물리 전용)입니다.
+struct FCollisionTickFunction : public FTickFunction
+{
+    UActorComponent* Target = nullptr;
+
+public:
+    void SetTarget(UActorComponent* InTarget) { Target = InTarget; }
+    virtual void ExecuteTick(float DeltaTime, ELevelTick TickType) override;
+
+    // FTickFunction을(를) 통해 상속됨
+    const char* GetDebugName() const override;
+};

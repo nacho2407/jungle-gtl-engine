@@ -141,6 +141,9 @@ public:
         bInOctreeOverflow = false;
     }
 
+	virtual void OnComponentOverlap(UPrimitiveComponent* Other) const;
+	virtual class FCollision* GetCollision() const { return nullptr; }
+
     DECLARE_DELEGATE(FOnComponentBeginOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentEndOverlap, UPrimitiveComponent*, AActor*);
     DECLARE_DELEGATE(FOnComponentHit, UPrimitiveComponent*, AActor*);
@@ -170,5 +173,16 @@ protected:
 
     FOctree* OctreeNode = nullptr;
     bool bInOctreeOverflow = false;
+
+	/**
+	둘 다 False (No Collision): 구름, 먼지 파티클, 배경용 풀 조각. (충돌 연산 완전 제외)
+
+	bGenerateOverlapEvents = True / bBlockComponent = False (Trigger): 아이템, 함정, 포탈. (통과하지만 이벤트 발생)
+
+	bGenerateOverlapEvents = False / bBlockComponent = True (Block/Physics): 벽, 상자, 플레이어 몸통. (통과 불가, 부딪힘 판정)
+
+	**/
+	bool bGenerateOverlapEvents;
+    bool bBlockComponent; //물리적 차단 / Hit 이벤트 여부
 };
 
