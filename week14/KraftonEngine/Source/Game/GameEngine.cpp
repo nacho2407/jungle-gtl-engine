@@ -1,10 +1,12 @@
 ﻿#include "Game/GameEngine.h"
 
 #include "Game/GameRenderPipeline.h"
+#include "Game/GameModeCarGame.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
+#include "GameFramework/World.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
 
@@ -104,6 +106,9 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 
 	LoadContext.WorldType = EWorldType::Game;
 	LoadContext.World->SetWorldType(EWorldType::Game);
+
+	// GameMode 주입 — World::BeginPlay가 이걸 보고 GameMode/GameState/PC를 spawn한다.
+	LoadContext.World->SetGameModeClass(AGameModeCarGame::StaticClass());
 
 	WorldList.push_back(LoadContext);
 	SetActiveWorld(LoadContext.ContextHandle);

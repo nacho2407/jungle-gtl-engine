@@ -537,7 +537,9 @@
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
     <ClCompile Include="Source\Game\GameEngine.cpp" />
+    <ClCompile Include="Source\Game\GameModeCarGame.cpp" />
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
+    <ClCompile Include="Source\Game\GameStateCarGame.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerRenderPipeline.cpp" />
@@ -784,7 +786,9 @@
     <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
     <ClInclude Include="Source\Game\GameEngine.h" />
+    <ClInclude Include="Source\Game\GameModeCarGame.h" />
     <ClInclude Include="Source\Game\GameRenderPipeline.h" />
+    <ClInclude Include="Source\Game\GameStateCarGame.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />

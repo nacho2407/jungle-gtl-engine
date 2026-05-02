@@ -917,7 +917,13 @@
     <ClCompile Include="Source\Game\GameEngine.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\GameModeCarGame.cpp">
+      <Filter>Source\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp">
+      <Filter>Source\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\GameStateCarGame.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp">
@@ -1652,7 +1658,13 @@
     <ClInclude Include="Source\Game\GameEngine.h">
       <Filter>Source\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\GameModeCarGame.h">
+      <Filter>Source\Game</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\GameRenderPipeline.h">
+      <Filter>Source\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameStateCarGame.h">
       <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h">
