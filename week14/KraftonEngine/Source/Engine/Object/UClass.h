@@ -2,6 +2,8 @@
 
 #include "Core/CoreTypes.h"
 
+#include <cstring>
+
 class UObject;
 
 enum EClassFlags : uint32
@@ -46,6 +48,19 @@ public:
 	{
 		static TArray<UClass*> Registry;
 		return Registry;
+	}
+
+	// 이름으로 등록된 클래스 룩업. 못 찾으면 nullptr.
+	// 직렬화/설정 파일에서 클래스를 string으로 지정할 때 사용.
+	static UClass* FindByName(const char* InName)
+	{
+		if (!InName) return nullptr;
+		for (UClass* C : GetAllClasses())
+		{
+			if (C && C->GetName() && std::strcmp(C->GetName(), InName) == 0)
+				return C;
+		}
+		return nullptr;
 	}
 
 private:

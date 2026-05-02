@@ -34,7 +34,9 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 	// --- Game ---
 	struct FGameOption
 	{
-		FString StartLevelName; // Scene 파일 이름 (확장자 제외)
+		FString StartLevelName;     // Scene 파일 이름 (확장자 제외)
+		FString GameModeClassName;  // ""면 GameEngine이 코드로 지정한 디폴트 사용.
+		                            // 잘못된 이름이거나 AGameModeBase 파생이 아니면 디폴트 fallback.
 	};
 
 public:

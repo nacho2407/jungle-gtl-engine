@@ -7,6 +7,8 @@
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
+#include "GameFramework/GameModeBase.h"
+#include "Object/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
 
@@ -108,7 +110,23 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 	LoadContext.World->SetWorldType(EWorldType::Game);
 
 	// GameMode 주입 — World::BeginPlay가 이걸 보고 GameMode/GameState/PC를 spawn한다.
-	LoadContext.World->SetGameModeClass(AGameModeCarGame::StaticClass());
+	// 우선 ProjectSettings에서 지정한 클래스를 시도, 실패하면 코드 디폴트로 fallback.
+	UClass* GMClass = AGameModeCarGame::StaticClass();
+	const FString& ConfiguredName = FProjectSettings::Get().Game.GameModeClassName;
+	if (!ConfiguredName.empty())
+	{
+		UClass* Found = UClass::FindByName(ConfiguredName.c_str());
+		if (Found && Found->IsA(AGameModeBase::StaticClass()))
+		{
+			GMClass = Found;
+		}
+		else
+		{
+			UE_LOG("[GameEngine] GameModeClassName '%s' not found or not a AGameModeBase subclass — using default %s",
+				ConfiguredName.c_str(), GMClass->GetName());
+		}
+	}
+	LoadContext.World->SetGameModeClass(GMClass);
 
 	WorldList.push_back(LoadContext);
 	SetActiveWorld(LoadContext.ContextHandle);
