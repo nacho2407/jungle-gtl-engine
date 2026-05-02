@@ -93,6 +93,14 @@ RMLUI_DEBUG_DIR = "ThirdParty\\RmlUi\\Debug"
 RMLUI_RELEASE_DIR = "ThirdParty\\RmlUi\\Release"
 RMLUI_DEPENDENCIES = ["rmlui.lib", "rmlui_debugger.lib"]
 
+# FMOD config — Debug 빌드는 fmodL_vc.lib + fmodL.dll(logging),
+# Release-like 빌드는 fmod_vc.lib + fmod.dll
+FMOD_LIB_DIR = "ThirdParty\\fmod\\lib"
+FMOD_DEBUG_LIB = "fmodL_vc.lib"
+FMOD_RELEASE_LIB = "fmod_vc.lib"
+FMOD_DEBUG_DLL = "fmodL.dll"
+FMOD_RELEASE_DLL = "fmod.dll"
+
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
     "$(ProjectDir)ThirdParty\\lua\\lib",
@@ -277,6 +285,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         is_x64 = plat == "x64"
         rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
         library_paths = [rmlui_dir] if is_x64 else []
+        if is_x64:
+            library_paths.append(FMOD_LIB_DIR)
         library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
@@ -335,6 +345,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         all_deps = list(ADDITIONAL_DEPENDENCIES)
         if is_x64:
             all_deps.extend(RMLUI_DEPENDENCIES)
+            # fmod: Debug면 logging 버전(fmodL_vc.lib), 그 외 release 버전(fmod_vc.lib)
+            all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
         if all_deps:
             ET.SubElement(link, "AdditionalDependencies").text = (
                 ";".join(all_deps) + ";%(AdditionalDependencies)"
@@ -342,8 +354,12 @@ def generate_vcxproj(files: dict[str, list[str]]):
 
         if is_x64:
             rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
+            fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
             post_build = ET.SubElement(idg, "PostBuildEvent")
-            ET.SubElement(post_build, "Command").text = f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"'
+            ET.SubElement(post_build, "Command").text = (
+                f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"'
+            )
 
     # ClCompile items
     ig = ET.SubElement(proj, "ItemGroup")
