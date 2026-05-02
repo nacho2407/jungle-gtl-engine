@@ -235,6 +235,52 @@ void APlayerController::HandleMouseMove(float DeltaX, float DeltaY)
 	ViewTargetCamera->AddPitchInput(-DeltaY * LookSensitivity);
 }
 
+void APlayerController::HandleMouseMoveAbsolute(float X, float Y)
+{
+	(void)X;
+	(void)Y;
+}
+
+void APlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
+{
+	(void)VK;
+	(void)X;
+	(void)Y;
+}
+
+void APlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)
+{
+	(void)VK;
+	(void)DeltaX;
+	(void)DeltaY;
+}
+
+void APlayerController::HandleMouseButtonReleased(int VK, float X, float Y)
+{
+	(void)VK;
+	(void)X;
+	(void)Y;
+}
+
+void APlayerController::HandleMouseDrag(int VK, float DeltaX, float DeltaY)
+{
+	(void)VK;
+	(void)DeltaX;
+	(void)DeltaY;
+}
+
+void APlayerController::HandleMouseDragEnd(int VK, float X, float Y)
+{
+	(void)VK;
+	(void)X;
+	(void)Y;
+}
+
+void APlayerController::HandleMouseWheel(float Notch)
+{
+	(void)Notch;
+}
+
 UCameraComponent* APlayerController::FindCameraComponent(AActor* Actor) const
 {
 	if (!Actor)

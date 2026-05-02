@@ -47,6 +47,42 @@ void AGameJamPlayerController::HandleMouseMove(float DeltaX, float DeltaY)
 	ViewTargetCamera->AddPitchInput(PitchDelta);
 }
 
+void AGameJamPlayerController::HandleMouseMoveAbsolute(float X, float Y)
+{
+	APlayerController::HandleMouseMoveAbsolute(X, Y);
+}
+
+void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
+{
+    UE_LOG("Hello!");
+	APlayerController::HandleMouseButtonPressed(VK, X, Y);
+}
+
+void AGameJamPlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)
+{
+	APlayerController::HandleMouseButtonDown(VK, DeltaX, DeltaY);
+}
+
+void AGameJamPlayerController::HandleMouseButtonReleased(int VK, float X, float Y)
+{
+	APlayerController::HandleMouseButtonReleased(VK, X, Y);
+}
+
+void AGameJamPlayerController::HandleMouseDrag(int VK, float DeltaX, float DeltaY)
+{
+	APlayerController::HandleMouseDrag(VK, DeltaX, DeltaY);
+}
+
+void AGameJamPlayerController::HandleMouseDragEnd(int VK, float X, float Y)
+{
+	APlayerController::HandleMouseDragEnd(VK, X, Y);
+}
+
+void AGameJamPlayerController::HandleMouseWheel(float Notch)
+{
+	APlayerController::HandleMouseWheel(Notch);
+}
+
 void AGameJamPlayerController::ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation)
 {
 	if (!Pawn)
