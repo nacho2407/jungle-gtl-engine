@@ -1,6 +1,5 @@
 ﻿#include "BoxComponent.h"
 #include "Serialization/Archive.h"
-#include "Render/Scene/Proxies/Shape/BoxProxy.h"
 
 #include "GameFrameWork/World.h"
 
