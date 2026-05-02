@@ -76,6 +76,7 @@ public:
     const TMap<UPrimitiveComponent*, FCollisionResult>& GetOverlapInfos() const { return CurOverlaps; }
     bool IsOverlappingActor(const AActor* OtherActor) const;
     bool ShouldGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
+    void SetGenerateOverlapEvents(bool NewState) { bGenerateOverlapEvents = NewState; }
     void ClearOverlaps() { CurOverlaps.clear(); }
     void AddOverlap(UPrimitiveComponent* OtherComp, const FCollisionResult& CollisionResult) { CurOverlaps[OtherComp] = CollisionResult; }
     void SetPrevOverlaps(const TMap<UPrimitiveComponent*, FCollisionResult>& InOverlaps) { PrevOverlaps = InOverlaps; }
