@@ -27,6 +27,18 @@ void UShapeComponent::Serialize(FArchive& Ar)
     Ar << bDrawOnlyIfSelected;
 }
 
+void UShapeComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UPrimitiveComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "ShapeColor", EPropertyType::Color4, &ShapeColor});
+    OutProps.push_back({ "AlwaysDrawCollider", EPropertyType::Bool, &bDrawOnlyIfSelected });
+}
+
+void UShapeComponent::PostEditProperty(const char* PropertyName)
+{
+    UPrimitiveComponent::PostEditProperty(PropertyName);
+}
+
 void UShapeComponent::PostDuplicate()
 {
     UPrimitiveComponent::PostDuplicate();

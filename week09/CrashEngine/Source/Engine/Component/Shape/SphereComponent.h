@@ -10,9 +10,12 @@ public:
     USphereComponent();
 
     void Serialize(FArchive& Ar) override;
-
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void PostEditProperty(const char* PropertyName) override;
 
     void SetRadius(float Radius) { SphereCollision.Sphere.Radius = Radius; }
+
+    virtual void OnComponentOverlap(UPrimitiveComponent* Other) const override;
 
     virtual FCollision* GetCollision() const override { return (FCollision*)&SphereCollision; }
 

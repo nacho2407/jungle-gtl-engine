@@ -188,8 +188,8 @@ protected:
 	bGenerateOverlapEvents = False / bBlockComponent = True (Block/Physics): 벽, 상자, 플레이어 몸통. (통과 불가, 부딪힘 판정)
 
 	**/
-	bool bGenerateOverlapEvents;
-    bool bBlockComponent; //물리적 차단 / Hit 이벤트 여부
+	bool bGenerateOverlapEvents;	//Overlap 이벤트를 발생시킬지 여부
+    bool bBlockComponent;	//물리적 차단 / Hit 이벤트 여부
     TArray<FOverlapInfo> OverlapInfos;
 };
 

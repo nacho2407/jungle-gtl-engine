@@ -14,6 +14,24 @@ void USphereComponent::Serialize(FArchive& Ar)
     Ar << SphereCollision;
 }
 
+void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UShapeComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "Radius", EPropertyType::Float, &SphereRadius, 0.0f, 100.0f, 0.1f });
+}
+
+void USphereComponent::PostEditProperty(const char* PropertyName)
+{
+    SphereRadius = std::max(0.0f, SphereRadius);
+    UShapeComponent::PostEditProperty(PropertyName);
+}
+
+void USphereComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
+{
+    if (bGenerateOverlapEvents)
+        return;
+}
+
 void USphereComponent::OnTransformDirty()
 {
     UShapeComponent::OnTransformDirty();
