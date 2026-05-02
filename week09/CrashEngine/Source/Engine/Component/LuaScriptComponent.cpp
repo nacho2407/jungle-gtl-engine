@@ -8,6 +8,8 @@
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/WorldContext.h"
+#include "Input/InputSystem.h"
+#include "LuaScript/LuaInputProxy.h"
 #include "LuaScript/LuaRuntime.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
@@ -128,6 +130,8 @@ void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
     {
         return;
     }
+
+	DispatchInputEvents();
 
     CallLuaFunction("Tick", TickFunc, LastError, DeltaTime);
 }
@@ -286,6 +290,12 @@ void ULuaScriptComponent::ClearScriptRuntime()
     TickFunc = sol::protected_function();
     EndPlayFunc = sol::protected_function();
 
+	OnKeyPressedFunc = sol::protected_function();
+    OnKeyReleasedFunc = sol::protected_function();
+
+    OnGamepadButtonPressedFunc = sol::protected_function();
+    OnGamepadButtonReleasedFunc = sol::protected_function();
+
     Env = sol::environment();
     ObjProxy.SetActor(nullptr);
 
@@ -297,10 +307,70 @@ void ULuaScriptComponent::CacheScriptFunctions()
     BeginPlayFunc = GetOptionalLuaFunction(Env, "BeginPlay", LastError);
     TickFunc = GetOptionalLuaFunction(Env, "Tick", LastError);
     EndPlayFunc = GetOptionalLuaFunction(Env, "EndPlay", LastError);
+
+	OnKeyPressedFunc = GetOptionalLuaFunction(Env, "OnKeyPressed", LastError);
+    OnKeyReleasedFunc = GetOptionalLuaFunction(Env, "OnKeyReleased", LastError);
+
+    OnGamepadButtonPressedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonPressed", LastError);
+    OnGamepadButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonReleased", LastError);
 }
 
 void ULuaScriptComponent::SetLastError(const FString& InError)
 {
     LastError = InError;
     UE_LOG(Lua, Error, "%s", LastError.c_str());
+}
+
+void ULuaScriptComponent::DispatchInputEvents()
+{
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    DispatchVirtualKeyEvents(Input);
+    DispatchGamepadEvents(Input);
+}
+
+void ULuaScriptComponent::DispatchVirtualKeyEvents(const FInputSnapshot& Input)
+{
+    for (int32 VK = 0; VK < 256; VK++)
+    {
+        if (Input.KeyPressed[VK])
+        {
+            const FString KeyName = LuaKeyNameFromVK(VK);
+            CallLuaFunction("OnKeyPressed", OnKeyPressedFunc, LastError, KeyName);
+        }
+
+        if (Input.KeyReleased[VK])
+        {
+            const FString KeyName = LuaKeyNameFromVK(VK);
+            CallLuaFunction("OnKeyReleased", OnKeyReleasedFunc, LastError, KeyName);
+        }
+
+        // KeyRepeated는 현재 지원하지 않음
+    }
+}
+
+void ULuaScriptComponent::DispatchGamepadEvents(const FInputSnapshot& Input)
+{
+    for (int32 ControllerId = 0; ControllerId < MaxGamepadCount; ++ControllerId)
+    {
+        const FGamepadSnapshot& Pad = Input.Gamepads[ControllerId];
+        if (!Pad.bConnected)
+        {
+            continue;
+        }
+
+        for (int32 ButtonIndex = 0; ButtonIndex < static_cast<int32>(EGamepadButton::Count); ButtonIndex++)
+        {
+            const FString ButtonName = LuaGamepadButtonNameFromIndex(ButtonIndex);
+
+            if (Pad.ButtonPressed[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonPressed", OnGamepadButtonPressedFunc, LastError, ButtonName, ControllerId);
+            }
+
+            if (Pad.ButtonReleased[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonReleased", OnGamepadButtonReleasedFunc, LastError, ButtonName, ControllerId);
+            }
+        }
+    }
 }

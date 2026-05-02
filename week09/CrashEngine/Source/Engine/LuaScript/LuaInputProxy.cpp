@@ -268,3 +268,92 @@ float FLuaInputProxy::GetAxis(const FString& AxisName, int32 ControllerId) const
 
     return 0.0f;
 }
+
+FString LuaKeyNameFromVK(int32 VK)
+{
+    if (VK >= 'A' && VK <= 'Z')
+        return FString(1, static_cast<char>(VK));
+    if (VK >= '0' && VK <= '9')
+        return FString(1, static_cast<char>(VK));
+
+    switch (VK)
+    {
+    case VK_SPACE:
+        return "Space";
+    case VK_RETURN:
+        return "Enter";
+    case VK_ESCAPE:
+        return "Escape";
+    case VK_LEFT:
+        return "Left";
+    case VK_RIGHT:
+        return "Right";
+    case VK_UP:
+        return "Up";
+    case VK_DOWN:
+        return "Down";
+    case VK_SHIFT:
+        return "Shift";
+    case VK_CONTROL:
+        return "Ctrl";
+    case VK_MENU:
+        return "Alt";
+    case VK_TAB:
+        return "Tab";
+    default:
+        return "Unknown";
+    }
+}
+
+FString LuaGamepadButtonNameFromIndex(int32 ButtonIndex)
+{
+    const EGamepadButton Button = static_cast<EGamepadButton>(ButtonIndex);
+
+    switch (Button)
+    {
+    case EGamepadButton::A:
+        return "A";
+
+    case EGamepadButton::B:
+        return "B";
+
+    case EGamepadButton::X:
+        return "X";
+
+    case EGamepadButton::Y:
+        return "Y";
+
+    case EGamepadButton::LeftShoulder:
+        return "LeftShoulder";
+
+    case EGamepadButton::RightShoulder:
+        return "RightShoulder";
+
+    case EGamepadButton::Back:
+        return "Back";
+
+    case EGamepadButton::Start:
+        return "Start";
+
+    case EGamepadButton::LeftThumb:
+        return "LeftThumb";
+
+    case EGamepadButton::RightThumb:
+        return "RightThumb";
+
+    case EGamepadButton::DPadUp:
+        return "DPadUp";
+
+    case EGamepadButton::DPadDown:
+        return "DPadDown";
+
+    case EGamepadButton::DPadLeft:
+        return "DPadLeft";
+
+    case EGamepadButton::DPadRight:
+        return "DPadRight";
+
+    default:
+        return "";
+    }
+}

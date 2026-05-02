@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/ActorComponent.h"
+#include "Input/InputTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaIncludes.h"
 
@@ -39,6 +40,10 @@ private:
     void CacheScriptFunctions();
     void SetLastError(const FString& InError);
 
+	void DispatchInputEvents();
+    void DispatchVirtualKeyEvents(const FInputSnapshot& Input);
+    void DispatchGamepadEvents(const FInputSnapshot& Input);
+
 private:
     FString LuaScriptPath = "None";
     FString LastError;
@@ -47,9 +52,17 @@ private:
 
 	// sol::state는 LuaRuntime에서 하나만 관리하고, 각 스크립트 컴포넌트는 sol::environment을 사용하여 격리된 Lua 환경을 가짐
     sol::environment Env;
+
     sol::protected_function BeginPlayFunc;
     sol::protected_function TickFunc;
     sol::protected_function EndPlayFunc;
 
     FLuaGameObjectProxy ObjProxy;
+
+	// Input Delegate 함수들
+	sol::protected_function OnKeyPressedFunc;
+    sol::protected_function OnKeyReleasedFunc;
+
+    sol::protected_function OnGamepadButtonPressedFunc;
+    sol::protected_function OnGamepadButtonReleasedFunc;
 };

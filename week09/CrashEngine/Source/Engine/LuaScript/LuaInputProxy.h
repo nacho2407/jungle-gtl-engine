@@ -20,3 +20,10 @@ public:
 
     float GetAxis(const FString& AxisName, int32 ControllerId = 0) const;
 };
+
+/*
+ * Helper Functions
+ */
+
+FString LuaKeyNameFromVK(int32 VK);
+FString LuaGamepadButtonNameFromIndex(int32 ButtonIndex);

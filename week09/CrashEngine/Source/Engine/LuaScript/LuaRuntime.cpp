@@ -8,6 +8,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "Core/Sound/SoundManager.h"
 #include "LuaScript/LuaGameObjectProxy.h"
+#include "LuaScript/LuaInputProxy.h"
 #include "Math/Vector.h"
 
 namespace
@@ -203,6 +204,29 @@ void FLuaRuntime::BindEngineTypes()
     );
 
     Lua->set_function("GetSoundManager", []() -> FSoundManager& {
-        return FSoundManager::Get();
-        });
+			return FSoundManager::Get();
+		}
+	);
+
+	Lua->new_usertype<FLuaInputProxy>("InputProxy", sol::no_constructor,
+		"IsKeyDown", &FLuaInputProxy::IsKeyDown,
+		"WasKeyPressed", &FLuaInputProxy::WasKeyPressed,
+		"WasKeyReleased", &FLuaInputProxy::WasKeyReleased,
+
+		"IsMouseButtonDown", &FLuaInputProxy::IsMouseButtonDown,
+		"WasMouseButtonPressed", &FLuaInputProxy::WasMouseButtonPressed,
+		"WasMouseButtonReleased", &FLuaInputProxy::WasMouseButtonReleased,
+
+		"IsGamepadConnected", &FLuaInputProxy::IsGamepadConnected,
+		"IsGamepadButtonDown", &FLuaInputProxy::IsGamepadButtonDown,
+		"WasGamepadButtonPressed", &FLuaInputProxy::WasGamepadButtonPressed,
+		"WasGamepadButtonReleased", &FLuaInputProxy::WasGamepadButtonReleased,
+
+		"GetAxis", &FLuaInputProxy::GetAxis
+	);
+
+    static FLuaInputProxy GLuaInputProxy;
+
+	// sol2를 이용하여 Lua 전역 테이블에 Input 추가
+    (*Lua)["Input"] = &GLuaInputProxy;
 }
