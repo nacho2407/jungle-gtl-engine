@@ -540,6 +540,7 @@
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp" />
     <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp" />
+    <ClCompile Include="Source\Game\Pawn\CarPawn.cpp" />
     <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
@@ -790,6 +791,7 @@
     <ClInclude Include="Source\Game\GameRenderPipeline.h" />
     <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h" />
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h" />
+    <ClInclude Include="Source\Game\Pawn\CarPawn.h" />
     <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
