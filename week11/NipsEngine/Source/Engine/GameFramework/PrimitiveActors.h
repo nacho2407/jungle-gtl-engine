@@ -12,6 +12,7 @@ class UHeightFogComponent;
 class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
+class UProjectileMovementComponent;
 
 class ACubeActor : public AActor
 {
@@ -232,4 +233,9 @@ public:
     DECLARE_CLASS(ABullet, AActor)
     void InitDefaultComponents() override;
     void Tick(float DeltaTime) override;
+
+	void SetProjectileVelocity(FVector NewVelocity);
+
+private:
+    UProjectileMovementComponent* ProjectileComp = nullptr;
 };
