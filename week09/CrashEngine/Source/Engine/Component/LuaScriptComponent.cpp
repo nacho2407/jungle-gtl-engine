@@ -222,7 +222,14 @@ bool ULuaScriptComponent::ReloadScript()
         return false;
     }
 
-    return LoadScript();
+    if (LoadScript())
+    {
+        CallLuaFunction("BeginPlay", BeginPlayFunc, LastError);
+
+        return true;
+    }
+
+    return false;
 }
 
 void ULuaScriptComponent::Serialize(FArchive& Ar)
