@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/AActor.h"
 
@@ -39,7 +39,7 @@ public:
 	USphereComponent* GetCollisionSphere() const { return CollisionSphere; }
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 
-	float Lifetime = 5.0f;       // 초 — 만료 시 자기 destroy
+	float Lifetime = 10.0f;       // 초 — 만료 시 자기 destroy
 	float DamagePerHit = 10.0f;  // 차량과 충돌 시 가하는 데미지
 
 private:
