@@ -5,6 +5,7 @@
 #include "Component/CapsuleComponent.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
+#include "Math/Quat.h"
 
 #include <cmath>
 #include <algorithm>
@@ -48,16 +49,19 @@ namespace
 		}
 	}
 
-	void BuildBoxLines(TArray<FWireLine>& Lines, const FVector& Center, const FVector& Ext)
+	void BuildBoxLines(TArray<FWireLine>& Lines, const FVector& Center, const FVector& Ext, const FQuat& Rot)
 	{
+		// Local axis-aligned 코너에 컴포넌트의 world rotation을 적용해야 차량처럼
+		// 회전된 콜라이더가 시각상 자식 컴포넌트와 일치한다.
 		FVector Corners[8];
 		for (int32 i = 0; i < 8; ++i)
 		{
-			Corners[i] = Center + FVector(
+			FVector LocalOffset(
 				(i & 1) ? Ext.X : -Ext.X,
 				(i & 2) ? Ext.Y : -Ext.Y,
 				(i & 4) ? Ext.Z : -Ext.Z
 			);
+			Corners[i] = Center + Rot.RotateVector(LocalOffset);
 		}
 
 		// Bottom 4
@@ -85,32 +89,37 @@ namespace
 		AddWireCircle(Lines, Center, FVector(0, 1, 0), FVector(0, 0, 1), Radius, Segments);
 	}
 
-	void BuildCapsuleLines(TArray<FWireLine>& Lines, const FVector& Center, float Radius, float HalfHeight)
+	void BuildCapsuleLines(TArray<FWireLine>& Lines, const FVector& Center, float Radius, float HalfHeight, const FQuat& Rot)
 	{
 		const float CylinderHalf = HalfHeight - Radius;
 		constexpr int32 Segments = 24;
 		constexpr int32 HalfSegments = 12;
 
-		const FVector TopCenter = Center + FVector(0, 0, CylinderHalf);
-		const FVector BotCenter = Center - FVector(0, 0, CylinderHalf);
+		// 컴포넌트의 회전된 local 축들 (X=Right, Y=Forward, Z=Up 기준)
+		const FVector AxisX = Rot.RotateVector(FVector(1, 0, 0));
+		const FVector AxisY = Rot.RotateVector(FVector(0, 1, 0));
+		const FVector AxisZ = Rot.RotateVector(FVector(0, 0, 1));
 
-		// Top and bottom circles
-		AddWireCircle(Lines, TopCenter, FVector(1, 0, 0), FVector(0, 1, 0), Radius, Segments);
-		AddWireCircle(Lines, BotCenter, FVector(1, 0, 0), FVector(0, 1, 0), Radius, Segments);
+		const FVector TopCenter = Center + AxisZ * CylinderHalf;
+		const FVector BotCenter = Center - AxisZ * CylinderHalf;
+
+		// Top and bottom circles (XY 평면)
+		AddWireCircle(Lines, TopCenter, AxisX, AxisY, Radius, Segments);
+		AddWireCircle(Lines, BotCenter, AxisX, AxisY, Radius, Segments);
 
 		// 4 vertical lines
-		Lines.push_back({ TopCenter + FVector(Radius, 0, 0), BotCenter + FVector(Radius, 0, 0) });
-		Lines.push_back({ TopCenter - FVector(Radius, 0, 0), BotCenter - FVector(Radius, 0, 0) });
-		Lines.push_back({ TopCenter + FVector(0, Radius, 0), BotCenter + FVector(0, Radius, 0) });
-		Lines.push_back({ TopCenter - FVector(0, Radius, 0), BotCenter - FVector(0, Radius, 0) });
+		Lines.push_back({ TopCenter + AxisX * Radius, BotCenter + AxisX * Radius });
+		Lines.push_back({ TopCenter - AxisX * Radius, BotCenter - AxisX * Radius });
+		Lines.push_back({ TopCenter + AxisY * Radius, BotCenter + AxisY * Radius });
+		Lines.push_back({ TopCenter - AxisY * Radius, BotCenter - AxisY * Radius });
 
-		// Top hemisphere caps
-		AddWireHalfCircle(Lines, TopCenter, FVector(1, 0, 0), FVector(0, 0, 1), Radius, HalfSegments, 0.0f);
-		AddWireHalfCircle(Lines, TopCenter, FVector(0, 1, 0), FVector(0, 0, 1), Radius, HalfSegments, 0.0f);
+		// Top hemisphere caps (XZ, YZ 평면, 위쪽 반원)
+		AddWireHalfCircle(Lines, TopCenter, AxisX, AxisZ, Radius, HalfSegments, 0.0f);
+		AddWireHalfCircle(Lines, TopCenter, AxisY, AxisZ, Radius, HalfSegments, 0.0f);
 
-		// Bottom hemisphere caps
-		AddWireHalfCircle(Lines, BotCenter, FVector(1, 0, 0), FVector(0, 0, 1), Radius, HalfSegments, FMath::Pi);
-		AddWireHalfCircle(Lines, BotCenter, FVector(0, 1, 0), FVector(0, 0, 1), Radius, HalfSegments, FMath::Pi);
+		// Bottom hemisphere caps (아래쪽 반원)
+		AddWireHalfCircle(Lines, BotCenter, AxisX, AxisZ, Radius, HalfSegments, FMath::Pi);
+		AddWireHalfCircle(Lines, BotCenter, AxisY, AxisZ, Radius, HalfSegments, FMath::Pi);
 	}
 }
 
@@ -160,12 +169,15 @@ void FShapeSceneProxy::RebuildLines()
 	UPrimitiveComponent* OwnerComp = GetOwner();
 	if (!OwnerComp) return;
 
+	const FQuat WorldRot = OwnerComp->GetWorldMatrix().ToQuat();
+
 	if (const UBoxComponent* Box = Cast<UBoxComponent>(OwnerComp))
 	{
-		BuildBoxLines(CachedLines, Box->GetWorldLocation(), Box->GetScaledBoxExtent());
+		BuildBoxLines(CachedLines, Box->GetWorldLocation(), Box->GetScaledBoxExtent(), WorldRot);
 	}
 	else if (const USphereComponent* Sphere = Cast<USphereComponent>(OwnerComp))
 	{
+		// 구체는 회전 무관 — rotation 인자 불필요
 		BuildSphereLines(CachedLines, Sphere->GetWorldLocation(), Sphere->GetScaledSphereRadius());
 	}
 	else if (const UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(OwnerComp))
@@ -173,6 +185,7 @@ void FShapeSceneProxy::RebuildLines()
 		BuildCapsuleLines(CachedLines,
 			Capsule->GetWorldLocation(),
 			Capsule->GetScaledCapsuleRadius(),
-			Capsule->GetScaledCapsuleHalfHeight());
+			Capsule->GetScaledCapsuleHalfHeight(),
+			WorldRot);
 	}
 }
