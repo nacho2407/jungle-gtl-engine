@@ -1,4 +1,4 @@
-#include "Engine/Runtime/Engine.h"
+﻿#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
 #include "Core/Log.h"
@@ -18,6 +18,7 @@
 #include "Core/TickFunction.h"
 #include "Lua/LuaScriptManager.h"
 #include "UI/UIManager.h"
+#include "Audio/AudioManager.h"
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -82,10 +83,12 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();
 	FLuaScriptManager::Initialize();
+	FAudioManager::Get().Initialize();
 }
 
 void UEngine::Shutdown()
 {
+	FAudioManager::Get().Shutdown();
 	FLuaScriptManager::Shutdown();
 	FDirectoryWatcher::Get().Shutdown();
 	FLogManager::Get().Shutdown();
@@ -115,6 +118,7 @@ void UEngine::Tick(float DeltaTime)
 	FDirectoryWatcher::Get().ProcessChanges();
 	FNotificationManager::Get().Tick(DeltaTime);
 	InputSystem::Get().Tick();
+	FAudioManager::Get().Tick();
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 }

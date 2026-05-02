@@ -141,15 +141,15 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Debug;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -162,22 +162,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
     <LibraryPath>ThirdParty\RmlUi\Release;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -231,10 +231,11 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmodL.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -254,10 +255,11 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -296,10 +298,11 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -375,6 +378,7 @@
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
     <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp" />
@@ -590,6 +594,7 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FLevelViewportLayout.h" />
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionMath.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Collision\ConvexVolume.h" />
