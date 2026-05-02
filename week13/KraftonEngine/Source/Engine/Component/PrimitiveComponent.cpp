@@ -3,6 +3,7 @@
 #include "Serialization/Archive.h"
 #include "Core/RayTypes.h"
 #include "Collision/RayUtils.h"
+#include "Collision/SpatialPartition.h"
 #include "Physics/IPhysicsScene.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/CollisionTypes.h"
@@ -73,10 +74,11 @@ void UPrimitiveComponent::BeginPlay()
 
 void UPrimitiveComponent::EndPlay()
 {
-	// World->DestroyActor → Actor::EndPlay → 컴포넌트 EndPlay 흐름. PhysX/Native에서 안전하게
-	// 제거하지 않으면 다음 frame simulate가 stale PxActor를 참조하다 crash 한다.
-	// dtor에도 같은 호출이 있지만 (raw 포인터라 OwnedComponents의 컴포넌트들이 자동 delete되지
-	// 않아) dtor가 안 불릴 수 있어 EndPlay에서 명시적으로 보장한다. 이중 호출은 mapping 부재로 noop.
+	// World->DestroyActor → Actor::EndPlay → 컴포넌트 EndPlay 흐름. PhysX와 RenderState
+	// (SceneProxy/Octree/PickingBVH)를 안전하게 정리하지 않으면 다음 frame에 stale 포인터를
+	// 참조해 crash. dtor에도 같은 호출이 있지만 (raw 포인터라 OwnedComponents의 컴포넌트들이
+	// 자동 delete되지 않아) dtor가 안 불릴 수 있어 EndPlay에서 명시적으로 보장한다.
+	// 이중 호출은 mapping/proxy 부재로 noop.
 	if (Owner)
 	{
 		if (UWorld* World = Owner->GetWorld())
@@ -85,8 +87,18 @@ void UPrimitiveComponent::EndPlay()
 			{
 				PS->UnregisterComponent(this);
 			}
+
+			// SpatialPartition에서도 즉시 제거. World::DestroyActor가 Partition.RemoveActor를
+			// 호출하지만, 그 시점에 OctreeNode 캐시가 이미 stale일 수 있는 경로(스폰 폭주 시
+			// RebuildRootBounds 등)가 있어 EndPlay에서 한 번 더 보장한다. 중복 제거는 noop.
+			World->GetPartition().RemoveSinglePrimitive(this);
 		}
 	}
+	// 캐시는 어떤 경로로도 다음 frame까지 살아있으면 안 된다 (FOctree node가 TryMerge로
+	// 사라지면 dangling). RemoveSinglePrimitive 후에도 명시적으로 한 번 더 클리어.
+	ClearOctreeLocation();
+
+	DestroyRenderState();
 	bComponentHasBegunPlay = false;
 
 	USceneComponent::EndPlay();
