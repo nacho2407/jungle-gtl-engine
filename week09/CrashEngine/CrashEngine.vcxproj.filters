@@ -289,6 +289,12 @@
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{55d28c66-e97a-4efc-752c-d6c20cfae250}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Physics">
+      <UniqueIdentifier>{20bbd357-19b4-4b00-abc6-868f88444ba1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Component\Shape">
+      <UniqueIdentifier>{fb55c42d-c0a3-467a-9691-2da10d86d232}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\VertexLayouts.hlsl">
@@ -1064,6 +1070,27 @@
     <ClCompile Include="Source\Engine\LuaScript\LuaGameObjectProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaRuntime.cpp" />
     <ClCompile Include="Source\Engine\Core\Watcher\DirectoryWatcher.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.cpp" />
+    <ClCompile Include="Source\GameRelease\GameReleaseEngine.cpp" />
+    <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\ShapeComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1916,8 +1943,35 @@
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\BoxProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Proxies\Shape\ShapeProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\GameRelease\GameReleaseEngine.h" />
+    <ClInclude Include="Source\Engine\Physics\CollisionManager.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\CollisionSystem.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\ShapeComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
