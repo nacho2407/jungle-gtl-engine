@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 
+#include "LuaActionLibrary.h"
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Sound/SoundManager.h"
@@ -58,78 +59,6 @@ FString LuaObjectToString(const sol::object& Object)
     default:
         return "unknown";
     }
-}
-
-static int Cpp_Wait(lua_State* L)
-{
-    if (!lua_isnumber(L, 1))
-    {
-        return luaL_error(L, "wait() argument must be a number!");
-    }
-
-    float WaitTime = sol::stack::get<float>(L, 1);
-
-    lua_pushthread(L);
-    sol::thread CurrentThread(L, -1);
-    lua_pop(L, 1);
-
-    FLuaCoroutineScheduler::Get().AddTimeTask(CurrentThread, WaitTime);
-
-    return lua_yield(L, 0);
-}
-
-static int Cpp_MoveTo(lua_State* L)
-{
-    FLuaGameObjectProxy* Proxy = sol::stack::get<FLuaGameObjectProxy*>(L, 1);
-    float TargetX = (float)lua_tonumber(L, 2);
-    float TargetY = (float)lua_tonumber(L, 3);
-
-    if (!Proxy || !Proxy->IsValid())
-    {
-        return luaL_error(L, "move_to() requires a valid GameObject!");
-    }
-
-    FVector NewLoc = Proxy->GetLocation();
-    NewLoc.X = TargetX;
-    NewLoc.Y = TargetY;
-    Proxy->SetLocation(NewLoc);
-
-    lua_pushthread(L);
-    sol::thread CurrentThread(L, -1);
-    lua_pop(L, 1);
-
-    auto Condition = [Proxy]() -> bool {
-        if (!Proxy || !Proxy->IsValid()) return true;
-        return Proxy->Velocity.LengthSquared() <= 0.01f;
-        };
-
-    FLuaCoroutineScheduler::Get().AddConditionTask(CurrentThread, Condition);
-
-    return lua_yield(L, 0);
-}
-
-static int Cpp_WaitUntilMoveDone(lua_State* L)
-{
-    sol::optional<FLuaGameObjectProxy*> OptProxy = sol::stack::get<sol::optional<FLuaGameObjectProxy*>>(L, 1);
-    if (!OptProxy)
-    {
-        return luaL_error(L, "wait_until_move_done() requires a valid GameObject as argument!");
-    }
-
-    FLuaGameObjectProxy* Proxy = OptProxy.value();
-
-    lua_pushthread(L);
-    sol::thread CurrentThread(L, -1);
-    lua_pop(L, 1);
-
-    auto Condition = [Proxy]() -> bool {
-        if (!Proxy || !Proxy->IsValid()) return true;
-        return Proxy->Velocity.LengthSquared() <= 0.01f;
-        };
-
-    FLuaCoroutineScheduler::Get().AddConditionTask(CurrentThread, Condition);
-
-    return lua_yield(L, 0);
 }
 } // namespace
 
@@ -279,7 +208,5 @@ void FLuaRuntime::BindEngineTypes()
         return FSoundManager::Get();
         });
 
-    Lua->set_function("wait", &Cpp_Wait);
-    Lua->set_function("wait_until_move_done", &Cpp_WaitUntilMoveDone);
-    Lua->set_function("move_to", &Cpp_MoveTo);
+    LuaActionLibrary::Bind(*Lua);
 }

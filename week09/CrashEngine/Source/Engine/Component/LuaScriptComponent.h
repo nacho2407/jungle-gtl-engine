@@ -17,7 +17,7 @@ public:
     void SetScriptPath(const FString& ScriptPath);
     const FString& GetScriptPath() const { return LuaScriptPath; }
 
-    void StartCoroutine(const FString& FunctionName);
+    void StartCoroutine(const FString& FunctionName, sol::variadic_args Args);
 
     void ClearScript();
 

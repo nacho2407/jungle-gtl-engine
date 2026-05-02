@@ -144,36 +144,25 @@ void ULuaScriptComponent::SetScriptPath(const FString& ScriptPath)
     ClearScriptRuntime();
 }
 
-void ULuaScriptComponent::StartCoroutine(const FString& FunctionName)
+void ULuaScriptComponent::StartCoroutine(const FString& FunctionName, sol::variadic_args Args)
 {
-    if (!bScriptLoaded)
-    {
-        UE_LOG(Lua, Warning, "Cannot start coroutine. Script is not loaded.");
-        return;
-    }
+    if (!bScriptLoaded) return;
 
     sol::state& Lua = FLuaRuntime::Get().GetState();
-
     sol::object Candidate = Env[FunctionName.c_str()];
 
-    if (Candidate.get_type() != sol::type::function)
-    {
-        UE_LOG(Lua, Warning, "Cannot start coroutine. Function '%s' not found or is not a function.", FunctionName.c_str());
-        return;
-    }
+    if (Candidate.get_type() != sol::type::function) return;
 
     sol::thread CoroutineThread = sol::thread::create(Lua.lua_state());
-    lua_State* L = CoroutineThread.thread_state();
 
-    Candidate.push(L);
+    sol::coroutine Co(CoroutineThread.state(), Candidate);
 
-    int nresults = 0;
-    int ResumeResult = lua_resume(L, nullptr, 0, &nresults);
+    sol::protected_function_result Result = Co(Args);
 
-    if (ResumeResult != 0 && ResumeResult != LUA_YIELD)
+    if (!Result.valid())
     {
-        const char* ErrorMsg = lua_tostring(L, -1);
-        UE_LOG(Lua, Error, "Coroutine '%s' failed on start: %s", FunctionName.c_str(), ErrorMsg);
+        sol::error Error = Result;
+        UE_LOG(Lua, Error, "Coroutine '%s' failed: %s", FunctionName.c_str(), Error.what());
     }
 }
 
@@ -221,9 +210,9 @@ bool ULuaScriptComponent::LoadScript()
     ObjProxy.SetActor(OwnerActor);
     Env["obj"] = &ObjProxy;
 
-    Env["StartCoroutine"] = [this](const std::string& FunctionName)
+    Env["StartCoroutine"] = [this](const std::string& Name, sol::variadic_args Args)
         {
-            this->StartCoroutine(FString(FunctionName.c_str()));
+            this->StartCoroutine(FString(Name.c_str()), Args);
         };
 
     const FString FullPathUtf8 = FPaths::FromPath(FullPath);
