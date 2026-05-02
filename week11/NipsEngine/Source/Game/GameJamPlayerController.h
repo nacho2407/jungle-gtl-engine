@@ -12,6 +12,13 @@ public:
 	void HandleKeyDown(int VK) override;
 	void HandleKeyReleased(int VK) override;
 	void HandleMouseMove(float DeltaX, float DeltaY) override;
+	void HandleMouseMoveAbsolute(float X, float Y) override;
+	void HandleMouseButtonPressed(int VK, float X, float Y) override;
+	void HandleMouseButtonDown(int VK, float DeltaX, float DeltaY) override;
+	void HandleMouseButtonReleased(int VK, float X, float Y) override;
+	void HandleMouseDrag(int VK, float DeltaX, float DeltaY) override;
+	void HandleMouseDragEnd(int VK, float X, float Y) override;
+	void HandleMouseWheel(float Notch) override;
 
 protected:
 	void ApplyInitialPawnTransform(ADefaultPlayerActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation) override;

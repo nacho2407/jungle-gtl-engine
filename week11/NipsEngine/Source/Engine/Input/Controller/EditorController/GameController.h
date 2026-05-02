@@ -5,11 +5,13 @@
 class FViewportCamera;
 class APlayerController;
 
-class FPIEController : public IBaseEditorController
+//  기존에 PIE Controller였음 이름이
+class FGameController : public IBaseEditorController
 {
   public:
     void Tick(float InDeltaTime) override;
     void OnMouseMove(float DeltaX, float DeltaY) override;
+    void OnMouseMoveAbsolute(float X, float Y) override;
     void OnLeftMouseClick(float X, float Y) override;
     void OnLeftMouseDragEnd(float X, float Y) override;
     void OnLeftMouseButtonUp(float X, float Y) override;
