@@ -70,7 +70,7 @@ void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y
                 Slash->InitDefaultComponents();
                 Slash->SetActorLocation(PossessedActor->GetActorLocation());
                 Slash->SetActorRotation(PossessedActor->GetActorRotation());
-                Slash->SetActorScale(FVector(10, 1, 1));
+                Slash->SetActorScale(FVector(10, 1, 0.1));
             }
         }
         break;
