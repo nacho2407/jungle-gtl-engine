@@ -220,6 +220,11 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 
 void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 {
+	Lua.new_usertype<UCarMovementComponent>("CarMovementComponent",
+		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
+		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
+		"GetForwardSpeed", &UCarMovementComponent::GetForwardSpeed);
+
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(
 		[](AActor& Actor)
@@ -268,6 +273,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"AddWorldOffset", [](AActor& Actor, const FVector& Offset)
 	{
 		Actor.AddActorWorldOffset(Offset);
+	},
+
+		"GetCarMovement", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UCarMovementComponent>();
 	},
 
 		"UUID", sol::property([](AActor& Actor)
