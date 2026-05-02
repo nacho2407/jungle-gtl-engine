@@ -34,7 +34,35 @@
               "bTickEnable" : true
             }
           }, {
-            "Children" : [],
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Element 0" : {
+                    "Path" : "Asset/Materials/Auto/top.mat"
+                  },
+                  "Generate Overlap Events" : false,
+                  "Location" : [-0.416978, 0.000000, 0.131648],
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [0.200000, 0.020000, 0.020000],
+                  "Simulate Physics" : false,
+                  "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+                  "Two Sided Shadow" : false,
+                  "Visible" : false,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
             "ClassName" : "UStaticMeshComponent",
             "Properties" : {
               "Cast Shadow" : true,
@@ -560,7 +588,7 @@
           "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
           "Intensity" : 1.000000,
           "Location" : [-3.937794, -4.427315, 8.093152],
-          "Rotation" : [89.900002, -45.000000, 0.000000],
+          "Rotation" : [89.899994, -45.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : -0.000100,
           "Shadow Normal Bias" : -0.002000,
@@ -581,9 +609,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [2.486115, 2.016448, 7.396931],
+    "Location" : [1.552224, -0.613752, 6.240169],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 26.715115, -175.647675]
+    "Rotation" : [0.000000, 27.315109, 178.052719]
   },
   "Version" : 2,
   "WorldType" : "Editor"
