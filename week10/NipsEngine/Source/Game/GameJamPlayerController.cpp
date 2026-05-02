@@ -60,6 +60,20 @@ void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y
     switch (VK)
     {
     case VK_LBUTTON:
+	{
+        if (PossessedActor)
+        {
+            UWorld* World = PossessedActor->GetFocusedWorld();
+            if (World)
+            {
+                ABladeSlash* Slash = World->SpawnActor<ABladeSlash>();
+                Slash->InitDefaultComponents();
+                Slash->SetActorLocation(PossessedActor->GetActorLocation());
+            }
+        }
+        break;
+	}
+    case VK_RBUTTON:
     {
         if (PossessedActor)
         {

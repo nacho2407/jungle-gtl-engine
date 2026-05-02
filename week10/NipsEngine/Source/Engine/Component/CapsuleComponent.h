@@ -12,24 +12,17 @@ public:
 
     float GetScaledCapsuleHalfHeight() const 
 	{
-        FVector Axis = GetWorldTransform().GetUnitAxis(EAxis::Z);
         FVector Scale = GetWorldScale();
-        float UpAxisScale = std::sqrt(
-            Axis.X * Axis.X * Scale.X * Scale.X +
-            Axis.Y * Axis.Y * Scale.Y * Scale.Y +
-            Axis.Z * Axis.Z * Scale.Z * Scale.Z);
-		return CapsuleHalfHeight * UpAxisScale; 
+        return CapsuleHalfHeight * std::abs(Scale.Z);
 	}
     
 	float GetScaledCapsuleRadius() const
     {
-        FVector Axis = GetWorldTransform().GetUnitAxis(EAxis::Z);
         FVector Scale = GetWorldScale();
-
-		// Capsule Axis = Z 일 때, X/Y 만 보면 됨
-        return CapsuleRadius * std::max(std::abs(Scale.X), std::abs(Scale.Y));
+        return CapsuleRadius * std::abs(Scale.Z);
     }
 
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostDuplicate(UObject* Original) override;
     void Serialize(FArchive& Ar) override;
 
