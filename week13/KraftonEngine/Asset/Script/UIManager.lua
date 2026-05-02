@@ -133,6 +133,23 @@ function UIManager.Toggle(key)
     return true
 end
 
+function UIManager.SetQuestHud(questText, arrowSymbol, visible)
+    local widget = widgets["gameOverlay"]
+    if widget == nil then
+        return false
+    end
+
+    local opacity = "1"
+    if visible == false then
+        opacity = "0"
+    end
+
+    widget:set_text("quest-value", questText or "-")
+    widget:set_text("quest-arrow", arrowSymbol or "&#8593;")
+    widget:set_property("hud-quest-panel", "opacity", opacity)
+    return true
+end
+
 function UIManager.FadeTo(fromOpacity, toOpacity, duration, onComplete, hideWhenDone)
     fade.active = true
     fade.elapsed = 0

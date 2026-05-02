@@ -50,6 +50,17 @@ body {
 	text-align: center;
 }
 
+#hud-quest-panel {
+	position: absolute;
+	left: 326dp;
+	top: 48dp;
+	width: 180dp;
+	height: 94dp;
+	border-width: 2dp;
+	border-color: #f04444;
+	background-color: #15171ce6;
+}
+
 #hud-status-panel {
 	position: absolute;
 	right: 4%;
@@ -71,6 +82,37 @@ body {
 	border-color: #f0c85a;
 	background-color: #15171ce6;
 	text-align: center;
+}
+
+#hud-quest-panel .hud-small-label {
+	left: 14dp;
+	top: 12dp;
+	width: 110dp;
+	color: #ff6666;
+}
+
+#quest-value {
+	position: absolute;
+	left: 14dp;
+	top: 42dp;
+	width: 110dp;
+	height: 30dp;
+	color: #ffffff;
+	font-size: 20dp;
+	line-height: 30dp;
+}
+
+#quest-arrow {
+	position: absolute;
+	right: 14dp;
+	top: 27dp;
+	width: 42dp;
+	height: 42dp;
+	color: #ff4444;
+	font-size: 38dp;
+	line-height: 42dp;
+	text-align: center;
+	transform-origin: 50% 50%;
 }
 
 .hud-label {

@@ -3,7 +3,6 @@
 #include "Core/Log.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
-#include "Component/QuestArrowComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -315,13 +314,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"AddWorldOffset", [](AActor& Actor, const FVector& Offset)
 	{
 		Actor.AddActorWorldOffset(Offset);
-	},
-
-	"AddQuestArrowComponent", [](AActor& Actor)
-	{
-		UQuestArrowComponent* Arrow = Actor.AddComponent<UQuestArrowComponent>();
-		Arrow->SetRelativeScale(FVector(3.0f, 3.0f, 3.0f));
-		return Arrow;
 	},
 
 		"Destroy", [](AActor& Actor)

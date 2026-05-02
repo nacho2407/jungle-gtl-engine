@@ -60,7 +60,6 @@ local quests = {
 local state = QuestState.NotStarted
 local currentQuestIndex = 0
 local car = nil
-local arrow = nil
 local activeTarget = nil
 
 local function EnsureCar()
@@ -72,24 +71,38 @@ local function EnsureCar()
     return car
 end
 
-local function EnsureArrow()
-    local ownerCar = EnsureCar()
-    if ownerCar == nil then
-        return nil
+local function GetQuestText(quest)
+    if quest == nil then
+        return "-"
     end
 
-    if arrow == nil then
-        arrow = ownerCar:AddQuestArrowComponent()
+    if quest.id == "carWash" then
+        return "세차하기"
+    elseif quest.id == "gas" then
+        return "주유하기"
     end
 
-    arrow:SetVisibility(true)
-    return arrow
+    return quest.id
 end
 
-local function HideArrow()
-    if arrow ~= nil then
-        arrow:SetVisibility(false)
+local function GetArrowSymbolFromAngle(angle)
+    if angle >= -22.5 and angle < 22.5 then
+        return "&#8593;"
+    elseif angle >= 22.5 and angle < 67.5 then
+        return "&#8598;"
+    elseif angle >= 67.5 and angle < 112.5 then
+        return "&#8592;"
+    elseif angle >= 112.5 and angle < 157.5 then
+        return "&#8601;"
+    elseif angle >= -67.5 and angle < -22.5 then
+        return "&#8599;"
+    elseif angle >= -112.5 and angle < -67.5 then
+        return "&#8594;"
+    elseif angle >= -157.5 and angle < -112.5 then
+        return "&#8600;"
     end
+
+    return "&#8595;"
 end
 
 local function GetCurrentQuest()
@@ -100,7 +113,7 @@ local function StartCurrentQuest()
     local quest = GetCurrentQuest()
     if quest == nil then
         state = QuestState.AllCompleted
-        HideArrow()
+        UIManager.SetQuestHud("-", "&#8593;", false)
         return
     end
 
@@ -114,18 +127,19 @@ local function StartCurrentQuest()
         return
     end
 
-    if EnsureArrow() == nil then
+    if EnsureCar() == nil then
         print("Quest car actor not found.")
         return
     end
 
+    UIManager.SetQuestHud(GetQuestText(quest), "&#8593;", true)
     state = QuestState.Active
 end
 
 local function ShowQuest(index)
     currentQuestIndex = index
     activeTarget = nil
-    HideArrow()
+    UIManager.SetQuestHud("-", "&#8593;", false)
 
     local quest = GetCurrentQuest()
     if quest == nil then
@@ -144,39 +158,52 @@ local function CompleteCurrentQuest()
     end
 
     state = QuestState.Completed
-    HideArrow()
+    UIManager.SetQuestHud("-", "&#8593;", false)
 
     if currentQuestIndex < #quests then
         ShowQuest(currentQuestIndex + 1)
     else
         state = QuestState.AllCompleted
+        UIManager.SetQuestHud("완료", "&#8593;", false)
         print("All quests completed.")
     end
 end
 
-local function UpdateQuestArrow()
+local function UpdateQuestHud()
     local ownerCar = EnsureCar()
     if ownerCar == nil or activeTarget == nil then
-        return
-    end
-
-    local questArrow = EnsureArrow()
-    if questArrow == nil then
+        UIManager.SetQuestHud("-", "&#8593;", false)
         return
     end
 
     local toTarget = activeTarget.Location - ownerCar.Location
-    toTarget.Z = 0.0
+    -- toTarget.Z = 0.0
+    local toTarget2D = Vector.new(toTarget.X, toTarget.Y, 0.0)
 
-    if toTarget:Length() <= 1.0 then
+    if toTarget2D:Length() <= 1.0 then
+        UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), "&#8593;", true)
         return
     end
 
-    local direction = toTarget:Normalized()
-    local arrowLocation = ownerCar.Location + ownerCar.Forward * 2.7
-    arrowLocation.Z = arrowLocation.Z + 0.7
-    questArrow:SetWorldLocation(arrowLocation)
-    questArrow:SetWorldDirection(direction)
+    local direction = toTarget2D:Normalized()
+    local rawForward = ownerCar.Forward
+    --forward.Z = 0.0
+    local forward = Vector.new(rawForward.X, rawForward.Y, 0.0)
+
+    if forward:Length() <= 1.0 then
+        UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), "&#8593;", true)
+        return
+    end
+
+    forward = forward:Normalized()
+
+    local dot = forward:Dot(direction)
+    if dot > 1.0 then dot = 1.0 end
+    if dot < -1.0 then dot = -1.0 end
+
+    local crossZ = forward.X * direction.Y - forward.Y * direction.X
+    local angle = math.atan(crossZ, dot) * 180.0 / 3.14159265
+    UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), GetArrowSymbolFromAngle(angle), true)
 end
 
 HandleQuestPhaseChanged = function(phase)
@@ -229,5 +256,5 @@ function Tick(dt)
         return
     end
 
-    UpdateQuestArrow()
+    UpdateQuestHud()
 end

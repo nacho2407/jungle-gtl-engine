@@ -60,7 +60,6 @@ void FMeshBufferManager::CreatePrimitiveMeshData()
 	CreateRotationGizmo();
 	CreateScaleGizmo();
 	CreateQuad();
-	CreateQuestArrow();
 	CreateTexturedQuad();
 }
 
@@ -275,61 +274,6 @@ void FMeshBufferManager::CreateQuad()
 	vertices.push_back({ FVector(0.0f, -0.5f, -0.5f), DefaultColor, 0 });
 
 	indices.assign({ 0, 1, 2, 0, 2, 3 });
-}
-
-void FMeshBufferManager::CreateQuestArrow()
-{
-	FMeshData& Data = MeshDataMap[EMeshShape::QuestArrow];
-	TArray<FVertex>& vertices = Data.Vertices;
-	TArray<uint32>& indices = Data.Indices;
-
-	const FVector4 ArrowColor(1.0f, 0.4f, 0.4f, 1.0f);
-
-	auto AddBox = [&](const FVector& Center, const FVector& Extent)
-	{
-		const uint32 StartIdx = static_cast<uint32>(vertices.size());
-		FVector p[8] = {
-			Center + FVector(-Extent.X, -Extent.Y, -Extent.Z),
-			Center + FVector( Extent.X, -Extent.Y, -Extent.Z),
-			Center + FVector( Extent.X,  Extent.Y, -Extent.Z),
-			Center + FVector(-Extent.X,  Extent.Y, -Extent.Z),
-			Center + FVector(-Extent.X, -Extent.Y,  Extent.Z),
-			Center + FVector( Extent.X, -Extent.Y,  Extent.Z),
-			Center + FVector( Extent.X,  Extent.Y,  Extent.Z),
-			Center + FVector(-Extent.X,  Extent.Y,  Extent.Z)
-		};
-
-		for (int32 i = 0; i < 8; ++i)
-		{
-			vertices.push_back({ p[i], ArrowColor, 0 });
-		}
-
-		const uint32 BoxIndices[] = {
-			0,2,1, 0,3,2, 4,5,6, 4,6,7,
-			0,1,5, 0,5,4, 2,3,7, 2,7,6,
-			0,4,7, 0,7,3, 1,2,6, 1,6,5
-		};
-		for (uint32 Idx : BoxIndices)
-		{
-			indices.push_back(StartIdx + Idx);
-		}
-	};
-
-	AddBox(FVector(0.10f, 0.0f, 0.0f), FVector(0.10f, 0.02f, 0.02f));
-
-	const uint32 Base = static_cast<uint32>(vertices.size());
-	vertices.push_back({ FVector(0.20f, -0.055f, -0.055f), ArrowColor, 0 });
-	vertices.push_back({ FVector(0.20f,  0.055f, -0.055f), ArrowColor, 0 });
-	vertices.push_back({ FVector(0.20f,  0.055f,  0.055f), ArrowColor, 0 });
-	vertices.push_back({ FVector(0.20f, -0.055f,  0.055f), ArrowColor, 0 });
-	vertices.push_back({ FVector(0.34f,  0.0f,    0.0f),   ArrowColor, 0 });
-
-	indices.push_back(Base + 0); indices.push_back(Base + 1); indices.push_back(Base + 4);
-	indices.push_back(Base + 1); indices.push_back(Base + 2); indices.push_back(Base + 4);
-	indices.push_back(Base + 2); indices.push_back(Base + 3); indices.push_back(Base + 4);
-	indices.push_back(Base + 3); indices.push_back(Base + 0); indices.push_back(Base + 4);
-	indices.push_back(Base + 0); indices.push_back(Base + 3); indices.push_back(Base + 2);
-	indices.push_back(Base + 0); indices.push_back(Base + 2); indices.push_back(Base + 1);
 }
 
 void FMeshBufferManager::CreateTranslationGizmo()
