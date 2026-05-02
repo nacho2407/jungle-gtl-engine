@@ -2,11 +2,15 @@
 #include "Game/Pawn/CarPawn.h"
 #include "Component/SphereComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/Movement/RotatingMovementComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "Mesh/ObjManager.h"
 #include "GameFramework/World.h"
+#include "Math/Rotator.h"
 #include "Core/CollisionTypes.h"
 #include "Core/Log.h"
+
+#include <cstdlib>
 
 IMPLEMENT_CLASS(AMeteor, AActor)
 
@@ -33,6 +37,19 @@ void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 			Mesh->SetStaticMesh(Asset);
 		Mesh->SetRelativeScale(FVector(5.0f, 5.0f, 5.0f));
 	}
+
+	// 시각적인 텀블링 — root는 PhysX가 매 프레임 회전을 덮어쓰므로 Mesh를 회전시킨다.
+	auto RandRange = [](float MinDeg, float MaxDeg)
+	{
+		const float T = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+		return MinDeg + T * (MaxDeg - MinDeg);
+	};
+	URotatingMovementComponent* Rotator = AddComponent<URotatingMovementComponent>();
+	Rotator->SetUpdatedComponent(Mesh);
+	// world-space + pivot=0이면 TickComponent가 early return해서 회전이 안 돈다.
+	// 자기 자리 자전이므로 local-space로 켜야 AddLocalRotation 경로를 탄다.
+	Rotator->SetRotationInLocalSpace(true);
+	Rotator->SetRotationRate(FRotator(RandRange(-180.0f, 180.0f), RandRange(-180.0f, 180.0f), RandRange(-180.0f, 180.0f)));
 }
 
 void AMeteor::PostDuplicate()

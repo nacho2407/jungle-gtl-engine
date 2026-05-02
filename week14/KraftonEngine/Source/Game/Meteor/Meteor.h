@@ -33,7 +33,7 @@ public:
 	void Tick(float DeltaTime) override;
 
 	// 코드 spawn 시 호출 — 직렬화 경로에선 PostDuplicate가 캐시 다시 잡음
-	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/BasicShape/Sphere.obj");
+	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/meteor/meteor.obj");
 	void PostDuplicate() override;
 
 	USphereComponent* GetCollisionSphere() const { return CollisionSphere; }
