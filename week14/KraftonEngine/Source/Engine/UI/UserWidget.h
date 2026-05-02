@@ -62,6 +62,7 @@ public:
 	void BindClick(const FString& ElementId, sol::protected_function Callback);
 	void RegisterEventListeners();
 	void ClearEventListeners();
+	void SetText(const FString& ElementId, const FString& Text);
 
 	APlayerController* GetOwningPlayer() const { return OwningPlayer; }
 	const FString& GetDocumentPath() const { return DocumentPath; }

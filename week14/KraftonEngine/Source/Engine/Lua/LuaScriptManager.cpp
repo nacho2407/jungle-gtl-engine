@@ -313,7 +313,8 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"bind_click", [](UUserWidget& Widget, const FString& ElementId, sol::protected_function Callback)
 	{
 		Widget.BindClick(ElementId, Callback);
-	});
+	},
+		"SetText", &UUserWidget::SetText);
 
 	sol::table UI = Lua.create_named_table("UI");
 	UI.set_function("CreateWidget", [](const FString& DocumentPath)

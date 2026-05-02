@@ -68,4 +68,8 @@ function UIManager.Toggle(key)
     return true
 end
 
+function UIManager.GetWidget(key)
+    return widgets[key]
+end
+
 return UIManager
