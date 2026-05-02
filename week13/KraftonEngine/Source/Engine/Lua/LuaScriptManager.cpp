@@ -1,6 +1,7 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Component/Movement/CarMovementComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -20,6 +21,7 @@ void FLuaScriptManager::Initialize()
 {
 	Lua = std::make_unique<sol::state>();
 	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::coroutine);
+	(*Lua)["package"]["path"] = FPaths::ToUtf8(FPaths::Combine(FPaths::ScriptDir(), L"?.lua").c_str());
 	RegisterBindings(*Lua);
 }
 

@@ -19,6 +19,10 @@ ULuaScriptComponent::~ULuaScriptComponent()
 
 void ULuaScriptComponent::InitializeLua()
 {
+	LuaBeginPlay = sol::nil;
+	LuaTick = sol::nil;
+	LuaEndPlay = sol::nil;
+
 	sol::state& Lua = FLuaScriptManager::GetState();
 
 	Env = sol::environment(Lua, sol::create, Lua.globals());

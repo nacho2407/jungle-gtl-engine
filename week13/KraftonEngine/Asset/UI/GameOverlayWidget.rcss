@@ -1,0 +1,175 @@
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	background-color: transparent;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+}
+
+#hud-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+#hud-top-line {
+	position: absolute;
+	left: 4%;
+	top: 28dp;
+	width: 92%;
+	height: 3dp;
+	background-color: #f0c85a;
+}
+
+#hud-score-panel {
+	position: absolute;
+	left: 4%;
+	top: 48dp;
+	width: 260dp;
+	height: 94dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+}
+
+#hud-time-panel {
+	position: absolute;
+	left: 50%;
+	top: 48dp;
+	width: 220dp;
+	height: 94dp;
+	margin-left: -110dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+	text-align: center;
+}
+
+#hud-status-panel {
+	position: absolute;
+	right: 4%;
+	top: 48dp;
+	width: 330dp;
+	height: 94dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+}
+
+#hud-combo-panel {
+	position: absolute;
+	right: 4%;
+	bottom: 64dp;
+	width: 160dp;
+	height: 82dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+	text-align: center;
+}
+
+.hud-label {
+	position: absolute;
+	left: 18dp;
+	top: 12dp;
+	width: 220dp;
+	height: 22dp;
+	color: #f0c85a;
+	font-size: 16dp;
+	line-height: 22dp;
+}
+
+.hud-main-value {
+	position: absolute;
+	left: 18dp;
+	top: 38dp;
+	width: 224dp;
+	height: 40dp;
+	color: #ffffff;
+	font-size: 34dp;
+	line-height: 40dp;
+}
+
+#hud-time-panel .hud-label,
+#hud-time-panel .hud-main-value {
+	left: 0px;
+	width: 100%;
+	text-align: center;
+}
+
+.hud-small-label {
+	position: absolute;
+	left: 18dp;
+	top: 14dp;
+	width: 280dp;
+	height: 20dp;
+	color: #aeb6c8;
+	font-size: 14dp;
+	line-height: 20dp;
+}
+
+.hud-status-value {
+	position: absolute;
+	left: 18dp;
+	top: 42dp;
+	width: 294dp;
+	height: 32dp;
+	color: #ffffff;
+	font-size: 22dp;
+	line-height: 32dp;
+}
+
+.hud-side-value {
+	position: absolute;
+	left: 0px;
+	top: 36dp;
+	width: 100%;
+	height: 32dp;
+	color: #ffffff;
+	font-size: 28dp;
+	line-height: 32dp;
+	text-align: center;
+}
+
+#hud-combo-panel .hud-small-label {
+	left: 0px;
+	width: 100%;
+	text-align: center;
+}
+
+#hud-center-mark {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 34dp;
+	height: 34dp;
+	margin-left: -17dp;
+	margin-top: -17dp;
+	border-width: 2dp;
+	border-color: #ffffff80;
+}
+
+#hud-center-dot {
+	position: absolute;
+	left: 14dp;
+	top: 14dp;
+	width: 6dp;
+	height: 6dp;
+	background-color: #f0c85a;
+}
+
+#hud-bottom-tip {
+	position: absolute;
+	left: 40dp;
+	bottom: 38dp;
+	width: 210dp;
+	height: 28dp;
+	color: #aeb6c8;
+	font-size: 16dp;
+	line-height: 28dp;
+}
