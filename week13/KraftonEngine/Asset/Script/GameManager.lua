@@ -7,7 +7,7 @@ function BeginPlay()
         UIManager.Show("gameOverlay")
     end)
 
-    UIManager.Show("gameOver")
+    UIManager.Show("intro")
 end
 
 function EndPlay()
