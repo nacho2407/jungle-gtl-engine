@@ -4,6 +4,9 @@
 #include "Geometry/Plane.h"
 #include "Render/Common/RenderTypes.h"
 
+class UStaticMesh;
+class UStaticMeshComponent;
+
 class UProceduralMeshComponent : public UPrimitiveComponent
 {
 public:
@@ -16,6 +19,9 @@ public:
     };
 
 public:
+    void CreateFrom(UStaticMesh* StaticMesh);
+    void CreateFrom(UProceduralMeshComponent* ProcMeshComp);
+
     void CreateSection(int32 SectionIndex,
                        const TArray<FNormalVertex>& InVertices,
                        const TArray<uint32>& InIndices);
@@ -36,6 +42,9 @@ public:
     int32 GetNumMaterials() const override { return Materials.size(); }
     class UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
     void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) override;
+
+    void PostDuplicate(UObject* Original) override;
+    void Serialize(FArchive& Ar) override;
 
 private:
     TArray<FMeshSection> Sections;
@@ -58,7 +67,13 @@ public:
         FSliceMeshData& OutBack);
 
 	static void SliceComponent(
-        UPrimitiveComponent* InComponent,
+        UStaticMeshComponent* InComponent,
+        const FPlane& Plane,
+        UProceduralMeshComponent*& OutFront,
+        UProceduralMeshComponent*& OutBack);
+
+	static void SliceComponent(
+        UProceduralMeshComponent* InComponent,
         const FPlane& Plane,
         UProceduralMeshComponent*& OutFront,
         UProceduralMeshComponent*& OutBack);

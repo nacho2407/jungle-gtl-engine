@@ -22,6 +22,9 @@
 #include "Component/BoxComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
+#include "GameFramework/World.h"
+
 
 namespace
 {
@@ -89,6 +92,15 @@ REGISTER_FACTORY(APointLightActor)
 
 DEFINE_CLASS(ASpotlightActor, APointLightActor)
 REGISTER_FACTORY(ASpotlightActor)
+
+DEFINE_CLASS(ABullet, AActor)
+REGISTER_FACTORY(ABullet)
+
+DEFINE_CLASS(ADestructibleActor, AActor)
+REGISTER_FACTORY(ADestructibleActor)
+
+DEFINE_CLASS(ABladeSlash, AActor)
+REGISTER_FACTORY(ABladeSlash)
 
 void ACubeActor::InitDefaultComponents()
 {
@@ -216,7 +228,7 @@ void ADefaultPlayerActor::InitDefaultComponents()
 	SpringArmComp = AddComponent<USpringArmComponent>();
 	SpringArmComp->AttachToComponent(SceneRoot);
 	SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
-	SpringArmComp->SetTargetArmLength(3.f);
+	SpringArmComp->SetTargetArmLength(0.f);
 	SpringArmComp->SetSocketOffset(FVector::ZeroVector);
 
 	CameraComp = AddComponent<UCameraComponent>();
@@ -278,7 +290,7 @@ void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 void AStaticMeshActor::InitDefaultComponents()
 {
-	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
+	auto* StaticMesh = AddComponent<UStaticMeshComponent>();
 	SetRootComponent(StaticMesh);
 
 	// Text attached directly to Root
@@ -536,4 +548,150 @@ void ASpotlightActor::Tick(float DeltaTime)
 	{
 		BillboardComp->SetColor(GetLight()->LightColor);
 	}
+}
+
+void ABullet::InitDefaultComponents()
+{
+    auto* Sphere = AddComponent<UStaticMeshComponent>();
+    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/sphere.obj"));
+    Sphere->SetRelativeScale(FVector(0.5, 0.5, 0.5));
+    SetRootComponent(Sphere);
+
+	auto* BoxComp = AddComponent<UBoxComponent>();
+    BoxComp->AttachToComponent(GetRootComponent());
+    BoxComp->SetGenerateOverlapEvents(true);
+
+    ProjectileComp = AddComponent<UProjectileMovementComponent>();
+    ProjectileComp->SetInitialSpeed(10);
+    ProjectileComp->SetComponentTickEnabled(true);
+    ProjectileComp->SetUpdatedComponent(GetRootComponent());
+}
+
+void ABullet::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
+}
+
+void ABullet::SetProjectileVelocity(FVector NewVelocity)
+{
+    if (ProjectileComp)
+	    ProjectileComp->SetVelocity(NewVelocity);
+}
+
+void ADestructibleActor::InitDestructibleActor(UStaticMesh* InStaticMesh)
+{
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(InStaticMesh);
+    SetRootComponent(ProcMeshComp);
+
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+    BoxComponent->SetGenerateOverlapEvents(true);
+}
+
+void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp)
+{
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(InProcMeshComp);
+    UObjectManager::Get().DestroyObject(InProcMeshComp);
+    SetRootComponent(ProcMeshComp);
+
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+	// 잘린 애들을 무한히 자를 수 없게 제한
+    BoxComponent->SetGenerateOverlapEvents(false);
+}
+
+void ADestructibleActor::InitDefaultComponents()
+{
+	UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    InitDestructibleActor(Mesh);
+}
+
+void ADestructibleActor::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
+}
+
+void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+}
+
+void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->IsA<ABladeSlash>())
+	{
+        UProceduralMeshComponent* ProcMeshComp1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+        UProceduralMeshComponent* ProcMeshComp2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+
+        FPlane Plane;
+
+        FVector N = SweepResult.Normal;   // 반드시 normalize
+        FVector P = SweepResult.Location; // plane 위의 점
+        float D = FVector::DotProduct(N, P);
+
+        FVector SplitDir;
+        SplitDir = FVector::CrossProduct(N, FVector::UpVector);
+        if (SplitDir.IsNearlyZero())
+        {
+            SplitDir = FVector::CrossProduct(N, FVector::RightVector);
+        }
+
+        Plane.Normal = SplitDir;
+        Plane.D = 0;
+
+        FMeshSlicer::SliceComponent(ProcMeshComp, Plane, ProcMeshComp1, ProcMeshComp2);
+
+        UWorld* World = OtherActor->GetFocusedWorld();
+        ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
+        ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
+
+        Actor1->InitDestructibleActor(ProcMeshComp1);
+        Actor1->SetActorLocation(GetActorLocation() + FVector(0, 0, 1));
+
+        Actor2->InitDestructibleActor(ProcMeshComp2);
+        Actor2->SetActorLocation(GetActorLocation() + FVector(0, 0, -1));
+
+        SetVisible(false);
+	}
+}
+
+void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+}
+
+void ADestructibleActor::PostDuplicate(UObject* Original)
+{
+	// 해당 함수에서 모든 걸 복사하기 때문에 추가로 복사를 고려할 필요 없음
+    AActor::PostDuplicate(Original);
+
+	// 복사된 것중 필요한 Comp 만 연결하는 과정
+    ProcMeshComp = nullptr;
+    BoxComponent = nullptr;
+
+    for (UActorComponent* Comp : GetComponents())
+    {
+        if (!Comp) continue;
+        if (ProcMeshComp == nullptr && Comp->IsA<UProceduralMeshComponent>())
+        {
+            ProcMeshComp = static_cast<UProceduralMeshComponent*>(Comp);
+        }
+        else if (BoxComponent == nullptr && Comp->IsA<UBoxComponent>())
+        {
+            BoxComponent = static_cast<UBoxComponent*>(Comp);
+        }
+        if (ProcMeshComp && BoxComponent) break;
+    }
+}
+
+void ABladeSlash::InitDefaultComponents()
+{
+    auto* Root = AddComponent<UBoxComponent>();
+    Root->SetGenerateOverlapEvents(true);
+    SetRootComponent(Root);
+}
+
+void ABladeSlash::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
 }
