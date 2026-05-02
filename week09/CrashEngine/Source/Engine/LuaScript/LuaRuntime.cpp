@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Core/Logging/LogMacros.h"
+#include "Core/Sound/SoundManager.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "Math/Vector.h"
 
@@ -187,4 +188,21 @@ void FLuaRuntime::BindEngineTypes()
 		"AddWorldOffset", &FLuaGameObjectProxy::AddWorldOffset,
 		"PrintLocation", &FLuaGameObjectProxy::PrintLocation
 	);
+
+    // SoundManager 등록
+    Lua->new_usertype<FSoundManager>("SoundManager", sol::no_constructor,
+        "LoadSound", &FSoundManager::LoadSound,
+        "LoadSoundsFromDirectory", &FSoundManager::LoadSoundsFromDirectory,
+        "PlayBGM", &FSoundManager::PlayBGM,
+        "StopBGM", &FSoundManager::StopBGM,
+        "PlaySFX", &FSoundManager::PlaySFX,
+        "StopAllSFX", &FSoundManager::StopAllSFX,
+        "SetMasterVolume", &FSoundManager::SetMasterVolume,
+        "SetBGMVolume", &FSoundManager::SetBGMVolume,
+        "SetSFXVolume", &FSoundManager::SetSFXVolume
+    );
+
+    Lua->set_function("GetSoundManager", []() -> FSoundManager& {
+        return FSoundManager::Get();
+        });
 }
