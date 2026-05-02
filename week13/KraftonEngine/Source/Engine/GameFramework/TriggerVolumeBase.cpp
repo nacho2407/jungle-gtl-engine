@@ -83,5 +83,12 @@ void ATriggerVolumeBase::HandleEndOverlap(
 	if (!Pawn || !Pawn->IsPossessed()) return;
 
 	OnPossessedPawnExited(Pawn);
-	// GameMode 통지는 entry에서만 — 페이즈 전이 트리거는 통상 진입 시점에 발생.
+
+	if (UWorld* W = GetWorld())
+	{
+		if (AGameModeBase* GM = W->GetGameMode())
+		{
+			GM->OnPossessedPawnExitedTrigger(this, Pawn);
+		}
+	}
 }

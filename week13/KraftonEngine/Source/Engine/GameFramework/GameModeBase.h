@@ -34,9 +34,10 @@ public:
 	virtual void EndMatch();
 
 	// --- TriggerVolume 콜백 ---
-	// Possessed Pawn이 진입한 경우에만 호출된다 (TriggerVolumeBase가 필터링).
+	// Possessed Pawn이 진입/이탈한 경우에만 호출된다 (TriggerVolumeBase가 필터링).
 	// 서브클래스가 페이즈 전이를 처리한다.
 	virtual void OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger, APawn* Pawn) {}
+	virtual void OnPossessedPawnExitedTrigger(ATriggerVolumeBase* Trigger, APawn* Pawn) {}
 
 	// --- Accessors ---
 	AGameStateBase* GetGameState() const { return GameState; }
