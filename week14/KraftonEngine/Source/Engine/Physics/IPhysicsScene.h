@@ -6,6 +6,7 @@
 
 class UWorld;
 class UPrimitiveComponent;
+struct FHitResult;
 
 // 물리 백엔드 선택
 enum class EPhysicsBackend : uint8
@@ -35,4 +36,22 @@ public:
 
 	// --- 시뮬레이션 ---
 	virtual void Tick(float DeltaTime) = 0;
+
+	// --- 힘/토크 ---
+	virtual void AddForce(UPrimitiveComponent* Comp, const FVector& Force) = 0;
+	virtual void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) = 0;
+	virtual void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) = 0;
+
+	// --- 속도 읽기/쓰기 ---
+	virtual FVector GetLinearVelocity(UPrimitiveComponent* Comp) const = 0;
+	virtual void SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel) = 0;
+	virtual FVector GetAngularVelocity(UPrimitiveComponent* Comp) const = 0;
+	virtual void SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel) = 0;
+
+	// --- Mass ---
+	virtual void SetMass(UPrimitiveComponent* Comp, float Mass) = 0;
+	virtual float GetMass(UPrimitiveComponent* Comp) const = 0;
+
+	// --- Raycast ---
+	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const = 0;
 };

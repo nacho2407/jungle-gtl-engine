@@ -24,6 +24,20 @@ public:
 
 	void Tick(float DeltaTime) override;
 
+	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
+	void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) override;
+	void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) override;
+
+	FVector GetLinearVelocity(UPrimitiveComponent* Comp) const override;
+	void SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel) override;
+	FVector GetAngularVelocity(UPrimitiveComponent* Comp) const override;
+	void SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel) override;
+
+	void SetMass(UPrimitiveComponent* Comp, float Mass) override;
+	float GetMass(UPrimitiveComponent* Comp) const override;
+
+	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const override;
+
 private:
 	UWorld* World = nullptr;
 	std::vector<UPrimitiveComponent*> RegisteredComponents;
@@ -32,6 +46,10 @@ private:
 	struct FBodyState
 	{
 		FVector Velocity = { 0, 0, 0 };
+		FVector AngularVelocity = { 0, 0, 0 };
+		FVector AccumulatedForce = { 0, 0, 0 };
+		FVector AccumulatedTorque = { 0, 0, 0 };
+		float Mass = 1.0f;
 	};
 	std::unordered_map<UPrimitiveComponent*, FBodyState> BodyStates;
 

@@ -94,17 +94,28 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 {
 	if (!World) return;
 
-	// ── 중력 적분: bSimulatePhysics인 컴포넌트에 중력 적용 ──
+	// ── 힘 적분 + 중력: bSimulatePhysics인 컴포넌트에 적용 ──
 	for (UPrimitiveComponent* Comp : RegisteredComponents)
 	{
 		if (!Comp->GetSimulatePhysics()) continue;
 
 		FBodyState& State = BodyStates[Comp];
+
+		// 외부 힘/토크 적분
+		float InvMass = (State.Mass > 0.0f) ? (1.0f / State.Mass) : 0.0f;
+		State.Velocity = State.Velocity + State.AccumulatedForce * InvMass * DeltaTime;
+		State.AngularVelocity = State.AngularVelocity + State.AccumulatedTorque * InvMass * DeltaTime;
+
+		// 중력
 		State.Velocity.Z += GravityZ * DeltaTime;
 
 		FVector Pos = Comp->GetWorldLocation();
 		Pos = Pos + State.Velocity * DeltaTime;
 		Comp->SetWorldLocation(Pos);
+
+		// 프레임 끝 누적값 초기화
+		State.AccumulatedForce = { 0, 0, 0 };
+		State.AccumulatedTorque = { 0, 0, 0 };
 	}
 
 	CurrentOverlaps.clear();
@@ -255,4 +266,144 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 
 	PreviousOverlaps = CurrentOverlaps;
 	PreviousBlockPairs = CurrentBlockPairs;
+}
+
+// ============================================================
+// Force / Torque
+// ============================================================
+
+void FNativePhysicsScene::AddForce(UPrimitiveComponent* Comp, const FVector& Force)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.AccumulatedForce = It->second.AccumulatedForce + Force;
+}
+
+void FNativePhysicsScene::AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+
+	It->second.AccumulatedForce = It->second.AccumulatedForce + Force;
+
+	// Torque = (Location - COM) x Force
+	FVector COM = Comp->GetWorldLocation();
+	FVector R = WorldLocation - COM;
+	FVector Torque;
+	Torque.X = R.Y * Force.Z - R.Z * Force.Y;
+	Torque.Y = R.Z * Force.X - R.X * Force.Z;
+	Torque.Z = R.X * Force.Y - R.Y * Force.X;
+	It->second.AccumulatedTorque = It->second.AccumulatedTorque + Torque;
+}
+
+void FNativePhysicsScene::AddTorque(UPrimitiveComponent* Comp, const FVector& Torque)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.AccumulatedTorque = It->second.AccumulatedTorque + Torque;
+}
+
+// ============================================================
+// Velocity
+// ============================================================
+
+FVector FNativePhysicsScene::GetLinearVelocity(UPrimitiveComponent* Comp) const
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return { 0, 0, 0 };
+	return It->second.Velocity;
+}
+
+void FNativePhysicsScene::SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.Velocity = Vel;
+}
+
+FVector FNativePhysicsScene::GetAngularVelocity(UPrimitiveComponent* Comp) const
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return { 0, 0, 0 };
+	return It->second.AngularVelocity;
+}
+
+void FNativePhysicsScene::SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.AngularVelocity = Vel;
+}
+
+// ============================================================
+// Mass
+// ============================================================
+
+void FNativePhysicsScene::SetMass(UPrimitiveComponent* Comp, float Mass)
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return;
+	It->second.Mass = (Mass > 0.0f) ? Mass : 1.0f;
+}
+
+float FNativePhysicsScene::GetMass(UPrimitiveComponent* Comp) const
+{
+	auto It = BodyStates.find(Comp);
+	if (It == BodyStates.end()) return 1.0f;
+	return It->second.Mass;
+}
+
+// ============================================================
+// Raycast — brute-force AABB ray test
+// ============================================================
+
+bool FNativePhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const
+{
+	// Inverse direction for slab test
+	FVector InvDir;
+	InvDir.X = (Dir.X != 0.0f) ? (1.0f / Dir.X) : 1e30f;
+	InvDir.Y = (Dir.Y != 0.0f) ? (1.0f / Dir.Y) : 1e30f;
+	InvDir.Z = (Dir.Z != 0.0f) ? (1.0f / Dir.Z) : 1e30f;
+
+	float ClosestDist = MaxDist;
+	bool bFound = false;
+
+	for (UPrimitiveComponent* Comp : RegisteredComponents)
+	{
+		FBoundingBox Box = Comp->GetWorldBoundingBox();
+
+		// Ray-AABB slab test
+		float tMin = (Box.Min.X - Start.X) * InvDir.X;
+		float tMax = (Box.Max.X - Start.X) * InvDir.X;
+		if (tMin > tMax) { float tmp = tMin; tMin = tMax; tMax = tmp; }
+
+		float tyMin = (Box.Min.Y - Start.Y) * InvDir.Y;
+		float tyMax = (Box.Max.Y - Start.Y) * InvDir.Y;
+		if (tyMin > tyMax) { float tmp = tyMin; tyMin = tyMax; tyMax = tmp; }
+
+		if ((tMin > tyMax) || (tyMin > tMax)) continue;
+		if (tyMin > tMin) tMin = tyMin;
+		if (tyMax < tMax) tMax = tyMax;
+
+		float tzMin = (Box.Min.Z - Start.Z) * InvDir.Z;
+		float tzMax = (Box.Max.Z - Start.Z) * InvDir.Z;
+		if (tzMin > tzMax) { float tmp = tzMin; tzMin = tzMax; tzMax = tmp; }
+
+		if ((tMin > tzMax) || (tzMin > tMax)) continue;
+		if (tzMin > tMin) tMin = tzMin;
+
+		if (tMin < 0.0f) tMin = 0.0f;
+		if (tMin >= ClosestDist) continue;
+
+		ClosestDist = tMin;
+		bFound = true;
+
+		OutHit.bHit = true;
+		OutHit.Distance = tMin;
+		OutHit.HitComponent = Comp;
+		OutHit.HitActor = Comp->GetOwner();
+		OutHit.WorldHitLocation = Start + Dir * tMin;
+	}
+
+	return bFound;
 }

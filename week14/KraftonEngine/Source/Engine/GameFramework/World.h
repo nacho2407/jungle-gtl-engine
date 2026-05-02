@@ -100,6 +100,9 @@ private:
 
 public:
 	IPhysicsScene* GetPhysicsScene() const { return PhysicsScene.get(); }
+
+	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
+	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const;
 };
 
 template<typename T>
