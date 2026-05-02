@@ -16,6 +16,13 @@ struct FLuaScriptInfo
     std::filesystem::file_time_type LastWriteTime = std::filesystem::file_time_type::min();
 };
 
+//ScriptComponent에게 전달할 구조체
+struct FLuaScriptLoadResult
+{
+    sol::environment Env;
+    sol::table ScriptClass;
+};
+
 class FScriptManager : public TSingleton<FScriptManager>
 {
     friend class TSingleton<FScriptManager>;
@@ -41,6 +48,8 @@ public:
 	bool CreateScript(const FName& name);
     bool EditScript(const FName& name);
     bool HasScript(const FName& name);
+	
+	bool ResolveScriptPath(const FString& ScriptName, FString& OutPath);
 
 	void HotReloadScripts();
 
@@ -49,8 +58,14 @@ public:
     void UnregisterScriptComponents(const FString& name, UScriptComponent* ScriptComponent);
     void UnregisterScriptComponentAll(UScriptComponent* ScriptComponent);
 
-	std::optional<sol::environment> LoadLuaEnvironment(UScriptComponent* ScriptComponent, const FString& ScriptName);
+    std::optional<FLuaScriptLoadResult> LoadScriptClass(
+        UScriptComponent* Component,
+        const FString& ScriptName);
 
+    std::optional<sol::table> LoadScriptClassForProperties(
+        const FString& ScriptName);
+
+    FWString GetScriptPathByName(const FName& name);
     auto GetScriptInfo(const FName& name) -> FLuaScriptInfo*;
     auto GetScriptArray() -> TMap<FName, FLuaScriptInfo, FName::Hash>& { return ScriptArray; }
 

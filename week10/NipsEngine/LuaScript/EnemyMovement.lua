@@ -1,52 +1,79 @@
-local target = Vector(0, 0, 0)
-local Speed = 10
+local Script = {}
+Script.__index = Script
 
-function BeginPlay()
-    Log("[BeginPlay]"  .. Actor.UUID)
+Script.Properties = {
+    Speed = {
+        Type = "Float",
+        Default = 5.0,
+        Category = "Movement"
+    },
+
+    HP = {
+        Type = "Int",
+        Default = 100,
+        Category = "Stats"
+    },
+
+    bCanMove = {
+        Type = "Bool",
+        Default = true,
+        Category = "Movement"
+    }
+}
+
+function Script.new(component, properties)
+    local self = setmetatable({}, Script)
+
+    self.component = component
+    self.owner = component:GetOwner()
+    self.target = Vector(0, 0, 0)
+
+    properties = properties or {}
+
+    for key, desc in pairs(Script.Properties) do
+        if properties[key] ~= nil then
+            self[key] = properties[key]
+        else
+            self[key] = desc.Default
+        end
+    end
+
+    return self
 end
 
-function EndPlay()
-    Log("[EndPlay]"  .. Actor.UUID)
+function Script:BeginPlay()
+    Log("[Enemy BeginPlay] " .. tostring(self.owner.UUID))
 end
 
-function OnOverlap(OtherActor)
-    Log("[OnOverlap]"  .. Actor.UUID)
-end
+function Script:Tick(dt)
+    if not self.bCanMove then
+        return
+    end
 
-function OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
-    Log("[OnHit] " .. Actor.UUID)
+    local delta = self.target - self.owner.Location
+    local distance = delta:Size()
 
-    if OtherActor ~= nil then
-        Log("OtherActor: " .. OtherActor.Name)
+    if distance > 0.1 then
+        local direction = delta:Normalized()
+        local moveDelta = direction * (dt * self.Speed)
+        self.owner.Location = self.owner.Location + moveDelta
     end
 end
 
-function OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
-    Log("[OnBeginOverlap] " .. Actor.UUID)
-
-    if OtherActor ~= nil then
-        Log("OtherActor: " .. OtherActor.Name)
-    end
-
-    if bFromSweep then
-        Log("BeginOverlap from sweep")
-    end
+function Script:EndPlay()
+    Log("[Enemy EndPlay] " .. tostring(self.owner.UUID))
 end
 
-function OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
-    Log("[OnEndOverlap] " .. Actor.UUID)
-
-    if OtherActor ~= nil then
-        Log("OtherActor: " .. OtherActor.Name)
-    end
+function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
+    Log("[Enemy OnHit] " .. tostring(self.owner.UUID))
 end
 
-function Tick(dt)
-    local Delta = target - Actor.Location
-    local Distance = Delta:Size()
-
-    if Distance > 0.1 then
-        local Direction = Delta:Normalized()
-        Actor.Location = Actor.Location + Direction * dt * Speed
-    end
+function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
+    Log("[Enemy OnBeginOverlap] " .. tostring(self.owner.UUID))
 end
+
+function Script:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
+    Log("[Enemy OnEndOverlap] " .. tostring(self.owner.UUID))
+end
+
+return Script
