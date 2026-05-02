@@ -34,6 +34,9 @@
 #include <filesystem>
 #include <functional>
 
+#include "Component/LuaScriptComponent.h"
+#include "LuaScript/LuaScriptManager.h"
+#include "Core/Logging/LogMacros.h"
 #include "Materials/MaterialManager.h"
 #include "Render/Execute/Passes/Scene/ShadowMapPass.h"
 #include "Render/Execute/Registry/RenderPassRegistry.h"
@@ -798,7 +801,29 @@ void FEditorDetailsPanel::RenderActorProperties(AActor* PrimaryActor, const TArr
     bool bVisible = PrimaryActor->IsVisible();
     if (ImGui::Checkbox("Visible", &bVisible))
     {
-        PrimaryActor->SetVisible(bVisible);
+        for (AActor* Actor : SelectedActors)
+        {
+            if (Actor)
+            {
+                Actor->SetVisible(bVisible);
+            }
+        }
+    }
+
+	ImGui::Separator();
+    ImGui::Text("Tick");
+    ImGui::Spacing();
+
+    bool bActorTickEnabled = PrimaryActor->IsActorTickEnabled();
+    if (ImGui::Checkbox("Actor Tick Enabled", &bActorTickEnabled))
+    {
+        for (AActor* Actor : SelectedActors)
+        {
+            if (Actor)
+            {
+                Actor->SetActorTickEnabled(bActorTickEnabled);
+            }
+        }
     }
 }
 
@@ -965,6 +990,10 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     {
         return Name == "Cast Shadows" || Name == "Depth Bias" || Name == "Slope Bias" || Name == "Normal Bias" || Name == "Shadow Sharpen" || Name == "ESM Exponent" || Name == "Cascade Count" || Name == "CSM Max Distance" || Name == "Cascade Distribution" || Name == "bAffectsWorld";
     };
+    auto IsLuaProp = [](const FString& Name, EPropertyType Type)
+    {
+        return Type == EPropertyType::LuaScriptRef || Name == "Create Script" || Name == "Edit Script" || Name == "Reload Script";
+    };
 
     bool bIsRoot = false;
     if (SelectedComponent->IsA<USceneComponent>())
@@ -1072,6 +1101,20 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     }
     EndEditorSection(bVisibilityOpen);
 
+    const bool bIsLuaScriptComponent = SelectedComponent->IsA<ULuaScriptComponent>();
+    const bool bLuaScriptOpen = bIsLuaScriptComponent && BeginEditorSection("Lua Script");
+    if (bLuaScriptOpen)
+    {
+        for (int32 i = 0; i < (int32)Props.size(); ++i)
+        {
+            if (IsLuaProp(Props[i].Name, Props[i].Type))
+            {
+                RenderDetailsPanel(Props, i);
+            }
+        }
+    }
+    EndEditorSection(bLuaScriptOpen);
+
     const char* PropertySectionLabel = "Component";
     if (bIsLightComponent)
     {
@@ -1096,7 +1139,12 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
     {
         for (const FPropertyDescriptor& Prop : Props)
         {
-            if (IsTransformProp(Prop.Name) || IsStaticMeshProp(Prop.Name, Prop.Type) || IsMaterialProp(Prop.Name, Prop.Type) || IsVisibilityProp(Prop.Name) || IsBehaviorProp(Prop.Name))
+            if (IsTransformProp(Prop.Name) 
+                || IsStaticMeshProp(Prop.Name, Prop.Type) 
+                || IsMaterialProp(Prop.Name, Prop.Type) 
+                || IsVisibilityProp(Prop.Name) 
+                || IsBehaviorProp(Prop.Name)
+                || IsLuaProp(Prop.Name, Prop.Type))
             {
                 continue;
             }
@@ -1132,22 +1180,31 @@ void FEditorDetailsPanel::RenderComponentProperties(AActor* Actor)
 
         for (int32 i = 0; i < (int32)Props.size(); ++i)
         {
-            if (IsTransformProp(Props[i].Name) || IsStaticMeshProp(Props[i].Name, Props[i].Type) || IsMaterialProp(Props[i].Name, Props[i].Type) || IsVisibilityProp(Props[i].Name) || IsBehaviorProp(Props[i].Name))
+            if (IsTransformProp(Props[i].Name) ||
+                IsStaticMeshProp(Props[i].Name, Props[i].Type) ||
+                IsMaterialProp(Props[i].Name, Props[i].Type) ||
+                IsVisibilityProp(Props[i].Name) ||
+                IsBehaviorProp(Props[i].Name) ||
+                IsLuaProp(Props[i].Name, Props[i].Type))
             {
                 continue;
             }
+
             if (LightComponent && IsShadowProp(Props[i].Name))
             {
                 continue;
             }
+
             if (LightComponent && Props[i].Name == "bAffectsWorld")
             {
                 continue;
             }
+
             if (LightComponent && !LightComponent->AffectsWorld())
             {
                 continue;
             }
+
             RenderDetailsPanel(Props, i);
         }
     }
@@ -1752,20 +1809,20 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
                 TArray<FEntry> Entries;
                 std::function<void(USceneComponent*, const FString&, int32)> Collect =
                     [&](USceneComponent* Comp, const FString& CurPath, int32 Depth)
-                {
-                    if (!Comp)
-                        return;
-                    FString Indent(static_cast<size_t>(Depth * 2), ' ');
-                    Entries.push_back({ CurPath, Indent + Comp->GetClass()->GetName() });
-                    const TArray<USceneComponent*>& Ch = Comp->GetChildren();
-                    for (int32 ci = 0; ci < static_cast<int32>(Ch.size()); ++ci)
                     {
-                        FString ChildPath = (CurPath == "Root")
-                                                ? std::to_string(ci)
-                                                : (CurPath + "/" + std::to_string(ci));
-                        Collect(Ch[ci], ChildPath, Depth + 1);
-                    }
-                };
+                        if (!Comp)
+                            return;
+                        FString Indent(static_cast<size_t>(Depth * 2), ' ');
+                        Entries.push_back({ CurPath, Indent + Comp->GetClass()->GetName() });
+                        const TArray<USceneComponent*>& Ch = Comp->GetChildren();
+                        for (int32 ci = 0; ci < static_cast<int32>(Ch.size()); ++ci)
+                        {
+                            FString ChildPath = (CurPath == "Root")
+                                ? std::to_string(ci)
+                                : (CurPath + "/" + std::to_string(ci));
+                            Collect(Ch[ci], ChildPath, Depth + 1);
+                        }
+                    };
                 Collect(RefActor->GetRootComponent(), "Root", 0);
 
                 for (const FEntry& Entry : Entries)
@@ -1899,6 +1956,125 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
             {
                 *Val = FName(Buf);
                 bChanged = true;
+            }
+        }
+        break;
+    }
+    case EPropertyType::LuaScriptRef:
+    {
+        ULuaScriptComponent* LuaScriptComponent = Cast<ULuaScriptComponent>(SelectedComponent);
+
+        if (LuaScriptComponent->HasScript())
+        {
+            std::wstring FullPath = FPaths::Combine(FPaths::ContentDir(), L"Scripts\\" + FPaths::ToWide(LuaScriptComponent->GetScriptPath()));
+            if (!std::filesystem::exists(FullPath))
+            {
+                LuaScriptComponent->ClearScript();
+                bChanged = true;
+            }
+        }
+
+        FString CurrentScript = LuaScriptComponent->GetScriptPath();
+
+        ImGui::Text("%s", DisplayName.c_str());
+        ImGui::SameLine(120);
+
+        float CreateBtnWidth = 60.0f;
+        float Spacing = ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - CreateBtnWidth - Spacing);
+
+        if (ImGui::BeginCombo("##SelectScriptCombo", CurrentScript.empty() ? "None" : CurrentScript.c_str()))
+        {
+            if (ImGui::Selectable("None", CurrentScript.empty()))
+            {
+                LuaScriptComponent->ClearScript();
+                bChanged = true;
+            }
+            ImGui::Separator();
+
+            TArray<FString> AvailableScripts = FLuaScriptManager::Get().GetAvailableScripts();
+            for (const FString& ScriptName : AvailableScripts)
+            {
+                ImGui::PushID(ScriptName.c_str());
+
+                float XButtonWidth = 24.0f;
+                float SelectableWidth = ImGui::GetContentRegionAvail().x - XButtonWidth - Spacing - 1.0f;
+
+                bool bIsSelected = (CurrentScript == ScriptName);
+                if (ImGui::Selectable(ScriptName.c_str(), bIsSelected, 0, ImVec2(SelectableWidth, 0)))
+                {
+                    if (CurrentScript != ScriptName)
+                    {
+                        if (!CurrentScript.empty()) LuaScriptComponent->ClearScript();
+                        LuaScriptComponent->SetScriptPath(ScriptName);
+                        bChanged = true;
+                    }
+                }
+
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+                if (ImGui::Selectable(" X ", false, 0, ImVec2(XButtonWidth, 0)))
+                {
+                    FLuaScriptManager::Get().DeleteScript(ScriptName);
+                    bChanged = true;
+                }
+                ImGui::PopStyleColor();
+
+                ImGui::PopID();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Create", ImVec2(CreateBtnWidth, 0.0f)))
+        {
+            FString FileName = FLuaScriptManager::Get().CreateScript(SelectedComponent->GetOwner());
+            if (!FileName.empty())
+            {
+                if (!CurrentScript.empty()) LuaScriptComponent->ClearScript();
+                LuaScriptComponent->SetScriptPath(FileName);
+                bChanged = true;
+            }
+        }
+
+        if (!CurrentScript.empty())
+        {
+            ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+            ImGui::Text("Rename:");
+            ImGui::SameLine();
+
+            char RenameBuffer[256];
+            strcpy_s(RenameBuffer, sizeof(RenameBuffer), CurrentScript.c_str());
+
+            ImGui::SetNextItemWidth(-1.0f);
+            if (ImGui::InputText("##RenameScriptInput", RenameBuffer, sizeof(RenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                FString NewName(RenameBuffer);
+                if (!NewName.empty() && NewName != CurrentScript)
+                {
+                    if (NewName.find(".lua") == std::string::npos) NewName += ".lua";
+                    if (FLuaScriptManager::Get().RenameScript(CurrentScript, NewName))
+                    {
+                        LuaScriptComponent->SetScriptPath(NewName);
+                        bChanged = true;
+                    }
+                }
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Press [Enter] to apply rename.");
+
+            ImGui::Dummy(ImVec2(0.0f, 4.0f));
+
+            float ButtonWidth = (ImGui::GetContentRegionAvail().x - Spacing) / 2.0f;
+
+            if (ImGui::Button("Edit", ImVec2(ButtonWidth, 0.0f)))
+            {
+                FLuaScriptManager::Get().OpenScriptInEditor(CurrentScript);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Reload", ImVec2(ButtonWidth, 0.0f)))
+            {
+                LuaScriptComponent->ReloadScript();
             }
         }
         break;

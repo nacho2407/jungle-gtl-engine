@@ -9,7 +9,6 @@ IMPLEMENT_CLASS(ADecalActor, AActor)
 ADecalActor::ADecalActor()
     : DecalComponent(nullptr)
 {
-    bNeedsTick = true;
     bTickInEditor = true;
 }
 

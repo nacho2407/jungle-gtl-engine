@@ -9,7 +9,7 @@ IMPLEMENT_CLASS(ASpotLightActor, AActor)
 
 ASpotLightActor::ASpotLightActor()
 {
-    bNeedsTick = false;
+    SetActorTickEnabled(false);
     bTickInEditor = false;
 }
 

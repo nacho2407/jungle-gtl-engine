@@ -1,58 +1,153 @@
-﻿{
+{
   "Actors" : [{
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "PrimitiveKey" : "8",
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "None"
-          },
-          "Location" : [0.000000, -7.255380, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "PrimitiveKey" : "10",
-      "RootComponent" : {
-        "Children" : [],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "None"
-          },
-          "Location" : [0.000000, 7.919561, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Visible" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "PrimitiveKey" : "12",
       "RootComponent" : {
-        "Children" : [],
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 10",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "None"
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
           },
-          "Location" : [-29.272213, 0.000000, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, -3.070420, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
           "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
           "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "UProjectileMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Initial Speed" : 10.000000,
+            "Max Speed" : 100.000000,
+            "Updated Component" : "",
+            "Velocity" : [0.000000, 0.000000, 0.000000],
+            "bTickEnable" : true
+          }
+        }],
+      "PrimitiveKey" : "15",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 13",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ADirectionalLightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 18",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/DirectionalLightIcon.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDirectionalLightComponent",
+        "Properties" : {
+          "CSM Max Distance" : 2000.000000,
+          "Cascade Count" : 3,
+          "Cascade Distribution" : 1.000000,
+          "Cast Shadows" : true,
+          "Depth Bias" : 0.000000,
+          "ESM Exponent" : 40.000000,
+          "Intensity" : 2.500000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Location" : [-2.452388, 0.000000, 6.479373],
+          "Normal Bias" : 0.000000,
+          "Rotation" : [21.899994, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shadow Resolution" : 2048,
+          "Shadow Sharpen" : 0.000000,
+          "Slope Bias" : 0.000000,
+          "bAffectsWorld" : true,
+          "bTickEnable" : false
         }
       },
       "bVisible" : true
@@ -64,27 +159,20 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [13.537819, -1.724252, 7.428248],
+    "Location" : [-1.079843, 7.874301, 12.891180],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 26.565046, 179.999985]
+    "Rotation" : [0.000000, 57.759731, -75.266418]
   },
   "Primitives" : {
-    "10" : {
-      "Location" : [0.000000, 7.919561, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
     "12" : {
-      "Location" : [-29.272213, 0.000000, 0.000000],
+      "Location" : [0.000000, -3.070420, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "8" : {
-      "Location" : [0.000000, -7.255380, 0.000000],
+    "15" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],

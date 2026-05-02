@@ -32,10 +32,18 @@ public:
 
     void SetActive(bool bNewActive);
     inline void SetAutoActivate(bool bNewAutoActivate) { bAutoActivate = bNewAutoActivate; }
-    inline void SetComponentTickEnabled(bool bEnabled)
+    
+	inline void SetComponentTickEnabled(bool bEnabled)
     {
+        bTickEnable = bEnabled;
         PrimaryComponentTick.SetTickEnabled(bEnabled);
     }
+
+    inline bool IsComponentTickEnabled() const
+    {
+        return bTickEnable;
+    }
+
     virtual void Serialize(FArchive& Ar) override;
 
     inline bool IsActive() { return bIsActive; }

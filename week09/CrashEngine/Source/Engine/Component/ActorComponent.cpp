@@ -59,6 +59,11 @@ void UActorComponent::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);
     Ar << bTickEnable;
+
+	if (Ar.IsLoading())
+    {
+        PrimaryComponentTick.SetTickEnabled(bTickEnable);
+    }
 }
 
 void UActorComponent::SetOwner(AActor* Actor)
@@ -83,6 +88,6 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 {
     if (strcmp(PropertyName, "bTickEnable") == 0)
     {
-        PrimaryComponentTick.SetTickEnabled(bTickEnable);
+        SetComponentTickEnabled(bTickEnable);
     }
 }

@@ -24,7 +24,7 @@ FTileBasedLightCulling::~FTileBasedLightCulling()
 
 void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
 {
-    check(InDevice);
+    ENGINE_CHECK(InDevice);
     Device = InDevice;
 
     auto CompileCS = [&](D3D_SHADER_MACRO* macros, ID3D11ComputeShader** outCS)
@@ -41,7 +41,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
 
         if (!FShaderProgramBase::CompileShaderBlobStandalone(&CSBlob, StageDesc, "cs_5_0", "Compute Shader Compile Error"))
         {
-            check(false);
+            ENGINE_CHECK(false);
         }
 
         const HRESULT hr = Device->GetDevice()->CreateComputeShader(
@@ -51,7 +51,7 @@ void FTileBasedLightCulling::Initialize(FD3DDevice* InDevice)
             outCS);
 
         CSBlob->Release();
-        check(SUCCEEDED(hr));
+        ENGINE_CHECK(SUCCEEDED(hr));
     };
 
     D3D_SHADER_MACRO tileMacros[] = {
@@ -238,7 +238,7 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
     // InitData.pSysMem = Lights.data();
 
     // HRESULT hr = Device->GetDevice()->CreateBuffer(&Desc, &InitData, &PointLightBuffer);
-    // check(SUCCEEDED(hr));
+    // ENGINE_CHECK(SUCCEEDED(hr));
 
     // D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
     // SrvDesc.ViewDimension       = D3D11_SRV_DIMENSION_BUFFER;
@@ -247,7 +247,7 @@ void FTileBasedLightCulling::CreatePointLightBufferGPU()
     // SrvDesc.Buffer.NumElements  = Lights.size();
 
     // hr = Device->GetDevice()->CreateShaderResourceView(PointLightBuffer, &SrvDesc, &PointLightDataSRV);
-    // check(SUCCEEDED(hr));
+    // ENGINE_CHECK(SUCCEEDED(hr));
 }
 
 void FTileBasedLightCulling::CreateTileMaskBuffers()
@@ -274,7 +274,7 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
         Desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
         HRESULT hr = Device->GetDevice()->CreateBuffer(&Desc, nullptr, OutBuffer);
-        check(SUCCEEDED(hr));
+        ENGINE_CHECK(SUCCEEDED(hr));
 
         D3D11_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
         UavDesc.ViewDimension                    = D3D11_UAV_DIMENSION_BUFFER;
@@ -283,7 +283,7 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
         UavDesc.Buffer.NumElements               = NumElements;
 
         hr = Device->GetDevice()->CreateUnorderedAccessView(*OutBuffer, &UavDesc, OutUAV);
-        check(SUCCEEDED(hr));
+        ENGINE_CHECK(SUCCEEDED(hr));
 
         if (OutSRV)
         {
@@ -294,7 +294,7 @@ void FTileBasedLightCulling::CreateTileMaskBuffers()
             SrvDesc.Buffer.NumElements              = NumElements;
 
             hr = Device->GetDevice()->CreateShaderResourceView(*OutBuffer, &SrvDesc, OutSRV);
-            check(SUCCEEDED(hr));
+            ENGINE_CHECK(SUCCEEDED(hr));
         }
     };
 
@@ -331,14 +331,14 @@ void FTileBasedLightCulling::CreateDebugHitMap(uint32 InWidth, uint32 InHeight)
     TexDesc.BindFlags            = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 
     HRESULT hr = Device->GetDevice()->CreateTexture2D(&TexDesc, nullptr, &DebugHitMapTexture);
-    check(SUCCEEDED(hr));
+    ENGINE_CHECK(SUCCEEDED(hr));
 
     D3D11_UNORDERED_ACCESS_VIEW_DESC UavDesc = {};
     UavDesc.ViewDimension                    = D3D11_UAV_DIMENSION_TEXTURE2D;
     UavDesc.Format                           = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
     hr = Device->GetDevice()->CreateUnorderedAccessView(DebugHitMapTexture, &UavDesc, &DebugHitMapUAV);
-    check(SUCCEEDED(hr));
+    ENGINE_CHECK(SUCCEEDED(hr));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
     SrvDesc.ViewDimension                   = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -346,7 +346,7 @@ void FTileBasedLightCulling::CreateDebugHitMap(uint32 InWidth, uint32 InHeight)
     SrvDesc.Texture2D.MipLevels             = 1;
 
     hr = Device->GetDevice()->CreateShaderResourceView(DebugHitMapTexture, &SrvDesc, &DebugHitMapSRV);
-    check(SUCCEEDED(hr));
+    ENGINE_CHECK(SUCCEEDED(hr));
 }
 
 void FTileBasedLightCulling::UpdateLightCullingParamsCB(const FFrameContext& frameContext, bool bEnable25DCulling)

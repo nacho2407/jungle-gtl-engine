@@ -6,7 +6,7 @@
 
 namespace
 {
-bool ShouldDispatchActorTick(const AActor* Actor, ELevelTick TickType)
+bool ShouldQueueActorTick(const AActor* Actor, ELevelTick TickType)
 {
     if (!Actor)
     {
@@ -19,10 +19,34 @@ bool ShouldDispatchActorTick(const AActor* Actor, ELevelTick TickType)
         return Actor->bTickInEditor;
 
     case LEVELTICK_All:
-    case LEVELTICK_TimeOnly:
     case LEVELTICK_PauseTick:
-        return Actor->bNeedsTick && Actor->HasActorBegunPlay();
+        return Actor->IsActorTickEnabled() && Actor->HasActorBegunPlay();
 
+    case LEVELTICK_TimeOnly:
+    default:
+        return false;
+    }
+}
+
+bool ShouldQueueComponentTicks(const AActor* Actor, ELevelTick TickType)
+{
+    if (!Actor)
+    {
+        return false;
+    }
+
+    switch (TickType)
+    {
+    case LEVELTICK_ViewportsOnly:
+        // 현재 엔진에는 Component 전용 bTickInEditor가 없으므로 기존과 동일하게 Owner Actor의 bTickInEditor를 사용
+        return Actor->bTickInEditor;
+
+    case LEVELTICK_All:
+    case LEVELTICK_PauseTick:
+        // 핵심 변경점: Runtime / PIE Component Tick은 Actor.bNeedsTick에 의존하지 않음
+        return Actor->HasActorBegunPlay();
+
+    case LEVELTICK_TimeOnly:
     default:
         return false;
     }
@@ -86,12 +110,20 @@ void FTickManager::GatherTickFunctions(UWorld* World, ELevelTick TickType)
 
     for (AActor* Actor : World->GetActors())
     {
-        if (!ShouldDispatchActorTick(Actor, TickType))
+        if (!Actor)
         {
             continue;
         }
 
-        QueueTickFunction(Actor->PrimaryActorTick);
+        if (ShouldQueueActorTick(Actor, TickType))
+        {
+            QueueTickFunction(Actor->PrimaryActorTick);
+        }
+
+        if (!ShouldQueueComponentTicks(Actor, TickType))
+        {
+            continue;
+        }
 
         for (UActorComponent* Component : Actor->GetComponents())
         {

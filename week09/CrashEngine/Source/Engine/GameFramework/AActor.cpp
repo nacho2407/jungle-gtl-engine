@@ -205,6 +205,12 @@ void AActor::SetVisible(bool Visible)
     }
 }
 
+void AActor::SetActorTickEnabled(bool bEnabled)
+{
+    bNeedsTick = bEnabled;
+    PrimaryActorTick.SetTickEnabled(bEnabled);
+}
+
 void AActor::MarkPickingDirty()
 {
     if (UWorld* World = GetWorld())
@@ -298,6 +304,11 @@ void AActor::EndPlay()
     }
 }
 
+void AActor::TakeDamage(int Damage)
+{
+    OnTakeDamage.BroadCast(Damage);
+}
+
 void AActor::Tick(float DeltaTime)
 {
     /*for (UActorComponent* ActorComp : OwnedComponents)
@@ -356,6 +367,11 @@ void AActor::Serialize(FArchive& Ar)
     // 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
     Ar << bVisible;
     Ar << bNeedsTick;
+
+	if (Ar.IsLoading())
+    {
+        PrimaryActorTick.SetTickEnabled(bNeedsTick);
+    }
 }
 
 // SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들되,

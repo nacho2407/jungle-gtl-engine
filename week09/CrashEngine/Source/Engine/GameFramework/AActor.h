@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
+#include "Core/Delegates/Delegate.h"
 #include "Core/TickFunction.h"
 
 class FArchive;
@@ -28,6 +29,12 @@ public:
     virtual void BeginPlay();
     virtual void Tick(float DeltaTime);
     virtual void EndPlay();
+    // Start ----- Delegate Prototype 
+    virtual void TakeDamage(int Damage);
+
+    DECLARE_DELEGATE(FOnTakeDamage, int);
+    FOnTakeDamage OnTakeDamage;
+    // End ----- Delegate Prototype
 
     bool HasActorBegunPlay() const { return bActorHasBegunPlay; }
 
@@ -91,13 +98,17 @@ public:
     bool IsVisible() const { return bVisible; }
     void SetVisible(bool Visible);
 
-    // Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
-    bool bNeedsTick = true;
-    bool bTickInEditor = false;
+	bool IsActorTickEnabled() const { return bNeedsTick; }
+    void SetActorTickEnabled(bool bEnabled);
 
     const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
     bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
     void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
+
+public:
+    // Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
+    bool bNeedsTick = true;
+    bool bTickInEditor = false;
 
     FActorTickFunction PrimaryActorTick;
 

@@ -7,10 +7,15 @@
 #include "Editor/EditorEngine.h"
 #endif
 
+#if GAME_RELEASE
+#include "GameRelease/GameReleaseEngine.h"
+#endif
+
+
 void FEngineLoop::CreateEngine()
 {
-#if IS_OBJ_VIEWER
-    GEngine = UObjectManager::Get().CreateObject<UObjViewerEngine>();
+#if GAME_RELEASE
+    GEngine = UObjectManager::Get().CreateObject<UGameReleaseEngine>();
 #elif WITH_EDITOR
     GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
 #else
