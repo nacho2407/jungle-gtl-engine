@@ -12,6 +12,7 @@ struct FCollisionResult
 {
     bool bHit = false;
     FVector HitPoint = FVector::ZeroVector;
+    FVector HitNormal = FVector::ZeroVector;
 };
 
 struct FCollision

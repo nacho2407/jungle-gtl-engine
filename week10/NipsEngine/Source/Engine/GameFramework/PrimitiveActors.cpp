@@ -266,12 +266,14 @@ void ASceneActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 {
     UE_LOG("%s: On Begin Overlap", GetFName().ToString().c_str());
     UE_LOG("Hit: %f %f %f", SweepResult.Location.X, SweepResult.Location.Y, SweepResult.Location.Z);
+    UE_LOG("Hit Normal: %f %f %f", SweepResult.Normal.X, SweepResult.Normal.Y, SweepResult.Normal.Z);
 }
 
 void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     UE_LOG("%s: On End Overlap", GetFName().ToString().c_str());
     UE_LOG("Hit: %f %f %f", SweepResult.Location.X, SweepResult.Location.Y, SweepResult.Location.Z);
+    UE_LOG("Hit Normal: %f %f %f", SweepResult.Normal.X, SweepResult.Normal.Y, SweepResult.Normal.Z);
 }
 
 void AStaticMeshActor::InitDefaultComponents()

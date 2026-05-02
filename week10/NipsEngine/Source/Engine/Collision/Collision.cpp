@@ -133,7 +133,6 @@ FCollisionResult FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
     FVector T = B.Center - A.Center;
 
     float R[3][3], AbsR[3][3];
-
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
         {
@@ -141,58 +140,73 @@ FCollisionResult FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
             AbsR[i][j] = MathUtil::Abs(R[i][j]) + KINDA_SMALL_NUMBER;
         }
 
+    float MinPen = FLT_MAX; // 추가
+    FVector BestAxis;       // 추가
+
+    // A axes
     for (int i = 0; i < 3; i++)
     {
         float ra = EA[i];
-        float rb =
-            EB.X * AbsR[i][0] +
-            EB.Y * AbsR[i][1] +
-            EB.Z * AbsR[i][2];
-
-        if (MathUtil::Abs(T.DotProduct(AAxis[i])) > ra + rb)
+        float rb = EB.X * AbsR[i][0] + EB.Y * AbsR[i][1] + EB.Z * AbsR[i][2];
+        float pen = ra + rb - MathUtil::Abs(T.DotProduct(AAxis[i])); // 추가
+        if (pen < 0)
             return Result;
+        if (pen < MinPen)
+        {
+            MinPen = pen;
+            BestAxis = AAxis[i];
+        } // 추가
     }
 
+    // B axes
     for (int i = 0; i < 3; i++)
     {
-        float ra =
-            EA.X * AbsR[0][i] +
-            EA.Y * AbsR[1][i] +
-            EA.Z * AbsR[2][i];
-
+        float ra = EA.X * AbsR[0][i] + EA.Y * AbsR[1][i] + EA.Z * AbsR[2][i];
         float rb = EB[i];
-
-        if (MathUtil::Abs(T.DotProduct(BAxis[i])) > ra + rb)
+        float pen = ra + rb - MathUtil::Abs(T.DotProduct(BAxis[i])); // 추가
+        if (pen < 0)
             return Result;
+        if (pen < MinPen)
+        {
+            MinPen = pen;
+            BestAxis = BAxis[i];
+        } // 추가
     }
 
+    // Cross product axes
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
         {
             FVector axis = AAxis[i].CrossProduct(BAxis[j]);
-
             if (axis.SizeSquared() < KINDA_SMALL_NUMBER)
                 continue;
-
             axis.Normalize();
 
             float ra =
                 EA[(i + 1) % 3] * MathUtil::Abs(AAxis[(i + 1) % 3].DotProduct(axis)) +
                 EA[(i + 2) % 3] * MathUtil::Abs(AAxis[(i + 2) % 3].DotProduct(axis));
-
             float rb =
                 EB[(j + 1) % 3] * MathUtil::Abs(BAxis[(j + 1) % 3].DotProduct(axis)) +
                 EB[(j + 2) % 3] * MathUtil::Abs(BAxis[(j + 2) % 3].DotProduct(axis));
 
-            float t =
-                MathUtil::Abs((B.Center - A.Center).DotProduct(axis));
-
-            if (t > ra + rb)
+            float pen = ra + rb - MathUtil::Abs((B.Center - A.Center).DotProduct(axis)); // 추가
+            if (pen < 0)
                 return Result;
+            if (pen < MinPen)
+            {
+                MinPen = pen;
+                BestAxis = axis;
+            } // 추가
         }
 
     Result.bHit = true;
     Result.HitPoint = (A.Center + B.Center) * 0.5f;
+
+    // Normal은 A→B 방향 기준으로 부호 정렬
+    if (BestAxis.DotProduct(T) < 0.0f)
+        BestAxis = BestAxis * -1.0f; // 추가
+    Result.HitNormal = BestAxis;     // 추가
+
     return Result;
 }
 
@@ -239,6 +253,7 @@ FCollisionResult FCollision::IntersectSphereSphere(const USphereComponent* A, co
                           ? (CenterB - CenterA) / Dist
                           : FVector(0, 0, 1);
         Result.HitPoint = CenterA + Dir * RadiusA;
+        Result.HitNormal = Dir;
     }
 
     return Result;
@@ -261,6 +276,9 @@ FCollisionResult FCollision::IntersectBoxSphere(const UBoxComponent* Box, const 
     {
         Result.bHit = true;
         Result.HitPoint = Closest;
+        FVector ToCenter = Center - Closest;
+        float Len = std::sqrt(ToCenter.SizeSquared());
+        Result.HitNormal = (Len > KINDA_SMALL_NUMBER) ? ToCenter / Len : FVector(0, 0, 1);
     }
 
     return Result;
@@ -295,6 +313,9 @@ FCollisionResult FCollision::IntersectCapsuleCapsule(const UCapsuleComponent* A,
     {
         Result.bHit = true;
         Result.HitPoint = (CenterA + CenterB) * 0.5f;
+        FVector ToB = CenterB - CenterA;
+        float Len = std::sqrt(ToB.SizeSquared());
+        Result.HitNormal = (Len > KINDA_SMALL_NUMBER) ? ToB / Len : FVector(0, 0, 1);
     }
 
     return Result;
@@ -329,6 +350,9 @@ FCollisionResult FCollision::IntersectCapsuleSphere(
         FVector AB = A1 - A0;
         float t = std::clamp((P - A0).DotProduct(AB) / AB.DotProduct(AB), 0.0f, 1.0f);
         Result.HitPoint = A0 + AB * t;
+        FVector ToSphere = P - Result.HitPoint;
+        float Len = std::sqrt(ToSphere.SizeSquared());
+        Result.HitNormal = (Len > KINDA_SMALL_NUMBER) ? ToSphere / Len : FVector(0, 0, 1);
     }
 
     return Result;
@@ -362,6 +386,12 @@ FCollisionResult FCollision::IntersectCapsuleBox(
     {
         Result.bHit = true;
         Result.HitPoint = (Dist0 < Dist1) ? C0 : C1;
+        FVector AB = A1 - A0;
+        float t = std::clamp((Result.HitPoint - A0).DotProduct(AB) / AB.DotProduct(AB), 0.0f, 1.0f);
+        FVector ClosestOnSeg = A0 + AB * t;
+        FVector ToBox = Result.HitPoint - ClosestOnSeg;
+        float Len = std::sqrt(ToBox.SizeSquared());
+        Result.HitNormal = (Len > KINDA_SMALL_NUMBER) ? -(ToBox / Len) : FVector(0, 0, 1); // 캡슐→박스 반대방향
     }
 
     return Result;
