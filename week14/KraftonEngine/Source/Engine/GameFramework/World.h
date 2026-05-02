@@ -17,6 +17,9 @@
 
 class UCameraComponent;
 class UPrimitiveComponent;
+class AGameModeBase;
+class AGameStateBase;
+class UClass;
 
 class UWorld : public UObject {
 public:
@@ -40,6 +43,8 @@ public:
 	// Actor lifecycle
 	template<typename T>
 	T* SpawnActor();
+	// UClass 기반 spawn — 런타임에 클래스가 결정되는 경우(GameMode/GameState 등) 사용.
+	AActor* SpawnActorByClass(UClass* Class);
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
 	void MarkWorldPrimitivePickingBVHDirty();
@@ -98,11 +103,21 @@ private:
 	FSpatialPartition Partition;
 	std::unique_ptr<IPhysicsScene> PhysicsScene;
 
+	// Game flow — Editor 월드에서는 nullptr로 유지된다.
+	AGameModeBase* GameMode = nullptr;
+	UClass* GameModeClass = nullptr;  // GameEngine 등이 BeginPlay 전에 세팅
+
 public:
 	IPhysicsScene* GetPhysicsScene() const { return PhysicsScene.get(); }
 
 	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
 	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit) const;
+
+	// --- Game flow ---
+	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.
+	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }
+	AGameModeBase* GetGameMode() const { return GameMode; }
+	AGameStateBase* GetGameState() const;
 };
 
 template<typename T>
