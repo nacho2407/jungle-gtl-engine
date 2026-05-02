@@ -54,7 +54,7 @@
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [20.000000, 20.000000, 1.000000],
+          "Scale" : [100.000000, 100.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -188,7 +188,7 @@
       "bVisible" : true
     }, {
       "ClassName" : "ACarPawn",
-      "Name" : "ACarPawn_1",
+      "Name" : "ACarPawn_3",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
@@ -199,16 +199,28 @@
         }, {
           "ClassName" : "UCarMovementComponent",
           "Properties" : {
-            "AccelForce" : 5000.000000,
+            "AccelForce" : 20000.000000,
+            "Air Steering Scale" : 0.150000,
             "Auto Register Updated" : true,
-            "BrakeForce" : 40.000000,
-            "LateralGrip" : 8.000000,
-            "MaxSpeed" : 20.000000,
-            "ReverseAccelForce" : 5000.000000,
-            "ReverseMaxSpeed" : -15.000000,
-            "RollingDrag" : 2.000000,
-            "SteeringPower" : 90.000000,
+            "BrakeForce" : 50000.000000,
+            "Disable Wheel Collision" : true,
+            "Ground Angular Damping" : 8000.000000,
+            "LateralGrip" : 8000.000000,
+            "Max Suspension Force" : 25000.000000,
+            "MaxSpeed" : 100.000000,
+            "ReverseAccelForce" : 15000.000000,
+            "ReverseMaxSpeed" : -80.000000,
+            "RollingDrag" : 800.000000,
+            "SteeringPower" : 15000.000000,
+            "Suspension Damping" : 3500.000000,
+            "Suspension Rest Length" : 0.600000,
+            "Suspension Spring Strength" : 12000.000000,
             "Updated Component" : "",
+            "Use Raycast Suspension" : true,
+            "Wheel Forward Offset" : 1.500000,
+            "Wheel Half Track" : 0.800000,
+            "Wheel Radius" : 0.400000,
+            "Wheel Root Z" : 0.000000,
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -256,10 +268,10 @@
                 "Path" : "Asset/Materials/Auto/Chassis.mat"
               },
               "Generate Overlap Events" : false,
-              "Location" : [-0.156215, 0.002640, -0.642434],
+              "Location" : [0.155000, 0.000000, -0.607000],
               "Mass (kg)" : 1.000000,
               "Object Type" : 0,
-              "Rotation" : [0.000000, 89.032349, 0.000000],
+              "Rotation" : [0.000000, 90.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Simulate Physics" : false,
               "Static Mesh" : "Data/Truck/TruckBody.obj",
@@ -274,7 +286,7 @@
             "Properties" : {
               "Cast Shadow" : false,
               "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 3,
+              "Collision Enabled" : 0,
               "Collision Responses" : {
                 "Pawn" : 2,
                 "Projectile" : 2,
@@ -290,7 +302,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : true,
+              "Simulate Physics" : false,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -303,7 +315,7 @@
             "Properties" : {
               "Cast Shadow" : false,
               "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 3,
+              "Collision Enabled" : 0,
               "Collision Responses" : {
                 "Pawn" : 2,
                 "Projectile" : 2,
@@ -319,7 +331,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : true,
+              "Simulate Physics" : false,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -332,7 +344,7 @@
             "Properties" : {
               "Cast Shadow" : false,
               "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 3,
+              "Collision Enabled" : 0,
               "Collision Responses" : {
                 "Pawn" : 2,
                 "Projectile" : 2,
@@ -348,7 +360,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : true,
+              "Simulate Physics" : false,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -361,7 +373,7 @@
             "Properties" : {
               "Cast Shadow" : false,
               "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-              "Collision Enabled" : 3,
+              "Collision Enabled" : 0,
               "Collision Responses" : {
                 "Pawn" : 2,
                 "Projectile" : 2,
@@ -377,7 +389,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "Simulate Physics" : true,
+              "Simulate Physics" : false,
               "Sphere Radius" : 0.400000,
               "Two Sided Shadow" : false,
               "Visible" : true,
@@ -404,7 +416,7 @@
         "Properties" : {
           "Box Extent" : [2.000000, 1.000000, 0.500000],
           "Cast Shadow" : false,
-          "Center Of Mass Offset" : [0.000000, 0.000000, 0.300000],
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.300000],
           "Collision Enabled" : 3,
           "Collision Responses" : {
             "Pawn" : 2,
@@ -415,13 +427,125 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [-8.273662, -2.064212, 2.783308],
-          "Mass (kg)" : 100.000000,
+          "Location" : [-61.219730, 20.857948, 2.203489],
+          "Mass (kg)" : 1500.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "ATriggerVolumeBase_2",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "MeteorSpawner.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [50.000000, 50.000000, 50.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [2.219879, 26.010515, 8.644118],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-41.261257, 20.160803, 7.250801],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "ATriggerVolumeBase_1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [-33.788609, 36.387966, 4.430082],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -437,9 +561,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-8.420328, 9.644907, 5.915001],
+    "Location" : [-85.192009, 36.855499, 24.990370],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 33.915833, -73.650597]
+    "Rotation" : [0.000000, 19.816143, -34.050682]
   },
   "Version" : 2,
   "WorldType" : "Editor"
