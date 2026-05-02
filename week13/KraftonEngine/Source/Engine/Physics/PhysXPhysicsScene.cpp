@@ -86,14 +86,15 @@ public:
 			|| PairHeader.flags & PxContactPairHeaderFlag::eREMOVED_ACTOR_1)
 			return;
 
-		auto* CompA = static_cast<UPrimitiveComponent*>(PairHeader.actors[0]->userData);
-		auto* CompB = static_cast<UPrimitiveComponent*>(PairHeader.actors[1]->userData);
-		if (!CompA || !CompB) return;
-
 		for (PxU32 i = 0; i < Count; ++i)
 		{
 			const PxContactPair& CP = Pairs[i];
 			if (!(CP.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)) continue;
+
+			// Compound shape: actor 단위가 아닌 shape별 userData에 PrimitiveComponent 저장.
+			auto* CompA = CP.shapes[0] ? static_cast<UPrimitiveComponent*>(CP.shapes[0]->userData) : nullptr;
+			auto* CompB = CP.shapes[1] ? static_cast<UPrimitiveComponent*>(CP.shapes[1]->userData) : nullptr;
+			if (!CompA || !CompB) continue;
 
 			// Contact point 추출
 			PxContactPairPoint ContactPoints[1];
@@ -146,8 +147,9 @@ public:
 			if (TP.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
 				continue;
 
-			auto* TriggerComp = static_cast<UPrimitiveComponent*>(TP.triggerActor->userData);
-			auto* OtherComp = static_cast<UPrimitiveComponent*>(TP.otherActor->userData);
+			// Compound shape: shape userData가 PrimitiveComponent.
+			auto* TriggerComp = TP.triggerShape ? static_cast<UPrimitiveComponent*>(TP.triggerShape->userData) : nullptr;
+			auto* OtherComp   = TP.otherShape   ? static_cast<UPrimitiveComponent*>(TP.otherShape->userData)   : nullptr;
 			if (!TriggerComp || !OtherComp) continue;
 
 			if (TP.status == PxPairFlag::eNOTIFY_TOUCH_FOUND)
@@ -211,7 +213,9 @@ static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 //   word0 = 자신의 ObjectType (ECollisionChannel)
 //   word1 = Block 비트마스크 (해당 채널에 Block 응답인 비트)
 //   word2 = Overlap 비트마스크 (해당 채널에 Overlap 응답인 비트)
-//   word3 = 예약
+//   word3 = 소유 액터 UUID — 같은 액터의 두 컴포넌트끼리 충돌을 무시하기 위함
+//           (Native 측 O(N²) 루프의 `if (A->GetOwner() == B->GetOwner()) continue;` 가드와 동일 의미)
+//           Owner가 없거나 UUID가 0이면 가드 미적용.
 
 static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
 {
@@ -219,7 +223,7 @@ static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
 	Filter.word0 = static_cast<PxU32>(Comp->GetCollisionObjectType());
 	Filter.word1 = 0;
 	Filter.word2 = 0;
-	Filter.word3 = 0;
+	Filter.word3 = Comp->GetOwner() ? Comp->GetOwner()->GetUUID() : 0;
 
 	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
 	{
@@ -239,6 +243,14 @@ static PxFilterFlags KraftonFilterShader(
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
 	PxPairFlags& pairFlags, const void* /*constantBlock*/, PxU32 /*constantBlockSize*/)
 {
+	// 같은 액터(같은 owner UUID)의 두 컴포넌트끼리는 충돌 무시.
+	// Native 측 O(N²) 루프의 same-owner 가드와 동일 의미. 차량 차체-바퀴처럼
+	// 한 액터가 여러 콜라이더를 가질 때 자기끼리 충돌 시뮬레이션되는 문제를 막는다.
+	if (filterData0.word3 != 0 && filterData0.word3 == filterData1.word3)
+	{
+		return PxFilterFlag::eKILL;
+	}
+
 	// 트리거 처리 — 한쪽이라도 트리거면 오버랩 통지만
 	if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
 	{
@@ -345,37 +357,96 @@ void FPhysXPhysicsScene::Shutdown()
 }
 
 // ============================================================
-// Body 관리
+// Body 관리 — Actor 단위 compound
+//
+// 한 액터의 여러 PrimitiveComponent는 같은 PxRigidActor에 shape로 합쳐진다.
+// shape의 LocalPose는 액터 RootComponent에 대한 상대 transform.
+// userData: PxActor → AActor, PxShape → UPrimitiveComponent.
 // ============================================================
 
 void FPhysXPhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 {
-	if (!Comp || !Scene) return;
-	if (FindMapping(Comp)) return; // 이미 등록됨
+	if (!Comp || !Scene || !Physics || !DefaultMaterial) return;
+	if (FindMappingByComponent(Comp)) return; // 이미 등록됨
 
-	PxRigidActor* Body = CreateBodyForComponent(Comp);
-	if (!Body) return;
+	AActor* OwnerActor = Comp->GetOwner();
+	if (!OwnerActor) return;
 
-	Scene->addActor(*Body);
-	BodyMappings.push_back({ Comp, Body });
+	FBodyMapping* Mapping = FindMappingByActor(OwnerActor);
+
+	if (!Mapping)
+	{
+		// 액터의 첫 등록 — PxRigidActor 생성. RootComponent가 PrimitiveComponent면 그걸,
+		// 아니면 fallback으로 들어온 Comp를 RootComp로 사용.
+		UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent());
+		if (!RootPrim) RootPrim = Comp;
+
+		const bool bDynamic = RootPrim->GetSimulatePhysics();
+		PxTransform BodyXf = GetPxTransform(RootPrim);
+
+		PxRigidActor* Body = bDynamic
+			? static_cast<PxRigidActor*>(Physics->createRigidDynamic(BodyXf))
+			: static_cast<PxRigidActor*>(Physics->createRigidStatic(BodyXf));
+		if (!Body) return;
+
+		Body->userData = OwnerActor;
+		Scene->addActor(*Body);
+
+		FBodyMapping NewMapping;
+		NewMapping.OwnerActor = OwnerActor;
+		NewMapping.Actor = Body;
+		NewMapping.RootComp = RootPrim;
+		BodyMappings.push_back(NewMapping);
+		Mapping = &BodyMappings.back();
+	}
+
+	// shape 추가
+	PxShape* Shape = AddShapeForComponent(*Mapping, Comp);
+	if (!Shape) return;
+	Mapping->Components.push_back(Comp);
+
+	// Dynamic이면 mass/inertia 재계산 (shape 추가 시마다)
+	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+	{
+		PxRigidBodyExt::updateMassAndInertia(*Dyn, 1.0f);
+	}
 }
 
 void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 {
 	if (!Comp || !Scene) return;
 
-	FBodyMapping* Mapping = FindMapping(Comp);
+	FBodyMapping* Mapping = FindMappingByComponent(Comp);
 	if (!Mapping) return;
 
-	if (Mapping->Actor)
+	// 해당 컴포넌트의 shape detach
+	DetachShapeForComponent(*Mapping, Comp);
+
+	// Components 배열에서 제거
+	Mapping->Components.erase(
+		std::remove(Mapping->Components.begin(), Mapping->Components.end(), Comp),
+		Mapping->Components.end());
+
+	// 마지막 컴포넌트가 빠지면 actor 자체도 release
+	if (Mapping->Components.empty())
 	{
-		Scene->removeActor(*Mapping->Actor);
-		Mapping->Actor->release();
+		if (Mapping->Actor)
+		{
+			Scene->removeActor(*Mapping->Actor);
+			Mapping->Actor->release();
+		}
+
+		// swap-and-pop
+		*Mapping = BodyMappings.back();
+		BodyMappings.pop_back();
+		return;
 	}
 
-	// swap-and-pop
-	*Mapping = BodyMappings.back();
-	BodyMappings.pop_back();
+	// 남은 shape가 있으면 mass 재계산
+	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+	{
+		PxRigidBodyExt::updateMassAndInertia(*Dyn, 1.0f);
+	}
 }
 
 // ============================================================
@@ -387,15 +458,15 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 	if (!Scene || DeltaTime <= 0.0f) return;
 
 	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
+	// 한 PxActor가 여러 컴포넌트를 가지므로 RootComp 기준으로만 한 번 동기화.
 	for (auto& Mapping : BodyMappings)
 	{
-		if (!Mapping.Component || !Mapping.Actor) continue;
+		if (!Mapping.RootComp || !Mapping.Actor) continue;
 
-		PxTransform NewPose = GetPxTransform(Mapping.Component);
+		PxTransform NewPose = GetPxTransform(Mapping.RootComp);
 
-		if (Mapping.Actor->is<PxRigidDynamic>())
+		if (PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>())
 		{
-			PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>();
 			// Kinematic이면 target으로, 아니면 직접 pose 설정은 하지 않음
 			// (Dynamic은 PhysX가 시뮬레이션으로 이동시킴)
 			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
@@ -415,9 +486,10 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 	Scene->fetchResults(true);
 
 	// ── Post-simulate: PhysX → Engine Transform 동기화 ──
+	// RootComp에만 transform 적용 → 자식 컴포넌트는 attach로 자동 따라감.
 	for (auto& Mapping : BodyMappings)
 	{
-		if (!Mapping.Component || !Mapping.Actor) continue;
+		if (!Mapping.RootComp || !Mapping.Actor) continue;
 
 		PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>();
 		if (!Dynamic) continue;
@@ -428,10 +500,8 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 		FVector NewPos = ToFVector(Pose.p);
 		FQuat NewRot = ToFQuat(Pose.q);
 
-		// Root component에 월드 Transform 적용
-		UPrimitiveComponent* Comp = Mapping.Component;
-		Comp->SetWorldLocation(NewPos);
-		Comp->SetRelativeRotation(NewRot);
+		Mapping.RootComp->SetWorldLocation(NewPos);
+		Mapping.RootComp->SetRelativeRotation(NewRot);
 	}
 }
 
@@ -439,16 +509,16 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 // Internal helpers
 // ============================================================
 
-PxRigidActor* FPhysXPhysicsScene::CreateBodyForComponent(UPrimitiveComponent* Comp)
+PxShape* FPhysXPhysicsScene::AddShapeForComponent(FBodyMapping& Mapping, UPrimitiveComponent* Comp)
 {
-	if (!Physics || !DefaultMaterial) return nullptr;
+	if (!Mapping.Actor || !DefaultMaterial || !Comp) return nullptr;
 
 	// Shape Component 타입에 따라 PxGeometry 결정
 	PxGeometryHolder Geom;
 	bool bHasGeom = false;
 
 	// Capsule은 PhysX에서 X축 기준이므로 로컬 회전 보정 필요
-	PxQuat ShapeLocalRot = PxQuat(PxIdentity);
+	PxQuat ShapeAxisRot = PxQuat(PxIdentity);
 
 	if (auto* Box = Cast<UBoxComponent>(Comp))
 	{
@@ -458,96 +528,124 @@ PxRigidActor* FPhysXPhysicsScene::CreateBodyForComponent(UPrimitiveComponent* Co
 	}
 	else if (auto* Sphere = Cast<USphereComponent>(Comp))
 	{
-		float Radius = Sphere->GetScaledSphereRadius();
-		Geom = PxSphereGeometry(Radius);
+		Geom = PxSphereGeometry(Sphere->GetScaledSphereRadius());
 		bHasGeom = true;
 	}
 	else if (auto* Capsule = Cast<UCapsuleComponent>(Comp))
 	{
 		float Radius = Capsule->GetScaledCapsuleRadius();
 		float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
-		// PhysX Capsule은 X축 기준 → 엔진의 Z축 기준으로 90° 보정
 		Geom = PxCapsuleGeometry(Radius, HalfHeight - Radius);
-		ShapeLocalRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+		ShapeAxisRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
 		bHasGeom = true;
 	}
 
 	if (!bHasGeom) return nullptr;
 
-	// Body 타입 결정
-	PxTransform BodyTransform = GetPxTransform(Comp);
-	PxRigidActor* Body = nullptr;
+	PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Mapping.Actor, Geom.any(), *DefaultMaterial);
+	if (!Shape) return nullptr;
 
-	bool bDynamic = Comp->GetSimulatePhysics();
-	if (bDynamic)
+	// Local pose: Comp의 RootComp 대비 상대 transform.
+	// Compound shape에서 자식 컴포넌트가 부모(=PxActor 기준)에 정확히 박혀있도록.
+	PxTransform LocalPose = PxTransform(PxIdentity);
+	if (Comp != Mapping.RootComp && Mapping.RootComp)
 	{
-		PxRigidDynamic* Dynamic = Physics->createRigidDynamic(BodyTransform);
-		PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Dynamic, Geom.any(), *DefaultMaterial);
-		if (Shape)
-		{
-			Shape->setLocalPose(PxTransform(ShapeLocalRot));
-			SetupFilterData(Shape, Comp);
-		}
-		PxRigidBodyExt::updateMassAndInertia(*Dynamic, 1.0f);
-		Body = Dynamic;
-	}
-	else
-	{
-		PxRigidStatic* Static = Physics->createRigidStatic(BodyTransform);
-		PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Static, Geom.any(), *DefaultMaterial);
-		if (Shape)
-		{
-			Shape->setLocalPose(PxTransform(ShapeLocalRot));
-			SetupFilterData(Shape, Comp);
-		}
-		Body = Static;
+		FVector RootPos = Mapping.RootComp->GetWorldLocation();
+		FQuat RootRot = Mapping.RootComp->GetWorldMatrix().ToQuat();
+		FVector CompPos = Comp->GetWorldLocation();
+		FQuat CompRot = Comp->GetWorldMatrix().ToQuat();
+
+		FQuat InvRootRot = RootRot.Inverse();
+		FVector LocalPos = InvRootRot.RotateVector(CompPos - RootPos);
+		FQuat LocalRot = InvRootRot * CompRot;
+
+		LocalPose = PxTransform(ToPxVec3(LocalPos), ToPxQuat(LocalRot));
 	}
 
-	// Overlap 전용인 경우 트리거로 설정
-	if (Body && Comp->GetGenerateOverlapEvents())
+	// Capsule 등 축 보정을 LocalPose의 회전 부분에 합성
+	LocalPose.q = LocalPose.q * ShapeAxisRot;
+	Shape->setLocalPose(LocalPose);
+
+	SetupFilterData(Shape, Comp);
+
+	// Trigger flag — 같은 PxActor에 simulation shape와 trigger shape가 섞이면
+	// PhysX가 actor를 trigger로 동작시키므로 주의. 같은 액터의 모든 shape가
+	// 같은 종류여야 안전.
+	if (Comp->GetGenerateOverlapEvents())
 	{
-		PxU32 ShapeCount = Body->getNbShapes();
-		PxShape* Shapes[1];
-		Body->getShapes(Shapes, 1);
-		if (ShapeCount > 0 && Shapes[0])
-		{
-			Shapes[0]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-			Shapes[0]->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
-		}
+		Shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+		Shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
 	}
 
-	// userData로 Component 포인터 저장 — 콜백에서 역참조용
-	if (Body)
-	{
-		Body->userData = Comp;
-	}
+	// userData: shape 단위로 PrimitiveComponent 매핑 — 콜백에서 역참조용
+	Shape->userData = Comp;
 
-	return Body;
+	return Shape;
 }
 
-void FPhysXPhysicsScene::RemoveBody(PxRigidActor* Body)
+void FPhysXPhysicsScene::DetachShapeForComponent(FBodyMapping& Mapping, UPrimitiveComponent* Comp)
 {
-	if (Body && Scene)
+	if (!Mapping.Actor || !Comp) return;
+
+	const PxU32 NumShapes = Mapping.Actor->getNbShapes();
+	if (NumShapes == 0) return;
+
+	std::vector<PxShape*> Shapes(NumShapes);
+	Mapping.Actor->getShapes(Shapes.data(), NumShapes);
+
+	for (PxShape* Shape : Shapes)
 	{
-		Scene->removeActor(*Body);
-		Body->release();
+		if (Shape && Shape->userData == Comp)
+		{
+			Mapping.Actor->detachShape(*Shape);
+			break;
+		}
 	}
 }
 
-FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMapping(UPrimitiveComponent* Comp)
+FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMappingByActor(AActor* OwnerActor)
 {
 	for (auto& M : BodyMappings)
 	{
-		if (M.Component == Comp) return &M;
+		if (M.OwnerActor == OwnerActor) return &M;
 	}
 	return nullptr;
 }
 
-const FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMapping(UPrimitiveComponent* Comp) const
+const FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMappingByActor(AActor* OwnerActor) const
 {
 	for (const auto& M : BodyMappings)
 	{
-		if (M.Component == Comp) return &M;
+		if (M.OwnerActor == OwnerActor) return &M;
+	}
+	return nullptr;
+}
+
+// "이 컴포넌트가 shape로 추가된 mapping" 검색 — 등록 가드 + Force/Velocity API 라우팅용.
+// owner 기반 lookup과 다름: 같은 owner라도 컴포넌트가 아직 Components에 push되지 않았으면
+// 다른 컴포넌트의 shape를 통해 force가 잘못 적용되지 않도록 nullptr 반환.
+FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMappingByComponent(UPrimitiveComponent* Comp)
+{
+	if (!Comp) return nullptr;
+	for (auto& M : BodyMappings)
+	{
+		for (UPrimitiveComponent* C : M.Components)
+		{
+			if (C == Comp) return &M;
+		}
+	}
+	return nullptr;
+}
+
+const FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMappingByComponent(UPrimitiveComponent* Comp) const
+{
+	if (!Comp) return nullptr;
+	for (const auto& M : BodyMappings)
+	{
+		for (UPrimitiveComponent* C : M.Components)
+		{
+			if (C == Comp) return &M;
+		}
 	}
 	return nullptr;
 }
@@ -558,7 +656,7 @@ const FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMapping(UPrimiti
 
 void FPhysXPhysicsScene::AddForce(UPrimitiveComponent* Comp, const FVector& Force)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -567,7 +665,7 @@ void FPhysXPhysicsScene::AddForce(UPrimitiveComponent* Comp, const FVector& Forc
 
 void FPhysXPhysicsScene::AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -576,7 +674,7 @@ void FPhysXPhysicsScene::AddForceAtLocation(UPrimitiveComponent* Comp, const FVe
 
 void FPhysXPhysicsScene::AddTorque(UPrimitiveComponent* Comp, const FVector& Torque)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -589,7 +687,7 @@ void FPhysXPhysicsScene::AddTorque(UPrimitiveComponent* Comp, const FVector& Tor
 
 FVector FPhysXPhysicsScene::GetLinearVelocity(UPrimitiveComponent* Comp) const
 {
-	const FBodyMapping* M = FindMapping(Comp);
+	const FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return { 0, 0, 0 };
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return { 0, 0, 0 };
@@ -598,7 +696,7 @@ FVector FPhysXPhysicsScene::GetLinearVelocity(UPrimitiveComponent* Comp) const
 
 void FPhysXPhysicsScene::SetLinearVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -607,7 +705,7 @@ void FPhysXPhysicsScene::SetLinearVelocity(UPrimitiveComponent* Comp, const FVec
 
 FVector FPhysXPhysicsScene::GetAngularVelocity(UPrimitiveComponent* Comp) const
 {
-	const FBodyMapping* M = FindMapping(Comp);
+	const FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return { 0, 0, 0 };
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return { 0, 0, 0 };
@@ -616,7 +714,7 @@ FVector FPhysXPhysicsScene::GetAngularVelocity(UPrimitiveComponent* Comp) const
 
 void FPhysXPhysicsScene::SetAngularVelocity(UPrimitiveComponent* Comp, const FVector& Vel)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -629,7 +727,7 @@ void FPhysXPhysicsScene::SetAngularVelocity(UPrimitiveComponent* Comp, const FVe
 
 void FPhysXPhysicsScene::SetMass(UPrimitiveComponent* Comp, float Mass)
 {
-	FBodyMapping* M = FindMapping(Comp);
+	FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return;
@@ -638,7 +736,7 @@ void FPhysXPhysicsScene::SetMass(UPrimitiveComponent* Comp, float Mass)
 
 float FPhysXPhysicsScene::GetMass(UPrimitiveComponent* Comp) const
 {
-	const FBodyMapping* M = FindMapping(Comp);
+	const FBodyMapping* M = FindMappingByComponent(Comp);
 	if (!M || !M->Actor) return 1.0f;
 	PxRigidDynamic* Dyn = M->Actor->is<PxRigidDynamic>();
 	if (!Dyn) return 1.0f;
