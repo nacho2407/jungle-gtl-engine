@@ -424,7 +424,7 @@
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "Name" : "AStaticMeshActor_11",
+      "Name" : "Road",
       "NonSceneComponents" : [],
       "RootComponent" : {
         "Children" : [],
@@ -485,6 +485,2222 @@
         }
       },
       "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [180.478745, -220.369781, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass2",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [180.578751, -66.697098, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass3",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [180.678757, 89.016449, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass4",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [180.778763, 244.979401, 1.200000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass5",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [22.951492, 245.079407, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass6",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [22.951477, 89.216446, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass7",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [22.951477, -66.397095, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass8",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [22.951462, -219.969788, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass9",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-136.509766, 245.179413, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass10",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-136.409790, 89.416443, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass11",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-136.309784, -66.097092, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Grass12",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/GRASS.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-136.209808, -219.569794, 1.100000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [80.000000, 80.000000, 0.500000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building1",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [50.079662, 20.135460, 0.598732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -9.244751, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building2",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-76.257545, -60.742134, 0.698732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.377350, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building3",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert3.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [152.556854, 185.489990, 0.000000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -10.137451, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building4",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [100.965355, 123.725266, 2.042000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -8.135162, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building5",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-189.786255, 2.971306, 0.290382],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.365997, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building6",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-29.629822, 5.449127, 0.698732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.709412, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAmbientLightActor",
+      "Name" : "AmbientLight",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/AmbientLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UAmbientLightComponent",
+        "Properties" : {
+          "Cast Shadows" : true,
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Intensity" : 0.700000,
+          "Location" : [107.808846, 35.338837, 89.294319],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shadow Bias" : -0.000100,
+          "Shadow Normal Bias" : -0.002000,
+          "Shadow Resolution Scale" : 1.000000,
+          "Shadow Sharpen" : 0.670000,
+          "Shadow Slope Bias" : 0.000100,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building7",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-54.609207, 15.458500, 0.798732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -9.308701, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building8",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-110.514145, 182.956833, 0.590382],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 3.963837, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building9",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-148.768600, 24.322607, 1.098732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.645569, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building10",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-32.435738, 142.698746, 1.942000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -8.199051, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building11",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert3.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [29.952431, 204.563477, 0.600000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -10.201355, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building12",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [98.288528, -180.002777, 2.042000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -101.054420, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building13",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-78.705887, -375.854645, 1.942000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 179.448578, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building14",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [204.890274, -206.460129, 2.042000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -101.054420, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building15",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert3.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [141.501801, 127.649612, 0.700000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -10.201355, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building16",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Side_Wall.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/house_blinn1.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper.mat"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Design.mat"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Extraa.mat"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Design.mat"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Wall.mat"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Materials/Auto/house_Wall_Right.mat"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Materials/Auto/house_RIght_Wall.mat"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Materials/Auto/lambert2.mat"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Materials/Auto/house_Middle_Floor.mat"
+          },
+          "Element 19" : {
+            "Path" : "Asset/Materials/Auto/house_Back_Extraa.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/house_lambert21.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/house_Floor_2.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/house_Top_Floor.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/house_Front_Gate_Upper_2.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/house_Floor.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/house_Inner_Wall.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1_Chokhat.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/house_Gate_1.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-60.380363, 68.380981, 0.798732],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.709412, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building1.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building17",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-132.665436, 48.727226, 0.490382],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.365997, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Building18",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert4.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [148.285507, -1.575706, 2.142000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -101.054420, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building3.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "BUilding19",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/lambert3.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-169.083557, 383.617706, 0.700000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 22.295364, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Buildings\\Building2.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_3",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-105.580467, -138.408600, 15.896111],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -10.012436, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_4",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-63.125122, -63.150097, 15.996111],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 76.058716, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_5",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-96.558975, -24.579353, 16.096111],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 88.800629, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_6",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-55.581631, 38.247536, 16.196112],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 144.952515, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_7",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [15.648876, -29.218086, 16.296112],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 144.952515, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_8",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.175016, -164.833603, 16.396112],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 144.952515, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_9",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-76.085510, -165.814606, 16.496113],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 84.254120, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_10",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [71.260841, -82.184189, 16.596113],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 73.761276, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_11",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [71.360840, 16.593370, 16.696114],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 171.694641, 0.000000],
+          "Scale" : [15.000000, 9.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_12",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [28.466717, 23.349985, 16.796114],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 171.694641, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_13",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-60.372906, -19.280462, 16.896114],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 171.694641, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_14",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-102.536407, -73.865387, 16.996115],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -81.358086, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_15",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [0.945610, -66.839455, 17.096115],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -81.358086, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_16",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [12.979149, -108.201797, 17.196115],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -6.303162, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_17",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [57.824001, -42.002888, 17.296116],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -6.303162, 0.000000],
+          "Scale" : [20.000000, 11.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_18",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-88.579887, 77.988007, 17.396116],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, 21.683044, 0.000000],
+          "Scale" : [15.000000, 8.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_19",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-67.507057, -97.426819, 17.496117],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -7.029984, 0.000000],
+          "Scale" : [15.000000, 8.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_20",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [55.406666, -114.761887, 17.596117],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -7.029984, 0.000000],
+          "Scale" : [15.000000, 8.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ABoxActor",
+      "Name" : "ABoxActor_21",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [43.643513, -172.126389, 17.696117],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 1,
+          "Rotation" : [0.000000, -7.029984, 0.000000],
+          "Scale" : [15.000000, 8.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "SkyDome",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/M_Sky_Panning_Clouds2.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [0.000000, 0.000000, 4.566345],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 10.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "C:\\Github\\Week9\\Jungle_Week9_Team5\\KraftonEngine\\Data\\Map\\Sky\\Sky.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -493,9 +2709,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-61.322823, 103.813034, 18.399658],
+    "Location" : [49.863804, -326.483612, 404.052704],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000000, 23.206068, -7.890015]
+    "Rotation" : [-0.000002, 35.656002, 98.611374]
   },
   "Version" : 2,
   "WorldType" : "Editor"
