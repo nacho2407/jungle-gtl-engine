@@ -150,7 +150,9 @@ bool UCarMovementComponent::ApplyWheelSuspension(float DeltaTime)
 		}
 
 		FHitResult Hit;
-		if (!World->PhysicsRaycast(WheelRoot, Down, RayLength, Hit, OwnerActor))
+		// 지면 검출 — WorldStatic 채널에 Block 응답인 shape만 hit. trigger volume처럼
+		// 응답이 모두 Overlap인 액터는 자동 제외되어 wheel suspension 판정이 흔들리지 않는다.
+		if (!World->PhysicsRaycast(WheelRoot, Down, RayLength, Hit, ECollisionChannel::WorldStatic, OwnerActor))
 		{
 			continue;
 		}

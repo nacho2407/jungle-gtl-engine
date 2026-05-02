@@ -285,13 +285,18 @@ static PxFilterFlags KraftonFilterShader(
 		return PxFilterFlag::eDEFAULT;
 	}
 
-	// 한쪽이라도 Overlap → 겹침 감지만 (물리적 밀어내기 없음)
+	// 한쪽이라도 Overlap → 겹침 감지만 (물리적 밀어내기 없음).
+	// 일반적으로 이 케이스는 위 trigger shape 분기에서 이미 처리되지만, 등록 시점에
+	// trigger flag로 분류되지 않은 simulation shape pair인데 응답이 Overlap인 경우의
+	// 안전망. eSOLVE_CONTACT 명시 제외 + eDETECT_DISCRETE_CONTACT + NOTIFY로 detection만.
 	bool bAOverlapsB = (filterData0.word2 & (1u << channelB)) != 0;
 	bool bBOverlapsA = (filterData1.word2 & (1u << channelA)) != 0;
 
 	if (bAOverlapsB || bBOverlapsA)
 	{
-		pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+		pairFlags = PxPairFlag::eDETECT_DISCRETE_CONTACT
+			| PxPairFlag::eNOTIFY_TOUCH_FOUND
+			| PxPairFlag::eNOTIFY_TOUCH_LOST;
 		return PxFilterFlag::eDEFAULT;
 	}
 
@@ -470,6 +475,19 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 
 	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
 	// 한 PxActor가 여러 컴포넌트를 가지므로 RootComp 기준으로만 한 번 동기화.
+	//
+	// Dynamic actor도 Engine 측 transform이 PhysX와 충분히 크게 다르면 teleport한다.
+	// (lua spawn 직후 m.Location = pos 같은 외부 변경 흡수용)
+	//
+	// 정상 시뮬레이션 흐름에서는 post-simulate가 Engine = PhysX로 맞춰주므로
+	// 다음 frame pre에서 차이 ≈ 0 → skip. 단 round-trip의 부동소수 오차로 작은
+	// 차이는 매 frame 발생할 수 있어 threshold를 충분히 크게 잡아 false-positive
+	// teleport를 막는다.
+	//
+	// velocity는 의도적으로 보존 — PhysX의 정상 시뮬레이션 momentum 유지.
+	constexpr float TeleportPosThresholdSq = 1.0f;   // 1m² (1m 이상 차이 시만 teleport)
+	constexpr float TeleportRotThreshold = 0.99f;    // ~8° 차이 시만 teleport
+
 	for (auto& Mapping : BodyMappings)
 	{
 		if (!Mapping.RootComp || !Mapping.Actor) continue;
@@ -478,16 +496,28 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 
 		if (PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>())
 		{
-			// Kinematic이면 target으로, 아니면 직접 pose 설정은 하지 않음
-			// (Dynamic은 PhysX가 시뮬레이션으로 이동시킴)
 			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
 			{
 				Dynamic->setKinematicTarget(NewPose);
 			}
+			else
+			{
+				PxTransform PxPose = Dynamic->getGlobalPose();
+				PxVec3 dp = NewPose.p - PxPose.p;
+				const float DistSq = dp.x * dp.x + dp.y * dp.y + dp.z * dp.z;
+				const float QDot = std::abs(
+					NewPose.q.x * PxPose.q.x + NewPose.q.y * PxPose.q.y +
+					NewPose.q.z * PxPose.q.z + NewPose.q.w * PxPose.q.w);
+
+				if (DistSq > TeleportPosThresholdSq || QDot < TeleportRotThreshold)
+				{
+					// 큰 외부 변경 → teleport. velocity는 보존.
+					Dynamic->setGlobalPose(NewPose);
+				}
+			}
 		}
 		else if (Mapping.Actor->is<PxRigidStatic>())
 		{
-			// Static body — 에디터에서 움직인 경우 위치 갱신
 			Mapping.Actor->setGlobalPose(NewPose);
 		}
 	}
@@ -579,10 +609,32 @@ PxShape* FPhysXPhysicsScene::AddShapeForComponent(FBodyMapping& Mapping, UPrimit
 
 	SetupFilterData(Shape, Comp);
 
-	// Trigger flag — 같은 PxActor에 simulation shape와 trigger shape가 섞이면
-	// PhysX가 actor를 trigger로 동작시키므로 주의. 같은 액터의 모든 shape가
-	// 같은 종류여야 안전.
-	if (Comp->GetGenerateOverlapEvents())
+	// Trigger flag 결정:
+	//   1) GenerateOverlapEvents=true (명시적 trigger 의도)  OR
+	//   2) 어떤 active 채널에도 Block 응답이 없음 (= simulation 의미 없음, overlap 이벤트만 의도)
+	//
+	// (2)가 핵심 — FilterShader의 PairFlag만으로는 simulation shape pair에서 contact resolve를
+	// 막지 못하는 경우가 있어, 응답이 모두 Overlap/Ignore이면 PhysX shape 자체를 trigger로
+	// 등록해 contact resolve 자체가 발생하지 않도록 한다.
+	//
+	// 같은 PxActor 안에 simulation shape와 trigger shape가 섞이면 PhysX가 거부하므로
+	// 같은 액터의 모든 컴포넌트가 같은 종류여야 안전 (현재 ATriggerVolumeBase는 BoxComponent 1개라 OK).
+	bool bShouldBeTrigger = Comp->GetGenerateOverlapEvents();
+	if (!bShouldBeTrigger)
+	{
+		bool bHasAnyBlockResponse = false;
+		for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
+		{
+			if (Comp->GetCollisionResponseToChannel(static_cast<ECollisionChannel>(Ch)) == ECollisionResponse::Block)
+			{
+				bHasAnyBlockResponse = true;
+				break;
+			}
+		}
+		bShouldBeTrigger = !bHasAnyBlockResponse;
+	}
+
+	if (bShouldBeTrigger)
 	{
 		Shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
 		Shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
@@ -781,25 +833,44 @@ FVector FPhysXPhysicsScene::GetCenterOfMass(UPrimitiveComponent* Comp) const
 // Raycast
 // ============================================================
 
-bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor) const
+bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {
 	if (!Scene) return false;
 
-	struct FIgnoreActorRaycastFilter : PxQueryFilterCallback
+	// Channel + IgnoreActor 통합 filter.
+	// shape의 queryFilterData는 SetupFilterData에서 word0=ObjectType, word1=Block 마스크.
+	// 응답이 TraceChannel에 대해 Block(=word1의 해당 비트 set)인 shape만 hit으로 인정.
+	// trigger flag가 set된 shape는 PhysX 측 query에서 자동 제외되므로 별도 처리 불필요.
+	struct FChannelRaycastFilter : PxQueryFilterCallback
 	{
 		const AActor* IgnoreActor = nullptr;
+		PxU32 TraceBit = 0;
 
-		explicit FIgnoreActorRaycastFilter(const AActor* InIgnoreActor)
+		FChannelRaycastFilter(const AActor* InIgnoreActor, ECollisionChannel InChannel)
 			: IgnoreActor(InIgnoreActor)
+			, TraceBit(1u << static_cast<PxU32>(InChannel))
 		{
 		}
 
-		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape*, const PxRigidActor* Actor, PxHitFlags&) override
+		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
 			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
 			{
 				return PxQueryHitType::eNONE;
 			}
+
+			// shape의 응답이 TraceChannel에 대해 Block인지 확인.
+			// (word1[TraceChannel 비트]가 set이면 Block 응답)
+			if (Shape)
+			{
+				const PxFilterData ShapeData = Shape->getQueryFilterData();
+				if ((ShapeData.word1 & TraceBit) == 0)
+				{
+					return PxQueryHitType::eNONE;
+				}
+			}
+
 			return PxQueryHitType::eBLOCK;
 		}
 
@@ -812,7 +883,7 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 	PxRaycastBuffer Hit;
 	PxQueryFilterData FilterData;
 	FilterData.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
-	FIgnoreActorRaycastFilter FilterCallback(IgnoreActor);
+	FChannelRaycastFilter FilterCallback(IgnoreActor, TraceChannel);
 
 	bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, Hit, PxHitFlag::eDEFAULT, FilterData, &FilterCallback);
 	if (!bStatus || !Hit.hasBlock) return false;

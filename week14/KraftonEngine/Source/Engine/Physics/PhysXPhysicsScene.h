@@ -55,7 +55,9 @@ public:
 	void SetCenterOfMass(UPrimitiveComponent* Comp, const FVector& LocalOffset) override;
 	FVector GetCenterOfMass(UPrimitiveComponent* Comp) const override;
 
-	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit, const AActor* IgnoreActor = nullptr) const override;
+	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const override;
 
 private:
 	UWorld* World = nullptr;

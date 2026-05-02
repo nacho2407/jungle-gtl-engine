@@ -1,4 +1,4 @@
-#include "Game/Meteor/Meteor.h"
+﻿#include "Game/Meteor/Meteor.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Component/SphereComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -14,7 +14,7 @@ void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 {
 	CollisionSphere = AddComponent<USphereComponent>();
 	SetRootComponent(CollisionSphere);
-	CollisionSphere->SetSphereRadius(0.5f);
+	CollisionSphere->SetSphereRadius(1.0f);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionSphere->SetCollisionObjectType(ECollisionChannel::WorldDynamic);
 	CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
@@ -40,7 +40,17 @@ void AMeteor::PostDuplicate()
 
 void AMeteor::BeginPlay()
 {
+	// 코드 spawn 경로(예: lua World.SpawnActor)는 InitDefaultComponents를 명시 호출하지
+	// 않으므로 여기서 자동 셋업. 씬 deserialize 경로에선 컴포넌트가 이미 복원되어 있어 skip.
+	// AActor::BeginPlay 직전에 호출해야 추가된 컴포넌트의 BeginPlay(=Physics 등록 등)가
+	// OwnedComponents 순회에 포함된다.
+	if (!CollisionSphere)
+	{
+		InitDefaultComponents();
+	}
+
 	Super::BeginPlay();
+
 	if (CollisionSphere)
 	{
 		CollisionSphere->OnComponentHit.AddRaw(this, &AMeteor::HandleHit);
