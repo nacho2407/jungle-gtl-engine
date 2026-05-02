@@ -24,12 +24,17 @@ void UProceduralMeshComponent::CreateFrom(UProceduralMeshComponent* ProcMeshComp
 {
 	if (ProcMeshComp)
 	{
-        CreateSection(0, ProcMeshComp->GetSections()[0].Vertices, ProcMeshComp->GetSections()[0].Indices);
-        for (size_t i = 0; i < ProcMeshComp->GetNumMaterials(); i++)
-        {
-            UMaterialInterface* Mat = ProcMeshComp->GetMaterial(i);
-            SetMaterial(i, Mat);
-        }
+        const TArray<FMeshSection>& Sections = ProcMeshComp->GetSections();
+
+		if (!Sections.empty())
+		{
+            CreateSection(0, Sections[0].Vertices, Sections[0].Indices);
+            for (size_t i = 0; i < ProcMeshComp->GetNumMaterials(); i++)
+            {
+                UMaterialInterface* Mat = ProcMeshComp->GetMaterial(i);
+                SetMaterial(i, Mat);
+            }
+		}
 	}
 }
 
