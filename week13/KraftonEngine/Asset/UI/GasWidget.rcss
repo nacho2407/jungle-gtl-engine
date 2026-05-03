@@ -24,7 +24,7 @@ body {
 	left: 4%;
 	top: 154dp;
 	width: 260dp;
-	height: 82dp;
+	height: 100dp;
 	border-width: 2dp;
 	border-color: #f0c85a;
 	background-color: #15171ce6;
@@ -47,8 +47,23 @@ body {
 	left: 18dp;
 	top: 38dp;
 	width: 224dp;
-	height: 40dp;
+	height: 32dp;
 	color: #ffffff;
-	font-size: 28dp;
-	line-height: 40dp;
+	font-size: 24dp;
+	line-height: 32dp;
+}
+
+#gas-bar-track {
+	position: absolute;
+	left: 18dp;
+	top: 76dp;
+	width: 224dp;
+	height: 10dp;
+	background-color: #30333bcc;
+}
+
+#gas-bar-fill {
+	width: 100%;
+	height: 100%;
+	background-color: #f0c85a;
 }

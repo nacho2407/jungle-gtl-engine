@@ -15,7 +15,7 @@
 
 IMPLEMENT_CLASS(ACarPawn, APawn)
 
-void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile, const FString& LuaCameraScriptFile)
+void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FString& LuaScriptFile, const FString& LuaCameraScriptFile, const FString& LuaGasScriptFile)
 {
 	// 1) Root = 차체 Box (충돌만 — 시뮬레이션은 끄고 Lua가 트랜스폼 직접 조작)
 	// SimulatePhysics=true로 두면 NativePhysicsScene의 중력/속도 적분과 Lua의
@@ -86,6 +86,12 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 	if (!LuaCameraScriptFile.empty())
 	{
 		LuaCameraScript->SetScriptFile(LuaCameraScriptFile);
+	}
+
+	LuaGasScript = AddComponent<ULuaScriptComponent>();
+	if (!LuaGasScriptFile.empty())
+	{
+		LuaGasScript->SetScriptFile(LuaGasScriptFile);
 	}
 
 	// 6) 차량 물리/이동 컴포넌트 — Lua에서 Throttle/Steering 입력을 받아서 Box에 힘과 토크를 가한다.

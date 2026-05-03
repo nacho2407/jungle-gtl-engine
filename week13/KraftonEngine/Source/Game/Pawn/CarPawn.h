@@ -34,7 +34,8 @@ public:
 	// 코드 spawn 시 호출 — 직렬화 경로에선 PostDuplicate가 캐시 포인터를 다시 잡는다.
 	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/Truck/TruckBody.obj",
 	                           const FString& LuaScriptFile = "CarController.lua",
-							   const FString& LuaCameraScriptFile = "CameraManager.lua");
+							   const FString& LuaCameraScriptFile = "CameraManager.lua",
+							   const FString& LuaGasScriptFile = "GasController.lua");
 	void PostDuplicate() override;
 
 	UBoxComponent* GetCollisionBox() const { return CollisionBox; }
@@ -58,6 +59,7 @@ private:
 	USphereComponent* Wheels[4] = {};
 	ULuaScriptComponent* LuaScript = nullptr;
 	ULuaScriptComponent* LuaCameraScript = nullptr;
+	ULuaScriptComponent* LuaGasScript = nullptr;
 	UCameraComponent* FirstPersonCamera = nullptr;
 	UCameraComponent* ThirdPersonCamera = nullptr;
 	UCarMovementComponent* Movement = nullptr;

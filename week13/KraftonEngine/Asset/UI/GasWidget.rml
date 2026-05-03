@@ -8,6 +8,9 @@
 		<div id="gas-panel">
 			<div class="gas-label">GAS</div>
 			<div id="gas-value" class="gas-value">100 / 100</div>
+			<div id="gas-bar-track">
+				<div id="gas-bar-fill"></div>
+			</div>
 		</div>
 	</div>
 </body>
