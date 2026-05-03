@@ -20,6 +20,26 @@
 #include <windows.h>  // PostQuitMessage
 
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
+sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
+
+void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
+{
+	OnEscapePressedCallback = std::move(Callback);
+}
+
+void FLuaScriptManager::FireOnEscapePressed()
+{
+	if (!OnEscapePressedCallback.valid())
+	{
+		return;
+	}
+	sol::protected_function_result Result = OnEscapePressedCallback();
+	if (!Result.valid())
+	{
+		sol::error Err = Result;
+		UE_LOG("[Lua] OnEscapePressed callback error: %s", Err.what());
+	}
+}
 
 void FLuaScriptManager::Initialize()
 {
@@ -185,6 +205,10 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		// WM_QUIT — FEngineLoop::Run 이 PumpMessages 에서 잡고 정상 shutdown.
 		PostQuitMessage(0);
+	});
+	Engine.set_function("SetOnEscape", [](sol::protected_function Callback)
+	{
+		FLuaScriptManager::SetOnEscapePressed(std::move(Callback));
 	});
 
 	sol::table Key = Lua.create_named_table("Key");

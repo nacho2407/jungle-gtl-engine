@@ -4,6 +4,8 @@
 #include "Game/GameMode/GameModeCarGame.h"
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Lua/LuaScriptManager.h"
+#include <windows.h>  // VK_ESCAPE
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
@@ -73,6 +75,13 @@ void UGameEngine::Tick(float DeltaTime)
 	if (GameViewportClient)
 	{
 		GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
+	}
+
+	// ESC 는 World pause 와 무관하게 동작해야 함 (메뉴 토글 자체가 pause 토글이라
+	// component-tick 에 두면 닫는 키 입력을 못 잡는다). 등록된 Lua 콜백을 직접 호출.
+	if (InputSnapshot.WasPressed(VK_ESCAPE))
+	{
+		FLuaScriptManager::FireOnEscapePressed();
 	}
 
 	// World->Tick / Render 가 모두 끝난 이후에 transition 처리 — Lua callback 안에서
