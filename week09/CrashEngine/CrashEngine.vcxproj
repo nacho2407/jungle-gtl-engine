@@ -401,6 +401,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Editor\Settings\ReleaseSettings.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaComponentProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaInputProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaWorldProxy.cpp" />
     <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp" />
@@ -628,6 +629,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaComponentProxy.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaInputProxy.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaWorldProxy.h" />
     <ClInclude Include="Source\Engine\Physics\CollisionManager.h" />

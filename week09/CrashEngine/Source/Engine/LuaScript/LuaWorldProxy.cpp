@@ -93,7 +93,7 @@ bool FLuaWorldProxy::DestroyActor(const FLuaGameObjectProxy& ActorProxy)
 {
     UWorld* World = ResolveWorld();
     AActor* Actor = ActorProxy.GetActor();
-    if (!World || !Actor)
+    if (!World || !Actor || Actor->GetWorld() != World)
     {
         return false;
     }

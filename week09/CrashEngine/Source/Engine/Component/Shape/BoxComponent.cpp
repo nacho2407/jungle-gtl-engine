@@ -3,24 +3,10 @@
 
 #include "GameFrameWork/World.h"
 
+#include <algorithm>
+#include <cmath>
+
 IMPLEMENT_COMPONENT_CLASS(UBoxComponent, UShapeComponent, EEditorComponentCategory::Shapes)
-
-
-static void NotifyColliderBVHChanged(UShapeComponent* Comp)
-{
-    if (!Comp)
-        return;
-
-    AActor* OwnerActor = Comp->GetOwner();
-    if (!OwnerActor)
-        return;
-
-    UWorld* World = OwnerActor->GetWorld();
-    if (!World)
-        return;
-
-    World->UpdateCollisionInBVH(Comp);
-}
 
 UBoxComponent::UBoxComponent()
     : BoxExtent(1.0f, 1.0f, 1.0f),
@@ -43,10 +29,16 @@ void UBoxComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 
 void UBoxComponent::PostEditProperty(const char* PropertyName)
 {
-    BoxExtent.X = std::max(0.0f, BoxExtent.X);
-    BoxExtent.Y = std::max(0.0f, BoxExtent.Y);
-    BoxExtent.Z = std::max(0.0f, BoxExtent.Z);
+    SetBoxExtent(BoxExtent);
     UShapeComponent::PostEditProperty(PropertyName);
+}
+
+void UBoxComponent::SetBoxExtent(const FVector& Extent)
+{
+    BoxExtent.X = std::max(0.0f, Extent.X);
+    BoxExtent.Y = std::max(0.0f, Extent.Y);
+    BoxExtent.Z = std::max(0.0f, Extent.Z);
+    OnTransformDirty();
 }
 
 void UBoxComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
@@ -67,7 +59,24 @@ void UBoxComponent::OnTransformDirty()
 
     BoxCollision.Bounds.UpdateAsOBB(WorldMat);
 
-    // (선택) 4. 만약 나중에 BVH나 Octree를 쓴다면 매니저에게 위치가 변했다고 알려줍니다.
-    // EnsureWorldAABBUpdated();
-    NotifyColliderBVHChanged(this);
+    NotifyCollisionShapeChanged();
+}
+
+void UBoxComponent::UpdateWorldAABB() const
+{
+    const FOBB& OBB = BoxCollision.Bounds;
+
+    const FVector AxisX = OBB.Rotation.GetForwardVector();
+    const FVector AxisY = OBB.Rotation.GetRightVector();
+    const FVector AxisZ = OBB.Rotation.GetUpVector();
+
+    const FVector Extent(
+        std::abs(AxisX.X) * OBB.Extent.X + std::abs(AxisY.X) * OBB.Extent.Y + std::abs(AxisZ.X) * OBB.Extent.Z,
+        std::abs(AxisX.Y) * OBB.Extent.X + std::abs(AxisY.Y) * OBB.Extent.Y + std::abs(AxisZ.Y) * OBB.Extent.Z,
+        std::abs(AxisX.Z) * OBB.Extent.X + std::abs(AxisY.Z) * OBB.Extent.Y + std::abs(AxisZ.Z) * OBB.Extent.Z);
+
+    WorldAABBMinLocation = OBB.Center - Extent;
+    WorldAABBMaxLocation = OBB.Center + Extent;
+    bWorldAABBDirty = false;
+    bHasValidWorldAABB = true;
 }

@@ -1,11 +1,24 @@
 ﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "LightComponentBase.h"
-#include "Object/ObjectFactory.h"
-#include "Serialization/Archive.h"
 
 #include <algorithm>
 
+#include "Component/LightComponent.h"
+#include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
+
 IMPLEMENT_ABSTRACT_COMPONENT_CLASS(ULightComponentBase, USceneComponent)
+
+namespace
+{
+void MarkLightDirtyIfPossible(ULightComponentBase* Base)
+{
+    if (ULightComponent* Light = Cast<ULightComponent>(Base))
+    {
+        Light->MarkRenderStateDirty();
+    }
+}
+} // namespace
 
 // 조명은 일반적으로 Tick을 필요로 하지 않으므로 bTickEnable을 꺼 둔다.
 ULightComponentBase::ULightComponentBase()
@@ -51,4 +64,28 @@ void ULightComponentBase::PostEditProperty(const char* PropertyName)
     ShadowSharpen = std::clamp(ShadowSharpen, 0.0f, 0.99f);
     ShadowESMExponent = std::max(0.01f, ShadowESMExponent);
     USceneComponent::PostEditProperty(PropertyName);
+}
+
+void ULightComponentBase::SetIntensity(float InIntensity)
+{
+    Intensity = std::max(0.0f, InIntensity);
+    MarkLightDirtyIfPossible(this);
+}
+
+void ULightComponentBase::SetLightColor(const FVector4& InColor)
+{
+    LightColor = InColor;
+    MarkLightDirtyIfPossible(this);
+}
+
+void ULightComponentBase::SetAffectsWorld(bool bInAffectsWorld)
+{
+    bAffectsWorld = bInAffectsWorld;
+    MarkLightDirtyIfPossible(this);
+}
+
+void ULightComponentBase::SetCastShadows(bool bInCastShadows)
+{
+    bCastShadows = bInCastShadows;
+    MarkLightDirtyIfPossible(this);
 }

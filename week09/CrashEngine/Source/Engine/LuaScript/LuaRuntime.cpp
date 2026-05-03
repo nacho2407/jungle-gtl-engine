@@ -5,10 +5,11 @@
 #include <sstream>
 #include <string>
 
-#include "LuaActionLibrary.h"
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Sound/SoundManager.h"
+#include "LuaScript/LuaActionLibrary.h"
+#include "LuaScript/LuaComponentProxy.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaInputProxy.h"
 #include "Math/Vector.h"
@@ -193,7 +194,9 @@ void FLuaRuntime::BindEngineTypes()
 		"HasTag", &FLuaGameObjectProxy::HasTag,
 		"AddTag", &FLuaGameObjectProxy::AddTag,
 		"RemoveTag", &FLuaGameObjectProxy::RemoveTag,
-		"PrintLocation", &FLuaGameObjectProxy::PrintLocation
+		"PrintLocation", &FLuaGameObjectProxy::PrintLocation,
+        "AddComponent", &FLuaGameObjectProxy::AddComponent,
+        "GetComponent", &FLuaGameObjectProxy::GetComponent
 	);
 
     // SoundManager 등록
@@ -238,4 +241,42 @@ void FLuaRuntime::BindEngineTypes()
 
     // Coroutine 관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
+
+	Lua->new_usertype<FLuaComponentProxy>("Component", sol::no_constructor,
+		"UUID", sol::property(&FLuaComponentProxy::GetUUID),
+		"IsValid", &FLuaComponentProxy::IsValid,
+		"GetClassName", &FLuaComponentProxy::GetComponentClassName,
+
+		"GetRelativeLocation", &FLuaComponentProxy::GetRelativeLocation,
+		"SetRelativeLocation", &FLuaComponentProxy::SetRelativeLocation,
+		"GetRelativeScale", &FLuaComponentProxy::GetRelativeScale,
+		"SetRelativeScale", &FLuaComponentProxy::SetRelativeScale,
+		"GetRelativeRotation", &FLuaComponentProxy::GetRelativeRotation,
+		"SetRelativeRotation", &FLuaComponentProxy::SetRelativeRotation,
+
+		"SetVisible", &FLuaComponentProxy::SetVisible,
+		"SetVisibleInGame", &FLuaComponentProxy::SetVisibleInGame,
+		"SetVisibleInEditor", &FLuaComponentProxy::SetVisibleInEditor,
+
+		"SetStaticMesh", &FLuaComponentProxy::SetStaticMesh,
+		"GetStaticMeshPath", &FLuaComponentProxy::GetStaticMeshPath,
+		"GetNumMaterials", &FLuaComponentProxy::GetNumMaterials,
+		"SetMaterial", &FLuaComponentProxy::SetMaterial,
+
+		"SetText", &FLuaComponentProxy::SetText,
+		"GetText", &FLuaComponentProxy::GetText,
+		"SetFontSize", &FLuaComponentProxy::SetFontSize,
+		"SetBillboard", &FLuaComponentProxy::SetBillboard,
+
+		"SetIntensity", &FLuaComponentProxy::SetIntensity,
+		"SetLightColor", &FLuaComponentProxy::SetLightColor,
+		"SetAffectsWorld", &FLuaComponentProxy::SetAffectsWorld,
+		"SetCastShadows", &FLuaComponentProxy::SetCastShadows,
+
+		"SetSphereRadius", &FLuaComponentProxy::SetSphereRadius,
+        "SetBoxExtent", &FLuaComponentProxy::SetBoxExtent,
+		"SetCapsuleSize", &FLuaComponentProxy::SetCapsuleSize,
+		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
+		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight
+	);
 }
