@@ -62,6 +62,26 @@ function UIManager.SetPersonQuestOkCallback(callback)
 end
 
 function UIManager.Init()
+    -- Scene reload 대응 — UI 위젯은 UUIManager 싱글턴이 보유 (월드와 별개) 라 첫 init 후
+    -- 유지된다. 두 번째 Init 호출 시 위젯 재생성 없이 표시만 인트로 화면으로 정리.
+    if widgets.intro ~= nil then
+        UIManager.Hide("gameOverlay")
+        UIManager.Hide("gameOver")
+        UIManager.Hide("gasWidget")
+        UIManager.Hide("carWashQuest")
+        UIManager.Hide("gasQuest")
+        UIManager.Hide("personQuest")
+        UIManager.Hide("contributor")
+        UIManager.Hide("whiteBox")
+        -- 진행 중이던 fade 취소 — 콜백이 죽은 액터를 참조하지 않도록.
+        fade.active = false
+        fade.onComplete = nil
+        SetFadeOpacity(0)
+        UIManager.Hide("fade")
+        UIManager.Show("intro")
+        return
+    end
+
     local introWidget = UI.CreateWidget("Asset/UI/IntroWidget.rml")
     introWidget:SetWantsMouse(true)
     introWidget:bind_click("start-button", function()

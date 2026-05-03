@@ -15,6 +15,7 @@
 #include "Game/Component/CarGasComponent.h"
 #include "Game/Component/DirtComponent.h"
 
+#include "Game/GameEngine.h"
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Game/Pawn/PoliceCar.h"
@@ -130,6 +131,22 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		UWorld* W = GEngine->GetWorld();
 		return W ? Cast<AGameStateCarGame>(W->GetGameState()) : nullptr;
 	};
+
+	// --- Engine.TransitionToScene — UGameEngine 에 의존하므로 Game 모듈 측에서 추가 ---
+	// (Engine 모듈의 LuaScriptManager 가 만든 "Engine" 테이블에 함수만 끼워 넣는다.)
+	sol::table EngineTable = Lua["Engine"];
+	EngineTable.set_function("TransitionToScene", [](const FString& Path)
+	{
+		// 다음 frame Tick 끝에 active world destroy + 새 scene 로드 + BeginPlay.
+		// 호출 stack 위의 액터/Lua 컴포넌트가 destroy 되어 use-after-free 가 나지 않도록
+		// deferred 처리 — UGameEngine::Tick 끝에서 ProcessPendingTransition 가 실행.
+		// "Go To Intro" 등 동적 상태 전체 리셋 시 사용 (같은 scene 재로드도 OK — 액터 / PhysX
+		// / 타이머 / 동적 스폰 모두 새 인스턴스로 시작).
+		if (UGameEngine* Game = Cast<UGameEngine>(GEngine))
+		{
+			Game->RequestTransitionToScene(Path);
+		}
+	});
 }
 
 // ============================================================

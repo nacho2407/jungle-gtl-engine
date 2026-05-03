@@ -74,6 +74,10 @@ void UGameEngine::Tick(float DeltaTime)
 	{
 		GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
 	}
+
+	// World->Tick / Render 가 모두 끝난 이후에 transition 처리 — Lua callback 안에서
+	// 요청이 들어와도 Tick/Render 흐름이 valid 한 액터/컴포넌트로 진행한 뒤 안전하게 destroy.
+	ProcessPendingTransition();
 }
 
 void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
@@ -89,6 +93,25 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 	}
 }
 
+FString UGameEngine::ResolveSceneFilePath(const FString& InNameOrPath) const
+{
+	// 이미 .Scene 확장자가 붙은 풀 경로면 그대로 사용. 그렇지 않으면 SceneDir 기준 상대로 풀어준다.
+	std::filesystem::path Input(FPaths::ToWide(InNameOrPath));
+	const std::wstring Ext = Input.has_extension() ? Input.extension().wstring() : L"";
+	if (Input.is_absolute() && std::filesystem::exists(Input))
+	{
+		return InNameOrPath;
+	}
+
+	const std::wstring SceneDir = FSceneSaveManager::GetSceneDirectory();
+	std::filesystem::path Resolved = std::filesystem::path(SceneDir) / Input;
+	if (Ext.empty())
+	{
+		Resolved += FSceneSaveManager::SceneExtension;
+	}
+	return FPaths::ToUtf8(Resolved.wstring());
+}
+
 void UGameEngine::LoadStartLevel()
 {
 	const FString& StartLevel = FProjectSettings::Get().Game.StartLevelName;
@@ -98,13 +121,51 @@ void UGameEngine::LoadStartLevel()
 		return;
 	}
 
-	std::filesystem::path ScenePath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
-		/ (FPaths::ToWide(StartLevel) + FSceneSaveManager::SceneExtension);
-	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
-
+	const FString FilePath = ResolveSceneFilePath(StartLevel);
 	if (!LoadSceneFromPath(FilePath))
 	{
 		UE_LOG("Failed to load start level: %s", StartLevel.c_str());
+	}
+}
+
+void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
+{
+	PendingScenePath = InScenePath;
+	bPendingSceneTransition = true;
+}
+
+void UGameEngine::ProcessPendingTransition()
+{
+	if (!bPendingSceneTransition)
+	{
+		return;
+	}
+	bPendingSceneTransition = false;
+
+	const FString ScenePath = std::move(PendingScenePath);
+	PendingScenePath.clear();
+
+	// Lua 에서 "Map" 같은 이름만 넘겨도 동작하도록 SceneDir/Map.Scene 으로 풀어준다.
+	const FString FilePath = ResolveSceneFilePath(ScenePath);
+
+	// 기존 active world 파괴 — EndPlay → 액터/컴포넌트 destruct → PhysicsScene unique_ptr 해제.
+	const FName OldHandle = GetActiveWorldHandle();
+	DestroyWorldContext(OldHandle);
+
+	// 새 scene 로드 — World/Level/PhysicsScene 새로 만들고 WorldList push + SetActiveWorld 까지.
+	if (!LoadSceneFromPath(FilePath))
+	{
+		UE_LOG("[GameEngine] TransitionToScene failed: %s", FilePath.c_str());
+		return;
+	}
+
+	// BeginPlay — UEngine::BeginPlay 와 동일 흐름.
+	if (FWorldContext* Ctx = GetWorldContextFromHandle(GetActiveWorldHandle()))
+	{
+		if (Ctx->World && (Ctx->WorldType == EWorldType::Game || Ctx->WorldType == EWorldType::PIE))
+		{
+			Ctx->World->BeginPlay();
+		}
 	}
 }
 

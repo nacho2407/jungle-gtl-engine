@@ -228,6 +228,14 @@ local function HandleQuestPhaseChanged(phase)
 end
 
 function BeginPlay()
+    -- Scene reload 대응 — 모듈 로컬 상태를 매 BeginPlay 마다 초기화한다. Lua VM 은 scene
+    -- 전환 사이에도 살아있어 module-top-level 의 `local state = QuestState.NotStarted` 같은
+    -- 초기화는 두 번째 BeginPlay 에선 다시 실행되지 않으므로 명시적으로 리셋해야 함.
+    state = QuestState.NotStarted
+    currentQuestIndex = 0
+    activeTarget = nil
+    car = nil
+
     UIManager.Init()
     gameState = GetGameState()
     if gameState ~= nil then
@@ -268,6 +276,14 @@ end
 function Tick(dt)
     UIManager.Tick(dt)
     UIManager.UpdateHUD()
+
+    -- ESC → 인트로로 복귀. 같은 Map.Scene 을 재로드하면 GameMode/State, 차량, 동적 스폰
+    -- (경찰차/운석), PhysX body, Lua 모듈 로컬까지 새 인스턴스로 다시 시작.
+    if Input.GetKeyDown(Key.Escape) then
+        Engine.TransitionToScene("Map")
+        return
+    end
+
     if state ~= QuestState.Active then
         return
     end
