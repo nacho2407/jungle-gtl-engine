@@ -1,4 +1,4 @@
-﻿#include "LuaGameObjectProxy.h"
+#include "LuaGameObjectProxy.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -31,6 +31,8 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
         return "UBoxComponent";
     if (TypeName == "CapsuleComponent")
         return "UCapsuleComponent";
+    if (TypeName == "LuaScriptComponent")
+        return "ULuaScriptComponent";
 
     return TypeName;
 }
@@ -38,13 +40,13 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
 bool IsLuaAddableComponentClassName(const FString& ClassName)
 {
     return ClassName == "UStaticMeshComponent"
-		|| ClassName == "UTextRenderComponent" 
-		|| ClassName == "UPointLightComponent" 
-		|| ClassName == "USpotLightComponent" 
-		|| ClassName == "UDirectionalLightComponent" 
-		|| ClassName == "UAmbientLightComponent" 
-		|| ClassName == "USphereComponent" 
-		|| ClassName == "UBoxComponent" 
+		|| ClassName == "UTextRenderComponent"
+		|| ClassName == "UPointLightComponent"
+		|| ClassName == "USpotLightComponent"
+		|| ClassName == "UDirectionalLightComponent"
+		|| ClassName == "UAmbientLightComponent"
+		|| ClassName == "USphereComponent"
+		|| ClassName == "UBoxComponent"
 		|| ClassName == "UCapsuleComponent";
 }
 

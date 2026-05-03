@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Component/ActorComponent.h"
 #include "Core/Delegates/Delegate.h"
@@ -21,6 +21,7 @@ public:
     const FString& GetScriptPath() const { return LuaScriptPath; }
 
     void StartCoroutine(const FString& FunctionName, sol::variadic_args Args);
+    bool CallFunction(const FString& FunctionName, sol::variadic_args Args);
 
     void ClearScript();
 
@@ -72,7 +73,7 @@ private:
 	sol::protected_function OnKeyPressedFunc;
     sol::protected_function OnKeyReleasedFunc;
 
-	
+
 	sol::protected_function OnMouseButtonPressedFunc;
     sol::protected_function OnMouseButtonReleasedFunc;
 

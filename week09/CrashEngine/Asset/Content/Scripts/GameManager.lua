@@ -17,15 +17,18 @@ local function getDocumentCount()
     return _G.PlayerState.DocumentCount or 0
 end
 
-function GameOver()
+function GameOver(finalHP, finalDocumentCount)
     if isGameOver then
         return
     end
 
     isGameOver = true
+    finalHP = finalHP
+    finalDocumentCount = finalDocumentCount
+
     print("GAME OVER")
-    print("Final HP : ", getPlayerHP())
-    print("Final Document Count : ", getDocumentCount())
+    print("Final HP : ", finalHP)
+    print("Final Document Count : ", finalDocumentCount)
     print("Timer : ", Timer)
 end
 
