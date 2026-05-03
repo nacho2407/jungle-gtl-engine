@@ -41,6 +41,7 @@ public:
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	USphereComponent* GetWheel(int Index) const;
 	ULuaScriptComponent* GetLuaScript() const { return LuaScript; }
+	ULuaScriptComponent* GetLuaCameraScript() const { return LuaCameraScript; }
 	UCameraComponent* GetFirstPersonCamera() const { return FirstPersonCamera; }
 	UCameraComponent* GetThirdPersonCamera() const { return ThirdPersonCamera; }
 	UCarGasComponent* GetGas() const { return Gas; }
