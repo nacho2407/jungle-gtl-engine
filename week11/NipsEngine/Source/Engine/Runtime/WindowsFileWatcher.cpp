@@ -55,7 +55,7 @@ void FWindowsFileWatcher::Tick()
 	DWORD BytesTransferred = 0;
 	if (!GetOverlappedResult(DirectoryHandle, &Overlapped, &BytesTransferred, FALSE))
 	{
-		UE_LOG("[FileWatcher] Read failed");
+		UE_LOG_WARNING("[FileWatcher] Read failed");
 		bPendingRead = false;
 		ResetEvent(EventHandle);
 		BeginRead();

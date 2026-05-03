@@ -72,7 +72,7 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
         {
             UObjectManager::Get().DestroyObject(Object);
         }
-        UE_LOG("[World] Failed to spawn actor by type name: %s", TypeName.c_str());
+        UE_LOG_ERROR("[World] Failed to spawn actor by type name: %s", TypeName.c_str());
         return nullptr;
     }
 

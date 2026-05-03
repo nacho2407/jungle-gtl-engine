@@ -189,6 +189,7 @@ void FEditorMaterialWidget::RenderAssetMaterialEditor()
 
 	MAT_SEPARATOR();
 	RenderMaterialPreviewSummary();
+	RenderMaterialPreview(nullptr);
 	MAT_SEPARATOR();
 	RenderMaterialDetails(nullptr);
 }
@@ -207,6 +208,7 @@ void FEditorMaterialWidget::RenderSingleMaterialEditor(UPrimitiveComponent* Slot
 
 	MAT_SEPARATOR();
 	RenderMaterialPreviewSummary();
+	RenderMaterialPreview(SlotOwnerComp);
 	MAT_SEPARATOR();
 	RenderMaterialDetails(SlotOwnerComp);
 }

@@ -338,7 +338,7 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
         static bool bLoggedMissingCompositeSource = false;
         if (!bLoggedMissingCompositeSource)
         {
-            UE_LOG("[GameRender] Backbuffer composite skipped. SourceSRV=%d BackBufferRTV=%d Context=%d",
+            UE_LOG_WARNING("[GameRender] Backbuffer composite skipped. SourceSRV=%d BackBufferRTV=%d Context=%d",
                    SourceSRV != nullptr, BackBufferRTV != nullptr, Context != nullptr);
             bLoggedMissingCompositeSource = true;
         }
@@ -368,7 +368,7 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
         static bool bLoggedMissingBlitShader = false;
         if (!bLoggedMissingBlitShader)
         {
-            UE_LOG("[GameRender] Backbuffer composite failed. FXAA blit shader is missing.");
+            UE_LOG_ERROR("[GameRender] Backbuffer composite failed. FXAA blit shader is missing.");
             bLoggedMissingBlitShader = true;
         }
         UseBackBufferRenderTargets();

@@ -115,7 +115,7 @@ struct FAudioSystem::FImpl
 
         if (!std::filesystem::exists(FPaths::ToWide(NormalizedPath)))
         {
-            UE_LOG("[AudioSystem] SFX file not found: %s", NormalizedPath.c_str());
+            UE_LOG_WARNING("[AudioSystem] SFX file not found: %s", NormalizedPath.c_str());
             return nullptr;
         }
 
@@ -123,7 +123,7 @@ struct FAudioSystem::FImpl
         const SoLoud::result Result = Clip->load(NormalizedPath.c_str());
         if (Result != SoLoud::SO_NO_ERROR)
         {
-            UE_LOG("[AudioSystem] Failed to load SFX: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));
+            UE_LOG_WARNING("[AudioSystem] Failed to load SFX: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));
             return nullptr;
         }
 
@@ -148,7 +148,7 @@ struct FAudioSystem::FImpl
 
         if (!std::filesystem::exists(FPaths::ToWide(NormalizedPath)))
         {
-            UE_LOG("[AudioSystem] Stream file not found: %s", NormalizedPath.c_str());
+            UE_LOG_WARNING("[AudioSystem] Stream file not found: %s", NormalizedPath.c_str());
             return nullptr;
         }
 
@@ -156,7 +156,7 @@ struct FAudioSystem::FImpl
         const SoLoud::result Result = Stream->load(NormalizedPath.c_str());
         if (Result != SoLoud::SO_NO_ERROR)
         {
-            UE_LOG("[AudioSystem] Failed to load stream: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));
+            UE_LOG_WARNING("[AudioSystem] Failed to load stream: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));
             return nullptr;
         }
 
@@ -251,7 +251,8 @@ bool FAudioSystem::Initialize()
     const SoLoud::result Result = Impl->Engine.init(Flags, SoLoud::Soloud::MINIAUDIO);
     if (Result != SoLoud::SO_NO_ERROR)
     {
-        UE_LOG("[AudioSystem] Failed to initialize SoLoud: %s", Impl->Engine.getErrorString(Result));
+        UE_LOG_ERROR("[AudioSystem] Failed to initialize SoLoud MiniAudio backend: %s", Impl->Engine.getErrorString(Result));
+        UE_LOG_WARNING("[AudioSystem] Audio will be disabled. Check the default playback device, Windows audio service, or exclusive device access.");
         return false;
     }
 

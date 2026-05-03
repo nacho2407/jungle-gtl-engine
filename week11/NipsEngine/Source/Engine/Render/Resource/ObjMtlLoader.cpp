@@ -132,6 +132,11 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 			Current->MaterialData.SpecularTexPath = ResolveTexPath(ISS);
 			Current->MaterialData.bHasSpecularTexture = true;
 		}
+		else if (Token == "map_Ke" || Token == "map_emissive" || Token == "map_Emissive")
+		{
+			Current->MaterialData.EmissiveTexPath = ResolveTexPath(ISS);
+			Current->MaterialData.bHasEmissiveTexture = true;
+		}
 		// map_bump / map_Bump / bump — skip any -option value pairs before the filename
 		else if (Token == "map_bump" || Token == "map_Bump" || Token == "bump")
 		{
@@ -184,6 +189,11 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 		else
 			Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
 
+		if (Mat->MaterialData.bHasEmissiveTexture)
+			Mat->MaterialParams["EmissiveMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.EmissiveTexPath, Device));
+		else
+			Mat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
+
 		if (Mat->MaterialData.bHasBumpTexture)
 			Mat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(Mat->MaterialData.BumpTexPath, Device));
 		else
@@ -192,6 +202,7 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 		Mat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(Mat->MaterialData.bHasDiffuseTexture);
 		Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(Mat->MaterialData.bHasSpecularTexture);
 		Mat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(Mat->MaterialData.bHasAmbientTexture);
+		Mat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(Mat->MaterialData.bHasEmissiveTexture);
 		Mat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(Mat->MaterialData.bHasBumpTexture);
 
 		Mat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));

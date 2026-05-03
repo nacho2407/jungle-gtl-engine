@@ -3,6 +3,7 @@
 #include "Core/Logging/Log.h"
 #include "Runtime/Script/CoroutineScheduler.h"
 #include "ThirdParty/sol/sol.hpp"
+#include <filesystem>
 
 class UPrimitiveComponent;
 struct FHitResult;
@@ -47,6 +48,7 @@ public:
 	void PostDuplicate(UObject* Original) override;
 	void Serialize(FArchive& Ar) override;
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	void SetScriptName(const FString& InScriptName);
     bool RegisterScript();
@@ -66,7 +68,7 @@ public:
 
 	const FString& GetScriptName() const { return ScriptName; }
 
-	//LuaScript Class의 인스턴스를 반환
+    //LuaScript Class의 인스턴스를 반환
     sol::optional<sol::table> CreateScriptInstance(const FLuaScriptLoadResult& Loaded);
     void ReloadLuaProperties();
 	sol::table MakeRuntimePropertyTable(sol::state& Lua);
@@ -104,7 +106,9 @@ private:
 
 private:
     void ClearLoadedState();
-	FString ScriptName;
+    FString ScriptName;
+    FString RegisteredScriptName;
+
     sol::environment ScriptEnv;
 
     sol::table ScriptClass;

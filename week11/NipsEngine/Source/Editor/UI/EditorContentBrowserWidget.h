@@ -72,6 +72,7 @@ private:
 	void DrawContentContextMenu(bool bHasSelectedItem);
 	bool CreateFolder();
 	bool CreateTextFile();
+	bool CreateLuaScriptFile();
 	bool CreateMaterialAsset();
 	bool DeleteSelectedItem();
 	void RequestRenameSelectedItem();
@@ -96,6 +97,7 @@ private:
 	bool IsPreviewableImage(const FString& Extension) const;
 	bool IsMaterialAsset(const FString& Extension) const;
 	bool IsPrefabAsset(const FString& Extension) const;
+	std::filesystem::path ResolveLuaScriptCreateDirectory() const;
 	FString MakeRelativeProjectPath(const std::filesystem::path& Path) const;
 
 private:
