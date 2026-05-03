@@ -50,4 +50,5 @@ end
 
 function Tick(dt)
     UIManager.Tick(dt)
+    UIManager.UpdateHUD()
 end

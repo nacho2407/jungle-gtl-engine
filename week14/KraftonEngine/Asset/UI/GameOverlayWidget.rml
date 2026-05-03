@@ -8,23 +8,23 @@
 		<div id="hud-top-line"></div>
 
 		<div id="hud-score-panel">
-			<div class="hud-label">SCORE</div>
-			<div id="score-value" class="hud-main-value">000000</div>
+			<div class="hud-label">CLEARED</div>
+			<div id="score-value" class="hud-main-value">0/4</div>
 		</div>
 
 		<div id="hud-time-panel">
 			<div class="hud-label">TIME</div>
-			<div id="time-value" class="hud-main-value">03:00</div>
+			<div id="time-value" class="hud-main-value">07:00</div>
 		</div>
 
 		<div id="hud-status-panel">
 			<div class="hud-small-label">OBJECTIVE</div>
-			<div id="objective-value" class="hud-status-value">REACH THE GOAL</div>
+			<div id="objective-value" class="hud-status-value">EXPLORE THE CITY</div>
 		</div>
 
 		<div id="hud-combo-panel">
-			<div class="hud-small-label">COMBO</div>
-			<div id="combo-value" class="hud-side-value">x1</div>
+			<div class="hud-small-label">PHASE</div>
+			<div id="combo-value" class="hud-side-value">--</div>
 		</div>
 
 		<div id="hud-center-mark">
