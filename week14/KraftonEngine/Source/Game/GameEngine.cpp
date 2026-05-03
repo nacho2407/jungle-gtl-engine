@@ -192,9 +192,28 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 	LoadContext.WorldType = EWorldType::Game;
 	LoadContext.World->SetWorldType(EWorldType::Game);
 
-	// GameMode 주입 — World::BeginPlay가 이걸 보고 GameMode/GameState/PC를 spawn한다.
-	// ProjectSettings 우선, 없거나 잘못된 이름이면 AGameModeCarGame으로 fallback.
-	UClass* GMClass = AGameModeBase::ResolveClassFromProjectSettings(AGameModeCarGame::StaticClass());
+	// GameMode 주입 — World::BeginPlay 가 이걸 보고 GameMode/GameState/PC 를 spawn 한다.
+	// 우선순위: scene 파일이 명시한 "GameMode" 키 → ProjectSettings.GameModeClassName
+	// → AGameModeCarGame fallback. Scene 별로 다른 GameMode 적용 가능 (Intro.Scene 의
+	// AGameModeIntro vs Map.Scene 의 AGameModeCarGame).
+	UClass* GMClass = nullptr;
+	if (!LoadContext.GameModeClassName.empty())
+	{
+		UClass* Found = UClass::FindByName(LoadContext.GameModeClassName.c_str());
+		if (Found && Found->IsA(AGameModeBase::StaticClass()))
+		{
+			GMClass = Found;
+		}
+		else
+		{
+			UE_LOG("[GameEngine] Scene 'GameMode' = '%s' 가 알 수 없는 클래스 — ProjectSettings 로 fallback",
+				LoadContext.GameModeClassName.c_str());
+		}
+	}
+	if (!GMClass)
+	{
+		GMClass = AGameModeBase::ResolveClassFromProjectSettings(AGameModeCarGame::StaticClass());
+	}
 	LoadContext.World->SetGameModeClass(GMClass);
 
 	WorldList.push_back(LoadContext);

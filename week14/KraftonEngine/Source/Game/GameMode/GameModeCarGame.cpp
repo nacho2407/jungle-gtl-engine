@@ -42,13 +42,6 @@ void AGameModeCarGame::StartMatch()
 		GS->SetLastPhaseResult(EPhaseResult::None);
 		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs", MatchDuration);
 	}
-
-	// 인트로 위젯이 떠 있는 동안 매치 시간 / 물리 / Tick 이 흐르지 않도록 일시정지.
-	// UIManager.lua 의 start-button 콜백이 Engine.ResumeGame() 으로 풀어준다.
-	if (UWorld* World = GetWorld())
-	{
-		World->SetPaused(true);
-	}
 }
 
 void AGameModeCarGame::Tick(float DeltaTime)

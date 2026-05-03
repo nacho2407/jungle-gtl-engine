@@ -65,6 +65,10 @@ function UIManager.Init()
     -- Scene reload 대응 — UI 위젯은 UUIManager 싱글턴이 보유 (월드와 별개) 라 첫 init 후
     -- 유지된다. 두 번째 Init 호출 시 위젯 재생성 없이 표시만 인트로 화면으로 정리.
     if widgets.intro ~= nil then
+        -- Scene 전환 시 재호출. 게임플레이 위젯은 모두 정리하고 fade 도 cancel 한다.
+        -- IntroWidget 은 "보일지 말지" 를 호출자 (Intro.Scene 의 IntroManager.lua /
+        -- Map.Scene 의 GameManager.lua) 가 결정하도록 여기선 명시적으로 hide.
+        UIManager.Hide("intro")
         UIManager.Hide("gameOverlay")
         UIManager.Hide("gameOver")
         UIManager.Hide("gasWidget")
@@ -79,31 +83,21 @@ function UIManager.Init()
         fade.onComplete = nil
         SetFadeOpacity(0)
         UIManager.Hide("fade")
-        UIManager.Show("intro")
         return
     end
 
     local introWidget = UI.CreateWidget("Asset/UI/IntroWidget.rml")
     introWidget:SetWantsMouse(true)
     introWidget:bind_click("start-button", function()
-        -- ResumeGame 을 fade 시작 *전* 에 호출. UIManager.Tick 이 GameManager.lua::Tick
-        -- 안에서 돌아가는데 그 자체가 component Tick → World 가 pause 면 안 돈다. 그래서
-        -- pause 상태에서 FadeOut 을 시작하면 fade 진행이 멈춰 callback 이 영영 안 불려
-        -- "click 이 안 먹는" 것처럼 보인다. 게임은 이미 클릭 시점에서 시작된 것으로 보고
-        -- pause 부터 풀어준다 (fade 동안 인트로가 전체 화면을 덮으니 시각적 변화는 없음).
-        Engine.ResumeGame()
+        -- 인트로 → 게임 화면 전환. fade 가 끝나면 Map.Scene 으로 transition.
+        -- TransitionToScene 은 UGameEngine::Tick 끝에 deferred 처리되므로 fade callback
+        -- 안에서 호출해도 안전.
         UIManager.FadeOut(0.5, function()
             UIManager.Hide("intro")
-
-            if onStartGame ~= nil then
-                onStartGame()
-            end
-
-            UIManager.FadeIn(0.5)
+            Engine.TransitionToScene("Map")
         end)
     end)
     introWidget:bind_click("exit-button", function()
-        UIManager.Hide("intro")
         Engine.Exit()
     end)
 
@@ -146,9 +140,12 @@ function UIManager.Init()
     local pauseMenuWidget = UI.CreateWidget("Asset/UI/PauseMenuWidget.rml")
     pauseMenuWidget:SetWantsMouse(true)
     pauseMenuWidget:bind_click("pause-menu-go-intro-button", function()
-        -- Map.Scene 재로드 → 모든 동적 상태 fresh 로 시작 → GameMode StartMatch 가
-        -- 다시 SetPaused(true) 로 인트로 페이즈에 진입.
-        Engine.TransitionToScene("Map")
+        -- Intro.Scene 으로 transition — Map.Scene 의 모든 동적 상태 (차량 / 경찰 / 운석 /
+        -- GameMode 타이머 / Lua 모듈 로컬) 가 월드 destroy 와 함께 정리되고, Intro.Scene
+        -- 의 IntroManager.lua BeginPlay 가 IntroWidget 을 다시 띄운다.
+        UIManager.Hide("pauseMenu")
+        Engine.ResumeGame()  -- Intro 씬은 paused 상태가 아니어야 — fade Tick 등이 동작.
+        Engine.TransitionToScene("Intro")
     end)
     pauseMenuWidget:bind_click("pause-menu-exit-button", function()
         Engine.Exit()
