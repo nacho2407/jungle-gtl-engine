@@ -1,4 +1,6 @@
 local Script = {}
+
+
 Script.__index = Script
 
 Script.Properties = {
@@ -26,7 +28,10 @@ function Script.new(component, properties)
 
     self.component = component
     self.owner = component:GetOwner()
-    self.target = Vector(0, 0, 0)
+    self.target = Actor
+
+    -- 런타임 전용 상태
+    self.bIsHitReacting = false
 
     properties = properties or {}
 
@@ -41,12 +46,30 @@ function Script.new(component, properties)
     return self
 end
 
+function Script:HitReaction()
+    if self.bIsHitReacting then
+        return
+    end
+
+    self.bIsHitReacting = true
+    self.bCanMove = false
+
+    Log("[Lua] start")
+
+    coroutine.yield(WaitForSeconds(1.0))
+
+    self.bCanMove = true
+    self.bIsHitReacting = false
+
+    Log("[Lua] after 1s")
+end
+
 function Script:BeginPlay()
     Log("[Enemy BeginPlay] " .. tostring(self.owner.UUID))
-    local player = Engine.API.World.FindActorByName("AStaticMeshActor")
+    local player = Engine.API.World.FindActorByTag("Player")
 
     if player ~= nil then
-        self.target = player.Location
+        self.target = player
         Log("[Enemy BeginPlay] " .. tostring(player.Name))
     else
         Log("[Enemy BeginPlay] 검색한 대상이 존재하지 않음")
@@ -58,7 +81,7 @@ function Script:Tick(dt)
         return
     end
 
-    local delta = self.target - self.owner.Location
+    local delta = self.target.Location - self.owner.Location
     local distance = delta:Size()
 
     if distance > 0.1 then
@@ -78,6 +101,10 @@ end
 
 function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
     Log("[Enemy OnBeginOverlap] " .. tostring(self.owner.UUID))
+    
+    StartCoroutine(function()
+        self:HitReaction()
+    end)
 end
 
 function Script:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
