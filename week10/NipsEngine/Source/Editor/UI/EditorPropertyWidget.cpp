@@ -1234,17 +1234,53 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	AActor* Owner = SelectedComponent->GetOwner();
 
 	for (auto& Prop : Props)
-	{
-		if (Prop.Type == EPropertyType::SceneComponentRef)
-		{
-			// SceneComponentRef는 액터 컨텍스트가 필요한 드롭다운으로 렌더링
-			RenderSceneComponentRefWidget(Prop, Owner);
-		}
-		else
-		{
-			RenderPropertyWidget(Prop);
-		}
-	}
+    {
+        if (!Prop.Name)
+        {
+            continue;
+        }
+
+        const bool bIsScriptName =
+            strcmp(Prop.Name, "ScriptName") == 0;
+
+        FString OldScriptName;
+
+        if (bIsScriptName)
+        {
+            if (FString* ScriptNamePtr = static_cast<FString*>(Prop.ValuePtr))
+            {
+                OldScriptName = *ScriptNamePtr;
+            }
+        }
+
+        if (Prop.Type == EPropertyType::SceneComponentRef)
+        {
+            RenderSceneComponentRefWidget(Prop, Owner);
+        }
+        else
+        {
+            RenderPropertyWidget(Prop);
+        }
+
+        if (bIsScriptName)
+        {
+            UScriptComponent* ScriptComp = Cast<UScriptComponent>(SelectedComponent);
+            if (!ScriptComp)
+            {
+                return;
+            }
+
+            const FString& NewScriptName = ScriptComp->GetScriptName();
+
+            if (OldScriptName != NewScriptName)
+            {
+                // ScriptName 변경으로 PostEditProperty -> ReloadLuaProperties가 실행됨.
+                // 기존 Props 안의 Lua property descriptor는 이제 무효이므로
+                // 이번 프레임 Details 렌더링을 중단한다.
+                return;
+            }
+        }
+    }
 	// Special: InterpToMovementComponent control points + behaviour + actions
 	if (UInterpToMovementComponent* InterpComp = Cast<UInterpToMovementComponent>(SelectedComponent))
 	{
@@ -1455,66 +1491,136 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 				}
 			}
 		}
-		else if (strcmp(Prop.Name, "ScriptName") == 0)
-		{
+        else if (strcmp(Prop.Name, "ScriptName") == 0)
+        {
+            if (!Val)
+            {
+                return;
+            }
+
             FScriptManager::Get().RefreshLuaScriptFiles();
+
             TMap<FName, FLuaScriptInfo, FName::Hash>& ScriptArray =
                 FScriptManager::Get().GetScriptArray();
 
             ImGui::PushID(Val);
+
             char Buffer[512] = {};
-            strncpy_s(Buffer, (*Val).c_str(), sizeof(Buffer) - 1);
+            strncpy_s(Buffer, sizeof(Buffer), Val->c_str(), _TRUNCATE);
 
             if (ImGui::InputText("##ScriptPathInput", Buffer, sizeof(Buffer)))
             {
                 *Val = Buffer;
                 bChanged = true;
             }
+
             if (ImGui::BeginDragDropTarget())
             {
                 if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("LuaScriptContentItem"))
                 {
                     const char* PayloadPath = static_cast<const char*>(Payload->Data);
-                    if (PayloadPath)
+                    if (PayloadPath && PayloadPath[0] != '\0')
                     {
-                        *Val = MakeScriptReferenceFromPath(PayloadPath);
-                        bChanged = true;
+                        // 중요:
+                        // MakeScriptReferenceFromPath()는 반드시 FScriptManager의 ScriptArray key와
+                        // 같은 형식의 문자열을 반환해야 한다.
+                        FString NewScriptRef = MakeScriptReferenceFromPath(PayloadPath);
+
+                        if (!NewScriptRef.empty())
+                        {
+                            *Val = NewScriptRef;
+                            bChanged = true;
+                        }
                     }
                 }
+
                 ImGui::EndDragDropTarget();
             }
 
             ImGui::SameLine();
 
             const FString Current = *Val;
-			if (ImGui::BeginCombo("##ScriptPathCombo", "SelectScript"))
+
+            FString Preview = "SelectScript";
+
+            for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
+            {
+                const FString Key = ScriptName.ToString();
+
+                if (Key == Current)
+                {
+                    if (!ScriptInfo.ScriptPath.empty())
+                    {
+                        Preview = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+                    }
+
+                    if (Preview.empty())
+                    {
+                        Preview = Key;
+                    }
+
+                    break;
+                }
+            }
+
+            if (ImGui::BeginCombo("##ScriptPathCombo", Preview.c_str()))
             {
                 for (const auto& [ScriptName, ScriptInfo] : ScriptArray)
                 {
-                    if (ScriptInfo.ScriptPath.empty() || !std::filesystem::exists(ScriptInfo.ScriptPath))
+                    const FString Key = ScriptName.ToString();
+
+                    if (Key.empty())
                     {
                         continue;
                     }
-                    const FString Key = ScriptName.ToString();
-                    const FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
-                    const bool bSelected = (Current == Key || Current == RelativePath);
-                    if (ImGui::Selectable(RelativePath.c_str(), bSelected))
+
+                    if (ScriptInfo.ScriptPath.empty())
                     {
-                        *Val = RelativePath;
+                        continue;
+                    }
+
+                    if (!std::filesystem::exists(ScriptInfo.ScriptPath))
+                    {
+                        continue;
+                    }
+
+                    FString RelativePath = FPaths::ToRelativeString(ScriptInfo.ScriptPath);
+
+                    // ImGui label은 절대 빈 문자열이면 안 됨
+                    FString DisplayName = RelativePath.empty() ? Key : RelativePath;
+
+                    const bool bSelected = (Current == Key);
+
+                    ImGui::PushID(Key.c_str());
+
+                    if (ImGui::Selectable(DisplayName.c_str(), bSelected))
+                    {
+                        // 저장은 표시용 RelativePath가 아니라 ScriptManager key로 한다.
+                        *Val = Key;
                         bChanged = true;
                     }
+
+                    ImGui::PopID();
+
                     if (bSelected)
                     {
                         ImGui::SetItemDefaultFocus();
                     }
                 }
+
                 ImGui::EndCombo();
             }
 
-            if (!Current.empty() && !FScriptManager::Get().HasScript(FName(Current)))
+            const FString NewCurrent = *Val;
+
+            if (!NewCurrent.empty() && !FScriptManager::Get().HasScript(FName(NewCurrent)))
             {
-                ImGui::TextColored(ImVec4(1.0f, 0.42f, 0.35f, 1.0f), "Missing script file.");
+                ImGui::TextColored(
+                    ImVec4(1.0f, 0.42f, 0.35f, 1.0f),
+                    "Missing script file.");
+
                 ImGui::SameLine();
+
                 if (ImGui::SmallButton("Clear##MissingScript"))
                 {
                     Val->clear();
@@ -1523,7 +1629,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
             }
 
             ImGui::PopID();
-		}
+        }
 		else
 		{
 			char Buf[256];
