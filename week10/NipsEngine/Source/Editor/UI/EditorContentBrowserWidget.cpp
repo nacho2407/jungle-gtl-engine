@@ -1457,6 +1457,10 @@ FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) co
 	{
 		return "LuaScriptContentItem";
 	}
+	if (Item.Extension == ".rml")
+	{
+		return "RMLContentItem";
+	}
 	if (Item.Extension == ".png")
 	{
 		return "PNGElement";
@@ -1493,6 +1497,10 @@ ImU32 FEditorContentBrowserWidget::GetItemColor(const FContentItem& Item) const
 	if (Item.Extension == ".lua")
 	{
 		return ImGui::GetColorU32(ImVec4(0.52f, 0.72f, 0.58f, 1.0f));
+	}
+	if (Item.Extension == ".rml" || Item.Extension == ".rcss")
+	{
+		return ImGui::GetColorU32(ImVec4(0.72f, 0.60f, 0.38f, 1.0f));
 	}
 	if (Item.Extension == ".png")
 	{

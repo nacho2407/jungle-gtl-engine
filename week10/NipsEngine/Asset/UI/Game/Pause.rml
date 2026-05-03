@@ -4,11 +4,27 @@
     </head>
     <body>
         <div id="Pause.Dim" class="screen-root dim">
-            <div class="center-stack">
+            <div class="modal-panel">
                 <div id="Pause.Title" class="headline">Paused</div>
-                <button id="Pause.Resume" class="button" data-action="ResumeGame">Resume</button>
-                <button id="Pause.Restart" class="button" data-action="RestartGame">Restart</button>
-                <button id="Pause.TitleButton" class="button" data-action="BackToTitle">Title</button>
+                <button id="Pause.Resume" class="button primary" data-action="ResumeGame">Resume</button>
+                <button id="Pause.Restart" class="button" data-action="RestartGame">Retry</button>
+                <button id="Pause.TitleButton" class="button danger" data-action="BackToTitle">Main</button>
+
+                <div class="settings-block">
+                    <div class="section-title">Settings</div>
+                    <div class="setting-row">
+                        <div class="setting-label">BGM</div>
+                        <button class="step-button" data-action="BGMDown">-</button>
+                        <div id="Pause.Settings.BGMValue" class="setting-value">100%</div>
+                        <button class="step-button" data-action="BGMUp">+</button>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-label">SFX</div>
+                        <button class="step-button" data-action="SFXDown">-</button>
+                        <div id="Pause.Settings.SFXValue" class="setting-value">100%</div>
+                        <button class="step-button" data-action="SFXUp">+</button>
+                    </div>
+                </div>
             </div>
         </div>
     </body>

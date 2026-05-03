@@ -3,12 +3,53 @@
         <link type="text/rcss" href="GameUI.rcss"/>
     </head>
     <body>
-        <div class="screen-root">
-            <div class="center-stack">
-                <div id="Title.Name" class="title">SSAMURAI</div>
-                <button id="Title.Start" class="button" data-action="StartGame">Start</button>
-                <button id="Title.Quit" class="button" data-action="QuitGame">Quit</button>
+        <div class="screen-root title-screen">
+            <div class="title-accent"></div>
+            <div class="title-mark">
+                <div id="Title.Name" class="title-logo">SSAMURAI</div>
+                <div class="title-subtitle">Project Week09 Team03</div>
             </div>
+
+            <div id="Title.MenuPanel" class="title-panel menu-panel">
+                <button id="Title.Start" class="button primary" data-action="StartGame">Game Start</button>
+                <button id="Title.Intro" class="button" data-action="ShowIntro">Intro</button>
+                <button id="Title.ScoreBoard" class="button" data-action="ShowScoreBoard">Score Board</button>
+                <button id="Title.Settings" class="button" data-action="ShowSettings">Settings</button>
+                <button id="Title.Credits" class="button" data-action="ShowCredits">Credits</button>
+                <button id="Title.Quit" class="button danger" data-action="QuitGame">Quit</button>
+            </div>
+
+            <div id="Title.ScoreBoardPanel" class="title-panel sub-panel">
+                <div class="headline">Score Board</div>
+                <div id="Title.BestScore" class="panel-line strong">Best Score: 0</div>
+                <button class="button" data-action="BackToTitleMenu">Back</button>
+            </div>
+
+            <div id="Title.SettingsPanel" class="title-panel sub-panel">
+                <div class="headline">Settings</div>
+                <div class="setting-row">
+                    <div class="setting-label">BGM</div>
+                    <button class="step-button" data-action="BGMDown">-</button>
+                    <div id="Title.Settings.BGMValue" class="setting-value">100%</div>
+                    <button class="step-button" data-action="BGMUp">+</button>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">SFX</div>
+                    <button class="step-button" data-action="SFXDown">-</button>
+                    <div id="Title.Settings.SFXValue" class="setting-value">100%</div>
+                    <button class="step-button" data-action="SFXUp">+</button>
+                </div>
+                <button class="button" data-action="BackToTitleMenu">Back</button>
+            </div>
+
+            <div id="Title.CreditsPanel" class="title-panel sub-panel">
+                <div class="headline">Credits</div>
+                <div class="panel-line">Management / UI</div>
+                <div class="panel-line strong">Game Jam Build</div>
+                <button class="button" data-action="BackToTitleMenu">Back</button>
+            </div>
+
+            <div id="Title.Version" class="version-label">v0.1 Jam UI</div>
         </div>
     </body>
 </rml>

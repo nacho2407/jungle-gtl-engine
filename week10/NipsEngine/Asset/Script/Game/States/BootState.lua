@@ -15,7 +15,7 @@ end
 function BootState:Tick(context, dt)
     self.elapsed = self.elapsed + dt
     if self.elapsed >= 0.1 then
-        context.stateMachine:Change("Title")
+        context.stateMachine:Change("Intro", { returnTo = "Title" })
     end
 end
 

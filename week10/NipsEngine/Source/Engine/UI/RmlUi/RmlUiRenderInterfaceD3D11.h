@@ -13,7 +13,10 @@ public:
     bool Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
     void Shutdown();
 
-    void BeginFrame(const Rml::Vector2f& InViewportMin, const Rml::Vector2f& InViewportSize);
+    void BeginFrame(
+        const Rml::Vector2f& InViewportMin,
+        const Rml::Vector2f& InViewportSize,
+        const Rml::Vector2f& InRenderScale = Rml::Vector2f(1.0f, 1.0f));
 
     Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices) override;
     void RenderGeometry(Rml::CompiledGeometryHandle Geometry, Rml::Vector2f Translation, Rml::TextureHandle Texture) override;
@@ -44,8 +47,9 @@ private:
     {
         float ViewportSize[2] = { 1.0f, 1.0f };
         float Translation[2] = { 0.0f, 0.0f };
+        float RenderScale[2] = { 1.0f, 1.0f };
         uint32 bUseTexture = 0;
-        float Padding[3] = { 0.0f, 0.0f, 0.0f };
+        float Padding = 0.0f;
     };
 
     bool CreateShaders();
@@ -70,6 +74,7 @@ private:
 
     Rml::Vector2f ViewportMin = Rml::Vector2f(0.0f, 0.0f);
     Rml::Vector2f ViewportSize = Rml::Vector2f(1.0f, 1.0f);
+    Rml::Vector2f RenderScale = Rml::Vector2f(1.0f, 1.0f);
     bool bScissorEnabled = false;
     Rml::Rectanglei CurrentScissorRegion;
 

@@ -8,6 +8,8 @@ function PlayingState.new()
 end
 
 function PlayingState:Enter(context)
+    context.managers.UI:HideAllOverlays()
+    context.managers.UI:Hide("Loading")
     context.managers.Game:StartRun()
     context.managers.UI:Show("HUD")
     context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Gameplay)
@@ -29,6 +31,7 @@ end
 
 function PlayingState:Resume(context)
     context.managers.Game:Resume()
+    context.managers.UI:HideOverlay("Pause")
     context.managers.UI:Show("HUD")
     Engine.API.Input.SetInputModeGameOnly()
 end
@@ -37,7 +40,7 @@ function PlayingState:Tick(context, dt)
     local game = context.managers.Game
     context.managers.UI:SetHUD(game:GetSnapshot())
 
-    if Engine.API.Input.IsKeyPressed("Escape") then
+    if Engine.API.Input.IsKeyPressed("Escape") or Engine.API.Input.IsKeyPressed("Q") then
         context.stateMachine:Push("Pause")
     end
 end

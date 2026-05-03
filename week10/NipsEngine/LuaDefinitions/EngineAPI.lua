@@ -180,6 +180,22 @@ function PlayerController:UnPossess() end
 function PlayerController:SetViewTarget(actor) end
 ---@param camera CameraComponent
 function PlayerController:SetViewTargetCamera(camera) end
+---@param visible boolean
+function PlayerController:SetCursorVisible(visible) end
+---@return boolean
+function PlayerController:IsCursorVisible() end
+---@param locked boolean
+function PlayerController:SetCursorLocked(locked) end
+---@return boolean
+function PlayerController:IsCursorLocked() end
+---@param captured boolean
+function PlayerController:SetMouseCapture(captured) end
+function PlayerController:ReleaseMouseCapture() end
+---@return boolean
+function PlayerController:IsMouseCaptured() end
+function PlayerController:SetInputModeGameOnly() end
+function PlayerController:SetInputModeUIOnly() end
+function PlayerController:SetInputModeGameAndUI() end
 ---@return Actor|nil
 function PlayerController:GetPossessedActor() end
 ---@return Actor|nil
@@ -259,6 +275,23 @@ function EngineAPIInput.SetInputModeGameAndUI() end
 
 ---@param visible boolean
 function EngineAPIInput.SetCursorVisible(visible) end
+
+---@param locked boolean
+function EngineAPIInput.SetCursorLocked(locked) end
+
+---@return boolean
+function EngineAPIInput.IsCursorLocked() end
+
+---@return boolean
+function EngineAPIInput.IsCursorVisible() end
+
+---@param captured boolean
+function EngineAPIInput.SetMouseCapture(captured) end
+
+function EngineAPIInput.ReleaseMouseCapture() end
+
+---@return boolean
+function EngineAPIInput.IsMouseCaptured() end
 
 ---@class EngineAPIWorld
 local EngineAPIWorld = {}
@@ -659,6 +692,33 @@ function EngineAPISave.Exists(relativePath) end
 ---@return boolean
 function EngineAPISave.Delete(relativePath) end
 
+---@class EngineAPIJson
+local EngineAPIJson = {}
+
+---@param value any
+---@return string
+function EngineAPIJson.Encode(value) end
+
+---@param text string
+---@return any
+function EngineAPIJson.Decode(text) end
+
+---@class EngineAPIScene
+local EngineAPIScene = {}
+
+---@param scenePath string
+---@return boolean
+function EngineAPIScene.Open(scenePath) end
+
+---@return boolean
+function EngineAPIScene.Reload() end
+
+---@return boolean
+function EngineAPIScene.IsOpenPending() end
+
+---@return string
+function EngineAPIScene.GetCurrentPath() end
+
 ---@class EngineAPIDebug
 local EngineAPIDebug = {}
 
@@ -736,6 +796,8 @@ local EngineAPIEffect = {}
 ---@field Audio EngineAPIAudio
 ---@field UI EngineAPIUI
 ---@field Save EngineAPISave
+---@field Json EngineAPIJson
+---@field Scene EngineAPIScene
 ---@field Debug EngineAPIDebug
 ---@field Asset EngineAPIAsset
 ---@field Random EngineAPIRandom

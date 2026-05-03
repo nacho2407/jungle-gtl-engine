@@ -5,6 +5,7 @@
 #include "Editor/Input/EditorViewportInputContexts.h"
 #include "Editor/Input/EditorViewportInputMapping.h"
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/Engine.h"
 #include "Engine/Slate/SlateApplication.h"
 #include "EditorEngine.h"
 
@@ -43,6 +44,13 @@ bool IsEditorCameraKeyboardKey(int VK)
 	default:
 		return false;
 	}
+}
+
+bool IsRuntimeGameInputCaptured()
+{
+	return GEngine
+		&& GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
+		&& GEngine->IsRuntimeCursorLocked();
 }
 }
 
@@ -321,6 +329,7 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
 	{
 		return IsPIEActive()
+			&& IsRuntimeGameInputCaptured()
 			&& !bPIEMouseFocusReleased
 			&& (Context.bFocused || Context.bCaptured || Context.bHovered || Context.bRelativeMouseMode);
 	}
@@ -1298,6 +1307,10 @@ void FEditorViewportClient::TickMouseInput(float VX, float VY)
 	{
 		return;
 	}
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
+	{
+		return;
+	}
 	const InputSystem& IS = InputSystem::Get();
 
 	POINT MP = IS.GetMousePos();
@@ -1341,6 +1354,10 @@ void FEditorViewportClient::TickMouseInput(const FViewportInputContext& Context)
 {
 	if (bControlLocked) return;
 	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && bPIEMouseFocusReleased)
+	{
+		return;
+	}
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
 	{
 		return;
 	}
@@ -1853,6 +1870,10 @@ void FEditorViewportClient::EnterPIEPossessedMode()
 	InputRouter.GetPIEController().SetCamera(&Camera);
 	InputRouter.GetPIEController().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
 	InputRouter.SetActiveController(EActiveEditorController::PIEController);
+	if (GEngine)
+	{
+		GEngine->SetRuntimeInputMode(ERuntimeInputMode::GameOnly);
+	}
 	if (World)
 	{
 		APlayerController* PlayerController = InputRouter.GetPIEController().GetPlayerController();

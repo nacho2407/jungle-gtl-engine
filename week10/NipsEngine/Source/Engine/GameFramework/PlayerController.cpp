@@ -244,6 +244,28 @@ bool APlayerController::IsCursorLocked() const
 	return GEngine ? GEngine->IsRuntimeCursorLocked() : false;
 }
 
+void APlayerController::SetMouseCapture(bool bCaptured)
+{
+	if (bCaptured)
+	{
+		SetInputModeGameOnly();
+	}
+	else
+	{
+		SetInputModeGameAndUI();
+	}
+}
+
+void APlayerController::ReleaseMouseCapture()
+{
+	SetMouseCapture(false);
+}
+
+bool APlayerController::IsMouseCaptured() const
+{
+	return GEngine ? GEngine->IsRuntimeCursorLocked() && !GEngine->IsRuntimeCursorVisible() : false;
+}
+
 void APlayerController::SetInputModeGameOnly()
 {
 	if (GEngine)

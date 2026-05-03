@@ -38,6 +38,10 @@ public:
 
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
 	virtual bool RequestQuitGame();
+	bool RequestOpenScene(const FString& ScenePath);
+	bool RequestReloadScene();
+	bool IsSceneOpenPending() const { return bPendingSceneOpen; }
+	FString GetCurrentScenePath() const { return CurrentScenePath; }
 
 	// World context management
 	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
@@ -111,6 +115,11 @@ protected:
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
 	virtual void WorldTick(float DeltaTime);
+	void ProcessPendingSceneOpen();
+	virtual bool OpenSceneNow(const FString& ScenePath);
+	virtual void OnSceneWorldWillUnload(UWorld* OldWorld) {}
+	virtual void OnSceneWorldLoaded(UWorld* NewWorld) {}
+	FString ResolveScenePath(const FString& ScenePath) const;
 
 protected:
 	FWindowsWindow* Window = nullptr;
@@ -130,6 +139,9 @@ protected:
 	float LastUnscaledDeltaTime = 0.0f;
 	double GameTimeSeconds = 0.0;
 	double RealTimeSeconds = 0.0;
+	bool bPendingSceneOpen = false;
+	FString PendingSceneOpenPath;
+	FString CurrentScenePath;
 
 private:
 	std::unique_ptr<IRenderPipeline> RenderPipeline;
