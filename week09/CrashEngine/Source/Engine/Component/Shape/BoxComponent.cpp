@@ -51,13 +51,8 @@ void UBoxComponent::OnTransformDirty()
 {
     UShapeComponent::OnTransformDirty();
 
-    FMatrix WorldMat = GetWorldMatrix();
-
-    WorldMat.M[0][0] = BoxExtent.X;
-    WorldMat.M[1][1] = BoxExtent.Y;
-    WorldMat.M[2][2] = BoxExtent.Z;
-
-    BoxCollision.Bounds.UpdateAsOBB(WorldMat);
+    FMatrix CollisionWorldMat = FMatrix::MakeScaleMatrix(BoxExtent) * GetWorldMatrix();
+    BoxCollision.Bounds.UpdateAsOBB(CollisionWorldMat);
 
     NotifyCollisionShapeChanged();
 }

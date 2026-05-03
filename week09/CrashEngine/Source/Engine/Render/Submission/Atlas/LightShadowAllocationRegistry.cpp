@@ -256,7 +256,7 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
     Light.ApplyShadowRecord(Record);
     if (!bNeedsReallocation && !bLoggedApplyWithoutReallocation)
     {
-        UE_LOG(Render, Verbose, "Applied shadow allocation for light %s without reallocation. Repeated frame logs are now suppressed.", GetLightLabel(Light).c_str());
+        //UE_LOG(Render, Verbose, "Applied shadow allocation for light %s without reallocation. Repeated frame logs are now suppressed.", GetLightLabel(Light).c_str());
         bLoggedApplyWithoutReallocation = true;
     }
     return true;
