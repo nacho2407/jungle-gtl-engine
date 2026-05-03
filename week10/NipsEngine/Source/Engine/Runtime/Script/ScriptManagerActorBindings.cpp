@@ -1,4 +1,4 @@
-#include "Runtime/Script/ScriptManager.h"
+﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/BillboardComponent.h"
@@ -216,6 +216,7 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(Get_Actor_Forward, GetActorForward);
     LUA_METHOD(Get_Actor_Right, GetActorRight);
     LUA_METHOD(Get_Actor_Up, GetActorUp);
+    LUA_METHOD(MarkPendingKill, MarkPendingKill);
     LUA_SET(GetComponents, &GetComponents);
     LUA_SET(Get_Components, &GetComponents);
     LUA_SET(GetComponent, &GetComponentByType);
