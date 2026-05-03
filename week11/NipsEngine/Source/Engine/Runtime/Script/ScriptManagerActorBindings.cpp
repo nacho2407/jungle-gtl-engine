@@ -163,6 +163,101 @@ namespace
         return Components;
     }
 
+    UActorComponent* FindComponentByName(AActor& Actor, const FString& Name)
+    {
+        for (UActorComponent* Component : Actor.GetComponents())
+        {
+            if (Component && Component->GetName() == Name)
+            {
+                return Component;
+            }
+        }
+        return nullptr;
+    }
+
+    sol::table FindComponentsByName(sol::this_state State, AActor& Actor, const FString& Name)
+    {
+        sol::state_view Lua(State);
+        sol::table Components = Lua.create_table();
+
+        int32 Index = 1;
+        for (UActorComponent* Component : Actor.GetComponents())
+        {
+            if (Component && Component->GetName() == Name)
+            {
+                Components[Index++] = Component;
+            }
+        }
+        return Components;
+    }
+
+    UActorComponent* FindComponentByTag(AActor& Actor, const FString& Tag)
+    {
+        for (UActorComponent* Component : Actor.GetComponents())
+        {
+            if (Component && Component->HasTag(Tag))
+            {
+                return Component;
+            }
+        }
+        return nullptr;
+    }
+
+    sol::table FindComponentsByTag(sol::this_state State, AActor& Actor, const FString& Tag)
+    {
+        sol::state_view Lua(State);
+        sol::table Components = Lua.create_table();
+
+        int32 Index = 1;
+        for (UActorComponent* Component : Actor.GetComponents())
+        {
+            if (Component && Component->HasTag(Tag))
+            {
+                Components[Index++] = Component;
+            }
+        }
+        return Components;
+    }
+
+    bool LuaTagsTableContainsComponentTags(const sol::table& TagsTable, UActorComponent* Component)
+    {
+        if (!Component)
+        {
+            return false;
+        }
+
+        bool bHasAnyTag = false;
+        for (const auto& Pair : TagsTable)
+        {
+            sol::object Value = Pair.second;
+            if (Value.valid() && Value.is<FString>())
+            {
+                bHasAnyTag = true;
+                if (!Component->HasTag(Value.as<FString>()))
+                {
+                    return false;
+                }
+            }
+        }
+        return bHasAnyTag;
+    }
+
+    sol::table FindComponentsByTags(sol::this_state State, AActor& Actor, const sol::table& TagsTable)
+    {
+        sol::state_view Lua(State);
+        sol::table Components = Lua.create_table();
+
+        int32 Index = 1;
+        for (UActorComponent* Component : Actor.GetComponents())
+        {
+            if (LuaTagsTableContainsComponentTags(TagsTable, Component))
+            {
+                Components[Index++] = Component;
+            }
+        }
+        return Components;
+    }
+
     sol::table ActorTagsToLuaTable(sol::this_state State, AActor& Actor)
     {
         sol::state_view Lua(State);
@@ -223,6 +318,16 @@ void FScriptManager::BindActorTypes()
     LUA_SET(GetComponentByType, &GetComponentByType);
     LUA_SET(Get_Component_By_Type, &GetComponentByType);
     LUA_SET(GetComponentsByType, &GetComponentsByType);
+    LUA_SET(FindComponentByName, &FindComponentByName);
+    LUA_SET(GetComponentByName, &FindComponentByName);
+    LUA_SET(FindComponentsByName, &FindComponentsByName);
+    LUA_SET(GetComponentsByName, &FindComponentsByName);
+    LUA_SET(FindComponentByTag, &FindComponentByTag);
+    LUA_SET(GetComponentByTag, &FindComponentByTag);
+    LUA_SET(FindComponentsByTag, &FindComponentsByTag);
+    LUA_SET(GetComponentsByTag, &FindComponentsByTag);
+    LUA_SET(FindComponentsByTags, &FindComponentsByTags);
+    LUA_SET(GetComponentsByTags, &FindComponentsByTags);
     LUA_SET(AddComponent, &AddComponentByType);
     LUA_SET(RemoveComponent, &RemoveActorComponent);
     LUA_SET(GetTags, &ActorTagsToLuaTable);
@@ -235,6 +340,13 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(UnPossess, UnPossess);
     LUA_METHOD(SetViewTarget, SetViewTarget);
     LUA_METHOD(SetViewTargetCamera, SetViewTargetCamera);
+    LUA_METHOD(SetCursorVisible, SetCursorVisible);
+    LUA_METHOD(IsCursorVisible, IsCursorVisible);
+    LUA_METHOD(SetCursorLocked, SetCursorLocked);
+    LUA_METHOD(IsCursorLocked, IsCursorLocked);
+    LUA_METHOD(SetInputModeGameOnly, SetInputModeGameOnly);
+    LUA_METHOD(SetInputModeUIOnly, SetInputModeUIOnly);
+    LUA_METHOD(SetInputModeGameAndUI, SetInputModeGameAndUI);
     LUA_METHOD(GetPossessedActor, GetPossessedActor);
     LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
     LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);

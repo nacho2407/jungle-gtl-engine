@@ -1,0 +1,15 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div id="Pause.Dim" class="screen-root dim">
+            <div class="center-stack">
+                <div id="Pause.Title" class="headline">Paused</div>
+                <button id="Pause.Resume" class="button" data-action="ResumeGame">Resume</button>
+                <button id="Pause.Restart" class="button" data-action="RestartGame">Restart</button>
+                <button id="Pause.TitleButton" class="button" data-action="BackToTitle">Title</button>
+            </div>
+        </div>
+    </body>
+</rml>

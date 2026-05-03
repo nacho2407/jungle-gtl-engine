@@ -186,6 +186,9 @@ local ActorComponent = {}
 ---@return AActor
 function ActorComponent:GetOwner() end
 
+---@return AActor
+function ActorComponent:GetActor() end
+
 ---@return boolean
 function ActorComponent:IsActive() end
 
@@ -206,6 +209,21 @@ function ActorComponent:SetComponentTickEnabled(tickEnabled) end
 
 ---@return boolean
 function ActorComponent:IsEditorOnly() end
+
+---@param tag string
+function ActorComponent:AddTag(tag) end
+
+---@param tag string
+function ActorComponent:RemoveTag(tag) end
+
+---@param tag string
+---@return boolean
+function ActorComponent:HasTag(tag) end
+
+function ActorComponent:ClearTags() end
+
+---@return string[]
+function ActorComponent:GetTags() end
 
 ---@class SceneComponent: ActorComponent
 ---@field Location Vector
@@ -508,12 +526,67 @@ function AActor:Get_Actor_Up() end
 ---@return ActorComponent[]
 function AActor:Get_Components() end
 
+---@return ActorComponent[]
+function AActor:GetComponents() end
+
 ---@return string[]
 function AActor:GetTags() end
 
 ---@param typeName string
 ---@return ActorComponent|nil
 function AActor:Get_Component_By_Type(typeName) end
+
+---@param typeName string
+---@return ActorComponent|nil
+function AActor:GetComponent(typeName) end
+
+---@param typeName string
+---@return ActorComponent|nil
+function AActor:GetComponentByType(typeName) end
+
+---@param typeName string
+---@return ActorComponent[]
+function AActor:GetComponentsByType(typeName) end
+
+---@param name string
+---@return ActorComponent|nil
+function AActor:FindComponentByName(name) end
+
+---@param name string
+---@return ActorComponent|nil
+function AActor:GetComponentByName(name) end
+
+---@param name string
+---@return ActorComponent[]
+function AActor:FindComponentsByName(name) end
+
+---@param name string
+---@return ActorComponent[]
+function AActor:GetComponentsByName(name) end
+
+---@param tag string
+---@return ActorComponent|nil
+function AActor:FindComponentByTag(tag) end
+
+---@param tag string
+---@return ActorComponent|nil
+function AActor:GetComponentByTag(tag) end
+
+---@param tag string
+---@return ActorComponent[]
+function AActor:FindComponentsByTag(tag) end
+
+---@param tag string
+---@return ActorComponent[]
+function AActor:GetComponentsByTag(tag) end
+
+---@param tags string[]
+---@return ActorComponent[]
+function AActor:FindComponentsByTags(tags) end
+
+---@param tags string[]
+---@return ActorComponent[]
+function AActor:GetComponentsByTags(tags) end
 
 ---@return StaticMeshComponent|nil
 function AActor:Get_Static_Mesh_Component() end

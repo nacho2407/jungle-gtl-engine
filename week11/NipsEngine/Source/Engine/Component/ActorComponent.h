@@ -28,11 +28,19 @@ public:
 	void SetOwner(AActor* Actor) { Owner = Actor; }
 	AActor* GetOwner() const { return Owner; }
 
+	void AddTag(const FString& Tag);
+	void RemoveTag(const FString& Tag);
+	bool HasTag(const FString& Tag) const;
+	void ClearTags();
+	const TArray<FString>& GetTags() const { return Tags; }
+	FString GetTagsText() const;
+	void SetTagsFromText(const FString& InTagsText);
+
 	// 에디터에 노출할 프로퍼티 목록 반환. 하위 클래스에서 override하여 속성 추가.
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
-	void PostEditProperty(const char* PropertyName) override {}
+	void PostEditProperty(const char* PropertyName) override;
 
 	virtual void Serialize(FArchive& Ar) override;
 
@@ -53,6 +61,8 @@ protected:
 
 protected:
 	AActor* Owner = nullptr;
+	TArray<FString> Tags;
+	FString TagsText;
 
 private:
 	bool bIsActive = true;

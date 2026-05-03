@@ -39,6 +39,19 @@ namespace
     {
         return Component.GetOwner();
     }
+
+    sol::table ComponentTagsToLuaTable(sol::this_state State, UActorComponent& Component)
+    {
+        sol::state_view Lua(State);
+        sol::table Tags = Lua.create_table();
+
+        int32 Index = 1;
+        for (const FString& Tag : Component.GetTags())
+        {
+            Tags[Index++] = Tag;
+        }
+        return Tags;
+    }
 }
 
 void FScriptManager::BindComponentTypes()
@@ -55,6 +68,11 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(IsComponentTickEnabled, IsComponentTickEnabled);
     LUA_METHOD(SetComponentTickEnabled, SetComponentTickEnabled);
     LUA_METHOD(IsEditorOnly, IsEditorOnly);
+    LUA_METHOD(AddTag, AddTag);
+    LUA_METHOD(RemoveTag, RemoveTag);
+    LUA_METHOD(HasTag, HasTag);
+    LUA_METHOD(ClearTags, ClearTags);
+    LUA_SET(GetTags, &ComponentTagsToLuaTable);
     LUA_RO_PROPERTY(Owner, GetOwner);
     LUA_RO_PROPERTY(Actor, GetOwner);
     LUA_RW_PROPERTY(Active, IsActive, SetActive);

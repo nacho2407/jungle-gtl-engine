@@ -15,7 +15,6 @@
 #include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Editor/Packaging/GamePackager.h"
 #include "Editor/Viewport/ViewportLayout.h"
-#include "UI/Backends/ImGuiRuntimeUIBackend.h"
 
 #include <future>
 
@@ -84,7 +83,6 @@ private:
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
 	void RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime);
-	FRuntimeUIResolvedImage ResolveRuntimeUIImage(const FString& ImagePath) const;
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
 	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
@@ -165,7 +163,6 @@ private:
 	FEditorToolbarWidget ToolbarWidget;
 	FEditorPlayStreamWidget PlayStreamWidget;
 	FEditorRuntimeUIPreviewWidget RuntimeUIPreviewWidget;
-	FImGuiRuntimeUIBackend RuntimeUIBackend;
 
 	bool bShowConsole = true;
 	bool bShowControl = false;
@@ -213,6 +210,7 @@ private:
 	FPIEViewportLayoutSnapshot SavedPIEViewportLayout;
 	FViewportContextMenuState ViewportContextMenuState;
 	FEditorFooterLogSystem FooterLogSystem;
+	TArray<FRuntimeUIRenderContext> PendingPIERmlUiRenderContexts;
 	ID3D11ShaderResourceView* ViewportToolIcons[static_cast<int32>(EViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* ViewportLayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
 	ID3D11ShaderResourceView* SaveIconSRV = nullptr;

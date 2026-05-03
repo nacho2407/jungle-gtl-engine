@@ -773,27 +773,6 @@
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.cpp">
-      <Filter>Source\Engine\UI\Backends</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUICanvas.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUIFacade.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUIScreen.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUISampleScreens.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUISystem.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RuntimeUIWidget.cpp">
-      <Filter>Source\Engine\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Serialization\ActorSerialization.cpp">
       <Filter>Source\Engine\Serialization</Filter>
     </ClCompile>
@@ -1532,37 +1511,7 @@
     <ClInclude Include="Source\Engine\Runtime\Stats\ScopeCycleCounter.h">
       <Filter>Source\Engine\Runtime\Stats</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.h">
-      <Filter>Source\Engine\UI\Backends</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIBackend.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUICanvas.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIFacade.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIInput.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIScreen.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUISampleScreens.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUISystem.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIStyle.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h">
-      <Filter>Source\Engine\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\UI\RuntimeUIWidget.h">
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ActorSerialization.h">

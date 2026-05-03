@@ -1,0 +1,16 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root">
+            <div class="center-stack">
+                <div id="Result.Title" class="headline">Result</div>
+                <div id="Result.Score" class="result-score">Score: 0</div>
+                <div id="Result.Best" class="result-score">Best: 0</div>
+                <button id="Result.Restart" class="button" data-action="RestartGame">Restart</button>
+                <button id="Result.TitleButton" class="button" data-action="BackToTitle">Title</button>
+            </div>
+        </div>
+    </body>
+</rml>

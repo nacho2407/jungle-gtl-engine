@@ -34,6 +34,7 @@
 #include "Component/CapsuleComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
+#include "Component/SoundComponent.h"
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include <commdlg.h>
@@ -293,6 +294,13 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		"Camera Component",
 		[](AActor* Actor) -> UActorComponent* {
 			UCameraComponent* Comp = Actor->AddComponent<UCameraComponent>();
+			return Comp;
+		}
+	},
+	{
+		"Sound Component",
+		[](AActor* Actor) -> UActorComponent* {
+			USoundComponent* Comp = Actor->AddComponent<USoundComponent>();
 			return Comp;
 		}
 	},
@@ -998,6 +1006,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 {
 	ImGui::Text("Actor: %s", PrimaryActor->GetTypeInfo()->name);
 	RenderEditableName("Name##Actor", PrimaryActor, &bFocusActorNameNextFrame); // 편집 가능한 UI
+	RenderActorTags(PrimaryActor, SelectedActors);
 
 	if (PrimaryActor->GetRootComponent())
 	{
@@ -1042,8 +1051,6 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	{
 		PrimaryActor->SetVisible(bVisible);
 	}
-
-	RenderActorTags(PrimaryActor, SelectedActors);
 
 	DrawDetailsSeparator();
 	// Billboard 타입 체크
@@ -1220,10 +1227,86 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 	}
 }
 
+void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
+{
+	if (!Component)
+	{
+		return;
+	}
+
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Component Tags");
+
+	const TArray<FString> Tags = Component->GetTags();
+	if (Tags.empty())
+	{
+		ImGui::TextDisabled("No tags.");
+	}
+	else
+	{
+		for (int32 TagIndex = 0; TagIndex < static_cast<int32>(Tags.size()); ++TagIndex)
+		{
+			const FString& Tag = Tags[TagIndex];
+			ImGui::PushID(TagIndex);
+			ImGui::AlignTextToFramePadding();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.70f, 0.76f, 0.84f, 1.0f));
+			ImGui::TextUnformatted(Tag.c_str());
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Remove"))
+			{
+				if (Component->HasTag(Tag))
+				{
+					if (EditorEngine)
+					{
+						EditorEngine->CaptureUndoSnapshot("Remove Component Tag");
+					}
+					Component->RemoveTag(Tag);
+					if (EditorEngine)
+					{
+						EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+					}
+				}
+			}
+			ImGui::PopID();
+		}
+	}
+
+	ImGui::Spacing();
+	ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - 58.0f));
+	const bool bAddByEnter = ImGui::InputTextWithHint(
+		"##NewComponentTag",
+		"New tag",
+		NewComponentTagBuffer,
+		IM_ARRAYSIZE(NewComponentTagBuffer),
+		ImGuiInputTextFlags_EnterReturnsTrue);
+	ImGui::SameLine();
+	const bool bAddByButton = ImGui::Button("Add", ImVec2(52.0f, 0.0f));
+
+	if ((bAddByEnter || bAddByButton) && NewComponentTagBuffer[0] != '\0')
+	{
+		const FString NewTag = NewComponentTagBuffer;
+		if (!Component->HasTag(NewTag))
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->CaptureUndoSnapshot("Add Component Tag");
+			}
+			Component->AddTag(NewTag);
+			NewComponentTagBuffer[0] = '\0';
+			if (EditorEngine)
+			{
+				EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
+			}
+		}
+	}
+}
+
 void FEditorPropertyWidget::RenderComponentProperties()
 {
 	ImGui::Text("Component: %s", SelectedComponent->GetTypeInfo()->name);
 	RenderEditableName("Name##Component", SelectedComponent, &bFocusComponentNameNextFrame); // 편집 가능한 UI
+	RenderComponentTags(SelectedComponent);
 
 	DrawDetailsSeparator();
 
@@ -1239,6 +1322,11 @@ void FEditorPropertyWidget::RenderComponentProperties()
         {
             continue;
         }
+
+		if (strcmp(Prop.Name, "Tags") == 0)
+		{
+			continue;
+		}
 
         const bool bIsScriptName =
             strcmp(Prop.Name, "ScriptName") == 0;
