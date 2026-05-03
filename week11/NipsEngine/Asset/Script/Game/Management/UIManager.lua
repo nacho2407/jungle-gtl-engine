@@ -74,6 +74,8 @@ function UIManager:BuildScreenIfNeeded(screenId)
     local loaded = false
     if screenId == "Boot" then
         loaded = self:BuildBootScreen()
+    elseif screenId == "Intro" then
+        loaded = self:BuildIntroScreen()
     elseif screenId == "Title" then
         loaded = self:BuildTitleScreen()
     elseif screenId == "HUD" then
@@ -94,6 +96,10 @@ end
 
 function UIManager:BuildBootScreen()
     return self:LoadScreenDocument("Boot", "Asset/UI/Game/Boot.rml")
+end
+
+function UIManager:BuildIntroScreen()
+    return self:LoadScreenDocument("Intro", "Asset/UI/Game/Intro.rml")
 end
 
 function UIManager:BuildTitleScreen()
@@ -166,6 +172,18 @@ end
 
 function UIManager:SetLoadingReady(isReady)
     Engine.API.UI.SetText("Loading.Status", isReady and "Press Space to Start" or "Preparing Game Scene...")
+end
+
+function UIManager:SetIntroText(text)
+    Engine.API.UI.SetText("Intro.Text", text or "")
+end
+
+function UIManager:SetIntroProgress(pageIndex, pageCount)
+    Engine.API.UI.SetText("Intro.Progress", tostring(pageIndex or 1) .. " / " .. tostring(pageCount or 1))
+end
+
+function UIManager:SetIntroContinueVisible(isVisible)
+    Engine.API.UI.SetVisible("Intro.Continue", isVisible == true)
 end
 
 function UIManager:SetHUD(snapshot)

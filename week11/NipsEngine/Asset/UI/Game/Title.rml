@@ -12,6 +12,7 @@
 
             <div id="Title.MenuPanel" class="title-panel menu-panel">
                 <button id="Title.Start" class="button primary" data-action="StartGame">Game Start</button>
+                <button id="Title.Intro" class="button" data-action="ShowIntro">Intro</button>
                 <button id="Title.ScoreBoard" class="button" data-action="ShowScoreBoard">Score Board</button>
                 <button id="Title.Settings" class="button" data-action="ShowSettings">Settings</button>
                 <button id="Title.Credits" class="button" data-action="ShowCredits">Credits</button>

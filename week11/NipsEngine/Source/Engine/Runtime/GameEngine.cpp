@@ -203,6 +203,7 @@ void UGameEngine::Tick(float DeltaTime)
         PumpPlayerInput(Input);
     }
     WorldTick(DeltaTime);
+    ProcessPendingSceneOpen();
     GetAudioSystem().Tick(DeltaTime);
     Render(DeltaTime);
 }
@@ -668,6 +669,29 @@ void UGameEngine::ShutdownRmlUiRuntime()
     bRmlUiRuntimeInitialized = false;
 }
 
+void UGameEngine::UnloadAllRmlUIDocuments()
+{
+    if (!RmlUiContext)
+    {
+        return;
+    }
+
+    TArray<FString> ScreenIds;
+    for (const auto& Pair : RmlUiDocumentsByScreenId)
+    {
+        ScreenIds.push_back(Pair.first);
+    }
+
+    for (const FString& ScreenId : ScreenIds)
+    {
+        UnloadRmlUIDocument(ScreenId);
+    }
+
+    RmlUiDocumentPathByScreenId.clear();
+    RmlUiPendingActionEvents.clear();
+    RmlUiTestDocument = nullptr;
+}
+
 void UGameEngine::RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context)
 {
     if (!bRmlUiRuntimeInitialized || !RmlUiContext)
@@ -675,14 +699,17 @@ void UGameEngine::RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context
         return;
     }
 
-    const int Width = std::max(static_cast<int>(Context.ViewportSize.X), 1);
-    const int Height = std::max(static_cast<int>(Context.ViewportSize.Y), 1);
-    RmlUiContext->SetDimensions(Rml::Vector2i(Width, Height));
+    const int LayoutWidth = std::max(static_cast<int>(Context.LayoutSize.X > 0.0f ? Context.LayoutSize.X : Context.ViewportSize.X), 1);
+    const int LayoutHeight = std::max(static_cast<int>(Context.LayoutSize.Y > 0.0f ? Context.LayoutSize.Y : Context.ViewportSize.Y), 1);
+    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
 
     Renderer.UseBackBufferRenderTargets();
     RmlUiRenderInterface.BeginFrame(
         Rml::Vector2f(Context.ViewportMin.X, Context.ViewportMin.Y),
-        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y));
+        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y),
+        Rml::Vector2f(
+            Context.ViewportSize.X / static_cast<float>(LayoutWidth),
+            Context.ViewportSize.Y / static_cast<float>(LayoutHeight)));
 
     RmlUiContext->Update();
     RmlUiContext->Render();
@@ -743,6 +770,7 @@ void UGameEngine::LoadStartupWorld()
             LoadedContext.World->SyncSpatialIndex();
             WorldList.push_back(LoadedContext);
             SetActiveWorld(LoadedContext.ContextHandle);
+            CurrentScenePath = ScenePath;
             UE_LOG("[GameEngine] Loaded startup scene: %s", ScenePath.c_str());
             return;
         }
@@ -757,6 +785,22 @@ void UGameEngine::LoadStartupWorld()
     FWorldContext& Context = CreateWorldContext(EWorldType::Game, FName("Game"), StartupSettings.GameName);
     SetActiveWorld(Context.ContextHandle);
     UE_LOG("[GameEngine] Created empty game world.");
+}
+
+void UGameEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
+{
+    PlayerController = nullptr;
+    UnloadAllRmlUIDocuments();
+    GetAudioSystem().StopAll();
+    SetTimeScale(1.0f);
+}
+
+void UGameEngine::OnSceneWorldLoaded(UWorld* NewWorld)
+{
+    PlayerController = nullptr;
+    EnsurePlayerController();
+    InputSystem::Get().SetUseRawMouse(false);
+    MaintainGameInputCapture(InputSystem::Get());
 }
 
 void UGameEngine::EnsurePlayerController()

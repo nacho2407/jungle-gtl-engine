@@ -28,6 +28,7 @@
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
 #include "Serialization/PrefabManager.h"
+#include "Serialization/SceneSaveManager.h"
 
 #include <algorithm>
 #include <chrono>
@@ -40,6 +41,22 @@
 namespace
 {
 constexpr const char* PackagingPopupName = "Packaging Settings";
+
+FString MakeFooterSceneDisplayPath(const FString& FilePath)
+{
+    if (FilePath.empty())
+    {
+        return {};
+    }
+
+    std::filesystem::path SceneDir = std::filesystem::path(FSceneSaveManager::GetSceneDirectory()).lexically_normal();
+    std::filesystem::path ScenePath = std::filesystem::path(FPaths::ToWide(FilePath)).lexically_normal();
+    std::error_code Ec;
+    std::filesystem::path RelativePath = std::filesystem::relative(ScenePath, SceneDir.parent_path(), Ec);
+    FString Display = Ec ? FPaths::ToUtf8(ScenePath.filename().wstring()) : FPaths::ToUtf8(RelativePath.wstring());
+    std::replace(Display.begin(), Display.end(), '/', '\\');
+    return Display;
+}
 
 void SetOpaqueBlendStateCallback(const ImDrawList*, const ImDrawCmd* Cmd)
 {
@@ -1483,7 +1500,15 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
         }
 
         ImGui::SameLine();
-        const FString SceneLabel = FString("Level: ") + SceneWidget.GetCurrentSceneDisplayPath();
+        FString SceneLabel = FString("Level: ") + SceneWidget.GetCurrentSceneDisplayPath();
+        if (EditorEngine->GetEditorState() != EViewportPlayState::Editing)
+        {
+            const FString ActiveScenePath = EditorEngine->GetCurrentScenePath();
+            if (!ActiveScenePath.empty())
+            {
+                SceneLabel += FString(" | ActiveScene: ") + MakeFooterSceneDisplayPath(ActiveScenePath);
+            }
+        }
         ImGui::TextDisabled("%s", SceneLabel.c_str());
 
 		ImGui::SameLine();

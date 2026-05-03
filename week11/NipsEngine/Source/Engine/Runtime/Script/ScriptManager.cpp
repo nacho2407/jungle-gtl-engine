@@ -131,6 +131,23 @@ namespace
         OutSource = Stream.str();
         return true;
     }
+
+    void ClearLuaRequireCache(sol::state& Lua)
+    {
+        sol::protected_function_result Result = Lua.safe_script(R"(
+            for key, _ in pairs(package.loaded) do
+                if type(key) == "string" and string.sub(key, 1, 5) == "Game." then
+                    package.loaded[key] = nil
+                end
+            end
+        )");
+
+        if (!Result.valid())
+        {
+            sol::error Err = Result;
+            UE_LOG_WARNING("[ScriptManager] Failed to clear Lua require cache: %s", Err.what());
+        }
+    }
 }
 
 void FScriptManager::initializeLuaState()
@@ -365,33 +382,52 @@ void FScriptManager::HotReloadScripts()
 {
     RefreshLuaScriptFiles();
 
+    bool bAnyScriptChanged = false;
     for (auto& [ScriptKey, ScriptInfo] : ScriptArray)
     {
         if (!ScriptInfo.ScriptPath.empty() && fs::exists(ScriptInfo.ScriptPath))
         {
             auto LastWriteTime = fs::last_write_time(ScriptInfo.ScriptPath);
-
             if (LastWriteTime > ScriptInfo.LastWriteTime)
             {
-                UE_LOG("[ScriptManager] 핫 리로드 실행");
-                bool bReloadSuccess = true;
-                for (auto* ScriptComponent : ScriptInfo.ScriptComponents)
-                {
-                    if (!ScriptComponent)
-                    {
-                        continue;
-                    }
-
-                    UE_LOG("[ScriptManager] 핫리로드 대상 %s", ScriptComponent->GetName().c_str());
-                    bool bResult = ScriptComponent->HotReloadScript();
-                    bReloadSuccess = bReloadSuccess && bResult;
-                }
-                if (bReloadSuccess)
-                {
-                    ScriptInfo.LastWriteTime = LastWriteTime;
-                }
+                bAnyScriptChanged = true;
+                ScriptInfo.LastWriteTime = LastWriteTime;
             }
         }
+    }
+
+    if (!bAnyScriptChanged)
+    {
+        return;
+    }
+
+    if (GLuaState)
+    {
+        ClearLuaRequireCache(*GLuaState);
+    }
+
+    TArray<UScriptComponent*> ReloadTargets;
+    for (auto& [ScriptKey, ScriptInfo] : ScriptArray)
+    {
+        for (UScriptComponent* ScriptComponent : ScriptInfo.ScriptComponents)
+        {
+            if (!ScriptComponent)
+            {
+                continue;
+            }
+
+            if (std::find(ReloadTargets.begin(), ReloadTargets.end(), ScriptComponent) == ReloadTargets.end())
+            {
+                ReloadTargets.push_back(ScriptComponent);
+            }
+        }
+    }
+
+    UE_LOG("[ScriptManager] 핫 리로드 실행");
+    for (UScriptComponent* ScriptComponent : ReloadTargets)
+    {
+        UE_LOG("[ScriptManager] 핫리로드 대상 %s", ScriptComponent->GetName().c_str());
+        ScriptComponent->HotReloadScript();
     }
 }
 
@@ -505,6 +541,8 @@ std::optional<FLuaScriptLoadResult> FScriptManager::LoadScriptClass(
         return std::nullopt;
     }
 
+    ClearLuaRequireCache(*GLuaState);
+
     sol::environment Env(*GLuaState, sol::create, GLuaState->globals());
 
     Env["Component"] = Component;
@@ -549,6 +587,8 @@ std::optional<sol::table> FScriptManager::LoadScriptClassForProperties(
     {
         return std::nullopt;
     }
+
+    ClearLuaRequireCache(*GLuaState);
 
     sol::environment TempEnv(*GLuaState, sol::create, GLuaState->globals());
 

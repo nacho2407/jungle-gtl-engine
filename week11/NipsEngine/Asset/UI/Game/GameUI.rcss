@@ -23,6 +23,62 @@ body
     background-color: rgb(15, 18, 22);
 }
 
+.intro-screen
+{
+    background-color: rgb(10, 13, 16);
+}
+
+.intro-mark
+{
+    position: absolute;
+    left: 150px;
+    top: 120px;
+    width: 360px;
+    font-size: 28px;
+    color: rgb(160, 202, 204);
+}
+
+.intro-progress
+{
+    position: absolute;
+    right: 150px;
+    top: 124px;
+    width: 180px;
+    font-size: 22px;
+    text-align: right;
+    color: rgba(238, 242, 247, 170);
+}
+
+.intro-text
+{
+    position: absolute;
+    left: 150px;
+    top: 310px;
+    width: 1280px;
+    min-height: 160px;
+    font-size: 34px;
+    line-height: 54px;
+    color: rgb(255, 248, 232);
+}
+
+.intro-continue
+{
+    position: absolute;
+    left: 150px;
+    bottom: 132px;
+    width: 320px;
+    font-size: 22px;
+    color: rgb(255, 224, 154);
+}
+
+.intro-skip
+{
+    position: absolute;
+    right: 150px;
+    bottom: 100px;
+    width: 210px;
+}
+
 .title-accent
 {
     position: absolute;
