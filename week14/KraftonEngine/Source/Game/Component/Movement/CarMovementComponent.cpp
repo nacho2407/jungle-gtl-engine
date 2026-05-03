@@ -7,6 +7,7 @@
 #include "Component/SphereComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Serialization/Archive.h"
+#include "Core/Log.h"
 
 #include <algorithm>
 
@@ -30,7 +31,7 @@ void UCarMovementComponent::BeginPlay()
 
 void UCarMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-		UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (!UpdatedPrimitive) return;
 

@@ -1442,7 +1442,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-32.435738, 142.698746, 1.942000],
-        "Rotation" : [0.000000, -8.199044, 0.000000],
+        "Rotation" : [0.000000, -8.199043, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1565,7 +1565,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-78.705887, -375.854645, 1.942000],
-        "Rotation" : [-0.000000, 178.366196, 0.000000],
+        "Rotation" : [-0.000000, 178.366180, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -3182,6 +3182,13 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GasController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "Properties" : {
         "Location" : [-77.506592, 101.352142, 3.741713],
@@ -3555,7 +3562,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [160.816833, -18.016075, 1.599991],
-        "Rotation" : [0.000000, -5.563553, 0.000000],
+        "Rotation" : [0.000000, -5.563552, 0.000000],
         "Scale" : [25.000000, 25.000000, 20.000000],
         "TriggerTag" : "CarWash",
         "Visible" : true

@@ -1,4 +1,5 @@
 local UIManager = {}
+local ObjRegistry = require("ObjRegistry")
 local widgets = {}
 
 local onStartGame = nil
@@ -33,6 +34,15 @@ local function SetFadeOpacity(opacity)
 
     opacity = Clamp(opacity, 0, 1)
     return fadeWidget:set_property("fade-screen", "opacity", tostring(opacity))
+end
+
+local function GetGasColor(ratio)
+    if ratio <= 0.2 then
+        return "#e65353"
+    elseif ratio <= 0.5 then
+        return "#f09a3e"
+    end
+    return "#f0c85a"
 end
 
 function UIManager.SetStartGameCallback(callback)
@@ -204,31 +214,31 @@ function UIManager.IsFading()
 end
 
 function UIManager.Tick(dt)
-    if not fade.active then
-        return
-    end
+    if fade.active then
+        fade.elapsed = fade.elapsed + dt
+        local alpha = Clamp(fade.elapsed / fade.duration, 0, 1)
+        local opacity = fade.from + (fade.to - fade.from) * alpha
+        SetFadeOpacity(opacity)
 
-    fade.elapsed = fade.elapsed + dt
-    local alpha = Clamp(fade.elapsed / fade.duration, 0, 1)
-    local opacity = fade.from + (fade.to - fade.from) * alpha
-    SetFadeOpacity(opacity)
+        if alpha >= 1 then
+            local onComplete = fade.onComplete
+            local hideWhenDone = fade.hideWhenDone
 
-    if alpha >= 1 then
-        local onComplete = fade.onComplete
-        local hideWhenDone = fade.hideWhenDone
+            fade.active = false
+            fade.onComplete = nil
+            fade.hideWhenDone = false
 
-        fade.active = false
-        fade.onComplete = nil
-        fade.hideWhenDone = false
+            if hideWhenDone then
+                UIManager.Hide("fade")
+            end
 
-        if hideWhenDone then
-            UIManager.Hide("fade")
-        end
-
-        if onComplete ~= nil then
-            onComplete()
+            if onComplete ~= nil then
+                onComplete()
+            end
         end
     end
+
+    UIManager.UpdateGasWidget()
 end
 
 function UIManager.GetWidget(key)
@@ -308,6 +318,39 @@ function UIManager.UpdateHUD()
     -- objective + 클리어 카운트 — 매 프레임 호출 비용 미미하므로 같이 갱신
     widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
     widget:set_text("score-value", PopCount(gs:GetClearedPhasesMask()) .. "/4")
+end
+
+function UIManager.UpdateGasWidget()
+    local widget = widgets["gasWidget"]
+    if widget == nil then return end
+
+    local overlayWidget = widgets["gameOverlay"]
+    if overlayWidget == nil or not overlayWidget:IsInViewport() then
+        if widget:IsInViewport() then
+            widget:hide()
+        end
+        return
+    end
+
+    local car = ObjRegistry.car
+    if car == nil then return end
+
+    local gas = car:GetCarGas()
+    if gas == nil then return end
+
+    if not widget:IsInViewport() then
+        widget:show()
+    end
+
+    local currentGas = gas:GetGas()
+    local maxGas = gas:GetMaxGas()
+    local ratio = Clamp(gas:GetGasRatio(), 0, 1)
+    local color = GetGasColor(ratio)
+    
+    widget:set_text("gas-value", string.format("%d / %d", math.floor(currentGas + 0.5), math.floor(maxGas + 0.5)))
+    widget:set_property("gas-bar-fill", "width", string.format("%.1f%%", ratio * 100))
+    widget:set_property("gas-bar-fill", "background-color", color)
+    widget:set_property("gas-value", "color", color)
 end
 
 return UIManager
