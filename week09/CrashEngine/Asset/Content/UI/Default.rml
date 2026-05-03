@@ -1,0 +1,50 @@
+<rml>
+<head>
+    <style>
+        body
+        {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background-color: transparent;
+        }
+
+        #root
+        {
+            position: absolute;
+            left: 24px;
+            top: 24px;
+            width: 280px;
+            height: 120px;
+            background-color: rgba(18, 24, 34, 180);
+            border: 2px rgba(88, 180, 255, 220);
+        }
+
+        #bar
+        {
+            position: absolute;
+            left: 18px;
+            top: 18px;
+            width: 244px;
+            height: 20px;
+            background-color: rgba(88, 180, 255, 230);
+        }
+
+        #accent
+        {
+            position: absolute;
+            left: 18px;
+            top: 56px;
+            width: 148px;
+            height: 46px;
+            background-color: rgba(255, 205, 88, 215);
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div id="bar" />
+        <div id="accent" />
+    </div>
+</body>
+</rml>

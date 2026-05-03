@@ -127,56 +127,56 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GameRelease|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GameRelease|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\RmlUi\Include;ThirdParty\FMOD\inc;Source\Editor;Source\ObjViewer;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -211,7 +211,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -224,9 +224,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -238,7 +238,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -249,7 +249,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -259,7 +259,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -270,14 +270,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -288,7 +288,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -302,7 +302,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -313,7 +313,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;lua51.lib;Xinput9_1_0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;lua51.lib;Xinput9_1_0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VcpkgInstalledDir)$(VcpkgTriplet)\lib;$(ProjectDir)\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -328,7 +328,7 @@ xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;GAME_RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;NDEBUG;_CONSOLE;GAME_RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -340,7 +340,7 @@ xcopy /Y /D "$(VcpkgInstalledDir)$(VcpkgTriplet)\bin\lua51.dll" "$(TargetDir)"
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VcpkgInstalledDir)$(VcpkgTriplet)\lib;$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmod_vc.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)ThirdParty\FMOD\lib\fmod.dll" "$(OutDir)"
@@ -353,7 +353,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;NDEBUG;_CONSOLE;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -364,7 +364,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -378,7 +378,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RMLUI_STATIC_LIB;NDEBUG;_CONSOLE;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -389,7 +389,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -921,6 +921,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h" />
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUiManager.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
@@ -1312,9 +1313,196 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\UI\RmlUiManager.cpp" />
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\BaseXMLParser.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Box.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\BoxShadowCache.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\CallbackTexture.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Clock.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\CompiledFilterShader.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ComputedValues.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ComputeProperty.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Context.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ContextInstancer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ContextInstancerDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ConvolutionFilter.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Core.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataController.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataControllerDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataExpression.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataModel.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataModelHandle.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataTypeRegister.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataVariable.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataView.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DataViewDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Decorator.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorGradient.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorNinePatch.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorShader.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorText.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorTiled.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorTiledBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorTiledHorizontal.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorTiledImage.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorTiledVertical.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DecoratorUtilities.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\DocumentHeader.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EffectSpecification.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Element.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementAnimation.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementBackgroundBorder.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementDefinition.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementDocument.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementEffects.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementHandle.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementInstancer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementMeta.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementScroll.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementStyle.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementText.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ElementUtilities.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Event.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EventDispatcher.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EventInstancer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EventInstancerDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EventListenerInstancer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\EventSpecification.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Factory.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FileInterface.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FileInterfaceDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Filter.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FilterBasic.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FilterBlur.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FilterDropShadow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffect.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffectBlur.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffectGlow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffectInstancer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffectOutline.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEffectShadow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\FontEngineInterface.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Geometry.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\GeometryBackgroundBorder.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\GeometryBoxShadow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Log.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\LogDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Math.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Memory.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\MeshUtilities.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ObserverPtr.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Plugin.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PluginRegistry.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Profiling.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertiesIteratorView.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Property.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyDefinition.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyDictionary.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserAnimation.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserBoxShadow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserColorStopList.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserColour.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserDecorator.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserFilter.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserFontEffect.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserKeyword.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserNumber.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserRatio.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserString.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertyParserTransform.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\PropertySpecification.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\RenderInterface.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\RenderInterfaceCompatibility.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\RenderManager.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\RenderManagerAccess.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\ScrollController.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Spritesheet.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Stream.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StreamFile.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StreamMemory.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StringUtilities.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheet.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetContainer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetFactory.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetNode.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetParser.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetSelector.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\StyleSheetSpecification.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\SystemInterface.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Template.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TemplateCache.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Texture.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TextureDatabase.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TextureLayout.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TextureLayoutRectangle.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TextureLayoutRow.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TextureLayoutTexture.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Traits.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Transform.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TransformPrimitive.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TransformState.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TransformUtilities.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Tween.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\TypeConverter.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\URL.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Variant.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\WidgetScroll.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLNodeHandler.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLNodeHandlerBody.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLNodeHandlerDefault.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLNodeHandlerHead.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLNodeHandlerTemplate.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLParser.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\XMLParseTools.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementFormControl.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementFormControlInput.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementFormControlSelect.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementFormControlTextArea.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementForm.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementImage.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementLabel.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementProgress.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementTabSet.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\ElementTextSelection.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeButton.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeCheckbox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputType.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeRadio.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeRange.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeSubmit.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\InputTypeText.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetDropDown.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetSlider.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetTextInput.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetTextInputMultiLine.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetTextInputSingleLine.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\WidgetTextInputSingleLinePassword.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\XMLNodeHandlerSelect.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\XMLNodeHandlerTabSet.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\XMLNodeHandlerTextArea.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\BlockContainer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\BlockFormattingContext.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\ContainerBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\FlexFormattingContext.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\FloatedBoxSpace.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\FormattingContext.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\InlineBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\InlineContainer.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\InlineLevelBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\LayoutBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\LayoutDetails.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\LayoutEngine.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\LayoutPools.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\LineBox.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\ReplacedFormattingContext.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\TableFormattingContext.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\TableFormattingDetails.cpp"><ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Asset\Content\UI\Default.rml" />
     <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

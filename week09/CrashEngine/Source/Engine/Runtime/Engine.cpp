@@ -11,6 +11,7 @@
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Mesh/ObjManager.h"
 #include "Texture/Texture2D.h"
+#include "UI/RmlUiManager.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
@@ -46,6 +47,9 @@ ELevelTick ToLevelTickType(EWorldType WorldType)
 }
 } // namespace
 
+UEngine::UEngine() = default;
+UEngine::~UEngine() = default;
+
 void UEngine::Init(FWindowsWindow* InWindow)
 {
     UE_LOG(Engine, Info, "Initializing runtime engine.");
@@ -56,6 +60,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
     Renderer.Create(Window->GetHWND());
     UE_LOG(Engine, Debug, "Renderer created.");
+    RmlUiManager = std::make_unique<FRmlUiManager>();
+    RmlUiManager->Initialize(Window, Renderer);
 
     ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
     FMeshBufferManager::Get().Initialize(Device);
@@ -87,6 +93,11 @@ void UEngine::Shutdown()
     UTexture2D::ReleaseAllGPU();
     FObjManager::ReleaseAllGPU();
     FMeshBufferManager::Get().Release();
+    if (RmlUiManager)
+    {
+        RmlUiManager->Shutdown();
+        RmlUiManager.reset();
+    }
     Renderer.Release();
 }
 
@@ -106,6 +117,10 @@ void UEngine::Tick(float DeltaTime)
 {
     FDirectoryWatcher::Get().Tick();
     InputSystem::Get().Tick(Window->IsForeground());
+    if (RmlUiManager)
+    {
+        RmlUiManager->Update();
+    }
     WorldTick(DeltaTime);
     Render(DeltaTime);
 }
@@ -181,7 +196,11 @@ void UEngine::Render(float DeltaTime)
         }
         Renderer.BuildDrawCommands(PipelineContext);
 
-        Renderer.RenderFrame(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
+        Renderer.BeginFrame(SceneView, &RenderTargets);
+        Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
+        Renderer.ExecutePresentPass(PipelineContext);
+        RenderRmlUi();
+        Renderer.EndFrame();
     }
 
     if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
@@ -199,6 +218,23 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 
     UE_LOG(Engine, Debug, "Window resized to %ux%u.", Width, Height);
     Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
+    if (RmlUiManager)
+    {
+        RmlUiManager->OnWindowResized(Width, Height);
+    }
+}
+
+bool UEngine::HandleWindowMessage(void* WindowHandle, unsigned int Message, std::uintptr_t WParam, std::intptr_t LParam)
+{
+    return RmlUiManager && RmlUiManager->HandleWindowMessage(static_cast<HWND__*>(WindowHandle), Message, WParam, LParam);
+}
+
+void UEngine::RenderRmlUi()
+{
+    if (RmlUiManager)
+    {
+        RmlUiManager->Render();
+    }
 }
 
 void UEngine::WorldTick(float DeltaTime)

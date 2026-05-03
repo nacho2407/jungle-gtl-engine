@@ -8,12 +8,14 @@
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 
+#include <cstdint>
 #include <memory>
 
 class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
 class UGameViewportClient;
+class FRmlUiManager;
 
 // UEngine는 런타임 영역의 핵심 동작을 담당합니다.
 class UEngine : public UObject
@@ -21,8 +23,8 @@ class UEngine : public UObject
 public:
     DECLARE_CLASS(UEngine, UObject)
 
-    UEngine() = default;
-    ~UEngine() override = default;
+    UEngine();
+    ~UEngine() override;
 
     // Lifecycle
     virtual void Init(FWindowsWindow* InWindow);
@@ -31,6 +33,7 @@ public:
     virtual void Tick(float DeltaTime);
 
     virtual void OnWindowResized(uint32 Width, uint32 Height);
+    virtual bool HandleWindowMessage(void* WindowHandle, unsigned int Message, std::uintptr_t WParam, std::intptr_t LParam);
 
     // World context management
     FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
@@ -63,6 +66,7 @@ public:
 protected:
     virtual void Render(float DeltaTime);
     virtual void OnRenderSceneCleared() {}
+    void RenderRmlUi();
     void WorldTick(float DeltaTime);
 
 protected:
@@ -76,6 +80,7 @@ protected:
     UGameViewportClient* GameViewportClient = nullptr;
 
     FRenderer Renderer;
+    std::unique_ptr<FRmlUiManager> RmlUiManager;
 
 protected:
     FSceneView SceneView;

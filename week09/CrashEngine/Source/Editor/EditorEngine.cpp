@@ -623,6 +623,7 @@ void UEditorEngine::Render(float DeltaTime)
     {
         SCOPE_STAT_CAT("EditorUI", "5_UI");
         RenderUI(DeltaTime);
+        RenderRmlUi();
     }
 
 #if STATS
