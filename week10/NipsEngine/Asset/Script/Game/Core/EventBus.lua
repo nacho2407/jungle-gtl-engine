@@ -58,6 +58,25 @@ function EventBus:ClearOwner(owner)
     end
 end
 
+function EventBus:IsSubscribed(eventName, handle)
+    if eventName == nil or handle == nil then
+        return false
+    end
+
+    local list = self.listeners[eventName]
+    if list == nil then
+        return false
+    end
+
+    for _, listener in ipairs(list) do
+        if listener.handle == handle then
+            return true
+        end
+    end
+
+    return false
+end
+
 function EventBus:Emit(eventName, payload)
     local list = self.listeners[eventName]
     if list == nil then
@@ -71,7 +90,9 @@ function EventBus:Emit(eventName, payload)
     end
 
     for _, listener in ipairs(snapshot) do
-        listener.callback(payload)
+        if self:IsSubscribed(eventName, listener.handle) then
+            listener.callback(payload)
+        end
     end
 end
 

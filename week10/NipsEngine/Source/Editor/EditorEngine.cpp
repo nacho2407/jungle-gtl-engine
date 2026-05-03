@@ -323,7 +323,7 @@ public:
             }
             if (!Action.empty())
             {
-                Owner->EnqueueRmlUIActionEvent(Action);
+                Owner->EnqueueRmlUIActionEvent(Action, Element->GetOwnerDocument());
                 return;
             }
             Element = Element->GetParentNode();
@@ -414,6 +414,32 @@ void UEditorEngine::UnloadAllRmlUIDocuments()
     }
 
     RmlUiDocumentPathByScreenId.clear();
+    RmlUiPendingActionEvents.clear();
+    RmlUiPreviewPendingActionEvents.clear();
+}
+
+void UEditorEngine::UnloadGameplayRmlUIDocuments()
+{
+    if (!RmlUiContext)
+    {
+        return;
+    }
+
+    TArray<FString> ScreenIds;
+    for (const auto& Pair : RmlUiDocumentsByScreenId)
+    {
+        if (Pair.first != RuntimeUIPreviewScreenId)
+        {
+            ScreenIds.push_back(Pair.first);
+        }
+    }
+
+    for (const FString& ScreenId : ScreenIds)
+    {
+        UnloadRmlUIDocument(ScreenId);
+        RmlUiDocumentPathByScreenId.erase(ScreenId);
+    }
+
     RmlUiPendingActionEvents.clear();
 }
 
@@ -592,6 +618,10 @@ bool UEditorEngine::UnloadRmlUIDocument(const FString& ScreenId)
 
     Document->Close();
     RmlUiDocumentsByScreenId.erase(ScreenId);
+    if (ScreenId == RuntimeUIPreviewScreenId)
+    {
+        RmlUiPreviewPendingActionEvents.clear();
+    }
     return true;
 }
 
@@ -830,12 +860,43 @@ TArray<FString> UEditorEngine::PollRmlUIActionEvents()
     return Events;
 }
 
+TArray<FString> UEditorEngine::PollRmlUIPreviewActionEvents()
+{
+    TArray<FString> Events = RmlUiPreviewPendingActionEvents;
+    RmlUiPreviewPendingActionEvents.clear();
+    return Events;
+}
+
 void UEditorEngine::EnqueueRmlUIActionEvent(const FString& EventName)
 {
     if (!EventName.empty())
     {
         RmlUiPendingActionEvents.push_back(EventName);
     }
+}
+
+void UEditorEngine::EnqueueRmlUIActionEvent(const FString& EventName, Rml::ElementDocument* SourceDocument)
+{
+    if (EventName.empty())
+    {
+        return;
+    }
+
+    auto It = std::find_if(
+        RmlUiDocumentsByScreenId.begin(),
+        RmlUiDocumentsByScreenId.end(),
+        [SourceDocument](const auto& Pair)
+        {
+            return Pair.second == SourceDocument;
+        });
+
+    if (It != RmlUiDocumentsByScreenId.end() && It->first == RuntimeUIPreviewScreenId)
+    {
+        RmlUiPreviewPendingActionEvents.push_back(EventName);
+        return;
+    }
+
+    RmlUiPendingActionEvents.push_back(EventName);
 }
 
 Rml::ElementDocument* UEditorEngine::FindRmlUIDocument(const FString& ScreenId) const
@@ -853,6 +914,10 @@ Rml::Element* UEditorEngine::FindRmlUIElement(const FString& ElementId) const
 
     for (const auto& Pair : RmlUiDocumentsByScreenId)
     {
+        if (Pair.first == RuntimeUIPreviewScreenId)
+        {
+            continue;
+        }
         if (Pair.second)
         {
             if (Rml::Element* Element = Pair.second->GetElementById(ElementId))
@@ -1095,7 +1160,11 @@ void UEditorEngine::WorldTick(float DeltaTime)
     {
         if (!Ctx.World || Ctx.bPaused)
             continue;
-        Ctx.World->Tick(DeltaTime);
+
+        const bool bScaleWorldTime =
+            Ctx.World->GetWorldType() == EWorldType::Game ||
+            Ctx.World->GetWorldType() == EWorldType::PIE;
+        Ctx.World->Tick(bScaleWorldTime ? DeltaTime * TimeScale : DeltaTime);
     }
 
     ProcessPendingSceneOpen();
@@ -1440,15 +1509,29 @@ void UEditorEngine::StartPlaySessionNow()
 	// 포커스된 뷰포트 클라이언트를 찾고 카메라 상태를 저장한 뒤, 실행 상태를 변경합니다.
     const int32 FocusedIdx = ViewportLayout.GetLastFocusedViewportIndex();
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
-    UWorld* FocusedWorld = GetFocusedWorld();
+    FWorldContext* EditorContext = nullptr;
+    const FName EditorHandle = GetEditorWorldHandle();
+    if (EditorHandle != FName::None)
+    {
+        EditorContext = GetWorldContextFromHandle(EditorHandle);
+    }
+    UWorld* SourceWorld = EditorContext ? EditorContext->World : GetFocusedWorld();
 
-    if (!FocusedClient || !FocusedWorld) return;
-    if (!HasPlayerStart(FocusedWorld))
+    if (!FocusedClient || !SourceWorld) return;
+    if (!HasPlayerStart(SourceWorld))
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
         MainPanel.PushFooterLog("PIE failed: Player Start is missing");
         return;
     }
+
+    bPendingSceneOpen = false;
+    PendingSceneOpenPath.clear();
+    CurrentScenePath = MainPanel.GetSceneWidget().GetCurrentSceneFilePath();
+    SetTimeScale(1.0f);
+    SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
+    UnloadGameplayRmlUIDocuments();
+    FScriptManager::Get().ResetLuaState();
 
     FocusedClient->SaveCameraSnapshot();
     ActivePIEViewportIndex = FocusedIdx;
@@ -1456,7 +1539,7 @@ void UEditorEngine::StartPlaySessionNow()
     SetEditorState(EViewportPlayState::Playing); 
 
     // PIE 월드 복제하고 세팅한 뒤, RegisterWorld() 헬퍼를 사용해 월드를 WorldList에 등록합니다.
-    UWorld* PIEWorld = Cast<UWorld>(FocusedWorld->Duplicate());
+    UWorld* PIEWorld = Cast<UWorld>(SourceWorld->Duplicate());
     PIEWorld->SetWorldType(EWorldType::PIE);
     FName PIEHandle(("PIE_" + std::to_string(FocusedIdx)).c_str());
     std::string PIEName = "PIE_World_" + std::to_string(FocusedIdx);
@@ -1549,6 +1632,12 @@ void UEditorEngine::StopPlaySessionNow()
     if (GetEditorState() == EViewportPlayState::Editing && ViewportPIEHandles.empty())
         return;
 
+    bPendingSceneOpen = false;
+    PendingSceneOpenPath.clear();
+    CurrentScenePath.clear();
+    SetTimeScale(1.0f);
+    SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
+
     int32 FocusedIdx = (ActivePIEViewportIndex >= 0) ? ActivePIEViewportIndex : ViewportLayout.GetLastFocusedViewportIndex();
     if (ViewportPIEHandles.find(FocusedIdx) == ViewportPIEHandles.end() && !ViewportPIEHandles.empty())
     {
@@ -1600,6 +1689,8 @@ void UEditorEngine::StopPlaySessionNow()
     }
 
     SelectionManager.ClearSelection();
+    UnloadGameplayRmlUIDocuments();
+    FScriptManager::Get().ResetLuaState();
 }
 
 void UEditorEngine::ResetViewport()

@@ -135,11 +135,17 @@ namespace
             return false;
         }
 
-        if (GEngine
-            && GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
-            && GEngine->IsRuntimeCursorLocked())
+        if (GEngine)
         {
-            return true;
+            const ERuntimeInputMode InputMode = GEngine->GetRuntimeInputMode();
+            if (InputMode == ERuntimeInputMode::UIOnly)
+            {
+                return false;
+            }
+            if (InputMode == ERuntimeInputMode::GameOnly)
+            {
+                return GEngine->IsRuntimeCursorLocked();
+            }
         }
 
         const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
@@ -153,11 +159,17 @@ namespace
 
     bool CanExposeMouseAxisToLua()
     {
-        if (GEngine
-            && GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
-            && GEngine->IsRuntimeCursorLocked())
+        if (GEngine)
         {
-            return true;
+            const ERuntimeInputMode InputMode = GEngine->GetRuntimeInputMode();
+            if (InputMode == ERuntimeInputMode::UIOnly)
+            {
+                return false;
+            }
+            if (InputMode == ERuntimeInputMode::GameOnly)
+            {
+                return GEngine->IsRuntimeCursorLocked();
+            }
         }
 
         const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();

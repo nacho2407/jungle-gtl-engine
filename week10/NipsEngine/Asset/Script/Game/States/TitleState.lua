@@ -25,6 +25,9 @@ function TitleState:Enter(context)
             context.stateMachine:Change("Loading")
         elseif event.name == "ShowIntro" then
             context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
+            if context.root:OpenIntroScene() then
+                return
+            end
             context.stateMachine:Change("Intro", { returnTo = "Title" })
         elseif event.name == "QuitGame" then
             Engine.API.Application.QuitGame()

@@ -11,6 +11,7 @@ function PauseState:Enter(context)
     context.managers.UI:ShowOverlay("Pause")
     context.managers.UI:RefreshSettings()
     Engine.API.Input.SetInputModeUIOnly()
+    Engine.API.Time.SetTimeScale(0)
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "ResumeGame" then

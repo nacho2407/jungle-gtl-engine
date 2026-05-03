@@ -32,8 +32,9 @@ local Script = {}
 Script.__index = Script
 
 local ScenePaths = {
+    Intro = "Asset/Scene/Intro.Scene",
     Main = "Asset/Scene/Main.Scene",
-    Game = "Asset/Scene/YGTest.Scene"
+    Game = "Asset/Scene/Playing.Scene"
 }
 
 -- ScriptComponent Details에 노출되는 값입니다.
@@ -110,6 +111,10 @@ end
 
 function Script:OpenMainScene()
     return Engine.API.Scene.Open(ScenePaths.Main)
+end
+
+function Script:OpenIntroScene()
+    return Engine.API.Scene.Open(ScenePaths.Intro)
 end
 
 function Script:OpenGameScene()

@@ -601,6 +601,10 @@ void FEditorViewportClient::TickKeyboardInput()
 	};
 
 	if (bControlLocked) return;
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
+	{
+		return;
+	}
 	const InputSystem& IS = InputSystem::Get();
 	const bool bEditorWorld = InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
 	const bool bKeyboardNavigationChord =
@@ -628,6 +632,10 @@ void FEditorViewportClient::TickKeyboardInput(const FViewportInputContext& Conte
 	};
 
 	if (bControlLocked) return;
+	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
+	{
+		return;
+	}
 	const bool bEditorWorld = InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
 	const bool bKeyboardNavigationChord =
 		Context.Frame.IsDown(VK_RBUTTON)

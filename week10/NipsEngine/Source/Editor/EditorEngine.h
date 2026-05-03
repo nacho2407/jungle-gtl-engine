@@ -127,6 +127,8 @@ public:
 	void RegisterViewportInputTargets();
 	void RequestPIEViewportInputFocus(int32 FrameCount = 3);
 	void EnqueueRmlUIActionEvent(const FString& EventName);
+	void EnqueueRmlUIActionEvent(const FString& EventName, Rml::ElementDocument* SourceDocument);
+	TArray<FString> PollRmlUIPreviewActionEvents();
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
@@ -177,6 +179,7 @@ private:
 	void InitializeRmlUiRuntime();
 	void ShutdownRmlUiRuntime();
 	void UnloadAllRmlUIDocuments();
+	void UnloadGameplayRmlUIDocuments();
 	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
 	void OnSceneWorldLoaded(UWorld* NewWorld) override;
 	TArray<std::pair<Rml::ElementDocument*, bool>> ApplyRmlUIDocumentVisibilityFilter(bool bPreviewDocumentOnly);
@@ -208,6 +211,7 @@ private:
 	TMap<FString, FString> RmlUiDocumentPathByScreenId;
 	TMap<FString, Rml::ElementDocument*> RmlUiDocumentsByScreenId;
 	TArray<FString> RmlUiPendingActionEvents;
+	TArray<FString> RmlUiPreviewPendingActionEvents;
 	FEditorRmlUiActionEventListener* RmlUiActionListener = nullptr;
     
 	TArray<FUndoSnapshotEntry> UndoHistory;
