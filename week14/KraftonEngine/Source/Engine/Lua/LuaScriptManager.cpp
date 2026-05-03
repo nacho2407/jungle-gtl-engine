@@ -24,6 +24,7 @@
 // 별도 등록 시점(GameEngine::Init 등)으로 분리하는 것을 권장.
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
+#include "Game/Pawn/PoliceCar.h"
 #include <filesystem>
 #include <fstream>
 
@@ -377,6 +378,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Cast<ACarPawn>(&Actor);
 	},
 
+		"AsPoliceCar", [](AActor& Actor)
+	{
+		return Cast<APoliceCar>(&Actor);
+	},
+
 		"FireCarWashRay", [](AActor& Actor)
 	{
 		return UDirtComponent::FireCarWashRay(Actor);
@@ -415,6 +421,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetHealth", &ACarPawn::GetHealth,
 		"IsFirstPersonView", &ACarPawn::IsFirstPersonView);
 
+	// PoliceCar — Lua AI 스크립트가 obj:GetTarget() 으로 추적 대상 액세스
+	Lua.new_usertype<APoliceCar>("PoliceCar",
+		sol::base_classes, sol::bases<ACarPawn, APawn, AActor>(),
+		"GetTarget", &APoliceCar::GetTarget);
+
 	// --- World binding — 런타임 액터 spawn 용 ---
 	sol::table World = Lua.create_named_table("World");
 	World.set_function("SpawnActor", [](const FString& ClassName) -> AActor*
@@ -434,10 +445,20 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"CarGas",       ECarGamePhase::CarGas,
 		"EscapePolice", ECarGamePhase::EscapePolice,
 		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
+		"Result",       ECarGamePhase::Result,
 		"Finished",     ECarGamePhase::Finished);
+
+	Lua.new_enum("EPhaseResult",
+		"None",    EPhaseResult::None,
+		"Success", EPhaseResult::Success,
+		"Failed",  EPhaseResult::Failed);
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase", &AGameStateCarGame::GetPhase,
+		"GetRemainingMatchTime", &AGameStateCarGame::GetRemainingMatchTime,
+		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
+		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
+		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable

@@ -5,7 +5,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [0.035111, 0.000000, 5.313506],
-        "Rotation" : [89.901085, -0.000000, 0.000000],
+        "Rotation" : [89.903084, -0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Visible" : true
       },
@@ -49,7 +49,7 @@
           "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
           "Intensity" : 1.000000,
           "Location" : [0.035111, 0.000000, 5.313506],
-          "Rotation" : [89.899994, 0.000000, 0.000000],
+          "Rotation" : [89.901093, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Bias" : -0.000100,
           "Shadow Normal Bias" : -0.002000,
@@ -824,7 +824,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-76.257545, -60.742134, 0.698732],
-        "Rotation" : [-0.000000, 81.377342, 0.000000],
+        "Rotation" : [-0.000000, 81.377335, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1004,7 +1004,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-189.786255, 2.971306, 0.290382],
-        "Rotation" : [-0.000000, 81.365990, 0.000000],
+        "Rotation" : [-0.000000, 81.365982, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1045,7 +1045,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-29.629822, 5.449127, 0.698732],
-        "Rotation" : [-0.000000, 81.709404, 0.000000],
+        "Rotation" : [-0.000000, 81.709396, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1344,7 +1344,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-148.768600, 24.322607, 1.098732],
-        "Rotation" : [-0.000000, 81.645561, 0.000000],
+        "Rotation" : [-0.000000, 81.645546, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1442,7 +1442,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-32.435738, 142.698746, 1.942000],
-        "Rotation" : [0.000000, -8.199049, 0.000000],
+        "Rotation" : [0.000000, -8.199047, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1483,7 +1483,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [29.952431, 204.563477, 0.600000],
-        "Rotation" : [0.000000, -10.201354, 0.000000],
+        "Rotation" : [0.000000, -10.201353, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1565,7 +1565,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-78.705887, -375.854645, 1.942000],
-        "Rotation" : [-0.000000, 178.366257, 0.000000],
+        "Rotation" : [-0.000000, 178.366241, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1647,7 +1647,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [141.501801, 127.649612, 0.700000],
-        "Rotation" : [0.000000, -10.201354, 0.000000],
+        "Rotation" : [0.000000, -10.201353, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1688,7 +1688,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-60.380363, 68.380981, 0.798732],
-        "Rotation" : [-0.000000, 81.709404, 0.000000],
+        "Rotation" : [-0.000000, 81.709396, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1786,7 +1786,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-132.665436, 48.727226, 0.490382],
-        "Rotation" : [-0.000000, 81.365990, 0.000000],
+        "Rotation" : [-0.000000, 81.365982, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1909,7 +1909,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-106.563385, -138.445251, 15.896111],
-        "Rotation" : [0.000000, -10.012435, 0.000000],
+        "Rotation" : [0.000000, -10.012434, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
         "Visible" : true
       },
@@ -1949,7 +1949,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-63.125122, -63.150097, 15.996111],
-        "Rotation" : [-0.000000, 76.058708, 0.000000],
+        "Rotation" : [-0.000000, 76.058701, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
         "Visible" : true
       },
@@ -1989,7 +1989,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-96.558975, -24.579353, 16.096111],
-        "Rotation" : [-0.000000, 88.800621, 0.000000],
+        "Rotation" : [-0.000000, 88.800613, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
         "Visible" : true
       },
@@ -2149,7 +2149,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-72.581436, -169.578049, 16.496113],
-        "Rotation" : [-0.000000, 84.254112, 0.000000],
+        "Rotation" : [-0.000000, 84.254105, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
         "Visible" : true
       },
@@ -2213,7 +2213,7 @@
           "Location" : [71.260841, -82.184189, 16.596113],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, 73.761276, 0.000000],
+          "Rotation" : [0.000000, 73.761261, 0.000000],
           "Scale" : [15.000000, 9.000000, 20.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2509,7 +2509,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-88.579887, 77.988007, 17.396116],
-        "Rotation" : [-0.000000, 21.683046, 0.000000],
+        "Rotation" : [-0.000000, 21.683048, 0.000000],
         "Scale" : [15.000000, 8.000000, 20.000000],
         "Visible" : true
       },
@@ -2710,7 +2710,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [150.440903, -124.145973, 1.505331],
-        "Rotation" : [0.000000, -98.215622, 0.000000],
+        "Rotation" : [0.000000, -98.215607, 0.000000],
         "Scale" : [1.500000, 1.500000, 1.500000],
         "Visible" : true
       },
@@ -2786,7 +2786,7 @@
           "Location" : [150.440903, -124.145973, 1.505331],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, -98.215637, 0.000000],
+          "Rotation" : [0.000000, -98.215622, 0.000000],
           "Scale" : [1.500000, 1.500000, 1.500000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/GasStation/GASSTATION .obj",
@@ -3457,8 +3457,49 @@
           "Location" : [15.969803, 145.687912, 48.246155],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [50.000000, 50.000000, 50.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "ATriggerVolumeBase_2",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-142.095993, 201.179596, 27.956924],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [40.000000, 40.000000, 40.000000],
+        "TriggerTag" : "EscapePolice",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [-142.095993, 201.179596, 27.956924],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [40.000000, 40.000000, 40.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -3475,9 +3516,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-123.702278, 167.266724, 46.201939],
+    "Location" : [-204.002274, 169.318710, 107.555801],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 12.106733, -20.788343]
+    "Rotation" : [0.000000, 54.256672, 13.261625]
   },
   "Version" : 2,
   "WorldType" : "Editor"
