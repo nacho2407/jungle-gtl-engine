@@ -22,6 +22,7 @@ public:
     bool DestroyActor(const FLuaGameObjectProxy& ActorProxy);
     FLuaGameObjectProxy FindPlayer();
     bool SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees);
+    bool MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, const FVector& Delta, const FString& BlockingTag);
     FVector GetActiveCameraForward() const;
     FVector GetActiveCameraRight() const;
     FVector GetActiveCameraUp() const;

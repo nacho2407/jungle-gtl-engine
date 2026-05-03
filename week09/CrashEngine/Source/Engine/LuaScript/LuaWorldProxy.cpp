@@ -6,9 +6,12 @@
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/Object.h"
+#include "Physics/CollisionManager.h"
 
 namespace
 {
+constexpr float kLuaBlockedMoveStepLength = 0.05f;
+
 FString NormalizeLuaActorClassName(const FString& Name)
 {
     if (Name == "Actor")
@@ -39,6 +42,7 @@ bool IsLuaSpawnableActorClassName(const FString& ClassName)
 		|| ClassName == "AHeightFogActor" 
 		|| ClassName == "ADecalActor";
 }
+
 } // namespace
 
 void FLuaWorldProxy::SetWorld(UWorld* InWorld)
@@ -135,6 +139,19 @@ bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target
     Camera->LookAt(Target);
     Camera->SetFOV(FovDegrees * DEG_TO_RAD);
     return true;
+}
+
+bool FLuaWorldProxy::MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, const FVector& Delta, const FString& BlockingTag)
+{
+    UWorld* World = ResolveWorld();
+    AActor* Actor = ActorProxy.GetActor();
+    FCollisionManager* CollisionManager = World ? World->GetCollisionManager() : nullptr;
+    if (!World || !CollisionManager || !Actor || Actor->GetWorld() != World)
+    {
+        return false;
+    }
+
+    return CollisionManager->MoveActorWithBlock(Actor, Delta, BlockingTag, kLuaBlockedMoveStepLength);
 }
 
 

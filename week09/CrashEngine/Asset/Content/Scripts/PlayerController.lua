@@ -99,7 +99,7 @@ function Tick(dt)
     LightComponet:SetIntensity(HP)
 
     if obj.Velocity:LengthSquared() > 0.0 then
-        obj:AddWorldOffset(obj.Velocity * dt)
+        World.MoveActorWithBlock(obj, obj.Velocity * dt, "Wall")
     end
 
 
