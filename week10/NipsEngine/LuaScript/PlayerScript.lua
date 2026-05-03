@@ -91,12 +91,15 @@ function Script:Tick(dt)
     local delta = CurLoc - self.PrevLocation
     local speed = delta:Size() / math.max(dt, 1e-6)
 
-    local amplitude = 0.0001 + speed * 0.0005   -- 크기
-    local freq = 6.0 + speed * 0.1             -- 속도
+    local amplitude = 0.0001 + speed * 0.002   -- 크기
+    local freq = 6.0 + speed * 0.2             -- 속도
 
     local offsetZ = math.cos(self.time * freq) * amplitude
+    local offsetX = math.sin(self.time * freq * 0.5) * amplitude * 0.5
+    local camOffset = Vector(offsetX, 0, offsetZ)
+    Engine.API.World.AddViewTargetCameraLocation(camOffset)
 
-    self.owner.Location = CurLoc + Vector(0, 0, offsetZ)
+    self.owner.Location = CurLoc
 
     self.PrevLocation = CurLoc
 

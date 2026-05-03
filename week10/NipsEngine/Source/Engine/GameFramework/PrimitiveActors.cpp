@@ -205,12 +205,27 @@ void ADefaultPlayerActor::InitDefaultComponents()
 	Billboard->SetEditorOnly(true);
 	Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
 
-	UStaticMeshComponent* DebugBody = AddComponent<UStaticMeshComponent>();
-	DebugBody->AttachToComponent(SceneRoot);
-	DebugBody->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-	DebugBody->SetRelativeLocation(FVector(0.0f, 0.0f, 0.5f));
-	DebugBody->SetRelativeScale(FVector(0.4f, 0.4f, 1.0f));
-	DebugBody->SetEnableCull(false);
+	auto* BodySection = AddComponent<USceneComponent>();
+    BodySection->AttachToComponent(SceneRoot);
+    BodySection->SetRelativeScale(FVector(1, 1, 1));
+    BodySection->SetRelativeRotation(FVector(0, 15.9, 13.1f));
+    BodySection->SetRelativeLocation(FVector(0.2, 0.5, 1.3));
+
+	auto* KatanaComp = AddComponent<UStaticMeshComponent>();
+    KatanaComp->AttachToComponent(BodySection);
+    KatanaComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_katana/katana.obj"));
+    KatanaComp->SetRelativeScale(FVector(3, 3, 1));
+    KatanaComp->SetRelativeRotation(FVector(180, 0, -103.3f));
+    KatanaComp->SetRelativeLocation(FVector(0.52, -0.8, 0));
+    KatanaComp->SetEnableCull(false);
+
+	auto* ArmComp = AddComponent<UStaticMeshComponent>();
+    ArmComp->AttachToComponent(BodySection);
+    ArmComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_arm/cyberpunk_arm_right.obj"));
+    ArmComp->SetRelativeScale(FVector(1, 1, 1));
+    ArmComp->SetRelativeRotation(FVector(82.8f, 17.3f, 53.4f));
+    ArmComp->SetRelativeLocation(FVector(0, 0, 0));
+    ArmComp->SetEnableCull(false);
 
 	SpringArmComp = AddComponent<USpringArmComponent>();
 	SpringArmComp->AttachToComponent(SceneRoot);
