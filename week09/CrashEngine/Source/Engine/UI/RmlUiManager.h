@@ -11,8 +11,11 @@
 #endif
 
 #include <RmlUi/Core.h>
+#include <RmlUi/Core/FileInterface.h>
 
 #include <d3d11.h>
+#include <cstdio>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +36,16 @@ public:
     bool LoadFontFace(const Rml::String& FilePath, int FaceIndex, bool FallbackFace, Rml::Style::FontWeight Weight) override;
     bool LoadFontFace(const Rml::String& FilePath, int FaceIndex, const Rml::String& Family, Rml::Style::FontStyle Style, Rml::Style::FontWeight Weight, bool FallbackFace) override;
     bool LoadFontFace(Rml::Span<const Rml::byte> Data, int FaceIndex, const Rml::String& Family, Rml::Style::FontStyle Style, Rml::Style::FontWeight Weight, bool FallbackFace) override;
+};
+
+class FRmlUiFileInterface final : public Rml::FileInterface
+{
+public:
+    Rml::FileHandle Open(const Rml::String& Path) override;
+    void Close(Rml::FileHandle File) override;
+    size_t Read(void* Buffer, size_t Size, Rml::FileHandle File) override;
+    bool Seek(Rml::FileHandle File, long Offset, int Origin) override;
+    size_t Tell(Rml::FileHandle File) override;
 };
 
 class FRmlUiD3D11RenderInterface final : public Rml::RenderInterface
@@ -122,20 +135,44 @@ public:
     void Update();
     void Render();
     void OnWindowResized(uint32 Width, uint32 Height);
+    void SetViewportOffset(float X, float Y);
     bool HandleWindowMessage(HWND__* WindowHandle, unsigned int Message, WPARAM WParam, LPARAM LParam);
 
     Rml::Context* GetContext() const { return Context; }
     bool IsInitialized() const { return bInitialized; }
 
+    bool LoadDocument(const FString& Name, const FString& DocumentPath);
+    bool CloseDocument(const FString& Name);
+    bool ShowDocument(const FString& Name, bool bShow = true);
+    bool IsDocumentLoaded(const FString& Name) const;
+
+    bool SetDocumentPosition(const FString& Name, float X, float Y);
+    bool SetDocumentSize(const FString& Name, float Width, float Height);
+    bool SetDocumentScale(const FString& Name, float Scale);
+    bool SetDocumentZOrder(const FString& Name, int32 ZOrder);
+    bool SetDocumentLayout(const FString& Name, float X, float Y, float Width, float Height, float Scale, int32 ZOrder);
+
+    bool SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text);
+    bool SetElementClass(const FString& DocumentName, const FString& ElementId, const FString& ClassName, bool bEnabled);
+    bool SetElementProperty(const FString& DocumentName, const FString& ElementId, const FString& PropertyName, const FString& Value);
+    bool SetElementTexture(const FString& DocumentName, const FString& ElementId, const FString& TexturePath);
+
 private:
     void LoadDefaultDocument();
+    Rml::ElementDocument* FindDocument(const FString& Name) const;
+    Rml::Element* FindElement(const FString& DocumentName, const FString& ElementId) const;
+    Rml::String ResolveDocumentPath(const FString& DocumentPath) const;
     int GetKeyModifierState() const;
     Rml::Input::KeyIdentifier TranslateKey(WPARAM VirtualKey, LPARAM KeyData) const;
 
 private:
     FRmlUiSystemInterface SystemInterface;
+    FRmlUiFileInterface FileInterface;
     FRmlUiNullFontEngine FontEngine;
     FRmlUiD3D11RenderInterface RenderInterface;
     Rml::Context* Context = nullptr;
+    std::unordered_map<std::string, Rml::ElementDocument*> Documents;
+    float ViewportOffsetX = 0.0f;
+    float ViewportOffsetY = 0.0f;
     bool bInitialized = false;
 };

@@ -12,6 +12,7 @@
 #include "LuaScript/LuaComponentProxy.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaInputProxy.h"
+#include "LuaScript/LuaUiProxy.h"
 #include "Math/Vector.h"
 
 namespace
@@ -244,6 +245,7 @@ void FLuaRuntime::BindEngineTypes()
 
     // Coroutine 관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
+    LuaUiProxy::Bind(*Lua);
 
 	Lua->new_usertype<FLuaComponentProxy>("Component", sol::no_constructor,
 		"UUID", sol::property(&FLuaComponentProxy::GetUUID),

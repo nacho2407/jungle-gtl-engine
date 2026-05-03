@@ -13,6 +13,7 @@
 
 class FWindowsWindow;
 class FTimer;
+class FViewport;
 class UCameraComponent;
 class UGameViewportClient;
 class FRmlUiManager;
@@ -59,6 +60,7 @@ public:
 
     FRenderer& GetRenderer() { return Renderer; }
     const FRenderer& GetRenderer() const { return Renderer; }
+    FRmlUiManager* GetRmlUiManager() const { return RmlUiManager.get(); }
 
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
@@ -67,6 +69,7 @@ protected:
     virtual void Render(float DeltaTime);
     virtual void OnRenderSceneCleared() {}
     void RenderRmlUi();
+    void RenderRmlUiToViewport(FViewport* Viewport, float InputOffsetX = 0.0f, float InputOffsetY = 0.0f);
     void WorldTick(float DeltaTime);
 
 protected:

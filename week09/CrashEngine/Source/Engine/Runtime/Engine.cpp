@@ -231,10 +231,59 @@ bool UEngine::HandleWindowMessage(void* WindowHandle, unsigned int Message, std:
 
 void UEngine::RenderRmlUi()
 {
-    if (RmlUiManager)
+    if (!RmlUiManager)
     {
-        RmlUiManager->Render();
+        return;
     }
+
+    FD3DDevice& D3DDevice = Renderer.GetFD3DDevice();
+    ID3D11DeviceContext* DeviceContext = D3DDevice.GetDeviceContext();
+    ID3D11RenderTargetView* FrameBufferRTV = D3DDevice.GetFrameBufferRTV();
+    if (!DeviceContext || !FrameBufferRTV)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* NullSRVs[16] = {};
+    DeviceContext->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+    DeviceContext->VSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+    const D3D11_VIEWPORT& Viewport = D3DDevice.GetViewport();
+    DeviceContext->RSSetViewports(1, &Viewport);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+
+    RmlUiManager->SetViewportOffset(0.0f, 0.0f);
+    RmlUiManager->OnWindowResized(static_cast<uint32>(Viewport.Width), static_cast<uint32>(Viewport.Height));
+    RmlUiManager->Update();
+    RmlUiManager->Render();
+}
+
+void UEngine::RenderRmlUiToViewport(FViewport* Viewport, float InputOffsetX, float InputOffsetY)
+{
+    if (!RmlUiManager || !Viewport)
+    {
+        return;
+    }
+
+    ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
+    ID3D11RenderTargetView* RenderTarget = Viewport->GetRTV();
+    if (!DeviceContext || !RenderTarget || Viewport->GetWidth() == 0 || Viewport->GetHeight() == 0)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* NullSRVs[16] = {};
+    DeviceContext->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+    DeviceContext->VSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+    const D3D11_VIEWPORT& ViewportRect = Viewport->GetViewportRect();
+    DeviceContext->RSSetViewports(1, &ViewportRect);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
+
+    RmlUiManager->SetViewportOffset(InputOffsetX, InputOffsetY);
+    RmlUiManager->OnWindowResized(Viewport->GetWidth(), Viewport->GetHeight());
+    RmlUiManager->Update();
+    RmlUiManager->Render();
 }
 
 void UEngine::WorldTick(float DeltaTime)

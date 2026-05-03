@@ -623,7 +623,6 @@ void UEditorEngine::Render(float DeltaTime)
     {
         SCOPE_STAT_CAT("EditorUI", "5_UI");
         RenderUI(DeltaTime);
-        RenderRmlUi();
     }
 
 #if STATS
@@ -769,6 +768,18 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
         SCOPE_STAT_CAT("Renderer.Render", "4_ExecutePass");
         Renderer.BuildDrawCommands(PipelineContext);
         Renderer.RunRootPipeline(ERenderPipelineType::EditorRootPipeline, PipelineContext);
+    }
+
+    FLevelEditorViewportClient* RmlViewport = GetActiveViewport();
+    if (PlayInEditorSessionInfo.has_value() && PlayInEditorSessionInfo->DestinationViewportClient)
+    {
+        RmlViewport = PlayInEditorSessionInfo->DestinationViewportClient;
+    }
+
+    if (VC == RmlViewport)
+    {
+        const FRect& ViewportRect = VC->GetViewportScreenRect();
+        RenderRmlUiToViewport(VP, ViewportRect.X, ViewportRect.Y);
     }
 
     if (GPUOcclusion.IsInitialized())

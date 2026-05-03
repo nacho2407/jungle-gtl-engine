@@ -492,6 +492,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\Input\ViewportInputRouter.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaRuntime.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaUiProxy.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
@@ -738,6 +739,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\LuaScript\LuaIncludes.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaRuntime.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaScriptManager.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaUiProxy.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />

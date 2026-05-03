@@ -6,22 +6,27 @@
 #include "Runtime/WindowsWindow.h"
 
 #include <RmlUi/Core/Context.h>
+#include <RmlUi/Core/Element.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <RmlUi/Core/Input.h>
 
+#include <WICTextureLoader.h>
 #include <Windows.h>
 #include <d3dcompiler.h>
 #include <windowsx.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <string>
 
 namespace
 {
 const char* GVertexShaderSource = R"(
 cbuffer RmlConstants : register(b0)
 {
-    float4x4 Transform;
+    row_major float4x4 Transform;
 };
 
 struct VSInput
@@ -79,6 +84,239 @@ void SafeRelease(T*& Resource)
 Rml::String ToRmlPath(const std::wstring& Path)
 {
     return FPaths::ToUtf8(Path);
+}
+
+std::string FormatFloat(float Value)
+{
+    char Buffer[64];
+    std::snprintf(Buffer, sizeof(Buffer), "%.3f", Value);
+    return Buffer;
+}
+
+std::string FormatPx(float Value)
+{
+    return FormatFloat(Value) + "px";
+}
+
+std::filesystem::path ResolveRmlFilePath(const Rml::String& Path)
+{
+    if (Path.empty())
+    {
+        return {};
+    }
+
+    Rml::String Normalized = Path;
+    std::replace(Normalized.begin(), Normalized.end(), '\\', '/');
+
+    const bool bLooksLikeWindowsAbsolute = Normalized.size() > 1 && Normalized[1] == ':';
+    if (!bLooksLikeWindowsAbsolute && !Normalized.empty() && Normalized[0] == '/')
+    {
+        Normalized.erase(Normalized.begin());
+    }
+
+    std::filesystem::path FilePath = FPaths::ToPath(Normalized);
+    if (!FilePath.is_absolute())
+    {
+        FilePath = std::filesystem::path(FPaths::RootDir()) / FilePath;
+    }
+
+    return FilePath.lexically_normal();
+}
+
+std::filesystem::path ResolveRmlTextureFilePath(const Rml::String& Source)
+{
+    std::filesystem::path TexturePath = ResolveRmlFilePath(Source);
+    if (std::filesystem::exists(TexturePath))
+    {
+        return TexturePath.lexically_normal();
+    }
+
+    Rml::String Normalized = Source;
+    std::replace(Normalized.begin(), Normalized.end(), '\\', '/');
+    while (!Normalized.empty() && Normalized[0] == '/')
+    {
+        Normalized.erase(Normalized.begin());
+    }
+
+    const std::filesystem::path SourcePath = FPaths::ToPath(Normalized);
+    const std::filesystem::path RootCandidate = (std::filesystem::path(FPaths::RootDir()) / SourcePath).lexically_normal();
+    if (std::filesystem::exists(RootCandidate))
+    {
+        return RootCandidate;
+    }
+
+    const std::filesystem::path ContentCandidate = (std::filesystem::path(FPaths::ContentDir()) / SourcePath).lexically_normal();
+    if (std::filesystem::exists(ContentCandidate))
+    {
+        return ContentCandidate;
+    }
+
+    const std::filesystem::path AssetCandidate = (std::filesystem::path(FPaths::AssetDir()) / SourcePath).lexically_normal();
+    if (std::filesystem::exists(AssetCandidate))
+    {
+        return AssetCandidate;
+    }
+
+    return TexturePath.lexically_normal();
+}
+
+std::string ResolveRmlTextureSource(const FString& DocumentPath, const FString& TexturePath)
+{
+    if (TexturePath.empty())
+    {
+        return {};
+    }
+
+    std::filesystem::path Path = FPaths::ToPath(TexturePath);
+    if (Path.is_absolute())
+    {
+        return FPaths::ToUtf8(Path.lexically_normal().wstring());
+    }
+
+    const std::filesystem::path ContentPath = (std::filesystem::path(FPaths::ContentDir()) / Path).lexically_normal();
+    if (std::filesystem::exists(ContentPath))
+    {
+        return "/" + FPaths::MakeRelativeToRoot(ContentPath);
+    }
+
+    const FString AssetRelativePath = FPaths::ResolveAssetPath(DocumentPath, TexturePath);
+    const std::filesystem::path RootRelativePath = FPaths::ToPath(AssetRelativePath);
+    const std::filesystem::path RootPath = (std::filesystem::path(FPaths::RootDir()) / RootRelativePath).lexically_normal();
+    if (std::filesystem::exists(RootPath))
+    {
+        return "/" + FPaths::MakeRelativeToRoot(RootPath);
+    }
+
+    return TexturePath;
+}
+
+std::string CreateRmlTextBitmapSource(const FString& Text)
+{
+    const std::wstring WideText = FPaths::ToWide(Text);
+    if (WideText.empty())
+    {
+        return {};
+    }
+
+    constexpr int FontSize = 32;
+    HDC ScreenDC = GetDC(nullptr);
+    HDC MemoryDC = CreateCompatibleDC(ScreenDC);
+    HFONT Font = CreateFontW(-FontSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Malgun Gothic");
+    HGDIOBJ OldFont = SelectObject(MemoryDC, Font);
+
+    SIZE TextSize = {};
+    GetTextExtentPoint32W(MemoryDC, WideText.c_str(), static_cast<int>(WideText.size()), &TextSize);
+    const int Width = std::max(TextSize.cx + 8, 1L);
+    const int Height = std::max(FontSize + 12, 1);
+
+    BITMAPINFO BitmapInfo = {};
+    BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    BitmapInfo.bmiHeader.biWidth = Width;
+    BitmapInfo.bmiHeader.biHeight = -Height;
+    BitmapInfo.bmiHeader.biPlanes = 1;
+    BitmapInfo.bmiHeader.biBitCount = 32;
+    BitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+    void* Bits = nullptr;
+    HBITMAP Bitmap = CreateDIBSection(MemoryDC, &BitmapInfo, DIB_RGB_COLORS, &Bits, nullptr, 0);
+    if (!Bitmap || !Bits)
+    {
+        SelectObject(MemoryDC, OldFont);
+        DeleteObject(Font);
+        if (Bitmap)
+        {
+            DeleteObject(Bitmap);
+        }
+        DeleteDC(MemoryDC);
+        ReleaseDC(nullptr, ScreenDC);
+        return {};
+    }
+
+    HGDIOBJ OldBitmap = SelectObject(MemoryDC, Bitmap);
+    RECT TextRect = {0, 0, Width, Height};
+    SetBkMode(MemoryDC, TRANSPARENT);
+    SetTextColor(MemoryDC, RGB(255, 255, 255));
+    DrawTextW(MemoryDC, WideText.c_str(), static_cast<int>(WideText.size()), &TextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+
+    std::vector<uint8> Pixels(static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4);
+    const uint8* Source = static_cast<const uint8*>(Bits);
+    for (int Y = 0; Y < Height; ++Y)
+    {
+        for (int X = 0; X < Width; ++X)
+        {
+            const size_t SourceIndex = (static_cast<size_t>(Y) * Width + X) * 4;
+            const uint8 B = Source[SourceIndex + 0];
+            const uint8 G = Source[SourceIndex + 1];
+            const uint8 R = Source[SourceIndex + 2];
+            const uint8 A = std::max(R, std::max(G, B));
+            const int FlippedY = Height - 1 - Y;
+            const size_t TargetIndex = (static_cast<size_t>(FlippedY) * Width + X) * 4;
+            Pixels[TargetIndex + 0] = B;
+            Pixels[TargetIndex + 1] = G;
+            Pixels[TargetIndex + 2] = R;
+            Pixels[TargetIndex + 3] = A;
+        }
+    }
+
+    SelectObject(MemoryDC, OldBitmap);
+    SelectObject(MemoryDC, OldFont);
+    DeleteObject(Bitmap);
+    DeleteObject(Font);
+    DeleteDC(MemoryDC);
+    ReleaseDC(nullptr, ScreenDC);
+
+    const std::filesystem::path OutputDir = std::filesystem::path(FPaths::SavedDir()) / L"RmlUiText";
+    std::filesystem::create_directories(OutputDir);
+
+    const size_t HashValue = std::hash<std::string>{}(Text);
+    const std::filesystem::path OutputPath = OutputDir / (L"text_" + std::to_wstring(static_cast<unsigned long long>(HashValue)) + L".bmp");
+
+#pragma pack(push, 1)
+    struct FBitmapFileHeader
+    {
+        uint16 Type = 0x4D42;
+        uint32 Size = 0;
+        uint16 Reserved1 = 0;
+        uint16 Reserved2 = 0;
+        uint32 OffBits = 0;
+    };
+
+    struct FBitmapInfoHeader
+    {
+        uint32 Size = 40;
+        int32 Width = 0;
+        int32 Height = 0;
+        uint16 Planes = 1;
+        uint16 BitCount = 32;
+        uint32 Compression = BI_RGB;
+        uint32 SizeImage = 0;
+        int32 XPelsPerMeter = 0;
+        int32 YPelsPerMeter = 0;
+        uint32 ClrUsed = 0;
+        uint32 ClrImportant = 0;
+    };
+#pragma pack(pop)
+
+    FBitmapFileHeader FileHeader;
+    FBitmapInfoHeader InfoHeader;
+    InfoHeader.Width = Width;
+    InfoHeader.Height = Height;
+    InfoHeader.SizeImage = static_cast<uint32>(Pixels.size());
+    FileHeader.OffBits = sizeof(FBitmapFileHeader) + sizeof(FBitmapInfoHeader);
+    FileHeader.Size = FileHeader.OffBits + InfoHeader.SizeImage;
+
+    FILE* File = nullptr;
+    if (_wfopen_s(&File, OutputPath.c_str(), L"wb") != 0 || !File)
+    {
+        return {};
+    }
+
+    std::fwrite(&FileHeader, sizeof(FileHeader), 1, File);
+    std::fwrite(&InfoHeader, sizeof(InfoHeader), 1, File);
+    std::fwrite(Pixels.data(), 1, Pixels.size(), File);
+    std::fclose(File);
+
+    return "/" + FPaths::MakeRelativeToRoot(OutputPath);
 }
 
 void BuildOrthographicMatrix(float* Out, uint32 Width, uint32 Height)
@@ -175,20 +413,57 @@ bool FRmlUiSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& M
 
 bool FRmlUiNullFontEngine::LoadFontFace(const Rml::String&, int, bool, Rml::Style::FontWeight)
 {
-    UE_LOG(Engine, Warning, "RmlUi font loading is disabled. Add a real FontEngineInterface or enable FreeType to render text.");
     return false;
 }
 
 bool FRmlUiNullFontEngine::LoadFontFace(const Rml::String&, int, const Rml::String&, Rml::Style::FontStyle, Rml::Style::FontWeight, bool)
 {
-    UE_LOG(Engine, Warning, "RmlUi font loading is disabled. Add a real FontEngineInterface or enable FreeType to render text.");
     return false;
 }
 
 bool FRmlUiNullFontEngine::LoadFontFace(Rml::Span<const Rml::byte>, int, const Rml::String&, Rml::Style::FontStyle, Rml::Style::FontWeight, bool)
 {
-    UE_LOG(Engine, Warning, "RmlUi font loading is disabled. Add a real FontEngineInterface or enable FreeType to render text.");
     return false;
+}
+
+Rml::FileHandle FRmlUiFileInterface::Open(const Rml::String& Path)
+{
+    const std::filesystem::path FilePath = ResolveRmlFilePath(Path);
+    FILE* File = nullptr;
+    if (_wfopen_s(&File, FilePath.c_str(), L"rb") != 0)
+    {
+        File = nullptr;
+    }
+    return reinterpret_cast<Rml::FileHandle>(File);
+}
+
+void FRmlUiFileInterface::Close(Rml::FileHandle File)
+{
+    if (File)
+    {
+        std::fclose(reinterpret_cast<FILE*>(File));
+    }
+}
+
+size_t FRmlUiFileInterface::Read(void* Buffer, size_t Size, Rml::FileHandle File)
+{
+    return File ? std::fread(Buffer, 1, Size, reinterpret_cast<FILE*>(File)) : 0;
+}
+
+bool FRmlUiFileInterface::Seek(Rml::FileHandle File, long Offset, int Origin)
+{
+    return File && _fseeki64(reinterpret_cast<FILE*>(File), Offset, Origin) == 0;
+}
+
+size_t FRmlUiFileInterface::Tell(Rml::FileHandle File)
+{
+    if (!File)
+    {
+        return 0;
+    }
+
+    const __int64 Position = _ftelli64(reinterpret_cast<FILE*>(File));
+    return Position >= 0 ? static_cast<size_t>(Position) : 0;
 }
 
 bool FRmlUiD3D11RenderInterface::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext)
@@ -228,6 +503,7 @@ Rml::CompiledGeometryHandle FRmlUiD3D11RenderInterface::CompileGeometry(Rml::Spa
 {
     if (!Device || Vertices.empty() || Indices.empty())
     {
+        UE_LOG(Engine, Warning, "RmlUi CompileGeometry skipped. device=%p vertices=%zu indices=%zu", Device, Vertices.size(), Indices.size());
         return 0;
     }
 
@@ -294,6 +570,7 @@ void FRmlUiD3D11RenderInterface::RenderGeometry(Rml::CompiledGeometryHandle Geom
     auto GeometryIt = Geometries.find(static_cast<uint64>(GeometryHandle));
     if (GeometryIt == Geometries.end() || !Context)
     {
+        UE_LOG(Engine, Warning, "RmlUi RenderGeometry skipped. geometry=%llu found=%d context=%p", static_cast<uint64>(GeometryHandle), GeometryIt != Geometries.end() ? 1 : 0, Context);
         return;
     }
 
@@ -345,10 +622,50 @@ void FRmlUiD3D11RenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle Geo
     Geometries.erase(It);
 }
 
-Rml::TextureHandle FRmlUiD3D11RenderInterface::LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String&)
+Rml::TextureHandle FRmlUiD3D11RenderInterface::LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String& Source)
 {
     TextureDimensions = {0, 0};
-    return 0;
+    if (!Device || Source.empty())
+    {
+        UE_LOG(Engine, Warning, "RmlUi LoadTexture skipped. device=%p source=%s", Device, Source.c_str());
+        return 0;
+    }
+
+    std::filesystem::path TexturePath = ResolveRmlTextureFilePath(Source);
+    const bool bExists = std::filesystem::exists(TexturePath);
+    if (!bExists)
+    {
+        UE_LOG(Engine, Warning, "RmlUi texture not found: %s", Source.c_str());
+        return 0;
+    }
+
+    ID3D11Resource* Resource = nullptr;
+    FTexture StoredTexture = {};
+    const HRESULT Result = DirectX::CreateWICTextureFromFile(Device, TexturePath.c_str(), &Resource, &StoredTexture.ShaderResourceView);
+    if (FAILED(Result))
+    {
+        UE_LOG(Engine, Warning, "RmlUi failed to load texture: %s hr=0x%08X", FPaths::ToUtf8(TexturePath.wstring()).c_str(), static_cast<unsigned int>(Result));
+        SafeRelease(Resource);
+        SafeRelease(StoredTexture.ShaderResourceView);
+        return 0;
+    }
+
+    ID3D11Texture2D* Texture = nullptr;
+    if (Resource && SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture))))
+    {
+        D3D11_TEXTURE2D_DESC Desc = {};
+        Texture->GetDesc(&Desc);
+        StoredTexture.Width = Desc.Width;
+        StoredTexture.Height = Desc.Height;
+        TextureDimensions = {static_cast<int>(Desc.Width), static_cast<int>(Desc.Height)};
+    }
+
+    SafeRelease(Texture);
+    SafeRelease(Resource);
+
+    const uint64 Handle = AllocateHandle();
+    Textures.emplace(Handle, StoredTexture);
+    return static_cast<Rml::TextureHandle>(Handle);
 }
 
 Rml::TextureHandle FRmlUiD3D11RenderInterface::GenerateTexture(Rml::Span<const Rml::byte> Source, Rml::Vector2i SourceDimensions)
@@ -657,11 +974,13 @@ bool FRmlUiManager::Initialize(FWindowsWindow* Window, FRenderer& Renderer)
     RenderInterface.SetViewportSize(Width, Height);
 
     Rml::SetSystemInterface(&SystemInterface);
+    Rml::SetFileInterface(&FileInterface);
     Rml::SetRenderInterface(&RenderInterface);
     Rml::SetFontEngineInterface(&FontEngine);
 
     if (!Rml::Initialise())
     {
+        UE_LOG(Engine, Error, "RmlUi initialization failed.");
         RenderInterface.Shutdown();
         return false;
     }
@@ -669,6 +988,7 @@ bool FRmlUiManager::Initialize(FWindowsWindow* Window, FRenderer& Renderer)
     Context = Rml::CreateContext("Main", Rml::Vector2i(static_cast<int>(Width), static_cast<int>(Height)));
     if (!Context)
     {
+        UE_LOG(Engine, Error, "Failed to create RmlUi context.");
         Rml::Shutdown();
         RenderInterface.Shutdown();
         return false;
@@ -676,7 +996,6 @@ bool FRmlUiManager::Initialize(FWindowsWindow* Window, FRenderer& Renderer)
 
     bInitialized = true;
     LoadDefaultDocument();
-    UE_LOG(Engine, Info, "RmlUi initialized.");
     return true;
 }
 
@@ -687,6 +1006,7 @@ void FRmlUiManager::Shutdown()
         return;
     }
 
+    Documents.clear();
     Context = nullptr;
     Rml::Shutdown();
     RenderInterface.Shutdown();
@@ -723,6 +1043,12 @@ void FRmlUiManager::OnWindowResized(uint32 Width, uint32 Height)
     }
 }
 
+void FRmlUiManager::SetViewportOffset(float X, float Y)
+{
+    ViewportOffsetX = X;
+    ViewportOffsetY = Y;
+}
+
 bool FRmlUiManager::HandleWindowMessage(HWND__* WindowHandle, unsigned int Message, WPARAM WParam, LPARAM LParam)
 {
     if (!Context)
@@ -735,7 +1061,10 @@ bool FRmlUiManager::HandleWindowMessage(HWND__* WindowHandle, unsigned int Messa
     switch (Message)
     {
     case WM_MOUSEMOVE:
-        return Context->ProcessMouseMove(GET_X_LPARAM(LParam), GET_Y_LPARAM(LParam), Modifiers);
+        return Context->ProcessMouseMove(
+            static_cast<int>(GET_X_LPARAM(LParam) - ViewportOffsetX),
+            static_cast<int>(GET_Y_LPARAM(LParam) - ViewportOffsetY),
+            Modifiers);
     case WM_LBUTTONDOWN:
         SetCapture(WindowHandle);
         return Context->ProcessMouseButtonDown(0, Modifiers);
@@ -784,6 +1113,224 @@ void FRmlUiManager::LoadDefaultDocument()
     {
         Document->Show();
     }
+    else
+    {
+        UE_LOG(Engine, Warning, "RmlUi default document was not loaded: %s", FPaths::ToUtf8(DefaultDocumentPath).c_str());
+    }
+}
+
+bool FRmlUiManager::LoadDocument(const FString& Name, const FString& DocumentPath)
+{
+    if (!Context || Name.empty() || DocumentPath.empty())
+    {
+        return false;
+    }
+
+    CloseDocument(Name);
+
+    Rml::ElementDocument* Document = Context->LoadDocument(ResolveDocumentPath(DocumentPath));
+    if (!Document)
+    {
+        UE_LOG(Engine, Error, "RmlUi failed to load document. name=%s path=%s", Name.c_str(), ResolveDocumentPath(DocumentPath).c_str());
+        return false;
+    }
+
+    Documents[Name] = Document;
+    Document->Show();
+    UE_LOG(Engine, Info, "RmlUi loaded document. name=%s path=%s", Name.c_str(), ResolveDocumentPath(DocumentPath).c_str());
+    return true;
+}
+
+bool FRmlUiManager::CloseDocument(const FString& Name)
+{
+    auto It = Documents.find(Name);
+    if (It == Documents.end())
+    {
+        return false;
+    }
+
+    Rml::ElementDocument* Document = It->second;
+    Documents.erase(It);
+    if (Document)
+    {
+        Document->Close();
+    }
+    return true;
+}
+
+bool FRmlUiManager::ShowDocument(const FString& Name, bool bShow)
+{
+    Rml::ElementDocument* Document = FindDocument(Name);
+    if (!Document)
+    {
+        return false;
+    }
+
+    if (bShow)
+    {
+        Document->Show();
+    }
+    else
+    {
+        Document->Hide();
+    }
+    return true;
+}
+
+bool FRmlUiManager::IsDocumentLoaded(const FString& Name) const
+{
+    return FindDocument(Name) != nullptr;
+}
+
+bool FRmlUiManager::SetDocumentPosition(const FString& Name, float X, float Y)
+{
+    Rml::ElementDocument* Document = FindDocument(Name);
+    if (!Document)
+    {
+        return false;
+    }
+
+    Document->SetProperty("position", "absolute");
+    Document->SetProperty("left", FormatPx(X));
+    Document->SetProperty("top", FormatPx(Y));
+    return true;
+}
+
+bool FRmlUiManager::SetDocumentSize(const FString& Name, float Width, float Height)
+{
+    Rml::ElementDocument* Document = FindDocument(Name);
+    if (!Document)
+    {
+        return false;
+    }
+
+    Document->SetProperty("width", FormatPx(Width));
+    Document->SetProperty("height", FormatPx(Height));
+    return true;
+}
+
+bool FRmlUiManager::SetDocumentScale(const FString& Name, float Scale)
+{
+    Rml::ElementDocument* Document = FindDocument(Name);
+    if (!Document)
+    {
+        return false;
+    }
+
+    Document->SetProperty("transform-origin", "0px 0px");
+    Document->SetProperty("transform", "scale(" + FormatFloat(Scale) + ")");
+    return true;
+}
+
+bool FRmlUiManager::SetDocumentZOrder(const FString& Name, int32 ZOrder)
+{
+    Rml::ElementDocument* Document = FindDocument(Name);
+    if (!Document)
+    {
+        return false;
+    }
+
+    Document->SetProperty("z-index", std::to_string(ZOrder));
+    return true;
+}
+
+bool FRmlUiManager::SetDocumentLayout(const FString& Name, float X, float Y, float Width, float Height, float Scale, int32 ZOrder)
+{
+    return SetDocumentPosition(Name, X, Y)
+        && SetDocumentSize(Name, Width, Height)
+        && SetDocumentScale(Name, Scale)
+        && SetDocumentZOrder(Name, ZOrder);
+}
+
+bool FRmlUiManager::SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text)
+{
+    Rml::Element* Element = FindElement(DocumentName, ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->SetInnerRML("");
+    const std::string TextTextureSource = CreateRmlTextBitmapSource(Text);
+    if (TextTextureSource.empty())
+    {
+        return false;
+    }
+
+    Element->SetProperty("width", "360px");
+    Element->SetProperty("height", "48px");
+    Element->SetProperty("decorator", "image(" + TextTextureSource + ")");
+    return true;
+}
+
+bool FRmlUiManager::SetElementClass(const FString& DocumentName, const FString& ElementId, const FString& ClassName, bool bEnabled)
+{
+    Rml::Element* Element = FindElement(DocumentName, ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->SetClass(ClassName, bEnabled);
+    return true;
+}
+
+bool FRmlUiManager::SetElementProperty(const FString& DocumentName, const FString& ElementId, const FString& PropertyName, const FString& Value)
+{
+    Rml::Element* Element = FindElement(DocumentName, ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    const bool bSucceeded = Element->SetProperty(PropertyName, Value);
+    return bSucceeded;
+}
+
+bool FRmlUiManager::SetElementTexture(const FString& DocumentName, const FString& ElementId, const FString& TexturePath)
+{
+    Rml::ElementDocument* Document = FindDocument(DocumentName);
+    if (!Document)
+    {
+        UE_LOG(Engine, Warning, "RmlUi SetElementTexture failed. document=%s element=%s source=%s", DocumentName.c_str(), ElementId.c_str(), TexturePath.c_str());
+        return false;
+    }
+
+    Rml::Element* Element = Document->GetElementById(ElementId);
+    if (!Element)
+    {
+        UE_LOG(Engine, Warning, "RmlUi SetElementTexture failed. document=%s element=%s source=%s", DocumentName.c_str(), ElementId.c_str(), TexturePath.c_str());
+        return false;
+    }
+
+    const std::string Source = ResolveRmlTextureSource(Document->GetSourceURL(), TexturePath);
+    Element->SetAttribute("src", Source);
+    Element->SetProperty("decorator", "image(" + Source + ")");
+    UE_LOG(Engine, Info, "RmlUi SetElementTexture. document=%s element=%s source=%s resolved=%s", DocumentName.c_str(), ElementId.c_str(), TexturePath.c_str(), Source.c_str());
+    return true;
+}
+
+Rml::ElementDocument* FRmlUiManager::FindDocument(const FString& Name) const
+{
+    auto It = Documents.find(Name);
+    return It != Documents.end() ? It->second : nullptr;
+}
+
+Rml::Element* FRmlUiManager::FindElement(const FString& DocumentName, const FString& ElementId) const
+{
+    Rml::ElementDocument* Document = FindDocument(DocumentName);
+    return Document ? Document->GetElementById(ElementId) : nullptr;
+}
+
+Rml::String FRmlUiManager::ResolveDocumentPath(const FString& DocumentPath) const
+{
+    std::filesystem::path Path = FPaths::ToPath(DocumentPath);
+    if (!Path.is_absolute())
+    {
+        Path = std::filesystem::path(FPaths::ContentDir()) / Path;
+    }
+
+    return FPaths::ToUtf8(Path.lexically_normal().wstring());
 }
 
 int FRmlUiManager::GetKeyModifierState() const
