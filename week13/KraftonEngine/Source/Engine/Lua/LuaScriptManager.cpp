@@ -1,4 +1,4 @@
-#include "LuaScriptManager.h"
+﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
@@ -173,6 +173,14 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		return GetLuaInputSnapshot().WasReleased(VK);
 	}));
+	Input.set_function("GetMouseDeltaX", []()
+	{
+		return GetLuaInputSnapshot().MouseDeltaX;
+	});
+	Input.set_function("GetMouseDeltaY", []()
+	{
+		return GetLuaInputSnapshot().MouseDeltaY;
+	});
 
 	// Engine — 게임 일시정지 / 종료.
 	sol::table Engine = Lua.create_named_table("Engine");
@@ -332,7 +340,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 {
 	Lua.new_usertype<UFloatingPawnMovementComponent>("FloatingPawnMovementComponent",
 		"SetMoveInput", &UFloatingPawnMovementComponent::SetMoveInput,
-		"SetRotationInput", &UFloatingPawnMovementComponent::SetRotationInput);
+		"SetLookInput", &UFloatingPawnMovementComponent::SetLookInput);
 
 	Lua.new_usertype<UCameraComponent>("CameraComponent");
 
