@@ -617,94 +617,64 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
     P_World = BladeTransform.GetLocation();
 
     // 메쉬 로컬 공간으로 변환
-    FMatrix MeshMatrix = ProcMeshComp->GetWorldMatrix();
-    FMatrix InvTranspose = MeshMatrix.GetInverse().GetTransposed();
-    FVector N_Local = InvTranspose.TransformVector(N_World).GetSafeNormal();
-    FVector P_Local = MeshMatrix.GetInverse().TransformPosition(P_World);
+    FTransform MeshTransform = ProcMeshComp->GetWorldTransform();
+    FMatrix MeshMatrix = MeshTransform.ToMatrixWithScale();
+
+	FQuat MeshRotation = MeshTransform.GetRotation();
+    FMatrix RotationMatrix = MeshRotation.ToMatrix();    
+
+    // 노멀은 회전만으로 역변환 (회전행렬은 직교행렬이라 전치 = 역행렬)
+    FVector N_Local = RotationMatrix.GetTransposed().TransformVector(N_World).GetSafeNormal();
+
+    // 위치는 풀 트랜스폼으로 역변환
+    FVector P_Local = MeshTransform.InverseTransformPosition(P_World);
 
     FPlane SlicePlane;
     SlicePlane.Normal = N_Local;
     SlicePlane.D = -FVector::DotProduct(N_Local, P_Local);
 
-    // 2. 절단된 메쉬를 담을 임시 컴포넌트 생성
+    // 절단된 메쉬를 담을 임시 컴포넌트 생성
     UProceduralMeshComponent* TempMesh1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
     UProceduralMeshComponent* TempMesh2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
 
     // 슬라이스 실행
     FMeshSlicer::SliceComponent(ProcMeshComp, SlicePlane, TempMesh1, TempMesh2);
 
-	bool bFirstMeshEmpty = (TempMesh1->GetSections().empty() || TempMesh1->GetSections()[0].Vertices.empty());
+    bool bFirstMeshEmpty = (TempMesh1->GetSections().empty() || TempMesh1->GetSections()[0].Vertices.empty());
     bool bSecondMeshEmpty = (TempMesh2->GetSections().empty() || TempMesh2->GetSections()[0].Vertices.empty());
 
     UWorld* World = GetFocusedWorld();
+    float SeparateDistance = 1.0f;
 
-	if (bFirstMeshEmpty && bSecondMeshEmpty)
-	{
-
-	}
-	else if (bFirstMeshEmpty)
-	{
-        ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
-
-        // 슬라이스 결과물 적용
-        Actor->InitDestructibleActor(TempMesh2);
-
-        // 원본의 트랜스폼 복사
-        Actor->SetActorLocation(GetActorLocation());
-        Actor->SetActorRotation(GetActorRotation());
-        Actor->SetActorScale(GetActorScale());
-
-        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
-        float SeparateDistance = 1.0f; // 벌릴 간격
-        Actor->AddActorWorldOffset(N_World * SeparateDistance);
-        Actor->AddActorWorldOffset(N_World * -SeparateDistance);
-	}
-	else if (bSecondMeshEmpty)
-	{
-        ADestructibleActor* Actor = World->SpawnActor<ADestructibleActor>();
-
-        // 슬라이스 결과물 적용
-        Actor->InitDestructibleActor(TempMesh1);
-
-        // 원본의 트랜스폼 복사
-        Actor->SetActorLocation(GetActorLocation());
-        Actor->SetActorRotation(GetActorRotation());
-        Actor->SetActorScale(GetActorScale());
-
-        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
-        float SeparateDistance = 1.0f; // 벌릴 간격
-        Actor->AddActorWorldOffset(N_World * SeparateDistance);
-        Actor->AddActorWorldOffset(N_World * -SeparateDistance);
-	}
-	else
-	{
+    if (bFirstMeshEmpty && bSecondMeshEmpty)
+    {
+        // 둘 다 비어있으면 아무것도 안 함
+    }
+    else if (bFirstMeshEmpty || bSecondMeshEmpty)
+    {
+        // 굳이 새로 만들 필요 없음
+    }
+    else
+    {
         ADestructibleActor* Actor1 = World->SpawnActor<ADestructibleActor>();
         ADestructibleActor* Actor2 = World->SpawnActor<ADestructibleActor>();
-
-        // 슬라이스 결과물 적용
         Actor1->InitDestructibleActor(TempMesh1);
         Actor2->InitDestructibleActor(TempMesh2);
-
-        // 원본의 트랜스폼 복사
         Actor1->SetActorLocation(GetActorLocation());
         Actor1->SetActorRotation(GetActorRotation());
         Actor1->SetActorScale(GetActorScale());
-
         Actor2->SetActorLocation(GetActorLocation());
         Actor2->SetActorRotation(GetActorRotation());
         Actor2->SetActorScale(GetActorScale());
-
-        // 4. 거리 벌리기 (절단면 노멀 N 방향으로)
-        float SeparateDistance = 1.0f; // 벌릴 간격
         Actor1->AddActorWorldOffset(N_World * SeparateDistance);
         Actor2->AddActorWorldOffset(N_World * -SeparateDistance);
-	}
 
-    UObjectManager::Get().DestroyObject(TempMesh1);
-    UObjectManager::Get().DestroyObject(TempMesh2);
+		UObjectManager::Get().DestroyObject(TempMesh1);
+        UObjectManager::Get().DestroyObject(TempMesh2);
 
-    OtherActor->MarkPendingKill(); // 칼날 제거 (연속 절단 방지)
-    this->MarkPendingKill();       // 원본 제거
+        OtherActor->MarkPendingKill();
+        this->MarkPendingKill();
+    }
 }
 
 void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
