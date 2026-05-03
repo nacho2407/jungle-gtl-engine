@@ -123,4 +123,5 @@ void UObject::CopyPropertiesFrom(UObject* Src)
 void UObject::Serialize(FArchive& Ar)
 {
 	Ar << "Type" << GetTypeInfo()->name;
+    Ar << "ObjectName" << ObjectName;
 }
