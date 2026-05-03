@@ -45,6 +45,7 @@ public:
         bool bControl = true;
         bool bProperty = true;
         bool bScene = true;
+        bool bContentBrowser = true;
         bool bStat = false;
     } UI;
 

@@ -188,6 +188,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     ImGui_ImplDX11_Init(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 
     ConsolePanel.Initialize(InEditorEngine, &LogBuffer);
+    ContentBrowserPanel.Initialize(InEditorEngine);
     ControlPanel.Initialize(InEditorEngine);
     DetailsPanel.Initialize(InEditorEngine);
     ScenePanel.Initialize(InEditorEngine);
@@ -269,6 +270,7 @@ void FEditorMainPanel::Render(float DeltaTime)
         {
             FEditorSettings& S = FEditorSettings::Get();
             ImGui::MenuItem("Console", nullptr, &S.UI.bConsole);
+            ImGui::MenuItem("Content Browser", nullptr, &S.UI.bContentBrowser);
             ImGui::MenuItem("Control Panel", nullptr, &S.UI.bControl);
             ImGui::MenuItem("Details", nullptr, &S.UI.bProperty);
             ImGui::MenuItem("Scene Manager", nullptr, &S.UI.bScene);
@@ -362,6 +364,12 @@ void FEditorMainPanel::Render(float DeltaTime)
     {
         SCOPE_STAT_CAT("ConsolePanel.Render", "5_UI");
         ConsolePanel.Render(DeltaTime);
+    }
+
+    if (!bHideEditorWindows && Settings.UI.bContentBrowser)
+    {
+        SCOPE_STAT_CAT("ContentBrowserPanel.Render", "5_UI");
+        ContentBrowserPanel.Render(DeltaTime);
     }
 
     if (!bHideEditorWindows && Settings.UI.bControl)
@@ -473,6 +481,7 @@ void FEditorMainPanel::HideEditorWindowsForPIE()
     bShowPanelList = false;
 
     Settings.UI.bConsole = false;
+    Settings.UI.bContentBrowser = false;
     Settings.UI.bControl = false;
     Settings.UI.bProperty = false;
     Settings.UI.bScene = false;

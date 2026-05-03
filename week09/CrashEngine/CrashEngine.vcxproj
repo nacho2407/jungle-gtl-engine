@@ -229,7 +229,7 @@
       <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -289,7 +289,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\FMOD\lib;$(SolutionDir)\CrashEngine\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)ThirdParty\FMOD\lib\fmod.dll" "$(OutDir)"
@@ -420,6 +420,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsolePanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorContentBrowserPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDetailsPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorShadowAtlasDebugWindow.cpp" />
@@ -648,6 +649,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsolePanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorContentBrowserPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorDetailsPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
