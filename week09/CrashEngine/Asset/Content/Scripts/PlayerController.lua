@@ -81,12 +81,6 @@ function OnOverlapBegin(other)
     elseif other:HasTag("Destination") then
         print("Game Finish!");
     end
-
-    print("Lua OnOverlapBegine", other.UUID);
-end
-
-function OnOverlapEnd(other)
-   
 end
 
 function BeginPlay()
