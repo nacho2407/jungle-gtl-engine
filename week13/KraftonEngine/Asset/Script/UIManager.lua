@@ -86,6 +86,7 @@ function UIManager.Init()
     end)
 
     local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
+    carWashQuestWidget:SetWantsMouse(true)
     carWashQuestWidget:bind_click("car-wash-quest-ok-button", function()
         UIManager.Hide("carWashQuest")
 
@@ -95,6 +96,7 @@ function UIManager.Init()
     end)
 
     local gasQuestWidget = UI.CreateWidget("Asset/UI/GasQuestWidget.rml")
+    gasQuestWidget:SetWantsMouse(true)
     gasQuestWidget:bind_click("gas-quest-ok-button", function()
         UIManager.Hide("gasQuest")
 
@@ -104,6 +106,7 @@ function UIManager.Init()
     end)
 
     local personQuestWidget = UI.CreateWidget("Asset/UI/PersonQuestWidget.rml")
+    personQuestWidget:SetWantsMouse(true)
     personQuestWidget:bind_click("person-quest-ok-button", function()
         UIManager.Hide("personQuest")
 
