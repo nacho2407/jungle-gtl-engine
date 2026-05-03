@@ -6,6 +6,7 @@
 #include "Editor/Logging/EditorLogBuffer.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/EditorConsolePanel.h"
+#include "Editor/UI/EditorContentBrowserPanel.h"
 #include "Editor/UI/EditorControlPanel.h"
 #include "Editor/UI/EditorDetailsPanel.h"
 #include "Editor/UI/EditorSceneManagerPanel.h"
@@ -36,6 +37,7 @@ private:
     UEditorEngine* EditorEngine = nullptr;
     FEditorLogBuffer LogBuffer;
     FEditorConsolePanel ConsolePanel;
+    FEditorContentBrowserPanel ContentBrowserPanel;
     FEditorControlPanel ControlPanel;
     FEditorDetailsPanel DetailsPanel;
     FEditorScenePanel ScenePanel;
