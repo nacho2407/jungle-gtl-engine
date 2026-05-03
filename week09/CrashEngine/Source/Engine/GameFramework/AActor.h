@@ -100,6 +100,8 @@ public:
 
     // Direction
     FVector GetActorForward() const;
+    FVector GetActorRightVector() const;
+    FVector GetActorUpVector() const;
 
     UWorld* GetWorld() const;
     ULevel* GetLevel() const;

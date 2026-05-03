@@ -24,6 +24,10 @@ public:
     FVector GetLocation() const;
     void SetLocation(const FVector& InLocation);
 
+    FVector GetForwardVector() const;
+    FVector GetRightVector() const;
+    FVector GetUpVector() const;
+
     void AddWorldOffset(const FVector& Delta);
 
     void ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator);

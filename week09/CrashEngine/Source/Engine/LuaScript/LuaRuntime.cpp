@@ -189,6 +189,9 @@ void FLuaRuntime::BindEngineTypes()
 		"Location", sol::property(&FLuaGameObjectProxy::GetLocation, &FLuaGameObjectProxy::SetLocation),
 		"Velocity", &FLuaGameObjectProxy::Velocity,
 		"IsValid", &FLuaGameObjectProxy::IsValid,
+        "GetForwardVector", &FLuaGameObjectProxy::GetForwardVector,
+        "GetRightVector", &FLuaGameObjectProxy::GetRightVector,
+        "GetUpVector", &FLuaGameObjectProxy::GetUpVector,
 		"AddWorldOffset", &FLuaGameObjectProxy::AddWorldOffset,
 		"ApplyDamage", &FLuaGameObjectProxy::ApplyDamage,
 		"HasTag", &FLuaGameObjectProxy::HasTag,
@@ -246,6 +249,10 @@ void FLuaRuntime::BindEngineTypes()
 		"UUID", sol::property(&FLuaComponentProxy::GetUUID),
 		"IsValid", &FLuaComponentProxy::IsValid,
 		"GetClassName", &FLuaComponentProxy::GetComponentClassName,
+
+        "GetForwardVector", &FLuaComponentProxy::GetForwardVector,
+        "GetRightVector", &FLuaComponentProxy::GetRightVector,
+        "GetUpVector", &FLuaComponentProxy::GetUpVector,
 
 		"GetRelativeLocation", &FLuaComponentProxy::GetRelativeLocation,
 		"SetRelativeLocation", &FLuaComponentProxy::SetRelativeLocation,

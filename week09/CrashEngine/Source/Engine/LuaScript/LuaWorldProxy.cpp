@@ -4,6 +4,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Math/MathUtils.h"
 #include "Object/Object.h"
 
 namespace
@@ -101,6 +102,42 @@ bool FLuaWorldProxy::DestroyActor(const FLuaGameObjectProxy& ActorProxy)
     World->DestroyActor(Actor);
     return true;
 }
+
+FLuaGameObjectProxy FLuaWorldProxy::FindPlayer()
+{
+    UWorld* World = ResolveWorld();
+    if (!World)
+    {
+        return FLuaGameObjectProxy();
+    }
+
+    TArray<AActor*> Actors = World->GetActors();
+    for (AActor* Actor : Actors)
+    {
+        TArray<FName> Tags = Actor->GetTags();
+        for (FName Tag : Tags)
+        {
+            if (Tag==FName("Player"))
+            {
+                return FLuaGameObjectProxy(Actor); 
+            }
+        }
+    }
+    return FLuaGameObjectProxy();
+}
+
+bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees)
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    if (!Camera) return false;
+    Camera->SetWorldLocation(Location);
+    Camera->LookAt(Target);
+    Camera->SetFOV(FovDegrees * DEG_TO_RAD);
+    return true;
+}
+
+
 
 FVector FLuaWorldProxy::GetActiveCameraForward() const
 {
