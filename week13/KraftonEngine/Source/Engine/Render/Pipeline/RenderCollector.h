@@ -4,8 +4,6 @@
 
 class AActor;
 class UWorld;
-class FOverlayStatSystem;
-class UEditorEngine;
 class FScene;
 class FOctree;
 
@@ -21,7 +19,6 @@ class FRenderCollector
 public:
 	void Collect(UWorld* World, const FFrameContext& Frame, FCollectOutput& Output);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);
-	void CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FScene& Scene);
 	void CollectDebugDraw(const FFrameContext& Frame, FScene& Scene);
 	void CollectOctreeDebug(const FOctree* Node, FScene& Scene, uint32 Depth = 0);
 
