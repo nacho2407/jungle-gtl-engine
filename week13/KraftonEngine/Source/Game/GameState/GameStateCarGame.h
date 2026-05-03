@@ -43,6 +43,8 @@ public:
 
 	ECarGamePhase GetPhase() const { return CurrentPhase; }
 	void SetPhase(ECarGamePhase InPhase);  // 디버그/스킵 자유 — forward-only 가드 없음
+	ECarGamePhase GetQuestPhase() const { return CurrentQuestPhase; }
+	void SetQuestPhase(ECarGamePhase InPhase) { CurrentQuestPhase = InPhase; }
 
 	// --- Timers (read by UI / Lua) ---
 	float GetRemainingMatchTime() const { return RemainingMatchTime; }
@@ -66,6 +68,7 @@ public:
 
 private:
 	ECarGamePhase CurrentPhase = ECarGamePhase::None;
+	ECarGamePhase CurrentQuestPhase = ECarGamePhase::None;
 
 	float RemainingMatchTime = 0.0f;   // 매치 전체 카운트다운 (GameMode 가 StartMatch 에서 초기화)
 	float RemainingPhaseTime = 0.0f;   // 활성 페이즈 카운트다운

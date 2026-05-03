@@ -1,4 +1,4 @@
-﻿#include "LuaScriptManager.h"
+#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
@@ -364,6 +364,32 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		UClass* Cls = UClass::FindByName(ClassName.c_str());
 		if (!Cls) return nullptr;
 		return W->SpawnActorByClass(Cls);
+	});
+	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld()) return nullptr;
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (Actor && Actor->GetFName().ToString() == ActorName)
+			{
+				return Actor;
+			}
+		}
+		return nullptr;
+	});
+	World.set_function("FindFirstActorByClass", [](const FString& ClassName) -> AActor*
+	{
+		if (!GEngine || !GEngine->GetWorld()) return nullptr;
+		UClass* Cls = UClass::FindByName(ClassName.c_str());
+		if (!Cls) return nullptr;
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (Actor && Actor->GetClass()->IsA(Cls))
+			{
+				return Actor;
+			}
+		}
+		return nullptr;
 	});
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의

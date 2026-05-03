@@ -12,6 +12,12 @@
 			<div id="score-value" class="hud-main-value">0/4</div>
 		</div>
 
+		<div id="hud-quest-panel">
+			<div class="hud-small-label">QUEST</div>
+			<div id="quest-value" class="hud-quest-value">-</div>
+			<div id="quest-arrow">&#8593;</div>
+		</div>
+
 		<div id="hud-time-panel">
 			<div class="hud-label">TIME</div>
 			<div id="time-value" class="hud-main-value">07:00</div>

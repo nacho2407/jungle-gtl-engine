@@ -35,6 +35,7 @@ void AGameModeCarGame::StartMatch()
 	if (auto* GS = Cast<AGameStateCarGame>(GetGameState()))
 	{
 		GS->SetPhase(ECarGamePhase::None);
+		GS->SetQuestPhase(ECarGamePhase::None);
 		GS->SetRemainingMatchTime(MatchDuration);
 		GS->SetRemainingPhaseTime(0.0f);
 		GS->SetLastEndedPhase(ECarGamePhase::None);
@@ -97,7 +98,7 @@ void AGameModeCarGame::Tick(float DeltaTime)
 		return;
 	}
 
-	if (Phase != ECarGamePhase::None)
+	if (Phase != ECarGamePhase::None && GS->GetRemainingPhaseTime() > 0.0f)
 	{
 		float t = GS->GetRemainingPhaseTime() - DeltaTime;
 		if (t <= 0.0f)
@@ -122,10 +123,10 @@ void AGameModeCarGame::OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger
 	if (!GS || !Trigger) return;
 
 	// Phase != None 인 동안엔 다른 트리거 무시 (사용자 결정 — 페이즈 동시 진행 X).
-	if (GS->GetPhase() != ECarGamePhase::None) return;
-
 	const ECarGamePhase Target = TagToPhase(Trigger->GetTriggerTag());
 	if (Target == ECarGamePhase::None) return;
+	if (GS->GetQuestPhase() != Target) return;
+	if (GS->GetPhase() != ECarGamePhase::None) return;
 
 	BeginPhase(Target, Pawn);
 }
