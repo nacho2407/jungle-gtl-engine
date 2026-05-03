@@ -1,6 +1,5 @@
 local ObjRegistry = require("ObjRegistry")
 local movement = nil
-local manCamera = nil
 
 function BeginPlay()
     movement = obj:GetFloatingPawnMovement()
@@ -23,7 +22,7 @@ function Tick(dt)
     if gs == nil then return false end
 
     if gs:GetPhase() ~= ECarGamePhase.CarWash and gs:GetPhase() ~= ECarGamePhase.CarGas then
-        movement:SetMoveInput(0)
+        movement:SetMoveInput(0, 0)
         movement:SetLookInput(0, 0)
         return
     end
