@@ -920,6 +920,9 @@
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\EngineInitHooks.cpp">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
@@ -1686,6 +1689,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\Engine.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\EngineInitHooks.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h">
