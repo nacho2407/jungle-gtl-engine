@@ -64,6 +64,10 @@ local function updateVelocity()
     obj.Velocity = getCameraMoveDirection() * moveSpeed
 end
 
+function OnOverlapEnd(other)
+    print("Lua OnOverlapEnd", other.UUID);
+end
+
 function OnOverlapBegin(other)
     print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Document") then
@@ -77,6 +81,8 @@ function OnOverlapBegin(other)
     elseif other:HasTag("Destination") then
         print("Game Finish!");
     end
+
+    print("Lua OnOverlapBegine", other.UUID);
 end
 
 function OnOverlapEnd(other)
