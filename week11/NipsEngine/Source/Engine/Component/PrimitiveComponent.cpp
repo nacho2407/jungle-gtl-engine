@@ -129,7 +129,7 @@ void UPrimitiveComponent::ResolveOverlaps()
             FHitResult HitResult;
             HitResult.bHit = true;
             HitResult.Location = It.second.HitPoint;
-            HitResult.Normal = It.second.HitNormal;
+            HitResult.Normal = It.second.HitNormal.GetSafeNormal();
             OnComponentBeginOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
         }
     }
@@ -141,7 +141,7 @@ void UPrimitiveComponent::ResolveOverlaps()
             FHitResult HitResult;
             HitResult.bHit = true;
             HitResult.Location = It.second.HitPoint;
-            HitResult.Normal = It.second.HitNormal;
+            HitResult.Normal = It.second.HitNormal.GetSafeNormal();
             OnComponentEndOverlap.Broadcast(this, It.first->GetOwner(), It.first, 0, false, HitResult);
         }
     }

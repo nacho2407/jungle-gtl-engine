@@ -606,21 +606,21 @@ void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    // 이미 처리 중이거나 칼날이 아니면 리턴
-    if (OtherActor->IsPendingKill() || !OtherActor->IsA<ABladeSlash>())
+    if (!OtherActor->IsA<ABladeSlash>())
         return;
 
-	const FTransform& BladeTransform = OtherComp->GetWorldTransform();
-    FVector N_World = BladeTransform.GetUnitAxis(EAxis::Z);
-    N_World.Normalize();
+    const FTransform& BladeTransform = OtherComp->GetWorldTransform();
+    FVector N_World;
+    FVector P_World;
 
-    FVector P_World = OtherComp->GetWorldTransform().GetLocation(); // 칼날 중심점
+    N_World = BladeTransform.GetUnitAxis(EAxis::Y).GetSafeNormal();
+    P_World = BladeTransform.GetLocation();
 
     // 메쉬 로컬 공간으로 변환
-    FMatrix MeshInvMatrix = ProcMeshComp->GetWorldMatrix().GetInverse();
-
-    FVector N_Local = MeshInvMatrix.TransformVector(N_World).GetSafeNormal();
-    FVector P_Local = MeshInvMatrix.TransformPosition(P_World);
+    FMatrix MeshMatrix = ProcMeshComp->GetWorldMatrix();
+    FMatrix InvTranspose = MeshMatrix.GetInverse().GetTransposed();
+    FVector N_Local = InvTranspose.TransformVector(N_World).GetSafeNormal();
+    FVector P_Local = MeshMatrix.GetInverse().TransformPosition(P_World);
 
     FPlane SlicePlane;
     SlicePlane.Normal = N_Local;
