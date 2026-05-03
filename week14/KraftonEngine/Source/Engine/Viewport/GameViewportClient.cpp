@@ -25,21 +25,13 @@ void UGameViewportClient::EndGameSession()
 
 void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, float /*DeltaTime*/)
 {
-	// 비활성 — snapshot 비우고 raw mouse / 커서 캡처 해제. Lua 등 폴링 측은 빈 입력 봄.
-	if (!bInputPossessed)
-	{
-		ClearGameInputSnapshot();
-		InputSystem::Get().SetUseRawMouse(false);
-		SetCursorCaptured(false);
-		ResetInputState();
-		return;
-	}
-
-	// 활성 — snapshot 저장은 항상 (비포커스여도 마지막 상태 유지).
+	// snapshot 저장은 호출이 들어온 매 프레임 항상 — possess off 인 동안에도 마지막 폴링값을
+	// 보관해 둔다 (구 standalone ProcessInput 동작). possess 토글 시점의 "snapshot clear"
+	// 는 SetInputPossessed 가 책임 (ProcessInput 호출이 끊겨도 즉시 비워짐).
 	SetGameInputSnapshot(Snapshot);
 
-	// 윈도우 비포커스: raw mouse / 커서 캡처 해제하고 입력 누적 리셋. snapshot 자체는 유지.
-	if (!Snapshot.bWindowFocused)
+	// 비활성 / 비포커스 — raw mouse / 커서 캡처 해제하고 입력 누적 리셋.
+	if (!bInputPossessed || !Snapshot.bWindowFocused)
 	{
 		InputSystem::Get().SetUseRawMouse(false);
 		SetCursorCaptured(false);
@@ -62,6 +54,13 @@ void UGameViewportClient::SetInputPossessed(bool bPossessed)
 	bInputPossessed = bPossessed;
 	SetCursorCaptured(bPossessed);
 	ResetInputState();
+
+	// possess off 로 전환되는 순간 GameInputSnapshot 도 비워서 Lua 폴링이 즉시 빈 입력을 본다.
+	// (ProcessInput 호출이 멈춘 뒤에도 이전 값이 남아있는 케이스 방지.)
+	if (!bPossessed)
+	{
+		ClearGameInputSnapshot();
+	}
 }
 
 void UGameViewportClient::SetCursorClipRect(const FRect& InViewportScreenRect)

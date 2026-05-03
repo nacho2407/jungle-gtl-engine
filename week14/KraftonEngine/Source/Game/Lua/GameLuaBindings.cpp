@@ -3,6 +3,8 @@
 #include "sol/sol.hpp"
 
 #include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/EngineInitHooks.h"
+#include "Lua/LuaScriptManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
@@ -124,4 +126,24 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		UWorld* W = GEngine->GetWorld();
 		return W ? Cast<AGameStateCarGame>(W->GetGameState()) : nullptr;
 	};
+}
+
+// ============================================================
+// 자기-등록 — Editor / Game 측이 RegisterGameLuaBindings 함수명을 모르고도
+// FEngineInitHooks::RunAll() 한 번이면 호출되도록 static initializer 로 등록.
+// 호출 시점은 RunAll() — 그때면 FLuaScriptManager 가 이미 init 끝낸 상태.
+// ============================================================
+namespace
+{
+	void RunRegisterGameLuaBindings()
+	{
+		RegisterGameLuaBindings(FLuaScriptManager::GetState());
+	}
+
+	struct GameLuaBindingsAutoReg
+	{
+		GameLuaBindingsAutoReg() { FEngineInitHooks::Register(&RunRegisterGameLuaBindings); }
+	};
+
+	static GameLuaBindingsAutoReg gAutoReg;
 }
