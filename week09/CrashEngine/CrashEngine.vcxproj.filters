@@ -476,6 +476,9 @@
     <ClCompile Include="Source\Editor\UI\EditorConsolePanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorContentBrowserPanel.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -1119,6 +1122,9 @@
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorConsolePanel.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorContentBrowserPanel.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorControlPanel.h">

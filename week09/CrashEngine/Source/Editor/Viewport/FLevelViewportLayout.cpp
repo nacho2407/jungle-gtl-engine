@@ -2,6 +2,7 @@
 #include "Editor/Viewport/FLevelViewportLayout.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorContentBrowserPanel.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -12,11 +13,15 @@
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/AActor.h"
 #include <cfloat>
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
@@ -105,6 +110,99 @@ void PushViewportContextPopupStyle()
 void PopViewportContextPopupStyle()
 {
     ImGui::PopStyleVar(3);
+}
+
+FString ToLowerCopy(FString Value)
+{
+    std::transform(Value.begin(), Value.end(), Value.begin(), [](unsigned char Ch)
+    {
+        return static_cast<char>(std::tolower(Ch));
+    });
+    return Value;
+}
+
+bool IsObjContentPayload(const FContentBrowserDragPayload& Payload)
+{
+    if (Payload.Type != EContentBrowserAssetType::Model)
+    {
+        return false;
+    }
+
+    const FString Path = Payload.Path;
+    return ToLowerCopy(FPaths::FromPath(FPaths::ToPath(Path).extension())) == ".obj";
+}
+
+AStaticMeshActor* SpawnStaticMeshActorFromContentPayload(
+    UEditorEngine* Editor,
+    FSelectionManager* SelectionManager,
+    const FContentBrowserDragPayload& Payload)
+{
+    if (!Editor || !IsObjContentPayload(Payload))
+    {
+        return nullptr;
+    }
+
+    UWorld* World = Editor->GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    const FString MeshPath = FPaths::ContentRelativePath(Payload.Path);
+    AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+    if (!Actor)
+    {
+        return nullptr;
+    }
+
+    Actor->InitDefaultComponents(MeshPath);
+    Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+    World->UpdateActorInOctree(Actor);
+    World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
+
+    if (SelectionManager)
+    {
+        SelectionManager->Select(Actor);
+    }
+
+    return Actor;
+}
+
+void RenderContentAssetDropTargetForViewport(
+    UEditorEngine* Editor,
+    FSelectionManager* SelectionManager,
+    FLevelViewportLayout* Layout,
+    int32 SlotIndex,
+    const FRect& Rect)
+{
+    const ImRect DropRect(
+        ImVec2(Rect.X, Rect.Y),
+        ImVec2(Rect.X + Rect.Width, Rect.Y + Rect.Height));
+
+    ImGui::PushID(SlotIndex);
+    if (ImGui::BeginDragDropTargetCustom(DropRect, ImGui::GetID("ViewportContentDropTarget")))
+    {
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ContentBrowserPayloadName))
+        {
+            if (Payload->Data && Payload->DataSize == sizeof(FContentBrowserDragPayload))
+            {
+                const FContentBrowserDragPayload* ContentPayload = static_cast<const FContentBrowserDragPayload*>(Payload->Data);
+                if (SpawnStaticMeshActorFromContentPayload(Editor, SelectionManager, *ContentPayload))
+                {
+                    if (Layout && SlotIndex >= 0)
+                    {
+                        const TArray<FLevelEditorViewportClient*>& Clients = Layout->GetLevelViewportClients();
+                        if (SlotIndex < static_cast<int32>(Clients.size()))
+                        {
+                            Layout->SetActiveViewport(Clients[SlotIndex]);
+                        }
+                    }
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+    ImGui::PopID();
 }
 
 // ─── 아이콘 로드/해제 ────────────────────────────────────────
@@ -712,6 +810,14 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
             if (i < static_cast<int32>(LevelViewportClients.size()))
             {
                 LevelViewportClients[i]->RenderViewportBorder();
+            }
+        }
+
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            if (ViewportWindows[i])
+            {
+                RenderContentAssetDropTargetForViewport(Editor, SelectionManager, this, i, ViewportWindows[i]->GetRect());
             }
         }
 

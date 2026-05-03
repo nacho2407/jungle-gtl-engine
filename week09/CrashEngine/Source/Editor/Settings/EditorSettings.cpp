@@ -59,6 +59,7 @@ constexpr const char* ShowConsole = "ShowConsole";
 constexpr const char* ShowControlPanel = "ShowControlPanel";
 constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
 constexpr const char* ShowSceneManager = "ShowSceneManager";
+constexpr const char* ShowContentBrowser = "ShowContentBrowser";
 constexpr const char* ShowStatProfiler = "ShowStatProfiler";
 
 // Perspective Camera
@@ -147,6 +148,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
     WidgetsObj[Key::ShowControlPanel] = UI.bControl;
     WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
     WidgetsObj[Key::ShowSceneManager] = UI.bScene;
+    WidgetsObj[Key::ShowContentBrowser] = UI.bContentBrowser;
     WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
     Root[Key::UIWidgets] = WidgetsObj;
 
@@ -330,6 +332,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
             UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
         if (W.hasKey(Key::ShowSceneManager))
             UI.bScene = W[Key::ShowSceneManager].ToBool();
+        if (W.hasKey(Key::ShowContentBrowser))
+            UI.bContentBrowser = W[Key::ShowContentBrowser].ToBool();
         if (W.hasKey(Key::ShowStatProfiler))
             UI.bStat = W[Key::ShowStatProfiler].ToBool();
     }
