@@ -3017,7 +3017,7 @@
       }
     }, {
       "ClassName" : "ATriggerVolumeBase",
-      "Name" : "CarWashTrigger",
+      "Name" : "GasStationTrigger",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [143.543884, -98.167198, 9.621486],
@@ -3116,7 +3116,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [141.138245, -82.717323, 5.420357],
+          "Location" : [134.444855, -84.006218, 5.420357],
           "Mass (kg)" : 1.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, 0.000000, 0.000000],
