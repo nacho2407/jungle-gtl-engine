@@ -2,6 +2,7 @@
 #include "Engine/Component/PrimitiveComponent.h"
 #include "Engine/Component/Shape/ShapeComponent.h"
 #include "Engine/Collision/CollisionSystem.h"
+#include "Engine/GameFramework/AActor.h"
 #include "Engine/Render/Scene/Scene.h"
 #include "Core/Logging/LogMacros.h"
 #include <algorithm>
@@ -176,11 +177,7 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
 
 void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
 {
-    if (bNeedsBVHRebuild)
-    {
-        BuildBVH();
-        bNeedsBVHRebuild = false; // 갱신 완료! 깃발 내림
-    }
+    EnsureBVHBuilt();
 
     // 1. 디버그 드로우용 색상 배열 (기본값: 모두 초록색)
     std::vector<FColor> DebugColors(RegisteredComponents.size(), FColor(0, 255, 0));
@@ -409,6 +406,46 @@ void FCollisionManager::QueryBVH(const FBoundingBox& QueryBounds, TArray<UPrimit
     }
 }
 
+bool FCollisionManager::IsActorOverlappingBlockingTag(AActor* Actor, const FString& BlockingTag)
+{
+    EnsureBVHBuilt();
+    return IsActorOverlappingBlockingTagInternal(Actor, BlockingTag);
+}
+
+bool FCollisionManager::MoveActorWithBlock(AActor* Actor, const FVector& Delta, const FString& BlockingTag, float StepLength)
+{
+    if (!Actor)
+    {
+        return false;
+    }
+
+    const float Distance = Delta.Length();
+    if (Distance <= 0.0f)
+    {
+        return true;
+    }
+
+    EnsureBVHBuilt();
+
+    const float SafeStepLength = std::max(0.001f, StepLength);
+    const int32 StepCount = std::max(1, static_cast<int32>(std::ceil(Distance / SafeStepLength)));
+    const FVector StepDelta = Delta / static_cast<float>(StepCount);
+
+    for (int32 StepIndex = 0; StepIndex < StepCount; ++StepIndex)
+    {
+        const FVector PreviousLocation = Actor->GetActorLocation();
+        Actor->AddActorWorldOffset(StepDelta);
+
+        if (IsActorOverlappingBlockingTagInternal(Actor, BlockingTag))
+        {
+            Actor->SetActorLocation(PreviousLocation);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
 {
     if (!A || !B)
@@ -436,6 +473,55 @@ bool FCollisionManager::IsRegistered(UPrimitiveComponent* Component) const
 {
     return Component
         && std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component) != RegisteredComponents.end();
+}
+
+bool FCollisionManager::IsActorOverlappingBlockingTagInternal(AActor* Actor, const FString& BlockingTag)
+{
+    if (!Actor)
+    {
+        return false;
+    }
+
+    for (UPrimitiveComponent* SourceComponent : Actor->GetPrimitiveComponents())
+    {
+        if (!IsRegistered(SourceComponent) || !SourceComponent->IsA<UShapeComponent>())
+        {
+            continue;
+        }
+
+        TArray<UPrimitiveComponent*> Candidates;
+        QueryBVH(SourceComponent->GetWorldBoundingBox(), Candidates);
+
+        for (UPrimitiveComponent* Candidate : Candidates)
+        {
+            if (!IsRegistered(Candidate) || Candidate == SourceComponent || !Candidate->IsA<UShapeComponent>())
+            {
+                continue;
+            }
+
+            AActor* OtherActor = Candidate->GetOwner();
+            if (!OtherActor || OtherActor == Actor || !OtherActor->HasTag(BlockingTag))
+            {
+                continue;
+            }
+
+            if (CheckOverlap(SourceComponent, Candidate))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void FCollisionManager::EnsureBVHBuilt()
+{
+    if (bNeedsBVHRebuild)
+    {
+        BuildBVH();
+        bNeedsBVHRebuild = false;
+    }
 }
 
 void FCollisionManager::BroadcastEndOverlapPair(const FOverlapPair& Pair)

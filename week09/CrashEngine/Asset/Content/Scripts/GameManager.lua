@@ -1,4 +1,5 @@
 local isGameOver = false
+local Timer = 0.0
 
 local function getPlayerHP()
     if _G.PlayerState == nil then
@@ -25,6 +26,7 @@ function GameOver()
     print("GAME OVER")
     print("Final HP : ", getPlayerHP())
     print("Final Document Count : ", getDocumentCount())
+    print("Timer : ", Timer)
 end
 
 function BeginPlay()
@@ -52,4 +54,5 @@ function OnOverlap(OtherActor)
 end
 
 function Tick(dt)
+    Timer = Timer + dt
 end

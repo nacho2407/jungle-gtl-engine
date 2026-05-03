@@ -330,9 +330,9 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
     Scene.GetDebugPrimitiveQueue().ClearOneFramePrimitives();
     Scene.GetDebugPrimitiveQueue().Tick(DeltaTime);
 
-	CollisionManager->TickCollision(DeltaTime, &Scene);
-
     TickManager.Tick(this, DeltaTime, TickType);
+
+	CollisionManager->TickCollision(DeltaTime, &Scene);
 }
 
 void UWorld::EndPlay()

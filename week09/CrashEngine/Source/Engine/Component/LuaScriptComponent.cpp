@@ -246,6 +246,8 @@ bool ULuaScriptComponent::LoadScript()
         { return WorldProxy.FindPlayer(); });
     WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
+    WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)
+        { return ActorProxy ? WorldProxy.MoveActorWithBlock(*ActorProxy, Delta, BlockingTag) : false; });
 
     Env["World"] = WorldTable;
 

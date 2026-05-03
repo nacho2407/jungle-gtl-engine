@@ -7,6 +7,7 @@ class UPrimitiveComponent;
 class FScenePrimitiveBVH;
 class UShapeComponent;
 class FScene;
+class AActor;
 
 using FCollisionBVH = TBVH<UPrimitiveComponent*, 8, 16>;
 
@@ -40,6 +41,8 @@ public:
     }
 
     void QueryBVH(const FBoundingBox& QueryBounds, TArray<UPrimitiveComponent*>& OutCandidates) const;
+    bool IsActorOverlappingBlockingTag(AActor* Actor, const FString& BlockingTag);
+    bool MoveActorWithBlock(AActor* Actor, const FVector& Delta, const FString& BlockingTag, float StepLength = 0.05f);
 
 private:
     // BVH 루트 노드
@@ -65,6 +68,8 @@ private:
 
     bool CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B);
     bool IsRegistered(UPrimitiveComponent* Component) const;
+    bool IsActorOverlappingBlockingTagInternal(AActor* Actor, const FString& BlockingTag);
+    void EnsureBVHBuilt();
     void BroadcastEndOverlapPair(const FOverlapPair& Pair);
 
     bool bNeedsBVHRebuild = true;
