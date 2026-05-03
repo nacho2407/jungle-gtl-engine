@@ -7,6 +7,7 @@
         "Location" : [0.035111, 0.000000, 5.313506],
         "Rotation" : [89.903084, -0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -90,6 +91,7 @@
         "Location" : [-113.357124, 120.826729, 7.370364],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -128,6 +130,7 @@
         "Location" : [27.957397, 14.251518, -3.400000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [227.897263, 298.354919, 5.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -168,6 +171,7 @@
         "Location" : [0.000000, 0.000000, 1.725000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -236,6 +240,7 @@
         "Location" : [180.478745, -220.369781, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -277,6 +282,7 @@
         "Location" : [180.578751, -66.697098, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -318,6 +324,7 @@
         "Location" : [180.678757, 89.016449, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -359,6 +366,7 @@
         "Location" : [180.778763, 244.979401, 1.200000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -400,6 +408,7 @@
         "Location" : [22.951492, 245.079407, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -441,6 +450,7 @@
         "Location" : [22.951477, 89.216446, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -482,6 +492,7 @@
         "Location" : [22.951477, -66.397095, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -523,6 +534,7 @@
         "Location" : [22.951462, -219.969788, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -564,6 +576,7 @@
         "Location" : [-136.509766, 245.179413, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -605,6 +618,7 @@
         "Location" : [-136.409790, 89.416443, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -646,6 +660,7 @@
         "Location" : [-136.309784, -66.097092, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -687,6 +702,7 @@
         "Location" : [-136.209808, -219.569794, 1.100000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [80.000000, 80.000000, 0.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -728,6 +744,7 @@
         "Location" : [50.079662, 20.135460, 0.598732],
         "Rotation" : [0.000000, -9.244751, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -826,6 +843,7 @@
         "Location" : [-76.257545, -60.742134, 0.698732],
         "Rotation" : [-0.000000, 81.377335, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -924,6 +942,7 @@
         "Location" : [152.556854, 185.489990, 0.000000],
         "Rotation" : [0.000000, -10.137451, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -965,6 +984,7 @@
         "Location" : [100.965355, 123.725266, 2.042000],
         "Rotation" : [0.000000, -8.135161, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1006,6 +1026,7 @@
         "Location" : [-189.786255, 2.971306, 0.290382],
         "Rotation" : [-0.000000, 81.365974, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1047,6 +1068,7 @@
         "Location" : [-29.629822, 5.449127, 0.698732],
         "Rotation" : [-0.000000, 81.709381, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1145,6 +1167,7 @@
         "Location" : [107.808846, 35.338837, 89.294319],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1207,6 +1230,7 @@
         "Location" : [-54.609207, 15.458500, 0.798732],
         "Rotation" : [0.000000, -9.308701, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1305,6 +1329,7 @@
         "Location" : [-110.514145, 182.956833, 0.590382],
         "Rotation" : [-0.000000, 3.963836, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1346,6 +1371,7 @@
         "Location" : [-148.768600, 24.322607, 1.098732],
         "Rotation" : [-0.000000, 81.645546, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1444,6 +1470,7 @@
         "Location" : [-32.435738, 142.698746, 1.942000],
         "Rotation" : [0.000000, -8.199039, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1485,6 +1512,7 @@
         "Location" : [29.952431, 204.563477, 0.600000],
         "Rotation" : [0.000000, -10.201352, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1526,6 +1554,7 @@
         "Location" : [98.288528, -180.002777, 2.042000],
         "Rotation" : [0.000000, -101.054420, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1567,6 +1596,7 @@
         "Location" : [-78.705887, -375.854645, 1.942000],
         "Rotation" : [-0.000000, 178.366180, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1608,6 +1638,7 @@
         "Location" : [204.890274, -206.460129, 2.042000],
         "Rotation" : [0.000000, -101.054420, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1649,6 +1680,7 @@
         "Location" : [141.501801, 127.649612, 0.700000],
         "Rotation" : [0.000000, -10.201352, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1690,6 +1722,7 @@
         "Location" : [-60.380363, 68.380981, 0.798732],
         "Rotation" : [-0.000000, 81.709381, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1788,6 +1821,7 @@
         "Location" : [-132.665436, 48.727226, 0.490382],
         "Rotation" : [-0.000000, 81.365974, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1829,6 +1863,7 @@
         "Location" : [148.285507, -1.575706, 2.142000],
         "Rotation" : [0.000000, -101.054420, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1870,6 +1905,7 @@
         "Location" : [-169.083557, 383.617706, 0.700000],
         "Rotation" : [-0.000000, 22.295364, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1911,6 +1947,7 @@
         "Location" : [-106.563385, -138.445251, 15.896111],
         "Rotation" : [0.000000, -10.012433, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1951,6 +1988,7 @@
         "Location" : [-63.125122, -63.150097, 15.996111],
         "Rotation" : [-0.000000, 76.058693, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -1991,6 +2029,7 @@
         "Location" : [-96.558975, -24.579353, 16.096111],
         "Rotation" : [-0.000000, 88.800606, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2031,6 +2070,7 @@
         "Location" : [-55.581631, 38.247536, 16.196112],
         "Rotation" : [-0.000000, 144.952499, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2071,6 +2111,7 @@
         "Location" : [15.648876, -29.218086, 16.296112],
         "Rotation" : [-0.000000, 144.952499, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2111,6 +2152,7 @@
         "Location" : [0.175016, -164.833603, 16.396112],
         "Rotation" : [-0.000000, 144.952499, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2151,6 +2193,7 @@
         "Location" : [-72.581436, -169.578049, 16.496113],
         "Rotation" : [-0.000000, 84.254105, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2191,6 +2234,7 @@
         "Location" : [71.260841, -82.184189, 16.596113],
         "Rotation" : [-0.000000, 73.761261, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2231,6 +2275,7 @@
         "Location" : [71.360840, 16.593370, 16.696114],
         "Rotation" : [-0.000000, 171.694641, 0.000000],
         "Scale" : [15.000000, 9.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2271,6 +2316,7 @@
         "Location" : [28.466717, 23.349985, 16.796114],
         "Rotation" : [-0.000000, 171.694641, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2311,6 +2357,7 @@
         "Location" : [-60.372906, -19.280462, 16.896114],
         "Rotation" : [-0.000000, 171.694641, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2351,6 +2398,7 @@
         "Location" : [-102.536407, -73.865387, 16.996115],
         "Rotation" : [0.000000, -81.358086, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2391,6 +2439,7 @@
         "Location" : [0.945610, -66.839455, 17.096115],
         "Rotation" : [0.000000, -81.358086, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2431,6 +2480,7 @@
         "Location" : [12.979149, -108.201797, 17.196115],
         "Rotation" : [0.000000, -6.303161, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2471,6 +2521,7 @@
         "Location" : [57.824001, -42.002888, 17.296116],
         "Rotation" : [0.000000, -6.303161, 0.000000],
         "Scale" : [20.000000, 11.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2511,6 +2562,7 @@
         "Location" : [-88.579887, 77.988007, 17.396116],
         "Rotation" : [-0.000000, 21.683048, 0.000000],
         "Scale" : [15.000000, 8.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2551,6 +2603,7 @@
         "Location" : [-67.507057, -97.426819, 17.496117],
         "Rotation" : [0.000000, -7.029983, 0.000000],
         "Scale" : [15.000000, 8.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2591,6 +2644,7 @@
         "Location" : [55.406666, -114.761887, 17.596117],
         "Rotation" : [0.000000, -7.029983, 0.000000],
         "Scale" : [15.000000, 8.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2631,6 +2685,7 @@
         "Location" : [43.643513, -172.126389, 17.696117],
         "Rotation" : [0.000000, -7.029983, 0.000000],
         "Scale" : [15.000000, 8.000000, 20.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2668,9 +2723,10 @@
       "Name" : "SkyDome",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [387.980988, 0.000000, 4.566345],
+        "Location" : [0.000000, 0.000000, -46.858231],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [300.000000, 300.000000, 200.000000],
+        "Scale" : [15.000000, 15.000000, 15.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2691,11 +2747,11 @@
             "Path" : "Asset/Materials/Auto/M_Sky_Panning_Clouds2.mat"
           },
           "Generate Overlap Events" : false,
-          "Location" : [387.980988, 0.000000, 4.566345],
+          "Location" : [0.000000, 0.000000, -46.858231],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [300.000000, 300.000000, 200.000000],
+          "Scale" : [15.000000, 15.000000, 15.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Sky/Sky.obj",
           "Two Sided Shadow" : false,
@@ -2712,6 +2768,7 @@
         "Location" : [150.440903, -124.145973, 1.505331],
         "Rotation" : [0.000000, -98.215591, 0.000000],
         "Scale" : [1.500000, 1.500000, 1.500000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2804,6 +2861,7 @@
         "Location" : [-395.902466, -47.921600, 130.874191],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2843,7 +2901,7 @@
         "ClassName" : "UHeightFogComponent",
         "Properties" : {
           "Cutoff Distance" : 0.000000,
-          "Fog Density" : 0.001000,
+          "Fog Density" : 0.000000,
           "Height Falloff" : 0.010000,
           "Inscattering Color" : [0.422617, 0.511933, 0.603376, 0.941176],
           "Location" : [-395.902466, -47.921600, 130.874191],
@@ -2863,6 +2921,7 @@
         "Location" : [262.657837, 11.516552, 7.276886],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [10.000000, 350.000000, 200.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2903,6 +2962,7 @@
         "Location" : [25.209410, 321.417877, 34.233711],
         "Rotation" : [-0.000000, 71.926514, 0.000000],
         "Scale" : [10.000000, 300.000000, 200.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2943,6 +3003,7 @@
         "Location" : [-210.151001, 11.616552, 7.376886],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [10.000000, 350.000000, 200.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -2983,6 +3044,7 @@
         "Location" : [25.309410, -294.699707, 34.333710],
         "Rotation" : [-0.000000, 71.926514, 0.000000],
         "Scale" : [10.000000, 300.000000, 200.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3023,6 +3085,7 @@
         "Location" : [143.543884, -98.167198, 9.621486],
         "Rotation" : [0.000000, -10.974365, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "TriggerTag" : "CarGas",
         "Visible" : true
       },
@@ -3076,11 +3139,19 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarWasherPlayer.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "Properties" : {
-        "Location" : [143.721603, -75.909882, 5.420357],
+        "Location" : [143.721603, -59.687435, 5.420357],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3090,7 +3161,7 @@
             "Properties" : {
               "FOV" : 1.047198,
               "Far Z" : 1000.000000,
-              "Location" : [0.000000, 0.000000, 0.000000],
+              "Location" : [0.000000, 0.000000, 1.381446],
               "Near Z" : 0.100000,
               "Ortho Width" : 10.000000,
               "Orthographic" : false,
@@ -3116,7 +3187,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [143.721603, -75.909882, 5.420357],
+          "Location" : [143.721603, -59.687435, 5.420357],
           "Mass (kg)" : 1.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -3194,6 +3265,7 @@
         "Location" : [-77.506592, 101.352142, 3.741713],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3441,6 +3513,7 @@
         "Location" : [15.969803, 145.687912, 48.246155],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [50.000000, 50.000000, 50.000000],
+        "Tags" : "",
         "TriggerTag" : "DodgeMeteor",
         "Visible" : true
       },
@@ -3482,6 +3555,7 @@
         "Location" : [-142.095993, 201.179596, 27.956924],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [40.000000, 40.000000, 40.000000],
+        "Tags" : "",
         "TriggerTag" : "EscapePolice",
         "Visible" : true
       },
@@ -3520,9 +3594,10 @@
       "Name" : "CarWashCenter",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [157.782654, -17.049404, 10.286926],
-        "Rotation" : [0.000000, -7.230791, 0.000000],
-        "Scale" : [20.000000, 20.000000, 10.000000],
+        "Location" : [141.023926, -16.603485, 12.499868],
+        "Rotation" : [-0.000000, 81.994919, 0.000000],
+        "Scale" : [2.000000, 2.000000, 2.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3540,16 +3615,40 @@
             "WorldStatic" : 2
           },
           "Element 0" : {
-            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+            "Path" : "Asset/Materials/Auto/.001.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/.006.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/.004.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/.005.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/.007.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/.008.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/.009.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/.010.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/.011.mat"
           },
           "Generate Overlap Events" : false,
-          "Location" : [157.782654, -17.049404, 10.286926],
+          "Location" : [141.023926, -16.603485, 12.499868],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, -7.230789, 0.000000],
-          "Scale" : [20.000000, 20.000000, 10.000000],
+          "Rotation" : [0.000000, 81.994934, 0.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
           "Simulate Physics" : false,
-          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Static Mesh" : "Data/Map/CarWashCenter/CarWash.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -3562,8 +3661,9 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [160.816833, -18.016075, 1.599991],
-        "Rotation" : [0.000000, -5.563549, 0.000000],
+        "Rotation" : [0.000000, -5.563547, 0.000000],
         "Scale" : [25.000000, 25.000000, 20.000000],
+        "Tags" : "",
         "TriggerTag" : "CarWash",
         "Visible" : true
       },
@@ -3612,6 +3712,7 @@
         "Location" : [104.880875, -128.580109, 3.433834],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3735,7 +3836,7 @@
                 "Path" : "Asset/Materials/Editor/SpotLight.mat"
               },
               "Object Type" : 0,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Simulate Physics" : false,
               "Two Sided Shadow" : false,
@@ -3752,7 +3853,7 @@
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 488",
               "Visible" : true,
@@ -3784,9 +3885,453 @@
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "DirtyCar",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "DirtyCar.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [148.855621, -29.787346, 3.923293],
+        "Rotation" : [-0.000000, 81.735168, 0.000000],
+        "Scale" : [2.000000, 2.000000, 2.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Mass (kg)" : 1.000000,
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.000000, 2.029567, 0.000000],
+                  "Mass (kg)" : 1.000000,
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Mass (kg)" : 1.000000,
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.000000, 1.164028, 0.000000],
+                  "Mass (kg)" : 1.000000,
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Mass (kg)" : 1.000000,
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [0.000000, 0.000000, 0.000000],
+                  "Mass (kg)" : 1.000000,
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }, {
+                "Children" : [{
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Properties" : {
+                      "Cast Shadow" : true,
+                      "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                      "Collision Enabled" : 0,
+                      "Collision Responses" : {
+                        "Pawn" : 2,
+                        "Projectile" : 2,
+                        "Trigger" : 2,
+                        "WorldDynamic" : 2,
+                        "WorldStatic" : 2
+                      },
+                      "Generate Overlap Events" : false,
+                      "Height" : 1.000000,
+                      "Location" : [0.000000, 0.000000, 0.000000],
+                      "Mass (kg)" : 1.000000,
+                      "Material" : {
+                        "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                      },
+                      "Object Type" : 0,
+                      "Rotation" : [0.000000, 0.000000, 0.000000],
+                      "Scale" : [1.000000, 1.000000, 1.000000],
+                      "Simulate Physics" : false,
+                      "Two Sided Shadow" : false,
+                      "Visible" : true,
+                      "Width" : 1.000000,
+                      "bEditorOnly" : true,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }],
+                "ClassName" : "UDirtComponent",
+                "Properties" : {
+                  "Cast Shadow" : true,
+                  "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                  "Collision Enabled" : 0,
+                  "Collision Responses" : {
+                    "Pawn" : 2,
+                    "Projectile" : 2,
+                    "Trigger" : 2,
+                    "WorldDynamic" : 2,
+                    "WorldStatic" : 2
+                  },
+                  "Color" : [0.340000, 0.230000, 0.120000, 0.950000],
+                  "FadeInDelay" : 0.000000,
+                  "FadeInDuration" : 0.000000,
+                  "FadeOutDelay" : 0.000000,
+                  "FadeOutDuration" : 0.000000,
+                  "Generate Overlap Events" : false,
+                  "Location" : [-0.000000, -1.127393, 0.000000],
+                  "Mass (kg)" : 1.000000,
+                  "Material" : {
+                    "Path" : "Asset/Materials/Auto/DirtDecal.mat"
+                  },
+                  "Object Type" : 0,
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
+                  "Scale" : [1.000000, 1.000000, 1.000000],
+                  "Simulate Physics" : false,
+                  "Two Sided Shadow" : false,
+                  "Visible" : true,
+                  "bEditorOnly" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UCarDirtComponent",
+            "Properties" : {
+              "Location" : [0.614505, -0.000000, 0.892294],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/MI_Body.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/Decals.001.mat"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Materials/Auto/Material.001.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/Interior.001.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/Trim.001.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_DarkTint.mat"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_White.mat"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Orange.mat"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Materials/Auto/M_Glass_Red.mat"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Materials/Auto/Chassis.mat"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [148.855621, -29.787346, 3.923293],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 81.735168, 0.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/Truck/Truck.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "WaterGun",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CarWasherController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [144.304993, -62.317932, 5.239977],
+        "Rotation" : [-0.000000, 89.999985, 0.000000],
+        "Scale" : [5.000000, 5.000000, 5.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [1.000000, 1.000000, 1.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/top.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-0.421491, 0.000000, 0.133785],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [0.200000, 0.050000, 0.050000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/yellow.mat"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Materials/Auto/green.mat"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Materials/Auto/lambert1.mat"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Materials/Auto/orange.mat"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Materials/Auto/white.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [144.304993, -62.317932, 5.239977],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 90.000000, 0.000000],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/WaterGun/WaterGun.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -3801,9 +4346,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [104.738899, -130.494019, 5.002512],
+    "Location" : [111.669823, -42.451359, 21.357510],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 29.507502, 86.764404]
+    "Rotation" : [-0.000000, 21.107328, -16.734861]
   },
   "Version" : 2,
   "WorldSettings" : {
