@@ -57,6 +57,10 @@ local function OnPhaseChanged(phase)
         print("Run Lua logic for CarWash")
     elseif phase == ECarGamePhase.CarGas then
         UIManager.FadeOut(0.5, function()
+            if ObjRegistry.manObj ~= nil then
+                ObjRegistry.manObj.Location = Vector.new(128, -100, 5)
+            end
+
             if ObjRegistry.car ~= nil then
                 ObjRegistry.car.Location = Vector.new(130, -95, 5)
             end
