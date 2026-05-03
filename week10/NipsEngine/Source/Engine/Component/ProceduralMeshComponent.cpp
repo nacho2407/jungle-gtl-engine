@@ -4,6 +4,9 @@
 #include "Object/ObjectFactory.h"
 #include <algorithm>
 #include "GameFramework/AActor.h"
+#include "Core/ResourceManager.h"
+#include "Core/Paths.h"
+#include <filesystem>
 
 DEFINE_CLASS(UProceduralMeshComponent, UPrimitiveComponent)
 REGISTER_FACTORY(UProceduralMeshComponent)
@@ -138,12 +141,60 @@ void UProceduralMeshComponent::PostDuplicate(UObject* Original)
 	UProceduralMeshComponent* ProcMeshComp = Cast<UProceduralMeshComponent>(Original);
 
 	Sections = ProcMeshComp->Sections;
-	Materials = ProcMeshComp->Materials;
+    Materials = ProcMeshComp->Materials;
 }
 
 void UProceduralMeshComponent::Serialize(FArchive& Ar)
 {
     UPrimitiveComponent::Serialize(Ar);
+
+    TArray<FString> MaterialPaths;
+
+	if (Ar.IsLoading())
+    {
+        Ar << "Materials" << MaterialPaths;
+
+        Materials.resize(MaterialPaths.size());
+        for (size_t i = 0; i < MaterialPaths.size(); ++i)
+        {
+            if (!MaterialPaths[i].empty())
+            {
+                SetMaterial(i, FResourceManager::Get().GetMaterialInterface(MaterialPaths[i]));
+            }
+            else
+            {
+                Materials[i] = nullptr;
+            }
+        }
+    }
+    else if (Ar.IsSaving())
+    {
+        for (auto& Mat : Materials)
+        {
+            if (UMaterialInstance* MatInst = Cast<UMaterialInstance>(Mat))
+            {
+                MaterialPaths.push_back(FPaths::Normalize(MatInst->GetFilePath()));
+            }
+            else if (UMaterial* BaseMat = Cast<UMaterial>(Mat))
+            {
+                const std::filesystem::path FilePath(FPaths::ToWide(BaseMat->GetFilePath()));
+                const bool bFileBackedMaterial = FilePath.extension() == L".mat";
+                MaterialPaths.push_back(bFileBackedMaterial ? FPaths::Normalize(BaseMat->GetFilePath()) : BaseMat->GetName());
+            }
+            else
+            {
+                MaterialPaths.push_back(Mat ? Mat->GetName() : "");
+            }
+        }
+        Ar << "Materials" << MaterialPaths;
+    }
+}
+
+void UProceduralMeshComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UPrimitiveComponent::GetEditableProperties(OutProps);
+
+    OutProps.push_back({ "Materials", EPropertyType::Material, &Materials });
 }
 
 void FMeshSlicer::Slice(const FSliceMeshData& InMesh, const FPlane& Plane, FSliceMeshData& OutFront, FSliceMeshData& OutBack)
