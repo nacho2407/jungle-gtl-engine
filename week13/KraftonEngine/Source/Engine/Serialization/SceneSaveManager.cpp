@@ -53,6 +53,7 @@ namespace SceneKeys
 	static constexpr const char* WorldType = "WorldType";
 	static constexpr const char* ContextName = "ContextName";
 	static constexpr const char* ContextHandle = "ContextHandle";
+	static constexpr const char* GameMode = "GameMode";
 	static constexpr const char* Actors = "Actors";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
@@ -318,6 +319,12 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		? root[SceneKeys::ContextHandle].ToString()
 		: ContextName;
 
+	// Scene 파일이 명시한 GameMode 클래스 이름 — 호출자 (UGameEngine::LoadSceneFromPath 등)
+	// 가 우선 적용 후 ProjectSettings 로 fallback.
+	FString GameModeClassName = root.hasKey(SceneKeys::GameMode)
+		? root[SceneKeys::GameMode].ToString()
+		: FString();
+
 	World->InitWorld();
 
 	// "PerspectiveCamera" 우선, 구버전 "Camera" 키도 지원
@@ -384,6 +391,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	OutWorldContext.World = World;
 	OutWorldContext.ContextName = ContextName;
 	OutWorldContext.ContextHandle = FName(ContextHandle);
+	OutWorldContext.GameModeClassName = GameModeClassName;
 }
 
 USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner)

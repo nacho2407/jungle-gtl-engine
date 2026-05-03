@@ -243,11 +243,6 @@ function BeginPlay()
         gameState:BindPhaseChanged(HandleQuestPhaseChanged)
     end
 
-    UIManager.SetStartGameCallback(function()
-        print("Start Game!")
-        UIManager.Show("gameOverlay")
-        ShowQuest(1)
-    end)
     UIManager.SetCarWashQuestOkCallback(function()
         if currentQuestIndex == 1 and state == QuestState.WaitingAccept then
             StartCurrentQuest()
@@ -264,7 +259,12 @@ function BeginPlay()
         end
     end)
 
-    UIManager.Show("intro")
+    -- Map.Scene 진입은 곧 "게임 시작" — 이전엔 intro start-button 콜백에서 했지만 이제는
+    -- intro 가 별도 scene 이라 클릭이 곧 transition 이고, 여기서 (Map 의 BeginPlay) 가
+    -- 본격 게임 진입 시점.
+    print("Start Game!")
+    UIManager.Show("gameOverlay")
+    ShowQuest(1)
 end
 
 function EndPlay()

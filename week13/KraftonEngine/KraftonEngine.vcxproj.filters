@@ -989,6 +989,9 @@
     <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp">
       <Filter>Source\Game\GameMode</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\GameMode\GameModeIntro.cpp">
+      <Filter>Source\Game\GameMode</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp">
       <Filter>Source\Game\GameState</Filter>
     </ClCompile>
@@ -1773,6 +1776,9 @@
       <Filter>Source\Game\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h">
+      <Filter>Source\Game\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameMode\GameModeIntro.h">
       <Filter>Source\Game\GameMode</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h">
