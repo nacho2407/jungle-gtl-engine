@@ -17,6 +17,8 @@ function Script.new(component, properties)
 
     self.component = component
     self.owner = component:GetOwner()
+    self.time = 0
+    self.PrevLocation =  Vector(0, 0, 0)
 
     -- Editor에서 설정한 Property 값을 self에 복사
     properties = properties or {}
@@ -50,6 +52,8 @@ function Script:Tick(dt)
     if not self.bCanTick then
         return
     end
+    
+    self.time = self.time + dt
 
     local move = Vector(0,0,0)
 
@@ -66,9 +70,28 @@ function Script:Tick(dt)
         move = move + self.owner:GetActorRightVector()
     end
 
+    local CurLoc = self.owner.Location
+
     if move:Size() > 0.001 then
-        self.owner.Location = self.owner.Location + move:Normalized() * 6.0 * dt
+        CurLoc = CurLoc + move:Normalized() * 6.0 * dt
     end
+
+    if not self.PrevLocation then
+        self.PrevLocation = CurLoc
+    end
+
+    local delta = CurLoc - self.PrevLocation
+    local speed = delta:Size() / math.max(dt, 1e-6)
+
+    local amplitude = 0.0001 + speed * 0.0005   -- 크기
+    local freq = 6.0 + speed * 0.1             -- 속도
+
+    local offsetZ = math.cos(self.time * freq) * amplitude
+
+    self.owner.Location = CurLoc + Vector(0, 0, offsetZ)
+
+    self.PrevLocation = CurLoc
+
 
     -- Mouse
     local sensivity = 0.003
@@ -111,6 +134,7 @@ function Script:Tick(dt)
         slash.Location = self.owner.Location + self.owner.Scale / 2 + fwd_pitched * (scale_long / 2)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
     end
+    
 end
 
 function Script:EndPlay()
