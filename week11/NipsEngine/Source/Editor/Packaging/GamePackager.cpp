@@ -1124,6 +1124,27 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
         EmitBuildLog("Copied NipsGame.pdb");
     }
 
+    const std::filesystem::path LuaJitRuntimeDll = EngineRoot / L"ThirdParty" / L"luajit" / L"src" / L"lua51.dll";
+    if (!std::filesystem::exists(LuaJitRuntimeDll, Ec))
+    {
+        OutMessage = "LuaJIT runtime dll not found: ThirdParty/luajit/src/lua51.dll";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+
+    std::filesystem::copy_file(
+        LuaJitRuntimeDll,
+        OutputRoot / L"lua51.dll",
+        std::filesystem::copy_options::overwrite_existing,
+        Ec);
+    if (Ec)
+    {
+        OutMessage = "Failed to copy LuaJIT runtime dll";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+    EmitBuildLog("Copied LuaJIT runtime dll");
+
     const TArray<FString> IncludedScenes = BuildIncludedSceneList(Settings);
     if (!CookAndCopyPackageAssets(Settings, OutputRoot, IncludedScenes, OutMessage)) return false;
     if (!CopyDirectoryIfExists(EngineRoot / L"Shaders", OutputRoot / L"Shaders", OutMessage)) return false;
