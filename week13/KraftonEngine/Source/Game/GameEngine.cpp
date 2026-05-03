@@ -15,6 +15,7 @@
 #include "Object/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Log.h"
+#include "Lua/GameLuaBindings.h"
 
 IMPLEMENT_CLASS(UGameEngine, UEngine)
 

@@ -31,12 +31,21 @@ public:
 	ACarPawn() = default;
 	~ACarPawn() override = default;
 
-	// 코드 spawn 시 호출 — 직렬화 경로에선 PostDuplicate가 캐시 포인터를 다시 잡는다.
+	// 코드 spawn 시 호출 — 직렬화 / Duplicate 경로에선 BeginPlay/PostDuplicate 가 캐시 포인터를 다시 잡는다.
 	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/Truck/TruckBody.obj",
 	                           const FString& LuaScriptFile = "CarController.lua",
 							   const FString& LuaCameraScriptFile = "CameraManager.lua",
 							   const FString& LuaGasScriptFile = "GasController.lua");
+	void BeginPlay() override;
 	void PostDuplicate() override;
+
+private:
+	// PostDuplicate / BeginPlay 양쪽에서 호출되는 캐시 포인터 재바인딩.
+	// PIE 는 PostDuplicate 경로, scene-load 는 BeginPlay 경로 — 둘 다 거쳐야 cached
+	// member (Gas / Movement / Wheels 등) 가 nullptr 가 되지 않는다.
+	void ResolveCachedComponents();
+
+public:
 
 	UBoxComponent* GetCollisionBox() const { return CollisionBox; }
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
