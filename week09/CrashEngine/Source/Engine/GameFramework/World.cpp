@@ -66,7 +66,11 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
     {
         if (!Src)
             continue;
-        Src->Duplicate(NewWorld);
+        AActor* Dup = Cast<AActor>(Src->Duplicate(NewWorld));
+        if (Dup)
+        {
+            Dup->SetFName(Src->GetFName());
+        }
     }
 
     NewWorld->PostDuplicate();

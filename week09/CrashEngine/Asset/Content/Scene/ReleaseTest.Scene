@@ -1,0 +1,189 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "Script File" : "test.lua",
+            "bTickEnable" : true
+          }
+        }],
+      "ObjectName" : "AStaticMeshActor_0",
+      "PrimitiveKey" : "10",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 10",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "ACameraActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "ACameraActor_0",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 13",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCameraComponent",
+            "Properties" : {
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Main Camera" : true,
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [21.746979, 110.413544, 0.000031],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/CameraActorIcon.json"
+              },
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UCameraBoomComponent",
+        "Properties" : {
+          "Auto Find Target" : true,
+          "Location" : [1.833243, -4.925877, 2.096591],
+          "Offset Direction" : [0.323970, -0.870498, 0.370508],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Target Actor" : "AStaticMeshActor_0",
+          "Target Distance" : 5.658687,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_3",
+      "PrimitiveKey" : "40",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 40",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-4.732070, 0.000000, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "ReleaseTest",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [1.666773, -14.612841, 16.719864],
+    "NearClip" : 0.100000,
+    "Rotation" : [-0.000016, 49.119106, 96.731911]
+  },
+  "Primitives" : {
+    "10" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "40" : {
+      "Location" : [-4.732070, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

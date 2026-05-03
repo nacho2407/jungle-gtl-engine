@@ -5,6 +5,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "Core/Logging/LogOutputDevice.h"
+#include "Editor/Settings/ReleaseSettings.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Materials/MaterialManager.h"
@@ -47,7 +48,20 @@ FWorldContext& UGameReleaseEngine::CreateFallbackGameWorld()
 
 FWorldContext& UGameReleaseEngine::LoadStartupWorld()
 {
-    const std::wstring StartupScenePath = FPaths::Combine(FPaths::SceneDir(), L"Default.Scene");
+    FReleaseSettings ReleaseSettings;
+    ReleaseSettings.LoadFromFile(FReleaseSettings::GetDefaultSettingsPath());
+
+    std::filesystem::path StartupScenePath = FPaths::ToPath(ReleaseSettings.StartupScenePath);
+    if (StartupScenePath.empty())
+    {
+        StartupScenePath = std::filesystem::path(FPaths::SceneDir()) / L"Default.Scene";
+    }
+    else if (StartupScenePath.is_relative())
+    {
+        StartupScenePath = std::filesystem::path(FPaths::RootDir()) / StartupScenePath;
+    }
+    StartupScenePath = StartupScenePath.lexically_normal();
+
     if (!std::filesystem::exists(StartupScenePath))
     {
         UE_LOG(Engine, Warning, "Startup scene not found. Falling back to empty game world.");
@@ -56,7 +70,7 @@ FWorldContext& UGameReleaseEngine::LoadStartupWorld()
 
     FWorldContext LoadedContext;
     FPerspectiveCameraData CameraData;
-    FSceneSaveManager::LoadSceneFromJSON(FPaths::ToUtf8(StartupScenePath), LoadedContext, CameraData);
+    FSceneSaveManager::LoadSceneFromJSON(FPaths::FromPath(StartupScenePath), LoadedContext, CameraData);
     if (!LoadedContext.World)
     {
         UE_LOG(Engine, Warning, "Failed to load startup scene. Falling back to empty game world.");
@@ -82,6 +96,7 @@ UCameraComponent* UGameReleaseEngine::FindCameraInWorld(UWorld* World) const
         return nullptr;
     }
 
+    UCameraComponent* FirstCamera = nullptr;
     for (AActor* Actor : World->GetActors())
     {
         if (!Actor)
@@ -93,12 +108,20 @@ UCameraComponent* UGameReleaseEngine::FindCameraInWorld(UWorld* World) const
         {
             if (UCameraComponent* Camera = Cast<UCameraComponent>(Component))
             {
-                return Camera;
+                if (Camera->IsMainCamera())
+                {
+                    return Camera;
+                }
+
+                if (!FirstCamera)
+                {
+                    FirstCamera = Camera;
+                }
             }
         }
     }
 
-    return nullptr;
+    return FirstCamera;
 }
 
 UCameraComponent* UGameReleaseEngine::CreateFallbackCamera(UWorld* World, const FPerspectiveCameraData* CameraData)
@@ -154,6 +177,7 @@ void UGameReleaseEngine::EnsureActiveCamera(UWorld* World, const FPerspectiveCam
     }
 
     UCameraComponent* Camera = FindCameraInWorld(World);
+    //This should be changed to Camera Following the character
     if (!Camera)
     {
         Camera = CreateFallbackCamera(World, CameraData);
@@ -225,6 +249,7 @@ void UGameReleaseEngine::Init(FWindowsWindow* InWindow)
     UGameViewportClient* NewViewportClient = UObjectManager::Get().CreateObject<UGameViewportClient>();
     SetGameViewportClient(NewViewportClient);
 
+    //Init Viewport
     const uint32 ViewportWidth = static_cast<uint32>(InWindow->GetWidth() > 0.0f ? InWindow->GetWidth() : 1920.0f);
     const uint32 ViewportHeight = static_cast<uint32>(InWindow->GetHeight() > 0.0f ? InWindow->GetHeight() : 1080.0f);
     GameViewport.Initialize(Renderer.GetFD3DDevice().GetDevice(), ViewportWidth, ViewportHeight);

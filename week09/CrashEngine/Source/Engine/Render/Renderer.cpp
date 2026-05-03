@@ -269,7 +269,7 @@ void FRenderer::WarmUpViewModeShaders(EViewMode ViewMode, ERenderShadingPath Ren
 
 // ==================== Scene Collection ====================
 
-void FRenderer::BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount)
+void FRenderer::PrepareCollect(const FSceneView& SceneView, uint32 MaxProxyCount)
 {
     (void)SceneView;
 

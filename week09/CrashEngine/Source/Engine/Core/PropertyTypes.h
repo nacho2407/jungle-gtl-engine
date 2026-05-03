@@ -21,6 +21,7 @@ enum class EPropertyType : uint8_t
     StaticMeshRef, // UStaticMesh* 에셋 레퍼런스 (드롭다운 선택)
     MaterialSlot,  // FMaterialSlot — 머티리얼 경로
     ComponentRef,  // 액터 내 SceneComponent 참조 — 계층 경로 문자열 ("Root", "0", "1/0" …)
+    ActorRef,      // 월드 내 Actor 참조 — Actor ObjectName 문자열
     LuaScriptRef,
 };
 

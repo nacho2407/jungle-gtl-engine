@@ -124,6 +124,7 @@ void UEngine::Render(float DeltaTime)
     ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
 
     UWorld* World = GetWorld();
+    //This should be changed to Camera Following the character
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
     FScene* Scene = nullptr;
     if (Camera)
@@ -140,7 +141,7 @@ void UEngine::Render(float DeltaTime)
                 Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
             }
 
-            Viewport->BeginRender(DeviceContext);
+            Viewport->SetViewportAsRenderState(DeviceContext);
             RenderTargets.SetFromViewport(Viewport);
             SceneView.SetViewportInfo(Viewport);
         }
@@ -151,7 +152,7 @@ void UEngine::Render(float DeltaTime)
 
         Scene = &World->GetScene();
 
-        Renderer.BeginCollect(SceneView, Scene->GetPrimitiveProxyCount());
+        Renderer.PrepareCollect(SceneView, Scene->GetPrimitiveProxyCount());
 
         FRenderCollectContext CollectContext = {};
         CollectContext.SceneView = &SceneView;
@@ -167,7 +168,7 @@ void UEngine::Render(float DeltaTime)
     else
     {
         Renderer.ReleaseViewModeSurfaces();
-        Renderer.BeginCollect(SceneView);
+        Renderer.PrepareCollect(SceneView);
     }
 
     {

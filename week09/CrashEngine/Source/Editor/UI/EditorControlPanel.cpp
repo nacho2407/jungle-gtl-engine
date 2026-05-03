@@ -10,6 +10,7 @@
 #include "GameFramework/DecalActor.h"
 #include "GameFramework/FakeLightActor.h"
 #include "GameFramework/FireballActor.h"
+#include "GameFramework/CameraActor.h"
 #include "GameFramework/HeightFogActor.h"
 #include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/AmbientLightActor.h"
@@ -60,6 +61,7 @@ constexpr FSpawnEntry SpawnTable[] = {
     SPAWN_ACTOR("Height Fog", AHeightFogActor, false),
     SPAWN_ACTOR("Fake Light", AFakeLightActor, false),
     SPAWN_ACTOR("Fireball", AFireballActor, false),
+    SPAWN_ACTOR("Camera", ACameraActor, false),
     SPAWN_ACTOR("Ambient Light", AAmbientLightActor, false),
     SPAWN_ACTOR("Directional Light", ADirectionalLightActor, false),
     SPAWN_ACTOR("Point Light", APointLightActor, false),

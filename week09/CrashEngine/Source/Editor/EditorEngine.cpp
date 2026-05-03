@@ -4,6 +4,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
+#include "Component/ActorComponent.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -32,6 +33,44 @@ IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
 namespace
 {
+UCameraComponent* FindPreferredSceneCamera(UWorld* World)
+{
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    UCameraComponent* FirstCamera = nullptr;
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor)
+        {
+            continue;
+        }
+
+        for (UActorComponent* Component : Actor->GetComponents())
+        {
+            UCameraComponent* Camera = Cast<UCameraComponent>(Component);
+            if (!Camera)
+            {
+                continue;
+            }
+
+            if (Camera->IsMainCamera())
+            {
+                return Camera;
+            }
+
+            if (!FirstCamera)
+            {
+                FirstCamera = Camera;
+            }
+        }
+    }
+
+    return FirstCamera;
+}
+
 void PreloadDefaultObjAssets(ID3D11Device* Device)
 {
     if (!Device)
@@ -430,7 +469,11 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 
     OnRenderSceneCleared();
 
-    if (UCameraComponent* VCCamera = PIEViewportClient->GetCamera())
+    if (UCameraComponent* SceneCamera = FindPreferredSceneCamera(PIEWorld))
+    {
+        PIEWorld->SetActiveCamera(SceneCamera);
+    }
+    else if (UCameraComponent* VCCamera = PIEViewportClient->GetCamera())
     {
         PIEWorld->SetActiveCamera(VCCamera);
     }
@@ -615,6 +658,14 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     if (!World)
         return;
 
+    if (VC->GetPlayState() != EEditorViewportPlayState::Stopped)
+    {
+        if (UCameraComponent* ActiveCamera = World->GetActiveCamera())
+        {
+            Camera = ActiveCamera;
+        }
+    }
+
     if (!GPUOcclusion.IsInitialized())
         GPUOcclusion.Initialize(Renderer.GetFD3DDevice().GetDevice());
 
@@ -641,7 +692,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
         Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
     }
 
-    VP->BeginRender(Ctx);
+    VP->SetViewportAsRenderState(Ctx);
 
     RenderTargets.Reset();
     RenderTargets.SetFromViewport(VP);
@@ -668,7 +719,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
         Renderer.ReleaseViewModeSurfaces(VP);
     }
 
-    Renderer.BeginCollect(SceneView, Scene.GetPrimitiveProxyCount());
+    Renderer.PrepareCollect(SceneView, Scene.GetPrimitiveProxyCount());
     auto PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, &Scene);
     PipelineContext.ViewMode.ActiveViewMode = ViewMode;
     PipelineContext.ViewMode.Surfaces = ViewModeSurfaces;
@@ -739,6 +790,11 @@ void UEditorEngine::RegisterViewportInputTargets()
     for (FLevelEditorViewportClient* VC: ViewportLayout.GetLevelViewportClients())
     {
         if (!VC || !VC->GetViewport())
+        {
+            continue;
+        }
+
+        if (VC->GetPlayState() != EEditorViewportPlayState::Stopped)
         {
             continue;
         }

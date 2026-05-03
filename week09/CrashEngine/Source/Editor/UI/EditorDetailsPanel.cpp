@@ -1967,6 +1967,54 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
         }
         break;
     }
+    case EPropertyType::ActorRef:
+    {
+        FString* Val = static_cast<FString*>(Prop.ValuePtr);
+        UWorld* World = SelectedComponent ? SelectedComponent->GetWorld() : nullptr;
+
+        FString Preview = (Val->empty() || *Val == "None") ? "None" : *Val;
+
+        ImGui::Text("%s", DisplayName.c_str());
+        ImGui::SameLine(140);
+        ImGui::SetNextItemWidth(-1.0f);
+
+        if (ImGui::BeginCombo(("##actorref_" + Prop.Name).c_str(), Preview.c_str()))
+        {
+            const bool bSelectedNone = (Val->empty() || *Val == "None");
+            if (ImGui::Selectable("None", bSelectedNone))
+            {
+                *Val = "None";
+                bChanged = true;
+            }
+            if (bSelectedNone)
+                ImGui::SetItemDefaultFocus();
+
+            if (World)
+            {
+                for (AActor* Actor : World->GetActors())
+                {
+                    if (!Actor)
+                    {
+                        continue;
+                    }
+
+                    const FString ActorName = Actor->GetFName().ToString();
+                    const FString Label = ActorName + " - " + Actor->GetClass()->GetName() + "##" + std::to_string(Actor->GetUUID());
+                    const bool bSelected = (*Val == ActorName);
+                    if (ImGui::Selectable(Label.c_str(), bSelected))
+                    {
+                        *Val = ActorName;
+                        bChanged = true;
+                    }
+                    if (bSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        break;
+    }
     case EPropertyType::MaterialSlot:
     {
         FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);

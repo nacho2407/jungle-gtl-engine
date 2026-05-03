@@ -1,9 +1,22 @@
 ﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "Component/CameraComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
 #include <cmath>
 
-IMPLEMENT_ABSTRACT_CLASS(UCameraComponent, USceneComponent)
+IMPLEMENT_COMPONENT_CLASS(UCameraComponent, USceneComponent,EEditorComponentCategory::Basic)
+
+void UCameraComponent::Serialize(FArchive& Ar)
+{
+    USceneComponent::Serialize(Ar);
+    Ar << CameraState.FOV;
+    Ar << CameraState.AspectRatio;
+    Ar << CameraState.NearZ;
+    Ar << CameraState.FarZ;
+    Ar << CameraState.OrthoWidth;
+    Ar << CameraState.bIsOrthogonal;
+    Ar << bMainCamera;
+}
 
 FMatrix UCameraComponent::GetViewMatrix() const
 {
@@ -112,4 +125,5 @@ void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
     OutProps.push_back({ "Far Z", EPropertyType::Float, &CameraState.FarZ, 1.0f, 100000.0f, 10.0f });
     OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
     OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f });
+    OutProps.push_back({ "Main Camera", EPropertyType::Bool, &bMainCamera });
 }

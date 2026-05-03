@@ -62,7 +62,7 @@ bool FViewport::ApplyPendingResize()
     return true;
 }
 
-void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
+void FViewport::SetViewportAsRenderState(ID3D11DeviceContext* Ctx, const float ClearColor[4])
 {
     if (!RTV)
         return;

@@ -5,6 +5,7 @@
 #include "Core/Logging/LogMacros.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Settings/ReleaseSettings.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
@@ -86,6 +87,30 @@ void SaveSceneFromEditor(UEditorEngine* EditorEngine)
     std::filesystem::path ScenePath = FPaths::ToPath(FilePath);
     FSceneSaveManager::SaveSceneAsJSON(FPaths::FromPath(ScenePath.stem()), *Ctx, PerspectiveCam);
     UE_LOG(EditorUI, Info, "Scene saved: %s", FilePath.c_str());
+}
+
+void SaveStartupSceneFromEditor(UEditorEngine* EditorEngine)
+{
+    if (!EditorEngine)
+    {
+        UE_LOG(EditorUI, Warning, "SaveStartupScene requested without editor engine.");
+        return;
+    }
+
+    const std::string FilePath = OpenSceneFileDialog(false);
+    if (FilePath.empty())
+    {
+        UE_LOG(EditorUI, Debug, "SaveStartupScene dialog canceled.");
+        return;
+    }
+
+    const std::filesystem::path ScenePath = FPaths::ToPath(FilePath);
+    FReleaseSettings ReleaseSettings;
+    ReleaseSettings.LoadFromFile(FReleaseSettings::GetDefaultSettingsPath());
+    ReleaseSettings.StartupScenePath = FPaths::MakeRelativeToRoot(ScenePath);
+    ReleaseSettings.SaveToFile(FReleaseSettings::GetDefaultSettingsPath());
+
+    UE_LOG(EditorUI, Info, "Startup scene set: %s", FilePath.c_str());
 }
 
 void LoadSceneFromEditor(UEditorEngine* EditorEngine)
@@ -205,6 +230,10 @@ void FEditorMainPanel::Render(float DeltaTime)
             if (ImGui::MenuItem("Save Scene..."))
             {
                 SaveSceneFromEditor(EditorEngine);
+            }
+            if (ImGui::MenuItem("Set as Start Scene..."))
+            {
+                SaveStartupSceneFromEditor(EditorEngine);
             }
             ImGui::EndMenu();
         }

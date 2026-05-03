@@ -548,6 +548,9 @@
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\CameraBoomComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -621,6 +624,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\CameraActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp">
@@ -1188,6 +1194,9 @@
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\CameraBoomComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\CameraComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -1288,6 +1297,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\CameraActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h">

@@ -2,65 +2,9 @@
   "Actors" : [{
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [{
-          "ClassName" : "UPendulumMovementComponent",
+          "ClassName" : "ULuaScriptComponent",
           "Properties" : {
-            "Amplitude (deg)" : 30.000000,
-            "Angle Offset (deg)" : 0.000000,
-            "Auto Register Updated" : true,
-            "Frequency (Hz)" : 0.500000,
-            "Phase (deg)" : 0.000000,
-            "Swing Axis" : [0.000000, 1.000000, 0.000000],
-            "Updated Component" : "",
-            "bTickEnable" : true
-          }
-        }],
-      "PrimitiveKey" : "12",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 10",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [0.000000, -3.070420, 0.000000],
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [10.329418, 7.413994, 7.082432],
-          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "UProjectileMovementComponent",
-          "Properties" : {
-            "Auto Register Updated" : true,
-            "Initial Speed" : 10.000000,
-            "Max Speed" : 100.000000,
-            "Updated Component" : "",
-            "Velocity" : [0.000000, 0.000000, 0.000000],
+            "Script File" : null,
             "bTickEnable" : true
           }
         }],
@@ -116,7 +60,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 20",
+              "Text" : "UUID : 19",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -171,18 +115,11 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-10.094619, -1.442157, 7.680788],
+    "Location" : [-20.055376, 5.395903, 16.754492],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000000, 42.639748, -0.926514]
+    "Rotation" : [-0.000001, 40.959747, -14.786447]
   },
   "Primitives" : {
-    "12" : {
-      "Location" : [0.000000, -3.070420, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [10.329418, 7.413994, 7.082432],
-      "Type" : "StaticMeshComp"
-    },
     "15" : {
       "Location" : [0.000000, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
