@@ -1442,7 +1442,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-32.435738, 142.698746, 1.942000],
-        "Rotation" : [0.000000, -8.199040, 0.000000],
+        "Rotation" : [0.000000, -8.199039, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -3070,7 +3070,7 @@
           "ClassName" : "UFloatingPawnMovementComponent",
           "Properties" : {
             "Auto Register Updated" : true,
-            "RotationSpeed" : 30.000000,
+            "MouseSensitivity" : 0.100000,
             "Speed" : 5.000000,
             "Updated Component" : "",
             "bEditorOnly" : false,
@@ -3078,7 +3078,7 @@
           }
         }],
       "Properties" : {
-        "Location" : [141.138245, -82.717323, 5.420357],
+        "Location" : [143.721603, -75.909882, 5.420357],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Visible" : true
@@ -3108,15 +3108,15 @@
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
           "Collision Enabled" : 3,
           "Collision Responses" : {
-            "Pawn" : 2,
-            "Projectile" : 2,
-            "Trigger" : 2,
-            "WorldDynamic" : 2,
-            "WorldStatic" : 2
+            "Pawn" : 0,
+            "Projectile" : 0,
+            "Trigger" : 0,
+            "WorldDynamic" : 0,
+            "WorldStatic" : 0
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [141.138245, -82.717323, 5.420357],
+          "Location" : [143.721603, -75.909882, 5.420357],
           "Mass (kg)" : 1.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -3562,7 +3562,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [160.816833, -18.016075, 1.599991],
-        "Rotation" : [0.000000, -5.563550, 0.000000],
+        "Rotation" : [0.000000, -5.563549, 0.000000],
         "Scale" : [25.000000, 25.000000, 20.000000],
         "TriggerTag" : "CarWash",
         "Visible" : true
@@ -3597,6 +3597,110 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "GasNozzle",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "GasNozzleController.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [104.880875, -128.580109, 3.433834],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/GaspumpNozzle_MTL.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [-9.000000, 1.000000, -180.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/FuelNozzle/fuel_nozzle.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Properties" : {
+              "Box Extent" : [0.300000, 0.300000, 0.300000],
+              "Cast Shadow" : false,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 1,
+              "Collision Responses" : {
+                "Pawn" : 1,
+                "Projectile" : 1,
+                "Trigger" : 1,
+                "WorldDynamic" : 1,
+                "WorldStatic" : 1
+              },
+              "Draw Only If Selected" : false,
+              "Generate Overlap Events" : true,
+              "Location" : [0.300000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 1,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [104.880875, -128.580109, 3.433834],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "None",
+          "Two Sided Shadow" : false,
+          "Visible" : false,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -3605,9 +3709,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-92.933617, 111.716240, 11.905921],
+    "Location" : [104.738899, -130.494019, 5.002512],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 25.157286, -36.387268]
+    "Rotation" : [0.000000, 29.507502, 86.764404]
   },
   "Version" : 2,
   "WorldSettings" : {

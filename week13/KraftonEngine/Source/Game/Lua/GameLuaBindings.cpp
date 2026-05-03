@@ -1,4 +1,4 @@
-#include "Game/Lua/GameLuaBindings.h"
+﻿#include "Game/Lua/GameLuaBindings.h"
 
 #include "sol/sol.hpp"
 
@@ -17,6 +17,7 @@
 
 #include "Game/GameEngine.h"
 #include "Game/GameState/GameStateCarGame.h"
+#include "Game/GameMode/GameModeCarGame.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Game/Pawn/PoliceCar.h"
 
@@ -100,6 +101,9 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"Success", EPhaseResult::Success,
 		"Failed",  EPhaseResult::Failed);
 
+	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
+		"SuccessPhase", &AGameModeCarGame::SuccessPhase);
+
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase",              &AGameStateCarGame::GetPhase,
 		"SetPhase",              &AGameStateCarGame::SetPhase,
@@ -124,6 +128,13 @@ void RegisterGameLuaBindings(sol::state& Lua)
 			}
 		});
 	});
+
+	Lua["GetGameMode"] = []() -> AGameModeCarGame*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		return W ? Cast<AGameModeCarGame>(W->GetGameMode()) : nullptr;
+	};
 
 	Lua["GetGameState"] = []() -> AGameStateCarGame*
 	{

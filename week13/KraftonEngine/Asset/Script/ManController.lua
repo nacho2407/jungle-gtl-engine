@@ -4,10 +4,7 @@ local manCamera = nil
 
 function BeginPlay()
     movement = obj:GetFloatingPawnMovement()
-    manCamera = obj:GetCamera()
-    if manCamera ~= nil then
-        ObjRegistry.RegisterManCamera(manCamera)
-    end
+    ObjRegistry.RegisterMan(obj)
 end
 
 function EndPlay()

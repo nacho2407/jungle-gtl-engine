@@ -53,6 +53,10 @@ local function OnPhaseChanged(phase)
         print("Run Lua logic for CarWash")
     elseif phase == ECarGamePhase.CarGas then
         UIManager.FadeOut(0.5, function()
+            if ObjRegistry.car ~= nil then
+                ObjRegistry.car.Location = Vector.new(130, -95, 5)
+            end
+
             CameraManager.PossessCamera(ObjRegistry.manCamera)
 
             UIManager.FadeIn(0.5)
@@ -62,6 +66,13 @@ local function OnPhaseChanged(phase)
         print("Run Lua logic for EscapePolice")
     elseif phase == ECarGamePhase.DodgeMeteor then
         print("Run Lua logic for DodgeMeteor")
+    elseif phase == ECarGamePhase.Result then
+        if CameraManager.GetPossessedCameraOwner().UUID ~= ObjRegistry.car.UUID then
+            UIManager.FadeOut(0.5, function()
+                CameraManager.PossessCamera(ObjRegistry.carCamera)
+                UIManager.FadeIn(0.5)
+            end)
+        end
     elseif phase == ECarGamePhase.Finished then
         print("Run Lua logic for Finished")
     end
