@@ -3,6 +3,12 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_0",
       "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [0.000000, 0.000000, 0.000000],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [100.000000, 100.000000, 1.000000],
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -62,12 +68,17 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ASphereActor",
       "Name" : "ASphereActor_0",
       "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-5.834825, -4.602389, 5.636736],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -127,12 +138,17 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ADirectionalLightActor",
       "Name" : "ADirectionalLightActor_1",
       "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-15.476057, -2.625384, 2.000001],
+        "Rotation" : [45.000004, -45.000004, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -184,8 +200,7 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ACarPawn",
       "Name" : "ACarPawn_3",
@@ -225,6 +240,12 @@
             "bTickEnable" : true
           }
         }],
+      "Properties" : {
+        "Location" : [-61.219730, 20.857948, 2.203489],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -439,8 +460,7 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ATriggerVolumeBase",
       "Name" : "ATriggerVolumeBase_2",
@@ -452,6 +472,13 @@
             "bTickEnable" : true
           }
         }],
+      "Properties" : {
+        "Location" : [2.219879, 26.010515, 8.644118],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "TriggerTag" : "DodgeMeteor",
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
@@ -481,12 +508,17 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_1",
       "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-41.261257, 20.160803, 7.250801],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [5.000000, 5.000000, 5.000000],
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
@@ -507,7 +539,7 @@
           "Location" : [-41.261257, 20.160803, 7.250801],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -516,12 +548,18 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }, {
       "ClassName" : "ATriggerVolumeBase",
       "Name" : "ATriggerVolumeBase_1",
       "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-33.788609, 36.387966, 4.430082],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [5.000000, 5.000000, 5.000000],
+        "TriggerTag" : "Name_None",
+        "Visible" : true
+      },
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
@@ -542,7 +580,7 @@
           "Location" : [-33.788609, 36.387966, 4.430082],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -551,8 +589,7 @@
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
-      },
-      "bVisible" : true
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -561,7 +598,7 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-85.192009, 36.855499, 24.990370],
+    "Location" : [-85.192101, 36.855545, 24.990393],
     "NearClip" : 0.100000,
     "Rotation" : [0.000000, 19.816143, -34.050682]
   },

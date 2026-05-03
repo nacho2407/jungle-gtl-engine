@@ -39,4 +39,8 @@ public:
 	static std::string ToUtf8(const std::wstring& WideStr);
 
 	static std::string ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath);
+
+	// 절대 경로면 프로젝트 루트 기준 상대 경로(forward slash)로 변환.
+	// 이미 상대 경로이거나 다른 드라이브 등으로 변환 불가하면 입력을 그대로 반환.
+	static std::string MakeProjectRelative(const std::string& Path);
 };

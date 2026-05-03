@@ -428,6 +428,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Log.cpp" />
     <ClCompile Include="Source\Engine\Core\Notification.cpp" />
+    <ClCompile Include="Source\Engine\Core\PropertyTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp" />
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
     <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />

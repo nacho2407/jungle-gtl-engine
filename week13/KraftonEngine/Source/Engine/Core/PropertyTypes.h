@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include "Core/CoreTypes.h"
+
+namespace json { class JSON; }
 
 // 에디터에서 자동 위젯 매핑에 사용되는 프로퍼티 타입
 enum class EPropertyType : uint8_t
@@ -57,4 +60,9 @@ struct FPropertyDescriptor
 
 	// Struct Metadata
 	FStructPropertyFunc StructFunc = nullptr;
+
+	// JSON 직렬화 — FSceneSaveManager 등 외부 직렬자가 호출.
+	// 헤더에 SimpleJSON 의존을 들이지 않기 위해 본문은 PropertyTypes.cpp 에 둔다.
+	json::JSON Serialize() const;
+	void	   Deserialize(json::JSON& Value);
 };
