@@ -95,7 +95,7 @@ public:
 	// 기본값 상수
 	static constexpr float  kDefaultBias = 0.005f;
 	static constexpr float  kDefaultSlopeBias = 0.005f;
-	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::Hard;
+	static constexpr EShadowFilterMode kDefaultFilterMode = EShadowFilterMode::PCF;
 
 	// 오버라이드 또는 기본값 반환 (편의 함수)
 	uint32            GetEffectiveCSMResolution() const { return Resolution.value_or(kDefaultCSMResolution); }
