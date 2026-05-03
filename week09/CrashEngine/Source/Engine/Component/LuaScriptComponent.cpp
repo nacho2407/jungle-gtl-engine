@@ -242,6 +242,10 @@ bool ULuaScriptComponent::LoadScript()
                             { return WorldProxy.GetActiveCameraRight(); });
     WorldTable.set_function("GetActiveCameraUp", [this]()
                             { return WorldProxy.GetActiveCameraUp(); });
+    WorldTable.set_function("FindPlayer",[this]()
+        { return WorldProxy.FindPlayer(); });
+    WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
+        { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
 
     Env["World"] = WorldTable;
 

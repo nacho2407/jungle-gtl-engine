@@ -146,6 +146,14 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
         // RegisteredComponents.erase(it);
     }
 
+    for (const FOverlapPair& Pair : PreviousFrameOverlaps)
+    {
+        if (Pair.A == Component || Pair.B == Component)
+        {
+            BroadcastEndOverlapPair(Pair);
+        }
+    }
+
 	RemovePairsContaining(PreviousFrameOverlaps, Component);
     RemovePairsContaining(CurrentFrameOverlaps, Component);
     RemovePairsContaining(PendingBeginOverlaps, Component);
@@ -394,4 +402,18 @@ bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent
     }
 
     return CollisionA->IsOverlapping(CollisionB); // Intersect 함수는 수학 라이브러리에 구현
+}
+
+void FCollisionManager::BroadcastEndOverlapPair(const FOverlapPair& Pair)
+{
+    if (!Pair.A || !Pair.B)
+    {
+        return;
+    }
+
+    Pair.A->RemoveOverlapInfo(Pair.B);
+    Pair.B->RemoveOverlapInfo(Pair.A);
+
+    Pair.A->BroadcastComponentEndOverlap(Pair.B->GetOwner());
+    Pair.B->BroadcastComponentEndOverlap(Pair.A->GetOwner());
 }

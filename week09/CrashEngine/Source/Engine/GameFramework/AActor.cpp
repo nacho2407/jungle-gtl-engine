@@ -451,6 +451,24 @@ FVector AActor::GetActorForward() const
     return FVector(0, 0, 1);
 }
 
+FVector AActor::GetActorRightVector() const
+{
+    if (RootComponent)
+    {
+        return RootComponent->GetRightVector();
+    }
+    return FVector(0, 0, 1);
+}
+
+FVector AActor::GetActorUpVector() const
+{
+    if (RootComponent)
+    {
+        return RootComponent->GetUpVector();
+    }
+    return FVector(0, 0, 1);
+}
+
 void AActor::Serialize(FArchive& Ar)
 {
     UObject::Serialize(Ar);

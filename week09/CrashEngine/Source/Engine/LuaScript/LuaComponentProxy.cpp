@@ -5,7 +5,6 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
-#include "Component/LightComponent.h"
 #include "Component/LightComponentBase.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
@@ -46,6 +45,25 @@ FString FLuaComponentProxy::GetComponentClassName() const
     return Component && Component->GetClass() ? Component->GetClass()->GetName() : "";
 }
 
+FVector FLuaComponentProxy::GetForwardVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorForward() : FVector(1.0f, 0.0f, 0.0f);
+}
+
+FVector FLuaComponentProxy::GetRightVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorRightVector() : FVector(0.0f, 1.0f, 0.0f);
+}
+
+FVector FLuaComponentProxy::GetUpVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorUpVector() : FVector(0.0f, 0.0f, 1.0f);
+}
+
+
 USceneComponent* FLuaComponentProxy::ResolveSceneComponent() const
 {
     return Cast<USceneComponent>(ResolveComponent());
@@ -59,6 +77,12 @@ UPrimitiveComponent* FLuaComponentProxy::ResolvePrimitiveComponent() const
 UStaticMeshComponent* FLuaComponentProxy::ResolveStaticMeshComponent() const
 {
     return Cast<UStaticMeshComponent>(ResolveComponent());
+}
+
+AActor* FLuaComponentProxy::ResolveActor() const
+{
+    UActorComponent* Component = ResolveComponent();
+    return Component ? Component->GetOwner() : nullptr;
 }
 
 FVector FLuaComponentProxy::GetRelativeLocation() const

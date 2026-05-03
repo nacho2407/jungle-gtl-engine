@@ -25,11 +25,7 @@ public:
     void SetTargetActor(AActor* InTargetActor);
 
 private:
-    AActor* ResolveTargetActor();
-    UCameraComponent* FindControlledCamera() const;
-    void ApplyMouseOrbitInput();
-    bool ConsumeExternalCameraLocation(const FVector& TargetLocation);
-    void UpdateCamera(float DeltaTime, bool bSnapToTarget);
+    void UpdateCamera(float DeltaTime);
 
 private:
     AActor* TargetActor = nullptr;

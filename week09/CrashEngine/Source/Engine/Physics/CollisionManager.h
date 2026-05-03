@@ -64,6 +64,7 @@ private:
     // void UpdateBVH();
 
     bool CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B);
+    void BroadcastEndOverlapPair(const FOverlapPair& Pair);
 
     bool bNeedsBVHRebuild = true;
 };

@@ -117,6 +117,24 @@ void FLuaGameObjectProxy::SetLocation(const FVector& InLocation)
     Actor->SetActorLocation(InLocation);
 }
 
+FVector FLuaGameObjectProxy::GetForwardVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorForward() : FVector(1.0f, 0.0f, 0.0f);
+}
+
+FVector FLuaGameObjectProxy::GetRightVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorRightVector() : FVector(0.0f, 1.0f, 0.0f);
+}
+
+FVector FLuaGameObjectProxy::GetUpVector() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorUpVector() : FVector(0.0f, 0.0f, 1.0f);
+}
+
 void FLuaGameObjectProxy::AddWorldOffset(const FVector& Delta)
 {
     AActor* Actor = ResolveActor();

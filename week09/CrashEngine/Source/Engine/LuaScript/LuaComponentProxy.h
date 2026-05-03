@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "GameFramework/AActor.h"
 #include "Math/Vector.h"
 
 class UActorComponent;
@@ -20,7 +21,10 @@ public:
     bool IsValid() const;
     FString GetComponentClassName() const;
     uint32 GetUUID() const { return ComponentUUID; }
-
+    
+    FVector GetForwardVector() const;
+    FVector GetRightVector() const;
+    FVector GetUpVector() const;
 	/*
 	 * Transform
 	 */
@@ -87,6 +91,7 @@ private:
     USceneComponent* ResolveSceneComponent() const;
     UPrimitiveComponent* ResolvePrimitiveComponent() const;
     UStaticMeshComponent* ResolveStaticMeshComponent() const;
+    AActor* ResolveActor() const;
 
 private:
     uint32 ComponentUUID = 0;
