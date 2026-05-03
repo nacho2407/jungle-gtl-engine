@@ -55,6 +55,16 @@ void ULevel::TickEditor(float DeltaTime)
 
 void ULevel::TickGame(float DeltaTime)
 {
+    bDoingTick = true;
+	if (!PendingAddActors.empty())
+	{
+		for (AActor* Actor : PendingAddActors)
+		{
+            Actors.push_back(Actor);
+		}
+        PendingAddActors.clear();
+	}
+
     for (AActor* Actor : Actors)
     {
         if (Actor && Actor->IsActive())
@@ -62,6 +72,7 @@ void ULevel::TickGame(float DeltaTime)
             Actor->Tick(DeltaTime);
         }
     }
+    bDoingTick = false;
 }
 
 void ULevel::EndPlay(EEndPlayReason::Type EndPlayReason)
