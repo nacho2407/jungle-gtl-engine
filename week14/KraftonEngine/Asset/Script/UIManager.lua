@@ -73,6 +73,7 @@ function UIManager.Init()
         UIManager.Hide("personQuest")
         UIManager.Hide("contributor")
         UIManager.Hide("whiteBox")
+        UIManager.Hide("pauseMenu")
         -- 진행 중이던 fade 취소 — 콜백이 죽은 액터를 참조하지 않도록.
         fade.active = false
         fade.onComplete = nil
@@ -142,6 +143,17 @@ function UIManager.Init()
         end
     end)
 
+    local pauseMenuWidget = UI.CreateWidget("Asset/UI/PauseMenuWidget.rml")
+    pauseMenuWidget:SetWantsMouse(true)
+    pauseMenuWidget:bind_click("pause-menu-go-intro-button", function()
+        -- Map.Scene 재로드 → 모든 동적 상태 fresh 로 시작 → GameMode StartMatch 가
+        -- 다시 SetPaused(true) 로 인트로 페이즈에 진입.
+        Engine.TransitionToScene("Map")
+    end)
+    pauseMenuWidget:bind_click("pause-menu-exit-button", function()
+        Engine.Exit()
+    end)
+
     UIManager.Register("intro", introWidget)
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
@@ -151,7 +163,27 @@ function UIManager.Init()
     UIManager.Register("personQuest", personQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
     UIManager.Register("gameOver", UI.CreateWidget("Asset/UI/GameOverWidget.rml"))
+    UIManager.Register("pauseMenu", pauseMenuWidget)
     UIManager.Register("fade", UI.CreateWidget("Asset/UI/FadeWidget.rml"))
+
+    -- ESC 처리 — World pause 와 무관하게 동작해야 하므로 component-tick 이 아닌 C++ 의
+    -- UGameEngine::Tick 이 직접 fire 하는 콜백 경로 (Engine.SetOnEscape) 에 바인딩.
+    Engine.SetOnEscape(UIManager.OnEscapePressed)
+end
+
+function UIManager.OnEscapePressed()
+    -- 인트로 / 결과 화면 등 다른 fullscreen 모달이 떠 있으면 ESC 무시.
+    if UIManager.IsVisible("intro") then
+        return
+    end
+
+    if UIManager.IsVisible("pauseMenu") then
+        UIManager.Hide("pauseMenu")
+        Engine.ResumeGame()
+    else
+        UIManager.Show("pauseMenu")
+        Engine.PauseGame()
+    end
 end
 
 function UIManager.Register(key, widget)
@@ -188,6 +220,14 @@ function UIManager.Toggle(key)
         widget:show()
     end
     return true
+end
+
+function UIManager.IsVisible(key)
+    local widget = widgets[key]
+    if widget == nil then
+        return false
+    end
+    return widget:IsInViewport()
 end
 
 function UIManager.SetQuestHud(questText, arrowSymbol, visible)

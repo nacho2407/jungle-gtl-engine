@@ -1,0 +1,16 @@
+<rml>
+<head>
+	<title>일시정지</title>
+	<link type="text/rcss" href="PauseMenuWidget.rcss"/>
+</head>
+<body>
+	<div id="pause-menu-overlay">
+		<div id="pause-menu-panel">
+			<div id="pause-menu-title">PAUSED</div>
+
+			<button id="pause-menu-go-intro-button">처음으로</button>
+			<button id="pause-menu-exit-button">종료</button>
+		</div>
+	</div>
+</body>
+</rml>
