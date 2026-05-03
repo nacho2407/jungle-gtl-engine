@@ -34,6 +34,7 @@
 #include "Component/CapsuleComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
+#include "Component/SoundComponent.h"
 #include "Runtime/Script/ScriptManager.h"
 #include <Runtime/Script/ScriptComponent.h>
 #include <commdlg.h>
@@ -293,6 +294,13 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		"Camera Component",
 		[](AActor* Actor) -> UActorComponent* {
 			UCameraComponent* Comp = Actor->AddComponent<UCameraComponent>();
+			return Comp;
+		}
+	},
+	{
+		"Sound Component",
+		[](AActor* Actor) -> UActorComponent* {
+			USoundComponent* Comp = Actor->AddComponent<USoundComponent>();
 			return Comp;
 		}
 	},
