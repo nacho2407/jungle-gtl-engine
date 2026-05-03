@@ -46,6 +46,14 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 
 void UGameEngine::Shutdown()
 {
+	// 게임 세션 종료 — 커서 캡처/clip / raw mouse / GameInputSnapshot 정리.
+	// 이거 안 부르면 종료 후에도 시스템 커서가 숨김 상태로 남거나 클립 영역이 잔존해
+	// 다른 앱 사용 시 마우스가 안 보이는 증상이 생긴다.
+	if (GameViewportClient)
+	{
+		GameViewportClient->EndGameSession();
+	}
+
 	if (StandaloneViewport)
 	{
 		delete StandaloneViewport;

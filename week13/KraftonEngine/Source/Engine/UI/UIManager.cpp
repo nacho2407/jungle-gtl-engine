@@ -496,6 +496,18 @@ UUserWidget* UUIManager::CreateWidget(APlayerController* OwningPlayer, const FSt
 	return Widget;
 }
 
+bool UUIManager::AnyViewportWidgetWantsMouse() const
+{
+	for (const UUserWidget* Widget : ViewportWidgets)
+	{
+		if (Widget && Widget->WantsMouse())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void UUIManager::AddToViewport(UUserWidget* Widget, int32 /*ZOrder*/)
 {
 	if (!Widget)
