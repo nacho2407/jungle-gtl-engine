@@ -2,7 +2,9 @@
 
 #include "Game/GameRenderPipeline.h"
 #include "Game/GameMode/GameModeCarGame.h"
+#include "Game/Lua/GameLuaBindings.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "Lua/LuaScriptManager.h"
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
@@ -17,6 +19,10 @@ IMPLEMENT_CLASS(UGameEngine, UEngine)
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
 	UEngine::Init(InWindow);
+
+	// Engine 측 LuaScriptManager 가 일반 바인딩만 등록하므로, 여기서 game-특화
+	// usertype/enum/global 을 추가 등록. 어떤 LuaScriptComponent 의 BeginPlay 보다도 앞서야 함.
+	RegisterGameLuaBindings(FLuaScriptManager::GetState());
 
 	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
