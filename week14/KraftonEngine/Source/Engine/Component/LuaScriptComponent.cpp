@@ -1,5 +1,6 @@
 ﻿#include "LuaScriptComponent.h"
 
+#include "Component/PrimitiveComponent.h"
 #include "Core/Log.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Level.h"
@@ -22,6 +23,8 @@ void ULuaScriptComponent::InitializeLua()
 	LuaBeginPlay = sol::nil;
 	LuaTick = sol::nil;
 	LuaEndPlay = sol::nil;
+	LuaOnOverlap = sol::nil;
+	LuaOnEndOverlap = sol::nil;
 
 	sol::state& Lua = FLuaScriptManager::GetState();
 
@@ -42,6 +45,8 @@ void ULuaScriptComponent::InitializeLua()
 	LuaBeginPlay = Env["BeginPlay"];
 	LuaTick = Env["Tick"];
 	LuaEndPlay = Env["EndPlay"];
+	LuaOnOverlap = Env["OnOverlap"];
+	LuaOnEndOverlap = Env["OnEndOverlap"];
 }
 
 void ULuaScriptComponent::BeginPlay()
@@ -60,11 +65,14 @@ void ULuaScriptComponent::BeginPlay()
 			UE_LOG("Lua BeginPlay error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
+
+	BindOwnerOverlapEvents();
 }
 
 void ULuaScriptComponent::EndPlay()
 {
 	UActorComponent::EndPlay();
+	ClearOverlapBindings();
 	if (LuaEndPlay)
 	{
 		sol::protected_function_result Result = LuaEndPlay();
@@ -72,6 +80,109 @@ void ULuaScriptComponent::EndPlay()
 		{
 			sol::error Err = Result;
 			UE_LOG("Lua EndPlay error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+}
+
+void ULuaScriptComponent::BindOwnerOverlapEvents()
+{
+	ClearOverlapBindings();
+
+	if (!LuaOnOverlap && !LuaOnEndOverlap)
+	{
+		return;
+	}
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		return;
+	}
+
+	for (UPrimitiveComponent* PrimitiveComponent : OwnerActor->GetPrimitiveComponents())
+	{
+		if (!PrimitiveComponent || !PrimitiveComponent->GetGenerateOverlapEvents())
+		{
+			continue;
+		}
+
+		BoundOverlapComponents.push_back(PrimitiveComponent);
+		BeginOverlapHandles.push_back(PrimitiveComponent->OnComponentBeginOverlap.AddRaw(this, &ULuaScriptComponent::HandleBeginOverlap));
+		EndOverlapHandles.push_back(PrimitiveComponent->OnComponentEndOverlap.AddRaw(this, &ULuaScriptComponent::HandleEndOverlap));
+	}
+}
+
+void ULuaScriptComponent::ClearOverlapBindings()
+{
+	for (int32 Index = 0; Index < static_cast<int32>(BoundOverlapComponents.size()); ++Index)
+	{
+		UPrimitiveComponent* PrimitiveComponent = BoundOverlapComponents[Index];
+		if (!PrimitiveComponent)
+		{
+			continue;
+		}
+
+		if (Index < static_cast<int32>(BeginOverlapHandles.size()) && BeginOverlapHandles[Index].IsValid())
+		{
+			PrimitiveComponent->OnComponentBeginOverlap.Remove(BeginOverlapHandles[Index]);
+		}
+
+		if (Index < static_cast<int32>(EndOverlapHandles.size()) && EndOverlapHandles[Index].IsValid())
+		{
+			PrimitiveComponent->OnComponentEndOverlap.Remove(EndOverlapHandles[Index]);
+		}
+	}
+
+	BoundOverlapComponents.clear();
+	BeginOverlapHandles.clear();
+	EndOverlapHandles.clear();
+}
+
+void ULuaScriptComponent::HandleBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 /*OtherBodyIndex*/,
+	bool /*bFromSweep*/,
+	const FHitResult& /*SweepResult*/)
+{
+	if (LuaOnOverlap)
+	{
+		sol::protected_function_result Result = LuaOnOverlap(OtherActor, OverlappedComponent, OtherComp);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua OnOverlap error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+}
+
+void ULuaScriptComponent::HandleEndOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 /*OtherBodyIndex*/)
+{
+	if (LuaOnEndOverlap)
+	{
+		sol::protected_function_result Result = LuaOnEndOverlap(OtherActor, OverlappedComponent, OtherComp);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua OnEndOverlap error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+}
+
+void ULuaScriptComponent::DispatchOverlap(AActor* OtherActor)
+{
+	if (LuaOnOverlap)
+	{
+		sol::protected_function_result Result = LuaOnOverlap(OtherActor);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua OnOverlap error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
 }

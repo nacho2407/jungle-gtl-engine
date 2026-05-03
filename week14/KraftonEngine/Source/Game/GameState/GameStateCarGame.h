@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/GameStateBase.h"
 #include "Core/Delegate.h"

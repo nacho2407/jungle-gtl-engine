@@ -3,6 +3,7 @@
 #include "Core/Log.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/SceneComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -283,7 +284,16 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		UCameraComponent* ActiveCamera = Manager ? Manager->GetActiveCamera() : nullptr;
 		return ActiveCamera ? ActiveCamera->GetOwner() : nullptr;
 	});
-	CameraManager.set_function("GetPossessedCamera", []() -> AActor*
+	CameraManager.set_function("GetPossessedCamera", []() -> UCameraComponent*
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return nullptr;
+		}
+		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		return Manager ? Manager->GetPossessedCamera() : nullptr;
+	});
+	CameraManager.set_function("GetPossessedCameraOwner", []() -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld())
 		{
@@ -342,7 +352,61 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetMoveInput", &UFloatingPawnMovementComponent::SetMoveInput,
 		"SetLookInput", &UFloatingPawnMovementComponent::SetLookInput);
 
-	Lua.new_usertype<UCameraComponent>("CameraComponent");
+	Lua.new_usertype<USceneComponent>("SceneComponent",
+		"Location", sol::property(
+		[](USceneComponent& Component)
+	{
+		return Component.GetWorldLocation();
+	},
+		[](USceneComponent& Component, const FVector& Location)
+	{
+		Component.SetWorldLocation(Location);
+	}
+	),
+		"Rotation", sol::property(
+		[](USceneComponent& Component)
+	{
+		return Component.GetRelativeRotation().ToVector();
+	},
+		[](USceneComponent& Component, const FVector& Rotation)
+	{
+		Component.SetRelativeRotation(Rotation);
+	}
+	),
+		"Forward", sol::property([](USceneComponent& Component)
+	{
+		return Component.GetForwardVector();
+	}
+	),
+		"Right", sol::property([](USceneComponent& Component)
+	{
+		return Component.GetRightVector();
+	}
+	),
+		"Up", sol::property([](USceneComponent& Component)
+	{
+		return Component.GetUpVector();
+	}
+	),
+		"GetLocation", [](USceneComponent& Component)
+	{
+		return Component.GetWorldLocation();
+	},
+		"SetLocation", [](USceneComponent& Component, const FVector& Location)
+	{
+		Component.SetWorldLocation(Location);
+	},
+		"GetRotation", [](USceneComponent& Component)
+	{
+		return Component.GetRelativeRotation().ToVector();
+	},
+		"SetRotation", [](USceneComponent& Component, const FVector& Rotation)
+	{
+		Component.SetRelativeRotation(Rotation);
+	});
+
+	Lua.new_usertype<UCameraComponent>("CameraComponent",
+		sol::base_classes, sol::bases<USceneComponent>());
 
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(

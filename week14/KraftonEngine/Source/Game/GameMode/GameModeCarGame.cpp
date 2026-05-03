@@ -146,6 +146,20 @@ void AGameModeCarGame::OnPlayerCaught(AActor* /*Catcher*/)
 	EndPhase(EPhaseResult::Failed);
 }
 
+void AGameModeCarGame::SuccessPhase()
+{
+	auto* GS = Cast<AGameStateCarGame>(GetGameState());
+	if (!GS) return;
+	if (GS->GetPhase() == ECarGamePhase::None || GS->GetPhase() == ECarGamePhase::Result) return;
+
+	EPhaseResult Result = EPhaseResult::Success;
+
+	UE_LOG("[CarGame] SuccessPhase called — Phase=%d Result=%d", static_cast<int32>(GS->GetPhase()), static_cast<int32>(Result));
+
+	GS->SetRemainingPhaseTime(0.0f);
+	EndPhase(Result);
+}
+
 // ============================================================
 // Phase begin / end
 // ============================================================

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/GameModeBase.h"
 #include "Game/GameState/GameStateCarGame.h"
@@ -39,6 +39,8 @@ public:
 
 	// APoliceCar 가 player 와 충돌(잡힘)했을 때 호출. 즉시 EndPhase(Failed) 로 라우팅.
 	void OnPlayerCaught(AActor* Catcher);
+
+	void SuccessPhase();
 
 	// --- 페이즈 시간 상수 (튜닝값 — 디자이너가 필요시 조정) ---
 	static constexpr float MatchDuration       = 420.0f;  // 7분
