@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Mesh/PreviewSphere_Inst_4.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 0.000000]
+          }],
+        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+      }

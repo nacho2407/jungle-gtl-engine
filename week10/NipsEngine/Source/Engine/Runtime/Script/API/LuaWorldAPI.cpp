@@ -305,10 +305,9 @@ namespace FLuaEngineAPI
 
         World["DestroyActor"] = [](AActor* Actor)
         {
-            UWorld* ActiveWorld = GetEngineAPIWorld();
-            if (ActiveWorld && Actor)
+            if (Actor)
             {
-                ActiveWorld->DestroyActor(Actor);
+                Actor->MarkPendingKill();
             }
         };
 
