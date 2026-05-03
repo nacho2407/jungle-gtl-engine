@@ -104,3 +104,26 @@ std::string FPaths::ResolveAssetPath(const std::string& BaseFilePath, const std:
 	// 5. 엔진에서 사용하는 UTF-8 포맷으로 반환 (Windows 백슬래시를 슬래시로 통일)
 	return ToUtf8(RelativePath.generic_wstring());
 }
+
+std::string FPaths::MakeProjectRelative(const std::string& Path)
+{
+	if (Path.empty()) return Path;
+
+	std::filesystem::path P(ToWide(Path));
+	if (!P.is_absolute())
+	{
+		// 이미 상대 경로 — 백슬래시만 슬래시로 정리
+		return ToUtf8(P.lexically_normal().generic_wstring());
+	}
+
+	std::filesystem::path ProjectRoot(RootDir());
+	std::filesystem::path Rel = P.lexically_relative(ProjectRoot);
+
+	// 드라이브가 다르거나 변환 불가한 경우 → 입력 유지
+	if (Rel.empty() || Rel.native().rfind(L"..", 0) == 0)
+	{
+		return ToUtf8(P.generic_wstring());
+	}
+
+	return ToUtf8(Rel.generic_wstring());
+}

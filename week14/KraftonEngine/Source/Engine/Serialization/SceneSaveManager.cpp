@@ -233,103 +233,9 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 	Obj->GetEditableProperties(Descriptors);
 
 	for (const auto& Prop : Descriptors) {
-		props[Prop.Name] = SerializePropertyValue(Prop);
+		props[Prop.Name] = Prop.Serialize();
 	}
 	return props;
-}
-
-json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& Prop)
-{
-	using namespace json;
-
-	switch (Prop.Type) {
-	case EPropertyType::Bool:
-		return JSON(*static_cast<bool*>(Prop.ValuePtr));
-
-	case EPropertyType::Int:
-		return JSON(*static_cast<int32*>(Prop.ValuePtr));
-
-	case EPropertyType::Float:
-		return JSON(static_cast<double>(*static_cast<float*>(Prop.ValuePtr)));
-
-	case EPropertyType::Vec3: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		JSON arr = json::Array();
-		arr.append(static_cast<double>(v[0]));
-		arr.append(static_cast<double>(v[1]));
-		arr.append(static_cast<double>(v[2]));
-		return arr;
-	}
-	case EPropertyType::Rotator: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		JSON arr = json::Array();
-		arr.append(static_cast<double>(v[0]));
-		arr.append(static_cast<double>(v[1]));
-		arr.append(static_cast<double>(v[2]));
-		return arr;
-	}
-	case EPropertyType::Vec4:
-	case EPropertyType::Color4: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		JSON arr = json::Array();
-		arr.append(static_cast<double>(v[0]));
-		arr.append(static_cast<double>(v[1]));
-		arr.append(static_cast<double>(v[2]));
-		arr.append(static_cast<double>(v[3]));
-		return arr;
-	}
-	case EPropertyType::String:
-	case EPropertyType::Script:
-	case EPropertyType::SceneComponentRef:
-	case EPropertyType::StaticMeshRef:
-		return JSON(*static_cast<FString*>(Prop.ValuePtr));
-
-	case EPropertyType::MaterialSlot: {
-		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(Prop.ValuePtr);
-		JSON obj = json::Object();
-		obj["Path"] = JSON(Slot->Path);
-		return obj;
-	}
-
-	case EPropertyType::ByteBool:
-		return JSON(static_cast<bool>(*static_cast<uint8_t*>(Prop.ValuePtr) != 0));
-
-	case EPropertyType::Name:
-		return JSON(static_cast<FName*>(Prop.ValuePtr)->ToString());
-
-	case EPropertyType::Enum: {
-		int32 Val = 0;
-		memcpy(&Val, Prop.ValuePtr, Prop.EnumSize);
-		return JSON(Val);
-	}
-
-	case EPropertyType::Vec3Array: {
-		const TArray<FVector>* Arr = static_cast<const TArray<FVector>*>(Prop.ValuePtr);
-		JSON outer = json::Array();
-		for (const FVector& v : *Arr) {
-			JSON inner = json::Array();
-			inner.append(static_cast<double>(v.X));
-			inner.append(static_cast<double>(v.Y));
-			inner.append(static_cast<double>(v.Z));
-			outer.append(inner);
-		}
-		return outer;
-	}
-
-	case EPropertyType::Struct: {
-		if (!Prop.StructFunc || !Prop.ValuePtr) return JSON();
-		TArray<FPropertyDescriptor> Children;
-		Prop.StructFunc(Prop.ValuePtr, Children);
-		JSON obj = json::Object();
-		for (const auto& Child : Children) {
-			obj[Child.Name] = SerializePropertyValue(Child);
-		}
-		return obj;
-	}
-
-	default:
-		return JSON();
-	}
 }
 
 // ---- Camera helpers ----
@@ -522,7 +428,7 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 	for (auto& Prop : Descriptors) {
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
 		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		DeserializePropertyValue(Prop, Value);
+		Prop.Deserialize(Value);
 		Obj->PostEditProperty(Prop.Name.c_str());
 	}
 
@@ -535,112 +441,8 @@ void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSO
 		auto& Prop = Descriptors2[i];
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
 		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
-		DeserializePropertyValue(Prop, Value);
+		Prop.Deserialize(Value);
 		Obj->PostEditProperty(Prop.Name.c_str());
-	}
-}
-
-void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value)
-{
-	switch (Prop.Type) {
-	case EPropertyType::Bool:
-		*static_cast<bool*>(Prop.ValuePtr) = Value.ToBool();
-		break;
-
-	case EPropertyType::ByteBool:
-		*static_cast<uint8_t*>(Prop.ValuePtr) = Value.ToBool() ? 1 : 0;
-		break;
-
-	case EPropertyType::Int:
-		*static_cast<int32*>(Prop.ValuePtr) = Value.ToInt();
-		break;
-
-	case EPropertyType::Float:
-		*static_cast<float*>(Prop.ValuePtr) = static_cast<float>(Value.ToFloat());
-		break;
-
-	case EPropertyType::Vec3: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		int i = 0;
-		for (auto& elem : Value.ArrayRange()) {
-			if (i < 3) v[i] = static_cast<float>(elem.ToFloat());
-			i++;
-		}
-		break;
-	}
-	case EPropertyType::Rotator: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		int i = 0;
-		for (auto& elem : Value.ArrayRange()) {
-			if (i < 3) v[i] = static_cast<float>(elem.ToFloat());
-			i++;
-		}
-		break;
-	}
-	case EPropertyType::Vec4:
-	case EPropertyType::Color4: {
-		float* v = static_cast<float*>(Prop.ValuePtr);
-		int i = 0;
-		for (auto& elem : Value.ArrayRange()) {
-			if (i < 4) v[i] = static_cast<float>(elem.ToFloat());
-			i++;
-		}
-		break;
-	}
-	case EPropertyType::String:
-	case EPropertyType::Script:
-	case EPropertyType::SceneComponentRef:
-	case EPropertyType::StaticMeshRef:
-		*static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
-		break;
-
-	case EPropertyType::MaterialSlot: {
-		FMaterialSlot* Slot = static_cast<FMaterialSlot*>(Prop.ValuePtr);
-		if (Value.hasKey("Path"))     Slot->Path = Value["Path"].ToString();
-		break;
-	}
-
-	case EPropertyType::Name:
-		*static_cast<FName*>(Prop.ValuePtr) = FName(Value.ToString());
-		break;
-
-	case EPropertyType::Enum: {
-		int32 Val = Value.ToInt();
-		memcpy(Prop.ValuePtr, &Val, Prop.EnumSize);
-		break;
-	}
-
-	case EPropertyType::Vec3Array: {
-		TArray<FVector>* Arr = static_cast<TArray<FVector>*>(Prop.ValuePtr);
-		Arr->clear();
-		for (auto& elem : Value.ArrayRange()) {
-			FVector v(0, 0, 0);
-			int i = 0;
-			for (auto& c : elem.ArrayRange()) {
-				if (i == 0) v.X = static_cast<float>(c.ToFloat());
-				else if (i == 1) v.Y = static_cast<float>(c.ToFloat());
-				else if (i == 2) v.Z = static_cast<float>(c.ToFloat());
-				++i;
-			}
-			Arr->push_back(v);
-		}
-		break;
-	}
-
-	case EPropertyType::Struct: {
-		if (!Prop.StructFunc || !Prop.ValuePtr) break;
-		TArray<FPropertyDescriptor> Children;
-		Prop.StructFunc(Prop.ValuePtr, Children);
-		for (auto& Child : Children) {
-			if (!Value.hasKey(Child.Name.c_str())) continue;
-			json::JSON& ChildVal = Value[Child.Name.c_str()];
-			DeserializePropertyValue(Child, ChildVal);
-		}
-		break;
-	}
-
-	default:
-		break;
 	}
 }
 

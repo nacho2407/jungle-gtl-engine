@@ -778,9 +778,16 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	}
 
 	bool bAnyChanged = false;
+	// StaticMeshRef 변경은 SetStaticMesh를 통해 MaterialSlots를 resize 하므로
+	// Props에 들어있던 &MaterialSlots[i] 포인터가 모두 무효화된다. 이후 Materials
+	// 카테고리 등을 더 렌더링하면 dangling pointer 접근 → bad_alloc.
+	// 변경이 발생하면 즉시 외부 루프까지 빠져나와 다음 프레임에 Props를 새로 수집해 렌더한다.
+	bool bPropsInvalidated = false;
 
 	for (const auto& Cat : CategoryOrder)
 	{
+		if (bPropsInvalidated) break;
+
 		// Root 컴포넌트는 Transform 카테고리 스킵
 		if (bIsRoot && Cat == "Transform")
 			continue;
@@ -805,7 +812,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				PropagatePropertyChange(Props[i].Name, SelectedActors);
 
 				if (Props[i].Type == EPropertyType::StaticMeshRef)
+				{
+					bPropsInvalidated = true;
 					break;
+				}
 			}
 		}
 	}

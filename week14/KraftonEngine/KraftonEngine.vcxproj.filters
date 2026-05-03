@@ -602,6 +602,9 @@
     <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\PropertyTypes.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>

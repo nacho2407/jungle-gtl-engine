@@ -3,6 +3,7 @@
 #include <cmath>
 #include "Object/ObjectFactory.h"
 #include "Core/PropertyTypes.h"
+#include "Engine/Platform/Paths.h"
 #include "Collision/RayUtils.h"
 #include "Mesh/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
@@ -24,7 +25,9 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 	StaticMesh = InMesh;
 	if (InMesh)
 	{
-		StaticMeshPath = InMesh->GetAssetPathFileName();
+		// 메시 에셋 PathFileName 은 Import 시점에 절대 경로로 들어올 수 있어
+		// 컴포넌트 단계에서 프로젝트 상대 경로로 정규화한다 (씬 직렬화 안정성).
+		StaticMeshPath = FPaths::MakeProjectRelative(InMesh->GetAssetPathFileName());
 		const TArray<FStaticMaterial>& DefaultMaterials = StaticMesh->GetStaticMaterials();
 
 		OverrideMaterials.resize(DefaultMaterials.size());
