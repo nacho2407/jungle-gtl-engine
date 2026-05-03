@@ -13,6 +13,7 @@
 #include <WICTextureLoader.h>
 #include <Windows.h>
 #include <d3dcompiler.h>
+#include <wincodec.h>
 #include <windowsx.h>
 
 #include <algorithm>
@@ -20,6 +21,8 @@
 #include <cstring>
 #include <filesystem>
 #include <string>
+
+#pragma comment(lib, "windowscodecs.lib")
 
 namespace
 {
@@ -190,7 +193,84 @@ std::string ResolveRmlTextureSource(const FString& DocumentPath, const FString& 
     return TexturePath;
 }
 
-std::string CreateRmlTextBitmapSource(const FString& Text)
+struct FGeneratedTextTexture
+{
+    std::string Source;
+    int Width = 0;
+    int Height = 0;
+};
+
+bool SaveBgraPng(const std::filesystem::path& OutputPath, const std::vector<uint8>& Pixels, int Width, int Height)
+{
+    if (Pixels.empty() || Width <= 0 || Height <= 0)
+    {
+        return false;
+    }
+
+    HRESULT InitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    const bool bShouldUninitialize = SUCCEEDED(InitializeResult);
+    if (InitializeResult == RPC_E_CHANGED_MODE)
+    {
+        InitializeResult = S_OK;
+    }
+    if (FAILED(InitializeResult))
+    {
+        return false;
+    }
+
+    IWICImagingFactory* Factory = nullptr;
+    IWICBitmapEncoder* Encoder = nullptr;
+    IWICBitmapFrameEncode* Frame = nullptr;
+    IWICStream* Stream = nullptr;
+    bool bSucceeded = false;
+
+    if (SUCCEEDED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory))) &&
+        SUCCEEDED(Factory->CreateStream(&Stream)) &&
+        SUCCEEDED(Stream->InitializeFromFilename(OutputPath.c_str(), GENERIC_WRITE)) &&
+        SUCCEEDED(Factory->CreateEncoder(GUID_ContainerFormatPng, nullptr, &Encoder)) &&
+        SUCCEEDED(Encoder->Initialize(Stream, WICBitmapEncoderNoCache)) &&
+        SUCCEEDED(Encoder->CreateNewFrame(&Frame, nullptr)) &&
+        SUCCEEDED(Frame->Initialize(nullptr)))
+    {
+        UINT PngWidth = static_cast<UINT>(Width);
+        UINT PngHeight = static_cast<UINT>(Height);
+        WICPixelFormatGUID PixelFormat = GUID_WICPixelFormat32bppBGRA;
+        const UINT Stride = static_cast<UINT>(Width * 4);
+        const UINT BufferSize = static_cast<UINT>(Pixels.size());
+
+        bSucceeded = SUCCEEDED(Frame->SetSize(PngWidth, PngHeight)) &&
+            SUCCEEDED(Frame->SetPixelFormat(&PixelFormat)) &&
+            IsEqualGUID(PixelFormat, GUID_WICPixelFormat32bppBGRA) &&
+            SUCCEEDED(Frame->WritePixels(PngHeight, Stride, BufferSize, const_cast<BYTE*>(Pixels.data()))) &&
+            SUCCEEDED(Frame->Commit()) &&
+            SUCCEEDED(Encoder->Commit());
+    }
+
+    if (Frame)
+    {
+        Frame->Release();
+    }
+    if (Encoder)
+    {
+        Encoder->Release();
+    }
+    if (Stream)
+    {
+        Stream->Release();
+    }
+    if (Factory)
+    {
+        Factory->Release();
+    }
+    if (bShouldUninitialize)
+    {
+        CoUninitialize();
+    }
+
+    return bSucceeded;
+}
+
+FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text)
 {
     const std::wstring WideText = FPaths::ToWide(Text);
     if (WideText.empty())
@@ -207,7 +287,7 @@ std::string CreateRmlTextBitmapSource(const FString& Text)
     SIZE TextSize = {};
     GetTextExtentPoint32W(MemoryDC, WideText.c_str(), static_cast<int>(WideText.size()), &TextSize);
     const int Width = std::max(TextSize.cx + 8, 1L);
-    const int Height = std::max(FontSize + 12, 1);
+    const int Height = std::max(TextSize.cy + 8, 1L);
 
     BITMAPINFO BitmapInfo = {};
     BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -233,7 +313,9 @@ std::string CreateRmlTextBitmapSource(const FString& Text)
     }
 
     HGDIOBJ OldBitmap = SelectObject(MemoryDC, Bitmap);
-    RECT TextRect = {0, 0, Width, Height};
+    PatBlt(MemoryDC, 0, 0, Width, Height, BLACKNESS);
+
+    RECT TextRect = {4, 0, Width, Height};
     SetBkMode(MemoryDC, TRANSPARENT);
     SetTextColor(MemoryDC, RGB(255, 255, 255));
     DrawTextW(MemoryDC, WideText.c_str(), static_cast<int>(WideText.size()), &TextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
@@ -249,8 +331,7 @@ std::string CreateRmlTextBitmapSource(const FString& Text)
             const uint8 G = Source[SourceIndex + 1];
             const uint8 R = Source[SourceIndex + 2];
             const uint8 A = std::max(R, std::max(G, B));
-            const int FlippedY = Height - 1 - Y;
-            const size_t TargetIndex = (static_cast<size_t>(FlippedY) * Width + X) * 4;
+            const size_t TargetIndex = SourceIndex;
             Pixels[TargetIndex + 0] = B;
             Pixels[TargetIndex + 1] = G;
             Pixels[TargetIndex + 2] = R;
@@ -269,54 +350,17 @@ std::string CreateRmlTextBitmapSource(const FString& Text)
     std::filesystem::create_directories(OutputDir);
 
     const size_t HashValue = std::hash<std::string>{}(Text);
-    const std::filesystem::path OutputPath = OutputDir / (L"text_" + std::to_wstring(static_cast<unsigned long long>(HashValue)) + L".bmp");
-
-#pragma pack(push, 1)
-    struct FBitmapFileHeader
-    {
-        uint16 Type = 0x4D42;
-        uint32 Size = 0;
-        uint16 Reserved1 = 0;
-        uint16 Reserved2 = 0;
-        uint32 OffBits = 0;
-    };
-
-    struct FBitmapInfoHeader
-    {
-        uint32 Size = 40;
-        int32 Width = 0;
-        int32 Height = 0;
-        uint16 Planes = 1;
-        uint16 BitCount = 32;
-        uint32 Compression = BI_RGB;
-        uint32 SizeImage = 0;
-        int32 XPelsPerMeter = 0;
-        int32 YPelsPerMeter = 0;
-        uint32 ClrUsed = 0;
-        uint32 ClrImportant = 0;
-    };
-#pragma pack(pop)
-
-    FBitmapFileHeader FileHeader;
-    FBitmapInfoHeader InfoHeader;
-    InfoHeader.Width = Width;
-    InfoHeader.Height = Height;
-    InfoHeader.SizeImage = static_cast<uint32>(Pixels.size());
-    FileHeader.OffBits = sizeof(FBitmapFileHeader) + sizeof(FBitmapInfoHeader);
-    FileHeader.Size = FileHeader.OffBits + InfoHeader.SizeImage;
-
-    FILE* File = nullptr;
-    if (_wfopen_s(&File, OutputPath.c_str(), L"wb") != 0 || !File)
+    const std::filesystem::path OutputPath = OutputDir / (L"text_" + std::to_wstring(static_cast<unsigned long long>(HashValue)) + L".png");
+    if (!SaveBgraPng(OutputPath, Pixels, Width, Height))
     {
         return {};
     }
 
-    std::fwrite(&FileHeader, sizeof(FileHeader), 1, File);
-    std::fwrite(&InfoHeader, sizeof(InfoHeader), 1, File);
-    std::fwrite(Pixels.data(), 1, Pixels.size(), File);
-    std::fclose(File);
-
-    return "/" + FPaths::MakeRelativeToRoot(OutputPath);
+    FGeneratedTextTexture Result;
+    Result.Source = "/" + FPaths::MakeRelativeToRoot(OutputPath);
+    Result.Width = Width;
+    Result.Height = Height;
+    return Result;
 }
 
 void BuildOrthographicMatrix(float* Out, uint32 Width, uint32 Height)
@@ -1251,15 +1295,15 @@ bool FRmlUiManager::SetElementText(const FString& DocumentName, const FString& E
     }
 
     Element->SetInnerRML("");
-    const std::string TextTextureSource = CreateRmlTextBitmapSource(Text);
-    if (TextTextureSource.empty())
+    const FGeneratedTextTexture TextTexture = CreateRmlTextBitmapSource(Text);
+    if (TextTexture.Source.empty())
     {
         return false;
     }
 
-    Element->SetProperty("width", "360px");
-    Element->SetProperty("height", "48px");
-    Element->SetProperty("decorator", "image(" + TextTextureSource + ")");
+    Element->SetProperty("width", FormatPx(static_cast<float>(TextTexture.Width)));
+    Element->SetProperty("height", FormatPx(static_cast<float>(TextTexture.Height)));
+    Element->SetProperty("decorator", "image(" + TextTexture.Source + ")");
     return true;
 }
 
