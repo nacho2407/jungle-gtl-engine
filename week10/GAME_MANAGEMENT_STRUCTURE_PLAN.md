@@ -48,10 +48,54 @@ Empty Actor
 - Rebuild management Lua after the team Lua template is merged.
 - Keep native engine/API work moving first:
   - `Engine.API`
-  - Runtime UI Preview
-  - Audio/System/Component
-  - Save/Debug/World helpers
+- Runtime UI Preview
+- Audio/System/Component
+- Save/Debug/World helpers
 - Reintroduce `GeneralManager` / `GameManager` / FSM only after the final Lua module style is fixed.
+
+## Current Lua Management Skeleton
+
+Reintroduced as a lightweight Lua-first skeleton under `Asset/Script`.
+
+Entry script:
+
+- `Asset/Script/GeneralManager.lua`
+
+Core modules:
+
+- `Asset/Script/Game/Core/EventBus.lua`
+- `Asset/Script/Game/Core/StateMachine.lua`
+
+Managers:
+
+- `Asset/Script/Game/Management/GameManager.lua`
+- `Asset/Script/Game/Management/DataManager.lua`
+- `Asset/Script/Game/Management/SoundManager.lua`
+- `Asset/Script/Game/Management/UIManager.lua`
+
+States:
+
+- `Asset/Script/Game/States/BootState.lua`
+- `Asset/Script/Game/States/TitleState.lua`
+- `Asset/Script/Game/States/PlayingState.lua`
+- `Asset/Script/Game/States/PauseState.lua`
+- `Asset/Script/Game/States/ResultState.lua`
+
+Style decision:
+
+- No shared `Class.lua`.
+- The attachable script keeps the engine-required `Script.new(component, properties)` shape.
+- Other modules use plain `M.new(context)` factory functions.
+- Managers and states communicate through `EventBus` for gameplay events.
+- State transitions are explicit through `StateMachine`.
+
+UI ownership:
+
+- State decides which screen is active.
+- `UIManager` owns widget construction and widget updates.
+- State-specific UI behavior is handled by listening to `UI.Action` events.
+- Pause is stacked over Playing using `StateMachine:Push("Pause")`.
+- Full flow changes use `StateMachine:Change(...)`, which exits every stacked state from top to bottom.
 
 ## Pending Game API Bridge
 
