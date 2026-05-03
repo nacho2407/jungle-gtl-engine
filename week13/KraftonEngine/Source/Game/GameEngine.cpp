@@ -5,6 +5,7 @@
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
+#include "Profiling/Timer.h"
 #include <windows.h>  // VK_ESCAPE
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
@@ -175,6 +176,15 @@ void UGameEngine::ProcessPendingTransition()
 		{
 			Ctx->World->BeginPlay();
 		}
+	}
+
+	// Timer 리셋 — destroy + load + BeginPlay 가 한 frame 안에서 통째로 일어나면 다음
+	// Tick 의 dt 가 그 로드 시간만큼 부풀어 PhysX 가 거대한 step (예: 2~3 초) 을 한 번에
+	// integrate → 차량이 바닥을 뚫고 추락 등 tunneling 발생. LastTime 을 지금으로 맞춰
+	// 다음 frame 의 dt 를 정상 frame 간격으로 회귀시킨다.
+	if (FTimer* T = GetTimer())
+	{
+		T->Initialize();
 	}
 }
 
