@@ -9,17 +9,16 @@ class FLuaGameObjectProxy
 {
 public:
     FLuaGameObjectProxy() = default;
-    explicit FLuaGameObjectProxy(AActor* InActor)
-        : Actor(InActor)
-    {
-    }
+    explicit FLuaGameObjectProxy(AActor* InActor);
 
-    void SetActor(AActor* InActor) { Actor = InActor; }
-    AActor* GetActor() const { return Actor; }
+    void SetActor(AActor* InActor);
+    AActor* ResolveActor() const;
+    AActor* GetActor() const { return ResolveActor(); }
 
-    bool IsValid() const { return Actor != nullptr; }
+    bool IsValid() const { return ResolveActor() != nullptr; }
 
-    uint32 GetUUID() const;
+    uint32 GetUUID() const { return ActorUUID; }
+    uint32 GetWorldUUID() const { return WorldUUID; }
 
     FVector GetLocation() const;
     void SetLocation(const FVector& InLocation);
@@ -32,5 +31,8 @@ public:
     FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
 
 private:
-    AActor* Actor = nullptr;
+    uint32 ActorUUID = 0;
+
+	// World 내 Actor 검증용
+    uint32 WorldUUID = 0;
 };
