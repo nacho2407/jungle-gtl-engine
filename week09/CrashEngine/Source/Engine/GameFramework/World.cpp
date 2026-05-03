@@ -247,7 +247,10 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 
 void UWorld::UpdateCollisionInBVH(UPrimitiveComponent* Comp)
 {
-    //CollisionManager->UpdateCollisionInBVH(Comp);
+    if (CollisionManager)
+    {
+        CollisionManager->UpdateCollisionInBVH(Comp);
+    }
 }
 
 FLODUpdateContext UWorld::PrepareLODContext()

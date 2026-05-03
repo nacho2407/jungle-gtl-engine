@@ -33,6 +33,11 @@ public:
     void SetShadowResolution(EShadowResolution InResolution) { ShadowResolution = InResolution; }
     void SetShadowResolution(uint32 InResolution) { ShadowResolution = RoundShadowResolutionToTier(InResolution); }
 
+	void SetIntensity(float InIntensity);
+    void SetLightColor(const FVector4& InColor);
+    void SetAffectsWorld(bool bInAffectsWorld);
+    void SetCastShadows(bool bInCastShadows);
+
 protected:
     float Intensity = 2.5f;
     FVector4 LightColor = { 1, 1, 1, 1 }; // linear RGBA (0~1)

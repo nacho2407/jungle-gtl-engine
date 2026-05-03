@@ -1,4 +1,7 @@
-﻿#include "SphereComponent.h"
+#include "SphereComponent.h"
+
+#include <algorithm>
+
 IMPLEMENT_COMPONENT_CLASS(USphereComponent, UShapeComponent, EEditorComponentCategory::Shapes)
 
 USphereComponent::USphereComponent()
@@ -22,8 +25,14 @@ void USphereComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
 
 void USphereComponent::PostEditProperty(const char* PropertyName)
 {
-    SphereRadius = std::max(0.0f, SphereRadius);
+    SetRadius(SphereRadius);
     UShapeComponent::PostEditProperty(PropertyName);
+}
+
+void USphereComponent::SetRadius(float Radius)
+{
+    SphereRadius = std::max(0.0f, Radius);
+    OnTransformDirty();
 }
 
 void USphereComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
@@ -37,12 +46,22 @@ void USphereComponent::OnTransformDirty()
     UShapeComponent::OnTransformDirty();
 
     const FMatrix& WorldMat = GetWorldMatrix();
-
     SphereCollision.Sphere.Center = WorldMat.GetLocation();
 
     FVector Scale = WorldMat.GetScale();
-
-    float MaxScale = std::max({ Scale.X, Scale.Y, Scale.Z });
-
+    const float MaxScale = std::max(std::max(Scale.X, Scale.Y), Scale.Z);
     SphereCollision.Sphere.Radius = SphereRadius * MaxScale;
+
+    NotifyCollisionShapeChanged();
+}
+
+void USphereComponent::UpdateWorldAABB() const
+{
+    const FVector Center = SphereCollision.Sphere.Center;
+    const FVector Extent(SphereCollision.Sphere.Radius);
+
+    WorldAABBMinLocation = Center - Extent;
+    WorldAABBMaxLocation = Center + Extent;
+    bWorldAABBDirty = false;
+    bHasValidWorldAABB = true;
 }

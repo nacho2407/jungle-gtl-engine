@@ -102,19 +102,39 @@ void DrawDebugOBB(FScene* Scene, const FOBB& OBB, const FColor& Color)
     // 0.0f = 1프레임 동안만 렌더링 (매 프레임 호출하므로 선이 남지 않음)
     Scene->GetDebugPrimitiveQueue().AddBox(P0, P1, P2, P3, P4, P5, P6, P7, Color, 0.0f);
 }
+
+void RemovePairsContaining(TArray<FOverlapPair>& Pairs, UPrimitiveComponent* Component)
+{
+    Pairs.erase(std::remove_if(Pairs.begin(), 
+			Pairs.end(),
+			[Component](const FOverlapPair& Pair) { return Pair.A == Component || Pair.B == Component; }),
+		Pairs.end());
+}
 } // namespace
 
 void FCollisionManager::RegisterComponent(UPrimitiveComponent* Component)
 {
-    if (RegisteredComponents.size() == 0 || RegisteredComponents.back() != Component)
+    if (!Component)
     {
-        RegisteredComponents.push_back(Component);
-        bNeedsBVHRebuild = true;
+        return;
     }
+
+    if (std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component) != RegisteredComponents.end())
+    {
+        return;
     }
+
+    RegisteredComponents.push_back(Component);
+    bNeedsBVHRebuild = true;
+}
 
 void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
 {
+    if (!Component)
+    {
+        return;
+    }
+
     auto it = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
 
     if (it != RegisteredComponents.end())
@@ -125,6 +145,11 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
         // 참고: 만약 순서가 꼭 유지되어야 한다면 아래 코드를 씁니다. (O(N) 비용)
         // RegisteredComponents.erase(it);
     }
+
+	RemovePairsContaining(PreviousFrameOverlaps, Component);
+    RemovePairsContaining(CurrentFrameOverlaps, Component);
+    RemovePairsContaining(PendingBeginOverlaps, Component);
+    RemovePairsContaining(PendingEndOverlaps, Component);
 }
 
 void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
@@ -265,6 +290,17 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
     }
 }
 
+void FCollisionManager::Reset()
+{
+    RegisteredComponents.clear();
+    SortedLeaves.clear();
+    PreviousFrameOverlaps.clear();
+    CurrentFrameOverlaps.clear();
+    PendingBeginOverlaps.clear();
+    PendingEndOverlaps.clear();
+    bNeedsBVHRebuild = true;
+}
+
 void FCollisionManager::BuildBVH()
 {
     TArray<UPrimitiveComponent*> Leaves = RegisteredComponents;
@@ -339,11 +375,23 @@ void FCollisionManager::QueryBVH(const FBoundingBox& QueryBounds, TArray<UPrimit
 
 bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent* B)
 {
-    if (!A->IsA<UShapeComponent>() || !B->IsA<UShapeComponent>())
+    if (!A || !B)
+    {
         return false;
+    }
+
+    if (!A->IsA<UShapeComponent>() || !B->IsA<UShapeComponent>())
+    {
+        return false;
+    }
 
     FCollision* CollisionA = static_cast<UShapeComponent*>(A)->GetCollision();
     FCollision* CollisionB = static_cast<UShapeComponent*>(B)->GetCollision();
+
+    if (!CollisionA || !CollisionB)
+    {
+        return false;
+    }
 
     return CollisionA->IsOverlapping(CollisionB); // Intersect 함수는 수학 라이브러리에 구현
 }
