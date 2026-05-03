@@ -445,11 +445,20 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"CarGas",       ECarGamePhase::CarGas,
 		"EscapePolice", ECarGamePhase::EscapePolice,
 		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
-		"Finished",     ECarGamePhase::Finished,
-		"Failed",       ECarGamePhase::Failed);
+		"Result",       ECarGamePhase::Result,
+		"Finished",     ECarGamePhase::Finished);
+
+	Lua.new_enum("EPhaseResult",
+		"None",    EPhaseResult::None,
+		"Success", EPhaseResult::Success,
+		"Failed",  EPhaseResult::Failed);
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase", &AGameStateCarGame::GetPhase,
+		"GetRemainingMatchTime", &AGameStateCarGame::GetRemainingMatchTime,
+		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
+		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
+		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable
