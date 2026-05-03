@@ -289,6 +289,70 @@ void AActor::Serialize(FArchive& Ar)
 	// 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
 	Ar << bVisible;
 	Ar << bNeedsTick;
+	Ar << Tags;
+}
+
+bool AActor::HasTag(const FName& Tag) const
+{
+	for (const FName& T : Tags)
+	{
+		if (T == Tag) return true;
+	}
+	return false;
+}
+
+void AActor::AddTag(const FName& Tag)
+{
+	if (HasTag(Tag)) return;
+	Tags.push_back(Tag);
+}
+
+void AActor::RemoveTag(const FName& Tag)
+{
+	for (auto it = Tags.begin(); it != Tags.end(); ++it)
+	{
+		if (*it == Tag) { Tags.erase(it); return; }
+	}
+}
+
+namespace
+{
+	FString JoinTagsCommaSep(const TArray<FName>& Tags)
+	{
+		FString Result;
+		for (size_t i = 0; i < Tags.size(); ++i)
+		{
+			if (i > 0) Result += ",";
+			Result += Tags[i].ToString();
+		}
+		return Result;
+	}
+
+	TArray<FName> SplitTagsCommaSep(const FString& In)
+	{
+		TArray<FName> Out;
+		size_t Start = 0;
+		while (Start <= In.size())
+		{
+			size_t End = In.find(',', Start);
+			if (End == FString::npos) End = In.size();
+
+			// 양 끝 공백 trim — "a, b" 같은 입력 허용.
+			size_t TokStart = Start;
+			size_t TokEnd = End;
+			while (TokStart < TokEnd && std::isspace(static_cast<unsigned char>(In[TokStart]))) ++TokStart;
+			while (TokEnd > TokStart && std::isspace(static_cast<unsigned char>(In[TokEnd - 1]))) --TokEnd;
+
+			if (TokEnd > TokStart)
+			{
+				Out.push_back(FName(In.substr(TokStart, TokEnd - TokStart)));
+			}
+
+			if (End == In.size()) break;
+			Start = End + 1;
+		}
+		return Out;
+	}
 }
 
 // SceneComponent 서브트리를 재귀 복제. 부모 → 자식 순으로 만들되,
@@ -390,6 +454,10 @@ void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 	OutProps.push_back({ "Rotation", EPropertyType::Rotator, "Transform", &PendingActorRotation });
 	OutProps.push_back({ "Scale", EPropertyType::Vec3, "Transform", &PendingActorScale });
 	OutProps.push_back({ "Visible", EPropertyType::Bool, "Actor", &PendingActorVisible });
+
+	// Tags — 콤마 구분 단일 문자열로 편집. PostEditProperty 가 다시 split 해서 Tags 갱신.
+	PendingTagsString = JoinTagsCommaSep(Tags);
+	OutProps.push_back({ "Tags", EPropertyType::String, "Actor", &PendingTagsString });
 }
 
 void AActor::PostEditProperty(const char* PropertyName)
@@ -410,6 +478,10 @@ void AActor::PostEditProperty(const char* PropertyName)
 	else if (strcmp(PropertyName, "Visible") == 0)
 	{
 		SetVisible(PendingActorVisible);
+	}
+	else if (strcmp(PropertyName, "Tags") == 0)
+	{
+		SetTags(SplitTagsCommaSep(PendingTagsString));
 	}
 }
 

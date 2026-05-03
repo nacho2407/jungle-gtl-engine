@@ -10,6 +10,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/CameraManager.h"
+#include "GameFramework/GameplayStatics.h"
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
 #include "Platform/Paths.h"
@@ -470,6 +471,19 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor != nullptr && IsAliveObject(Actor);
 	},
 
+		"HasTag", [](AActor& Actor, const FString& Tag)
+	{
+		return Actor.HasTag(FName(Tag));
+	},
+		"AddTag", [](AActor& Actor, const FString& Tag)
+	{
+		Actor.AddTag(FName(Tag));
+	},
+		"RemoveTag", [](AActor& Actor, const FString& Tag)
+	{
+		Actor.RemoveTag(FName(Tag));
+	},
+
 		"GetFloatingPawnMovement", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UFloatingPawnMovementComponent>();
@@ -532,6 +546,23 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			}
 		}
 		return nullptr;
+	});
+	World.set_function("FindFirstActorByTag", [](const FString& Tag) -> AActor*
+	{
+		return FGameplayStatics::FindFirstActorByTag(
+			GEngine ? GEngine->GetWorld() : nullptr, FName(Tag));
+	});
+	World.set_function("FindActorsByTag", [](const FString& Tag) -> sol::table
+	{
+		sol::table Result = FLuaScriptManager::GetState().create_table();
+		const TArray<AActor*> Found = FGameplayStatics::FindActorsByTag(
+			GEngine ? GEngine->GetWorld() : nullptr, FName(Tag));
+		int Idx = 1; // Lua arrays are 1-indexed
+		for (AActor* Actor : Found)
+		{
+			Result[Idx++] = Actor;
+		}
+		return Result;
 	});
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
