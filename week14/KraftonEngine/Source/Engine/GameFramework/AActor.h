@@ -98,6 +98,15 @@ public:
 	bool IsVisible() const { return bVisible; }
 	void SetVisible(bool Visible);
 
+	// Tags — 게임 측에서 액터를 의미적으로 분류하는 FName 배열 (UE Actor::Tags 대응).
+	// Trigger volume 의 TriggerTag 같은 단일-태그 필드는 그대로 두고, 이건 범용 다중 태그.
+	// 에디터에서는 콤마 구분 문자열로 편집 — PostEditProperty 가 split 해서 반영.
+	bool HasTag(const FName& Tag) const;
+	void AddTag(const FName& Tag);
+	void RemoveTag(const FName& Tag);
+	const TArray<FName>& GetTags() const { return Tags; }
+	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }
+
 	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
 	bool bNeedsTick = true;
 	bool bTickInEditor = false;
@@ -120,6 +129,9 @@ protected:
 	bool PendingActorVisible = true;
 
 	bool bVisible = true;
+
+	TArray<FName> Tags;
+	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
 	TArray<UActorComponent*> OwnedComponents;
 
