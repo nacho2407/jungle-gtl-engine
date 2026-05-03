@@ -17,11 +17,31 @@ function Script:Attack(degree, yaw)
         return
     end
 
+    local mode = math.random(1, 3)
+
     local swingSign = math.sin(math.rad(degree)) > 0 and 1 or -1
-    local swingStart = -55 * swingSign
-    local swingEnd   =  55 * swingSign
-    local pitchStart = -35
-    local pitchEnd   =  15
+    local swingStart = 0
+    local swingEnd   =  0
+    local pitchStart =  0
+    local pitchEnd   =  0
+
+    if mode == 1 then
+        swingStart = -55 * swingSign
+        swingEnd   =  90 * swingSign
+        pitchStart =  0
+        pitchEnd   =  0
+    elseif mode == 2 then
+        swingStart = -55 * swingSign
+        swingEnd   =  90 * swingSign
+        pitchStart =  -45
+        pitchEnd   =  -45
+    else        
+        swingStart = -55 * swingSign
+        swingEnd   =  90 * swingSign
+        pitchStart =  -90
+        pitchEnd   =  -90
+    end
+
 
     for i = 1, 8 do
         local t = i / 8
