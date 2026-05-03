@@ -1,8 +1,8 @@
-﻿#include "DirtComponent.h"
+﻿#include "Game/Component/DirtComponent.h"
 
 #include "Collision/RayUtils.h"
 #include "Component/CameraComponent.h"
-#include "Component/CompletionOutlineComponent.h"
+#include "Game/Component/CompletionOutlineComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "GameFramework/AActor.h"

@@ -1,6 +1,6 @@
-#include "CarDirtComponent.h"
+#include "Game/Component/CarDirtComponent.h"
 
-#include "Component/DirtComponent.h"
+#include "Game/Component/DirtComponent.h"
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
 #include "Object/ObjectFactory.h"

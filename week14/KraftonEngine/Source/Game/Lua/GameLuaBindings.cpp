@@ -9,9 +9,9 @@
 #include "Object/Object.h"  // Cast
 #include "Core/Log.h"
 
-#include "Component/Movement/CarMovementComponent.h"
-#include "Component/CarGasComponent.h"
-#include "Component/DirtComponent.h"
+#include "Game/Component/Movement/CarMovementComponent.h"
+#include "Game/Component/CarGasComponent.h"
+#include "Game/Component/DirtComponent.h"
 
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
