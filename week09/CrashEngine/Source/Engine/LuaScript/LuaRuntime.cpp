@@ -189,6 +189,7 @@ void FLuaRuntime::BindEngineTypes()
 		"Velocity", &FLuaGameObjectProxy::Velocity,
 		"IsValid", &FLuaGameObjectProxy::IsValid,
 		"AddWorldOffset", &FLuaGameObjectProxy::AddWorldOffset,
+		"ApplyDamage", &FLuaGameObjectProxy::ApplyDamage,
 		"PrintLocation", &FLuaGameObjectProxy::PrintLocation
 	);
 

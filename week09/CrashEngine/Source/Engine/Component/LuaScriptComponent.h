@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/ActorComponent.h"
+#include "Core/Delegates/Delegate.h"
 #include "Input/InputTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaIncludes.h"
@@ -42,6 +43,8 @@ private:
     void ClearScriptRuntime();
     void CacheScriptFunctions();
     void SetLastError(const FString& InError);
+    void BindNativeDelegates();
+    void UnbindNativeDelegates();
 
 	void DispatchInputEvents();
     void DispatchVirtualKeyEvents(const FInputSnapshot& Input);
@@ -75,4 +78,12 @@ private:
 
     sol::protected_function OnGamepadButtonPressedFunc;
     sol::protected_function OnGamepadButtonReleasedFunc;
+
+    sol::protected_function OnOverlapBeginFunc;
+    sol::protected_function OnOverlapEndFunc;
+    sol::protected_function OnTakeDamageFunc;
+
+    DelegateHandle OnOverlapBeginHandle = 0;
+    DelegateHandle OnOverlapEndHandle = 0;
+    DelegateHandle OnTakeDamageHandle = 0;
 };

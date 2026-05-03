@@ -33,6 +33,16 @@ void FLuaGameObjectProxy::AddWorldOffset(const FVector& Delta)
     Actor->AddActorWorldOffset(Delta);
 }
 
+void FLuaGameObjectProxy::ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+    Actor->TakeDamage(Damage, Instigator.GetActor());
+}
+
 void FLuaGameObjectProxy::PrintLocation() const
 {
     const FVector Location = GetLocation();

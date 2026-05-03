@@ -120,6 +120,7 @@ StyleCopReport.xml
 *.meta
 *.obj
 !**/Content/**/*.obj
+CrashEngine/Asset/Content/Models/Wreck/Untitled.obj
 *.idb
 *.iobj
 *.pch
