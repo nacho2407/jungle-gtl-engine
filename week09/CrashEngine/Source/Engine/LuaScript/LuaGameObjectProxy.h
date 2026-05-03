@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "LuaScript/LuaComponentProxy.h"
 #include "Math/Vector.h"
 
 class AActor;
@@ -28,6 +29,9 @@ public:
     void ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator);
 
     void PrintLocation() const;
+
+	FLuaComponentProxy AddComponent(const FString& ComponentType);
+    FLuaComponentProxy GetComponent(const FString& ComponentType, int32 Index = 0) const;
 
 public:
     FVector Velocity = FVector(0.0f, 0.0f, 0.0f);

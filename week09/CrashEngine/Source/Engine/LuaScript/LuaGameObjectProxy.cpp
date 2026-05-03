@@ -1,9 +1,66 @@
-#include "LuaGameObjectProxy.h"
+﻿#include "LuaGameObjectProxy.h"
 
+#include "Component/ActorComponent.h"
+#include "Component/SceneComponent.h"
+#include "Component/LuaScriptComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
+#include "Object/UClass.h"
+
+namespace
+{
+FString NormalizeLuaComponentClassName(const FString& TypeName)
+{
+    if (TypeName == "StaticMeshComponent")
+        return "UStaticMeshComponent";
+    if (TypeName == "TextRenderComponent")
+        return "UTextRenderComponent";
+    if (TypeName == "PointLightComponent")
+        return "UPointLightComponent";
+    if (TypeName == "SpotLightComponent")
+        return "USpotLightComponent";
+    if (TypeName == "DirectionalLightComponent")
+        return "UDirectionalLightComponent";
+    if (TypeName == "AmbientLightComponent")
+        return "UAmbientLightComponent";
+    if (TypeName == "SphereComponent")
+        return "USphereComponent";
+    if (TypeName == "BoxComponent")
+        return "UBoxComponent";
+    if (TypeName == "CapsuleComponent")
+        return "UCapsuleComponent";
+
+    return TypeName;
+}
+
+bool IsLuaAddableComponentClassName(const FString& ClassName)
+{
+    return ClassName == "UStaticMeshComponent"
+		|| ClassName == "UTextRenderComponent" 
+		|| ClassName == "UPointLightComponent" 
+		|| ClassName == "USpotLightComponent" 
+		|| ClassName == "UDirectionalLightComponent" 
+		|| ClassName == "UAmbientLightComponent" 
+		|| ClassName == "USphereComponent" 
+		|| ClassName == "UBoxComponent" 
+		|| ClassName == "UCapsuleComponent";
+}
+
+UClass* FindClassByName(const FString& ClassName)
+{
+    for (UClass* Class : UClass::GetAllClasses())
+    {
+        if (Class && ClassName == Class->GetName())
+        {
+            return Class;
+        }
+    }
+
+    return nullptr;
+}
+} // namespace
 
 FLuaGameObjectProxy::FLuaGameObjectProxy(AActor* InActor)
 {
@@ -73,6 +130,7 @@ void FLuaGameObjectProxy::AddWorldOffset(const FVector& Delta)
 
 void FLuaGameObjectProxy::ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator)
 {
+    AActor* Actor = ResolveActor();
     if (!Actor)
     {
         return;

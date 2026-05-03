@@ -78,13 +78,9 @@ public:
 	 */
 
     bool SetSphereRadius(float Radius);
-
 	bool SetBoxExtent(const FVector& Extent);
-
     bool SetCapsuleSize(float Radius, float HalfHeight);
-
     bool SetCapsuleRadius(float Radius);
-
     bool SetCapsuleHalfHeight(float HalfHeight);
 
 private:
