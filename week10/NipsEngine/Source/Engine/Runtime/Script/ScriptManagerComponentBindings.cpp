@@ -1,4 +1,4 @@
-#include "Runtime/Script/ScriptManager.h"
+﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Asset/StaticMesh.h"
 #include "Component/ActorComponent.h"
@@ -61,6 +61,8 @@ void FScriptManager::BindComponentTypes()
                  { return Component.GetTypeInfo() && Component.GetTypeInfo()->name ? Component.GetTypeInfo()->name : ""; });
     LUA_METHOD(GetOwner, GetOwner);
     LUA_SET(GetActor, &LuaGetComponentActor);
+    LUA_SET(AsSceneComponent, [](UActorComponent& Self) -> USceneComponent*
+				 { return Cast<USceneComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
     LUA_METHOD(SetActive, SetActive);
     LUA_METHOD(IsAutoActivate, IsAutoActivate);

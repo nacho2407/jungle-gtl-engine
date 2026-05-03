@@ -63,7 +63,10 @@ public:
 	//                   하위 클래스 구현 시 부모의 PostDuplicate 를 먼저 호출해야 합니다.
 	// -----------------------------------------------------------------------
 	virtual UObject* Duplicate();
-	virtual void PostDuplicate(UObject* Original) {}
+	virtual void PostDuplicate(UObject* Original) 
+	{
+        ObjectName = Original->ObjectName;
+	}
 
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
