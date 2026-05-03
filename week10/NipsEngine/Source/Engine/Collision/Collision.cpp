@@ -204,8 +204,10 @@ FCollisionResult FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
 
     // Normal은 A→B 방향 기준으로 부호 정렬
     if (BestAxis.DotProduct(T) < 0.0f)
-        BestAxis = BestAxis * -1.0f; // 추가
-    Result.HitNormal = BestAxis;     // 추가
+        BestAxis = BestAxis * -1.0f;
+
+    // 항상 단위 벡터로 반환하도록 정규화
+    Result.HitNormal = BestAxis.GetSafeNormal();
 
     return Result;
 }

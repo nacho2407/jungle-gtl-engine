@@ -82,9 +82,28 @@ function Script:Tick(dt)
     local player = Engine.API.World.GetPossessedActor()
 
     if player and Engine.API.Input.IsMousePressed("LMB") then
+        local slash = Engine.API.World.SpawnActor("ABladeSlash")
+    
+        local yaw = rotation.z
+        local yaw_rad = math.rad(yaw)
 
-        local slash = Engine.API.World.SpawnActor("ABullet")
+        local pitch_x = 45 * math.abs(math.sin(yaw_rad))
+        local pitch_y = 45 * math.abs(math.cos(yaw_rad))
 
+        local scale_long = 10
+        local scale_short = 3
+
+        -- forward vector 성분으로 scale 결정
+        local fx = math.abs(math.sin(yaw_rad))  -- X축 방향 성분
+        local fz = math.abs(math.cos(yaw_rad))  -- Z축 방향 성분
+
+        -- forward가 X쪽이면 X를 길게, Z쪽이면 Z를 길게
+        local scale_x = scale_short + (scale_long - scale_short) * fx
+        local scale_z = scale_short + (scale_long - scale_short) * fz
+
+        slash.Rotation = Vector(pitch_y, pitch_x, yaw)
+        slash.Location = self.owner.Location + self.owner.Scale / 2
+        slash.Scale = Vector(scale_x, 0.1, scale_z)
     end
 end
 
