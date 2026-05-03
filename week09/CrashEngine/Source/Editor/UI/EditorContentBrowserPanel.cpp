@@ -17,8 +17,6 @@
 
 namespace
 {
-constexpr const char* ContentBrowserPayloadName = "CRASH_CONTENT_ASSET";
-
 bool IsPrefabExtension(const std::filesystem::path& Path)
 {
     return Path.extension() == L".prefab" || Path.extension() == L".Prefab";
@@ -343,6 +341,10 @@ void FEditorContentBrowserPanel::DrawTileThumbnail(const FContentItem& Item, con
     else if (Item.Type == EContentBrowserAssetType::Material)
     {
         Texture = GetEditorIconTexture("Material.png");
+    }
+    else if (Item.Type == EContentBrowserAssetType::Model && ToLowerString(Item.Extension) == ".obj")
+    {
+        Texture = GetEditorIconTexture("obj_icon.png");
     }
 
     if (Texture && Texture->GetSRV())

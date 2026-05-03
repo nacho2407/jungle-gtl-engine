@@ -9,6 +9,8 @@
 
 struct ImVec2;
 
+constexpr const char* ContentBrowserPayloadName = "CRASH_CONTENT_ASSET";
+
 enum class EContentBrowserAssetType : int32
 {
     Unknown,
