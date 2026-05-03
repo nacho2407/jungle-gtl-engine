@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Mesh/PreviewSphere_Inst_1.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/ChatGPT Image 2026년 5월 4일 오전 04_11_50.png"
+          }],
+        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+      }

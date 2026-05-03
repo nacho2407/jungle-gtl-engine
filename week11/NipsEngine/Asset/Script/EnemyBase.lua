@@ -12,7 +12,7 @@ Script.Properties = {
 
     HP = {
         Type = "Int",
-        Default = 100,
+        Default = 1,
         Category = "Stats"
     },
 
@@ -28,7 +28,8 @@ function Script.new(component, properties)
 
     self.component = component
     self.owner = component:GetOwner()
-    self.target = Actor
+    self.target = nil
+    self.bMovementLocked = false
 
     -- 런타임 전용 상태
     self.bIsHitReacting = false
@@ -52,16 +53,15 @@ function Script:HitReaction()
     end
 
     self.bIsHitReacting = true
-    self.bCanMove = false
+    self.bMovementLocked = true
 
-    Log("[Lua] start")
+    Log("[Lua] HitReaction start")
 
     coroutine.yield(WaitForSeconds(1.0))
 
-    self.bCanMove = true
     self.bIsHitReacting = false
 
-    Log("[Lua] after 1s")
+    Log("[Lua] HitReaction end")
 end
 
 function Script:BeginPlay()
@@ -77,16 +77,20 @@ function Script:BeginPlay()
 end
 
 function Script:Tick(dt)
-    if not self.bCanMove then
+    if not self.bCanMove or self.bMovementLocked then
         return
     end
 
     local delta = self.target.Location - self.owner.Location
+    delta.Z = 0
+
     local distance = delta:Size()
 
     if distance > 0.1 then
         local direction = delta:Normalized()
-        local moveDelta = direction * (dt * self.Speed)
+        
+        local step = math.min(distance, dt * self.Speed)
+        local moveDelta = direction * step
         self.owner.Location = self.owner.Location + moveDelta
     end
 end
@@ -102,6 +106,10 @@ end
 function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
     Log("[Enemy OnBeginOverlap] " .. tostring(self.owner.UUID))
     
+    if OtherActor:HasTag("Enemy") then
+        return
+    end
+
     StartCoroutine(function()
         self:HitReaction()
     end)

@@ -1,0 +1,25 @@
+{
+        "Name" : "Asset/Mesh/PreviewSphere_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/Dice.JPG"
+          }, {
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : true
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 1.000000
+          }, {
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "bHasSpecularMap",
+            "Type" : "Bool",
+            "Value" : false
+          }],
+        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+      }
