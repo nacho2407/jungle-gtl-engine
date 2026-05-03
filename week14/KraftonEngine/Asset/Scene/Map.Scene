@@ -1442,7 +1442,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-32.435738, 142.698746, 1.942000],
-        "Rotation" : [0.000000, -8.199043, 0.000000],
+        "Rotation" : [0.000000, -8.199042, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1467,7 +1467,7 @@
           "Location" : [-32.435738, 142.698746, 1.942000],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, -8.199051, 0.000000],
+          "Rotation" : [0.000000, -8.199036, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Buildings/Building3.obj",
@@ -1590,7 +1590,7 @@
           "Location" : [-78.705887, -375.854645, 1.942000],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 178.366211, 0.000000],
+          "Rotation" : [0.000000, 178.366180, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Buildings/Building3.obj",
@@ -2677,7 +2677,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
-          "Cast Shadow" : true,
+          "Cast Shadow" : false,
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
           "Collision Enabled" : 0,
           "Collision Responses" : {
@@ -3562,7 +3562,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [160.816833, -18.016075, 1.599991],
-        "Rotation" : [0.000000, -5.563552, 0.000000],
+        "Rotation" : [0.000000, -5.563551, 0.000000],
         "Scale" : [25.000000, 25.000000, 20.000000],
         "TriggerTag" : "CarWash",
         "Visible" : true
@@ -3605,9 +3605,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-107.473183, 111.149300, 23.777182],
+    "Location" : [-83.096588, 104.467133, 6.167001],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 17.657286, -18.687407]
+    "Rotation" : [0.000000, 25.157286, -36.387268]
   },
   "Version" : 2,
   "WorldType" : "Editor"
