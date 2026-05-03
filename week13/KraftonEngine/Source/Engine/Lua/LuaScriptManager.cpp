@@ -1,14 +1,11 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
-#include "Component/Movement/CarMovementComponent.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
-#include "Component/CarGasComponent.h"
 #include "Component/CameraComponent.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
-#include "Component/DirtComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/CameraManager.h"
@@ -18,13 +15,6 @@
 #include "Math/Vector.h"
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
-// ⚠ 의존성 주의: Engine 모듈의 Lua binding이 Game 모듈의 클래스(GameStateCarGame 등)를
-// 직접 참조한다. 일반적으로 Engine→Game 결합은 피해야 하지만, 자동차 게임 전용
-// Lua API 노출을 위해 의도적으로 허용. 다른 게임 모드가 추가되면 게임-특화 binding은
-// 별도 등록 시점(GameEngine::Init 등)으로 분리하는 것을 권장.
-#include "Game/GameState/GameStateCarGame.h"
-#include "Game/Pawn/CarPawn.h"
-#include "Game/Pawn/PoliceCar.h"
 #include <filesystem>
 #include <fstream>
 
@@ -276,21 +266,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	Lua.new_usertype<UCameraComponent>("CameraComponent");
 
-	Lua.new_usertype<UCarMovementComponent>("CarMovementComponent",
-		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
-		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
-		"StopImmediately", &UCarMovementComponent::StopImmediately,
-		"GetForwardSpeed", &UCarMovementComponent::GetForwardSpeed);
-
-	Lua.new_usertype<UCarGasComponent>("CarGasComponent",
-		"SetGas", &UCarGasComponent::SetGas,
-		"AddGas", &UCarGasComponent::AddGas,
-		"ConsumeGas", &UCarGasComponent::ConsumeGas,
-		"GetGas", &UCarGasComponent::GetGas,
-		"GetMaxGas", &UCarGasComponent::GetMaxGas,
-		"GetGasRatio", &UCarGasComponent::GetGasRatio,
-		"HasGas", &UCarGasComponent::HasGas);
-
 	Lua.new_usertype<AActor>("Actor",
 		"Location", sol::property(
 		[](AActor& Actor)
@@ -353,16 +328,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor != nullptr && IsAliveObject(Actor);
 	},
 
-		"GetCarMovement", [](AActor& Actor)
-	{
-		return Actor.GetComponentByClass<UCarMovementComponent>();
-	},
-
-		"GetCarGas", [](AActor& Actor)
-	{
-		return Actor.GetComponentByClass<UCarGasComponent>();
-	},
-
 		"GetFloatingPawnMovement", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UFloatingPawnMovementComponent>();
@@ -371,26 +336,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetCamera", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UCameraComponent>();
-	},
-
-		"AsCarPawn", [](AActor& Actor)
-	{
-		return Cast<ACarPawn>(&Actor);
-	},
-
-		"AsPoliceCar", [](AActor& Actor)
-	{
-		return Cast<APoliceCar>(&Actor);
-	},
-
-		"FireCarWashRay", [](AActor& Actor)
-	{
-		return UDirtComponent::FireCarWashRay(Actor);
-	},
-
-		"SetCarWashStreamVisible", [](AActor& Actor, bool bVisible)
-	{
-		UDirtComponent::SetCarWashStreamVisible(Actor, bVisible);
 	},
 
 		"UUID", sol::property([](AActor& Actor)
@@ -409,24 +354,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
 		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer);
 
-	Lua.new_usertype<ACarPawn>("CarPawn",
-		sol::base_classes, sol::bases<APawn, AActor>(),
-		"GetCarMovement", [](ACarPawn& Pawn)
-	{
-		return Pawn.GetComponentByClass<UCarMovementComponent>();
-	},
-		"GetCarGas", &ACarPawn::GetGas,
-		"GetGas", &ACarPawn::GetGas,
-		"TakeDamage", &ACarPawn::TakeDamage,
-		"GetHealth", &ACarPawn::GetHealth,
-		"IsFirstPersonView", &ACarPawn::IsFirstPersonView);
-
-	// PoliceCar — Lua AI 스크립트가 obj:GetTarget() 으로 추적 대상 액세스
-	Lua.new_usertype<APoliceCar>("PoliceCar",
-		sol::base_classes, sol::bases<ACarPawn, APawn, AActor>(),
-		"GetTarget", &APoliceCar::GetTarget);
-
-	// --- World binding — 런타임 액터 spawn 용 ---
+	// --- World binding — 런타임 액터 spawn 용 (Engine 일반 기능) ---
 	sol::table World = Lua.create_named_table("World");
 	World.set_function("SpawnActor", [](const FString& ClassName) -> AActor*
 	{
@@ -438,52 +366,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return W->SpawnActorByClass(Cls);
 	});
 
-	// --- ECarGamePhase enum + AGameStateCarGame — Lua에서 페이즈 분기 ---
-	Lua.new_enum("ECarGamePhase",
-		"None",         ECarGamePhase::None,
-		"CarWash",      ECarGamePhase::CarWash,
-		"CarGas",       ECarGamePhase::CarGas,
-		"EscapePolice", ECarGamePhase::EscapePolice,
-		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
-		"Result",       ECarGamePhase::Result,
-		"Finished",     ECarGamePhase::Finished);
-
-	Lua.new_enum("EPhaseResult",
-		"None",    EPhaseResult::None,
-		"Success", EPhaseResult::Success,
-		"Failed",  EPhaseResult::Failed);
-
-	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
-		"GetPhase", &AGameStateCarGame::GetPhase,
-		"GetRemainingMatchTime", &AGameStateCarGame::GetRemainingMatchTime,
-		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
-		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
-		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
-		"GetClearedPhasesMask",  &AGameStateCarGame::GetClearedPhasesMask,
-		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
-	{
-		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable
-		{
-			if (!Callback.valid())
-			{
-				return;
-			}
-
-			sol::protected_function_result Result = Callback(NewPhase);
-			if (!Result.valid())
-			{
-				sol::error Err = Result;
-				UE_LOG("[Lua] Phase changed callback error: %s", Err.what());
-			}
-		});
-	});
-
-	Lua["GetGameState"] = []() -> AGameStateCarGame*
-	{
-		if (!GEngine) return nullptr;
-		UWorld* W = GEngine->GetWorld();
-		return W ? Cast<AGameStateCarGame>(W->GetGameState()) : nullptr;
-	};
+	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
+	// RegisterGameLuaBindings 가 등록한다. 호출 순서는 GameEngine/EditorEngine::Init
+	// 에서 UEngine::Init() 직후.
 }
 
 void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)

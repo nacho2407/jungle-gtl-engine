@@ -558,6 +558,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp" />
     <ClCompile Include="Source\Game\GameState\GameStateCarGame.cpp" />
+    <ClCompile Include="Source\Game\Lua\GameLuaBindings.cpp" />
     <ClCompile Include="Source\Game\Meteor\Meteor.cpp" />
     <ClCompile Include="Source\Game\Pawn\CarPawn.cpp" />
     <ClCompile Include="Source\Game\Pawn\PoliceCar.cpp" />
@@ -818,6 +819,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="Source\Game\GameRenderPipeline.h" />
     <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h" />
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h" />
+    <ClInclude Include="Source\Game\Lua\GameLuaBindings.h" />
     <ClInclude Include="Source\Game\Meteor\Meteor.h" />
     <ClInclude Include="Source\Game\Pawn\CarPawn.h" />
     <ClInclude Include="Source\Game\Pawn\PoliceCar.h" />
