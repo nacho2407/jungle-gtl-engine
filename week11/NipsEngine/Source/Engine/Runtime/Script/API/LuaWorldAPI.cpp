@@ -258,6 +258,17 @@ namespace FLuaEngineAPI
 			}
         };
 
+		World["AddViewTargetCameraLocation"] = [](const FVector& Delta)
+        {
+            APlayerController* PC = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+            if (PC)
+            {
+                auto cam = PC->GetViewTargetCamera();
+                cam->SetRelativeLocation(cam->GetRelativeLocation() + Delta);
+            }
+        };
+
 		World["GetViewTargetCameraLocation"] = []() -> FVector
         {
             APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
