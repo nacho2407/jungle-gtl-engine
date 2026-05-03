@@ -16,7 +16,13 @@ public:
 	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override {}
 	void PostEditProperty(const char* PropertyName) override {}
 
-	void AddActor(AActor* Actor) { Actors.push_back(Actor); }
+	void AddActor(AActor* Actor) 
+	{
+        if (bDoingTick)
+            PendingAddActors.push_back(Actor);
+        else
+			Actors.push_back(Actor); 
+	}
 	void RemoveActor(AActor* Actor) {
 		auto it = std::find(Actors.begin(), Actors.end(), Actor);
 		if (it != Actors.end()) Actors.erase(it);
@@ -30,5 +36,7 @@ public:
 	void EndPlay(EEndPlayReason::Type EndPlayReason);
 private:
 	TArray<AActor*> Actors;
+    TArray<AActor*> PendingAddActors;
+    bool bDoingTick = false;
 };
 

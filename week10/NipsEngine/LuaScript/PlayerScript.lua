@@ -79,7 +79,13 @@ function Script:Tick(dt)
 
     Engine.API.World.GetViewTargetCamera():add_pitch_input(Engine.API.Input.GetMouseDelta().Y * 0.1)
     
-    
+    local player = Engine.API.World.GetPossessedActor()
+
+    if player and Engine.API.Input.IsMousePressed("LMB") then
+
+        local slash = Engine.API.World.SpawnActor("ABullet")
+
+    end
 end
 
 function Script:EndPlay()
