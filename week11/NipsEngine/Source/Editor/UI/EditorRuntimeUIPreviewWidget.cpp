@@ -1,9 +1,8 @@
 #include "Editor/UI/EditorRuntimeUIPreviewWidget.h"
 
 #include "Editor/EditorEngine.h"
-#include "Core/ResourceManager.h"
-#include "Render/Resource/Texture.h"
-#include "UI/RuntimeUISampleScreens.h"
+#include "Engine/Input/InputSystem.h"
+#include "Runtime/ViewportRect.h"
 
 #include "ImGui/imgui.h"
 
@@ -30,25 +29,6 @@ namespace
 		{ "Custom", 0, 0 },
 	};
 
-	const char* GetWidgetTypeName(ERuntimeUIWidgetType Type)
-	{
-		switch (Type)
-		{
-		case ERuntimeUIWidgetType::Panel:
-			return "Panel";
-		case ERuntimeUIWidgetType::Text:
-			return "Text";
-		case ERuntimeUIWidgetType::Button:
-			return "Button";
-		case ERuntimeUIWidgetType::Image:
-			return "Image";
-		case ERuntimeUIWidgetType::ProgressBar:
-			return "ProgressBar";
-		default:
-			return "Unknown";
-		}
-	}
-
 	void GetPreviewResolution(int32 PresetIndex, int32 CustomWidth, int32 CustomHeight, int32& OutWidth, int32& OutHeight)
 	{
 		const int32 PresetCount = static_cast<int32>(sizeof(PreviewResolutionPresets) / sizeof(PreviewResolutionPresets[0]));
@@ -69,12 +49,11 @@ namespace
 void FEditorRuntimeUIPreviewWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
-	PreviewBackend.SetImageResolver(
-		[this](const FString& ImagePath)
-		{
-			return ResolveRuntimeUIImage(ImagePath);
-		});
-	RebuildPreviewUI();
+}
+
+void FEditorRuntimeUIPreviewWidget::SetRmlRenderQueue(std::function<void(const FRuntimeUIRenderContext&)> InQueueCallback)
+{
+	QueueRmlRenderContext = std::move(InQueueCallback);
 }
 
 void FEditorRuntimeUIPreviewWidget::Render(float DeltaTime)
@@ -89,28 +68,11 @@ void FEditorRuntimeUIPreviewWidget::Render(float DeltaTime)
 	DrawToolbar();
 	ImGui::Separator();
 
-	const bool bLiveRuntime = PreviewSource == EPreviewSource::LiveRuntime;
-	FRuntimeUISystem* UIToRender = bLiveRuntime && EditorEngine ? &EditorEngine->GetRuntimeUI() : &PreviewUI;
-	if (UIToRender)
-	{
-		DrawScreenSelector(*UIToRender, !bLiveRuntime);
-	}
-
-	if (bLiveRuntime)
-	{
-		ImGui::SameLine();
-		ImGui::TextDisabled("Live Runtime is read-only here.");
-	}
-
-	ImGui::Columns(2, "##RuntimeUIPreviewColumns", true);
+	ImGui::Columns(2, "##RmlRuntimeUIPreviewColumns", true);
 	ImGui::SetColumnWidth(0, 720.0f);
 	DrawPreviewSurface(DeltaTime);
 	ImGui::NextColumn();
 
-	if (UIToRender)
-	{
-		DrawWidgetSummary(*UIToRender);
-	}
 	DrawActionEvents();
 	DrawAuthoringGuidance();
 
@@ -118,32 +80,24 @@ void FEditorRuntimeUIPreviewWidget::Render(float DeltaTime)
 	ImGui::End();
 }
 
-void FEditorRuntimeUIPreviewWidget::RebuildPreviewUI()
-{
-	PreviewUI = FRuntimeUISystem();
-	RuntimeUISamples::BuildMinimalGameJamScreens(PreviewUI);
-	PreviewActionEvents.clear();
-	bNeedsRebuild = false;
-}
-
 void FEditorRuntimeUIPreviewWidget::DrawToolbar()
 {
-	const char* SourceLabels[] = { "Sample GameJam UI Set", "Live Engine Runtime UI" };
-	int32 SourceIndex = static_cast<int32>(PreviewSource);
-	ImGui::SetNextItemWidth(210.0f);
-	if (ImGui::Combo("Source", &SourceIndex, SourceLabels, 2))
+	ImGui::SetNextItemWidth(360.0f);
+	if (ImGui::InputText("RML", PreviewDocumentPathBuffer, IM_ARRAYSIZE(PreviewDocumentPathBuffer), ImGuiInputTextFlags_EnterReturnsTrue))
 	{
-		PreviewSource = static_cast<EPreviewSource>(SourceIndex);
-		if (PreviewSource == EPreviewSource::SampleGameJam)
-		{
-			bNeedsRebuild = true;
-		}
+		RefreshPreviewDocument();
 	}
 
 	ImGui::SameLine();
-	if (ImGui::Button("Rebuild"))
+	if (ImGui::Button("Load"))
 	{
-		bNeedsRebuild = true;
+		RefreshPreviewDocument();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Reload"))
+	{
+		RefreshPreviewDocument();
 	}
 
 	ImGui::SameLine();
@@ -185,29 +139,24 @@ void FEditorRuntimeUIPreviewWidget::DrawToolbar()
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(120.0f);
 	ImGui::SliderFloat("Zoom", &PreviewZoom, 0.25f, 1.5f, "%.2fx");
-
-	if (bNeedsRebuild && PreviewSource == EPreviewSource::SampleGameJam)
-	{
-		RebuildPreviewUI();
-	}
 }
 
 void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 {
+	if (!EditorEngine)
+	{
+		ImGui::TextDisabled("EditorEngine is not ready.");
+		return;
+	}
+
+	if (!bPreviewDocumentLoaded)
+	{
+		LoadPreviewDocument();
+	}
+
 	int32 TargetWidth = 1920;
 	int32 TargetHeight = 1080;
 	GetPreviewResolution(ResolutionPresetIndex, CustomWidth, CustomHeight, TargetWidth, TargetHeight);
-
-	FRuntimeUISystem* UIToRender =
-		PreviewSource == EPreviewSource::LiveRuntime && EditorEngine
-			? &EditorEngine->GetRuntimeUI()
-			: &PreviewUI;
-
-	if (!UIToRender)
-	{
-		ImGui::TextDisabled("No Runtime UI system.");
-		return;
-	}
 
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
 	const float FitScale = std::min(
@@ -218,14 +167,16 @@ void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 		std::max(1.0f, static_cast<float>(TargetWidth) * Scale),
 		std::max(1.0f, static_cast<float>(TargetHeight) * Scale));
 
-	ImGui::BeginChild("##RuntimeUIPreviewSurface", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_NoScrollWithMouse);
+	ImGui::BeginChild("##RmlRuntimeUIPreviewSurface", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_NoScrollWithMouse);
 
 	const ImVec2 Start = ImGui::GetCursorScreenPos();
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(Start, ImVec2(Start.x + PreviewSize.x, Start.y + PreviewSize.y), ImGui::GetColorU32(ImVec4(0.025f, 0.027f, 0.032f, 1.0f)), 6.0f);
-	DrawList->AddRect(Start, ImVec2(Start.x + PreviewSize.x, Start.y + PreviewSize.y), ImGui::GetColorU32(ImVec4(0.25f, 0.29f, 0.35f, 1.0f)), 6.0f);
+	DrawList->AddRectFilled(Start, ImVec2(Start.x + PreviewSize.x, Start.y + PreviewSize.y),
+		ImGui::GetColorU32(ImVec4(0.025f, 0.027f, 0.032f, 1.0f)), 6.0f);
+	DrawList->AddRect(Start, ImVec2(Start.x + PreviewSize.x, Start.y + PreviewSize.y),
+		ImGui::GetColorU32(ImVec4(0.25f, 0.29f, 0.35f, 1.0f)), 6.0f);
 
-	ImGui::InvisibleButton("##RuntimeUIPreviewInputSurface", PreviewSize);
+	ImGui::InvisibleButton("##RmlRuntimeUIPreviewInputSurface", PreviewSize);
 	const bool bPreviewHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
 	FRuntimeUIRenderContext Context;
@@ -234,15 +185,26 @@ void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 	Context.ViewportSize = FRuntimeUIVector2(PreviewSize.x, PreviewSize.y);
 	Context.DeltaTime = DeltaTime;
 
-	UIToRender->UpdateLayout(Context);
-	if (bPreviewHovered || !UIToRender->GetPressedWidgetId().empty())
+	if (QueueRmlRenderContext)
 	{
-		HandlePreviewInput(*UIToRender, Context, PreviewSource == EPreviewSource::SampleGameJam);
+		QueueRmlRenderContext(Context);
 	}
 
-	UIToRender->Render(PreviewBackend, Context);
+	if (bEnableInteraction && bPreviewHovered)
+	{
+		FViewportRect PreviewRect(
+			static_cast<int32>(Start.x),
+			static_cast<int32>(Start.y),
+			static_cast<int32>(PreviewSize.x),
+			static_cast<int32>(PreviewSize.y));
+		if (EditorEngine->PumpPIERmlUiInput(PreviewRect))
+		{
+			InputSystem::Get().SetGuiMouseCapture(true);
+			InputSystem::Get().SetGuiViewportMouseBlock(true);
+		}
+	}
 
-	const TArray<FString> NewEvents = UIToRender->ConsumeActionEvents();
+	const TArray<FString> NewEvents = EditorEngine->PollRmlUIActionEvents();
 	for (const FString& Event : NewEvents)
 	{
 		if (!Event.empty())
@@ -255,66 +217,18 @@ void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 		PreviewActionEvents.erase(PreviewActionEvents.begin());
 	}
 
-	char OverlayText[128];
-	std::snprintf(OverlayText, sizeof(OverlayText), "%d x %d  |  %.2fx", TargetWidth, TargetHeight, Scale);
-	DrawList->AddText(ImVec2(Start.x + 10.0f, Start.y + 8.0f), ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.82f, 0.9f)), OverlayText);
+	char OverlayText[192];
+	std::snprintf(OverlayText, sizeof(OverlayText), "%d x %d | %.2fx | %s",
+		TargetWidth, TargetHeight, Scale, bPreviewDocumentLoaded ? "RML loaded" : "RML missing");
+	DrawList->AddText(ImVec2(Start.x + 10.0f, Start.y + 8.0f),
+		ImGui::GetColorU32(ImVec4(0.72f, 0.76f, 0.82f, 0.9f)), OverlayText);
 
-	ImGui::EndChild();
-}
-
-void FEditorRuntimeUIPreviewWidget::DrawScreenSelector(FRuntimeUISystem& UI, bool bCanMutate)
-{
-	FRuntimeUICanvas* Canvas = UI.FindCanvas(FRuntimeUISystem::DefaultCanvasId);
-	const FString CurrentScreen = Canvas ? Canvas->GetActiveScreenId() : FString();
-
-	ImGui::SetNextItemWidth(180.0f);
-	if (ImGui::BeginCombo("Screen", CurrentScreen.empty() ? "<none>" : CurrentScreen.c_str()))
-	{
-		for (const auto& ScreenPair : UI.GetScreens())
-		{
-			const FRuntimeUIScreen& Screen = ScreenPair.second;
-			if (Screen.GetCanvasId() != FRuntimeUISystem::DefaultCanvasId)
-			{
-				continue;
-			}
-
-			const bool bSelected = Screen.GetId() == CurrentScreen;
-			if (ImGui::Selectable(Screen.GetId().c_str(), bSelected) && bCanMutate)
-			{
-				UI.SetActiveScreen(FRuntimeUISystem::DefaultCanvasId, Screen.GetId());
-			}
-			if (bSelected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
-	}
-}
-
-void FEditorRuntimeUIPreviewWidget::DrawWidgetSummary(const FRuntimeUISystem& UI) const
-{
-	ImGui::Text("Widgets");
-	ImGui::Separator();
-	ImGui::TextDisabled("Count: %d", static_cast<int32>(UI.GetWidgets().size()));
-
-	if (ImGui::BeginChild("##RuntimeUIPreviewWidgetList", ImVec2(0.0f, 210.0f), true))
-	{
-		for (const auto& WidgetPair : UI.GetWidgets())
-		{
-			const FRuntimeUIWidget& Widget = WidgetPair.second;
-			ImGui::Text("%s", Widget.GetId().c_str());
-			ImGui::SameLine();
-			ImGui::TextDisabled("(%s)", GetWidgetTypeName(Widget.GetType()));
-		}
-	}
 	ImGui::EndChild();
 }
 
 void FEditorRuntimeUIPreviewWidget::DrawActionEvents()
 {
-	ImGui::Spacing();
-	ImGui::Text("Action Events");
+	ImGui::Text("RmlUi Action Events");
 	ImGui::Separator();
 	if (PreviewActionEvents.empty())
 	{
@@ -336,80 +250,45 @@ void FEditorRuntimeUIPreviewWidget::DrawAuthoringGuidance() const
 	}
 
 	ImGui::Spacing();
-	ImGui::Text("Authoring Rule");
+	ImGui::Text("RML Preview Rule");
 	ImGui::Separator();
-	ImGui::TextWrapped("StateMachine decides which UI set is shown. UI scripts should expose Build(UI), and both Runtime and Preview should pass their own UI facade into that Build function.");
+	ImGui::TextWrapped("Load an .rml document under Asset/UI. Linked .rcss files are resolved by the RmlUi file interface.");
 	ImGui::Spacing();
-	ImGui::TextDisabled("Example");
-	ImGui::TextWrapped("TitleUI.Build(Engine.API.UI) at runtime");
-	ImGui::TextWrapped("TitleUI.Build(PreviewUI) inside this panel");
+	ImGui::TextDisabled("Action event");
+	ImGui::TextWrapped("<button id=\"StartButton\" data-action=\"StartGame\">START</button>");
+	ImGui::Spacing();
+	ImGui::TextDisabled("Lua runtime");
+	ImGui::TextWrapped("Engine.API.UI.LoadDocument(\"Title\", \"Asset/UI/Title/Title.rml\")");
+	ImGui::TextWrapped("Engine.API.UI.ShowDocument(\"Title\")");
 }
 
-void FEditorRuntimeUIPreviewWidget::HandlePreviewInput(FRuntimeUISystem& UI, const FRuntimeUIRenderContext& Context, bool bCanMutate)
+bool FEditorRuntimeUIPreviewWidget::LoadPreviewDocument()
 {
-	if (!bEnableInteraction || !bCanMutate)
+	if (!EditorEngine)
 	{
+		return false;
+	}
+
+	const FString ScreenId = PreviewScreenIdBuffer;
+	const FString Path = PreviewDocumentPathBuffer;
+	bPreviewDocumentLoaded = EditorEngine->LoadRmlUIDocument(ScreenId, Path);
+	if (bPreviewDocumentLoaded)
+	{
+		EditorEngine->ShowRmlUIScreen(ScreenId);
+	}
+	return bPreviewDocumentLoaded;
+}
+
+void FEditorRuntimeUIPreviewWidget::RefreshPreviewDocument()
+{
+	if (!EditorEngine)
+	{
+		bPreviewDocumentLoaded = false;
 		return;
 	}
 
-	const ImGuiIO& IO = ImGui::GetIO();
-	FRuntimeUIInputEvent Event;
-	Event.ScreenPosition = FRuntimeUIVector2(IO.MousePos.x, IO.MousePos.y);
-
-	Event.Type = ERuntimeUIInputEventType::MouseMove;
-	UI.HandleInput(Event);
-
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-	{
-		Event.Type = ERuntimeUIInputEventType::MouseButtonDown;
-		Event.MouseButton = ERuntimeUIMouseButton::Left;
-		UI.HandleInput(Event);
-	}
-	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-	{
-		Event.Type = ERuntimeUIInputEventType::MouseButtonUp;
-		Event.MouseButton = ERuntimeUIMouseButton::Left;
-		UI.HandleInput(Event);
-	}
-	if (IO.MouseWheel != 0.0f)
-	{
-		Event.Type = ERuntimeUIInputEventType::MouseWheel;
-		Event.MouseButton = ERuntimeUIMouseButton::None;
-		Event.WheelDelta = IO.MouseWheel;
-		UI.HandleInput(Event);
-	}
-
-	(void)Context;
-}
-
-FRuntimeUIResolvedImage FEditorRuntimeUIPreviewWidget::ResolveRuntimeUIImage(const FString& ImagePath) const
-{
-	UTexture* Texture = FResourceManager::Get().LoadTexture(ImagePath);
-	if (!Texture || !Texture->GetSRV())
-	{
-		return {};
-	}
-
-	FRuntimeUIResolvedImage Result;
-	Result.TextureId = Texture->GetSRV();
-	Result.Width = 1.0f;
-	Result.Height = 1.0f;
-
-	ID3D11Resource* Resource = nullptr;
-	Texture->GetSRV()->GetResource(&Resource);
-	if (Resource)
-	{
-		ID3D11Texture2D* Texture2D = nullptr;
-		if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D))) && Texture2D)
-		{
-			D3D11_TEXTURE2D_DESC Desc = {};
-			Texture2D->GetDesc(&Desc);
-			Result.Width = static_cast<float>(Desc.Width);
-			Result.Height = static_cast<float>(Desc.Height);
-			Texture2D->Release();
-		}
-		Resource->Release();
-	}
-
-	return Result;
+	EditorEngine->UnloadRmlUIDocument(PreviewScreenIdBuffer);
+	bPreviewDocumentLoaded = false;
+	PreviewActionEvents.clear();
+	LoadPreviewDocument();
 }

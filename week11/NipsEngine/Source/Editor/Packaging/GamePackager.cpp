@@ -235,6 +235,8 @@ namespace
             || Extension == ".ogg"
             || Extension == ".lua"
             || Extension == ".prefab"
+            || Extension == ".rml"
+            || Extension == ".rcss"
             || Extension == ".meta"
             || Extension == ".ttf"
             || Extension == ".otf";
@@ -1149,6 +1151,8 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     if (!CookAndCopyPackageAssets(Settings, OutputRoot, IncludedScenes, OutMessage)) return false;
     if (!CopyDirectoryIfExists(EngineRoot / L"Shaders", OutputRoot / L"Shaders", OutMessage)) return false;
     EmitBuildLog("Copied Shaders directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UI", OutputRoot / L"Asset" / L"UI", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/UI directory");
 
     FString PackagedIconPath;
     FString PackagedSplashPath;

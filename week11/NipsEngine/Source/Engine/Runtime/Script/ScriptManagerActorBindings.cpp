@@ -234,6 +234,13 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(UnPossess, UnPossess);
     LUA_METHOD(SetViewTarget, SetViewTarget);
     LUA_METHOD(SetViewTargetCamera, SetViewTargetCamera);
+    LUA_METHOD(SetCursorVisible, SetCursorVisible);
+    LUA_METHOD(IsCursorVisible, IsCursorVisible);
+    LUA_METHOD(SetCursorLocked, SetCursorLocked);
+    LUA_METHOD(IsCursorLocked, IsCursorLocked);
+    LUA_METHOD(SetInputModeGameOnly, SetInputModeGameOnly);
+    LUA_METHOD(SetInputModeUIOnly, SetInputModeUIOnly);
+    LUA_METHOD(SetInputModeGameAndUI, SetInputModeGameAndUI);
     LUA_METHOD(GetPossessedActor, GetPossessedActor);
     LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
     LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);

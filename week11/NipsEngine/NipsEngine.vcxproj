@@ -112,35 +112,35 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;Source\Editor;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -148,7 +148,7 @@
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
     <TargetName>NipsGame</TargetName>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -156,7 +156,7 @@
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
     <TargetName>NipsGame</TargetName>
-    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
+    <IncludePath>Source\Engine;Source;ThirdParty;ThirdParty\SoLoud\include;ThirdParty\RmlUi\Include;ThirdParty\ImGui;.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
@@ -164,7 +164,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -181,7 +181,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -196,13 +196,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -217,13 +217,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -238,13 +238,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);IS_OBJ_VIEWER=1;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);IS_OBJ_VIEWER=1;</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -255,13 +255,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;GAME_DEVELOPMENT=1;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;GAME_DEVELOPMENT=1;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -276,13 +276,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;WITH_MINIAUDIO;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;IS_GAME_CLIENT=1;IS_OBJ_VIEWER=0;WITH_MINIAUDIO;RMLUI_STATIC_LIB;_CRT_SECURE_NO_WARNINGS;NOMINMAX;SOL_LUA_VERSION=501;SOL_LUAJIT=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -340,13 +340,17 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp">
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUICanvas.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUIFacade.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUIScreen.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUISampleScreens.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUISystem.cpp" />
-    <ClCompile Include="Source\Engine\UI\RuntimeUIWidget.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\*.cpp">
+      <ObjectFileName>$(IntDir)RmlUiCore_%(Filename).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\*.cpp">
+      <ObjectFileName>$(IntDir)RmlUiCoreElements_%(Filename).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\*.cpp">
+      <ObjectFileName>$(IntDir)RmlUiCoreLayout_%(Filename).obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -645,17 +649,9 @@
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\API\LuaEngineAPIBindings.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
-    <ClInclude Include="Source\Engine\UI\Backends\ImGuiRuntimeUIBackend.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIBackend.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUICanvas.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIFacade.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIInput.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIScreen.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUISampleScreens.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUISystem.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIStyle.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
     <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUIWidget.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\EditorUtils.h" />

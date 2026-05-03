@@ -6,24 +6,20 @@ function SoundManager.new(context)
         context = context,
 
         BGM = {
-            Title = "Asset/Audio/BGM/Title.wav",
-            Gameplay = "Asset/Audio/BGM/Gameplay.wav",
-            Result = "Asset/Audio/BGM/Result.wav"
+            Title = "Asset/Audio/BGM/TitleScreen.wav",
         },
 
         SFX = {
-            Button = "Asset/Audio/SFX/Button.wav",
-            Slash = "Asset/Audio/SFX/Slash.wav",
-            EnemyHit = "Asset/Audio/SFX/EnemyHit.wav"
         }
     }, SoundManager)
 end
 
 function SoundManager:PlayBGM(path, fadeIn)
+    Engine.API.Debug.Log("BGM ON")
     if path == nil or path == "" then
         return
     end
-
+    
     Engine.API.Audio.PlayBGM(path, fadeIn or 0.5)
 end
 

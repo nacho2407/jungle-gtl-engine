@@ -3,6 +3,8 @@
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
 #include "Core/Logging/Log.h"
+#include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/Engine.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 
@@ -207,6 +209,62 @@ void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
 	if (bCleared)
 	{
 		UE_LOG_WARNING("[PlayerController] Observed actor destroyed. Runtime possession/view target cleared.");
+	}
+}
+
+void APlayerController::SetCursorVisible(bool bVisible)
+{
+	if (GEngine)
+	{
+		GEngine->SetRuntimeCursorVisible(bVisible);
+	}
+	InputSystem::Get().SetCursorVisibility(bVisible);
+}
+
+bool APlayerController::IsCursorVisible() const
+{
+	return GEngine ? GEngine->IsRuntimeCursorVisible() : false;
+}
+
+void APlayerController::SetCursorLocked(bool bLocked)
+{
+	if (GEngine)
+	{
+		GEngine->SetRuntimeCursorLocked(bLocked);
+	}
+	if (!bLocked)
+	{
+		InputSystem::Get().SetUseRawMouse(false);
+		InputSystem::Get().LockMouse(false);
+	}
+}
+
+bool APlayerController::IsCursorLocked() const
+{
+	return GEngine ? GEngine->IsRuntimeCursorLocked() : false;
+}
+
+void APlayerController::SetInputModeGameOnly()
+{
+	if (GEngine)
+	{
+		GEngine->SetRuntimeInputMode(ERuntimeInputMode::GameOnly);
+	}
+}
+
+void APlayerController::SetInputModeUIOnly()
+{
+	if (GEngine)
+	{
+		GEngine->SetRuntimeInputMode(ERuntimeInputMode::UIOnly);
+	}
+}
+
+void APlayerController::SetInputModeGameAndUI()
+{
+	if (GEngine)
+	{
+		GEngine->SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
 	}
 }
 

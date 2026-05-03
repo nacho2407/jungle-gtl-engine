@@ -6,7 +6,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Renderer/IRenderPipeline.h"
-#include "UI/RuntimeUISystem.h"
+#include "UI/RuntimeUITypes.h"
 
 #include <memory>
 
@@ -65,14 +65,26 @@ public:
 	FRenderer& GetRenderer() { return Renderer; }
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
 	virtual APlayerController* GetPrimaryPlayerController() const;
-	FRuntimeUISystem& GetRuntimeUI() { return RuntimeUI; }
-	const FRuntimeUISystem& GetRuntimeUI() const { return RuntimeUI; }
+	virtual bool LoadRmlUIDocument(const FString& ScreenId, const FString& Path) { return false; }
+	virtual bool UnloadRmlUIDocument(const FString& ScreenId) { return false; }
+	virtual bool ReloadRmlUIDocument(const FString& ScreenId) { return false; }
+	virtual bool ShowRmlUIScreen(const FString& ScreenId) { return false; }
+	virtual bool HideRmlUIScreen(const FString& ScreenId) { return false; }
+	virtual bool SetRmlUIElementText(const FString& ElementId, const FString& Text) { return false; }
+	virtual bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) { return false; }
+	virtual bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) { return false; }
+	virtual bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) { return false; }
+	virtual bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
+	virtual bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
+	virtual TArray<FString> PollRmlUIActionEvents() { return {}; }
 	FAudioSystem& GetAudioSystem() { return AudioSystem; }
 	const FAudioSystem& GetAudioSystem() const { return AudioSystem; }
 	void SetRuntimeInputMode(ERuntimeInputMode InMode);
 	ERuntimeInputMode GetRuntimeInputMode() const { return RuntimeInputMode; }
 	void SetRuntimeCursorVisible(bool bVisible);
 	bool IsRuntimeCursorVisible() const { return bRuntimeCursorVisible; }
+	void SetRuntimeCursorLocked(bool bLocked);
+	bool IsRuntimeCursorLocked() const { return bRuntimeCursorLocked; }
 	void SetTimeScale(float InTimeScale);
 	float GetTimeScale() const { return TimeScale; }
 	float GetDeltaTime() const { return LastDeltaTime; }
@@ -96,10 +108,10 @@ protected:
 	FTimer* Timer = nullptr;
 
 	FRenderer Renderer;
-	FRuntimeUISystem RuntimeUI;
 	FAudioSystem AudioSystem;
 	ERuntimeInputMode RuntimeInputMode = ERuntimeInputMode::GameOnly;
 	bool bRuntimeCursorVisible = false;
+	bool bRuntimeCursorLocked = true;
 	float TimeScale = 1.0f;
 	float LastDeltaTime = 0.0f;
 	float LastUnscaledDeltaTime = 0.0f;
