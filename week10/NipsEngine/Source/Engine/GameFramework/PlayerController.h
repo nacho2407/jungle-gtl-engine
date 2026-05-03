@@ -23,6 +23,13 @@ public:
 	void SetViewTarget(AActor* InActor);
 	void SetViewTargetCamera(UCameraComponent* InCamera);
 	void NotifyObservedActorDestroyed(AActor* DestroyedActor);
+	void SetCursorVisible(bool bVisible);
+	bool IsCursorVisible() const;
+	void SetCursorLocked(bool bLocked);
+	bool IsCursorLocked() const;
+	void SetInputModeGameOnly();
+	void SetInputModeUIOnly();
+	void SetInputModeGameAndUI();
 
 	virtual void HandleKeyPressed(int VK);
 	virtual void HandleKeyDown(int VK);

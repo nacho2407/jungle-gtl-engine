@@ -1,10 +1,20 @@
 #pragma once
 
 #include "Engine/Runtime/Engine.h"
-#include "UI/Backends/ImGuiRuntimeUIBackend.h"
+#include "Core/Containers/Map.h"
+#include "UI/RmlUi/RmlUiRenderInterfaceD3D11.h"
+#include "UI/RmlUi/RmlUiRuntimeModule.h"
 
 class APlayerController;
 class InputSystem;
+class FRmlUiActionEventListener;
+
+namespace Rml
+{
+    class Context;
+    class Element;
+    class ElementDocument;
+}
 
 class UGameEngine : public UEngine
 {
@@ -18,8 +28,21 @@ public:
     void OnWindowResized(uint32 Width, uint32 Height) override;
     void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) override;
     APlayerController* GetPrimaryPlayerController() const override { return PlayerController; }
+    bool LoadRmlUIDocument(const FString& ScreenId, const FString& Path) override;
+    bool UnloadRmlUIDocument(const FString& ScreenId) override;
+    bool ReloadRmlUIDocument(const FString& ScreenId) override;
+    bool ShowRmlUIScreen(const FString& ScreenId) override;
+    bool HideRmlUIScreen(const FString& ScreenId) override;
+    bool SetRmlUIElementText(const FString& ElementId, const FString& Text) override;
+    bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) override;
+    bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) override;
+    bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) override;
+    bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) override;
+    bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) override;
+    TArray<FString> PollRmlUIActionEvents() override;
 
     APlayerController* GetPlayerController() const { return PlayerController; }
+    void EnqueueRmlUIActionEvent(const FString& EventName);
 
 private:
     struct FGameStartupSettings
@@ -36,15 +59,27 @@ private:
     bool PumpRuntimeUIInput(InputSystem& Input);
     void PumpPlayerInput(InputSystem& Input);
     FString ResolveStartupScenePath() const;
-    void InitializeRuntimeUIBackend();
-    void ShutdownRuntimeUIBackend();
-    FRuntimeUIResolvedImage ResolveRuntimeUIImage(const FString& ImagePath) const;
+    void InitializeRmlUiRuntime();
+    void ShutdownRmlUiRuntime();
+    void RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context);
+    bool PumpRmlUiInput(InputSystem& Input);
+    int GetRmlUiKeyModifierState(const InputSystem& Input) const;
+    Rml::ElementDocument* FindRmlUIDocument(const FString& ScreenId) const;
+    Rml::Element* FindRmlUIElement(const FString& ElementId) const;
+    void AttachRmlUIDocumentListeners(Rml::ElementDocument* Document);
 
 private:
     FGameStartupSettings StartupSettings;
     APlayerController* PlayerController = nullptr;
     bool bLoggedInputCapture = false;
     bool bLoggedFirstInput = false;
-    bool bRuntimeUIBackendInitialized = false;
-    FImGuiRuntimeUIBackend RuntimeUIBackend;
+    bool bRmlUiRuntimeInitialized = false;
+    FRmlUiRuntimeModule RmlUiRuntimeModule;
+    FRmlUiRenderInterfaceD3D11 RmlUiRenderInterface;
+    Rml::Context* RmlUiContext = nullptr;
+    Rml::ElementDocument* RmlUiTestDocument = nullptr;
+    TMap<FString, FString> RmlUiDocumentPathByScreenId;
+    TMap<FString, Rml::ElementDocument*> RmlUiDocumentsByScreenId;
+    TArray<FString> RmlUiPendingActionEvents;
+    FRmlUiActionEventListener* RmlUiActionListener = nullptr;
 };

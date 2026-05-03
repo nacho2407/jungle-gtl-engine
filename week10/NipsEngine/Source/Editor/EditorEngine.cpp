@@ -17,6 +17,19 @@
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Settings/EditorSettings.h"
+#ifdef GetFirstChild
+#undef GetFirstChild
+#endif
+#ifdef GetNextSibling
+#undef GetNextSibling
+#endif
+#include "RmlUi/Core.h"
+#include "RmlUi/Core/Context.h"
+#include "RmlUi/Core/Element.h"
+#include "RmlUi/Core/ElementDocument.h"
+#include "RmlUi/Core/Event.h"
+#include "RmlUi/Core/EventListener.h"
+#include "RmlUi/Core/Input.h"
 #include <algorithm>
 #include <unordered_set>
 #include <utility>
@@ -80,6 +93,87 @@ namespace
 
         World->SyncSpatialIndex();
     }
+
+    bool IsMouseButtonVK(int VK)
+    {
+        return VK == VK_LBUTTON
+            || VK == VK_RBUTTON
+            || VK == VK_MBUTTON
+            || VK == VK_XBUTTON1
+            || VK == VK_XBUTTON2;
+    }
+
+    Rml::Input::KeyIdentifier MapVirtualKeyToRmlKey(int VK)
+    {
+        using namespace Rml::Input;
+
+        if (VK >= '0' && VK <= '9')
+        {
+            return static_cast<KeyIdentifier>(KI_0 + (VK - '0'));
+        }
+        if (VK >= 'A' && VK <= 'Z')
+        {
+            return static_cast<KeyIdentifier>(KI_A + (VK - 'A'));
+        }
+        if (VK >= VK_F1 && VK <= VK_F24)
+        {
+            return static_cast<KeyIdentifier>(KI_F1 + (VK - VK_F1));
+        }
+        if (VK >= VK_NUMPAD0 && VK <= VK_NUMPAD9)
+        {
+            return static_cast<KeyIdentifier>(KI_NUMPAD0 + (VK - VK_NUMPAD0));
+        }
+
+        switch (VK)
+        {
+        case VK_SPACE: return KI_SPACE;
+        case VK_BACK: return KI_BACK;
+        case VK_TAB: return KI_TAB;
+        case VK_RETURN: return KI_RETURN;
+        case VK_ESCAPE: return KI_ESCAPE;
+        case VK_PRIOR: return KI_PRIOR;
+        case VK_NEXT: return KI_NEXT;
+        case VK_END: return KI_END;
+        case VK_HOME: return KI_HOME;
+        case VK_LEFT: return KI_LEFT;
+        case VK_UP: return KI_UP;
+        case VK_RIGHT: return KI_RIGHT;
+        case VK_DOWN: return KI_DOWN;
+        case VK_INSERT: return KI_INSERT;
+        case VK_DELETE: return KI_DELETE;
+        case VK_SHIFT: return KI_LSHIFT;
+        case VK_LSHIFT: return KI_LSHIFT;
+        case VK_RSHIFT: return KI_RSHIFT;
+        case VK_CONTROL: return KI_LCONTROL;
+        case VK_LCONTROL: return KI_LCONTROL;
+        case VK_RCONTROL: return KI_RCONTROL;
+        case VK_MENU: return KI_LMENU;
+        case VK_LMENU: return KI_LMENU;
+        case VK_RMENU: return KI_RMENU;
+        case VK_OEM_1: return KI_OEM_1;
+        case VK_OEM_PLUS: return KI_OEM_PLUS;
+        case VK_OEM_COMMA: return KI_OEM_COMMA;
+        case VK_OEM_MINUS: return KI_OEM_MINUS;
+        case VK_OEM_PERIOD: return KI_OEM_PERIOD;
+        case VK_OEM_2: return KI_OEM_2;
+        case VK_OEM_3: return KI_OEM_3;
+        case VK_OEM_4: return KI_OEM_4;
+        case VK_OEM_5: return KI_OEM_5;
+        case VK_OEM_6: return KI_OEM_6;
+        case VK_OEM_7: return KI_OEM_7;
+        case VK_MULTIPLY: return KI_MULTIPLY;
+        case VK_ADD: return KI_ADD;
+        case VK_SEPARATOR: return KI_SEPARATOR;
+        case VK_SUBTRACT: return KI_SUBTRACT;
+        case VK_DECIMAL: return KI_DECIMAL;
+        case VK_DIVIDE: return KI_DIVIDE;
+        case VK_PAUSE: return KI_PAUSE;
+        case VK_CAPITAL: return KI_CAPITAL;
+        case VK_NUMLOCK: return KI_NUMLOCK;
+        case VK_SCROLL: return KI_SCROLL;
+        default: return KI_UNKNOWN;
+        }
+    }
 }
 
 //  Init
@@ -136,6 +230,7 @@ void UEditorEngine::Shutdown()
     // CloseScene 이후에 ViewportLayout을 내리면 Client 포인터 단절로 인한 역참조를 피할 수 있습니다.
     ViewportLayout.Shutdown();           // 위젯 트리 해제 (소유권: UEditorEngine)
     FSlateApplication::Get().Shutdown(); // RootWindow 해제
+    ShutdownRmlUiRuntime();
 
     // 엔진 공통 해제 (Renderer, D3D 등)
     UEngine::Shutdown();
@@ -199,6 +294,470 @@ void UEditorEngine::RequestPIEViewportInputFocus(int32 FrameCount)
 {
     PendingPIEViewportFocusFrames = std::max(PendingPIEViewportFocusFrames, FrameCount);
     MainPanel.RequestPIEViewportInputFocus();
+}
+
+class FEditorRmlUiActionEventListener final : public Rml::EventListener
+{
+public:
+    explicit FEditorRmlUiActionEventListener(UEditorEngine* InOwner)
+        : Owner(InOwner)
+    {
+    }
+
+    void ProcessEvent(Rml::Event& Event) override
+    {
+        if (!Owner)
+        {
+            return;
+        }
+
+        Rml::Element* Element = Event.GetTargetElement();
+        while (Element)
+        {
+            Rml::String Action = Element->GetAttribute<Rml::String>("data-action", "");
+            if (Action.empty())
+            {
+                Action = Element->GetAttribute<Rml::String>("action", "");
+            }
+            if (!Action.empty())
+            {
+                Owner->EnqueueRmlUIActionEvent(Action);
+                return;
+            }
+            Element = Element->GetParentNode();
+        }
+    }
+
+private:
+    UEditorEngine* Owner = nullptr;
+};
+
+void UEditorEngine::InitializeRmlUiRuntime()
+{
+    if (bRmlUiRuntimeInitialized)
+    {
+        return;
+    }
+
+    if (!RmlUiRenderInterface.Initialize(
+        Renderer.GetFD3DDevice().GetDevice(),
+        Renderer.GetFD3DDevice().GetDeviceContext()))
+    {
+        UE_LOG_ERROR("[RmlUi][PIE] Failed to initialize D3D11 render interface.");
+        return;
+    }
+
+    if (!RmlUiRuntimeModule.Initialize())
+    {
+        UE_LOG_ERROR("[RmlUi][PIE] Failed to initialize runtime module.");
+        RmlUiRenderInterface.Shutdown();
+        return;
+    }
+
+    RmlUiContext = Rml::CreateContext("EditorPIE", Rml::Vector2i(1, 1), &RmlUiRenderInterface);
+    if (!RmlUiContext)
+    {
+        UE_LOG_ERROR("[RmlUi][PIE] Failed to create context.");
+        RmlUiRuntimeModule.Shutdown();
+        RmlUiRenderInterface.Shutdown();
+        return;
+    }
+
+    delete RmlUiActionListener;
+    RmlUiActionListener = new FEditorRmlUiActionEventListener(this);
+    bRmlUiRuntimeInitialized = true;
+}
+
+void UEditorEngine::ShutdownRmlUiRuntime()
+{
+    if (!bRmlUiRuntimeInitialized)
+    {
+        return;
+    }
+
+    if (RmlUiContext)
+    {
+        RmlUiContext->UnloadAllDocuments();
+        RmlUiContext->Update();
+        Rml::RemoveContext("EditorPIE");
+        RmlUiContext = nullptr;
+    }
+
+    delete RmlUiActionListener;
+    RmlUiActionListener = nullptr;
+    RmlUiPendingActionEvents.clear();
+    RmlUiDocumentsByScreenId.clear();
+    RmlUiDocumentPathByScreenId.clear();
+    RmlUiRuntimeModule.Shutdown();
+    RmlUiRenderInterface.Shutdown();
+    bRmlUiRuntimeInitialized = false;
+}
+
+void UEditorEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
+{
+    InitializeRmlUiRuntime();
+    if (!bRmlUiRuntimeInitialized || !RmlUiContext)
+    {
+        return;
+    }
+
+    const int Width = std::max(static_cast<int>(Context.ViewportSize.X), 1);
+    const int Height = std::max(static_cast<int>(Context.ViewportSize.Y), 1);
+    RmlUiContext->SetDimensions(Rml::Vector2i(Width, Height));
+
+    Renderer.UseBackBufferRenderTargets();
+    RmlUiRenderInterface.BeginFrame(
+        Rml::Vector2f(Context.ViewportMin.X, Context.ViewportMin.Y),
+        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y));
+
+    RmlUiContext->Update();
+    RmlUiContext->Render();
+}
+
+bool UEditorEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
+{
+    InitializeRmlUiRuntime();
+    if (!bRmlUiRuntimeInitialized || !RmlUiContext || ScreenId.empty() || Path.empty())
+    {
+        return false;
+    }
+
+    UnloadRmlUIDocument(ScreenId);
+
+    Rml::ElementDocument* Document = RmlUiContext->LoadDocument(Path);
+    if (!Document)
+    {
+        UE_LOG_ERROR("[RmlUi][PIE] Failed to load document. Screen=%s Path=%s", ScreenId.c_str(), Path.c_str());
+        return false;
+    }
+
+    AttachRmlUIDocumentListeners(Document);
+    Document->Show();
+    RmlUiDocumentsByScreenId[ScreenId] = Document;
+    RmlUiDocumentPathByScreenId[ScreenId] = Path;
+    return true;
+}
+
+bool UEditorEngine::UnloadRmlUIDocument(const FString& ScreenId)
+{
+    Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId);
+    if (!Document)
+    {
+        return false;
+    }
+
+    Document->Close();
+    RmlUiDocumentsByScreenId.erase(ScreenId);
+    return true;
+}
+
+bool UEditorEngine::ReloadRmlUIDocument(const FString& ScreenId)
+{
+    auto PathIt = RmlUiDocumentPathByScreenId.find(ScreenId);
+    if (PathIt == RmlUiDocumentPathByScreenId.end())
+    {
+        return false;
+    }
+
+    const FString Path = PathIt->second;
+    UnloadRmlUIDocument(ScreenId);
+    return LoadRmlUIDocument(ScreenId, Path);
+}
+
+bool UEditorEngine::ShowRmlUIScreen(const FString& ScreenId)
+{
+    if (Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId))
+    {
+        Document->Show();
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::HideRmlUIScreen(const FString& ScreenId)
+{
+    if (Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId))
+    {
+        Document->Hide();
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementText(const FString& ElementId, const FString& Text)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->SetInnerRML(Text);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementVisible(const FString& ElementId, bool bVisible)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        if (bVisible)
+        {
+            Element->RemoveProperty(Rml::PropertyId::Display);
+        }
+        else
+        {
+            Element->SetProperty(Rml::PropertyId::Display, Rml::Property(Rml::Style::Display::None));
+        }
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        if (bEnabled)
+        {
+            Element->RemoveAttribute("disabled");
+            Element->SetClass("disabled", false);
+        }
+        else
+        {
+            Element->SetAttribute("disabled", "disabled");
+            Element->SetClass("disabled", true);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->SetClass(ClassName, bEnabled);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->SetAttribute(Name, Value);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->SetProperty(Name, Value);
+        return true;
+    }
+    return false;
+}
+
+TArray<FString> UEditorEngine::PollRmlUIActionEvents()
+{
+    TArray<FString> Events = RmlUiPendingActionEvents;
+    RmlUiPendingActionEvents.clear();
+    return Events;
+}
+
+void UEditorEngine::EnqueueRmlUIActionEvent(const FString& EventName)
+{
+    if (!EventName.empty())
+    {
+        RmlUiPendingActionEvents.push_back(EventName);
+    }
+}
+
+Rml::ElementDocument* UEditorEngine::FindRmlUIDocument(const FString& ScreenId) const
+{
+    auto It = RmlUiDocumentsByScreenId.find(ScreenId);
+    return It != RmlUiDocumentsByScreenId.end() ? It->second : nullptr;
+}
+
+Rml::Element* UEditorEngine::FindRmlUIElement(const FString& ElementId) const
+{
+    if (ElementId.empty())
+    {
+        return nullptr;
+    }
+
+    for (const auto& Pair : RmlUiDocumentsByScreenId)
+    {
+        if (Pair.second)
+        {
+            if (Rml::Element* Element = Pair.second->GetElementById(ElementId))
+            {
+                return Element;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+void UEditorEngine::AttachRmlUIDocumentListeners(Rml::ElementDocument* Document)
+{
+    if (Document && RmlUiActionListener)
+    {
+        Document->AddEventListener("click", RmlUiActionListener);
+    }
+}
+
+int UEditorEngine::GetRmlUiKeyModifierState(const InputSystem& Input) const
+{
+    int Modifiers = 0;
+    if (Input.GetKey(VK_CONTROL) || Input.GetKey(VK_LCONTROL) || Input.GetKey(VK_RCONTROL))
+    {
+        Modifiers |= Rml::Input::KM_CTRL;
+    }
+    if (Input.GetKey(VK_SHIFT) || Input.GetKey(VK_LSHIFT) || Input.GetKey(VK_RSHIFT))
+    {
+        Modifiers |= Rml::Input::KM_SHIFT;
+    }
+    if (Input.GetKey(VK_MENU) || Input.GetKey(VK_LMENU) || Input.GetKey(VK_RMENU))
+    {
+        Modifiers |= Rml::Input::KM_ALT;
+    }
+    if ((::GetKeyState(VK_CAPITAL) & 0x0001) != 0)
+    {
+        Modifiers |= Rml::Input::KM_CAPSLOCK;
+    }
+    if ((::GetKeyState(VK_NUMLOCK) & 0x0001) != 0)
+    {
+        Modifiers |= Rml::Input::KM_NUMLOCK;
+    }
+    if ((::GetKeyState(VK_SCROLL) & 0x0001) != 0)
+    {
+        Modifiers |= Rml::Input::KM_SCROLLLOCK;
+    }
+    return Modifiers;
+}
+
+bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect)
+{
+    InputSystem& Input = InputSystem::Get();
+
+    if (!bRmlUiRuntimeInitialized || !RmlUiContext || !Window || !Window->GetHWND()
+        || ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+    {
+        return false;
+    }
+
+    if (GetRuntimeInputMode() == ERuntimeInputMode::GameOnly && IsRuntimeCursorLocked())
+    {
+        Input.ConsumeTextInput();
+        return false;
+    }
+
+    POINT ClientMousePos = Input.GetMousePos();
+    ::ScreenToClient(Window->GetHWND(), &ClientMousePos);
+
+    const bool bInsideViewport =
+        ClientMousePos.x >= ViewportRect.X && ClientMousePos.y >= ViewportRect.Y
+        && ClientMousePos.x < ViewportRect.X + ViewportRect.Width
+        && ClientMousePos.y < ViewportRect.Y + ViewportRect.Height;
+
+    if (!bInsideViewport && !RmlUiContext->IsMouseInteracting())
+    {
+        return false;
+    }
+
+    RmlUiContext->SetDimensions(Rml::Vector2i(
+        std::max(static_cast<int>(ViewportRect.Width), 1),
+        std::max(static_cast<int>(ViewportRect.Height), 1)));
+
+    const int Modifiers = GetRmlUiKeyModifierState(Input);
+    bool bConsumed = false;
+
+    if (bInsideViewport)
+    {
+        const int LocalX = ClientMousePos.x - ViewportRect.X;
+        const int LocalY = ClientMousePos.y - ViewportRect.Y;
+        const bool bMouseFree = RmlUiContext->ProcessMouseMove(LocalX, LocalY, Modifiers);
+        bConsumed = (!bMouseFree && RmlUiContext->IsMouseInteracting()) || bConsumed;
+    }
+    else
+    {
+        const bool bMouseFree = RmlUiContext->ProcessMouseLeave();
+        bConsumed = (!bMouseFree) || bConsumed;
+    }
+
+    auto PumpMouseButton = [&](int VK, int ButtonIndex)
+    {
+        if (Input.GetKeyDown(VK))
+        {
+            const bool bMouseFree = RmlUiContext->ProcessMouseButtonDown(ButtonIndex, Modifiers);
+            bConsumed = (!bMouseFree) || bConsumed;
+        }
+        if (Input.GetKeyUp(VK))
+        {
+            const bool bMouseFree = RmlUiContext->ProcessMouseButtonUp(ButtonIndex, Modifiers);
+            bConsumed = (!bMouseFree) || bConsumed;
+        }
+    };
+
+    PumpMouseButton(VK_LBUTTON, 0);
+    PumpMouseButton(VK_RBUTTON, 1);
+    PumpMouseButton(VK_MBUTTON, 2);
+
+    if (Input.GetScrollDelta() != 0)
+    {
+        const float WheelDelta = -Input.GetScrollNotches();
+        const bool bEventNotConsumed = RmlUiContext->ProcessMouseWheel(Rml::Vector2f(0.0f, WheelDelta), Modifiers);
+        bConsumed = (!bEventNotConsumed) || bConsumed;
+    }
+
+    bool bKeyboardConsumed = false;
+    for (int VK = 0; VK < 256; ++VK)
+    {
+        if (IsMouseButtonVK(VK))
+        {
+            continue;
+        }
+
+        const Rml::Input::KeyIdentifier Key = MapVirtualKeyToRmlKey(VK);
+        if (Key == Rml::Input::KI_UNKNOWN)
+        {
+            continue;
+        }
+
+        if (Input.GetKeyDown(VK))
+        {
+            const bool bEventNotConsumed = RmlUiContext->ProcessKeyDown(Key, Modifiers);
+            bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
+        }
+        if (Input.GetKeyUp(VK))
+        {
+            const bool bEventNotConsumed = RmlUiContext->ProcessKeyUp(Key, Modifiers);
+            bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
+        }
+    }
+
+    for (uint32_t Codepoint : Input.ConsumeTextInput())
+    {
+        const bool bEventNotConsumed = RmlUiContext->ProcessTextInput(static_cast<Rml::Character>(Codepoint));
+        bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
+    }
+
+    bConsumed = bKeyboardConsumed || bConsumed;
+    if (bConsumed)
+    {
+        Input.SetGuiMouseCapture(true);
+        Input.SetGuiViewportMouseBlock(true);
+        if (bKeyboardConsumed)
+        {
+            Input.SetGuiKeyboardCapture(true);
+        }
+    }
+
+    return bConsumed;
 }
 
 void UEditorEngine::RegisterViewportInputTargets()

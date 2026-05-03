@@ -11,7 +11,9 @@ function TitleState:Enter(context)
     context.managers.UI:Show("Title")
     Engine.API.Input.SetInputModeUIOnly()
 
-    context.managers.Sound:PlayBGM()
+    Engine.API.Debug.Log("Title State")
+
+    context.managers.Sound:PlayBGM("Asset/Audio/BGM/TitleScreen.wav")
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "StartGame" then

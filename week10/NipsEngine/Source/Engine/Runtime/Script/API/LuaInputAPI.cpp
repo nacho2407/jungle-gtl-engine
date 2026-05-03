@@ -328,6 +328,29 @@ namespace FLuaEngineAPI
             InputSystem::Get().SetCursorVisibility(bVisible);
         };
 
+        Input["SetCursorLocked"] = [](bool bLocked)
+        {
+            if (GEngine)
+            {
+                GEngine->SetRuntimeCursorLocked(bLocked);
+            }
+            if (!bLocked)
+            {
+                InputSystem::Get().SetUseRawMouse(false);
+                InputSystem::Get().LockMouse(false);
+            }
+        };
+
+        Input["IsCursorLocked"] = []() -> bool
+        {
+            return GEngine ? GEngine->IsRuntimeCursorLocked() : false;
+        };
+
+        Input["IsCursorVisible"] = []() -> bool
+        {
+            return GEngine ? GEngine->IsRuntimeCursorVisible() : false;
+        };
+
         API["Input"] = Input;
     }
 }

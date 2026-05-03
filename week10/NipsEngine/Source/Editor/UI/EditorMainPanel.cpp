@@ -23,7 +23,6 @@
 
 #include "Render/Renderer/Renderer.h"
 #include "Render/Resource/Shader.h"
-#include "Render/Resource/Texture.h"
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
@@ -547,6 +546,11 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     PlayStreamWidget.Initialize(InEditorEngine);
     ToolbarWidget.Initialize(InEditorEngine);
     RuntimeUIPreviewWidget.Initialize(InEditorEngine);
+    RuntimeUIPreviewWidget.SetRmlRenderQueue(
+        [this](const FRuntimeUIRenderContext& Context)
+        {
+            PendingPIERmlUiRenderContexts.push_back(Context);
+        });
     ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
     ToolbarWidget.SetSceneWidget(&SceneWidget);
     ToolbarWidget.SetPlayStreamWidget(&PlayStreamWidget);
@@ -556,11 +560,6 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
                                          &bShowMaterialEditor, &bShowStatProfiler, &bShowEditorDebug,
                                          &bShowContentBrowser, &bShowUndoHistory, &bShowRuntimeUIPreview,
                                          &bPIEViewportFullscreenEnabled);
-    RuntimeUIBackend.SetImageResolver(
-        [this](const FString& ImagePath)
-        {
-            return ResolveRuntimeUIImage(ImagePath);
-        });
 }
 
 void FEditorMainPanel::Release()
@@ -658,6 +657,8 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
 
 void FEditorMainPanel::Render(float DeltaTime)
 {
+    PendingPIERmlUiRenderContexts.clear();
+
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -750,6 +751,15 @@ void FEditorMainPanel::Render(float DeltaTime)
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    for (const FRuntimeUIRenderContext& Context : PendingPIERmlUiRenderContexts)
+    {
+        if (EditorEngine)
+        {
+            EditorEngine->RenderRuntimeUI(Context);
+        }
+    }
+    PendingPIERmlUiRenderContexts.clear();
 }
 
 void FEditorMainPanel::HideEditorWindowsForPIE()
@@ -2733,82 +2743,13 @@ void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& Viewpo
     Context.ViewportSize = FRuntimeUIVector2(static_cast<float>(ViewportRect.Width), static_cast<float>(ViewportRect.Height));
     Context.DeltaTime = DeltaTime;
 
-    EditorEngine->GetRuntimeUI().Render(RuntimeUIBackend, Context);
+    PendingPIERmlUiRenderContexts.push_back(Context);
 
-    const ImGuiIO& IO = ImGui::GetIO();
-    const bool bMouseInViewport =
-        IO.MousePos.x >= static_cast<float>(ViewportRect.X) &&
-        IO.MousePos.y >= static_cast<float>(ViewportRect.Y) &&
-        IO.MousePos.x <= static_cast<float>(ViewportRect.X + ViewportRect.Width) &&
-        IO.MousePos.y <= static_cast<float>(ViewportRect.Y + ViewportRect.Height);
-
-    bool bRuntimeUIConsumed = false;
-    if (bMouseInViewport || !EditorEngine->GetRuntimeUI().GetPressedWidgetId().empty())
-    {
-        FRuntimeUIInputEvent Event;
-        Event.ScreenPosition = FRuntimeUIVector2(IO.MousePos.x, IO.MousePos.y);
-
-        Event.Type = ERuntimeUIInputEventType::MouseMove;
-        bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
-
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        {
-            Event.Type = ERuntimeUIInputEventType::MouseButtonDown;
-            Event.MouseButton = ERuntimeUIMouseButton::Left;
-            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
-        }
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-        {
-            Event.Type = ERuntimeUIInputEventType::MouseButtonUp;
-            Event.MouseButton = ERuntimeUIMouseButton::Left;
-            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
-        }
-        if (IO.MouseWheel != 0.0f)
-        {
-            Event.Type = ERuntimeUIInputEventType::MouseWheel;
-            Event.MouseButton = ERuntimeUIMouseButton::None;
-            Event.WheelDelta = IO.MouseWheel;
-            bRuntimeUIConsumed = EditorEngine->GetRuntimeUI().HandleInput(Event) || bRuntimeUIConsumed;
-        }
-    }
-
-    if (bRuntimeUIConsumed)
+    if (EditorEngine->PumpPIERmlUiInput(ViewportRect))
     {
         InputSystem::Get().SetGuiMouseCapture(true);
         InputSystem::Get().SetGuiViewportMouseBlock(true);
     }
-}
-
-FRuntimeUIResolvedImage FEditorMainPanel::ResolveRuntimeUIImage(const FString& ImagePath) const
-{
-    UTexture* Texture = FResourceManager::Get().LoadTexture(ImagePath);
-    if (!Texture || !Texture->GetSRV())
-    {
-        return {};
-    }
-
-    FRuntimeUIResolvedImage Result;
-    Result.TextureId = Texture->GetSRV();
-    Result.Width = 1.0f;
-    Result.Height = 1.0f;
-
-    ID3D11Resource* Resource = nullptr;
-    Texture->GetSRV()->GetResource(&Resource);
-    if (Resource)
-    {
-        ID3D11Texture2D* Texture2D = nullptr;
-        if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D))) && Texture2D)
-        {
-            D3D11_TEXTURE2D_DESC Desc = {};
-            Texture2D->GetDesc(&Desc);
-            Result.Width = static_cast<float>(Desc.Width);
-            Result.Height = static_cast<float>(Desc.Height);
-            Texture2D->Release();
-        }
-        Resource->Release();
-    }
-
-    return Result;
 }
 
 void FEditorMainPanel::TickViewportContextMenu()

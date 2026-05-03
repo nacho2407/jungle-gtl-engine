@@ -11,10 +11,21 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "Camera/ViewportCamera.h"
 #include "Editor/Viewport/ViewportLayout.h"
+#include "UI/RmlUi/RmlUiRenderInterfaceD3D11.h"
+#include "UI/RmlUi/RmlUiRuntimeModule.h"
 
 class UGizmoComponent;
 class FEditorRenderPipeline;
 class AActor;
+class InputSystem;
+class FEditorRmlUiActionEventListener;
+
+namespace Rml
+{
+	class Context;
+	class Element;
+	class ElementDocument;
+}
 
 struct FUndoSnapshotEntry
 {
@@ -47,6 +58,20 @@ public:
 	void Tick(float DeltaTime) override;
 	void OnWindowResized(uint32 Width, uint32 Height) override;
 	virtual void WorldTick(float DeltaTime) override;
+	void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) override;
+	bool LoadRmlUIDocument(const FString& ScreenId, const FString& Path) override;
+	bool UnloadRmlUIDocument(const FString& ScreenId) override;
+	bool ReloadRmlUIDocument(const FString& ScreenId) override;
+	bool ShowRmlUIScreen(const FString& ScreenId) override;
+	bool HideRmlUIScreen(const FString& ScreenId) override;
+	bool SetRmlUIElementText(const FString& ElementId, const FString& Text) override;
+	bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) override;
+	bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) override;
+	bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) override;
+	bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) override;
+	bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) override;
+	TArray<FString> PollRmlUIActionEvents() override;
+	bool PumpPIERmlUiInput(const FViewportRect& ViewportRect);
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
@@ -86,6 +111,7 @@ public:
 	void RenderUI(float DeltaTime);
 	void RegisterViewportInputTargets();
 	void RequestPIEViewportInputFocus(int32 FrameCount = 3);
+	void EnqueueRmlUIActionEvent(const FString& EventName);
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
@@ -133,6 +159,12 @@ private:
 	void StopPlaySessionNow();
 	FString CaptureSceneSnapshot() const;
 	bool RestoreSceneSnapshot(const FString& Snapshot);
+	void InitializeRmlUiRuntime();
+	void ShutdownRmlUiRuntime();
+	int GetRmlUiKeyModifierState(const InputSystem& Input) const;
+	Rml::ElementDocument* FindRmlUIDocument(const FString& ScreenId) const;
+	Rml::Element* FindRmlUIElement(const FString& ElementId) const;
+	void AttachRmlUIDocumentListeners(Rml::ElementDocument* Document);
     
 	FSelectionManager SelectionManager;
 	FEditorMainPanel  MainPanel;
@@ -148,6 +180,15 @@ private:
 
 	int32 ActorDestroyedListenerId = 0;
 	UWorld* ActorDestroyedListenerWorld = nullptr;
+
+	bool bRmlUiRuntimeInitialized = false;
+	FRmlUiRuntimeModule RmlUiRuntimeModule;
+	FRmlUiRenderInterfaceD3D11 RmlUiRenderInterface;
+	Rml::Context* RmlUiContext = nullptr;
+	TMap<FString, FString> RmlUiDocumentPathByScreenId;
+	TMap<FString, Rml::ElementDocument*> RmlUiDocumentsByScreenId;
+	TArray<FString> RmlUiPendingActionEvents;
+	FEditorRmlUiActionEventListener* RmlUiActionListener = nullptr;
     
 	TArray<FUndoSnapshotEntry> UndoHistory;
 	TArray<FUndoSnapshotEntry> RedoHistory;
