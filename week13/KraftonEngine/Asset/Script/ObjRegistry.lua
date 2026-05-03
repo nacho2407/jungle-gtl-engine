@@ -6,6 +6,8 @@ ObjRegistry.carGas = nil
 ObjRegistry.manObj = nil
 ObjRegistry.manCamera = nil
 ObjRegistry.gasNozzle = nil
+ObjRegistry.carWasher = nil
+ObjRegistry.dirtyCar = nil
 
 function ObjRegistry.RegisterCar(car)
     ObjRegistry.car = car
@@ -20,6 +22,14 @@ end
 
 function ObjRegistry.RegisterGasNozzle(gasNozzle)
     ObjRegistry.gasNozzle = gasNozzle
+end
+
+function ObjRegistry.RegisterDirtyCar(dirtyCar)
+    ObjRegistry.dirtyCar = dirtyCar
+end
+
+function ObjRegistry.RegisterCarWasher(carWasher)
+    ObjRegistry.carWasher = carWasher
 end
 
 return ObjRegistry

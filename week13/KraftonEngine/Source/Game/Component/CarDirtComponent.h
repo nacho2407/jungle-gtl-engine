@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/SceneComponent.h"
 
@@ -15,7 +15,5 @@ public:
 	void BeginPlay() override;
 
 private:
-	void EnsureDirtComponents();
 	int32 CountDirtChildren() const;
-	UDirtComponent* CreateDirtChild(int32 Index);
 };

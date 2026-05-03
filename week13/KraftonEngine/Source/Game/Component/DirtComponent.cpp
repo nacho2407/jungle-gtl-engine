@@ -1,7 +1,6 @@
 ﻿#include "Game/Component/DirtComponent.h"
 
 #include "Collision/RayUtils.h"
-#include "Component/CameraComponent.h"
 #include "Game/Component/CompletionOutlineComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Debug/DrawDebugHelpers.h"
@@ -117,6 +116,10 @@ UStaticMeshComponent* UDirtComponent::FindWaterGunComponent(AActor& Actor)
 {
 	UStaticMeshComponent* FirstStaticMesh = nullptr;
 	USceneComponent* RootComponent = Actor.GetRootComponent();
+	if (UStaticMeshComponent* RootStaticMesh = Cast<UStaticMeshComponent>(RootComponent))
+	{
+		return RootStaticMesh;
+	}
 
 	for (UActorComponent* Component : Actor.GetComponents())
 	{
@@ -129,11 +132,6 @@ UStaticMeshComponent* UDirtComponent::FindWaterGunComponent(AActor& Actor)
 		if (!FirstStaticMesh)
 		{
 			FirstStaticMesh = StaticMesh;
-		}
-
-		if (StaticMesh != RootComponent && StaticMesh->GetParent() == RootComponent)
-		{
-			return StaticMesh;
 		}
 	}
 
@@ -159,19 +157,6 @@ UStaticMeshComponent* UDirtComponent::FindWaterStreamComponent(AActor& Actor)
 	return nullptr;
 }
 
-UCameraComponent* UDirtComponent::FindOwnedCamera(AActor& Actor)
-{
-	for (UActorComponent* Component : Actor.GetComponents())
-	{
-		if (UCameraComponent* Camera = Cast<UCameraComponent>(Component))
-		{
-			return Camera;
-		}
-	}
-
-	return nullptr;
-}
-
 bool UDirtComponent::FireCarWashRay(AActor& Actor)
 {
 	UWorld* World = Actor.GetWorld();
@@ -181,19 +166,18 @@ bool UDirtComponent::FireCarWashRay(AActor& Actor)
 	}
 
 	UStaticMeshComponent* WaterStream = FindWaterStreamComponent(Actor);
-	UStaticMeshComponent* WaterGun = FindWaterGunComponent(Actor);
-	const FVector Start = WaterStream ? WaterStream->GetWorldLocation()
-		: WaterGun ? WaterGun->GetWorldLocation()
-		: Actor.GetActorLocation();
-
-	FVector Direction = Actor.GetActorForward();
-	if (UCameraComponent* ActiveCamera = World->GetActiveCamera())
+	if (!WaterStream || !WaterStream->IsVisible())
 	{
-		Direction = ActiveCamera->GetForwardVector();
+		return false;
 	}
-	else if (UCameraComponent* OwnedCamera = FindOwnedCamera(Actor))
+
+	UStaticMeshComponent* WaterGun = FindWaterGunComponent(Actor);
+	const FVector Start = WaterStream->GetWorldLocation();
+
+	FVector Direction = WaterStream->GetForwardVector();
+	if (Direction.IsNearlyZero() && WaterGun)
 	{
-		Direction = OwnedCamera->GetForwardVector();
+		Direction = WaterGun->GetForwardVector();
 	}
 
 	if (Direction.IsNearlyZero())
@@ -202,7 +186,7 @@ bool UDirtComponent::FireCarWashRay(AActor& Actor)
 	}
 
 	Direction.Normalize();
-	constexpr float RayLength = 1.5f;
+	constexpr float RayLength = 8.0f;
 	DrawDebugLine(World, Start, Start + Direction * RayLength, FColor::Red(), 0.0f);
 	return WashFirstHitDirt(World, Start, Direction, RayLength);
 }
@@ -213,6 +197,28 @@ void UDirtComponent::SetCarWashStreamVisible(AActor& Actor, bool bVisible)
 	{
 		WaterStream->SetVisibility(bVisible);
 	}
+}
+
+bool UDirtComponent::IsCarWashStreamVisible(AActor& Actor)
+{
+	UStaticMeshComponent* WaterStream = FindWaterStreamComponent(Actor);
+	return WaterStream && WaterStream->IsVisible();
+}
+
+bool UDirtComponent::AreAllDirtComponentsWashed(AActor& Actor)
+{
+	for (UActorComponent* Component : Actor.GetComponents())
+	{
+		if (UDirtComponent* Dirt = Cast<UDirtComponent>(Component))
+		{
+			if (!Dirt->IsWashed())
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
 bool UDirtComponent::WashFirstHitDirt(UWorld* World, const FVector& Start, const FVector& Direction, float MaxDistance)
