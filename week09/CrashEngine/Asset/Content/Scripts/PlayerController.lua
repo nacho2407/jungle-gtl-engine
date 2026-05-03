@@ -2,7 +2,7 @@ local moveSpeed = 10.0
 local pressedKeys = {}
 
 local HP = 100.0
-local HP_reduction  = 1;
+local HP_reduction  = 10;
 
 local LightComponet = nil
 local Initial_Light_Intensity = 0.0
@@ -94,7 +94,11 @@ end
 function Tick(dt)
     updateVelocity()
 
-    HP = HP - dt * HP_reduction
+    if(HP > 0) then
+        HP = HP - dt * HP_reduction
+    else 
+        HP = 0
+    end
 
     LightComponet:SetIntensity(HP)
 
