@@ -9,7 +9,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_0",
-      "PrimitiveKey" : "103",
+      "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -70,7 +70,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_3",
-      "PrimitiveKey" : "106",
+      "PrimitiveKey" : "19",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -109,6 +109,123 @@
       "Tags" : [],
       "bVisible" : true
     }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_14",
+      "PrimitiveKey" : "22",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 127",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "BoxExtent" : [1.000000, 1.000000, 1.000000],
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-3.685356, 4.807872, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [0.368087, 0.344661, 3.252439],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["Battery"],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_15",
+      "PrimitiveKey" : "25",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 130",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UCapsuleComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "CapsuleHalfHeight" : 1.000000,
+              "CapsuleRadius" : 1.000000,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-4.747623, 0.000000, -1.371347],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [2.966088, 3.357748, 0.172949],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["Document"],
+      "bVisible" : true
+    }, {
       "ClassName" : "ACameraActor",
       "NonSceneComponents" : [],
       "ObjectName" : "ACameraActor_0",
@@ -124,7 +241,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 111",
+              "Text" : "UUID : 34",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -198,7 +315,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 116",
+              "Text" : "UUID : 41",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -262,7 +379,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 120",
+              "Text" : "UUID : 47",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -308,16 +425,9 @@
       "Tags" : [],
       "bVisible" : true
     }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "ULuaScriptComponent",
-          "Properties" : {
-            "Script File" : "BatteryComponent.lua",
-            "bTickEnable" : true
-          }
-        }],
-      "ObjectName" : "AStaticMeshActor_14",
-      "PrimitiveKey" : "127",
+      "ClassName" : "ADecalActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "ADecalActor_0",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -328,12 +438,30 @@
               "Font Size" : 1.000000,
               "Is Editor Helper" : true,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 127",
+              "Text" : "UUID : 53",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/DecalIcon.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
               "bTickEnable" : true
             }
           }, {
@@ -344,7 +472,7 @@
               "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "Is Editor Helper" : false,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
               "Visible" : true,
@@ -353,35 +481,33 @@
               "bTickEnable" : true
             }
           }],
-        "ClassName" : "UStaticMeshComponent",
+        "ClassName" : "UDecalComponent",
         "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
-          },
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "FadeInDelay" : 0.000000,
+          "FadeInDuration" : 0.000000,
+          "FadeOutDelay" : 0.000000,
+          "FadeOutDuration" : 0.000000,
           "Is Editor Helper" : false,
-          "Location" : [-3.685356, 4.807872, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [0.368087, 0.344661, 3.252439],
-          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Location" : [9.335962, 1.959702, -6.479184],
+          "Material" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Aquarium.json"
+          },
+          "Rotation" : [-90.000000, 0.000000, 0.000000],
+          "Scale" : [20.200001, 5.000000, 5.000000],
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
           "bTickEnable" : true
         }
       },
-      "Tags" : ["Battery"],
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [{
-          "ClassName" : "ULuaScriptComponent",
-          "Properties" : {
-            "Script File" : "BatteryComponent.lua",
-            "bTickEnable" : true
-          }
-        }],
-      "ObjectName" : "AStaticMeshActor_15",
-      "PrimitiveKey" : "130",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_20",
+      "PrimitiveKey" : "207",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -392,9 +518,9 @@
               "Font Size" : 1.000000,
               "Is Editor Helper" : true,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 130",
+              "Text" : "UUID : 207",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -424,7 +550,7 @@
             "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
           },
           "Is Editor Helper" : false,
-          "Location" : [-4.747623, 0.000000, -1.371347],
+          "Location" : [-4.747623, -7.473082, -1.371347],
           "Rotation" : [-0.000000, 0.000000, 0.000000],
           "Scale" : [2.966088, 3.357748, 0.172949],
           "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
@@ -436,6 +562,64 @@
       },
       "Tags" : ["Document"],
       "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_26",
+      "PrimitiveKey" : "251",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 251",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "BoxExtent" : [1.000000, 1.000000, 1.000000],
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/_Basic/BasicShapeMaterial.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-3.685356, 7.704048, 0.000000],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [0.368087, 0.344661, 3.252439],
+          "Static Mesh" : "Asset/Content/Models/_Basic/Cube.OBJ",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["Battery"],
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Default",
@@ -444,37 +628,51 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [5.010587, -6.209571, 12.420863],
+    "Location" : [4.263181, -6.670633, 12.420863],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000009, 54.999523, 140.894699]
+    "Rotation" : [0.000000, 52.479473, 115.694695]
   },
   "Primitives" : {
-    "103" : {
+    "12" : {
       "Location" : [2.020485, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/clownFish/ClownFish.obj",
       "Rotation" : [0.000000, -0.000000, 91.332390],
       "Scale" : [21.400002, 14.500000, 11.400000],
       "Type" : "StaticMeshComp"
     },
-    "106" : {
+    "19" : {
       "Location" : [0.000000, 0.000000, -8.753875],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 100.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "127" : {
+    "207" : {
+      "Location" : [-4.747623, -7.473082, -1.371347],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [2.966088, 3.357748, 0.172949],
+      "Type" : "StaticMeshComp"
+    },
+    "22" : {
       "Location" : [-3.685356, 4.807872, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.368087, 0.344661, 3.252439],
       "Type" : "StaticMeshComp"
     },
-    "130" : {
+    "25" : {
       "Location" : [-4.747623, 0.000000, -1.371347],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [2.966088, 3.357748, 0.172949],
+      "Type" : "StaticMeshComp"
+    },
+    "251" : {
+      "Location" : [-3.685356, 7.704048, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [0.368087, 0.344661, 3.252439],
       "Type" : "StaticMeshComp"
     }
   },

@@ -2,7 +2,14 @@ local moveSpeed = 10.0
 local pressedKeys = {}
 
 local HP = 100.0
-local hasDocument = false
+local HP_reduction  = 1;
+
+local LightComponet = nil
+local Initial_Light_Intensity = 0.0
+
+local DocumentCount = 0
+
+
 
 local movementKeys = {
     W = true,
@@ -60,33 +67,42 @@ end
 function OnOverlapBegin(other)
     print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Document") then
-        hasDocument = true;
-        print("Has Document : ", hasDocument);
+        DocumentCount = DocumentCount + 1;
+        print("Has Document : ", DocumentCount);
+        World.DestroyActor(other)
     elseif other:HasTag("Battery") then
         HP = HP + 10
         print("Player HP : ", HP);
+        World.DestroyActor(other)
+    elseif other:HasTag("Destination") then
+        print("Game Finish!");
     end
 end
 
 function OnOverlapEnd(other)
-    print("Lua OnOverlapEnd", other.UUID);
-end
-
-function OnTakeDamage(damage, instigator)
-    print("Lua OnTakeDamage", damage, instigator.UUID);
+   
 end
 
 function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+
+    LightComponet = obj:GetComponent("PointLightComponent", 0)
+    LightComponet:SetIntensity(HP)
 end
 
 function Tick(dt)
     updateVelocity()
 
+    HP = HP - dt * HP_reduction
+
+    LightComponet:SetIntensity(HP)
+
     if obj.Velocity:LengthSquared() > 0.0 then
         obj:AddWorldOffset(obj.Velocity * dt)
     end
+
+
 end
 
 function EndPlay()
