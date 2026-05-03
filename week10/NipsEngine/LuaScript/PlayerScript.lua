@@ -72,6 +72,8 @@ function Script:Tick(dt)
             self.dashCooldown = 0.01
 
             if self.dashStepsLeft <= 0 then
+                -- 대쉬 종료 시 PrevLocation 초기화
+                self.PrevLocation = self.owner.Location
                 self.bDoingDash = false
             end
         end
@@ -107,7 +109,7 @@ function Script:Tick(dt)
     local speed = delta:Size() / math.max(dt, 1e-6)
 
     local amplitude = 0.0001 + speed * 0.002
-    local freq = 6.0 + speed * 0.2
+    local freq = 6.0 + speed * 0.02
     local offsetZ = math.cos(self.time * freq) * amplitude
     local offsetX = math.sin(self.time * freq * 0.5) * amplitude * 0.5
     Engine.API.World.AddViewTargetCameraLocation(Vector(offsetX, 0, offsetZ))
