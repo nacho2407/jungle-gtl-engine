@@ -467,7 +467,7 @@ void UUIManager::Initialize(ID3D11Device* InDevice)
 
 void UUIManager::Shutdown()
 {
-	ClearViewport();
+	DestroyAllWidgets();
 
 	if (RmlContext)
 	{
@@ -560,6 +560,11 @@ void UUIManager::RemoveFromViewportImmediate(UUserWidget* Widget)
 
 void UUIManager::ClearViewport()
 {
+	// 위젯을 viewport 에서만 떼고 UObject 자체는 유지. UUIManager 는 widgets 의 owner —
+	// 같은 Lua VM 안의 widgets[] 테이블이 그대로 살아있고, PIE 재시작 / TransitionToScene
+	// 후 UIManager.Init re-entry 경로가 동일 위젯을 재사용한다 (위젯 destroy 시 Lua 측
+	// 캐시가 dangling 이 되어 RemoveFromParent → CloseDocument 가 stale Rml::Document 를
+	// 참조해 크래시). UObject 까지 파괴하는 건 Shutdown 만의 책임.
 	PendingRemoveWidgets.clear();
 
 	for (UUserWidget* Widget : ViewportWidgets)
@@ -576,6 +581,11 @@ void UUIManager::ClearViewport()
 	{
 		RmlContext->Update();
 	}
+}
+
+void UUIManager::DestroyAllWidgets()
+{
+	ClearViewport();
 
 	for (UUserWidget* Widget : CreatedWidgets)
 	{
