@@ -41,6 +41,7 @@ private:
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
+	void RenderComponentTags(UActorComponent* Component);
 	void RenderComponentProperties();
 	void RenderPropertyWidget(struct FPropertyDescriptor& Prop);
 	void RenderSceneComponentRefWidget(struct FPropertyDescriptor& Prop, AActor* Owner);
@@ -72,4 +73,5 @@ private:
 	bool bFocusActorNameNextFrame = false;
 	bool bFocusComponentNameNextFrame = false;
 	char NewActorTagBuffer[128] = "";
+	char NewComponentTagBuffer[128] = "";
 };

@@ -70,12 +70,25 @@ public:
 	virtual bool ReloadRmlUIDocument(const FString& ScreenId) { return false; }
 	virtual bool ShowRmlUIScreen(const FString& ScreenId) { return false; }
 	virtual bool HideRmlUIScreen(const FString& ScreenId) { return false; }
+	virtual bool HasRmlUIElement(const FString& ElementId) { return false; }
+	virtual FString GetRmlUIElementText(const FString& ElementId) { return ""; }
 	virtual bool SetRmlUIElementText(const FString& ElementId, const FString& Text) { return false; }
 	virtual bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) { return false; }
 	virtual bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) { return false; }
 	virtual bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) { return false; }
+	virtual bool HasRmlUIElementClass(const FString& ElementId, const FString& ClassName) { return false; }
+	virtual FString GetRmlUIElementClassNames(const FString& ElementId) { return ""; }
+	virtual bool SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames) { return false; }
+	virtual bool HasRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return false; }
+	virtual FString GetRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return ""; }
 	virtual bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
+	virtual bool RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return false; }
+	virtual FString GetRmlUIElementStyle(const FString& ElementId, const FString& Name) { return ""; }
 	virtual bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
+	virtual bool RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name) { return false; }
+	virtual bool FocusRmlUIElement(const FString& ElementId, bool bFocusVisible) { return false; }
+	virtual bool BlurRmlUIElement(const FString& ElementId) { return false; }
+	virtual bool ClickRmlUIElement(const FString& ElementId) { return false; }
 	virtual TArray<FString> PollRmlUIActionEvents() { return {}; }
 	FAudioSystem& GetAudioSystem() { return AudioSystem; }
 	const FAudioSystem& GetAudioSystem() const { return AudioSystem; }

@@ -7,9 +7,11 @@ function SoundManager.new(context)
 
         BGM = {
             Title = "Asset/Audio/BGM/TitleScreen.wav",
+            Gameplay = "Asset/Audio/BGM/TitleScreen.wav",
         },
 
         SFX = {
+            Button = "",
         }
     }, SoundManager)
 end

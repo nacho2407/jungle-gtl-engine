@@ -1,0 +1,14 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root">
+            <div class="hud-panel">
+                <div id="HUD.Score" class="hud-line">Score: 0</div>
+                <div id="HUD.Time" class="hud-line">Time: 0.0</div>
+                <progress id="HUD.Health" class="health-bar" value="1.0"></progress>
+            </div>
+        </div>
+    </body>
+</rml>

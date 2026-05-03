@@ -24,8 +24,13 @@ end
 
 function UIManager:Show(screenId)
     self:BuildScreenIfNeeded(screenId)
+
+    if self.currentScreen ~= nil and self.currentScreen ~= screenId then
+        Engine.API.UI.HideDocument(self.currentScreen)
+    end
+
     self.currentScreen = screenId
-    Engine.API.UI.ShowScreen(screenId)
+    Engine.API.UI.ShowDocument(screenId)
 end
 
 function UIManager:BuildScreenIfNeeded(screenId)
@@ -33,59 +38,53 @@ function UIManager:BuildScreenIfNeeded(screenId)
         return
     end
 
+    local loaded = false
     if screenId == "Boot" then
-        self:BuildBootScreen()
+        loaded = self:BuildBootScreen()
     elseif screenId == "Title" then
-        self:BuildTitleScreen()
+        loaded = self:BuildTitleScreen()
     elseif screenId == "HUD" then
-        self:BuildHUDScreen()
+        loaded = self:BuildHUDScreen()
     elseif screenId == "Pause" then
-        self:BuildPauseScreen()
+        loaded = self:BuildPauseScreen()
     elseif screenId == "Result" then
-        self:BuildResultScreen()
+        loaded = self:BuildResultScreen()
     else
         Engine.API.Debug.Warn("[UIManager] Unknown screen: " .. tostring(screenId))
         return
     end
 
-    self.builtScreens[screenId] = true
+    self.builtScreens[screenId] = loaded
 end
 
 function UIManager:BuildBootScreen()
-    Engine.API.UI.CreateText("Boot", "Boot.Title", "Loading...", 760, 500, 400, 60)
-    Engine.API.UI.SetFontScale("Boot.Title", 1.4)
+    return self:LoadScreenDocument("Boot", "Asset/UI/Game/Boot.rml")
 end
 
 function UIManager:BuildTitleScreen()
-    Engine.API.UI.CreateText("Title", "Title.Name", "SSAMURAI", 720, 260, 520, 80)
-    Engine.API.UI.SetFontScale("Title.Name", 2.0)
-    Engine.API.UI.CreateButton("Title", "Title.Start", "Start", "StartGame", 810, 430, 280, 64)
-    Engine.API.UI.CreateButton("Title", "Title.Quit", "Quit", "QuitGame", 810, 510, 280, 64)
+    return self:LoadScreenDocument("Title", "Asset/UI/Game/Title.rml")
 end
 
 function UIManager:BuildHUDScreen()
-    Engine.API.UI.CreateText("HUD", "HUD.Score", "Score: 0", 32, 28, 260, 36)
-    Engine.API.UI.CreateText("HUD", "HUD.Time", "Time: 0.0", 32, 68, 260, 36)
-    Engine.API.UI.CreateProgressBar("HUD", "HUD.Health", 1.0, 32, 112, 260, 24)
+    return self:LoadScreenDocument("HUD", "Asset/UI/Game/HUD.rml")
 end
 
 function UIManager:BuildPauseScreen()
-    Engine.API.UI.CreatePanel("Pause", "Pause.Dim", 0, 0, 1920, 1080)
-    Engine.API.UI.SetBackgroundColor("Pause.Dim", 0.0, 0.0, 0.0, 0.55)
-    Engine.API.UI.CreateText("Pause", "Pause.Title", "Paused", 820, 300, 300, 64)
-    Engine.API.UI.SetFontScale("Pause.Title", 1.6)
-    Engine.API.UI.CreateButton("Pause", "Pause.Resume", "Resume", "ResumeGame", 820, 420, 280, 60)
-    Engine.API.UI.CreateButton("Pause", "Pause.Restart", "Restart", "RestartGame", 820, 496, 280, 60)
-    Engine.API.UI.CreateButton("Pause", "Pause.TitleButton", "Title", "BackToTitle", 820, 572, 280, 60)
+    return self:LoadScreenDocument("Pause", "Asset/UI/Game/Pause.rml")
 end
 
 function UIManager:BuildResultScreen()
-    Engine.API.UI.CreateText("Result", "Result.Title", "Result", 820, 280, 320, 64)
-    Engine.API.UI.SetFontScale("Result.Title", 1.6)
-    Engine.API.UI.CreateText("Result", "Result.Score", "Score: 0", 780, 380, 420, 44)
-    Engine.API.UI.CreateText("Result", "Result.Best", "Best: 0", 780, 430, 420, 44)
-    Engine.API.UI.CreateButton("Result", "Result.Restart", "Restart", "RestartGame", 820, 530, 280, 60)
-    Engine.API.UI.CreateButton("Result", "Result.TitleButton", "Title", "BackToTitle", 820, 606, 280, 60)
+    return self:LoadScreenDocument("Result", "Asset/UI/Game/Result.rml")
+end
+
+function UIManager:LoadScreenDocument(screenId, path)
+    if not Engine.API.UI.LoadDocument(screenId, path) then
+        Engine.API.Debug.Warn("[UIManager] Failed to load RML screen: " .. tostring(screenId) .. " path=" .. tostring(path))
+        return false
+    end
+
+    Engine.API.UI.HideDocument(screenId)
+    return true
 end
 
 function UIManager:SetHUD(snapshot)

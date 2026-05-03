@@ -301,6 +301,17 @@ bool UGameEngine::HideRmlUIScreen(const FString& ScreenId)
     return true;
 }
 
+bool UGameEngine::HasRmlUIElement(const FString& ElementId)
+{
+    return FindRmlUIElement(ElementId) != nullptr;
+}
+
+FString UGameEngine::GetRmlUIElementText(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->GetInnerRML() : "";
+}
+
 bool UGameEngine::SetRmlUIElementText(const FString& ElementId, const FString& Text)
 {
     Rml::Element* Element = FindRmlUIElement(ElementId);
@@ -364,6 +375,42 @@ bool UGameEngine::SetRmlUIElementClass(const FString& ElementId, const FString& 
     return true;
 }
 
+bool UGameEngine::HasRmlUIElementClass(const FString& ElementId, const FString& ClassName)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->IsClassSet(ClassName) : false;
+}
+
+FString UGameEngine::GetRmlUIElementClassNames(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->GetClassNames() : "";
+}
+
+bool UGameEngine::SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->SetClassNames(ClassNames);
+    return true;
+}
+
+bool UGameEngine::HasRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->HasAttribute(Name) : false;
+}
+
+FString UGameEngine::GetRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->GetAttribute<Rml::String>(Name, "") : "";
+}
+
 bool UGameEngine::SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value)
 {
     Rml::Element* Element = FindRmlUIElement(ElementId);
@@ -376,6 +423,30 @@ bool UGameEngine::SetRmlUIElementAttribute(const FString& ElementId, const FStri
     return true;
 }
 
+bool UGameEngine::RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->RemoveAttribute(Name);
+    return true;
+}
+
+FString UGameEngine::GetRmlUIElementStyle(const FString& ElementId, const FString& Name)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return "";
+    }
+
+    const Rml::Property* Property = Element->GetProperty(Name);
+    return Property ? Property->ToString() : "";
+}
+
 bool UGameEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value)
 {
     Rml::Element* Element = FindRmlUIElement(ElementId);
@@ -385,6 +456,48 @@ bool UGameEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& 
     }
 
     return Element->SetProperty(Name, Value);
+}
+
+bool UGameEngine::RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->RemoveProperty(Name);
+    return true;
+}
+
+bool UGameEngine::FocusRmlUIElement(const FString& ElementId, bool bFocusVisible)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element ? Element->Focus(bFocusVisible) : false;
+}
+
+bool UGameEngine::BlurRmlUIElement(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->Blur();
+    return true;
+}
+
+bool UGameEngine::ClickRmlUIElement(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->Click();
+    return true;
 }
 
 TArray<FString> UGameEngine::PollRmlUIActionEvents()
@@ -412,7 +525,7 @@ public:
 
     void ProcessEvent(Rml::Event& Event) override
     {
-        if (!Owner || Event.GetType() != "click")
+        if (!Owner)
         {
             return;
         }
@@ -609,7 +722,9 @@ void UGameEngine::AttachRmlUIDocumentListeners(Rml::ElementDocument* Document)
         return;
     }
 
-        Document->AddEventListener("click", RmlUiActionListener);
+    Document->AddEventListener("click", RmlUiActionListener);
+    Document->AddEventListener("change", RmlUiActionListener);
+    Document->AddEventListener("submit", RmlUiActionListener);
 }
 
 void UGameEngine::LoadStartupWorld()
