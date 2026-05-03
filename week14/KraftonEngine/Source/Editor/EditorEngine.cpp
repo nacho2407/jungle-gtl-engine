@@ -5,8 +5,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Platform/DirectoryWatcher.h"
-#include "Lua/LuaScriptManager.h"
-#include "Game/Lua/GameLuaBindings.h"
+#include "Engine/Runtime/EngineInitHooks.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
@@ -48,10 +47,10 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 엔진 공통 초기화 (Renderer, D3D, 싱글턴 등)
 	UEngine::Init(InWindow);
 
-	// PIE 에서도 game 스크립트(CarController.lua 등)가 동일 바인딩으로 동작해야 하므로
-	// 에디터 엔진 init 시점에서도 game-특화 Lua 바인딩을 등록한다. 호출 순서는
-	// LuaScriptManager 초기화 직후 + 어떤 ULuaScriptComponent::BeginPlay 보다도 앞.
-	RegisterGameLuaBindings(FLuaScriptManager::GetState());
+	// Game 등 외부 모듈이 static initializer 로 자기 init 함수를 FEngineInitHooks 에
+	// 등록해 둔 상태. 여기서 한 번에 실행 — Lua state 등 Engine subsystem 들은 이미
+	// UEngine::Init 에서 준비됨. Editor 는 Game 모듈의 함수명도, 헤더도 모름.
+	FEngineInitHooks::RunAll();
 
 	{
 		SCOPE_STARTUP_STAT("ObjManager::ScanMeshAssets");

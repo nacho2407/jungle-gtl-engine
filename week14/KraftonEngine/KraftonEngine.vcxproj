@@ -535,7 +535,9 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp" />
     <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\ActorPlacementRegistry.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\EngineInitHooks.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp" />
@@ -549,6 +551,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
     <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
     <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
+    <ClCompile Include="Source\Game\GameActorPlacements.cpp" />
     <ClCompile Include="Source\Game\GameEngine.cpp" />
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
     <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp" />
@@ -791,7 +794,9 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h" />
     <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Runtime\ActorPlacementRegistry.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
+    <ClInclude Include="Source\Engine\Runtime\EngineInitHooks.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
     <ClInclude Include="Source\Engine\Runtime\Launch.h" />
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h" />
@@ -810,6 +815,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h" />
     <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
     <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
+    <ClInclude Include="Source\Game\GameActorPlacements.h" />
     <ClInclude Include="Source\Game\GameEngine.h" />
     <ClInclude Include="Source\Game\GameRenderPipeline.h" />
     <ClInclude Include="Source\Game\Component\CarDirtComponent.h" />

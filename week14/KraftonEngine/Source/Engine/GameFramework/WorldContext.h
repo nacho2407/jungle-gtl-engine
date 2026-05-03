@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/CoreTypes.h"
 #include "Object/FName.h"
 
@@ -8,7 +8,7 @@ enum class EWorldType : uint32
 {
     Editor,    // Editor mode — no BeginPlay
     Game,      // Game mode — BeginPlay/Tick active
-    PIE,       // Play In Editor (future use)
+    PIE,       // Play In Editor
 };
 
 struct FWorldContext
