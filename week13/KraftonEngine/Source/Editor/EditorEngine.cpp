@@ -331,7 +331,7 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 			InitialViewport = ActiveVC->GetViewport();
 			PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
 		}
-		PIEViewportClient->OnBeginPIE(InitialViewport);
+		PIEViewportClient->BeginGameSession(InitialViewport);
 	}
 	EnterPIEPossessedMode();
 	
@@ -408,7 +408,7 @@ void UEditorEngine::EndPlayMap()
 
 	if (UGameViewportClient* PIEViewportClient = GetGameViewportClient())
 	{
-		PIEViewportClient->OnEndPIE();
+		PIEViewportClient->EndGameSession();
 		UObjectManager::Get().DestroyObject(PIEViewportClient);
 		SetGameViewportClient(nullptr);
 	}
@@ -479,7 +479,7 @@ void UEditorEngine::SyncGameViewportPIEControlState(bool bPossessedMode)
 		return;
 	}
 
-	PIEViewportClient->SetPIEPossessedInputEnabled(bPossessedMode);
+	PIEViewportClient->SetInputPossessed(bPossessedMode);
 	if (!bPossessedMode)
 	{
 		return;

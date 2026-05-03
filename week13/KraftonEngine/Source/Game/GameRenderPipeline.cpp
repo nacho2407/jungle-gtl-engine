@@ -15,6 +15,9 @@ FGameRenderPipeline::~FGameRenderPipeline()
 
 void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
+	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
+	if (!Ctx) return;
+
 	Frame.ClearViewportResources();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
@@ -34,13 +37,6 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FViewportRenderOptions Opts;
 	Opts.ViewMode = EViewMode::Lit_Phong;
 	Frame.SetRenderOptions(Opts);
-
-	if (VP->ApplyPendingResize())
-	{
-		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
-	}
-
-	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
 
 	FScene* Scene = &World->GetScene();
 
