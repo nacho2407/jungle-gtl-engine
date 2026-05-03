@@ -980,6 +980,9 @@
     <ClCompile Include="Source\Game\Pawn\CarPawn.cpp">
       <Filter>Source\Game\Pawn</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Pawn\PoliceCar.cpp">
+      <Filter>Source\Game\Pawn</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp">
       <Filter>Source\Game\PlayerController</Filter>
     </ClCompile>
@@ -1749,6 +1752,9 @@
       <Filter>Source\Game\Meteor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Pawn\CarPawn.h">
+      <Filter>Source\Game\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Pawn\PoliceCar.h">
       <Filter>Source\Game\Pawn</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h">

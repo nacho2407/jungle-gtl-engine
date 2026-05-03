@@ -12,6 +12,7 @@ enum class ECarGamePhase : uint8
 	EscapePolice,   // 3) 경찰차 따돌리기
 	DodgeMeteor,    // 4) 운석 피하기
 	Finished,
+	Failed,         // 게임 오버 (예: EscapePolice 중 잡힘)
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGamePhaseChangedSignature, ECarGamePhase /*NewPhase*/);
