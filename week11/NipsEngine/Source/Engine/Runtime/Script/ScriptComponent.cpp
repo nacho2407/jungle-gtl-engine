@@ -229,13 +229,15 @@ void UScriptComponent::Serialize(FArchive& Ar)
         LuaProperties.resize(LuaPropertyCount);
     }
 
-    for (int32 i = 0; i < LuaPropertyCount; ++i)
+	for (int32 i = 0; i < LuaPropertyCount; ++i)
     {
         FLuaScriptProperty& Prop = LuaProperties[i];
 
-        Ar << "Name" << Prop.Name;
-        Ar << "TypeName" << Prop.TypeName;
-        Ar << "Category" << Prop.Category;
+        const FString Prefix = "LuaProperty_" + std::to_string(i) + "_";
+
+        Ar << (Prefix + "Name").c_str() << Prop.Name;
+        Ar << (Prefix + "TypeName").c_str() << Prop.TypeName;
+        Ar << (Prefix + "Category").c_str() << Prop.Category;
 
         if (Ar.IsLoading())
         {
@@ -245,33 +247,33 @@ void UScriptComponent::Serialize(FArchive& Ar)
         switch (Prop.Type)
         {
         case EPropertyType::Int:
-            Ar << "IntValue" << Prop.IntValue;
+            Ar << (Prefix + "IntValue").c_str() << Prop.IntValue;
             break;
 
         case EPropertyType::Float:
-            Ar << "FloatValue" << Prop.FloatValue;
+            Ar << (Prefix + "FloatValue").c_str() << Prop.FloatValue;
             break;
 
         case EPropertyType::Bool:
-            Ar << "BoolValue" << Prop.BoolValue;
+            Ar << (Prefix + "BoolValue").c_str() << Prop.BoolValue;
             break;
 
         case EPropertyType::String:
-            Ar << "StringValue" << Prop.StringValue;
+            Ar << (Prefix + "StringValue").c_str() << Prop.StringValue;
             break;
 
         case EPropertyType::Vec3:
-            Ar << "Vec3Value" << Prop.Vec3Value;
+            Ar << (Prefix + "Vec3Value").c_str() << Prop.Vec3Value;
             break;
 
         default:
             break;
         }
 
-        Ar << "bHasMin" << Prop.bHasMin;
-        Ar << "bHasMax" << Prop.bHasMax;
-        Ar << "Min" << Prop.Min;
-        Ar << "Max" << Prop.Max;
+        Ar << (Prefix + "bHasMin").c_str() << Prop.bHasMin;
+        Ar << (Prefix + "bHasMax").c_str() << Prop.bHasMax;
+        Ar << (Prefix + "Min").c_str() << Prop.Min;
+        Ar << (Prefix + "Max").c_str() << Prop.Max;
     }
 
     if (Ar.IsLoading() && !ScriptName.empty())
