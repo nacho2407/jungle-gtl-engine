@@ -64,12 +64,25 @@ public:
 	bool ReloadRmlUIDocument(const FString& ScreenId) override;
 	bool ShowRmlUIScreen(const FString& ScreenId) override;
 	bool HideRmlUIScreen(const FString& ScreenId) override;
+	bool HasRmlUIElement(const FString& ElementId) override;
+	FString GetRmlUIElementText(const FString& ElementId) override;
 	bool SetRmlUIElementText(const FString& ElementId, const FString& Text) override;
 	bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) override;
 	bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) override;
 	bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) override;
+	bool HasRmlUIElementClass(const FString& ElementId, const FString& ClassName) override;
+	FString GetRmlUIElementClassNames(const FString& ElementId) override;
+	bool SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames) override;
+	bool HasRmlUIElementAttribute(const FString& ElementId, const FString& Name) override;
+	FString GetRmlUIElementAttribute(const FString& ElementId, const FString& Name) override;
 	bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) override;
+	bool RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name) override;
+	FString GetRmlUIElementStyle(const FString& ElementId, const FString& Name) override;
 	bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) override;
+	bool RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name) override;
+	bool FocusRmlUIElement(const FString& ElementId, bool bFocusVisible) override;
+	bool BlurRmlUIElement(const FString& ElementId) override;
+	bool ClickRmlUIElement(const FString& ElementId) override;
 	TArray<FString> PollRmlUIActionEvents() override;
 	bool PumpPIERmlUiInput(const FViewportRect& ViewportRect);
 

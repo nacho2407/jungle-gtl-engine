@@ -484,6 +484,20 @@ bool UEditorEngine::HideRmlUIScreen(const FString& ScreenId)
     return false;
 }
 
+bool UEditorEngine::HasRmlUIElement(const FString& ElementId)
+{
+    return FindRmlUIElement(ElementId) != nullptr;
+}
+
+FString UEditorEngine::GetRmlUIElementText(const FString& ElementId)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->GetInnerRML();
+    }
+    return "";
+}
+
 bool UEditorEngine::SetRmlUIElementText(const FString& ElementId, const FString& Text)
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
@@ -540,6 +554,52 @@ bool UEditorEngine::SetRmlUIElementClass(const FString& ElementId, const FString
     return false;
 }
 
+bool UEditorEngine::HasRmlUIElementClass(const FString& ElementId, const FString& ClassName)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->IsClassSet(ClassName);
+    }
+    return false;
+}
+
+FString UEditorEngine::GetRmlUIElementClassNames(const FString& ElementId)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->GetClassNames();
+    }
+    return "";
+}
+
+bool UEditorEngine::SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->SetClassNames(ClassNames);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::HasRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->HasAttribute(Name);
+    }
+    return false;
+}
+
+FString UEditorEngine::GetRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->GetAttribute<Rml::String>(Name, "");
+    }
+    return "";
+}
+
 bool UEditorEngine::SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value)
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
@@ -550,11 +610,70 @@ bool UEditorEngine::SetRmlUIElementAttribute(const FString& ElementId, const FSt
     return false;
 }
 
+bool UEditorEngine::RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->RemoveAttribute(Name);
+        return true;
+    }
+    return false;
+}
+
+FString UEditorEngine::GetRmlUIElementStyle(const FString& ElementId, const FString& Name)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        const Rml::Property* Property = Element->GetProperty(Name);
+        return Property ? Property->ToString() : "";
+    }
+    return "";
+}
+
 bool UEditorEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value)
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
         Element->SetProperty(Name, Value);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->RemoveProperty(Name);
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::FocusRmlUIElement(const FString& ElementId, bool bFocusVisible)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        return Element->Focus(bFocusVisible);
+    }
+    return false;
+}
+
+bool UEditorEngine::BlurRmlUIElement(const FString& ElementId)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->Blur();
+        return true;
+    }
+    return false;
+}
+
+bool UEditorEngine::ClickRmlUIElement(const FString& ElementId)
+{
+    if (Rml::Element* Element = FindRmlUIElement(ElementId))
+    {
+        Element->Click();
         return true;
     }
     return false;
@@ -607,6 +726,8 @@ void UEditorEngine::AttachRmlUIDocumentListeners(Rml::ElementDocument* Document)
     if (Document && RmlUiActionListener)
     {
         Document->AddEventListener("click", RmlUiActionListener);
+        Document->AddEventListener("change", RmlUiActionListener);
+        Document->AddEventListener("submit", RmlUiActionListener);
     }
 }
 

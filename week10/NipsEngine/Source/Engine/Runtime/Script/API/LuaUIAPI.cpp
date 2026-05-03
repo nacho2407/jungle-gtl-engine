@@ -49,17 +49,6 @@ namespace
         bResult = GEngine->SetRmlUIElementStyle(ElementId, "height", ToPx(H)) || bResult;
         return bResult;
     }
-
-    bool UnsupportedLegacyCreate(sol::variadic_args)
-    {
-        // RmlUi 전환 후 위젯 생성은 Lua 런타임 함수가 아니라 .rml 문서가 담당합니다.
-        return false;
-    }
-
-    bool UnsupportedLegacyOption(sol::variadic_args)
-    {
-        return false;
-    }
 }
 
 namespace FLuaEngineAPI
@@ -93,19 +82,19 @@ namespace FLuaEngineAPI
             return GEngine ? GEngine->HideRmlUIScreen(ScreenId) : false;
         };
 
-        UI["ShowScreen"] = sol::overload(
-            [](const FString& ScreenId) -> bool
-            {
-                return GEngine ? GEngine->ShowRmlUIScreen(ScreenId) : false;
-            },
-            [](const FString& ScreenId, const FString&) -> bool
-            {
-                return GEngine ? GEngine->ShowRmlUIScreen(ScreenId) : false;
-            });
-
         UI["SetElementText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
             return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
+        };
+
+        UI["GetElementText"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementText(ElementId) : "";
+        };
+
+        UI["HasElement"] = [](const FString& ElementId) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElement(ElementId) : false;
         };
 
         UI["SetElementVisible"] = [](const FString& ElementId, bool bVisible) -> bool
@@ -123,9 +112,44 @@ namespace FLuaEngineAPI
             return GEngine ? GEngine->SetRmlUIElementClass(ElementId, ClassName, bEnabled) : false;
         };
 
+        UI["HasElementClass"] = [](const FString& ElementId, const FString& ClassName) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElementClass(ElementId, ClassName) : false;
+        };
+
+        UI["GetElementClassNames"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementClassNames(ElementId) : "";
+        };
+
+        UI["SetElementClassNames"] = [](const FString& ElementId, const FString& ClassNames) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementClassNames(ElementId, ClassNames) : false;
+        };
+
+        UI["HasElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElementAttribute(ElementId, Name) : false;
+        };
+
+        UI["GetElementAttribute"] = [](const FString& ElementId, const FString& Name) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementAttribute(ElementId, Name) : "";
+        };
+
         UI["SetElementAttribute"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
         {
             return SetAttribute(ElementId, Name, Value);
+        };
+
+        UI["RemoveElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
+        {
+            return GEngine ? GEngine->RemoveRmlUIElementAttribute(ElementId, Name) : false;
+        };
+
+        UI["GetElementStyle"] = [](const FString& ElementId, const FString& Name) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementStyle(ElementId, Name) : "";
         };
 
         UI["SetElementStyle"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
@@ -133,99 +157,107 @@ namespace FLuaEngineAPI
             return SetStyle(ElementId, Name, Value);
         };
 
-        UI["SetText"] = [](const FString& WidgetId, const FString& Text) -> bool
+        UI["RemoveElementStyle"] = [](const FString& ElementId, const FString& Name) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementText(WidgetId, Text) : false;
+            return GEngine ? GEngine->RemoveRmlUIElementStyle(ElementId, Name) : false;
         };
 
-        UI["SetImage"] = [](const FString& WidgetId, const FString& ImagePath) -> bool
+        UI["FocusElement"] = sol::overload(
+            [](const FString& ElementId) -> bool
+            {
+                return GEngine ? GEngine->FocusRmlUIElement(ElementId, false) : false;
+            },
+            [](const FString& ElementId, bool bFocusVisible) -> bool
+            {
+                return GEngine ? GEngine->FocusRmlUIElement(ElementId, bFocusVisible) : false;
+            });
+
+        UI["BlurElement"] = [](const FString& ElementId) -> bool
         {
-            return SetAttribute(WidgetId, "src", ImagePath);
+            return GEngine ? GEngine->BlurRmlUIElement(ElementId) : false;
         };
 
-        UI["SetProgress"] = [](const FString& WidgetId, float Value) -> bool
+        UI["ClickElement"] = [](const FString& ElementId) -> bool
         {
-            return SetAttribute(WidgetId, "value", std::to_string(Value));
+            return GEngine ? GEngine->ClickRmlUIElement(ElementId) : false;
         };
 
-        UI["SetVisible"] = [](const FString& WidgetId, bool bVisible) -> bool
+        UI["SetText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementVisible(WidgetId, bVisible) : false;
+            return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
         };
 
-        UI["SetEnabled"] = [](const FString& WidgetId, bool bEnabled) -> bool
+        UI["SetImage"] = [](const FString& ElementId, const FString& ImagePath) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementEnabled(WidgetId, bEnabled) : false;
+            return SetAttribute(ElementId, "src", ImagePath);
         };
 
-        UI["SetActionEvent"] = [](const FString& WidgetId, const FString& EventName) -> bool
+        UI["SetProgress"] = [](const FString& ElementId, float Value) -> bool
         {
-            return SetAttribute(WidgetId, "data-action", EventName);
+            return SetAttribute(ElementId, "value", std::to_string(Value));
         };
 
-        UI["RemoveWidget"] = [](const FString& WidgetId) -> bool
+        UI["SetVisible"] = [](const FString& ElementId, bool bVisible) -> bool
         {
-            bool bResult = GEngine ? GEngine->SetRmlUIElementVisible(WidgetId, false) : false;
-            bResult = SetAttribute(WidgetId, "disabled", "true") || bResult;
+            return GEngine ? GEngine->SetRmlUIElementVisible(ElementId, bVisible) : false;
+        };
+
+        UI["SetEnabled"] = [](const FString& ElementId, bool bEnabled) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementEnabled(ElementId, bEnabled) : false;
+        };
+
+        UI["SetActionEvent"] = [](const FString& ElementId, const FString& EventName) -> bool
+        {
+            return SetAttribute(ElementId, "data-action", EventName);
+        };
+
+        UI["RemoveElement"] = [](const FString& ElementId) -> bool
+        {
+            bool bResult = GEngine ? GEngine->SetRmlUIElementVisible(ElementId, false) : false;
+            bResult = SetAttribute(ElementId, "disabled", "true") || bResult;
             return bResult;
         };
 
-        UI["SetZOrder"] = [](const FString& WidgetId, int32 ZOrder) -> bool
+        UI["SetZOrder"] = [](const FString& ElementId, int32 ZOrder) -> bool
         {
-            return SetStyle(WidgetId, "z-index", std::to_string(ZOrder));
+            return SetStyle(ElementId, "z-index", std::to_string(ZOrder));
         };
 
-        UI["SetTint"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["SetTint"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return SetStyle(WidgetId, "color", ToCssColor(R, G, B, A));
+            return SetStyle(ElementId, "color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetBackgroundColor"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["SetBackgroundColor"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return SetStyle(WidgetId, "background-color", ToCssColor(R, G, B, A));
+            return SetStyle(ElementId, "background-color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetTextColor"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["SetTextColor"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return SetStyle(WidgetId, "color", ToCssColor(R, G, B, A));
+            return SetStyle(ElementId, "color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetAlpha"] = [](const FString& WidgetId, float Alpha) -> bool
+        UI["SetAlpha"] = [](const FString& ElementId, float Alpha) -> bool
         {
-            return SetStyle(WidgetId, "opacity", std::to_string(std::clamp(Alpha, 0.0f, 1.0f)));
+            return SetStyle(ElementId, "opacity", std::to_string(std::clamp(Alpha, 0.0f, 1.0f)));
         };
 
-        UI["SetRounding"] = [](const FString& WidgetId, float Rounding) -> bool
+        UI["SetRounding"] = [](const FString& ElementId, float Rounding) -> bool
         {
-            return SetStyle(WidgetId, "border-radius", ToPx(Rounding));
+            return SetStyle(ElementId, "border-radius", ToPx(Rounding));
         };
 
-        UI["SetFontScale"] = [](const FString& WidgetId, float FontScale) -> bool
+        UI["SetFontScale"] = [](const FString& ElementId, float FontScale) -> bool
         {
-            return SetStyle(WidgetId, "font-size", std::to_string(std::max(FontScale, 0.0f)) + "em");
+            return SetStyle(ElementId, "font-size", std::to_string(std::max(FontScale, 0.0f)) + "em");
         };
 
-        UI["SetWidgetTransform"] = [](const FString& WidgetId, float X, float Y, float W, float H) -> bool
+        UI["SetElementTransform"] = [](const FString& ElementId, float X, float Y, float W, float H) -> bool
         {
-            return SetTransformStyles(WidgetId, X, Y, W, H);
+            return SetTransformStyles(ElementId, X, Y, W, H);
         };
-
-        UI["SetWidgetAnchors"] = UnsupportedLegacyOption;
-        UI["SetImageOptions"] = UnsupportedLegacyOption;
-        UI["SetButtonImages"] = UnsupportedLegacyOption;
-        UI["SetProgressImages"] = UnsupportedLegacyOption;
-        UI["SetSpriteFrame"] = UnsupportedLegacyOption;
-        UI["SetSpriteFrameByMeta"] = UnsupportedLegacyOption;
-        UI["AnimateTransform"] = UnsupportedLegacyOption;
-        UI["AnimatePatrol"] = UnsupportedLegacyOption;
-        UI["AnimatePatrolBySpeed"] = UnsupportedLegacyOption;
-        UI["StopAnimation"] = UnsupportedLegacyOption;
-
-        UI["CreatePanel"] = UnsupportedLegacyCreate;
-        UI["CreateText"] = UnsupportedLegacyCreate;
-        UI["CreateButton"] = UnsupportedLegacyCreate;
-        UI["CreateImage"] = UnsupportedLegacyCreate;
-        UI["CreateProgressBar"] = UnsupportedLegacyCreate;
 
         UI["PollActionEvents"] = [](sol::this_state State)
         {
