@@ -1,25 +1,15 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
 #include "Profiling/StartupProfiler.h"
 
-#if IS_OBJ_VIEWER
-#include "ObjViewer/ObjViewerEngine.h"
-#elif WITH_EDITOR
-#include "Editor/EditorEngine.h"
-#elif WITH_STANDALONE
-#include "Game/GameEngine.h"
-#endif
+FEngineLoop::FEngineLoop(FCreateEngineFn InEngineFactory)
+	: EngineFactory(InEngineFactory)
+{
+}
 
 void FEngineLoop::CreateEngine()
 {
-#if IS_OBJ_VIEWER
-	GEngine = UObjectManager::Get().CreateObject<UObjViewerEngine>();
-#elif WITH_EDITOR
-	GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
-#elif WITH_STANDALONE
-	GEngine = UObjectManager::Get().CreateObject<UGameEngine>();
-#else
-	GEngine = UObjectManager::Get().CreateObject<UEngine>();
-#endif
+	// 팩토리 미주입 시 베이스 UEngine 으로 fallback — 구체 변종 선택은 호출 측 책임.
+	GEngine = EngineFactory ? EngineFactory() : UObjectManager::Get().CreateObject<UEngine>();
 }
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
