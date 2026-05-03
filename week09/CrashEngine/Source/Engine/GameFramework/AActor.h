@@ -2,6 +2,7 @@
 #pragma once
 #include "Object/Object.h"
 #include "Object/ObjectFactory.h"
+#include "Object/FName.h"
 #include "Component/SceneComponent.h"
 #include "Core/Delegates/Delegate.h"
 #include "Core/TickFunction.h"
@@ -109,6 +110,16 @@ public:
 	bool IsActorTickEnabled() const { return bNeedsTick; }
     void SetActorTickEnabled(bool bEnabled);
 
+    const TArray<FName>& GetTags() const { return Tags; }
+    bool HasTag(const FName& Tag) const;
+    bool HasTag(const FString& Tag) const;
+    void AddTag(const FName& Tag);
+    void AddTag(const FString& Tag);
+    void RemoveTag(const FName& Tag);
+    void RemoveTag(const FString& Tag);
+    void SetTagAt(int32 Index, const FName& Tag);
+    void RemoveTagAt(int32 Index);
+
     const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
     bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
     void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
@@ -133,6 +144,7 @@ protected:
 
     FVector PendingActorLocation = FVector(0, 0, 0);
     bool bVisible = true;
+    TArray<FName> Tags;
 
     TArray<UActorComponent*> OwnedComponents;
 

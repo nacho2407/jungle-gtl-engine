@@ -63,7 +63,11 @@ end
 
 function OnOverlapBegin(other)
     print("Lua OnOverlapBegin", other.UUID);
-    obj:ApplyDamage(10.0, obj);
+    if other:HasTag("Dummy") then
+        obj:ApplyDamage(10.0, obj);
+    else
+        obj:ApplyDamage(20.0, obj);
+    end
 end
 
 function OnOverlapEnd(other)

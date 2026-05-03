@@ -75,8 +75,15 @@ FArchive& operator<<(FArchive& Ar, TArray<T>& Array)
         Array.resize(ArrayNum);
     if (ArrayNum > 0)
     {
+        if constexpr (std::is_same<T, FName>::value)
+        {
+            for (auto& Item : Array)
+            {
+                Ar << Item;
+            }
+        }
         // FVertexPNCT_T처럼 완벽한 숫자 덩어리일 때만 O(1) 고속 복사를 수행합니다.
-        if constexpr (std::is_trivially_copyable<T>::value)
+        else if constexpr (std::is_trivially_copyable<T>::value)
         {
             Ar.Serialize(Array.data(), ArrayNum * sizeof(T));
         }

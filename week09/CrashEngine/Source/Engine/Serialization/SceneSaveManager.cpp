@@ -62,6 +62,7 @@ static constexpr const char* ContextName = "ContextName";
 static constexpr const char* ContextHandle = "ContextHandle";
 static constexpr const char* Actors = "Actors";
 static constexpr const char* Visible = "bVisible";
+static constexpr const char* Tags = "Tags";
 static constexpr const char* RootComponent = "RootComponent";
 static constexpr const char* NonSceneComponents = "NonSceneComponents";
 static constexpr const char* Properties = "Properties";
@@ -231,6 +232,13 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
     a[SceneKeys::ObjectName] = Actor->GetFName().ToString();
     a[SceneKeys::Visible] = Actor->IsVisible();
 
+    JSON Tags = json::Array();
+    for (const FName& Tag : Actor->GetTags())
+    {
+        Tags.append(Tag.ToString());
+    }
+    a[SceneKeys::Tags] = Tags;
+
     // RootComponent 트리 직렬화
     if (Actor->GetRootComponent())
     {
@@ -361,6 +369,17 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
 
     case EPropertyType::Name:
         return JSON(static_cast<FName*>(Prop.ValuePtr)->ToString());
+
+    case EPropertyType::NameArray:
+    {
+        TArray<FName>* Values = static_cast<TArray<FName>*>(Prop.ValuePtr);
+        JSON arr = json::Array();
+        for (const FName& Value : *Values)
+        {
+            arr.append(Value.ToString());
+        }
+        return arr;
+    }
 
     default:
         return JSON();
@@ -581,6 +600,20 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
             if (ActorJSON.hasKey(SceneKeys::Visible))
             {
                 Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
+            }
+
+            if (ActorJSON.hasKey(SceneKeys::Tags))
+            {
+                TArray<FName> ExistingTags = Actor->GetTags();
+                for (const FName& Tag : ExistingTags)
+                {
+                    Actor->RemoveTag(Tag);
+                }
+
+                for (auto& TagJSON : ActorJSON[SceneKeys::Tags].ArrayRange())
+                {
+                    Actor->AddTag(FName(TagJSON.ToString()));
+                }
             }
 
             // RootComponent 트리 복원
@@ -817,6 +850,17 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
     case EPropertyType::Name:
         *static_cast<FName*>(Prop.ValuePtr) = FName(Value.ToString());
         break;
+
+    case EPropertyType::NameArray:
+    {
+        TArray<FName>* Values = static_cast<TArray<FName>*>(Prop.ValuePtr);
+        Values->clear();
+        for (auto& Elem : Value.ArrayRange())
+        {
+            Values->push_back(FName(Elem.ToString()));
+        }
+        break;
+    }
 
     default:
         break;
