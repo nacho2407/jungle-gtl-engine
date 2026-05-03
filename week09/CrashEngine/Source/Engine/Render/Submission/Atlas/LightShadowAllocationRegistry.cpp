@@ -217,8 +217,8 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
 
     if (bNeedsReallocation)
     {
-        UE_LOG(Render, Info, "Updating %s shadow maps for light %s. RequestedResolution=%u Cascades=%u",
-            GetLightTypeName(LightType), GetLightLabel(Light).c_str(), Resolution, CascadeCount);
+        //UE_LOG(Render, Info, "Updating %s shadow maps for light %s. RequestedResolution=%u Cascades=%u",
+        //    GetLightTypeName(LightType), GetLightLabel(Light).c_str(), Resolution, CascadeCount);
         FLightShadowRecord CandidateRecord = {};
         const bool bAllocated = TryAllocateRecord(CandidateRecord, Light, Device, AtlasPool, Resolution, CascadeCount, LightType);
 
@@ -245,8 +245,8 @@ bool FLightShadowAllocationRegistry::UpdateLightShadow(FLightProxy& Light, ID3D1
                 Record = CandidateRecord;
             }
 
-            UE_LOG(Render, Warning, "Failed to allocate %s shadow maps for light %s. Keeping existing shadow state if any; lighting will fall back without shadow sampling.",
-                GetLightTypeName(LightType), GetLightLabel(Light).c_str());
+            //UE_LOG(Render, Warning, "Failed to allocate %s shadow maps for light %s. Keeping existing shadow state if any; lighting will fall back without shadow sampling.",
+            //    GetLightTypeName(LightType), GetLightLabel(Light).c_str());
         }
 
         bLoggedApplyWithoutReallocation = false;
