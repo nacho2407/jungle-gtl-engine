@@ -145,6 +145,12 @@ void FEditorViewportClient::Tick(float DeltaTime)
         return;
     }
 
+    if (PlayState != EEditorViewportPlayState::Stopped)
+    {
+        ResetInputState();
+        return;
+    }
+
     UpdateViewFromPilotedActor();
 
     if (InputController)
@@ -153,6 +159,20 @@ void FEditorViewportClient::Tick(float DeltaTime)
     }
 
     ApplyViewToPilotedActor();
+}
+
+void FEditorViewportClient::SetPlayState(EEditorViewportPlayState InPlayState)
+{
+    if (PlayState == InPlayState)
+    {
+        return;
+    }
+
+    PlayState = InPlayState;
+    if (PlayState != EEditorViewportPlayState::Stopped)
+    {
+        ResetInputState();
+    }
 }
 
 void FEditorViewportClient::PilotSelectedActor(AActor* Actor)

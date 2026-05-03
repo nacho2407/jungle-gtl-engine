@@ -72,7 +72,7 @@ public:
 
     // ==================== Scene Collection ====================
 
-    void BeginCollect(const FSceneView& SceneView, uint32 MaxProxyCount = 0);
+    void PrepareCollect(const FSceneView& SceneView, uint32 MaxProxyCount = 0);
 
     void CollectWorld(UWorld* World, FRenderCollectContext& CollectContext);
     void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FScene& Scene);

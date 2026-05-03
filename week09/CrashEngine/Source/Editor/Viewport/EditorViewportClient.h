@@ -78,7 +78,7 @@ public:
     void SetActive(bool bInActive) { bIsActive = bInActive; }
     bool IsActive() const { return bIsActive; }
 
-    void SetPlayState(EEditorViewportPlayState InPlayState) { PlayState = InPlayState; }
+    void SetPlayState(EEditorViewportPlayState InPlayState);
     EEditorViewportPlayState GetPlayState() const { return PlayState; }
     void SetPaneToolbarHeight(float InHeight) { PaneToolbarHeight = InHeight; }
     float GetPaneToolbarHeight() const { return PaneToolbarHeight; }

@@ -14,6 +14,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Core/TickFunction.h"
+#include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
 #include "LuaScript/LuaRuntime.h"
@@ -77,6 +78,8 @@ void UEngine::Shutdown()
 
     FLuaScriptManager::Get().Release();
     FDirectoryWatcher::Get().Release();
+    // coroutinescheduler가 luaruntime보다 먼저 clear되어야 함.
+    FLuaCoroutineScheduler::Get().Clear();
     FLuaRuntime::Get().Shutdown();
 
     FSoundManager::Get().Release();
@@ -121,6 +124,7 @@ void UEngine::Render(float DeltaTime)
     ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
 
     UWorld* World = GetWorld();
+    //This should be changed to Camera Following the character
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
     FScene* Scene = nullptr;
     if (Camera)
@@ -137,7 +141,7 @@ void UEngine::Render(float DeltaTime)
                 Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
             }
 
-            Viewport->BeginRender(DeviceContext);
+            Viewport->SetViewportAsRenderState(DeviceContext);
             RenderTargets.SetFromViewport(Viewport);
             SceneView.SetViewportInfo(Viewport);
         }
@@ -148,7 +152,7 @@ void UEngine::Render(float DeltaTime)
 
         Scene = &World->GetScene();
 
-        Renderer.BeginCollect(SceneView, Scene->GetPrimitiveProxyCount());
+        Renderer.PrepareCollect(SceneView, Scene->GetPrimitiveProxyCount());
 
         FRenderCollectContext CollectContext = {};
         CollectContext.SceneView = &SceneView;
@@ -164,7 +168,7 @@ void UEngine::Render(float DeltaTime)
     else
     {
         Renderer.ReleaseViewModeSurfaces();
-        Renderer.BeginCollect(SceneView);
+        Renderer.PrepareCollect(SceneView);
     }
 
     {

@@ -8,6 +8,8 @@
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/WorldContext.h"
+#include "Input/InputSystem.h"
+#include "LuaScript/LuaInputProxy.h"
 #include "LuaScript/LuaRuntime.h"
 #include "Object/ObjectFactory.h"
 #include "Platform/Paths.h"
@@ -80,12 +82,21 @@ bool CallLuaFunction(const char* FunctionName, sol::protected_function& Function
 
     return true;
 }
+
+bool IsMouseButtonVK(int32 VK)
+{
+    return VK == VK_LBUTTON 
+		|| VK == VK_RBUTTON 
+		|| VK == VK_MBUTTON 
+		|| VK == VK_XBUTTON1 
+		|| VK == VK_XBUTTON2;
+}
 } // namespace
 
 void ULuaScriptComponent::BeginPlay()
 {
     UActorComponent::BeginPlay();
-    if (GetWorld()->GetWorldType() == EWorldType::Editor)
+    if (!GetWorld() || GetWorld()->GetWorldType() == EWorldType::Editor)
     {
         return;
     }
@@ -129,6 +140,8 @@ void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
         return;
     }
 
+	DispatchInputEvents();
+
     CallLuaFunction("Tick", TickFunc, LastError, DeltaTime);
 }
 
@@ -142,6 +155,28 @@ void ULuaScriptComponent::SetScriptPath(const FString& ScriptPath)
     LuaScriptPath = ScriptPath.empty() ? FString("None") : ScriptPath;
     LastError.clear();
     ClearScriptRuntime();
+}
+
+void ULuaScriptComponent::StartCoroutine(const FString& FunctionName, sol::variadic_args Args)
+{
+    if (!bScriptLoaded) return;
+
+    sol::state& Lua = FLuaRuntime::Get().GetState();
+    sol::object Candidate = Env[FunctionName.c_str()];
+
+    if (Candidate.get_type() != sol::type::function) return;
+
+    sol::thread CoroutineThread = sol::thread::create(Lua.lua_state());
+
+    sol::coroutine Co(CoroutineThread.state(), Candidate);
+
+    sol::protected_function_result Result = Co(Args);
+
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        UE_LOG(Lua, Error, "Coroutine '%s' failed: %s", FunctionName.c_str(), Error.what());
+    }
 }
 
 void ULuaScriptComponent::ClearScript()
@@ -187,6 +222,28 @@ bool ULuaScriptComponent::LoadScript()
 
     ObjProxy.SetActor(OwnerActor);
     Env["obj"] = &ObjProxy;
+
+    Env["StartCoroutine"] = [this](const std::string& Name, sol::variadic_args Args)
+        {
+            this->StartCoroutine(FString(Name.c_str()), Args);
+        };
+	WorldProxy.SetWorld(OwnerActor->GetWorld());
+
+    sol::table WorldTable = Lua.create_table();
+    WorldTable.set_function("IsValid", [this]()
+                            { return WorldProxy.IsValid(); });
+    WorldTable.set_function("SpawnActor", [this](const FString& ActorClassName)
+                            { return WorldProxy.SpawnActor(ActorClassName); });
+    WorldTable.set_function("DestroyActor", [this](const FLuaGameObjectProxy& ActorProxy)
+                            { return WorldProxy.DestroyActor(ActorProxy); });
+    WorldTable.set_function("GetActiveCameraForward", [this]()
+                            { return WorldProxy.GetActiveCameraForward(); });
+    WorldTable.set_function("GetActiveCameraRight", [this]()
+                            { return WorldProxy.GetActiveCameraRight(); });
+    WorldTable.set_function("GetActiveCameraUp", [this]()
+                            { return WorldProxy.GetActiveCameraUp(); });
+
+    Env["World"] = WorldTable;
 
     const FString FullPathUtf8 = FPaths::FromPath(FullPath);
 
@@ -286,8 +343,18 @@ void ULuaScriptComponent::ClearScriptRuntime()
     TickFunc = sol::protected_function();
     EndPlayFunc = sol::protected_function();
 
+	OnKeyPressedFunc = sol::protected_function();
+    OnKeyReleasedFunc = sol::protected_function();
+
+	OnMouseButtonPressedFunc = sol::protected_function();
+    OnMouseButtonReleasedFunc = sol::protected_function();
+
+    OnGamepadButtonPressedFunc = sol::protected_function();
+    OnGamepadButtonReleasedFunc = sol::protected_function();
+
     Env = sol::environment();
     ObjProxy.SetActor(nullptr);
+    WorldProxy.SetWorld(nullptr);
 
     bScriptLoaded = false;
 }
@@ -297,10 +364,111 @@ void ULuaScriptComponent::CacheScriptFunctions()
     BeginPlayFunc = GetOptionalLuaFunction(Env, "BeginPlay", LastError);
     TickFunc = GetOptionalLuaFunction(Env, "Tick", LastError);
     EndPlayFunc = GetOptionalLuaFunction(Env, "EndPlay", LastError);
+
+	OnKeyPressedFunc = GetOptionalLuaFunction(Env, "OnKeyPressed", LastError);
+    OnKeyReleasedFunc = GetOptionalLuaFunction(Env, "OnKeyReleased", LastError);
+
+	OnMouseButtonPressedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonPressed", LastError);
+    OnMouseButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonReleased", LastError);
+
+    OnGamepadButtonPressedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonPressed", LastError);
+    OnGamepadButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonReleased", LastError);
 }
 
 void ULuaScriptComponent::SetLastError(const FString& InError)
 {
     LastError = InError;
     UE_LOG(Lua, Error, "%s", LastError.c_str());
+}
+
+void ULuaScriptComponent::DispatchInputEvents()
+{
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    DispatchVirtualKeyEvents(Input);
+    DispatchGamepadEvents(Input);
+}
+
+void ULuaScriptComponent::DispatchVirtualKeyEvents(const FInputSnapshot& Input)
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        if (!Input.KeyPressed[VK] && !Input.KeyReleased[VK])
+        {
+            continue;
+        }
+
+        if (IsMouseButtonVK(VK))
+        {
+            DispatchMouseButtonEvent(Input, VK);
+        }
+        else
+        {
+            DispatchKeyboardEvent(Input, VK);
+        }
+    }
+}
+
+void ULuaScriptComponent::DispatchKeyboardEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString KeyName = LuaKeyNameFromVK(VK);
+    if (KeyName.empty() || KeyName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnKeyPressed", OnKeyPressedFunc, LastError, KeyName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnKeyReleased", OnKeyReleasedFunc, LastError, KeyName);
+    }
+}
+
+void ULuaScriptComponent::DispatchMouseButtonEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString ButtonName = LuaMouseButtonNameFromVK(VK);
+    if (ButtonName.empty() || ButtonName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnMouseButtonPressed", OnMouseButtonPressedFunc, LastError, ButtonName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnMouseButtonReleased", OnMouseButtonReleasedFunc, LastError, ButtonName);
+    }
+}
+
+void ULuaScriptComponent::DispatchGamepadEvents(const FInputSnapshot& Input)
+{
+    for (int32 ControllerId = 0; ControllerId < MaxGamepadCount; ++ControllerId)
+    {
+        const FGamepadSnapshot& Pad = Input.Gamepads[ControllerId];
+        if (!Pad.bConnected)
+        {
+            continue;
+        }
+
+        for (int32 ButtonIndex = 0; ButtonIndex < static_cast<int32>(EGamepadButton::Count); ButtonIndex++)
+        {
+            const FString ButtonName = LuaGamepadButtonNameFromIndex(ButtonIndex);
+
+            if (Pad.ButtonPressed[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonPressed", OnGamepadButtonPressedFunc, LastError, ButtonName, ControllerId);
+            }
+
+            if (Pad.ButtonReleased[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonReleased", OnGamepadButtonReleasedFunc, LastError, ButtonName, ControllerId);
+            }
+        }
+    }
 }

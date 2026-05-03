@@ -28,6 +28,7 @@ public:
     UCameraComponent() = default;
 
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+    void Serialize(FArchive& Ar) override;
 
     void LookAt(const FVector& Target);
     void SetCameraState(const FCameraState& NewState);
@@ -51,7 +52,11 @@ public:
     bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
 
     FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight);
+    
+    bool IsMainCamera() const { return bMainCamera; }
+    bool SetMainCamera(bool InBool) { bMainCamera = InBool; return bMainCamera; }
 
 private:
     FCameraState CameraState;
+    bool bMainCamera = false;
 };

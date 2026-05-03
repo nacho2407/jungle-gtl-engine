@@ -313,7 +313,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>fmod_vc.lib;lua51.lib;Xinput9_1_0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VcpkgInstalledDir)$(VcpkgTriplet)\lib;$(ProjectDir)\ThirdParty\FMOD\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -398,7 +398,11 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\Settings\ReleaseSettings.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaInputProxy.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaWorldProxy.cpp" />
     <ClCompile Include="Source\Engine\Physics\CollisionManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
@@ -440,6 +444,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\CameraBoomComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
@@ -470,6 +475,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\Core\Watcher\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AmbientLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\CameraActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\FakeLightActor.cpp" />
@@ -617,7 +623,12 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\Settings\ReleaseSettings.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
+    <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaInputProxy.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaWorldProxy.h" />
     <ClInclude Include="Source\Engine\Physics\CollisionManager.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
@@ -663,6 +674,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\AmbientLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\CameraBoomComponent.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
@@ -704,6 +716,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\Core\Watcher\DirectoryWatcher.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\AmbientLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\CameraActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DirectionalLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\FakeLightActor.h" />

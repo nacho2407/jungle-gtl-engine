@@ -56,6 +56,7 @@ namespace SceneKeys
 static constexpr const char* Version = "Version";
 static constexpr const char* Name = "Name";
 static constexpr const char* ClassName = "ClassName";
+static constexpr const char* ObjectName = "ObjectName";
 static constexpr const char* WorldType = "WorldType";
 static constexpr const char* ContextName = "ContextName";
 static constexpr const char* ContextHandle = "ContextHandle";
@@ -227,6 +228,7 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
     using namespace json;
     JSON a = json::Object();
     a[SceneKeys::ClassName] = Actor->GetClass()->GetName();
+    a[SceneKeys::ObjectName] = Actor->GetFName().ToString();
     a[SceneKeys::Visible] = Actor->IsVisible();
 
     // RootComponent 트리 직렬화
@@ -342,6 +344,8 @@ json::JSON FSceneSaveManager::SerializePropertyValue(const FPropertyDescriptor& 
     case EPropertyType::String:
     case EPropertyType::StaticMeshRef:
     case EPropertyType::ComponentRef:
+    case EPropertyType::ActorRef:
+    case EPropertyType::LuaScriptRef:
         return JSON(*static_cast<FString*>(Prop.ValuePtr));
 
     case EPropertyType::MaterialSlot:
@@ -569,6 +573,11 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
                 World->AddActor(Actor);
             }
 
+            if (ActorJSON.hasKey(SceneKeys::ObjectName))
+            {
+                Actor->SetFName(FName(ActorJSON[SceneKeys::ObjectName].ToString()));
+            }
+
             if (ActorJSON.hasKey(SceneKeys::Visible))
             {
                 Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
@@ -792,6 +801,8 @@ void FSceneSaveManager::DeserializePropertyValue(FPropertyDescriptor& Prop, json
     case EPropertyType::String:
     case EPropertyType::StaticMeshRef:
     case EPropertyType::ComponentRef:
+    case EPropertyType::ActorRef:
+    case EPropertyType::LuaScriptRef:
         *static_cast<FString*>(Prop.ValuePtr) = Value.ToString();
         break;
 
