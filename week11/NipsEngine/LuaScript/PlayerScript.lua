@@ -8,11 +8,45 @@ Script.Properties = {
         Category = "Script"
     }
 }
-
-function Script:Attack()
+function Script:Attack(degree, yaw)
     self.bDoingAttack = true
-    local wait = WaitForSeconds(0.1)
-    coroutine.yield(wait)
+
+    local BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
+    if not BodySection then
+        self.bDoingAttack = false
+        return
+    end
+
+    local swingSign = math.sin(math.rad(degree)) > 0 and 1 or -1
+    local swingStart = -55 * swingSign
+    local swingEnd   =  55 * swingSign
+    local pitchStart = -35
+    local pitchEnd   =  15
+
+    for i = 1, 8 do
+        local t = i / 8
+        local ease = 1 - (1 - t) * (1 - t)
+        BodySection.Rotation = Vector(
+            pitchStart + (pitchEnd - pitchStart) * ease,
+            0,
+            swingStart + (swingEnd - swingStart) * ease  -- yaw 없음
+        )
+        coroutine.yield(WaitForSeconds(0.025))
+    end
+
+    -- 복귀
+    for i = 1, 5 do
+        local t = i / 5
+        local ease = t * t
+        BodySection.Rotation = Vector(
+            pitchEnd * (1 - ease),
+            0,
+            swingEnd * (1 - ease)
+        )
+        coroutine.yield(WaitForSeconds(0.02))
+    end
+
+    BodySection.Rotation = Vector(0, 0, 0)
     self.bDoingAttack = false
 end
 
@@ -159,7 +193,7 @@ function Script:Tick(dt)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
 
         StartCoroutine(function()
-            self:Attack()
+            self:Attack(degree, yaw)
         end)
     end
 end
