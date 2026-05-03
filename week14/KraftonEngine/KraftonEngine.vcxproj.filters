@@ -425,6 +425,9 @@
     <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -1088,6 +1091,9 @@
     <ClInclude Include="Source\Editor\UI\EditorProjectSettingsWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1356,6 +1362,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\WorldContext.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\WorldSettings.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h">

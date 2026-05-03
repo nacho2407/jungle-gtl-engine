@@ -36,6 +36,7 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
 		return nullptr;
 	}
 	NewWorld->SetOuter(NewOuter);
+	NewWorld->WorldSettings = WorldSettings;  // 씬 단위 설정 (GameMode 등) 복제
 	NewWorld->InitWorld(); // Partition/VisibleSet 초기화 — 이거 없으면 복제 액터가 렌더링되지 않음
 
 	for (AActor* Src : GetActors())
@@ -54,6 +55,7 @@ UWorld* UWorld::DuplicateAs(EWorldType InWorldType) const
 	if (!NewWorld) return nullptr;
 
 	NewWorld->SetWorldType(InWorldType);
+	NewWorld->WorldSettings = WorldSettings;  // 씬 단위 설정 복제
 	NewWorld->InitWorld();
 
 	for (AActor* Src : GetActors())

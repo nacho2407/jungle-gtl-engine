@@ -12,6 +12,7 @@
 #include "Render/Types/LODContext.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
+#include "GameFramework/WorldSettings.h"
 #include "Physics/IPhysicsScene.h"
 #include <memory>
 
@@ -67,6 +68,10 @@ public:
 
 	bool HasBegunPlay() const { return bHasBegunPlay; }
 
+	// 씬 단위 게임 설정 (GameMode 등). 에디터 UI 와 SceneSaveManager 가 사용.
+	FWorldSettings& GetWorldSettings() { return WorldSettings; }
+	const FWorldSettings& GetWorldSettings() const { return WorldSettings; }
+
 	// 일시정지 — true 동안 World::Tick 이 PhysicsScene 와 TickManager 호출을 skip 한다.
 	// Render / UI / Input poll 은 영향 받지 않으므로 인트로 / 메뉴 / 모달 띄운 상태에서
 	// 게임 시간만 멈추는 용도. 기본 false (게임 진행).
@@ -98,6 +103,7 @@ private:
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bPaused = false;
+	FWorldSettings WorldSettings;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;

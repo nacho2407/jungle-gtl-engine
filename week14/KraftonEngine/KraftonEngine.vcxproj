@@ -372,6 +372,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClCompile Include="Source\Editor\UI\EditorMaterialInspector.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorShadowMapDebugWidget.cpp" />
@@ -824,6 +825,8 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="Source\Game\Component\CompletionOutlineComponent.h" />
     <ClInclude Include="Source\Game\Component\DirtComponent.h" />
     <ClInclude Include="Source\Game\Component\Movement\CarMovementComponent.h" />
+    <ClInclude Include="Source\Engine\GameFramework\WorldSettings.h" />
+    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h" />
     <ClInclude Include="Source\Game\GameMode\GameModeIntro.h" />
     <ClInclude Include="Source\Game\GameState\GameStateCarGame.h" />
