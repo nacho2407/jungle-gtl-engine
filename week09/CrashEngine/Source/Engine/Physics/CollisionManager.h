@@ -30,7 +30,7 @@ public:
 
     void TickCollision(float DeltaTime, FScene* Scene = nullptr);
 
-    void Reset() { RegisteredComponents.clear(); }
+    void Reset();
 
     void BuildBVH();
     void UpdateCollisionInBVH(UPrimitiveComponent* Component)

@@ -141,11 +141,13 @@ void FLuaGameObjectProxy::ApplyDamage(float Damage, const FLuaGameObjectProxy& I
 
 bool FLuaGameObjectProxy::HasTag(const FString& Tag) const
 {
+    AActor* Actor = ResolveActor();
     return Actor ? Actor->HasTag(Tag) : false;
 }
 
 void FLuaGameObjectProxy::AddTag(const FString& Tag)
 {
+    AActor* Actor = ResolveActor();
     if (Actor)
     {
         Actor->AddTag(Tag);
@@ -154,6 +156,7 @@ void FLuaGameObjectProxy::AddTag(const FString& Tag)
 
 void FLuaGameObjectProxy::RemoveTag(const FString& Tag)
 {
+    AActor* Actor = ResolveActor();
     if (Actor)
     {
         Actor->RemoveTag(Tag);
@@ -169,4 +172,93 @@ void FLuaGameObjectProxy::PrintLocation() const
            Location.X,
            Location.Y,
            Location.Z);
+}
+
+FLuaComponentProxy FLuaGameObjectProxy::AddComponent(const FString& ComponentType)
+{
+    AActor* Actor = ResolveActor();
+    if (!Actor)
+    {
+        return FLuaComponentProxy();
+    }
+
+    const FString ClassName = NormalizeLuaComponentClassName(ComponentType);
+    if (!IsLuaAddableComponentClassName(ClassName))
+    {
+        UE_LOG(Lua, Warning,
+               "Lua tried to add disallowed component class: %s",
+               ComponentType.c_str());
+        return FLuaComponentProxy();
+    }
+
+    UClass* TargetClass = FindClassByName(ClassName);
+    if (!TargetClass)
+    {
+        UE_LOG(Lua, Warning,
+               "Lua component class was not found: %s",
+               ClassName.c_str());
+        return FLuaComponentProxy();
+    }
+
+    UActorComponent* NewComponent = Actor->AddComponentByClass(TargetClass);
+    if (!NewComponent)
+    {
+        UE_LOG(Lua, Warning,
+               "Lua failed to add component class: %s",
+               ClassName.c_str());
+        return FLuaComponentProxy();
+    }
+
+    if (USceneComponent* SceneComp = Cast<USceneComponent>(NewComponent))
+    {
+        if (!Actor->GetRootComponent())
+        {
+            Actor->SetRootComponent(SceneComp);
+        }
+        else if (SceneComp != Actor->GetRootComponent())
+        {
+            SceneComp->AttachToComponent(Actor->GetRootComponent());
+        }
+
+        SceneComp->MarkTransformDirty();
+    }
+
+    if (Actor->HasActorBegunPlay())
+    {
+        NewComponent->BeginPlay();
+    }
+
+    return FLuaComponentProxy(NewComponent);
+}
+
+FLuaComponentProxy FLuaGameObjectProxy::GetComponent(const FString& ComponentType, int32 Index) const
+{
+    AActor* Actor = ResolveActor();
+    if (!Actor || Index < 0)
+    {
+        return FLuaComponentProxy();
+    }
+
+    const FString ClassName = NormalizeLuaComponentClassName(ComponentType);
+    int32 FoundIndex = 0;
+
+    for (UActorComponent* Component : Actor->GetComponents())
+    {
+        if (!Component || !Component->GetClass())
+        {
+            continue;
+        }
+
+        if (ClassName == Component->GetClass()->GetName())
+        {
+            if (FoundIndex == Index)
+            {
+                return FLuaComponentProxy(Component);
+            }
+
+            ++FoundIndex;
+        }
+    }
+
+    return FLuaComponentProxy();
 }

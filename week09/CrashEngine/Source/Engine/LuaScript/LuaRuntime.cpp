@@ -194,7 +194,9 @@ void FLuaRuntime::BindEngineTypes()
 		"HasTag", &FLuaGameObjectProxy::HasTag,
 		"AddTag", &FLuaGameObjectProxy::AddTag,
 		"RemoveTag", &FLuaGameObjectProxy::RemoveTag,
-		"PrintLocation", &FLuaGameObjectProxy::PrintLocation
+		"PrintLocation", &FLuaGameObjectProxy::PrintLocation,
+        "AddComponent", &FLuaGameObjectProxy::AddComponent,
+        "GetComponent", &FLuaGameObjectProxy::GetComponent
 	);
 
     // SoundManager 등록
