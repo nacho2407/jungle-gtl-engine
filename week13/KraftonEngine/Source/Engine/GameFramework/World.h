@@ -67,6 +67,12 @@ public:
 
 	bool HasBegunPlay() const { return bHasBegunPlay; }
 
+	// 일시정지 — true 동안 World::Tick 이 PhysicsScene 와 TickManager 호출을 skip 한다.
+	// Render / UI / Input poll 은 영향 받지 않으므로 인트로 / 메뉴 / 모달 띄운 상태에서
+	// 게임 시간만 멈추는 용도. 기본 false (게임 진행).
+	void SetPaused(bool bInPaused) { bPaused = bInPaused; }
+	bool IsPaused() const { return bPaused; }
+
 	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
 	void SetActiveCamera(UCameraComponent* InCamera) { if (CameraManager) CameraManager->SetActiveCamera(InCamera); }
 	UCameraComponent* GetActiveCamera() const { return CameraManager ? CameraManager->GetActiveCamera() : nullptr; }
@@ -91,6 +97,7 @@ private:
 	UCameraComponent* LastLODUpdateCamera = nullptr;
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
+	bool bPaused = false;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;

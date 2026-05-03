@@ -65,6 +65,12 @@ function UIManager.Init()
     local introWidget = UI.CreateWidget("Asset/UI/IntroWidget.rml")
     introWidget:SetWantsMouse(true)
     introWidget:bind_click("start-button", function()
+        -- ResumeGame 을 fade 시작 *전* 에 호출. UIManager.Tick 이 GameManager.lua::Tick
+        -- 안에서 돌아가는데 그 자체가 component Tick → World 가 pause 면 안 돈다. 그래서
+        -- pause 상태에서 FadeOut 을 시작하면 fade 진행이 멈춰 callback 이 영영 안 불려
+        -- "click 이 안 먹는" 것처럼 보인다. 게임은 이미 클릭 시점에서 시작된 것으로 보고
+        -- pause 부터 풀어준다 (fade 동안 인트로가 전체 화면을 덮으니 시각적 변화는 없음).
+        Engine.ResumeGame()
         UIManager.FadeOut(0.5, function()
             UIManager.Hide("intro")
 
@@ -77,6 +83,7 @@ function UIManager.Init()
     end)
     introWidget:bind_click("exit-button", function()
         UIManager.Hide("intro")
+        Engine.Exit()
     end)
 
     local contributorWidget = UI.CreateWidget("Asset/UI/ContributorWidget.rml")
