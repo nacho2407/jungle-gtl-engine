@@ -81,28 +81,33 @@ function Script:Tick(dt)
     
     local player = Engine.API.World.GetPossessedActor()
 
+    self.camera_pitch = (self.camera_pitch or 0) + Engine.API.Input.GetMouseDelta().Y * 0.1
+
     if player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
-    
+
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
-
-        local pitch_x = 45 * math.abs(math.sin(yaw_rad))
-        local pitch_y = 45 * math.abs(math.cos(yaw_rad))
-
-        local scale_long = 10
-        local scale_short = 3
-
-        -- forward vector 성분으로 scale 결정
-        local fx = math.abs(math.sin(yaw_rad))  -- X축 방향 성분
-        local fz = math.abs(math.cos(yaw_rad))  -- Z축 방향 성분
-
-        -- forward가 X쪽이면 X를 길게, Z쪽이면 Z를 길게
+        local pitch_x = 45 * (math.sin(yaw_rad))
+        local pitch_y = 45 * (math.cos(yaw_rad))
+        local scale_long = 5
+        local scale_short = 1
+        local fx = math.abs(math.sin(yaw_rad))
+        local fz = math.abs(math.cos(yaw_rad))
         local scale_x = scale_short + (scale_long - scale_short) * fx
         local scale_z = scale_short + (scale_long - scale_short) * fz
 
+        local pitch_rad = math.rad(self.camera_pitch)
+        local fwd = self.owner:GetActorForwardVector()
+        -- forward를 pitch 각도만큼 위아래로 기울임
+        local fwd_pitched = Vector(
+            fwd.X * math.cos(pitch_rad),
+            fwd.Y * math.cos(pitch_rad),
+            -math.sin(pitch_rad)  -- 위를 보면 올라가고 아래를 보면 내려감
+        )
+
         slash.Rotation = Vector(pitch_y, pitch_x, yaw)
-        slash.Location = self.owner.Location + self.owner.Scale / 2
+        slash.Location = self.owner.Location + self.owner.Scale / 2 + fwd_pitched * (scale_long / 2)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
     end
 end
