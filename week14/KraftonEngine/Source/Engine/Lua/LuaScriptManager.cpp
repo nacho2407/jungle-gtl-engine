@@ -427,7 +427,9 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"SetText", &UUserWidget::SetText,
 		"set_text", &UUserWidget::SetText,
 		"SetProperty", &UUserWidget::SetProperty,
-		"set_property", &UUserWidget::SetProperty);
+		"set_property", &UUserWidget::SetProperty,
+		"SetWantsMouse", &UUserWidget::SetWantsMouse,
+		"WantsMouse", &UUserWidget::WantsMouse);
 
 	sol::table UI = Lua.create_named_table("UI");
 	UI.set_function("CreateWidget", [](const FString& DocumentPath)

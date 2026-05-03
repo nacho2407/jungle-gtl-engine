@@ -53,6 +53,7 @@ end
 
 function UIManager.Init()
     local introWidget = UI.CreateWidget("Asset/UI/IntroWidget.rml")
+    introWidget:SetWantsMouse(true)
     introWidget:bind_click("start-button", function()
         UIManager.FadeOut(0.5, function()
             UIManager.Hide("intro")
@@ -69,6 +70,7 @@ function UIManager.Init()
     end)
 
     local contributorWidget = UI.CreateWidget("Asset/UI/ContributorWidget.rml")
+    contributorWidget:SetWantsMouse(true)
     contributorWidget:bind_click("contributor-close-button", function()
         UIManager.Hide("contributor")
     end)

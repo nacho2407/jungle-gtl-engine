@@ -72,6 +72,13 @@ public:
 	bool IsDocumentLoaded() const { return bDocumentLoaded; }
 	Rml::ElementDocument* GetDocument() const { return Document; }
 
+	// 메뉴/대화창처럼 사용자가 클릭/포인팅을 해야 하는 widget 은 true 로 설정.
+	// UUIManager 가 viewport 에 올라온 widget 중 하나라도 이 값이 true 면 GameViewportClient
+	// 에 알려 시스템 커서를 보이고 raw mouse / clip 을 해제하도록 한다. HUD 처럼 비대화형
+	// 오버레이는 false 유지.
+	void SetWantsMouse(bool bInWantsMouse) { bWantsMouse = bInWantsMouse; }
+	bool WantsMouse() const { return bWantsMouse; }
+
 	void MarkDocumentLoaded(Rml::ElementDocument* InDocument) { Document = InDocument; bDocumentLoaded = Document != nullptr; }
 	void MarkRemovedFromViewport() { bInViewport = false; }
 	void ClearDocument() { Document = nullptr; bDocumentLoaded = false; }
@@ -85,4 +92,5 @@ private:
 	int32 ZOrder = 0;
 	bool bInViewport = false;
 	bool bDocumentLoaded = false;
+	bool bWantsMouse = false;
 };
