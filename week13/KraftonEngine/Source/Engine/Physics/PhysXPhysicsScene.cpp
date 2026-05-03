@@ -6,6 +6,7 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Math/Quat.h"
+#include "Object/Object.h"  // IsAliveObject
 #include "Core/Log.h"
 
 // PhysX headers
@@ -74,11 +75,34 @@ static void ReleaseSharedPhysX()
 
 // ============================================================
 // PhysX Simulation Event Callback
+//
+// PhysX 의 onContact / onTrigger 는 Scene->fetchResults(true) 진행 중에 호출되며,
+// 그 안에서 직접 게임 측 핸들러(NotifyComponentHit 등)를 호출하면 핸들러가
+// World->DestroyActor 같은 scene-mutating 작업을 해서 fetchResults 와 겹쳐 크래쉬한다.
+//
+// 따라서 콜백은 이벤트를 큐에 적재만 하고, FPhysXPhysicsScene::Tick 의 post-simulate
+// 단계 끝에서 DispatchPendingEvents 가 한꺼번에 게임 측 Notify 를 호출한다. 이 시점은
+// simulate/fetchResults 외부이므로 핸들러가 자유롭게 actor/component 를 추가/제거해도 안전.
 // ============================================================
 class FPhysXSimulationCallback : public PxSimulationEventCallback
 {
 public:
-	// Block 접촉 → NotifyComponentHit
+	struct FQueuedHit
+	{
+		UPrimitiveComponent* Self      = nullptr;  // Notify 가 호출되는 대상
+		UPrimitiveComponent* Other     = nullptr;
+		FVector              NormalImpulse{0,0,0};
+		FHitResult           Hit;
+	};
+
+	struct FQueuedTrigger
+	{
+		UPrimitiveComponent* Self  = nullptr;
+		UPrimitiveComponent* Other = nullptr;
+		bool                 bBegin = true;        // false = end
+	};
+
+	// Block 접촉 → 큐에 적재
 	void onContact(const PxContactPairHeader& PairHeader,
 		const PxContactPair* Pairs, PxU32 Count) override
 	{
@@ -91,12 +115,11 @@ public:
 			const PxContactPair& CP = Pairs[i];
 			if (!(CP.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)) continue;
 
-			// Compound shape: actor 단위가 아닌 shape별 userData에 PrimitiveComponent 저장.
 			auto* CompA = CP.shapes[0] ? static_cast<UPrimitiveComponent*>(CP.shapes[0]->userData) : nullptr;
 			auto* CompB = CP.shapes[1] ? static_cast<UPrimitiveComponent*>(CP.shapes[1]->userData) : nullptr;
 			if (!CompA || !CompB) continue;
 
-			// Contact point 추출
+			// Contact point — 큐 dispatch 시점에 PxContactPair 가 이미 무효이므로 여기서 모두 추출.
 			PxContactPairPoint ContactPoints[1];
 			PxU32 NumPoints = CP.extractContacts(ContactPoints, 1);
 
@@ -106,38 +129,42 @@ public:
 
 			if (NumPoints > 0)
 			{
-				ContactPos = FVector(ContactPoints[0].position.x, ContactPoints[0].position.y, ContactPoints[0].position.z);
-				ContactNormal = FVector(ContactPoints[0].normal.x, ContactPoints[0].normal.y, ContactPoints[0].normal.z);
-				Penetration = ContactPoints[0].separation; // 음수 = 관통
+				ContactPos    = FVector(ContactPoints[0].position.x, ContactPoints[0].position.y, ContactPoints[0].position.z);
+				ContactNormal = FVector(ContactPoints[0].normal.x,   ContactPoints[0].normal.y,   ContactPoints[0].normal.z);
+				Penetration   = ContactPoints[0].separation; // 음수 = 관통
 			}
 
-			FVector NormalImpulse = ContactNormal * Penetration;
+			const FVector NormalImpulse = ContactNormal * Penetration;
 
-			// A → Hit 통지
-			FHitResult HitA;
-			HitA.bHit = true;
-			HitA.HitComponent = CompB;
-			HitA.HitActor = CompB->GetOwner();
-			HitA.WorldHitLocation = ContactPos;
-			HitA.ImpactNormal = ContactNormal;
-			HitA.WorldNormal = ContactNormal;
-			HitA.PenetrationDepth = -Penetration;
-			CompA->NotifyComponentHit(CompA, CompB->GetOwner(), CompB, NormalImpulse, HitA);
+			FQueuedHit A;
+			A.Self                = CompA;
+			A.Other               = CompB;
+			A.NormalImpulse       = NormalImpulse;
+			A.Hit.bHit            = true;
+			A.Hit.HitComponent    = CompB;
+			A.Hit.HitActor        = CompB->GetOwner();
+			A.Hit.WorldHitLocation= ContactPos;
+			A.Hit.ImpactNormal    = ContactNormal;
+			A.Hit.WorldNormal     = ContactNormal;
+			A.Hit.PenetrationDepth= -Penetration;
+			PendingHits.push_back(A);
 
-			// B → Hit 통지 (법선 반전)
-			FHitResult HitB;
-			HitB.bHit = true;
-			HitB.HitComponent = CompA;
-			HitB.HitActor = CompA->GetOwner();
-			HitB.WorldHitLocation = ContactPos;
-			HitB.ImpactNormal = ContactNormal * -1.0f;
-			HitB.WorldNormal = ContactNormal * -1.0f;
-			HitB.PenetrationDepth = -Penetration;
-			CompB->NotifyComponentHit(CompB, CompA->GetOwner(), CompA, NormalImpulse * -1.0f, HitB);
+			FQueuedHit B;
+			B.Self                 = CompB;
+			B.Other                = CompA;
+			B.NormalImpulse        = NormalImpulse * -1.0f;
+			B.Hit.bHit             = true;
+			B.Hit.HitComponent     = CompA;
+			B.Hit.HitActor         = CompA->GetOwner();
+			B.Hit.WorldHitLocation = ContactPos;
+			B.Hit.ImpactNormal     = ContactNormal * -1.0f;
+			B.Hit.WorldNormal      = ContactNormal * -1.0f;
+			B.Hit.PenetrationDepth = -Penetration;
+			PendingHits.push_back(B);
 		}
 	}
 
-	// Trigger 진입/이탈 → BeginOverlap / EndOverlap
+	// Trigger 진입/이탈 → 큐에 적재
 	void onTrigger(PxTriggerPair* Pairs, PxU32 Count) override
 	{
 		for (PxU32 i = 0; i < Count; ++i)
@@ -147,25 +174,56 @@ public:
 			if (TP.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER))
 				continue;
 
-			// Compound shape: shape userData가 PrimitiveComponent.
 			auto* TriggerComp = TP.triggerShape ? static_cast<UPrimitiveComponent*>(TP.triggerShape->userData) : nullptr;
 			auto* OtherComp   = TP.otherShape   ? static_cast<UPrimitiveComponent*>(TP.otherShape->userData)   : nullptr;
 			if (!TriggerComp || !OtherComp) continue;
 
-			if (TP.status == PxPairFlag::eNOTIFY_TOUCH_FOUND)
+			const bool bBegin = (TP.status == PxPairFlag::eNOTIFY_TOUCH_FOUND);
+			const bool bEnd   = (TP.status == PxPairFlag::eNOTIFY_TOUCH_LOST);
+			if (!bBegin && !bEnd) continue;
+
+			if (TriggerComp->GetGenerateOverlapEvents())
+			{
+				PendingTriggers.push_back({ TriggerComp, OtherComp, bBegin });
+			}
+			if (OtherComp->GetGenerateOverlapEvents())
+			{
+				PendingTriggers.push_back({ OtherComp, TriggerComp, bBegin });
+			}
+		}
+	}
+
+	// FPhysXPhysicsScene::Tick 끝에서 호출. simulate/fetchResults 바깥이므로 핸들러가
+	// 자유롭게 World->DestroyActor / SpawnActor / RegisterComponent 호출 가능.
+	// 핸들러 도중 다른 컴포넌트가 destroy되는 경우 대비해 dispatch 직전에 IsAliveObject
+	// 검증 — destroy된 포인터를 만지지 않는다.
+	void DispatchPendingEvents()
+	{
+		// move-out — dispatch 도중 새 이벤트가 큐에 들어오는 일은 없지만, 안전하게 swap 후 처리.
+		std::vector<FQueuedHit> HitsToDispatch;
+		HitsToDispatch.swap(PendingHits);
+		std::vector<FQueuedTrigger> TriggersToDispatch;
+		TriggersToDispatch.swap(PendingTriggers);
+
+		for (FQueuedHit& E : HitsToDispatch)
+		{
+			if (!IsAliveObject(E.Self) || !IsAliveObject(E.Other)) continue;
+			AActor* OtherActor = E.Other->GetOwner();
+			E.Self->NotifyComponentHit(E.Self, OtherActor, E.Other, E.NormalImpulse, E.Hit);
+		}
+
+		for (FQueuedTrigger& E : TriggersToDispatch)
+		{
+			if (!IsAliveObject(E.Self) || !IsAliveObject(E.Other)) continue;
+			AActor* OtherActor = E.Other->GetOwner();
+			if (E.bBegin)
 			{
 				FHitResult DummyHit;
-				if (TriggerComp->GetGenerateOverlapEvents())
-					TriggerComp->NotifyComponentBeginOverlap(TriggerComp, OtherComp->GetOwner(), OtherComp, 0, false, DummyHit);
-				if (OtherComp->GetGenerateOverlapEvents())
-					OtherComp->NotifyComponentBeginOverlap(OtherComp, TriggerComp->GetOwner(), TriggerComp, 0, false, DummyHit);
+				E.Self->NotifyComponentBeginOverlap(E.Self, OtherActor, E.Other, 0, false, DummyHit);
 			}
-			else if (TP.status == PxPairFlag::eNOTIFY_TOUCH_LOST)
+			else
 			{
-				if (TriggerComp->GetGenerateOverlapEvents())
-					TriggerComp->NotifyComponentEndOverlap(TriggerComp, OtherComp->GetOwner(), OtherComp, 0);
-				if (OtherComp->GetGenerateOverlapEvents())
-					OtherComp->NotifyComponentEndOverlap(OtherComp, TriggerComp->GetOwner(), TriggerComp, 0);
+				E.Self->NotifyComponentEndOverlap(E.Self, OtherActor, E.Other, 0);
 			}
 		}
 	}
@@ -174,6 +232,10 @@ public:
 	void onWake(PxActor**, PxU32) override {}
 	void onSleep(PxActor**, PxU32) override {}
 	void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) override {}
+
+private:
+	std::vector<FQueuedHit>     PendingHits;
+	std::vector<FQueuedTrigger> PendingTriggers;
 };
 
 // ============================================================
@@ -567,6 +629,15 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 
 		Mapping.RootComp->SetWorldLocation(NewPos);
 		Mapping.RootComp->SetRelativeRotation(NewRot);
+	}
+
+	// ── Dispatch deferred contact/trigger events ──
+	// onContact / onTrigger 는 fetchResults 안에서 fire 되므로 거기서 직접 게임 핸들러를
+	// 부르면 핸들러의 World->DestroyActor 등이 PhysX scene 변경 타이밍과 겹쳐 크래쉬한다.
+	// 그래서 큐에만 적재했고, 이 시점(simulate/fetchResults 외부)에서 한꺼번에 dispatch.
+	if (EventCallback)
+	{
+		EventCallback->DispatchPendingEvents();
 	}
 }
 
