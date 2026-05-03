@@ -50,7 +50,7 @@ void APlayerController::BeginPlay()
 		}
 		else
 		{
-			SpawnDefaultPawn();
+			UE_LOG_ERROR("[PlayerController] Player actor with tag 'Player' is missing. Default pawn will not be spawned.");
 		}
 	}
 	UpdateRuntimeCameraFromViewTarget();
@@ -405,7 +405,6 @@ AActor* APlayerController::FindPlacedPlayerActor() const
 	}
 
 	AActor* FirstTaggedPlayer = nullptr;
-	AActor* FirstDefaultPlayer = nullptr;
 	for (AActor* Actor : World->GetActors())
 	{
 		if (!Actor || Actor == this || Actor->IsA<APlayerController>() || Actor->IsA<APlayerStart>())
@@ -426,10 +425,6 @@ AActor* APlayerController::FindPlacedPlayerActor() const
 				return Actor;
 			}
 		}
-		else if (!FirstDefaultPlayer && Actor->IsA<ADefaultPlayerActor>() && bHasCamera)
-		{
-			FirstDefaultPlayer = Actor;
-		}
 	}
 
 	if (FirstTaggedPlayer)
@@ -437,13 +432,7 @@ AActor* APlayerController::FindPlacedPlayerActor() const
 		UE_LOG_WARNING("[PlayerController] Actor tagged Player has no CameraComponent: %s",
 			FirstTaggedPlayer->GetFName().ToString().c_str());
 	}
-	if (FirstDefaultPlayer)
-	{
-		FirstDefaultPlayer->AddTag("Player");
-		UE_LOG_WARNING("[PlayerController] Reusing default player actor without Player tag: %s",
-			FirstDefaultPlayer->GetFName().ToString().c_str());
-	}
-	return FirstDefaultPlayer;
+	return nullptr;
 }
 
 bool APlayerController::IsActorInCurrentWorld(const AActor* Actor) const

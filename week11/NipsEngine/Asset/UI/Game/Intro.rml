@@ -1,6 +1,6 @@
 <rml>
     <head>
-        <link type="text/rcss" href="GameUI.rcss"/>
+        <link type="text/rcss" href="Intro.rcss"/>
     </head>
     <body>
         <div class="screen-root intro-screen">

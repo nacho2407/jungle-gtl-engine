@@ -25,6 +25,8 @@ public:
 private:
 	// 선택 상태 관리
 	void UpdateSelectionState(AActor* PrimaryActor);
+	void SelectActorForDetails();
+	void SelectComponentForDetails(UActorComponent* Component);
 
 	// 헤더 영역
 	void RenderDetailsLockBar(AActor* CurrentSelection, AActor* DisplayActor);

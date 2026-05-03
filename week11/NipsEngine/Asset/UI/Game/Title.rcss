@@ -1,0 +1,213 @@
+@font-face
+{
+    font-family: "Glitch Goblin";
+    font-style: normal;
+    font-weight: normal;
+    src: "Asset/UIFont/GlitchGoblin_Font_1_1/GlitchGoblin.ttf";
+}
+
+body
+{
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    background-color: transparent;
+    font-family: "Malgun Gothic";
+    font-size: 20px;
+    color: rgb(238, 242, 247);
+}
+
+.screen-root
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.title-screen
+{
+    background-color: rgba(0, 18, 22, 0);
+}
+
+.title-mark1
+{
+    position: absolute;
+    left: 140px;
+    top: 300px;
+    width: 1500px;
+}
+
+.title-logo1
+{
+    font-family: "Glitch Goblin";
+    font-size: 140px;
+    color: rgb(0, 236, 0);
+}
+
+.title-mark2
+{
+    position: absolute;
+    left: 120px;
+    top: 300px;
+    width: 1500px;
+}
+
+.title-logo2
+{
+    font-family: "Glitch Goblin";
+    font-size: 140px;
+    color: rgb(255, 51, 0);
+}
+
+.title-mark3
+{
+    position: absolute;
+    left: 130px;
+    top: 300px;
+    width: 1500px;
+}
+
+.title-logo3
+{
+    font-family: "Glitch Goblin";
+    font-size: 140px;
+    color: rgb(255, 255, 255);
+}
+
+.title-subtitle
+{
+    margin-top: 12px;
+    font-size: 22px;
+    color: rgb(160, 202, 204);
+}
+
+.title-panel
+{
+    position: absolute;
+    left: 1250px;
+    top: 500px;
+    width: 430px;
+}
+
+.menu-panel
+{
+    top: 300px;
+}
+
+.sub-panel
+{
+    padding: 28px;
+    background-color: rgba(25, 31, 38, 235);
+    border-width: 2px;
+    border-color: rgba(230, 218, 190, 190);
+}
+
+.version-label
+{
+    position: absolute;
+    right: 42px;
+    bottom: 34px;
+    font-size: 18px;
+    color: rgba(238, 242, 247, 170);
+}
+
+.headline
+{
+    margin-bottom: 34px;
+    font-size: 42px;
+    color: rgb(255, 248, 232);
+}
+
+.button
+{
+    display: block;
+    width: 310px;
+    height: 58px;
+    margin-bottom: 16px;
+    padding-top: 14px;
+    background-color: rgba(31, 43, 52, 235);
+    border-width: 2px;
+    border-color: rgba(220, 232, 242, 170);
+    color: rgb(244, 248, 252);
+    text-align: center;
+}
+
+.title-panel .button
+{
+    width: 360px;
+}
+
+.primary
+{
+    background-color: rgba(32, 95, 92, 245);
+    border-color: rgba(180, 236, 226, 210);
+}
+
+.danger
+{
+    background-color: rgba(92, 36, 41, 235);
+    border-color: rgba(238, 170, 156, 190);
+}
+
+.button:hover,
+.step-button:hover
+{
+    background-color: rgba(83, 103, 118, 245);
+}
+
+.button:active,
+.step-button:active
+{
+    background-color: rgba(205, 85, 54, 245);
+}
+
+.panel-line
+{
+    margin-bottom: 14px;
+    font-size: 24px;
+}
+
+.strong
+{
+    color: rgb(255, 224, 154);
+}
+
+.setting-row
+{
+    width: 360px;
+    height: 54px;
+    margin-bottom: 12px;
+}
+
+.setting-label
+{
+    display: inline-block;
+    width: 82px;
+    padding-top: 10px;
+    color: rgb(238, 242, 247);
+}
+
+.setting-value
+{
+    display: inline-block;
+    width: 88px;
+    padding-top: 10px;
+    text-align: center;
+    color: rgb(255, 224, 154);
+}
+
+.step-button
+{
+    display: inline-block;
+    width: 48px;
+    height: 44px;
+    margin-right: 8px;
+    padding-top: 8px;
+    background-color: rgba(31, 43, 52, 235);
+    border-width: 2px;
+    border-color: rgba(220, 232, 242, 150);
+    color: rgb(244, 248, 252);
+    text-align: center;
+}

@@ -61,8 +61,8 @@ private:
 
 	D3D11_VIEWPORT ViewportInfo = {};
 
-	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
-	const float ClearNormal[4] = { 0.25f, 0.25f, 0.25f, 0.f };
+	const float ClearColor[4] = { 0.f, 0.f, 0.f, 1.0f };
+	const float ClearNormal[4] = { 0.f, 0.f, 0.f, 0.f };
 
 	ID3D11RasterizerState* CurrentRasterizerState = nullptr;
 	ID3D11DepthStencilState* CurrentDepthStencilState = nullptr;

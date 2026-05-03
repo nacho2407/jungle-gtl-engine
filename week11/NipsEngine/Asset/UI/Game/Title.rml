@@ -1,13 +1,27 @@
 <rml>
     <head>
-        <link type="text/rcss" href="GameUI.rcss"/>
+        <link type="text/rcss" href="Title.rcss"/>
     </head>
     <body>
         <div class="screen-root title-screen">
-            <div class="title-accent"></div>
-            <div class="title-mark">
-                <div id="Title.Name" class="title-logo">SSAMURAI</div>
+
+            <div class="title-mark1">
+                <div id="Title.Name.Green" class="title-logo1">CYBER PSYCHO</div>
+                <!--
                 <div class="title-subtitle">Project Week09 Team03</div>
+                 -->
+            </div>
+            <div class="title-mark2">
+                <div id="Title.Name.Red" class="title-logo2">CYBER PSYCHO</div>
+                <!--
+                <div class="title-subtitle">Project Week09 Team03</div>
+                 -->
+            </div>
+            <div class="title-mark3">
+                <div id="Title.Name" class="title-logo3">CYBER PSYCHO</div>
+                <!--
+                <div class="title-subtitle">Project Week09 Team03</div>
+                 -->
             </div>
 
             <div id="Title.MenuPanel" class="title-panel menu-panel">
@@ -19,12 +33,14 @@
                 <button id="Title.Quit" class="button danger" data-action="QuitGame">Quit</button>
             </div>
 
+            <!--
             <div id="Title.ScoreBoardPanel" class="title-panel sub-panel">
                 <div class="headline">Score Board</div>
                 <div id="Title.BestScore" class="panel-line strong">Best Score: 0</div>
                 <button class="button" data-action="BackToTitleMenu">Back</button>
             </div>
-
+            -->
+            <!--
             <div id="Title.SettingsPanel" class="title-panel sub-panel">
                 <div class="headline">Settings</div>
                 <div class="setting-row">
@@ -41,15 +57,16 @@
                 </div>
                 <button class="button" data-action="BackToTitleMenu">Back</button>
             </div>
-
+            -->
+            <!--
             <div id="Title.CreditsPanel" class="title-panel sub-panel">
                 <div class="headline">Credits</div>
                 <div class="panel-line">Management / UI</div>
                 <div class="panel-line strong">Game Jam Build</div>
                 <button class="button" data-action="BackToTitleMenu">Back</button>
             </div>
-
-            <div id="Title.Version" class="version-label">v0.1 Jam UI</div>
+            -->
+            <div id="Title.Version" class="version-label">Latest Update v.20260504 by Team03</div>
         </div>
     </body>
 </rml>

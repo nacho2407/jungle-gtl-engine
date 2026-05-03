@@ -29,6 +29,7 @@
 #include "RmlUi/Core/ElementDocument.h"
 #include "RmlUi/Core/Event.h"
 #include "RmlUi/Core/EventListener.h"
+#include "RmlUi/Core/Factory.h"
 #include "RmlUi/Core/Input.h"
 #include <algorithm>
 #include <unordered_set>
@@ -56,6 +57,40 @@ namespace
             }
         }
         return false;
+    }
+
+    bool HasCameraComponent(AActor* Actor)
+    {
+        if (!Actor)
+        {
+            return false;
+        }
+
+        for (UActorComponent* Component : Actor->GetComponents())
+        {
+            if (Cast<UCameraComponent>(Component))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    AActor* FindTaggedPlayerActor(UWorld* World)
+    {
+        if (!World)
+        {
+            return nullptr;
+        }
+
+        for (AActor* Actor : World->GetActors())
+        {
+            if (Actor && !Actor->IsA<APlayerController>() && !Actor->IsA<APlayerStart>() && Actor->HasTag("Player"))
+            {
+                return Actor;
+            }
+        }
+        return nullptr;
     }
 
     void SpawnDefaultSceneActors(UWorld* World)
@@ -593,6 +628,8 @@ bool UEditorEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Pa
     }
 
     UnloadRmlUIDocument(ScreenId);
+    Rml::Factory::ClearStyleSheetCache();
+    Rml::Factory::ClearTemplateCache();
 
     Rml::ElementDocument* Document = RmlUiContext->LoadDocument(Path);
     if (!Document)
@@ -616,8 +653,10 @@ bool UEditorEngine::UnloadRmlUIDocument(const FString& ScreenId)
         return false;
     }
 
-    Document->Close();
+    RmlUiContext->UnloadDocument(Document);
+    RmlUiContext->Update();
     RmlUiDocumentsByScreenId.erase(ScreenId);
+    RmlUiDocumentPathByScreenId.erase(ScreenId);
     if (ScreenId == RuntimeUIPreviewScreenId)
     {
         RmlUiPreviewPendingActionEvents.clear();
@@ -1522,6 +1561,20 @@ void UEditorEngine::StartPlaySessionNow()
     {
         UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
         MainPanel.PushFooterLog("PIE failed: Player Start is missing");
+        return;
+    }
+    AActor* PlayerActor = FindTaggedPlayerActor(SourceWorld);
+    if (!PlayerActor)
+    {
+        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor with tag 'Player' is missing.");
+        MainPanel.PushFooterLog("PIE failed: Player actor is missing");
+        return;
+    }
+    if (!HasCameraComponent(PlayerActor))
+    {
+        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player actor has no CameraComponent: %s",
+            PlayerActor->GetFName().ToString().c_str());
+        MainPanel.PushFooterLog("PIE failed: Player CameraComponent is missing");
         return;
     }
 

@@ -83,7 +83,8 @@ function GameManager:CancelRun(reason)
 end
 
 function GameManager:Restart()
-    self.context.stateMachine:Change("Playing", { restart = true })
+    self:CancelRun("Restart")
+    self.context.stateMachine:Change("Loading", { reopenGameScene = true })
 end
 
 function GameManager:AddKill(payload)
