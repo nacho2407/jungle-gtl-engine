@@ -52,7 +52,7 @@ private:
 	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx, UCameraComponent* PerspectiveCam);
 	static json::JSON SerializeActor(AActor* Actor);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
-	static json::JSON SerializeProperties(UActorComponent* Comp);
+	static json::JSON SerializeProperties(UObject* Obj);
 	static json::JSON SerializePropertyValue(const FPropertyDescriptor& Prop);
 
 	// ---- Camera ----
@@ -61,7 +61,7 @@ private:
 
 	// ---- Deserialization helpers ----
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner);
-	static void DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON);
+	static void DeserializeProperties(UObject* Obj, json::JSON& PropsJSON);
 	static void DeserializePropertyValue(FPropertyDescriptor& Prop, json::JSON& Value);
 
 	static string GetCurrentTimeStamp();
