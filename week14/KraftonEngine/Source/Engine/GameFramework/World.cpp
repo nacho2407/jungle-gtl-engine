@@ -309,6 +309,14 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 
+	// bPaused 동안 PhysicsScene + TickManager skip — GameMode 타이머, Lua Tick, 차량
+	// 이동, PhysX 시뮬레이션 모두 정지. Render / UI / Input poll 은 호출자 (UEngine::Tick)
+	// 가 따로 돌리므로 영향 없음 → 메뉴/인트로 위에서 화면 보이고 클릭 가능.
+	if (bPaused)
+	{
+		return;
+	}
+
 	if (bHasBegunPlay && PhysicsScene)
 	{
 		SCOPE_STAT_CAT("PhysicsScene", "1_WorldTick");

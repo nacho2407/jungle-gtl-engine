@@ -17,6 +17,7 @@
 #include "UI/UserWidget.h"
 #include <filesystem>
 #include <fstream>
+#include <windows.h>  // PostQuitMessage
 
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 
@@ -146,6 +147,45 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		return GetLuaInputSnapshot().WasReleased(VK);
 	}));
+
+	// Engine — 게임 일시정지 / 종료.
+	sol::table Engine = Lua.create_named_table("Engine");
+	Engine.set_function("PauseGame", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				World->SetPaused(true);
+			}
+		}
+	});
+	Engine.set_function("ResumeGame", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				World->SetPaused(false);
+			}
+		}
+	});
+	Engine.set_function("IsPaused", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				return World->IsPaused();
+			}
+		}
+		return false;
+	});
+	Engine.set_function("Exit", []()
+	{
+		// WM_QUIT — FEngineLoop::Run 이 PumpMessages 에서 잡고 정상 shutdown.
+		PostQuitMessage(0);
+	});
 
 	sol::table Key = Lua.create_named_table("Key");
 	Key["W"] = static_cast<int32>('W');
