@@ -34,6 +34,6 @@ private:
 
 	FVector DirtColor = FVector(0.34f, 0.23f, 0.12f);
 	float CurrentAlpha = 0.95f;
-	float AlphaDecreasePerHit = 0.002f;
+	float AlphaDecreasePerHit = 0.003f;
 	bool bWashed = false;
 };
