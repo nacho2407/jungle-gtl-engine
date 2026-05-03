@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <windows.h>
+#include <cstdint>
+#include <vector>
 #include "Core/Singleton.h"
 #include "Runtime/ViewportRect.h"
 
@@ -66,6 +68,8 @@ class InputSystem : public TSingleton<InputSystem>
     void SetUseRawMouse(bool bEnable) { bUseRawMouse = bEnable; }
     bool IsUsingRawMouse() const { return bUseRawMouse; }
     void AddRawMouseDelta(int DeltaX, int DeltaY);
+    void AddTextInput(uint32_t Codepoint);
+    std::vector<uint32_t> ConsumeTextInput();
 
     // Keyboard
     bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
@@ -184,6 +188,7 @@ class InputSystem : public TSingleton<InputSystem>
     // Scrolling
     int ScrollDelta = 0;
     int PrevScrollDelta = 0;
+    std::vector<uint32_t> TextInputQueue;
 
     // Window handle for focus check
     HWND OwnerHWnd = nullptr;

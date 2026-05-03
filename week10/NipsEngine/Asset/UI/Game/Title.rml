@@ -1,0 +1,14 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root">
+            <div class="center-stack">
+                <div id="Title.Name" class="title">SSAMURAI</div>
+                <button id="Title.Start" class="button" data-action="StartGame">Start</button>
+                <button id="Title.Quit" class="button" data-action="QuitGame">Quit</button>
+            </div>
+        </div>
+    </body>
+</rml>

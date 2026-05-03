@@ -1,0 +1,12 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root">
+            <div class="center-stack">
+                <div id="Boot.Title" class="headline">Loading...</div>
+            </div>
+        </div>
+    </body>
+</rml>

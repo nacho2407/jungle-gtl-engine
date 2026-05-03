@@ -220,6 +220,23 @@ void InputSystem::AddRawMouseDelta(int DeltaX, int DeltaY)
     RawMouseDeltaAccumY += DeltaY;
 }
 
+void InputSystem::AddTextInput(uint32_t Codepoint)
+{
+    if (Codepoint == 0)
+    {
+        return;
+    }
+
+    TextInputQueue.push_back(Codepoint);
+}
+
+std::vector<uint32_t> InputSystem::ConsumeTextInput()
+{
+    std::vector<uint32_t> Result;
+    Result.swap(TextInputQueue);
+    return Result;
+}
+
 void InputSystem::FilterDragThreshold(bool& bCandidate, bool& bDragging, bool& bJustStarted, const POINT& MouseDownPos,
                                       POINT& DragStartPos)
 {

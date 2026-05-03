@@ -243,9 +243,32 @@ void UEngine::SetActiveWorld(const FName& Handle)
 void UEngine::SetRuntimeInputMode(ERuntimeInputMode InMode)
 {
 	RuntimeInputMode = InMode;
+	if (RuntimeInputMode == ERuntimeInputMode::GameOnly)
+	{
+		bRuntimeCursorVisible = false;
+		bRuntimeCursorLocked = true;
+	}
+	else
+	{
+		bRuntimeCursorVisible = true;
+		bRuntimeCursorLocked = false;
+	}
 }
 
 void UEngine::SetRuntimeCursorVisible(bool bVisible)
 {
 	bRuntimeCursorVisible = bVisible;
+	if (bVisible)
+	{
+		bRuntimeCursorLocked = false;
+	}
+}
+
+void UEngine::SetRuntimeCursorLocked(bool bLocked)
+{
+	bRuntimeCursorLocked = bLocked;
+	if (bLocked)
+	{
+		bRuntimeCursorVisible = false;
+	}
 }

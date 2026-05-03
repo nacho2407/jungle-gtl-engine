@@ -32,6 +32,15 @@ LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, unsigned int Msg,
 
 LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam)
 {
+	if (Msg == WM_CHAR)
+	{
+		const uint32_t Codepoint = static_cast<uint32_t>(wParam);
+		if (Codepoint >= 0x20 && Codepoint != 0x7F && !InputSystem::Get().GetGuiInputState().bUsingTextInput)
+		{
+			InputSystem::Get().AddTextInput(Codepoint);
+		}
+	}
+
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
 	{
 		return true;

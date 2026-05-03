@@ -31,6 +31,16 @@ function ActorComponent:SetActive(active) end
 function ActorComponent:IsComponentTickEnabled() end
 ---@param enabled boolean
 function ActorComponent:SetComponentTickEnabled(enabled) end
+---@param tag string
+function ActorComponent:AddTag(tag) end
+---@param tag string
+function ActorComponent:RemoveTag(tag) end
+---@param tag string
+---@return boolean
+function ActorComponent:HasTag(tag) end
+function ActorComponent:ClearTags() end
+---@return string[]
+function ActorComponent:GetTags() end
 
 ---@class SceneComponent: ActorComponent
 local SceneComponent = {}
@@ -111,6 +121,36 @@ function Actor:GetComponent(typeName) end
 ---@param typeName string
 ---@return ActorComponent[]
 function Actor:GetComponentsByType(typeName) end
+---@param name string
+---@return ActorComponent|nil
+function Actor:FindComponentByName(name) end
+---@param name string
+---@return ActorComponent|nil
+function Actor:GetComponentByName(name) end
+---@param name string
+---@return ActorComponent[]
+function Actor:FindComponentsByName(name) end
+---@param name string
+---@return ActorComponent[]
+function Actor:GetComponentsByName(name) end
+---@param tag string
+---@return ActorComponent|nil
+function Actor:FindComponentByTag(tag) end
+---@param tag string
+---@return ActorComponent|nil
+function Actor:GetComponentByTag(tag) end
+---@param tag string
+---@return ActorComponent[]
+function Actor:FindComponentsByTag(tag) end
+---@param tag string
+---@return ActorComponent[]
+function Actor:GetComponentsByTag(tag) end
+---@param tags string[]
+---@return ActorComponent[]
+function Actor:FindComponentsByTags(tags) end
+---@param tags string[]
+---@return ActorComponent[]
+function Actor:GetComponentsByTags(tags) end
 ---@param typeName string
 ---@param attachToRoot? boolean
 ---@return ActorComponent|nil

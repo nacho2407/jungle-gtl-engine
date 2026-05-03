@@ -1,94 +1,53 @@
 #include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
-#include "Core/ResourceManager.h"
 #include "Engine/Runtime/Engine.h"
-#include "Object/FName.h"
-#include "UI/RuntimeUIFacade.h"
 
-#include <cmath>
+#include <algorithm>
+#include <cstdio>
+#include <string>
 
 namespace
 {
-    FRuntimeUIFacade MakeRuntimeUIFacade()
+    FString ToPx(float Value)
     {
-        return FRuntimeUIFacade(GEngine->GetRuntimeUI());
+        return std::to_string(Value) + "px";
     }
 
-    ERuntimeUIImageDrawMode ParseImageDrawMode(const FString& DrawMode)
+    FString ToCssColor(float R, float G, float B, float A)
     {
-        if (DrawMode == "NineSlice" || DrawMode == "nine_slice" || DrawMode == "nine")
-        {
-            return ERuntimeUIImageDrawMode::NineSlice;
-        }
-        return ERuntimeUIImageDrawMode::Simple;
+        const int32 RI = static_cast<int32>(std::clamp(R, 0.0f, 1.0f) * 255.0f);
+        const int32 GI = static_cast<int32>(std::clamp(G, 0.0f, 1.0f) * 255.0f);
+        const int32 BI = static_cast<int32>(std::clamp(B, 0.0f, 1.0f) * 255.0f);
+        const float Alpha = std::clamp(A, 0.0f, 1.0f);
+
+        char Buffer[96] = {};
+        std::snprintf(Buffer, sizeof(Buffer), "rgba(%d,%d,%d,%.3f)", RI, GI, BI, Alpha);
+        return FString(Buffer);
     }
 
-    ERuntimeUIProgressFillDirection ParseProgressFillDirection(const FString& Direction)
+    bool SetStyle(const FString& ElementId, const FString& Name, const FString& Value)
     {
-        if (Direction == "RightToLeft" || Direction == "right_to_left")
-        {
-            return ERuntimeUIProgressFillDirection::RightToLeft;
-        }
-        if (Direction == "BottomToTop" || Direction == "bottom_to_top")
-        {
-            return ERuntimeUIProgressFillDirection::BottomToTop;
-        }
-        if (Direction == "TopToBottom" || Direction == "top_to_bottom")
-        {
-            return ERuntimeUIProgressFillDirection::TopToBottom;
-        }
-        return ERuntimeUIProgressFillDirection::LeftToRight;
+        return GEngine ? GEngine->SetRmlUIElementStyle(ElementId, Name, Value) : false;
     }
 
-    ERuntimeUIAnimationEasing ParseAnimationEasing(const FString& Easing)
+    bool SetAttribute(const FString& ElementId, const FString& Name, const FString& Value)
     {
-        if (Easing == "EaseIn" || Easing == "ease_in" || Easing == "easein")
-        {
-            return ERuntimeUIAnimationEasing::EaseIn;
-        }
-        if (Easing == "EaseOut" || Easing == "ease_out" || Easing == "easeout")
-        {
-            return ERuntimeUIAnimationEasing::EaseOut;
-        }
-        if (Easing == "EaseInOut" || Easing == "ease_in_out" || Easing == "easeinout")
-        {
-            return ERuntimeUIAnimationEasing::EaseInOut;
-        }
-        if (Easing == "SmoothStep" || Easing == "smooth_step" || Easing == "smoothstep")
-        {
-            return ERuntimeUIAnimationEasing::SmoothStep;
-        }
-        return ERuntimeUIAnimationEasing::Linear;
+        return GEngine ? GEngine->SetRmlUIElementAttribute(ElementId, Name, Value) : false;
     }
 
-    FRuntimeUIColor MakeUIColor(float R, float G, float B, float A)
+    bool SetTransformStyles(const FString& ElementId, float X, float Y, float W, float H)
     {
-        return FRuntimeUIColor(R, G, B, A);
-    }
-
-    const FParticleResource* FindExactParticleResource(const FString& ParticleNameOrPath)
-    {
-        const TArray<FString> ParticleNames = FResourceManager::Get().GetParticleNames();
-        for (const FString& ParticleName : ParticleNames)
+        if (!GEngine)
         {
-            if (ParticleName == ParticleNameOrPath)
-            {
-                return FResourceManager::Get().FindParticle(FName(ParticleNameOrPath.c_str()));
-            }
-        }
-        return nullptr;
-    }
-
-    float MakeDurationFromSpeed(float X0, float Y0, float X1, float Y1, float Speed)
-    {
-        if (Speed <= 0.0f)
-        {
-            return 0.0f;
+            return false;
         }
 
-        const float DX = X1 - X0;
-        const float DY = Y1 - Y0;
-        return std::sqrt(DX * DX + DY * DY) / Speed;
+        bool bResult = GEngine->SetRmlUIElementStyle(ElementId, "position", "absolute");
+        bResult = GEngine->SetRmlUIElementStyle(ElementId, "left", ToPx(X)) || bResult;
+        bResult = GEngine->SetRmlUIElementStyle(ElementId, "top", ToPx(Y)) || bResult;
+        bResult = GEngine->SetRmlUIElementStyle(ElementId, "width", ToPx(W)) || bResult;
+        bResult = GEngine->SetRmlUIElementStyle(ElementId, "height", ToPx(H)) || bResult;
+        return bResult;
     }
 }
 
@@ -98,282 +57,206 @@ namespace FLuaEngineAPI
     {
         sol::table UI = Lua.create_table();
 
-        UI["ShowScreen"] = sol::overload(
-            [](const FString& ScreenId) -> bool
+        UI["LoadDocument"] = [](const FString& ScreenId, const FString& Path) -> bool
+        {
+            return GEngine ? GEngine->LoadRmlUIDocument(ScreenId, Path) : false;
+        };
+
+        UI["UnloadDocument"] = [](const FString& ScreenId) -> bool
+        {
+            return GEngine ? GEngine->UnloadRmlUIDocument(ScreenId) : false;
+        };
+
+        UI["ReloadDocument"] = [](const FString& ScreenId) -> bool
+        {
+            return GEngine ? GEngine->ReloadRmlUIDocument(ScreenId) : false;
+        };
+
+        UI["ShowDocument"] = [](const FString& ScreenId) -> bool
+        {
+            return GEngine ? GEngine->ShowRmlUIScreen(ScreenId) : false;
+        };
+
+        UI["HideDocument"] = [](const FString& ScreenId) -> bool
+        {
+            return GEngine ? GEngine->HideRmlUIScreen(ScreenId) : false;
+        };
+
+        UI["SetElementText"] = [](const FString& ElementId, const FString& Text) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
+        };
+
+        UI["GetElementText"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementText(ElementId) : "";
+        };
+
+        UI["HasElement"] = [](const FString& ElementId) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElement(ElementId) : false;
+        };
+
+        UI["SetElementVisible"] = [](const FString& ElementId, bool bVisible) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementVisible(ElementId, bVisible) : false;
+        };
+
+        UI["SetElementEnabled"] = [](const FString& ElementId, bool bEnabled) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementEnabled(ElementId, bEnabled) : false;
+        };
+
+        UI["SetElementClass"] = [](const FString& ElementId, const FString& ClassName, bool bEnabled) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementClass(ElementId, ClassName, bEnabled) : false;
+        };
+
+        UI["HasElementClass"] = [](const FString& ElementId, const FString& ClassName) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElementClass(ElementId, ClassName) : false;
+        };
+
+        UI["GetElementClassNames"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementClassNames(ElementId) : "";
+        };
+
+        UI["SetElementClassNames"] = [](const FString& ElementId, const FString& ClassNames) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementClassNames(ElementId, ClassNames) : false;
+        };
+
+        UI["HasElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
+        {
+            return GEngine ? GEngine->HasRmlUIElementAttribute(ElementId, Name) : false;
+        };
+
+        UI["GetElementAttribute"] = [](const FString& ElementId, const FString& Name) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementAttribute(ElementId, Name) : "";
+        };
+
+        UI["SetElementAttribute"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
+        {
+            return SetAttribute(ElementId, Name, Value);
+        };
+
+        UI["RemoveElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
+        {
+            return GEngine ? GEngine->RemoveRmlUIElementAttribute(ElementId, Name) : false;
+        };
+
+        UI["GetElementStyle"] = [](const FString& ElementId, const FString& Name) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementStyle(ElementId, Name) : "";
+        };
+
+        UI["SetElementStyle"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
+        {
+            return SetStyle(ElementId, Name, Value);
+        };
+
+        UI["RemoveElementStyle"] = [](const FString& ElementId, const FString& Name) -> bool
+        {
+            return GEngine ? GEngine->RemoveRmlUIElementStyle(ElementId, Name) : false;
+        };
+
+        UI["FocusElement"] = sol::overload(
+            [](const FString& ElementId) -> bool
             {
-                return GEngine ? MakeRuntimeUIFacade().ShowScreen(ScreenId) : false;
+                return GEngine ? GEngine->FocusRmlUIElement(ElementId, false) : false;
             },
-            [](const FString& ScreenId, const FString& CanvasId) -> bool
+            [](const FString& ElementId, bool bFocusVisible) -> bool
             {
-                return GEngine ? MakeRuntimeUIFacade().ShowScreen(ScreenId, CanvasId) : false;
+                return GEngine ? GEngine->FocusRmlUIElement(ElementId, bFocusVisible) : false;
             });
 
-        UI["CreatePanel"] = sol::overload(
-            [](const FString& ScreenId, const FString& WidgetId, float X, float Y, float W, float H) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreatePanel(ScreenId, WidgetId, { X, Y }, { W, H }) : false;
-            },
-            [](const FString& ScreenId, const FString& WidgetId, float X, float Y, float W, float H, const FString& ParentId) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreatePanel(ScreenId, WidgetId, { X, Y }, { W, H }, ParentId) : false;
-            });
-
-        UI["CreateText"] = sol::overload(
-            [](const FString& ScreenId, const FString& WidgetId, const FString& Text, float X, float Y, float W, float H) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateText(ScreenId, WidgetId, Text, { X, Y }, { W, H }) : false;
-            },
-            [](const FString& ScreenId, const FString& WidgetId, const FString& Text, float X, float Y, float W, float H, const FString& ParentId) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateText(ScreenId, WidgetId, Text, { X, Y }, { W, H }, ParentId) : false;
-            });
-
-        UI["CreateButton"] = sol::overload(
-            [](const FString& ScreenId, const FString& WidgetId, const FString& Text, const FString& EventName, float X, float Y, float W, float H) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateButton(ScreenId, WidgetId, Text, EventName, { X, Y }, { W, H }) : false;
-            },
-            [](const FString& ScreenId, const FString& WidgetId, const FString& Text, const FString& EventName, float X, float Y, float W, float H, const FString& ParentId) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateButton(ScreenId, WidgetId, Text, EventName, { X, Y }, { W, H }, ParentId) : false;
-            });
-
-        UI["CreateImage"] = sol::overload(
-            [](const FString& ScreenId, const FString& WidgetId, const FString& ImagePath, float X, float Y, float W, float H) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateImage(ScreenId, WidgetId, ImagePath, { X, Y }, { W, H }) : false;
-            },
-            [](const FString& ScreenId, const FString& WidgetId, const FString& ImagePath, float X, float Y, float W, float H, const FString& ParentId) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateImage(ScreenId, WidgetId, ImagePath, { X, Y }, { W, H }, ParentId) : false;
-            });
-
-        UI["CreateProgressBar"] = sol::overload(
-            [](const FString& ScreenId, const FString& WidgetId, float Value, float X, float Y, float W, float H) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateProgressBar(ScreenId, WidgetId, Value, { X, Y }, { W, H }) : false;
-            },
-            [](const FString& ScreenId, const FString& WidgetId, float Value, float X, float Y, float W, float H, const FString& ParentId) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().CreateProgressBar(ScreenId, WidgetId, Value, { X, Y }, { W, H }, ParentId) : false;
-            });
-
-        UI["RemoveWidget"] = [](const FString& WidgetId) -> bool
+        UI["BlurElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().RemoveWidget(WidgetId) : false;
+            return GEngine ? GEngine->BlurRmlUIElement(ElementId) : false;
         };
 
-        UI["SetText"] = [](const FString& WidgetId, const FString& Text) -> bool
+        UI["ClickElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetText(WidgetId, Text) : false;
+            return GEngine ? GEngine->ClickRmlUIElement(ElementId) : false;
         };
 
-        UI["SetImage"] = [](const FString& WidgetId, const FString& ImagePath) -> bool
+        UI["SetText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetImage(WidgetId, ImagePath) : false;
+            return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
         };
 
-        UI["SetProgress"] = [](const FString& WidgetId, float Value) -> bool
+        UI["SetImage"] = [](const FString& ElementId, const FString& ImagePath) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetProgress(WidgetId, Value) : false;
+            return SetAttribute(ElementId, "src", ImagePath);
         };
 
-        UI["SetVisible"] = [](const FString& WidgetId, bool bVisible) -> bool
+        UI["SetProgress"] = [](const FString& ElementId, float Value) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetVisible(WidgetId, bVisible) : false;
+            return SetAttribute(ElementId, "value", std::to_string(Value));
         };
 
-        UI["SetEnabled"] = [](const FString& WidgetId, bool bEnabled) -> bool
+        UI["SetVisible"] = [](const FString& ElementId, bool bVisible) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetEnabled(WidgetId, bEnabled) : false;
+            return GEngine ? GEngine->SetRmlUIElementVisible(ElementId, bVisible) : false;
         };
 
-        UI["SetActionEvent"] = [](const FString& WidgetId, const FString& EventName) -> bool
+        UI["SetEnabled"] = [](const FString& ElementId, bool bEnabled) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetActionEvent(WidgetId, EventName) : false;
+            return GEngine ? GEngine->SetRmlUIElementEnabled(ElementId, bEnabled) : false;
         };
 
-        UI["SetZOrder"] = [](const FString& WidgetId, int32 ZOrder) -> bool
+        UI["SetActionEvent"] = [](const FString& ElementId, const FString& EventName) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetZOrder(WidgetId, ZOrder) : false;
+            return SetAttribute(ElementId, "data-action", EventName);
         };
 
-        UI["SetTint"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["RemoveElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetTint(WidgetId, MakeUIColor(R, G, B, A)) : false;
+            bool bResult = GEngine ? GEngine->SetRmlUIElementVisible(ElementId, false) : false;
+            bResult = SetAttribute(ElementId, "disabled", "true") || bResult;
+            return bResult;
         };
 
-        UI["SetBackgroundColor"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["SetZOrder"] = [](const FString& ElementId, int32 ZOrder) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetBackgroundColor(WidgetId, MakeUIColor(R, G, B, A)) : false;
+            return SetStyle(ElementId, "z-index", std::to_string(ZOrder));
         };
 
-        UI["SetTextColor"] = [](const FString& WidgetId, float R, float G, float B, float A) -> bool
+        UI["SetTint"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetTextColor(WidgetId, MakeUIColor(R, G, B, A)) : false;
+            return SetStyle(ElementId, "color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetAlpha"] = [](const FString& WidgetId, float Alpha) -> bool
+        UI["SetBackgroundColor"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetAlpha(WidgetId, Alpha) : false;
+            return SetStyle(ElementId, "background-color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetRounding"] = [](const FString& WidgetId, float Rounding) -> bool
+        UI["SetTextColor"] = [](const FString& ElementId, float R, float G, float B, float A) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetRounding(WidgetId, Rounding) : false;
+            return SetStyle(ElementId, "color", ToCssColor(R, G, B, A));
         };
 
-        UI["SetFontScale"] = [](const FString& WidgetId, float FontScale) -> bool
+        UI["SetAlpha"] = [](const FString& ElementId, float Alpha) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetFontScale(WidgetId, FontScale) : false;
+            return SetStyle(ElementId, "opacity", std::to_string(std::clamp(Alpha, 0.0f, 1.0f)));
         };
 
-        UI["SetWidgetTransform"] = [](const FString& WidgetId, float X, float Y, float W, float H) -> bool
+        UI["SetRounding"] = [](const FString& ElementId, float Rounding) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetWidgetTransform(WidgetId, { X, Y }, { W, H }) : false;
+            return SetStyle(ElementId, "border-radius", ToPx(Rounding));
         };
 
-        UI["SetWidgetAnchors"] = [](const FString& WidgetId, float MinX, float MinY, float MaxX, float MaxY, float PivotX, float PivotY) -> bool
+        UI["SetFontScale"] = [](const FString& ElementId, float FontScale) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetWidgetAnchors(WidgetId, { MinX, MinY }, { MaxX, MaxY }, { PivotX, PivotY }) : false;
+            return SetStyle(ElementId, "font-size", std::to_string(std::max(FontScale, 0.0f)) + "em");
         };
 
-        UI["SetImageOptions"] = sol::overload(
-            [](const FString& WidgetId, float UMinX, float UMinY, float UMaxX, float UMaxY, const FString& DrawMode) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().SetImageOptions(
-                        WidgetId,
-                        { { UMinX, UMinY }, { UMaxX, UMaxY } },
-                        ParseImageDrawMode(DrawMode))
-                    : false;
-            },
-            [](const FString& WidgetId, float UMinX, float UMinY, float UMaxX, float UMaxY, const FString& DrawMode, float Left, float Top, float Right, float Bottom) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().SetImageOptions(
-                        WidgetId,
-                        { { UMinX, UMinY }, { UMaxX, UMaxY } },
-                        ParseImageDrawMode(DrawMode),
-                        { Left, Top, Right, Bottom })
-                    : false;
-            });
-
-        UI["SetButtonImages"] = [](const FString& WidgetId, const FString& Normal, const FString& Hover, const FString& Pressed, const FString& Disabled) -> bool
+        UI["SetElementTransform"] = [](const FString& ElementId, float X, float Y, float W, float H) -> bool
         {
-            return GEngine ? MakeRuntimeUIFacade().SetButtonImages(WidgetId, Normal, Hover, Pressed, Disabled) : false;
-        };
-
-        UI["SetSpriteFrame"] = [](const FString& WidgetId, int32 Columns, int32 Rows, int32 FrameIndex) -> bool
-        {
-            return GEngine ? MakeRuntimeUIFacade().SetSpriteFrame(WidgetId, Columns, Rows, FrameIndex) : false;
-        };
-
-        UI["SetSpriteFrameByMeta"] = [](const FString& WidgetId, const FString& ParticleNameOrPath, int32 FrameIndex) -> bool
-        {
-            if (!GEngine)
-            {
-                return false;
-            }
-
-            const FParticleResource* Particle = FindExactParticleResource(ParticleNameOrPath);
-            if (!Particle)
-            {
-                return false;
-            }
-
-            FRuntimeUIFacade Facade = MakeRuntimeUIFacade();
-            return Facade.SetImage(WidgetId, Particle->Path)
-                && Facade.SetSpriteFrame(
-                    WidgetId,
-                    static_cast<int32>(Particle->Columns),
-                    static_cast<int32>(Particle->Rows),
-                    FrameIndex);
-        };
-
-        UI["SetProgressImages"] = sol::overload(
-            [](const FString& WidgetId, const FString& Background, const FString& Fill, const FString& Frame) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().SetProgressImages(WidgetId, Background, Fill, Frame) : false;
-            },
-            [](const FString& WidgetId, const FString& Background, const FString& Fill, const FString& Frame, const FString& Direction) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().SetProgressImages(WidgetId, Background, Fill, Frame, ParseProgressFillDirection(Direction)) : false;
-            });
-
-        UI["AnimateTransform"] = sol::overload(
-            [](const FString& WidgetId, float X, float Y, float W, float H, float Duration) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetTransform(WidgetId, { X, Y }, { W, H }, Duration) : false;
-            },
-            [](const FString& WidgetId, float X, float Y, float W, float H, float Duration, const FString& Easing) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetTransform(WidgetId, { X, Y }, { W, H }, Duration, false, false, ParseAnimationEasing(Easing))
-                    : false;
-            },
-            [](const FString& WidgetId, float X, float Y, float W, float H, float Duration, bool bLoop, bool bPingPong) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetTransform(WidgetId, { X, Y }, { W, H }, Duration, bLoop, bPingPong) : false;
-            },
-            [](const FString& WidgetId, float X, float Y, float W, float H, float Duration, bool bLoop, bool bPingPong, const FString& Easing) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetTransform(WidgetId, { X, Y }, { W, H }, Duration, bLoop, bPingPong, ParseAnimationEasing(Easing))
-                    : false;
-            });
-
-        UI["AnimatePatrol"] = sol::overload(
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Duration) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration) : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Duration, const FString& Easing) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, true, true, ParseAnimationEasing(Easing))
-                    : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Duration, bool bLoop, bool bPingPong) -> bool
-            {
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, bLoop, bPingPong) : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Duration, bool bLoop, bool bPingPong, const FString& Easing) -> bool
-            {
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, bLoop, bPingPong, ParseAnimationEasing(Easing))
-                    : false;
-            });
-
-        UI["AnimatePatrolBySpeed"] = sol::overload(
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Speed) -> bool
-            {
-                const float Duration = MakeDurationFromSpeed(X0, Y0, X1, Y1, Speed);
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration) : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Speed, const FString& Easing) -> bool
-            {
-                const float Duration = MakeDurationFromSpeed(X0, Y0, X1, Y1, Speed);
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, true, true, ParseAnimationEasing(Easing))
-                    : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Speed, bool bLoop, bool bPingPong) -> bool
-            {
-                const float Duration = MakeDurationFromSpeed(X0, Y0, X1, Y1, Speed);
-                return GEngine ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, bLoop, bPingPong) : false;
-            },
-            [](const FString& WidgetId, float X0, float Y0, float X1, float Y1, float Speed, bool bLoop, bool bPingPong, const FString& Easing) -> bool
-            {
-                const float Duration = MakeDurationFromSpeed(X0, Y0, X1, Y1, Speed);
-                return GEngine
-                    ? MakeRuntimeUIFacade().AnimateWidgetPatrol(WidgetId, { X0, Y0 }, { X1, Y1 }, Duration, bLoop, bPingPong, ParseAnimationEasing(Easing))
-                    : false;
-            });
-
-        UI["StopAnimation"] = [](const FString& WidgetId) -> bool
-        {
-            return GEngine ? MakeRuntimeUIFacade().StopWidgetAnimation(WidgetId) : false;
+            return SetTransformStyles(ElementId, X, Y, W, H);
         };
 
         UI["PollActionEvents"] = [](sol::this_state State)
@@ -385,7 +268,7 @@ namespace FLuaEngineAPI
                 return Events;
             }
 
-            const TArray<FString> PendingEvents = MakeRuntimeUIFacade().PollActionEvents();
+            const TArray<FString> PendingEvents = GEngine->PollRmlUIActionEvents();
             int32 Index = 1;
             for (const FString& EventName : PendingEvents)
             {
