@@ -117,7 +117,7 @@ void FCoroutineScheduler::Resume(FCoroutine& Coroutine)
     {
         sol::error Error = Result;
         
-        UE_LOG("[Coroutine Error] Coroutine is not valid - %s", Error.what());
+        UE_LOG_ERROR("[Coroutine Error] Coroutine is not valid - %s", Error.what());
         
         Coroutine.bFinished = true;
         return;

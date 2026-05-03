@@ -34,6 +34,9 @@ struct FMaterial
     FString SpecularTexPath;  // map_Ks
 	bool	bHasSpecularTexture = { false };
 
+	FString EmissiveTexPath;  // map_Ke
+	bool	bHasEmissiveTexture = { false };
+
 	FString BumpTexPath;      // map_bump
 	bool	bHasBumpTexture = { false };
 };
@@ -170,17 +173,17 @@ public:
 	}
 	bool HasEmissiveMap() const override
 	{
-		if (auto It = MaterialParams.find("bHasAmbientMap"); It != MaterialParams.end()
+		if (auto It = MaterialParams.find("bHasEmissiveMap"); It != MaterialParams.end()
 			&& It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
 		{
 			return std::get<bool>(It->second.Value);
 		}
-		if (auto It = MaterialParams.find("AmbientMap"); It != MaterialParams.end()
+		if (auto It = MaterialParams.find("EmissiveMap"); It != MaterialParams.end()
 			&& It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
 		{
 			return std::get<UTexture*>(It->second.Value) != nullptr;
 		}
-		return MaterialData.bHasAmbientTexture;
+		return MaterialData.bHasEmissiveTexture;
 	}
 	bool HasAlphaMask() const override { return false; }
 
@@ -293,14 +296,14 @@ public:
 	}
 	bool HasEmissiveMap() const override
 	{
-		if (auto It = OverridedParams.find("bHasAmbientMap"); It != OverridedParams.end())
+		if (auto It = OverridedParams.find("bHasEmissiveMap"); It != OverridedParams.end())
 		{
 			if (It->second.Type == EMaterialParamType::Bool && std::holds_alternative<bool>(It->second.Value))
 			{
 				return std::get<bool>(It->second.Value);
 			}
 		}
-		if (auto It = OverridedParams.find("AmbientMap"); It != OverridedParams.end())
+		if (auto It = OverridedParams.find("EmissiveMap"); It != OverridedParams.end())
 		{
 			if (It->second.Type == EMaterialParamType::Texture && std::holds_alternative<UTexture*>(It->second.Value))
 			{

@@ -6,6 +6,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
+#include "Runtime/Script/ScriptManager.h"
 #include "Render/Resource/Material.h"
 #include "Render/Renderer/Renderer.h"
 #include "ImGui/imgui.h"
@@ -255,6 +256,14 @@ void FEditorContentBrowserWidget::DrawBrowserContents()
 {
 	DrawToolbar();
 	ImGui::Separator();
+
+	const ImGuiIO& IO = ImGui::GetIO();
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+		&& !IO.WantTextInput
+		&& ImGui::IsKeyPressed(ImGuiKey_F2, false))
+	{
+		RequestRenameSelectedItem();
+	}
 
 	if (ImGui::BeginTable("##ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
@@ -767,6 +776,11 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 			CreateTextFile();
 			ImGui::CloseCurrentPopup();
 		}
+		if (ImGui::MenuItem("Lua Script"))
+		{
+			CreateLuaScriptFile();
+			ImGui::CloseCurrentPopup();
+		}
 		if (ImGui::MenuItem("Material"))
 		{
 			CreateMaterialAsset();
@@ -825,6 +839,35 @@ bool FEditorContentBrowserWidget::CreateTextFile()
 	return true;
 }
 
+bool FEditorContentBrowserWidget::CreateLuaScriptFile()
+{
+	const std::filesystem::path TargetDir = ResolveLuaScriptCreateDirectory();
+	std::error_code CreateDirEc;
+	std::filesystem::create_directories(TargetDir, CreateDirEc);
+	if (CreateDirEc)
+	{
+		return false;
+	}
+
+	const std::filesystem::path NewPath = MakeUniquePath(TargetDir / L"New Script.lua");
+	const FString RelativePath = MakeRelativeProjectPath(NewPath);
+	if (!FScriptManager::Get().CreateScript(FName(RelativePath.c_str())))
+	{
+		return false;
+	}
+
+	SelectedPath = NewPath;
+	if (CurrentPath.lexically_normal() != TargetDir.lexically_normal())
+	{
+		NavigateTo(TargetDir);
+	}
+	else
+	{
+		RefreshContent();
+	}
+	return true;
+}
+
 bool FEditorContentBrowserWidget::CreateMaterialAsset()
 {
 	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Material.mat");
@@ -852,12 +895,14 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 	Material->SetParam("bHasDiffuseMap", FMaterialParamValue(false));
 	Material->SetParam("bHasSpecularMap", FMaterialParamValue(false));
 	Material->SetParam("bHasAmbientMap", FMaterialParamValue(false));
+	Material->SetParam("bHasEmissiveMap", FMaterialParamValue(false));
 	Material->SetParam("bHasBumpMap", FMaterialParamValue(false));
 	if (UTexture* DefaultWhite = FResourceManager::Get().GetTexture("DefaultWhite"))
 	{
 		Material->SetParam("DiffuseMap", FMaterialParamValue(DefaultWhite));
 		Material->SetParam("AmbientMap", FMaterialParamValue(DefaultWhite));
 		Material->SetParam("SpecularMap", FMaterialParamValue(DefaultWhite));
+		Material->SetParam("EmissiveMap", FMaterialParamValue(DefaultWhite));
 		Material->SetParam("BumpMap", FMaterialParamValue(DefaultWhite));
 	}
 
@@ -1492,6 +1537,25 @@ bool FEditorContentBrowserWidget::IsMaterialAsset(const FString& Extension) cons
 bool FEditorContentBrowserWidget::IsPrefabAsset(const FString& Extension) const
 {
 	return Extension == ".prefab";
+}
+
+std::filesystem::path FEditorContentBrowserWidget::ResolveLuaScriptCreateDirectory() const
+{
+	const std::filesystem::path AssetScriptDir = (RootPath / L"Asset" / L"Script").lexically_normal();
+	const std::filesystem::path LuaScriptDir = (RootPath / L"LuaScript").lexically_normal();
+	const std::filesystem::path NormalizedCurrent = CurrentPath.lexically_normal();
+
+	auto IsInsideDir = [](const std::filesystem::path& Path, const std::filesystem::path& Dir)
+	{
+		const std::filesystem::path Relative = Path.lexically_relative(Dir);
+		return Path == Dir || (!Relative.empty() && !IsParentDirectoryReference(Relative));
+	};
+
+	if (IsInsideDir(NormalizedCurrent, AssetScriptDir) || IsInsideDir(NormalizedCurrent, LuaScriptDir))
+	{
+		return NormalizedCurrent;
+	}
+	return AssetScriptDir;
 }
 
 FString FEditorContentBrowserWidget::MakeRelativeProjectPath(const std::filesystem::path& Path) const

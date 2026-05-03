@@ -106,7 +106,7 @@ void FResourceManager::PreloadStaticMeshes()
 
 		if (LoadStaticMesh(Resource.Path) == nullptr)
 		{
-			UE_LOG("Failed to load static mesh from Resource.ini: %s", Resource.Path.c_str());
+			UE_LOG_WARNING("Failed to load static mesh from Resource.ini: %s", Resource.Path.c_str());
 		}
 	}
 }
@@ -149,7 +149,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 
 	if (!fs::exists(RootPath) || !fs::is_directory(RootPath))
 	{
-		UE_LOG("[ResourceManager] Fatal Error : Root Directory Error");
+		UE_LOG_ERROR("[ResourceManager] Fatal Error : Root Directory Error");
 		return;
 	}
 
@@ -246,7 +246,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	}
 	else
 	{
-		UE_LOG("Failed to Load Resources...");
+		UE_LOG_ERROR("Failed to Load Resources...");
 	}
 }
 
@@ -268,7 +268,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 
 	if (!fs::exists(RootPath) || !fs::is_directory(RootPath))
 	{
-		UE_LOG("[ResourceManager] Refresh Failed : Root Directory Error");
+		UE_LOG_ERROR("[ResourceManager] Refresh Failed : Root Directory Error");
 		return;
 	}
 
@@ -349,12 +349,12 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	}
 	catch (const std::exception& Ex)
 	{
-		UE_LOG("[ResourceManager] Refresh Exception: %s", Ex.what());
+		UE_LOG_ERROR("[ResourceManager] Refresh Exception: %s", Ex.what());
 	}
 
 	if (CachedDevice && !LoadGPUResources(CachedDevice.Get()))
 	{
-		UE_LOG("[ResourceManager] Refresh Failed : GPU Resource Reload Error");
+		UE_LOG_ERROR("[ResourceManager] Refresh Failed : GPU Resource Reload Error");
 	}
 
 	UE_LOG("[ResourceManager] Asset Refresh Complete");
@@ -535,7 +535,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 		if (!FontLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
 		{
-			UE_LOG("Failed to load Font atlas: %s", Resource.Path.c_str());
+			UE_LOG_WARNING("Failed to load Font atlas: %s", Resource.Path.c_str());
 			return false;
 		}
 	}
@@ -549,7 +549,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 
 		if (!ParticleLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
 		{
-			UE_LOG("Failed to load Particle atlas: %s", Resource.Path.c_str());
+			UE_LOG_WARNING("Failed to load Particle atlas: %s", Resource.Path.c_str());
 			return false;
 		}
 	}
@@ -609,11 +609,21 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	else
 		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
 
+	if (DefaultMat->MaterialData.bHasEmissiveTexture)
+		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.EmissiveTexPath, Device));
+	else
+		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
+
 	if (DefaultMat->MaterialData.bHasBumpTexture)
 		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.BumpTexPath, Device));
 	else
 		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
 
+	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
+	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
+	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
+	DefaultMat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasEmissiveTexture);
+	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
 	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
 	
 	// Outline Material
@@ -751,7 +761,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		&Permutation.VS);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create vertex shader: %s", NormalizedFilePath.c_str());
+		UE_LOG_ERROR("Failed to create vertex shader: %s", NormalizedFilePath.c_str());
 		return false;
 	}
 
@@ -759,7 +769,7 @@ bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntr
 		&Permutation.PS);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create pixel shader: %s", NormalizedFilePath.c_str());
+		UE_LOG_ERROR("Failed to create pixel shader: %s", NormalizedFilePath.c_str());
 		return false;
 	}
 
@@ -832,11 +842,11 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
     {
         if (ErrorBlob)
         {
-            UE_LOG("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+            UE_LOG_ERROR("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
         }
         else
         {
-            UE_LOG("Failed to compile compute shader: %s", NormalizedFilePath.c_str());
+            UE_LOG_ERROR("Failed to compile compute shader: %s", NormalizedFilePath.c_str());
         }
         return false;
     }
@@ -846,7 +856,7 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
                                            &Shader->CS);
     if (FAILED(hr))
     {
-        UE_LOG("Failed to create compute shader: %s", NormalizedFilePath.c_str());
+        UE_LOG_ERROR("Failed to create compute shader: %s", NormalizedFilePath.c_str());
         return false;
     }
 
@@ -972,14 +982,14 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
 	if (!Shader)
 	{
-		UE_LOG("Shader not found for material: %s, using default shader", ShaderName.c_str());
+		UE_LOG_WARNING("Shader not found for material: %s, using default shader", ShaderName.c_str());
 		return false;
 	}
 
 	TMap<FString, UMaterial*> Parsed;
 	if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get()))
 	{
-		UE_LOG("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
+		UE_LOG_WARNING("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
 		return false;
 	}
 
@@ -1021,7 +1031,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
 		if (Materials.find(Name) != Materials.end())
 		{
-			UE_LOG("Warning: Material with name '%s' already exists. Overwriting.", Name.c_str());
+			UE_LOG_WARNING("Material with name '%s' already exists. Overwriting.", Name.c_str());
 		}
 		else
 		{
@@ -1189,7 +1199,7 @@ bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMate
 	std::ofstream OutFile(FPaths::ToWide(NormalizedMatFilePath));
 	if (!OutFile.is_open())
 	{
-		UE_LOG("Failed to open material file for writing: %s", NormalizedMatFilePath.c_str());
+		UE_LOG_ERROR("Failed to open material file for writing: %s", NormalizedMatFilePath.c_str());
 		return false;
 	}
 	OutFile << Root.dump(4);
@@ -1289,7 +1299,7 @@ bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath,
 	std::ofstream OutFile(FPaths::ToWide(NormalizedMatInstFilePath));
 	if (!OutFile.is_open())
 	{
-		UE_LOG("Failed to open material instance file for writing: %s", NormalizedMatInstFilePath.c_str());
+		UE_LOG_ERROR("Failed to open material instance file for writing: %s", NormalizedMatInstFilePath.c_str());
 		return false;
 	}
 	OutFile << Root.dump(4);
@@ -1304,7 +1314,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 	std::ifstream MatFile(FPaths::ToWide(NormalizedMatFilePath));
 	if (!MatFile.is_open())
 	{
-		UE_LOG("Failed to open material file: %s", NormalizedMatFilePath.c_str());
+		UE_LOG_ERROR("Failed to open material file: %s", NormalizedMatFilePath.c_str());
 		return false;
 	}
 
@@ -1324,7 +1334,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 
 		if (!ParentMat)
 		{
-			UE_LOG("Parent material not found: %s", ParentIdentifier.c_str());
+			UE_LOG_WARNING("Parent material not found: %s", ParentIdentifier.c_str());
 			return false;
 		}
 
@@ -1455,6 +1465,22 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 				static_cast<float>(Param["Value"][1].ToFloat()),
 				static_cast<float>(Param["Value"][2].ToFloat()));
 			Material->SetParam(ParamName, FMaterialParamValue(Value));
+			if (ParamName == "AmbientColor")
+			{
+				Material->MaterialData.AmbientColor = Value;
+			}
+			else if (ParamName == "DiffuseColor")
+			{
+				Material->MaterialData.DiffuseColor = Value;
+			}
+			else if (ParamName == "SpecularColor")
+			{
+				Material->MaterialData.SpecularColor = Value;
+			}
+			else if (ParamName == "EmissiveColor")
+			{
+				Material->MaterialData.EmissiveColor = Value;
+			}
 		}
 		else if (Type == "Vector4" || Type == "FVector4")
 		{
@@ -1495,6 +1521,12 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 					Material->MaterialData.SpecularTexPath = FPaths::Normalize(TexPath);
 					Material->MaterialData.bHasSpecularTexture = true;
 					Material->SetParam("bHasSpecularMap", FMaterialParamValue(true));
+				}
+				else if (ParamName == "EmissiveMap")
+				{
+					Material->MaterialData.EmissiveTexPath = FPaths::Normalize(TexPath);
+					Material->MaterialData.bHasEmissiveTexture = true;
+					Material->SetParam("bHasEmissiveMap", FMaterialParamValue(true));
 				}
 				else if (ParamName == "AmbientMap")
 				{
@@ -1652,7 +1684,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 		if (!BinarySerializer.LoadStaticMesh(NormalizedPath, *LoadedMeshData))
 		{
 			delete LoadedMeshData;
-			UE_LOG("[StaticMeshLoad] Failed binary cache drop | Path=%s", NormalizedPath.c_str());
+			UE_LOG_WARNING("[StaticMeshLoad] Failed binary cache drop | Path=%s", NormalizedPath.c_str());
 			return nullptr;
 		}
 
@@ -1744,19 +1776,29 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 
 		if (LoadedMeshData == nullptr)
 		{
-			UE_LOG("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
+			UE_LOG_ERROR("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
 			       ObjLoadSec);
 			return nullptr;
 		}
 
 		//	4. OBJ 로드 성공 시 Binary 저장
 		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
-		UE_LOG(
-			"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=%s | BinaryPath=%s",
-			NormalizedPath.c_str(),
-			ObjLoadSec,
-			bSaveBinaryOk ? "OK" : "FAIL",
-			BinaryPath.c_str());
+		if (bSaveBinaryOk)
+		{
+			UE_LOG(
+				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=OK | BinaryPath=%s",
+				NormalizedPath.c_str(),
+				ObjLoadSec,
+				BinaryPath.c_str());
+		}
+		else
+		{
+			UE_LOG_WARNING(
+				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=FAIL | BinaryPath=%s",
+				NormalizedPath.c_str(),
+				ObjLoadSec,
+				BinaryPath.c_str());
+		}
 	}
 	else
 	{
@@ -1792,7 +1834,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
     }
     else
     {
-        UE_LOG("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", NormalizedPath.c_str());
+        UE_LOG_WARNING("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", NormalizedPath.c_str());
     }
 
     StaticMeshes.insert({NormalizedPath, LoadedMesh});
@@ -1874,7 +1916,7 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 	HRESULT hr = CachedDevice->CreateSamplerState(&Desc, &SamplerState);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create sampler state");
+		UE_LOG_ERROR("Failed to create sampler state");
 		return nullptr;
 	}
 
@@ -1954,7 +1996,7 @@ ID3D11DepthStencilState* FResourceManager::GetOrCreateDepthStencilState(EDepthSt
 	HRESULT hr = CachedDevice->CreateDepthStencilState(&Desc, &DepthStencilState);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create depth stencil state");
+		UE_LOG_ERROR("Failed to create depth stencil state");
 		return nullptr;
 	}
 
@@ -2001,7 +2043,7 @@ ID3D11BlendState* FResourceManager::GetOrCreateBlendState(EBlendType Type, ID3D1
 	HRESULT hr = CachedDevice->CreateBlendState(&Desc, &BlendState);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create blend state");
+		UE_LOG_ERROR("Failed to create blend state");
 		return nullptr;
 	}
 
@@ -2046,7 +2088,7 @@ ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerT
 	HRESULT hr = CachedDevice->CreateRasterizerState(&Desc, &RasterizerState);
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to create rasterizer state");
+		UE_LOG_ERROR("Failed to create rasterizer state");
 		return nullptr;
 	}
 	RasterizerStates[Type] = RasterizerState;

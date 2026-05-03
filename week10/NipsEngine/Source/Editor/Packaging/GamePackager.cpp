@@ -844,7 +844,7 @@ namespace
         if (PlayerStartCount != 1)
         {
             OutMessage = "Packaging validation failed: Startup scene must contain exactly one Player Start.";
-            UE_LOG("[Build] %s Found=%d", OutMessage.c_str(), PlayerStartCount);
+            UE_LOG_ERROR("[Build] %s Found=%d", OutMessage.c_str(), PlayerStartCount);
             EmitBuildLog("Add a Player Start to the startup scene, save it, then build again.");
             return false;
         }
@@ -880,21 +880,21 @@ FGamePackageResult FGamePackager::BuildAndPackage(const FGameBuildSettings& Sett
     if (!ValidateStartupSceneForPackaging(Settings, Message))
     {
         Result.Message = Message;
-        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        UE_LOG_ERROR("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
 
     if (!ValidateIncludedScenesForPackaging(Settings, Message))
     {
         Result.Message = Message;
-        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        UE_LOG_ERROR("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
 
     if (!PrepareBrandingResources(Settings, Message))
     {
         Result.Message = Message;
-        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        UE_LOG_ERROR("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
 
@@ -903,7 +903,7 @@ FGamePackageResult FGamePackager::BuildAndPackage(const FGameBuildSettings& Sett
         FString IgnoredResetMessage;
         PrepareBrandingResources(FGameBuildSettings{}, IgnoredResetMessage);
         Result.Message = Message;
-        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        UE_LOG_ERROR("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
 
@@ -913,7 +913,7 @@ FGamePackageResult FGamePackager::BuildAndPackage(const FGameBuildSettings& Sett
     if (!CopyPackageFiles(Settings, Message))
     {
         Result.Message = Message;
-        UE_LOG("[Build] Build Failed: %s", Message.c_str());
+        UE_LOG_ERROR("[Build] Build Failed: %s", Message.c_str());
         return Result;
     }
 
@@ -1055,7 +1055,7 @@ bool FGamePackager::RunMSBuild(const FGameBuildSettings& Settings, FString& OutM
     if (ExitCode != 0)
     {
         OutMessage = "MSBuild failed";
-        UE_LOG("[Build] MSBuild failed. ExitCode=%lu", ExitCode);
+        UE_LOG_ERROR("[Build] MSBuild failed. ExitCode=%lu", ExitCode);
         return false;
     }
 
@@ -1123,6 +1123,27 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
         }
         EmitBuildLog("Copied NipsGame.pdb");
     }
+
+    const std::filesystem::path LuaJitRuntimeDll = EngineRoot / L"ThirdParty" / L"luajit" / L"src" / L"lua51.dll";
+    if (!std::filesystem::exists(LuaJitRuntimeDll, Ec))
+    {
+        OutMessage = "LuaJIT runtime dll not found: ThirdParty/luajit/src/lua51.dll";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+
+    std::filesystem::copy_file(
+        LuaJitRuntimeDll,
+        OutputRoot / L"lua51.dll",
+        std::filesystem::copy_options::overwrite_existing,
+        Ec);
+    if (Ec)
+    {
+        OutMessage = "Failed to copy LuaJIT runtime dll";
+        EmitBuildLog(OutMessage);
+        return false;
+    }
+    EmitBuildLog("Copied LuaJIT runtime dll");
 
     const TArray<FString> IncludedScenes = BuildIncludedSceneList(Settings);
     if (!CookAndCopyPackageAssets(Settings, OutputRoot, IncludedScenes, OutMessage)) return false;

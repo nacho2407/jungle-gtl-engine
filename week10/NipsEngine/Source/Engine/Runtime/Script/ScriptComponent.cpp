@@ -5,6 +5,7 @@
 #include "Core/Paths.h"
 #include "Core/CollisionTypes.h"
 #include <algorithm>
+#include <filesystem>
 
 DEFINE_CLASS(UScriptComponent, UActorComponent)
 REGISTER_FACTORY(UScriptComponent)
@@ -94,6 +95,71 @@ namespace
         }
     }
 
+    float GetLuaNumberField(const sol::table& Table, const char* UpperName, const char* LowerName, int Index)
+    {
+        sol::object Value = Table[UpperName];
+        if (Value.valid() && Value.get_type() == sol::type::number)
+        {
+            return Value.as<float>();
+        }
+
+        Value = Table[LowerName];
+        if (Value.valid() && Value.get_type() == sol::type::number)
+        {
+            return Value.as<float>();
+        }
+
+        Value = Table[Index];
+        if (Value.valid() && Value.get_type() == sol::type::number)
+        {
+            return Value.as<float>();
+        }
+
+        return 0.0f;
+    }
+
+    FVector GetLuaVectorDefault(const sol::table& PropTable)
+    {
+        sol::object DefaultObj = PropTable["Default"];
+        if (!DefaultObj.valid() || DefaultObj == sol::nil)
+        {
+            return FVector();
+        }
+
+        if (DefaultObj.is<FVector>())
+        {
+            return DefaultObj.as<FVector>();
+        }
+
+        if (DefaultObj.get_type() == sol::type::table)
+        {
+            sol::table DefaultTable = DefaultObj.as<sol::table>();
+            return FVector(
+                GetLuaNumberField(DefaultTable, "X", "x", 1),
+                GetLuaNumberField(DefaultTable, "Y", "y", 2),
+                GetLuaNumberField(DefaultTable, "Z", "z", 3));
+        }
+
+        return FVector();
+    }
+
+    std::filesystem::file_time_type GetLuaScriptWriteTime(const FString& ScriptName)
+    {
+        FString ScriptPath;
+        if (!FScriptManager::Get().ResolveScriptPath(ScriptName, ScriptPath))
+        {
+            return std::filesystem::file_time_type::min();
+        }
+
+        std::filesystem::path Path(FPaths::ToWide(ScriptPath));
+        if (!std::filesystem::exists(Path))
+        {
+            return std::filesystem::file_time_type::min();
+        }
+
+        return std::filesystem::last_write_time(Path);
+    }
+
 	static bool MakeLuaPropertyDescriptor(
         FLuaScriptProperty& LuaProp,
         FPropertyDescriptor& OutDesc)
@@ -109,7 +175,7 @@ namespace
         OutDesc.ValuePtr = ValuePtr;
 
         OutDesc.Min = LuaProp.bHasMin ? LuaProp.Min : 0.0f;
-        OutDesc.Max = LuaProp.bHasMax ? LuaProp.Max : 0.0f;
+        OutDesc.Max = LuaProp.bHasMax ? LuaProp.Max : 1.0f;
         OutDesc.Speed = 0.1f;
 
         OutDesc.EnumNames = nullptr;
@@ -163,13 +229,15 @@ void UScriptComponent::Serialize(FArchive& Ar)
         LuaProperties.resize(LuaPropertyCount);
     }
 
-    for (int32 i = 0; i < LuaPropertyCount; ++i)
+	for (int32 i = 0; i < LuaPropertyCount; ++i)
     {
         FLuaScriptProperty& Prop = LuaProperties[i];
 
-        Ar << "Name" << Prop.Name;
-        Ar << "TypeName" << Prop.TypeName;
-        Ar << "Category" << Prop.Category;
+        const FString Prefix = "LuaProperty_" + std::to_string(i) + "_";
+
+        Ar << (Prefix + "Name").c_str() << Prop.Name;
+        Ar << (Prefix + "TypeName").c_str() << Prop.TypeName;
+        Ar << (Prefix + "Category").c_str() << Prop.Category;
 
         if (Ar.IsLoading())
         {
@@ -179,33 +247,33 @@ void UScriptComponent::Serialize(FArchive& Ar)
         switch (Prop.Type)
         {
         case EPropertyType::Int:
-            Ar << "IntValue" << Prop.IntValue;
+            Ar << (Prefix + "IntValue").c_str() << Prop.IntValue;
             break;
 
         case EPropertyType::Float:
-            Ar << "FloatValue" << Prop.FloatValue;
+            Ar << (Prefix + "FloatValue").c_str() << Prop.FloatValue;
             break;
 
         case EPropertyType::Bool:
-            Ar << "BoolValue" << Prop.BoolValue;
+            Ar << (Prefix + "BoolValue").c_str() << Prop.BoolValue;
             break;
 
         case EPropertyType::String:
-            Ar << "StringValue" << Prop.StringValue;
+            Ar << (Prefix + "StringValue").c_str() << Prop.StringValue;
             break;
 
         case EPropertyType::Vec3:
-            Ar << "Vec3Value" << Prop.Vec3Value;
+            Ar << (Prefix + "Vec3Value").c_str() << Prop.Vec3Value;
             break;
 
         default:
             break;
         }
 
-        Ar << "bHasMin" << Prop.bHasMin;
-        Ar << "bHasMax" << Prop.bHasMax;
-        Ar << "Min" << Prop.Min;
-        Ar << "Max" << Prop.Max;
+        Ar << (Prefix + "bHasMin").c_str() << Prop.bHasMin;
+        Ar << (Prefix + "bHasMax").c_str() << Prop.bHasMax;
+        Ar << (Prefix + "Min").c_str() << Prop.Min;
+        Ar << (Prefix + "Max").c_str() << Prop.Max;
     }
 
     if (Ar.IsLoading() && !ScriptName.empty())
@@ -220,10 +288,6 @@ void UScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
     OutProps.push_back({ "ScriptName", EPropertyType::String, &ScriptName });
 
 	// ScriptName이 바뀐 뒤 아직 Property를 안 읽었다면 여기서 갱신
-    if (!ScriptName.empty() && !bLuaPropertiesScanned)
-    {
-        ReloadLuaProperties();
-    }
 
 	for (FLuaScriptProperty& LuaProp : LuaProperties)
     {
@@ -239,16 +303,63 @@ void UScriptComponent::SetScriptName(const FString& InScriptName)
 {
     if (ScriptName == InScriptName)
     {
+        if (bScriptLoaded)
+        {
+            HotReloadScript();
+        }
+        else
+        {
+            bLuaPropertiesScanned = false;
+            ReloadLuaProperties();
+        }
         return;
     }
 
     UnregisterScript();
 
     ScriptName = InScriptName;
+
     ClearLoadedState();
     bLuaPropertiesScanned = false;
 
-	ReloadLuaProperties();
+    if (!ScriptName.empty())
+    {
+        ReloadLuaProperties();
+    }
+}
+
+void UScriptComponent::PostEditProperty(const char* PropertyName)
+{
+    UActorComponent::PostEditProperty(PropertyName);
+
+    if (!PropertyName || FString(PropertyName) != "ScriptName")
+    {
+        return;
+    }
+
+    // 1. 기존 등록 해제
+    UnregisterScript();
+
+    // 2. 경로 문자열 정리
+    // 여기서 ScriptName이 절대경로/상대경로로 들어올 수 있으면
+    // 반드시 FScriptManager 기준 Script Reference로 변환해야 한다.
+    FString NewScriptName = ScriptName;
+
+    // 예시:
+    // NewScriptName = FScriptManager::Get().MakeScriptReferenceFromPathOrName(ScriptName);
+    // 네 코드에 MakeScriptReferenceFromPath() 같은 함수가 이미 있다면 그걸 써야 함.
+
+    ScriptName = NewScriptName;
+
+    // 3. Lua 상태 초기화
+    ClearLoadedState();
+    bLuaPropertiesScanned = false;
+
+    // 4. 프로퍼티 재스캔
+    if (!ScriptName.empty())
+    {
+        ReloadLuaProperties();
+    }
 }
 
 bool UScriptComponent::RegisterScript()
@@ -269,6 +380,7 @@ bool UScriptComponent::RegisterScript()
     }
 
     FScriptManager::Get().RegisterScriptComponents(ScriptName, this);
+    RegisteredScriptName = ScriptName;
     bScriptRegistered = true;
 
     return true;
@@ -281,8 +393,17 @@ void UScriptComponent::UnregisterScript()
         return;
     }
 
-    FScriptManager::Get().UnregisterScriptComponents(ScriptName, this);
+	if (!RegisteredScriptName.empty())
+    {
+        FScriptManager::Get().UnregisterScriptComponents(RegisteredScriptName, this);
+    }
+    else
+    {
+        FScriptManager::Get().UnregisterScriptComponentAll(this);
+    }
+
     bScriptRegistered = false;
+    RegisteredScriptName.clear();
 }
 
 void UScriptComponent::ClearScript()
@@ -290,7 +411,11 @@ void UScriptComponent::ClearScript()
     UnregisterScript();
 
     ScriptName.clear();
+    RegisteredScriptName.clear();
+
     ClearLoadedState();
+    LuaProperties.clear();
+    bLuaPropertiesScanned = false;
 }
 
 void UScriptComponent::ReleaseLuaStateReferences()
@@ -340,6 +465,8 @@ bool UScriptComponent::HotReloadScript()
         return false;
     }
 
+    ReloadLuaProperties();
+
 	auto Loaded = FScriptManager::Get().LoadScriptClass(this, ScriptName);
     if (Loaded == std::nullopt)
     {
@@ -369,7 +496,7 @@ void UScriptComponent::StartCoroutine(sol::function Function)
 {
     if (!Function.valid())
     {
-        UE_LOG("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
         return;
     }
 
@@ -432,7 +559,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     sol::state* Lua = FScriptManager::Get().GetGlobalLuaState();
     if (!Lua)
     {
-        UE_LOG("[ScriptComponent] LuaState is null");
+        UE_LOG_ERROR("[ScriptComponent] LuaState is null");
         return std::nullopt;
     }
 
@@ -441,7 +568,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     sol::object NewObj = Loaded.ScriptClass["new"];
     if (!NewObj.valid() || NewObj.get_type() != sol::type::function)
     {
-        UE_LOG("[ScriptComponent] Script.new missing: %s", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Script.new missing: %s", ScriptName.c_str());
         return std::nullopt;
     }
 
@@ -453,7 +580,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     if (!NewResult.valid())
     {
         sol::error Err = NewResult;
-        UE_LOG("[ScriptComponent] Script.new failed: %s", Err.what());
+        UE_LOG_ERROR("[ScriptComponent] Script.new failed: %s", Err.what());
         return std::nullopt;
     }
 
@@ -461,7 +588,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
 
     if (!InstanceObj.valid() || InstanceObj.get_type() != sol::type::table)
     {
-        UE_LOG("[ScriptComponent] Script.new must return table: %s", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Script.new must return table: %s", ScriptName.c_str());
         return std::nullopt;
     }
 
@@ -485,7 +612,7 @@ void UScriptComponent::ReloadLuaProperties()
 
     if (!FScriptManager::Get().HasScript(ScriptName))
     {
-        UE_LOG("[ScriptComponent] Script not found: %s", ScriptName.c_str());
+        UE_LOG_WARNING("[ScriptComponent] Script not found: %s", ScriptName.c_str());
         return;
     }
 
@@ -493,7 +620,7 @@ void UScriptComponent::ReloadLuaProperties()
     auto LoadedClass = FScriptManager::Get().LoadScriptClassForProperties(ScriptName);
     if (!LoadedClass)
     {
-        UE_LOG("[ScriptComponent] property 읽기 실패: %s", ScriptName.c_str());
+        UE_LOG_WARNING("[ScriptComponent] property read failed: %s", ScriptName.c_str());
         return;
     }
 
@@ -535,7 +662,7 @@ void UScriptComponent::ReloadLuaProperties()
         NewProp.Type = PropType;
         NewProp.Category = PropTable["Category"].get_or<FString>("Default");
 
-        //기존 값이 있으면 보존
+        // 기존 값을 보존해야 하는 경로(씬 로드/복제)에서는 같은 타입의 기존 값을 유지한다.
         FLuaScriptProperty* OldProp = FindPropertyInArray(OldProperties, PropName);
 
         if (OldProp != nullptr && OldProp->Type == PropType)
@@ -544,10 +671,11 @@ void UScriptComponent::ReloadLuaProperties()
             NewProp.FloatValue = OldProp->FloatValue;
             NewProp.BoolValue = OldProp->BoolValue;
             NewProp.StringValue = OldProp->StringValue;
+            NewProp.Vec3Value = OldProp->Vec3Value;
         }
         else
         {
-            //기존 값이 없거나 타입이 바뀌었으면 Default 사용
+            // Lua 파일 변경/ScriptName 변경 시에는 Lua의 Default를 다시 반영한다.
             switch (PropType)
             {
             case EPropertyType::Int:
@@ -564,6 +692,10 @@ void UScriptComponent::ReloadLuaProperties()
 
             case EPropertyType::String:
                 NewProp.StringValue = PropTable.get_or("Default", std::string(""));
+                break;
+
+            case EPropertyType::Vec3:
+                NewProp.Vec3Value = GetLuaVectorDefault(PropTable);
                 break;
             }
         }

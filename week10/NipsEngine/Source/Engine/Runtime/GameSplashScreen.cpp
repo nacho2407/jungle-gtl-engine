@@ -64,21 +64,21 @@ bool FGameSplashScreen::ShowOverWindow(HINSTANCE InInstance, HWND OwnerWindow)
     const std::wstring SplashPath = ResolveRuntimePath(Settings.SplashImagePath);
     if (SplashPath.empty() || !std::filesystem::exists(SplashPath))
     {
-        UE_LOG("[Splash] Splash image not found: %s", Settings.SplashImagePath.c_str());
+        UE_LOG_WARNING("[Splash] Splash image not found: %s", Settings.SplashImagePath.c_str());
         return false;
     }
 
     Gdiplus::GdiplusStartupInput StartupInput;
     if (Gdiplus::GdiplusStartup(&GdiToken, &StartupInput, nullptr) != Gdiplus::Ok)
     {
-        UE_LOG("[Splash] Failed to initialize GDI+.");
+        UE_LOG_ERROR("[Splash] Failed to initialize GDI+.");
         return false;
     }
 
     SplashImage = std::make_unique<Gdiplus::Image>(SplashPath.c_str());
     if (!SplashImage || SplashImage->GetLastStatus() != Gdiplus::Ok)
     {
-        UE_LOG("[Splash] Failed to load splash image.");
+        UE_LOG_WARNING("[Splash] Failed to load splash image.");
         SplashImage.reset();
         Gdiplus::GdiplusShutdown(GdiToken);
         GdiToken = 0;
