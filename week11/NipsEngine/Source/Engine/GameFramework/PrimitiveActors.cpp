@@ -618,7 +618,6 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
 
     // 메쉬 로컬 공간으로 변환
     FTransform MeshTransform = ProcMeshComp->GetWorldTransform();
-    FMatrix MeshMatrix = MeshTransform.ToMatrixWithScale();
 
 	FQuat MeshRotation = MeshTransform.GetRotation();
     FMatrix RotationMatrix = MeshRotation.ToMatrix();    
@@ -669,12 +668,12 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor1->AddActorWorldOffset(N_World * SeparateDistance);
         Actor2->AddActorWorldOffset(N_World * -SeparateDistance);
 
-		UObjectManager::Get().DestroyObject(TempMesh1);
-        UObjectManager::Get().DestroyObject(TempMesh2);
-
         OtherActor->MarkPendingKill();
         this->MarkPendingKill();
     }
+	
+	UObjectManager::Get().DestroyObject(TempMesh1);
+    UObjectManager::Get().DestroyObject(TempMesh2);
 }
 
 void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
