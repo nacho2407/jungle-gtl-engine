@@ -169,6 +169,12 @@
     <Filter Include="Source\Game">
       <UniqueIdentifier>{7b75b017-e44b-6189-2a88-30dc16a5724f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Component">
+      <UniqueIdentifier>{78626bb9-6558-fab0-2208-a035814756cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Component\Movement">
+      <UniqueIdentifier>{4333c327-1f62-b9bf-6949-fb14c97be88a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\GameMode">
       <UniqueIdentifier>{180756f8-cd60-823a-2895-cf41347cb361}</UniqueIdentifier>
     </Filter>
@@ -503,22 +509,10 @@
     <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CarDirtComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CarGasComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\CompletionOutlineComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\CylindricalBillboardComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\DirtComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\GizmoComponent.cpp">
@@ -571,9 +565,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp">
       <Filter>Source\Engine\Component\Light</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\CarMovementComponent.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -971,6 +962,21 @@
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp">
+      <Filter>Source\Game\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Component\CarGasComponent.cpp">
+      <Filter>Source\Game\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Component\CompletionOutlineComponent.cpp">
+      <Filter>Source\Game\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Component\DirtComponent.cpp">
+      <Filter>Source\Game\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Component\Movement\CarMovementComponent.cpp">
+      <Filter>Source\Game\Component\Movement</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\GameMode\GameModeCarGame.cpp">
       <Filter>Source\Game\GameMode</Filter>
     </ClCompile>
@@ -1166,22 +1172,10 @@
     <ClInclude Include="Source\Engine\Component\CapsuleComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CarDirtComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CarGasComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\CompletionOutlineComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\DecalComponent.h">
-      <Filter>Source\Engine\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\DirtComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h">
@@ -1234,9 +1228,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h">
       <Filter>Source\Engine\Component\Light</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\CarMovementComponent.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
@@ -1747,6 +1738,21 @@
     </ClInclude>
     <ClInclude Include="Source\Game\GameRenderPipeline.h">
       <Filter>Source\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Component\CarDirtComponent.h">
+      <Filter>Source\Game\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Component\CarGasComponent.h">
+      <Filter>Source\Game\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Component\CompletionOutlineComponent.h">
+      <Filter>Source\Game\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Component\DirtComponent.h">
+      <Filter>Source\Game\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Component\Movement\CarMovementComponent.h">
+      <Filter>Source\Game\Component\Movement</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\GameMode\GameModeCarGame.h">
       <Filter>Source\Game\GameMode</Filter>
