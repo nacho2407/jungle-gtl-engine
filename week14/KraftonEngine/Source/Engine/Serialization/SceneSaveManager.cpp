@@ -54,7 +54,6 @@ namespace SceneKeys
 	static constexpr const char* ContextName = "ContextName";
 	static constexpr const char* ContextHandle = "ContextHandle";
 	static constexpr const char* Actors = "Actors";
-	static constexpr const char* Visible = "bVisible";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
 	static constexpr const char* Properties = "Properties";
@@ -182,7 +181,7 @@ json::JSON FSceneSaveManager::SerializeActor(AActor* Actor)
 	JSON a = json::Object();
 	a[SceneKeys::ClassName] = Actor->GetClass()->GetName();
 	a[SceneKeys::Name] = Actor->GetFName().ToString();
-	a[SceneKeys::Visible] = Actor->IsVisible();
+	a[SceneKeys::Properties] = SerializeProperties(Actor);
 
 	// RootComponent 트리 직렬화
 	if (Actor->GetRootComponent()) {
@@ -224,13 +223,14 @@ json::JSON FSceneSaveManager::SerializeSceneComponentTree(USceneComponent* Comp)
 	return c;
 }
 
-json::JSON FSceneSaveManager::SerializeProperties(UActorComponent* Comp)
+json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj)
 {
 	using namespace json;
 	JSON props = json::Object();
+	if (!Obj) return props;
 
 	TArray<FPropertyDescriptor> Descriptors;
-	Comp->GetEditableProperties(Descriptors);
+	Obj->GetEditableProperties(Descriptors);
 
 	for (const auto& Prop : Descriptors) {
 		props[Prop.Name] = SerializePropertyValue(Prop);
@@ -438,15 +438,17 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 				Actor->SetFName(FName(ActorJSON[SceneKeys::Name].ToString()));
 			}
 
-			if (ActorJSON.hasKey(SceneKeys::Visible)) {
-				Actor->SetVisible(ActorJSON[SceneKeys::Visible].ToBool());
-			}
-
 			// RootComponent 트리 복원
 			if (ActorJSON.hasKey(SceneKeys::RootComponent)) {
 				JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
 				USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor);
 				if (Root) Actor->SetRootComponent(Root);
+			}
+
+			// Actor 프로퍼티(Location/Rotation/Scale/Visible 및 서브클래스 추가 항목)
+			// 복원 — RootComponent 복원 뒤여야 SetActorLocation 등이 적용됨.
+			if (ActorJSON.hasKey(SceneKeys::Properties)) {
+				DeserializeProperties(Actor, ActorJSON[SceneKeys::Properties]);
 			}
 
 			// Non-scene components 복원
@@ -510,29 +512,31 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 	return Comp;
 }
 
-void FSceneSaveManager::DeserializeProperties(UActorComponent* Comp, json::JSON& PropsJSON)
+void FSceneSaveManager::DeserializeProperties(UObject* Obj, json::JSON& PropsJSON)
 {
+	if (!Obj) return;
+
 	TArray<FPropertyDescriptor> Descriptors;
-	Comp->GetEditableProperties(Descriptors);
+	Obj->GetEditableProperties(Descriptors);
 
 	for (auto& Prop : Descriptors) {
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
 		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
 		DeserializePropertyValue(Prop, Value);
-		Comp->PostEditProperty(Prop.Name.c_str());
+		Obj->PostEditProperty(Prop.Name.c_str());
 	}
 
 	// 2nd pass: PostEditProperty가 새 프로퍼티를 추가할 수 있음
 	// (예: SetStaticMesh → MaterialSlots 생성 → "Element N" 디스크립터 추가)
 	TArray<FPropertyDescriptor> Descriptors2;
-	Comp->GetEditableProperties(Descriptors2);
+	Obj->GetEditableProperties(Descriptors2);
 
 	for (size_t i = Descriptors.size(); i < Descriptors2.size(); ++i) {
 		auto& Prop = Descriptors2[i];
 		if (!PropsJSON.hasKey(Prop.Name.c_str())) continue;
 		json::JSON& Value = PropsJSON[Prop.Name.c_str()];
 		DeserializePropertyValue(Prop, Value);
-		Comp->PostEditProperty(Prop.Name.c_str());
+		Obj->PostEditProperty(Prop.Name.c_str());
 	}
 }
 
