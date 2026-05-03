@@ -709,6 +709,10 @@ void ABladeSlash::InitDefaultComponents()
     auto* Root = AddComponent<UBoxComponent>();
     Root->SetGenerateOverlapEvents(true);
     SetRootComponent(Root);
+
+    auto* Cube = AddComponent<UStaticMeshComponent>();
+    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    Cube->AttachToComponent(Root);
 }
 
 void ABladeSlash::Tick(float DeltaTime)

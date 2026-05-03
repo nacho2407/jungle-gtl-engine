@@ -88,8 +88,9 @@ function Script:Tick(dt)
 
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
-        local pitch_x = 45 * (math.sin(yaw_rad))
-        local pitch_y = 45 * (math.cos(yaw_rad))
+        local degree = math.random(0, 180)
+        local pitch_x = degree * (math.sin(yaw_rad))
+        local pitch_y = degree * (math.cos(yaw_rad))
         local scale_long = 5
         local scale_short = 1
         local fx = math.abs(math.sin(yaw_rad))
