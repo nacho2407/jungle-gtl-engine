@@ -33,7 +33,7 @@ std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 void FLuaScriptManager::Initialize()
 {
 	Lua = std::make_unique<sol::state>();
-	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::coroutine);
+	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::coroutine);
 	(*Lua)["package"]["path"] = FPaths::ToUtf8(FPaths::Combine(FPaths::ScriptDir(), L"?.lua").c_str());
 	RegisterBindings(*Lua);
 }
@@ -459,6 +459,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
 		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
 		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
+		"GetClearedPhasesMask",  &AGameStateCarGame::GetClearedPhasesMask,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable
