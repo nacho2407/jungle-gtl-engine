@@ -4,7 +4,7 @@
   "Origin" : "ObjImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
-    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "SectionColor" : [0.000000, 0.000000, 0.000000, 1.000000],
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
   "PathFileName" : "Asset/Materials/Auto/Material.001.mat",
