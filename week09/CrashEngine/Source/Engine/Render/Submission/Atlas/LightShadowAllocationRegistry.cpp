@@ -321,7 +321,7 @@ void FLightShadowAllocationRegistry::FreeRecord(FLightShadowRecord& Record, FSha
     {
         if (Face.bAllocated)
         {
-            UE_LOG(Render, Verbose, "Releasing point shadow face allocation: %s", FormatShadowAllocation(Face).c_str());
+            //UE_LOG(Render, Verbose, "Releasing point shadow face allocation: %s", FormatShadowAllocation(Face).c_str());
         }
         AtlasPool.Free(Face);
         Face.Reset();
@@ -438,8 +438,8 @@ bool FLightShadowAllocationRegistry::AllocatePoint(FLightShadowRecord& Record, F
             return false;
         }
         Record.CubeShadowMapData.FaceViewProj[FaceIndex] = PointShadowViewProjMatrices[FaceIndex];
-        UE_LOG(Render, Info, "Point shadow face %u allocated for %s: %s",
-            FaceIndex, GetLightLabel(Light).c_str(), FormatShadowAllocation(Record.CubeShadowMapData.Faces[FaceIndex]).c_str());
+        //UE_LOG(Render, Info, "Point shadow face %u allocated for %s: %s",
+        //    FaceIndex, GetLightLabel(Light).c_str(), FormatShadowAllocation(Record.CubeShadowMapData.Faces[FaceIndex]).c_str());
     }
     return true;
 }
@@ -465,8 +465,8 @@ bool FLightShadowAllocationRegistry::TryAllocateRecord(
             {
                 if (CandidateResolution != RequestedResolution)
                 {
-                    UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
-                        GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                    //UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                        //GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
                 }
                 return true;
             }
@@ -483,8 +483,8 @@ bool FLightShadowAllocationRegistry::TryAllocateRecord(
                 {
                     if (CandidateResolution != RequestedResolution)
                     {
-                        UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
-                            GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                        //UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                        //    GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
                     }
                     return true;
                 }
@@ -510,8 +510,8 @@ bool FLightShadowAllocationRegistry::TryAllocateRecord(
             {
                 if (CandidateResolution != RequestedResolution)
                 {
-                    UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
-                        GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
+                    //UE_LOG(Render, Info, "Shadow resolution downgraded for %s (%s): %u -> %u to stay within atlas budget.",
+                    //    GetLightLabel(Light).c_str(), GetLightTypeName(LightType), RequestedResolution, CandidateResolution);
                 }
                 return true;
             }

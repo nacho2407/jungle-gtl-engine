@@ -2,14 +2,37 @@ local moveSpeed = 10.0
 local pressedKeys = {}
 
 local HP = 100.0
-local HP_reduction  = 1;
+local HP_reduction  = 10;
 
 local LightComponet = nil
 local Initial_Light_Intensity = 0.0
 
 local DocumentCount = 0
 
+local function ensurePlayerState()
+    _G.PlayerState = _G.PlayerState or {}
+    _G.PlayerState.HP = HP
+    _G.PlayerState.DocumentCount = DocumentCount
+    return _G.PlayerState
+end
 
+local function syncPlayerState()
+    if _G.PlayerState == nil then
+        ensurePlayerState()
+        return
+    end
+
+    _G.PlayerState.HP = HP
+    _G.PlayerState.DocumentCount = DocumentCount
+end
+
+local function callGameOver()
+    if _G.GameManager ~= nil and _G.GameManager.GameOver ~= nil then
+        _G.GameManager.GameOver()
+    else
+        print("GameManager is not ready")
+    end
+end
 
 local movementKeys = {
     W = true,
@@ -72,31 +95,45 @@ function OnOverlapBegin(other)
     print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Document") then
         DocumentCount = DocumentCount + 1;
+        syncPlayerState()
         print("Has Document : ", DocumentCount);
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
         HP = HP + 10
+        syncPlayerState()
         print("Player HP : ", HP);
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         print("Game Finish!");
+        callGameOver()
     end
 end
 
 function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+    ensurePlayerState()
 
     LightComponet = obj:GetComponent("PointLightComponent", 0)
-    LightComponet:SetIntensity(HP)
+    if LightComponet:IsValid() then
+        LightComponet:SetIntensity(HP)
+    end
 end
 
 function Tick(dt)
     updateVelocity()
 
-    HP = HP - dt * HP_reduction
+    if(HP > 0) then
+        HP = HP - dt * HP_reduction
+    else 
+        HP = 0
+    end
 
-    LightComponet:SetIntensity(HP)
+    syncPlayerState()
+
+    if LightComponet ~= nil and LightComponet:IsValid() then
+        LightComponet:SetIntensity(HP)
+    end
 
     if obj.Velocity:LengthSquared() > 0.0 then
         World.MoveActorWithBlock(obj, obj.Velocity * dt, "Wall")
@@ -107,6 +144,10 @@ end
 
 function EndPlay()
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+    if _G.PlayerState ~= nil then
+        _G.PlayerState.HP = HP
+        _G.PlayerState.DocumentCount = DocumentCount
+    end
 end
 
 function OnKeyPressed(key)
