@@ -1,5 +1,6 @@
 ﻿#include "LuaWorldProxy.h"
 
+#include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
@@ -99,4 +100,25 @@ bool FLuaWorldProxy::DestroyActor(const FLuaGameObjectProxy& ActorProxy)
 
     World->DestroyActor(Actor);
     return true;
+}
+
+FVector FLuaWorldProxy::GetActiveCameraForward() const
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    return Camera ? Camera->GetForwardVector() : FVector(1.0f, 0.0f, 0.0f);
+}
+
+FVector FLuaWorldProxy::GetActiveCameraRight() const
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    return Camera ? Camera->GetRightVector() : FVector(0.0f, 1.0f, 0.0f);
+}
+
+FVector FLuaWorldProxy::GetActiveCameraUp() const
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    return Camera ? Camera->GetUpVector() : FVector(0.0f, 0.0f, 1.0f);
 }

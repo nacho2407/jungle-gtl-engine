@@ -236,6 +236,12 @@ bool ULuaScriptComponent::LoadScript()
                             { return WorldProxy.SpawnActor(ActorClassName); });
     WorldTable.set_function("DestroyActor", [this](const FLuaGameObjectProxy& ActorProxy)
                             { return WorldProxy.DestroyActor(ActorProxy); });
+    WorldTable.set_function("GetActiveCameraForward", [this]()
+                            { return WorldProxy.GetActiveCameraForward(); });
+    WorldTable.set_function("GetActiveCameraRight", [this]()
+                            { return WorldProxy.GetActiveCameraRight(); });
+    WorldTable.set_function("GetActiveCameraUp", [this]()
+                            { return WorldProxy.GetActiveCameraUp(); });
 
     Env["World"] = WorldTable;
 

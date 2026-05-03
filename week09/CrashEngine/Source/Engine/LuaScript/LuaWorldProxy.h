@@ -2,6 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
+#include "Math/Vector.h"
 
 class UWorld;
 
@@ -18,6 +19,9 @@ public:
 
     FLuaGameObjectProxy SpawnActor(const FString& ActorClassName);
     bool DestroyActor(const FLuaGameObjectProxy& ActorProxy);
+    FVector GetActiveCameraForward() const;
+    FVector GetActiveCameraRight() const;
+    FVector GetActiveCameraUp() const;
 
 private:
     uint32 WorldUUID = 0;
