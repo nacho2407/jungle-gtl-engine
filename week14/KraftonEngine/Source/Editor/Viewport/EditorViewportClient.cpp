@@ -163,7 +163,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
 				if (UGameViewportClient* GameViewportClient = EditorEngine->GetGameViewportClient())
 				{
 					GameViewportClient->SetViewport(Viewport);
-					GameViewportClient->ProcessPIEInput(InputSnapshot, DeltaTime);
+					GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
 				}
 				return;
 			}
