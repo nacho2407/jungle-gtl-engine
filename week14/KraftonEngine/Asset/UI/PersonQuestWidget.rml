@@ -1,0 +1,16 @@
+<rml>
+<head>
+	<title>Person Quest</title>
+	<link type="text/rcss" href="PersonQuestWidget.rcss"/>
+</head>
+<body>
+	<div id="quest-root">
+		<div id="quest-panel">
+			<div class="quest-badge">QUEST 03</div>
+			<div class="quest-title">사람치기</div>
+			<div class="quest-body">목표 지점으로 이동해 경찰 추격 이벤트를 시작하세요.</div>
+			<button id="person-quest-ok-button" class="quest-button">Okay</button>
+		</div>
+	</div>
+</body>
+</rml>

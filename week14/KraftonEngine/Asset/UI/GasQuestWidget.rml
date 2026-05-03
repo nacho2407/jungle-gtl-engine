@@ -1,0 +1,16 @@
+<rml>
+<head>
+	<title>Gas Quest</title>
+	<link type="text/rcss" href="GasQuestWidget.rcss"/>
+</head>
+<body>
+	<div id="quest-root">
+		<div id="quest-panel">
+			<div class="quest-badge">QUEST 02</div>
+			<div class="quest-title">주유하기</div>
+			<div class="quest-body">주유소로 이동해 주유를 완료하세요.</div>
+			<button id="gas-quest-ok-button" class="quest-button">Okay</button>
+		</div>
+	</div>
+</body>
+</rml>
