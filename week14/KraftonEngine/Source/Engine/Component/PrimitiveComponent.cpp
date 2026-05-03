@@ -261,8 +261,19 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "Collision Enabled") == 0)
 	{
-		// 에디터에서 직접 enum 값을 변경한 경우 — 이미 CollisionEnabled 필드가 갱신된 상태
-		// Register/Unregister를 수동으로 처리
+		// 에디터 property panel 이 enum 값을 직접 바꾼 경우 — 이미 CollisionEnabled 필드는
+		// 갱신된 상태고 setter 를 안 거쳤으니 여기서 Register/Unregister 처리.
+		//
+		// 단 BeginPlay 이전에는 skip — DeserializeProperties 가 GetEditableProperties
+		// 순서대로 프로퍼티를 set 하면서 매번 PostEditProperty 를 부르는데, "Collision
+		// Enabled" 는 그 중에 비교적 앞쪽에 위치해서 ObjectType / Mass / COM / BoxExtent
+		// 같은 다른 프로퍼티들이 아직 default 인 시점에 RegisterComponent 가 발화해버린다.
+		// 결과: 단위 큐브 + mass=1 + WorldStatic 으로 PhysX 본체가 만들어지고, 이후 다른
+		// 프로퍼티 setter 들의 NotifyPhysicsBodyDirty 가 같은 가드에 막혀 no-op 라 영영
+		// 갱신 안 됨. BeginPlay 의 RegisterComponent 한 번에 위임하면 모든 프로퍼티가
+		// 최종 상태인 채로 등록된다 (PIE Duplicate 경로와 동일한 타이밍).
+		if (!bComponentHasBegunPlay) return;
+
 		if (Owner)
 		{
 			if (UWorld* World = Owner->GetWorld())
