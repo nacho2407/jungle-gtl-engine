@@ -20,6 +20,9 @@ function ResultState:Enter(context, snapshot)
             context.managers.Game:Restart()
         elseif event.name == "BackToTitle" then
             Engine.API.Time.SetTimeScale(1.0)
+            if context.root:OpenMainScene() then
+                return
+            end
             context.stateMachine:Change("Title")
         end
     end)

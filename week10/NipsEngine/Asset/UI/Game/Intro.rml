@@ -1,0 +1,14 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root intro-screen">
+            <div class="intro-mark">INTRO</div>
+            <div id="Intro.Progress" class="intro-progress">1 / 3</div>
+            <div id="Intro.Text" class="intro-text"></div>
+            <div id="Intro.Continue" class="intro-continue">Press Space</div>
+            <button id="Intro.Skip" class="button intro-skip" data-action="SkipIntro">Skip</button>
+        </div>
+    </body>
+</rml>

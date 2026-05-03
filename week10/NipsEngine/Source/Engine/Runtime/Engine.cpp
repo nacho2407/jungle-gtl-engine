@@ -4,6 +4,7 @@
 #include "Core/Paths.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/Logging/Log.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Core/ResourceManager.h"
@@ -11,8 +12,10 @@
 #include "Camera/ViewportCamera.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
+#include "Serialization/SceneSaveManager.h"
 
 #include <algorithm>
+#include <filesystem>
 
 DEFINE_CLASS(UEngine, UObject)
 
@@ -62,6 +65,7 @@ void UEngine::Tick(float DeltaTime)
 	UpdateTimeState(DeltaTime);
 	InputSystem::Get().Tick();
 	WorldTick(DeltaTime);
+	ProcessPendingSceneOpen();
 	AudioSystem.Tick(DeltaTime);
 	Render(DeltaTime);
 }
@@ -107,6 +111,36 @@ bool UEngine::RequestQuitGame()
 #endif
 }
 
+bool UEngine::RequestOpenScene(const FString& ScenePath)
+{
+	const FString ResolvedPath = ResolveScenePath(ScenePath);
+	if (ResolvedPath.empty())
+	{
+		return false;
+	}
+
+	if (!std::filesystem::exists(FPaths::ToWide(ResolvedPath)))
+	{
+		UE_LOG_ERROR("[Scene] Scene file missing: %s", ResolvedPath.c_str());
+		return false;
+	}
+
+	PendingSceneOpenPath = ResolvedPath;
+	bPendingSceneOpen = true;
+	UE_LOG("[Scene] Queued scene open: %s", PendingSceneOpenPath.c_str());
+	return true;
+}
+
+bool UEngine::RequestReloadScene()
+{
+	if (CurrentScenePath.empty())
+	{
+		return false;
+	}
+
+	return RequestOpenScene(CurrentScenePath);
+}
+
 void UEngine::SetTimeScale(float InTimeScale)
 {
 	TimeScale = std::max(0.0f, InTimeScale);
@@ -144,6 +178,93 @@ void UEngine::WorldTick(float DeltaTime)
 				ActiveCamera->GetEffectiveUp());
 		}
 	}
+}
+
+void UEngine::ProcessPendingSceneOpen()
+{
+	if (!bPendingSceneOpen)
+	{
+		return;
+	}
+
+	const FString ScenePath = PendingSceneOpenPath;
+	bPendingSceneOpen = false;
+	PendingSceneOpenPath.clear();
+
+	if (!OpenSceneNow(ScenePath))
+	{
+		UE_LOG_ERROR("[Scene] Failed to open scene: %s", ScenePath.c_str());
+	}
+}
+
+bool UEngine::OpenSceneNow(const FString& ScenePath)
+{
+	FWorldContext* ActiveContext = GetWorldContextFromHandle(ActiveWorldHandle);
+	if (!ActiveContext)
+	{
+		UE_LOG_ERROR("[Scene] Cannot open scene without an active world context.");
+		return false;
+	}
+
+	if (ScenePath.empty() || !std::filesystem::exists(FPaths::ToWide(ScenePath)))
+	{
+		UE_LOG_ERROR("[Scene] Scene file missing: %s", ScenePath.c_str());
+		return false;
+	}
+
+	FWorldContext LoadedContext;
+	FSceneSaveManager::Load(ScenePath, LoadedContext, nullptr);
+	if (!LoadedContext.World)
+	{
+		return false;
+	}
+
+	UWorld* OldWorld = ActiveContext->World;
+	const EWorldType TargetWorldType = ActiveContext->WorldType;
+	const FName TargetHandle = ActiveContext->ContextHandle;
+	const FString TargetName = ActiveContext->ContextName;
+
+	OnSceneWorldWillUnload(OldWorld);
+	if (OldWorld)
+	{
+		OldWorld->EndPlay(EEndPlayReason::Type::LevelTransition);
+	}
+
+	LoadedContext.World->SetWorldType(TargetWorldType);
+	LoadedContext.World->SyncSpatialIndex();
+
+	ActiveContext->WorldType = TargetWorldType;
+	ActiveContext->World = LoadedContext.World;
+	ActiveContext->ContextHandle = TargetHandle;
+	ActiveContext->ContextName = TargetName;
+	ActiveContext->bPaused = false;
+	SetActiveWorld(TargetHandle);
+	CurrentScenePath = ScenePath;
+
+	OnSceneWorldLoaded(ActiveContext->World);
+
+	if (TargetWorldType == EWorldType::Game || TargetWorldType == EWorldType::PIE)
+	{
+		ActiveContext->World->BeginPlay();
+	}
+
+	if (OldWorld)
+	{
+		UObjectManager::Get().DestroyObject(OldWorld);
+	}
+
+	UE_LOG("[Scene] Opened scene: %s", ScenePath.c_str());
+	return true;
+}
+
+FString UEngine::ResolveScenePath(const FString& ScenePath) const
+{
+	if (ScenePath.empty())
+	{
+		return {};
+	}
+
+	return FPaths::Normalize(FPaths::ToAbsoluteString(FPaths::ToWide(ScenePath)));
 }
 
 UWorld* UEngine::GetWorld() const

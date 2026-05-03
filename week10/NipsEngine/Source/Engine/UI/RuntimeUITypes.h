@@ -41,5 +41,7 @@ struct FRuntimeUIRenderContext
     ERuntimeUIRenderMode RenderMode = ERuntimeUIRenderMode::GameClient;
     FRuntimeUIVector2 ViewportMin;
     FRuntimeUIVector2 ViewportSize;
+    FRuntimeUIVector2 LayoutSize;
     float DeltaTime = 0.0f;
+    bool bPreviewDocumentOnly = false;
 };

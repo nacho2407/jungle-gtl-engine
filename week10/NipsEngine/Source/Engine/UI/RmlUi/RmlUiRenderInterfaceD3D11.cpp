@@ -17,8 +17,9 @@ cbuffer RmlUiFrameConstants : register(b0)
 {
     float2 ViewportSize;
     float2 Translation;
+    float2 RenderScale;
     uint UseTexture;
-    float3 Padding;
+    float Padding;
 };
 
 Texture2D RmlUiTexture : register(t0);
@@ -41,7 +42,7 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output;
-    float2 PixelPosition = Input.Position + Translation;
+    float2 PixelPosition = (Input.Position + Translation) * RenderScale;
     float2 ClipPosition;
     ClipPosition.x = (PixelPosition.x / max(ViewportSize.x, 1.0f)) * 2.0f - 1.0f;
     ClipPosition.y = 1.0f - (PixelPosition.y / max(ViewportSize.y, 1.0f)) * 2.0f;
@@ -143,10 +144,14 @@ void FRmlUiRenderInterfaceD3D11::Shutdown()
     Device.Reset();
 }
 
-void FRmlUiRenderInterfaceD3D11::BeginFrame(const Rml::Vector2f& InViewportMin, const Rml::Vector2f& InViewportSize)
+void FRmlUiRenderInterfaceD3D11::BeginFrame(
+    const Rml::Vector2f& InViewportMin,
+    const Rml::Vector2f& InViewportSize,
+    const Rml::Vector2f& InRenderScale)
 {
     ViewportMin = InViewportMin;
     ViewportSize = Rml::Vector2f(std::max(InViewportSize.x, 1.0f), std::max(InViewportSize.y, 1.0f));
+    RenderScale = Rml::Vector2f(std::max(InRenderScale.x, 0.001f), std::max(InRenderScale.y, 0.001f));
     bScissorEnabled = false;
     CurrentScissorRegion = Rml::Rectanglei::MakeInvalid();
 
@@ -233,6 +238,8 @@ void FRmlUiRenderInterfaceD3D11::RenderGeometry(Rml::CompiledGeometryHandle Geom
     Constants.ViewportSize[1] = ViewportSize.y;
     Constants.Translation[0] = Translation.x;
     Constants.Translation[1] = Translation.y;
+    Constants.RenderScale[0] = RenderScale.x;
+    Constants.RenderScale[1] = RenderScale.y;
     Constants.bUseTexture = bUseTexture ? 1u : 0u;
     Context->UpdateSubresource(ConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
     Context->VSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
@@ -354,10 +361,10 @@ void FRmlUiRenderInterfaceD3D11::SetScissorRegion(Rml::Rectanglei Region)
     }
 
     D3D11_RECT Rect = {};
-    Rect.left = static_cast<LONG>(ViewportMin.x + Region.Left());
-    Rect.top = static_cast<LONG>(ViewportMin.y + Region.Top());
-    Rect.right = static_cast<LONG>(ViewportMin.x + Region.Right());
-    Rect.bottom = static_cast<LONG>(ViewportMin.y + Region.Bottom());
+    Rect.left = static_cast<LONG>(ViewportMin.x + static_cast<float>(Region.Left()) * RenderScale.x);
+    Rect.top = static_cast<LONG>(ViewportMin.y + static_cast<float>(Region.Top()) * RenderScale.y);
+    Rect.right = static_cast<LONG>(ViewportMin.x + static_cast<float>(Region.Right()) * RenderScale.x);
+    Rect.bottom = static_cast<LONG>(ViewportMin.y + static_cast<float>(Region.Bottom()) * RenderScale.y);
     Context->RSSetScissorRects(1, &Rect);
 }
 

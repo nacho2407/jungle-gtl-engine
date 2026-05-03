@@ -692,6 +692,33 @@ function EngineAPISave.Exists(relativePath) end
 ---@return boolean
 function EngineAPISave.Delete(relativePath) end
 
+---@class EngineAPIJson
+local EngineAPIJson = {}
+
+---@param value any
+---@return string
+function EngineAPIJson.Encode(value) end
+
+---@param text string
+---@return any
+function EngineAPIJson.Decode(text) end
+
+---@class EngineAPIScene
+local EngineAPIScene = {}
+
+---@param scenePath string
+---@return boolean
+function EngineAPIScene.Open(scenePath) end
+
+---@return boolean
+function EngineAPIScene.Reload() end
+
+---@return boolean
+function EngineAPIScene.IsOpenPending() end
+
+---@return string
+function EngineAPIScene.GetCurrentPath() end
+
 ---@class EngineAPIDebug
 local EngineAPIDebug = {}
 
@@ -769,6 +796,8 @@ local EngineAPIEffect = {}
 ---@field Audio EngineAPIAudio
 ---@field UI EngineAPIUI
 ---@field Save EngineAPISave
+---@field Json EngineAPIJson
+---@field Scene EngineAPIScene
 ---@field Debug EngineAPIDebug
 ---@field Asset EngineAPIAsset
 ---@field Random EngineAPIRandom

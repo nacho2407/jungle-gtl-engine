@@ -71,9 +71,12 @@ private:
     void MaintainGameInputCapture(InputSystem& Input);
     bool PumpRuntimeUIInput(InputSystem& Input);
     void PumpPlayerInput(InputSystem& Input);
+    void OnSceneWorldWillUnload(UWorld* OldWorld) override;
+    void OnSceneWorldLoaded(UWorld* NewWorld) override;
     FString ResolveStartupScenePath() const;
     void InitializeRmlUiRuntime();
     void ShutdownRmlUiRuntime();
+    void UnloadAllRmlUIDocuments();
     void RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context);
     bool PumpRmlUiInput(InputSystem& Input);
     int GetRmlUiKeyModifierState(const InputSystem& Input) const;

@@ -19,7 +19,13 @@ function TitleState:Enter(context)
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "StartGame" then
             context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
+            if context.root:OpenGameScene() then
+                return
+            end
             context.stateMachine:Change("Loading")
+        elseif event.name == "ShowIntro" then
+            context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
+            context.stateMachine:Change("Intro", { returnTo = "Title" })
         elseif event.name == "QuitGame" then
             Engine.API.Application.QuitGame()
         elseif event.name == "ShowScoreBoard" then

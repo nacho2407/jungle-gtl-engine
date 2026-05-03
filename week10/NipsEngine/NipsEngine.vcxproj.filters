@@ -887,7 +887,9 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaDebugAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaEffectAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaInputAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaJsonAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaRandomAPI.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSceneAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSaveAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaTimeAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />

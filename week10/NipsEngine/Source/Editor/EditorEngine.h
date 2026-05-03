@@ -14,6 +14,8 @@
 #include "UI/RmlUi/RmlUiRenderInterfaceD3D11.h"
 #include "UI/RmlUi/RmlUiRuntimeModule.h"
 
+#include <utility>
+
 class UGizmoComponent;
 class FEditorRenderPipeline;
 class AActor;
@@ -84,7 +86,7 @@ public:
 	bool BlurRmlUIElement(const FString& ElementId) override;
 	bool ClickRmlUIElement(const FString& ElementId) override;
 	TArray<FString> PollRmlUIActionEvents() override;
-	bool PumpPIERmlUiInput(const FViewportRect& ViewportRect);
+	bool PumpPIERmlUiInput(const FViewportRect& ViewportRect, int32 LayoutWidth = 0, int32 LayoutHeight = 0, bool bPreviewDocumentOnly = false);
 
 	// Editor-specific API
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
@@ -174,6 +176,11 @@ private:
 	bool RestoreSceneSnapshot(const FString& Snapshot);
 	void InitializeRmlUiRuntime();
 	void ShutdownRmlUiRuntime();
+	void UnloadAllRmlUIDocuments();
+	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
+	void OnSceneWorldLoaded(UWorld* NewWorld) override;
+	TArray<std::pair<Rml::ElementDocument*, bool>> ApplyRmlUIDocumentVisibilityFilter(bool bPreviewDocumentOnly);
+	void RestoreRmlUIDocumentVisibility(const TArray<std::pair<Rml::ElementDocument*, bool>>& VisibilitySnapshot);
 	int GetRmlUiKeyModifierState(const InputSystem& Input) const;
 	Rml::ElementDocument* FindRmlUIDocument(const FString& ScreenId) const;
 	Rml::Element* FindRmlUIElement(const FString& ElementId) const;
