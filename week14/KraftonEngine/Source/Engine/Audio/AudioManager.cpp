@@ -23,6 +23,17 @@ bool FAudioManager::Initialize()
 
 void FAudioManager::Shutdown()
 {
+	if (MasterGroup)
+	{
+		MasterGroup->stop();
+	}
+	BGMChannel = nullptr;
+
+	if (System)
+	{
+		System->update();
+	}
+
 	for (auto& Pair : Audios)
 	{
 		if (Pair.second)
@@ -38,9 +49,6 @@ void FAudioManager::Shutdown()
 		System->release();
 		System = nullptr;
 	}
-
-	MasterGroup = nullptr;
-	BGMChannel = nullptr;
 }
 
 void FAudioManager::Tick()
