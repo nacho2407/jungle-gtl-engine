@@ -26,6 +26,11 @@ public:
 
     void AddWorldOffset(const FVector& Delta);
 
+    void ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator);
+    bool HasTag(const FString& Tag) const;
+    void AddTag(const FString& Tag);
+    void RemoveTag(const FString& Tag);
+
     void PrintLocation() const;
 
 public:

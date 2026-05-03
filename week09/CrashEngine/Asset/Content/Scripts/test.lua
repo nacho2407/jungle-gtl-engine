@@ -61,6 +61,23 @@ local function updateVelocity()
     obj.Velocity = getCameraMoveDirection() * moveSpeed
 end
 
+function OnOverlapBegin(other)
+    print("Lua OnOverlapBegin", other.UUID);
+    if other:HasTag("Dummy") then
+        obj:ApplyDamage(10.0, obj);
+    else
+        obj:ApplyDamage(20.0, obj);
+    end
+end
+
+function OnOverlapEnd(other)
+    print("Lua OnOverlapEnd", other.UUID);
+end
+
+function OnTakeDamage(damage, instigator)
+    print("Lua OnTakeDamage", damage, instigator.UUID);
+end
+
 function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)

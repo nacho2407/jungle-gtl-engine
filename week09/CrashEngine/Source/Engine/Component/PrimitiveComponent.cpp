@@ -8,6 +8,7 @@
 #include "Core/CollisionTypes.h"
 #include "Render/Scene/Scene.h"
 #include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
 
@@ -312,17 +313,27 @@ void UPrimitiveComponent::DestroyRenderState()
 
 void UPrimitiveComponent::BroadcastComponentBeginOverlap(AActor* OtherActor)
 {
-    OnComponentBeginOverlap.BroadCast(this, OtherActor);
+    OnComponentBeginOverlap.Broadcast(this, OtherActor);
+
+    if (AActor* OwnerActor = GetOwner())
+    {
+        OwnerActor->BroadcastOverlapBegin(OtherActor);
+    }
 }
 
 void UPrimitiveComponent::BroadcastComponentEndOverlap(AActor* OtherActor)
 {
-    OnComponentEndOverlap.BroadCast(this, OtherActor);
+    OnComponentEndOverlap.Broadcast(this, OtherActor);
+
+    if (AActor* OwnerActor = GetOwner())
+    {
+        OwnerActor->BroadcastOverlapEnd(OtherActor);
+    }
 }
 
 void UPrimitiveComponent::BroadcastComponentHit(AActor* OtherActor)
 {
-    OnComponentHit.BroadCast(this, OtherActor);
+    OnComponentHit.Broadcast(this, OtherActor);
 }
 
 bool UPrimitiveComponent::IsOverLappingActor(const AActor* Other)

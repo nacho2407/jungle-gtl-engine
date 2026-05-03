@@ -210,12 +210,11 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
         UE_LOG(Console, Info, "Collision %s and Collision %s Begin Collision!", 
 			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
 
-		Pair.A->AddOverlapInfo(Pair.B);
+        Pair.A->AddOverlapInfo(Pair.B);
         Pair.B->AddOverlapInfo(Pair.A);
 
-        // 나중에 BeginOverlap 이벤트를 구현한다면 
-        // Pair.A->OnComponentBeginOverlap(Pair.B);
-        // Pair.B->OnComponentBeginOverlap(Pair.A);
+        Pair.A->BroadcastComponentBeginOverlap(Pair.B->GetOwner());
+        Pair.B->BroadcastComponentBeginOverlap(Pair.A->GetOwner());
     }
 
     for (const auto& Pair : PendingEndOverlaps)
@@ -223,12 +222,11 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
         UE_LOG(Console, Info, "Collision %s and Collision %s End Collision!", 
 			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
 
-		Pair.A->RemoveOverlapInfo(Pair.B);
+        Pair.A->RemoveOverlapInfo(Pair.B);
         Pair.B->RemoveOverlapInfo(Pair.A);
 
-        // 나중에 EndOverlap 이벤트를 구현한다면 
-        // Pair.A->OnComponentEndOverlap(Pair.B);
-        // Pair.B->OnComponentEndOverlap(Pair.A);
+        Pair.A->BroadcastComponentEndOverlap(Pair.B->GetOwner());
+        Pair.B->BroadcastComponentEndOverlap(Pair.A->GetOwner());
     }
 
     // 5. 다음 프레임 비교를 위해 장부 덮어쓰기

@@ -269,6 +269,7 @@ bool ULuaScriptComponent::LoadScript()
     }
 
     CacheScriptFunctions();
+    BindNativeDelegates();
 
     bScriptLoaded = true;
 
@@ -339,6 +340,8 @@ void ULuaScriptComponent::PostEditProperty(const char* PropertyName)
 
 void ULuaScriptComponent::ClearScriptRuntime()
 {
+    UnbindNativeDelegates();
+
     BeginPlayFunc = sol::protected_function();
     TickFunc = sol::protected_function();
     EndPlayFunc = sol::protected_function();
@@ -352,11 +355,94 @@ void ULuaScriptComponent::ClearScriptRuntime()
     OnGamepadButtonPressedFunc = sol::protected_function();
     OnGamepadButtonReleasedFunc = sol::protected_function();
 
+    OnOverlapBeginFunc = sol::protected_function();
+    OnOverlapEndFunc = sol::protected_function();
+    OnTakeDamageFunc = sol::protected_function();
+
     Env = sol::environment();
     ObjProxy.SetActor(nullptr);
     WorldProxy.SetWorld(nullptr);
 
     bScriptLoaded = false;
+}
+
+void ULuaScriptComponent::BindNativeDelegates()
+{
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        OwnerActor = GetTypedOuter<AActor>();
+    }
+
+    if (!OwnerActor)
+    {
+        return;
+    }
+
+    if (OnOverlapBeginFunc.valid() && OnOverlapBeginHandle == 0)
+    {
+        OnOverlapBeginHandle = OwnerActor->OnOverlapBegin.Add(
+            [this](AActor* OtherActor)
+            {
+                FLuaGameObjectProxy OtherProxy(OtherActor);
+                CallLuaFunction("OnOverlapBegin", OnOverlapBeginFunc, LastError, OtherProxy);
+            });
+    }
+
+    if (OnOverlapEndFunc.valid() && OnOverlapEndHandle == 0)
+    {
+        OnOverlapEndHandle = OwnerActor->OnOverlapEnd.Add(
+            [this](AActor* OtherActor)
+            {
+                FLuaGameObjectProxy OtherProxy(OtherActor);
+                CallLuaFunction("OnOverlapEnd", OnOverlapEndFunc, LastError, OtherProxy);
+            });
+    }
+
+    if (OnTakeDamageFunc.valid() && OnTakeDamageHandle == 0)
+    {
+        OnTakeDamageHandle = OwnerActor->OnTakeDamage.Add(
+            [this](float Damage, AActor* Instigator)
+            {
+                FLuaGameObjectProxy InstigatorProxy(Instigator);
+                CallLuaFunction("OnTakeDamage", OnTakeDamageFunc, LastError, Damage, InstigatorProxy);
+            });
+    }
+}
+
+void ULuaScriptComponent::UnbindNativeDelegates()
+{
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        OwnerActor = GetTypedOuter<AActor>();
+    }
+
+    if (!OwnerActor)
+    {
+        OnOverlapBeginHandle = 0;
+        OnOverlapEndHandle = 0;
+        OnTakeDamageHandle = 0;
+        return;
+    }
+
+    if (OnOverlapBeginHandle != 0)
+    {
+        OwnerActor->OnOverlapBegin.Remove(OnOverlapBeginHandle);
+        OnOverlapBeginHandle = 0;
+    }
+
+    if (OnOverlapEndHandle != 0)
+    {
+        OwnerActor->OnOverlapEnd.Remove(OnOverlapEndHandle);
+        OnOverlapEndHandle = 0;
+    }
+
+    if (OnTakeDamageHandle != 0)
+    {
+        OwnerActor->OnTakeDamage.Remove(OnTakeDamageHandle);
+        OnTakeDamageHandle = 0;
+    }
 }
 
 void ULuaScriptComponent::CacheScriptFunctions()
@@ -373,6 +459,10 @@ void ULuaScriptComponent::CacheScriptFunctions()
 
     OnGamepadButtonPressedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonPressed", LastError);
     OnGamepadButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonReleased", LastError);
+
+    OnOverlapBeginFunc = GetOptionalLuaFunction(Env, "OnOverlapBegin", LastError);
+    OnOverlapEndFunc = GetOptionalLuaFunction(Env, "OnOverlapEnd", LastError);
+    OnTakeDamageFunc = GetOptionalLuaFunction(Env, "OnTakeDamage", LastError);
 }
 
 void ULuaScriptComponent::SetLastError(const FString& InError)

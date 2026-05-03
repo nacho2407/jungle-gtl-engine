@@ -28,6 +28,22 @@
               "Visible In Game" : false,
               "bTickEnable" : true
             }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 3.300000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
@@ -45,11 +61,12 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : ["Player"],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_3",
+      "ObjectName" : "AStaticMeshActor_26",
       "PrimitiveKey" : "18",
       "RootComponent" : {
         "Children" : [{
@@ -63,10 +80,26 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 40",
+              "Text" : "UUID : 140",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
               "bTickEnable" : true
             }
           }],
@@ -76,7 +109,7 @@
             "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
           },
           "Is Editor Helper" : false,
-          "Location" : [-4.732070, 0.000000, 0.000000],
+          "Location" : [-4.732070, 2.233307, -2.266686],
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
@@ -86,6 +119,529 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_27",
+      "PrimitiveKey" : "25",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 144",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-4.732070, 4.157786, -2.266686],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_28",
+      "PrimitiveKey" : "28",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 148",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, 4.157786, -2.266686],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_29",
+      "PrimitiveKey" : "31",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 152",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, 2.098570, -2.266686],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_30",
+      "PrimitiveKey" : "34",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 156",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, -0.140295, -2.266686],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["Dummy"],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_31",
+      "PrimitiveKey" : "37",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 160",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, -0.064345, 0.854265],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_32",
+      "PrimitiveKey" : "40",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 164",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, 1.468776, 0.854265],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_33",
+      "PrimitiveKey" : "43",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 168",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, 1.468776, 2.725367],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_34",
+      "PrimitiveKey" : "46",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 172",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-2.779919, -0.454735, 2.725367],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_8",
+      "PrimitiveKey" : "49",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 70",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USphereComponent",
+            "Properties" : {
+              "AlwaysDrawCollider" : false,
+              "Is Editor Helper" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Radius" : 0.600000,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-4.732070, 0.011115, -2.266686],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "ACameraActor",
@@ -103,7 +659,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 26",
+              "Text" : "UUID : 64",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -159,6 +715,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "ADirectionalLightActor",
@@ -176,7 +733,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 33",
+              "Text" : "UUID : 71",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -211,7 +768,7 @@
           "ESM Exponent" : 40.000000,
           "Intensity" : 2.500000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "Location" : [0.000000, 0.000000, 5.273368],
+          "Location" : [2.514137, 0.000000, 5.273368],
           "Normal Bias" : 0.001000,
           "Rotation" : [152.676117, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
@@ -222,532 +779,7 @@
           "bTickEnable" : false
         }
       },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AAmbientLightActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AAmbientLightActor_0",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 39",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Editor/Icons/Materials/AmbientLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UAmbientLightComponent",
-        "Properties" : {
-          "Cast Shadows" : true,
-          "Depth Bias" : 0.000000,
-          "ESM Exponent" : 40.000000,
-          "Intensity" : 0.200000,
-          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "Location" : [6.400162, 0.000000, 2.221960],
-          "Normal Bias" : 0.000000,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Resolution" : 2048,
-          "Shadow Sharpen" : 0.000000,
-          "Slope Bias" : 0.000000,
-          "bAffectsWorld" : true,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AHeightFogActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AHeightFogActor_0",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 45",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Editor/Icons/Materials/HeightFog.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UHeightFogComponent",
-        "Properties" : {
-          "Cutoff Distance" : 0.000000,
-          "Fog Density" : 0.023000,
-          "Height Falloff" : 0.041000,
-          "Inscattering Color" : [0.000000, 0.027451, 0.749020, 1.000000],
-          "Location" : [4.926972, 0.000000, 1.920562],
-          "Max Opacity" : 0.420000,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Start Distance" : 0.000000,
-          "bTickEnable" : false
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_2",
-      "PrimitiveKey" : "52",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 52",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, 1.629377, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_3",
-      "PrimitiveKey" : "55",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 55",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, 5.555648, 0.000000],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_4",
-      "PrimitiveKey" : "58",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 58",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, 5.555648, -12.574749],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_5",
-      "PrimitiveKey" : "61",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 61",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, -0.325930, -12.574749],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_6",
-      "PrimitiveKey" : "64",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 64",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, -7.018701, -12.574749],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_7",
-      "PrimitiveKey" : "67",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 67",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, -7.018701, -2.266686],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_8",
-      "PrimitiveKey" : "70",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 70",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-4.732070, 0.011115, -2.266686],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_9",
-      "PrimitiveKey" : "73",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 73",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-2.355064, 0.011115, -2.266686],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_10",
-      "PrimitiveKey" : "76",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 76",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-2.355064, 9.093726, -2.266686],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
-      "bVisible" : true
-    }, {
-      "ClassName" : "AStaticMeshActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "AStaticMeshActor_11",
-      "PrimitiveKey" : "79",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 79",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UStaticMeshComponent",
-        "Properties" : {
-          "Element 0" : {
-            "Path" : "Asset/Content/Materials/SolarSystem/textures/uranus.json"
-          },
-          "Is Editor Helper" : false,
-          "Location" : [-2.355064, 5.486198, -2.266686],
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Static Mesh" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-          "Visible" : true,
-          "Visible In Editor" : true,
-          "Visible In Game" : true,
-          "bTickEnable" : true
-        }
-      },
+      "Tags" : [],
       "bVisible" : true
     }],
   "ClassName" : "UWorld",
@@ -757,9 +789,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [8.335890, -0.064541, 12.428910],
+    "Location" : [7.316108, -7.271158, 10.629128],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000001, 54.158840, -169.608444]
+    "Rotation" : [-0.000003, 47.859821, 130.814240]
   },
   "Primitives" : {
     "12" : {
@@ -770,77 +802,70 @@
       "Type" : "StaticMeshComp"
     },
     "18" : {
-      "Location" : [-4.732070, 0.000000, 0.000000],
+      "Location" : [-4.732070, 2.233307, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "52" : {
-      "Location" : [-4.732070, 1.629377, 0.000000],
+    "25" : {
+      "Location" : [-4.732070, 4.157786, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "55" : {
-      "Location" : [-4.732070, 5.555648, 0.000000],
+    "28" : {
+      "Location" : [-2.779919, 4.157786, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "58" : {
-      "Location" : [-4.732070, 5.555648, -12.574749],
+    "31" : {
+      "Location" : [-2.779919, 2.098570, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "61" : {
-      "Location" : [-4.732070, -0.325930, -12.574749],
+    "34" : {
+      "Location" : [-2.779919, -0.140295, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "64" : {
-      "Location" : [-4.732070, -7.018701, -12.574749],
+    "37" : {
+      "Location" : [-2.779919, -0.064345, 0.854265],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "67" : {
-      "Location" : [-4.732070, -7.018701, -2.266686],
+    "40" : {
+      "Location" : [-2.779919, 1.468776, 0.854265],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "70" : {
+    "43" : {
+      "Location" : [-2.779919, 1.468776, 2.725367],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "46" : {
+      "Location" : [-2.779919, -0.454735, 2.725367],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "49" : {
       "Location" : [-4.732070, 0.011115, -2.266686],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "73" : {
-      "Location" : [-2.355064, 0.011115, -2.266686],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "76" : {
-      "Location" : [-2.355064, 9.093726, -2.266686],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "79" : {
-      "Location" : [-2.355064, 5.486198, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],

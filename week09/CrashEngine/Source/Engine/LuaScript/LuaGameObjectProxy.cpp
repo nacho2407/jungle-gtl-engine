@@ -33,6 +33,37 @@ void FLuaGameObjectProxy::AddWorldOffset(const FVector& Delta)
     Actor->AddActorWorldOffset(Delta);
 }
 
+void FLuaGameObjectProxy::ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator)
+{
+    if (!Actor)
+    {
+        return;
+    }
+
+    Actor->TakeDamage(Damage, Instigator.GetActor());
+}
+
+bool FLuaGameObjectProxy::HasTag(const FString& Tag) const
+{
+    return Actor ? Actor->HasTag(Tag) : false;
+}
+
+void FLuaGameObjectProxy::AddTag(const FString& Tag)
+{
+    if (Actor)
+    {
+        Actor->AddTag(Tag);
+    }
+}
+
+void FLuaGameObjectProxy::RemoveTag(const FString& Tag)
+{
+    if (Actor)
+    {
+        Actor->RemoveTag(Tag);
+    }
+}
+
 void FLuaGameObjectProxy::PrintLocation() const
 {
     const FVector Location = GetLocation();
