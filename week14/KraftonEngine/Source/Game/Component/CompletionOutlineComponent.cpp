@@ -1,4 +1,4 @@
-#include "CompletionOutlineComponent.h"
+#include "Game/Component/CompletionOutlineComponent.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"

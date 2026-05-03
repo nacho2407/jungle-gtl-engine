@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "MovementComponent.h"
+#include "Component/Movement/MovementComponent.h"
 #include "Math/Vector.h"
 
 class UPrimitiveComponent;
