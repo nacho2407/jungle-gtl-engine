@@ -65,3 +65,13 @@ void UShapeComponent::OnOwnerChanged()
 
     world->GetCollisionManager()->RegisterComponent(this);
 }
+
+void UShapeComponent::NotifyCollisionShapeChanged()
+{
+    MarkWorldBoundsDirty();
+
+    if (UWorld* World = GetWorld())
+    {
+        World->UpdateCollisionInBVH(this);
+    }
+}

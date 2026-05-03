@@ -21,6 +21,10 @@ public:
     FString GetComponentClassName() const;
     uint32 GetUUID() const { return ComponentUUID; }
 
+	/*
+	 * Transform
+	 */
+
     FVector GetRelativeLocation() const;
     void SetRelativeLocation(const FVector& InLocation);
 
@@ -30,26 +34,58 @@ public:
     FVector GetRelativeRotation() const;
     void SetRelativeRotation(const FVector& InEulerRotation);
 
+	/*
+     * Visibility
+     */
+
     bool SetVisible(bool bVisible);
     bool SetVisibleInGame(bool bVisible);
     bool SetVisibleInEditor(bool bVisible);
+
+	/*
+     * Static Mesh
+     */
 
     bool SetStaticMesh(const FString& MeshPath);
     FString GetStaticMeshPath() const;
     int32 GetNumMaterials() const;
     bool SetMaterial(int32 ElementIndex, const FString& MaterialPath);
 
+	/*
+     * Text Render
+     */
+
     bool SetText(const FString& Text);
     FString GetText() const;
     bool SetFontSize(float FontSize);
+
+	/**
+	 * @brief 빌보드 자체를 설정하는 함수가 아니라 text render component를 빌보드로 설정할지 결정
+	 */
     bool SetBillboard(bool bBillboard);
+
+	/*
+     * Light
+     */
 
     bool SetIntensity(float Intensity);
     bool SetLightColor(float R, float G, float B, float A = 1.0f);
     bool SetAffectsWorld(bool bAffectsWorld);
     bool SetCastShadows(bool bCastShadows);
 
+	/*
+	 * Collision Shape
+	 */
+
     bool SetSphereRadius(float Radius);
+
+	bool SetBoxExtent(const FVector& Extent);
+
+    bool SetCapsuleSize(float Radius, float HalfHeight);
+
+    bool SetCapsuleRadius(float Radius);
+
+    bool SetCapsuleHalfHeight(float HalfHeight);
 
 private:
     USceneComponent* ResolveSceneComponent() const;

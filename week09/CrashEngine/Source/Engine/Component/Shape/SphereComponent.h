@@ -13,13 +13,15 @@ public:
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
-    void SetRadius(float Radius) { SphereCollision.Sphere.Radius = Radius; }
+    void SetRadius(float Radius);
+    float GetRadius() const { return SphereRadius; }
 
     virtual void OnComponentOverlap(UPrimitiveComponent* Other) const override;
 
     virtual FCollision* GetCollision() const override { return (FCollision*)&SphereCollision; }
 
     virtual void OnTransformDirty() override;
+    void UpdateWorldAABB() const override;
 
 private:
     float SphereRadius;
