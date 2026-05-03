@@ -171,4 +171,79 @@ function UIManager.GetWidget(key)
     return widgets[key]
 end
 
+-- ============================================================
+-- HUD (GameOverlayWidget) 갱신
+--
+-- 매 프레임 폴링: time-value(매치 카운트다운), combo-value(페이즈 카운트다운).
+-- 페이즈 전환 / 클리어 시 OnPhaseChanged 콜백에서 UpdateHUD 호출 → 즉시 라벨 갱신.
+-- 게임오버레이가 viewport 에 없으면 no-op (intro 화면 동안).
+-- ============================================================
+
+local PHASE_OBJECTIVE = {
+    [ECarGamePhase.None]         = "EXPLORE THE CITY",
+    [ECarGamePhase.CarWash]      = "WASH THE CAR",
+    [ECarGamePhase.CarGas]       = "FILL UP GAS",
+    [ECarGamePhase.EscapePolice] = "ESCAPE THE POLICE",
+    [ECarGamePhase.DodgeMeteor]  = "DODGE METEORS",
+    [ECarGamePhase.Finished]     = "MATCH COMPLETE",
+}
+
+local PHASE_NAME = {
+    [ECarGamePhase.CarWash]      = "CAR WASH",
+    [ECarGamePhase.CarGas]       = "GAS FILL",
+    [ECarGamePhase.EscapePolice] = "ESCAPE",
+    [ECarGamePhase.DodgeMeteor]  = "METEOR DODGE",
+}
+
+local function FormatTime(seconds)
+    if seconds == nil or seconds < 0 then seconds = 0 end
+    local m = math.floor(seconds / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%02d:%02d", m, s)
+end
+
+local function PopCount(mask)
+    local n = 0
+    while mask > 0 do
+        if mask % 2 == 1 then n = n + 1 end
+        mask = math.floor(mask / 2)
+    end
+    return n
+end
+
+local function GetObjectiveText(phase, lastEnded, lastResult)
+    if phase == ECarGamePhase.Result then
+        local name = PHASE_NAME[lastEnded] or "PHASE"
+        if lastResult == EPhaseResult.Success then
+            return name .. " CLEARED!"
+        elseif lastResult == EPhaseResult.Failed then
+            return name .. " FAILED"
+        end
+    end
+    return PHASE_OBJECTIVE[phase] or ""
+end
+
+function UIManager.UpdateHUD()
+    local gs = GetGameState()
+    if gs == nil then return end
+    local widget = widgets["gameOverlay"]
+    if widget == nil or not widget:IsInViewport() then return end
+
+    local phase = gs:GetPhase()
+
+    -- 매치 전체 카운트다운 (항상 표시)
+    widget:set_text("time-value", FormatTime(gs:GetRemainingMatchTime()))
+
+    -- 페이즈 카운트다운 — 활성/Result 일 때만, 그 외 "--"
+    if phase == ECarGamePhase.None or phase == ECarGamePhase.Finished then
+        widget:set_text("combo-value", "--")
+    else
+        widget:set_text("combo-value", FormatTime(gs:GetRemainingPhaseTime()))
+    end
+
+    -- objective + 클리어 카운트 — 매 프레임 호출 비용 미미하므로 같이 갱신
+    widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
+    widget:set_text("score-value", PopCount(gs:GetClearedPhasesMask()) .. "/4")
+end
+
 return UIManager
