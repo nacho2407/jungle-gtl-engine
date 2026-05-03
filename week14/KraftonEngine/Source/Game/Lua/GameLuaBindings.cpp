@@ -101,8 +101,12 @@ void RegisterGameLuaBindings(sol::state& Lua)
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase",              &AGameStateCarGame::GetPhase,
+		"SetPhase",              &AGameStateCarGame::SetPhase,
+		"GetQuestPhase",         &AGameStateCarGame::GetQuestPhase,
+		"SetQuestPhase",         &AGameStateCarGame::SetQuestPhase,
 		"GetRemainingMatchTime", &AGameStateCarGame::GetRemainingMatchTime,
 		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
+		"SetRemainingPhaseTime", &AGameStateCarGame::SetRemainingPhaseTime,
 		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
 		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
 		"GetClearedPhasesMask",  &AGameStateCarGame::GetClearedPhasesMask,

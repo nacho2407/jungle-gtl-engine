@@ -1045,7 +1045,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-29.629822, 5.449127, 0.698732],
-        "Rotation" : [-0.000000, 81.709389, 0.000000],
+        "Rotation" : [-0.000000, 81.709381, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1127,7 +1127,7 @@
           "Location" : [-29.629822, 5.449127, 0.698732],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 81.709412, 0.000000],
+          "Rotation" : [0.000000, 81.709381, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Buildings/Building1.obj",
@@ -1442,7 +1442,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-32.435738, 142.698746, 1.942000],
-        "Rotation" : [0.000000, -8.199046, 0.000000],
+        "Rotation" : [0.000000, -8.199044, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1565,7 +1565,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-78.705887, -375.854645, 1.942000],
-        "Rotation" : [-0.000000, 178.366226, 0.000000],
+        "Rotation" : [-0.000000, 178.366196, 0.000000],
         "Scale" : [30.000000, 30.000000, 30.000000],
         "Visible" : true
       },
@@ -1590,7 +1590,7 @@
           "Location" : [-78.705887, -375.854645, 1.942000],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 178.366241, 0.000000],
+          "Rotation" : [0.000000, 178.366211, 0.000000],
           "Scale" : [30.000000, 30.000000, 30.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Buildings/Building3.obj",
@@ -1688,7 +1688,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-60.380363, 68.380981, 0.798732],
-        "Rotation" : [-0.000000, 81.709389, 0.000000],
+        "Rotation" : [-0.000000, 81.709381, 0.000000],
         "Scale" : [20.000000, 20.000000, 20.000000],
         "Visible" : true
       },
@@ -1770,7 +1770,7 @@
           "Location" : [-60.380363, 68.380981, 0.798732],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 81.709412, 0.000000],
+          "Rotation" : [0.000000, 81.709381, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Buildings/Building1.obj",
@@ -1973,7 +1973,7 @@
           "Location" : [-63.125122, -63.150097, 15.996111],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, 76.058716, 0.000000],
+          "Rotation" : [0.000000, 76.058685, 0.000000],
           "Scale" : [15.000000, 9.000000, 20.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2710,7 +2710,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [150.440903, -124.145973, 1.505331],
-        "Rotation" : [0.000000, -98.215599, 0.000000],
+        "Rotation" : [0.000000, -98.215591, 0.000000],
         "Scale" : [1.500000, 1.500000, 1.500000],
         "Visible" : true
       },
@@ -2786,7 +2786,7 @@
           "Location" : [150.440903, -124.145973, 1.505331],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, -98.215607, 0.000000],
+          "Rotation" : [0.000000, -98.215591, 0.000000],
           "Scale" : [1.500000, 1.500000, 1.500000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/GasStation/GASSTATION .obj",
@@ -3023,7 +3023,7 @@
         "Location" : [143.543884, -98.167198, 9.621486],
         "Rotation" : [0.000000, -10.974365, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
-        "TriggerTag" : "CarWash",
+        "TriggerTag" : "CarGas",
         "Visible" : true
       },
       "RootComponent" : {
@@ -3116,7 +3116,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [134.444855, -84.006218, 5.420357],
+          "Location" : [141.138245, -82.717323, 5.420357],
           "Mass (kg)" : 1.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -3508,6 +3508,88 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "CarWashCenter",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [157.782654, -17.049404, 10.286926],
+        "Rotation" : [0.000000, -7.230791, 0.000000],
+        "Scale" : [20.000000, 20.000000, 10.000000],
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [157.782654, -17.049404, 10.286926],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -7.230789, 0.000000],
+          "Scale" : [20.000000, 20.000000, 10.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "CarWashTrigger",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [160.816833, -18.016075, 1.599991],
+        "Rotation" : [0.000000, -5.563553, 0.000000],
+        "Scale" : [25.000000, 25.000000, 20.000000],
+        "TriggerTag" : "CarWash",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [160.816833, -18.016075, 1.599991],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [0.000000, -5.563553, 0.000000],
+          "Scale" : [25.000000, 25.000000, 20.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
@@ -3516,9 +3598,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [148.304871, -75.158966, 10.090735],
+    "Location" : [-107.473183, 111.149300, 23.777182],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000001, 37.007107, -127.438370]
+    "Rotation" : [0.000000, 17.657286, -18.687407]
   },
   "Version" : 2,
   "WorldType" : "Editor"

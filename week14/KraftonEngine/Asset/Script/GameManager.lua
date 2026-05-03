@@ -1,36 +1,6 @@
 local UIManager = require("UIManager")
 local ObjRegistry = require("ObjRegistry")
 local gameState = nil
-local HandleQuestPhaseChanged = nil
-
-local function OnPhaseChanged(phase)
-    print("Phase changed: " .. tostring(phase))
-
-    if HandleQuestPhaseChanged ~= nil then
-        HandleQuestPhaseChanged(phase)
-    end
-
-    if phase == ECarGamePhase.None then
-        return
-    end
-
-    if phase == ECarGamePhase.CarWash then
-        UIManager.FadeOut(0.5, function()
-            CameraManager.PossessCamera(ObjRegistry.manCamera)
-
-            UIManager.FadeIn(0.5)
-        end)
-        print("Run Lua logic for CarWash")
-    elseif phase == ECarGamePhase.CarGas then
-        print("Run Lua logic for CarGas")
-    elseif phase == ECarGamePhase.EscapePolice then
-        print("Run Lua logic for EscapePolice")
-    elseif phase == ECarGamePhase.DodgeMeteor then
-        print("Run Lua logic for DodgeMeteor")
-    elseif phase == ECarGamePhase.Finished then
-        print("Run Lua logic for Finished")
-    end
-end
 
 local QuestState = {
     NotStarted = 0,
@@ -46,19 +16,57 @@ local quests = {
         uiKey = "carWashQuest",
         targetName = "CarWashCenter",
         fallbackTargetName = "CarWashTrigger",
-        completionPhase = ECarGamePhase.CarWash
+        phase = ECarGamePhase.CarWash
     },
     {
         id = "gas",
         uiKey = "gasQuest",
         targetName = "GasStation",
         fallbackTargetName = "GasStationTrigger",
-        completionPhase = ECarGamePhase.CarGas
+        phase = ECarGamePhase.CarGas
+    },
+    {
+        id = "hitPerson",
+        uiKey = "personQuest",
+        targetName = "ATriggerVolumeBase_2",
+        fallbackTargetName = nil,
+        phase = ECarGamePhase.EscapePolice
     }
 }
 
 local state = QuestState.NotStarted
 local currentQuestIndex = 0
+
+local function OnPhaseChanged(phase)
+    print("Phase changed: " .. tostring(phase))
+
+    if phase == ECarGamePhase.None then
+        return
+    end
+
+    if phase == ECarGamePhase.CarWash then
+        UIManager.FadeOut(0.5, function()
+            CameraManager.PossessCamera(ObjRegistry.manCamera)
+
+            UIManager.FadeIn(0.5)
+        end)
+        print("Run Lua logic for CarWash")
+    elseif phase == ECarGamePhase.CarGas then
+        UIManager.FadeOut(0.5, function()
+            CameraManager.PossessCamera(ObjRegistry.manCamera)
+
+            UIManager.FadeIn(0.5)
+        end)
+        print("Run Lua logic for CarGas")
+    elseif phase == ECarGamePhase.EscapePolice then
+        print("Run Lua logic for EscapePolice")
+    elseif phase == ECarGamePhase.DodgeMeteor then
+        print("Run Lua logic for DodgeMeteor")
+    elseif phase == ECarGamePhase.Finished then
+        print("Run Lua logic for Finished")
+    end
+end
+
 local car = nil
 local activeTarget = nil
 
@@ -80,6 +88,10 @@ local function GetQuestText(quest)
         return "세차하기"
     elseif quest.id == "gas" then
         return "주유하기"
+    end
+
+    if quest.id == "hitPerson" then
+        return "사람치기"
     end
 
     return quest.id
@@ -132,6 +144,11 @@ local function StartCurrentQuest()
         return
     end
 
+    if gameState ~= nil and quest.phase ~= nil then
+        gameState:SetRemainingPhaseTime(0.0)
+        gameState:SetQuestPhase(quest.phase)
+    end
+
     UIManager.SetQuestHud(GetQuestText(quest), "&#8593;", true)
     state = QuestState.Active
 end
@@ -165,6 +182,9 @@ local function CompleteCurrentQuest()
     else
         state = QuestState.AllCompleted
         UIManager.SetQuestHud("완료", "&#8593;", false)
+        if gameState ~= nil then
+            gameState:SetQuestPhase(ECarGamePhase.None)
+        end
         print("All quests completed.")
     end
 end
@@ -193,13 +213,16 @@ local function UpdateQuestHud()
     UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), GetArrowSymbolFromAngle(angle), true)
 end
 
-HandleQuestPhaseChanged = function(phase)
+local function HandleQuestPhaseChanged(phase)
     local quest = GetCurrentQuest()
     if state ~= QuestState.Active or quest == nil then
         return
     end
 
-    if phase == quest.completionPhase then
+    if phase == ECarGamePhase.Result
+        and gameState ~= nil
+        and gameState:GetLastEndedPhase() == quest.phase
+        and gameState:GetLastPhaseResult() == EPhaseResult.Success then
         CompleteCurrentQuest()
     end
 end
@@ -209,6 +232,7 @@ function BeginPlay()
     gameState = GetGameState()
     if gameState ~= nil then
         gameState:BindPhaseChanged(OnPhaseChanged)
+        gameState:BindPhaseChanged(HandleQuestPhaseChanged)
     end
 
     UIManager.SetStartGameCallback(function()
@@ -223,6 +247,11 @@ function BeginPlay()
     end)
     UIManager.SetGasQuestOkCallback(function()
         if currentQuestIndex == 2 and state == QuestState.WaitingAccept then
+            StartCurrentQuest()
+        end
+    end)
+    UIManager.SetPersonQuestOkCallback(function()
+        if currentQuestIndex == 3 and state == QuestState.WaitingAccept then
             StartCurrentQuest()
         end
     end)
