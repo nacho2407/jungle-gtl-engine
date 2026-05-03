@@ -53,7 +53,8 @@ namespace SceneKeys
 	static constexpr const char* WorldType = "WorldType";
 	static constexpr const char* ContextName = "ContextName";
 	static constexpr const char* ContextHandle = "ContextHandle";
-	static constexpr const char* GameMode = "GameMode";
+	static constexpr const char* WorldSettings = "WorldSettings";
+	static constexpr const char* GameMode = "GameMode";  // legacy / WorldSettings 내부 키
 	static constexpr const char* Actors = "Actors";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
@@ -158,6 +159,14 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	w[SceneKeys::WorldType] = WorldTypeToString(Ctx.WorldType);
 	w[SceneKeys::ContextName] = Ctx.ContextName;
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
+
+	// ---- WorldSettings (씬 단위 게임 설정) ----
+	{
+		const FWorldSettings& WS = World->GetWorldSettings();
+		JSON WSObj = json::Object();
+		WSObj[SceneKeys::GameMode] = WS.GameModeClassName;
+		w[SceneKeys::WorldSettings] = WSObj;
+	}
 
 	// ---- Actors ----
 	JSON Actors = json::Array();
@@ -319,11 +328,22 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		? root[SceneKeys::ContextHandle].ToString()
 		: ContextName;
 
-	// Scene 파일이 명시한 GameMode 클래스 이름 — 호출자 (UGameEngine::LoadSceneFromPath 등)
-	// 가 우선 적용 후 ProjectSettings 로 fallback.
-	FString GameModeClassName = root.hasKey(SceneKeys::GameMode)
-		? root[SceneKeys::GameMode].ToString()
-		: FString();
+	// WorldSettings — scene 단위 게임 설정. 신규 포맷은 root["WorldSettings"] 객체.
+	// 구버전 호환: root["GameMode"] (top-level) 도 fallback 으로 읽음.
+	FWorldSettings WorldSettings;
+	if (root.hasKey(SceneKeys::WorldSettings))
+	{
+		JSON& WSObj = root[SceneKeys::WorldSettings];
+		if (WSObj.hasKey(SceneKeys::GameMode))
+		{
+			WorldSettings.GameModeClassName = WSObj[SceneKeys::GameMode].ToString();
+		}
+	}
+	else if (root.hasKey(SceneKeys::GameMode))
+	{
+		WorldSettings.GameModeClassName = root[SceneKeys::GameMode].ToString();
+	}
+	World->GetWorldSettings() = WorldSettings;
 
 	World->InitWorld();
 
@@ -391,7 +411,6 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	OutWorldContext.World = World;
 	OutWorldContext.ContextName = ContextName;
 	OutWorldContext.ContextHandle = FName(ContextHandle);
-	OutWorldContext.GameModeClassName = GameModeClassName;
 }
 
 USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner)

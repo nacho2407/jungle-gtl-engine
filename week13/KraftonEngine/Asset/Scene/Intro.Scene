@@ -142,7 +142,6 @@
   "ClassName" : "UWorld",
   "ContextHandle" : "IntroScene",
   "ContextName" : "Intro",
-  "GameMode" : "AGameModeIntro",
   "Name" : "Intro",
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
@@ -152,5 +151,8 @@
     "Rotation" : [0.000000, 26.565046, 179.999985]
   },
   "Version" : 2,
+  "WorldSettings" : {
+    "GameMode" : "AGameModeIntro"
+  },
   "WorldType" : "Editor"
 }
