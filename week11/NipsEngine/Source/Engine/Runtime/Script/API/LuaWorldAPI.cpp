@@ -1,4 +1,4 @@
-#include "Runtime/Script/API/LuaEngineAPIBindings.h"
+﻿#include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
 #include "Engine/Runtime/Engine.h"
 #include "Component/CameraComponent.h"
@@ -246,6 +246,23 @@ namespace FLuaEngineAPI
         {
             APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
             return PlayerController ? PlayerController->GetViewTargetCamera() : nullptr;
+        };
+
+		World["SetViewTargetCameraLocation"] = [](const FVector& NewLocation)
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+			if (PlayerController)
+			{
+                PlayerController->GetViewTargetCamera()->SetRelativeLocation(NewLocation);
+			}
+        };
+
+		World["GetViewTargetCameraLocation"] = []() -> FVector
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+			return PlayerController ? PlayerController->GetViewTargetCamera()->GetRelativeLocation() : FVector::ZeroVector;
         };
 
         World["SpawnActor"] = [](const FString& TypeName) -> AActor*

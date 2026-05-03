@@ -11,6 +11,15 @@ Script.Properties = {
     }
 }
 
+function Script:Attack()
+    self.bDoingAttack = true
+    Log("Attack")
+    local wait = WaitForSeconds(0.1)
+    coroutine.yield(wait)
+    Log("Attack End")
+    self.bDoingAttack = false
+end
+
 -- instance를 반환하는 함수 Script 객체화하는 함수
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -18,7 +27,8 @@ function Script.new(component, properties)
     self.component = component
     self.owner = component:GetOwner()
     self.time = 0
-    self.PrevLocation =  Vector(0, 0, 0)
+    self.PrevLocation = Vector(0, 0, 0)
+    self.bDoingAttack = false
 
     -- Editor에서 설정한 Property 값을 self에 복사
     properties = properties or {}
@@ -40,9 +50,7 @@ function Script:BeginPlay()
 
     StartCoroutine(function()
         Log("Coroutine Start")
-
         coroutine.yield(WaitForSeconds(1.0))
-
         Log("1 seconds later")
     end
     )
@@ -105,7 +113,7 @@ function Script:Tick(dt)
 
     self.camera_pitch = (self.camera_pitch or 0) + Engine.API.Input.GetMouseDelta().Y * 0.1
 
-    if player and Engine.API.Input.IsMousePressed("LMB") then
+    if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
 
         local yaw = rotation.z
@@ -133,6 +141,10 @@ function Script:Tick(dt)
         slash.Rotation = Vector(pitch_y, pitch_x, yaw)
         slash.Location = self.owner.Location + self.owner.Scale / 2 + fwd_pitched * (scale_long / 2)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
+
+        StartCoroutine(function()
+            self:Attack()
+        end)
     end
     
 end
