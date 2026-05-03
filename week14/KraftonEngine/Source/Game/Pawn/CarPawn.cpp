@@ -101,10 +101,22 @@ void ACarPawn::InitDefaultComponents(const FString& StaticMeshFileName, const FS
 	Gas = AddComponent<UCarGasComponent>();
 }
 
+void ACarPawn::BeginPlay()
+{
+	Super::BeginPlay();
+	// Scene-load 경로에서는 PostDuplicate 가 안 도므로 여기서 캐시 포인터 결정.
+	// PostDuplicate 경로에선 이미 잡혀 있으니 다시 잡아도 동일 결과 (idempotent).
+	ResolveCachedComponents();
+}
+
 void ACarPawn::PostDuplicate()
 {
 	Super::PostDuplicate();
+	ResolveCachedComponents();
+}
 
+void ACarPawn::ResolveCachedComponents()
+{
 	CollisionBox = Cast<UBoxComponent>(GetRootComponent());
 	Mesh = GetComponentByClass<UStaticMeshComponent>();
 	LuaScript = GetComponentByClass<ULuaScriptComponent>();
@@ -113,6 +125,7 @@ void ACarPawn::PostDuplicate()
 	Gas = GetComponentByClass<UCarGasComponent>();
 
 	// Wheels — 컴포넌트 순회 순서대로 캐싱 (InitDefaultComponents 추가 순서 또는 직렬화 순서가 보존된다고 가정)
+	for (auto& W : Wheels) W = nullptr;
 	int Idx = 0;
 	for (UActorComponent* C : GetComponents())
 	{
