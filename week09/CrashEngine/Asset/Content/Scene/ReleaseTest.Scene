@@ -35,7 +35,7 @@
               "AlwaysDrawCollider" : false,
               "Is Editor Helper" : false,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Radius" : 3.300000,
+              "Radius" : 0.050000,
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "ShapeColor" : [0.000000, 0.000000, 0.000000, 0.000000],
@@ -48,13 +48,16 @@
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
           "Element 0" : {
-            "Path" : "Asset/Content/Materials/Goldfish/Ryukin_Goldfish.json"
+            "Path" : "Asset/Content/Materials/Clownfish/fishclown.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Clownfish/fishclown.001.json"
           },
           "Is Editor Helper" : false,
           "Location" : [2.020485, 0.000000, 0.000000],
-          "Rotation" : [0.000000, -93.113167, 0.000000],
-          "Scale" : [0.400000, 0.200000, 0.200000],
-          "Static Mesh" : "Asset/Content/Models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj",
+          "Rotation" : [0.000000, 91.332397, 0.000000],
+          "Scale" : [21.400000, 14.500000, 11.400000],
+          "Static Mesh" : "Asset/Content/Models/Clownfish/ClownFish.obj",
           "Visible" : true,
           "Visible In Editor" : true,
           "Visible In Game" : true,
@@ -644,6 +647,60 @@
       "Tags" : [],
       "bVisible" : true
     }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_11",
+      "PrimitiveKey" : "52",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 78",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Dirt.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Algae_1.json"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Algae_2.json"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Root.json"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Content/Materials/Aquarium/Aquarium.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [92.203125, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/Aquarium/Aquarium.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
       "ClassName" : "ACameraActor",
       "NonSceneComponents" : [],
       "ObjectName" : "ACameraActor_0",
@@ -659,7 +716,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 64",
+              "Text" : "UUID : 80",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -733,7 +790,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 71",
+              "Text" : "UUID : 87",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -770,11 +827,72 @@
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "Location" : [2.514137, 0.000000, 5.273368],
           "Normal Bias" : 0.001000,
-          "Rotation" : [152.676117, 0.000000, 0.000000],
+          "Rotation" : [177.334778, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shadow Resolution" : 2048,
           "Shadow Sharpen" : 0.000000,
           "Slope Bias" : 0.001000,
+          "bAffectsWorld" : true,
+          "bTickEnable" : false
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AAmbientLightActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AAmbientLightActor_0",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 93",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Height" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Material" : {
+                "Path" : "Asset/Editor/Icons/Materials/AmbientLightIcon.json"
+              },
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "Width" : 1.000000,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UAmbientLightComponent",
+        "Properties" : {
+          "Cast Shadows" : true,
+          "Depth Bias" : 0.000000,
+          "ESM Exponent" : 40.000000,
+          "Intensity" : 0.500000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "Location" : [259.698578, 0.000000, 0.000000],
+          "Normal Bias" : 0.000000,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [14.110077, 1.000000, 1.000000],
+          "Shadow Resolution" : 2048,
+          "Shadow Sharpen" : 0.000000,
+          "Slope Bias" : 0.000000,
           "bAffectsWorld" : true,
           "bTickEnable" : false
         }
@@ -789,16 +907,16 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [7.316108, -7.271158, 10.629128],
+    "Location" : [0.942922, -13.772308, 6.597881],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000003, 47.859821, 130.814240]
+    "Rotation" : [0.000000, 18.879635, 121.994934]
   },
   "Primitives" : {
     "12" : {
       "Location" : [2.020485, 0.000000, 0.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Goldfish/13001_Ryukin_Goldfish_v1_L3.obj",
-      "Rotation" : [0.000000, -0.000000, -93.113167],
-      "Scale" : [0.400000, 0.200000, 0.200000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Clownfish/ClownFish.obj",
+      "Rotation" : [0.000000, -0.000000, 91.332314],
+      "Scale" : [21.399992, 14.499996, 11.400000],
       "Type" : "StaticMeshComp"
     },
     "18" : {
@@ -868,6 +986,13 @@
       "Location" : [-4.732070, 0.011115, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "52" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Aquarium/Aquarium.obj",
+      "Rotation" : [180.000000, 87.796814, 180.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     }
