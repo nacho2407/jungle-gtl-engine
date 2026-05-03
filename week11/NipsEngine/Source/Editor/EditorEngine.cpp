@@ -1331,7 +1331,7 @@ void UEditorEngine::StartPlaySessionNow()
     RequestPIEViewportInputFocus(3);
     SelectionManager.ClearSelection();
 
-    constexpr const char* DefaultPIEPlayerControllerClass = "APlayerController";
+    constexpr const char* DefaultPIEPlayerControllerClass = "AGameJamPlayerController";
     APlayerController* PlayerController = Cast<APlayerController>(
         PIEWorld->SpawnActorByTypeName(DefaultPIEPlayerControllerClass));
     if (PlayerController)

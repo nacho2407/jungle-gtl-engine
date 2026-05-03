@@ -243,32 +243,48 @@ void UEngine::SetActiveWorld(const FName& Handle)
 void UEngine::SetRuntimeInputMode(ERuntimeInputMode InMode)
 {
 	RuntimeInputMode = InMode;
+	InputSystem& Input = InputSystem::Get();
 	if (RuntimeInputMode == ERuntimeInputMode::GameOnly)
 	{
 		bRuntimeCursorVisible = false;
 		bRuntimeCursorLocked = true;
+		Input.SetCursorVisibility(false);
 	}
 	else
 	{
 		bRuntimeCursorVisible = true;
 		bRuntimeCursorLocked = false;
+		Input.SetUseRawMouse(false);
+		Input.LockMouse(false);
+		Input.SetCursorVisibility(true);
 	}
 }
 
 void UEngine::SetRuntimeCursorVisible(bool bVisible)
 {
 	bRuntimeCursorVisible = bVisible;
+	InputSystem& Input = InputSystem::Get();
 	if (bVisible)
 	{
 		bRuntimeCursorLocked = false;
+		Input.SetUseRawMouse(false);
+		Input.LockMouse(false);
 	}
+	Input.SetCursorVisibility(bVisible);
 }
 
 void UEngine::SetRuntimeCursorLocked(bool bLocked)
 {
 	bRuntimeCursorLocked = bLocked;
+	InputSystem& Input = InputSystem::Get();
 	if (bLocked)
 	{
 		bRuntimeCursorVisible = false;
+		Input.SetCursorVisibility(false);
+	}
+	else
+	{
+		Input.SetUseRawMouse(false);
+		Input.LockMouse(false);
 	}
 }

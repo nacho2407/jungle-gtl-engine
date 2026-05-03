@@ -344,6 +344,9 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(IsCursorVisible, IsCursorVisible);
     LUA_METHOD(SetCursorLocked, SetCursorLocked);
     LUA_METHOD(IsCursorLocked, IsCursorLocked);
+    LUA_METHOD(SetMouseCapture, SetMouseCapture);
+    LUA_METHOD(ReleaseMouseCapture, ReleaseMouseCapture);
+    LUA_METHOD(IsMouseCaptured, IsMouseCaptured);
     LUA_METHOD(SetInputModeGameOnly, SetInputModeGameOnly);
     LUA_METHOD(SetInputModeUIOnly, SetInputModeUIOnly);
     LUA_METHOD(SetInputModeGameAndUI, SetInputModeGameAndUI);

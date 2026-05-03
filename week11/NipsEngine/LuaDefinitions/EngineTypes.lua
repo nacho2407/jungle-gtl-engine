@@ -604,6 +604,22 @@ function PlayerController:UnPossess() end
 function PlayerController:SetViewTarget(actor) end
 ---@param camera CameraComponent
 function PlayerController:SetViewTargetCamera(camera) end
+---@param visible boolean
+function PlayerController:SetCursorVisible(visible) end
+---@return boolean
+function PlayerController:IsCursorVisible() end
+---@param locked boolean
+function PlayerController:SetCursorLocked(locked) end
+---@return boolean
+function PlayerController:IsCursorLocked() end
+---@param captured boolean
+function PlayerController:SetMouseCapture(captured) end
+function PlayerController:ReleaseMouseCapture() end
+---@return boolean
+function PlayerController:IsMouseCaptured() end
+function PlayerController:SetInputModeGameOnly() end
+function PlayerController:SetInputModeUIOnly() end
+function PlayerController:SetInputModeGameAndUI() end
 ---@return AActor|nil
 function PlayerController:GetPossessedActor() end
 ---@return AActor|nil

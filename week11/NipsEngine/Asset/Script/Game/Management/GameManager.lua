@@ -25,6 +25,8 @@ function GameManager:EndPlay()
 end
 
 function GameManager:StartRun()
+    Engine.API.Time.SetTimeScale(1.0)
+
     self.isRunning = true
     self.isPaused = false
     self.survivalTime = 0.0

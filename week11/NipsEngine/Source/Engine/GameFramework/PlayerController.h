@@ -27,6 +27,9 @@ public:
 	bool IsCursorVisible() const;
 	void SetCursorLocked(bool bLocked);
 	bool IsCursorLocked() const;
+	void SetMouseCapture(bool bCaptured);
+	void ReleaseMouseCapture();
+	bool IsMouseCaptured() const;
 	void SetInputModeGameOnly();
 	void SetInputModeUIOnly();
 	void SetInputModeGameAndUI();
