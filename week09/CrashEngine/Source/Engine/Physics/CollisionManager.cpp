@@ -146,12 +146,26 @@ void FCollisionManager::UnregisterComponent(UPrimitiveComponent* Component)
         // RegisteredComponents.erase(it);
     }
 
-    for (const FOverlapPair& Pair : PreviousFrameOverlaps)
-    {
-        if (Pair.A == Component || Pair.B == Component)
+    TArray<FOverlapPair> PairsToEnd;
+    auto AddPairsContainingComponent = [Component, &PairsToEnd](const TArray<FOverlapPair>& Pairs)
         {
-            BroadcastEndOverlapPair(Pair);
-        }
+            for (const FOverlapPair& Pair : Pairs)
+            {
+                if ((Pair.A == Component || Pair.B == Component)
+                    && std::find(PairsToEnd.begin(), PairsToEnd.end(), Pair) == PairsToEnd.end())
+                {
+                    PairsToEnd.push_back(Pair);
+                }
+            }
+        };
+
+    AddPairsContainingComponent(PreviousFrameOverlaps);
+    AddPairsContainingComponent(CurrentFrameOverlaps);
+    AddPairsContainingComponent(PendingBeginOverlaps);
+
+    for (const FOverlapPair& Pair : PairsToEnd)
+    {
+        BroadcastEndOverlapPair(Pair);
     }
 
 	RemovePairsContaining(PreviousFrameOverlaps, Component);
@@ -238,8 +252,15 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
     }
 
     // 4. 지연된 이벤트 및 로그 한꺼번에 발생
-    for (const auto& Pair : PendingBeginOverlaps)
+    const TArray<FOverlapPair> BeginOverlapsToBroadcast = PendingBeginOverlaps;
+    for (const auto& Pair : BeginOverlapsToBroadcast)
     {
+        if (!IsRegistered(Pair.A) || !IsRegistered(Pair.B)
+            || std::find(PendingBeginOverlaps.begin(), PendingBeginOverlaps.end(), Pair) == PendingBeginOverlaps.end())
+        {
+            continue;
+        }
+
         UE_LOG(Console, Info, "Collision %s and Collision %s Begin Collision!", 
 			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
 
@@ -247,19 +268,26 @@ void FCollisionManager::TickCollision(float DeltaTime, FScene* Scene)
         Pair.B->AddOverlapInfo(Pair.A);
 
         Pair.A->BroadcastComponentBeginOverlap(Pair.B->GetOwner());
+        if (!IsRegistered(Pair.A) || !IsRegistered(Pair.B))
+        {
+            continue;
+        }
         Pair.B->BroadcastComponentBeginOverlap(Pair.A->GetOwner());
     }
 
-    for (const auto& Pair : PendingEndOverlaps)
+    const TArray<FOverlapPair> EndOverlapsToBroadcast = PendingEndOverlaps;
+    for (const auto& Pair : EndOverlapsToBroadcast)
     {
+        if (!IsRegistered(Pair.A) || !IsRegistered(Pair.B)
+            || std::find(PendingEndOverlaps.begin(), PendingEndOverlaps.end(), Pair) == PendingEndOverlaps.end())
+        {
+            continue;
+        }
+
         UE_LOG(Console, Info, "Collision %s and Collision %s End Collision!", 
 			Pair.A->GetFName().ToString().c_str(), Pair.B->GetFName().ToString().c_str());
 
-        Pair.A->RemoveOverlapInfo(Pair.B);
-        Pair.B->RemoveOverlapInfo(Pair.A);
-
-        Pair.A->BroadcastComponentEndOverlap(Pair.B->GetOwner());
-        Pair.B->BroadcastComponentEndOverlap(Pair.A->GetOwner());
+        BroadcastEndOverlapPair(Pair);
     }
 
     // 5. 다음 프레임 비교를 위해 장부 덮어쓰기
@@ -402,6 +430,12 @@ bool FCollisionManager::CheckOverlap(UPrimitiveComponent* A, UPrimitiveComponent
     }
 
     return CollisionA->IsOverlapping(CollisionB); // Intersect 함수는 수학 라이브러리에 구현
+}
+
+bool FCollisionManager::IsRegistered(UPrimitiveComponent* Component) const
+{
+    return Component
+        && std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component) != RegisteredComponents.end();
 }
 
 void FCollisionManager::BroadcastEndOverlapPair(const FOverlapPair& Pair)

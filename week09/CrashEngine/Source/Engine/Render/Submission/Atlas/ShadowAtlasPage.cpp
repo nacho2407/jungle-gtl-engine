@@ -1,4 +1,4 @@
-#include "Render/Submission/Atlas/ShadowAtlasPage.h"
+﻿#include "Render/Submission/Atlas/ShadowAtlasPage.h"
 
 #include "Core/Logging/LogMacros.h"
 
@@ -250,7 +250,7 @@ bool FShadowAtlasPage::Allocate(uint32 Resolution, uint32 AtlasPageIndex, FShado
         Candidate.AtlasPageIndex = AtlasPageIndex;
         Candidate.SliceIndex = SliceIndex;
         OutData = Candidate;
-        UE_LOG(Render, Verbose, "Allocated shadow atlas slot: %s", FormatShadowAllocation(OutData).c_str());
+        //UE_LOG(Render, Verbose, "Allocated shadow atlas slot: %s", FormatShadowAllocation(OutData).c_str());
         return true;
     }
 
@@ -265,7 +265,7 @@ void FShadowAtlasPage::Free(const FShadowMapData& Allocation)
         return;
     }
 
-    UE_LOG(Render, Verbose, "Freed shadow atlas slot: %s", FormatShadowAllocation(Allocation).c_str());
+    //UE_LOG(Render, Verbose, "Freed shadow atlas slot: %s", FormatShadowAllocation(Allocation).c_str());
     SliceAllocators[Allocation.SliceIndex].Free(Allocation);
 }
 
