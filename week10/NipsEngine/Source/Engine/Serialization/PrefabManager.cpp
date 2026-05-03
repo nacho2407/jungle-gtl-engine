@@ -97,7 +97,7 @@ bool FPrefabManager::SaveActorPrefab(AActor* Actor, const FString& FilePath)
 	std::filesystem::path PrefabPath;
 	if (!ResolvePrefabPath(FilePath, PrefabPath, true))
 	{
-		UE_LOG("[Prefab] Invalid prefab save path: %s", FilePath.c_str());
+		UE_LOG_WARNING("[Prefab] Invalid prefab save path: %s", FilePath.c_str());
 		return false;
 	}
 
@@ -110,7 +110,7 @@ bool FPrefabManager::SaveActorPrefab(AActor* Actor, const FString& FilePath)
 	std::ofstream File(PrefabPath);
 	if (!File.is_open())
 	{
-		UE_LOG("[Prefab] Failed to open prefab file: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
+		UE_LOG_ERROR("[Prefab] Failed to open prefab file: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
 		return false;
 	}
 
@@ -129,14 +129,14 @@ AActor* FPrefabManager::SpawnActorFromPrefab(UWorld* World, const FString& Relat
 	std::filesystem::path PrefabPath;
 	if (!ResolvePrefabPath(RelativePath, PrefabPath, false))
 	{
-		UE_LOG("[Prefab] Invalid prefab path: %s", RelativePath.c_str());
+		UE_LOG_WARNING("[Prefab] Invalid prefab path: %s", RelativePath.c_str());
 		return nullptr;
 	}
 
 	std::ifstream File(PrefabPath);
 	if (!File.is_open())
 	{
-		UE_LOG("[Prefab] Failed to open prefab file: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
+		UE_LOG_ERROR("[Prefab] Failed to open prefab file: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
 		return nullptr;
 	}
 
@@ -144,7 +144,7 @@ AActor* FPrefabManager::SpawnActorFromPrefab(UWorld* World, const FString& Relat
 	json::JSON Root = json::JSON::Load(FileContent);
 	if (!Root.hasKey(PrefabKeys::Actor))
 	{
-		UE_LOG("[Prefab] Prefab has no actor payload: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
+		UE_LOG_WARNING("[Prefab] Prefab has no actor payload: %s", FPaths::ToUtf8(PrefabPath.wstring()).c_str());
 		return nullptr;
 	}
 

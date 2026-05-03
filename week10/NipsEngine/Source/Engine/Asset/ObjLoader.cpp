@@ -51,7 +51,7 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	/* Obj Parse - Build Raw Data */
 	if (!ParseObj(Path, RawData))
 	{
-		UE_LOG("[ObjLoader] Failed to parse OBJ: %s", Path.c_str());
+		UE_LOG_ERROR("[ObjLoader] Failed to parse OBJ: %s", Path.c_str());
 		return nullptr;
 	}
 	
@@ -70,7 +70,7 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	/* Build Cooked Data from Raw Data */
 	if (!BuildStaticMesh(Path, StaticMesh, RawData))
 	{
-		UE_LOG("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
+		UE_LOG_ERROR("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
 		return nullptr;
 	}
 

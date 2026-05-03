@@ -60,13 +60,13 @@ PSInput mainVS(VSInput input)
 
     float3 accumulatedLight = float3(0, 0, 0);
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
-    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f);
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f));
 
     for (uint i = 0; i < LightCount; i++) {
         LightInfo light = Lights[i];
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f) :
-            CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f)) :
+            CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, CameraPosition - output.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f));
     }
 
     output.LitColor = accumulatedLight;
@@ -160,14 +160,14 @@ PSOutput mainPS(PSInput input) : SV_Target
 
     float3 accumulatedLight = float3(0, 0, 0);
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
-    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f);
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f));
 
     for (uint i = 0; i < tileData.y; i++)
     {
         LightInfo light = Lights[CulledIndexBuffer[tileData.x + i]];
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f))
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N_Phong, input.WorldPos, CameraPosition - input.WorldPos, 32.0f, float3(1.0f, 1.0f, 1.0f));
     }
 
     float4 DecalColor = float4(0, 0, 0, 0);

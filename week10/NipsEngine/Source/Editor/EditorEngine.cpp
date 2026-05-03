@@ -613,7 +613,7 @@ void UEditorEngine::StartPlaySessionNow()
     if (!FocusedClient || !FocusedWorld) return;
     if (!HasPlayerStart(FocusedWorld))
     {
-        UE_LOG("[PIE] Cannot start Play In Editor: Player Start is missing.");
+        UE_LOG_ERROR("[PIE] Cannot start Play In Editor: Player Start is missing.");
         MainPanel.PushFooterLog("PIE failed: Player Start is missing");
         return;
     }

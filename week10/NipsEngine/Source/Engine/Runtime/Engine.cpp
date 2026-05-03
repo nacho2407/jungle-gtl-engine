@@ -94,7 +94,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 bool UEngine::RequestQuitGame()
 {
 #if WITH_EDITOR
-	UE_LOG("[Engine] RequestQuitGame is ignored in editor builds.");
+	UE_LOG_WARNING("[Engine] RequestQuitGame is ignored in editor builds.");
 	return false;
 #else
 	if (!Window || !Window->GetHWND())

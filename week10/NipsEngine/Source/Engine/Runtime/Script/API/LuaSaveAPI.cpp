@@ -64,7 +64,7 @@ namespace FLuaEngineAPI
             std::filesystem::path SavePath;
             if (!ResolveSafeSavePath(RelativePath, SavePath))
             {
-                UE_LOG("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
+                UE_LOG_WARNING("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
                 return false;
             }
 
@@ -72,14 +72,14 @@ namespace FLuaEngineAPI
             std::filesystem::create_directories(SavePath.parent_path(), Ec);
             if (Ec)
             {
-                UE_LOG("[Engine.API.Save] Failed to create save directory: %s", FPaths::ToUtf8(SavePath.parent_path().wstring()).c_str());
+                UE_LOG_ERROR("[Engine.API.Save] Failed to create save directory: %s", FPaths::ToUtf8(SavePath.parent_path().wstring()).c_str());
                 return false;
             }
 
             std::ofstream File(SavePath, std::ios::binary | std::ios::trunc);
             if (!File.is_open())
             {
-                UE_LOG("[Engine.API.Save] Failed to open save file for write: %s", FPaths::ToUtf8(SavePath.wstring()).c_str());
+                UE_LOG_ERROR("[Engine.API.Save] Failed to open save file for write: %s", FPaths::ToUtf8(SavePath.wstring()).c_str());
                 return false;
             }
 
@@ -92,7 +92,7 @@ namespace FLuaEngineAPI
             std::filesystem::path SavePath;
             if (!ResolveSafeSavePath(RelativePath, SavePath))
             {
-                UE_LOG("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
+                UE_LOG_WARNING("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
                 return sol::make_object(State, sol::nil);
             }
 
@@ -117,7 +117,7 @@ namespace FLuaEngineAPI
             std::filesystem::path SavePath;
             if (!ResolveSafeSavePath(RelativePath, SavePath))
             {
-                UE_LOG("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
+                UE_LOG_WARNING("[Engine.API.Save] Invalid save path: %s", RelativePath.c_str());
                 return false;
             }
 

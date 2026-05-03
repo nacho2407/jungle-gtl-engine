@@ -29,7 +29,7 @@ bool UTexture::LoadFromFile(const FString& InFilePath, ID3D11Device* InDevice)
 
 	if (FAILED(hr))
 	{
-		UE_LOG("Failed to load texture: %s", InFilePath.c_str());
+		UE_LOG_WARNING("Failed to load texture: %s", InFilePath.c_str());
 		return false;
 	}
 

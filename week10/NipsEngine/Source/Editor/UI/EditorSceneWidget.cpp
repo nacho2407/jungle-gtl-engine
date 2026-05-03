@@ -456,6 +456,19 @@ void FEditorSceneWidget::Render(float DeltaTime)
         }
     };
 
+    auto RequestRenameActor = [&](AActor* RenameTarget)
+    {
+        if (!RenameTarget)
+        {
+            return;
+        }
+
+        PendingRenameActor = RenameTarget;
+        const FString CurrentName = PendingRenameActor->GetFName().ToString();
+        strncpy_s(RenameActorName, IM_ARRAYSIZE(RenameActorName), CurrentName.c_str(), _TRUNCATE);
+        bOpenRenameActorPopup = true;
+    };
+
     auto DrawOutlinerContextMenu = [&]()
     {
         const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
@@ -464,10 +477,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
         ImGui::BeginDisabled(RenameTarget == nullptr);
         if (ImGui::MenuItem("Rename", "F2"))
         {
-            PendingRenameActor = RenameTarget;
-            const FString CurrentName = PendingRenameActor ? PendingRenameActor->GetFName().ToString() : FString();
-            strncpy_s(RenameActorName, IM_ARRAYSIZE(RenameActorName), CurrentName.c_str(), _TRUNCATE);
-            bOpenRenameActorPopup = true;
+            RequestRenameActor(RenameTarget);
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndDisabled();
@@ -617,6 +627,17 @@ void FEditorSceneWidget::Render(float DeltaTime)
             ImGui::EndChild();
             ImGui::End();
             return;
+        }
+    }
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+        && !ImGui::GetIO().WantTextInput
+        && ImGui::IsKeyPressed(ImGuiKey_F2, false))
+    {
+        const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+        if (SelectedActors.size() == 1)
+        {
+            RequestRenameActor(SelectedActors.front());
         }
     }
 

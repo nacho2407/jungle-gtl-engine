@@ -109,7 +109,7 @@ static bool CompileShaderPermutation(
 		ShaderOwner.FilePath, Desc.VSEntryPoint, "vs_5_0", Macros.data(), Desc.PermutationKey);
 	if (!VSResult.bSuccess)
 	{
-		UE_LOG("Failed to compile vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		UE_LOG_ERROR("Failed to compile vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
 		return false;
 	}
 	VSBlob = VSResult.Blob;
@@ -118,20 +118,20 @@ static bool CompileShaderPermutation(
 		ShaderOwner.FilePath, Desc.PSEntryPoint, "ps_5_0", Macros.data(), Desc.PermutationKey);
 	if (!PSResult.bSuccess)
 	{
-		UE_LOG("Failed to compile pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		UE_LOG_ERROR("Failed to compile pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
 		return false;
 	}
 	PSBlob = PSResult.Blob;
 
 	if (FAILED(Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &OutShader.VS)))
 	{
-		UE_LOG("Failed to create vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		UE_LOG_ERROR("Failed to create vertex shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
 		return false;
 	}
 
 	if (FAILED(Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &OutShader.PS)))
 	{
-		UE_LOG("Failed to create pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
+		UE_LOG_ERROR("Failed to create pixel shader: %s key=%u", ShaderOwner.FilePath.c_str(), Desc.PermutationKey);
 		OutShader.Release();
 		return false;
 	}

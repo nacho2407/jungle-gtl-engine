@@ -41,6 +41,10 @@
             "Type" : "Texture",
             "Value" : "Asset/Mesh/PUBG_lv3_helmet/textures/Helmet_Metallic.png"
           }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
             "Name" : "BumpMap",
             "Type" : "Texture",
             "Value" : "Asset/Mesh/PUBG_lv3_helmet/textures/Helmet_Normal.png"
@@ -54,6 +58,10 @@
             "Value" : true
           }, {
             "Name" : "bHasAmbientMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasEmissiveMap",
             "Type" : "Bool",
             "Value" : false
           }, {

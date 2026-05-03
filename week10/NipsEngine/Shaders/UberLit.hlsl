@@ -37,7 +37,7 @@ Texture2D DiffuseMap  : register(t0);
 Texture2D BumpMap : register(t1);
 #endif
 #if HAS_EMISSIVE_MAP
-Texture2D AmbientMap  : register(t2);
+Texture2D EmissiveMap  : register(t2);
 #endif
 #if HAS_SPECULAR_MAP
 Texture2D SpecularMap : register(t3);
@@ -95,6 +95,7 @@ PSInput mainVS(VSInput input)
     
 #if LIGHTING_MODEL_GOURAUD
     float3 accumulatedLight = float3(0, 0, 0);
+    float3 VertexSpecular = SpecularColor;
     float3 V = CameraPosition - output.WorldPos;
     if (IsOrthographic > 0.5f)
     {
@@ -102,13 +103,13 @@ PSInput mainVS(VSInput input)
     }
 
     accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
-    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess);
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
     
     for (uint i = 0; i < LightCount; i++) {
         LightInfo light = Lights[i];
         accumulatedLight += light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess);
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
     }
     
     output.LitColor = accumulatedLight;
@@ -313,11 +314,20 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #endif
     
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
+    float3 SpecularFactor = SpecularColor;
+#if HAS_SPECULAR_MAP
+    SpecularFactor *= SpecularMap.Sample(SampleState, input.UV).rgb;
+#endif
     
-    if (any(EmissiveColor > 0.f))
+    float3 Emissive = EmissiveColor;
+#if HAS_EMISSIVE_MAP
+    Emissive *= EmissiveMap.Sample(SampleState, input.UV).rgb;
+#endif
+
+    if (any(abs(Emissive) > 0.0001f))
     {
-        // Emissive surface: write the glow color and mark normal.a = 2
-        output.Color = float4(EmissiveColor, 1.f) * DiffuseTex;
+        // Emissive surface: keep base color visible, add glow color, and mark normal.a = 2.
+        output.Color = float4(FinalColor.rgb + Emissive * DiffuseTex.rgb, 1.f);
         output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
         output.WorldPos = float4(input.WorldPos, 1.f);
         return output;
@@ -391,7 +401,7 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 #if LIGHTING_MODEL_LAMBERT
         accumulatedLight += CalcDirectionalLambert(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N) * shadowFactor;
 #elif LIGHTING_MODEL_PHONG
-        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess) * shadowFactor;
+        accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess, SpecularFactor) * shadowFactor;
 #endif
 
     uint LightsToIterate;
@@ -421,8 +431,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
             : CalcPointLambert(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz)) * lightShadowFactor;
 #elif LIGHTING_MODEL_PHONG
         accumulatedLight += (light.Type == 0 ?
-            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)
-            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess)) * lightShadowFactor;
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess, SpecularFactor)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess, SpecularFactor)) * lightShadowFactor;
 #endif
     }
 #endif
