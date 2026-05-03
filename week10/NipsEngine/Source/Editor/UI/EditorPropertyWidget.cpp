@@ -494,8 +494,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		}
 		else
 		{
-			bActorSelected = true;
-			SelectedComponent = nullptr;
+			SelectActorForDetails();
 			bFocusActorNameNextFrame = true;
 		}
 	}
@@ -610,6 +609,41 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 		LastSelectedActor = PrimaryActor;
 		bActorSelected = true;
 	}
+
+	if (!bDetailsLocked && SelectionManager)
+	{
+		UActorComponent* ManagerComponent = SelectionManager->GetSelectedComponent();
+		if (ManagerComponent && ManagerComponent->GetOwner() == PrimaryActor)
+		{
+			SelectedComponent = ManagerComponent;
+			bActorSelected = false;
+		}
+		else
+		{
+			SelectedComponent = nullptr;
+			bActorSelected = true;
+		}
+	}
+}
+
+void FEditorPropertyWidget::SelectActorForDetails()
+{
+	bActorSelected = true;
+	SelectedComponent = nullptr;
+	if (SelectionManager)
+	{
+		SelectionManager->ClearComponentSelection();
+	}
+}
+
+void FEditorPropertyWidget::SelectComponentForDetails(UActorComponent* Component)
+{
+	SelectedComponent = Component;
+	bActorSelected = false;
+	if (SelectionManager)
+	{
+		SelectionManager->SelectComponent(Component);
+	}
 }
 
 void FEditorPropertyWidget::RenderActorHeaderRegion(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -640,13 +674,11 @@ void FEditorPropertyWidget::RenderMultiSelectionHeader(AActor* PrimaryActor, con
 
 	if (ImGui::IsItemClicked())
 	{
-		bActorSelected = true;
-		SelectedComponent = nullptr;
+		SelectActorForDetails();
 	}
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 	{
-		bActorSelected = true;
-		SelectedComponent = nullptr;
+		SelectActorForDetails();
 		bOpenDetailsContextMenu = true;
 	}
 }
@@ -658,13 +690,11 @@ void FEditorPropertyWidget::RenderSingleSelectionHeader(AActor* PrimaryActor)
 	ImGui::Text("Actor: %s", PrimaryActor->GetFName().ToString().c_str());
 	if (ImGui::IsItemClicked())
 	{
-		bActorSelected = true;
-		SelectedComponent = nullptr;
+		SelectActorForDetails();
 	}
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 	{
-		bActorSelected = true;
-		SelectedComponent = nullptr;
+		SelectActorForDetails();
 		bOpenDetailsContextMenu = true;
 	}
 	if (bWasActorSelected) ImGui::PopStyleColor();
@@ -766,13 +796,11 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
     const bool bActorNodeOpen = ImGui::TreeNodeEx(Actor, ActorFlags, "%s (Instance)", ActorName.c_str());
     if (ImGui::IsItemClicked())
     {
-        SelectedComponent = nullptr;
-        bActorSelected = true;
+        SelectActorForDetails();
     }
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
-        SelectedComponent = nullptr;
-        bActorSelected = true;
+        SelectActorForDetails();
         bOpenDetailsContextMenu = true;
     }
 
@@ -816,13 +844,11 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
             if (ImGui::IsItemClicked())
             {
-                SelectedComponent = Comp;
-                bActorSelected = false;
+                SelectComponentForDetails(Comp);
             }
             if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
             {
-                SelectedComponent = Comp;
-                bActorSelected = false;
+                SelectComponentForDetails(Comp);
                 bOpenDetailsContextMenu = true;
             }
 
@@ -835,8 +861,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
         && !ImGui::IsAnyItemHovered()
         && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
-        SelectedComponent = nullptr;
-        bActorSelected = true;
+        SelectActorForDetails();
         bOpenDetailsContextMenu = true;
     }
 
@@ -915,13 +940,11 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
 
     if (ImGui::IsItemClicked())
     {
-        SelectedComponent = Comp;
-        bActorSelected = false;
+        SelectComponentForDetails(Comp);
     }
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
-        SelectedComponent = Comp;
-        bActorSelected = false;
+        SelectComponentForDetails(Comp);
         bOpenDetailsContextMenu = true;
     }
 
@@ -979,6 +1002,10 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	}
 	SelectedComponent = nullptr;
 	bActorSelected = true;
+	if (SelectionManager)
+	{
+		SelectionManager->ClearComponentSelection();
+	}
 	Owner->RemoveComponent(ComponentToDelete);
 	if (EditorEngine)
 	{
@@ -2190,8 +2217,7 @@ void FEditorPropertyWidget::AttachAndSelectNewComponent(AActor* PrimaryActor, UA
 		}
 	}
 
-	SelectedComponent = NewComp;
-	bActorSelected = false;
+	SelectComponentForDetails(NewComp);
 }
 
 template<typename T>

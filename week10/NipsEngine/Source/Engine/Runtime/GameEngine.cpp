@@ -21,6 +21,7 @@
 #include "RmlUi/Core/ElementDocument.h"
 #include "RmlUi/Core/Event.h"
 #include "RmlUi/Core/EventListener.h"
+#include "RmlUi/Core/Factory.h"
 #include "RmlUi/Core/Input.h"
 #include "RmlUi/Core/Types.h"
 
@@ -236,6 +237,8 @@ bool UGameEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path
     }
 
     UnloadRmlUIDocument(ScreenId);
+    Rml::Factory::ClearStyleSheetCache();
+    Rml::Factory::ClearTemplateCache();
 
     Rml::ElementDocument* Document = RmlUiContext->LoadDocument(Path);
     if (!Document)
@@ -261,7 +264,9 @@ bool UGameEngine::UnloadRmlUIDocument(const FString& ScreenId)
     }
 
     RmlUiContext->UnloadDocument(Document);
+    RmlUiContext->Update();
     RmlUiDocumentsByScreenId.erase(ScreenId);
+    RmlUiDocumentPathByScreenId.erase(ScreenId);
     return true;
 }
 

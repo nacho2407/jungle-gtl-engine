@@ -1,0 +1,71 @@
+body
+{
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    background-color: transparent;
+    font-family: "Malgun Gothic";
+    font-size: 20px;
+    color: rgb(238, 242, 247);
+}
+
+.screen-root
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+.loading-screen
+{
+    background-color: rgb(15, 18, 22);
+}
+
+.loading-copy
+{
+    position: absolute;
+    left: 150px;
+    top: 210px;
+    width: 680px;
+}
+
+.headline
+{
+    margin-bottom: 34px;
+    font-size: 42px;
+    color: rgb(255, 248, 232);
+}
+
+.panel-line
+{
+    margin-bottom: 14px;
+    font-size: 24px;
+}
+
+.tip-line
+{
+    width: 620px;
+    margin-bottom: 30px;
+    font-size: 19px;
+    line-height: 28px;
+    color: rgb(204, 216, 222);
+}
+
+.loading-status
+{
+    position: absolute;
+    right: 80px;
+    bottom: 58px;
+    width: 380px;
+    text-align: right;
+    color: rgb(255, 248, 232);
+}
+
+.loading-cycle
+{
+    margin-bottom: 10px;
+    font-size: 48px;
+    color: rgb(160, 202, 204);
+}
