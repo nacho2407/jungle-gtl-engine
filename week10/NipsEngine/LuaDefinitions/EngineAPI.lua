@@ -180,6 +180,22 @@ function PlayerController:UnPossess() end
 function PlayerController:SetViewTarget(actor) end
 ---@param camera CameraComponent
 function PlayerController:SetViewTargetCamera(camera) end
+---@param visible boolean
+function PlayerController:SetCursorVisible(visible) end
+---@return boolean
+function PlayerController:IsCursorVisible() end
+---@param locked boolean
+function PlayerController:SetCursorLocked(locked) end
+---@return boolean
+function PlayerController:IsCursorLocked() end
+---@param captured boolean
+function PlayerController:SetMouseCapture(captured) end
+function PlayerController:ReleaseMouseCapture() end
+---@return boolean
+function PlayerController:IsMouseCaptured() end
+function PlayerController:SetInputModeGameOnly() end
+function PlayerController:SetInputModeUIOnly() end
+function PlayerController:SetInputModeGameAndUI() end
 ---@return Actor|nil
 function PlayerController:GetPossessedActor() end
 ---@return Actor|nil
@@ -259,6 +275,23 @@ function EngineAPIInput.SetInputModeGameAndUI() end
 
 ---@param visible boolean
 function EngineAPIInput.SetCursorVisible(visible) end
+
+---@param locked boolean
+function EngineAPIInput.SetCursorLocked(locked) end
+
+---@return boolean
+function EngineAPIInput.IsCursorLocked() end
+
+---@return boolean
+function EngineAPIInput.IsCursorVisible() end
+
+---@param captured boolean
+function EngineAPIInput.SetMouseCapture(captured) end
+
+function EngineAPIInput.ReleaseMouseCapture() end
+
+---@return boolean
+function EngineAPIInput.IsMouseCaptured() end
 
 ---@class EngineAPIWorld
 local EngineAPIWorld = {}

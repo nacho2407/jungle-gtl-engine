@@ -62,7 +62,7 @@ private:
     {
         FString GameName = "NipsGame";
         FString StartupScene = "Asset/Scene/Default.scene";
-        FString PlayerControllerClass = "APlayerController";
+        FString PlayerControllerClass = "AGameJamPlayerController";
     };
 
     void LoadGameSettings();

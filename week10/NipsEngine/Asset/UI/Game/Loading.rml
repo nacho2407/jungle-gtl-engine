@@ -1,0 +1,21 @@
+<rml>
+    <head>
+        <link type="text/rcss" href="GameUI.rcss"/>
+    </head>
+    <body>
+        <div class="screen-root loading-screen">
+            <div class="loading-copy">
+                <div class="headline">Loading</div>
+                <div class="panel-line">Controls</div>
+                <div class="tip-line">Move / Aim / Attack are mapped by the current gameplay controller.</div>
+                <div class="panel-line">Tips</div>
+                <div class="tip-line">Keep moving, read the wave, and spend UI pauses only when needed.</div>
+            </div>
+
+            <div class="loading-status">
+                <div class="loading-cycle">...</div>
+                <div id="Loading.Status">Preparing Game Scene...</div>
+            </div>
+        </div>
+    </body>
+</rml>

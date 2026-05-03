@@ -9,6 +9,7 @@ end
 
 function TitleState:Enter(context)
     context.managers.UI:Show("Title")
+    context.managers.UI:SetTitlePanel("Menu")
     Engine.API.Input.SetInputModeUIOnly()
 
     Engine.API.Debug.Log("Title State")
@@ -18,9 +19,29 @@ function TitleState:Enter(context)
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "StartGame" then
             context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
-            context.stateMachine:Change("Playing")
+            context.stateMachine:Change("Loading")
         elseif event.name == "QuitGame" then
             Engine.API.Application.QuitGame()
+        elseif event.name == "ShowScoreBoard" then
+            context.managers.UI:SetTitlePanel("ScoreBoard")
+        elseif event.name == "ShowSettings" then
+            context.managers.UI:SetTitlePanel("Settings")
+        elseif event.name == "ShowCredits" then
+            context.managers.UI:SetTitlePanel("Credits")
+        elseif event.name == "BackToTitleMenu" then
+            context.managers.UI:SetTitlePanel("Menu")
+        elseif event.name == "BGMDown" then
+            context.managers.Sound:AdjustBGMVolume(-0.1)
+            context.managers.UI:RefreshSettings()
+        elseif event.name == "BGMUp" then
+            context.managers.Sound:AdjustBGMVolume(0.1)
+            context.managers.UI:RefreshSettings()
+        elseif event.name == "SFXDown" then
+            context.managers.Sound:AdjustSFXVolume(-0.1)
+            context.managers.UI:RefreshSettings()
+        elseif event.name == "SFXUp" then
+            context.managers.Sound:AdjustSFXVolume(0.1)
+            context.managers.UI:RefreshSettings()
         end
     end)
 end

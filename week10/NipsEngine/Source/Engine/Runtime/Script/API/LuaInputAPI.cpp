@@ -135,6 +135,13 @@ namespace
             return false;
         }
 
+        if (GEngine
+            && GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
+            && GEngine->IsRuntimeCursorLocked())
+        {
+            return true;
+        }
+
         const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
         if (IsMouseButtonCode(KeyCode))
         {
@@ -146,6 +153,13 @@ namespace
 
     bool CanExposeMouseAxisToLua()
     {
+        if (GEngine
+            && GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
+            && GEngine->IsRuntimeCursorLocked())
+        {
+            return true;
+        }
+
         const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
         return !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
     }
@@ -339,6 +353,27 @@ namespace FLuaEngineAPI
                 InputSystem::Get().SetUseRawMouse(false);
                 InputSystem::Get().LockMouse(false);
             }
+        };
+
+        Input["SetMouseCapture"] = [](bool bCaptured)
+        {
+            if (GEngine)
+            {
+                GEngine->SetRuntimeInputMode(bCaptured ? ERuntimeInputMode::GameOnly : ERuntimeInputMode::GameAndUI);
+            }
+        };
+
+        Input["ReleaseMouseCapture"] = []()
+        {
+            if (GEngine)
+            {
+                GEngine->SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
+            }
+        };
+
+        Input["IsMouseCaptured"] = []() -> bool
+        {
+            return GEngine ? GEngine->IsRuntimeCursorLocked() && !GEngine->IsRuntimeCursorVisible() : false;
         };
 
         Input["IsCursorLocked"] = []() -> bool
