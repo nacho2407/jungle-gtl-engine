@@ -3,13 +3,13 @@
         <link type="text/rcss" href="GameUI.rcss"/>
     </head>
     <body>
-        <div class="screen-root">
-            <div class="center-stack">
-                <div id="Result.Title" class="headline">Result</div>
+        <div class="screen-root dim">
+            <div class="modal-panel result-panel">
+                <div id="Result.Title" class="headline">Game Over</div>
                 <div id="Result.Score" class="result-score">Score: 0</div>
-                <div id="Result.Best" class="result-score">Best: 0</div>
-                <button id="Result.Restart" class="button" data-action="RestartGame">Restart</button>
-                <button id="Result.TitleButton" class="button" data-action="BackToTitle">Title</button>
+                <div id="Result.Best" class="result-score muted">Best: 0</div>
+                <button id="Result.Restart" class="button primary" data-action="RestartGame">Retry</button>
+                <button id="Result.TitleButton" class="button" data-action="BackToTitle">Main</button>
             </div>
         </div>
     </body>

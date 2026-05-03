@@ -39,6 +39,8 @@ REGISTER_FACTORY(UEditorEngine)
 
 namespace
 {
+    constexpr const char* RuntimeUIPreviewScreenId = "__RuntimeUIPreview";
+
     bool HasPlayerStart(UWorld* World)
     {
         if (!World)
@@ -393,6 +395,142 @@ void UEditorEngine::ShutdownRmlUiRuntime()
     bRmlUiRuntimeInitialized = false;
 }
 
+void UEditorEngine::UnloadAllRmlUIDocuments()
+{
+    if (!RmlUiContext)
+    {
+        return;
+    }
+
+    TArray<FString> ScreenIds;
+    for (const auto& Pair : RmlUiDocumentsByScreenId)
+    {
+        ScreenIds.push_back(Pair.first);
+    }
+
+    for (const FString& ScreenId : ScreenIds)
+    {
+        UnloadRmlUIDocument(ScreenId);
+    }
+
+    RmlUiDocumentPathByScreenId.clear();
+    RmlUiPendingActionEvents.clear();
+}
+
+TArray<std::pair<Rml::ElementDocument*, bool>> UEditorEngine::ApplyRmlUIDocumentVisibilityFilter(bool bPreviewDocumentOnly)
+{
+    TArray<std::pair<Rml::ElementDocument*, bool>> VisibilitySnapshot;
+    if (!RmlUiContext)
+    {
+        return VisibilitySnapshot;
+    }
+
+    for (const auto& Pair : RmlUiDocumentsByScreenId)
+    {
+        Rml::ElementDocument* Document = Pair.second;
+        if (!Document)
+        {
+            continue;
+        }
+
+        const bool bWasVisible = Document->IsVisible();
+        VisibilitySnapshot.push_back(std::make_pair(Document, bWasVisible));
+
+        const bool bIsPreviewDocument = Pair.first == RuntimeUIPreviewScreenId;
+        const bool bShouldRender = bPreviewDocumentOnly ? bIsPreviewDocument : (!bIsPreviewDocument && bWasVisible);
+        if (bShouldRender)
+        {
+            Document->Show();
+        }
+        else
+        {
+            Document->Hide();
+        }
+    }
+
+    return VisibilitySnapshot;
+}
+
+void UEditorEngine::RestoreRmlUIDocumentVisibility(const TArray<std::pair<Rml::ElementDocument*, bool>>& VisibilitySnapshot)
+{
+    for (const auto& Pair : VisibilitySnapshot)
+    {
+        Rml::ElementDocument* Document = Pair.first;
+        if (!Document)
+        {
+            continue;
+        }
+
+        if (Pair.second)
+        {
+            Document->Show();
+        }
+        else
+        {
+            Document->Hide();
+        }
+    }
+}
+
+void UEditorEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
+{
+    if (OldWorld)
+    {
+        UnbindActorDestroyedListener(OldWorld);
+    }
+
+    UnloadAllRmlUIDocuments();
+    GetAudioSystem().StopAll();
+    SetTimeScale(1.0f);
+}
+
+void UEditorEngine::OnSceneWorldLoaded(UWorld* NewWorld)
+{
+    if (!NewWorld)
+    {
+        return;
+    }
+
+    ApplySpatialIndexMaintenanceSettings(NewWorld);
+
+    if (NewWorld->GetWorldType() == EWorldType::PIE)
+    {
+        const int32 FocusedIdx = (ActivePIEViewportIndex >= 0)
+            ? ActivePIEViewportIndex
+            : ViewportLayout.GetLastFocusedViewportIndex();
+        FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+        if (!FocusedClient)
+        {
+            return;
+        }
+
+        FocusedClient->StartPIE(NewWorld);
+        FocusedClient->SetEndPIECallback([this]() { StopPlaySession(); });
+
+        constexpr const char* DefaultPIEPlayerControllerClass = "AGameJamPlayerController";
+        APlayerController* PlayerController = Cast<APlayerController>(
+            NewWorld->SpawnActorByTypeName(DefaultPIEPlayerControllerClass));
+        if (PlayerController)
+        {
+            PlayerController->InitDefaultComponents();
+            PlayerController->SetFName(FName(DefaultPIEPlayerControllerClass));
+            PlayerController->ConfigureRuntimeCameraFromViewport(FocusedClient->GetCamera());
+            FocusedClient->SetPIEPlayerController(PlayerController);
+            NewWorld->SetActiveCamera(PlayerController->GetRuntimeCamera());
+        }
+        else
+        {
+            NewWorld->SetActiveCamera(FocusedClient->GetCamera());
+        }
+
+        InputSystem::Get().SetUseRawMouse(false);
+        RequestPIEViewportInputFocus(3);
+        return;
+    }
+
+    ResetViewport();
+}
+
 void UEditorEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
 {
     InitializeRmlUiRuntime();
@@ -401,17 +539,23 @@ void UEditorEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
         return;
     }
 
-    const int Width = std::max(static_cast<int>(Context.ViewportSize.X), 1);
-    const int Height = std::max(static_cast<int>(Context.ViewportSize.Y), 1);
-    RmlUiContext->SetDimensions(Rml::Vector2i(Width, Height));
+    const int LayoutWidth = std::max(static_cast<int>(Context.LayoutSize.X > 0.0f ? Context.LayoutSize.X : Context.ViewportSize.X), 1);
+    const int LayoutHeight = std::max(static_cast<int>(Context.LayoutSize.Y > 0.0f ? Context.LayoutSize.Y : Context.ViewportSize.Y), 1);
+    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
 
     Renderer.UseBackBufferRenderTargets();
     RmlUiRenderInterface.BeginFrame(
         Rml::Vector2f(Context.ViewportMin.X, Context.ViewportMin.Y),
-        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y));
+        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y),
+        Rml::Vector2f(
+            Context.ViewportSize.X / static_cast<float>(LayoutWidth),
+            Context.ViewportSize.Y / static_cast<float>(LayoutHeight)));
 
+    const TArray<std::pair<Rml::ElementDocument*, bool>> VisibilitySnapshot =
+        ApplyRmlUIDocumentVisibilityFilter(Context.bPreviewDocumentOnly);
     RmlUiContext->Update();
     RmlUiContext->Render();
+    RestoreRmlUIDocumentVisibility(VisibilitySnapshot);
 }
 
 bool UEditorEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
@@ -761,7 +905,7 @@ int UEditorEngine::GetRmlUiKeyModifierState(const InputSystem& Input) const
     return Modifiers;
 }
 
-bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect)
+bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect, int32 LayoutWidth, int32 LayoutHeight, bool bPreviewDocumentOnly)
 {
     InputSystem& Input = InputSystem::Get();
 
@@ -790,17 +934,21 @@ bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect)
         return false;
     }
 
-    RmlUiContext->SetDimensions(Rml::Vector2i(
-        std::max(static_cast<int>(ViewportRect.Width), 1),
-        std::max(static_cast<int>(ViewportRect.Height), 1)));
+    LayoutWidth = std::max(LayoutWidth > 0 ? LayoutWidth : static_cast<int32>(ViewportRect.Width), 1);
+    LayoutHeight = std::max(LayoutHeight > 0 ? LayoutHeight : static_cast<int32>(ViewportRect.Height), 1);
+    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
+    const TArray<std::pair<Rml::ElementDocument*, bool>> VisibilitySnapshot =
+        ApplyRmlUIDocumentVisibilityFilter(bPreviewDocumentOnly);
 
     const int Modifiers = GetRmlUiKeyModifierState(Input);
     bool bConsumed = false;
 
     if (bInsideViewport)
     {
-        const int LocalX = ClientMousePos.x - ViewportRect.X;
-        const int LocalY = ClientMousePos.y - ViewportRect.Y;
+        const int LocalX = static_cast<int>(
+            static_cast<float>(ClientMousePos.x - ViewportRect.X) * static_cast<float>(LayoutWidth) / static_cast<float>(ViewportRect.Width));
+        const int LocalY = static_cast<int>(
+            static_cast<float>(ClientMousePos.y - ViewportRect.Y) * static_cast<float>(LayoutHeight) / static_cast<float>(ViewportRect.Height));
         const bool bMouseFree = RmlUiContext->ProcessMouseMove(LocalX, LocalY, Modifiers);
         bConsumed = (!bMouseFree && RmlUiContext->IsMouseInteracting()) || bConsumed;
     }
@@ -866,6 +1014,8 @@ bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect)
         const bool bEventNotConsumed = RmlUiContext->ProcessTextInput(static_cast<Rml::Character>(Codepoint));
         bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
     }
+
+    RestoreRmlUIDocumentVisibility(VisibilitySnapshot);
 
     bConsumed = bKeyboardConsumed || bConsumed;
     if (bConsumed)
@@ -947,6 +1097,8 @@ void UEditorEngine::WorldTick(float DeltaTime)
             continue;
         Ctx.World->Tick(DeltaTime);
     }
+
+    ProcessPendingSceneOpen();
 }
 
 int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
@@ -1331,7 +1483,7 @@ void UEditorEngine::StartPlaySessionNow()
     RequestPIEViewportInputFocus(3);
     SelectionManager.ClearSelection();
 
-    constexpr const char* DefaultPIEPlayerControllerClass = "APlayerController";
+    constexpr const char* DefaultPIEPlayerControllerClass = "AGameJamPlayerController";
     APlayerController* PlayerController = Cast<APlayerController>(
         PIEWorld->SpawnActorByTypeName(DefaultPIEPlayerControllerClass));
     if (PlayerController)

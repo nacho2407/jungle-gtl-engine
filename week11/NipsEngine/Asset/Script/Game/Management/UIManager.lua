@@ -5,7 +5,9 @@ function UIManager.new(context)
     return setmetatable({
         context = context,
         builtScreens = {},
-        currentScreen = nil
+        currentScreen = nil,
+        visibleOverlays = {},
+        titlePanel = "Menu"
     }, UIManager)
 end
 
@@ -33,6 +35,37 @@ function UIManager:Show(screenId)
     Engine.API.UI.ShowDocument(screenId)
 end
 
+function UIManager:Hide(screenId)
+    if screenId == nil then
+        return
+    end
+
+    Engine.API.UI.HideDocument(screenId)
+    self.visibleOverlays[screenId] = nil
+
+    if self.currentScreen == screenId then
+        self.currentScreen = nil
+    end
+end
+
+function UIManager:ShowOverlay(screenId)
+    self:BuildScreenIfNeeded(screenId)
+    self.visibleOverlays[screenId] = true
+    Engine.API.UI.ShowDocument(screenId)
+end
+
+function UIManager:HideOverlay(screenId)
+    self.visibleOverlays[screenId] = nil
+    Engine.API.UI.HideDocument(screenId)
+end
+
+function UIManager:HideAllOverlays()
+    for screenId, _ in pairs(self.visibleOverlays) do
+        Engine.API.UI.HideDocument(screenId)
+    end
+    self.visibleOverlays = {}
+end
+
 function UIManager:BuildScreenIfNeeded(screenId)
     if self.builtScreens[screenId] then
         return
@@ -41,10 +74,14 @@ function UIManager:BuildScreenIfNeeded(screenId)
     local loaded = false
     if screenId == "Boot" then
         loaded = self:BuildBootScreen()
+    elseif screenId == "Intro" then
+        loaded = self:BuildIntroScreen()
     elseif screenId == "Title" then
         loaded = self:BuildTitleScreen()
     elseif screenId == "HUD" then
         loaded = self:BuildHUDScreen()
+    elseif screenId == "Loading" then
+        loaded = self:BuildLoadingScreen()
     elseif screenId == "Pause" then
         loaded = self:BuildPauseScreen()
     elseif screenId == "Result" then
@@ -61,12 +98,20 @@ function UIManager:BuildBootScreen()
     return self:LoadScreenDocument("Boot", "Asset/UI/Game/Boot.rml")
 end
 
+function UIManager:BuildIntroScreen()
+    return self:LoadScreenDocument("Intro", "Asset/UI/Game/Intro.rml")
+end
+
 function UIManager:BuildTitleScreen()
     return self:LoadScreenDocument("Title", "Asset/UI/Game/Title.rml")
 end
 
 function UIManager:BuildHUDScreen()
     return self:LoadScreenDocument("HUD", "Asset/UI/Game/HUD.rml")
+end
+
+function UIManager:BuildLoadingScreen()
+    return self:LoadScreenDocument("Loading", "Asset/UI/Game/Loading.rml")
 end
 
 function UIManager:BuildPauseScreen()
@@ -85,6 +130,60 @@ function UIManager:LoadScreenDocument(screenId, path)
 
     Engine.API.UI.HideDocument(screenId)
     return true
+end
+
+function UIManager:SetTitlePanel(panelName)
+    panelName = panelName or "Menu"
+    self.titlePanel = panelName
+
+    local panels = {
+        "Menu",
+        "ScoreBoard",
+        "Settings",
+        "Credits"
+    }
+
+    for _, name in ipairs(panels) do
+        Engine.API.UI.SetVisible("Title." .. name .. "Panel", name == panelName)
+    end
+
+    if panelName == "ScoreBoard" then
+        local data = self.context.managers.Data
+        local bestScore = data and data:GetBestScore() or 0
+        Engine.API.UI.SetText("Title.BestScore", "Best Score: " .. tostring(math.floor(bestScore)))
+    elseif panelName == "Settings" then
+        self:RefreshSettings()
+    end
+end
+
+function UIManager:RefreshSettings()
+    local sound = self.context.managers.Sound
+    if sound == nil then
+        return
+    end
+
+    local bgmPercent = math.floor((sound.bgmVolume or 1.0) * 100)
+    local sfxPercent = math.floor((sound.sfxVolume or 1.0) * 100)
+    Engine.API.UI.SetText("Title.Settings.BGMValue", tostring(bgmPercent) .. "%")
+    Engine.API.UI.SetText("Title.Settings.SFXValue", tostring(sfxPercent) .. "%")
+    Engine.API.UI.SetText("Pause.Settings.BGMValue", tostring(bgmPercent) .. "%")
+    Engine.API.UI.SetText("Pause.Settings.SFXValue", tostring(sfxPercent) .. "%")
+end
+
+function UIManager:SetLoadingReady(isReady)
+    Engine.API.UI.SetText("Loading.Status", isReady and "Press Space to Start" or "Preparing Game Scene...")
+end
+
+function UIManager:SetIntroText(text)
+    Engine.API.UI.SetText("Intro.Text", text or "")
+end
+
+function UIManager:SetIntroProgress(pageIndex, pageCount)
+    Engine.API.UI.SetText("Intro.Progress", tostring(pageIndex or 1) .. " / " .. tostring(pageCount or 1))
+end
+
+function UIManager:SetIntroContinueVisible(isVisible)
+    Engine.API.UI.SetVisible("Intro.Continue", isVisible == true)
 end
 
 function UIManager:SetHUD(snapshot)

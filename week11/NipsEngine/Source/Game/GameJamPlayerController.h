@@ -31,4 +31,5 @@ protected:
 
 private:
 	float LookSensitivity = 0.003f;
+	float MoveSpeed = 6.0f;
 };

@@ -18,6 +18,128 @@ body
     height: 100%;
 }
 
+.title-screen
+{
+    background-color: rgb(15, 18, 22);
+}
+
+.intro-screen
+{
+    background-color: rgb(10, 13, 16);
+}
+
+.intro-mark
+{
+    position: absolute;
+    left: 150px;
+    top: 120px;
+    width: 360px;
+    font-size: 28px;
+    color: rgb(160, 202, 204);
+}
+
+.intro-progress
+{
+    position: absolute;
+    right: 150px;
+    top: 124px;
+    width: 180px;
+    font-size: 22px;
+    text-align: right;
+    color: rgba(238, 242, 247, 170);
+}
+
+.intro-text
+{
+    position: absolute;
+    left: 150px;
+    top: 310px;
+    width: 1280px;
+    min-height: 160px;
+    font-size: 34px;
+    line-height: 54px;
+    color: rgb(255, 248, 232);
+}
+
+.intro-continue
+{
+    position: absolute;
+    left: 150px;
+    bottom: 132px;
+    width: 320px;
+    font-size: 22px;
+    color: rgb(255, 224, 154);
+}
+
+.intro-skip
+{
+    position: absolute;
+    right: 150px;
+    bottom: 100px;
+    width: 210px;
+}
+
+.title-accent
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 520px;
+    height: 1080px;
+    background-color: rgb(87, 28, 34);
+}
+
+.title-mark
+{
+    position: absolute;
+    left: 150px;
+    top: 170px;
+    width: 760px;
+}
+
+.title-logo
+{
+    font-size: 82px;
+    color: rgb(255, 246, 220);
+}
+
+.title-subtitle
+{
+    margin-top: 12px;
+    font-size: 22px;
+    color: rgb(160, 202, 204);
+}
+
+.title-panel
+{
+    position: absolute;
+    left: 1180px;
+    top: 230px;
+    width: 430px;
+}
+
+.menu-panel
+{
+    top: 250px;
+}
+
+.sub-panel
+{
+    padding: 28px;
+    background-color: rgba(25, 31, 38, 235);
+    border-width: 2px;
+    border-color: rgba(230, 218, 190, 190);
+}
+
+.version-label
+{
+    position: absolute;
+    right: 42px;
+    bottom: 34px;
+    font-size: 18px;
+    color: rgba(238, 242, 247, 170);
+}
+
 .center-stack
 {
     position: absolute;
@@ -27,43 +149,125 @@ body
     text-align: center;
 }
 
-.title
+.headline
 {
-    margin-bottom: 72px;
-    font-size: 56px;
+    margin-bottom: 34px;
+    font-size: 42px;
     color: rgb(255, 248, 232);
 }
 
-.headline
+.section-title
 {
-    margin-bottom: 36px;
-    font-size: 42px;
-    color: rgb(255, 248, 232);
+    margin-top: 22px;
+    margin-bottom: 14px;
+    font-size: 24px;
+    color: rgb(160, 202, 204);
 }
 
 .button
 {
     display: block;
-    width: 280px;
+    width: 310px;
     height: 58px;
-    margin-left: 60px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     padding-top: 14px;
-    background-color: rgba(30, 42, 54, 230);
+    background-color: rgba(31, 43, 52, 235);
     border-width: 2px;
-    border-color: rgba(220, 232, 242, 190);
+    border-color: rgba(220, 232, 242, 170);
     color: rgb(244, 248, 252);
     text-align: center;
 }
 
-.button:hover
+.title-panel .button
 {
-    background-color: rgba(64, 92, 118, 240);
+    width: 360px;
 }
 
-.button:active
+.primary
 {
-    background-color: rgba(180, 72, 52, 245);
+    background-color: rgba(32, 95, 92, 245);
+    border-color: rgba(180, 236, 226, 210);
+}
+
+.danger
+{
+    background-color: rgba(92, 36, 41, 235);
+    border-color: rgba(238, 170, 156, 190);
+}
+
+.button:hover,
+.step-button:hover
+{
+    background-color: rgba(83, 103, 118, 245);
+}
+
+.button:active,
+.step-button:active
+{
+    background-color: rgba(205, 85, 54, 245);
+}
+
+.panel-line
+{
+    margin-bottom: 14px;
+    font-size: 24px;
+}
+
+.tip-line
+{
+    width: 620px;
+    margin-bottom: 30px;
+    font-size: 19px;
+    line-height: 28px;
+    color: rgb(204, 216, 222);
+}
+
+.strong
+{
+    color: rgb(255, 224, 154);
+}
+
+.muted
+{
+    color: rgb(178, 193, 202);
+}
+
+.setting-row
+{
+    width: 360px;
+    height: 54px;
+    margin-bottom: 12px;
+}
+
+.setting-label
+{
+    display: inline-block;
+    width: 82px;
+    padding-top: 10px;
+    color: rgb(238, 242, 247);
+}
+
+.setting-value
+{
+    display: inline-block;
+    width: 88px;
+    padding-top: 10px;
+    text-align: center;
+    color: rgb(255, 224, 154);
+}
+
+.step-button
+{
+    display: inline-block;
+    width: 48px;
+    height: 44px;
+    margin-right: 8px;
+    padding-top: 8px;
+    background-color: rgba(31, 43, 52, 235);
+    border-width: 2px;
+    border-color: rgba(220, 232, 242, 150);
+    color: rgb(244, 248, 252);
+    text-align: center;
 }
 
 .hud-panel
@@ -100,11 +304,70 @@ body
 
 .dim
 {
-    background-color: rgba(0, 0, 0, 150);
+    background-color: rgba(0, 0, 0, 160);
+}
+
+.modal-panel
+{
+    position: absolute;
+    left: 760px;
+    top: 150px;
+    width: 400px;
+    padding: 34px;
+    background-color: rgba(24, 30, 36, 242);
+    border-width: 2px;
+    border-color: rgba(230, 218, 190, 190);
+    text-align: center;
+}
+
+.modal-panel .button
+{
+    margin-left: 45px;
+}
+
+.settings-block
+{
+    margin-top: 18px;
+    text-align: left;
+}
+
+.loading-screen
+{
+    background-color: rgb(15, 18, 22);
+}
+
+.loading-copy
+{
+    position: absolute;
+    left: 150px;
+    top: 210px;
+    width: 680px;
+}
+
+.loading-status
+{
+    position: absolute;
+    right: 80px;
+    bottom: 58px;
+    width: 380px;
+    text-align: right;
+    color: rgb(255, 248, 232);
+}
+
+.loading-cycle
+{
+    margin-bottom: 10px;
+    font-size: 48px;
+    color: rgb(160, 202, 204);
+}
+
+.result-panel
+{
+    top: 240px;
 }
 
 .result-score
 {
     margin-bottom: 14px;
-    font-size: 24px;
+    font-size: 28px;
 }

@@ -8,15 +8,21 @@ function ResultState.new()
 end
 
 function ResultState:Enter(context, snapshot)
+    Engine.API.Time.SetTimeScale(0.0)
     context.managers.Sound:StopBGM(0.5)
-    context.managers.UI:Show("Result")
+    context.managers.UI:ShowOverlay("Result")
     context.managers.UI:SetResult(snapshot)
     Engine.API.Input.SetInputModeUIOnly()
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "RestartGame" then
+            Engine.API.Time.SetTimeScale(1.0)
             context.managers.Game:Restart()
         elseif event.name == "BackToTitle" then
+            Engine.API.Time.SetTimeScale(1.0)
+            if context.root:OpenMainScene() then
+                return
+            end
             context.stateMachine:Change("Title")
         end
     end)
@@ -25,6 +31,8 @@ end
 function ResultState:Exit(context)
     context.eventBus:Unsubscribe(self.uiHandle)
     self.uiHandle = nil
+    context.managers.UI:HideOverlay("Result")
+    Engine.API.Time.SetTimeScale(1.0)
 end
 
 return ResultState

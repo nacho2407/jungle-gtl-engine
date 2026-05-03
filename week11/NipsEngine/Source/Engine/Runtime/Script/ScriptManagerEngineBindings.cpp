@@ -16,6 +16,8 @@ void FScriptManager::BindEngineAPI()
     FLuaEngineAPI::BindTime(*GLuaState, API);
     FLuaEngineAPI::BindInput(*GLuaState, API);
     FLuaEngineAPI::BindSave(*GLuaState, API);
+    FLuaEngineAPI::BindJson(*GLuaState, API);
+    FLuaEngineAPI::BindScene(*GLuaState, API);
     FLuaEngineAPI::BindDebug(*GLuaState, API);
     FLuaEngineAPI::BindWorld(*GLuaState, API);
     sol::table World = API["World"];

@@ -6,14 +6,35 @@ local GameManager = require("Game.Management.GameManager")
 local SoundManager = require("Game.Management.SoundManager")
 local UIManager = require("Game.Management.UIManager")
 
-local BootState = require("Game.States.BootState")
-local TitleState = require("Game.States.TitleState")
-local PlayingState = require("Game.States.PlayingState")
-local PauseState = require("Game.States.PauseState")
-local ResultState = require("Game.States.ResultState")
+local StateModules = {
+    Boot = "Game.States.BootState",
+    Intro = "Game.States.IntroState",
+    Title = "Game.States.TitleState",
+    Loading = "Game.States.LoadingState",
+    Playing = "Game.States.PlayingState",
+    Pause = "Game.States.PauseState",
+    Result = "Game.States.ResultState"
+}
+
+for _, moduleName in pairs(StateModules) do
+    package.loaded[moduleName] = nil
+end
+
+local BootState = require(StateModules.Boot)
+local IntroState = require(StateModules.Intro)
+local TitleState = require(StateModules.Title)
+local LoadingState = require(StateModules.Loading)
+local PlayingState = require(StateModules.Playing)
+local PauseState = require(StateModules.Pause)
+local ResultState = require(StateModules.Result)
 
 local Script = {}
 Script.__index = Script
+
+local ScenePaths = {
+    Main = "Asset/Scene/Main.Scene",
+    Game = "Asset/Scene/YGTest.Scene"
+}
 
 -- ScriptComponent Details에 노출되는 값입니다.
 -- 게임잼 중에는 C++ 수정 없이 여기 값을 바꿔 기본 흐름을 조율할 수 있게 둡니다.
@@ -77,12 +98,22 @@ function Script.new(component, properties)
     self.context.managers.Game = GameManager.new(self.context)
 
     self.context.stateMachine:Register("Boot", BootState.new())
+    self.context.stateMachine:Register("Intro", IntroState.new())
     self.context.stateMachine:Register("Title", TitleState.new())
+    self.context.stateMachine:Register("Loading", LoadingState.new())
     self.context.stateMachine:Register("Playing", PlayingState.new())
     self.context.stateMachine:Register("Pause", PauseState.new())
     self.context.stateMachine:Register("Result", ResultState.new())
 
     return self
+end
+
+function Script:OpenMainScene()
+    return Engine.API.Scene.Open(ScenePaths.Main)
+end
+
+function Script:OpenGameScene()
+    return Engine.API.Scene.Open(ScenePaths.Game)
 end
 
 function Script:BeginPlay()

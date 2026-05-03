@@ -2,6 +2,8 @@
 
 #include "Component/CameraComponent.h"
 #include "Component/SpringArmComponent.h"
+#include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/Engine.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 
@@ -146,6 +148,43 @@ void AGameJamPlayerController::ApplyInitialPawnTransform(ADefaultPlayerActor* Pa
 void AGameJamPlayerController::UpdatePossessedActorMovement(float DeltaTime)
 {
 	APlayerController::UpdatePossessedActorMovement(DeltaTime);
+
+	if (!PossessedActor || DeltaTime <= 0.0f)
+	{
+		return;
+	}
+	if (!GEngine
+		|| GEngine->GetRuntimeInputMode() != ERuntimeInputMode::GameOnly
+		|| !GEngine->IsRuntimeCursorLocked())
+	{
+		return;
+	}
+
+	InputSystem& Input = InputSystem::Get();
+	FVector Move = FVector::ZeroVector;
+
+	if (Input.GetKey('W'))
+	{
+		Move += PossessedActor->GetActorForward();
+	}
+	if (Input.GetKey('S'))
+	{
+		Move -= PossessedActor->GetActorForward();
+	}
+	if (Input.GetKey('D'))
+	{
+		Move += PossessedActor->GetActorRight();
+	}
+	if (Input.GetKey('A'))
+	{
+		Move -= PossessedActor->GetActorRight();
+	}
+
+	Move.Z = 0.0f;
+	if (Move.Normalize())
+	{
+		PossessedActor->AddActorWorldOffset(Move * MoveSpeed * DeltaTime);
+	}
 }
 
 void AGameJamPlayerController::OnPossess(AActor* InActor)
