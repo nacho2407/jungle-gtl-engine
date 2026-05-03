@@ -7,6 +7,7 @@
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Lua/LuaScriptManager.h"
 #include "Game/Lua/GameLuaBindings.h"
+#include "Game/GameActorPlacements.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "GameFramework/World.h"
@@ -52,6 +53,11 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	// 에디터 엔진 init 시점에서도 game-특화 Lua 바인딩을 등록한다. 호출 순서는
 	// LuaScriptManager 초기화 직후 + 어떤 ULuaScriptComponent::BeginPlay 보다도 앞.
 	RegisterGameLuaBindings(FLuaScriptManager::GetState());
+
+	// "Place Actor" 메뉴에 game-특화 액터(ACarPawn 등) 항목 등록. Editor 가 Game
+	// 헤더를 직접 include 하지 않도록 Game 측이 제공한 등록 함수만 호출하고,
+	// 실제 spawn 로직은 FActorPlacementRegistry 에 보관된 람다가 책임.
+	RegisterGameActorPlacements();
 
 	{
 		SCOPE_STARTUP_STAT("ObjManager::ScanMeshAssets");

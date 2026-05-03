@@ -3,6 +3,7 @@
 #include "Game/GameRenderPipeline.h"
 #include "Game/GameMode/GameModeCarGame.h"
 #include "Game/Lua/GameLuaBindings.h"
+#include "Game/GameActorPlacements.h"
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
 #include "Viewport/Viewport.h"
@@ -23,6 +24,10 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 	// Engine 측 LuaScriptManager 가 일반 바인딩만 등록하므로, 여기서 game-특화
 	// usertype/enum/global 을 추가 등록. 어떤 LuaScriptComponent 의 BeginPlay 보다도 앞서야 함.
 	RegisterGameLuaBindings(FLuaScriptManager::GetState());
+
+	// "Place Actor" 메뉴(에디터)에 game-특화 액터 항목 등록. standalone 빌드에선 메뉴
+	// 자체가 안 떠도 무해 — 호출 순서를 Lua 바인딩과 통일.
+	RegisterGameActorPlacements();
 
 	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
