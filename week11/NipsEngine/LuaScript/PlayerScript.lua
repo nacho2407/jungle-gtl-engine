@@ -13,11 +13,20 @@ Script.Properties = {
 
 function Script:Attack()
     self.bDoingAttack = true
-    Log("Attack")
     local wait = WaitForSeconds(0.1)
     coroutine.yield(wait)
-    Log("Attack End")
     self.bDoingAttack = false
+end
+
+function Script:Dash(dir)
+    self.bDoingDash = true
+
+    for i = 1, 10 do
+        self.owner.Location = self.owner.Location + dir * 0.75
+        coroutine.yield(WaitForSeconds(0.005))
+    end
+
+    self.bDoingDash = false
 end
 
 -- instance를 반환하는 함수 Script 객체화하는 함수
@@ -29,6 +38,7 @@ function Script.new(component, properties)
     self.time = 0
     self.PrevLocation = Vector(0, 0, 0)
     self.bDoingAttack = false
+    self.bDoingDash = false
 
     -- Editor에서 설정한 Property 값을 self에 복사
     properties = properties or {}
@@ -62,7 +72,7 @@ function Script:Tick(dt)
     end
     
     self.time = self.time + dt
-
+    
     local move = Vector(0,0,0)
 
     if Engine.API.Input.IsKeyDown("W") then
@@ -102,6 +112,12 @@ function Script:Tick(dt)
     self.owner.Location = CurLoc
 
     self.PrevLocation = CurLoc
+    
+    if not self.bDoingDash and Engine.API.Input.IsKeyPressed("Shift") then
+        StartCoroutine(function()
+            self:Dash(move:Normalized())
+        end)
+    end
 
     -- Mouse
     local sensivity = 0.003
