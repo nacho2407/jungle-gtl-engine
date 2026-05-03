@@ -4,24 +4,6 @@ local previousPhase = nil
 local gunForwardOffset = 0.5
 local gunRightOffset = 0.2
 
-local function MoveManToDirtyCarFront()
-    local man = ObjRegistry.manObj
-    local dirtyCar = ObjRegistry.dirtyCar
-    if man == nil or dirtyCar == nil then
-        return
-    end
-
-    local forward = dirtyCar.Forward
-    forward.Z = 0.0
-    forward = forward:Normalized()
-    if forward:Length() <= 0.001 then
-        forward = Vector.Forward()
-    end
-
-    man.Location = dirtyCar.Location + forward * 6.0 + Vector(0.0, 0.0, 2.8)
-    man.Rotation = Vector(0.0, 0.0, dirtyCar.Rotation.Z + 180.0)
-end
-
 local function UpdateCarWasherTransform()
     local man = ObjRegistry.manObj
     local manCamera = ObjRegistry.manCamera
@@ -51,7 +33,6 @@ function Tick(dt)
         if bIsCarWashPhase then
             bCarWashSucceeded = false
             obj:SetVisible(true)
-            --MoveManToDirtyCarFront()
         else
             obj:SetVisible(false)
             obj:SetCarWashStreamVisible(false)
