@@ -1,4 +1,4 @@
-﻿#include "Viewport/GameViewportClient.h"
+#include "Viewport/GameViewportClient.h"
 
 #include "Component/CameraComponent.h"
 #include "Engine/Input/InputSystem.h"
@@ -9,41 +9,59 @@
 
 DEFINE_CLASS(UGameViewportClient, UObject)
 
-void UGameViewportClient::OnBeginPIE(FViewport* InViewport)
+void UGameViewportClient::BeginGameSession(FViewport* InViewport)
 {
 	Viewport = InViewport;
 	ResetInputState();
 }
 
-void UGameViewportClient::OnEndPIE()
+void UGameViewportClient::EndGameSession()
 {
-	SetPossessed(false);
+	SetInputPossessed(false);
 	ResetInputState();
 	bHasCursorClipRect = false;
 	Viewport = nullptr;
 }
 
-bool UGameViewportClient::ProcessPIEInput(const FInputSystemSnapshot& Snapshot, float DeltaTime)
+void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, float /*DeltaTime*/)
 {
-	if (!bPIEPossessedInputEnabled)
+	// 비활성 — snapshot 비우고 raw mouse / 커서 캡처 해제. Lua 등 폴링 측은 빈 입력 봄.
+	if (!bInputPossessed)
 	{
 		ClearGameInputSnapshot();
-		return false;
+		InputSystem::Get().SetUseRawMouse(false);
+		SetCursorCaptured(false);
+		ResetInputState();
+		return;
 	}
 
+	// 활성 — snapshot 저장은 항상 (비포커스여도 마지막 상태 유지).
 	SetGameInputSnapshot(Snapshot);
-	return Tick(DeltaTime, Snapshot);
+
+	// 윈도우 비포커스: raw mouse / 커서 캡처 해제하고 입력 누적 리셋. snapshot 자체는 유지.
+	if (!Snapshot.bWindowFocused)
+	{
+		InputSystem::Get().SetUseRawMouse(false);
+		SetCursorCaptured(false);
+		ResetInputState();
+		return;
+	}
+
+	// 활성 + 포커스 — raw mouse on, 커서 클립.
+	InputSystem::Get().SetUseRawMouse(true);
+	SetCursorCaptured(true);
 }
 
-bool UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, float DeltaTime)
+void UGameViewportClient::SetInputPossessed(bool bPossessed)
 {
-	SetGameInputSnapshot(Snapshot);
-	return Tick(DeltaTime, Snapshot);
-}
+	if (bInputPossessed == bPossessed)
+	{
+		return;
+	}
 
-void UGameViewportClient::SetPIEPossessedInputEnabled(bool bEnabled)
-{
-	SetPossessed(bEnabled);
+	bInputPossessed = bPossessed;
+	SetCursorCaptured(bPossessed);
+	ResetInputState();
 }
 
 void UGameViewportClient::SetCursorClipRect(const FRect& InViewportScreenRect)
@@ -71,43 +89,10 @@ void UGameViewportClient::SetCursorClipRect(const FRect& InViewportScreenRect)
 	}
 }
 
-void UGameViewportClient::SetPossessed(bool bPossessed)
-{
-	if (bPIEPossessedInputEnabled == bPossessed)
-	{
-		return;
-	}
-
-	bPIEPossessedInputEnabled = bPossessed;
-	SetCursorCaptured(bPossessed);
-	ResetInputState();
-}
-
 void UGameViewportClient::ResetInputState()
 {
 	InputSystem::Get().ResetMouseDelta();
 	InputSystem::Get().ResetWheelDelta();
-}
-
-bool UGameViewportClient::Tick(float DeltaTime, const FInputSystemSnapshot& Snapshot)
-{
-	if (!bPIEPossessedInputEnabled)
-	{
-		return false;
-	}
-
-	if (!Snapshot.bWindowFocused)
-	{
-		InputSystem::Get().SetUseRawMouse(false);
-		SetCursorCaptured(false);
-		ResetInputState();
-		return false;
-	}
-
-	InputSystem::Get().SetUseRawMouse(true);
-	SetCursorCaptured(true);
-
-	return true;
 }
 
 void UGameViewportClient::SetCursorCaptured(bool bCaptured)

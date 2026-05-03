@@ -37,8 +37,8 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 
 	FRect ViewportRect{ 0, 0, static_cast<float>(InWindow->GetWidth()), static_cast<float>(InWindow->GetHeight()) };
 	GameViewportClient->SetCursorClipRect(ViewportRect);
-	GameViewportClient->OnBeginPIE(StandaloneViewport);
-	GameViewportClient->SetPIEPossessedInputEnabled(true);
+	GameViewportClient->BeginGameSession(StandaloneViewport);
+	GameViewportClient->SetInputPossessed(true);
 
 	LoadStartLevel();
 
