@@ -304,9 +304,29 @@ void AActor::EndPlay()
     }
 }
 
-void AActor::TakeDamage(int Damage)
+void AActor::TakeDamage(float Damage, AActor* Instigator)
 {
-    OnTakeDamage.BroadCast(Damage);
+    if (Damage <= 0.0f)
+    {
+        return;
+    }
+
+    OnTakeDamage.Broadcast(Damage, Instigator);
+}
+
+void AActor::BroadcastOverlapBegin(AActor* OtherActor)
+{
+    OnOverlapBegin.Broadcast(OtherActor);
+}
+
+void AActor::BroadcastOverlapEnd(AActor* OtherActor)
+{
+    OnOverlapEnd.Broadcast(OtherActor);
+}
+
+void AActor::BroadcastOnTakeDamage(float Damage, AActor* Instigator)
+{
+    OnTakeDamage.Broadcast(Damage, Instigator);
 }
 
 void AActor::Tick(float DeltaTime)

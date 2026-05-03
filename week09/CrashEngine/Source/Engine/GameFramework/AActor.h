@@ -30,10 +30,18 @@ public:
     virtual void Tick(float DeltaTime);
     virtual void EndPlay();
     // Start ----- Delegate Prototype 
-    virtual void TakeDamage(int Damage);
+    virtual void TakeDamage(float Damage, AActor* Instigator = nullptr);
 
-    DECLARE_DELEGATE(FOnTakeDamage, int);
+    DECLARE_DELEGATE(FOnTakeDamage, float, AActor*);
     FOnTakeDamage OnTakeDamage;
+    DECLARE_DELEGATE(FOnOverlapBegin, AActor*);
+    FOnOverlapBegin OnOverlapBegin;
+    DECLARE_DELEGATE(FOnOverlapEnd, AActor*);
+    FOnOverlapEnd OnOverlapEnd;
+
+    void BroadcastOverlapBegin(AActor* OtherActor);
+    void BroadcastOverlapEnd(AActor* OtherActor);
+    void BroadcastOnTakeDamage(float Damage, AActor* Instigator = nullptr);
     // End ----- Delegate Prototype
 
     bool HasActorBegunPlay() const { return bActorHasBegunPlay; }

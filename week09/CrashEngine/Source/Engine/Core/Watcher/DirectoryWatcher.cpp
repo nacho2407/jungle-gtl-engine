@@ -49,7 +49,7 @@ void FDirectoryWatcher::Tick()
         FString ChangedFile = TempQueue.front();
         TempQueue.pop();
 
-        OnDirectoryChanged.BroadCast(ChangedFile);
+        OnDirectoryChanged.Broadcast(ChangedFile);
         for (const auto& Listener : Listeners)
         {
             if (Listener)

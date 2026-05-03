@@ -25,6 +25,8 @@ public:
 
     void AddWorldOffset(const FVector& Delta);
 
+    void ApplyDamage(float Damage, const FLuaGameObjectProxy& Instigator);
+
     void PrintLocation() const;
 
 public:

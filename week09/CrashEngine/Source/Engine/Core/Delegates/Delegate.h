@@ -120,7 +120,7 @@ public:
     }
     
     //BroadCaster Uses This Function To BroadCast Event
-    void BroadCast(Args... args)
+    void Broadcast(Args... args)
     {
         ++BroadcastDepth;
         const std::size_t BroadcastCount = Handlers.size();
