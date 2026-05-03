@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "GameFramework/AActor.h"
+#include "LuaScript/LuaIncludes.h"
 #include "Math/Vector.h"
 
 class UActorComponent;
@@ -21,7 +22,7 @@ public:
     bool IsValid() const;
     FString GetComponentClassName() const;
     uint32 GetUUID() const { return ComponentUUID; }
-    
+
     FVector GetForwardVector() const;
     FVector GetRightVector() const;
     FVector GetUpVector() const;
@@ -86,6 +87,8 @@ public:
     bool SetCapsuleSize(float Radius, float HalfHeight);
     bool SetCapsuleRadius(float Radius);
     bool SetCapsuleHalfHeight(float HalfHeight);
+
+    bool CallFunction(const FString& FunctionName, sol::variadic_args Args);
 
 private:
     USceneComponent* ResolveSceneComponent() const;

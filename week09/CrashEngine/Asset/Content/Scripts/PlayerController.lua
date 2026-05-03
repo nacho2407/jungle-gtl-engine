@@ -8,6 +8,7 @@ local LightComponet = nil
 local Initial_Light_Intensity = 0.0
 
 local DocumentCount = 0
+local GameManagerLuaComponent = nil
 
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
@@ -27,8 +28,19 @@ local function syncPlayerState()
 end
 
 local function callGameOver()
+    local gameManager = World.FindActorByTag("GameManager")
+    if gameManager:IsValid() then
+        GameManagerLuaComponent = gameManager:GetComponent("LuaScriptComponent", 0)
+
+        if GameManagerLuaComponent:IsValid() then
+            if GameManagerLuaComponent:CallFunction("GameOver", HP, DocumentCount) then
+                return
+            end
+        end
+    end
+
     if _G.GameManager ~= nil and _G.GameManager.GameOver ~= nil then
-        _G.GameManager.GameOver()
+        _G.GameManager.GameOver(HP, DocumentCount)
     else
         print("GameManager is not ready")
     end
@@ -103,6 +115,11 @@ function OnOverlapBegin(other)
         syncPlayerState()
         print("Player HP : ", HP);
         World.DestroyActor(other)
+    elseif other:HasTag("Bullet") then
+        HP = HP - 10
+        syncPlayerState()
+        print("Player HP : ", HP);
+        World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         print("Game Finish!");
         callGameOver()
@@ -113,6 +130,11 @@ function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     ensurePlayerState()
+
+    local gameManager = World.FindActorByTag("GameManager")
+    if gameManager:IsValid() then
+        GameManagerLuaComponent = gameManager:GetComponent("LuaScriptComponent", 0)
+    end
 
     LightComponet = obj:GetComponent("PointLightComponent", 0)
     if LightComponet:IsValid() then
@@ -125,7 +147,7 @@ function Tick(dt)
 
     if(HP > 0) then
         HP = HP - dt * HP_reduction
-    else 
+    else
         HP = 0
     end
 

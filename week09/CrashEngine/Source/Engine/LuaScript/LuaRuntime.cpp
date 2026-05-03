@@ -1,4 +1,4 @@
-﻿#include "LuaRuntime.h"
+#include "LuaRuntime.h"
 
 #include <cstdio>
 #include <iomanip>
@@ -104,7 +104,7 @@ void FLuaRuntime::Shutdown()
     {
         return;
     }
-    
+
     if (Lua)
     {
         Lua->collect_garbage();
@@ -156,7 +156,7 @@ void FLuaRuntime::BindUtilityFunctions()
 				bFirst = false;
 			}
 
-			UE_LOG(Lua, Info, "%s", Message.c_str()); 
+			UE_LOG(Lua, Info, "%s", Message.c_str());
 		}
 	);
 }
@@ -284,6 +284,8 @@ void FLuaRuntime::BindEngineTypes()
         "SetBoxExtent", &FLuaComponentProxy::SetBoxExtent,
 		"SetCapsuleSize", &FLuaComponentProxy::SetCapsuleSize,
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
-		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight
+		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
+
+        "CallFunction", &FLuaComponentProxy::CallFunction
 	);
 }

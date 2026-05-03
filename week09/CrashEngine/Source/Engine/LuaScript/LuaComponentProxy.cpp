@@ -1,4 +1,4 @@
-﻿#include "LuaComponentProxy.h"
+#include "LuaComponentProxy.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -6,6 +6,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/LightComponentBase.h"
+#include "Component/LuaScriptComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -383,4 +384,15 @@ bool FLuaComponentProxy::SetCapsuleHalfHeight(float HalfHeight)
 
     Capsule->SetCapsuleHalfHeight(HalfHeight);
     return true;
+}
+
+bool FLuaComponentProxy::CallFunction(const FString& FunctionName, sol::variadic_args Args)
+{
+    ULuaScriptComponent* LuaScript = Cast<ULuaScriptComponent>(ResolveComponent());
+    if (!LuaScript)
+    {
+        return false;
+    }
+
+    return LuaScript->CallFunction(FunctionName, Args);
 }

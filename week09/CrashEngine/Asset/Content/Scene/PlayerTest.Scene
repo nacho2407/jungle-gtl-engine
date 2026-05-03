@@ -3,7 +3,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_12",
-      "PrimitiveKey" : "296",
+      "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -61,7 +61,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_13",
-      "PrimitiveKey" : "299",
+      "PrimitiveKey" : "15",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -115,7 +115,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_0",
-      "PrimitiveKey" : "302",
+      "PrimitiveKey" : "18",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -150,6 +150,28 @@
               "Visible In Game" : true,
               "bTickEnable" : true
             }
+          }, {
+            "Children" : [],
+            "ClassName" : "UPointLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 10.000000,
+              "Cast Shadows" : true,
+              "Depth Bias" : 0.000000,
+              "ESM Exponent" : 40.000000,
+              "Intensity" : 9.200000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 8.000000,
+              "Location" : [0.000000, 0.000000, -0.500000],
+              "Normal Bias" : 0.000000,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shadow Resolution" : 2048,
+              "Shadow Sharpen" : 0.000000,
+              "Slope Bias" : 0.000000,
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bTickEnable" : false
+            }
           }],
         "ClassName" : "UStaticMeshComponent",
         "Properties" : {
@@ -176,7 +198,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_3",
-      "PrimitiveKey" : "305",
+      "PrimitiveKey" : "25",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -218,7 +240,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_20",
-      "PrimitiveKey" : "308",
+      "PrimitiveKey" : "28",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -277,7 +299,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_14",
-      "PrimitiveKey" : "311",
+      "PrimitiveKey" : "31",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -335,7 +357,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_15",
-      "PrimitiveKey" : "314",
+      "PrimitiveKey" : "34",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -394,7 +416,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_26",
-      "PrimitiveKey" : "317",
+      "PrimitiveKey" : "37",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -458,7 +480,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_8",
-      "PrimitiveKey" : "320",
+      "PrimitiveKey" : "40",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -497,70 +519,6 @@
       "Tags" : ["GameManager"],
       "bVisible" : true
     }, {
-      "ClassName" : "ADirectionalLightActor",
-      "NonSceneComponents" : [],
-      "ObjectName" : "ADirectionalLightActor_0",
-      "RootComponent" : {
-        "Children" : [{
-            "Children" : [],
-            "ClassName" : "UUUIDTextRenderComponent",
-            "Properties" : {
-              "Billboard" : true,
-              "Font" : "Default",
-              "Font Size" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 331",
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "bTickEnable" : true
-            }
-          }, {
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Properties" : {
-              "Height" : 1.000000,
-              "Is Editor Helper" : true,
-              "Location" : [0.000000, 0.000000, 0.000000],
-              "Material" : {
-                "Path" : "Asset/Editor/Icons/Materials/DirectionalLightIcon.json"
-              },
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
-              "Visible" : true,
-              "Visible In Editor" : true,
-              "Visible In Game" : false,
-              "Width" : 1.000000,
-              "bTickEnable" : true
-            }
-          }],
-        "ClassName" : "UDirectionalLightComponent",
-        "Properties" : {
-          "CSM Max Distance" : 2000.000000,
-          "Cascade Count" : 3,
-          "Cascade Distribution" : 1.000000,
-          "Cast Shadows" : true,
-          "Depth Bias" : 0.001000,
-          "ESM Exponent" : 40.000000,
-          "Intensity" : 2.500000,
-          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-          "Location" : [2.514137, 0.000000, 5.273368],
-          "Normal Bias" : 0.001000,
-          "Rotation" : [177.334778, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shadow Resolution" : 2048,
-          "Shadow Sharpen" : 0.000000,
-          "Slope Bias" : 0.001000,
-          "bAffectsWorld" : true,
-          "bTickEnable" : false
-        }
-      },
-      "Tags" : [],
-      "bVisible" : true
-    }, {
       "ClassName" : "AAmbientLightActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AAmbientLightActor_0",
@@ -576,7 +534,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 335",
+              "Text" : "UUID : 60",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -637,7 +595,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 339",
+              "Text" : "UUID : 66",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -708,68 +666,68 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [1.315162, -5.087086, 18.733496],
+    "Location" : [-11.920644, -2.587421, 14.260432],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000015, 70.539421, 93.014877]
+    "Rotation" : [-0.000003, 52.059471, 20.354986]
   },
   "Primitives" : {
-    "296" : {
+    "12" : {
       "Location" : [-1.082971, 13.434097, 2.447348],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [19.588823, 3.442119, 11.602758],
       "Type" : "StaticMeshComp"
     },
-    "299" : {
+    "15" : {
       "Location" : [12.969712, 7.741277, 0.685662],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, -90.466202],
       "Scale" : [26.846292, 1.000000, 11.741141],
       "Type" : "StaticMeshComp"
     },
-    "302" : {
+    "18" : {
       "Location" : [2.020485, 0.000000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/clownFish/ClownFish.obj",
       "Rotation" : [0.000000, -0.000000, 91.332390],
       "Scale" : [21.400002, 14.500000, 11.400000],
       "Type" : "StaticMeshComp"
     },
-    "305" : {
+    "25" : {
       "Location" : [0.000000, 0.000000, -8.753875],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [100.000000, 100.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "308" : {
+    "28" : {
       "Location" : [-4.747623, -7.473082, -1.371347],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [2.966088, 3.357748, 0.172949],
       "Type" : "StaticMeshComp"
     },
-    "311" : {
+    "31" : {
       "Location" : [-3.685356, 4.807872, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.368087, 0.344661, 3.252439],
       "Type" : "StaticMeshComp"
     },
-    "314" : {
+    "34" : {
       "Location" : [-4.747623, 0.000000, -1.371347],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [2.966088, 3.357748, 0.172949],
       "Type" : "StaticMeshComp"
     },
-    "317" : {
+    "37" : {
       "Location" : [-3.685356, 7.704048, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.368087, 0.344661, 3.252439],
       "Type" : "StaticMeshComp"
     },
-    "320" : {
+    "40" : {
       "Location" : [0.000000, 0.000000, 500.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
