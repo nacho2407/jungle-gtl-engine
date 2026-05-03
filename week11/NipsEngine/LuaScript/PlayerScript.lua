@@ -92,7 +92,6 @@ function Script:Tick(dt)
 
     self.PrevLocation = CurLoc
 
-
     -- Mouse
     local sensivity = 0.003
 
@@ -123,6 +122,7 @@ function Script:Tick(dt)
 
         local pitch_rad = math.rad(self.camera_pitch)
         local fwd = self.owner:GetActorForwardVector()
+
         -- forward를 pitch 각도만큼 위아래로 기울임
         local fwd_pitched = Vector(
             fwd.X * math.cos(pitch_rad),

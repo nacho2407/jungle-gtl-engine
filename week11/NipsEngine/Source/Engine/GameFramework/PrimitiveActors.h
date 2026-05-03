@@ -272,4 +272,6 @@ public:
 private:
 	UProceduralMeshComponent* ProcMeshComp = nullptr;
     UBoxComponent* BoxComponent = nullptr;
+	// 물리 시뮬레이션 흉내용
+    UProjectileMovementComponent* ProjMoveComp = nullptr;
 };

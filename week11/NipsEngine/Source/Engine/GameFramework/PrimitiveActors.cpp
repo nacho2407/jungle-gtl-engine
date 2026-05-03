@@ -574,6 +574,13 @@ void ADestructibleActor::InitDestructibleActor(UStaticMesh* InStaticMesh)
     BoxComponent = AddComponent<UBoxComponent>();
     BoxComponent->AttachToComponent(GetRootComponent());
     BoxComponent->SetGenerateOverlapEvents(true);
+
+    ProjMoveComp = AddComponent<UProjectileMovementComponent>();
+    ProjMoveComp->SetVelocity(FVector(0, 0, 0));
+    ProjMoveComp->SetInitialSpeed(0);
+    ProjMoveComp->SetComponentTickEnabled(false);
+    ProjMoveComp->SetGravityScale(0);
+    ProjMoveComp->SetUpdatedComponent(GetRootComponent());
 }
 
 void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp)
@@ -586,6 +593,13 @@ void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcM
     BoxComponent->AttachToComponent(GetRootComponent());
 	// 잘린 애들을 무한히 자를 수 없게 제한
     BoxComponent->SetGenerateOverlapEvents(true);
+
+    ProjMoveComp = AddComponent<UProjectileMovementComponent>();
+    ProjMoveComp->SetVelocity(FVector(0, 0, 0));
+    ProjMoveComp->SetInitialSpeed(1);
+    ProjMoveComp->SetComponentTickEnabled(true);
+    ProjMoveComp->SetGravityScale(1);
+    ProjMoveComp->SetUpdatedComponent(GetRootComponent());
 }
 
 void ADestructibleActor::InitDefaultComponents()
@@ -688,6 +702,7 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
 	// 복사된 것중 필요한 Comp 만 연결하는 과정
     ProcMeshComp = nullptr;
     BoxComponent = nullptr;
+    ProjMoveComp = nullptr;
 
     for (UActorComponent* Comp : GetComponents())
     {
@@ -700,7 +715,12 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
         {
             BoxComponent = static_cast<UBoxComponent*>(Comp);
         }
-        if (ProcMeshComp && BoxComponent) break;
+		else if (ProjMoveComp == nullptr && Comp->IsA<UProjectileMovementComponent>())
+		{
+            ProjMoveComp = static_cast<UProjectileMovementComponent*>(Comp);
+		}
+
+        if (ProcMeshComp && BoxComponent && ProjMoveComp) break;
     }
 }
 
@@ -710,9 +730,9 @@ void ABladeSlash::InitDefaultComponents()
     Root->SetGenerateOverlapEvents(true);
     SetRootComponent(Root);
 
-    auto* Cube = AddComponent<UStaticMeshComponent>();
-    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-    Cube->AttachToComponent(Root);
+    //auto* Cube = AddComponent<UStaticMeshComponent>();
+    //Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    //Cube->AttachToComponent(Root);
 }
 
 void ABladeSlash::Tick(float DeltaTime)
