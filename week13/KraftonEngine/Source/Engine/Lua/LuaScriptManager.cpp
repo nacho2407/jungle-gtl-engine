@@ -51,6 +51,12 @@ void FLuaScriptManager::Initialize()
 
 void FLuaScriptManager::Shutdown()
 {
+	// 등록된 Lua 콜백 (sol::protected_function 들) 을 lua_State 가 살아있는 동안 먼저 release.
+	// static 멤버라 프로그램 종료 시점까지 살아있는데, 그때 destructor 가 luaL_unref 를
+	// 호출하면서 이미 reset 된 lua_State 를 만지면 크래시. 빈 함수로 덮어써 deref 를 지금
+	// (Lua 가 valid 한 동안) 일으킨다.
+	OnEscapePressedCallback = sol::protected_function();
+
 	Lua.reset();
 }
 
