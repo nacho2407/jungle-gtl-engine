@@ -694,8 +694,8 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor2->SetActorLocation(GetActorLocation());
         Actor2->SetActorRotation(GetActorRotation());
         Actor2->SetActorScale(GetActorScale());
-        Actor1->AddActorWorldOffset(N_World * SeparateDistance);
-        Actor2->AddActorWorldOffset(N_World * -SeparateDistance);
+        Actor1->ProjMoveComp->SetVelocity(N_World * 5);
+        Actor2->ProjMoveComp->SetVelocity(-N_World * 5);
 
         OtherActor->MarkPendingKill();
         this->MarkPendingKill();
@@ -745,6 +745,7 @@ void ABladeSlash::InitDefaultComponents()
     Root->SetGenerateOverlapEvents(true);
     SetRootComponent(Root);
 
+	// Slash 경로 시각화 용도
     //auto* Cube = AddComponent<UStaticMeshComponent>();
     //Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
     //Cube->AttachToComponent(Root);
