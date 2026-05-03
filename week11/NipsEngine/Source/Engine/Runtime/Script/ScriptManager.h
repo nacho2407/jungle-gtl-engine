@@ -43,6 +43,7 @@ public:
     void initializeLuaState();
     void BindLuaState();
     void ShutdownLuaState();
+    void ResetLuaState();
 
     sol::state* GetGlobalLuaState() { return GLuaState.get(); }
 

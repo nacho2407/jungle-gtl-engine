@@ -137,6 +137,9 @@ function IntroState:Finish(context)
     end
 
     self.finished = true
+    if self.returnTo == "Title" and context.root:OpenMainScene() then
+        return
+    end
     context.stateMachine:Change(self.returnTo or "Title")
 end
 

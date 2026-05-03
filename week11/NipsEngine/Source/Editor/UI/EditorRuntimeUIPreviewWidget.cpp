@@ -295,7 +295,7 @@ void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 		}
 	}
 
-	const TArray<FString> NewEvents = EditorEngine->PollRmlUIActionEvents();
+	const TArray<FString> NewEvents = EditorEngine->PollRmlUIPreviewActionEvents();
 	for (const FString& Event : NewEvents)
 	{
 		if (!Event.empty())
