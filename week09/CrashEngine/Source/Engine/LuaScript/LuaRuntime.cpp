@@ -190,6 +190,9 @@ void FLuaRuntime::BindEngineTypes()
 		"IsValid", &FLuaGameObjectProxy::IsValid,
 		"AddWorldOffset", &FLuaGameObjectProxy::AddWorldOffset,
 		"ApplyDamage", &FLuaGameObjectProxy::ApplyDamage,
+		"HasTag", &FLuaGameObjectProxy::HasTag,
+		"AddTag", &FLuaGameObjectProxy::AddTag,
+		"RemoveTag", &FLuaGameObjectProxy::RemoveTag,
 		"PrintLocation", &FLuaGameObjectProxy::PrintLocation
 	);
 

@@ -211,6 +211,76 @@ void AActor::SetActorTickEnabled(bool bEnabled)
     PrimaryActorTick.SetTickEnabled(bEnabled);
 }
 
+bool AActor::HasTag(const FName& Tag) const
+{
+    if (!Tag.IsValid())
+    {
+        return false;
+    }
+
+    return std::find(Tags.begin(), Tags.end(), Tag) != Tags.end();
+}
+
+bool AActor::HasTag(const FString& Tag) const
+{
+    return HasTag(FName(Tag));
+}
+
+void AActor::AddTag(const FName& Tag)
+{
+    if (!Tag.IsValid() || HasTag(Tag))
+    {
+        return;
+    }
+
+    Tags.push_back(Tag);
+}
+
+void AActor::AddTag(const FString& Tag)
+{
+    AddTag(FName(Tag));
+}
+
+void AActor::RemoveTag(const FName& Tag)
+{
+    auto It = std::find(Tags.begin(), Tags.end(), Tag);
+    if (It != Tags.end())
+    {
+        Tags.erase(It);
+    }
+}
+
+void AActor::RemoveTag(const FString& Tag)
+{
+    RemoveTag(FName(Tag));
+}
+
+void AActor::SetTagAt(int32 Index, const FName& Tag)
+{
+    if (Index < 0 || Index >= static_cast<int32>(Tags.size()) || !Tag.IsValid())
+    {
+        return;
+    }
+
+    auto Existing = std::find(Tags.begin(), Tags.end(), Tag);
+    if (Existing != Tags.end() && Existing != Tags.begin() + Index)
+    {
+        return;
+    }
+
+    Tags[Index] = Tag;
+}
+
+void AActor::RemoveTagAt(int32 Index)
+{
+    if (Index < 0 || Index >= static_cast<int32>(Tags.size()))
+    {
+        return;
+    }
+
+    Tags.erase(Tags.begin() + Index);
+}
+
 void AActor::MarkPickingDirty()
 {
     if (UWorld* World = GetWorld())
@@ -387,6 +457,7 @@ void AActor::Serialize(FArchive& Ar)
     // 소유 포인터(OwnedComponents/RootComponent/Outer)는 직렬화 제외 — 복제 단계에서 재구성.
     Ar << bVisible;
     Ar << bNeedsTick;
+    Ar << Tags;
 
 	if (Ar.IsLoading())
     {

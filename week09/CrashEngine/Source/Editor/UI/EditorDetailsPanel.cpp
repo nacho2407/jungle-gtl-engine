@@ -71,6 +71,23 @@ static FString GetStemFromPath(const FString& Path)
     return RemoveExtension(FileName);
 }
 
+static FString TrimWhitespace(const FString& Value)
+{
+    size_t Begin = 0;
+    while (Begin < Value.size() && std::isspace(static_cast<unsigned char>(Value[Begin])))
+    {
+        ++Begin;
+    }
+
+    size_t End = Value.size();
+    while (End > Begin && std::isspace(static_cast<unsigned char>(Value[End - 1])))
+    {
+        --End;
+    }
+
+    return Value.substr(Begin, End - Begin);
+}
+
 static FString BuildComponentDisplayLabel(UActorComponent* Comp)
 {
     if (!Comp)
@@ -730,6 +747,91 @@ void FEditorDetailsPanel::RenderActorProperties(AActor* PrimaryActor, const TArr
 {
     ImGui::Text("Actor: %s", PrimaryActor->GetClass()->GetName());
     ImGui::Text("Name: %s", PrimaryActor->GetFName().ToString().c_str());
+
+    ImGui::Separator();
+    ImGui::Text("Tags");
+    ImGui::Spacing();
+
+    auto ForEachSelectedActor = [&](auto&& Func)
+    {
+        if (SelectedActors.empty())
+        {
+            Func(PrimaryActor);
+            return;
+        }
+
+        for (AActor* Actor : SelectedActors)
+        {
+            if (Actor)
+            {
+                Func(Actor);
+            }
+        }
+    };
+
+    ImGui::PushID("ActorTags");
+    const TArray<FName>& Tags = PrimaryActor->GetTags();
+    if (Tags.empty())
+    {
+        ImGui::TextDisabled("No tags");
+    }
+
+    for (int32 TagIndex = 0; TagIndex < static_cast<int32>(Tags.size()); ++TagIndex)
+    {
+        ImGui::PushID(TagIndex);
+
+        FString Current = Tags[TagIndex].ToString();
+        char Buf[128];
+        strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+
+        const float RemoveButtonWidth = ImGui::CalcTextSize("X").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - RemoveButtonWidth - ImGui::GetStyle().ItemSpacing.x);
+        if (ImGui::InputText("##TagValue", Buf, sizeof(Buf)))
+        {
+            FString NewTag = TrimWhitespace(Buf);
+            if (!NewTag.empty())
+            {
+                ForEachSelectedActor([&](AActor* Actor)
+                {
+                    if (TagIndex < static_cast<int32>(Actor->GetTags().size()))
+                    {
+                        Actor->SetTagAt(TagIndex, FName(NewTag));
+                    }
+                });
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("X"))
+        {
+            ForEachSelectedActor([&](AActor* Actor)
+            {
+                Actor->RemoveTagAt(TagIndex);
+            });
+            ImGui::PopID();
+            break;
+        }
+
+        ImGui::PopID();
+    }
+
+    static char NewActorTagBuf[128] = {};
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 48.0f - ImGui::GetStyle().ItemSpacing.x);
+    const bool bAddByEnter = ImGui::InputText("##NewTag", NewActorTagBuf, sizeof(NewActorTagBuf), ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SameLine();
+    if (ImGui::Button("Add") || bAddByEnter)
+    {
+        FString NewTag = TrimWhitespace(NewActorTagBuf);
+        if (!NewTag.empty())
+        {
+            ForEachSelectedActor([&](AActor* Actor)
+            {
+                Actor->AddTag(FName(NewTag));
+            });
+            NewActorTagBuf[0] = '\0';
+        }
+    }
+    ImGui::PopID();
 
     if (PrimaryActor->GetRootComponent())
     {
@@ -2131,6 +2233,63 @@ bool FEditorDetailsPanel::RenderDetailsPanel(TArray<FPropertyDescriptor>& Props,
                 bChanged = true;
             }
         }
+        break;
+    }
+    case EPropertyType::NameArray:
+    {
+        TArray<FName>* Values = static_cast<TArray<FName>*>(Prop.ValuePtr);
+
+        ImGui::Text("%s", DisplayName.c_str());
+        ImGui::Indent();
+
+        for (int32 NameIndex = 0; NameIndex < static_cast<int32>(Values->size()); ++NameIndex)
+        {
+            ImGui::PushID(NameIndex);
+
+            FString Current = (*Values)[NameIndex].ToString();
+            char Buf[128];
+            strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+
+            const float RemoveButtonWidth = ImGui::CalcTextSize("X").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - RemoveButtonWidth - ImGui::GetStyle().ItemSpacing.x);
+            if (ImGui::InputText("##NameValue", Buf, sizeof(Buf)))
+            {
+                FString NewName = TrimWhitespace(Buf);
+                if (!NewName.empty())
+                {
+                    (*Values)[NameIndex] = FName(NewName);
+                    bChanged = true;
+                }
+            }
+
+            ImGui::SameLine();
+            if (ImGui::SmallButton("X"))
+            {
+                Values->erase(Values->begin() + NameIndex);
+                bChanged = true;
+                ImGui::PopID();
+                break;
+            }
+
+            ImGui::PopID();
+        }
+
+        static char NewNameBuf[128] = {};
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 48.0f - ImGui::GetStyle().ItemSpacing.x);
+        const bool bAddByEnter = ImGui::InputText("##NewName", NewNameBuf, sizeof(NewNameBuf), ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::SameLine();
+        if (ImGui::Button("Add") || bAddByEnter)
+        {
+            FString NewName = TrimWhitespace(NewNameBuf);
+            if (!NewName.empty())
+            {
+                Values->push_back(FName(NewName));
+                NewNameBuf[0] = '\0';
+                bChanged = true;
+            }
+        }
+
+        ImGui::Unindent();
         break;
     }
     case EPropertyType::LuaScriptRef:

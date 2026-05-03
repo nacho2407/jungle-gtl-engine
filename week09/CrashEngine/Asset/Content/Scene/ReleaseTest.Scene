@@ -61,6 +61,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : ["Player"],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -118,6 +119,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -175,6 +177,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -232,6 +235,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -289,6 +293,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -346,6 +351,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : ["Dummy"],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -403,6 +409,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -460,6 +467,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -517,6 +525,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
@@ -574,12 +583,13 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_8",
-      "PrimitiveKey" : "58",
+      "PrimitiveKey" : "49",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -631,6 +641,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "ACameraActor",
@@ -648,7 +659,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 74",
+              "Text" : "UUID : 64",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -704,6 +715,7 @@
           "bTickEnable" : true
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }, {
       "ClassName" : "ADirectionalLightActor",
@@ -721,7 +733,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 81",
+              "Text" : "UUID : 71",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -767,6 +779,7 @@
           "bTickEnable" : false
         }
       },
+      "Tags" : [],
       "bVisible" : true
     }],
   "ClassName" : "UWorld",
@@ -776,9 +789,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [7.579408, -4.266437, 8.838735],
+    "Location" : [7.316108, -7.271158, 10.629128],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000002, 56.259789, 153.913879]
+    "Rotation" : [-0.000003, 47.859821, 130.814240]
   },
   "Primitives" : {
     "12" : {
@@ -851,7 +864,7 @@
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "58" : {
+    "49" : {
       "Location" : [-4.732070, 0.011115, -2.266686],
       "ObjStaticMeshAsset" : "Asset/Content/Models/SolarSystem/source/uranus.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
