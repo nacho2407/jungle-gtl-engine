@@ -45,6 +45,7 @@ public:
 
     void PostDuplicate(UObject* Original) override;
     void Serialize(FArchive& Ar) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
 private:
     TArray<FMeshSection> Sections;
