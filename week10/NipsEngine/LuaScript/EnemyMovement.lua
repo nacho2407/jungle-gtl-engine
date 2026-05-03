@@ -43,6 +43,14 @@ end
 
 function Script:BeginPlay()
     Log("[Enemy BeginPlay] " .. tostring(self.owner.UUID))
+    local player = Engine.API.World.FindActorByName("AStaticMeshActor")
+
+    if player ~= nil then
+        self.target = player.Location
+        Log("[Enemy BeginPlay] " .. tostring(player.Name))
+    else
+        Log("[Enemy BeginPlay] 검색한 대상이 존재하지 않음")
+    end
 end
 
 function Script:Tick(dt)

@@ -1,10 +1,11 @@
-#include "ScriptManager.h"
+﻿#include "ScriptManager.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "GameFramework/AActor.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "ThirdParty/sol/sol.hpp"
+#include "ThirdParty/luajit/src/luajit.h"
 
 #include <Windows.h>
 #include <algorithm>
@@ -104,6 +105,7 @@ namespace
 void FScriptManager::initializeLuaState()
 {
     GLuaState = std::make_unique<sol::state>();
+
     GLuaState->open_libraries(
         sol::lib::base,
         sol::lib::package,
@@ -112,15 +114,31 @@ void FScriptManager::initializeLuaState()
         sol::lib::os,
         sol::lib::math,
         sol::lib::table,
-        sol::lib::bit32,
-        sol::lib::utf8);
+        sol::lib::debug,
+		sol::lib::jit
+        //sol::lib::bit // 필요하면 bit32 대신 이것 사용
+    );
 
     ConfigureLuaPackagePath();
 
     RefreshLuaScriptFiles();
     BindLuaState();
-}
 
+    sol::protected_function_result Result = GLuaState->safe_script(R"(
+        if jit then
+            jit.on()
+            Log("[Lua] " .. _VERSION .. " / " .. jit.version)
+        else
+            Log("[Lua] " .. _VERSION .. " / LuaJIT not detected")
+        end
+    )");
+
+    if (!Result.valid())
+    {
+        sol::error Err = Result;
+        UE_LOG_ERROR("[ScriptManager] LuaJIT init check failed: %s", Err.what());
+    }
+}
 void FScriptManager::ShutdownLuaState()
 {
     if (!GLuaState)
