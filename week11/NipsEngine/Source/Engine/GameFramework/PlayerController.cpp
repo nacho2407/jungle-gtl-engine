@@ -206,7 +206,7 @@ void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
 
 	if (bCleared)
 	{
-		UE_LOG("[PlayerController] Observed actor destroyed. Runtime possession/view target cleared.");
+		UE_LOG_WARNING("[PlayerController] Observed actor destroyed. Runtime possession/view target cleared.");
 	}
 }
 
@@ -354,13 +354,13 @@ AActor* APlayerController::FindPlacedPlayerActor() const
 
 	if (FirstTaggedPlayer)
 	{
-		UE_LOG("[PlayerController] Actor tagged Player has no CameraComponent: %s",
+		UE_LOG_WARNING("[PlayerController] Actor tagged Player has no CameraComponent: %s",
 			FirstTaggedPlayer->GetFName().ToString().c_str());
 	}
 	if (FirstDefaultPlayer)
 	{
 		FirstDefaultPlayer->AddTag("Player");
-		UE_LOG("[PlayerController] Reusing default player actor without Player tag: %s",
+		UE_LOG_WARNING("[PlayerController] Reusing default player actor without Player tag: %s",
 			FirstDefaultPlayer->GetFName().ToString().c_str());
 	}
 	return FirstDefaultPlayer;

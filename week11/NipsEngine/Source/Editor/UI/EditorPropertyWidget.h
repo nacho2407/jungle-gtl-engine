@@ -55,7 +55,7 @@ private:
 
 	// 이름 변경 및 UI 렌더링
 	template<typename T>
-	void RenderEditableName(const char* Label, T* TargetObject);
+	void RenderEditableName(const char* Label, T* TargetObject, bool* bFocusNextFrame = nullptr);
 
 	// 멤버 변수
 	FSelectionManager* SelectionManager  = nullptr;
@@ -69,5 +69,7 @@ private:
 	bool bActorSelected   = true; // true: Actor details, false: Component details
 	bool bOpenDetailsContextMenu = false;
 	bool bPropertyEditUndoCaptured = false;
+	bool bFocusActorNameNextFrame = false;
+	bool bFocusComponentNameNextFrame = false;
 	char NewActorTagBuffer[128] = "";
 };

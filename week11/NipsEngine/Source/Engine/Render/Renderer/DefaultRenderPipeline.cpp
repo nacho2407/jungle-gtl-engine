@@ -75,7 +75,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			if (!bLoggedRuntimeFallback)
 			{
 				const auto& FallbackStats = Collector.GetLastCullingStats();
-				UE_LOG("[GameRender] Frustum collect produced no opaque commands. Fallback full-world collect used. VisiblePrimitives=%d OpaqueCommands=%d",
+				UE_LOG_WARNING("[GameRender] Frustum collect produced no opaque commands. Fallback full-world collect used. VisiblePrimitives=%d OpaqueCommands=%d",
 					FallbackStats.TotalVisiblePrimitiveCount,
 					static_cast<int32>(Bus.GetCommands(ERenderPass::Opaque).size()));
 				bLoggedRuntimeFallback = true;

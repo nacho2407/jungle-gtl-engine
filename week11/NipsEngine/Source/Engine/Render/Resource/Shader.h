@@ -103,7 +103,7 @@ public:
 		auto It = Permutations.find(PermutationKey);
 		if (It == Permutations.end())
 		{
-			UE_LOG("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
+			UE_LOG_ERROR("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
 			return;
 		}
 
@@ -124,7 +124,7 @@ public:
 		auto It = Permutations.find(PermutationKey);
 		if (It == Permutations.end())
 		{
-			UE_LOG("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
+			UE_LOG_ERROR("Missing shader permutation: %s key=%u", FilePath.c_str(), PermutationKey);
 			return;
 		}
 

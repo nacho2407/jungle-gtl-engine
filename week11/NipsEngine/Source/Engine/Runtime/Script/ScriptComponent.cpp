@@ -369,7 +369,7 @@ void UScriptComponent::StartCoroutine(sol::function Function)
 {
     if (!Function.valid())
     {
-        UE_LOG("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
         return;
     }
 
@@ -432,7 +432,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     sol::state* Lua = FScriptManager::Get().GetGlobalLuaState();
     if (!Lua)
     {
-        UE_LOG("[ScriptComponent] LuaState is null");
+        UE_LOG_ERROR("[ScriptComponent] LuaState is null");
         return std::nullopt;
     }
 
@@ -441,7 +441,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     sol::object NewObj = Loaded.ScriptClass["new"];
     if (!NewObj.valid() || NewObj.get_type() != sol::type::function)
     {
-        UE_LOG("[ScriptComponent] Script.new missing: %s", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Script.new missing: %s", ScriptName.c_str());
         return std::nullopt;
     }
 
@@ -453,7 +453,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
     if (!NewResult.valid())
     {
         sol::error Err = NewResult;
-        UE_LOG("[ScriptComponent] Script.new failed: %s", Err.what());
+        UE_LOG_ERROR("[ScriptComponent] Script.new failed: %s", Err.what());
         return std::nullopt;
     }
 
@@ -461,7 +461,7 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
 
     if (!InstanceObj.valid() || InstanceObj.get_type() != sol::type::table)
     {
-        UE_LOG("[ScriptComponent] Script.new must return table: %s", ScriptName.c_str());
+        UE_LOG_ERROR("[ScriptComponent] Script.new must return table: %s", ScriptName.c_str());
         return std::nullopt;
     }
 
@@ -485,7 +485,7 @@ void UScriptComponent::ReloadLuaProperties()
 
     if (!FScriptManager::Get().HasScript(ScriptName))
     {
-        UE_LOG("[ScriptComponent] Script not found: %s", ScriptName.c_str());
+        UE_LOG_WARNING("[ScriptComponent] Script not found: %s", ScriptName.c_str());
         return;
     }
 
@@ -493,7 +493,7 @@ void UScriptComponent::ReloadLuaProperties()
     auto LoadedClass = FScriptManager::Get().LoadScriptClassForProperties(ScriptName);
     if (!LoadedClass)
     {
-        UE_LOG("[ScriptComponent] property 읽기 실패: %s", ScriptName.c_str());
+        UE_LOG_WARNING("[ScriptComponent] property read failed: %s", ScriptName.c_str());
         return;
     }
 

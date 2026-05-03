@@ -163,7 +163,7 @@ void UGameEngine::LoadGameSettings()
     std::ifstream File(GameIniPath);
     if (!File.is_open())
     {
-        UE_LOG("[GameEngine] Settings/Game.ini not found. Using default startup scene: %s",
+        UE_LOG_WARNING("[GameEngine] Settings/Game.ini not found. Using default startup scene: %s",
                StartupSettings.StartupScene.c_str());
         return;
     }
@@ -288,11 +288,11 @@ void UGameEngine::LoadStartupWorld()
             return;
         }
 
-        UE_LOG("[GameEngine] Failed to load startup scene: %s", ScenePath.c_str());
+        UE_LOG_ERROR("[GameEngine] Failed to load startup scene: %s", ScenePath.c_str());
     }
     else
     {
-        UE_LOG("[GameEngine] Startup scene missing: %s", ScenePath.c_str());
+        UE_LOG_ERROR("[GameEngine] Startup scene missing: %s", ScenePath.c_str());
     }
 
     FWorldContext& Context = CreateWorldContext(EWorldType::Game, FName("Game"), StartupSettings.GameName);
@@ -316,7 +316,7 @@ void UGameEngine::EnsurePlayerController()
     PlayerController = Cast<APlayerController>(World->SpawnActorByTypeName(StartupSettings.PlayerControllerClass));
     if (!PlayerController)
     {
-        UE_LOG("[GameEngine] Failed to spawn PlayerController class: %s", StartupSettings.PlayerControllerClass.c_str());
+        UE_LOG_ERROR("[GameEngine] Failed to spawn PlayerController class: %s", StartupSettings.PlayerControllerClass.c_str());
         return;
     }
 
