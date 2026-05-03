@@ -76,4 +76,5 @@ body {
 	color: #ffffff;
 	font-size: 18dp;
 	line-height: 38dp;
+	text-align: center;
 }

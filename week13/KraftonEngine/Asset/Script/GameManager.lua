@@ -45,14 +45,14 @@ local quests = {
         id = "carWash",
         uiKey = "carWashQuest",
         targetName = "CarWashCenter",
-        fallbackTargetName = "CarWashCenterTrigger",
+        fallbackTargetName = "CarWashTrigger",
         completionPhase = ECarGamePhase.CarWash
     },
     {
         id = "gas",
         uiKey = "gasQuest",
         targetName = "GasStation",
-        fallbackTargetName = "CarWashTrigger",
+        fallbackTargetName = "GasStationTrigger",
         completionPhase = ECarGamePhase.CarGas
     }
 }
@@ -87,22 +87,22 @@ end
 
 local function GetArrowSymbolFromAngle(angle)
     if angle >= -22.5 and angle < 22.5 then
-        return "&#8593;"
+        return "&#8593;" -- ↑
     elseif angle >= 22.5 and angle < 67.5 then
-        return "&#8598;"
+        return "&#8599;" -- ↗
     elseif angle >= 67.5 and angle < 112.5 then
-        return "&#8592;"
+        return "&#8594;" -- →
     elseif angle >= 112.5 and angle < 157.5 then
-        return "&#8601;"
+        return "&#8600;" -- ↘
     elseif angle >= -67.5 and angle < -22.5 then
-        return "&#8599;"
+        return "&#8598;" -- ↖
     elseif angle >= -112.5 and angle < -67.5 then
-        return "&#8594;"
+        return "&#8592;" -- ←
     elseif angle >= -157.5 and angle < -112.5 then
-        return "&#8600;"
+        return "&#8601;" -- ↙
     end
 
-    return "&#8595;"
+    return "&#8595;" -- ↓
 end
 
 local function GetCurrentQuest()
@@ -177,24 +177,11 @@ local function UpdateQuestHud()
     end
 
     local toTarget = activeTarget.Location - ownerCar.Location
-    -- toTarget.Z = 0.0
-    local toTarget2D = Vector.new(toTarget.X, toTarget.Y, 0.0)
+    toTarget.Z = 0.0
+    local direction = toTarget:Normalized()
 
-    if toTarget2D:Length() <= 1.0 then
-        UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), "&#8593;", true)
-        return
-    end
-
-    local direction = toTarget2D:Normalized()
-    local rawForward = ownerCar.Forward
-    --forward.Z = 0.0
-    local forward = Vector.new(rawForward.X, rawForward.Y, 0.0)
-
-    if forward:Length() <= 1.0 then
-        UIManager.SetQuestHud(GetQuestText(GetCurrentQuest()), "&#8593;", true)
-        return
-    end
-
+    local forward = ownerCar.Forward
+    forward.Z = 0.0
     forward = forward:Normalized()
 
     local dot = forward:Dot(direction)

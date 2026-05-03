@@ -8,7 +8,7 @@
 		<div id="quest-panel">
 			<div class="quest-badge">QUEST 01</div>
 			<div class="quest-title">세차하기</div>
-			<div class="quest-body">CarWashCenter로 이동해 차량 세차를 완료하세요.</div>
+			<div class="quest-body">세차장으로 이동해 차량 세차를 완료하세요.</div>
 			<button id="car-wash-quest-ok-button" class="quest-button">Okay</button>
 		</div>
 	</div>
