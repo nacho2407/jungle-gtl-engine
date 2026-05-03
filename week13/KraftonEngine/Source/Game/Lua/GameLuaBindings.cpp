@@ -16,8 +16,8 @@
 #include "Game/Component/DirtComponent.h"
 
 #include "Game/GameEngine.h"
-#include "Game/GameState/GameStateCarGame.h"
 #include "Game/GameMode/GameModeCarGame.h"
+#include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Game/Pawn/PoliceCar.h"
 
@@ -67,6 +67,22 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	ActorType["SetCarWashStreamVisible"] = [](AActor& Actor, bool bVisible)
 	{
 		UDirtComponent::SetCarWashStreamVisible(Actor, bVisible);
+	};
+	ActorType["IsCarWashStreamVisible"] = [](AActor& Actor)
+	{
+		return UDirtComponent::IsCarWashStreamVisible(Actor);
+	};
+	ActorType["AreAllDirtComponentsWashed"] = [](AActor& Actor)
+	{
+		return UDirtComponent::AreAllDirtComponentsWashed(Actor);
+	};
+	ActorType["SetVisible"] = [](AActor& Actor, bool bVisible)
+	{
+		Actor.SetVisible(bVisible);
+	};
+	ActorType["IsVisible"] = [](AActor& Actor)
+	{
+		return Actor.IsVisible();
 	};
 
 	// --- ACarPawn / APoliceCar usertype ---

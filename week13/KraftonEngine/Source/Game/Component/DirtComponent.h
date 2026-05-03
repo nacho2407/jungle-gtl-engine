@@ -3,7 +3,6 @@
 #include "Component/DecalComponent.h"
 
 class AActor;
-class UCameraComponent;
 class UStaticMeshComponent;
 class UWorld;
 
@@ -22,6 +21,8 @@ public:
 
 	static bool FireCarWashRay(AActor& Actor);
 	static void SetCarWashStreamVisible(AActor& Actor, bool bVisible);
+	static bool IsCarWashStreamVisible(AActor& Actor);
+	static bool AreAllDirtComponentsWashed(AActor& Actor);
 	static bool WashFirstHitDirt(UWorld* World, const FVector& Start, const FVector& Direction, float MaxDistance);
 
 protected:
@@ -30,7 +31,6 @@ protected:
 private:
 	static UStaticMeshComponent* FindWaterGunComponent(AActor& Actor);
 	static UStaticMeshComponent* FindWaterStreamComponent(AActor& Actor);
-	static UCameraComponent* FindOwnedCamera(AActor& Actor);
 
 	FVector DirtColor = FVector(0.34f, 0.23f, 0.12f);
 	float CurrentAlpha = 0.95f;
