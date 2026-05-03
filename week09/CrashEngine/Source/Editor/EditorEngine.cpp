@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
+#include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
 #include "LuaScript/LuaScriptManager.h"
 
@@ -171,6 +172,7 @@ void UEditorEngine::Tick(float DeltaTime)
     InputSystem::Get().Tick(Window->IsForeground());
     FDirectoryWatcher::Get().Tick();
     FLuaCoroutineScheduler::Get().Update(DeltaTime);
+    FSoundManager::Get().Tick();
 
     const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
     const FGuiInputCaptureState& GuiCapture = MainPanel.GetGuiInputCaptureState();

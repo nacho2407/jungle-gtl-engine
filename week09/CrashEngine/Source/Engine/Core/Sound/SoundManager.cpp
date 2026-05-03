@@ -31,6 +31,11 @@ void FSoundManager::Tick()
 
 void FSoundManager::Release()
 {
+    if (MasterGroup)
+    {
+        MasterGroup->stop();
+    }
+
     for (auto& Pair : SoundCache)
     {
         if (Pair.second)
@@ -42,10 +47,15 @@ void FSoundManager::Release()
 
     if (System)
     {
-        System->close();
+        System->close(); 
         System->release();
         System = nullptr;
     }
+
+    MasterGroup = nullptr;
+    BgmGroup = nullptr;
+    SfxGroup = nullptr;
+    CurrentBgmChannel = nullptr;
 }
 
 bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM)
