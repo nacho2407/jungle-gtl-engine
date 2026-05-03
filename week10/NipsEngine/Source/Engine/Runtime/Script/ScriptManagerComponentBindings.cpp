@@ -89,6 +89,8 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(GetRelativeLocation, GetRelativeLocation);
     LUA_METHOD(SetRelativeLocation, SetRelativeLocation);
     LUA_RW_PROPERTY(Location, GetRelativeLocation, SetRelativeLocation);
+    LUA_RW_PROPERTY(Rotation, GetRelativeRotation, SetRelativeRotation);
+    LUA_RW_PROPERTY(Scale, GetRelativeScale, SetRelativeScale);
     LUA_RO_PROPERTY(Forward, GetForwardVector);
     LUA_END_TYPE();
 
