@@ -1,4 +1,4 @@
-#include "CarGasComponent.h"
+#include "Game/Component/CarGasComponent.h"
 
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
