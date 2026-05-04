@@ -15,6 +15,20 @@ local PlayerAimOffset = Vector.new(0.0, 0.0, -1.0)
 
 -- Candidate에서 받은 초기 회전의 X/Y는 유지하고, 공격할 때 Z(Yaw)만 Player 방향으로 바꾼다.
 local BaseRotation = Vector.new(0.0, 0.0, 0.0)
+local SoundManager = nil
+
+local function loadTurretSounds()
+    SoundManager = GetSoundManager()
+    SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
+end
+
+local function playTurretSound(sound_id)
+    if SoundManager == nil then
+        loadTurretSounds()
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 local DamagedEffectMaterial = "Asset/Content/Materials/subUV_Damaged.json"
 local DamagedEffectLifeTime = 0.5
@@ -106,6 +120,7 @@ local function fireAtPlayer(player)
     local direction = shotDirection:Normalized()
     print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
     BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end
 
@@ -115,6 +130,7 @@ function BeginPlay()
     HP = MaxHP
     ShotTimer = 0.0
     BaseRotation = obj.Rotation
+    loadTurretSounds()
 end
 
 function EndPlay()

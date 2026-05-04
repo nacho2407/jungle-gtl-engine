@@ -18,35 +18,48 @@
             height: 100%;
         }
 
+        .game-over-line
+        {
+            position: absolute;
+            right: 100px;
+            width: 560px;
+            height: 60px;
+        }
+
         .game-over-label
         {
             position: absolute;
-            left: 0px;
-            width: 100%;
+            top: 0px;
             height: 44px;
         }
 
-        #game_over_score
+        #game_over_score_line
         {
             top: 300px;
         }
 
-        #game_over_prompt
+        #game_over_prompt_line
         {
-            top: 330px;
+            top: 340px;
         }
 
-        #game_over_name
+        #game_over_name_line
         {
-            top: 360px;
+            top: 380px;
         }
     </style>
 </head>
 <body>
     <img id="background" src="" />
     <div id="game_over_title" class="game-over-label"></div>
-    <div id="game_over_score" class="game-over-label"></div>
-    <div id="game_over_prompt" class="game-over-label"></div>
-    <div id="game_over_name" class="game-over-label"></div>
+    <div id="game_over_score_line" class="game-over-line">
+        <div id="game_over_score" class="game-over-label"></div>
+    </div>
+    <div id="game_over_prompt_line" class="game-over-line">
+        <div id="game_over_prompt" class="game-over-label"></div>
+    </div>
+    <div id="game_over_name_line" class="game-over-line">
+        <div id="game_over_name" class="game-over-label"></div>
+    </div>
 </body>
 </rml>

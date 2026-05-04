@@ -32,6 +32,22 @@ local CurrentLightB = 1.0
 
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
+local SoundManager = nil
+
+local function loadPlayerSounds()
+    SoundManager = GetSoundManager()
+    SoundManager:LoadSound("Shoot", "Asset/Content/Sounds/Shoot.mp3", false)
+    SoundManager:LoadSound("Charge", "Asset/Content/Sounds/Charge.mp3", false)
+    SoundManager:LoadSound("Document", "Asset/Content/Sounds/Document.mp3", false)
+end
+
+local function playPlayerSound(sound_id)
+    if SoundManager == nil then
+        loadPlayerSounds()
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 local EffectLocationOffset = Vector.new(0.0, 0.0, 3.0)
 local EffectScale = Vector.new(1.8, 1.8, 1.8)
@@ -239,6 +255,7 @@ local function firePlayerBullet()
     print("Player Fire Direction : ", aimDirection)
     print("Player Fire Location : ", spawnLocation)
     BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
+    playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
 
@@ -274,6 +291,7 @@ function OnOverlapBegin(other)
         other:AddTag("Collected")
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
+        playPlayerSound("Document")
         print("Has Document : ", DocumentCount);
         spawnEffect(other.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
@@ -289,6 +307,7 @@ function OnOverlapBegin(other)
         end
         BatteryLightFlashTime = BatteryLightFlashDuration
         syncPlayerState()
+        playPlayerSound("Charge")
         print("Player HP : ", HP);
         spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
@@ -323,6 +342,7 @@ function BeginPlay()
     })
     ensurePlayerState()
     syncPlayerAimState()
+    loadPlayerSounds()
 
     local gameManager = World.FindActorByTag("GameManager")
     if gameManager:IsValid() then

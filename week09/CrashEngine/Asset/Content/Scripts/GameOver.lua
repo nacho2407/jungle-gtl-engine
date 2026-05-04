@@ -12,14 +12,14 @@ local function setText(element_id, text, red, green, blue, font_size)
 end
 
 local function refreshName()
-    setText("game_over_name", player_name .. "_", 255, 220, 64, 26)
+    setText("game_over_name", player_name .. "_", 255, 220, 64, 35)
 end
 
 local function refreshScore()
     local minutes = math.floor(timer / 60)
     local seconds = math.floor(timer % 60)
     local score_text = string.format("Score %d   HP %d   Doc %d   Timer %02d:%02d", score, hp, document_count, minutes, seconds)
-    setText("game_over_score", score_text, 255, 255, 255, 20)
+    setText("game_over_score", score_text, 255, 255, 255, 35)
 end
 
 local function submitName()
@@ -47,9 +47,10 @@ function BeginPlay()
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(100)
+    GetSoundManager():StopBGM()
     ui_document:SetTexture("background", "Textures/GameOver.jpg")
 
-    setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, 20)
+    setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, 35)
     refreshScore()
     refreshName()
 
