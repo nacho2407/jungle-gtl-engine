@@ -12,6 +12,32 @@
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 
+namespace
+{
+bool HasSelectedOutlineProxy(const FRenderPipelineContext& Context)
+{
+    if (!Context.Submission.SceneData)
+    {
+        return false;
+    }
+
+    for (const FPrimitiveProxy* Proxy : Context.Submission.SceneData->Primitives.VisibleProxies)
+    {
+        if (Proxy && Proxy->bSelected && Proxy->bSupportsOutline)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+} // namespace
+
+bool FOutlinePass::IsEnabled(const FRenderPipelineContext& Context) const
+{
+    return HasSelectedOutlineProxy(Context);
+}
+
 void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 {
     if (!Context.SceneView)
@@ -29,6 +55,11 @@ void FOutlinePass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FOutlinePass::BuildDrawCommands(FRenderPipelineContext& Context)
 {
+    if (!HasSelectedOutlineProxy(Context))
+    {
+        return;
+    }
+
     DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass::PostProcess, Context, *Context.DrawCommandList, EViewModePostProcessVariant::Outline);
 
     if (!Context.DrawCommandList || Context.DrawCommandList->GetCommands().empty())
@@ -59,7 +90,7 @@ void FOutlinePass::SubmitDrawCommands(FRenderPipelineContext& Context)
         for (uint32 i = s; i < e; ++i)
         {
             const auto& c = Context.DrawCommandList->GetCommands()[i];
-            const uint8 UserBits = static_cast<uint8>((c.SortKey >> 52) & 0xFFu);
+            const uint8 UserBits = static_cast<uint8>((c.SortKey >> 51) & 0xFFu);
             if (UserBits == static_cast<uint8>(ToPostProcessUserBits(EViewModePostProcessVariant::Outline)))
                 Context.DrawCommandList->SubmitRange(i, i + 1, *Context.Device, Context.Context, *Context.StateCache);
         }

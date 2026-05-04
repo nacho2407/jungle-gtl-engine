@@ -72,7 +72,7 @@ void FHeightFogPass::SubmitDrawCommands(FRenderPipelineContext& Context)
         for (uint32 i = s; i < e; ++i)
         {
             const auto&  c        = Context.DrawCommandList->GetCommands()[i];
-            const uint8 UserBits = static_cast<uint8>((c.SortKey >> 52) & 0xFFu);
+            const uint8 UserBits = static_cast<uint8>((c.SortKey >> 51) & 0xFFu);
             if (UserBits == static_cast<uint8>(ToPostProcessUserBits(EViewModePostProcessVariant::None)))
                 Context.DrawCommandList->SubmitRange(i, i + 1, *Context.Device, Context.Context, *Context.StateCache);
         }

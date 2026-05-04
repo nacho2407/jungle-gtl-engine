@@ -9,6 +9,7 @@ class UActorComponent;
 class USceneComponent;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
+class USubUVComponent;
 
 class FLuaComponentProxy
 {
@@ -55,6 +56,7 @@ public:
     FString GetStaticMeshPath() const;
     int32 GetNumMaterials() const;
     bool SetMaterial(int32 ElementIndex, const FString& MaterialPath);
+    bool SetSubUVGrid(int32 Rows, int32 Columns);
 
 	/*
      * Text Render
@@ -95,6 +97,7 @@ private:
     USceneComponent* ResolveSceneComponent() const;
     UPrimitiveComponent* ResolvePrimitiveComponent() const;
     UStaticMeshComponent* ResolveStaticMeshComponent() const;
+    USubUVComponent* ResolveSubUVComponent() const;
     AActor* ResolveActor() const;
 
 private:

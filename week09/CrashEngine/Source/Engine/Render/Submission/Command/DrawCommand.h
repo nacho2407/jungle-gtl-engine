@@ -50,7 +50,7 @@ struct FDrawCommand
     ERenderPass Pass      = ERenderPass::Opaque;
     const char* DebugName = nullptr;
 
-    // Pass(4bit) | UserBits(8bit) | ShaderHash(16bit) | MeshHash(16bit) | MaterialHash(20bit)
+    // Pass(5bit) | UserBits(8bit) | ShaderHash(16bit) | MeshHash(16bit) | MaterialHash(19bit)
     static uint64 BuildSortKey(ERenderPass InPass,
                                uint8 InUserBits,
                                const FGraphicsProgram* InShader,
@@ -64,11 +64,11 @@ struct FDrawCommand
         };
 
         uint64 Key = 0;
-        Key |= (static_cast<uint64>(InPass) & 0xFu) << 60;             // [63:60] Pass
-        Key |= (static_cast<uint64>(InUserBits) & 0xFFu) << 52;        // [59:52] UserBits
-        Key |= PtrHash16(InShader) << 36;                              // [51:36] Shader
-        Key |= PtrHash16(InMeshBuffer) << 20;                          // [35:20] MeshBuffer
-        Key |= (static_cast<uint64>(InMaterialHash) & 0xFFFFFu);       // [19:0]  Material
+        Key |= (static_cast<uint64>(InPass) & 0x1Fu) << 59;            // [63:59] Pass
+        Key |= (static_cast<uint64>(InUserBits) & 0xFFu) << 51;        // [58:51] UserBits
+        Key |= PtrHash16(InShader) << 35;                              // [50:35] Shader
+        Key |= PtrHash16(InMeshBuffer) << 19;                          // [34:19] MeshBuffer
+        Key |= (static_cast<uint64>(InMaterialHash) & 0x7FFFFu);       // [18:0]  Material
         return Key;
     }
 };

@@ -539,9 +539,9 @@ void FShadowMapPass::SubmitDrawCommands(FRenderPipelineContext& Context)
     uint32 CurrentIdx = GlobalStart;
     while (CurrentIdx < GlobalEnd)
     {
-        const uint8 ItemIndex = static_cast<uint8>((Commands[CurrentIdx].SortKey >> 52) & 0xFF);
+        const uint8 ItemIndex = static_cast<uint8>((Commands[CurrentIdx].SortKey >> 51) & 0xFF);
         const uint32 RangeStart = CurrentIdx;
-        while (CurrentIdx < GlobalEnd && static_cast<uint8>((Commands[CurrentIdx].SortKey >> 52) & 0xFF) == ItemIndex)
+        while (CurrentIdx < GlobalEnd && static_cast<uint8>((Commands[CurrentIdx].SortKey >> 51) & 0xFF) == ItemIndex)
         {
             ++CurrentIdx;
         }
