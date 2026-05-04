@@ -6,6 +6,19 @@
 
 DEFINE_CLASS(UPrimitiveComponent, USceneComponent)
 
+UPrimitiveComponent::~UPrimitiveComponent()
+{
+    for (auto& [Other, _] : CurOverlaps)
+    {
+        if (Other)
+        {
+            Other->RemoveOverlap(this);
+        }
+    }
+    CurOverlaps.clear();
+    PrevOverlaps.clear();
+}
+
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
@@ -118,6 +131,12 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
             return true;
 	}
     return false;
+}
+
+void UPrimitiveComponent::RemoveOverlap(UPrimitiveComponent* OtherComp)
+{
+    CurOverlaps.erase(OtherComp);
+    PrevOverlaps.erase(OtherComp);
 }
 
 void UPrimitiveComponent::ResolveOverlaps()

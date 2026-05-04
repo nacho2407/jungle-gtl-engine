@@ -29,6 +29,7 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
     DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+    ~UPrimitiveComponent() override;
 
     FOnComponentBeginOverlap OnComponentBeginOverlap;
     FOnComponentEndOverlap OnComponentEndOverlap;
@@ -79,6 +80,7 @@ public:
     void SetGenerateOverlapEvents(bool NewState) { bGenerateOverlapEvents = NewState; }
     void ClearOverlaps() { CurOverlaps.clear(); }
     void AddOverlap(UPrimitiveComponent* OtherComp, const FCollisionResult& CollisionResult) { CurOverlaps[OtherComp] = CollisionResult; }
+    void RemoveOverlap(UPrimitiveComponent* OtherComp);
     void SetPrevOverlaps(const TMap<UPrimitiveComponent*, FCollisionResult>& InOverlaps) { PrevOverlaps = InOverlaps; }
 	// Begin, End 체크
     void ResolveOverlaps();
