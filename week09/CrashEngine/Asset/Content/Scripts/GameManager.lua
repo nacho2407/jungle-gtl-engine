@@ -277,6 +277,7 @@ function GameOver(finalHP, finalDocumentCount)
     print("Final Document Count : ", finalDocumentCount)
     print("Timer : ", Timer)
     ShowScoreboard(ScoreboardLimit)
+    LoadScene("GameOver.Scene")
 end
 
 -- 저장된 점수 상위 목록을 로그로 출력한다.
