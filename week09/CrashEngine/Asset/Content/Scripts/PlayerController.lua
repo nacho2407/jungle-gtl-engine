@@ -15,7 +15,9 @@ local bGameOverRequested = false
 
 -- Player의 생존/점수 관련 상태.
 local HP = 100.0
-local HP_reduction  = 0;
+local bDestroyEffectSpawned = false
+local MaxHP = 100.0
+local HP_reduction  = 2.5;
 
 -- Scene에 붙어있는 Component를 캐싱해두면 Tick마다 다시 찾지 않아도 된다.
 local LightComponet = nil
@@ -25,10 +27,28 @@ local Initial_Light_Intensity = 0.0
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
 
+local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
+local DestroyEffectLifeTime = 1.2
+local DestroyEffectRow = 6
+local DestroyEffectColumn = 6
+local HealingEffectMaterial = "Asset/Content/Materials/subUV_healing.json"
+local HealingEffectLifeTime = 1.0
+local HealingEffectRow = 4
+local HealingEffectColumn = 5
+local DocumentEffectMaterial = "Asset/Content/Materials/subUV_Document.json"
+local DocumentEffectLifeTime = 1.0
+local DocumentEffectRow = 2
+local DocumentEffectColumn = 6
+local DamagedEffectMaterial = "Asset/Content/Materials/subUV_Damaged.json"
+local DamagedEffectLifeTime = 0.5
+local DamagedEffectRow = 1
+local DamagedEffectColumn = 1
+
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
     return _G.PlayerState
 end
@@ -41,6 +61,7 @@ local function syncPlayerState()
     end
 
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
 end
 
@@ -66,6 +87,33 @@ local function takeDamage(damage)
 
     syncPlayerState()
     print("Player HP : ", HP);
+end
+
+local function spawnEffect(location, materialPath, lifeTime, row, column)
+    local effectActor = World.SpawnActor("SubUVActor")
+    if effectActor == nil or not effectActor:IsValid() then
+        print("Failed to spawn SubUVActor effect")
+        return
+    end
+
+    local script = effectActor:AddComponent("LuaScriptComponent")
+    if script == nil or not script:IsValid() then
+        print("Failed to add Effect.lua")
+        World.DestroyActor(effectActor)
+        return
+    end
+
+    script:SetScriptPath("Effect.lua")
+    script:CallFunction("InitEffect", location, lifeTime, materialPath, row, column)
+end
+
+local function spawnDestroyEffectOnce()
+    if bDestroyEffectSpawned then
+        return
+    end
+
+    bDestroyEffectSpawned = true
+    spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
 end
 
 -- GameManager Actor의 LuaScriptComponent를 직접 호출하고,
@@ -156,11 +204,13 @@ function OnOverlapBegin(other)
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
         print("Has Document : ", DocumentCount);
+        spawnEffect(obj.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
         HP = HP + 10
         syncPlayerState()
         print("Player HP : ", HP);
+        spawnEffect(obj.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
         if not other:HasTag("DamageApplied") then
@@ -225,6 +275,7 @@ function Tick(dt)
     end
 
     if HP <= 0.0 then
+        spawnDestroyEffectOnce()
         HP = 0.0
         syncPlayerState()
         callGameOver()
@@ -291,6 +342,10 @@ end
 function OnTakeDamage(damage, instigator)
     -- AActor::TakeDamage가 LuaScriptComponent를 통해 이 함수로 전달된다.
     takeDamage(damage)
+    spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
+    if HP <= 0.0 then
+        spawnDestroyEffectOnce()
+    end
 end
 
 function OnKeyPressed(key)

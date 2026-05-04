@@ -399,7 +399,7 @@ function OnKeyPressed(key)
         refreshMenuHighlight()
     elseif key == "Enter" then
         if selected_index == 1 then
-            LoadScene("PlayerTest.Scene")
+            LoadScene("DroneLevel.Scene")
         elseif selected_index == 2 then
             setMainMenuVisible(false)
         elseif selected_index == 3 then

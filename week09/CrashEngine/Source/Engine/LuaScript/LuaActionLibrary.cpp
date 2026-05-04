@@ -1,8 +1,10 @@
-﻿#include "LuaActionLibrary.h"
+#include "LuaActionLibrary.h"
 
+#include "Component/CameraComponent.h"
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Runtime/Engine.h"
+#include "GameFramework/AActor.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
@@ -14,6 +16,101 @@ namespace LuaActionLibrary
     namespace
     {
         FString PendingSceneLoadPath;
+
+        UCameraComponent* FindCameraInWorld(UWorld* World)
+        {
+            if (!World)
+            {
+                return nullptr;
+            }
+
+            UCameraComponent* FirstCamera = nullptr;
+            for (AActor* Actor : World->GetActors())
+            {
+                if (!Actor)
+                {
+                    continue;
+                }
+
+                for (UActorComponent* Component : Actor->GetComponents())
+                {
+                    if (UCameraComponent* Camera = Cast<UCameraComponent>(Component))
+                    {
+                        if (Camera->IsMainCamera())
+                        {
+                            return Camera;
+                        }
+
+                        if (!FirstCamera)
+                        {
+                            FirstCamera = Camera;
+                        }
+                    }
+                }
+            }
+
+            return FirstCamera;
+        }
+
+        UCameraComponent* CreateFallbackCamera(UWorld* World, const FPerspectiveCameraData* CameraData)
+        {
+            if (!World)
+            {
+                return nullptr;
+            }
+
+            AActor* CameraActor = World->SpawnActor<AActor>();
+            if (!CameraActor)
+            {
+                return nullptr;
+            }
+
+            UCameraComponent* Camera = UObjectManager::Get().CreateObject<UCameraComponent>(CameraActor);
+            if (!Camera)
+            {
+                return nullptr;
+            }
+
+            CameraActor->RegisterComponent(Camera);
+            CameraActor->SetRootComponent(Camera);
+
+            if (CameraData)
+            {
+                FCameraState CameraState = Camera->GetCameraState();
+                CameraState.FOV = CameraData->FOV;
+                CameraState.NearZ = CameraData->NearClip;
+                CameraState.FarZ = CameraData->FarClip;
+                Camera->SetCameraState(CameraState);
+                CameraActor->SetActorLocation(CameraData->Location);
+                CameraActor->SetActorRotation(CameraData->Rotation);
+            }
+            else
+            {
+                CameraActor->SetActorLocation(FVector(-500.0f, -500.0f, 300.0f));
+                Camera->LookAt(FVector(0.0f, 0.0f, 0.0f));
+            }
+
+            return Camera;
+        }
+
+        void EnsureActiveCamera(UWorld* World, const FPerspectiveCameraData* CameraData)
+        {
+            if (!World)
+            {
+                return;
+            }
+
+            UCameraComponent* Camera = FindCameraInWorld(World);
+            if (!Camera)
+            {
+                Camera = CreateFallbackCamera(World, CameraData);
+            }
+
+            if (Camera)
+            {
+                World->SetActiveCamera(Camera);
+            }
+        }
 
         std::filesystem::path ResolveSceneLoadPath(const FString& ScenePath)
         {
@@ -142,6 +239,7 @@ namespace LuaActionLibrary
         GEngine->DestroyWorldContext(TargetHandle);
         GEngine->GetWorldList().push_back(LoadedContext);
         GEngine->SetActiveWorld(TargetHandle);
+        EnsureActiveCamera(LoadedContext.World, CameraData.bValid ? &CameraData : nullptr);
 
         if (TargetWorldType == EWorldType::Game || TargetWorldType == EWorldType::PIE)
         {

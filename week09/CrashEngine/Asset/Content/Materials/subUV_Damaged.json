@@ -1,0 +1,17 @@
+{
+  "PathFileName": "Asset/Content/Materials/subUV_Damaged.json",
+  "ShaderType": "SubUV",
+  "ShaderPath": "Shaders/Render/Editor/subUV_sample.hlsl",
+  "RenderPass": "AlphaBlend",
+  "BlendState": "Additive",
+  "DepthStencilState": "DepthReadOnly",
+  "RasterizerState": "SolidNoCull",
+  "Parameters": {
+    "SectionColor": [1.0, 1.0, 1.0, 1.0],
+    "SpecularPower": 1.0,
+    "SpecularStrength": 0.0
+  },
+  "Textures": {
+    "DiffuseTexture": "Asset/Content/Textures/damagedEffect.png"
+  }
+}

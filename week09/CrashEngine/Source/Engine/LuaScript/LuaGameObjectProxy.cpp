@@ -1,4 +1,4 @@
-#include "LuaGameObjectProxy.h"
+﻿#include "LuaGameObjectProxy.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -52,6 +52,8 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "USphereComponent"
 		|| ClassName == "UBoxComponent"
 		|| ClassName == "UCapsuleComponent"
+		|| ClassName == "ULuaScriptComponent"
+        || ClassName == "USubUVComponent";
 		|| ClassName == "ULuaScriptComponent"
 		|| ClassName == "UPatrolAgentComponent"
 		|| ClassName == "UPatrolPointComponent";

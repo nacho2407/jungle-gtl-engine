@@ -439,6 +439,12 @@
             "Script File" : "GameManager.lua",
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "Script File" : "GameHUD.lua",
+            "bTickEnable" : true
+          }
         }],
       "ObjectName" : "AStaticMeshActor_8",
       "PrimitiveKey" : "36",

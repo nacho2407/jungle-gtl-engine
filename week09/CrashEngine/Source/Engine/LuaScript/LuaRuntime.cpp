@@ -275,6 +275,7 @@ void FLuaRuntime::BindEngineTypes()
 		"GetStaticMeshPath", &FLuaComponentProxy::GetStaticMeshPath,
 		"GetNumMaterials", &FLuaComponentProxy::GetNumMaterials,
 		"SetMaterial", &FLuaComponentProxy::SetMaterial,
+        "SetSubUVGrid", &FLuaComponentProxy::SetSubUVGrid,
 
 		"SetText", &FLuaComponentProxy::SetText,
 		"GetText", &FLuaComponentProxy::GetText,

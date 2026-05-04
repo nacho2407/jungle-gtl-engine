@@ -18,6 +18,7 @@
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaActionLibrary.h"
 #include "LuaScript/LuaRuntime.h"
 #include "LuaScript/LuaScriptManager.h"
 #include "Viewport/GameViewportClient.h"
@@ -122,6 +123,10 @@ void UEngine::Tick(float DeltaTime)
         RmlUiManager->Update();
     }
     WorldTick(DeltaTime);
+    if (LuaActionLibrary::ProcessPendingSceneLoad())
+    {
+        OnRenderSceneCleared();
+    }
     Render(DeltaTime);
 }
 
