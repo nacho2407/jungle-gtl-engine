@@ -6,6 +6,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/StaticMeshComponent.h"
 #include "Core/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
@@ -505,7 +506,14 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetRotation", [](USceneComponent& Component, const FVector& Rotation)
 	{
 		Component.SetRelativeRotation(Rotation);
-	});
+	},
+
+		// 부모 기준 상대 위치 — 동일한 메시를 4개 깐 바퀴 같은 케이스에서 앞/뒤 구분 등
+		// 위치 기반 필터링에 쓰인다. 월드 위치는 위 "Location" 프로퍼티 참고.
+		"RelativeLocation", sol::property(
+		[](USceneComponent& Component) { return Component.GetRelativeLocation(); },
+		[](USceneComponent& Component, const FVector& V) { Component.SetRelativeLocation(V); }
+		));
 
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
 		sol::base_classes, sol::bases<USceneComponent>(),
@@ -521,6 +529,14 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetMass", &UPrimitiveComponent::GetMass,
 		"SetMass", &UPrimitiveComponent::SetMass,
 		"GetGenerateOverlapEvents", &UPrimitiveComponent::GetGenerateOverlapEvents);
+
+	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
+	// 은 월드 초기화 순서에 따라 카운터가 달라져 빌드별로 매칭이 깨질 수 있다. 메시 경로는
+	// 씬 파일에 명시 저장되므로 deterministic.
+	Lua.new_usertype<UStaticMeshComponent>("StaticMeshComponent",
+		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
+		"MeshPath", sol::property([](UStaticMeshComponent& C) { return C.GetStaticMeshPath(); }),
+		"GetMeshPath", [](UStaticMeshComponent& C) { return C.GetStaticMeshPath(); });
 
 	Lua.new_usertype<FHitResult>("HitResult",
 		"HitComponent", &FHitResult::HitComponent,
@@ -655,6 +671,38 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			}
 		}
 		return nullptr;
+	},
+
+		// 메시 에셋 경로로 첫 매칭 컴포넌트 반환. 자동 생성된 FName 의존성을 피하기 위한
+		// deterministic 방식 — 핸들 / 점멸등 처럼 한 액터에 1개뿐인 메시 컴포넌트용.
+		"FindFirstMeshComponentByPath", [](AActor& Actor, const FString& MeshPath) -> UStaticMeshComponent*
+	{
+		for (UActorComponent* Component : Actor.GetComponents())
+		{
+			UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Component);
+			if (Mesh && Mesh->GetStaticMeshPath() == MeshPath)
+			{
+				return Mesh;
+			}
+		}
+		return nullptr;
+	},
+
+		// 같은 메시를 여러 번 사용하는 경우(타이어 4개 등) 전부 모아서 반환. 호출 측에서 추가
+		// 필터링(RelativeLocation 의 X 부호로 앞/뒤 구분 등) 하면 된다.
+		"FindMeshComponentsByPath", [](AActor& Actor, const FString& MeshPath) -> sol::table
+	{
+		sol::table Result = FLuaScriptManager::GetState().create_table();
+		int32 Idx = 1; // Lua arrays are 1-indexed
+		for (UActorComponent* Component : Actor.GetComponents())
+		{
+			UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(Component);
+			if (Mesh && Mesh->GetStaticMeshPath() == MeshPath)
+			{
+				Result[Idx++] = Mesh;
+			}
+		}
+		return Result;
 	},
 
 		"UUID", sol::property([](AActor& Actor)
