@@ -17,5 +17,17 @@
       "name" : "Player",
       "score" : 0.000000,
       "timestamp" : "2026-05-04 07:44:36"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timestamp" : "2026-05-04 13:01:01"
+    }, {
+      "documentCount" : 0,
+      "hp" : 91.395762,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timestamp" : "2026-05-04 17:17:11"
     }]
 }

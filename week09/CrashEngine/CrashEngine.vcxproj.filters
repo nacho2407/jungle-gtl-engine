@@ -375,6 +375,9 @@
     <FxCompile Include="Shaders\Render\Editor\ShaderSubUV.hlsl">
       <Filter>Shaders\Render\Editor</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Render\Editor\subUV_sample.hlsl">
+      <Filter>Shaders\Render\Editor</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Render\Scene\Decal\DecalApply.hlsli">
       <Filter>Shaders\Render\Scene\Decal</Filter>
     </FxCompile>
@@ -657,6 +660,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\SubUVActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\World.cpp">
@@ -1339,6 +1345,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\SubUVActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\World.h">

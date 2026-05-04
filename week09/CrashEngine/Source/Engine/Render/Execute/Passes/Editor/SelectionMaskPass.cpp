@@ -13,6 +13,7 @@ void FSelectionMaskPass::PrepareInputs(FRenderPipelineContext& Context)
 
 void FSelectionMaskPass::PrepareTargets(FRenderPipelineContext& Context)
 {
+    Context.Context->ClearDepthStencilView(Context.GetViewportDSV(), D3D11_CLEAR_STENCIL, 0.0f, 0);
     Context.Context->OMSetRenderTargets(0, nullptr, Context.GetViewportDSV());
 }
 

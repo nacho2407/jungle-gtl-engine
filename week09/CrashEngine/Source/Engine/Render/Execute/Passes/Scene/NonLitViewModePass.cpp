@@ -148,7 +148,7 @@ void FNonLitViewModePass::SubmitDrawCommands(FRenderPipelineContext& Context)
     for (uint32 Index = Start; Index < End; ++Index)
     {
         const FDrawCommand& Command = Context.DrawCommandList->GetCommands()[Index];
-        const uint8 UserBits = static_cast<uint8>((Command.SortKey >> 52) & 0xFFu);
+        const uint8 UserBits = static_cast<uint8>((Command.SortKey >> 51) & 0xFFu);
         if (UserBits == ExpectedUserBits)
         {
             Context.DrawCommandList->SubmitRange(Index, Index + 1, *Context.Device, Context.Context, *Context.StateCache);

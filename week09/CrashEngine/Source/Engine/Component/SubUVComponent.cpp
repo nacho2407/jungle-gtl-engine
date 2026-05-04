@@ -2,6 +2,7 @@
 #include "SubUVComponent.h"
 #include "Object/ObjectFactory.h"
 
+#include <algorithm>
 #include <cstring>
 #include "Render/Resources/Buffers/MeshBufferManager.h"
 #include "Resource/ResourceManager.h"
@@ -10,6 +11,8 @@
 #include "Component/CameraComponent.h"
 #include "Render/Scene/Proxies/Primitive/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 IMPLEMENT_COMPONENT_CLASS(USubUVComponent, UBillboardComponent, EEditorComponentCategory::Visual)
 
@@ -28,6 +31,12 @@ void USubUVComponent::Serialize(FArchive& Ar)
 
     Ar << ParticleName;
     Ar << FrameIndex;
+    Ar << CellCountX;
+    Ar << CellCountY;
+    Ar << LeftOffset;
+    Ar << RightOffset;
+    Ar << TopOffset;
+    Ar << BottomOffset;
     Ar << PlayRate;
     Ar << bLoop;
 }
@@ -41,7 +50,6 @@ void USubUVComponent::PostDuplicate()
 
 USubUVComponent::USubUVComponent()
 {
-    SetVisibility(false);
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)
@@ -57,9 +65,16 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
         primitive 공통 속성과 SubUV 전용 속성만 에디터에 등록합니다.
     */
     UPrimitiveComponent::GetEditableProperties(OutProps);
+    OutProps.push_back({ "Material", EPropertyType::MaterialSlot, &MaterialSlot });
     OutProps.push_back({ "Particle", EPropertyType::Name, &ParticleName });
     OutProps.push_back({ "Width", EPropertyType::Float, &Width, 0.1f, 100.0f, 0.1f });
     OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
+    OutProps.push_back({ "Cell Count X", EPropertyType::Int, &CellCountX, 1.0f, 256.0f, 1.0f });
+    OutProps.push_back({ "Cell Count Y", EPropertyType::Int, &CellCountY, 1.0f, 256.0f, 1.0f });
+    OutProps.push_back({ "Left Offset", EPropertyType::Float, &LeftOffset, 0.0f, 1.0f, 0.001f });
+    OutProps.push_back({ "Right Offset", EPropertyType::Float, &RightOffset, 0.0f, 1.0f, 0.001f });
+    OutProps.push_back({ "Top Offset", EPropertyType::Float, &TopOffset, 0.0f, 1.0f, 0.001f });
+    OutProps.push_back({ "Bottom Offset", EPropertyType::Float, &BottomOffset, 0.0f, 1.0f, 0.001f });
     OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
     OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
 }
@@ -71,7 +86,23 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
     */
     UPrimitiveComponent::PostEditProperty(PropertyName);
 
-    if (strcmp(PropertyName, "Particle") == 0)
+    if (strcmp(PropertyName, "Material") == 0)
+    {
+        if (MaterialSlot.Path == "None" || MaterialSlot.Path.empty())
+        {
+            SetMaterial(nullptr);
+        }
+        else
+        {
+            UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MaterialSlot.Path);
+            if (LoadedMat)
+            {
+                SetMaterial(LoadedMat);
+            }
+        }
+        MarkRenderStateDirty();
+    }
+    else if (strcmp(PropertyName, "Particle") == 0)
     {
         SetParticle(ParticleName);
         // particle 교체는 UV 그리드와 texture를 바꾸므로 메시 단계까지 dirty 처리합니다.
@@ -81,6 +112,18 @@ void USubUVComponent::PostEditProperty(const char* PropertyName)
     {
         MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
         MarkWorldBoundsDirty();
+    }
+    else if (strcmp(PropertyName, "Cell Count X") == 0 || strcmp(PropertyName, "Cell Count Y") == 0 ||
+             strcmp(PropertyName, "Left Offset") == 0 || strcmp(PropertyName, "Right Offset") == 0 ||
+             strcmp(PropertyName, "Top Offset") == 0 || strcmp(PropertyName, "Bottom Offset") == 0)
+    {
+        CellCountX = std::max(CellCountX, 1);
+        CellCountY = std::max(CellCountY, 1);
+        LeftOffset = Clamp(LeftOffset, 0.0f, 1.0f);
+        RightOffset = Clamp(RightOffset, 0.0f, 1.0f);
+        TopOffset = Clamp(TopOffset, 0.0f, 1.0f);
+        BottomOffset = Clamp(BottomOffset, 0.0f, 1.0f);
+        MarkProxyDirty(ESceneProxyDirtyFlag::Material);
     }
 }
 
@@ -110,12 +153,12 @@ void USubUVComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 {
     UBillboardComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (!CachedParticle)
-        return;
+    const uint32 Columns = CachedParticle ? CachedParticle->Columns : static_cast<uint32>(std::max(CellCountX, 1));
+    const uint32 Rows = CachedParticle ? CachedParticle->Rows : static_cast<uint32>(std::max(CellCountY, 1));
     if (!bLoop && bIsExecute)
         return;
 
-    const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
+    const uint32 TotalFrames = Columns * Rows;
     if (TotalFrames == 0)
         return;
 
