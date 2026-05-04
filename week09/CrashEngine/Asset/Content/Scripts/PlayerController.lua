@@ -11,6 +11,7 @@ local PlayerShotTimer = 0.0
 
 local HP = 100.0
 local HP_reduction  = 10;
+local bDestroyEffectSpawned = false
 
 local LightComponet = nil
 local MeshComponent = nil
@@ -18,6 +19,23 @@ local Initial_Light_Intensity = 0.0
 
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
+
+local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
+local DestroyEffectLifeTime = 1.2
+local DestroyEffectRow = 6
+local DestroyEffectColumn = 6
+local HealingEffectMaterial = "Asset/Content/Materials/subUV_healing.json"
+local HealingEffectLifeTime = 1.0
+local HealingEffectRow = 4
+local HealingEffectColumn = 5
+local DocumentEffectMaterial = "Asset/Content/Materials/subUV_Document.json"
+local DocumentEffectLifeTime = 1.0
+local DocumentEffectRow = 2
+local DocumentEffectColumn = 6
+local DamagedEffectMaterial = "Asset/Content/Materials/subUV_Damaged.json"
+local DamagedEffectLifeTime = 0.5
+local DamagedEffectRow = 1
+local DamagedEffectColumn = 1
 
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
@@ -56,6 +74,33 @@ local function takeDamage(damage)
 
     syncPlayerState()
     print("Player HP : ", HP);
+end
+
+local function spawnEffect(location, materialPath, lifeTime, row, column)
+    local effectActor = World.SpawnActor("SubUVActor")
+    if effectActor == nil or not effectActor:IsValid() then
+        print("Failed to spawn SubUVActor effect")
+        return
+    end
+
+    local script = effectActor:AddComponent("LuaScriptComponent")
+    if script == nil or not script:IsValid() then
+        print("Failed to add Effect.lua")
+        World.DestroyActor(effectActor)
+        return
+    end
+
+    script:SetScriptPath("Effect.lua")
+    script:CallFunction("InitEffect", location, lifeTime, materialPath, row, column)
+end
+
+local function spawnDestroyEffectOnce()
+    if bDestroyEffectSpawned then
+        return
+    end
+
+    bDestroyEffectSpawned = true
+    spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
 end
 
 local function callGameOver()
@@ -132,11 +177,13 @@ function OnOverlapBegin(other)
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
         print("Has Document : ", DocumentCount);
+        spawnEffect(obj.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
         HP = HP + 10
         syncPlayerState()
         print("Player HP : ", HP);
+        spawnEffect(obj.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
         if not other:HasTag("DamageApplied") then
@@ -196,6 +243,10 @@ function Tick(dt)
         HP = 0
     end
 
+    if HP <= 0.0 then
+        spawnDestroyEffectOnce()
+    end
+
     syncPlayerState()
 
     if LightComponet ~= nil and LightComponet:IsValid() then
@@ -252,6 +303,10 @@ end
 
 function OnTakeDamage(damage, instigator)
     takeDamage(damage)
+    spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
+    if HP <= 0.0 then
+        spawnDestroyEffectOnce()
+    end
 end
 
 function OnKeyPressed(key)

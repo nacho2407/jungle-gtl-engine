@@ -58,6 +58,16 @@ void USubUVComponent::SetParticle(const FName& InParticleName)
     CachedParticle = FResourceManager::Get().FindParticle(InParticleName);
 }
 
+void USubUVComponent::SetCellCount(int32 InCellCountX, int32 InCellCountY)
+{
+    CellCountX = std::max(InCellCountX, 1);
+    CellCountY = std::max(InCellCountY, 1);
+    FrameIndex = 0;
+    TimeAccumulator = 0.0f;
+    bIsExecute = false;
+    MarkProxyDirty(ESceneProxyDirtyFlag::Material);
+}
+
 void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     /*

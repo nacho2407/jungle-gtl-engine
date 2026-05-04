@@ -34,6 +34,7 @@ public:
     bool IsFinished() const { return !bLoop && bIsExecute; }
     int32 GetCellCountX() const { return CellCountX; }
     int32 GetCellCountY() const { return CellCountY; }
+    void SetCellCount(int32 InCellCountX, int32 InCellCountY);
     float GetLeftOffset() const { return LeftOffset; }
     float GetRightOffset() const { return RightOffset; }
     float GetTopOffset() const { return TopOffset; }

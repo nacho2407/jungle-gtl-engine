@@ -33,6 +33,8 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
         return "UCapsuleComponent";
     if (TypeName == "LuaScriptComponent")
         return "ULuaScriptComponent";
+    if (TypeName == "SubUVComponent")
+        return "USubUVComponent";
 
     return TypeName;
 }
@@ -48,7 +50,8 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "USphereComponent"
 		|| ClassName == "UBoxComponent"
 		|| ClassName == "UCapsuleComponent"
-		|| ClassName == "ULuaScriptComponent";
+		|| ClassName == "ULuaScriptComponent"
+        || ClassName == "USubUVComponent";
 }
 
 UClass* FindClassByName(const FString& ClassName)

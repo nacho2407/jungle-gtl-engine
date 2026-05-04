@@ -1,4 +1,4 @@
-// 게임 프레임워크 영역의 세부 동작을 구현합니다.
+﻿// 게임 프레임워크 영역의 세부 동작을 구현합니다.
 #include "GameFramework/SubUVActor.h"
 
 #include "Component/SubUVComponent.h"
@@ -17,5 +17,5 @@ void ASubUVActor::InitDefaultComponents()
     SubUVComponent->SetVisibility(true);
     SubUVComponent->SetVisibleInEditor(true);
     SubUVComponent->SetVisibleInGame(true);
-    SubUVComponent->SetSpriteSize(2.0f, 2.0f);
+    SubUVComponent->SetSpriteSize(10.0f, 10.0f);
 }

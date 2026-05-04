@@ -4,6 +4,7 @@
 #include "Component/SceneComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/LightComponentBase.h"
 #include "Component/LuaScriptComponent.h"
@@ -78,6 +79,11 @@ UPrimitiveComponent* FLuaComponentProxy::ResolvePrimitiveComponent() const
 UStaticMeshComponent* FLuaComponentProxy::ResolveStaticMeshComponent() const
 {
     return Cast<UStaticMeshComponent>(ResolveComponent());
+}
+
+USubUVComponent* FLuaComponentProxy::ResolveSubUVComponent() const
+{
+    return Cast<USubUVComponent>(ResolveComponent());
 }
 
 AActor* FLuaComponentProxy::ResolveActor() const
@@ -214,6 +220,26 @@ int32 FLuaComponentProxy::GetNumMaterials() const
 
 bool FLuaComponentProxy::SetMaterial(int32 ElementIndex, const FString& MaterialPath)
 {
+    if (USubUVComponent* SubUVComp = ResolveSubUVComponent())
+    {
+        if (MaterialPath.empty() || MaterialPath == "None")
+        {
+            SubUVComp->SetSubUVMaterial(nullptr);
+            SubUVComp->MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
+            return true;
+        }
+
+        UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);
+        if (!Material)
+        {
+            return false;
+        }
+
+        SubUVComp->SetSubUVMaterial(Material);
+        SubUVComp->MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
+        return true;
+    }
+
     UStaticMeshComponent* MeshComp = ResolveStaticMeshComponent();
     if (!MeshComp)
     {
@@ -233,6 +259,18 @@ bool FLuaComponentProxy::SetMaterial(int32 ElementIndex, const FString& Material
     }
 
     MeshComp->SetMaterial(ElementIndex, Material);
+    return true;
+}
+
+bool FLuaComponentProxy::SetSubUVGrid(int32 Rows, int32 Columns)
+{
+    USubUVComponent* SubUVComp = ResolveSubUVComponent();
+    if (!SubUVComp)
+    {
+        return false;
+    }
+
+    SubUVComp->SetCellCount(Columns, Rows);
     return true;
 }
 
