@@ -24,6 +24,7 @@
 #include "Component/ProceduralMeshComponent.h"
 #include "Component/Movement/ProjectileMovementComponent.h"
 #include "GameFramework/World.h"
+#include "Runtime/Script/ScriptManager.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -35,6 +36,84 @@ namespace
 	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
 	constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
 	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
+    constexpr const char* AttackIdTagPrefix = "AttackId:";
+
+    FString ExtractAttackIdFromTags(const AActor* Actor)
+    {
+        if (!Actor)
+        {
+            return "";
+        }
+
+        constexpr size_t PrefixLength = std::char_traits<char>::length(AttackIdTagPrefix);
+        for (const FString& Tag : Actor->GetTags())
+        {
+            if (Tag.rfind(AttackIdTagPrefix, 0) == 0)
+            {
+                return Tag.substr(PrefixLength);
+            }
+        }
+
+        return "";
+    }
+
+    sol::table GetGameJamTable(sol::state& Lua)
+    {
+        sol::object GameJamObject = Lua["GameJam"];
+        if (!GameJamObject.valid() || GameJamObject.get_type() != sol::type::table)
+        {
+            return sol::table();
+        }
+
+        return GameJamObject.as<sol::table>();
+    }
+
+    void NotifyGameJamFunction(sol::state& Lua, const char* FunctionName, sol::object Argument)
+    {
+        sol::table GameJam = GetGameJamTable(Lua);
+        if (!GameJam.valid())
+        {
+            return;
+        }
+
+        sol::object FunctionObject = GameJam[FunctionName];
+        if (!FunctionObject.valid() || FunctionObject.get_type() != sol::type::function)
+        {
+            return;
+        }
+
+        sol::protected_function Function = FunctionObject.as<sol::protected_function>();
+        sol::protected_function_result Result = Function(Argument);
+        if (!Result.valid())
+        {
+            sol::error Error = Result;
+            UE_LOG_WARNING("[Destructible] GameJam callback failed: %s %s", FunctionName, Error.what());
+        }
+    }
+
+    void NotifyGameJamDestructibleCut(const FString& AttackId)
+    {
+        sol::state* Lua = FScriptManager::Get().GetGlobalLuaState();
+        if (!Lua)
+        {
+            return;
+        }
+
+        sol::table Payload = Lua->create_table();
+        Payload["score"] = 1;
+        if (!AttackId.empty())
+        {
+            Payload["attackId"] = AttackId;
+        }
+
+        NotifyGameJamFunction(*Lua, "NotifyEnemyKilled", Payload);
+
+        if (!AttackId.empty())
+        {
+            sol::object AttackIdObject = sol::make_object(*Lua, AttackId);
+            NotifyGameJamFunction(*Lua, "NotifyPlayerAttackHit", AttackIdObject);
+        }
+    }
 
     bool GetProceduralMeshLocalCenter(UProceduralMeshComponent* MeshComp, FVector& OutCenter)
     {
@@ -799,6 +878,7 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor1->ProjMoveComp->SetVelocity(N_World * 5);
         Actor2->ProjMoveComp->SetVelocity(-N_World * 5);
 
+        NotifyGameJamDestructibleCut(ExtractAttackIdFromTags(OtherActor));
         AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
         OtherActor->MarkPendingKill();
         this->MarkPendingKill();

@@ -4,6 +4,7 @@ local StateMachine = require("Game.Core.StateMachine")
 local DataManager = require("Game.Management.DataManager")
 local ComboManager = require("Game.Management.ComboManager")
 local GameManager = require("Game.Management.GameManager")
+local ItemManager = require("Game.Management.ItemManager")
 local SoundManager = require("Game.Management.SoundManager")
 local UIManager = require("Game.Management.UIManager")
 
@@ -119,6 +120,7 @@ function Script.new(component, properties)
     self.context.managers.UI = UIManager.new(self.context)
     self.context.managers.Game = GameManager.new(self.context)
     self.context.managers.Combo = ComboManager.new(self.context)
+    self.context.managers.Item = ItemManager.new(self.context)
 
     self.context.stateMachine:Register("Boot", BootState.new())
     self.context.stateMachine:Register("Intro", IntroState.new())
@@ -171,6 +173,15 @@ function Script:RecoverPlayer(amount, source)
     return false
 end
 
+function Script:ActivateTimeSlow(duration, scale, source)
+    local game = self.context.managers.Game
+    if game and game.ActivateTimeSlow then
+        return game:ActivateTimeSlow(duration, scale, source)
+    end
+
+    return false
+end
+
 function Script:InstallGameJamBridge()
     _G.GameJam = _G.GameJam or {}
     _G.GameJam.Manager = self
@@ -194,6 +205,9 @@ function Script:InstallGameJamBridge()
     _G.GameJam.RecoverPlayer = function(amount, source)
         return self:RecoverPlayer(amount, source)
     end
+    _G.GameJam.ActivateTimeSlow = function(duration, scale, source)
+        return self:ActivateTimeSlow(duration, scale, source)
+    end
     _G.GameJam.NotifyPlayerAttackStarted = function(attackId)
         self.context.eventBus:Emit("Player.AttackStarted", { attackId = tostring(attackId or "") })
     end
@@ -208,12 +222,6 @@ function Script:InstallGameJamBridge()
     end
     _G.GameJam.NotifyPlayerDashed = function(payload)
         self.context.eventBus:Emit("Player.Dashed", payload or {})
-    end
-    _G.GameJam.NotifyTimeSlowStarted = function()
-        self.context.eventBus:Emit("TimeSlow.Started", {})
-    end
-    _G.GameJam.NotifyTimeSlowEnded = function()
-        self.context.eventBus:Emit("TimeSlow.Ended", {})
     end
 end
 
@@ -248,6 +256,10 @@ function Script:Tick(dt)
         managers.Combo:Tick(dt)
     end
 
+    if managers.Item and managers.Item.Tick then
+        managers.Item:Tick(dt)
+    end
+
     self.context.stateMachine:Tick(dt)
 end
 
@@ -270,13 +282,12 @@ function Script:EndPlay()
         _G.GameJam.NotifyEnemyKilled = nil
         _G.GameJam.DamagePlayer = nil
         _G.GameJam.RecoverPlayer = nil
+        _G.GameJam.ActivateTimeSlow = nil
         _G.GameJam.NotifyPlayerAttackStarted = nil
         _G.GameJam.NotifyPlayerAttackHit = nil
         _G.GameJam.NotifyPlayerAttackFinished = nil
         _G.GameJam.NotifyPlayerAttackGround = nil
         _G.GameJam.NotifyPlayerDashed = nil
-        _G.GameJam.NotifyTimeSlowStarted = nil
-        _G.GameJam.NotifyTimeSlowEnded = nil
     end
 end
 

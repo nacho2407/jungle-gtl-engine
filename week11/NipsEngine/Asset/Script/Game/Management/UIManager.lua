@@ -27,8 +27,8 @@ function UIManager.new(context)
         crosshairPulse = {
             elapsed = 0.0,
             duration = 0.10,
-            baseSize = 36.0,
-            hitSize = 52.0,
+            baseSize = 72.0,
+            hitSize = 104.0,
             active = false
         }
     }, UIManager)
@@ -748,7 +748,10 @@ function UIManager:SetHUD(snapshot)
     local limitSeconds = tonumber(snapshot.sessionLimitSeconds or self.context.root.SessionLimitSeconds) or 0.0
     local elapsedSeconds = tonumber(snapshot.survivalTime) or 0.0
     local totalSeconds = elapsedSeconds
-    if limitSeconds > 0.0 then
+    local isFinished = snapshot.isRunning == false and snapshot.finishReason ~= nil and snapshot.finishReason ~= "None"
+    if isFinished then
+        totalSeconds = 0.0
+    elseif limitSeconds > 0.0 then
         totalSeconds = math.max(0.0, limitSeconds - elapsedSeconds)
     end
 
