@@ -18,6 +18,32 @@ local ShotCooldown = 1.5
 local BulletSpawnHeight = 1.5
 local BulletSpawnForwardOffset = 2.0
 local PlayerAimOffset = Vector.new(0.0, 0.0, -1.0)
+local DamagedEffectMaterial = "Asset/Content/Materials/subUV_Damaged.json"
+local DamagedEffectLifeTime = 0.5
+local DamagedEffectRow = 1
+local DamagedEffectColumn = 1
+local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
+local DestroyEffectLifeTime = 1.2
+local DestroyEffectRow = 6
+local DestroyEffectColumn = 6
+
+local function spawnEffect(location, materialPath, lifeTime, row, column)
+    local effectActor = World.SpawnActor("SubUVActor")
+    if effectActor == nil or not effectActor:IsValid() then
+        print("Failed to spawn SubUVActor effect")
+        return
+    end
+
+    local script = effectActor:AddComponent("LuaScriptComponent")
+    if script == nil or not script:IsValid() then
+        print("Failed to add Effect.lua")
+        World.DestroyActor(effectActor)
+        return
+    end
+
+    script:SetScriptPath("Effect.lua")
+    script:CallFunction("InitEffect", location, lifeTime, materialPath, row, column)
+end
 
 local function atan2(y, x)
     if math.atan2 ~= nil then
@@ -253,10 +279,13 @@ function OnTakeDamage(damage, instigator)
     HP = HP - damage
     print("Monster HP : ", HP)
     DebugLog.Write("Monster.TakeDamage", "Monster=" .. DebugLog.Actor(obj), "Damage=" .. tostring(damage), "Instigator=" .. DebugLog.Actor(instigator), "HP=" .. tostring(HP))
+    spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
 
     if HP <= 0 then
         print("Monster Destroyed")
         DebugLog.Write("Monster.Destroyed", "Monster=" .. DebugLog.Actor(obj), "Location=" .. DebugLog.Vector(obj.Location))
+        local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
+        spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)
     end
 end

@@ -15507,3 +15507,349 @@
 [time-unavailable] [Turret.EndPlay] Turret=UUID=1400 Valid=true HP=3 ShotTimer=0
 [time-unavailable] [Turret.EndPlay] Turret=UUID=1405 Valid=true HP=3 ShotTimer=0
 [time-unavailable] [Turret.EndPlay] Turret=UUID=1410 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=false
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=503 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=515 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=503 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=515 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2125 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2130 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2135 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2140 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2145 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2150 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2155 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2160 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2165 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2170 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=1996 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=2009 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Player WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Player.BindWorld] Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(104.034, 6.137, 10.000) AimDirection=(-0.137, 0.990, 0.025) SpawnLocation=(103.966, 6.632, 11.013) Zooming=true CameraStateExists=true CameraAimOrigin=(104.034, 6.137, 11.200) CameraAimPoint=(99.932, 35.845, 11.962) CameraAimDirection=(-0.137, 0.990, 0.025) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(103.966, 6.632, 11.013) Direction=(-0.137, 0.990, 0.025) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2178 Valid=true ShotDirection=(-0.137, 0.990, 0.025) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2178 Valid=true MeshValid=true BulletLocation=(103.966, 6.632, 11.013) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2178 Valid=true OwnerTag=PlayerBullet FinalLocation=(103.959, 6.682, 11.014) Direction=(-0.137, 0.990, 0.025) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2178 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2178 Valid=true OwnerTag=PlayerBullet Location=(100.527, 31.532, 11.651)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2178 Valid=true OwnerTag=PlayerBullet Location=(100.527, 31.532, 11.651) RemainingLife=2.7211732007563
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=1996 Valid=true Damage=1 Instigator=UUID=2178 Valid=true HP=1
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.13464040146209 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Monster.Fire.Request] Monster=UUID=1996 Valid=true Player=UUID=2090 Valid=true MonsterLocation=(100.000, 30.803, 10.000) PlayerLocation=(104.034, 6.137, 10.000) TargetLocation=(104.034, 6.137, 9.000) SpawnLocation=(100.323, 28.831, 11.420) Direction=(0.161, -0.986, -0.040) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=1996 Valid=true Location=(100.323, 28.831, 11.420) Direction=(0.161, -0.986, -0.040) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2186 Valid=true ShotDirection=(0.161, -0.986, -0.040) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2186 Valid=true MeshValid=true BulletLocation=(100.323, 28.831, 11.420) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2186 Valid=true OwnerTag=EnemyBullet FinalLocation=(100.331, 28.781, 11.418) Direction=(0.161, -0.986, -0.040) BulletCountAfter=1
+[time-unavailable] [Monster.Fire.Result] Monster=UUID=1996 Valid=true Bullet=UUID=2186 Valid=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4935805001296
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4899138000328
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.486289500026
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4827614999376
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4790997998789
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4754454998765
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4719065998215
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4683726998046
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4648985997774
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4610597998835
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4572505999822
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4534477998968
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4498443999328
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4458976997994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.441620499827
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4379742997698
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4342474997975
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4307577998843
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4269806998782
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4234015999828
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4196099999826
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4159784000367
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.412271700101
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4081055999268
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.4042119998485
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.40044199978
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3966649998911
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3927664998919
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.388972299872
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.385438399855
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3817496998236
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(104.034, 6.137, 10.000) AimDirection=(-0.171, 0.985, 0.002) SpawnLocation=(103.949, 6.630, 11.001) Zooming=true CameraStateExists=true CameraAimOrigin=(104.034, 6.137, 11.200) CameraAimPoint=(98.917, 35.697, 11.246) CameraAimDirection=(-0.171, 0.985, 0.002) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(103.949, 6.630, 11.001) Direction=(-0.171, 0.985, 0.002) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2190 Valid=true ShotDirection=(-0.171, 0.985, 0.002) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2190 Valid=true MeshValid=true BulletLocation=(103.949, 6.630, 11.001) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2190 Valid=true OwnerTag=PlayerBullet FinalLocation=(103.941, 6.679, 11.001) Direction=(-0.171, 0.985, 0.002) BulletCountAfter=2
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2190 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3746249000542
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3709772001021
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3553784997202
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3514304999262
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3477892999072
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3439588998444
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3401113997679
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3363556996919
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3326564996969
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3289047996514
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3249205998145
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3212190999184
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3175672998186
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3139078998938
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.309906899929
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3062230998185
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.3025741998572
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2988326998893
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2949151999783
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.290632299846
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2862969997805
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2813612997998
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.277447299799
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2736513998825
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2700976999477
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.266541799996
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2627964999992
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2587884000968
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.255143100163
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2515570002142
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2479672001209
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2186 Valid=true OwnerTag=EnemyBullet Location=(103.981, 6.463, 10.513)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2186 Valid=true OwnerTag=EnemyBullet Location=(103.981, 6.463, 10.513) RemainingLife=2.7485265003052
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2425091003533
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2386461002752
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2350919002201
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2313772002235
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2275203003082
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.223850800423
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2202231003903
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2165769003332
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2128693002742
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2090949001722
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2054726001807
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.2018142002635
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.19803660037
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1942295003682
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1904632004444
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1868794003967
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.183176900493
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1791937004309
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1750463002827
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1712287003174
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1673956003506
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1636574002914
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1596915004775
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1558809005655
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1519771006424
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1482702007052
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1441425008234
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1401460010093
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1364294011146
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=1996 Valid=true ShotTimer=1.1328198011033
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2190 Valid=true OwnerTag=PlayerBullet Location=(100.174, 28.434, 11.034)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2190 Valid=true OwnerTag=PlayerBullet Location=(100.174, 28.434, 11.034) RemainingLife=2.754679701291
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=1996 Valid=true Damage=1 Instigator=UUID=2190 Valid=true HP=0
+[time-unavailable] [Monster.Destroyed] Monster=UUID=1996 Valid=true Location=(100.000, 30.803, 10.000)
+[time-unavailable] [Monster.EndPlay] Monster=UUID=1996 Valid=true HP=0 ShotTimer=1.1328198011033
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(114.119, -43.059, 10.000) AimDirection=(0.837, 0.490, -0.242) SpawnLocation=(114.538, -42.814, 10.879) Zooming=true CameraStateExists=true CameraAimOrigin=(114.119, -43.059, 11.200) CameraAimPoint=(139.242, -28.364, 3.926) CameraAimDirection=(0.837, 0.490, -0.242) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(114.538, -42.814, 10.879) Direction=(0.837, 0.490, -0.242) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2208 Valid=true ShotDirection=(0.837, 0.490, -0.242) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2208 Valid=true MeshValid=true BulletLocation=(114.538, -42.814, 10.879) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2208 Valid=true OwnerTag=PlayerBullet FinalLocation=(114.580, -42.789, 10.867) Direction=(0.837, 0.490, -0.242) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2208 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2208 Valid=true OwnerTag=PlayerBullet Location=(133.158, -31.923, 5.488)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2208 Valid=true OwnerTag=PlayerBullet Location=(133.158, -31.923, 5.488) RemainingLife=2.7535080993548
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2170 Valid=true Damage=1 Instigator=UUID=2208 Valid=true HP=2
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.32776759914123 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.031850998057052 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(114.119, -43.059, 10.000) AimDirection=(0.851, 0.468, -0.240) SpawnLocation=(114.544, -42.825, 10.880) Zooming=true CameraStateExists=true CameraAimOrigin=(114.119, -43.059, 11.200) CameraAimPoint=(139.635, -29.021, 3.998) CameraAimDirection=(0.851, 0.468, -0.240) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(114.544, -42.825, 10.880) Direction=(0.851, 0.468, -0.240) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2216 Valid=true ShotDirection=(0.851, 0.468, -0.240) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2216 Valid=true MeshValid=true BulletLocation=(114.544, -42.825, 10.880) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2216 Valid=true OwnerTag=PlayerBullet FinalLocation=(114.587, -42.801, 10.868) Direction=(0.851, 0.468, -0.240) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2216 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.83602240029722 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2216 Valid=true OwnerTag=PlayerBullet Location=(133.152, -32.588, 5.628)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2216 Valid=true OwnerTag=PlayerBullet Location=(133.152, -32.588, 5.628) RemainingLife=2.7574748997577
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2170 Valid=true Damage=1 Instigator=UUID=2216 Valid=true HP=1
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(114.119, -43.059, 10.000) AimDirection=(0.875, 0.440, -0.200) SpawnLocation=(114.557, -42.839, 10.900) Zooming=true CameraStateExists=true CameraAimOrigin=(114.119, -43.059, 11.200) CameraAimPoint=(140.382, -29.863, 5.187) CameraAimDirection=(0.875, 0.440, -0.200) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(114.557, -42.839, 10.900) Direction=(0.875, 0.440, -0.200) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2224 Valid=true ShotDirection=(0.875, 0.440, -0.200) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2224 Valid=true MeshValid=true BulletLocation=(114.557, -42.839, 10.900) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2224 Valid=true OwnerTag=PlayerBullet FinalLocation=(114.600, -42.817, 10.890) Direction=(0.875, 0.440, -0.200) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2224 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2224 Valid=true OwnerTag=PlayerBullet Location=(133.774, -33.183, 6.500)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2224 Valid=true OwnerTag=PlayerBullet Location=(133.774, -33.183, 6.500) RemainingLife=2.7566468005534
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2170 Valid=true Damage=1 Instigator=UUID=2224 Valid=true HP=0
+[time-unavailable] [Turret.Destroyed] Turret=UUID=2170 Valid=true Location=(140.000, -30.000, 0.500)
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2170 Valid=true HP=0 ShotTimer=0
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=2160 Valid=true Player=UUID=2090 Valid=true TurretLocation=(120.000, -90.000, 0.500) PlayerLocation=(124.531, -61.635, 10.000) TargetLocation=(124.531, -61.635, 9.000) Forward=(0.158, 0.987, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(120.631, -86.050, 2.700) Direction=(0.153, 0.957, 0.247) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2160 Valid=true Location=(120.631, -86.050, 2.700) Direction=(0.153, 0.957, 0.247) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2236 Valid=true ShotDirection=(0.153, 0.957, 0.247) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2236 Valid=true MeshValid=true BulletLocation=(120.631, -86.050, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2236 Valid=true OwnerTag=EnemyBullet FinalLocation=(120.639, -86.002, 2.712) Direction=(0.153, 0.957, 0.247) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=2160 Valid=true Bullet=UUID=2236 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2236 Valid=true OwnerTag=EnemyBullet Location=(123.593, -67.506, 7.485)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2236 Valid=true OwnerTag=EnemyBullet Location=(123.593, -67.506, 7.485) RemainingLife=2.7852357004303
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(129.435, -66.156, 10.000) AimDirection=(-0.347, -0.906, -0.240) SpawnLocation=(129.261, -66.609, 10.880) Zooming=true CameraStateExists=true CameraAimOrigin=(129.435, -66.156, 11.200) CameraAimPoint=(119.013, -93.347, 3.988) CameraAimDirection=(-0.347, -0.906, -0.240) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(129.261, -66.609, 10.880) Direction=(-0.347, -0.906, -0.240) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2244 Valid=true ShotDirection=(-0.347, -0.906, -0.240) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2244 Valid=true MeshValid=true BulletLocation=(129.261, -66.609, 10.880) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2244 Valid=true OwnerTag=PlayerBullet FinalLocation=(129.244, -66.654, 10.868) Direction=(-0.347, -0.906, -0.240) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2244 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2244 Valid=true OwnerTag=PlayerBullet Location=(122.678, -83.785, 6.324)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2244 Valid=true OwnerTag=PlayerBullet Location=(122.678, -83.785, 6.324) RemainingLife=2.7899901000783
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2160 Valid=true Damage=1 Instigator=UUID=2244 Valid=true HP=2
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=2160 Valid=true Player=UUID=2090 Valid=true TurretLocation=(120.000, -90.000, 0.500) PlayerLocation=(129.435, -66.156, 10.000) TargetLocation=(129.435, -66.156, 9.000) Forward=(0.368, 0.930, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(121.472, -86.281, 2.700) Direction=(0.353, 0.893, 0.279) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2160 Valid=true Location=(121.472, -86.281, 2.700) Direction=(0.353, 0.893, 0.279) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2252 Valid=true ShotDirection=(0.353, 0.893, 0.279) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2252 Valid=true MeshValid=true BulletLocation=(121.472, -86.281, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2252 Valid=true OwnerTag=EnemyBullet FinalLocation=(121.489, -86.236, 2.714) Direction=(0.353, 0.893, 0.279) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=2160 Valid=true Bullet=UUID=2252 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.56213840004057 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2252 Valid=true OwnerTag=EnemyBullet Location=(128.715, -67.975, 8.431)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2252 Valid=true OwnerTag=EnemyBullet Location=(128.715, -67.975, 8.431) RemainingLife=2.7727325996384
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.40084279933944 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.2396773993969 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.074299299158156 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(129.435, -66.156, 10.000) AimDirection=(-0.347, -0.906, -0.240) SpawnLocation=(129.261, -66.609, 10.880) Zooming=true CameraStateExists=true CameraAimOrigin=(129.435, -66.156, 11.200) CameraAimPoint=(119.013, -93.347, 3.988) CameraAimDirection=(-0.347, -0.906, -0.240) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(129.261, -66.609, 10.880) Direction=(-0.347, -0.906, -0.240) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2260 Valid=true ShotDirection=(-0.347, -0.906, -0.240) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2260 Valid=true MeshValid=true BulletLocation=(129.261, -66.609, 10.880) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2260 Valid=true OwnerTag=PlayerBullet FinalLocation=(129.244, -66.654, 10.868) Direction=(-0.347, -0.906, -0.240) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2260 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.83971049939282 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2260 Valid=true OwnerTag=PlayerBullet Location=(122.613, -83.955, 6.279)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2260 Valid=true OwnerTag=PlayerBullet Location=(122.613, -83.955, 6.279) RemainingLife=2.7879081999417
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2160 Valid=true Damage=1 Instigator=UUID=2260 Valid=true HP=1
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.66942099970765 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.48619590001181 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=2160 Valid=true Player=UUID=2090 Valid=true TurretLocation=(120.000, -90.000, 0.500) PlayerLocation=(129.435, -66.156, 10.000) TargetLocation=(129.435, -66.156, 9.000) Forward=(0.368, 0.930, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(121.472, -86.281, 2.700) Direction=(0.353, 0.893, 0.279) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2160 Valid=true Location=(121.472, -86.281, 2.700) Direction=(0.353, 0.893, 0.279) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2268 Valid=true ShotDirection=(0.353, 0.893, 0.279) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2268 Valid=true MeshValid=true BulletLocation=(121.472, -86.281, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2268 Valid=true OwnerTag=EnemyBullet FinalLocation=(121.489, -86.236, 2.714) Direction=(0.353, 0.893, 0.279) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=2160 Valid=true Bullet=UUID=2268 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.30366690061055 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2268 Valid=true OwnerTag=EnemyBullet Location=(128.701, -68.010, 8.419)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2268 Valid=true OwnerTag=EnemyBullet Location=(128.701, -68.010, 8.419) RemainingLife=2.7731734998524
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.12929510022514 Zooming=true Player=UUID=2090 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2090 Valid=true PlayerLocation=(129.435, -66.156, 10.000) AimDirection=(-0.347, -0.906, -0.240) SpawnLocation=(129.261, -66.609, 10.880) Zooming=true CameraStateExists=true CameraAimOrigin=(129.435, -66.156, 11.200) CameraAimPoint=(119.013, -93.347, 3.988) CameraAimDirection=(-0.347, -0.906, -0.240) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2090 Valid=true Location=(129.261, -66.609, 10.880) Direction=(-0.347, -0.906, -0.240) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=2276 Valid=true ShotDirection=(-0.347, -0.906, -0.240) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=2276 Valid=true MeshValid=true BulletLocation=(129.261, -66.609, 10.880) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=2276 Valid=true OwnerTag=PlayerBullet FinalLocation=(129.244, -66.654, 10.868) Direction=(-0.347, -0.906, -0.240) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=2276 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=2276 Valid=true OwnerTag=PlayerBullet Location=(122.624, -83.925, 6.287)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=2276 Valid=true OwnerTag=PlayerBullet Location=(122.624, -83.925, 6.287) RemainingLife=2.7882800993975
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=2160 Valid=true Damage=1 Instigator=UUID=2276 Valid=true HP=0
+[time-unavailable] [Turret.Destroyed] Turret=UUID=2160 Valid=true Location=(120.000, -90.000, 0.500)
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2160 Valid=true HP=0 ShotTimer=0.88587479991838
+[time-unavailable] [Monster.EndPlay] Monster=UUID=2009 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Player.EndPlay] Player=UUID=2090 Valid=true HP=19.197403302649 DocumentCount=1 ShotTimer=0
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2125 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2130 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2135 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2140 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2145 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2150 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2155 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2165 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=false
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2954 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2959 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2964 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2969 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2974 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2979 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2984 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2989 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2994 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=2999 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=2825 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=2838 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Player WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Player.BindWorld] Player=UUID=2919 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=2984 Valid=true Player=UUID=2919 Valid=true TurretLocation=(100.000, -90.000, 0.500) PlayerLocation=(94.096, -61.887, 10.000) TargetLocation=(94.096, -61.887, 9.000) Forward=(-0.206, 0.979, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(99.178, -86.085, 2.700) Direction=(-0.199, 0.948, 0.247) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2984 Valid=true Location=(99.178, -86.085, 2.700) Direction=(-0.199, 0.948, 0.247) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3007 Valid=true ShotDirection=(-0.199, 0.948, 0.247) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3007 Valid=true MeshValid=true BulletLocation=(99.178, -86.085, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3007 Valid=true OwnerTag=EnemyBullet FinalLocation=(99.168, -86.038, 2.712) Direction=(-0.199, 0.948, 0.247) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=2984 Valid=true Bullet=UUID=3007 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3007 Valid=true OwnerTag=EnemyBullet Location=(94.897, -65.702, 8.007)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3007 Valid=true OwnerTag=EnemyBullet Location=(94.897, -65.702, 8.007) RemainingLife=2.7617431001272
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=2984 Valid=true Player=UUID=2919 Valid=true TurretLocation=(100.000, -90.000, 0.500) PlayerLocation=(95.815, -61.557, 10.000) TargetLocation=(95.815, -61.557, 9.000) Forward=(-0.146, 0.989, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(99.418, -86.043, 2.700) Direction=(-0.141, 0.959, 0.247) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2984 Valid=true Location=(99.418, -86.043, 2.700) Direction=(-0.141, 0.959, 0.247) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3015 Valid=true ShotDirection=(-0.141, 0.959, 0.247) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3015 Valid=true MeshValid=true BulletLocation=(99.418, -86.043, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3015 Valid=true OwnerTag=EnemyBullet FinalLocation=(99.411, -85.995, 2.712) Direction=(-0.141, 0.959, 0.247) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=2984 Valid=true Bullet=UUID=3015 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3015 Valid=true OwnerTag=EnemyBullet Location=(96.192, -64.121, 8.340)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3015 Valid=true OwnerTag=EnemyBullet Location=(96.192, -64.121, 8.340) RemainingLife=2.7465050995816
+[time-unavailable] [Monster.EndPlay] Monster=UUID=2825 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Monster.EndPlay] Monster=UUID=2838 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Player.EndPlay] Player=UUID=2919 Valid=true HP=68.127524206182 DocumentCount=0 ShotTimer=0
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2954 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2959 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2964 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2969 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2974 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2979 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2984 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2989 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2994 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=2999 Valid=true HP=3 ShotTimer=0
