@@ -55,7 +55,7 @@
           "Shadow Bias" : -0.000100,
           "Shadow Normal Bias" : -0.002000,
           "Shadow Resolution Scale" : 1.000000,
-          "Shadow Sharpen" : 0.670000,
+          "Shadow Sharpen" : 0.000000,
           "Shadow Slope Bias" : 0.000100,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -3954,7 +3954,7 @@
         }],
       "Properties" : {
         "Location" : [147.190277, -160.682205, 11.441320],
-        "Rotation" : [0.000000, -5.591672, 0.000000],
+        "Rotation" : [0.000000, -5.591671, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "TriggerTag" : "DodgeMeteor",
@@ -5111,7 +5111,7 @@
       "Properties" : {
         "Location" : [-23.014721, -119.216591, 2.998577],
         "Quest Target" : false,
-        "Rotation" : [0.000000, -100.543625, 0.000000],
+        "Rotation" : [0.000000, -100.543610, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "Visible" : true
@@ -5166,7 +5166,7 @@
           "Location" : [-23.014721, -119.216591, 2.998577],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, -100.543633, 0.000000],
+          "Rotation" : [0.000000, -100.543625, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5269,7 +5269,7 @@
       "Properties" : {
         "Location" : [114.239723, -164.685303, 5.045566],
         "Quest Target" : false,
-        "Rotation" : [-0.000000, 77.934303, 0.000000],
+        "Rotation" : [-0.000000, 77.934296, 0.000000],
         "Scale" : [3.000000, 3.000000, 3.000000],
         "Tags" : "",
         "Visible" : true
@@ -5360,7 +5360,7 @@
           "Location" : [114.239723, -164.685303, 5.045566],
           "Mass (kg)" : 80.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, 77.934326, 0.000000],
+          "Rotation" : [0.000000, 77.934296, 0.000000],
           "Scale" : [3.000000, 3.000000, 3.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5372,7 +5372,7 @@
       }
     }, {
       "ClassName" : "AStaticMeshActor",
-      "Name" : "AStaticMeshActor_44",
+      "Name" : "AStaticMeshMeteor3",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [168.014313, -183.554764, 1.599999],
@@ -5402,7 +5402,7 @@
           "Location" : [168.014313, -183.554764, 1.599999],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [36.946320, 0.000000, 0.000000],
+          "Rotation" : [36.947723, 0.000000, 0.000000],
           "Scale" : [20.000000, 20.000000, 20.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/meteor/meteor.obj",
@@ -5414,7 +5414,7 @@
       }
     }, {
       "ClassName" : "AStaticMeshActor",
-      "Name" : "AStaticMeshActor_44",
+      "Name" : "AStaticMeshMeteor1",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [140.295105, -177.302322, 2.189528],
@@ -5444,7 +5444,7 @@
           "Location" : [140.295105, -177.302322, 2.189528],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/meteor/meteor.obj",
@@ -5456,11 +5456,11 @@
       }
     }, {
       "ClassName" : "AStaticMeshActor",
-      "Name" : "AStaticMeshActor_44",
+      "Name" : "AStaticMeshMeteor2",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [161.855591, -153.581970, 2.289528],
-        "Rotation" : [0.000000, 0.000000, -33.258537],
+        "Rotation" : [0.000000, 0.000000, -33.258533],
         "Scale" : [5.000000, 5.000000, 5.000000],
         "Tags" : "",
         "Visible" : true
@@ -5486,7 +5486,7 @@
           "Location" : [161.855591, -153.581970, 2.289528],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 0.000000, -33.258240],
+          "Rotation" : [0.000000, 0.000000, -33.258545],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/meteor/meteor.obj",
@@ -5504,9 +5504,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [144.774628, -80.486809, 30.839771],
+    "Location" : [139.771210, -107.983810, 19.616596],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 7.964233, -99.746895]
+    "Rotation" : [0.000000, 3.614334, -130.346802]
   },
   "Version" : 2,
   "WorldSettings" : {
