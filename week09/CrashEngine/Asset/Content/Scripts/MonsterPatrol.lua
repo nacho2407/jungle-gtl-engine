@@ -11,6 +11,7 @@ local bPatrolFinished = false
 local ShotTimer = 0.0
 local MaxHP = 2
 local HP = MaxHP
+local BaseRotation = Vector.new(0.0, 0.0, 0.0)
 
 local AttackRange = 25.0
 local ShotCooldown = 1.5
@@ -45,7 +46,7 @@ local function lookAtDirection(direction)
     end
 
     local yaw = math.deg(atan2(planarDirection.Y, planarDirection.X))
-    obj.Rotation = Vector.new(0.0, 0.0, yaw)
+    obj.Rotation = Vector.new(BaseRotation.X, BaseRotation.Y, BaseRotation.Z + yaw)
 end
 
 local function findPlayer()
@@ -215,6 +216,7 @@ function BeginPlay()
     end
 
     HP = MaxHP
+    BaseRotation = obj.Rotation
     CurrentTargetIndex = 1
     bPatrolFinished = false
     ShotTimer = 0.0
@@ -293,4 +295,5 @@ function EndPlay()
     CurrentTargetIndex = 1
     bPatrolFinished = false
     ShotTimer = 0.0
+    BaseRotation = Vector.new(0.0, 0.0, 0.0)
 end

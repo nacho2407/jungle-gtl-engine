@@ -475,5 +475,19 @@
       "score" : 0.000000,
       "timer" : 70.001489,
       "timestamp" : "2026-05-05 03:24:30"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 49.349178,
+      "timestamp" : "2026-05-05 03:58:15"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 40.003835,
+      "timestamp" : "2026-05-05 04:15:05"
     }]
 }

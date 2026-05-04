@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "SpecularPower" : 32.000000,
+    "SpecularStrength" : 0.527027
+  },
+  "PathFileName" : "Asset/Content/Materials/Hely.json",
+  "RasterizerState" : "SolidBackCull"
+}
