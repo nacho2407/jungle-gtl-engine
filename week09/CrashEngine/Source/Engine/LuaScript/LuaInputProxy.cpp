@@ -26,6 +26,7 @@ int32 KeyNameToVK(const FString& KeyName)
 
     static const TMap<FString, int32> Map = {
         { "Space", VK_SPACE },
+        { "Backspace", VK_BACK },
         { "Enter", VK_RETURN },
         { "Escape", VK_ESCAPE },
         { "Left", VK_LEFT },
@@ -280,6 +281,8 @@ FString LuaKeyNameFromVK(int32 VK)
     {
     case VK_SPACE:
         return "Space";
+    case VK_BACK:
+        return "Backspace";
     case VK_RETURN:
         return "Enter";
     case VK_ESCAPE:
