@@ -2,7 +2,6 @@
 -- Player/Turret처럼 매 프레임 직접 움직이는 Actor가 아니라, 월드 규칙을 관리하는 스크립트다.
 local isGameOver = false
 local Timer = 0.0
-local ScoreboardLimit = 5
 
 -- Candidate가 실제 아이템/터렛으로 바뀔 때 종류별 최대 생성 수.
 -- Scene에 Candidate가 더 많아도 여기 숫자까지만 랜덤으로 선택된다.
@@ -220,7 +219,6 @@ end
 -- BeginPlay에서 한 번 호출되어 Scene의 Candidate들을 실제 아이템/터렛으로 바꾼다.
 local function replaceCandidates()
     if World.FindActorsByTag == nil then
-        print("World.FindActorsByTag is not registered")
         return
     end
 
@@ -229,8 +227,14 @@ local function replaceCandidates()
         shuffleActors(candidates)
 
         local spawnCount = math.min(#candidates, spawnInfo.MaxCount)
-        for i = 1, spawnCount do
-            replaceCandidate(candidates[i], spawnInfo)
+        for i, candidate in ipairs(candidates) do
+            if i <= spawnCount then
+                if not replaceCandidate(candidate, spawnInfo) and candidate:IsValid() then
+                    World.DestroyActor(candidate)
+                end
+            elseif candidate:IsValid() then
+                World.DestroyActor(candidate)
+            end
         end
     end
 end
@@ -270,7 +274,7 @@ local function calculateScore(finalHP, finalDocumentCount, elapsedTime)
     end
 
     local time_score = math.max(0, 10000 - math.floor((elapsedTime or 0) * 50))
-    local document_bonus = math.max(0, finalDocumentCount or 0) * 300
+    local document_bonus = math.max(0, finalDocumentCount or 0) * 3000
     local hp_bonus = math.max(0, math.floor((finalHP or 0) + 0.5)) * 5
 
     return math.max(0, math.floor(time_score + document_bonus + hp_bonus))
@@ -290,24 +294,7 @@ function GameOver(finalHP, finalDocumentCount)
     Prefs.SetNumber("LastHP", finalHP)
     Prefs.SetNumber("LastDocumentCount", finalDocumentCount)
     Prefs.SetNumber("LastTimer", Timer)
-    print("GAME OVER")
-    print("Score : ", score)
-    print("Final HP : ", finalHP)
-    print("Final Document Count : ", finalDocumentCount)
-    print("Timer : ", Timer)
-    ShowScoreboard(ScoreboardLimit)
     LoadScene("GameOver.Scene")
-end
-
--- 저장된 점수 상위 목록을 로그로 출력한다.
-function ShowScoreboard(limit)
-    limit = limit or ScoreboardLimit
-    local scores = Scoreboard.GetTopScores(limit)
-
-    print("SCOREBOARD")
-    for i, entry in ipairs(scores) do
-        print(entry.rank, entry.name, entry.score, entry.hp, entry.documentCount, entry.timestamp)
-    end
 end
 
 function BeginPlay()
@@ -319,8 +306,6 @@ function BeginPlay()
         GetTimer = getTimer
     }
 
-    print("[BeginPlay] " .. obj.UUID)
-    obj:PrintLocation()
     playBackgroundBGM()
     replaceCandidates()
 end
@@ -331,12 +316,9 @@ function EndPlay()
         _G.GameManager = nil
     end
 
-    print("[EndPlay] " .. obj.UUID)
-    obj:PrintLocation()
 end
 
 function OnOverlap(OtherActor)
-    OtherActor:PrintLocation();
 end
 
 function Tick(dt)
