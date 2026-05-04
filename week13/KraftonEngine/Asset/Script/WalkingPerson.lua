@@ -21,11 +21,22 @@ end
 -- 깨어나서 복원된 rotation 에 또 +180° 를 얹어버린다. generation 카운터로 stale coroutine
 -- 이 자기 차례에서 자체 종료되도록 만든다.
 local turnGen = 0
+-- 가장 최근에 시작된 회전 coroutine 핸들 — EndPlay 에서 명시 stop 해야 옛 핸들이
+-- 새 월드 lua tick 에 끼어들지 않는다.
+local turnRoutine = nil
+
+local function StopTurnCoroutine()
+    if turnRoutine ~= nil then
+        StopCoroutine(turnRoutine)
+        turnRoutine = nil
+    end
+end
 
 local function StartTurnCoroutine()
+    StopTurnCoroutine()
     turnGen = turnGen + 1
     local myGen = turnGen
-    StartCoroutine(function()
+    turnRoutine = StartCoroutine(function()
         while isMoving and turnGen == myGen do
             Wait(TURN_INTERVAL)
             if isMoving and turnGen == myGen then
@@ -33,6 +44,7 @@ local function StartTurnCoroutine()
                 obj.Rotation = Vector.new(rotation.X, rotation.Y, rotation.Z + 180.0)
             end
         end
+        turnRoutine = nil
     end)
 end
 
@@ -58,6 +70,7 @@ function ResetWalkingState()
 end
 
 function EndPlay()
+    StopTurnCoroutine()
 end
 
 function OnOverlap(OtherActor)
