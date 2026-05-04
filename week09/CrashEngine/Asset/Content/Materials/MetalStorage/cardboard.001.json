@@ -1,0 +1,14 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 82.317177,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/MetalStorage/cardboard.001.json",
+  "RasterizerState" : "SolidBackCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/MetalStorage/cardboard_baseColor.jpg"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "SpecularPower" : 159.999985,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/FederalWhite_shader.json",
+  "RasterizerState" : "SolidBackCull"
+}

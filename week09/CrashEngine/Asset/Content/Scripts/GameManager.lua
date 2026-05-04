@@ -229,8 +229,14 @@ local function replaceCandidates()
         shuffleActors(candidates)
 
         local spawnCount = math.min(#candidates, spawnInfo.MaxCount)
-        for i = 1, spawnCount do
-            replaceCandidate(candidates[i], spawnInfo)
+        for i, candidate in ipairs(candidates) do
+            if i <= spawnCount then
+                if not replaceCandidate(candidate, spawnInfo) and candidate:IsValid() then
+                    World.DestroyActor(candidate)
+                end
+            elseif candidate:IsValid() then
+                World.DestroyActor(candidate)
+            end
         end
     end
 end
