@@ -200,6 +200,14 @@ struct FGeneratedTextTexture
     int Height = 0;
 };
 
+struct FGeneratedTextStyle
+{
+    COLORREF TextColor = RGB(255, 255, 255);
+    int32 FontSize = 32;
+    bool bBold = false;
+    int32 CenterWidth = 0;
+};
+
 bool SaveBgraPng(const std::filesystem::path& OutputPath, const std::vector<uint8>& Pixels, int Width, int Height)
 {
     if (Pixels.empty() || Width <= 0 || Height <= 0)
@@ -270,7 +278,7 @@ bool SaveBgraPng(const std::filesystem::path& OutputPath, const std::vector<uint
     return bSucceeded;
 }
 
-FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, COLORREF TextColor = RGB(255, 255, 255))
+FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, const FGeneratedTextStyle& Style)
 {
     const std::wstring WideText = FPaths::ToWide(Text);
     if (WideText.empty())
@@ -278,10 +286,10 @@ FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, COLORREF Te
         return {};
     }
 
-    constexpr int FontSize = 32;
+    const int ClampedFontSize = std::clamp(Style.FontSize, 8, 128);
     HDC ScreenDC = GetDC(nullptr);
     HDC MemoryDC = CreateCompatibleDC(ScreenDC);
-    HFONT Font = CreateFontW(-FontSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Malgun Gothic");
+    HFONT Font = CreateFontW(-ClampedFontSize, 0, 0, 0, Style.bBold ? FW_BOLD : FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Malgun Gothic");
     HGDIOBJ OldFont = SelectObject(MemoryDC, Font);
 
     SIZE TextSize = {};
@@ -317,7 +325,7 @@ FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, COLORREF Te
 
     RECT TextRect = {4, 0, Width, Height};
     SetBkMode(MemoryDC, TRANSPARENT);
-    SetTextColor(MemoryDC, TextColor);
+    SetTextColor(MemoryDC, Style.TextColor);
     DrawTextW(MemoryDC, WideText.c_str(), static_cast<int>(WideText.size()), &TextRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     std::vector<uint8> Pixels(static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4);
@@ -349,7 +357,7 @@ FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, COLORREF Te
     const std::filesystem::path OutputDir = std::filesystem::path(FPaths::SavedDir()) / L"RmlUiText";
     std::filesystem::create_directories(OutputDir);
 
-    const FString HashKey = Text + "#" + std::to_string(GetRValue(TextColor)) + "," + std::to_string(GetGValue(TextColor)) + "," + std::to_string(GetBValue(TextColor));
+    const FString HashKey = Text + "#" + std::to_string(GetRValue(Style.TextColor)) + "," + std::to_string(GetGValue(Style.TextColor)) + "," + std::to_string(GetBValue(Style.TextColor)) + "," + std::to_string(ClampedFontSize) + "," + (Style.bBold ? "bold" : "normal");
     const size_t HashValue = std::hash<std::string>{}(HashKey);
     const std::filesystem::path OutputPath = OutputDir / (L"text_" + std::to_wstring(static_cast<unsigned long long>(HashValue)) + L".png");
     if (!SaveBgraPng(OutputPath, Pixels, Width, Height))
@@ -362,6 +370,41 @@ FGeneratedTextTexture CreateRmlTextBitmapSource(const FString& Text, COLORREF Te
     Result.Width = Width;
     Result.Height = Height;
     return Result;
+}
+
+bool ApplyGeneratedTextTexture(Rml::Element* Element, const FString& Text, const FGeneratedTextStyle& Style)
+{
+    if (!Element)
+    {
+        return false;
+    }
+
+    Element->SetInnerRML("");
+    const FGeneratedTextTexture TextTexture = CreateRmlTextBitmapSource(Text, Style);
+    if (TextTexture.Source.empty())
+    {
+        return false;
+    }
+
+    Element->SetProperty("width", FormatPx(static_cast<float>(TextTexture.Width)));
+    Element->SetProperty("height", FormatPx(static_cast<float>(TextTexture.Height)));
+    Element->SetProperty("decorator", "image(" + TextTexture.Source + ")");
+
+    if (Style.CenterWidth > 0)
+    {
+        const float Left = (static_cast<float>(Style.CenterWidth) - static_cast<float>(TextTexture.Width)) * 0.5f;
+        Element->SetProperty("left", FormatPx(Left));
+    }
+
+    return true;
+}
+
+COLORREF MakeTextColor(int32 R, int32 G, int32 B)
+{
+    const uint8 Red = static_cast<uint8>(std::clamp(R, 0, 255));
+    const uint8 Green = static_cast<uint8>(std::clamp(G, 0, 255));
+    const uint8 Blue = static_cast<uint8>(std::clamp(B, 0, 255));
+    return RGB(Red, Green, Blue);
 }
 
 void BuildOrthographicMatrix(float* Out, uint32 Width, uint32 Height)
@@ -1287,50 +1330,32 @@ bool FRmlUiManager::SetDocumentLayout(const FString& Name, float X, float Y, flo
         && SetDocumentZOrder(Name, ZOrder);
 }
 
-bool FRmlUiManager::SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text)
+bool FRmlUiManager::SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 FontSize)
 {
     Rml::Element* Element = FindElement(DocumentName, ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    Element->SetInnerRML("");
-    const FGeneratedTextTexture TextTexture = CreateRmlTextBitmapSource(Text);
-    if (TextTexture.Source.empty())
-    {
-        return false;
-    }
-
-    Element->SetProperty("width", FormatPx(static_cast<float>(TextTexture.Width)));
-    Element->SetProperty("height", FormatPx(static_cast<float>(TextTexture.Height)));
-    Element->SetProperty("decorator", "image(" + TextTexture.Source + ")");
-    return true;
+    FGeneratedTextStyle Style;
+    Style.FontSize = FontSize;
+    return ApplyGeneratedTextTexture(Element, Text, Style);
 }
 
-bool FRmlUiManager::SetElementTextColor(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B)
+bool FRmlUiManager::SetElementTextColor(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize)
 {
     Rml::Element* Element = FindElement(DocumentName, ElementId);
-    if (!Element)
-    {
-        return false;
-    }
+    FGeneratedTextStyle Style;
+    Style.TextColor = MakeTextColor(R, G, B);
+    Style.FontSize = FontSize;
+    return ApplyGeneratedTextTexture(Element, Text, Style);
+}
 
-    const uint8 Red = static_cast<uint8>(std::clamp(R, 0, 255));
-    const uint8 Green = static_cast<uint8>(std::clamp(G, 0, 255));
-    const uint8 Blue = static_cast<uint8>(std::clamp(B, 0, 255));
-    Element->SetInnerRML("");
-
-    const FGeneratedTextTexture TextTexture = CreateRmlTextBitmapSource(Text, RGB(Red, Green, Blue));
-    if (TextTexture.Source.empty())
-    {
-        return false;
-    }
-
-    Element->SetProperty("width", FormatPx(static_cast<float>(TextTexture.Width)));
-    Element->SetProperty("height", FormatPx(static_cast<float>(TextTexture.Height)));
-    Element->SetProperty("decorator", "image(" + TextTexture.Source + ")");
-    return true;
+bool FRmlUiManager::SetElementTextStyle(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize, bool bBold, int32 CenterWidth)
+{
+    Rml::Element* Element = FindElement(DocumentName, ElementId);
+    FGeneratedTextStyle Style;
+    Style.TextColor = MakeTextColor(R, G, B);
+    Style.FontSize = FontSize;
+    Style.bBold = bBold;
+    Style.CenterWidth = CenterWidth;
+    return ApplyGeneratedTextTexture(Element, Text, Style);
 }
 
 bool FRmlUiManager::SetElementClass(const FString& DocumentName, const FString& ElementId, const FString& ClassName, bool bEnabled)

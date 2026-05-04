@@ -1,24 +1,122 @@
 local ui_document = nil
 
 local selected_index = 1
+local current_screen = "menu"
 
 local menu_items = {
     {
         label_id = "game_start_label",
-        text = "Game Start",
-        left = "132px"
+        text = "Game Start"
     },
     {
         label_id = "credit_label",
-        text = "Credit",
-        left = "166px"
+        text = "Credit"
     },
     {
         label_id = "scoreboard_label",
-        text = "Scoreboard",
-        left = "118px"
+        text = "Scoreboard"
     }
 }
+
+local credit_items = {
+    {
+        line_id = "credit_line_1",
+        label_id = "credit_text_1",
+        text = "Team 8"
+    },
+    {
+        line_id = "credit_line_2",
+        label_id = "credit_text_2",
+        text = "장민준"
+    },
+    {
+        line_id = "credit_line_3",
+        label_id = "credit_text_3",
+        text = "오준혁"
+    },
+    {
+        line_id = "credit_line_4",
+        label_id = "credit_text_4",
+        text = "권현수"
+    },
+    {
+        line_id = "credit_line_5",
+        label_id = "credit_text_5",
+        text = "이호진"
+    }
+}
+
+local menu_text_style = {
+    normal_red = 255,
+    normal_green = 255,
+    normal_blue = 255,
+    highlight_red = 255,
+    highlight_green = 220,
+    highlight_blue = 64,
+    font_size = 32,
+    bold = true,
+    center_width = 300
+}
+
+local credit_text_style = {
+    red = 255,
+    green = 220,
+    blue = 64,
+    font_size = 20,
+    bold = true,
+    center_width = 300
+}
+
+local function setMenuText(item, highlighted)
+    if highlighted then
+        ui_document:SetTextStyle(
+            item.label_id,
+            item.text,
+            menu_text_style.highlight_red,
+            menu_text_style.highlight_green,
+            menu_text_style.highlight_blue,
+            menu_text_style.font_size,
+            menu_text_style.bold,
+            menu_text_style.center_width
+        )
+    else
+        ui_document:SetTextStyle(
+            item.label_id,
+            item.text,
+            menu_text_style.normal_red,
+            menu_text_style.normal_green,
+            menu_text_style.normal_blue,
+            menu_text_style.font_size,
+            menu_text_style.bold,
+            menu_text_style.center_width
+        )
+    end
+end
+
+local function setCreditText(item)
+    ui_document:SetTextStyle(
+        item.label_id,
+        item.text,
+        credit_text_style.red,
+        credit_text_style.green,
+        credit_text_style.blue,
+        credit_text_style.font_size,
+        credit_text_style.bold,
+        credit_text_style.center_width
+    )
+end
+
+local function setMainMenuVisible(visible)
+    if visible then
+        ui_document:SetProperty("menu", "display", "block")
+        ui_document:SetProperty("credit_view", "display", "none")
+        current_screen = "menu"
+    else
+        ui_document:SetProperty("menu", "display", "none")
+        ui_document:SetProperty("credit_view", "display", "block")
+        current_screen = "credit"
+    end
+end
 
 local function refreshMenuHighlight()
     if ui_document == nil or not ui_document:IsValid() then
@@ -26,14 +124,8 @@ local function refreshMenuHighlight()
     end
 
     for index, item in ipairs(menu_items) do
-        if index == selected_index then
-            ui_document:SetTextColor(item.label_id, item.text, 255, 220, 64)
-        else
-            ui_document:SetTextColor(item.label_id, item.text, 255, 255, 255)
-        end
-
-        ui_document:SetProperty(item.label_id, "top", "5px")
-        ui_document:SetProperty(item.label_id, "left", item.left)
+        setMenuText(item, index == selected_index)
+        ui_document:SetProperty(item.label_id, "top", "-5px")
     end
 end
 
@@ -52,11 +144,26 @@ function BeginPlay()
     ui_document:SetProperty("credit_button", "background-color", "rgb(0, 0, 0)")
     ui_document:SetProperty("scoreboard_button", "background-color", "rgb(0, 0, 0)")
 
-    ui_document:SetProperty("game_start_button", "top", "235px")
-    ui_document:SetProperty("credit_button", "top", "313px")
-    ui_document:SetProperty("scoreboard_button", "top", "391px")
+    ui_document:SetProperty("game_start_button", "border-width", "2px")
+    ui_document:SetProperty("game_start_button", "border-color", "rgb(0, 220, 220)")
+    ui_document:SetProperty("credit_button", "border-width", "2px")
+    ui_document:SetProperty("credit_button", "border-color", "rgb(0, 220, 220)")
+    ui_document:SetProperty("scoreboard_button", "border-width", "2px")
+    ui_document:SetProperty("scoreboard_button", "border-color", "rgb(0, 220, 220)")
+
+    for index, item in ipairs(credit_items) do
+        ui_document:SetProperty(item.line_id, "background-color", "transparent")
+        ui_document:SetProperty(item.line_id, "border-width", "0px")
+        ui_document:SetProperty(item.line_id, "top", tostring(250 + (index - 1) * 30) .. "px")
+        setCreditText(item)
+    end
+
+    ui_document:SetProperty("game_start_button", "top", "230px")
+    ui_document:SetProperty("credit_button", "top", "288px")
+    ui_document:SetProperty("scoreboard_button", "top", "346px")
 
     selected_index = 1
+    setMainMenuVisible(true)
     refreshMenuHighlight()
 
     ui_document:Show()
@@ -71,6 +178,15 @@ function EndPlay()
 end
 
 function OnKeyPressed(key)
+    if current_screen == "credit" then
+        if key == "Escape" or key == "Esc" or key == "Enter" then
+            setMainMenuVisible(true)
+            refreshMenuHighlight()
+        end
+
+        return
+    end
+
     if key == "Up" then
         selected_index = selected_index - 1
         if selected_index < 1 then
@@ -85,7 +201,11 @@ function OnKeyPressed(key)
         end
 
         refreshMenuHighlight()
-    elseif key == "Enter" and selected_index == 1 then
-        LoadScene("PlayerTest.Scene")
+    elseif key == "Enter" then
+        if selected_index == 1 then
+            LoadScene("PlayerTest.Scene")
+        elseif selected_index == 2 then
+            setMainMenuVisible(false)
+        end
     end
 end

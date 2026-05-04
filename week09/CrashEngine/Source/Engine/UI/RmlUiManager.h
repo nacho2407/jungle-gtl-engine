@@ -152,8 +152,9 @@ public:
     bool SetDocumentZOrder(const FString& Name, int32 ZOrder);
     bool SetDocumentLayout(const FString& Name, float X, float Y, float Width, float Height, float Scale, int32 ZOrder);
 
-    bool SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text);
-    bool SetElementTextColor(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B);
+    bool SetElementText(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 FontSize = 32);
+    bool SetElementTextColor(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize = 32);
+    bool SetElementTextStyle(const FString& DocumentName, const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize, bool bBold, int32 CenterWidth);
     bool SetElementClass(const FString& DocumentName, const FString& ElementId, const FString& ClassName, bool bEnabled);
     bool SetElementProperty(const FString& DocumentName, const FString& ElementId, const FString& PropertyName, const FString& Value);
     bool SetElementTexture(const FString& DocumentName, const FString& ElementId, const FString& TexturePath);

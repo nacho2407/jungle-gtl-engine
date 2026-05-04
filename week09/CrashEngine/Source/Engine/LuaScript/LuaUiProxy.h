@@ -26,6 +26,7 @@ public:
 
     bool SetText(const FString& ElementId, const FString& Text);
     bool SetTextColor(const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B);
+    bool SetTextStyle(const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize, bool bBold, int32 CenterWidth);
     bool SetClass(const FString& ElementId, const FString& ClassName, bool bEnabled);
     bool SetProperty(const FString& ElementId, const FString& PropertyName, const FString& Value);
     bool SetTexture(const FString& ElementId, const FString& TexturePath);
