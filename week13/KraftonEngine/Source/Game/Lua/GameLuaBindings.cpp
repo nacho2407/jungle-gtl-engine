@@ -117,6 +117,11 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"Success", EPhaseResult::Success,
 		"Failed",  EPhaseResult::Failed);
 
+	Lua.new_enum("EFinishOutcome",
+		"None", EFinishOutcome::None,
+		"Win",  EFinishOutcome::Win,
+		"Lose", EFinishOutcome::Lose);
+
 	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
 		"SuccessPhase", &AGameModeCarGame::SuccessPhase);
 
@@ -131,6 +136,9 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
 		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
 		"GetClearedPhasesMask",  &AGameStateCarGame::GetClearedPhasesMask,
+		"GetHealth",             &AGameStateCarGame::GetHealth,
+		"GetMaxHealth",          &AGameStateCarGame::GetMaxHealth,
+		"GetFinishOutcome",      &AGameStateCarGame::GetFinishOutcome,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable

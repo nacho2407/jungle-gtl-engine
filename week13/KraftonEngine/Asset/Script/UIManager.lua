@@ -151,6 +151,19 @@ function UIManager.Init()
         Engine.Exit()
     end)
 
+    local gameOverWidget = UI.CreateWidget("Asset/UI/GameOverWidget.rml")
+    gameOverWidget:SetWantsMouse(true)
+    gameOverWidget:bind_click("restart-button", function()
+        -- Map.Scene 으로 재진입 — World destroy + 새 PhysX scene + StartMatch 가 HP/페이즈/타이머
+        -- 모두 리셋. PauseGame 풀어두지 않으면 새 scene 도 paused 상태로 시작.
+        UIManager.Hide("gameOver")
+        Engine.ResumeGame()
+        Engine.TransitionToScene("Map")
+    end)
+    gameOverWidget:bind_click("game-over-exit-button", function()
+        Engine.Exit()
+    end)
+
     UIManager.Register("intro", introWidget)
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
@@ -159,7 +172,7 @@ function UIManager.Init()
     UIManager.Register("gasQuest", gasQuestWidget)
     UIManager.Register("personQuest", personQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
-    UIManager.Register("gameOver", UI.CreateWidget("Asset/UI/GameOverWidget.rml"))
+    UIManager.Register("gameOver", gameOverWidget)
     UIManager.Register("pauseMenu", pauseMenuWidget)
     UIManager.Register("fade", UI.CreateWidget("Asset/UI/FadeWidget.rml"))
 
@@ -170,7 +183,7 @@ end
 
 function UIManager.OnEscapePressed()
     -- 인트로 / 결과 화면 등 다른 fullscreen 모달이 떠 있으면 ESC 무시.
-    if UIManager.IsVisible("intro") then
+    if UIManager.IsVisible("intro") or UIManager.IsVisible("gameOver") then
         return
     end
 
@@ -280,6 +293,27 @@ function UIManager.IsFading()
     return fade.active
 end
 
+-- 게임 종료 화면 표시 — outcome 에 따라 타이틀 텍스트 swap.
+-- finalScore 는 Score 시스템 도입 시 채워서 호출 (지금은 nil 이면 placeholder 유지).
+function UIManager.ShowGameOver(outcome, finalScore)
+    local widget = widgets["gameOver"]
+    if widget == nil then return end
+
+    if outcome == EFinishOutcome.Win then
+        widget:set_text("game-over-title", "VICTORY")
+        widget:set_text("game-over-kicker", "MATCH COMPLETE")
+    else
+        widget:set_text("game-over-title", "GAME OVER")
+        widget:set_text("game-over-kicker", "GAME RESULT")
+    end
+
+    if finalScore ~= nil then
+        widget:set_text("final-score-value", tostring(finalScore))
+    end
+
+    UIManager.Show("gameOver")
+end
+
 function UIManager.Tick(dt)
     if fade.active then
         fade.elapsed = fade.elapsed + dt
@@ -385,6 +419,14 @@ function UIManager.UpdateHUD()
     -- objective + 클리어 카운트 — 매 프레임 호출 비용 미미하므로 같이 갱신
     widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
     widget:set_text("score-value", PopCount(gs:GetClearedPhasesMask()) .. "/4")
+
+    -- HP — RML 에 hp-slot-0/1/2 슬롯이 있고 색만 채워진(빨강)/빈(회색) 으로 토글.
+    local hp = gs:GetHealth()
+    local maxHp = gs:GetMaxHealth()
+    for i = 0, maxHp - 1 do
+        local color = (i < hp) and "#f04444" or "#4a4a52"
+        widget:set_property("hp-slot-" .. tostring(i), "color", color)
+    end
 end
 
 function UIManager.UpdateGasWidget()
