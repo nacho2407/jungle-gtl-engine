@@ -72,6 +72,13 @@ void UWorld::DestroyActor(AActor* Actor)
 {
 	// remove and clean up
 	if (!Actor) return;
+
+	// PhysX onContact 콜백 / actor 자신의 callback 안에서 호출돼도 안전하도록 실제 delete 는
+	// frame 끝(UEngine::Tick → FlushPendingKill)으로 미룬다. 단, partition / level / picking
+	// BVH 의 정리는 다음 frame 의 FlushPrimitive 가 stale 포인터를 만지지 않도록 여기서
+	// 즉시 끝낸다 (RemoveSinglePrimitive 는 bTryMergeNow=false 로 노드 delete 도 frame 끝에).
+	if (UObjectManager::Get().IsPendingKill(Actor)) return;
+
 	Actor->EndPlay();
 	// Remove from actor list
 	PersistentLevel->RemoveActor(Actor);
@@ -79,8 +86,8 @@ void UWorld::DestroyActor(AActor* Actor)
 	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);
 
-	// Mark for garbage collection
-	UObjectManager::Get().DestroyObject(Actor);
+	// Deferred delete — frame 끝의 FlushPendingKill 이 처리.
+	UObjectManager::Get().MarkPendingKill(Actor);
 }
 
 AActor* UWorld::SpawnActorByClass(UClass* Class)
