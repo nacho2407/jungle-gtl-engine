@@ -19,10 +19,12 @@ body {
 	pointer-events: none;
 }
 
+/* 우하단 HP 패널 왼쪽에 위치. HP 가 right:40dp width:260dp 이라 GAS 는 right:320dp 로 두면
+   HP 와 20dp 간격으로 나란히 배치된다. bottom 도 HP(60dp) 와 같은 baseline. */
 #gas-panel {
 	position: absolute;
-	left: 4%;
-	top: 250dp;
+	right: 320dp;
+	bottom: 60dp;
 	width: 260dp;
 	height: 100dp;
 	border-width: 2dp;

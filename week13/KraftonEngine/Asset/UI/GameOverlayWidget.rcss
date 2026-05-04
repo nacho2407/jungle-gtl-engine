@@ -26,7 +26,8 @@ body {
 	background-color: #f0c85a;
 }
 
-#hud-score-panel {
+/* 좌상단 — TIME (위) / SCORE (아래) */
+#hud-time-panel {
 	position: absolute;
 	left: 4%;
 	top: 48dp;
@@ -37,25 +38,24 @@ body {
 	background-color: #15171ce6;
 }
 
-#hud-time-panel {
-	position: absolute;
-	left: 50%;
-	top: 48dp;
-	width: 220dp;
-	height: 94dp;
-	margin-left: -110dp;
-	border-width: 2dp;
-	border-color: #f0c85a;
-	background-color: #15171ce6;
-	text-align: center;
-}
-
-#hud-hp-panel {
+#hud-score-panel {
 	position: absolute;
 	left: 4%;
 	top: 156dp;
 	width: 260dp;
-	height: 78dp;
+	height: 94dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+}
+
+/* 우하단 — HP. Gas widget 은 이 패널 왼쪽에 GasWidget.rcss 가 별도 배치. */
+#hud-hp-panel {
+	position: absolute;
+	right: 40dp;
+	bottom: 60dp;
+	width: 260dp;
+	height: 88dp;
 	border-width: 2dp;
 	border-color: #f04444;
 	background-color: #15171ce6;
@@ -87,17 +87,7 @@ body {
 	color: #4a4a52;
 }
 
-#hud-quest-panel {
-	position: absolute;
-	left: 326dp;
-	top: 48dp;
-	width: 180dp;
-	height: 94dp;
-	border-width: 2dp;
-	border-color: #f04444;
-	background-color: #15171ce6;
-}
-
+/* 우상단 column — OBJECTIVE (위) / QUEST (가운데) / PHASE (아래) */
 #hud-status-panel {
 	position: absolute;
 	right: 4%;
@@ -109,40 +99,50 @@ body {
 	background-color: #15171ce6;
 }
 
+#hud-quest-panel {
+	position: absolute;
+	right: 4%;
+	top: 156dp;
+	width: 330dp;
+	height: 82dp;
+	border-width: 2dp;
+	border-color: #f04444;
+	background-color: #15171ce6;
+}
+
 #hud-combo-panel {
 	position: absolute;
 	right: 4%;
-	bottom: 64dp;
-	width: 160dp;
+	top: 252dp;
+	width: 330dp;
 	height: 82dp;
 	border-width: 2dp;
 	border-color: #f0c85a;
 	background-color: #15171ce6;
-	text-align: center;
 }
 
 #hud-quest-panel .hud-small-label {
-	left: 14dp;
-	top: 12dp;
-	width: 110dp;
+	left: 18dp;
+	top: 10dp;
+	width: 200dp;
 	color: #ff6666;
 }
 
 #quest-value {
 	position: absolute;
-	left: 14dp;
-	top: 42dp;
-	width: 110dp;
-	height: 30dp;
+	left: 18dp;
+	top: 36dp;
+	width: 240dp;
+	height: 36dp;
 	color: #ffffff;
-	font-size: 20dp;
-	line-height: 30dp;
+	font-size: 22dp;
+	line-height: 36dp;
 }
 
 #quest-arrow {
 	position: absolute;
-	right: 14dp;
-	top: 27dp;
+	right: 18dp;
+	top: 28dp;
 	width: 42dp;
 	height: 42dp;
 	color: #ff4444;
@@ -174,12 +174,7 @@ body {
 	line-height: 40dp;
 }
 
-#hud-time-panel .hud-label,
-#hud-time-panel .hud-main-value {
-	left: 0px;
-	width: 100%;
-	text-align: center;
-}
+/* TIME 패널이 좌상단으로 옮겨가서 중앙정렬 룰 제거 — 기본 left-aligned 사용 */
 
 .hud-small-label {
 	position: absolute;
@@ -205,21 +200,16 @@ body {
 
 .hud-side-value {
 	position: absolute;
-	left: 0px;
+	left: 18dp;
 	top: 36dp;
-	width: 100%;
-	height: 32dp;
+	width: 294dp;
+	height: 36dp;
 	color: #ffffff;
-	font-size: 28dp;
-	line-height: 32dp;
-	text-align: center;
+	font-size: 26dp;
+	line-height: 36dp;
 }
 
-#hud-combo-panel .hud-small-label {
-	left: 0px;
-	width: 100%;
-	text-align: center;
-}
+/* PHASE 패널 라벨도 다른 패널과 동일한 좌측정렬 — 중앙정렬 override 제거 */
 
 #hud-center-mark {
 	position: absolute;
