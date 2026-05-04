@@ -170,7 +170,8 @@ function OnTakeDamage(damage, instigator)
 
     if HP <= 0 then
         print("Turret Destroyed")
-        spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
+        local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
+        spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)
     end
 end
