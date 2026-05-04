@@ -53,6 +53,8 @@ private:
 	void HandleHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	void ResolveCachedComponents();
+
 	USphereComponent* CollisionSphere = nullptr;
 	UStaticMeshComponent* Mesh = nullptr;
 	float ElapsedTime = 0.0f;
