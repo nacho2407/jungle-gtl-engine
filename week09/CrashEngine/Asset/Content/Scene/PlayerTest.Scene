@@ -163,7 +163,31 @@
               "LightFalloffExponent" : 8.000000,
               "Location" : [0.000000, 0.000000, -0.500000],
               "Normal Bias" : 0.000000,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Shadow Resolution" : 2048,
+              "Shadow Sharpen" : 0.000000,
+              "Slope Bias" : 0.000000,
+              "UseInverseSquaredFalloff" : true,
+              "bAffectsWorld" : true,
+              "bTickEnable" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "USpotLightComponent",
+            "Properties" : {
+              "AttenuationRadius" : 5.000000,
+              "Cast Shadows" : true,
+              "Depth Bias" : 0.000000,
+              "ESM Exponent" : 40.000000,
+              "InnerConeAngle" : 0.000000,
+              "Intensity" : 20.000000,
+              "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "LightFalloffExponent" : 8.000000,
+              "Location" : [0.000000, 0.000000, 0.200000],
+              "Normal Bias" : 0.000000,
+              "OuterConeAngle" : 47.000000,
+              "Rotation" : [90.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Shadow Resolution" : 2048,
               "Shadow Sharpen" : 0.000000,
@@ -534,7 +558,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 60",
+              "Text" : "UUID : 55",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -595,7 +619,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 66",
+              "Text" : "UUID : 61",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -666,9 +690,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-11.920644, -2.587421, 14.260432],
+    "Location" : [2.036356, 7.516695, 2.012922],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000003, 52.059471, 20.354986]
+    "Rotation" : [0.000000, 25.179497, -72.885330]
   },
   "Primitives" : {
     "12" : {
