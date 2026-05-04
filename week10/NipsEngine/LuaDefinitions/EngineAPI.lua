@@ -982,6 +982,9 @@ function GameJam.NotifyPlayerAttackFinished(attackId) end
 ---@param payload? table
 function GameJam.NotifyPlayerAttackGround(payload) end
 
+---@param payload? table
+function GameJam.NotifyPlayerDashed(payload) end
+
 function GameJam.NotifyTimeSlowStarted() end
 function GameJam.NotifyTimeSlowEnded() end
 

@@ -206,6 +206,9 @@ function Script:InstallGameJamBridge()
     _G.GameJam.NotifyPlayerAttackGround = function(payload)
         self.context.eventBus:Emit("Player.AttackGround", payload or {})
     end
+    _G.GameJam.NotifyPlayerDashed = function(payload)
+        self.context.eventBus:Emit("Player.Dashed", payload or {})
+    end
     _G.GameJam.NotifyTimeSlowStarted = function()
         self.context.eventBus:Emit("TimeSlow.Started", {})
     end
@@ -271,6 +274,7 @@ function Script:EndPlay()
         _G.GameJam.NotifyPlayerAttackHit = nil
         _G.GameJam.NotifyPlayerAttackFinished = nil
         _G.GameJam.NotifyPlayerAttackGround = nil
+        _G.GameJam.NotifyPlayerDashed = nil
         _G.GameJam.NotifyTimeSlowStarted = nil
         _G.GameJam.NotifyTimeSlowEnded = nil
     end

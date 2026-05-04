@@ -26,6 +26,10 @@
             <div id="HUD.ComboWrap" class="combo-wrap">
                 <div id="HUD.ComboCount" class="combo-count">0 COMBO</div>
             </div>
+
+            <div id="HUD.CrossHairWrap" class="crosshair-wrap">
+                <img class="crosshair-image" src="Asset/UIImage/CrossHair.png"/>
+            </div>
         </div>
     </body>
 </rml>

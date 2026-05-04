@@ -105,6 +105,12 @@ function Script:SlamAttack()
     -- 3단계: 충격 — slash 스폰 + 카메라 쉐이크
     local player = Engine.API.World.GetPossessedActor()
     if player then
+        if _G.GameJam and _G.GameJam.NotifyPlayerAttackGround then
+            _G.GameJam.NotifyPlayerAttackGround({
+                source = self.owner
+            })
+        end
+
         local slam = Engine.API.World.SpawnActor("ABladeSlash")
         local fwd  = self.owner:GetActorForwardVector()
         slam.Location = self.owner.Location + fwd * 3 + Vector(0, 0, -1)
@@ -158,6 +164,11 @@ function Script:Dash(dir)
     self.dashDir = dir
     self.dashStepsLeft = 5
     self.dashCooldown = 0.0
+    if _G.GameJam and _G.GameJam.NotifyPlayerDashed then
+        _G.GameJam.NotifyPlayerDashed({
+            direction = dir
+        })
+    end
 end
 
 function Script:DestroyActorAfter(actor, time)

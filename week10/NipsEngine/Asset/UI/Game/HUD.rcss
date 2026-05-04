@@ -183,3 +183,20 @@ body
     font-size: 42px;
     font-weight: normal;
 }
+
+.crosshair-wrap
+{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+    margin-top: -18px;
+}
+
+.crosshair-image
+{
+    width: 100%;
+    height: 100%;
+}

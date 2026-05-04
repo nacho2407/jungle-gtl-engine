@@ -18,9 +18,7 @@
                     </div>
 
                     <div id="Result.EntrySummary" class="entry-summary" style="display: none;">
-                        <div class="summary-label">Player</div>
                         <div id="Result.PlayerName" class="summary-name">PLAYER</div>
-                        <div class="summary-label score-summary-label">Score</div>
                         <div id="Result.FinalScore" class="summary-score">0</div>
                     </div>
 
