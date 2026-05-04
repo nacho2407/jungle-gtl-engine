@@ -1,4 +1,5 @@
 local EnemyBase = require("Asset.Script.EnemyBase")
+local ProjectilePool = require("Asset.Script.ProjectilePool")
 
 local ADEnemy = {}
 ADEnemy.__index = ADEnemy
@@ -68,16 +69,14 @@ end
 
 function ADEnemy:SpawnProjectile()
     local prefabPath = "Asset/Prefab/Projectile"
+    local spawnLocation = self.owner.Location + Vector.Up()
 
-    local Projectile = Engine.API.World.SpawnActorFromPrefab(prefabPath)
+    local projectile = ProjectilePool:Spawn(spawnLocation, self.target, prefabPath)
 
-    if Projectile == nil then
-        Log("[ADEnemy] Spawn failed: " .. prefabPath)
+    if projectile == nil then
+        Log("[ADEnemy] SpawnProjectile 완전 실패")
         return
     end
-
-    local spawnLocation = self.owner.Location + Vector.Up() 
-    Projectile.Location = spawnLocation
 end
 
 function ADEnemy:Tick(dt)
