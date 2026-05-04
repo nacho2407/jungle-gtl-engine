@@ -36,7 +36,9 @@ public:
     T* SpawnActor();
     AActor* SpawnActorByClassName(const FString& ActorClassName);
     void DestroyActor(AActor* Actor);
+    void QueueDestroyActor(AActor* Actor);
     void AddActor(AActor* Actor);
+    void QueueDamage(AActor* Target, float Damage, AActor* Instigator);
     void MarkEditorPickingAndScenePrimitiveBVHsDirty();
     void BuildEditorPickingBVHNow() const;
     const FEditorPickingBVH& GetEditorPickingBVH() const { return EditorPickingBVH; }
@@ -80,12 +82,23 @@ public:
 
 
 private:
+    struct FPendingDamage
+    {
+        uint32 TargetUUID = 0;
+        uint32 InstigatorUUID = 0;
+        float Damage = 0.0f;
+    };
+
+    void ProcessPendingDamage();
+    void ProcessPendingActorDestroys();
+
     // TArray<AActor*> Actors;
     ULevel* PersistentLevel;
 
     UCameraComponent* ActiveCamera = nullptr;
     UCameraComponent* LastLODUpdateCamera = nullptr;
     bool bHasBegunPlay = false;
+    bool bIsEndingPlay = false;
     bool bHasLastFullLODUpdateCameraPos = false;
     mutable FEditorPickingBVH EditorPickingBVH;
     mutable FScenePrimitiveBVH ScenePrimitiveBVH;
@@ -96,6 +109,8 @@ private:
     FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
     FScene Scene;
     FTickManager TickManager;
+    TArray<FPendingDamage> PendingDamages;
+    TArray<uint32> PendingDestroyActorUUIDs;
 
     FSpatialPartition Partition;
     EWorldType WorldType = EWorldType::Editor;

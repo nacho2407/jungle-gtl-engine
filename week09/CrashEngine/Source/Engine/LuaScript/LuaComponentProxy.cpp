@@ -386,6 +386,25 @@ bool FLuaComponentProxy::SetCapsuleHalfHeight(float HalfHeight)
     return true;
 }
 
+bool FLuaComponentProxy::SetScriptPath(const FString& ScriptPath)
+{
+    ULuaScriptComponent* LuaScript = Cast<ULuaScriptComponent>(ResolveComponent());
+    if (!LuaScript)
+    {
+        return false;
+    }
+
+    LuaScript->SetScriptPath(ScriptPath);
+
+    AActor* OwnerActor = LuaScript->GetOwner();
+    if (OwnerActor && OwnerActor->HasActorBegunPlay())
+    {
+        LuaScript->BeginPlay();
+    }
+
+    return true;
+}
+
 bool FLuaComponentProxy::CallFunction(const FString& FunctionName, sol::variadic_args Args)
 {
     ULuaScriptComponent* LuaScript = Cast<ULuaScriptComponent>(ResolveComponent());

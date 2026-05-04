@@ -112,7 +112,7 @@ bool FLuaWorldProxy::DestroyActor(const FLuaGameObjectProxy& ActorProxy)
         return false;
     }
 
-    World->DestroyActor(Actor);
+    World->QueueDestroyActor(Actor);
     return true;
 }
 

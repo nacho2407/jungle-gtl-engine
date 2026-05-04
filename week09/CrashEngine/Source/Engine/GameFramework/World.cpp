@@ -83,6 +83,11 @@ void UWorld::DestroyActor(AActor* Actor)
     if (!Actor)
         return;
 
+    if (bIsEndingPlay)
+    {
+        return;
+    }
+
 	//충돌체 해재
 	for (UPrimitiveComponent* Comp : Actor->GetPrimitiveComponents())
     {
@@ -101,6 +106,22 @@ void UWorld::DestroyActor(AActor* Actor)
 
     // Mark for garbage collection
     UObjectManager::Get().DestroyObject(Actor);
+}
+
+void UWorld::QueueDestroyActor(AActor* Actor)
+{
+    if (!Actor || Actor->GetWorld() != this || bIsEndingPlay)
+    {
+        return;
+    }
+
+    const uint32 ActorUUID = Actor->GetUUID();
+    if (std::find(PendingDestroyActorUUIDs.begin(), PendingDestroyActorUUIDs.end(), ActorUUID) != PendingDestroyActorUUIDs.end())
+    {
+        return;
+    }
+
+    PendingDestroyActorUUIDs.push_back(ActorUUID);
 }
 
 void UWorld::AddActor(AActor* Actor)
@@ -142,6 +163,70 @@ void UWorld::AddActor(AActor* Actor)
     if (bHasBegunPlay && !Actor->HasActorBegunPlay())
     {
         Actor->BeginPlay();
+    }
+}
+
+void UWorld::QueueDamage(AActor* Target, float Damage, AActor* Instigator)
+{
+    if (!Target || Damage <= 0.0f)
+    {
+        return;
+    }
+
+    PendingDamages.push_back({
+        Target->GetUUID(),
+        Instigator ? Instigator->GetUUID() : 0,
+        Damage
+    });
+}
+
+void UWorld::ProcessPendingDamage()
+{
+    if (PendingDamages.empty())
+    {
+        return;
+    }
+
+    TArray<FPendingDamage> DamagesToProcess = PendingDamages;
+    PendingDamages.clear();
+
+    for (const FPendingDamage& PendingDamage : DamagesToProcess)
+    {
+        AActor* Target = Cast<AActor>(UObjectManager::Get().FindByUUID(PendingDamage.TargetUUID));
+        if (!Target || Target->GetWorld() != this)
+        {
+            continue;
+        }
+
+        AActor* Instigator = Cast<AActor>(UObjectManager::Get().FindByUUID(PendingDamage.InstigatorUUID));
+        if (Instigator && Instigator->GetWorld() != this)
+        {
+            Instigator = nullptr;
+        }
+
+        Target->TakeDamage(PendingDamage.Damage, Instigator);
+    }
+}
+
+void UWorld::ProcessPendingActorDestroys()
+{
+    if (PendingDestroyActorUUIDs.empty())
+    {
+        return;
+    }
+
+    TArray<uint32> ActorsToDestroy = PendingDestroyActorUUIDs;
+    PendingDestroyActorUUIDs.clear();
+
+    for (uint32 ActorUUID : ActorsToDestroy)
+    {
+        AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
+        if (!Actor || Actor->GetWorld() != this)
+        {
+            continue;
+        }
+
+        DestroyActor(Actor);
     }
 }
 
@@ -331,6 +416,8 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
     Scene.GetDebugPrimitiveQueue().Tick(DeltaTime);
 
     TickManager.Tick(this, DeltaTime, TickType);
+    ProcessPendingDamage();
+    ProcessPendingActorDestroys();
 
 	CollisionManager->TickCollision(DeltaTime, &Scene);
 }
@@ -339,13 +426,17 @@ void UWorld::EndPlay()
 {
     bHasBegunPlay = false;
     TickManager.Reset();
+    PendingDamages.clear();
+    PendingDestroyActorUUIDs.clear();
 
     if (!PersistentLevel)
     {
         return;
     }
 
+    bIsEndingPlay = true;
     PersistentLevel->EndPlay();
+    bIsEndingPlay = false;
 
     // Clear spatial partition while actors/components are still alive.
     // Otherwise Octree teardown can dereference stale primitive pointers during shutdown.

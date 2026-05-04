@@ -88,6 +88,7 @@ public:
     bool SetCapsuleRadius(float Radius);
     bool SetCapsuleHalfHeight(float HalfHeight);
 
+    bool SetScriptPath(const FString& ScriptPath);
     bool CallFunction(const FString& FunctionName, sol::variadic_args Args);
 
 private:

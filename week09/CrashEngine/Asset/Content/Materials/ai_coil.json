@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.321654, 0.047358, 0.008260, 1.000000],
+    "SpecularPower" : 625.630371,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/ai_coil.json",
+  "RasterizerState" : "SolidBackCull"
+}
