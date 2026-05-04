@@ -8,6 +8,7 @@ Script.Properties = {
         Category = "Script"
     }
 }
+
 function Script:Attack(mode, degree, yaw)
     self.bDoingAttack = true
 
@@ -39,19 +40,17 @@ function Script:Attack(mode, degree, yaw)
         pitchEnd   =  -90
     end
 
-
     for i = 1, 8 do
         local t = i / 8
         local ease = 1 - (1 - t) * (1 - t)
         self.BodySection.Rotation = Vector(
             pitchStart + (pitchEnd - pitchStart) * ease,
             0,
-            swingStart + (swingEnd - swingStart) * ease  -- yaw 없음
+            swingStart + (swingEnd - swingStart) * ease
         )
         coroutine.yield(WaitForSeconds(0.025))
     end
 
-    -- 복귀
     for i = 1, 5 do
         local t = i / 5
         local ease = t * t
@@ -65,6 +64,93 @@ function Script:Attack(mode, degree, yaw)
 
     self.BodySection.Rotation = Vector(0, 0, 0)
     self.bDoingAttack = false
+end
+
+-- =========================================================
+--  SlamAttack: 내려찍기 (Q)
+--  X축(pitch) 기준: 뒤로 -90° 젖혔다가 → 앞으로 +90° 찍기
+--  카메라: 슬램 시작 시 45° 아래 전환, 복귀 시 원래 pitch로 복원
+-- =========================================================
+function Script:SlamAttack()
+    self.bDoingSlam = true
+
+    if not self.BodySection then
+        self.bDoingSlam = false
+        return
+    end
+
+    Engine.API.World.GetViewTargetCamera():add_pitch_input(-self.camera_pitch or 0)
+    local originalPitch = 0
+    self.slamPitchTarget = 15
+
+    -- 1단계: 뒤로 젖히기 (0 → -90)
+    for i = 1, 7 do
+        local t    = i / 7
+        local ease = t * t
+        self.BodySection.Rotation = Vector(-90 * ease, 0, 0)
+        coroutine.yield(WaitForSeconds(0.028))
+    end
+
+    coroutine.yield(WaitForSeconds(0.07))
+
+    -- 2단계: 앞으로 내리찍기 (-90 → +90)
+    for i = 1, 6 do
+        local t    = i / 6
+        local inv  = 1 - t
+        local ease = 1 - inv * inv * inv
+        self.BodySection.Rotation = Vector(-90, 0, 90 * ease)
+        coroutine.yield(WaitForSeconds(0.013))
+    end
+
+    -- 3단계: 충격 — slash 스폰 + 카메라 쉐이크
+    local player = Engine.API.World.GetPossessedActor()
+    if player then
+        local slam = Engine.API.World.SpawnActor("ABladeSlash")
+        local fwd  = self.owner:GetActorForwardVector()
+        slam.Location = self.owner.Location + fwd * 3 + Vector(0, 0, -1)
+        slam.Rotation = Vector(90, 0, self.owner.Rotation.z)
+        slam.Scale    = Vector(30, 30, 30)
+        StartCoroutine(function()
+            self:DestroyActorAfter(slam, 0.12)
+        end)
+    end
+
+    self.bSlamShake         = true
+    self.slamShakeTime      = 0.35
+    self.slamShakeDuration  = 0.35
+    self.slamShakeIntensity = 100.0
+
+    coroutine.yield(WaitForSeconds(0.07))
+
+    -- 4단계: 복귀
+    for i = 1, 6 do
+        local t    = i / 6
+        local ease = t * t
+        self.BodySection.Rotation = Vector(-90, 0, 90 * (1 - ease))
+        coroutine.yield(WaitForSeconds(0.025))
+    end
+
+    for i = 1, 6 do
+        local t    = i / 6
+        local ease = t * t
+        self.BodySection.Rotation = Vector(-90 * (1 - ease), 0, 0)
+        coroutine.yield(WaitForSeconds(0.025))
+    end
+
+    self.BodySection.Rotation = Vector(0, 0, 0)
+
+    -- 카메라 원래 pitch로 복귀 (Tick이 부드럽게 보간)
+    self.slamPitchTarget = originalPitch
+    -- slamPitchOffset이 target에 도달하면 자동으로 멈춤
+    -- 완전히 복귀될 때까지 대기 후 슬램 종료
+    while math.abs(self.slamPitchOffset - self.slamPitchTarget) > 0.5 do
+        coroutine.yield(WaitForSeconds(0.016))
+    end
+    self.slamPitchOffset = 0
+    self.slamPitchTarget = 0
+    self.camera_pitch = originalPitch
+
+    self.bDoingSlam = false
 end
 
 function Script:Dash(dir)
@@ -89,10 +175,18 @@ function Script.new(component, properties)
     self.PrevLocation = Vector(0, 0, 0)
     self.bDoingAttack = false
     self.bDoingDash = false
+    self.bDoingSlam = false         -- Q 슬램 전용 플래그
+    self.bSlamShake = false
+    self.slamShakeTime = 0
+    self.slamShakeDuration = 0
+    self.slamShakeIntensity = 0
     self.dashDir = Vector(0, 0, 0)
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
     self.BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
+    self.slamPitchOffset    = 0      -- 현재 적용 중인 슬램 pitch 오프셋
+    self.slamPitchTarget    = 0      -- 목표 오프셋
+    self.slamPitchSpeed     = 180    -- 초당 최대 이동 각도 (조절 가능)
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -117,9 +211,63 @@ function Script:BeginPlay()
 end
 
 function Script:Tick(dt)
+    -- Release 는 Tick 이 꺼져도 받아야 함
+    if (Engine.API.Input.IsMouseReleased("RMB")) then
+        Engine.API.World.SetTimeScale(1)
+    end
+
     if not self.bCanTick then return end
 
+    if (Engine.API.Input.IsMousePressed("RMB")) then
+        Engine.API.World.SetTimeScale(0.1)
+    end
+
+    local WorldTimeScale = Engine.API.World.GetTimeScale()
+    if WorldTimeScale ~= 0 then
+        dt = dt / WorldTimeScale
+    end
+    
     self.time = self.time + dt
+
+    -- -------------------------------------------------------
+    -- Slam 카메라 쉐이크: 슬램 중/후 관계없이 항상 소비
+    -- -------------------------------------------------------
+    if self.bSlamShake then
+        self.slamShakeTime = self.slamShakeTime - dt
+        if self.slamShakeTime <= 0 then
+            self.bSlamShake = false
+        else
+            local progress  = self.slamShakeTime / self.slamShakeDuration
+            local intensity = self.slamShakeIntensity * progress
+            local shakeZ = math.sin(self.time * 85) * intensity * 0.002
+            local shakeX = math.cos(self.time * 65) * intensity * 0.001
+            Engine.API.World.AddViewTargetCameraLocation(Vector(shakeX, 0, shakeZ))
+        end
+    end
+
+    -- -------------------------------------------------------
+    -- 슬램 카메라 pitch 오프셋 보간 (Tick에서 매 프레임 처리)
+    -- -------------------------------------------------------
+    if self.slamPitchOffset ~= self.slamPitchTarget then
+        local diff = self.slamPitchTarget - self.slamPitchOffset
+        local step = self.slamPitchSpeed * dt
+        if math.abs(diff) <= step then
+            local delta = diff - 0  -- 남은 만큼만
+            self.slamPitchOffset = self.slamPitchTarget
+            Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
+        else
+            local delta = (diff > 0 and step or -step)
+            self.slamPitchOffset = self.slamPitchOffset + delta
+            Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
+        end
+    end
+
+    -- -------------------------------------------------------
+    -- Q 슬램 중이면 다른 입력 전부 차단
+    -- -------------------------------------------------------
+    if self.bDoingSlam then
+        return
+    end
 
     -- Dash 스텝 처리
     if self.bDoingDash then
@@ -130,7 +278,6 @@ function Script:Tick(dt)
             self.dashCooldown = 0.01
 
             if self.dashStepsLeft <= 0 then
-                -- 대쉬 종료 시 PrevLocation 초기화
                 self.PrevLocation = self.owner.Location
                 self.bDoingDash = false
             end
@@ -196,14 +343,6 @@ function Script:Tick(dt)
         self.BodySection.Rotation = Vector(0, clampedPitch, 0)
     end
 
-    if (Engine.API.Input.IsMousePressed("RMB")) then
-        Engine.API.World.SetTimeScale(0.5)
-    end
-
-    if (Engine.API.Input.IsMouseReleased("RMB")) then
-        Engine.API.World.SetTimeScale(1)
-    end
-
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
 
@@ -247,6 +386,15 @@ function Script:Tick(dt)
 
         StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
+        end)
+    end
+
+    -- -------------------------------------------------------
+    -- Q: 내려찍기 슬램 (슬램/일반어택 중 아닐 때만)
+    -- -------------------------------------------------------
+    if not self.bDoingAttack and player and Engine.API.Input.IsKeyPressed("Q") then
+        StartCoroutine(function()
+            self:SlamAttack()
         end)
     end
 end

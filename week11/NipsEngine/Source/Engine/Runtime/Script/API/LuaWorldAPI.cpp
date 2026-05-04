@@ -316,6 +316,12 @@ namespace FLuaEngineAPI
             ActiveWorld->SetGlobalTimeScale(NewTimeScale);
         };
 
+        World["GetTimeScale"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld->GetGlobalTimeScale();
+        };
+
 
         API["World"] = World;
     }
