@@ -66,6 +66,8 @@ function Script:Attack(degree, yaw)
         coroutine.yield(WaitForSeconds(0.02))
     end
 
+    coroutine.yield(WaitForSeconds(0.1))
+
     BodySection.Rotation = Vector(0, 0, 0)
     self.bDoingAttack = false
 end
@@ -76,6 +78,12 @@ function Script:Dash(dir)
     self.dashStepsLeft = 5
     self.dashCooldown = 0.0
 end
+
+function Script:DestroyActorAfter(actor, time)
+    coroutine.yield(time)
+    Engine.API.World.DestroyActor(actor)
+end
+
 
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -215,6 +223,11 @@ function Script:Tick(dt)
         StartCoroutine(function()
             self:Attack(degree, yaw)
         end)
+
+        StartCoroutine(function()
+            self:DestroyActorAfter(slash, 0.1)
+        end)
+
     end
 end
 
