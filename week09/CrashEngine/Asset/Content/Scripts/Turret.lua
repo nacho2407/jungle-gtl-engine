@@ -9,6 +9,9 @@ local ShotCooldown = 1.5
 local ShotTimer = 0.0
 local MaxHP = 3
 local HP = MaxHP
+local BulletSpawnForwardOffset = 4.0
+local BulletSpawnUpOffset = 2.2
+local PlayerAimOffset = Vector.new(0.0, 0.0, -1.0)
 
 -- Candidate에서 받은 초기 회전의 X/Y는 유지하고, 공격할 때 Z(Yaw)만 Player 방향으로 바꾼다.
 local BaseRotation = Vector.new(0.0, 0.0, 0.0)
@@ -84,17 +87,23 @@ end
 
 -- Player 위치를 향해 총알을 생성하고 쿨타임을 다시 채운다.
 local function fireAtPlayer(player)
-    local targetLocation = player.Location + Vector.new(0.0, 0.0, 1.0)
-    local toPlayer = targetLocation - obj.Location
-
-    if toPlayer:LengthSquared() <= 0.0001 then
+    local targetLocation = player.Location + PlayerAimOffset
+    local lookDirection = targetLocation - obj.Location
+    if lookDirection:LengthSquared() <= 0.0001 then
         return
     end
 
-    local direction = toPlayer:Normalized()
-    lookAtDirection(direction)
+    lookAtDirection(lookDirection:Normalized())
+    local turretForward = obj:GetForwardVector()
+    local turretUp = obj:GetUpVector()
+    local spawnLocation = obj.Location + turretForward * BulletSpawnForwardOffset + turretUp * BulletSpawnUpOffset
+    local shotDirection = targetLocation - spawnLocation
 
-    local spawnLocation = obj.Location + Vector.new(0.0, 0.0, 1.5) + direction * 2.0
+    if shotDirection:LengthSquared() <= 0.0001 then
+        return
+    end
+
+    local direction = shotDirection:Normalized()
     print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
     BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
     ShotTimer = ShotCooldown
