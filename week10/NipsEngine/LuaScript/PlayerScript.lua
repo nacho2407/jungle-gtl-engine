@@ -165,6 +165,51 @@ function Script:DestroyActorAfter(actor, time)
     Engine.API.World.DestroyActor(actor)
 end
 
+function Script:HitReact(fromActor)
+
+    if not fromActor then return end
+    if self.bHitReact or self.hitInvincibleTime > 0 then return end
+
+    self.bHitReact = true
+    self.hitInvincibleTime = 0.4
+
+    local dir = self.owner.Location - fromActor.Location
+    dir.z = 0
+
+    if dir:Size() > 0.001 then
+        dir = dir:Normalized()
+    else
+        dir = Vector(0,0,0)
+    end
+
+    StartCoroutine(function()
+
+        local duration = 0.25
+        local t = 0
+
+        while t < duration do
+            local dt = 0.016
+            t = t + dt
+
+            local p = t / duration
+
+            -- 카메라 쉐이크
+            local intensity = 0.15 * (1 - p)
+            Engine.API.World.AddViewTargetCameraLocation(Vector(
+                math.sin(t * 80) * intensity,
+                0,
+                math.cos(t * 90) * intensity
+            ))
+
+            -- 넉백
+            self.owner.Location = self.owner.Location + dir * (1 - p) * 1.5
+
+            coroutine.yield(WaitForSeconds(dt))
+        end
+
+        self.bHitReact = false
+    end)
+end
 
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -187,6 +232,8 @@ function Script.new(component, properties)
     self.slamPitchOffset    = 0      -- 현재 적용 중인 슬램 pitch 오프셋
     self.slamPitchTarget    = 0      -- 목표 오프셋
     self.slamPitchSpeed     = 180    -- 초당 최대 이동 각도 (조절 가능)
+    self.bHitReact = false
+    self.hitInvincibleTime = 0
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -230,6 +277,14 @@ function Script:Tick(dt)
     end
     
     self.time = self.time + dt
+
+    if self.hitInvincibleTime > 0 then
+        self.hitInvincibleTime = self.hitInvincibleTime - dt
+    end
+
+    if self.bHitReact then
+        return
+    end
 
     -- -------------------------------------------------------
     -- Slam 카메라 쉐이크: 슬램 중/후 관계없이 항상 소비
@@ -414,12 +469,8 @@ function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
 end
 
 function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
-    Log("[OnBeginOverlap] " .. tostring(self.owner.UUID))
-    if OtherActor ~= nil then
-        Log("OtherActor: " .. tostring(OtherActor.Name))
-    end
-    if bFromSweep then
-        Log("BeginOverlap from sweep")
+    if OtherActor then
+        self:HitReact(OtherActor)
     end
 end
 
