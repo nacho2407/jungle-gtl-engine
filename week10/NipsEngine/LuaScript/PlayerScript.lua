@@ -194,6 +194,13 @@ function Script:Dash(dir)
     end
 end
 
+function Script:StopDash()
+    self.bDoingDash = false
+    self.dashStepsLeft = 0
+    self.dashCooldown = 0.0
+    self.dashDir = Vector(0, 0, 0)
+end
+
 function Script:DestroyActorAfter(actor, time)
     coroutine.yield(time)
     Engine.API.World.DestroyActor(actor)
@@ -348,6 +355,9 @@ function Script.new(component, properties)
     self.slamPitchSpeed     = 180    -- 초당 최대 이동 각도 (조절 가능)
     self.bHitReact = false
     self.hitInvincibleTime = 0
+    --이전 위치
+    self.LastSafeLocation = self.owner.Location
+    self.bBlockedByWall = false
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -381,6 +391,7 @@ function Script:Tick(dt)
         dt = dt / WorldTimeScale
     end
     
+    self.LastSafeLocation = self.owner.Location
     self.time = self.time + dt
 
     if self.hitInvincibleTime > 0 then
@@ -433,17 +444,36 @@ function Script:Tick(dt)
 
     -- Dash 스텝 처리
     if self.bDoingDash then
+        -- 이미 벽에 막힌 상태면 dash 취소
+        if self.bBlockedByWall then
+            self:StopDash()
+            self.owner.Location = self.LastSafeLocation
+            self.PrevLocation = self.LastSafeLocation
+            return
+        end
+
         self.dashCooldown = self.dashCooldown - dt
+
         if self.dashCooldown <= 0 then
-            self.owner.Location = self.owner.Location + self.dashDir * 1.5
+            -- dash 이동 직전 위치를 안전 위치로 저장
+            self.LastSafeLocation = self.owner.Location
+
+            local NextLocation = self.owner.Location + self.dashDir * 1.5
+            self.owner.Location = NextLocation
+
             self.dashStepsLeft = self.dashStepsLeft - 1
             self.dashCooldown = 0.01
 
             if self.dashStepsLeft <= 0 then
                 self.PrevLocation = self.owner.Location
-                self.bDoingDash = false
+                self:StopDash()
             end
         end
+
+        return
+    end
+
+    if self.bBlockedByWall then
         return
     end
 
@@ -494,7 +524,8 @@ function Script:Tick(dt)
     local player = Engine.API.World.GetPossessedActor()
     self.camera_pitch = (self.camera_pitch or 0) + Engine.API.Input.GetMouseDelta().Y * 0.1
 
-    if not self.bDoingDash and Engine.API.Input.IsKeyPressed("Shift") then
+
+    if not self.bDoingDash and not self.bBlockedByWall and Engine.API.Input.IsKeyPressed("Shift") then
         local dir = move:Size() > 0.001 and move:Normalized() or self.owner:GetActorForwardVector()
         self:Dash(dir)
     end
@@ -617,12 +648,32 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
             self:ApplyDamage(20.0, OtherActor)
         end
     end
+
+    if OtherActor:HasTag("BoundingBox") then
+        Log("Blocked by wall")
+
+        self.bBlockedByWall = true
+
+        -- dash 중 벽에 닿으면 dash 강제 종료
+        self:StopDash()
+
+        -- 마지막 안전 위치로 되돌림
+        self.owner.Location = self.LastSafeLocation
+        self.PrevLocation = self.LastSafeLocation
+
+        return
+    end
 end
 
 function Script:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
     Log("[OnEndOverlap] " .. tostring(self.owner.UUID))
     if OtherActor ~= nil then
         Log("OtherActor: " .. tostring(OtherActor.Name))
+    end
+
+    if OtherActor:HasTag("Wall") or OtherActor:HasTag("BoundingBox") then
+        Log("Unblocked from wall")
+        self.bBlockedByWall = false
     end
 end
 
