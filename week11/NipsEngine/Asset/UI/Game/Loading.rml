@@ -5,16 +5,29 @@
     <body>
         <div class="screen-root loading-screen">
             <div class="controls-panel">
-                <div class="panel-line">Controls</div>
-                <div class="control-copy">Move / Aim / Attack are mapped by the current gameplay controller.</div>
+                <div class="panel-title">Controls</div>
+                <div class="controls-list">
+                    <div class="control-row">
+                        <div class="control-desc">Move</div>
+                        <div class="control-key">WASD</div>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-desc">Attack</div>
+                        <div class="control-key">LMB</div>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-desc">Dash</div>
+                        <div class="control-key">Shift</div>
+                    </div>
+                </div>
             </div>
 
             <div class="tips-block">
-                <div class="panel-line">Tips</div>
-                <div class="tip-line">Keep moving, read the wave, and spend UI pauses only when needed.</div>
+                <div id="Loading.Tip" class="tip-line">[Tips] Keep moving, read the wave, and strike clean.</div>
             </div>
 
-            <div id="Loading.Status" class="status-text">Preparing Game Scene...</div>
+            <img id="Loading.Cycle" class="loading-cycle" src="Asset/UIImage/LoadingCycleFrames/LoadingCycle_00.png"/>
+            <div id="Loading.Status" class="status-text">Press Space to Start</div>
         </div>
     </body>
 </rml>

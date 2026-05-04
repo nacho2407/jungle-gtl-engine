@@ -28,6 +28,7 @@ public:
 
     void EnableScissorRegion(bool bEnable) override;
     void SetScissorRegion(Rml::Rectanglei Region) override;
+    void SetTransform(const Rml::Matrix4f* Transform) override;
 
 private:
     struct FCompiledGeometry
@@ -50,6 +51,12 @@ private:
         float RenderScale[2] = { 1.0f, 1.0f };
         uint32 bUseTexture = 0;
         float Padding = 0.0f;
+        float Transform[16] = {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
     };
 
     bool CreateShaders();
@@ -75,6 +82,7 @@ private:
     Rml::Vector2f ViewportMin = Rml::Vector2f(0.0f, 0.0f);
     Rml::Vector2f ViewportSize = Rml::Vector2f(1.0f, 1.0f);
     Rml::Vector2f RenderScale = Rml::Vector2f(1.0f, 1.0f);
+    Rml::Matrix4f CurrentTransform = Rml::Matrix4f::Identity();
     bool bScissorEnabled = false;
     Rml::Rectanglei CurrentScissorRegion;
 

@@ -31,7 +31,7 @@ body
     top: 550px;
     width: 1320px;
     min-height: 180px;
-    font-size: 52px;
+    font-size: 60px;
     font-weight: bold;
     line-height: 58px;
     text-align: center;
@@ -59,13 +59,13 @@ body
 .default-button
 {
     display: block;
-    width: 180px;
-    height: 55px;
-    padding-top: 24px;
+    width: 150px;
+    height: 40px;
+    padding-top: 16px;
     border-width: 0px;
     decorator: image("Asset/UIImage/ButtonDefault.PNG" fill);
     color: rgb(244, 248, 252);
-    font-size: 30px;
+    font-size: 26px;
     text-align: center;
 }
 

@@ -28,11 +28,36 @@ body
 {
     position: absolute;
     left: 136px;
-    top: 112px;
-    width: 480px;
-    min-height: 700px;
-    padding: 52px;
+    top: 260px;
+    width: 560px;
+    height: 560px;
+    padding: 0px;
     decorator: image("Asset/UIImage/PlayerScoreBoard.PNG" fill);
+    text-align: center;
+}
+
+.player-content
+{
+    position: absolute;
+    left: 64px;
+    top: 96px;
+    width: 432px;
+    height: 368px;
+    text-align: center;
+}
+
+.outcome
+{
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 18px;
+    width: 432px;
+    height: 76px;
+    margin-bottom: 0px;
+    font-size: 56px;
+    font-weight: bold;
+    color: rgb(255, 224, 154);
     text-align: center;
 }
 
@@ -51,7 +76,7 @@ body
 .headline,
 .board-title
 {
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     font-size: 42px;
     font-weight: bold;
     color: rgb(255, 248, 232);
@@ -59,10 +84,17 @@ body
 
 .result-score
 {
-    margin-bottom: 14px;
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 112px;
+    width: 432px;
+    height: 42px;
+    margin-bottom: 0px;
     font-size: 29px;
     font-weight: bold;
     color: rgb(255, 224, 154);
+    text-align: center;
 }
 
 .muted
@@ -72,19 +104,33 @@ body
 
 .input-label
 {
-    margin-top: 32px;
-    margin-bottom: 10px;
+    display: block;
+    margin-top: 0px;
+    margin-bottom: 16px;
     font-size: 20px;
     color: rgb(238, 242, 247);
+    text-align: center;
+}
+
+.entry-form
+{
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 184px;
+    width: 432px;
+    height: 166px;
+    text-align: center;
 }
 
 .input-wrap
 {
+    display: block;
     position: relative;
     width: 360px;
     height: 48px;
-    margin-left: 60px;
-    margin-bottom: 16px;
+    margin-left: 36px;
+    margin-bottom: 18px;
 }
 
 .input-bg
@@ -131,62 +177,167 @@ body
 
 .submit-button
 {
+    display: block;
     width: 180px;
-    margin-left: 150px;
+    margin-left: 126px;
+    margin-bottom: 0px;
 }
 
-.retry-button
+.entry-summary
 {
-    margin-top: 26px;
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 184px;
+    width: 432px;
+    height: 148px;
+    text-align: center;
+}
+
+.summary-label
+{
+    width: 432px;
+    margin-bottom: 8px;
+    font-size: 19px;
+    color: rgb(184, 202, 208);
+}
+
+.summary-name
+{
+    width: 432px;
+    margin-bottom: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: rgb(255, 248, 232);
+}
+
+.score-summary-label
+{
+    margin-top: 0px;
+}
+
+.summary-score
+{
+    width: 432px;
+    font-size: 34px;
+    font-weight: bold;
+    color: rgb(255, 224, 154);
 }
 
 .submit-status
 {
-    height: 28px;
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 364px;
+    width: 432px;
+    height: 42px;
+    margin-top: 0px;
     color: rgb(255, 180, 100);
     font-size: 18px;
+    line-height: 24px;
 }
 
 .score-scroll
 {
     position: relative;
-    width: 560px;
-    height: 520px;
-    margin-left: 55px;
-    overflow-y: auto;
-    padding-right: 36px;
+    width: 580px;
+    height: 482px;
+    margin-left: 45px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding: 18px 44px 18px 20px;
+    background-color: rgba(0, 5, 8, 215);
 }
 
 .score-list
 {
+    position: relative;
     width: 510px;
+    min-height: 620px;
 }
 
 .score-row
 {
+    display: block;
     width: 500px;
-    height: 40px;
-    margin-bottom: 10px;
+    height: 52px;
+    margin-bottom: 7px;
     color: rgb(235, 242, 245);
-    font-size: 24px;
+    font-size: 22px;
+    overflow: hidden;
 }
 
-.scroll-bg
+.score-empty
 {
     position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 18px;
-    height: 520px;
+    left: 0px;
+    top: 206px;
+    width: 500px;
+    height: 46px;
+    padding-top: 20px;
+    text-align: center;
+    color: rgb(170, 190, 200);
+    font-size: 25px;
 }
 
-.scroll-thumb
+.score-rank
 {
-    position: absolute;
-    right: -8px;
-    top: 12px;
+    display: inline-block;
+    width: 66px;
+    height: 38px;
+    padding-top: 7px;
+    color: rgb(255, 224, 154);
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.score-name
+{
+    display: inline-block;
+    width: 280px;
+    height: 38px;
+    padding-top: 7px;
+    color: rgb(238, 242, 247);
+    vertical-align: top;
+}
+
+.score-value
+{
+    display: inline-block;
+    width: 130px;
+    height: 38px;
+    padding-top: 7px;
+    text-align: right;
+    color: rgb(255, 248, 232);
+    font-weight: bold;
+    vertical-align: top;
+}
+
+scrollbarvertical
+{
     width: 34px;
-    height: 90px;
+    background-color: rgba(0, 0, 0, 190);
+}
+
+scrollbarvertical slidertrack
+{
+    width: 34px;
+    decorator: image("Asset/UIImage/ScrollBackground.PNG" fill);
+}
+
+scrollbarvertical sliderbar
+{
+    width: 34px;
+    min-height: 82px;
+    decorator: image("Asset/UIImage/ScrollButton.PNG" fill);
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc
+{
+    width: 0px;
+    height: 0px;
 }
 
 .renew-button

@@ -12,8 +12,17 @@ function GameManager.new(context)
         killScore = 0,
         comboBonusScore = 0,
         playerHealth = 100.0,
-        finishReason = "None"
+        finishReason = "None",
+        isClear = false
     }, GameManager)
+end
+
+local function IsClearReason(reason)
+    return reason == "Clear"
+        or reason == "Victory"
+        or reason == "Win"
+        or reason == "Completed"
+        or reason == "TimeUp"
 end
 
 function GameManager:RecalculateScore()
@@ -42,6 +51,7 @@ function GameManager:StartRun()
     self.comboBonusScore = 0
     self.playerHealth = self.context.root.PlayerMaxHealth or 100.0
     self.finishReason = "None"
+    self.isClear = false
 
     self.context.eventBus:Emit("Game.Started", self:GetSnapshot())
 end
@@ -72,6 +82,7 @@ function GameManager:FinishRun(reason)
     self.isRunning = false
     self.isPaused = false
     self.finishReason = reason or "Finished"
+    self.isClear = IsClearReason(self.finishReason)
     Engine.API.Time.SetTimeScale(1.0)
 
     local combo = self.context.managers.Combo
@@ -91,6 +102,7 @@ function GameManager:CancelRun(reason)
     self.isRunning = false
     self.isPaused = false
     self.finishReason = reason or "Canceled"
+    self.isClear = false
     Engine.API.Time.SetTimeScale(1.0)
     self.context.eventBus:Emit("Game.Canceled", self:GetSnapshot())
 end
@@ -160,7 +172,7 @@ function GameManager:Tick(dt)
     self.survivalTime = self.survivalTime + dt
     self:RecalculateScore()
 
-    local limit = self.context.root.SessionLimitSeconds or 300.0
+    local limit = self.context.root.SessionLimitSeconds or 5.0
     if limit > 0.0 and self.survivalTime >= limit then
         self:FinishRun("TimeUp")
     end
@@ -176,7 +188,8 @@ function GameManager:GetSnapshot()
         killScore = self.killScore,
         comboBonusScore = self.comboBonusScore,
         playerHealth = self.playerHealth,
-        finishReason = self.finishReason
+        finishReason = self.finishReason,
+        isClear = self.isClear
     }
 end
 
