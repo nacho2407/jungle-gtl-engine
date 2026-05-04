@@ -18,6 +18,14 @@ struct FAudioPlaybackPolicy
     bool bStopOldestWhenFull = true;
 };
 
+struct FAudio3DSettings
+{
+    float MinDistance = 2.5f;
+    float MaxDistance = 22.0f;
+    int AttenuationModel = 2;
+    float RolloffFactor = 1.0f;
+};
+
 class FAudioSystem
 {
 public:
@@ -43,7 +51,8 @@ public:
         bool bSpatialized = false,
         const FVector& Position = FVector::ZeroVector,
         float VolumeScale = 1.0f,
-        float FadeInSeconds = 0.0f);
+        float FadeInSeconds = 0.0f,
+        const FAudio3DSettings& SpatialSettings = FAudio3DSettings());
     FAudioHandle PlaySFX(const FString& KeyOrPath, float VolumeScale = 1.0f);
     FAudioHandle PlaySFX3D(const FString& KeyOrPath, const FVector& Position, float VolumeScale = 1.0f);
     void StopSound(FAudioHandle Handle, float FadeOutSeconds = 0.0f);

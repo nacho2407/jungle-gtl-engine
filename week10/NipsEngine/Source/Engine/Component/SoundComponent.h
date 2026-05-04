@@ -19,6 +19,20 @@ public:
 
     void SetSound(const FString& InSoundKeyOrPath) { SoundKeyOrPath = InSoundKeyOrPath; }
     const FString& GetSound() const { return SoundKeyOrPath; }
+    void SetPlayOnBeginPlay(bool bEnabled) { bPlayOnBeginPlay = bEnabled; }
+    bool IsPlayOnBeginPlay() const { return bPlayOnBeginPlay; }
+    void SetLoop(bool bEnabled) { bLoop = bEnabled; }
+    bool IsLooping() const { return bLoop; }
+    void SetSpatialized(bool bEnabled) { bSpatialized = bEnabled; }
+    bool IsSpatialized() const { return bSpatialized; }
+    void SetVolumeScale(float InVolumeScale) { VolumeScale = InVolumeScale; }
+    float GetVolumeScale() const { return VolumeScale; }
+    void Set3DMinMaxDistance(float InMinDistance, float InMaxDistance);
+    float Get3DMinDistance() const { return MinDistance; }
+    float Get3DMaxDistance() const { return MaxDistance; }
+    void Set3DAttenuation(int InAttenuationModel, float InRolloffFactor);
+    int Get3DAttenuationModel() const { return AttenuationModel; }
+    float Get3DRolloffFactor() const { return RolloffFactor; }
 
 protected:
     void TickComponent(float DeltaTime) override;
@@ -32,5 +46,9 @@ private:
     float VolumeScale = 1.0f;
     float FadeInSeconds = 0.0f;
     float FadeOutSeconds = 0.0f;
+    float MinDistance = 2.5f;
+    float MaxDistance = 22.0f;
+    int AttenuationModel = 2;
+    float RolloffFactor = 1.0f;
     FAudioHandle ActiveHandle = 0;
 };

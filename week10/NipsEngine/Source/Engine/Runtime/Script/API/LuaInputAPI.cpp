@@ -176,6 +176,57 @@ namespace
         return !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
     }
 
+    bool IsUIInputKeyDown(int32 KeyCode)
+    {
+        return IsValidInputKeyCode(KeyCode) && InputSystem::Get().GetKey(KeyCode);
+    }
+
+    bool IsUIInputKeyPressed(int32 KeyCode)
+    {
+        return IsValidInputKeyCode(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+    }
+
+    bool IsUIInputKeyReleased(int32 KeyCode)
+    {
+        return IsValidInputKeyCode(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+    }
+
+    void AppendUtf8(FString& Out, uint32_t Codepoint)
+    {
+        if (Codepoint < 0x20 || Codepoint == 0x7F || Codepoint > 0x10FFFF)
+        {
+            return;
+        }
+
+        if (Codepoint >= 0xD800 && Codepoint <= 0xDFFF)
+        {
+            return;
+        }
+
+        if (Codepoint <= 0x7F)
+        {
+            Out.push_back(static_cast<char>(Codepoint));
+        }
+        else if (Codepoint <= 0x7FF)
+        {
+            Out.push_back(static_cast<char>(0xC0 | (Codepoint >> 6)));
+            Out.push_back(static_cast<char>(0x80 | (Codepoint & 0x3F)));
+        }
+        else if (Codepoint <= 0xFFFF)
+        {
+            Out.push_back(static_cast<char>(0xE0 | (Codepoint >> 12)));
+            Out.push_back(static_cast<char>(0x80 | ((Codepoint >> 6) & 0x3F)));
+            Out.push_back(static_cast<char>(0x80 | (Codepoint & 0x3F)));
+        }
+        else
+        {
+            Out.push_back(static_cast<char>(0xF0 | (Codepoint >> 18)));
+            Out.push_back(static_cast<char>(0x80 | ((Codepoint >> 12) & 0x3F)));
+            Out.push_back(static_cast<char>(0x80 | ((Codepoint >> 6) & 0x3F)));
+            Out.push_back(static_cast<char>(0x80 | (Codepoint & 0x3F)));
+        }
+    }
+
     ERuntimeInputMode ParseRuntimeInputMode(const FString& Mode)
     {
         const FString Normalized = NormalizeInputName(Mode);
@@ -229,6 +280,46 @@ namespace FLuaEngineAPI
             {
                 return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
             });
+
+        Input["IsUIKeyDown"] = sol::overload(
+            [](const FString& KeyName) -> bool
+            {
+                return IsUIInputKeyDown(ResolveInputKeyCode(KeyName));
+            },
+            [](int32 KeyCode) -> bool
+            {
+                return IsUIInputKeyDown(KeyCode);
+            });
+
+        Input["IsUIKeyPressed"] = sol::overload(
+            [](const FString& KeyName) -> bool
+            {
+                return IsUIInputKeyPressed(ResolveInputKeyCode(KeyName));
+            },
+            [](int32 KeyCode) -> bool
+            {
+                return IsUIInputKeyPressed(KeyCode);
+            });
+
+        Input["IsUIKeyReleased"] = sol::overload(
+            [](const FString& KeyName) -> bool
+            {
+                return IsUIInputKeyReleased(ResolveInputKeyCode(KeyName));
+            },
+            [](int32 KeyCode) -> bool
+            {
+                return IsUIInputKeyReleased(KeyCode);
+            });
+
+        Input["ConsumeTextInput"] = []() -> FString
+        {
+            FString Result;
+            for (uint32_t Codepoint : InputSystem::Get().ConsumeScriptTextInput())
+            {
+                AppendUtf8(Result, Codepoint);
+            }
+            return Result;
+        };
 
         Input["IsMouseDown"] = sol::overload(
             [](const FString& ButtonName) -> bool

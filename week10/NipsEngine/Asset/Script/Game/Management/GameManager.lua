@@ -12,6 +12,8 @@ function GameManager.new(context)
         killScore = 0,
         comboBonusScore = 0,
         playerHealth = 100.0,
+        playerMaxHealth = 100.0,
+        invulnerableRemaining = 0.0,
         finishReason = "None",
         isClear = false
     }, GameManager)
@@ -26,12 +28,17 @@ local function IsClearReason(reason)
 end
 
 function GameManager:RecalculateScore()
-    self.score = self.killScore + self.comboBonusScore + math.floor(self.survivalTime)
+    self.score = self.killScore + self.comboBonusScore
 end
 
 function GameManager:BeginPlay()
     self.context.eventBus:Subscribe("Enemy.Killed", self, function(payload)
         self:AddKill(payload)
+    end)
+
+    self.context.eventBus:Subscribe("Player.DamageRequested", self, function(payload)
+        payload = payload or {}
+        self:DamagePlayer(payload.amount, payload.source)
     end)
 end
 
@@ -49,7 +56,9 @@ function GameManager:StartRun()
     self.score = 0
     self.killScore = 0
     self.comboBonusScore = 0
-    self.playerHealth = self.context.root.PlayerMaxHealth or 100.0
+    self.playerMaxHealth = self.context.root.PlayerMaxHealth or 100.0
+    self.playerHealth = self.playerMaxHealth
+    self.invulnerableRemaining = 0.0
     self.finishReason = "None"
     self.isClear = false
 
@@ -79,16 +88,16 @@ function GameManager:FinishRun(reason)
         return
     end
 
+    local combo = self.context.managers.Combo
+    if combo and combo.CloseCombo then
+        combo:CloseCombo("Finished")
+    end
+
     self.isRunning = false
     self.isPaused = false
     self.finishReason = reason or "Finished"
     self.isClear = IsClearReason(self.finishReason)
     Engine.API.World.SetTimeScale(1.0)
-
-    local combo = self.context.managers.Combo
-    if combo and combo.CloseCombo then
-        combo:CloseCombo("Finished")
-    end
 
     local data = self.context.managers.Data
     if data then
@@ -114,19 +123,25 @@ end
 
 function GameManager:AddKill(payload)
     if not self.isRunning then
-        return
+        return false
     end
 
-    local bonus = 100
-    if payload and payload.score then
+    payload = payload or {}
+
+    local bonus = 1
+    if payload.score then
         bonus = payload.score
     end
+    bonus = math.max(0, math.floor(tonumber(bonus) or 1))
 
     self.killCount = self.killCount + 1
     self.killScore = self.killScore + bonus
     self:RecalculateScore()
-    self.context.eventBus:Emit("Combo.Kill", payload or { score = bonus })
+    payload.score = bonus
+    payload.killCount = self.killCount
+    self.context.eventBus:Emit("Combo.Kill", payload)
     self.context.eventBus:Emit("Score.Changed", self:GetSnapshot())
+    return true
 end
 
 function GameManager:AddScoreBonus(amount, reason)
@@ -149,19 +164,68 @@ function GameManager:AddScoreBonus(amount, reason)
     self.context.eventBus:Emit("Score.Changed", self:GetSnapshot())
 end
 
-function GameManager:DamagePlayer(amount)
+function GameManager:DamagePlayer(amount, source)
     if not self.isRunning then
-        return
+        return false
     end
 
-    self.playerHealth = math.max(0.0, self.playerHealth - (amount or 0.0))
+    if self.invulnerableRemaining > 0.0 then
+        self.context.eventBus:Emit("Player.DamageBlocked", {
+            amount = amount or 0.0,
+            source = source,
+            invulnerableRemaining = self.invulnerableRemaining,
+            snapshot = self:GetSnapshot()
+        })
+        return false
+    end
+
+    local damage = tonumber(amount) or tonumber(self.context.root.PlayerDamagePerHit) or 20.0
+    if damage <= 0.0 then
+        return false
+    end
+
+    self.playerHealth = math.max(0.0, self.playerHealth - damage)
+    if self.playerHealth > 0.0 then
+        self.invulnerableRemaining = tonumber(self.context.root.PlayerInvulnerableSeconds) or 3.0
+    else
+        self.invulnerableRemaining = 0.0
+    end
+
     self.context.eventBus:Emit("Player.Damaged", {
-        amount = amount or 0.0,
+        amount = damage,
+        source = source,
+        invulnerableSeconds = self.invulnerableRemaining,
         snapshot = self:GetSnapshot()
     })
     if self.playerHealth <= 0.0 then
         self:FinishRun("Dead")
     end
+
+    return true
+end
+
+function GameManager:RecoverPlayer(amount, source)
+    if not self.isRunning then
+        return false
+    end
+
+    local recoverAmount = tonumber(amount) or 0.0
+    if recoverAmount <= 0.0 then
+        return false
+    end
+
+    local oldHealth = self.playerHealth
+    self.playerHealth = math.min(self.playerMaxHealth or 100.0, self.playerHealth + recoverAmount)
+    if self.playerHealth <= oldHealth then
+        return false
+    end
+
+    self.context.eventBus:Emit("Player.Recovered", {
+        amount = self.playerHealth - oldHealth,
+        source = source,
+        snapshot = self:GetSnapshot()
+    })
+    return true
 end
 
 function GameManager:Tick(dt)
@@ -169,7 +233,11 @@ function GameManager:Tick(dt)
         return
     end
 
-    self.survivalTime = self.survivalTime + dt
+    if self.invulnerableRemaining > 0.0 then
+        self.invulnerableRemaining = math.max(0.0, self.invulnerableRemaining - (dt or 0.0))
+    end
+
+    self.survivalTime = self.survivalTime + (dt or 0.0)
     self:RecalculateScore()
 
     local limit = self.context.root.SessionLimitSeconds or 5.0
@@ -179,15 +247,21 @@ function GameManager:Tick(dt)
 end
 
 function GameManager:GetSnapshot()
+    local limit = self.context.root.SessionLimitSeconds or 5.0
+    local maxHealth = self.playerMaxHealth or self.context.root.PlayerMaxHealth or 100.0
     return {
         isRunning = self.isRunning,
         isPaused = self.isPaused,
         survivalTime = self.survivalTime,
+        sessionLimitSeconds = limit,
         killCount = self.killCount,
         score = self.score,
         killScore = self.killScore,
         comboBonusScore = self.comboBonusScore,
         playerHealth = self.playerHealth,
+        playerMaxHealth = maxHealth,
+        playerHealthRatio = maxHealth > 0.0 and (self.playerHealth / maxHealth) or 0.0,
+        invulnerableRemaining = self.invulnerableRemaining,
         finishReason = self.finishReason,
         isClear = self.isClear
     }

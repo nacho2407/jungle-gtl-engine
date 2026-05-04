@@ -135,6 +135,48 @@ namespace
         default: return KI_UNKNOWN;
         }
     }
+
+    bool IsElementOrAncestorFormControl(Rml::Element* Element)
+    {
+        for (Rml::Element* Current = Element; Current != nullptr; Current = Current->GetParentNode())
+        {
+            if (rmlui_dynamic_cast<Rml::ElementFormControl*>(Current) != nullptr)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool IsElementOrDescendantFocused(Rml::Element* Element, Rml::Element* FocusedElement)
+    {
+        if (!Element || !FocusedElement)
+        {
+            return false;
+        }
+
+        for (Rml::Element* Current = FocusedElement; Current != nullptr; Current = Current->GetParentNode())
+        {
+            if (Current == Element)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void CaptureTextInputForFocusedRmlElement(Rml::Element* Element)
+    {
+        if (!IsElementOrAncestorFormControl(Element))
+        {
+            return;
+        }
+
+        InputSystem& Input = InputSystem::Get();
+        Input.SetGuiKeyboardCapture(true);
+        Input.SetGuiTextInputCapture(true);
+        Input.SetGuiViewportMouseBlock(true);
+    }
 }
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
@@ -543,7 +585,23 @@ bool UGameEngine::RemoveRmlUIElementStyle(const FString& ElementId, const FStrin
 bool UGameEngine::FocusRmlUIElement(const FString& ElementId, bool bFocusVisible)
 {
     Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->Focus(bFocusVisible) : false;
+    if (!Element)
+    {
+        return false;
+    }
+
+    const bool bFocused = Element->Focus(bFocusVisible);
+    if (bFocused)
+    {
+        CaptureTextInputForFocusedRmlElement(Element);
+    }
+    return bFocused;
+}
+
+bool UGameEngine::IsRmlUIElementFocused(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element && RmlUiContext && IsElementOrDescendantFocused(Element, RmlUiContext->GetFocusElement());
 }
 
 bool UGameEngine::BlurRmlUIElement(const FString& ElementId)
@@ -1096,6 +1154,8 @@ bool UGameEngine::PumpRmlUiInput(InputSystem& Input)
 
     bConsumed = bKeyboardConsumed || bConsumed;
 
+    const bool bTextInputFocused = IsElementOrAncestorFormControl(RmlUiContext->GetFocusElement());
+
     if (bConsumed)
     {
         Input.SetGuiMouseCapture(true);
@@ -1104,6 +1164,11 @@ bool UGameEngine::PumpRmlUiInput(InputSystem& Input)
         {
             Input.SetGuiKeyboardCapture(true);
         }
+    }
+    if (bTextInputFocused)
+    {
+        Input.SetGuiKeyboardCapture(true);
+        Input.SetGuiTextInputCapture(true);
     }
 
     return bConsumed;

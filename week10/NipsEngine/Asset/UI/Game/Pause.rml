@@ -4,6 +4,7 @@
     </head>
     <body>
         <div id="Pause.Dim" class="screen-root dim">
+
             <div id="Pause.MenuPanel" class="pause-panel">
                 <div class="headline">Paused</div>
                 <button id="Pause.Resume" class="menu-button primary" data-action="ResumeGame">Resume</button>
@@ -17,7 +18,7 @@
                 <button class="panel-close" data-action="BackToPauseMenu">
                     <img class="panel-close-icon" src="Asset/UIImage/13_Escape_r.PNG"/>
                 </button>
-                <div class="headline">Settings</div>
+                <div class="headline1">Settings</div>
                 <div class="setting-row bgm-setting">
                     <div class="setting-label">BGM</div>
                     <input id="Pause.Settings.BGMSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="BGMVolumeChanged"/>
@@ -29,6 +30,8 @@
                     <div id="Pause.Settings.SFXValue" class="setting-value">100%</div>
                 </div>
             </div>
+
+            
         </div>
     </body>
 </rml>

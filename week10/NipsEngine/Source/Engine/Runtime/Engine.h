@@ -93,6 +93,7 @@ public:
 	virtual bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
 	virtual bool RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name) { return false; }
 	virtual bool FocusRmlUIElement(const FString& ElementId, bool bFocusVisible) { return false; }
+	virtual bool IsRmlUIElementFocused(const FString& ElementId) { return false; }
 	virtual bool BlurRmlUIElement(const FString& ElementId) { return false; }
 	virtual bool ClickRmlUIElement(const FString& ElementId) { return false; }
 	virtual TArray<FString> PollRmlUIActionEvents() { return {}; }

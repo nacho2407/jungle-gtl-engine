@@ -165,6 +165,13 @@ function Script:DestroyActorAfter(actor, time)
     Engine.API.World.DestroyActor(actor)
 end
 
+function Script:FinishAttackAfter(attackId, time)
+    coroutine.yield(time)
+    if _G.GameJam and _G.GameJam.NotifyPlayerAttackFinished then
+        _G.GameJam.NotifyPlayerAttackFinished(attackId)
+    end
+end
+
 
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -183,6 +190,8 @@ function Script.new(component, properties)
     self.dashDir = Vector(0, 0, 0)
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
+    self.attackSequence = 0
+    self.bTimeSlowActive = false
     self.BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
     self.slamPitchOffset    = 0      -- 현재 적용 중인 슬램 pitch 오프셋
     self.slamPitchTarget    = 0      -- 목표 오프셋
@@ -345,8 +354,39 @@ function Script:Tick(dt)
         self.BodySection.Rotation = Vector(0, clampedPitch, 0)
     end
 
+    if (Engine.API.Input.IsMousePressed("RMB")) then
+        Engine.API.World.SetTimeScale(0.5)
+        if not self.bTimeSlowActive then
+            self.bTimeSlowActive = true
+            if _G.GameJam and _G.GameJam.NotifyTimeSlowStarted then
+                _G.GameJam.NotifyTimeSlowStarted()
+            end
+        end
+    end
+
+    if (Engine.API.Input.IsMouseReleased("RMB")) then
+        Engine.API.World.SetTimeScale(1)
+        if self.bTimeSlowActive then
+            self.bTimeSlowActive = false
+            if _G.GameJam and _G.GameJam.NotifyTimeSlowEnded then
+                _G.GameJam.NotifyTimeSlowEnded()
+            end
+        end
+    end
+
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
+        if slash == nil then
+            return
+        end
+
+        self.attackSequence = self.attackSequence + 1
+        local attackId = tostring(self.owner.UUID) .. "_" .. tostring(self.attackSequence)
+        slash:AddTag("PlayerAttack")
+        slash:AddTag("AttackId:" .. attackId)
+        if _G.GameJam and _G.GameJam.NotifyPlayerAttackStarted then
+            _G.GameJam.NotifyPlayerAttackStarted(attackId)
+        end
 
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
@@ -389,6 +429,10 @@ function Script:Tick(dt)
         StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
         end)
+
+        StartCoroutine(function()
+            self:FinishAttackAfter(attackId, 0.14)
+        end)
     end
 
     -- -------------------------------------------------------
@@ -403,6 +447,13 @@ end
 
 function Script:EndPlay()
     Log("[EndPlay] " .. tostring(self.owner.UUID))
+    if self.bTimeSlowActive and _G.GameJam and _G.GameJam.NotifyTimeSlowEnded then
+        _G.GameJam.NotifyTimeSlowEnded()
+    end
+    if self.bTimeSlowActive then
+        Engine.API.World.SetTimeScale(1)
+        self.bTimeSlowActive = false
+    end
 end
 
 function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
