@@ -66,6 +66,8 @@ function Script:Attack(degree, yaw)
         coroutine.yield(WaitForSeconds(0.02))
     end
 
+    coroutine.yield(WaitForSeconds(0.1))
+
     BodySection.Rotation = Vector(0, 0, 0)
     self.bDoingAttack = false
 end
@@ -76,6 +78,12 @@ function Script:Dash(dir)
     self.dashStepsLeft = 5
     self.dashCooldown = 0.0
 end
+
+function Script:DestroyActorAfter(actor, time)
+    coroutine.yield(WaitForSeconds(0.3))
+    Engine.API.World.DestroyActor(actor)
+end
+
 
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -186,6 +194,7 @@ function Script:Tick(dt)
     end
 
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
+        Log("ATTACK TRIGGERED, bDoingAttack=" .. tostring(self.bDoingAttack))
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
 
         local yaw = rotation.z
@@ -215,6 +224,8 @@ function Script:Tick(dt)
         StartCoroutine(function()
             self:Attack(degree, yaw)
         end)
+        Log("AFTER SET, bDoingAttack=" .. tostring(self.bDoingAttack))
+
     end
 end
 
