@@ -405,13 +405,13 @@ end
 -- ============================================================
 
 local PHASE_OBJECTIVE = {
-    [ECarGamePhase.None]         = "EXPLORE THE CITY",
-    [ECarGamePhase.CarWash]      = "WASH THE CAR",
-    [ECarGamePhase.CarGas]       = "FILL UP GAS",
-    [ECarGamePhase.EscapePolice] = "ESCAPE THE POLICE",
-    [ECarGamePhase.DodgeMeteor]  = "DODGE METEORS",
-    [ECarGamePhase.Goal]         = "REACH THE GOAL",
-    [ECarGamePhase.Finished]     = "MATCH COMPLETE",
+    [ECarGamePhase.None]         = "퀘스트를 수행하라",
+    [ECarGamePhase.CarWash]      = "세차 진행 중",
+    [ECarGamePhase.CarGas]       = "주유 중",
+    [ECarGamePhase.EscapePolice] = "경찰 따돌리는 중",
+    [ECarGamePhase.DodgeMeteor]  = "메테오 피하는 중",
+    [ECarGamePhase.Goal]         = "골인 지점으로 이동 중",
+    [ECarGamePhase.Finished]     = "매치 종료",
 }
 
 local PHASE_NAME = {
