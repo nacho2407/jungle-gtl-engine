@@ -7,7 +7,7 @@ print("[BindWorld] Turret", obj ~= nil and obj.UUID or "nil")
 DebugLog.Write("Turret.BindWorld", "Turret=" .. DebugLog.Actor(obj))
 
 -- 터렛 튜닝 값.
-local DetectRange = 30.0
+local DetectRange = 40.0
 local ShotCooldown = 1.5
 local ShotTimer = 0.0
 local MaxHP = 3

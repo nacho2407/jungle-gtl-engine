@@ -72,6 +72,8 @@ local DamagedEffectLifeTime = 0.5
 local DamagedEffectRow = 1
 local DamagedEffectColumn = 1
 
+local BatteryHealAmount = 25.0
+
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
@@ -331,7 +333,7 @@ function OnOverlapBegin(other)
         end
 
         other:AddTag("Collected")
-        HP = HP + 10
+        HP = HP + BatteryHealAmount
         if HP > MaxHP then
             HP = MaxHP
         end
