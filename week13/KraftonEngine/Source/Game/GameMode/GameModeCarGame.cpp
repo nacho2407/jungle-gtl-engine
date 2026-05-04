@@ -7,9 +7,11 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
+#include "GameFramework/GameplayStatics.h"
 #include "Game/Component/CarGasComponent.h"
 #include "Game/Component/DirtComponent.h"
 #include "Math/Vector.h"
+#include "Math/Rotator.h"
 #include "Object/FName.h"
 #include "Core/Log.h"
 
@@ -461,28 +463,37 @@ void AGameModeCarGame::SpawnPoliceCars(APawn* PlayerPawn)
 
 	DespawnPoliceCars();
 
-	const FVector PlayerLoc = PlayerPawn->GetActorLocation();
-	constexpr int32 SpawnCount = 3;
-	constexpr float MinRadius = 30.0f;
-	constexpr float MaxRadius = 45.0f;
-
-	for (int32 i = 0; i < SpawnCount; ++i)
+	// 월드에 미리 배치된 "SpawnPoliceCar" 태그 액터들의 위치마다 경찰차 1마리씩 spawn.
+	// 디자이너가 에디터에서 위치 / 개수 / 각도 모두 조정 가능. 마커 액터의 종류는 무관 —
+	// AActor 의 Tags 만 보고 위치 추출.
+	const TArray<AActor*> Spawners = FGameplayStatics::FindActorsByTag(W, FName("SpawnPoliceCar"));
+	if (Spawners.empty())
 	{
+		UE_LOG("[Police] No actor tagged 'SpawnPoliceCar' — no police spawned");
+		return;
+	}
+
+	for (size_t i = 0; i < Spawners.size(); ++i)
+	{
+		AActor* Spawner = Spawners[i];
+		if (!Spawner) continue;
+
 		auto* Police = W->SpawnActor<APoliceCar>();
 		if (!Police) continue;
 
 		Police->SetTarget(PlayerPawn);
 
-		const float RandT  = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-		const float Angle  = (static_cast<float>(i) / SpawnCount + RandT * 0.1f) * 6.28318f;
-		const float Radius = MinRadius + (MaxRadius - MinRadius) * (static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
-		FVector Offset(std::cos(Angle) * Radius, std::sin(Angle) * Radius, 1.0f);
-		Police->SetActorLocation(PlayerLoc + Offset);
+		const FVector SpawnLoc = Spawner->GetActorLocation();
+		const FRotator SpawnRot = Spawner->GetActorRotation();
+		Police->SetActorLocation(SpawnLoc);
+		Police->SetActorRotation(SpawnRot);
 
 		SpawnedPolice.push_back(Police);
 
-		UE_LOG("[Police] spawn idx=%d at (%.1f,%.1f,%.1f)", i,
-			(PlayerLoc + Offset).X, (PlayerLoc + Offset).Y, (PlayerLoc + Offset).Z);
+		UE_LOG("[Police] spawn idx=%zu at (%.1f,%.1f,%.1f) rot=(%.1f,%.1f,%.1f) (marker=%s)", i,
+			SpawnLoc.X, SpawnLoc.Y, SpawnLoc.Z,
+			SpawnRot.Roll, SpawnRot.Pitch, SpawnRot.Yaw,
+			Spawner->GetFName().ToString().c_str());
 	}
 }
 
