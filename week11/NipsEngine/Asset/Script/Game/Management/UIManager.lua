@@ -23,6 +23,13 @@ function UIManager.new(context)
             duration = 1.4,
             fadeSeconds = 0.35,
             visible = false
+        },
+        crosshairPulse = {
+            elapsed = 0.0,
+            duration = 0.10,
+            baseSize = 36.0,
+            hitSize = 52.0,
+            active = false
         }
     }, UIManager)
 end
@@ -95,10 +102,56 @@ function UIManager:SetCachedStyle(elementId, name, value)
     end
 end
 
+function UIManager:SetCrosshairSize(size)
+    size = tonumber(size) or 36.0
+    local half = size * 0.5
+    self:SetCachedStyle("HUD.CrossHairWrap", "width", string.format("%.1fpx", size))
+    self:SetCachedStyle("HUD.CrossHairWrap", "height", string.format("%.1fpx", size))
+    self:SetCachedStyle("HUD.CrossHairWrap", "margin-left", string.format("%.1fpx", -half))
+    self:SetCachedStyle("HUD.CrossHairWrap", "margin-top", string.format("%.1fpx", -half))
+end
+
+function UIManager:PlayCrosshairHit()
+    local pulse = self.crosshairPulse
+    if pulse == nil then
+        return
+    end
+
+    pulse.elapsed = 0.0
+    pulse.active = true
+    self:SetCrosshairSize(pulse.hitSize)
+end
+
+function UIManager:TickCrosshairPulse(dt)
+    local pulse = self.crosshairPulse
+    if pulse == nil or pulse.active ~= true then
+        return
+    end
+
+    pulse.elapsed = pulse.elapsed + (dt or 0.0)
+    local t = pulse.elapsed / pulse.duration
+    if t >= 1.0 then
+        pulse.active = false
+        self:SetCrosshairSize(pulse.baseSize)
+        return
+    end
+
+    local normalized = t < 0.5 and (t * 2.0) or ((1.0 - t) * 2.0)
+    if normalized < 0.0 then
+        normalized = 0.0
+    elseif normalized > 1.0 then
+        normalized = 1.0
+    end
+    local inverse = 1.0 - normalized
+    local eased = 1.0 - inverse * inverse * inverse
+    self:SetCrosshairSize(pulse.baseSize + (pulse.hitSize - pulse.baseSize) * eased)
+end
+
 function UIManager:Tick(dt)
     self:TickTitleLogoAnimation(dt)
     self:TickHealthLerp(dt)
     self:TickScoreBonus(dt)
+    self:TickCrosshairPulse(dt)
     self:TickResultNameInputFocus()
     self:TickResultNameInputText()
 
@@ -127,6 +180,10 @@ function UIManager:BeginPlay()
     self.context.eventBus:Subscribe("Score.Bonus", self, function(payload)
         payload = payload or {}
         self:ShowScoreBonus(payload.amount)
+    end)
+
+    self.context.eventBus:Subscribe("Player.AttackHit", self, function()
+        self:PlayCrosshairHit()
     end)
 end
 
@@ -296,6 +353,7 @@ function UIManager:BuildHUDScreen()
     if loaded then
         Engine.API.UI.SetVisible("HUD.ComboWrap", false)
         Engine.API.UI.SetVisible("HUD.BonusText", false)
+        self:SetCrosshairSize(self.crosshairPulse.baseSize)
     end
     return loaded
 end
@@ -731,6 +789,7 @@ function UIManager:SetResult(snapshot)
         or reason == "TimeUp"
     local outcome = isClear and "Victory" or "Defeat"
     self:SetCachedText("Result.Outcome", outcome)
+    Engine.API.UI.SetVisible("Result.Score", true)
     Engine.API.UI.SetText("Result.Score", "Score: " .. tostring(math.floor(snapshot.score or 0)))
     Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
     Engine.API.UI.SetText("Result.PlayerName", "PLAYER")
@@ -777,18 +836,13 @@ function UIManager:SubmitResultScore(snapshot)
     local ok, result, record = data:RegisterScore(userName, snapshot.score or 0)
     if ok then
         local savedName = record and record.name or userName or "PLAYER"
-        Engine.API.UI.SetText("Result.PlayerName", tostring(savedName))
-        Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
+        Engine.API.UI.SetText("Result.PlayerName", "Player " .. tostring(savedName))
+        Engine.API.UI.SetText("Result.FinalScore", "Thanks for Playing")
+        Engine.API.UI.SetVisible("Result.Score", false)
         Engine.API.UI.SetVisible("Result.EntryForm", false)
         Engine.API.UI.SetVisible("Result.EntrySummary", true)
 
-        if result == "Updated" then
-            Engine.API.UI.SetText("Result.SubmitStatus", "Score updated.")
-        elseif result == "Kept" then
-            Engine.API.UI.SetText("Result.SubmitStatus", "Existing score is higher.")
-        else
-            Engine.API.UI.SetText("Result.SubmitStatus", "Saved.")
-        end
+        Engine.API.UI.SetText("Result.SubmitStatus", "")
         self.resultNameEditing = false
         self.resultNameFocusFrames = 0
         self:RefreshScoreBoard("Result")

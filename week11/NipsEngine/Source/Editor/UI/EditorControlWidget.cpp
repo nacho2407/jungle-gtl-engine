@@ -86,7 +86,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 
 	DrawSpawnItem(0, "Empty Actor");
 	ImGui::Separator();
-	DrawSpawnItem(17, "Player");
+	DrawSpawnItem(18, "Player");
 	DrawSpawnItem(1, "Static Mesh");
 	DrawSpawnItem(2, "Text Render");
 	DrawSpawnItem(3, "SubUV");
@@ -269,6 +269,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		}
 		case 17:
 		{
+		    AMainSceneDestructibleActor* Actor = World->SpawnActor<AMainSceneDestructibleActor>();
+		    Actor->InitDefaultComponents();
+		    Actor->SetActorLocation(SpawnPoint);
+		    break;
+		}
+		case 18:
+		{
 			ADefaultPlayerActor* Actor = World->SpawnActor<ADefaultPlayerActor>();
 			Actor->InitDefaultComponents();
 			Actor->SetFName(FName("Player"));
@@ -277,13 +284,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			Actor->AddComponent<UScriptComponent>();
 			break;
 		}
-		case 17:
-		{
-			AMainSceneDestructibleActor* Actor = World->SpawnActor<AMainSceneDestructibleActor>();
-			Actor->InitDefaultComponents();
-			Actor->SetActorLocation(SpawnPoint);
-			break;
-		}
+
 		default:
 			return false;
 		}

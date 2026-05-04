@@ -26,6 +26,7 @@ function SoundManager.new(context)
             },
             AttackNone = "Asset/Audio/SFX/GameAttackNone.WAV",
             AttackGround = "Asset/Audio/SFX/GameAttackGround.WAV",
+            PlayerDash = "Asset/Audio/SFX/GamePlayerDash.mp3",
             PlayerHit = "Asset/Audio/SFX/GamePlayerHit.mp3",
             PlayerRecover = "Asset/Audio/SFX/GamePlayerRecovery.mp3",
             TimeSlowStart = "Asset/Audio/SFX/GameTimeSlowStart.mp3",
@@ -55,6 +56,10 @@ function SoundManager:BeginPlay()
 
     self.context.eventBus:Subscribe("Player.AttackGround", self, function()
         self:PlayAttackGround()
+    end)
+
+    self.context.eventBus:Subscribe("Player.Dashed", self, function()
+        self:PlayPlayerDash()
     end)
 
     self.context.eventBus:Subscribe("Player.Damaged", self, function()
@@ -141,6 +146,10 @@ end
 
 function SoundManager:PlayAttackGround()
     self:PlaySFX(self.SFX.AttackGround)
+end
+
+function SoundManager:PlayPlayerDash()
+    self:PlaySFX(self.SFX.PlayerDash)
 end
 
 function SoundManager:PlayPlayerHit()
