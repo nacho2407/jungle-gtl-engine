@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/MultiMaterialCube_Mat_______________Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Cube/Cube.png"
+          }],
+        "Parent" : "Asset/Material/Auto/MultiMaterialCube_Mat______________.mat"
+      }

@@ -135,7 +135,9 @@ function Script:SetDirection(version, targetActor)
         return
     end
 
-    local delta = player.Location - self.owner.Location
+    local target = player.Location + Vector.Up() * 1
+
+    local delta = target - self.owner.Location
 
     if delta:Size() <= 0.001 then
         LogWarning("[Projectile] Direction length is zero")
