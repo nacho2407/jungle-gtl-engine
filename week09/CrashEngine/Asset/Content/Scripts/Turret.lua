@@ -12,6 +12,20 @@ local HP = MaxHP
 
 -- Candidate에서 받은 초기 회전의 X/Y는 유지하고, 공격할 때 Z(Yaw)만 Player 방향으로 바꾼다.
 local BaseRotation = Vector.new(0.0, 0.0, 0.0)
+local SoundManager = nil
+
+local function loadTurretSounds()
+    SoundManager = GetSoundManager()
+    SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
+end
+
+local function playTurretSound(sound_id)
+    if SoundManager == nil then
+        loadTurretSounds()
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 -- Lua 런타임에 math.atan2가 없을 수도 있어서 직접 fallback을 둔다.
 local function atan2(y, x)
@@ -69,6 +83,7 @@ local function fireAtPlayer(player)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, 1.5) + direction * 2.0
     BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet")
+    playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end
 
@@ -78,6 +93,7 @@ function BeginPlay()
     HP = MaxHP
     ShotTimer = 0.0
     BaseRotation = obj.Rotation
+    loadTurretSounds()
 end
 
 function EndPlay()

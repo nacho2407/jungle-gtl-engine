@@ -47,6 +47,7 @@ function BeginPlay()
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(100)
+    GetSoundManager():StopBGM()
     ui_document:SetTexture("background", "Textures/GameOver.jpg")
 
     setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, 35)

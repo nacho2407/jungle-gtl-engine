@@ -170,6 +170,12 @@ local scoreboard_items = {
     }
 }
 
+local function playBackgroundBGM()
+    local sound_mgr = GetSoundManager()
+    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/backgroundbgm.mp3", true)
+    sound_mgr:PlayBGM("backgroundbgm")
+end
+
 local function formatTimer(total_seconds)
     total_seconds = math.floor((total_seconds or 0) + 0.5)
     local minutes = math.floor(total_seconds / 60)
@@ -344,6 +350,7 @@ function BeginPlay()
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
+    playBackgroundBGM()
     ui_document:SetTexture("background", main_background_texture)
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")

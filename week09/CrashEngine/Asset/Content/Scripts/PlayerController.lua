@@ -25,6 +25,22 @@ local Initial_Light_Intensity = 0.0
 
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
+local SoundManager = nil
+
+local function loadPlayerSounds()
+    SoundManager = GetSoundManager()
+    SoundManager:LoadSound("Shoot", "Asset/Content/Sounds/Shoot.mp3", false)
+    SoundManager:LoadSound("Charge", "Asset/Content/Sounds/Charge.mp3", false)
+    SoundManager:LoadSound("Document", "Asset/Content/Sounds/Document.mp3", false)
+end
+
+local function playPlayerSound(sound_id)
+    if SoundManager == nil then
+        loadPlayerSounds()
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
@@ -128,6 +144,7 @@ local function firePlayerBullet()
     print("Player Fire Direction : ", aimDirection)
     print("Player Fire Location : ", spawnLocation)
     BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet")
+    playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
 
@@ -158,11 +175,13 @@ function OnOverlapBegin(other)
     if other:HasTag("Document") then
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
+        playPlayerSound("Document")
         print("Has Document : ", DocumentCount);
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
         HP = HP + 10
         syncPlayerState()
+        playPlayerSound("Charge")
         print("Player HP : ", HP);
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
@@ -195,6 +214,7 @@ function BeginPlay()
     })
     ensurePlayerState()
     syncPlayerAimState()
+    loadPlayerSounds()
 
     local gameManager = World.FindActorByTag("GameManager")
     if gameManager:IsValid() then
