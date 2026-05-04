@@ -24,6 +24,12 @@ public:
     FVector GetLocation() const;
     void SetLocation(const FVector& InLocation);
 
+    FVector GetRotation() const;
+    void SetRotation(const FVector& InRotation);
+
+    FVector GetScale() const;
+    void SetScale(const FVector& InScale);
+
     FVector GetForwardVector() const;
     FVector GetRightVector() const;
     FVector GetUpVector() const;

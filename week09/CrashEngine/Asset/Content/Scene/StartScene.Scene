@@ -1,6 +1,6 @@
 {
   "Actors" : [{
-      "ClassName" : "ALuaActor",
+      "ClassName" : "ALuaScriptActor",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
@@ -8,7 +8,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectName" : "ALuaActor_0",
+      "ObjectName" : "ALuaScriptActor_0",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],

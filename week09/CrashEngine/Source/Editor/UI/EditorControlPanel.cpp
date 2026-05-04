@@ -1,4 +1,4 @@
-// 에디터 영역의 세부 동작을 구현합니다.
+﻿// 에디터 영역의 세부 동작을 구현합니다.
 #include "Editor/UI/EditorControlPanel.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -12,7 +12,7 @@
 #include "GameFramework/FireballActor.h"
 #include "GameFramework/CameraActor.h"
 #include "GameFramework/HeightFogActor.h"
-#include "GameFramework/LuaActor.h"
+#include "GameFramework/LuaScriptActor.h"
 #include "GameFramework/StaticMeshActor.h"
 #include "GameFramework/AmbientLightActor.h"
 #include "GameFramework/DirectionalLightActor.h"
@@ -62,8 +62,8 @@ constexpr FSpawnEntry SpawnTable[] = {
     SPAWN_ACTOR("Height Fog", AHeightFogActor, false),
     SPAWN_ACTOR("Fake Light", AFakeLightActor, false),
     SPAWN_ACTOR("Fireball", AFireballActor, false),
+    SPAWN_ACTOR("Lua Script", ALuaScriptActor, false),
     SPAWN_ACTOR("Camera", ACameraActor, false),
-    SPAWN_ACTOR("Lua Script", ALuaActor, false),
     SPAWN_ACTOR("Ambient Light", AAmbientLightActor, false),
     SPAWN_ACTOR("Directional Light", ADirectionalLightActor, false),
     SPAWN_ACTOR("Point Light", APointLightActor, false),
