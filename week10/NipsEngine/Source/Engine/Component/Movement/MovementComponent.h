@@ -52,6 +52,9 @@ public:
 	// 이동속도를 즉시 0으로 만듭니다.
     void StopMovementImmediately() { Velocity = FVector::ZeroVector; }
 
+    void OnRegister() override;
+    void OnUnregister() override;
+
 protected:
 	// UpdatedComponent를 Delta만큼 이동시킵니다.
     void MoveUpdatedComponent(const FVector& Delta);

@@ -97,3 +97,15 @@ FVector UMovementComponent::ConstrainLocationToPlane(const FVector& Location) co
     const float Dot = FVector::DotProduct(Location, Normal);
     return Location - Normal * Dot;
 }
+
+void UMovementComponent::OnRegister()
+{
+    UActorComponent::OnRegister();
+    UpdatedComponent = GetOwner()->GetRootComponent();
+}
+
+void UMovementComponent::OnUnregister()
+{
+    UActorComponent::OnUnregister();
+    UpdatedComponent = nullptr;
+}

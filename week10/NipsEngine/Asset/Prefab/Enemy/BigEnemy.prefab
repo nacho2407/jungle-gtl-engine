@@ -7,14 +7,14 @@
         "Enable Cull" : true,
         "Enable Tick" : true,
         "GenerateOverlapEvents" : false,
-        "Location" : [-2.031852, -2.473422, 0.000000],
+        "Location" : [-20.123812, 15.148963, 1.915694],
         "Materials" : ["DefaultWhite"],
         "ObjectName" : "UProceduralMeshComponent_127",
         "Rotation" : [0.000000, 0.000000, 0.000000],
-        "Scale" : [1.700000, 1.700000, 1.700000],
+        "Scale" : [2.000000, 2.000000, 3.000000],
         "Tags" : [],
         "Type" : "UProceduralMeshComponent",
-        "UUID" : 1462,
+        "UUID" : 4835,
         "Visible" : true
       }, {
         "ClassName" : "UBoxComponent",
@@ -26,13 +26,13 @@
         "GenerateOverlapEvents" : true,
         "Location" : [0.000000, 0.000000, 0.000000],
         "ObjectName" : "UBoxComponent_79",
-        "ParentUUID" : 1462,
+        "ParentUUID" : 4835,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "ShapeColor" : [0.000000, 0.000000, 0.000000, 1.000000],
         "Tags" : [],
         "Type" : "UBoxComponent",
-        "UUID" : 1463,
+        "UUID" : 4836,
         "Visible" : true
       }, {
         "ClassName" : "UProjectileMovementComponent",
@@ -41,7 +41,7 @@
         "ObjectName" : "UProjectileMovementComponent_49",
         "Tags" : [],
         "Type" : "UProjectileMovementComponent",
-        "UUID" : 1464
+        "UUID" : 4837
       }, {
         "ClassName" : "UScriptComponent",
         "Editor Only" : false,
@@ -75,13 +75,13 @@
         "ScriptName" : "EnemyBase",
         "Tags" : [],
         "Type" : "UScriptComponent",
-        "UUID" : 1465
+        "UUID" : 4838
       }],
     "EditorOnly" : false,
     "Name" : "BigEnemy",
-    "RootComponent" : 1462,
+    "RootComponent" : 4835,
     "Tags" : [],
-    "UUID" : 1461,
+    "UUID" : 4834,
     "Visible" : true
   },
   "ClassName" : "NipsPrefab",
