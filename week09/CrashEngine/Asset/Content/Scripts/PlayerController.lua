@@ -254,7 +254,7 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
     print("Player Fire Direction : ", aimDirection)
     print("Player Fire Location : ", spawnLocation)
-    BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet")
+    BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
     playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -312,6 +312,7 @@ function OnOverlapBegin(other)
         spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
+        print("[Player] Hit by EnemyBullet", "Player:", obj.UUID, "Bullet:", other.UUID, "Location:", other.Location)
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
             obj:ApplyDamage(10, other)

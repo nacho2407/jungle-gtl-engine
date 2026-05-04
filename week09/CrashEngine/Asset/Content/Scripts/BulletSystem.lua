@@ -7,12 +7,13 @@ local BulletMeshPath = "Asset/Content/Models/Bullet/Bullet.obj"
 local BulletSpeed = 90.0
 local BulletLifeTime = 3.0
 local BulletScale = Vector.new(0.15, 0.15, 0.15)
-local BulletColliderRadius = 0.6
-local PlayerHitRadius = 1.2
-local TurretHitRadius = 2.0
-local MonsterHitRadius = 2.0
+local BulletColliderLocation = Vector.new(-5.0, 0.0, 0.2)
+local BulletColliderScale = Vector.new(1.0, 1.0, 1.0)
+local BulletColliderRadius = 5.5
 local BulletMeshRollOffset = 0.0
 local BulletMeshYawOffset = 180.0
+local BulletWallBlockGraceTime = 0.12
+local bLogBulletLifecycle = true
 
 -- 현재 월드에 살아있는 총알들의 런타임 정보.
 local bullets = BulletSystem.Bullets or {}
@@ -21,6 +22,18 @@ BulletSystem.Bullets = bullets
 -- BindWorld가 되어 있으면 그 World를 사용하고, 아니면 현재 스크립트의 World 전역을 사용한다.
 local function getWorld()
     return BulletSystem.World or World
+end
+
+local function logBullet(message, bulletInfo)
+    if not bLogBulletLifecycle then
+        return
+    end
+
+    if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
+        print("[BulletSystem]", message, "Tag:", bulletInfo.OwnerTag, "Age:", bulletInfo.Age or 0.0, "Location:", bulletInfo.Actor.Location, "Direction:", bulletInfo.Direction)
+    else
+        print("[BulletSystem]", message)
+    end
 end
 
 -- PlayerController/Turret 등 호출자가 자기 World를 등록한다.
@@ -72,9 +85,11 @@ local function directionToBulletRotation(direction)
     return Vector.new(BulletMeshRollOffset, 0.0, yaw)
 end
 
--- 총알 Actor에 StaticMesh와 SphereCollider를 붙인다.
--- 실제 충돌 판정은 아래 거리 체크와 MoveActorWithBlock을 같이 사용한다.
+-- 총알 Actor에 중립 Root, StaticMesh, SphereCollider를 붙인다.
+-- Mesh scale이 Collider에 상속되지 않도록 Root를 따로 만든다.
 local function addBulletVisual(actor)
+    local root = actor:AddComponent("SceneComponent")
+
     local mesh = actor:AddComponent("StaticMeshComponent")
     if mesh:IsValid() then
         mesh:SetStaticMesh(BulletMeshPath)
@@ -83,10 +98,12 @@ local function addBulletVisual(actor)
 
     local collider = actor:AddComponent("SphereComponent")
     if collider:IsValid() then
+        collider:SetRelativeLocation(BulletColliderLocation)
+        collider:SetRelativeScale(BulletColliderScale)
         collider:SetSphereRadius(BulletColliderRadius)
-        collider:SetVisible(false)
-        collider:SetVisibleInEditor(false)
-        collider:SetVisibleInGame(false)
+        collider:SetVisible(true)
+        collider:SetVisibleInEditor(true)
+        collider:SetVisibleInGame(true)
     end
 
     return mesh
@@ -94,7 +111,7 @@ end
 
 -- 외부에서 호출하는 총알 생성 함수.
 -- ownerTag로 PlayerBullet/EnemyBullet을 붙여서 피격 대상을 구분한다.
-function BulletSystem.SpawnBullet(location, direction, ownerTag)
+function BulletSystem.SpawnBullet(location, direction, ownerTag, instigator)
     local world = getWorld()
     local bullet = world.SpawnActor("StaticMeshActor")
     if not bullet:IsValid() then
@@ -120,16 +137,21 @@ function BulletSystem.SpawnBullet(location, direction, ownerTag)
         Mesh = mesh,
         Direction = shotDirection,
         OwnerTag = ownerTag or "Bullet",
+        Instigator = instigator,
+        Age = 0.0,
         LifeTime = BulletLifeTime
     }
+
+    logBullet("Spawn", bullets[#bullets])
 
     return bullet
 end
 
 -- bullets 배열에서 제거하면서 실제 Actor도 파괴 요청한다.
-local function destroyBullet(index)
+local function destroyBullet(index, reason)
     local world = getWorld()
     local bulletInfo = bullets[index]
+    logBullet(reason or "Destroy", bulletInfo)
     if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
         world.DestroyActor(bulletInfo.Actor)
     end
@@ -137,92 +159,39 @@ local function destroyBullet(index)
     table.remove(bullets, index)
 end
 
--- 적 총알이 Player 근처에 왔는지 간단한 거리 기반으로 판정한다.
-local function hitPlayer(bulletInfo, player)
-    if player == nil or not player:IsValid() then
-        return false
-    end
-
-    local toPlayer = player.Location - bulletInfo.Actor.Location
-    return toPlayer:LengthSquared() <= PlayerHitRadius * PlayerHitRadius
-end
-
--- 데미지 적용은 Actor의 OnTakeDamage 이벤트로 이어진다.
-local function applyDamage(target, damage, instigator)
-    if target ~= nil and target:IsValid() then
-        target:ApplyDamage(damage, instigator)
-    end
-end
-
--- 플레이어 총알이 맞출 수 있는 Turret을 찾는다.
--- 현재는 모든 Turret 태그 Actor와 거리 비교하는 방식이다.
-local function hitActorByTag(bulletInfo, tag, hitRadius)
-    local world = getWorld()
-    if world.FindActorsByTag == nil then
-        return nil
-    end
-
-    local actors = world.FindActorsByTag(tag)
-    for i, actor in ipairs(actors) do
-        if actor:IsValid() then
-            local toActor = actor.Location - bulletInfo.Actor.Location
-            if toActor:LengthSquared() <= hitRadius * hitRadius then
-                return actor
-            end
-        end
-    end
-
-    return nil
-end
-
-local function hitTurret(bulletInfo)
-    return hitActorByTag(bulletInfo, "Turret", TurretHitRadius)
-end
-
-local function hitMonster(bulletInfo)
-    return hitActorByTag(bulletInfo, "Monster", MonsterHitRadius)
-end
-
--- 매 프레임 총알을 이동시키고, 벽/플레이어/터렛 피격을 처리한다.
+-- 매 프레임 총알 이동과 수명, 벽 충돌만 처리한다.
+-- Player/Turret/Monster 피격은 각 대상 스크립트의 OnOverlapBegin에서 총알 Tag로 처리한다.
 function BulletSystem.Tick(dt)
     local world = getWorld()
-    local player = world.FindPlayer()
 
     for i = #bullets, 1, -1 do
         local bulletInfo = bullets[i]
         local bullet = bulletInfo.Actor
 
         if bullet == nil or not bullet:IsValid() then
+            logBullet("Remove invalid bullet", bulletInfo)
             table.remove(bullets, i)
         else
-            bulletInfo.LifeTime = bulletInfo.LifeTime - dt
-
-            if bulletInfo.LifeTime <= 0.0 then
-                destroyBullet(i)
+            if bullet:HasTag("DamageApplied") then
+                destroyBullet(i, "Destroy: DamageApplied")
             else
-                local moveDelta = bulletInfo.Direction * BulletSpeed * dt
-                local moved = world.MoveActorWithBlock(bullet, moveDelta, "Wall")
+                bulletInfo.Age = (bulletInfo.Age or 0.0) + dt
+                bulletInfo.LifeTime = bulletInfo.LifeTime - dt
 
-                if not moved then
-                    destroyBullet(i)
-                elseif bulletInfo.OwnerTag == "EnemyBullet" and hitPlayer(bulletInfo, player) then
-                    if not bullet:HasTag("DamageApplied") then
-                        bullet:AddTag("DamageApplied")
-                        applyDamage(player, 10, bullet)
+                if bulletInfo.LifeTime <= 0.0 then
+                    destroyBullet(i, "Destroy: Lifetime expired")
+                else
+                    local moveDelta = bulletInfo.Direction * BulletSpeed * dt
+                    local moved = true
+
+                    if bulletInfo.Age <= BulletWallBlockGraceTime then
+                        bullet.Location = bullet.Location + moveDelta
+                    else
+                        moved = world.MoveActorWithBlock(bullet, moveDelta, "Wall")
                     end
 
-                    destroyBullet(i)
-                elseif bulletInfo.OwnerTag == "PlayerBullet" then
-                    local turret = hitTurret(bulletInfo)
-                    if turret ~= nil and turret:IsValid() then
-                        applyDamage(turret, 1, bullet)
-                        destroyBullet(i)
-                    else
-                        local monster = hitMonster(bulletInfo)
-                        if monster ~= nil and monster:IsValid() then
-                            applyDamage(monster, 1, bullet)
-                            destroyBullet(i)
-                        end
+                    if not moved then
+                        destroyBullet(i, "Destroy: Blocked by Wall")
                     end
                 end
             end

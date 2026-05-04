@@ -272,5 +272,26 @@
       "score" : 0.000000,
       "timer" : 0.000000,
       "timestamp" : "2026-05-04 22:32:16"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:18:09"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:24:38"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:37:36"
     }]
 }

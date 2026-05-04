@@ -71,6 +71,7 @@ public:
 	 * @brief 빌보드 자체를 설정하는 함수가 아니라 text render component를 빌보드로 설정할지 결정
 	 */
     bool SetBillboard(bool bBillboard);
+    bool SetSpriteSize(float Width, float Height);
 
 	/*
      * Light

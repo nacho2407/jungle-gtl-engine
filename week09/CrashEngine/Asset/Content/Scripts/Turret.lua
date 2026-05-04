@@ -109,7 +109,8 @@ local function fireAtPlayer(player)
     lookAtDirection(direction)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, 1.5) + direction * 2.0
-    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet")
+    print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
+    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
     playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end
@@ -125,6 +126,28 @@ end
 
 function EndPlay()
     ShotTimer = 0.0
+end
+
+function OnOverlapBegin(other)
+    if other == nil or not other:IsValid() then
+        return
+    end
+
+    if other:HasTag("Bullet") then
+        print("[Turret] Overlap bullet", "Turret:", obj.UUID, "Bullet:", other.UUID, "PlayerBullet:", other:HasTag("PlayerBullet"), "EnemyBullet:", other:HasTag("EnemyBullet"))
+    end
+
+    if not other:HasTag("PlayerBullet") then
+        return
+    end
+
+    if other:HasTag("DamageApplied") then
+        return
+    end
+
+    other:AddTag("DamageApplied")
+    obj:ApplyDamage(1, other)
+    World.DestroyActor(other)
 end
 
 function OnTakeDamage(damage, instigator)

@@ -13,10 +13,14 @@ namespace
 {
 FString NormalizeLuaComponentClassName(const FString& TypeName)
 {
+    if (TypeName == "SceneComponent")
+        return "USceneComponent";
     if (TypeName == "StaticMeshComponent")
         return "UStaticMeshComponent";
     if (TypeName == "TextRenderComponent")
         return "UTextRenderComponent";
+    if (TypeName == "BillboardComponent")
+        return "UBillboardComponent";
     if (TypeName == "PointLightComponent")
         return "UPointLightComponent";
     if (TypeName == "SpotLightComponent")
@@ -45,8 +49,10 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
 
 bool IsLuaAddableComponentClassName(const FString& ClassName)
 {
-    return ClassName == "UStaticMeshComponent"
+    return ClassName == "USceneComponent"
+        || ClassName == "UStaticMeshComponent"
 		|| ClassName == "UTextRenderComponent"
+        || ClassName == "UBillboardComponent"
 		|| ClassName == "UPointLightComponent"
 		|| ClassName == "USpotLightComponent"
 		|| ClassName == "UDirectionalLightComponent"
