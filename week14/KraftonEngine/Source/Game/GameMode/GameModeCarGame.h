@@ -41,6 +41,7 @@ public:
 	void OnPlayerCaught(AActor* Catcher);
 
 	void SuccessPhase();
+	void GameOver();
 
 	// --- 페이즈 시간 상수 (튜닝값 — 디자이너가 필요시 조정) ---
 	static constexpr float MatchDuration       = 420.0f;  // 7분

@@ -77,8 +77,6 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
 end
 
 function Tick(dt)
-    UpdateCoroutines(dt)
-
     if root == nil or not isMoving then
         return
     end

@@ -1,0 +1,14 @@
+<rml>
+<head>
+	<title>Critical Warning</title>
+	<link type="text/rcss" href="CriticalWarningWidget.rcss"/>
+</head>
+<body>
+	<div id="critical-warning-screen">
+		<div id="critical-warning-line-top"></div>
+		<div id="critical-warning-title">WARNING</div>
+		<div id="critical-warning-description">A critical condition has occurred.</div>
+		<div id="critical-warning-line-bottom"></div>
+	</div>
+</body>
+</rml>

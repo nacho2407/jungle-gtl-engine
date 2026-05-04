@@ -269,6 +269,19 @@ void AGameModeCarGame::SuccessPhase()
 	EndPhase(Result);
 }
 
+void AGameModeCarGame::GameOver()
+{
+	auto* GS = Cast<AGameStateCarGame>(GetGameState());
+	if (!GS) return;
+	if (GS->GetPhase() == ECarGamePhase::Finished) return;
+
+	GS->SetRemainingPhaseTime(0.0f);
+	GS->SetFinishOutcome(EFinishOutcome::Lose);
+	ApplyMatchEndBonus();
+	GS->SetPhase(ECarGamePhase::Finished);
+	UE_LOG("[CarGame] GameOver called — Phase = Finished, Outcome=Lose");
+}
+
 // ============================================================
 // Phase begin / end
 // ============================================================
@@ -355,11 +368,7 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 	// HP 소진 시 즉시 게임오버 — Result 페이즈 거치지 않고 Finished 로 전이.
 	if (GS->GetHealth() <= 0)
 	{
-		GS->SetRemainingPhaseTime(0.0f);
-		GS->SetFinishOutcome(EFinishOutcome::Lose);
-		ApplyMatchEndBonus();
-		GS->SetPhase(ECarGamePhase::Finished);
-		UE_LOG("[CarGame] HP depleted — Phase = Finished, Outcome=Lose");
+		GameOver();
 		return;
 	}
 
