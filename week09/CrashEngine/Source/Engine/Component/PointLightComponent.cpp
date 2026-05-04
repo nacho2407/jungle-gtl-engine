@@ -4,6 +4,8 @@
 #include "Serialization/Archive.h"
 #include "Render/Scene/Proxies/Light/PointLightSceneProxy.h"
 
+#include <algorithm>
+
 IMPLEMENT_COMPONENT_CLASS(UPointLightComponent, ULightComponent, EEditorComponentCategory::Lights)
 
 void UPointLightComponent::Serialize(FArchive& Ar)
@@ -25,6 +27,12 @@ void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 void UPointLightComponent::PostEditProperty(const char* PropertyName)
 {
     ULightComponent::PostEditProperty(PropertyName);
+}
+
+void UPointLightComponent::SetAttenuationRadius(float InRadius)
+{
+    AttenuationRadius = std::max(0.0f, InRadius);
+    MarkRenderStateDirty();
 }
 
 FLightProxy* UPointLightComponent::CreateLightProxy()

@@ -81,7 +81,8 @@ local function fireAtPlayer(player)
     lookAtDirection(direction)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, BulletSpawnHeight) + direction * BulletSpawnForwardOffset
-    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet")
+    print("[Monster] Fire EnemyBullet", "Monster:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
+    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
     ShotTimer = ShotCooldown
 end
 
@@ -203,6 +204,10 @@ end
 function OnOverlapBegin(other)
     if other == nil or not other:IsValid() then
         return
+    end
+
+    if other:HasTag("Bullet") then
+        print("[Monster] Overlap bullet", "Monster:", obj.UUID, "Bullet:", other.UUID, "PlayerBullet:", other:HasTag("PlayerBullet"), "EnemyBullet:", other:HasTag("EnemyBullet"))
     end
 
     if not other:HasTag("PlayerBullet") then

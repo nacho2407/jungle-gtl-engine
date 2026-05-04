@@ -435,11 +435,15 @@ void UWorld::EndPlay()
     }
 
     bIsEndingPlay = true;
+
+    // Actor destruction calls PrimitiveComponent::DestroyRenderState().
+    // Clear the partition first so components no longer hold octree node
+    // pointers while the octree can be reshaped or destroyed during shutdown.
+    Partition.Reset(FBoundingBox());
+
     PersistentLevel->EndPlay();
     bIsEndingPlay = false;
 
-    // Clear spatial partition while actors/components are still alive.
-    // Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
     Partition.Reset(FBoundingBox());
 
     PersistentLevel->Clear();

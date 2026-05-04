@@ -50,6 +50,7 @@ void USubUVComponent::PostDuplicate()
 
 USubUVComponent::USubUVComponent()
 {
+    SetCastShadow(false);
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)

@@ -4,6 +4,7 @@
 #include "Component/BillboardComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/PointLightComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -295,6 +296,18 @@ bool FLuaComponentProxy::SetSubUVGrid(int32 Rows, int32 Columns)
     return true;
 }
 
+bool FLuaComponentProxy::SetCastShadow(bool bCastShadow)
+{
+    UPrimitiveComponent* Comp = ResolvePrimitiveComponent();
+    if (!Comp)
+    {
+        return false;
+    }
+
+    Comp->SetCastShadow(bCastShadow);
+    return true;
+}
+
 bool FLuaComponentProxy::SetText(const FString& Text)
 {
     UTextRenderComponent* TextComp = Cast<UTextRenderComponent>(ResolveComponent());
@@ -372,6 +385,24 @@ bool FLuaComponentProxy::SetLightColor(float R, float G, float B, float A)
     }
 
     Light->SetLightColor(FVector4(R, G, B, A));
+    return true;
+}
+
+float FLuaComponentProxy::GetAttenuationRadius() const
+{
+    UPointLightComponent* Light = Cast<UPointLightComponent>(ResolveComponent());
+    return Light ? Light->GetAttenuationRadius() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetAttenuationRadius(float Radius)
+{
+    UPointLightComponent* Light = Cast<UPointLightComponent>(ResolveComponent());
+    if (!Light)
+    {
+        return false;
+    }
+
+    Light->SetAttenuationRadius(Radius);
     return true;
 }
 

@@ -277,6 +277,7 @@ void FLuaRuntime::BindEngineTypes()
 		"GetNumMaterials", &FLuaComponentProxy::GetNumMaterials,
 		"SetMaterial", &FLuaComponentProxy::SetMaterial,
         "SetSubUVGrid", &FLuaComponentProxy::SetSubUVGrid,
+        "SetCastShadow", &FLuaComponentProxy::SetCastShadow,
 
 		"SetText", &FLuaComponentProxy::SetText,
 		"GetText", &FLuaComponentProxy::GetText,
@@ -286,6 +287,8 @@ void FLuaRuntime::BindEngineTypes()
 
 		"SetIntensity", &FLuaComponentProxy::SetIntensity,
 		"SetLightColor", &FLuaComponentProxy::SetLightColor,
+        "GetAttenuationRadius", &FLuaComponentProxy::GetAttenuationRadius,
+        "SetAttenuationRadius", &FLuaComponentProxy::SetAttenuationRadius,
 		"SetAffectsWorld", &FLuaComponentProxy::SetAffectsWorld,
 		"SetCastShadows", &FLuaComponentProxy::SetCastShadows,
 
