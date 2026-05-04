@@ -18,6 +18,7 @@ public:
 	static void SetSink(SinkFn InSink);
 	static void SetDetailedSink(DetailedSinkFn InSink);
 	static void SetFileOutputPath(const std::wstring& InPath);
+	static void SetPerfFileOutputPath(const std::wstring& InPath);
 	static void AddLog(const char* Format, ...);
 	static void AddWarning(const char* Format, ...);
 	static void AddError(const char* Format, ...);

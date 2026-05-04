@@ -6,6 +6,7 @@
 #include "GameFramework/World.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Core/Logging/Log.h"
 #include "Runtime/SceneView.h"
 #include "Engine/Component/GizmoComponent.h"
 #include "Asset/StaticMesh.h"
@@ -15,6 +16,8 @@
 #include "Math/Utils.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cstring>
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
@@ -28,38 +31,153 @@ FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
 
 void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 {
+    const auto PipelineStart = std::chrono::steady_clock::now();
 #if STATS
     FStatManager::Get().TakeSnapshot();
     FGPUProfiler::Get().TakeSnapshot();
+
+    {
+        const TArray<FStatEntry>& GpuSnapshot = FGPUProfiler::Get().GetGPUSnapshot();
+        double GpuTotalMs = 0.0;
+        double GpuTopMs = 0.0;
+        const char* GpuTopName = "";
+        double GpuTopPassMs[3] = {};
+        const char* GpuTopPassName[3] = { "", "", "" };
+        for (const FStatEntry& Entry : GpuSnapshot)
+        {
+            const double EntryMs = Entry.TotalTime * 1000.0;
+            GpuTotalMs += EntryMs;
+            if (EntryMs > GpuTopMs)
+            {
+                GpuTopMs = EntryMs;
+                GpuTopName = Entry.Name ? Entry.Name : "";
+            }
+
+            const char* EntryName = Entry.Name ? Entry.Name : "";
+            const bool bIsFrameWrapper = std::strcmp(EntryName, "EditorFrameGPU") == 0;
+            if (!bIsFrameWrapper && EntryMs > 0.0)
+            {
+                for (int32 TopIndex = 0; TopIndex < 3; ++TopIndex)
+                {
+                    if (EntryMs > GpuTopPassMs[TopIndex])
+                    {
+                        for (int32 ShiftIndex = 2; ShiftIndex > TopIndex; --ShiftIndex)
+                        {
+                            GpuTopPassMs[ShiftIndex] = GpuTopPassMs[ShiftIndex - 1];
+                            GpuTopPassName[ShiftIndex] = GpuTopPassName[ShiftIndex - 1];
+                        }
+
+                        GpuTopPassMs[TopIndex] = EntryMs;
+                        GpuTopPassName[TopIndex] = EntryName;
+                        break;
+                    }
+                }
+            }
+        }
+
+        static std::chrono::steady_clock::time_point LastGpuPerfLogTime = {};
+        const auto GpuPerfNow = std::chrono::steady_clock::now();
+        const bool bCanLogGpu =
+            LastGpuPerfLogTime.time_since_epoch().count() == 0 ||
+            std::chrono::duration<double>(GpuPerfNow - LastGpuPerfLogTime).count() >= 0.5;
+        if (GpuSnapshot.size() > 0 && GpuTotalMs >= 2.0 && bCanLogGpu)
+        {
+            LastGpuPerfLogTime = GpuPerfNow;
+            UE_LOG("[GPUFramePerf] Total=%.2fms Top=%s TopMs=%.2f TopPass=%s %.2fms | %s %.2fms | %s %.2fms Samples=%zu State=%d FocusedWorld=%p",
+                GpuTotalMs,
+                GpuTopName,
+                GpuTopMs,
+                GpuTopPassName[0],
+                GpuTopPassMs[0],
+                GpuTopPassName[1],
+                GpuTopPassMs[1],
+                GpuTopPassName[2],
+                GpuTopPassMs[2],
+                GpuSnapshot.size(),
+                static_cast<int32>(Editor->GetEditorState()),
+                static_cast<void*>(Editor->GetFocusedWorld()));
+        }
+    }
 #endif
+    const auto StatsEnd = std::chrono::steady_clock::now();
 
     for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
     {
         Stats = {};
     }
+    const auto ResetStatsEnd = std::chrono::steady_clock::now();
 
     if (!Editor->GetFocusedWorld())
         return;
 
     // 1회: 전체 백버퍼 클리어 (색상 + 깊이/스텐실)
+    const auto BeginFrameStart = std::chrono::steady_clock::now();
     Renderer.BeginFrame();
+    const auto BeginFrameEnd = std::chrono::steady_clock::now();
 
-    // 4개 뷰포트를 순서대로 렌더링
-    for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+    std::chrono::steady_clock::time_point ViewportsStart;
+    std::chrono::steady_clock::time_point ViewportsEnd;
+    std::chrono::steady_clock::time_point BackBufferStart;
+    std::chrono::steady_clock::time_point BackBufferEnd;
+    std::chrono::steady_clock::time_point UIStart;
+    std::chrono::steady_clock::time_point UIEnd;
     {
-        RenderViewport(Renderer, i);
+        GPU_SCOPE_STAT("EditorFrameGPU");
+
+        // 4개 뷰포트를 순서대로 렌더링
+        ViewportsStart = std::chrono::steady_clock::now();
+        for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
+        {
+            RenderViewport(Renderer, i);
+        }
+        ViewportsEnd = std::chrono::steady_clock::now();
+
+        BackBufferStart = std::chrono::steady_clock::now();
+        Renderer.UseBackBufferRenderTargets();
+        BackBufferEnd = std::chrono::steady_clock::now();
+
+        // ImGui UI 오버레이
+        UIStart = std::chrono::steady_clock::now();
+        Editor->RenderUI(DeltaTime);
+        UIEnd = std::chrono::steady_clock::now();
     }
 
-    Renderer.UseBackBufferRenderTargets();
-
-    // ImGui UI 오버레이
-    Editor->RenderUI(DeltaTime);
-
+    const auto EndFrameStart = std::chrono::steady_clock::now();
     Renderer.EndFrame();
+    const auto EndFrameEnd = std::chrono::steady_clock::now();
+
+#if STATS
+    static std::chrono::steady_clock::time_point LastPipelinePerfLogTime = {};
+    const double TotalMs = std::chrono::duration<double, std::milli>(EndFrameEnd - PipelineStart).count();
+    const auto Now = EndFrameEnd;
+    const bool bCanLog =
+        LastPipelinePerfLogTime.time_since_epoch().count() == 0 ||
+        std::chrono::duration<double>(Now - LastPipelinePerfLogTime).count() >= 0.25;
+    if (TotalMs >= 18.0 && bCanLog)
+    {
+        LastPipelinePerfLogTime = Now;
+        auto ToMs = [](std::chrono::steady_clock::duration Duration)
+        {
+            return std::chrono::duration<double, std::milli>(Duration).count();
+        };
+        UE_LOG("[EditorPipelinePerf] Total=%.2fms Stats=%.2fms Reset=%.2fms BeginFrame=%.2fms Viewports=%.2fms BackBuffer=%.2fms RenderUI=%.2fms EndFrame=%.2fms State=%d FocusedWorld=%p",
+               TotalMs,
+               ToMs(StatsEnd - PipelineStart),
+               ToMs(ResetStatsEnd - StatsEnd),
+               ToMs(BeginFrameEnd - BeginFrameStart),
+               ToMs(ViewportsEnd - ViewportsStart),
+               ToMs(BackBufferEnd - BackBufferStart),
+               ToMs(UIEnd - UIStart),
+               ToMs(EndFrameEnd - EndFrameStart),
+               static_cast<int32>(Editor->GetEditorState()),
+               static_cast<void*>(Editor->GetFocusedWorld()));
+    }
+#endif
 }
 
 void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIndex)
 {
+    const auto ViewportRenderStart = std::chrono::steady_clock::now();
     FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
     // 1. 이 뷰포트의 SceneView 빌드
@@ -71,6 +189,12 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 2. 렌더링 대상을 서브 영역으로 제한
     const FViewportRect& Rect = SceneView.ViewRect;
     if (Rect.Width <= 0 || Rect.Height <= 0)
+        return;
+
+    // Avoid recreating the full viewport render-target stack every frame while
+    // layout animation is resizing panes. The UI can scale the last SRV until
+    // the transition lands, then we render once at the final size.
+    if (Editor->GetViewportLayout().IsLayoutTransitionActive())
         return;
 
     FSceneViewport& SceneViewport = Editor->GetViewportLayout().GetSceneViewport(ViewportIndex);
@@ -130,6 +254,29 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
     Renderer.PrepareBatchers(Bus);
     Renderer.Render(Bus);
+
+#if STATS
+    const double RenderSec = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - ViewportRenderStart).count();
+    static std::chrono::steady_clock::time_point LastPerfLogTimes[FEditorViewportLayout::MaxViewports] = {};
+    const auto Now = std::chrono::steady_clock::now();
+    const bool bCanLog =
+        ViewportIndex >= 0 &&
+        ViewportIndex < FEditorViewportLayout::MaxViewports &&
+        (LastPerfLogTimes[ViewportIndex].time_since_epoch().count() == 0 ||
+            std::chrono::duration<double>(Now - LastPerfLogTimes[ViewportIndex]).count() >= 1.0);
+    if (RenderSec >= 0.018 && bCanLog)
+    {
+        LastPerfLogTimes[ViewportIndex] = Now;
+        UE_LOG("[EditorRenderPerf] Viewport=%d Time=%.4fs Opaque=%zu Lights=%zu ShadowRequests=%zu VisiblePrimitives=%d",
+               ViewportIndex,
+               RenderSec,
+               Bus.GetCommands(ERenderPass::Opaque).size(),
+               Bus.LightInfos.size(),
+               Bus.ShadowLightRequests.size(),
+               ViewportCullingStats[ViewportIndex].TotalVisiblePrimitiveCount);
+    }
+#endif
 }
 
 const FRenderCollector::FCullingStats& FEditorRenderPipeline::GetViewportCullingStats(int32 ViewportIndex) const

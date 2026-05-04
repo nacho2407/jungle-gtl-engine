@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 
 class AActor;
+class UActorComponent;
 class UGizmoComponent;
 
 class FSelectionManager
@@ -17,6 +18,10 @@ public:
 	void ToggleSelect(AActor* Actor);
 	void Deselect(AActor* Actor);
 	void ClearSelection();
+	void SelectComponent(UActorComponent* Component);
+	void ClearComponentSelection();
+	void OnComponentDestroyed(UActorComponent* Component);
+	void ValidateSelection();
 	void BeginBatchUpdate();
 	void EndBatchUpdate();
 
@@ -30,6 +35,7 @@ public:
 		return SelectedActors.empty() ? nullptr : SelectedActors.back();
 	}
 
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
 	const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
 	bool IsEmpty() const { return SelectedActors.empty(); }
 
@@ -38,10 +44,13 @@ public:
 	void OnActorDestroyed(AActor* Actor);
 
 private:
+	bool IsSelectedComponentAlive() const;
 	void RequestGizmoSync();
 	void SyncGizmo();
 
 	TArray<AActor*> SelectedActors;
+	UActorComponent* SelectedComponent = nullptr;
+	uint32 SelectedComponentUUID = 0;
 	UGizmoComponent* Gizmo = nullptr;
 	int32 BatchUpdateDepth = 0;
 	bool bPendingGizmoSync = false;

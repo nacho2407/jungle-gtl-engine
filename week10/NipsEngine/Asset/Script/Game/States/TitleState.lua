@@ -25,6 +25,9 @@ function TitleState:Enter(context)
             context.stateMachine:Change("Loading")
         elseif event.name == "ShowIntro" then
             context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
+            if context.root:OpenIntroScene() then
+                return
+            end
             context.stateMachine:Change("Intro", { returnTo = "Title" })
         elseif event.name == "QuitGame" then
             Engine.API.Application.QuitGame()
@@ -36,6 +39,10 @@ function TitleState:Enter(context)
             context.managers.UI:SetTitlePanel("Credits")
         elseif event.name == "BackToTitleMenu" then
             context.managers.UI:SetTitlePanel("Menu")
+        elseif event.name == "BGMVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("BGM", "Title.Settings.BGMSlider")
+        elseif event.name == "SFXVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("SFX", "Title.Settings.SFXSlider")
         elseif event.name == "BGMDown" then
             context.managers.Sound:AdjustBGMVolume(-0.1)
             context.managers.UI:RefreshSettings()

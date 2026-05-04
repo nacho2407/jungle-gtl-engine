@@ -152,6 +152,11 @@ namespace
 
 void FScriptManager::initializeLuaState()
 {
+    if (GLuaState)
+    {
+        ShutdownLuaState();
+    }
+
     GLuaState = std::make_unique<sol::state>();
 
     GLuaState->open_libraries(
@@ -209,6 +214,12 @@ void FScriptManager::ShutdownLuaState()
 
     ScriptArray.clear();
     GLuaState.reset();
+}
+
+void FScriptManager::ResetLuaState()
+{
+    ShutdownLuaState();
+    initializeLuaState();
 }
 
 void FScriptManager::ConfigureLuaPackagePath()

@@ -61,7 +61,20 @@ private:
 
 	D3D11_VIEWPORT ViewportInfo = {};
 
-	const float ClearColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
+	struct FGpuFrameTrace
+	{
+		TComPtr<ID3D11Query> DisjointQuery;
+		TComPtr<ID3D11Query> BeginTimestamp;
+		TComPtr<ID3D11Query> EndTimestamp;
+		bool bInFlight = false;
+	};
+
+	static constexpr uint32 GpuFrameTraceCount = 4;
+	FGpuFrameTrace GpuFrameTraces[GpuFrameTraceCount];
+	uint32 GpuFrameTraceWriteIndex = 0;
+	bool bGpuFrameTraceRecording = false;
+
+	const float ClearColor[4] = { 0.f, 0.f, 0.f, 1.0f };
 	const float ClearNormal[4] = { 0.25f, 0.25f, 0.25f, 0.f };
 
 	ID3D11RasterizerState* CurrentRasterizerState = nullptr;
@@ -80,6 +93,12 @@ private:
 
 	void CreateDepthStencilBuffer();
 	void ReleaseDepthStencilBuffer();
+
+	void CreateGpuFrameTraceQueries();
+	void ReleaseGpuFrameTraceQueries();
+	bool CollectGpuFrameTrace(uint32 TraceIndex);
+	void BeginGpuFrameTrace();
+	void EndGpuFrameTrace();
 
 public:
 	FD3DDevice() = default;

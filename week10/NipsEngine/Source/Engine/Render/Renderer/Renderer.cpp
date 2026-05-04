@@ -207,10 +207,6 @@ void FRenderer::BeginViewportFrame(FRenderTargetSet InRenderTargetSet)
 {
     Device.BeginViewportFrame(InRenderTargetSet);
     UseViewportRenderTargets(InRenderTargetSet);
-
-#if STATS
-    FGPUProfiler::Get().BeginFrame();
-#endif
 }
 
 FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)

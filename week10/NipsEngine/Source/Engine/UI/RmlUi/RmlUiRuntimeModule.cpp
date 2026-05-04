@@ -14,6 +14,8 @@
 
 #include <chrono>
 #include <algorithm>
+#include <cctype>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <unordered_map>
@@ -144,14 +146,24 @@ namespace
 
     class FNipsRmlUiGdiFontEngine final : public Rml::FontEngineInterface
     {
+        struct FFontFaceInfo
+        {
+            Rml::String Family;
+            int Size = 16;
+        };
+
     public:
+        ~FNipsRmlUiGdiFontEngine()
+        {
+            ReleaseRegisteredFontFiles();
+        }
+
         bool LoadFontFace(const Rml::String& FileName, int FaceIndex, bool bFallbackFace, Rml::Style::FontWeight Weight) override
         {
             (void)FaceIndex;
             (void)bFallbackFace;
             (void)Weight;
-            UE_LOG("[RmlUi] Registered GDI font face request: %s", FileName.c_str());
-            return true;
+            return RegisterFontFile(FileName);
         }
 
         bool LoadFontFace(
@@ -166,12 +178,18 @@ namespace
             (void)Style;
             (void)Weight;
             (void)bFallbackFace;
-            if (!Family.empty())
+            const bool bLoaded = RegisterFontFile(FileName);
+            if (bLoaded && !Family.empty())
             {
-                DefaultFamily = Family;
+                const Rml::String ActualFamily = ExtractFontFamilyName(ResolveFontPath(FileName));
+                if (!ActualFamily.empty())
+                {
+                    FontFamilyAliases[Family] = ActualFamily;
+                    UE_LOG("[RmlUi] Font family alias: %s -> %s", Family.c_str(), ActualFamily.c_str());
+                }
             }
             UE_LOG("[RmlUi] Registered GDI font face request: %s Family=%s", FileName.c_str(), Family.c_str());
-            return true;
+            return bLoaded;
         }
 
         bool LoadFontFace(
@@ -187,10 +205,6 @@ namespace
             (void)Style;
             (void)Weight;
             (void)bFallbackFace;
-            if (!Family.empty())
-            {
-                DefaultFamily = Family;
-            }
             return true;
         }
 
@@ -202,14 +216,15 @@ namespace
         {
             (void)Style;
             (void)Weight;
-            if (!Family.empty())
-            {
-                DefaultFamily = Family;
-            }
 
             const int ClampedSize = std::max(Size, 8);
             EnsureMetrics(ClampedSize);
-            return static_cast<Rml::FontFaceHandle>(ClampedSize);
+            const int Handle = NextHandle++;
+            FaceByHandle[Handle] = FFontFaceInfo{
+                ResolveFamilyName(Family),
+                ClampedSize
+            };
+            return static_cast<Rml::FontFaceHandle>(Handle);
         }
 
         Rml::FontEffectsHandle PrepareFontEffects(Rml::FontFaceHandle Handle, const Rml::FontEffectList& FontEffects) override
@@ -239,8 +254,8 @@ namespace
                 return 0;
             }
 
-            const int FontSize = HandleToSize(Handle);
-            HFONT Font = CreateGdiFont(FontSize);
+            const FFontFaceInfo Face = GetFaceInfo(Handle);
+            HFONT Font = CreateGdiFont(Face.Size, Face.Family);
             HDC DC = ::CreateCompatibleDC(nullptr);
             HGDIOBJ OldFont = ::SelectObject(DC, Font);
             SIZE TextSize = {};
@@ -271,13 +286,16 @@ namespace
                 return 0;
             }
 
-            const int FontSize = HandleToSize(FaceHandle);
-            const Rml::FontMetrics& Metrics = EnsureMetrics(FontSize);
-            const int Width = std::max(GetStringWidth(FaceHandle, String, TextShapingContext), 1);
-            const int Height = std::max(static_cast<int>(Metrics.line_spacing + 2.0f), FontSize + 4);
+            const FFontFaceInfo Face = GetFaceInfo(FaceHandle);
+            const Rml::FontMetrics& Metrics = EnsureMetrics(Face.Size);
+            const int AdvanceWidth = std::max(GetStringWidth(FaceHandle, String, TextShapingContext), 1);
+            const int PaddingX = std::max(4, Face.Size / 4);
+            const int PaddingY = std::max(2, Face.Size / 8);
+            const int Width = AdvanceWidth + PaddingX * 2;
+            const int Height = std::max(static_cast<int>(Metrics.line_spacing + 2.0f), Face.Size + 4) + PaddingY * 2;
             std::vector<Rml::byte> Pixels(static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4, 0);
 
-            RenderTextToPixels(Wide, FontSize, Width, Height, Colour, Opacity, Pixels);
+            RenderTextToPixels(Wide, Face.Size, Face.Family, Width, Height, PaddingX, PaddingY, Colour, Opacity, Pixels);
 
             const Rml::Vector2i Dimensions(Width, Height);
             Rml::CallbackTexture TextureResource = RenderManager.MakeCallbackTexture(
@@ -289,8 +307,8 @@ namespace
             GeneratedTextures.push_back(std::move(TextureResource));
 
             Rml::Mesh Mesh;
-            const float Left = Position.x;
-            const float Top = Position.y - Metrics.ascent;
+            const float Left = Position.x - static_cast<float>(PaddingX);
+            const float Top = Position.y - Metrics.ascent - static_cast<float>(PaddingY);
             const float Right = Left + static_cast<float>(Width);
             const float Bottom = Top + static_cast<float>(Height);
             const Rml::ColourbPremultiplied White(255, 255, 255, 255);
@@ -302,7 +320,7 @@ namespace
             };
             Mesh.indices = { 0, 1, 2, 0, 2, 3 };
             MeshList.push_back(Rml::TexturedMesh{ std::move(Mesh), Texture });
-            return Width;
+            return AdvanceWidth;
         }
 
         int GetVersion(Rml::FontFaceHandle Handle) override
@@ -320,7 +338,33 @@ namespace
     private:
         int HandleToSize(Rml::FontFaceHandle Handle) const
         {
-            return std::max(static_cast<int>(Handle), 8);
+            return GetFaceInfo(Handle).Size;
+        }
+
+        FFontFaceInfo GetFaceInfo(Rml::FontFaceHandle Handle) const
+        {
+            const int Key = static_cast<int>(Handle);
+            auto It = FaceByHandle.find(Key);
+            if (It != FaceByHandle.end())
+            {
+                return It->second;
+            }
+            return FFontFaceInfo{ "Malgun Gothic", std::max(Key, 8) };
+        }
+
+        Rml::String ResolveFamilyName(const Rml::String& Family) const
+        {
+            if (Family.empty())
+            {
+                return "Malgun Gothic";
+            }
+
+            auto It = FontFamilyAliases.find(Family);
+            if (It != FontFamilyAliases.end() && !It->second.empty())
+            {
+                return It->second;
+            }
+            return Family;
         }
 
         const Rml::FontMetrics& EnsureMetrics(int Size)
@@ -343,9 +387,9 @@ namespace
             return MetricsBySize.emplace(Size, Metrics).first->second;
         }
 
-        HFONT CreateGdiFont(int Size) const
+        HFONT CreateGdiFont(int Size, const Rml::String& FamilyName) const
         {
-            const std::wstring Family = Utf8ToWide(DefaultFamily.empty() ? Rml::String("Malgun Gothic") : DefaultFamily);
+            const std::wstring Family = Utf8ToWide(FamilyName.empty() ? Rml::String("Malgun Gothic") : FamilyName);
             return ::CreateFontW(
                 -Size,
                 0,
@@ -382,11 +426,33 @@ namespace
             return Wide;
         }
 
+        Rml::String WideToUtf8(const std::wstring& String) const
+        {
+            if (String.empty())
+            {
+                return {};
+            }
+
+            const int SourceLength = static_cast<int>(String.size());
+            int Utf8Length = ::WideCharToMultiByte(CP_UTF8, 0, String.c_str(), SourceLength, nullptr, 0, nullptr, nullptr);
+            if (Utf8Length <= 0)
+            {
+                return {};
+            }
+
+            Rml::String Utf8(static_cast<size_t>(Utf8Length), '\0');
+            ::WideCharToMultiByte(CP_UTF8, 0, String.c_str(), SourceLength, Utf8.data(), Utf8Length, nullptr, nullptr);
+            return Utf8;
+        }
+
         void RenderTextToPixels(
             const std::wstring& Text,
             int FontSize,
+            const Rml::String& FamilyName,
             int Width,
             int Height,
+            int TextOffsetX,
+            int TextOffsetY,
             Rml::ColourbPremultiplied Colour,
             float Opacity,
             std::vector<Rml::byte>& Pixels) const
@@ -413,9 +479,9 @@ namespace
             }
 
             HGDIOBJ OldBitmap = ::SelectObject(DC, Bitmap);
-            HFONT Font = CreateGdiFont(FontSize);
+            HFONT Font = CreateGdiFont(FontSize, FamilyName);
             HGDIOBJ OldFont = ::SelectObject(DC, Font);
-            RECT Rect{ 0, 0, Width, Height };
+            RECT Rect{ TextOffsetX, TextOffsetY, Width, Height };
             HBRUSH BlackBrush = ::CreateSolidBrush(RGB(0, 0, 0));
             ::FillRect(DC, &Rect, BlackBrush);
             ::DeleteObject(BlackBrush);
@@ -425,6 +491,10 @@ namespace
 
             const Rml::byte* Source = static_cast<const Rml::byte*>(Bits);
             const float OpacityScale = std::clamp(Opacity, 0.0f, 1.0f);
+            const float ColourAlpha = Colour.alpha / 255.0f;
+            const Rml::byte StraightRed = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.red / ColourAlpha, 0.0f, 255.0f)) : Colour.red;
+            const Rml::byte StraightGreen = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.green / ColourAlpha, 0.0f, 255.0f)) : Colour.green;
+            const Rml::byte StraightBlue = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.blue / ColourAlpha, 0.0f, 255.0f)) : Colour.blue;
             for (int Y = 0; Y < Height; ++Y)
             {
                 for (int X = 0; X < Width; ++X)
@@ -432,9 +502,9 @@ namespace
                     const size_t Index = (static_cast<size_t>(Y) * Width + X) * 4;
                     const Rml::byte Coverage = std::max(Source[Index + 0], std::max(Source[Index + 1], Source[Index + 2]));
                     const float AlphaScale = (Coverage / 255.0f) * OpacityScale;
-                    Pixels[Index + 0] = static_cast<Rml::byte>(Colour.red * AlphaScale);
-                    Pixels[Index + 1] = static_cast<Rml::byte>(Colour.green * AlphaScale);
-                    Pixels[Index + 2] = static_cast<Rml::byte>(Colour.blue * AlphaScale);
+                    Pixels[Index + 0] = StraightRed;
+                    Pixels[Index + 1] = StraightGreen;
+                    Pixels[Index + 2] = StraightBlue;
                     Pixels[Index + 3] = static_cast<Rml::byte>(Colour.alpha * AlphaScale);
                 }
             }
@@ -446,8 +516,241 @@ namespace
             ::DeleteDC(DC);
         }
 
-        Rml::String DefaultFamily = "Malgun Gothic";
+        std::filesystem::path ResolveFontPath(const Rml::String& FileName) const
+        {
+            std::filesystem::path Candidate(FPaths::ToWide(FPaths::Normalize(CleanFontFileName(FileName))));
+            if (Candidate.is_absolute())
+            {
+                return Candidate.lexically_normal();
+            }
+            return (std::filesystem::path(FPaths::RootDir()) / Candidate).lexically_normal();
+        }
+
+        Rml::String CleanFontFileName(const Rml::String& FileName) const
+        {
+            Rml::String Clean = TrimAscii(FileName);
+            if (Clean.size() >= 5 && Clean.substr(0, 4) == "url(" && Clean.back() == ')')
+            {
+                Clean = TrimAscii(Clean.substr(4, Clean.size() - 5));
+            }
+            if (Clean.size() >= 2
+                && ((Clean.front() == '"' && Clean.back() == '"') || (Clean.front() == '\'' && Clean.back() == '\'')))
+            {
+                Clean = Clean.substr(1, Clean.size() - 2);
+            }
+            return Clean;
+        }
+
+        Rml::String TrimAscii(const Rml::String& Value) const
+        {
+            size_t Begin = 0;
+            while (Begin < Value.size() && std::isspace(static_cast<unsigned char>(Value[Begin])))
+            {
+                ++Begin;
+            }
+
+            size_t End = Value.size();
+            while (End > Begin && std::isspace(static_cast<unsigned char>(Value[End - 1])))
+            {
+                --End;
+            }
+            return Value.substr(Begin, End - Begin);
+        }
+
+        bool RegisterFontFile(const Rml::String& FileName)
+        {
+            if (FileName.empty())
+            {
+                return false;
+            }
+
+            const std::filesystem::path FontPath = ResolveFontPath(FileName);
+            if (!std::filesystem::exists(FontPath))
+            {
+                UE_LOG_WARNING("[RmlUi] Font file missing: %s -> %s",
+                    FileName.c_str(),
+                    FPaths::ToUtf8(FontPath.generic_wstring()).c_str());
+                return false;
+            }
+
+            for (const std::filesystem::path& RegisteredPath : RegisteredFontPaths)
+            {
+                if (RegisteredPath == FontPath)
+                {
+                    return true;
+                }
+            }
+
+            const int LoadedCount = ::AddFontResourceExW(FontPath.c_str(), FR_PRIVATE, nullptr);
+            if (LoadedCount <= 0)
+            {
+                UE_LOG_WARNING("[RmlUi] Failed to load font file: %s", FileName.c_str());
+                return false;
+            }
+
+            RegisteredFontPaths.push_back(FontPath);
+            UE_LOG("[RmlUi] Loaded font file: %s", FileName.c_str());
+            return true;
+        }
+
+        static std::uint16_t ReadBE16(const std::vector<unsigned char>& Data, size_t Offset)
+        {
+            if (Offset + 1 >= Data.size())
+            {
+                return 0;
+            }
+            return static_cast<std::uint16_t>((Data[Offset] << 8) | Data[Offset + 1]);
+        }
+
+        static std::uint32_t ReadBE32(const std::vector<unsigned char>& Data, size_t Offset)
+        {
+            if (Offset + 3 >= Data.size())
+            {
+                return 0;
+            }
+            return (static_cast<std::uint32_t>(Data[Offset]) << 24)
+                | (static_cast<std::uint32_t>(Data[Offset + 1]) << 16)
+                | (static_cast<std::uint32_t>(Data[Offset + 2]) << 8)
+                | static_cast<std::uint32_t>(Data[Offset + 3]);
+        }
+
+        Rml::String DecodeFontNameString(
+            const std::vector<unsigned char>& Data,
+            size_t Offset,
+            size_t Length,
+            std::uint16_t PlatformId) const
+        {
+            if (Offset + Length > Data.size() || Length == 0)
+            {
+                return {};
+            }
+
+            if (PlatformId == 0 || PlatformId == 3)
+            {
+                std::wstring Wide;
+                Wide.reserve(Length / 2);
+                for (size_t Index = 0; Index + 1 < Length; Index += 2)
+                {
+                    Wide.push_back(static_cast<wchar_t>(ReadBE16(Data, Offset + Index)));
+                }
+                return WideToUtf8(Wide);
+            }
+
+            Rml::String Result;
+            Result.reserve(Length);
+            for (size_t Index = 0; Index < Length; ++Index)
+            {
+                const unsigned char Ch = Data[Offset + Index];
+                if (Ch >= 32 && Ch < 127)
+                {
+                    Result.push_back(static_cast<char>(Ch));
+                }
+            }
+            return Result;
+        }
+
+        Rml::String ExtractFontFamilyName(const std::filesystem::path& FontPath) const
+        {
+            std::ifstream File(FontPath, std::ios::binary | std::ios::ate);
+            if (!File.is_open())
+            {
+                return {};
+            }
+
+            const std::streamsize Size = File.tellg();
+            if (Size <= 0)
+            {
+                return {};
+            }
+
+            std::vector<unsigned char> Data(static_cast<size_t>(Size));
+            File.seekg(0, std::ios::beg);
+            if (!File.read(reinterpret_cast<char*>(Data.data()), Size) || Data.size() < 12)
+            {
+                return {};
+            }
+
+            const std::uint16_t TableCount = ReadBE16(Data, 4);
+            size_t NameOffset = 0;
+            size_t NameLength = 0;
+            for (std::uint16_t TableIndex = 0; TableIndex < TableCount; ++TableIndex)
+            {
+                const size_t RecordOffset = 12 + static_cast<size_t>(TableIndex) * 16;
+                if (RecordOffset + 15 >= Data.size())
+                {
+                    break;
+                }
+
+                if (Data[RecordOffset] == 'n'
+                    && Data[RecordOffset + 1] == 'a'
+                    && Data[RecordOffset + 2] == 'm'
+                    && Data[RecordOffset + 3] == 'e')
+                {
+                    NameOffset = ReadBE32(Data, RecordOffset + 8);
+                    NameLength = ReadBE32(Data, RecordOffset + 12);
+                    break;
+                }
+            }
+
+            if (NameOffset == 0 || NameOffset + NameLength > Data.size() || NameLength < 6)
+            {
+                return {};
+            }
+
+            const std::uint16_t NameCount = ReadBE16(Data, NameOffset + 2);
+            const size_t StringBase = NameOffset + ReadBE16(Data, NameOffset + 4);
+            Rml::String FallbackFamily;
+            for (std::uint16_t NameIndex = 0; NameIndex < NameCount; ++NameIndex)
+            {
+                const size_t RecordOffset = NameOffset + 6 + static_cast<size_t>(NameIndex) * 12;
+                if (RecordOffset + 11 >= Data.size())
+                {
+                    break;
+                }
+
+                const std::uint16_t PlatformId = ReadBE16(Data, RecordOffset);
+                const std::uint16_t LanguageId = ReadBE16(Data, RecordOffset + 4);
+                const std::uint16_t NameId = ReadBE16(Data, RecordOffset + 6);
+                if (NameId != 1)
+                {
+                    continue;
+                }
+
+                const size_t TextLength = ReadBE16(Data, RecordOffset + 8);
+                const size_t TextOffset = StringBase + ReadBE16(Data, RecordOffset + 10);
+                Rml::String Family = DecodeFontNameString(Data, TextOffset, TextLength, PlatformId);
+                if (Family.empty())
+                {
+                    continue;
+                }
+
+                if (FallbackFamily.empty())
+                {
+                    FallbackFamily = Family;
+                }
+                if (PlatformId == 3 && LanguageId == 0x0409)
+                {
+                    return Family;
+                }
+            }
+
+            return FallbackFamily;
+        }
+
+        void ReleaseRegisteredFontFiles()
+        {
+            for (const std::filesystem::path& FontPath : RegisteredFontPaths)
+            {
+                ::RemoveFontResourceExW(FontPath.c_str(), FR_PRIVATE, nullptr);
+            }
+            RegisteredFontPaths.clear();
+        }
+
+        int NextHandle = 1;
         std::unordered_map<int, Rml::FontMetrics> MetricsBySize;
+        std::unordered_map<int, FFontFaceInfo> FaceByHandle;
+        std::unordered_map<Rml::String, Rml::String> FontFamilyAliases;
+        std::vector<std::filesystem::path> RegisteredFontPaths;
         std::vector<Rml::CallbackTexture> GeneratedTextures;
         int Version = 1;
     };

@@ -1,13 +1,30 @@
 <rml>
     <head>
-        <link type="text/rcss" href="GameUI.rcss"/>
+        <link type="text/rcss" href="HUD.rcss"/>
     </head>
     <body>
         <div class="screen-root">
-            <div class="hud-panel">
-                <div id="HUD.Score" class="hud-line">Score: 0</div>
-                <div id="HUD.Time" class="hud-line">Time: 0.0</div>
-                <progress id="HUD.Health" class="health-bar" value="1.0"></progress>
+            <div class="hp-cluster">
+                <img class="hp-icon" src="Asset/UIImage/24_HP_r.PNG"/>
+                <div class="hp-bar-wrap">
+                    <progress id="HUD.Health" class="health-bar" value="1.0"></progress>
+                    <div id="HUD.HealthText" class="health-text">100/100</div>
+                </div>
+            </div>
+
+            <div class="timer-wrap">
+                <img class="timer-bg" src="Asset/UIImage/TimerBackground.PNG"/>
+                <div id="HUD.Time" class="timer-text">00:00</div>
+            </div>
+
+            <div class="score-wrap">
+                <img class="score-bg" src="Asset/UIImage/InGameScoreBoard.PNG"/>
+                <div id="HUD.Score" class="score-text">Score 0</div>
+            </div>
+
+            <div id="HUD.ComboWrap" class="combo-wrap">
+                <div id="HUD.ComboCount" class="combo-count">0 COMBO</div>
+                <div id="HUD.ComboBonus" class="combo-bonus">Bonus +0</div>
             </div>
         </div>
     </body>

@@ -69,6 +69,8 @@ public:
 	bool HasRmlUIElement(const FString& ElementId) override;
 	FString GetRmlUIElementText(const FString& ElementId) override;
 	bool SetRmlUIElementText(const FString& ElementId, const FString& Text) override;
+	FString GetRmlUIElementValue(const FString& ElementId) override;
+	bool SetRmlUIElementValue(const FString& ElementId, const FString& Value) override;
 	bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) override;
 	bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) override;
 	bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) override;
@@ -127,6 +129,8 @@ public:
 	void RegisterViewportInputTargets();
 	void RequestPIEViewportInputFocus(int32 FrameCount = 3);
 	void EnqueueRmlUIActionEvent(const FString& EventName);
+	void EnqueueRmlUIActionEvent(const FString& EventName, Rml::ElementDocument* SourceDocument);
+	TArray<FString> PollRmlUIPreviewActionEvents();
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.
@@ -177,6 +181,7 @@ private:
 	void InitializeRmlUiRuntime();
 	void ShutdownRmlUiRuntime();
 	void UnloadAllRmlUIDocuments();
+	void UnloadGameplayRmlUIDocuments();
 	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
 	void OnSceneWorldLoaded(UWorld* NewWorld) override;
 	TArray<std::pair<Rml::ElementDocument*, bool>> ApplyRmlUIDocumentVisibilityFilter(bool bPreviewDocumentOnly);
@@ -208,6 +213,7 @@ private:
 	TMap<FString, FString> RmlUiDocumentPathByScreenId;
 	TMap<FString, Rml::ElementDocument*> RmlUiDocumentsByScreenId;
 	TArray<FString> RmlUiPendingActionEvents;
+	TArray<FString> RmlUiPreviewPendingActionEvents;
 	FEditorRmlUiActionEventListener* RmlUiActionListener = nullptr;
     
 	TArray<FUndoSnapshotEntry> UndoHistory;

@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -13,7 +14,37 @@ namespace
 	FLog::SinkFn GLogSink = nullptr;
 	FLog::DetailedSinkFn GDetailedLogSink = nullptr;
 	std::wstring GLogFilePath;
+	std::wstring GPerfLogFilePath;
 	std::mutex GLogMutex;
+
+	bool StartsWith(const char* Text, const char* Prefix)
+	{
+		return std::strncmp(Text, Prefix, std::strlen(Prefix)) == 0;
+	}
+
+	bool IsPerfTraceLogLine(const char* Text)
+	{
+		return StartsWith(Text, "[EditorFramePerf]") ||
+			StartsWith(Text, "[PIEPerf]") ||
+			StartsWith(Text, "[EditorPipelinePerf]") ||
+			StartsWith(Text, "[EditorRenderPerf]") ||
+			StartsWith(Text, "[GPUFramePerf]") ||
+			StartsWith(Text, "[D3DPresentPerf]") ||
+			StartsWith(Text, "[ScenePerf]") ||
+			StartsWith(Text, "[RmlUiPerf]");
+	}
+
+	void ResetFile(const std::wstring& FilePath)
+	{
+		if (FilePath.empty())
+		{
+			return;
+		}
+
+		std::error_code Ec;
+		std::filesystem::create_directories(std::filesystem::path(FilePath).parent_path(), Ec);
+		std::ofstream File(FilePath, std::ios::trunc);
+	}
 
 	void AddLogInternal(ELogVerbosity Verbosity, const char* Format, va_list Args)
 	{
@@ -23,11 +54,13 @@ namespace
 		FLog::SinkFn Sink = nullptr;
 		FLog::DetailedSinkFn DetailedSink = nullptr;
 		std::wstring FilePath;
+		std::wstring PerfFilePath;
 		{
 			std::lock_guard<std::mutex> Lock(GLogMutex);
 			Sink = GLogSink;
 			DetailedSink = GDetailedLogSink;
 			FilePath = GLogFilePath;
+			PerfFilePath = GPerfLogFilePath;
 		}
 
 		if (DetailedSink)
@@ -45,6 +78,15 @@ namespace
 		if (!FilePath.empty())
 		{
 			std::ofstream File(FilePath, std::ios::app);
+			if (File.is_open())
+			{
+				File << Buffer << '\n';
+			}
+		}
+
+		if (!PerfFilePath.empty() && IsPerfTraceLogLine(Buffer))
+		{
+			std::ofstream File(PerfFilePath, std::ios::app);
 			if (File.is_open())
 			{
 				File << Buffer << '\n';
@@ -69,12 +111,14 @@ void FLog::SetFileOutputPath(const std::wstring& InPath)
 {
 	std::lock_guard<std::mutex> Lock(GLogMutex);
 	GLogFilePath = InPath;
-	if (!GLogFilePath.empty())
-	{
-		std::error_code Ec;
-		std::filesystem::create_directories(std::filesystem::path(GLogFilePath).parent_path(), Ec);
-		std::ofstream File(GLogFilePath, std::ios::trunc);
-	}
+	ResetFile(GLogFilePath);
+}
+
+void FLog::SetPerfFileOutputPath(const std::wstring& InPath)
+{
+	std::lock_guard<std::mutex> Lock(GLogMutex);
+	GPerfLogFilePath = InPath;
+	ResetFile(GPerfLogFilePath);
 }
 
 void FLog::AddLog(const char* Format, ...)

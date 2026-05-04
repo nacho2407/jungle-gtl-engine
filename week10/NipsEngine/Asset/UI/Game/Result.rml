@@ -1,16 +1,49 @@
 <rml>
     <head>
-        <link type="text/rcss" href="GameUI.rcss"/>
+        <link type="text/rcss" href="Result.rcss"/>
     </head>
     <body>
         <div class="screen-root dim">
-            <div class="modal-panel result-panel">
-                <div id="Result.Title" class="headline">Game Over</div>
+            <div class="player-board">
+                <div class="headline">Game Over</div>
                 <div id="Result.Score" class="result-score">Score: 0</div>
                 <div id="Result.Best" class="result-score muted">Best: 0</div>
-                <button id="Result.Restart" class="button primary" data-action="RestartGame">Retry</button>
-                <button id="Result.TitleButton" class="button" data-action="BackToTitle">Main</button>
+
+                <div class="input-label">Player Name</div>
+                <div class="input-wrap">
+                    <img class="input-bg" src="Asset/UIImage/InputPanel.PNG"/>
+                    <input id="Result.PlayerNameInput" class="name-input" type="text" value="PLAYER"/>
+                </div>
+                <button id="Result.Submit" class="default-button submit-button" data-action="SubmitScore">Submit</button>
+                <div id="Result.SubmitStatus" class="submit-status"></div>
+
+                <button id="Result.Restart" class="default-button retry-button" data-action="RestartGame">Retry</button>
+                <button id="Result.TitleButton" class="default-button main-button" data-action="BackToTitle">Main</button>
             </div>
+
+            <div class="score-board">
+                <div class="board-title">Score Board</div>
+                <div class="score-scroll">
+                    <div id="Result.ScoreRows" class="score-list">
+                        <div id="Result.ScoreRow.1" class="score-row">--  No Records  0</div>
+                        <div id="Result.ScoreRow.2" class="score-row"></div>
+                        <div id="Result.ScoreRow.3" class="score-row"></div>
+                        <div id="Result.ScoreRow.4" class="score-row"></div>
+                        <div id="Result.ScoreRow.5" class="score-row"></div>
+                        <div id="Result.ScoreRow.6" class="score-row"></div>
+                        <div id="Result.ScoreRow.7" class="score-row"></div>
+                        <div id="Result.ScoreRow.8" class="score-row"></div>
+                        <div id="Result.ScoreRow.9" class="score-row"></div>
+                        <div id="Result.ScoreRow.10" class="score-row"></div>
+                    </div>
+                    <img class="scroll-bg" src="Asset/UIImage/ScrollBackground.PNG"/>
+                    <img class="scroll-thumb" src="Asset/UIImage/ScrollButton.PNG"/>
+                </div>
+            </div>
+
+            <button id="Result.Renew" class="renew-button" data-action="RenewResultName">
+                <img class="renew-icon" src="Asset/UIImage/53_Renew.PNG"/>
+            </button>
         </div>
     </body>
 </rml>

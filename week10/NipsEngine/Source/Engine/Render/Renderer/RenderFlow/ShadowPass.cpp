@@ -112,12 +112,25 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 	FShadowAtlasManager::Get().ClearTiles();
 	FShadowAtlasManager::Get().ClearTilesCube();
 
-    ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
-	Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	if (Context == nullptr || Context->RenderBus == nullptr)
+	{
+		return false;
+	}
 
 	ID3D11ShaderResourceView* NullSRV[1] = { nullptr };
 	Context->DeviceContext->PSSetShaderResources(10, 1, NullSRV);
 	Context->DeviceContext->PSSetShaderResources(12, 1, NullSRV);
+
+	const TArray<FRenderCommand>& OpaqueCmds = Context->RenderBus->GetCommands(ERenderPass::Opaque);
+	if (!Context->RenderBus->GetShowFlags().bShadow ||
+		Context->RenderBus->ShadowLightRequests.empty() ||
+		OpaqueCmds.empty())
+	{
+		return true;
+	}
+
+    ID3D11DepthStencilView* DSV = FShadowAtlasManager::Get().GetDSV();
+	Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return true;
 }
@@ -125,7 +138,15 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 {
     if (!Context->RenderBus->GetShowFlags().bShadow)
-        return false;
+        return true;
+
+	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+	const FRenderBus* RenderBus = Context->RenderBus;
+	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
+	if (RenderBus->ShadowLightRequests.empty() || OpaqueCmds.empty())
+	{
+		return true;
+	}
 
 	UShader* ShadowShader = FResourceManager::Get().GetShader("Shaders/Shadow.hlsl");
 	if (ShadowShader == nullptr)
@@ -134,15 +155,6 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	}
 
 	ShadowShader->Bind(Context->DeviceContext);
-
-	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
-
-	const FRenderBus* RenderBus = Context->RenderBus;
-	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
-	if (RenderBus->ShadowLightRequests.empty())
-	{
-		return true;
-	}
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
 	FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
