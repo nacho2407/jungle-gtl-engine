@@ -7,6 +7,9 @@ local function ensureSubUVComponent()
     end
 
     SubUVComponent = obj:GetComponent("SubUVComponent", 0)
+    if SubUVComponent ~= nil and SubUVComponent:IsValid() then
+        SubUVComponent:SetCastShadow(false)
+    end
     return SubUVComponent
 end
 

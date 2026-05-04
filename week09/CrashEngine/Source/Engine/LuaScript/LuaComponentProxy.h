@@ -57,6 +57,7 @@ public:
     int32 GetNumMaterials() const;
     bool SetMaterial(int32 ElementIndex, const FString& MaterialPath);
     bool SetSubUVGrid(int32 Rows, int32 Columns);
+    bool SetCastShadow(bool bCastShadow);
 
 	/*
      * Text Render
@@ -77,6 +78,8 @@ public:
 
     bool SetIntensity(float Intensity);
     bool SetLightColor(float R, float G, float B, float A = 1.0f);
+    float GetAttenuationRadius() const;
+    bool SetAttenuationRadius(float Radius);
     bool SetAffectsWorld(bool bAffectsWorld);
     bool SetCastShadows(bool bCastShadows);
 
