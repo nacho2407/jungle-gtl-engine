@@ -86,7 +86,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
 
 	DrawSpawnItem(0, "Empty Actor");
 	ImGui::Separator();
-	DrawSpawnItem(16, "Player");
+	DrawSpawnItem(17, "Player");
 	DrawSpawnItem(1, "Static Mesh");
 	DrawSpawnItem(2, "Text Render");
 	DrawSpawnItem(3, "SubUV");
@@ -97,6 +97,7 @@ bool FEditorControlWidget::DrawPlaceActorMenu(const FVector& SpawnPoint, bool bC
     DrawSpawnItem(7, "Decal Spotlight");
     DrawSpawnItem(14, "Cube");
     DrawSpawnItem(15, "Destructible");
+    DrawSpawnItem(16, "BondingBox");
 	ImGui::Separator();
 	DrawSpawnItem(8, "Ambient Light");
 	DrawSpawnItem(9, "Directional Light");
@@ -130,7 +131,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 			return false;
 		}
 	}
-	if (PrimitiveType == 16)
+	if (PrimitiveType == 17)
 	{
 		Count = 1;
 		if (HasPlacedPlayer(World))
@@ -259,6 +260,13 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
             break;
 		}
 		case 16:
+        {
+            ABoundsBoxActor* Actor = World->SpawnActor<ABoundsBoxActor>();
+            Actor->InitDefaultComponents();
+            Actor->SetActorLocation(SpawnPoint);
+            break;
+		}
+		case 17:
 		{
 			ADefaultPlayerActor* Actor = World->SpawnActor<ADefaultPlayerActor>();
 			Actor->InitDefaultComponents();
