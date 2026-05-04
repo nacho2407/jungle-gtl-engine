@@ -3,6 +3,10 @@ local ObjRegistry = require("ObjRegistry")
 local car = nil
 local movement = nil
 local startLocationActor = nil   -- Tag = "StartLocation" 인 액터 — R 키 리스폰 기준점.
+local ENGINE_LOOP_NAME = "PlayerCarEngine"
+local ENGINE_IDLE_PITCH = 0.8
+local ENGINE_MAX_PITCH = 3.0
+local ENGINE_MAX_PITCH_SPEED = 100.0
 
 function BeginPlay()
     car = obj:AsCarPawn()
@@ -16,6 +20,8 @@ function BeginPlay()
     -- 시작 위치 액터를 1회 lookup. 매 frame 재검색하지 않도록 캐시 — World.FindFirstActorByTag
     -- 가 actors 선형 스캔이라 비싸진 않지만, 주기적 호출은 피한다.
     startLocationActor = World.FindFirstActorByTag("StartLocation")
+
+    AudioManager.PlayLoop("CarEngineLoop", ENGINE_LOOP_NAME, 0.5, ENGINE_IDLE_PITCH)
 end
 
 local function ResetCarToStart()
@@ -33,6 +39,7 @@ local function ResetCarToStart()
 end
 
 function EndPlay()
+    AudioManager.StopLoop(ENGINE_LOOP_NAME)
 end
 
 function OnOverlap(OtherActor)
@@ -50,6 +57,7 @@ function Tick(dt)
         movement:StopImmediately()
         movement:SetThrottleInput(0)
         movement:SetSteeringInput(0)
+        AudioManager.SetLoopPitch(ENGINE_LOOP_NAME, ENGINE_IDLE_PITCH)
         return
     end
 
@@ -68,5 +76,8 @@ function Tick(dt)
 
     movement:SetThrottleInput(throttle)
     movement:SetSteeringInput(steering)
-end
 
+    local speedRatio = math.min(math.abs(movement:GetForwardSpeed()) / ENGINE_MAX_PITCH_SPEED, 1.0)
+    local pitch = ENGINE_IDLE_PITCH + (ENGINE_MAX_PITCH - ENGINE_IDLE_PITCH) * speedRatio
+    AudioManager.SetLoopPitch(ENGINE_LOOP_NAME, pitch)
+end

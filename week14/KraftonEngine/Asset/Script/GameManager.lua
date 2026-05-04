@@ -217,6 +217,8 @@ local function ShowQuest(index)
 
     UIManager.Show(quest.uiKey)
     state = QuestState.WaitingAccept
+
+    AudioManager.Play("Notify", 1.0)
 end
 
 local function CompleteCurrentQuest()

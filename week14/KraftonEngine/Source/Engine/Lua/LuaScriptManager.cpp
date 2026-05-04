@@ -1,6 +1,7 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Audio/AudioManager.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/SceneComponent.h"
@@ -304,6 +305,44 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		UCameraComponent* PossessedCamera = Manager ? Manager->GetPossessedCamera() : nullptr;
 		return PossessedCamera ? PossessedCamera->GetOwner() : nullptr;
+	});
+
+	sol::table AudioManager = Lua.create_named_table("AudioManager");
+	AudioManager.set_function("Play", [](const FString& SoundName, float Volume)
+	{
+		FAudioManager::Get().PlayAudio(SoundName, Volume);
+	});
+	AudioManager.set_function("PlayBGM", [](const FString& SoundName, float Volume)
+	{
+		FAudioManager::Get().PlayBGM(SoundName, Volume);
+	});
+	AudioManager.set_function("StopBGM", []()
+	{
+		FAudioManager::Get().StopBGM();
+	});
+	AudioManager.set_function("PlayLoop", [](const FString& SoundName, const FString& LoopName, sol::optional<float> Volume, sol::optional<float> Pitch)
+	{
+		FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
+	});
+	AudioManager.set_function("StopLoop", [](const FString& LoopName)
+	{
+		FAudioManager::Get().StopLoop(LoopName);
+	});
+	AudioManager.set_function("StopAllLoops", []()
+	{
+		FAudioManager::Get().StopAllLoops();
+	});
+	AudioManager.set_function("SetLoopVolume", [](const FString& LoopName, float Volume)
+	{
+		FAudioManager::Get().SetLoopVolume(LoopName, Volume);
+	});
+	AudioManager.set_function("SetLoopPitch", [](const FString& LoopName, float Pitch)
+	{
+		FAudioManager::Get().SetLoopPitch(LoopName, Pitch);
+	});
+	AudioManager.set_function("IsLoopPlaying", [](const FString& LoopName)
+	{
+		return FAudioManager::Get().IsLoopPlaying(LoopName);
 	});
 }
 

@@ -104,24 +104,28 @@ function UIManager.Init()
         -- 인트로 → 게임 화면 전환. fade 가 끝나면 Map.Scene 으로 transition.
         -- TransitionToScene 은 UGameEngine::Tick 끝에 deferred 처리되므로 fade callback
         -- 안에서 호출해도 안전.
+        AudioManager.Play("Click", 1.0)
         UIManager.FadeOut(0.5, function()
             UIManager.Hide("intro")
             Engine.TransitionToScene("Map")
         end)
     end)
     introWidget:bind_click("exit-button", function()
+        AudioManager.Play("Click", 1.0)
         Engine.Exit()
     end)
 
     local contributorWidget = UI.CreateWidget("Asset/UI/ContributorWidget.rml")
     contributorWidget:SetWantsMouse(true)
     contributorWidget:bind_click("contributor-close-button", function()
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("contributor")
     end)
 
     local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
     carWashQuestWidget:SetWantsMouse(true)
     carWashQuestWidget:bind_click("car-wash-quest-ok-button", function()
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("carWashQuest")
 
         if onCarWashQuestOk ~= nil then
@@ -132,6 +136,7 @@ function UIManager.Init()
     local gasQuestWidget = UI.CreateWidget("Asset/UI/GasQuestWidget.rml")
     gasQuestWidget:SetWantsMouse(true)
     gasQuestWidget:bind_click("gas-quest-ok-button", function()
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("gasQuest")
 
         if onGasQuestOk ~= nil then
@@ -142,6 +147,7 @@ function UIManager.Init()
     local personQuestWidget = UI.CreateWidget("Asset/UI/PersonQuestWidget.rml")
     personQuestWidget:SetWantsMouse(true)
     personQuestWidget:bind_click("person-quest-ok-button", function()
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("personQuest")
 
         if onPersonQuestOk ~= nil then
@@ -152,6 +158,7 @@ function UIManager.Init()
     local meteorQuestWidget = UI.CreateWidget("Asset/UI/MeteorQuestWidget.rml")
     meteorQuestWidget:SetWantsMouse(true)
     meteorQuestWidget:bind_click("meteor-quest-ok-button", function()
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("meteorQuest")
 
         if onMeteorQuestOk ~= nil then
@@ -175,11 +182,13 @@ function UIManager.Init()
         -- Intro.Scene 으로 transition — Map.Scene 의 모든 동적 상태 (차량 / 경찰 / 운석 /
         -- GameMode 타이머 / Lua 모듈 로컬) 가 월드 destroy 와 함께 정리되고, Intro.Scene
         -- 의 IntroManager.lua BeginPlay 가 IntroWidget 을 다시 띄운다.
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("pauseMenu")
         Engine.ResumeGame()  -- Intro 씬은 paused 상태가 아니어야 — fade Tick 등이 동작.
         Engine.TransitionToScene("Intro")
     end)
     pauseMenuWidget:bind_click("pause-menu-exit-button", function()
+        AudioManager.Play("Click", 1.0)
         Engine.Exit()
     end)
 
@@ -188,11 +197,13 @@ function UIManager.Init()
     gameOverWidget:bind_click("lobby-button", function()
         -- Intro 씬으로 복귀 — Map 재진입 시 일부 상태가 stale 하게 남는 증상이 있어
         -- 로비를 거쳐 새로 시작하도록. Intro 의 start-button 이 Map 으로 다시 transition.
+        AudioManager.Play("Click", 1.0)
         UIManager.Hide("gameOver")
         Engine.ResumeGame()
         Engine.TransitionToScene("Intro")
     end)
     gameOverWidget:bind_click("game-over-exit-button", function()
+        AudioManager.Play("Click", 1.0)
         Engine.Exit()
     end)
 
