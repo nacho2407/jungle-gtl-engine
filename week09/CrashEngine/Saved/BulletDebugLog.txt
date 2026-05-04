@@ -20809,3 +20809,1335 @@
 [time-unavailable] [Turret.EndPlay] Turret=UUID=2218 Valid=true HP=3 ShotTimer=0
 [time-unavailable] [Turret.EndPlay] Turret=UUID=2228 Valid=true HP=3 ShotTimer=0
 [time-unavailable] [Turret.EndPlay] Turret=UUID=2233 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=false
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3014 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3019 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3024 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3029 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3034 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3039 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3044 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3049 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3054 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3059 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=2827 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=2843 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Player WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Player.BindWorld] Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(101.261, 1.725, 10.000) AimDirection=(-0.076, 0.997, 0.000) SpawnLocation=(101.223, 2.223, 11.000) Zooming=true CameraStateExists=true CameraAimOrigin=(101.261, 1.725, 11.200) CameraAimPoint=(98.978, 31.638, 11.200) CameraAimDirection=(-0.076, 0.997, 0.000) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(101.223, 2.223, 11.000) Direction=(-0.076, 0.997, 0.000) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3067 Valid=true ShotDirection=(-0.076, 0.997, 0.000) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3067 Valid=true MeshValid=true BulletLocation=(101.223, 2.223, 11.000) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3067 Valid=true OwnerTag=PlayerBullet FinalLocation=(101.219, 2.273, 11.000) Direction=(-0.076, 0.997, 0.000) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3067 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Request] Monster=UUID=2827 Valid=true Player=UUID=2979 Valid=true MonsterLocation=(100.000, 26.663, 10.000) PlayerLocation=(101.261, 1.725, 10.000) TargetLocation=(101.261, 1.725, 9.000) SpawnLocation=(100.101, 24.667, 11.420) Direction=(0.050, -0.998, -0.040) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=2827 Valid=true Location=(100.101, 24.667, 11.420) Direction=(0.050, -0.998, -0.040) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3071 Valid=true ShotDirection=(0.050, -0.998, -0.040) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3071 Valid=true MeshValid=true BulletLocation=(100.101, 24.667, 11.420) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3071 Valid=true OwnerTag=EnemyBullet FinalLocation=(100.103, 24.617, 11.418) Direction=(0.050, -0.998, -0.040) BulletCountAfter=2
+[time-unavailable] [Monster.Fire.Result] Monster=UUID=2827 Valid=true Bullet=UUID=3071 Valid=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.49306420004
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4886417998932
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4840154000558
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4795301998965
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4752650000155
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4707304998301
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4663785998709
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4620077
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4575840001926
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4527800003998
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4482603003271
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4440116002224
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4396665003151
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4311190005392
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4267566003837
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4216490006074
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.417047700379
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4126491001807
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4082837002352
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.4034964004532
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3987684003077
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3943423004821
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3897934006527
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3850962007418
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3808192005381
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3765168003738
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3717824001797
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3671144000255
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3624991998076
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.357966999989
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3532813000493
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.348931599874
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3446872998029
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3399530998431
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3270590002649
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3223436004482
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3176259002648
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3133229003288
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.3090206002817
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.304546800442
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2999933003448
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2957070004195
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2912330003455
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2866025003605
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2822368005291
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2779290005565
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2733201007359
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.268858700525
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2645392003469
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2601906005293
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3067 Valid=true OwnerTag=PlayerBullet Location=(99.531, 24.394, 11.000)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3067 Valid=true OwnerTag=PlayerBullet Location=(99.531, 24.394, 11.000) RemainingLife=2.7534996005706
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=2827 Valid=true Damage=1 Instigator=UUID=3067 Valid=true HP=1
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2538919006474
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2493684007786
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2445806008764
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3071 Valid=true OwnerTag=EnemyBullet Location=(101.260, 1.750, 10.501)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3071 Valid=true OwnerTag=EnemyBullet Location=(101.260, 1.750, 10.501) RemainingLife=2.7453893008642
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2386550009251
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2339155008085
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.229609600734
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2253701006994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2208687006496
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2164054005407
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2121685007587
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2079854006879
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.2035091007128
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1991239008494
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1949030007236
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1906366008334
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1859589009546
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1774818007834
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1730272006243
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1681499006227
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.163929100614
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1598061006516
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1554871005937
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1510442006402
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.146837700624
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1426742007025
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1378892008215
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1335385008715
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1293698009104
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1251711007208
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1206112005748
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1162752006203
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1120867007412
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1078913006932
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.1029126006179
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.09840930067
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0941100008786
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0895878006704
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0850399006158
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0726710008457
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0678828009404
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0636034007184
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0591107006185
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0546897007152
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0502750007436
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0461033005267
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0417889007367
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0372917009518
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0329249007627
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0286452006549
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.024394500535
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0200500003994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0157926003449
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0115649001673
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0072985002771
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=1.0028936001472
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.99856280023232
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.99425090011209
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.48321130033582 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.98941670032218
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.98499910021201
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.98051020037383
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.97592590050772
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.97151040052995
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.96674930071458
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.96227360051125
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.95810390030965
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.95346520049497
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.94903840031475
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.94449580041692
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.93997720023617
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.93542040046304
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.92726410087198
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.92290860088542
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.91820050077513
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.91385000059381
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.90964300045744
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.90526540065184
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.90088030043989
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.89670040039346
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.89257800020278
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.88806969998404
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.88361069979146
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.87940069986507
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.87519789999351
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.87063959985971
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.86630389979109
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.86204249970615
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.85749439988285
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.85290089994669
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.84845920000225
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.84413419989869
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.83896209998056
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.83459600014612
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.82209670031443
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.81740790046751
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.81308530038223
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.80883370060474
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.80441450048238
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.80010680062696
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.79555950080976
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.79115010099486
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.78651410108432
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.78173600090668
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.77721860073507
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.77281230082735
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.76828030077741
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.76388380071148
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.75965450052172
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.7550934003666
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.24405380059034 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.75037760054693
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.74612620053813
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.7419135007076
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.7374998005107
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.73291860055178
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.72857780056074
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.72425440046936
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.71964010037482
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.71501710033044
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.71021500043571
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.70554040046409
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.70110910059884
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.69677590066567
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.69263820070773
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.68831940088421
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.68364850105718
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.67464920086786
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.67012010095641
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.6654447009787
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.66119230119511
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.6568462010473
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.65226080082357
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.64785180101171
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.64364070119336
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.63937740121037
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.63442930113524
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.63008630136028
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.6258592014201
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.62133750133216
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.61668420117348
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.61239230120555
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.60822020098567
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.60322840092704
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.59849660098553
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.5941876010038
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.58989490102977
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.58530040085316
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.58100610086694
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.54431680077687
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.53940010070801
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.53478950075805
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.53033630084246
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.52581090060994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.52122600050643
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.51637320034206
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.51211910042912
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.0010795006528497 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.50738700060174
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.50283130072057
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.49809050094336
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.4934571008198
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.4888455006294
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.48435450065881
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.47990620043129
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.47567100031301
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.47129040025175
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.4666895000264
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.46244629984722
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.45820289989933
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.45369589980692
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.44932270003483
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.44499300001189
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.44048989983276
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.43559269979596
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.4312601997517
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.42275709984824
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.41831969982013
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.41409019986168
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.40989429969341
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.40554489986971
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.40108919981867
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.39685749961063
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.39264309965074
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.38777729962021
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.38301089964807
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.37873679958284
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.3743913997896
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.36963079962879
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.36511889984831
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.36086069978774
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.35626649996266
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.35190840018913
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.34770550020039
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.34348140005022
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.33891949988902
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.33436049986631
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.33010229980573
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.32567269960418
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.3209457998164
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.31640309980139
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.31167309964076
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.30738129978999
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.30293469969183
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.2906692000106
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(101.261, 1.725, 10.000) AimDirection=(-0.076, 0.997, 0.000) SpawnLocation=(101.223, 2.223, 11.000) Zooming=true CameraStateExists=true CameraAimOrigin=(101.261, 1.725, 11.200) CameraAimPoint=(98.978, 31.638, 11.200) CameraAimDirection=(-0.076, 0.997, 0.000) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(101.223, 2.223, 11.000) Direction=(-0.076, 0.997, 0.000) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3083 Valid=true ShotDirection=(-0.076, 0.997, 0.000) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3083 Valid=true MeshValid=true BulletLocation=(101.223, 2.223, 11.000) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3083 Valid=true OwnerTag=PlayerBullet FinalLocation=(101.219, 2.273, 11.000) Direction=(-0.076, 0.997, 0.000) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3083 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.28304950008169
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.27843050006777
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.27376169990748
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.26882379967719
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.26444279961288
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.26010049972683
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.25549109978601
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.25087709957734
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.24640829954296
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.24210569960997
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.23718399973586
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.2326259999536
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.22830059984699
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.22391270007938
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.21915780007839
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.21473459992558
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.21040049986914
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.20591800007969
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.20110130030662
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.19663890032098
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.19194850046188
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.18731200043112
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.18272460065782
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.17835010075942
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.16965410066769
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.16459200065583
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.16029990045354
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.15573920030147
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.15131570026278
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.14694980019704
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.14268669998273
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.1381819001399
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.13369900034741
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.12937390012667
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.12504900014028
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.12061300035566
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.11607430037111
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.11152910022065
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.10704790009186
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.10242710029706
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.097853100392967
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.093579500447959
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.089228700380772
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.084464300423861
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.079897400457412
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.075084700249135
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.069546400103718
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.064662599936128
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.059904799796641
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.05540159996599
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.050700100138783
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.76003090012819 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.037869600579143
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=2827 Valid=true ShotTimer=0.033267000690103
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3083 Valid=true OwnerTag=PlayerBullet Location=(99.488, 24.959, 11.000)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3083 Valid=true OwnerTag=PlayerBullet Location=(99.488, 24.959, 11.000) RemainingLife=2.7472004005685
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=2827 Valid=true Damage=1 Instigator=UUID=3083 Valid=true HP=0
+[time-unavailable] [Monster.Destroyed] Monster=UUID=2827 Valid=true Location=(100.000, 26.663, 10.000)
+[time-unavailable] [Monster.EndPlay] Monster=UUID=2827 Valid=true HP=0 ShotTimer=0.033267000690103
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.52308160089888 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3034 Valid=true Player=UUID=2979 Valid=true TurretLocation=(140.000, 10.000, 0.500) PlayerLocation=(101.365, 4.161, 10.000) TargetLocation=(101.365, 4.161, 9.000) Forward=(-0.989, -0.149, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(136.045, 9.402, 2.700) Direction=(-0.973, -0.147, 0.177) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3034 Valid=true Location=(136.045, 9.402, 2.700) Direction=(-0.973, -0.147, 0.177) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3095 Valid=true ShotDirection=(-0.973, -0.147, 0.177) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3095 Valid=true MeshValid=true BulletLocation=(136.045, 9.402, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3095 Valid=true OwnerTag=EnemyBullet FinalLocation=(135.996, 9.395, 2.709) Direction=(-0.973, -0.147, 0.177) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3034 Valid=true Bullet=UUID=3095 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=MoveBlockedByWall Bullet=UUID=3095 Valid=true OwnerTag=EnemyBullet Location=(90.562, 2.528, 10.963) Direction=(-0.973, -0.147, 0.177) MoveDelta=(-1.083, -0.164, 0.197) DeltaTime=0.012366799637675
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3095 Valid=true OwnerTag=EnemyBullet Location=(90.562, 2.528, 10.963) RemainingLife=2.4791234002914
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3034 Valid=true Player=UUID=2979 Valid=true TurretLocation=(140.000, 10.000, 0.500) PlayerLocation=(105.171, 7.298, 10.000) TargetLocation=(105.171, 7.298, 9.000) Forward=(-0.997, -0.077, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(136.012, 9.691, 2.700) Direction=(-0.977, -0.076, 0.200) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3034 Valid=true Location=(136.012, 9.691, 2.700) Direction=(-0.977, -0.076, 0.200) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3099 Valid=true ShotDirection=(-0.977, -0.076, 0.200) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3099 Valid=true MeshValid=true BulletLocation=(136.012, 9.691, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3099 Valid=true OwnerTag=EnemyBullet FinalLocation=(135.963, 9.687, 2.710) Direction=(-0.977, -0.076, 0.200) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3034 Valid=true Bullet=UUID=3099 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=MoveBlockedByWall Bullet=UUID=3099 Valid=true OwnerTag=EnemyBullet Location=(90.589, 6.167, 11.979) Direction=(-0.977, -0.076, 0.200) MoveDelta=(-0.335, -0.026, 0.068) DeltaTime=0.0038058999925852
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3099 Valid=true OwnerTag=EnemyBullet Location=(90.589, 6.167, 11.979) RemainingLife=2.48013879871
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3034 Valid=true Player=UUID=2979 Valid=true TurretLocation=(140.000, 10.000, 0.500) PlayerLocation=(107.404, 4.601, 10.000) TargetLocation=(107.404, 4.601, 9.000) Forward=(-0.987, -0.163, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(136.054, 9.346, 2.700) Direction=(-0.964, -0.160, 0.212) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3034 Valid=true Location=(136.054, 9.346, 2.700) Direction=(-0.964, -0.160, 0.212) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3103 Valid=true ShotDirection=(-0.964, -0.160, 0.212) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3103 Valid=true MeshValid=true BulletLocation=(136.054, 9.346, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3103 Valid=true OwnerTag=EnemyBullet FinalLocation=(136.006, 9.338, 2.711) Direction=(-0.964, -0.160, 0.212) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3034 Valid=true Bullet=UUID=3103 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(107.404, 4.601, 10.000) AimDirection=(0.967, 0.153, -0.202) SpawnLocation=(107.888, 4.678, 10.899) Zooming=true CameraStateExists=true CameraAimOrigin=(107.404, 4.601, 11.200) CameraAimPoint=(136.424, 9.197, 5.140) CameraAimDirection=(0.967, 0.153, -0.202) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(107.888, 4.678, 10.899) Direction=(0.967, 0.153, -0.202) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3107 Valid=true ShotDirection=(0.967, 0.153, -0.202) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3107 Valid=true MeshValid=true BulletLocation=(107.888, 4.678, 10.899) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3107 Valid=true OwnerTag=PlayerBullet FinalLocation=(107.937, 4.685, 10.889) Direction=(0.967, 0.153, -0.202) BulletCountAfter=2
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3107 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3103 Valid=true OwnerTag=EnemyBullet Location=(109.295, 4.914, 8.584)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3103 Valid=true OwnerTag=EnemyBullet Location=(109.295, 4.914, 8.584) RemainingLife=2.692179202335
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3107 Valid=true OwnerTag=PlayerBullet Location=(133.528, 8.739, 5.545)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3107 Valid=true OwnerTag=PlayerBullet Location=(133.528, 8.739, 5.545) RemainingLife=2.7060499007348
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3034 Valid=true Damage=1 Instigator=UUID=3107 Valid=true HP=2
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.59653199929744 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.35373870027252 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.15257060155272 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(107.404, 4.601, 10.000) AimDirection=(0.967, 0.153, -0.202) SpawnLocation=(107.888, 4.678, 10.899) Zooming=true CameraStateExists=true CameraAimOrigin=(107.404, 4.601, 11.200) CameraAimPoint=(136.424, 9.197, 5.140) CameraAimDirection=(0.967, 0.153, -0.202) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(107.888, 4.678, 10.899) Direction=(0.967, 0.153, -0.202) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3119 Valid=true ShotDirection=(0.967, 0.153, -0.202) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3119 Valid=true MeshValid=true BulletLocation=(107.888, 4.678, 10.899) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3119 Valid=true OwnerTag=PlayerBullet FinalLocation=(107.937, 4.685, 10.889) Direction=(0.967, 0.153, -0.202) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3119 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.77237750124186 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3034 Valid=true Player=UUID=2979 Valid=true TurretLocation=(140.000, 10.000, 0.500) PlayerLocation=(107.404, 4.601, 10.000) TargetLocation=(107.404, 4.601, 9.000) Forward=(-0.987, -0.163, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(136.054, 9.346, 2.700) Direction=(-0.964, -0.160, 0.212) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3034 Valid=true Location=(136.054, 9.346, 2.700) Direction=(-0.964, -0.160, 0.212) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3123 Valid=true ShotDirection=(-0.964, -0.160, 0.212) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3123 Valid=true MeshValid=true BulletLocation=(136.054, 9.346, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3123 Valid=true OwnerTag=EnemyBullet FinalLocation=(136.006, 9.338, 2.711) Direction=(-0.964, -0.160, 0.212) BulletCountAfter=2
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3034 Valid=true Bullet=UUID=3123 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3119 Valid=true OwnerTag=PlayerBullet Location=(133.619, 8.753, 5.526)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3119 Valid=true OwnerTag=PlayerBullet Location=(133.619, 8.753, 5.526) RemainingLife=2.7050080012996
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3034 Valid=true Damage=1 Instigator=UUID=3119 Valid=true HP=1
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.54826800129376 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3123 Valid=true OwnerTag=EnemyBullet Location=(109.151, 4.890, 8.616)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3123 Valid=true OwnerTag=EnemyBullet Location=(109.151, 4.890, 8.616) RemainingLife=2.6905132005922
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.32610750221647 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.11216860194691 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(107.404, 4.601, 10.000) AimDirection=(0.967, 0.153, -0.202) SpawnLocation=(107.888, 4.678, 10.899) Zooming=true CameraStateExists=true CameraAimOrigin=(107.404, 4.601, 11.200) CameraAimPoint=(136.424, 9.197, 5.140) CameraAimDirection=(0.967, 0.153, -0.202) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(107.888, 4.678, 10.899) Direction=(0.967, 0.153, -0.202) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3135 Valid=true ShotDirection=(0.967, 0.153, -0.202) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3135 Valid=true MeshValid=true BulletLocation=(107.888, 4.678, 10.899) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3135 Valid=true OwnerTag=PlayerBullet FinalLocation=(107.937, 4.685, 10.889) Direction=(0.967, 0.153, -0.202) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3135 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3135 Valid=true OwnerTag=PlayerBullet Location=(133.827, 8.786, 5.483)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3135 Valid=true OwnerTag=PlayerBullet Location=(133.827, 8.786, 5.483) RemainingLife=2.7026127004065
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3034 Valid=true Damage=1 Instigator=UUID=3135 Valid=true HP=0
+[time-unavailable] [Turret.Destroyed] Turret=UUID=3034 Valid=true Location=(140.000, 10.000, 0.500)
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3034 Valid=true HP=0 ShotTimer=0.3307479005307
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3024 Valid=true Player=UUID=2979 Valid=true TurretLocation=(120.000, -10.000, 0.500) PlayerLocation=(120.049, 8.214, 10.000) TargetLocation=(120.049, 8.214, 9.000) Forward=(0.003, 1.000, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(120.011, -6.000, 2.700) Direction=(0.002, 0.914, 0.405) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3024 Valid=true Location=(120.011, -6.000, 2.700) Direction=(0.002, 0.914, 0.405) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3147 Valid=true ShotDirection=(0.002, 0.914, 0.405) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3147 Valid=true MeshValid=true BulletLocation=(120.011, -6.000, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3147 Valid=true OwnerTag=EnemyBullet FinalLocation=(120.011, -5.954, 2.720) Direction=(0.002, 0.914, 0.405) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3024 Valid=true Bullet=UUID=3147 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3147 Valid=true OwnerTag=EnemyBullet Location=(120.045, 6.679, 8.320)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3147 Valid=true OwnerTag=EnemyBullet Location=(120.045, 6.679, 8.320) RemainingLife=2.8464594013058
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3024 Valid=true Player=UUID=2979 Valid=true TurretLocation=(120.000, -10.000, 0.500) PlayerLocation=(131.254, 6.764, 10.000) TargetLocation=(131.254, 6.764, 9.000) Forward=(0.557, 0.830, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3024 Valid=true Location=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3155 Valid=true ShotDirection=(0.519, 0.774, 0.363) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3155 Valid=true MeshValid=true BulletLocation=(122.229, -6.679, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3155 Valid=true OwnerTag=EnemyBullet FinalLocation=(122.255, -6.640, 2.718) Direction=(0.519, 0.774, 0.363) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3024 Valid=true Bullet=UUID=3155 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3155 Valid=true OwnerTag=EnemyBullet Location=(130.197, 5.190, 8.262)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3155 Valid=true OwnerTag=EnemyBullet Location=(130.197, 5.190, 8.262) RemainingLife=2.8301198999397
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(131.254, 6.764, 10.000) AimDirection=(-0.528, -0.777, -0.343) SpawnLocation=(130.990, 6.376, 10.829) Zooming=true CameraStateExists=true CameraAimOrigin=(131.254, 6.764, 11.200) CameraAimPoint=(115.403, -16.536, 0.911) CameraAimDirection=(-0.528, -0.777, -0.343) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(130.990, 6.376, 10.829) Direction=(-0.528, -0.777, -0.343) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3163 Valid=true ShotDirection=(-0.528, -0.777, -0.343) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3163 Valid=true MeshValid=true BulletLocation=(130.990, 6.376, 10.829) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3163 Valid=true OwnerTag=PlayerBullet FinalLocation=(130.963, 6.337, 10.811) Direction=(-0.528, -0.777, -0.343) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3163 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3024 Valid=true Player=UUID=2979 Valid=true TurretLocation=(120.000, -10.000, 0.500) PlayerLocation=(131.254, 6.764, 10.000) TargetLocation=(131.254, 6.764, 9.000) Forward=(0.557, 0.830, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3024 Valid=true Location=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3167 Valid=true ShotDirection=(0.519, 0.774, 0.363) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3167 Valid=true MeshValid=true BulletLocation=(122.229, -6.679, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3167 Valid=true OwnerTag=EnemyBullet FinalLocation=(122.255, -6.640, 2.718) Direction=(0.519, 0.774, 0.363) BulletCountAfter=2
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3024 Valid=true Bullet=UUID=3167 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3163 Valid=true OwnerTag=PlayerBullet Location=(122.155, -6.612, 5.094)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3163 Valid=true OwnerTag=PlayerBullet Location=(122.155, -6.612, 5.094) RemainingLife=2.8147563973907
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3024 Valid=true Damage=1 Instigator=UUID=3163 Valid=true HP=2
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.76143599697389 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3167 Valid=true OwnerTag=EnemyBullet Location=(130.212, 5.211, 8.272)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3167 Valid=true OwnerTag=EnemyBullet Location=(130.212, 5.211, 8.272) RemainingLife=2.8298083001282
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.54105569748208 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.33717019855976 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.1217290959321 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(131.254, 6.764, 10.000) AimDirection=(-0.528, -0.777, -0.343) SpawnLocation=(130.990, 6.376, 10.829) Zooming=true CameraStateExists=true CameraAimOrigin=(131.254, 6.764, 11.200) CameraAimPoint=(115.403, -16.536, 0.911) CameraAimDirection=(-0.528, -0.777, -0.343) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(130.990, 6.376, 10.829) Direction=(-0.528, -0.777, -0.343) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3179 Valid=true ShotDirection=(-0.528, -0.777, -0.343) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3179 Valid=true MeshValid=true BulletLocation=(130.990, 6.376, 10.829) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3179 Valid=true OwnerTag=PlayerBullet FinalLocation=(130.963, 6.337, 10.811) Direction=(-0.528, -0.777, -0.343) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3179 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3179 Valid=true OwnerTag=PlayerBullet Location=(123.565, -4.538, 6.009)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3179 Valid=true OwnerTag=PlayerBullet Location=(123.565, -4.538, 6.009) RemainingLife=2.8444182989188
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3024 Valid=true Damage=1 Instigator=UUID=3179 Valid=true HP=1
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.78878809884191 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.57175899879076 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3024 Valid=true Player=UUID=2979 Valid=true TurretLocation=(120.000, -10.000, 0.500) PlayerLocation=(131.254, 6.764, 10.000) TargetLocation=(131.254, 6.764, 9.000) Forward=(0.557, 0.830, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3024 Valid=true Location=(122.229, -6.679, 2.700) Direction=(0.519, 0.774, 0.363) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3187 Valid=true ShotDirection=(0.519, 0.774, 0.363) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3187 Valid=true MeshValid=true BulletLocation=(122.229, -6.679, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3187 Valid=true OwnerTag=EnemyBullet FinalLocation=(122.255, -6.640, 2.718) Direction=(0.519, 0.774, 0.363) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3024 Valid=true Bullet=UUID=3187 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.36311359889805 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3187 Valid=true OwnerTag=EnemyBullet Location=(130.130, 5.089, 8.215)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3187 Valid=true OwnerTag=EnemyBullet Location=(130.130, 5.089, 8.215) RemainingLife=2.8315658012871
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.169229099527 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=2979 Valid=true PlayerLocation=(131.254, 6.764, 10.000) AimDirection=(-0.528, -0.777, -0.343) SpawnLocation=(130.990, 6.376, 10.829) Zooming=true CameraStateExists=true CameraAimOrigin=(131.254, 6.764, 11.200) CameraAimPoint=(115.403, -16.536, 0.911) CameraAimDirection=(-0.528, -0.777, -0.343) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=2979 Valid=true Location=(130.990, 6.376, 10.829) Direction=(-0.528, -0.777, -0.343) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3195 Valid=true ShotDirection=(-0.528, -0.777, -0.343) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3195 Valid=true MeshValid=true BulletLocation=(130.990, 6.376, 10.829) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3195 Valid=true OwnerTag=PlayerBullet FinalLocation=(130.963, 6.337, 10.811) Direction=(-0.528, -0.777, -0.343) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3195 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3195 Valid=true OwnerTag=PlayerBullet Location=(123.568, -4.534, 6.011)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3195 Valid=true OwnerTag=PlayerBullet Location=(123.568, -4.534, 6.011) RemainingLife=2.8444864996709
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3024 Valid=true Damage=1 Instigator=UUID=3195 Valid=true HP=0
+[time-unavailable] [Turret.Destroyed] Turret=UUID=3024 Valid=true Location=(120.000, -10.000, 0.500)
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3024 Valid=true HP=0 ShotTimer=0.89321250561625
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.80538719892502 Zooming=true Player=UUID=2979 Valid=true
+[time-unavailable] [Monster.EndPlay] Monster=UUID=2843 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Player.EndPlay] Player=UUID=2979 Valid=true HP=0 DocumentCount=0 ShotTimer=0.37622709735297
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3014 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3019 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3029 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3039 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3044 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3049 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3054 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3059 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [BulletSystem.BindWorld] Owner=Player WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Player.BindWorld] Player=UUID=3859 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Monster.BindWorld] Monster=UUID=3773 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Monster.BindWorld] Monster=UUID=3783 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3907 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3912 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3917 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3922 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3927 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3932 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3937 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3942 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3947 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=false BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [Turret.BindWorld] Turret=UUID=3952 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3942 Valid=true Player=UUID=3859 Valid=true TurretLocation=(-140.000, 70.000, 0.500) PlayerLocation=(-101.136, 74.076, 10.000) TargetLocation=(-101.136, 74.076, 9.000) Forward=(0.995, 0.104, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(-136.022, 70.417, 2.700) Direction=(0.979, 0.103, 0.177) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3942 Valid=true Location=(-136.022, 70.417, 2.700) Direction=(0.979, 0.103, 0.177) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3960 Valid=true ShotDirection=(0.979, 0.103, 0.177) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3960 Valid=true MeshValid=true BulletLocation=(-136.022, 70.417, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3960 Valid=true OwnerTag=EnemyBullet FinalLocation=(-135.973, 70.422, 2.709) Direction=(0.979, 0.103, 0.177) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3942 Valid=true Bullet=UUID=3960 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3960 Valid=true OwnerTag=EnemyBullet Location=(-107.561, 73.402, 7.840)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3960 Valid=true OwnerTag=EnemyBullet Location=(-107.561, 73.402, 7.840) RemainingLife=2.6775062992238
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3942 Valid=true Player=UUID=3859 Valid=true TurretLocation=(-140.000, 70.000, 0.500) PlayerLocation=(-104.932, 83.762, 10.000) TargetLocation=(-104.932, 83.762, 9.000) Forward=(0.931, 0.365, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3942 Valid=true Location=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3968 Valid=true ShotDirection=(0.915, 0.359, 0.184) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3968 Valid=true MeshValid=true BulletLocation=(-136.276, 71.461, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3968 Valid=true OwnerTag=EnemyBullet FinalLocation=(-136.231, 71.479, 2.709) Direction=(0.915, 0.359, 0.184) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3942 Valid=true Bullet=UUID=3968 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3968 Valid=true OwnerTag=EnemyBullet Location=(-106.846, 83.011, 8.615)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3968 Valid=true OwnerTag=EnemyBullet Location=(-106.846, 83.011, 8.615) RemainingLife=2.643178300932
+[time-unavailable] [Player.Fire.Request] Player=UUID=3859 Valid=true PlayerLocation=(-104.932, 83.762, 10.000) AimDirection=(-0.916, -0.322, -0.238) SpawnLocation=(-105.390, 83.601, 10.881) Zooming=true CameraStateExists=true CameraAimOrigin=(-104.932, 83.762, 11.200) CameraAimPoint=(-132.421, 74.090, 4.069) CameraAimDirection=(-0.916, -0.322, -0.238) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=3859 Valid=true Location=(-105.390, 83.601, 10.881) Direction=(-0.916, -0.322, -0.238) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3976 Valid=true ShotDirection=(-0.916, -0.322, -0.238) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3976 Valid=true MeshValid=true BulletLocation=(-105.390, 83.601, 10.881) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3976 Valid=true OwnerTag=PlayerBullet FinalLocation=(-105.436, 83.585, 10.869) Direction=(-0.916, -0.322, -0.238) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3976 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3976 Valid=true OwnerTag=PlayerBullet Location=(-134.177, 73.472, 3.413)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3976 Valid=true OwnerTag=PlayerBullet Location=(-134.177, 73.472, 3.413) RemainingLife=2.6514739987906
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3942 Valid=true Damage=1 Instigator=UUID=3976 Valid=true HP=2
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.56325729866512 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.32230439782143 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.097061495995149 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3942 Valid=true Player=UUID=3859 Valid=true TurretLocation=(-140.000, 70.000, 0.500) PlayerLocation=(-104.932, 83.762, 10.000) TargetLocation=(-104.932, 83.762, 9.000) Forward=(0.931, 0.365, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3942 Valid=true Location=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3984 Valid=true ShotDirection=(0.915, 0.359, 0.184) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3984 Valid=true MeshValid=true BulletLocation=(-136.276, 71.461, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3984 Valid=true OwnerTag=EnemyBullet FinalLocation=(-136.231, 71.479, 2.709) Direction=(0.915, 0.359, 0.184) BulletCountAfter=1
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3942 Valid=true Bullet=UUID=3984 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=3859 Valid=true PlayerLocation=(-104.932, 83.762, 10.000) AimDirection=(-0.916, -0.322, -0.238) SpawnLocation=(-105.390, 83.601, 10.881) Zooming=true CameraStateExists=true CameraAimOrigin=(-104.932, 83.762, 11.200) CameraAimPoint=(-132.421, 74.090, 4.069) CameraAimDirection=(-0.916, -0.322, -0.238) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=3859 Valid=true Location=(-105.390, 83.601, 10.881) Direction=(-0.916, -0.322, -0.238) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=3988 Valid=true ShotDirection=(-0.916, -0.322, -0.238) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=3988 Valid=true MeshValid=true BulletLocation=(-105.390, 83.601, 10.881) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=3988 Valid=true OwnerTag=PlayerBullet FinalLocation=(-105.436, 83.585, 10.869) Direction=(-0.916, -0.322, -0.238) BulletCountAfter=2
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=3988 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3984 Valid=true OwnerTag=EnemyBullet Location=(-106.561, 83.123, 8.673)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3984 Valid=true OwnerTag=EnemyBullet Location=(-106.561, 83.123, 8.673) RemainingLife=2.6397170023993
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.77160040289164 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=3988 Valid=true OwnerTag=PlayerBullet Location=(-134.296, 73.430, 3.383)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=3988 Valid=true OwnerTag=PlayerBullet Location=(-134.296, 73.430, 3.383) RemainingLife=2.6500378022902
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3942 Valid=true Damage=1 Instigator=UUID=3988 Valid=true HP=1
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.27012530318461 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.03816590225324 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Player.Fire.Request] Player=UUID=3859 Valid=true PlayerLocation=(-104.932, 83.762, 10.000) AimDirection=(-0.916, -0.322, -0.238) SpawnLocation=(-105.390, 83.601, 10.881) Zooming=true CameraStateExists=true CameraAimOrigin=(-104.932, 83.762, 11.200) CameraAimPoint=(-132.421, 74.090, 4.069) CameraAimDirection=(-0.916, -0.322, -0.238) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=3859 Valid=true Location=(-105.390, 83.601, 10.881) Direction=(-0.916, -0.322, -0.238) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4000 Valid=true ShotDirection=(-0.916, -0.322, -0.238) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4000 Valid=true MeshValid=true BulletLocation=(-105.390, 83.601, 10.881) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4000 Valid=true OwnerTag=PlayerBullet FinalLocation=(-105.436, 83.585, 10.869) Direction=(-0.916, -0.322, -0.238) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=4000 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Turret.Fire.Request] Turret=UUID=3942 Valid=true Player=UUID=3859 Valid=true TurretLocation=(-140.000, 70.000, 0.500) PlayerLocation=(-104.932, 83.762, 10.000) TargetLocation=(-104.932, 83.762, 9.000) Forward=(0.931, 0.365, 0.000) Up=(0.000, 0.000, 1.000) SpawnLocation=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3942 Valid=true Location=(-136.276, 71.461, 2.700) Direction=(0.915, 0.359, 0.184) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4004 Valid=true ShotDirection=(0.915, 0.359, 0.184) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4004 Valid=true MeshValid=true BulletLocation=(-136.276, 71.461, 2.700) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4004 Valid=true OwnerTag=EnemyBullet FinalLocation=(-136.231, 71.479, 2.709) Direction=(0.915, 0.359, 0.184) BulletCountAfter=2
+[time-unavailable] [Turret.Fire.Result] Turret=UUID=3942 Valid=true Bullet=UUID=4004 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.81632210034877 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4000 Valid=true OwnerTag=PlayerBullet Location=(-134.295, 73.431, 3.383)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4000 Valid=true OwnerTag=PlayerBullet Location=(-134.295, 73.431, 3.383) RemainingLife=2.6500500994734
+[time-unavailable] [Turret.TakeDamage] Turret=UUID=3942 Valid=true Damage=1 Instigator=UUID=4000 Valid=true HP=0
+[time-unavailable] [Turret.Destroyed] Turret=UUID=3942 Valid=true Location=(-140.000, 70.000, 0.500)
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3942 Valid=true HP=0 ShotTimer=1.2956769983284
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4004 Valid=true OwnerTag=EnemyBullet Location=(-106.799, 83.030, 8.625)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4004 Valid=true OwnerTag=EnemyBullet Location=(-106.799, 83.030, 8.625) RemainingLife=2.6425998001359
+[time-unavailable] [Monster.Fire.Request] Monster=UUID=3783 Valid=true Player=UUID=3859 Valid=true MonsterLocation=(-103.276, 29.290, 8.000) PlayerLocation=(-95.575, 52.904, 10.000) TargetLocation=(-95.575, 52.904, 9.000) SpawnLocation=(-102.656, 31.190, 9.580) Direction=(0.310, 0.950, 0.040) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3783 Valid=true Location=(-102.656, 31.190, 9.580) Direction=(0.310, 0.950, 0.040) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4020 Valid=true ShotDirection=(0.310, 0.950, 0.040) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4020 Valid=true MeshValid=true BulletLocation=(-102.656, 31.190, 9.580) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4020 Valid=true OwnerTag=EnemyBullet FinalLocation=(-102.641, 31.238, 9.582) Direction=(0.310, 0.950, 0.040) BulletCountAfter=1
+[time-unavailable] [Monster.Fire.Result] Monster=UUID=3783 Valid=true Bullet=UUID=4020 Valid=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4925783998333
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4875404997729
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4827378997579
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4777139998041
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4726983997971
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4680400998332
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4633088000119
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4579170001671
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4531501000747
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4484059000388
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4352580001578
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4302599001676
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4251272003166
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4204502003267
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4156047003344
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4104138002731
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4053687001579
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4003767003305
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.395368100144
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.390264400281
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3855000003241
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3806738001294
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3753323000856
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3704774002545
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3656125003472
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3605699003674
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3553317002952
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3504139003344
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3450774005614
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3400723007508
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3351995008998
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3304863008671
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3254744010046
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3207651008852
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3161264010705
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3113745008595
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.306495401077
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.301675200928
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.297122200951
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2919313008897
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2870977008715
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2824435010552
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2775989011861
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2722708010115
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2648445009254
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2573304008693
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2524398006499
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2477169004269
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2427366003394
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2379812002182
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2331509003416
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2280514002778
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2228353004903
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2180285006762
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2133788005449
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2082577003166
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2034860001877
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1988993003033
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1938413004391
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1810074006207
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1756915007718
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1708565009758
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1662109009922
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1607571011409
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1554909013212
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1508224015124
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.14585900167
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1406241017394
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1359322015196
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1310896016657
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1262068017386
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1214965018444
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1166169019416
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1115853018127
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1066192016006
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1017742017284
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0970890019089
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0920843021013
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0872244019993
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0825102021918
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0775602022186
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0724811023101
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0677491021343
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.063086502254
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0581027022563
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0532161020674
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0481718019582
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0431471019983
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0379414018244
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0332461018115
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0283577018417
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0232288017869
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0185115016066
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0113112013787
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0041624014266
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.99945730157197
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.99454230163246
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.98941990174353
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.98448300175369
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.979604201857
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.97427740180865
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.96949160192162
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.96490380214527
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.9596024020575
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.95485400222242
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.94999840203673
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.94506400218233
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.9393338020891
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.92610710207373
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.92093740217388
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.91621760232374
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.9104621023871
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.90545640233904
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.90079900249839
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.8958306023851
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.89039910258725
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.88569310260937
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.88098340248689
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.87578770238906
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.87090700259432
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.86577370250598
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.86075990227982
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.85578270209953
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.85061210207641
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.84577700216323
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.84065600205213
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.83571490226313
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.83079390227795
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.82580800214782
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.82095150230452
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.81621100241318
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.8110794024542
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.80605060234666
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.80098810233176
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.79636470228434
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.79128110222518
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.78648300236091
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.78174520237371
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.77656230237335
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.77153770253062
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.76669900259003
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.75978840282187
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7528216028586
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7481943028979
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.74289100291207
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.73778030276299
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.73315160255879
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7285375026986
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.72331280261278
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.71846970263869
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.71391450241208
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.70883480226621
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=MoveBlockedByWall Bullet=UUID=4020 Valid=true OwnerTag=EnemyBullet Location=(-80.573, 98.907, 12.448) Direction=(0.310, 0.950, 0.040) MoveDelta=(0.142, 0.434, 0.018) DeltaTime=0.0050797001458704
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4020 Valid=true OwnerTag=EnemyBullet Location=(-80.573, 98.907, 12.448) RemainingLife=2.2044414021075
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7033149022609
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.69871940230951
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.69389020232484
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.68904500221834
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.68233890226111
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.67134130233899
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.66636500228196
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.66150460205972
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.65655550220981
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.65191750228405
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.64688210235909
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.64177090255544
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.63695370266214
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.63230730267242
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.62741850269958
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.62237980263308
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.61765510262921
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.6127254026942
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.60775320278481
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.60304800281301
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.598458702676
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.59357740264386
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.58874180261046
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.58409040281549
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.57946130260825
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.5745016024448
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.56978980265558
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.56502990284935
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.56008610269055
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.55530290259048
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.55063310265541
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.54600170254707
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.54094450268894
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.53621170250699
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.53171290270984
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.5267856027931
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.52199850277975
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.51728230295703
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.51247220300138
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.50509660318494
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.49809000315145
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.49329740321264
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.48575980309397
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.48107440304011
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.47593460325152
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.47108960337937
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.46646930323914
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.46183810336515
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.45696230325848
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.45227560307831
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.44749740324914
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.4420831031166
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.43727850308642
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.43051730329171
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.41936640301719
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.41436360310763
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.4092124029994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.40440400317311
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.39958600327373
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.39466790342703
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.38961600326002
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.38484790315852
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.38011810323223
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.37516040308401
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.37047610292211
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.36569700296968
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.36085290275514
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.35597920278087
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.35115400282666
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.34631400275975
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.34110540291294
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.33588430285454
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.33123440295458
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.32645760290325
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.32174810301512
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.31694860290736
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.31216660281643
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.30726210260764
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.30255310283974
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.29796540271491
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.29302190290764
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.28810750273988
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.28321870276704
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.27852880256251
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.27370790252462
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.26903840247542
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.26439780229703
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.25956160249189
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.25275100255385
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.24624130269513
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.24125580256805
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.23653780249879
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.23202110268176
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.22688030265272
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.22181260259822
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.2172032026574
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.21245650248602
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.20727240247652
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.20237980270758
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.19715760275722
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.19191310275346
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.18678920296952
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.17957470286638
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.16758190281689
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.16255910275504
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.15773670282215
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.15311610279605
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.14831250300631
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.14339760318398
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.13855340331793
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.13380450336263
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.12914590351284
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.12405450362712
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.11887100385502
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.11414220370352
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.10896500386298
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.10413930378854
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.098948703613132
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.093924303539097
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.089105203747749
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.084160703700036
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.07957260357216
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.074080003425479
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.069304203614593
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.064797203522176
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.06009850371629
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.055094003677368
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.050120403524488
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.045417603570968
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.04036120371893
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.035525903571397
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.030940203461796
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.023974303621799
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.019131203647703
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.014574703760445
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.0095724039711058
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.0026627038605511
+[time-unavailable] [Monster.Fire.Request] Monster=UUID=3783 Valid=true Player=UUID=3859 Valid=true MonsterLocation=(-103.276, 29.290, 8.000) PlayerLocation=(-94.633, 40.714, 10.000) TargetLocation=(-94.633, 40.714, 9.000) SpawnLocation=(-102.072, 30.881, 9.639) Direction=(0.602, 0.796, 0.070) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3783 Valid=true Location=(-102.072, 30.881, 9.639) Direction=(0.602, 0.796, 0.070) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4024 Valid=true ShotDirection=(0.602, 0.796, 0.070) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4024 Valid=true MeshValid=true BulletLocation=(-102.072, 30.881, 9.639) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4024 Valid=true OwnerTag=EnemyBullet FinalLocation=(-102.042, 30.921, 9.643) Direction=(0.602, 0.796, 0.070) BulletCountAfter=1
+[time-unavailable] [Monster.Fire.Result] Monster=UUID=3783 Valid=true Bullet=UUID=4024 Valid=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4921947000548
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4871553000994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4820238002576
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4763864004053
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4716720003635
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.466876800172
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4609838002361
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4562284001149
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4516503000632
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4462370001711
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.44130650023
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4366573002189
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4294119002298
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4183927997947
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4133959999308
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4086154000834
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4036595001817
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3983261999674
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3931770999916
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3885671999305
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3836769000627
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3788201999851
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3740539997816
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.369216799736
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4024 Valid=true OwnerTag=EnemyBullet Location=(-94.860, 40.414, 10.474)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4024 Valid=true OwnerTag=EnemyBullet Location=(-94.860, 40.414, 10.474) RemainingLife=2.8674151999876
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.362979399506
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3580932994373
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3532887995243
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3485519993119
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3434412991628
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3385452991351
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3337005991489
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.328784998972
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3239361988381
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.319322898984
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3146151988767
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3096892987378
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.305002798792
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2999395988882
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2948648990132
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2901774989441
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2855701991357
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2808054992929
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2758133993484
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2709244992584
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2662932993844
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2609584992751
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2539754994214
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2471064995043
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2422130997293
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2375351996161
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2329023997299
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2274997998029
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.222687699832
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2179674999788
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2128491997719
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2081385999918
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.2034537000582
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1986687998287
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1934845997021
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1887896996923
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1840472999029
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.176812000107
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1658556996845
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1608462994918
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1561526996084
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1509900996462
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1459537995979
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1412648996338
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.136394799687
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1316095995717
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1265076994896
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1217736992985
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1167344991118
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1111214989796
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1064403988421
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.1018140986562
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0967013984919
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0918185985647
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0870873983949
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0825031981803
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0776801980101
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0728121981956
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0682091983035
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0633457982913
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0586048983969
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0540217985399
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0492523983121
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0436650984921
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0387983983383
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0341267981566
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0289081982337
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0240017981268
+[time-unavailable] [Player.Fire.Request] Player=UUID=3859 Valid=true PlayerLocation=(-94.633, 40.714, 10.000) AimDirection=(-0.538, -0.835, -0.111) SpawnLocation=(-94.902, 40.297, 10.945) Zooming=true CameraStateExists=true CameraAimOrigin=(-94.633, 40.714, 11.200) CameraAimPoint=(-110.778, 15.650, 7.872) CameraAimDirection=(-0.538, -0.835, -0.111) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=3859 Valid=true Location=(-94.902, 40.297, 10.945) Direction=(-0.538, -0.835, -0.111) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4032 Valid=true ShotDirection=(-0.538, -0.835, -0.111) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4032 Valid=true MeshValid=true BulletLocation=(-94.902, 40.297, 10.945) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4032 Valid=true OwnerTag=PlayerBullet FinalLocation=(-94.929, 40.255, 10.939) Direction=(-0.538, -0.835, -0.111) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=4032 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0165067980997
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0112169981003
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.0038301981986
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.9969195984304
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.99192919861525
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.98726179869846
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.98251989856362
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.97762109851465
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.97284729871899
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.96793739870191
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.96293249865994
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.95817689877003
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.95355929899961
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.9484647992067
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.94344519916922
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.93883739924058
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.93417899915949
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.92934319935739
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.92244019918144
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.91131029929966
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.90641129948199
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.90164059959352
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.89616449968889
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.89115809975192
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4032 Valid=true OwnerTag=PlayerBullet Location=(-101.121, 30.642, 9.663)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4032 Valid=true OwnerTag=PlayerBullet Location=(-101.121, 30.642, 9.663) RemainingLife=2.872162701562
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=3783 Valid=true Damage=1 Instigator=UUID=4032 Valid=true HP=1
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.88472499977797
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.87941979989409
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.87455989979208
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.86986609967425
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.86504119960591
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.85996129969135
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.85477999970317
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.85026049986482
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.84492659987882
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.83972509996966
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.83514129975811
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.83042399957776
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.82556079979986
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.82100409967825
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.81610999954864
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.81117119966075
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.80621579987928
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.80142439994961
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.79647669987753
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.79157779971138
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7867345996201
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.78196669975296
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.77694549970329
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.77223809948191
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.76770299952477
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.76263439934701
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.75788359949365
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.75120939966291
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.74439709959552
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7395505993627
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.73378699924797
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.7286397991702
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.72400019923225
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.71942779934034
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.71465689921752
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.70982469944283
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.705282099545
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.70073889940977
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.69507349934429
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.69042239943519
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.68574929935858
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.68059499934316
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.67582899937406
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.66906229918823
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.65838129958138
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.65339739946648
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.62939560133964 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.64826209936291
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.64315409958363
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.63467379938811
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.6291093993932
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.62432679953054
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.61965339956805
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.61496919952333
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.61015429953113
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.60557319968939
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.6009465996176
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.59609309956431
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.59122059959918
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.58655169978738
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.58183929976076
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.57653609989211
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.57167469989508
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.56703009968624
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.56180939963087
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.55705549940467
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.55247479956597
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.54761469969526
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.54264639969915
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.5379563998431
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.53326039994135
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.52831010008231
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.52357889991254
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.51868780003861
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.51336289988831
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.50844880007207
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.50382529990748
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.49685469968244
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.49007989978418
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.48550680000335
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.48058569990098
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.47563380002975
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.47092070011422
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.4661059002392
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.46093130018562
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.45619209995493
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.45141689991578
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.42741510178894 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.44610780011863
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.44117700029165
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.4363337000832
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.4313600002788
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.42638260032982
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.42168810032308
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.41435680026188
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.40313989995047
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.39830760005862
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.39341549994424
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.3886720999144
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.38398119993508
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.37893569981679
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.37409959966317
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.36950329970568
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.36463389964774
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.35938089946285
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.35433669947088
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.34953149966896
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.34422599989921
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.33955179993063
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.33487210003659
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.32991930004209
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.32487090025097
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.31997430045158
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.3152347006835
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.31015130085871
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.3053957009688
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.3007885008119
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.29575810069218
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.29085020069033
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.28570430073887
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.28080270066857
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.27586410054937
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.2712743007578
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.26667170086876
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.26127480110154
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.25660760095343
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.25194680085406
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.24485510075465
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.23808530066162
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.23310940060765
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.22815820062533
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.20415640249848 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.22280800063163
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.21786680072546
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.21274150069803
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.20795470057055
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.20314170047641
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.19822970032692
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.19321660045534
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.1885904003866
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.18388850055635
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.17887000041083
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.17415130045265
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.16952520050108
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.16272600041702
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.15196170052513
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.14670090051368
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.14139370061457
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.13640500046313
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.13146020052955
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.12640650058165
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.12170390039682
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.11711020022631
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.11208720039576
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.10714440047741
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.10246730037034
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.097362900152802
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.091940599959344
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.087241500150412
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.082508299965411
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.077043999917805
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.071921499911696
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.067156400065869
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.06208059983328
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.057239299640059
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.052495399489999
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.047494699712843
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.042630499694496
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.038048699498177
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.033192799426615
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.027800299227238
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.022832999005914
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.018134299200028
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.013148799072951
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.0081795989535749
+[time-unavailable] [Player.Fire.Request] Player=UUID=3859 Valid=true PlayerLocation=(-94.633, 40.714, 10.000) AimDirection=(-0.538, -0.835, -0.111) SpawnLocation=(-94.902, 40.297, 10.945) Zooming=true CameraStateExists=true CameraAimOrigin=(-94.633, 40.714, 11.200) CameraAimPoint=(-110.778, 15.650, 7.872) CameraAimDirection=(-0.538, -0.835, -0.111) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=PlayerBullet Instigator=UUID=3859 Valid=true Location=(-94.902, 40.297, 10.945) Direction=(-0.538, -0.835, -0.111) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=0
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4040 Valid=true ShotDirection=(-0.538, -0.835, -0.111) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4040 Valid=true MeshValid=true BulletLocation=(-94.902, 40.297, 10.945) OwnerTag=PlayerBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4040 Valid=true OwnerTag=PlayerBullet FinalLocation=(-94.929, 40.255, 10.939) Direction=(-0.538, -0.835, -0.111) BulletCountAfter=1
+[time-unavailable] [Player.Fire.Result] Bullet=UUID=4040 Valid=true SoundWillPlay=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=0.00041069881990552
+[time-unavailable] [Monster.Fire.Request] Monster=UUID=3783 Valid=true Player=UUID=3859 Valid=true MonsterLocation=(-103.276, 29.290, 8.000) PlayerLocation=(-94.633, 40.714, 10.000) TargetLocation=(-94.633, 40.714, 9.000) SpawnLocation=(-102.072, 30.881, 9.639) Direction=(0.602, 0.796, 0.070) ShotTimerBefore=0
+[time-unavailable] [BulletSystem.Spawn.Request] OwnerTag=EnemyBullet Instigator=UUID=3783 Valid=true Location=(-102.072, 30.881, 9.639) Direction=(0.602, 0.796, 0.070) WorldHasSpawnActor=true WorldHasMoveActorWithBlock=true BulletCountBefore=1
+[time-unavailable] [BulletSystem.Spawn.ActorCreated] Bullet=UUID=4044 Valid=true ShotDirection=(0.602, 0.796, 0.070) Scale=(0.150, 0.150, 0.150) ColliderRadius=0.4 ProbeDistance=0.05
+[time-unavailable] [BulletSystem.Spawn.VisualReady] Bullet=UUID=4044 Valid=true MeshValid=true BulletLocation=(-102.072, 30.881, 9.639) OwnerTag=EnemyBullet
+[time-unavailable] [BulletSystem.Spawn.Success] Bullet=UUID=4044 Valid=true OwnerTag=EnemyBullet FinalLocation=(-102.042, 30.921, 9.643) Direction=(0.602, 0.796, 0.070) BulletCountAfter=2
+[time-unavailable] [Monster.Fire.Result] Monster=UUID=3783 Valid=true Bullet=UUID=4044 Valid=true CooldownWillStart=true
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.49014659971
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4847024995834
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4798255995847
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4749402995221
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4700124994852
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4650871995836
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4601289997809
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4553036997095
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4503066996112
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4454464996234
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4406070997939
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4344312995672
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4294543997385
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4244199995883
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4170849993825
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.405863199383
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.4005921995267
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3954986995086
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3907405994833
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3857835996896
+[time-unavailable] [Monster.Fire.Skip] Reason=Cooldown Monster=UUID=3783 Valid=true ShotTimer=1.3807178996503
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4040 Valid=true OwnerTag=PlayerBullet Location=(-101.191, 30.533, 9.648)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4040 Valid=true OwnerTag=PlayerBullet Location=(-101.191, 30.533, 9.648) RemainingLife=2.8707131994888
+[time-unavailable] [Monster.TakeDamage] Monster=UUID=3783 Valid=true Damage=1 Instigator=UUID=4040 Valid=true HP=0
+[time-unavailable] [Monster.Destroyed] Monster=UUID=3783 Valid=true Location=(-103.276, 29.290, 8.000)
+[time-unavailable] [Monster.EndPlay] Monster=UUID=3783 Valid=true HP=0 ShotTimer=1.3807178996503
+[time-unavailable] [BulletSystem.Tick.Remove] Reason=DamageApplied Bullet=UUID=4044 Valid=true OwnerTag=EnemyBullet Location=(-94.769, 40.534, 10.484)
+[time-unavailable] [BulletSystem.DestroyBullet] Index=1 Bullet=UUID=4044 Valid=true OwnerTag=EnemyBullet Location=(-94.769, 40.534, 10.484) RemainingLife=2.8657368994318
+[time-unavailable] [Player.Fire.Skip] Reason=Cooldown ShotTimer=0.77021489944309 Zooming=true Player=UUID=3859 Valid=true
+[time-unavailable] [Monster.EndPlay] Monster=UUID=3773 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Player.EndPlay] Player=UUID=3859 Valid=true HP=0.096627586288378 DocumentCount=0 ShotTimer=0
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3907 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3912 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3917 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3922 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3927 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3932 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3937 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3947 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=3952 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Player PreviousWorldHasSpawnActor=true PreviousWorldValid=false
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4720 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4725 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4730 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4735 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4740 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4745 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4750 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4755 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4760 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Turret WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.BindWorld] Turret=UUID=4765 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Turret PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=4533 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Monster WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Monster.BindWorld] Monster=UUID=4549 Valid=true
+[time-unavailable] [BulletSystem.BindWorld] Owner=Player WorldChanged=true ShouldBind=true BulletCount=0 IncomingWorldHasSpawnActor=true IncomingWorldValid=true PreviousWorldOwner=Monster PreviousWorldHasSpawnActor=true PreviousWorldValid=true
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Player.BindWorld] Player=UUID=4685 Valid=true
+[time-unavailable] [Monster.EndPlay] Monster=UUID=4533 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Monster.EndPlay] Monster=UUID=4549 Valid=true HP=2 ShotTimer=0
+[time-unavailable] [Player.EndPlay] Player=UUID=4685 Valid=true HP=94.481392389163 DocumentCount=0 ShotTimer=0
+[time-unavailable] [BulletSystem.Clear] DestroyActors=false BeforeCount=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4720 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4725 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4730 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4735 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4740 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4745 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4750 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4755 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4760 Valid=true HP=3 ShotTimer=0
+[time-unavailable] [Turret.EndPlay] Turret=UUID=4765 Valid=true HP=3 ShotTimer=0
