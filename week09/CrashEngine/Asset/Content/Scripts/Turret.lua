@@ -26,6 +26,20 @@ local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
 local DestroyEffectLifeTime = 1.2
 local DestroyEffectRow = 6
 local DestroyEffectColumn = 6
+local SoundManager = nil
+
+local function loadTurretSounds()
+    SoundManager = GetSoundManager()
+    SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
+end
+
+local function playTurretSound(sound_id)
+    if SoundManager == nil then
+        loadTurretSounds()
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 local function spawnEffect(location, materialPath, lifeTime, row, column)
     local effectActor = World.SpawnActor("SubUVActor")
@@ -124,6 +138,7 @@ local function fireAtPlayer(player)
     local direction = shotDirection:Normalized()
     print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
     BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end
 
@@ -134,6 +149,7 @@ function BeginPlay()
     ShotTimer = 0.0
     BaseRotation = obj.Rotation
     BaseForward = normalizePlanar(obj:GetForwardVector())
+    loadTurretSounds()
 end
 
 function EndPlay()
@@ -170,7 +186,8 @@ function OnTakeDamage(damage, instigator)
 
     if HP <= 0 then
         print("Turret Destroyed")
-        spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
+        local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
+        spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)
     end
 end

@@ -4,7 +4,7 @@
   "ShaderPath": "Shaders/Render/Editor/subUV_sample.hlsl",
   "RenderPass": "AlphaBlend",
   "BlendState": "Additive",
-  "DepthStencilState": "DepthReadOnly",
+  "DepthStencilState": "NoDepth",
   "RasterizerState": "SolidNoCull",
   "Parameters": {
     "SectionColor": [1.0, 1.0, 1.0, 1.0],
