@@ -131,6 +131,7 @@ public:
 	void EnqueueRmlUIActionEvent(const FString& EventName);
 	void EnqueueRmlUIActionEvent(const FString& EventName, Rml::ElementDocument* SourceDocument);
 	TArray<FString> PollRmlUIPreviewActionEvents();
+	int32 GetActivePIEViewportIndex() const { return ActivePIEViewportIndex; }
 
 	// 포커스된 뷰포트가 참조하는 월드를 반환합니다.
 	// 편집 중이면 에디터 월드, PIE 중이면 PIE 월드가 됩니다.

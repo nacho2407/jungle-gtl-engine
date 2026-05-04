@@ -41,6 +41,8 @@
 namespace
 {
 constexpr const char* PackagingPopupName = "Packaging Settings";
+constexpr int32 DefaultPIEUILayoutWidth = 1920;
+constexpr int32 DefaultPIEUILayoutHeight = 1080;
 
 FString MakeFooterSceneDisplayPath(const FString& FilePath)
 {
@@ -1231,6 +1233,58 @@ void FEditorMainPanel::RenderEditorToolbar()
         if (bFullscreenClicked)
         {
             SetPIEViewportFullscreenEnabled(!bFullscreenOn);
+        }
+
+        if (bCanStop)
+        {
+            FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+            const int32 PIEViewportIndex = (EditorEngine->GetActivePIEViewportIndex() >= 0)
+                ? EditorEngine->GetActivePIEViewportIndex()
+                : Layout.GetLastFocusedViewportIndex();
+            FEditorViewportClient* PIEClient = Layout.GetViewportClient(PIEViewportIndex);
+
+            ImGui::SetCursorPos(ImVec2(FullMax.x - ImGui::GetWindowPos().x + Gap, ButtonY + 2.0f));
+            if (PIEClient)
+            {
+                char PIEViewPopupID[48];
+                snprintf(PIEViewPopupID, sizeof(PIEViewPopupID), "##MainToolbarPIEViewPopup_%d", PIEViewportIndex);
+                char PIEViewButtonLabel[80];
+                snprintf(PIEViewButtonLabel, sizeof(PIEViewButtonLabel), "View: %s", GetViewModeName(PIEClient->GetViewportState()->ViewMode));
+
+                if (ImGui::Button(PIEViewButtonLabel, ImVec2(132.0f, ButtonSize - 4.0f)))
+                {
+                    ImGui::OpenPopup(PIEViewPopupID);
+                }
+                if (ImGui::BeginPopup(PIEViewPopupID))
+                {
+                    static constexpr EViewMode PIEViewModes[] = {
+                        EViewMode::Lit_Gouraud,
+                        EViewMode::Unlit,
+                        EViewMode::Wireframe,
+                        EViewMode::Depth,
+                        EViewMode::Normal,
+                    };
+                    for (EViewMode Mode : PIEViewModes)
+                    {
+                        if (ImGui::MenuItem(GetViewModeName(Mode), nullptr, PIEClient->GetViewportState()->ViewMode == Mode))
+                        {
+                            PIEClient->GetViewportState()->ViewMode = Mode;
+                        }
+                    }
+                    ImGui::EndPopup();
+                }
+                ImGui::SameLine(0.0f, Gap);
+            }
+
+            if (ImGui::Checkbox("PIE 1920x1080", &bPIEUseFixedUILayout) && bPIEUseFixedUILayout)
+            {
+                PIEUILayoutWidth = DefaultPIEUILayoutWidth;
+                PIEUILayoutHeight = DefaultPIEUILayoutHeight;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Use a 16:9 PIE viewport and a fixed 1920x1080 RML layout.");
+            }
         }
     }
     ImGui::End();
@@ -2607,6 +2661,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
         GuiState.bViewportHostVisible = true;
         GuiState.ViewportHostRect = HostRect;
         EditorEngine->GetViewportLayout().SetHostRect(HostRect);
+        ApplyPIEFixedAspectViewportRect();
 
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
@@ -2699,7 +2754,13 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
                 if (FEditorViewportClient* Client = Layout.GetViewportClient(DrawIndex))
                 {
-                    Client->SetViewportInputDeadZoneTop(MenuBarH);
+                    const bool bHidePIEViewportToolbar =
+                        EditorEngine->GetEditorState() != EViewportPlayState::Editing && Client->IsPIEPossessed();
+                    Client->SetViewportInputDeadZoneTop(bHidePIEViewportToolbar ? 0.0f : MenuBarH);
+                    if (bHidePIEViewportToolbar)
+                    {
+                        continue;
+                    }
                 }
 
                 FViewportRect ViewportRect = Layout.GetSceneViewport(DrawIndex).GetRect();
@@ -2755,6 +2816,67 @@ void FEditorMainPanel::RenderViewportHostWindow()
     ImGui::End();
 }
 
+FViewportRect FEditorMainPanel::GetPIEFixedAspectViewportRect(const FViewportRect& SourceRect) const
+{
+    if (SourceRect.Width <= 0 || SourceRect.Height <= 0 || PIEUILayoutWidth <= 0 || PIEUILayoutHeight <= 0)
+    {
+        return SourceRect;
+    }
+
+    const float TargetAspect = static_cast<float>(PIEUILayoutWidth) / static_cast<float>(PIEUILayoutHeight);
+    const float SourceAspect = static_cast<float>(SourceRect.Width) / static_cast<float>(SourceRect.Height);
+
+    int32 Width = SourceRect.Width;
+    int32 Height = SourceRect.Height;
+    if (SourceAspect > TargetAspect)
+    {
+        Width = std::max(static_cast<int32>(static_cast<float>(SourceRect.Height) * TargetAspect), 1);
+    }
+    else
+    {
+        Height = std::max(static_cast<int32>(static_cast<float>(SourceRect.Width) / TargetAspect), 1);
+    }
+
+    const int32 X = SourceRect.X + (SourceRect.Width - Width) / 2;
+    const int32 Y = SourceRect.Y + (SourceRect.Height - Height) / 2;
+    return FViewportRect(X, Y, Width, Height);
+}
+
+void FEditorMainPanel::ApplyPIEFixedAspectViewportRect()
+{
+    if (!EditorEngine || !bPIEUseFixedUILayout || EditorEngine->GetEditorState() == EViewportPlayState::Editing)
+    {
+        return;
+    }
+
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    const int32 PIEViewportIndex = (EditorEngine->GetActivePIEViewportIndex() >= 0)
+        ? EditorEngine->GetActivePIEViewportIndex()
+        : Layout.GetLastFocusedViewportIndex();
+    if (PIEViewportIndex < 0 || PIEViewportIndex >= FEditorViewportLayout::MaxViewports)
+    {
+        return;
+    }
+
+    FEditorViewportClient* Client = Layout.GetViewportClient(PIEViewportIndex);
+    if (!Client || !Client->IsPIEPossessed())
+    {
+        return;
+    }
+
+    FSceneViewport& SceneViewport = Layout.GetSceneViewport(PIEViewportIndex);
+    const FViewportRect SourceRect = SceneViewport.GetRect();
+    const FViewportRect FixedRect = GetPIEFixedAspectViewportRect(SourceRect);
+    if (FixedRect.X == SourceRect.X && FixedRect.Y == SourceRect.Y &&
+        FixedRect.Width == SourceRect.Width && FixedRect.Height == SourceRect.Height)
+    {
+        return;
+    }
+
+    SceneViewport.SetRect(FixedRect);
+    Client->SetViewportSize(static_cast<float>(FixedRect.Width), static_cast<float>(FixedRect.Height));
+}
+
 void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime)
 {
     if (!EditorEngine || ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
@@ -2762,15 +2884,19 @@ void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& Viewpo
         return;
     }
 
+    const int32 LayoutWidth = bPIEUseFixedUILayout ? std::max(PIEUILayoutWidth, 1) : ViewportRect.Width;
+    const int32 LayoutHeight = bPIEUseFixedUILayout ? std::max(PIEUILayoutHeight, 1) : ViewportRect.Height;
+
     FRuntimeUIRenderContext Context;
     Context.RenderMode = ERuntimeUIRenderMode::PIE;
     Context.ViewportMin = FRuntimeUIVector2(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
     Context.ViewportSize = FRuntimeUIVector2(static_cast<float>(ViewportRect.Width), static_cast<float>(ViewportRect.Height));
+    Context.LayoutSize = FRuntimeUIVector2(static_cast<float>(LayoutWidth), static_cast<float>(LayoutHeight));
     Context.DeltaTime = DeltaTime;
 
     PendingPIERmlUiRenderContexts.push_back(Context);
 
-    if (EditorEngine->PumpPIERmlUiInput(ViewportRect))
+    if (EditorEngine->PumpPIERmlUiInput(ViewportRect, LayoutWidth, LayoutHeight))
     {
         InputSystem::Get().SetGuiMouseCapture(true);
         InputSystem::Get().SetGuiViewportMouseBlock(true);
@@ -3189,44 +3315,6 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
 
     if (bPIEPossessed)
     {
-        static constexpr EViewMode PIEViewModes[] = {
-            EViewMode::Lit_Gouraud,
-            EViewMode::Unlit,
-            EViewMode::Wireframe,
-            EViewMode::Depth,
-            EViewMode::Normal,
-        };
-
-        char PIEViewPopupID[48];
-        snprintf(PIEViewPopupID, sizeof(PIEViewPopupID), "##PIEViewportViewPopup_%d", ViewportIndex);
-        char PIEViewButtonLabel[80];
-        snprintf(PIEViewButtonLabel, sizeof(PIEViewButtonLabel), "View Mode: %s ▼", GetViewModeName(Client->GetViewportState()->ViewMode));
-
-        if (DrawViewportTextButton("##PIEViewportViewButton", PIEViewButtonLabel))
-        {
-            ImGui::OpenPopup(PIEViewPopupID);
-        }
-        if (ImGui::BeginPopup(PIEViewPopupID))
-        {
-            for (EViewMode Mode : PIEViewModes)
-            {
-                if (ImGui::MenuItem(GetViewModeName(Mode), nullptr, Client->GetViewportState()->ViewMode == Mode))
-                {
-                    Client->GetViewportState()->ViewMode = Mode;
-                }
-            }
-            ImGui::EndPopup();
-        }
-
-        ImGui::SameLine(0.0f, 8.0f);
-        const char* PIEStateLabel = (Client->GetPlayState() == EViewportPlayState::Paused) ? "PIE Paused" : "PIE";
-        ImGui::TextDisabled("%s", PIEStateLabel);
-        ImGui::SameLine(0.0f, 8.0f);
-        bool bFullscreen = IsPIEViewportFullscreenEnabled();
-        if (ImGui::Checkbox("Fullscreen", &bFullscreen))
-        {
-            SetPIEViewportFullscreenEnabled(bFullscreen);
-        }
         ImGui::PopID();
         return;
     }
