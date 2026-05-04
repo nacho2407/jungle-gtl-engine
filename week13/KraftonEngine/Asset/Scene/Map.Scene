@@ -4339,62 +4339,66 @@
         }
       }
     }, {
-      "ClassName" : "ATriggerVolumeBase",
-      "Name" : "GoalTrigger",
-      "NonSceneComponents" : [],
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "BGMPlayer",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "BGMPlayer.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
       "Properties" : {
-        "Location" : [4.447159, 35.948753, 4.935393],
+        "Location" : [103.902794, -128.664200, 3.695285],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
-        "Tags" : "GoalTrigger",
-        "TriggerTag" : "GoalTrigger",
+        "Tags" : "",
         "Visible" : true
       },
       "RootComponent" : {
         "Children" : [],
-        "ClassName" : "UBoxComponent",
+        "ClassName" : "UStaticMeshComponent",
         "Properties" : {
-          "Box Extent" : [3.000000, 3.000000, 3.000000],
           "Cast Shadow" : false,
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
-          "Collision Enabled" : 1,
+          "Collision Enabled" : 0,
           "Collision Responses" : {
-            "Pawn" : 1,
-            "Projectile" : 1,
-            "Trigger" : 1,
-            "WorldDynamic" : 1,
-            "WorldStatic" : 1
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
           },
-          "Draw Only If Selected" : false,
-          "Generate Overlap Events" : true,
-          "Location" : [4.447159, 35.948753, 4.935393],
+          "Generate Overlap Events" : false,
+          "Location" : [103.902794, -128.664200, 3.695285],
           "Mass (kg)" : 1.000000,
-          "Object Type" : 4,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
-          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
+          "Static Mesh" : "None",
           "Two Sided Shadow" : false,
-          "Visible" : true,
+          "Visible" : false,
           "bEditorOnly" : false,
           "bTickEnable" : true
         }
       }
     }],
   "ClassName" : "UWorld",
-  "ContextHandle" : "NewScene",
-  "ContextName" : "New Scene",
+  "ContextHandle" : "Loaded Scene",
+  "ContextName" : "Loaded Scene",
   "Name" : "Map",
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [100.464745, -130.924744, 3.456294],
+    "Location" : [10.000000, 0.000000, 5.000000],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 0.257370, 27.964964]
+    "Rotation" : [0.000000, 26.565046, 179.999985]
   },
   "Version" : 2,
   "WorldSettings" : {
-    "GameMode" : "AGameModeCarGame"
+    "GameMode" : ""
   },
   "WorldType" : "Editor"
 }
