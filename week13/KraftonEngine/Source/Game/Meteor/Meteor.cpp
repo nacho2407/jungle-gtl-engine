@@ -60,15 +60,14 @@ void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 void AMeteor::PostDuplicate()
 {
 	Super::PostDuplicate();
-	CollisionSphere = Cast<USphereComponent>(GetRootComponent());
-	Mesh = GetComponentByClass<UStaticMeshComponent>();
+	ResolveCachedComponents();
 }
 
 void AMeteor::BeginPlay()
 {
 	if (!CollisionSphere)
 	{
-		InitDefaultComponents();
+		ResolveCachedComponents();
 	}
 
 	Super::BeginPlay();
@@ -131,4 +130,10 @@ void AMeteor::HandleHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
 	// PhysX onContact 콜백 안에서 즉시 DestroyActor 호출하면 PhysX scene 변경 시점이
 	// fetchResults 도중과 겹쳐 위험. Lifetime을 만료시켜 다음 AMeteor::Tick에서 안전하게 destroy.
 	ElapsedTime = Lifetime;
+}
+
+void AMeteor::ResolveCachedComponents()
+{
+	CollisionSphere = Cast<USphereComponent>(GetRootComponent());
+	Mesh = GetComponentByClass<UStaticMeshComponent>();
 }
