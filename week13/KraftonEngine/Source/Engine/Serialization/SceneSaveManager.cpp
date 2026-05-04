@@ -297,7 +297,7 @@ void FSceneSaveManager::DeserializeCamera(json::JSON& CameraJSON, FPerspectiveCa
 // Load
 // ============================================================
 
-void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext, FPerspectiveCameraData& OutCam)
+void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext, FPerspectiveCameraData& OutCam, const EWorldType* OverrideWorldType)
 {
 	using json::JSON;
 	std::ifstream File(std::filesystem::path(FPaths::ToWide(filepath)));
@@ -318,9 +318,16 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 	UWorld* World = static_cast<UWorld*>(WorldObj);
 
-	EWorldType WorldType = root.hasKey(SceneKeys::WorldType)
-		? StringToWorldType(root[SceneKeys::WorldType].ToString())
-		: EWorldType::Editor;
+	EWorldType WorldType = OverrideWorldType
+		? *OverrideWorldType
+		: (root.hasKey(SceneKeys::WorldType)
+			? StringToWorldType(root[SceneKeys::WorldType].ToString())
+			: EWorldType::Editor);
+
+	// World 의 WorldType 을 actor deserialize 전에 적용. Default 가 Editor 라 actor 추가
+	// 시 CreateRenderState 의 "EditorOnly && WorldType != Editor" 체크가 잘못 통과돼 Game
+	// 빌드에서도 editor billboard SceneProxy 가 만들어지는 버그를 막기 위해.
+	World->SetWorldType(WorldType);
 	FString ContextName = root.hasKey(SceneKeys::ContextName)
 		? root[SceneKeys::ContextName].ToString()
 		: "Loaded Scene";
