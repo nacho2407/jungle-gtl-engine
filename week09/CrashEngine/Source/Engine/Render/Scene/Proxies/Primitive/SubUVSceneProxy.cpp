@@ -60,7 +60,9 @@ void FSubUVSceneProxy::UpdateMesh()
     DepthStencil = EDepthStencilState::DepthReadOnly;
     Rasterizer   = ERasterizerState::SolidNoCull;
 
-    MaterialCB[0] = &UVRegionCB;
+    MaterialCB[0] = nullptr;
+    MaterialCB[1] = nullptr;
+    ExtraCB.Bind<FSubUVRegionCBData>(&UVRegionCB, ECBSlot::PerShader0);
 
     if (UMaterial* Material = Comp->GetSubUVMaterial())
     {
@@ -214,7 +216,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FSceneView& SceneView)
         Region.Width               = std::max(0.0f, FrameW - Left - Right);
         Region.Height              = std::max(0.0f, FrameH - Top - Bottom);
 
-		ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
+        ID3D11DeviceContext* Context = GEngine->GetRenderer().GetFD3DDevice().GetDeviceContext();
         if (Context && UVRegionCB.GetBuffer())
         {
             UVRegionCB.Update(Context, &Region, sizeof(FSubUVRegionCBData));

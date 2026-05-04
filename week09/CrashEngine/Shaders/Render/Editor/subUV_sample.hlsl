@@ -21,16 +21,17 @@ cbuffer SubUVRegionParams : register(b2)
 PS_Input_Tex VS(VS_Input_PNCT input)
 {
     PS_Input_Tex output;
+    float2 baseUV = input.texcoord;
+    baseUV.y = 1.0f - baseUV.y;
+
     output.position = ApplyMVP(input.position);
-    output.texcoord = UVRegion.xy + input.texcoord * UVRegion.zw;
+    output.texcoord = UVRegion.xy + baseUV * UVRegion.zw;
     return output;
 }
 
 float4 PS(PS_Input_Tex input) : SV_TARGET
 {
-
-    float2 UV = UVRegion.xy + input.texcoord * UVRegion.zw;
-    float4 color = SubUVAtlas.Sample(LinearWrapSampler, UV);
+    float4 color = SubUVAtlas.Sample(LinearClampSampler, input.texcoord);
     if (!bIsWireframe && color.a <= 0.001f)
     {
         discard;

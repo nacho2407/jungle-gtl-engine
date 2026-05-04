@@ -12,6 +12,6 @@
     "SpecularStrength": 0.0
   },
   "Textures": {
-    "DiffuseTexture": "Asset/Content/Textures/brick_diff-512.png"
+    "DiffuseTexture": "Asset/Content/Textures/SubUV_Fire.png"
   }
 }

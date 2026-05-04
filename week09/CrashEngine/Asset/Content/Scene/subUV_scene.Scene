@@ -1,0 +1,67 @@
+{
+  "Actors" : [{
+      "ClassName" : "ASubUVActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "ASubUVActor_0",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 10",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "USubUVComponent",
+        "Properties" : {
+          "Bottom Offset" : 0.000000,
+          "Cell Count X" : 6,
+          "Cell Count Y" : 6,
+          "Height" : 815.000000,
+          "Is Editor Helper" : false,
+          "Left Offset" : 0.000000,
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Material" : {
+            "Path" : "Asset/Content/Materials/subUV_sample.json"
+          },
+          "Particle" : "Name_None",
+          "Play Rate" : 7.000000,
+          "Right Offset" : 0.000000,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [0.010000, 0.010000, 0.010000],
+          "Top Offset" : 0.000000,
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "Width" : 815.000000,
+          "bLoop" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "subUV_scene",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 1000.000000,
+    "Location" : [-57.065750, -1.586257, 12.589218],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 12.999008, 1.233232]
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
