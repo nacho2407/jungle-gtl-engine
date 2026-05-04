@@ -160,6 +160,12 @@ namespace
             ReleaseRegisteredFontFiles();
         }
 
+        void ReleaseCachedRenderResources()
+        {
+            GeneratedTextures.clear();
+            ++Version;
+        }
+
         bool LoadFontFace(const Rml::String& FileName, int FaceIndex, bool bFallbackFace, Rml::Style::FontWeight Weight) override
         {
             (void)FaceIndex;
@@ -338,8 +344,7 @@ namespace
 
         void ReleaseFontResources() override
         {
-            GeneratedTextures.clear();
-            ++Version;
+            ReleaseCachedRenderResources();
         }
 
     private:
@@ -818,7 +823,13 @@ void FRmlUiRuntimeModule::Shutdown()
         return;
     }
 
+    GRmlUiFontEngine.ReleaseCachedRenderResources();
     Rml::Shutdown();
     bInitialized = false;
     UE_LOG("[RmlUi] Shutdown RmlUi core.");
+}
+
+void FRmlUiRuntimeModule::ReleaseCachedFontRenderResources()
+{
+    GRmlUiFontEngine.ReleaseCachedRenderResources();
 }

@@ -5,13 +5,23 @@
     <body>
         <div class="screen-root title-screen">
             <div class="title-mark1">
-                <div id="Title.Name.Green" class="title-logo1">CYBER PSYCHO</div>
+                <div id="Title.Name.Green" class="title-logo1">CYBER</div>
             </div>
             <div class="title-mark2">
-                <div id="Title.Name.Red" class="title-logo2">CYBER PSYCHO</div>
+                <div id="Title.Name.Red" class="title-logo2">CYBER</div>
             </div>
             <div class="title-mark3">
-                <div id="Title.Name" class="title-logo3">CYBER PSYCHO</div>
+                <div id="Title.Name" class="title-logo3">CYBER</div>
+            </div>
+
+            <div class="title-mark4">
+                <div id="Title.Name.Green" class="title-logo4">PSYCHO</div>
+            </div>
+            <div class="title-mark5">
+                <div id="Title.Name.Red" class="title-logo5">PSYCHO</div>
+            </div>
+            <div class="title-mark6">
+                <div id="Title.Name" class="title-logo6">PSYCHO</div>
             </div>
 
             <div id="Title.MenuPanel" class="menu-panel">
