@@ -92,7 +92,7 @@ body {
 	text-align: center;
 }
 
-#restart-button {
+#lobby-button {
 	position: absolute;
 	left: 50%;
 	top: 62%;

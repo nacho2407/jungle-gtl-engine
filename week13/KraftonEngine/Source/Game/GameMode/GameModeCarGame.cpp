@@ -40,7 +40,11 @@ void AGameModeCarGame::StartMatch()
 		GS->SetRemainingPhaseTime(0.0f);
 		GS->SetLastEndedPhase(ECarGamePhase::None);
 		GS->SetLastPhaseResult(EPhaseResult::None);
-		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs", MatchDuration);
+		GS->SetHealth(GS->GetMaxHealth());
+		GS->SetFinishOutcome(EFinishOutcome::None);
+		GS->SetScore(0);
+		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs, HP=%d/%d",
+			MatchDuration, GS->GetHealth(), GS->GetMaxHealth());
 	}
 }
 
@@ -70,8 +74,20 @@ void AGameModeCarGame::Tick(float DeltaTime)
 				GS->SetLastEndedPhase(Cur);
 				GS->SetLastPhaseResult(R);
 			}
+
+			// 매치 시간 만료 시점에 모든 페이즈가 클리어돼 있으면 Win, 아니면 Lose.
+			constexpr uint32 AllPhases =
+				(1u << static_cast<uint32>(ECarGamePhase::CarWash))      |
+				(1u << static_cast<uint32>(ECarGamePhase::CarGas))       |
+				(1u << static_cast<uint32>(ECarGamePhase::EscapePolice)) |
+				(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor));
+			const bool bAllCleared = (GS->GetClearedPhasesMask() & AllPhases) == AllPhases;
+			GS->SetFinishOutcome(bAllCleared ? EFinishOutcome::Win : EFinishOutcome::Lose);
+
+			ApplyMatchEndBonus();
 			GS->SetPhase(ECarGamePhase::Finished);
-			UE_LOG("[CarGame] Match time elapsed — Phase = Finished");
+			UE_LOG("[CarGame] Match time elapsed — Phase = Finished, Outcome=%s",
+				bAllCleared ? "Win" : "Lose");
 			return;
 		}
 		GS->SetRemainingMatchTime(t);
@@ -154,9 +170,12 @@ void AGameModeCarGame::SuccessPhase()
 
 	EPhaseResult Result = EPhaseResult::Success;
 
-	UE_LOG("[CarGame] SuccessPhase called — Phase=%d Result=%d", static_cast<int32>(GS->GetPhase()), static_cast<int32>(Result));
+	UE_LOG("[CarGame] SuccessPhase called — Phase=%d Result=%d, RemainingPhaseTime=%.2f",
+		static_cast<int32>(GS->GetPhase()), static_cast<int32>(Result), GS->GetRemainingPhaseTime());
 
-	GS->SetRemainingPhaseTime(0.0f);
+	// EndPhase 가 Result 페이즈로 전이하면서 RemainingPhaseTime 을 ResultDisplayDuration
+	// 로 덮어쓰므로 여기서 0 으로 만들 필요 없음. 오히려 0 으로 만들면 Score Time Bonus
+	// 계산이 항상 0 이 돼서 Lua-driven 페이즈 클리어가 base 점수만 받음.
 	EndPhase(Result);
 }
 
@@ -202,10 +221,36 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 	if (Result == EPhaseResult::Success)
 	{
 		GS->MarkPhaseCleared(Cur);
+
+		// Base + 잔여시간 비례 보너스. 시간 다 써서 클리어해도 base 는 보장.
+		const float Duration  = GetPhaseDuration(Cur);
+		const float Remaining = GS->GetRemainingPhaseTime();
+		const float Ratio     = (Duration > 0.0f) ? (Remaining / Duration) : 0.0f;
+		const int32 TimeBonus = static_cast<int32>(Ratio * static_cast<float>(PhaseTimeBonusMax));
+		const int32 PhaseScore = BasePhaseScore + TimeBonus;
+		GS->AddScore(PhaseScore);
+		UE_LOG("[CarGame] Phase score +%d (base=%d, time=%d, total=%d)",
+			PhaseScore, BasePhaseScore, TimeBonus, GS->GetScore());
+	}
+	else if (Result == EPhaseResult::Failed)
+	{
+		GS->LoseHealth(1);
+		UE_LOG("[CarGame] Phase failed — HP=%d/%d", GS->GetHealth(), GS->GetMaxHealth());
 	}
 
 	GS->SetLastEndedPhase(Cur);
 	GS->SetLastPhaseResult(Result);
+
+	// HP 소진 시 즉시 게임오버 — Result 페이즈 거치지 않고 Finished 로 전이.
+	if (GS->GetHealth() <= 0)
+	{
+		GS->SetRemainingPhaseTime(0.0f);
+		GS->SetFinishOutcome(EFinishOutcome::Lose);
+		ApplyMatchEndBonus();
+		GS->SetPhase(ECarGamePhase::Finished);
+		UE_LOG("[CarGame] HP depleted — Phase = Finished, Outcome=Lose");
+		return;
+	}
 
 	// Result 페이즈로 전이 — 다음 트리거 진입까지 빈 페이즈가 되지 않도록 짧게 표시.
 	GS->SetRemainingPhaseTime(ResultDisplayDuration);
@@ -267,6 +312,23 @@ EPhaseResult AGameModeCarGame::JudgePhaseResult(ECarGamePhase Phase) const
 	}
 }
 
+void AGameModeCarGame::ApplyMatchEndBonus()
+{
+	auto* GS = Cast<AGameStateCarGame>(GetGameState());
+	if (!GS) return;
+
+	const float SafeRemaining = GS->GetRemainingMatchTime() < 0.0f ? 0.0f : GS->GetRemainingMatchTime();
+	const int32 TimeBonus   = static_cast<int32>(SafeRemaining) * MatchTimeBonusPerSec;
+	const int32 HealthBonus = GS->GetHealth() * HealthBonusPerHP;
+	const int32 Total       = TimeBonus + HealthBonus;
+	if (Total != 0)
+	{
+		GS->AddScore(Total);
+	}
+	UE_LOG("[CarGame] Match-end bonus: time=%d, hp=%d, total=%d (score=%d)",
+		TimeBonus, HealthBonus, Total, GS->GetScore());
+}
+
 bool AGameModeCarGame::TryFinishOnAllCleared()
 {
 	auto* GS = Cast<AGameStateCarGame>(GetGameState());
@@ -280,8 +342,10 @@ bool AGameModeCarGame::TryFinishOnAllCleared()
 
 	if ((GS->GetClearedPhasesMask() & AllPhases) == AllPhases)
 	{
+		GS->SetFinishOutcome(EFinishOutcome::Win);
+		ApplyMatchEndBonus();
 		GS->SetPhase(ECarGamePhase::Finished);
-		UE_LOG("[CarGame] All phases cleared — Phase = Finished");
+		UE_LOG("[CarGame] All phases cleared — Phase = Finished, Outcome=Win");
 		return true;
 	}
 	return false;

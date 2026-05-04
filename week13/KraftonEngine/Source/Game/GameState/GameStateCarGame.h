@@ -25,7 +25,19 @@ enum class EPhaseResult : uint8
 	Failed,
 };
 
+// 매치 종료(Phase=Finished) 시점의 최종 결과 — Win / Lose 분기.
+//   Win  : 모든 페이즈 1회 클리어 후 도달 (또는 매치 시간 만료 시 모두 클리어 상태)
+//   Lose : HP 0 도달 또는 매치 시간 만료 시 미클리어 페이즈 잔존
+enum class EFinishOutcome : uint8
+{
+	None = 0,
+	Win,
+	Lose,
+};
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGamePhaseChangedSignature, ECarGamePhase /*NewPhase*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameHealthChangedSignature, int32 /*NewHealth*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameScoreChangedSignature,  int32 /*NewScore*/);
 
 // ============================================================
 // AGameStateCarGame — 자동차 게임의 현재 페이즈/타이머/누적 결과 데이터 보유
@@ -55,6 +67,21 @@ public:
 	EPhaseResult  GetLastPhaseResult() const { return LastPhaseResult; }
 	uint32        GetClearedPhasesMask() const { return ClearedPhasesMask; }
 
+	// --- HP (페이즈 실패 시 1씩 차감, 0 도달 시 GameMode 가 Finished 로 전이) ---
+	int32 GetHealth() const { return CurrentHealth; }
+	int32 GetMaxHealth() const { return MaxHealth; }
+	void  SetHealth(int32 V);
+	void  LoseHealth(int32 Amount = 1);
+
+	// --- Finish outcome (Phase=Finished 시점 최종 결과) ---
+	EFinishOutcome GetFinishOutcome() const { return FinishOutcome; }
+	void           SetFinishOutcome(EFinishOutcome V) { FinishOutcome = V; }
+
+	// --- Score (페이즈 성공 보너스 + 매치 종료 보너스 누적) ---
+	int32 GetScore() const { return CurrentScore; }
+	void  SetScore(int32 V);
+	void  AddScore(int32 Delta);
+
 	// --- GameMode 전용 setter (private 으로 두지 않은 이유: friend 회피 + 단일 호출자 가정) ---
 	void SetRemainingMatchTime(float V) { RemainingMatchTime = V; }
 	void SetRemainingPhaseTime(float V) { RemainingPhaseTime = V; }
@@ -63,6 +90,8 @@ public:
 	void MarkPhaseCleared(ECarGamePhase P) { ClearedPhasesMask |= (1u << static_cast<uint32>(P)); }
 
 	FCarGamePhaseChangedSignature OnPhaseChanged;
+	FCarGameHealthChangedSignature OnHealthChanged;
+	FCarGameScoreChangedSignature  OnScoreChanged;
 
 	void Serialize(FArchive& Ar) override;
 
@@ -77,4 +106,12 @@ private:
 	EPhaseResult  LastPhaseResult = EPhaseResult::None;
 
 	uint32 ClearedPhasesMask = 0;      // bit per ECarGamePhase — Success 시 set
+
+	static constexpr int32 DefaultMaxHealth = 3;
+	int32 MaxHealth     = DefaultMaxHealth;
+	int32 CurrentHealth = DefaultMaxHealth;
+
+	EFinishOutcome FinishOutcome = EFinishOutcome::None;
+
+	int32 CurrentScore = 0;
 };

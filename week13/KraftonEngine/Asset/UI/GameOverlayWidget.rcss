@@ -50,6 +50,43 @@ body {
 	text-align: center;
 }
 
+#hud-hp-panel {
+	position: absolute;
+	left: 4%;
+	top: 156dp;
+	width: 260dp;
+	height: 78dp;
+	border-width: 2dp;
+	border-color: #f04444;
+	background-color: #15171ce6;
+}
+
+#hud-hp-panel .hud-small-label {
+	left: 18dp;
+	top: 10dp;
+	width: 80dp;
+	color: #ff8888;
+}
+
+.hud-hp-row {
+	position: absolute;
+	left: 18dp;
+	top: 32dp;
+	width: 224dp;
+	height: 40dp;
+}
+
+.hud-hp-slot {
+	color: #f04444;
+	font-size: 36dp;
+	line-height: 40dp;
+	margin-right: 8dp;
+}
+
+.hud-hp-slot.empty {
+	color: #4a4a52;
+}
+
 #hud-quest-panel {
 	position: absolute;
 	left: 326dp;
