@@ -1,29 +1,31 @@
 <rml>
     <head>
-        <link type="text/rcss" href="GameUI.rcss"/>
+        <link type="text/rcss" href="Pause.rcss"/>
     </head>
     <body>
         <div id="Pause.Dim" class="screen-root dim">
-            <div class="modal-panel">
-                <div id="Pause.Title" class="headline">Paused</div>
-                <button id="Pause.Resume" class="button primary" data-action="ResumeGame">Resume</button>
-                <button id="Pause.Restart" class="button" data-action="RestartGame">Retry</button>
-                <button id="Pause.TitleButton" class="button danger" data-action="BackToTitle">Main</button>
+            <div id="Pause.MenuPanel" class="pause-panel">
+                <div class="headline">Paused</div>
+                <button id="Pause.Resume" class="menu-button primary" data-action="ResumeGame">Resume</button>
+                <button id="Pause.Restart" class="menu-button" data-action="RestartGame">Retry</button>
+                <button id="Pause.Settings" class="menu-button" data-action="ShowPauseSettings">Settings</button>
+                <button id="Pause.TitleButton" class="menu-button danger" data-action="BackToTitle">Main</button>
+            </div>
 
-                <div class="settings-block">
-                    <div class="section-title">Settings</div>
-                    <div class="setting-row">
-                        <div class="setting-label">BGM</div>
-                        <button class="step-button" data-action="BGMDown">-</button>
-                        <div id="Pause.Settings.BGMValue" class="setting-value">100%</div>
-                        <button class="step-button" data-action="BGMUp">+</button>
-                    </div>
-                    <div class="setting-row">
-                        <div class="setting-label">SFX</div>
-                        <button class="step-button" data-action="SFXDown">-</button>
-                        <div id="Pause.Settings.SFXValue" class="setting-value">100%</div>
-                        <button class="step-button" data-action="SFXUp">+</button>
-                    </div>
+            <div id="Pause.SettingsPanel" class="pause-panel settings-panel">
+                <button class="panel-close" data-action="BackToPauseMenu">
+                    <img class="panel-close-icon" src="Asset/UIImage/13_Escape_r.PNG"/>
+                </button>
+                <div class="headline">Settings</div>
+                <div class="setting-row">
+                    <div class="setting-label">BGM</div>
+                    <input id="Pause.Settings.BGMSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="BGMVolumeChanged"/>
+                    <div id="Pause.Settings.BGMValue" class="setting-value">100%</div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">SFX</div>
+                    <input id="Pause.Settings.SFXSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="SFXVolumeChanged"/>
+                    <div id="Pause.Settings.SFXValue" class="setting-value">100%</div>
                 </div>
             </div>
         </div>

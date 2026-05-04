@@ -8,11 +8,7 @@
 
 // --- 빌드 설정 ---
 #ifndef STATS
-#if defined(_DEBUG) || defined(DEBUG)
-#define STATS 1
-#else
 #define STATS 0
-#endif
 #endif
 
 // --- Stat Entry ---

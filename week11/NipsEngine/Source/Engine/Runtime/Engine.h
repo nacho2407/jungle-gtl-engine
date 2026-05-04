@@ -77,6 +77,8 @@ public:
 	virtual bool HasRmlUIElement(const FString& ElementId) { return false; }
 	virtual FString GetRmlUIElementText(const FString& ElementId) { return ""; }
 	virtual bool SetRmlUIElementText(const FString& ElementId, const FString& Text) { return false; }
+	virtual FString GetRmlUIElementValue(const FString& ElementId) { return ""; }
+	virtual bool SetRmlUIElementValue(const FString& ElementId, const FString& Value) { return false; }
 	virtual bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) { return false; }
 	virtual bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) { return false; }
 	virtual bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) { return false; }

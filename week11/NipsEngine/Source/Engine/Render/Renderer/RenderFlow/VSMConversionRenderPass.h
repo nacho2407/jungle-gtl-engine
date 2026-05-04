@@ -14,7 +14,11 @@ protected:
 
 
 	private:
+    bool HasUsedShadowTiles() const;
     bool DrawVSMConversion(const FRenderPassContext* Context);      // depth, depth² 변환
     bool DispatchHorizontalBlur(const FRenderPassContext* Context); // Horizontal CS
     bool DispatchVerticalBlur(const FRenderPassContext* Context);   // Vertical CS
+
+    bool bSkipThisFrame = false;
+    ID3D11RasterizerState* PrevRasterizerState = nullptr;
 };

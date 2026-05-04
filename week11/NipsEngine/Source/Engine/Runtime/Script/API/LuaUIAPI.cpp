@@ -92,6 +92,16 @@ namespace FLuaEngineAPI
             return GEngine ? GEngine->GetRmlUIElementText(ElementId) : "";
         };
 
+        UI["GetElementValue"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementValue(ElementId) : "";
+        };
+
+        UI["SetElementValue"] = [](const FString& ElementId, const FString& Value) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementValue(ElementId, Value) : false;
+        };
+
         UI["HasElement"] = [](const FString& ElementId) -> bool
         {
             return GEngine ? GEngine->HasRmlUIElement(ElementId) : false;
@@ -185,6 +195,16 @@ namespace FLuaEngineAPI
         UI["SetText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
             return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
+        };
+
+        UI["GetValue"] = [](const FString& ElementId) -> FString
+        {
+            return GEngine ? GEngine->GetRmlUIElementValue(ElementId) : "";
+        };
+
+        UI["SetValue"] = [](const FString& ElementId, const FString& Value) -> bool
+        {
+            return GEngine ? GEngine->SetRmlUIElementValue(ElementId, Value) : false;
         };
 
         UI["SetImage"] = [](const FString& ElementId, const FString& ImagePath) -> bool

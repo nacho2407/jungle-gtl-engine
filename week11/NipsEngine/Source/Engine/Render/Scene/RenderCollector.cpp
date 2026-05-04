@@ -958,17 +958,20 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
 		RenderBus.DirectionalLightInfo = DirLightData;
 		//RenderBus.DirLightComp = DirLight;
 
-        FShadowLightRequest DirLightDataShadow = {};
-		DirLightDataShadow.LightIndex		= InvalidShadowIndex;
-        DirLightDataShadow.LightComponent	= const_cast<UDirectionalLightComponent*>(DirLight);
-        DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
-        DirLightDataShadow.bCastShadows		= DirLight->bCastShadows;
-        DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
-        DirLightDataShadow.ConstantBias		= DirLight->ConstantBias;
-        DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
-        DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
-        DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
-		RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
+        if (RenderBus.GetShowFlags().bShadow && DirLight->bCastShadows)
+        {
+            FShadowLightRequest DirLightDataShadow = {};
+		    DirLightDataShadow.LightIndex		= InvalidShadowIndex;
+            DirLightDataShadow.LightComponent	= const_cast<UDirectionalLightComponent*>(DirLight);
+            DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
+            DirLightDataShadow.bCastShadows		= true;
+            DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
+            DirLightDataShadow.ConstantBias		= DirLight->ConstantBias;
+            DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
+            DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
+            DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
+		    RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
+        }
 
         LastLightStats.DirectionalLightCount += 1;
         if (DirLight->bCastShadows)
@@ -990,17 +993,20 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         LightData.Type				= 0;
 		RenderBus.LightInfos.push_back(LightData);
 
-		FShadowLightRequest ShadowRequest = {};
-		ShadowRequest.LightIndex		= LightIndex;
-		ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
-		ShadowRequest.Type			= EShadowLightType::SLT_Spot;
-		ShadowRequest.bCastShadows	= SpotLight->bCastShadows;
-        ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
-		ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
-		ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
-		ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
-		ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
-        RenderBus.ShadowLightRequests.push_back(ShadowRequest);
+        if (RenderBus.GetShowFlags().bShadow && SpotLight->bCastShadows)
+        {
+		    FShadowLightRequest ShadowRequest = {};
+		    ShadowRequest.LightIndex		= LightIndex;
+		    ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
+		    ShadowRequest.Type			= EShadowLightType::SLT_Spot;
+		    ShadowRequest.bCastShadows	= true;
+            ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
+		    ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
+		    ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
+		    ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
+		    ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
+            RenderBus.ShadowLightRequests.push_back(ShadowRequest);
+        }
 
         LastLightStats.SpotlightCount += 1;
         if (SpotLight->bCastShadows)
@@ -1017,17 +1023,20 @@ void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus
         LightData.ShadowTextureIndex = InvalidShadowIndex;
 		RenderBus.LightInfos.push_back(LightData);
 
-		FShadowLightRequest PointLightDataShadow = {};
-		PointLightDataShadow.LightIndex = static_cast<uint32>(RenderBus.LightInfos.size() - 1); // TODO: Cubemap Index를 가리키도록 수정
-		PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
-		PointLightDataShadow.Type = EShadowLightType::SLT_Point;
-        PointLightDataShadow.bCastShadows = PointLight->bCastShadows;
-        PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
-		PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
-		PointLightDataShadow.ConstantBias = PointLight->ConstantBias;
-		PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
-		PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
-		RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
+        if (RenderBus.GetShowFlags().bShadow && PointLight->bCastShadows)
+        {
+		    FShadowLightRequest PointLightDataShadow = {};
+		    PointLightDataShadow.LightIndex = static_cast<uint32>(RenderBus.LightInfos.size() - 1); // TODO: Cubemap Index를 가리키도록 수정
+		    PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
+		    PointLightDataShadow.Type = EShadowLightType::SLT_Point;
+            PointLightDataShadow.bCastShadows = true;
+            PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
+		    PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
+		    PointLightDataShadow.ConstantBias = PointLight->ConstantBias;
+		    PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
+		    PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
+		    RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
+        }
 
         LastLightStats.PointLightCount += 1;
         if (PointLight->bCastShadows)

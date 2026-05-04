@@ -56,6 +56,7 @@ private:
 		TComPtr<ID3D11Query> DisjointQuery;
 		FTimestampPair Timestamps[MAX_TIMESTAMPS];
 		uint32 UsedCount = 0;
+		bool bSubmitted = false;
 	};
 
 	FFrameData Frames[FRAME_COUNT];

@@ -33,6 +33,11 @@ public:
 	void SetInputModeGameOnly();
 	void SetInputModeUIOnly();
 	void SetInputModeGameAndUI();
+	void PlayCameraShake(float Intensity, float Duration);
+	void PlayCameraShakeDetailed(float LocationAmplitude, float RotationAmplitudeDegrees, float Frequency, float Duration);
+	void LerpCameraFOVDegrees(float TargetFOVDegrees, float Duration);
+	void ResetCameraFOV(float Duration);
+	void StopCameraEffects();
 
 	virtual void HandleKeyPressed(int VK);
 	virtual void HandleKeyDown(int VK);
@@ -65,7 +70,9 @@ protected:
 	virtual void ApplyPlayerStartTransform(AActor* Pawn, const FVector& SpawnLocation, const FVector& SpawnRotation);
 
 	virtual void UpdatePossessedActorMovement(float DeltaTime);
-	virtual void UpdateRuntimeCameraFromViewTarget();
+	virtual void UpdateRuntimeCameraFromViewTarget(float DeltaTime = 0.0f);
+	void UpdateCameraFOVEffect(float DeltaTime, float BaseFOV);
+	void ApplyCameraShakeEffect(float DeltaTime);
 
 	virtual void OnPossess(AActor* InActor);
 	virtual void OnUnPossess(AActor* OldActor);
@@ -76,4 +83,33 @@ protected:
 	UCameraComponent* ViewTargetCamera = nullptr;
 
 	FViewportCamera RuntimeCamera;
+
+	struct FCameraShakeState
+	{
+		bool bActive = false;
+		float Elapsed = 0.0f;
+		float Duration = 0.0f;
+		float Frequency = 18.0f;
+		float LocationAmplitude = 0.0f;
+		float RotationAmplitudeDegrees = 0.0f;
+		float PhaseX = 0.0f;
+		float PhaseY = 1.7f;
+		float PhaseZ = 3.1f;
+		float Seed = 0.0f;
+	};
+
+	struct FCameraFOVState
+	{
+		bool bActive = false;
+		bool bResetToBase = false;
+		bool bOverrideActive = false;
+		float Elapsed = 0.0f;
+		float Duration = 0.0f;
+		float StartFOV = 0.0f;
+		float TargetFOV = 0.0f;
+		float OverrideFOV = 0.0f;
+	};
+
+	FCameraShakeState CameraShake;
+	FCameraFOVState CameraFOV;
 };

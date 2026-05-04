@@ -547,11 +547,15 @@ void UScriptComponent::EndPlay()
 	if (!ScriptEnv.valid())
 	{
         CoroutineScheduler.StopAll();
+        UnregisterScript();
+        ClearLoadedState();
 		return;
 	}
 
     CallScriptFunction("EndPlay");
     CoroutineScheduler.StopAll();
+    UnregisterScript();
+    ClearLoadedState();
 }
 
 sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScriptLoadResult& Loaded)

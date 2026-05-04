@@ -19,13 +19,16 @@
 #include "RmlUi/Core/Context.h"
 #include "RmlUi/Core/Element.h"
 #include "RmlUi/Core/ElementDocument.h"
+#include "RmlUi/Core/Elements/ElementFormControl.h"
 #include "RmlUi/Core/Event.h"
 #include "RmlUi/Core/EventListener.h"
+#include "RmlUi/Core/Factory.h"
 #include "RmlUi/Core/Input.h"
 #include "RmlUi/Core/Types.h"
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <d3d11.h>
 #include <filesystem>
 #include <fstream>
@@ -230,12 +233,15 @@ void UGameEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
 
 bool UGameEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
 {
+    const auto StartTime = std::chrono::steady_clock::now();
     if (!bRmlUiRuntimeInitialized || !RmlUiContext || ScreenId.empty() || Path.empty())
     {
         return false;
     }
 
     UnloadRmlUIDocument(ScreenId);
+    Rml::Factory::ClearStyleSheetCache();
+    Rml::Factory::ClearTemplateCache();
 
     Rml::ElementDocument* Document = RmlUiContext->LoadDocument(Path);
     if (!Document)
@@ -248,7 +254,8 @@ bool UGameEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path
     Document->Show();
     RmlUiDocumentsByScreenId[ScreenId] = Document;
     RmlUiDocumentPathByScreenId[ScreenId] = Path;
-    UE_LOG("[RmlUi] Loaded document. Screen=%s Path=%s", ScreenId.c_str(), Path.c_str());
+    const double ElapsedSec = std::chrono::duration<double>(std::chrono::steady_clock::now() - StartTime).count();
+    UE_LOG("[RmlUiPerf] Loaded document. Screen=%s Path=%s Time=%.4fs", ScreenId.c_str(), Path.c_str(), ElapsedSec);
     return true;
 }
 
@@ -261,7 +268,9 @@ bool UGameEngine::UnloadRmlUIDocument(const FString& ScreenId)
     }
 
     RmlUiContext->UnloadDocument(Document);
+    RmlUiContext->Update();
     RmlUiDocumentsByScreenId.erase(ScreenId);
+    RmlUiDocumentPathByScreenId.erase(ScreenId);
     return true;
 }
 
@@ -321,8 +330,37 @@ bool UGameEngine::SetRmlUIElementText(const FString& ElementId, const FString& T
         return false;
     }
 
+    if (Element->GetInnerRML() == Text)
+    {
+        return true;
+    }
     Element->SetInnerRML(Text);
     return true;
+}
+
+FString UGameEngine::GetRmlUIElementValue(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
+    {
+        return Control->GetValue();
+    }
+    return GetRmlUIElementAttribute(ElementId, "value");
+}
+
+bool UGameEngine::SetRmlUIElementValue(const FString& ElementId, const FString& Value)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
+    {
+        if (Control->GetValue() == Value)
+        {
+            return true;
+        }
+        Control->SetValue(Value);
+        return true;
+    }
+    return SetRmlUIElementAttribute(ElementId, "value", Value);
 }
 
 bool UGameEngine::SetRmlUIElementVisible(const FString& ElementId, bool bVisible)
@@ -333,12 +371,22 @@ bool UGameEngine::SetRmlUIElementVisible(const FString& ElementId, bool bVisible
         return false;
     }
 
+    const Rml::Property* Display = Element->GetProperty("display");
+    const bool bCurrentlyHidden = Display && Display->ToString() == "none";
     if (bVisible)
     {
+        if (!bCurrentlyHidden)
+        {
+            return true;
+        }
         Element->RemoveProperty("display");
     }
     else
     {
+        if (bCurrentlyHidden)
+        {
+            return true;
+        }
         Element->SetProperty("display", "none");
     }
     return true;
@@ -352,6 +400,11 @@ bool UGameEngine::SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled
         return false;
     }
 
+    const bool bCurrentlyDisabled = Element->HasAttribute("disabled") || Element->IsClassSet("disabled");
+    if (bCurrentlyDisabled == !bEnabled)
+    {
+        return true;
+    }
     if (bEnabled)
     {
         Element->RemoveAttribute("disabled");
@@ -372,6 +425,10 @@ bool UGameEngine::SetRmlUIElementClass(const FString& ElementId, const FString& 
         return false;
     }
 
+    if (Element->IsClassSet(ClassName) == bEnabled)
+    {
+        return true;
+    }
     Element->SetClass(ClassName, bEnabled);
     return true;
 }
@@ -396,6 +453,10 @@ bool UGameEngine::SetRmlUIElementClassNames(const FString& ElementId, const FStr
         return false;
     }
 
+    if (Element->GetClassNames() == ClassNames)
+    {
+        return true;
+    }
     Element->SetClassNames(ClassNames);
     return true;
 }
@@ -420,6 +481,10 @@ bool UGameEngine::SetRmlUIElementAttribute(const FString& ElementId, const FStri
         return false;
     }
 
+    if (Element->GetAttribute<Rml::String>(Name, "") == Value)
+    {
+        return true;
+    }
     Element->SetAttribute(Name, Value);
     return true;
 }
@@ -456,6 +521,11 @@ bool UGameEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& 
         return false;
     }
 
+    const Rml::Property* Property = Element->GetProperty(Name);
+    if (Property && Property->ToString() == Value)
+    {
+        return true;
+    }
     return Element->SetProperty(Name, Value);
 }
 

@@ -2,7 +2,39 @@
 
 ---@alias InputKey string|integer
 ---@alias MouseButton string|integer
----@alias UIEasing "'Linear'"|"'EaseIn'"|"'EaseOut'"|"'EaseInOut'"|"'SmoothStep'"|string
+
+---@class Vector
+---@field X number
+---@field Y number
+---@field Z number
+---@field x number
+---@field y number
+---@field z number
+---@param x? number
+---@param y? number
+---@param z? number
+---@type fun(x?: number, y?: number, z?: number): Vector
+Vector = {}
+---@return number
+function Vector:Size() end
+---@return number
+function Vector:SizeSquared() end
+---@return number
+function Vector:Size2D() end
+---@return number
+function Vector:SizeSquared2D() end
+---@return number
+function Vector:Length() end
+---@return Vector
+function Vector:GetSafeNormal() end
+---@return Vector
+function Vector:Normalized() end
+---@param other Vector
+---@return number
+function Vector:Dot(other) end
+---@param other Vector
+---@return Vector
+function Vector:Cross(other) end
 
 ---@class Object
 local Object = {}
@@ -18,6 +50,10 @@ function Object:IsA(typeName) end
 
 ---@class ActorComponent: Object
 ---@field TypeName string
+---@field Active boolean
+---@field AutoActivate boolean
+---@field TickEnabled boolean
+---@field EditorOnly boolean
 local ActorComponent = {}
 ---@return Actor
 function ActorComponent:GetOwner() end
@@ -28,9 +64,15 @@ function ActorComponent:IsActive() end
 ---@param active boolean
 function ActorComponent:SetActive(active) end
 ---@return boolean
+function ActorComponent:IsAutoActivate() end
+---@param active boolean
+function ActorComponent:SetAutoActivate(active) end
+---@return boolean
 function ActorComponent:IsComponentTickEnabled() end
 ---@param enabled boolean
 function ActorComponent:SetComponentTickEnabled(enabled) end
+---@return boolean
+function ActorComponent:IsEditorOnly() end
 ---@param tag string
 function ActorComponent:AddTag(tag) end
 ---@param tag string
@@ -43,6 +85,8 @@ function ActorComponent:ClearTags() end
 function ActorComponent:GetTags() end
 
 ---@class SceneComponent: ActorComponent
+---@field Location Vector
+---@field Forward Vector
 local SceneComponent = {}
 ---@return SceneComponent
 function SceneComponent:GetParent() end
@@ -69,7 +113,16 @@ function MovementComponent:AddInputVector(direction, scale) end
 function MovementComponent:ConsumeInputVector() end
 ---@return number
 function MovementComponent:GetMaxSpeed() end
+---@param velocity Vector
+---@return boolean
+function MovementComponent:IsExceedingMaxSpeed(velocity) end
 function MovementComponent:StopMovementImmediately() end
+---@param direction Vector
+---@return Vector
+function MovementComponent:ConstrainDirectionToPlane(direction) end
+---@param location Vector
+---@return Vector
+function MovementComponent:ConstrainLocationToPlane(location) end
 
 ---@class ProjectileMovementComponent: MovementComponent
 ---@field InitialSpeed number
@@ -87,14 +140,25 @@ local RotatingMovementComponent = {}
 ---@class InterpToMovementComponent: MovementComponent
 ---@field Duration number
 ---@field AutoActivate boolean
+---@field FacingTargetDirection boolean
 local InterpToMovementComponent = {}
 ---@param point Vector
 function InterpToMovementComponent:AddControlPoint(point) end
 ---@param index integer
 function InterpToMovementComponent:RemoveControlPoint(index) end
+---@param index integer
+---@param point Vector
+function InterpToMovementComponent:SetControlPoint(index, point) end
 function InterpToMovementComponent:Initiate() end
 function InterpToMovementComponent:Reset() end
 function InterpToMovementComponent:ResetAndHalt() end
+
+---@class PursuitMovementComponent: MovementComponent
+---@field FacingTargetDirection boolean
+local PursuitMovementComponent = {}
+function PursuitMovementComponent:ClearTarget() end
+---@return boolean
+function PursuitMovementComponent:IsInPursuit() end
 
 ---@class ScriptComponent: ActorComponent
 local ScriptComponent = {}
@@ -110,6 +174,14 @@ function ScriptComponent:ClearScript() end
 
 ---@class Actor: Object
 ---@field TypeName string
+---@field Name string
+---@field Location Vector
+---@field Rotation Vector
+---@field Scale Vector
+---@field RootComponent SceneComponent
+---@field Active boolean
+---@field Visible boolean
+---@field TickInEditor boolean
 local Actor = {}
 ---@return SceneComponent
 function Actor:GetRootComponent() end
@@ -167,6 +239,41 @@ function Actor:RemoveTag(tag) end
 function Actor:HasTag(tag) end
 ---@return string[]
 function Actor:GetTags() end
+function Actor:ClearTags() end
+---@return Actor
+function Actor:Duplicate() end
+---@return Vector
+function Actor:GetActorForwardVector() end
+---@return Vector
+function Actor:GetActorRightVector() end
+---@return Vector
+function Actor:GetActorUpVector() end
+---@param delta Vector
+function Actor:Add_Actor_World_Offset(delta) end
+function Actor:MarkPendingKill() end
+
+---@class CameraComponent: SceneComponent
+---@field FOV number
+---@field OrthoWidth number
+---@field Orthographic boolean
+---@field NearPlane number
+---@field FarPlane number
+---@field Forward Vector
+---@field Right Vector
+---@field Up Vector
+local CameraComponent = {}
+---@param target Vector
+function CameraComponent:look_at(target) end
+---@param amount number
+function CameraComponent:move_forward(amount) end
+---@param amount number
+function CameraComponent:move_right(amount) end
+---@param amount number
+function CameraComponent:move_up(amount) end
+---@param amount number
+function CameraComponent:add_yaw_input(amount) end
+---@param amount number
+function CameraComponent:add_pitch_input(amount) end
 
 ---@class PlayerController: Actor
 ---@field PossessedActor Actor|nil
@@ -196,6 +303,20 @@ function PlayerController:IsMouseCaptured() end
 function PlayerController:SetInputModeGameOnly() end
 function PlayerController:SetInputModeUIOnly() end
 function PlayerController:SetInputModeGameAndUI() end
+---@param intensity number 1.0 is a normal hit shake.
+---@param duration number seconds
+function PlayerController:PlayCameraShake(intensity, duration) end
+---@param location_amplitude number world-unit camera offset
+---@param rotation_amplitude_degrees number camera rotation offset in degrees
+---@param frequency number shake cycles per second
+---@param duration number seconds
+function PlayerController:PlayCameraShakeDetailed(location_amplitude, rotation_amplitude_degrees, frequency, duration) end
+---@param target_fov_degrees number final vertical FOV in degrees
+---@param duration number seconds
+function PlayerController:LerpCameraFOVDegrees(target_fov_degrees, duration) end
+---@param duration number seconds
+function PlayerController:ResetCameraFOV(duration) end
+function PlayerController:StopCameraEffects() end
 ---@return Actor|nil
 function PlayerController:GetPossessedActor() end
 ---@return Actor|nil
@@ -297,60 +418,69 @@ function EngineAPIInput.IsMouseCaptured() end
 local EngineAPIWorld = {}
 
 ---@param name string
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.FindActorByName(name) end
 
 ---@param name string
----@return AActor[]
+---@return Actor[]
 function EngineAPIWorld.FindActorsByName(name) end
 
 ---@param tag string
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.FindActorByTag(tag) end
 
 ---@param tag string
----@return AActor[]
+---@return Actor[]
 function EngineAPIWorld.FindActorsByTag(tag) end
 
 ---@param tags string[]
----@return AActor[]
+---@return Actor[]
 function EngineAPIWorld.FindActorsByTags(tags) end
 
 ---@param typeName string
----@return AActor[]
+---@return Actor[]
 function EngineAPIWorld.FindActorsByType(typeName) end
 
----@return AActor[]
+---@return Actor[]
 function EngineAPIWorld.GetAllActors() end
 
 ---@return integer
 function EngineAPIWorld.GetActorCount() end
 
----@param actor AActor
+---@param actor Actor
 ---@return boolean
 function EngineAPIWorld.IsValidActor(actor) end
 
 ---@return PlayerController|nil
 function EngineAPIWorld.GetPlayerController() end
 
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.GetPossessedActor() end
 
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.GetViewTargetActor() end
 
 ---@return CameraComponent|nil
 function EngineAPIWorld.GetViewTargetCamera() end
 
+---@param location Vector
+function EngineAPIWorld.SetViewTargetCameraLocation(location) end
+
+---@param delta Vector
+function EngineAPIWorld.AddViewTargetCameraLocation(delta) end
+
+---@return Vector
+function EngineAPIWorld.GetViewTargetCameraLocation() end
+
 ---@param typeName string
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.SpawnActor(typeName) end
 
 ---@param relativePath string
----@return AActor|nil
+---@return Actor|nil
 function EngineAPIWorld.SpawnActorFromPrefab(relativePath) end
 
----@param actor AActor
+---@param actor Actor
 function EngineAPIWorld.DestroyActor(actor) end
 
 ---@class EngineAPIAudio
@@ -432,242 +562,222 @@ function EngineAPIAudio.StopAll() end
 local EngineAPIUI = {}
 
 ---@param screenId string
----@param canvasId? string
+---@param path string
 ---@return boolean
-function EngineAPIUI.ShowScreen(screenId, canvasId) end
+function EngineAPIUI.LoadDocument(screenId, path) end
 
 ---@param screenId string
----@param widgetId string
----@param x number
----@param y number
----@param w number
----@param h number
----@param parentId? string
 ---@return boolean
-function EngineAPIUI.CreatePanel(screenId, widgetId, x, y, w, h, parentId) end
+function EngineAPIUI.UnloadDocument(screenId) end
 
 ---@param screenId string
----@param widgetId string
----@param text string
----@param x number
----@param y number
----@param w number
----@param h number
----@param parentId? string
 ---@return boolean
-function EngineAPIUI.CreateText(screenId, widgetId, text, x, y, w, h, parentId) end
+function EngineAPIUI.ReloadDocument(screenId) end
 
 ---@param screenId string
----@param widgetId string
----@param text string
----@param eventName string
----@param x number
----@param y number
----@param w number
----@param h number
----@param parentId? string
 ---@return boolean
-function EngineAPIUI.CreateButton(screenId, widgetId, text, eventName, x, y, w, h, parentId) end
+function EngineAPIUI.ShowDocument(screenId) end
 
 ---@param screenId string
----@param widgetId string
----@param imagePath string
----@param x number
----@param y number
----@param w number
----@param h number
----@param parentId? string
 ---@return boolean
-function EngineAPIUI.CreateImage(screenId, widgetId, imagePath, x, y, w, h, parentId) end
+function EngineAPIUI.HideDocument(screenId) end
 
----@param screenId string
----@param widgetId string
----@param value number
----@param x number
----@param y number
----@param w number
----@param h number
----@param parentId? string
+---@param elementId string
 ---@return boolean
-function EngineAPIUI.CreateProgressBar(screenId, widgetId, value, x, y, w, h, parentId) end
+function EngineAPIUI.HasElement(elementId) end
 
----@param widgetId string
----@return boolean
-function EngineAPIUI.RemoveWidget(widgetId) end
-
----@param widgetId string
+---@param elementId string
 ---@param text string
 ---@return boolean
-function EngineAPIUI.SetText(widgetId, text) end
+function EngineAPIUI.SetElementText(elementId, text) end
 
----@param widgetId string
----@param imagePath string
+---@param elementId string
+---@return string
+function EngineAPIUI.GetElementText(elementId) end
+
+---@param elementId string
+---@return string
+function EngineAPIUI.GetElementValue(elementId) end
+
+---@param elementId string
+---@param value string
 ---@return boolean
-function EngineAPIUI.SetImage(widgetId, imagePath) end
+function EngineAPIUI.SetElementValue(elementId, value) end
 
----@param widgetId string
----@param value number
----@return boolean
-function EngineAPIUI.SetProgress(widgetId, value) end
-
----@param widgetId string
+---@param elementId string
 ---@param visible boolean
 ---@return boolean
-function EngineAPIUI.SetVisible(widgetId, visible) end
+function EngineAPIUI.SetElementVisible(elementId, visible) end
 
----@param widgetId string
+---@param elementId string
 ---@param enabled boolean
 ---@return boolean
-function EngineAPIUI.SetEnabled(widgetId, enabled) end
+function EngineAPIUI.SetElementEnabled(elementId, enabled) end
 
----@param widgetId string
+---@param elementId string
+---@param className string
+---@param enabled boolean
+---@return boolean
+function EngineAPIUI.SetElementClass(elementId, className, enabled) end
+
+---@param elementId string
+---@param className string
+---@return boolean
+function EngineAPIUI.HasElementClass(elementId, className) end
+
+---@param elementId string
+---@return string
+function EngineAPIUI.GetElementClassNames(elementId) end
+
+---@param elementId string
+---@param classNames string
+---@return boolean
+function EngineAPIUI.SetElementClassNames(elementId, classNames) end
+
+---@param elementId string
+---@param name string
+---@return boolean
+function EngineAPIUI.HasElementAttribute(elementId, name) end
+
+---@param elementId string
+---@param name string
+---@return string
+function EngineAPIUI.GetElementAttribute(elementId, name) end
+
+---@param elementId string
+---@param name string
+---@param value string
+---@return boolean
+function EngineAPIUI.SetElementAttribute(elementId, name, value) end
+
+---@param elementId string
+---@param name string
+---@return boolean
+function EngineAPIUI.RemoveElementAttribute(elementId, name) end
+
+---@param elementId string
+---@param name string
+---@return string
+function EngineAPIUI.GetElementStyle(elementId, name) end
+
+---@param elementId string
+---@param name string
+---@param value string
+---@return boolean
+function EngineAPIUI.SetElementStyle(elementId, name, value) end
+
+---@param elementId string
+---@param name string
+---@return boolean
+function EngineAPIUI.RemoveElementStyle(elementId, name) end
+
+---@param elementId string
+---@param focusVisible? boolean
+---@return boolean
+function EngineAPIUI.FocusElement(elementId, focusVisible) end
+
+---@param elementId string
+---@return boolean
+function EngineAPIUI.BlurElement(elementId) end
+
+---@param elementId string
+---@return boolean
+function EngineAPIUI.ClickElement(elementId) end
+
+---@param elementId string
+---@param text string
+---@return boolean
+function EngineAPIUI.SetText(elementId, text) end
+
+---@param elementId string
+---@return string
+function EngineAPIUI.GetValue(elementId) end
+
+---@param elementId string
+---@param value string
+---@return boolean
+function EngineAPIUI.SetValue(elementId, value) end
+
+---@param elementId string
+---@param imagePath string
+---@return boolean
+function EngineAPIUI.SetImage(elementId, imagePath) end
+
+---@param elementId string
+---@param value number
+---@return boolean
+function EngineAPIUI.SetProgress(elementId, value) end
+
+---@param elementId string
+---@param visible boolean
+---@return boolean
+function EngineAPIUI.SetVisible(elementId, visible) end
+
+---@param elementId string
+---@param enabled boolean
+---@return boolean
+function EngineAPIUI.SetEnabled(elementId, enabled) end
+
+---@param elementId string
 ---@param eventName string
 ---@return boolean
-function EngineAPIUI.SetActionEvent(widgetId, eventName) end
+function EngineAPIUI.SetActionEvent(elementId, eventName) end
 
----@param widgetId string
+---@param elementId string
+---@return boolean
+function EngineAPIUI.RemoveElement(elementId) end
+
+---@param elementId string
 ---@param zOrder integer
 ---@return boolean
-function EngineAPIUI.SetZOrder(widgetId, zOrder) end
+function EngineAPIUI.SetZOrder(elementId, zOrder) end
 
----@param widgetId string
+---@param elementId string
 ---@param r number
 ---@param g number
 ---@param b number
 ---@param a number
 ---@return boolean
-function EngineAPIUI.SetTint(widgetId, r, g, b, a) end
+function EngineAPIUI.SetTint(elementId, r, g, b, a) end
 
----@param widgetId string
+---@param elementId string
 ---@param r number
 ---@param g number
 ---@param b number
 ---@param a number
 ---@return boolean
-function EngineAPIUI.SetBackgroundColor(widgetId, r, g, b, a) end
+function EngineAPIUI.SetBackgroundColor(elementId, r, g, b, a) end
 
----@param widgetId string
+---@param elementId string
 ---@param r number
 ---@param g number
 ---@param b number
 ---@param a number
 ---@return boolean
-function EngineAPIUI.SetTextColor(widgetId, r, g, b, a) end
+function EngineAPIUI.SetTextColor(elementId, r, g, b, a) end
 
----@param widgetId string
+---@param elementId string
 ---@param alpha number
 ---@return boolean
-function EngineAPIUI.SetAlpha(widgetId, alpha) end
+function EngineAPIUI.SetAlpha(elementId, alpha) end
 
----@param widgetId string
+---@param elementId string
 ---@param rounding number
 ---@return boolean
-function EngineAPIUI.SetRounding(widgetId, rounding) end
+function EngineAPIUI.SetRounding(elementId, rounding) end
 
----@param widgetId string
+---@param elementId string
 ---@param fontScale number
 ---@return boolean
-function EngineAPIUI.SetFontScale(widgetId, fontScale) end
+function EngineAPIUI.SetFontScale(elementId, fontScale) end
 
----@param widgetId string
+---@param elementId string
 ---@param x number
 ---@param y number
 ---@param w number
 ---@param h number
 ---@return boolean
-function EngineAPIUI.SetWidgetTransform(widgetId, x, y, w, h) end
-
----@param widgetId string
----@param minX number
----@param minY number
----@param maxX number
----@param maxY number
----@param pivotX number
----@param pivotY number
----@return boolean
-function EngineAPIUI.SetWidgetAnchors(widgetId, minX, minY, maxX, maxY, pivotX, pivotY) end
-
----@param widgetId string
----@param uMinX number
----@param uMinY number
----@param uMaxX number
----@param uMaxY number
----@param drawMode "'Simple'"|"'NineSlice'"|string
----@param left? number
----@param top? number
----@param right? number
----@param bottom? number
----@return boolean
-function EngineAPIUI.SetImageOptions(widgetId, uMinX, uMinY, uMaxX, uMaxY, drawMode, left, top, right, bottom) end
-
----@param widgetId string
----@param normal string
----@param hover string
----@param pressed string
----@param disabled string
----@return boolean
-function EngineAPIUI.SetButtonImages(widgetId, normal, hover, pressed, disabled) end
-
----@param widgetId string
----@param columns integer
----@param rows integer
----@param frameIndex integer
----@return boolean
-function EngineAPIUI.SetSpriteFrame(widgetId, columns, rows, frameIndex) end
-
----@param widgetId string
----@param particleNameOrPath string
----@param frameIndex integer
----@return boolean
-function EngineAPIUI.SetSpriteFrameByMeta(widgetId, particleNameOrPath, frameIndex) end
-
----@param widgetId string
----@param background string
----@param fill string
----@param frame string
----@param direction? "'LeftToRight'"|"'RightToLeft'"|"'BottomToTop'"|"'TopToBottom'"|string
----@return boolean
-function EngineAPIUI.SetProgressImages(widgetId, background, fill, frame, direction) end
-
----@param widgetId string
----@param x number
----@param y number
----@param w number
----@param h number
----@param duration number
----@param loop? boolean
----@param pingPong? boolean
----@param easing? UIEasing
----@return boolean
-function EngineAPIUI.AnimateTransform(widgetId, x, y, w, h, duration, loop, pingPong, easing) end
-
----@param widgetId string
----@param x0 number
----@param y0 number
----@param x1 number
----@param y1 number
----@param duration number
----@param loop? boolean
----@param pingPong? boolean
----@param easing? UIEasing
----@return boolean
-function EngineAPIUI.AnimatePatrol(widgetId, x0, y0, x1, y1, duration, loop, pingPong, easing) end
-
----@param widgetId string
----@param x0 number
----@param y0 number
----@param x1 number
----@param y1 number
----@param speed number
----@param loop? boolean
----@param pingPong? boolean
----@param easing? UIEasing
----@return boolean
-function EngineAPIUI.AnimatePatrolBySpeed(widgetId, x0, y0, x1, y1, speed, loop, pingPong, easing) end
-
----@param widgetId string
----@return boolean
-function EngineAPIUI.StopAnimation(widgetId) end
+function EngineAPIUI.SetElementTransform(elementId, x, y, w, h) end
 
 ---@return string[]
 function EngineAPIUI.PollActionEvents() end
@@ -808,10 +918,10 @@ local EngineAPI = {}
 ---@return PlayerController|nil
 function EngineAPI.GetPlayerController() end
 
----@return AActor|nil
+---@return Actor|nil
 function EngineAPI.GetPossessedActor() end
 
----@return AActor|nil
+---@return Actor|nil
 function EngineAPI.GetViewTargetActor() end
 
 ---@return CameraComponent|nil
