@@ -27,6 +27,7 @@
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Sound/SoundManager.h"
 #include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaActionLibrary.h"
 #include "LuaScript/LuaScriptManager.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
@@ -275,6 +276,12 @@ void UEditorEngine::Tick(float DeltaTime)
         }
 
         World->Tick(DeltaTime, TickType);
+    }
+
+    if (IsPlayingInEditor() && LuaActionLibrary::ProcessPendingSceneLoad())
+    {
+        SelectionManager.SetWorld(GetWorld());
+        OnRenderSceneCleared();
     }
 
     Render(DeltaTime);

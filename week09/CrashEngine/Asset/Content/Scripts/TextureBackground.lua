@@ -85,5 +85,7 @@ function OnKeyPressed(key)
         end
 
         refreshMenuHighlight()
+    elseif key == "Enter" and selected_index == 1 then
+        LoadScene("PlayerTest.Scene")
     end
 end
