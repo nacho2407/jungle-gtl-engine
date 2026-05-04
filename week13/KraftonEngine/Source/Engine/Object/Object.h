@@ -112,10 +112,20 @@ private:
 };
 
 extern TArray<UObject*> GUObjectArray;
+// 살아있는 UObject 포인터를 O(1) 로 조회하기 위한 set. UObject ctor/dtor 가 자동 유지.
+// dangling pointer 도 hash 만 계산하므로(deref 없음) 안전.
+extern TSet<UObject*> GUObjectSet;
+
+// 포인터가 현재 살아있는 UObject 를 가리키는지 확인. dangling/freed 포인터가 들어와도
+// 해시 테이블 조회만 하므로 deref 안 함 — 안전.
+inline bool IsValid(const UObject* Object)
+{
+	return Object && GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end();
+}
 
 inline bool IsAliveObject(const UObject* Object)
 {
-	return Object && std::find(GUObjectArray.begin(), GUObjectArray.end(), Object) != GUObjectArray.end();
+	return IsValid(Object);
 }
 
 class UObjectManager : public TSingleton<UObjectManager>
@@ -138,17 +148,50 @@ public:
 		return Obj;
 	}
 
+	// 즉시 destroy — 호출자가 lifetime 을 안전하게 보장한 경우에만 사용 (예: ~AActor 가
+	// 자기 컴포넌트들을 정리하는 destructor 흐름, 단발성 transient material 해제 등).
+	// gameplay 코드가 액터를 destroy 하려는 경우엔 World::DestroyActor 를 통해 MarkPendingKill
+	// 경로를 타야 함 — 그 쪽은 frame 끝에 일괄 delete.
 	void DestroyObject(UObject* Obj)
 	{
-		if (!Obj)
-		{
-			return;
-		}
+		if (!Obj) return;
 		delete Obj;
+	}
+
+	// PendingKill 큐에 추가만 — 실제 delete 는 UEngine::Tick 끝의 FlushPendingKill 시점.
+	// PhysX onContact 콜백 / TickManager 순회 / 자기 callback 안에서의 self-destroy 등
+	// "delete this" 가 호출 stack 위의 코드를 dangling 으로 만드는 사고를 방지하는 용도.
+	void MarkPendingKill(UObject* Obj)
+	{
+		if (!Obj) return;
+		if (std::find(PendingKill.begin(), PendingKill.end(), Obj) != PendingKill.end()) return;
+		PendingKill.push_back(Obj);
+	}
+
+	bool IsPendingKill(const UObject* Obj) const
+	{
+		return Obj && std::find(PendingKill.begin(), PendingKill.end(), Obj) != PendingKill.end();
+	}
+
+	// 매 frame UEngine::Tick 끝에서 호출 — 중간 작업이 새 PendingKill 을 추가할 수도 있어
+	// (예: Actor 소멸 시 ~AActor 가 RemoveComponent → DestroyObject) swap-and-process 패턴으로
+	// cascade 처리. 처리 도중 vector 가 reallocate 돼도 안전.
+	void FlushPendingKill()
+	{
+		while (!PendingKill.empty())
+		{
+			TArray<UObject*> Local;
+			std::swap(Local, PendingKill);
+			for (UObject* Obj : Local)
+			{
+				if (Obj) delete Obj;
+			}
+		}
 	}
 
 private:
 	TMap<FString, uint32> NameCounters;
+	TArray<UObject*> PendingKill;
 
 public:
 	UObject* FindByUUID(uint32 InUUID)

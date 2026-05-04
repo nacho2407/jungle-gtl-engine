@@ -194,14 +194,14 @@ void FSpatialPartition::FlushPrimitive()
 
 	for (AActor* Actor : DirtyActors)
 	{
-		if (!Actor)
+		if (!IsValid(Actor))
 		{
 			continue;
 		}
 
 		for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
 		{
-			if (!Prim)
+			if (!IsValid(Prim))
 			{
 				continue;
 			}
@@ -212,9 +212,12 @@ void FSpatialPartition::FlushPrimitive()
 				{
 					RemovePrimitive(Prim);
 				}
-				else if (FOctree* Node = Prim->GetOctreeNode())
+				else if (Prim->GetOctreeNode())
 				{
-					Node->RemoveDirect(Prim, false);
+					// cached OctreeNode 가 stale (freed FOctree) 일 수 있으니 root traversal
+					// 로 안전하게 제거. 실패해도 OctreeLocation 은 어차피 stale 일 뿐 다음
+					// Insert 가 새 node 로 덮어씀.
+					Octree->Remove(Prim);
 				}
 				continue;
 			}
@@ -232,14 +235,12 @@ void FSpatialPartition::FlushPrimitive()
 				continue;
 			}
 
-			if (FOctree* Node = Prim->GetOctreeNode())
+			if (Prim->GetOctreeNode())
 			{
-				if (Node->GetLooseBounds().IsContains(PrimBox))
-				{
-					continue;
-				}
-
-				Node->RemoveDirect(Prim, false);
+				// cached node 의 LooseBounds 도 신뢰 못 함 (freed 일 수도). Octree->Remove 로
+				// root 부터 walking 해 제거 후 재삽입 — 약간 느려지지만 dangling FOctree* 가
+				// 끼치는 use-after-free 를 차단.
+				Octree->Remove(Prim);
 
 				if (!Octree->Insert(Prim))
 				{
@@ -437,18 +438,19 @@ void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 
 void FSpatialPartition::RemoveSinglePrimitive(UPrimitiveComponent* Primitive)
 {
-	if (!Primitive) return;
+	if (!IsValid(Primitive)) return;
 
 	if (Primitive->IsInOctreeOverflow())
 	{
 		RemovePrimitive(Primitive);
 	}
-	else if (FOctree* Node = Primitive->GetOctreeNode())
-	{
-		Node->RemoveDirect(Primitive);
-	}
 	else if (Octree)
 	{
+		// cached OctreeNode 가 stale 일 수 있으니 root 부터 traversal. 약간 느려지지만
+		// dangling FOctree 노드 접근으로 인한 use-after-free 사고 방지. 내부적으로
+		// FOctree::Remove → RemoveDirect 호출하며, RemoveDirect 는 bTryMergeNow=true 가
+		// default 라 즉시 merge 시도. 하지만 root traversal 자체는 valid 트리 안에서만
+		// 일어나므로 안전.
 		Octree->Remove(Primitive);
 	}
 }

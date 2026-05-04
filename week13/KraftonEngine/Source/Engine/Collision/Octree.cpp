@@ -84,7 +84,7 @@ bool FOctree::Insert(UPrimitiveComponent* Primitive)
 
 bool FOctree::RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow)
 {
-	if (!Primitive)
+	if (!IsValid(Primitive))
 	{
 		return false;
 	}
@@ -199,16 +199,20 @@ void FOctree::TryMerge()
 
 		for (UPrimitiveComponent* Prim : Child->PrimitiveList)
 		{
-			if (Prim)
+			if (IsValid(Prim))
 			{
 				Prim->SetOctreeLocation(this, false);
 			}
 		}
 
-		PrimitiveList.insert(
-			PrimitiveList.end(),
-			Child->PrimitiveList.begin(),
-			Child->PrimitiveList.end());
+		// dangling 포인터를 부모 list 에 그대로 옮기지 않도록 필터해서 옮김.
+		for (UPrimitiveComponent* Prim : Child->PrimitiveList)
+		{
+			if (IsValid(Prim))
+			{
+				PrimitiveList.push_back(Prim);
+			}
+		}
 
 		Child->PrimitiveList.clear();
 		delete Child;
@@ -220,7 +224,7 @@ void FOctree::ClearChildrenAndPrimitiveLocations()
 {
 	for (UPrimitiveComponent* Prim : PrimitiveList)
 	{
-		if (Prim && Prim->GetOctreeNode() == this)
+		if (IsValid(Prim) && Prim->GetOctreeNode() == this)
 		{
 			Prim->ClearOctreeLocation();
 		}
@@ -328,7 +332,13 @@ bool FOctree::HasPrimitive(const UPrimitiveComponent* Primitive)
 
 void FOctree::GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPrimitiveList)
 {
-	OutPrimitiveList.insert(OutPrimitiveList.end(), PrimitiveList.begin(), PrimitiveList.end());
+	for (UPrimitiveComponent* Prim : PrimitiveList)
+	{
+		if (IsValid(Prim))
+		{
+			OutPrimitiveList.push_back(Prim);
+		}
+	}
 
 	if (!IsLeaf())
 	{

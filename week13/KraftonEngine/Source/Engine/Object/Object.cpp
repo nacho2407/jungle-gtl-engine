@@ -5,16 +5,20 @@
 #include "Object/ObjectFactory.h"
 
 TArray<UObject*> GUObjectArray;
+TSet<UObject*> GUObjectSet;
 
 UObject::UObject()
 {
 	UUID = UUIDGenerator::GenUUID();
 	InternalIndex = static_cast<uint32>(GUObjectArray.size());
 	GUObjectArray.push_back(this);
+	GUObjectSet.insert(this);
 }
 
 UObject::~UObject()
 {
+	GUObjectSet.erase(this);
+
 	uint32 LastIndex = static_cast<uint32>(GUObjectArray.size() - 1);
 
 	if (InternalIndex != LastIndex)
