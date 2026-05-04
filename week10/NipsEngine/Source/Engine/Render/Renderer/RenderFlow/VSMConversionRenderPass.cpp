@@ -12,9 +12,45 @@ bool FVSMConversionRenderPass::Release()
     return true;
 }
 
+bool FVSMConversionRenderPass::HasUsedShadowTiles() const
+{
+    const TArray<FShadowAtlasTile> ShadowAtlasTiles = FShadowAtlasManager::Get().GetAllocatedTiles();
+    for (const auto& Tile : ShadowAtlasTiles)
+    {
+        if (Tile.bUsed)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
 {
+    bSkipThisFrame = true;
+    OutSRV = PrevPassSRV;
+    OutRTV = PrevPassRTV;
+    if (PrevRasterizerState != nullptr)
+    {
+        PrevRasterizerState->Release();
+        PrevRasterizerState = nullptr;
+    }
+
+    if (Context == nullptr || Context->RenderBus == nullptr || !Context->RenderBus->GetShowFlags().bShadow)
+    {
+        return true;
+    }
+
+    if (!HasUsedShadowTiles())
+    {
+        return true;
+    }
+
+    bSkipThisFrame = false;
+
     ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+    DeviceContext->RSGetState(&PrevRasterizerState);
 
     // VSM 기록에 영향을 주는 blend state 초기화.
 
@@ -51,6 +87,31 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     ShadowViewport.MaxDepth = 1.0f;
     DeviceContext->RSSetViewports(1, &ShadowViewport);
 
+    D3D11_RASTERIZER_DESC RasterizerDesc = {};
+    RasterizerDesc.FillMode = D3D11_FILL_SOLID;
+    RasterizerDesc.CullMode = D3D11_CULL_NONE;
+    RasterizerDesc.DepthClipEnable = TRUE;
+    RasterizerDesc.ScissorEnable = TRUE;
+
+    ID3D11RasterizerState* ScissorRasterizerState = nullptr;
+    HRESULT Hr = Context->Device->CreateRasterizerState(&RasterizerDesc, &ScissorRasterizerState);
+    if (FAILED(Hr) || ScissorRasterizerState == nullptr)
+    {
+        DeviceContext->RSSetState(PrevRasterizerState);
+        if (PrevRasterizerState != nullptr)
+        {
+            PrevRasterizerState->Release();
+            PrevRasterizerState = nullptr;
+        }
+        bSkipThisFrame = true;
+        return true;
+    }
+
+    DeviceContext->RSSetState(ScissorRasterizerState);
+    if (ScissorRasterizerState != nullptr)
+    {
+        ScissorRasterizerState->Release();
+    }
 
     // constantbuffer는 shadowrenderpass에서 알아서 해줌ㄴ
     return true;
@@ -58,6 +119,11 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FVSMConversionRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (bSkipThisFrame)
+    {
+        return true;
+    }
+
     DrawVSMConversion(Context);
 	// AtlasManager.VSMRTV를 통해서 depth , depth^2 기록
     DispatchHorizontalBlur(Context);
@@ -68,6 +134,11 @@ bool FVSMConversionRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FVSMConversionRenderPass::End(const FRenderPassContext* Context)
 {
+    if (bSkipThisFrame)
+    {
+        return true;
+    }
+
     ID3D11ShaderResourceView* ShadowMap = nullptr;
     ID3D11SamplerState* PointSampler = nullptr;
 
@@ -85,6 +156,12 @@ bool FVSMConversionRenderPass::End(const FRenderPassContext* Context)
     OriginViewport.MaxDepth = 1.0f;
 
     Context->DeviceContext->RSSetViewports(1, &OriginViewport);
+    Context->DeviceContext->RSSetState(PrevRasterizerState);
+    if (PrevRasterizerState != nullptr)
+    {
+        PrevRasterizerState->Release();
+        PrevRasterizerState = nullptr;
+    }
 
     return true;
 }
@@ -99,7 +176,6 @@ bool FVSMConversionRenderPass::DrawVSMConversion(const FRenderPassContext* Conte
 
     // ID3D11RenderTargetView* VSMRTV = FShadowAtlasManager::Get().VarianceShadowRTV.Get();
     ID3D11RenderTargetView* VSMRTV = FShadowAtlasManager::Get().GetVarianceRTV();
-    Context->DeviceContext->ClearRenderTargetView(VSMRTV, FShadowAtlasManager::Get().ClearColor);
     Context->DeviceContext->OMSetRenderTargets(1, &VSMRTV, nullptr);
 
     // initialize할 때 이미 묶어 놓았을 것 & Getting Normal ShadowMapSRV
@@ -113,7 +189,24 @@ bool FVSMConversionRenderPass::DrawVSMConversion(const FRenderPassContext* Conte
     Context->DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    Context->DeviceContext->Draw(3, 0);
+    const TArray<FShadowAtlasTile> ShadowAtlasTiles = FShadowAtlasManager::Get().GetAllocatedTiles();
+    for (const auto& Tile : ShadowAtlasTiles)
+    {
+        if (!Tile.bUsed)
+        {
+            continue;
+        }
+
+        const D3D11_RECT TileRect =
+        {
+            Tile.X,
+            Tile.Y,
+            Tile.X + Tile.Width,
+            Tile.Y + Tile.Height
+        };
+        Context->DeviceContext->RSSetScissorRects(1, &TileRect);
+        Context->DeviceContext->Draw(3, 0);
+    }
     // depth ,depth^2 기록한 RTV를 SRV로 쓰기 위한 Unbind
     Context->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 

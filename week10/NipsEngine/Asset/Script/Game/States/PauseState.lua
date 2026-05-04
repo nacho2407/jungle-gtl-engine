@@ -9,6 +9,7 @@ end
 
 function PauseState:Enter(context)
     context.managers.UI:ShowOverlay("Pause")
+    context.managers.UI:SetPausePanel("Menu")
     context.managers.UI:RefreshSettings()
     Engine.API.Input.SetInputModeUIOnly()
     Engine.API.Time.SetTimeScale(0)
@@ -24,6 +25,14 @@ function PauseState:Enter(context)
                 return
             end
             context.stateMachine:Change("Title")
+        elseif event.name == "ShowPauseSettings" then
+            context.managers.UI:SetPausePanel("Settings")
+        elseif event.name == "BackToPauseMenu" then
+            context.managers.UI:SetPausePanel("Menu")
+        elseif event.name == "BGMVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("BGM", "Pause.Settings.BGMSlider")
+        elseif event.name == "SFXVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("SFX", "Pause.Settings.SFXSlider")
         elseif event.name == "BGMDown" then
             context.managers.Sound:AdjustBGMVolume(-0.1)
             context.managers.UI:RefreshSettings()

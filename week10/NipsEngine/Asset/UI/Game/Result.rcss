@@ -20,30 +20,37 @@ body
 
 .dim
 {
-    background-color: rgba(0, 0, 0, 160);
+    background-color: rgba(0, 0, 0, 170);
 }
 
-.modal-panel
+.player-board
 {
     position: absolute;
-    left: 760px;
-    top: 150px;
-    width: 400px;
-    padding: 34px;
-    background-color: rgba(24, 30, 36, 242);
-    border-width: 2px;
-    border-color: rgba(230, 218, 190, 190);
+    left: 136px;
+    top: 112px;
+    width: 480px;
+    min-height: 700px;
+    padding: 52px;
+    decorator: image("Asset/UIImage/PlayerScoreBoard.PNG" fill);
     text-align: center;
 }
 
-.result-panel
+.score-board
 {
-    top: 240px;
+    position: absolute;
+    right: 136px;
+    top: 112px;
+    width: 670px;
+    min-height: 700px;
+    padding: 52px 62px;
+    decorator: image("Asset/UIImage/ScoreBoardPanel.PNG" fill);
+    text-align: center;
 }
 
-.headline
+.headline,
+.board-title
 {
-    margin-bottom: 34px;
+    margin-bottom: 28px;
     font-size: 42px;
     color: rgb(255, 248, 232);
 }
@@ -51,41 +58,154 @@ body
 .result-score
 {
     margin-bottom: 14px;
-    font-size: 28px;
+    font-size: 29px;
+    color: rgb(255, 224, 154);
 }
 
 .muted
 {
-    color: rgb(178, 193, 202);
+    color: rgb(184, 202, 208);
 }
 
-.button
+.input-label
+{
+    margin-top: 32px;
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: rgb(238, 242, 247);
+}
+
+.input-wrap
+{
+    position: relative;
+    width: 360px;
+    height: 48px;
+    margin-left: 60px;
+    margin-bottom: 16px;
+}
+
+.input-bg
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 360px;
+    height: 48px;
+}
+
+.name-input
+{
+    position: absolute;
+    left: 16px;
+    top: 8px;
+    width: 328px;
+    height: 32px;
+    background-color: transparent;
+    border-width: 0px;
+    color: rgb(255, 248, 232);
+    font-size: 22px;
+}
+
+.default-button
 {
     display: block;
-    width: 310px;
+    width: 250px;
     height: 58px;
-    margin-left: 45px;
-    margin-bottom: 16px;
-    padding-top: 14px;
-    background-color: rgba(31, 43, 52, 235);
-    border-width: 2px;
-    border-color: rgba(220, 232, 242, 170);
+    margin-left: 115px;
+    margin-bottom: 14px;
+    padding-top: 17px;
+    border-width: 0px;
+    decorator: image("Asset/UIImage/ButtonDefault.PNG" fill);
     color: rgb(244, 248, 252);
+    font-size: 21px;
     text-align: center;
 }
 
-.primary
+.default-button:hover
 {
-    background-color: rgba(32, 95, 92, 245);
-    border-color: rgba(180, 236, 226, 210);
+    decorator: image("Asset/UIImage/ButtonDefaultHover.PNG" fill);
 }
 
-.button:hover
+.submit-button
 {
-    background-color: rgba(83, 103, 118, 245);
+    width: 180px;
+    margin-left: 150px;
 }
 
-.button:active
+.retry-button
 {
-    background-color: rgba(205, 85, 54, 245);
+    margin-top: 26px;
+}
+
+.submit-status
+{
+    height: 28px;
+    color: rgb(255, 180, 100);
+    font-size: 18px;
+}
+
+.score-scroll
+{
+    position: relative;
+    width: 560px;
+    height: 520px;
+    margin-left: 55px;
+    overflow-y: auto;
+    padding-right: 36px;
+}
+
+.score-list
+{
+    width: 510px;
+}
+
+.score-row
+{
+    width: 500px;
+    height: 40px;
+    margin-bottom: 10px;
+    color: rgb(235, 242, 245);
+    font-size: 24px;
+}
+
+.scroll-bg
+{
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 18px;
+    height: 520px;
+}
+
+.scroll-thumb
+{
+    position: absolute;
+    right: -8px;
+    top: 12px;
+    width: 34px;
+    height: 90px;
+}
+
+.renew-button
+{
+    position: absolute;
+    left: 76px;
+    bottom: 54px;
+    width: 82px;
+    height: 82px;
+    border-width: 0px;
+    decorator: image("Asset/UIImage/TitleButtonSmall.PNG" fill);
+}
+
+.renew-button:hover
+{
+    decorator: image("Asset/UIImage/TitleButtonSmallHover.PNG" fill);
+}
+
+.renew-icon
+{
+    width: 44px;
+    height: 44px;
+    margin-left: 19px;
+    margin-top: 19px;
 }

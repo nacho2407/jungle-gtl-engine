@@ -69,6 +69,8 @@ public:
 	bool HasRmlUIElement(const FString& ElementId) override;
 	FString GetRmlUIElementText(const FString& ElementId) override;
 	bool SetRmlUIElementText(const FString& ElementId, const FString& Text) override;
+	FString GetRmlUIElementValue(const FString& ElementId) override;
+	bool SetRmlUIElementValue(const FString& ElementId, const FString& Value) override;
 	bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) override;
 	bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) override;
 	bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) override;

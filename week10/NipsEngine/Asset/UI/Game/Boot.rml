@@ -5,6 +5,7 @@
     <body>
         <div class="screen-root">
             <div class="center-stack">
+                <img class="boot-bg" src="Asset/UIImage/TimerBackground.PNG"/>
                 <div id="Boot.Title" class="headline">Loading...</div>
             </div>
         </div>

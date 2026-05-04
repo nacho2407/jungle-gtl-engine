@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <d3dcompiler.h>
+#include <filesystem>
 #include <vector>
 
 namespace
@@ -57,7 +58,9 @@ float4 PSMain(VSOutput Input) : SV_TARGET
     float4 Color = Input.Color;
     if (UseTexture != 0)
     {
-        Color *= RmlUiTexture.Sample(RmlUiSampler, Input.TexCoord);
+        float4 TextureColor = RmlUiTexture.Sample(RmlUiSampler, Input.TexCoord);
+        TextureColor.rgb *= TextureColor.a;
+        Color *= TextureColor;
     }
     return Color;
 }
@@ -97,11 +100,33 @@ float4 PSMain(VSOutput Input) : SV_TARGET
     FString NormalizeRmlUiTexturePath(const Rml::String& Source)
     {
         FString Path = FPaths::Normalize(Source);
-        if (!Path.empty())
+        if (Path.empty())
+        {
+            return Source;
+        }
+
+        const auto ExistsRelativeToRoot = [](const FString& Candidate)
+        {
+            return std::filesystem::exists(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(Candidate))));
+        };
+
+        if (ExistsRelativeToRoot(Path))
         {
             return Path;
         }
-        return Source;
+
+        const FString AssetPrefix = "Asset/";
+        size_t AssetPos = Path.rfind(AssetPrefix);
+        if (AssetPos != FString::npos)
+        {
+            FString AssetRelativePath = Path.substr(AssetPos);
+            if (ExistsRelativeToRoot(AssetRelativePath))
+            {
+                return AssetRelativePath;
+            }
+        }
+
+        return Path;
     }
 }
 

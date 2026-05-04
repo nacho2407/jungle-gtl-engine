@@ -2,6 +2,7 @@ local EventBus = require("Game.Core.EventBus")
 local StateMachine = require("Game.Core.StateMachine")
 
 local DataManager = require("Game.Management.DataManager")
+local ComboManager = require("Game.Management.ComboManager")
 local GameManager = require("Game.Management.GameManager")
 local SoundManager = require("Game.Management.SoundManager")
 local UIManager = require("Game.Management.UIManager")
@@ -59,6 +60,16 @@ Script.Properties = {
         Type = "Float",
         Default = 100.0,
         Category = "Management"
+    },
+    ComboTimeoutSeconds = {
+        Type = "Float",
+        Default = 2.4,
+        Category = "Management"
+    },
+    ComboBonusRatio = {
+        Type = "Float",
+        Default = 0.25,
+        Category = "Management"
     }
 }
 
@@ -97,6 +108,7 @@ function Script.new(component, properties)
     self.context.managers.Sound = SoundManager.new(self.context)
     self.context.managers.UI = UIManager.new(self.context)
     self.context.managers.Game = GameManager.new(self.context)
+    self.context.managers.Combo = ComboManager.new(self.context)
 
     self.context.stateMachine:Register("Boot", BootState.new())
     self.context.stateMachine:Register("Intro", IntroState.new())
@@ -145,6 +157,10 @@ function Script:Tick(dt)
 
     if managers.Game and managers.Game.Tick then
         managers.Game:Tick(dt)
+    end
+
+    if managers.Combo and managers.Combo.Tick then
+        managers.Combo:Tick(dt)
     end
 
     self.context.stateMachine:Tick(dt)

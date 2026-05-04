@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Editor/EditorRenderPipeline.h"
+#include "Core/Logging/Log.h"
 #include "Core/Logging/Stats.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Slate/SSplitterV.h"
@@ -27,11 +28,14 @@
 #include "RmlUi/Core/Context.h"
 #include "RmlUi/Core/Element.h"
 #include "RmlUi/Core/ElementDocument.h"
+#include "RmlUi/Core/Elements/ElementFormControl.h"
 #include "RmlUi/Core/Event.h"
 #include "RmlUi/Core/EventListener.h"
 #include "RmlUi/Core/Factory.h"
 #include "RmlUi/Core/Input.h"
 #include <algorithm>
+#include <chrono>
+#include <filesystem>
 #include <unordered_set>
 #include <utility>
 
@@ -41,6 +45,30 @@ REGISTER_FACTORY(UEditorEngine)
 namespace
 {
     constexpr const char* RuntimeUIPreviewScreenId = "__RuntimeUIPreview";
+
+    const char* EditorPlayStateName(EViewportPlayState State)
+    {
+        switch (State)
+        {
+        case EViewportPlayState::Editing: return "Editing";
+        case EViewportPlayState::Playing: return "Playing";
+        case EViewportPlayState::Paused: return "Paused";
+        default: return "Unknown";
+        }
+    }
+
+    const char* WorldTypeName(EWorldType Type)
+    {
+        switch (Type)
+        {
+        case EWorldType::Editor: return "Editor";
+        case EWorldType::PIE: return "PIE";
+        case EWorldType::EditorPriview: return "EditorPreview";
+        case EWorldType::ViewerPreview: return "ViewerPreview";
+        case EWorldType::Game: return "Game";
+        default: return "Unknown";
+        }
+    }
 
     bool HasPlayerStart(UWorld* World)
     {
@@ -216,6 +244,11 @@ namespace
 //  Init
 void UEditorEngine::Init(FWindowsWindow* InWindow)
 {
+    const std::filesystem::path LogDir = std::filesystem::path(FPaths::RootDir()) / L"Saves" / L"Logs";
+    FLog::SetFileOutputPath((LogDir / L"Editor.log").wstring());
+    FLog::SetPerfFileOutputPath((LogDir / L"EditorPerf.log").wstring());
+    UE_LOG("[EditorEngine] Editor boot started.");
+
     UEngine::Init(InWindow);
     InputSystem::Get().SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
     EditorInputRouter.SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
@@ -282,9 +315,19 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-    UpdateTimeState(DeltaTime);
-    ProcessQueuedPlaySessionRequests();
+    const auto FrameStart = std::chrono::steady_clock::now();
+    const EViewportPlayState StateAtFrameStart = GetEditorState();
 
+    const auto UpdateStart = std::chrono::steady_clock::now();
+    UpdateTimeState(DeltaTime);
+    const auto UpdateEnd = std::chrono::steady_clock::now();
+
+    const auto PlayRequestStart = std::chrono::steady_clock::now();
+    ProcessQueuedPlaySessionRequests();
+    const auto PlayRequestEnd = std::chrono::steady_clock::now();
+    const EViewportPlayState StateAfterPlayRequests = GetEditorState();
+
+    const auto InputSetupStart = std::chrono::steady_clock::now();
     const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
     const bool bGuiKeyboardCaptureForViewport =
         (GuiState.bUsingKeyboard || GuiState.bUsingTextInput) && !GuiState.bAllowViewportMouseFocus;
@@ -310,6 +353,9 @@ void UEditorEngine::Tick(float DeltaTime)
         InputSystem::Get().SetGuiViewportMouseFocusAllowed(true);
         --PendingPIEViewportFocusFrames;
     }
+    const auto InputSetupEnd = std::chrono::steady_clock::now();
+
+    const auto InputRouteStart = std::chrono::steady_clock::now();
     FViewportInputContext RoutedInputContext;
     FInteractionBinding RoutedInputBinding;
     EditorInputRouter.Tick(DeltaTime, RoutedInputContext, RoutedInputBinding);
@@ -320,11 +366,123 @@ void UEditorEngine::Tick(float DeltaTime)
             ViewportClient->SetLegacyInputSuppressedThisFrame(true);
         }
     }
+    const auto InputRouteEnd = std::chrono::steady_clock::now();
 
+    const auto PanelStart = std::chrono::steady_clock::now();
     ViewportLayout.Tick(DeltaTime);
     MainPanel.Update();
+    const auto PanelEnd = std::chrono::steady_clock::now();
+
+    const auto WorldStart = std::chrono::steady_clock::now();
     WorldTick(DeltaTime);
+    const auto WorldEnd = std::chrono::steady_clock::now();
+
+    const auto RenderStart = std::chrono::steady_clock::now();
     Render(DeltaTime);
+    const auto RenderEnd = std::chrono::steady_clock::now();
+
+#if STATS
+    static int32 PostPIETraceFrames = 0;
+    static int32 PostPIETraceFrameIndex = 0;
+    static std::chrono::steady_clock::time_point LastSlowFrameLogTime = {};
+
+    if (StateAtFrameStart != EViewportPlayState::Editing &&
+        StateAfterPlayRequests == EViewportPlayState::Editing)
+    {
+        PostPIETraceFrames = 180;
+        PostPIETraceFrameIndex = 0;
+        UE_LOG("[EditorFramePerf] PIE stop detected. Tracing next %d editor frames.", PostPIETraceFrames);
+    }
+
+    const auto FrameEnd = std::chrono::steady_clock::now();
+    auto ToMs = [](std::chrono::steady_clock::duration Duration)
+    {
+        return std::chrono::duration<double, std::milli>(Duration).count();
+    };
+
+    const double FrameMs = ToMs(FrameEnd - FrameStart);
+    const bool bPostPIETracing = PostPIETraceFrames > 0;
+    const bool bInitialPostPIEFrame = bPostPIETracing && PostPIETraceFrameIndex < 12;
+    const bool bPeriodicPostPIEFrame = bPostPIETracing && (PostPIETraceFrameIndex % 30 == 0);
+    const auto Now = FrameEnd;
+    const bool bCanThrottleLog =
+        LastSlowFrameLogTime.time_since_epoch().count() == 0 ||
+        std::chrono::duration<double>(Now - LastSlowFrameLogTime).count() >= 0.25;
+    const bool bSlowFrame = FrameMs >= 30.0;
+
+    if (bInitialPostPIEFrame || bPeriodicPostPIEFrame || (bSlowFrame && bCanThrottleLog))
+    {
+        LastSlowFrameLogTime = Now;
+
+        int32 PIEWorldCount = 0;
+        int32 PausedWorldCount = 0;
+        FString WorldSummary;
+        for (const FWorldContext& Ctx : WorldList)
+        {
+            if (Ctx.WorldType == EWorldType::PIE)
+            {
+                ++PIEWorldCount;
+            }
+            if (Ctx.bPaused)
+            {
+                ++PausedWorldCount;
+            }
+
+            if (!WorldSummary.empty())
+            {
+                WorldSummary += ", ";
+            }
+            WorldSummary += Ctx.ContextHandle.ToString();
+            WorldSummary += ":";
+            WorldSummary += WorldTypeName(Ctx.WorldType);
+            if (Ctx.ContextHandle == ActiveWorldHandle)
+            {
+                WorldSummary += "*";
+            }
+            if (Ctx.bPaused)
+            {
+                WorldSummary += "(Paused)";
+            }
+        }
+
+        int32 VisibleRmlDocuments = 0;
+        for (const auto& Pair : RmlUiDocumentsByScreenId)
+        {
+            if (Pair.second && Pair.second->IsVisible())
+            {
+                ++VisibleRmlDocuments;
+            }
+        }
+
+        UE_LOG("[EditorFramePerf] Frame=%.2fms State=%s->%s PostPIEFrame=%d Update=%.2fms PlayReq=%.2fms InputSetup=%.2fms InputRoute=%.2fms Panel=%.2fms World=%.2fms Render=%.2fms Worlds=%zu PIEWorlds=%d PausedWorlds=%d Active=%s PendingScene=%d RmlDocs=%zu VisibleRml=%d Scene=%s | %s",
+               FrameMs,
+               EditorPlayStateName(StateAtFrameStart),
+               EditorPlayStateName(StateAfterPlayRequests),
+               bPostPIETracing ? PostPIETraceFrameIndex : -1,
+               ToMs(UpdateEnd - UpdateStart),
+               ToMs(PlayRequestEnd - PlayRequestStart),
+               ToMs(InputSetupEnd - InputSetupStart),
+               ToMs(InputRouteEnd - InputRouteStart),
+               ToMs(PanelEnd - PanelStart),
+               ToMs(WorldEnd - WorldStart),
+               ToMs(RenderEnd - RenderStart),
+               WorldList.size(),
+               PIEWorldCount,
+               PausedWorldCount,
+               ActiveWorldHandle.ToString().c_str(),
+               bPendingSceneOpen ? 1 : 0,
+               RmlUiDocumentsByScreenId.size(),
+               VisibleRmlDocuments,
+               CurrentScenePath.c_str(),
+               WorldSummary.c_str());
+    }
+
+    if (PostPIETraceFrames > 0)
+    {
+        --PostPIETraceFrames;
+        ++PostPIETraceFrameIndex;
+    }
+#endif
 }
 
 void UEditorEngine::RequestPIEViewportInputFocus(int32 FrameCount)
@@ -621,6 +779,7 @@ void UEditorEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
 
 bool UEditorEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
 {
+    const auto StartTime = std::chrono::steady_clock::now();
     InitializeRmlUiRuntime();
     if (!bRmlUiRuntimeInitialized || !RmlUiContext || ScreenId.empty() || Path.empty())
     {
@@ -642,6 +801,8 @@ bool UEditorEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Pa
     Document->Show();
     RmlUiDocumentsByScreenId[ScreenId] = Document;
     RmlUiDocumentPathByScreenId[ScreenId] = Path;
+    const double ElapsedSec = std::chrono::duration<double>(std::chrono::steady_clock::now() - StartTime).count();
+    UE_LOG("[RmlUiPerf][PIE] Loaded document. Screen=%s Path=%s Time=%.4fs", ScreenId.c_str(), Path.c_str(), ElapsedSec);
     return true;
 }
 
@@ -715,22 +876,61 @@ bool UEditorEngine::SetRmlUIElementText(const FString& ElementId, const FString&
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        if (Element->GetInnerRML() == Text)
+        {
+            return true;
+        }
         Element->SetInnerRML(Text);
         return true;
     }
     return false;
 }
 
+FString UEditorEngine::GetRmlUIElementValue(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
+    {
+        return Control->GetValue();
+    }
+    return GetRmlUIElementAttribute(ElementId, "value");
+}
+
+bool UEditorEngine::SetRmlUIElementValue(const FString& ElementId, const FString& Value)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
+    {
+        if (Control->GetValue() == Value)
+        {
+            return true;
+        }
+        Control->SetValue(Value);
+        return true;
+    }
+    return SetRmlUIElementAttribute(ElementId, "value", Value);
+}
+
 bool UEditorEngine::SetRmlUIElementVisible(const FString& ElementId, bool bVisible)
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        const Rml::Property* Display = Element->GetProperty("display");
+        const bool bCurrentlyHidden = Display && Display->ToString() == "none";
         if (bVisible)
         {
+            if (!bCurrentlyHidden)
+            {
+                return true;
+            }
             Element->RemoveProperty(Rml::PropertyId::Display);
         }
         else
         {
+            if (bCurrentlyHidden)
+            {
+                return true;
+            }
             Element->SetProperty(Rml::PropertyId::Display, Rml::Property(Rml::Style::Display::None));
         }
         return true;
@@ -742,6 +942,11 @@ bool UEditorEngine::SetRmlUIElementEnabled(const FString& ElementId, bool bEnabl
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        const bool bCurrentlyDisabled = Element->HasAttribute("disabled") || Element->IsClassSet("disabled");
+        if (bCurrentlyDisabled == !bEnabled)
+        {
+            return true;
+        }
         if (bEnabled)
         {
             Element->RemoveAttribute("disabled");
@@ -761,6 +966,10 @@ bool UEditorEngine::SetRmlUIElementClass(const FString& ElementId, const FString
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        if (Element->IsClassSet(ClassName) == bEnabled)
+        {
+            return true;
+        }
         Element->SetClass(ClassName, bEnabled);
         return true;
     }
@@ -789,6 +998,10 @@ bool UEditorEngine::SetRmlUIElementClassNames(const FString& ElementId, const FS
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        if (Element->GetClassNames() == ClassNames)
+        {
+            return true;
+        }
         Element->SetClassNames(ClassNames);
         return true;
     }
@@ -817,6 +1030,10 @@ bool UEditorEngine::SetRmlUIElementAttribute(const FString& ElementId, const FSt
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        if (Element->GetAttribute<Rml::String>(Name, "") == Value)
+        {
+            return true;
+        }
         Element->SetAttribute(Name, Value);
         return true;
     }
@@ -847,6 +1064,11 @@ bool UEditorEngine::SetRmlUIElementStyle(const FString& ElementId, const FString
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
+        const Rml::Property* Property = Element->GetProperty(Name);
+        if (Property && Property->ToString() == Value)
+        {
+            return true;
+        }
         Element->SetProperty(Name, Value);
         return true;
     }
@@ -1682,9 +1904,11 @@ void UEditorEngine::StopPlaySession()
 
 void UEditorEngine::StopPlaySessionNow()
 {
+    const auto StopStart = std::chrono::steady_clock::now();
     if (GetEditorState() == EViewportPlayState::Editing && ViewportPIEHandles.empty())
         return;
 
+    const auto PrepStart = std::chrono::steady_clock::now();
     bPendingSceneOpen = false;
     PendingSceneOpenPath.clear();
     CurrentScenePath.clear();
@@ -1697,8 +1921,10 @@ void UEditorEngine::StopPlaySessionNow()
         FocusedIdx = ViewportPIEHandles.begin()->first;
     }
     FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(FocusedIdx);
+    const auto PrepEnd = std::chrono::steady_clock::now();
 
     // 기존 PIE 월드를 해제합니다.
+    const auto WorldCleanupStart = std::chrono::steady_clock::now();
     auto HandleIt = ViewportPIEHandles.find(FocusedIdx);
     if (HandleIt != ViewportPIEHandles.end())
     {
@@ -1714,8 +1940,10 @@ void UEditorEngine::StopPlaySessionNow()
             GetAudioSystem().StopAll();
         }
     }
+    const auto WorldCleanupEnd = std::chrono::steady_clock::now();
 
     // 원본 에디터 월드를 검색합니다.
+    const auto RestoreWorldStart = std::chrono::steady_clock::now();
     FName EditorHandle = GetEditorWorldHandle();
     UWorld* EditorWorld = nullptr;
     
@@ -1727,8 +1955,10 @@ void UEditorEngine::StopPlaySessionNow()
             EditorWorld = Ctx->World;
         }
     }
+    const auto RestoreWorldEnd = std::chrono::steady_clock::now();
 
     // 원본 에디터 월드로 뷰포트 및 상태를 복구합니다.
+    const auto ViewportRestoreStart = std::chrono::steady_clock::now();
     ViewportLayout.SetLastFocusedViewportIndex(FocusedIdx);
     FocusedClient->EndPIE(EditorWorld);
     SetEditorState(EViewportPlayState::Editing);
@@ -1742,8 +1972,32 @@ void UEditorEngine::StopPlaySessionNow()
     }
 
     SelectionManager.ClearSelection();
+    const auto ViewportRestoreEnd = std::chrono::steady_clock::now();
+
+    const auto RmlUnloadStart = std::chrono::steady_clock::now();
     UnloadGameplayRmlUIDocuments();
+    const auto RmlUnloadEnd = std::chrono::steady_clock::now();
+
+    const auto LuaResetStart = std::chrono::steady_clock::now();
     FScriptManager::Get().ResetLuaState();
+    const auto LuaResetEnd = std::chrono::steady_clock::now();
+
+    const auto StopEnd = std::chrono::steady_clock::now();
+    auto ToMs = [](std::chrono::steady_clock::duration Duration)
+    {
+        return std::chrono::duration<double, std::milli>(Duration).count();
+    };
+    UE_LOG("[PIEPerf] Stop Total=%.2fms Prep=%.2fms WorldCleanup=%.2fms RestoreWorld=%.2fms ViewportRestore=%.2fms RmlUnload=%.2fms LuaReset=%.2fms RemainingWorlds=%zu Active=%s RmlDocs=%zu",
+           ToMs(StopEnd - StopStart),
+           ToMs(PrepEnd - PrepStart),
+           ToMs(WorldCleanupEnd - WorldCleanupStart),
+           ToMs(RestoreWorldEnd - RestoreWorldStart),
+           ToMs(ViewportRestoreEnd - ViewportRestoreStart),
+           ToMs(RmlUnloadEnd - RmlUnloadStart),
+           ToMs(LuaResetEnd - LuaResetStart),
+           WorldList.size(),
+           ActiveWorldHandle.ToString().c_str(),
+           RmlUiDocumentsByScreenId.size());
 }
 
 void UEditorEngine::ResetViewport()

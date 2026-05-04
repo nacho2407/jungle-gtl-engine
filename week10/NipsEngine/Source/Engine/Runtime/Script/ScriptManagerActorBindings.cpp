@@ -350,6 +350,11 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(SetInputModeGameOnly, SetInputModeGameOnly);
     LUA_METHOD(SetInputModeUIOnly, SetInputModeUIOnly);
     LUA_METHOD(SetInputModeGameAndUI, SetInputModeGameAndUI);
+    LUA_METHOD(PlayCameraShake, PlayCameraShake);
+    LUA_METHOD(PlayCameraShakeDetailed, PlayCameraShakeDetailed);
+    LUA_METHOD(LerpCameraFOVDegrees, LerpCameraFOVDegrees);
+    LUA_METHOD(ResetCameraFOV, ResetCameraFOV);
+    LUA_METHOD(StopCameraEffects, StopCameraEffects);
     LUA_METHOD(GetPossessedActor, GetPossessedActor);
     LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
     LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);

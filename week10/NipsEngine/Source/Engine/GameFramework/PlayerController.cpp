@@ -7,6 +7,10 @@
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
+#include "Math/Utils.h"
+
+#include <algorithm>
+#include <cmath>
 
 DEFINE_CLASS(APlayerController, AActor)
 REGISTER_FACTORY(APlayerController)
@@ -68,7 +72,7 @@ void APlayerController::Tick(float DeltaTime)
 	AActor::Tick(DeltaTime);
 
 	UpdatePossessedActorMovement(DeltaTime);
-	UpdateRuntimeCameraFromViewTarget();
+	UpdateRuntimeCameraFromViewTarget(DeltaTime);
 }
 
 void APlayerController::ConfigureRuntimeCameraFromViewport(const FViewportCamera* SourceCamera)
@@ -290,6 +294,55 @@ void APlayerController::SetInputModeGameAndUI()
 	}
 }
 
+void APlayerController::PlayCameraShake(float Intensity, float Duration)
+{
+	const float SafeIntensity = std::max(0.0f, Intensity);
+	PlayCameraShakeDetailed(SafeIntensity * 0.08f, SafeIntensity * 3.0f, 18.0f, Duration);
+}
+
+void APlayerController::PlayCameraShakeDetailed(float LocationAmplitude, float RotationAmplitudeDegrees, float Frequency, float Duration)
+{
+	CameraShake.bActive = Duration > 0.0f && (LocationAmplitude > 0.0f || RotationAmplitudeDegrees > 0.0f);
+	CameraShake.Elapsed = 0.0f;
+	CameraShake.Duration = std::max(0.0f, Duration);
+	CameraShake.Frequency = std::max(0.1f, Frequency);
+	CameraShake.LocationAmplitude = std::max(0.0f, LocationAmplitude);
+	CameraShake.RotationAmplitudeDegrees = std::max(0.0f, RotationAmplitudeDegrees);
+	CameraShake.Seed += 1.0f;
+	CameraShake.PhaseX = CameraShake.Seed * 1.37f;
+	CameraShake.PhaseY = CameraShake.Seed * 2.11f + 1.7f;
+	CameraShake.PhaseZ = CameraShake.Seed * 2.89f + 3.1f;
+}
+
+void APlayerController::LerpCameraFOVDegrees(float TargetFOVDegrees, float Duration)
+{
+	CameraFOV.bActive = true;
+	CameraFOV.bResetToBase = false;
+	CameraFOV.Elapsed = 0.0f;
+	CameraFOV.Duration = std::max(0.0f, Duration);
+	CameraFOV.StartFOV = RuntimeCamera.GetFOV();
+	CameraFOV.TargetFOV = MathUtil::DegreesToRadians(MathUtil::Clamp(TargetFOVDegrees, 1.0f, 179.0f));
+	CameraFOV.OverrideFOV = CameraFOV.TargetFOV;
+	CameraFOV.bOverrideActive = true;
+}
+
+void APlayerController::ResetCameraFOV(float Duration)
+{
+	CameraFOV.bActive = true;
+	CameraFOV.bResetToBase = true;
+	CameraFOV.Elapsed = 0.0f;
+	CameraFOV.Duration = std::max(0.0f, Duration);
+	CameraFOV.StartFOV = RuntimeCamera.GetFOV();
+	CameraFOV.TargetFOV = ViewTargetCamera ? ViewTargetCamera->GetFOV() : RuntimeCamera.GetFOV();
+}
+
+void APlayerController::StopCameraEffects()
+{
+	CameraShake.bActive = false;
+	CameraFOV.bActive = false;
+	CameraFOV.bOverrideActive = false;
+}
+
 void APlayerController::HandleKeyPressed(int VK)
 {
 	(void)VK;
@@ -477,7 +530,88 @@ void APlayerController::UpdatePossessedActorMovement(float DeltaTime)
 	(void)DeltaTime;
 }
 
-void APlayerController::UpdateRuntimeCameraFromViewTarget()
+void APlayerController::UpdateCameraFOVEffect(float DeltaTime, float BaseFOV)
+{
+	if (!CameraFOV.bActive)
+	{
+		RuntimeCamera.SetFOV(CameraFOV.bOverrideActive ? CameraFOV.OverrideFOV : BaseFOV);
+		return;
+	}
+
+	CameraFOV.TargetFOV = CameraFOV.bResetToBase ? BaseFOV : CameraFOV.TargetFOV;
+
+	if (CameraFOV.Duration <= 0.0f)
+	{
+		RuntimeCamera.SetFOV(CameraFOV.TargetFOV);
+		if (CameraFOV.bResetToBase)
+		{
+			CameraFOV.bOverrideActive = false;
+		}
+		CameraFOV.bActive = false;
+		return;
+	}
+
+	CameraFOV.Elapsed += std::max(0.0f, DeltaTime);
+	float Alpha = MathUtil::Clamp(CameraFOV.Elapsed / CameraFOV.Duration, 0.0f, 1.0f);
+	Alpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
+	const float NewFOV = CameraFOV.StartFOV + (CameraFOV.TargetFOV - CameraFOV.StartFOV) * Alpha;
+	RuntimeCamera.SetFOV(NewFOV);
+
+	if (CameraFOV.Elapsed >= CameraFOV.Duration)
+	{
+		if (CameraFOV.bResetToBase)
+		{
+			CameraFOV.bOverrideActive = false;
+		}
+		CameraFOV.bActive = false;
+	}
+}
+
+void APlayerController::ApplyCameraShakeEffect(float DeltaTime)
+{
+	if (!CameraShake.bActive)
+	{
+		return;
+	}
+
+	if (CameraShake.Duration <= 0.0f)
+	{
+		CameraShake.bActive = false;
+		return;
+	}
+
+	CameraShake.Elapsed += std::max(0.0f, DeltaTime);
+	const float NormalizedTime = MathUtil::Clamp(CameraShake.Elapsed / CameraShake.Duration, 0.0f, 1.0f);
+	const float Fade = 1.0f - NormalizedTime;
+	const float WaveTime = CameraShake.Elapsed * CameraShake.Frequency * MathUtil::TwoPi;
+
+	const float OffsetX = std::sin(WaveTime + CameraShake.PhaseX) * CameraShake.LocationAmplitude * Fade;
+	const float OffsetY = std::sin(WaveTime * 1.13f + CameraShake.PhaseY) * CameraShake.LocationAmplitude * Fade;
+	const float OffsetZ = std::sin(WaveTime * 1.31f + CameraShake.PhaseZ) * CameraShake.LocationAmplitude * Fade;
+
+	const FVector BaseLocation = RuntimeCamera.GetLocation();
+	const FVector ShakeLocation =
+		BaseLocation
+		+ RuntimeCamera.GetRightVector() * OffsetX
+		+ RuntimeCamera.GetForwardVector() * OffsetY
+		+ RuntimeCamera.GetUpVector() * OffsetZ;
+	RuntimeCamera.SetLocation(ShakeLocation);
+
+	const float Pitch = std::sin(WaveTime * 1.07f + CameraShake.PhaseY) * CameraShake.RotationAmplitudeDegrees * Fade;
+	const float Yaw = std::sin(WaveTime * 0.93f + CameraShake.PhaseX) * CameraShake.RotationAmplitudeDegrees * Fade;
+	const float Roll = std::sin(WaveTime * 1.21f + CameraShake.PhaseZ) * CameraShake.RotationAmplitudeDegrees * 0.5f * Fade;
+	FQuat ShakeRotation = FQuat::MakeFromEuler(FVector(Roll, Pitch, Yaw));
+	FQuat NewRotation = RuntimeCamera.GetRotation() * ShakeRotation;
+	NewRotation.Normalize();
+	RuntimeCamera.SetRotation(NewRotation);
+
+	if (CameraShake.Elapsed >= CameraShake.Duration)
+	{
+		CameraShake.bActive = false;
+	}
+}
+
+void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 {
 	ClearInvalidViewTarget();
 	if (!ViewTargetCamera)
@@ -490,10 +624,11 @@ void APlayerController::UpdateRuntimeCameraFromViewTarget()
 		: EViewportProjectionType::Perspective);
 	RuntimeCamera.SetLocation(ViewTargetCamera->GetWorldLocation());
 	RuntimeCamera.SetRotation(MakeViewQuatFromCamera(ViewTargetCamera));
-	RuntimeCamera.SetFOV(ViewTargetCamera->GetFOV());
+	UpdateCameraFOVEffect(DeltaTime, ViewTargetCamera->GetFOV());
 	RuntimeCamera.SetNearPlane(ViewTargetCamera->GetNearPlane());
 	RuntimeCamera.SetFarPlane(ViewTargetCamera->GetFarPlane());
 	RuntimeCamera.SetOrthoHeight(ViewTargetCamera->GetOrthoWidth());
+	ApplyCameraShakeEffect(DeltaTime);
 }
 
 void APlayerController::OnPossess(AActor* InActor)

@@ -26,6 +26,7 @@ void FSelectionManager::Shutdown()
 void FSelectionManager::Select(AActor* Actor)
 {
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 	SelectedActors.clear();
 	if (Actor)
 	{
@@ -41,6 +42,7 @@ void FSelectionManager::AddSelect(AActor* Actor)
 		return;
 	}
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
 	if (It != SelectedActors.end())
@@ -67,6 +69,7 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 {
 	if (!ClickedActor) return;
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 
 	// Find index of clicked actor
 	int32 ClickedIdx = -1;
@@ -116,6 +119,7 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
 {
 	if (!Actor) return;
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
 	if (It != SelectedActors.end())
@@ -131,9 +135,11 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
 
 void FSelectionManager::Deselect(AActor* Actor)
 {
+	ValidateSelection();
 	if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
 	{
 		SelectedComponent = nullptr;
+		SelectedComponentUUID = 0;
 	}
 
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
@@ -148,12 +154,14 @@ void FSelectionManager::ClearSelection()
 {
 	SelectedActors.clear();
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 	RequestGizmoSync();
 }
 
 void FSelectionManager::SelectComponent(UActorComponent* Component)
 {
 	SelectedComponent = Component;
+	SelectedComponentUUID = Component ? Component->GetUUID() : 0;
 	if (Component && Component->GetOwner())
 	{
 		SelectedActors.clear();
@@ -169,7 +177,40 @@ void FSelectionManager::ClearComponentSelection()
 		return;
 	}
 	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
 	RequestGizmoSync();
+}
+
+void FSelectionManager::OnComponentDestroyed(UActorComponent* Component)
+{
+	if (!Component || SelectedComponent != Component)
+	{
+		return;
+	}
+
+	SelectedComponent = nullptr;
+	SelectedComponentUUID = 0;
+	RequestGizmoSync();
+}
+
+bool FSelectionManager::IsSelectedComponentAlive() const
+{
+	if (!SelectedComponent || SelectedComponentUUID == 0)
+	{
+		return false;
+	}
+
+	return UObjectManager::Get().FindByUUID(SelectedComponentUUID) == SelectedComponent;
+}
+
+void FSelectionManager::ValidateSelection()
+{
+	if (SelectedComponent && !IsSelectedComponentAlive())
+	{
+		SelectedComponent = nullptr;
+		SelectedComponentUUID = 0;
+		RequestGizmoSync();
+	}
 }
 
 void FSelectionManager::BeginBatchUpdate()
@@ -200,6 +241,8 @@ void FSelectionManager::OnActorDestroyed(AActor* Actor)
         return;
     }
 
+	ValidateSelection();
+
 	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
     if (It != SelectedActors.end())
     {
@@ -211,6 +254,7 @@ void FSelectionManager::OnActorDestroyed(AActor* Actor)
 	if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
 	{
 		SelectedComponent = nullptr;
+		SelectedComponentUUID = 0;
 		RequestGizmoSync();
 	}
 }
@@ -229,6 +273,7 @@ void FSelectionManager::RequestGizmoSync()
 void FSelectionManager::SyncGizmo()
 {
 	if (!Gizmo) return;
+	ValidateSelection();
 
 	AActor* Primary = GetPrimarySelection();
 	if (USceneComponent* SceneComponent = Cast<USceneComponent>(SelectedComponent))

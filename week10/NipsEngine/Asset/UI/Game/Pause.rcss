@@ -20,116 +20,152 @@ body
 
 .dim
 {
-    background-color: rgba(0, 0, 0, 160);
+    background-color: rgba(0, 0, 0, 165);
 }
 
-.modal-panel
+.pause-panel
 {
     position: absolute;
-    left: 760px;
-    top: 150px;
-    width: 400px;
-    padding: 34px;
-    background-color: rgba(24, 30, 36, 242);
-    border-width: 2px;
-    border-color: rgba(230, 218, 190, 190);
+    left: 700px;
+    top: 126px;
+    width: 520px;
+    min-height: 590px;
+    padding: 54px 62px;
+    decorator: image("Asset/UIImage/PausePanel.PNG" fill);
+    text-align: center;
+}
+
+.settings-panel
+{
+    top: 170px;
+    min-height: 420px;
     text-align: center;
 }
 
 .headline
 {
     margin-bottom: 34px;
-    font-size: 42px;
+    font-size: 46px;
     color: rgb(255, 248, 232);
 }
 
-.button
+.menu-button
 {
     display: block;
-    width: 310px;
-    height: 58px;
-    margin-left: 45px;
-    margin-bottom: 16px;
-    padding-top: 14px;
-    background-color: rgba(31, 43, 52, 235);
-    border-width: 2px;
-    border-color: rgba(220, 232, 242, 170);
+    width: 390px;
+    height: 74px;
+    margin-left: 65px;
+    margin-bottom: 18px;
+    padding-top: 23px;
+    border-width: 0px;
+    decorator: image("Asset/UIImage/TitleButtonDefault.PNG" fill);
     color: rgb(244, 248, 252);
+    font-size: 24px;
     text-align: center;
+}
+
+.menu-button:hover
+{
+    decorator: image("Asset/UIImage/TitleButtonHover.PNG" fill);
 }
 
 .primary
 {
-    background-color: rgba(32, 95, 92, 245);
-    border-color: rgba(180, 236, 226, 210);
+    color: rgb(255, 244, 214);
 }
 
 .danger
 {
-    background-color: rgba(92, 36, 41, 235);
-    border-color: rgba(238, 170, 156, 190);
+    color: rgb(255, 180, 170);
 }
 
-.button:hover,
-.step-button:hover
+.panel-close
 {
-    background-color: rgba(83, 103, 118, 245);
+    position: absolute;
+    right: 48px;
+    top: 42px;
+    width: 54px;
+    height: 54px;
+    border-width: 0px;
+    decorator: image("Asset/UIImage/TitleButtonSmall.PNG" fill);
 }
 
-.button:active,
-.step-button:active
+.panel-close:hover
 {
-    background-color: rgba(205, 85, 54, 245);
+    decorator: image("Asset/UIImage/TitleButtonSmallHover.PNG" fill);
 }
 
-.settings-block
+.panel-close-icon
 {
-    margin-top: 18px;
-    text-align: left;
-}
-
-.section-title
-{
-    margin-top: 22px;
-    margin-bottom: 14px;
-    font-size: 24px;
-    color: rgb(160, 202, 204);
+    width: 26px;
+    height: 26px;
+    margin-left: 14px;
+    margin-top: 14px;
 }
 
 .setting-row
 {
-    width: 360px;
-    height: 54px;
-    margin-bottom: 12px;
+    position: relative;
+    width: 430px;
+    height: 66px;
+    margin-left: 45px;
+    margin-bottom: 24px;
+    text-align: left;
 }
 
 .setting-label
 {
-    display: inline-block;
-    width: 82px;
-    padding-top: 10px;
-    color: rgb(238, 242, 247);
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 60px;
+    padding-top: 18px;
 }
 
 .setting-value
 {
-    display: inline-block;
-    width: 88px;
-    padding-top: 10px;
-    text-align: center;
+    position: absolute;
+    left: 352px;
+    top: 0px;
+    width: 70px;
+    padding-top: 18px;
+    text-align: right;
     color: rgb(255, 224, 154);
 }
 
-.step-button
+.volume-slider
 {
-    display: inline-block;
-    width: 48px;
-    height: 44px;
-    margin-right: 8px;
-    padding-top: 8px;
-    background-color: rgba(31, 43, 52, 235);
-    border-width: 2px;
-    border-color: rgba(220, 232, 242, 150);
-    color: rgb(244, 248, 252);
-    text-align: center;
+    position: absolute;
+    left: 70px;
+    top: 0px;
+    width: 270px;
+    height: 42px;
+    margin-top: 10px;
+}
+
+slidertrack
+{
+    height: 18px;
+    margin-top: 12px;
+    decorator: image("Asset/UIImage/SliderBackground.PNG" fill);
+}
+
+sliderprogress
+{
+    height: 18px;
+    background-color: rgba(255, 124, 54, 180);
+}
+
+sliderbar
+{
+    width: 18px;
+    height: 36px;
+    decorator: image("Asset/UIImage/SliderButton.PNG" fill);
+}
+
+sliderarrowdec,
+sliderarrowinc
+{
+    width: 0px;
+    height: 0px;
 }

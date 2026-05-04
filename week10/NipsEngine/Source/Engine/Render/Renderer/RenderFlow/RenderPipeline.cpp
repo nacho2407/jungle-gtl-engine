@@ -16,6 +16,37 @@
 #include "DepthLessRenderPass.h"
 #include "PostProcessOutlineRenderPass.h"
 #include "VSMConversionRenderPass.h";
+#include "Core/Logging/GPUProfiler.h"
+
+#include <cstddef>
+
+namespace
+{
+    const char* GetRenderPassPerfName(size_t Index)
+    {
+        static constexpr const char* Names[] =
+        {
+            "RenderPass.DepthPre",
+            "RenderPass.LightCulling",
+            "RenderPass.Shadow",
+            "RenderPass.VSMConversion",
+            "RenderPass.Opaque",
+            "RenderPass.Light",
+            "RenderPass.Fog",
+            "RenderPass.FXAA",
+            "RenderPass.Font",
+            "RenderPass.SubUV",
+            "RenderPass.Translucent",
+            "RenderPass.SelectionMask",
+            "RenderPass.Grid",
+            "RenderPass.Editor",
+            "RenderPass.DepthLess",
+            "RenderPass.PostProcessOutline",
+        };
+
+        return Index < (sizeof(Names) / sizeof(Names[0])) ? Names[Index] : "RenderPass.Unknown";
+    }
+}
 
 bool FRenderPipeline::Initialize()
 {
@@ -103,11 +134,17 @@ bool FRenderPipeline::Render(const FRenderPassContext* Context)
     OutSRV = nullptr;
     OutRTV = nullptr;
 
-	for (std::shared_ptr<FBaseRenderPass> Pass : RenderPasses)
+    for (size_t PassIndex = 0; PassIndex < RenderPasses.size(); ++PassIndex)
 	{
+        std::shared_ptr<FBaseRenderPass> Pass = RenderPasses[PassIndex];
         Pass->SetPrevPassSRV(OutSRV);
         Pass->SetPrevPassRTV(OutRTV);
-        Pass->Render(Context);
+        {
+#if STATS
+            FGPUScopedTimer PassTimer(GetRenderPassPerfName(PassIndex));
+#endif
+            Pass->Render(Context);
+        }
         OutSRV = Pass->GetOutSRV();
         OutRTV = Pass->GetOutRTV();
 	}

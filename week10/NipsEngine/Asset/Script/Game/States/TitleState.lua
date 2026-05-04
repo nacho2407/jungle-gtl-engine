@@ -39,6 +39,10 @@ function TitleState:Enter(context)
             context.managers.UI:SetTitlePanel("Credits")
         elseif event.name == "BackToTitleMenu" then
             context.managers.UI:SetTitlePanel("Menu")
+        elseif event.name == "BGMVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("BGM", "Title.Settings.BGMSlider")
+        elseif event.name == "SFXVolumeChanged" then
+            context.managers.UI:ApplyVolumeFromSlider("SFX", "Title.Settings.SFXSlider")
         elseif event.name == "BGMDown" then
             context.managers.Sound:AdjustBGMVolume(-0.1)
             context.managers.UI:RefreshSettings()

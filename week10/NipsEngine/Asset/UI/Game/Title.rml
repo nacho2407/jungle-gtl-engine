@@ -4,69 +4,83 @@
     </head>
     <body>
         <div class="screen-root title-screen">
-
             <div class="title-mark1">
                 <div id="Title.Name.Green" class="title-logo1">CYBER PSYCHO</div>
-                <!--
-                <div class="title-subtitle">Project Week09 Team03</div>
-                 -->
             </div>
             <div class="title-mark2">
                 <div id="Title.Name.Red" class="title-logo2">CYBER PSYCHO</div>
-                <!--
-                <div class="title-subtitle">Project Week09 Team03</div>
-                 -->
             </div>
             <div class="title-mark3">
                 <div id="Title.Name" class="title-logo3">CYBER PSYCHO</div>
-                <!--
-                <div class="title-subtitle">Project Week09 Team03</div>
-                 -->
             </div>
 
-            <div id="Title.MenuPanel" class="title-panel menu-panel">
-                <button id="Title.Start" class="button primary" data-action="StartGame">Game Start</button>
-                <button id="Title.Intro" class="button" data-action="ShowIntro">Intro</button>
-                <button id="Title.ScoreBoard" class="button" data-action="ShowScoreBoard">Score Board</button>
-                <button id="Title.Settings" class="button" data-action="ShowSettings">Settings</button>
-                <button id="Title.Credits" class="button" data-action="ShowCredits">Credits</button>
-                <button id="Title.Quit" class="button danger" data-action="QuitGame">Quit</button>
+            <div id="Title.MenuPanel" class="menu-panel">
+                <button id="Title.Start" class="title-button primary" data-action="StartGame">Game Start</button>
+                <button id="Title.ScoreBoard" class="title-button" data-action="ShowScoreBoard">Score Board</button>
+                <button id="Title.Quit" class="title-button danger" data-action="QuitGame">Quit</button>
             </div>
 
-            <!--
-            <div id="Title.ScoreBoardPanel" class="title-panel sub-panel">
-                <div class="headline">Score Board</div>
-                <div id="Title.BestScore" class="panel-line strong">Best Score: 0</div>
-                <button class="button" data-action="BackToTitleMenu">Back</button>
+            <div class="quick-menu">
+                <button id="Title.Intro" class="quick-button" data-action="ShowIntro">
+                    <img class="quick-icon" src="Asset/UIImage/58_Talk_3.PNG"/>
+                </button>
+                <button id="Title.Settings" class="quick-button" data-action="ShowSettings">
+                    <img class="quick-icon" src="Asset/UIImage/25_Setting.PNG"/>
+                </button>
+                <button id="Title.Credits" class="quick-button" data-action="ShowCredits">
+                    <img class="quick-icon" src="Asset/UIImage/14_Exclamation.PNG"/>
+                </button>
             </div>
-            -->
-            <!--
-            <div id="Title.SettingsPanel" class="title-panel sub-panel">
-                <div class="headline">Settings</div>
+
+            <div id="Title.Version" class="version-label">Latest Update v.20260504 by Team03</div>
+
+            <div id="Title.ModalOverlay" class="modal-overlay"></div>
+
+            <div id="Title.ScoreBoardPanel" class="title-panel title-sub-panel">
+                <div class="panel-title">Score Board</div>
+                <div id="Title.BestScore" class="panel-best">Best Score: 0</div>
+                <div class="scroll-box scoreboard-scroll">
+                    <div id="Title.ScoreRows" class="score-list">
+                        <div id="Title.ScoreRow.1" class="score-row">--  No Records  0</div>
+                        <div id="Title.ScoreRow.2" class="score-row"></div>
+                        <div id="Title.ScoreRow.3" class="score-row"></div>
+                        <div id="Title.ScoreRow.4" class="score-row"></div>
+                        <div id="Title.ScoreRow.5" class="score-row"></div>
+                        <div id="Title.ScoreRow.6" class="score-row"></div>
+                        <div id="Title.ScoreRow.7" class="score-row"></div>
+                        <div id="Title.ScoreRow.8" class="score-row"></div>
+                        <div id="Title.ScoreRow.9" class="score-row"></div>
+                        <div id="Title.ScoreRow.10" class="score-row"></div>
+                    </div>
+                    <img class="scroll-bg" src="Asset/UIImage/ScrollBackground.PNG"/>
+                    <img class="scroll-thumb" src="Asset/UIImage/ScrollButton.PNG"/>
+                </div>
+            </div>
+
+            <div id="Title.SettingsPanel" class="title-panel title-sub-panel">
+                <div class="panel-title">Settings</div>
                 <div class="setting-row">
                     <div class="setting-label">BGM</div>
-                    <button class="step-button" data-action="BGMDown">-</button>
+                    <input id="Title.Settings.BGMSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="BGMVolumeChanged"/>
                     <div id="Title.Settings.BGMValue" class="setting-value">100%</div>
-                    <button class="step-button" data-action="BGMUp">+</button>
                 </div>
                 <div class="setting-row">
                     <div class="setting-label">SFX</div>
-                    <button class="step-button" data-action="SFXDown">-</button>
+                    <input id="Title.Settings.SFXSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="SFXVolumeChanged"/>
                     <div id="Title.Settings.SFXValue" class="setting-value">100%</div>
-                    <button class="step-button" data-action="SFXUp">+</button>
                 </div>
-                <button class="button" data-action="BackToTitleMenu">Back</button>
             </div>
-            -->
-            <!--
-            <div id="Title.CreditsPanel" class="title-panel sub-panel">
-                <div class="headline">Credits</div>
+
+            <div id="Title.CreditsPanel" class="title-panel title-sub-panel">
+                <div class="panel-title">Credits</div>
                 <div class="panel-line">Management / UI</div>
-                <div class="panel-line strong">Game Jam Build</div>
-                <button class="button" data-action="BackToTitleMenu">Back</button>
+                <div class="panel-line strong">Project Week09 Team03</div>
+                <div class="panel-line muted">Game Jam Build</div>
             </div>
-            -->
-            <div id="Title.Version" class="version-label">Latest Update v.20260504 by Team03</div>
+
+            <button id="Title.ModalClose" class="panel-close" data-action="BackToTitleMenu">
+                <img class="panel-close-icon" src="Asset/UIImage/13_Escape_r.PNG"/>
+            </button>
         </div>
     </body>
 </rml>

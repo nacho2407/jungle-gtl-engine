@@ -23,49 +23,59 @@ body
     background-color: rgb(15, 18, 22);
 }
 
-.loading-copy
+.controls-panel
 {
     position: absolute;
-    left: 150px;
-    top: 210px;
-    width: 680px;
-}
-
-.headline
-{
-    margin-bottom: 34px;
-    font-size: 42px;
-    color: rgb(255, 248, 232);
+    left: 606px;
+    top: 170px;
+    width: 600px;
+    min-height: 390px;
+    padding: 52px 62px;
+    decorator: image("Asset/UIImage/ScoreBoardPanel.PNG" fill);
+    text-align: center;
 }
 
 .panel-line
 {
-    margin-bottom: 14px;
-    font-size: 24px;
+    margin-bottom: 24px;
+    font-size: 28px;
+    color: rgb(255, 224, 154);
+}
+
+.control-copy
+{
+    width: 470px;
+    margin-left: 62px;
+    margin-top: 54px;
+    color: rgb(204, 216, 222);
+    font-size: 20px;
+    line-height: 30px;
+}
+
+.tips-block
+{
+    position: absolute;
+    left: 490px;
+    bottom: 154px;
+    width: 940px;
+    text-align: center;
 }
 
 .tip-line
 {
-    width: 620px;
-    margin-bottom: 30px;
-    font-size: 19px;
-    line-height: 28px;
+    width: 940px;
+    font-size: 22px;
+    line-height: 32px;
     color: rgb(204, 216, 222);
 }
 
-.loading-status
+.status-text
 {
     position: absolute;
-    right: 80px;
+    right: 68px;
     bottom: 58px;
-    width: 380px;
+    width: 420px;
+    font-size: 24px;
     text-align: right;
     color: rgb(255, 248, 232);
-}
-
-.loading-cycle
-{
-    margin-bottom: 10px;
-    font-size: 48px;
-    color: rgb(160, 202, 204);
 }
