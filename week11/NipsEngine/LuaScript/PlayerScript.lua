@@ -389,6 +389,7 @@ function Script:Tick(dt)
         StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
         end)
+
     end
 
     -- -------------------------------------------------------
