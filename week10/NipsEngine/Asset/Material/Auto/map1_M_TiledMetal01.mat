@@ -19,7 +19,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/M_TiledMetal01_BaseColor.png"
+            "Value" : "Asset/Mesh/Map/M_TiledMetal01_BaseColor.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
