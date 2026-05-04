@@ -11,6 +11,7 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Types/FrameContext.h"
 #include "UI/UserWidget.h"
+#include "WICTextureLoader.h"
 
 #ifdef GetNextSibling
 #undef GetNextSibling
@@ -290,10 +291,60 @@ void FRmlRenderInterfaceD3D11::ReleaseGeometry(Rml::CompiledGeometryHandle Geome
 	delete Geometry;
 }
 
-Rml::TextureHandle FRmlRenderInterfaceD3D11::LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String& /*Source*/)
+Rml::TextureHandle FRmlRenderInterfaceD3D11::LoadTexture(Rml::Vector2i& TextureDimensions, const Rml::String& Source)
 {
 	TextureDimensions = { 0, 0 };
-	return 0;
+
+	if (!Device || Source.empty())
+	{
+		return 0;
+	}
+
+	const std::wstring WidePath = FPaths::ToWide(Source);
+
+	ID3D11Resource* Resource = nullptr;
+	ID3D11ShaderResourceView* SRV = nullptr;
+	const HRESULT HR = DirectX::CreateWICTextureFromFileEx(
+		Device,
+		WidePath.c_str(),
+		0,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_SHADER_RESOURCE,
+		0,
+		0,
+		DirectX::WIC_LOADER_IGNORE_SRGB,
+		&Resource,
+		&SRV);
+
+	if (FAILED(HR) || !SRV)
+	{
+		if (Resource)
+		{
+			Resource->Release();
+		}
+		UE_LOG("[RmlUi] Failed to load texture: %s", Source.c_str());
+		return 0;
+	}
+
+	if (Resource)
+	{
+		ID3D11Texture2D* Texture2D = nullptr;
+		if (SUCCEEDED(Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D))) && Texture2D)
+		{
+			D3D11_TEXTURE2D_DESC Desc = {};
+			Texture2D->GetDesc(&Desc);
+			TextureDimensions = {
+				static_cast<int>(Desc.Width),
+				static_cast<int>(Desc.Height)
+			};
+			Texture2D->Release();
+		}
+		Resource->Release();
+	}
+
+	auto* TextureResource = new FRmlTextureD3D11();
+	TextureResource->SRV = SRV;
+	return reinterpret_cast<Rml::TextureHandle>(TextureResource);
 }
 
 Rml::TextureHandle FRmlRenderInterfaceD3D11::GenerateTexture(Rml::Span<const Rml::byte> Source, Rml::Vector2i SourceDimensions)

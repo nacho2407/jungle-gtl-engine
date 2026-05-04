@@ -6,9 +6,9 @@
 <body>
 	<div id="quest-root">
 		<div id="quest-panel">
-			<div class="quest-badge">QUEST 05</div>
-			<div class="quest-title">골인 지점으로!</div>
-			<div class="quest-body">최종 골인 지점에 도달하면 게임이 클리어됩니다.</div>
+			<div class="quest-badge">ENDING</div>
+			<div class="quest-title">탈출!</div>
+			<div class="quest-body">탈출구를 찾아 이 세계를 탈출하세요.</div>
 			<button id="goal-quest-ok-button" class="quest-button">Okay</button>
 		</div>
 	</div>

@@ -8,7 +8,7 @@
 		<div id="quest-panel">
 			<div class="quest-badge">QUEST 04</div>
 			<div class="quest-title">운석 피하기</div>
-			<div class="quest-body">목표 지점으로 이동해 운석 회피 이벤트를 시작하세요.</div>
+			<div class="quest-body">목표 지점으로 이동해 정해진 시간 동안 운석을 피하세요.</div>
 			<button id="meteor-quest-ok-button" class="quest-button">Okay</button>
 		</div>
 	</div>
