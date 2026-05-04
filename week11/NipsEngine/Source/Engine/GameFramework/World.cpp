@@ -5,6 +5,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Object/ObjectFactory.h"
 
+#include <algorithm>
+
 DEFINE_CLASS(UWorld, UObject)
 REGISTER_FACTORY(UWorld)
 
@@ -89,7 +91,12 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
 
 void UWorld::Tick(float DeltaTime)
 {
-    DeltaTime *= GlobalTimeScale;
+    LastUnscaledDeltaTime = std::max(0.0f, DeltaTime);
+    LastDeltaTime = LastUnscaledDeltaTime * GlobalTimeScale;
+    RealTimeSeconds += LastUnscaledDeltaTime;
+    GameTimeSeconds += LastDeltaTime;
+
+    DeltaTime = LastDeltaTime;
     if (!PersistentLevel)
         return;
 
@@ -101,6 +108,11 @@ void UWorld::Tick(float DeltaTime)
     SyncSpatialIndex();
     UpdateOverlaps();
     CheckPendingKill();
+}
+
+void UWorld::SetGlobalTimeScale(float NewTimeScale)
+{
+    GlobalTimeScale = std::max(0.0f, NewTimeScale);
 }
 
 void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)

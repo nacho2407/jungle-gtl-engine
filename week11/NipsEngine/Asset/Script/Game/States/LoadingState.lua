@@ -21,7 +21,7 @@ function LoadingState:Enter(context, payload)
     context.managers.UI:SetLoadingCycleRotation(0.0)
     context.managers.Sound:StopBGM(0.5)
     Engine.API.Input.SetInputModeGameAndUI()
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
 
     if payload and payload.reopenGameScene then
         self.waitingForSceneOpen = context.root:OpenGameScene()
@@ -39,7 +39,7 @@ function LoadingState:Tick(context, dt)
         self.waitingForSceneOpen = false
     end
 
-    local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
     self.elapsed = self.elapsed + realDt
     context.managers.UI:SetLoadingCycleRotation((self.elapsed * 360.0) % 360.0)
 

@@ -324,27 +324,6 @@ function PlayerController:GetViewTargetActor() end
 ---@return CameraComponent|nil
 function PlayerController:GetViewTargetCamera() end
 
----@class EngineAPITime
-local EngineAPITime = {}
-
----@param scale number
-function EngineAPITime.SetTimeScale(scale) end
-
----@return number
-function EngineAPITime.GetTimeScale() end
-
----@return number
-function EngineAPITime.GetDeltaTime() end
-
----@return number
-function EngineAPITime.GetUnscaledDeltaTime() end
-
----@return number
-function EngineAPITime.GetGameTime() end
-
----@return number
-function EngineAPITime.GetRealTime() end
-
 ---@class EngineAPIInput
 local EngineAPIInput = {}
 
@@ -482,6 +461,24 @@ function EngineAPIWorld.SpawnActorFromPrefab(relativePath) end
 
 ---@param actor Actor
 function EngineAPIWorld.DestroyActor(actor) end
+
+---@param scale number
+function EngineAPIWorld.SetTimeScale(scale) end
+
+---@return number
+function EngineAPIWorld.GetTimeScale() end
+
+---@return number
+function EngineAPIWorld.GetDeltaTime() end
+
+---@return number
+function EngineAPIWorld.GetUnscaledDeltaTime() end
+
+---@return number
+function EngineAPIWorld.GetGameTime() end
+
+---@return number
+function EngineAPIWorld.GetRealTime() end
 
 ---@class EngineAPIAudio
 local EngineAPIAudio = {}
@@ -900,7 +897,6 @@ function EngineAPIApplication.QuitGame() end
 local EngineAPIEffect = {}
 
 ---@class EngineAPI
----@field Time EngineAPITime
 ---@field Input EngineAPIInput
 ---@field World EngineAPIWorld
 ---@field Audio EngineAPIAudio

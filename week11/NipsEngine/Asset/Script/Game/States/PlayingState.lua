@@ -48,7 +48,7 @@ end
 
 function PlayingState:Tick(context, dt)
     if self.pendingResult ~= nil then
-        local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+        local realDt = Engine.API.World.GetUnscaledDeltaTime()
         self.resultDelayRemaining = self.resultDelayRemaining - realDt
         if self.resultDelayRemaining <= 0.0 then
             local snapshot = self.pendingResult

@@ -112,7 +112,7 @@ function IntroState:Tick(context, dt)
         return
     end
 
-    local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
     self.visibleChars = self.visibleChars + realDt * self.charsPerSecond
 
     if self.visibleChars >= self.pageCharCount then

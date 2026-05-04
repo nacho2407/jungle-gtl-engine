@@ -891,7 +891,6 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaRandomAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSceneAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSaveAPI.cpp" />
-    <ClCompile Include="Source\Engine\Runtime\Script\API\LuaTimeAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
     <ClCompile Include="Source\Game\GameJamPlayerController.cpp">

@@ -7,7 +7,6 @@
 
 namespace FLuaEngineAPI
 {
-    void BindTime(sol::state& Lua, sol::table& API);
     void BindInput(sol::state& Lua, sol::table& API);
     void BindSave(sol::state& Lua, sol::table& API);
     void BindJson(sol::state& Lua, sol::table& API);
