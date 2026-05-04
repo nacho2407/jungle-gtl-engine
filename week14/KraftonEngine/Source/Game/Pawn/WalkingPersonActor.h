@@ -40,6 +40,11 @@ public:
 	void EndPlay() override;
 	void PostDuplicate() override;
 	void Tick(float DeltaTime) override;
+	void Serialize(FArchive& Ar) override;
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
+	bool IsQuestTarget() const { return bQuestTarget; }
+	void SetQuestTarget(bool bIn) { bQuestTarget = bIn; }
 
 	UBoxComponent*        GetCollisionBox() const { return CollisionBox; }
 	UStaticMeshComponent* GetMesh()         const { return Mesh; }
@@ -64,6 +69,10 @@ private:
 	static constexpr float TriggerExtentX = 5.0f;
 	static constexpr float TriggerExtentY = 5.0f;
 	static constexpr float TriggerExtentZ = 3.0f;
+
+	// 씬에 사람 여러 명 깔되, 그중 단 한 명만 EscapePolice 퀘스트 트리거 역할.
+	// true 인 인스턴스의 트리거에만 "EscapePolice" 태그가 붙어 GameMode 라우팅을 받음.
+	bool bQuestTarget = false;
 
 	// Phase 전환마다 돌아갈 시작 위치/회전. BeginPlay 첫 frame 에 캐시.
 	FVector  InitialLocation = FVector(0.0f, 0.0f, 0.0f);
