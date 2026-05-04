@@ -17,6 +17,7 @@ public:
     FLightProxy* CreateLightProxy() override;
 
     float GetAttenuationRadius() const { return AttenuationRadius; }
+    void SetAttenuationRadius(float InRadius);
     float GetLightFalloffExponent() const { return LightFalloffExponent; }
 
 protected:
