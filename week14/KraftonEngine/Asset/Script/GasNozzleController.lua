@@ -1,4 +1,5 @@
 local ObjRegistry = require("ObjRegistry")
+local UIManager = require("UIManager")
 local bIsOverlapping = false
 
 function BeginPlay()
@@ -10,14 +11,15 @@ end
 
 function OnOverlap(OtherActor)
     if ObjRegistry.car ~= nil and OtherActor.UUID == ObjRegistry.car.UUID then
-        print("Car entered gas nozzle trigger")
         bIsOverlapping = true
+        UIManager.SetGasFeedbackActive(true)
     end
 end
 
 function OnEndOverlap(OtherActor)
     if ObjRegistry.car ~= nil and OtherActor.UUID == ObjRegistry.car.UUID then
         bIsOverlapping = false
+        UIManager.SetGasFeedbackActive(false)
     end
 end
 
@@ -33,6 +35,8 @@ function Tick(dt)
             obj.Rotation = manCamera.Rotation
         end
 
+        UIManager.SetGasFeedbackActive(bIsOverlapping)
+
         if bIsOverlapping and ObjRegistry.car ~= nil then
             ObjRegistry.car:GetCarGas():AddGas(5.0 * dt)
 
@@ -41,5 +45,7 @@ function Tick(dt)
                 GetGameMode():SuccessPhase()
             end
         end
+    else
+        UIManager.SetGasFeedbackActive(false)
     end
 end

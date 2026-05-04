@@ -17,6 +17,7 @@ local scoreCounter = {
     display = 0,
     target = 0
 }
+local gasFeedbackActive = false
 local onCarWashQuestOk = nil
 local onGasQuestOk = nil
 local onPersonQuestOk = nil
@@ -130,6 +131,7 @@ function UIManager.Init()
         UIManager.Hide("gameOverlay")
         UIManager.Hide("gameOver")
         UIManager.Hide("gasWidget")
+        UIManager.Hide("gasFeedback")
         UIManager.Hide("meteorHp")
         UIManager.Hide("carWashQuest")
         UIManager.Hide("gasQuest")
@@ -266,6 +268,7 @@ function UIManager.Init()
     UIManager.Register("meteorQuest", meteorQuestWidget)
     UIManager.Register("goalQuest", goalQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
+    UIManager.Register("gasFeedback", UI.CreateWidget("Asset/UI/GasFeedbackWidget.rml"))
     UIManager.Register("meteorHp", UI.CreateWidget("Asset/UI/MeteorHpWidget.rml"))
     UIManager.Register("gameOver", gameOverWidget)
     UIManager.Register("pauseMenu", pauseMenuWidget)
@@ -388,6 +391,10 @@ function UIManager.IsFading()
     return fade.active
 end
 
+function UIManager.SetGasFeedbackActive(active)
+    gasFeedbackActive = active == true
+end
+
 -- 게임 종료 화면 표시 — outcome 에 따라 타이틀 텍스트 swap.
 -- finalScore 는 Score 시스템 도입 시 채워서 호출 (지금은 nil 이면 placeholder 유지).
 -- 주의: UUIManager 가 RML Document 를 첫 AddToViewport 시점에 lazy-load 하므로
@@ -437,6 +444,7 @@ function UIManager.Tick(dt)
     end
 
     UIManager.UpdateGasWidget()
+    UIManager.UpdateGasFeedbackWidget()
     UIManager.UpdateMeteorHpWidget()
     UpdateScoreCounter(dt)
 end
@@ -576,6 +584,50 @@ function UIManager.UpdateGasWidget()
 end
 
 -- 메테오 HP 바 — Phase==DodgeMeteor 일 때만 표시. ObjRegistry.car 의 MeteorHealth 폴링.
+function UIManager.UpdateGasFeedbackWidget()
+    local widget = widgets["gasFeedback"]
+    if widget == nil then return end
+
+    local overlayWidget = widgets["gameOverlay"]
+    if overlayWidget == nil or not overlayWidget:IsInViewport() then
+        if widget:IsInViewport() then
+            widget:hide()
+        end
+        return
+    end
+
+    local gs = GetGameState()
+    if gs == nil or gs:GetPhase() ~= ECarGamePhase.CarGas then
+        if widget:IsInViewport() then
+            widget:hide()
+        end
+        gasFeedbackActive = false
+        return
+    end
+
+    local car = ObjRegistry.car
+    if car == nil then return end
+
+    local gas = car:GetCarGas()
+    if gas == nil then return end
+
+    if not widget:IsInViewport() then
+        widget:show()
+    end
+
+    local ratio = Clamp(gas:GetGasRatio(), 0, 1)
+    local color = GetGasColor(ratio)
+
+    if gasFeedbackActive then
+        color = "#5bd7ff"
+    end
+
+    local trackWidth = 348.0
+    local emptyWidth = trackWidth * (1.0 - ratio)
+    widget:set_property("gas-feedback-bar-fill", "right", string.format("%.1fdp", emptyWidth))
+    widget:set_property("gas-feedback-bar-fill", "background-color", color)
+end
+
 function UIManager.UpdateMeteorHpWidget()
     local widget = widgets["meteorHp"]
     if widget == nil then return end
