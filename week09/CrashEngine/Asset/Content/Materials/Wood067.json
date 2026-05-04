@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 32.0,
+        "SpecularStrength": 0.45
+    },
+    "PathFileName": "Asset/Content/Materials/Wood067.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Wood067/Wood067_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Wood067/Wood067_NormalDX.jpg"
+    }
+}

@@ -3,7 +3,7 @@ local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
 BulletSystem.BindWorld(World)
 
-local moveSpeed = 10.0
+local moveSpeed = 25.0
 local pressedKeys = {}
 local movementState = nil
 local PlayerShotCooldown = 0.25
@@ -11,7 +11,7 @@ local PlayerShotTimer = 0.0
 
 local HP = 100.0
 local MaxHP = 100.0
-local HP_reduction  = 10;
+local HP_reduction  = 2.5;
 
 local LightComponet = nil
 local MeshComponent = nil

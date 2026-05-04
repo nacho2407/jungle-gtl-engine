@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 34.0,
+        "SpecularStrength": 0.45
+    },
+    "PathFileName": "Asset/Content/Materials/Tiles078.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Tiles078/Tiles078_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Tiles078/Tiles078_NormalDX.jpg"
+    }
+}
