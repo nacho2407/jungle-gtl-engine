@@ -1,4 +1,4 @@
-#include "LuaRuntime.h"
+﻿#include "LuaRuntime.h"
 
 #include <cstdio>
 #include <iomanip>
@@ -12,6 +12,7 @@
 #include "LuaScript/LuaComponentProxy.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaInputProxy.h"
+#include "LuaScript/LuaUiProxy.h"
 #include "LuaScript/LuaPersistentStorage.h"
 #include "Math/Vector.h"
 
@@ -245,6 +246,7 @@ void FLuaRuntime::BindEngineTypes()
 
     // Coroutine 관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
+    LuaUiProxy::Bind(*Lua);
     FLuaPersistentStorage::Bind(*Lua);
 
 	Lua->new_usertype<FLuaComponentProxy>("Component", sol::no_constructor,

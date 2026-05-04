@@ -11,6 +11,12 @@
 
 void FBlendStateManager::Create(ID3D11Device* InDevice)
 {
+    CurrentState = static_cast<EBlendState>(-1);
+    if (!InDevice)
+    {
+        return;
+    }
+
     // Alpha Blend
     D3D11_BLEND_DESC Desc                      = {};
     Desc.RenderTarget[0].BlendEnable           = TRUE;
@@ -57,10 +63,16 @@ void FBlendStateManager::Release()
     SAFE_RELEASE(Alpha);
     SAFE_RELEASE(Additive);
     SAFE_RELEASE(NoColorWrite);
+    CurrentState = static_cast<EBlendState>(-1);
 }
 
 void FBlendStateManager::Set(ID3D11DeviceContext* InContext, EBlendState InState)
 {
+    if (!InContext)
+    {
+        return;
+    }
+
     if (CurrentState == InState)
         return;
 

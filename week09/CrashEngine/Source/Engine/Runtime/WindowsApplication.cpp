@@ -5,6 +5,7 @@
 #include <windowsx.h>
 
 #include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/Engine.h"
 
 // ImGui Win32 메시지 핸들러
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam);
@@ -31,6 +32,11 @@ LRESULT CALLBACK FWindowsApplication::StaticWndProc(HWND hWnd, unsigned int Msg,
 LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam, LPARAM lParam)
 {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
+    {
+        return true;
+    }
+
+    if (GEngine && GEngine->HandleWindowMessage(hWnd, Msg, wParam, lParam))
     {
         return true;
     }

@@ -770,6 +770,18 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
         Renderer.RunRootPipeline(ERenderPipelineType::EditorRootPipeline, PipelineContext);
     }
 
+    FLevelEditorViewportClient* RmlViewport = GetActiveViewport();
+    if (PlayInEditorSessionInfo.has_value() && PlayInEditorSessionInfo->DestinationViewportClient)
+    {
+        RmlViewport = PlayInEditorSessionInfo->DestinationViewportClient;
+    }
+
+    if (VC == RmlViewport)
+    {
+        const FRect& ViewportRect = VC->GetViewportScreenRect();
+        RenderRmlUiToViewport(VP, ViewportRect.X, ViewportRect.Y);
+    }
+
     if (GPUOcclusion.IsInitialized())
     {
         SCOPE_STAT_CAT("GPUOcclusion", "4_ExecutePass");

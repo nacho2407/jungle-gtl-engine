@@ -7,17 +7,42 @@
 
 void FSoundManager::Init()
 {
-    FMOD::System_Create(&System);
+    if (bInitialized)
+    {
+        return;
+    }
 
-    System->init(128, FMOD_INIT_NORMAL, nullptr);
+    FMOD_RESULT Result = FMOD::System_Create(&System);
+    if (Result != FMOD_OK || !System)
+    {
+        UE_LOG(Sound, Error, "Failed to create FMOD system. result=%d", static_cast<int>(Result));
+        System = nullptr;
+        return;
+    }
+
+    Result = System->init(128, FMOD_INIT_NORMAL, nullptr);
+    if (Result != FMOD_OK)
+    {
+        UE_LOG(Sound, Error, "Failed to initialize FMOD system. result=%d", static_cast<int>(Result));
+        System->release();
+        System = nullptr;
+        return;
+    }
 
     System->getMasterChannelGroup(&MasterGroup);
     System->createChannelGroup("BGM", &BgmGroup);
     System->createChannelGroup("SFX", &SfxGroup);
 
-    MasterGroup->addGroup(BgmGroup);
-    MasterGroup->addGroup(SfxGroup);
+    if (MasterGroup && BgmGroup)
+    {
+        MasterGroup->addGroup(BgmGroup);
+    }
+    if (MasterGroup && SfxGroup)
+    {
+        MasterGroup->addGroup(SfxGroup);
+    }
 
+    bInitialized = true;
     UE_LOG(Sound, Info, "SoundManager Initialized with FMOD.");
 }
 
@@ -31,6 +56,11 @@ void FSoundManager::Tick()
 
 void FSoundManager::Release()
 {
+    if (!bInitialized && !System)
+    {
+        return;
+    }
+
     if (MasterGroup)
     {
         MasterGroup->stop();
@@ -56,10 +86,17 @@ void FSoundManager::Release()
     BgmGroup = nullptr;
     SfxGroup = nullptr;
     CurrentBgmChannel = nullptr;
+    bInitialized = false;
 }
 
 bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM)
 {
+    if (!System)
+    {
+        UE_LOG(Sound, Warning, "LoadSound skipped because FMOD system is not initialized.");
+        return false;
+    }
+
     if (SoundCache.find(SoundID) != SoundCache.end())
     {
         return true;
@@ -112,6 +149,7 @@ void FSoundManager::LoadSoundsFromDirectory(const FString& RelativeDirPath, bool
 
 void FSoundManager::PlayBGM(const FString& SoundID)
 {
+    if (!System || !BgmGroup) return;
     if (SoundCache.find(SoundID) == SoundCache.end()) return;
 
     StopBGM(); 
@@ -135,6 +173,7 @@ void FSoundManager::StopBGM()
 
 void FSoundManager::PlaySFX(const FString& SoundID)
 {
+    if (!System || !SfxGroup) return;
     if (SoundCache.find(SoundID) == SoundCache.end()) return;
 
     System->playSound(SoundCache[SoundID], SfxGroup, false, nullptr);
