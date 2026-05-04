@@ -16,6 +16,7 @@ local onCarWashQuestOk = nil
 local onGasQuestOk = nil
 local onPersonQuestOk = nil
 local onMeteorQuestOk = nil
+local onGoalQuestOk = nil
 
 local function Clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -66,6 +67,10 @@ function UIManager.SetMeteorQuestOkCallback(callback)
     onMeteorQuestOk = callback
 end
 
+function UIManager.SetGoalQuestOkCallback(callback)
+    onGoalQuestOk = callback
+end
+
 function UIManager.Init()
     -- Scene reload 대응 — UI 위젯은 UUIManager 싱글턴이 보유 (월드와 별개) 라 첫 init 후
     -- 유지된다. 두 번째 Init 호출 시 위젯 재생성 없이 표시만 인트로 화면으로 정리.
@@ -81,6 +86,7 @@ function UIManager.Init()
         UIManager.Hide("gasQuest")
         UIManager.Hide("personQuest")
         UIManager.Hide("meteorQuest")
+        UIManager.Hide("goalQuest")
         UIManager.Hide("contributor")
         UIManager.Hide("whiteBox")
         UIManager.Hide("pauseMenu")
@@ -153,6 +159,16 @@ function UIManager.Init()
         end
     end)
 
+    local goalQuestWidget = UI.CreateWidget("Asset/UI/GoalQuestWidget.rml")
+    goalQuestWidget:SetWantsMouse(true)
+    goalQuestWidget:bind_click("goal-quest-ok-button", function()
+        UIManager.Hide("goalQuest")
+
+        if onGoalQuestOk ~= nil then
+            onGoalQuestOk()
+        end
+    end)
+
     local pauseMenuWidget = UI.CreateWidget("Asset/UI/PauseMenuWidget.rml")
     pauseMenuWidget:SetWantsMouse(true)
     pauseMenuWidget:bind_click("pause-menu-go-intro-button", function()
@@ -188,6 +204,7 @@ function UIManager.Init()
     UIManager.Register("gasQuest", gasQuestWidget)
     UIManager.Register("personQuest", personQuestWidget)
     UIManager.Register("meteorQuest", meteorQuestWidget)
+    UIManager.Register("goalQuest", goalQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
     UIManager.Register("gameOver", gameOverWidget)
     UIManager.Register("pauseMenu", pauseMenuWidget)
@@ -379,6 +396,7 @@ local PHASE_OBJECTIVE = {
     [ECarGamePhase.CarGas]       = "FILL UP GAS",
     [ECarGamePhase.EscapePolice] = "ESCAPE THE POLICE",
     [ECarGamePhase.DodgeMeteor]  = "DODGE METEORS",
+    [ECarGamePhase.Goal]         = "REACH THE GOAL",
     [ECarGamePhase.Finished]     = "MATCH COMPLETE",
 }
 
@@ -387,6 +405,7 @@ local PHASE_NAME = {
     [ECarGamePhase.CarGas]       = "GAS FILL",
     [ECarGamePhase.EscapePolice] = "ESCAPE",
     [ECarGamePhase.DodgeMeteor]  = "METEOR DODGE",
+    [ECarGamePhase.Goal]         = "GOAL",
 }
 
 local function FormatTime(seconds)

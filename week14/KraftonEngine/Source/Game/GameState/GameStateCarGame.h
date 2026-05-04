@@ -15,6 +15,7 @@ enum class ECarGamePhase : uint8
 	DodgeMeteor,    // 4) 운석 피하기
 	Result,         // 직전 페이즈 결과(성공/실패) UI 표시용 짧은 페이즈
 	Finished,       // 매치 종료 (시간 만료 또는 모든 페이즈 1회 클리어)
+	Goal,           // 5) 골인 지점 도달 — 트리거 진입 즉시 Success 후 Win 종결
 };
 
 // 페이즈 종료 결과 — Result 페이즈 동안 LastPhaseResult 에 저장돼 UI/Lua 가 폴링.

@@ -80,7 +80,8 @@ void AGameModeCarGame::Tick(float DeltaTime)
 				(1u << static_cast<uint32>(ECarGamePhase::CarWash))      |
 				(1u << static_cast<uint32>(ECarGamePhase::CarGas))       |
 				(1u << static_cast<uint32>(ECarGamePhase::EscapePolice)) |
-				(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor));
+				(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor)) |
+				(1u << static_cast<uint32>(ECarGamePhase::Goal));
 			const bool bAllCleared = (GS->GetClearedPhasesMask() & AllPhases) == AllPhases;
 			GS->SetFinishOutcome(bAllCleared ? EFinishOutcome::Win : EFinishOutcome::Lose);
 
@@ -225,6 +226,13 @@ void AGameModeCarGame::BeginPhase(ECarGamePhase Target, APawn* TriggerPawn)
 			}
 		}
 	}
+	else if (Target == ECarGamePhase::Goal)
+	{
+		// 골인 트리거 진입 자체가 성공. BeginPhase 안에서 즉시 EndPhase 호출 →
+		// MarkPhaseCleared + Result 페이즈 → 다음 Result tick 의 TryFinishOnAllCleared
+		// 에서 Goal 비트까지 set 되었음을 보고 Phase=Finished, Outcome=Win.
+		EndPhase(EPhaseResult::Success);
+	}
 }
 
 void AGameModeCarGame::EndPhase(EPhaseResult Result)
@@ -332,6 +340,11 @@ EPhaseResult AGameModeCarGame::JudgePhaseResult(ECarGamePhase Phase) const
 		return Car && Car->GetHealth() > 0.0f
 			? EPhaseResult::Success : EPhaseResult::Failed;
 
+	case ECarGamePhase::Goal:
+		// 트리거 진입 자체가 성공 — BeginPhase 가 즉시 EndPhase(Success) 를 호출하므로
+		// 여기까진 보통 도달하지 않지만, match-time-elapsed 같은 경로로 호출되면 Success.
+		return EPhaseResult::Success;
+
 	default:
 		return EPhaseResult::None;
 	}
@@ -363,7 +376,8 @@ bool AGameModeCarGame::TryFinishOnAllCleared()
 		(1u << static_cast<uint32>(ECarGamePhase::CarWash))      |
 		(1u << static_cast<uint32>(ECarGamePhase::CarGas))       |
 		(1u << static_cast<uint32>(ECarGamePhase::EscapePolice)) |
-		(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor));
+		(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor)) |
+		(1u << static_cast<uint32>(ECarGamePhase::Goal));
 
 	if ((GS->GetClearedPhasesMask() & AllPhases) == AllPhases)
 	{
@@ -386,6 +400,7 @@ ECarGamePhase AGameModeCarGame::TagToPhase(const FName& Tag)
 	if (Tag == FName("CarGas"))       return ECarGamePhase::CarGas;
 	if (Tag == FName("EscapePolice")) return ECarGamePhase::EscapePolice;
 	if (Tag == FName("DodgeMeteor"))  return ECarGamePhase::DodgeMeteor;
+	if (Tag == FName("GoalTrigger"))  return ECarGamePhase::Goal;
 	return ECarGamePhase::None;
 }
 
@@ -397,6 +412,7 @@ float AGameModeCarGame::GetPhaseDuration(ECarGamePhase Phase)
 	case ECarGamePhase::CarGas:       return CarGasDuration;
 	case ECarGamePhase::EscapePolice: return EscapePoliceDuration;
 	case ECarGamePhase::DodgeMeteor:  return DodgeMeteorDuration;
+	case ECarGamePhase::Goal:         return GoalDuration;
 	default:                          return 0.0f;
 	}
 }

@@ -38,6 +38,13 @@ local quests = {
         targetName = "MeteorVolume",
         fallbackTargetName = nil,
         phase = ECarGamePhase.DodgeMeteor
+    },
+    {
+        id = "goal",
+        uiKey = "goalQuest",
+        targetName = "GoalTrigger",
+        fallbackTargetName = nil,
+        phase = ECarGamePhase.Goal
     }
 }
 
@@ -81,6 +88,8 @@ local function OnPhaseChanged(phase)
         print("Run Lua logic for EscapePolice")
     elseif phase == ECarGamePhase.DodgeMeteor then
         print("Run Lua logic for DodgeMeteor")
+    elseif phase == ECarGamePhase.Goal then
+        print("Run Lua logic for Goal")
     elseif phase == ECarGamePhase.Result then
         if CameraManager.GetPossessedCameraOwner().UUID ~= ObjRegistry.car.UUID then
             UIManager.FadeOut(0.5, function()
@@ -130,6 +139,10 @@ local function GetQuestText(quest)
 
     if quest.id == "meteor" then
         return "운석 피하기"
+    end
+
+    if quest.id == "goal" then
+        return "골인 지점으로"
     end
 
     return quest.id
@@ -298,6 +311,11 @@ function BeginPlay()
     end)
     UIManager.SetMeteorQuestOkCallback(function()
         if currentQuestIndex == 4 and state == QuestState.WaitingAccept then
+            StartCurrentQuest()
+        end
+    end)
+    UIManager.SetGoalQuestOkCallback(function()
+        if currentQuestIndex == 5 and state == QuestState.WaitingAccept then
             StartCurrentQuest()
         end
     end)

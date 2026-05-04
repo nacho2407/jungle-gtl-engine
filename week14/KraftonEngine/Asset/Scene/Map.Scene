@@ -4338,6 +4338,48 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "GoalTrigger",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [4.447159, 35.948753, 4.935393],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "GoalTrigger",
+        "TriggerTag" : "GoalTrigger",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [3.000000, 3.000000, 3.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [4.447159, 35.948753, 4.935393],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "NewScene",
