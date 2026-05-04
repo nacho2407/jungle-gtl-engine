@@ -1081,6 +1081,7 @@
     <ClCompile Include="Source\Engine\LuaScript\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaGameObjectProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaRuntime.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaUiProxy.cpp" />
     <ClCompile Include="Source\Engine\Core\Watcher\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\Core\Sound\SoundManager.cpp" />
     <ClCompile Include="Source\GameRelease\GameReleaseEngine.cpp" />
@@ -1964,6 +1965,7 @@
     <ClInclude Include="Source\Engine\LuaScript\LuaIncludes.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaRuntime.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaScriptManager.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaUiProxy.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />

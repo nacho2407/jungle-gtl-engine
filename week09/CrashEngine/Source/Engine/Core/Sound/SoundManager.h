@@ -40,4 +40,5 @@ private:
     FMOD::Channel* CurrentBgmChannel = nullptr;
 
     TMap<FString, FMOD::Sound*> SoundCache;
+    bool bInitialized = false;
 };
