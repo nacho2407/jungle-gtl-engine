@@ -22,7 +22,7 @@ PS_Input_Tex VS(VS_Input_PNCT input)
 {
     PS_Input_Tex output;
     float2 baseUV = input.texcoord;
-    baseUV.y = 1.0f - baseUV.y;
+    baseUV.x = 1.0f - baseUV.x;
 
     output.position = ApplyMVP(input.position);
     output.texcoord = UVRegion.xy + baseUV * UVRegion.zw;
