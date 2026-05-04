@@ -117,6 +117,7 @@ void UEngine::BeginPlay()
 void UEngine::Tick(float DeltaTime)
 {
     FDirectoryWatcher::Get().Tick();
+    FSoundManager::Get().Tick();
     InputSystem::Get().Tick(Window->IsForeground());
     if (RmlUiManager)
     {

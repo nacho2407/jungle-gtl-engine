@@ -30,15 +30,24 @@ local DestroyEffectLifeTime = 1.2
 local DestroyEffectRow = 6
 local DestroyEffectColumn = 6
 local SoundManager = nil
+local SoundsLoaded = false
 
 local function loadTurretSounds()
     SoundManager = GetSoundManager()
-    SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
+    if SoundManager == nil or not SoundManager:IsInitialized() then
+        SoundsLoaded = false
+        return false
+    end
+
+    local enemyShootLoaded = SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
+    local enemyDieLoaded = SoundManager:LoadSound("EnemyDie", "Asset/Content/Sounds/EnemyDie.mp3", false)
+    SoundsLoaded = enemyShootLoaded and enemyDieLoaded
+    return SoundsLoaded
 end
 
 local function playTurretSound(sound_id)
-    if SoundManager == nil then
-        loadTurretSounds()
+    if not SoundsLoaded and not loadTurretSounds() then
+        return
     end
 
     SoundManager:PlaySFX(sound_id)
@@ -216,6 +225,7 @@ function OnTakeDamage(damage, instigator)
     if HP <= 0 then
         print("Turret Destroyed")
         DebugLog.Write("Turret.Destroyed", "Turret=" .. DebugLog.Actor(obj), "Location=" .. DebugLog.Vector(obj.Location))
+        playTurretSound("EnemyDie")
         local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
         spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)

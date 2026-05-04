@@ -252,7 +252,8 @@ void FLuaRuntime::BindEngineTypes()
         "StopAllSFX", &FSoundManager::StopAllSFX,
         "SetMasterVolume", &FSoundManager::SetMasterVolume,
         "SetBGMVolume", &FSoundManager::SetBGMVolume,
-        "SetSFXVolume", &FSoundManager::SetSFXVolume
+        "SetSFXVolume", &FSoundManager::SetSFXVolume,
+        "IsInitialized", &FSoundManager::IsInitialized
     );
 
     Lua->set_function("GetSoundManager", []() -> FSoundManager& {

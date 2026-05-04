@@ -4,6 +4,18 @@
 
 #include "Core/Logging/LogMacros.h"
 #include "Platform/Paths.h"
+#include "fmod_errors.h"
+
+namespace
+{
+void LogFmodError(const char* Operation, FMOD_RESULT Result)
+{
+    if (Result != FMOD_OK)
+    {
+        UE_LOG(Sound, Warning, "%s failed. result=%d (%s)", Operation, static_cast<int>(Result), FMOD_ErrorString(Result));
+    }
+}
+} // namespace
 
 void FSoundManager::Init()
 {
@@ -15,7 +27,7 @@ void FSoundManager::Init()
     FMOD_RESULT Result = FMOD::System_Create(&System);
     if (Result != FMOD_OK || !System)
     {
-        UE_LOG(Sound, Error, "Failed to create FMOD system. result=%d", static_cast<int>(Result));
+        UE_LOG(Sound, Error, "Failed to create FMOD system. result=%d (%s)", static_cast<int>(Result), FMOD_ErrorString(Result));
         System = nullptr;
         return;
     }
@@ -23,24 +35,64 @@ void FSoundManager::Init()
     Result = System->init(128, FMOD_INIT_NORMAL, nullptr);
     if (Result != FMOD_OK)
     {
-        UE_LOG(Sound, Error, "Failed to initialize FMOD system. result=%d", static_cast<int>(Result));
+        UE_LOG(Sound, Warning, "Failed to initialize FMOD output device. result=%d (%s)", static_cast<int>(Result), FMOD_ErrorString(Result));
+
+        FMOD_RESULT FallbackResult = System->setOutput(FMOD_OUTPUTTYPE_NOSOUND);
+        if (FallbackResult == FMOD_OK)
+        {
+            FallbackResult = System->init(128, FMOD_INIT_NORMAL, nullptr);
+        }
+
+        if (FallbackResult != FMOD_OK)
+        {
+            UE_LOG(Sound, Error, "Failed to initialize FMOD no-sound fallback. result=%d (%s)", static_cast<int>(FallbackResult), FMOD_ErrorString(FallbackResult));
+            System->release();
+            System = nullptr;
+            return;
+        }
+
+        UE_LOG(Sound, Warning, "FMOD initialized with no-sound fallback.");
+    }
+
+    Result = System->getMasterChannelGroup(&MasterGroup);
+    if (Result != FMOD_OK || !MasterGroup)
+    {
+        LogFmodError("FMOD getMasterChannelGroup", Result);
+        System->close();
         System->release();
         System = nullptr;
+        MasterGroup = nullptr;
         return;
     }
 
-    System->getMasterChannelGroup(&MasterGroup);
-    System->createChannelGroup("BGM", &BgmGroup);
-    System->createChannelGroup("SFX", &SfxGroup);
+    Result = System->createChannelGroup("BGM", &BgmGroup);
+    if (Result != FMOD_OK || !BgmGroup)
+    {
+        LogFmodError("FMOD createChannelGroup(BGM)", Result);
+        System->close();
+        System->release();
+        System = nullptr;
+        MasterGroup = nullptr;
+        BgmGroup = nullptr;
+        return;
+    }
 
-    if (MasterGroup && BgmGroup)
+    Result = System->createChannelGroup("SFX", &SfxGroup);
+    if (Result != FMOD_OK || !SfxGroup)
     {
-        MasterGroup->addGroup(BgmGroup);
+        LogFmodError("FMOD createChannelGroup(SFX)", Result);
+        BgmGroup->release();
+        System->close();
+        System->release();
+        System = nullptr;
+        MasterGroup = nullptr;
+        BgmGroup = nullptr;
+        SfxGroup = nullptr;
+        return;
     }
-    if (MasterGroup && SfxGroup)
-    {
-        MasterGroup->addGroup(SfxGroup);
-    }
+
+    LogFmodError("FMOD addGroup(BGM)", MasterGroup->addGroup(BgmGroup));
+    LogFmodError("FMOD addGroup(SFX)", MasterGroup->addGroup(SfxGroup));
 
     bInitialized = true;
     UE_LOG(Sound, Info, "SoundManager Initialized with FMOD.");
@@ -48,9 +100,9 @@ void FSoundManager::Init()
 
 void FSoundManager::Tick()
 {
-    if (System)
+    if (bInitialized && System)
     {
-        System->update();
+        LogFmodError("FMOD update", System->update());
     }
 }
 
@@ -61,24 +113,37 @@ void FSoundManager::Release()
         return;
     }
 
+    bInitialized = false;
+
     if (MasterGroup)
     {
-        MasterGroup->stop();
+        LogFmodError("FMOD master stop", MasterGroup->stop());
     }
+
+    CurrentBgmChannel = nullptr;
 
     for (auto& Pair : SoundCache)
     {
         if (Pair.second)
         {
-            Pair.second->release();
+            LogFmodError("FMOD sound release", Pair.second->release());
         }
     }
     SoundCache.clear();
 
+    if (SfxGroup)
+    {
+        LogFmodError("FMOD SFX group release", SfxGroup->release());
+    }
+    if (BgmGroup)
+    {
+        LogFmodError("FMOD BGM group release", BgmGroup->release());
+    }
+
     if (System)
     {
-        System->close(); 
-        System->release();
+        LogFmodError("FMOD system close", System->close());
+        LogFmodError("FMOD system release", System->release());
         System = nullptr;
     }
 
@@ -86,12 +151,11 @@ void FSoundManager::Release()
     BgmGroup = nullptr;
     SfxGroup = nullptr;
     CurrentBgmChannel = nullptr;
-    bInitialized = false;
 }
 
 bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, bool bIsBGM)
 {
-    if (!System)
+    if (!bInitialized || !System)
     {
         UE_LOG(Sound, Warning, "LoadSound skipped because FMOD system is not initialized.");
         return false;
@@ -103,13 +167,12 @@ bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, b
     }
 
     FMOD::Sound* NewSound = nullptr;
-
     FMOD_MODE Mode = bIsBGM ? (FMOD_LOOP_NORMAL | FMOD_2D) : (FMOD_DEFAULT | FMOD_2D);
 
     FMOD_RESULT Result = System->createSound(FilePath.c_str(), Mode, nullptr, &NewSound);
-    if (Result != FMOD_OK)
+    if (Result != FMOD_OK || !NewSound)
     {
-        UE_LOG(Sound, Error, "Failed to load sound: %s", FilePath.c_str());
+        UE_LOG(Sound, Error, "Failed to load sound: %s. result=%d (%s)", FilePath.c_str(), static_cast<int>(Result), FMOD_ErrorString(Result));
         return false;
     }
 
@@ -119,6 +182,12 @@ bool FSoundManager::LoadSound(const FString& SoundID, const FString& FilePath, b
 
 void FSoundManager::LoadSoundsFromDirectory(const FString& RelativeDirPath, bool bIsBGM)
 {
+    if (!bInitialized || !System)
+    {
+        UE_LOG(Sound, Warning, "LoadSoundsFromDirectory skipped because FMOD system is not initialized.");
+        return;
+    }
+
     std::wstring WideDirPath = FPaths::Combine(FPaths::ContentDir(), FPaths::ToWide(RelativeDirPath));
 
     if (!std::filesystem::exists(WideDirPath))
@@ -149,58 +218,101 @@ void FSoundManager::LoadSoundsFromDirectory(const FString& RelativeDirPath, bool
 
 void FSoundManager::PlayBGM(const FString& SoundID)
 {
-    if (!System || !BgmGroup) return;
-    if (SoundCache.find(SoundID) == SoundCache.end()) return;
+    if (!bInitialized || !System || !BgmGroup)
+    {
+        return;
+    }
 
-    StopBGM(); 
+    auto It = SoundCache.find(SoundID);
+    if (It == SoundCache.end() || !It->second)
+    {
+        UE_LOG(Sound, Warning, "PlayBGM skipped because sound is not loaded: %s", SoundID.c_str());
+        return;
+    }
 
-    System->playSound(SoundCache[SoundID], BgmGroup, false, &CurrentBgmChannel);
+    StopBGM();
+
+    FMOD_RESULT Result = System->playSound(It->second, BgmGroup, false, &CurrentBgmChannel);
+    if (Result != FMOD_OK)
+    {
+        CurrentBgmChannel = nullptr;
+        LogFmodError("FMOD play BGM", Result);
+    }
 }
 
 void FSoundManager::StopBGM()
 {
-    if (CurrentBgmChannel)
+    if (!bInitialized || !CurrentBgmChannel)
     {
-        bool bIsPlaying = false;
-        CurrentBgmChannel->isPlaying(&bIsPlaying);
-        if (bIsPlaying)
-        {
-            CurrentBgmChannel->stop();
-        }
         CurrentBgmChannel = nullptr;
+        return;
     }
+
+    bool bIsPlaying = false;
+    FMOD_RESULT Result = CurrentBgmChannel->isPlaying(&bIsPlaying);
+    if (Result == FMOD_OK && bIsPlaying)
+    {
+        LogFmodError("FMOD stop BGM", CurrentBgmChannel->stop());
+    }
+    else if (Result != FMOD_OK)
+    {
+        LogFmodError("FMOD BGM isPlaying", Result);
+    }
+
+    CurrentBgmChannel = nullptr;
 }
 
 void FSoundManager::PlaySFX(const FString& SoundID)
 {
-    if (!System || !SfxGroup) return;
-    if (SoundCache.find(SoundID) == SoundCache.end()) return;
+    if (!bInitialized || !System || !SfxGroup)
+    {
+        return;
+    }
 
-    System->playSound(SoundCache[SoundID], SfxGroup, false, nullptr);
+    auto It = SoundCache.find(SoundID);
+    if (It == SoundCache.end() || !It->second)
+    {
+        UE_LOG(Sound, Warning, "PlaySFX skipped because sound is not loaded: %s", SoundID.c_str());
+        return;
+    }
+
+    FMOD::Channel* SFXChannel = nullptr;
+    FMOD_RESULT Result = System->playSound(It->second, SfxGroup, false, &SFXChannel);
+
+    if (Result != FMOD_OK)
+    {
+        UE_LOG(Sound, Warning, "Failed to play SFX: %s. result=%d (%s)", SoundID.c_str(), static_cast<int>(Result), FMOD_ErrorString(Result));
+    }
 }
 
 void FSoundManager::StopAllSFX()
 {
-    if (SfxGroup)
+    if (bInitialized && SfxGroup)
     {
-        SfxGroup->stop();
+        LogFmodError("FMOD stop all SFX", SfxGroup->stop());
     }
 }
 
 void FSoundManager::SetMasterVolume(float Volume)
 {
-    if (MasterGroup)
+    if (bInitialized && MasterGroup)
     {
-        MasterGroup->setVolume(Volume);
+        LogFmodError("FMOD set master volume", MasterGroup->setVolume(Volume));
     }
 }
 
 void FSoundManager::SetBGMVolume(float Volume)
 {
-    if (BgmGroup) BgmGroup->setVolume(Volume);
+    if (bInitialized && BgmGroup)
+    {
+        LogFmodError("FMOD set BGM volume", BgmGroup->setVolume(Volume));
+    }
 }
 
 void FSoundManager::SetSFXVolume(float Volume)
 {
-    if (SfxGroup) SfxGroup->setVolume(Volume);
+    if (bInitialized && SfxGroup)
+    {
+        LogFmodError("FMOD set SFX volume", SfxGroup->setVolume(Volume));
+    }
 }

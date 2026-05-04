@@ -26,6 +26,8 @@ public:
     void SetBGMVolume(float Volume);
     void SetSFXVolume(float Volume);
 
+    bool IsInitialized() const { return bInitialized; }
+
 private:
     FSoundManager() = default;
     ~FSoundManager() = default;
