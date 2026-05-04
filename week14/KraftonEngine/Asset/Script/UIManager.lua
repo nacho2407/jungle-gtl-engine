@@ -263,7 +263,7 @@ local function StartGameOverScoreRoutine(events, finalScore, onComplete)
         end
 
         local display = 0
-        local duration = 2.0
+        local duration = 1.0
         SetGameOverScoreText(display)
         widget:set_text("final-score-detail", "")
 
@@ -296,7 +296,7 @@ local function StartGameOverScoreRoutine(events, finalScore, onComplete)
             display = targetScore
             SetGameOverScoreText(display)
 
-            Wait(1.0)
+            Wait(0.5)
         end
 
         SetGameOverScoreText(finalScore)
