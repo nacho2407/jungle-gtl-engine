@@ -1,4 +1,4 @@
-#include "UI/RmlUiManager.h"
+﻿#include "UI/RmlUiManager.h"
 
 #include "Core/Logging/LogMacros.h"
 #include "Platform/Paths.h"
@@ -1113,7 +1113,43 @@ void FRmlUiManager::Render()
 {
     if (Context)
     {
+        // RmlUi 렌더 인터페이스에서 D3D11 Context 가져오기
+        // (RenderInterface 구조에 따라 접근자가 다를 수 있으니 알맞게 수정하세요)
+        ID3D11DeviceContext* D3DContext = RenderInterface.GetContext();
+
+        // 1. 기존 3D 렌더 상태를 저장할 백업 변수들
+        ID3D11DepthStencilState* OldDepthState = nullptr;
+        UINT OldStencilRef = 0;
+
+        ID3D11BlendState* OldBlendState = nullptr;
+        FLOAT OldBlendFactor[4];
+        UINT OldSampleMask = 0;
+
+        ID3D11RasterizerState* OldRasterizerState = nullptr;
+
+        // 2. 현재 상태 백업 (Get 함수를 쓰면 RefCount가 올라갑니다)
+        if (D3DContext)
+        {
+            D3DContext->OMGetDepthStencilState(&OldDepthState, &OldStencilRef);
+            D3DContext->OMGetBlendState(&OldBlendState, OldBlendFactor, &OldSampleMask);
+            D3DContext->RSGetState(&OldRasterizerState);
+        }
+
+        // 3. UI 렌더링 실행 (이 안에서 Depth가 꺼지고 Blend가 켜짐)
         Context->Render();
+
+        // 4. 원래 3D 상태로 완벽하게 복구
+        if (D3DContext)
+        {
+            D3DContext->OMSetDepthStencilState(OldDepthState, OldStencilRef);
+            D3DContext->OMSetBlendState(OldBlendState, OldBlendFactor, OldSampleMask);
+            D3DContext->RSSetState(OldRasterizerState);
+
+            // 5. 메모리 누수 방지 (Get으로 가져온 COM 객체들은 반드시 Release 해야 함)
+            SafeRelease(OldDepthState);
+            SafeRelease(OldBlendState);
+            SafeRelease(OldRasterizerState);
+        }
     }
 }
 

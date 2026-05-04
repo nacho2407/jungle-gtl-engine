@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/RHI/D3D11/Common/D3D11API.h"
@@ -66,6 +66,8 @@ public:
     void EnableScissorRegion(bool Enable) override;
     void SetScissorRegion(Rml::Rectanglei Region) override;
     void SetTransform(const Rml::Matrix4f* Transform) override;
+
+    ID3D11DeviceContext* GetContext() { return Context; }
 
 private:
     struct FCompiledGeometry
