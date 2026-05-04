@@ -4,6 +4,7 @@
 #include "Core/Paths.h"
 
 #include "SoLoud/include/soloud.h"
+#include "SoLoud/include/soloud_audiosource.h"
 #include "SoLoud/include/soloud_wav.h"
 #include "SoLoud/include/soloud_wavstream.h"
 
@@ -47,6 +48,14 @@ namespace
                Value.find('\\') != FString::npos ||
                Value.find('.') != FString::npos ||
                Value.find(':') != FString::npos;
+    }
+
+    int ClampAttenuationModel(int Model)
+    {
+        return std::clamp(
+            Model,
+            static_cast<int>(SoLoud::AudioSource::NO_ATTENUATION),
+            static_cast<int>(SoLoud::AudioSource::EXPONENTIAL_DISTANCE));
     }
 }
 
@@ -278,6 +287,11 @@ bool FAudioSystem::Initialize()
             Impl->Engine.setGlobalVolume(Impl->MasterVolume);
             Impl->bInitialized = true;
             ReloadSoundRegistry();
+            FAudioPlaybackPolicy EnemyPolicy;
+            EnemyPolicy.MaxConcurrent = 8;
+            EnemyPolicy.CooldownSeconds = 0.08f;
+            EnemyPolicy.bStopOldestWhenFull = true;
+            SetPlaybackPolicy("Asset/Audio/SFX/GameEnemy.mp3", EnemyPolicy);
             UE_LOG("[AudioSystem] Initialized. Backend=%s Attempt=%s", Impl->Engine.getBackendString(), Attempt.Label);
             return true;
         }
@@ -470,7 +484,8 @@ FAudioHandle FAudioSystem::PlaySoundCue(
     bool bSpatialized,
     const FVector& Position,
     float VolumeScale,
-    float FadeInSeconds)
+    float FadeInSeconds,
+    const FAudio3DSettings& SpatialSettings)
 {
     if (!Impl->bInitialized)
     {
@@ -494,6 +509,17 @@ FAudioHandle FAudioSystem::PlaySoundCue(
     const SoLoud::handle Handle = bSpatialized
         ? Impl->Engine.play3d(*Clip, Position.X, Position.Y, Position.Z, 0.0f, 0.0f, 0.0f, StartVolume)
         : Impl->Engine.play(*Clip, StartVolume);
+    if (bSpatialized && Handle != 0)
+    {
+        const float MinDistance = std::max(0.0f, SpatialSettings.MinDistance);
+        const float MaxDistance = std::max(MinDistance + 0.01f, SpatialSettings.MaxDistance);
+        const float RolloffFactor = std::max(0.0f, SpatialSettings.RolloffFactor);
+        Impl->Engine.set3dSourceMinMaxDistance(Handle, MinDistance, MaxDistance);
+        Impl->Engine.set3dSourceAttenuation(
+            Handle,
+            static_cast<unsigned int>(ClampAttenuationModel(SpatialSettings.AttenuationModel)),
+            RolloffFactor);
+    }
     if (FadeInSeconds > 0.0f && Handle != 0)
     {
         Impl->Engine.fadeVolume(Handle, TargetVolume, FadeInSeconds);
@@ -625,4 +651,5 @@ void FAudioSystem::StopAll()
     Impl->BGMHandle = 0;
     Impl->CurrentBGMPath.clear();
     Impl->ActiveSFXHandles.clear();
+    Impl->CooldownRemaining.clear();
 }

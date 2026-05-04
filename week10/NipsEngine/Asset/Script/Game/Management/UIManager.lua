@@ -10,7 +10,20 @@ function UIManager.new(context)
         titlePanel = "Menu",
         pausePanel = "Menu",
         uiCache = {},
-        titleLogoAnimation = nil
+        titleLogoAnimation = nil,
+        loadingTipIndex = 0,
+        resultNameFocusFrames = 0,
+        resultNameBuffer = "",
+        resultNameEditing = false,
+        displayedHealth = nil,
+        healthLerp = nil,
+        scoreBonus = {
+            amount = 0,
+            elapsed = 0.0,
+            duration = 1.4,
+            fadeSeconds = 0.35,
+            visible = false
+        }
     }, UIManager)
 end
 
@@ -84,6 +97,10 @@ end
 
 function UIManager:Tick(dt)
     self:TickTitleLogoAnimation(dt)
+    self:TickHealthLerp(dt)
+    self:TickScoreBonus(dt)
+    self:TickResultNameInputFocus()
+    self:TickResultNameInputText()
 
     local events = Engine.API.UI.PollActionEvents()
     if events == nil then
@@ -100,6 +117,21 @@ function UIManager:Tick(dt)
             name = eventName
         })
     end
+end
+
+function UIManager:BeginPlay()
+    self.context.eventBus:Subscribe("Game.Started", self, function(snapshot)
+        self:ResetHUDAnimation(snapshot)
+    end)
+
+    self.context.eventBus:Subscribe("Score.Bonus", self, function(payload)
+        payload = payload or {}
+        self:ShowScoreBonus(payload.amount)
+    end)
+end
+
+function UIManager:EndPlay()
+    self.context.eventBus:ClearOwner(self)
 end
 
 local TITLE_LOGO_LAYERS = {
@@ -260,7 +292,12 @@ function UIManager:BuildTitleScreen()
 end
 
 function UIManager:BuildHUDScreen()
-    return self:LoadScreenDocument("HUD", "Asset/UI/Game/HUD.rml")
+    local loaded = self:LoadScreenDocument("HUD", "Asset/UI/Game/HUD.rml")
+    if loaded then
+        Engine.API.UI.SetVisible("HUD.ComboWrap", false)
+        Engine.API.UI.SetVisible("HUD.BonusText", false)
+    end
+    return loaded
 end
 
 function UIManager:BuildLoadingScreen()
@@ -337,6 +374,107 @@ local function FormatPercent(value)
     return tostring(math.floor(Clamp01(value) * 100 + 0.5)) .. "%"
 end
 
+function UIManager:ApplyHealthVisual(health, maxHealth)
+    maxHealth = tonumber(maxHealth) or self.context.root.PlayerMaxHealth or 100.0
+    health = math.max(0.0, tonumber(health) or maxHealth)
+
+    local healthRatio = 0.0
+    if maxHealth > 0.0 then
+        healthRatio = Clamp01(health / maxHealth)
+    end
+
+    self:SetCachedProgress("HUD.Health", healthRatio)
+    self:SetCachedText("HUD.HealthText", tostring(math.floor(health + 0.5)) .. "/" .. tostring(math.floor(maxHealth + 0.5)))
+end
+
+function UIManager:ResetHUDAnimation(snapshot)
+    snapshot = snapshot or {}
+    local maxHealth = tonumber(snapshot.playerMaxHealth) or self.context.root.PlayerMaxHealth or 100.0
+    local health = tonumber(snapshot.playerHealth) or maxHealth
+    self.displayedHealth = health
+    self.healthLerp = nil
+    self:ApplyHealthVisual(health, maxHealth)
+    self:SetCachedVisible("HUD.BonusText", false)
+    self:SetCachedAlpha("HUD.BonusText", 0.0)
+end
+
+function UIManager:SetHealthTarget(health, maxHealth)
+    maxHealth = tonumber(maxHealth) or self.context.root.PlayerMaxHealth or 100.0
+    health = math.max(0.0, tonumber(health) or maxHealth)
+
+    if self.displayedHealth == nil then
+        self.displayedHealth = health
+        self.healthLerp = nil
+        self:ApplyHealthVisual(health, maxHealth)
+        return
+    end
+
+    local currentTarget = self.healthLerp and self.healthLerp.target or self.displayedHealth
+    if math.abs(currentTarget - health) <= 0.001 then
+        return
+    end
+
+    self.healthLerp = {
+        start = self.displayedHealth,
+        target = health,
+        maxHealth = maxHealth,
+        elapsed = 0.0,
+        duration = 1.0
+    }
+end
+
+function UIManager:TickHealthLerp(dt)
+    if self.healthLerp == nil then
+        return
+    end
+
+    local lerpState = self.healthLerp
+    lerpState.elapsed = lerpState.elapsed + (dt or 0.0)
+    local t = Clamp01(lerpState.elapsed / lerpState.duration)
+    self.displayedHealth = Lerp(lerpState.start, lerpState.target, t)
+    self:ApplyHealthVisual(self.displayedHealth, lerpState.maxHealth)
+
+    if t >= 1.0 then
+        self.displayedHealth = lerpState.target
+        self.healthLerp = nil
+        self:ApplyHealthVisual(self.displayedHealth, lerpState.maxHealth)
+    end
+end
+
+function UIManager:ShowScoreBonus(amount)
+    amount = math.floor(tonumber(amount) or 0)
+    if amount <= 0 then
+        return
+    end
+
+    self.scoreBonus.amount = amount
+    self.scoreBonus.elapsed = 0.0
+    self.scoreBonus.visible = true
+    self:SetCachedText("HUD.BonusText", "Bonus + " .. tostring(amount))
+    self:SetCachedVisible("HUD.BonusText", true)
+    self:SetCachedAlpha("HUD.BonusText", 1.0)
+end
+
+function UIManager:TickScoreBonus(dt)
+    local bonus = self.scoreBonus
+    if bonus == nil or bonus.visible ~= true then
+        return
+    end
+
+    bonus.elapsed = bonus.elapsed + (dt or 0.0)
+    local fadeStart = math.max(0.0, bonus.duration - bonus.fadeSeconds)
+    local alpha = 1.0
+    if bonus.elapsed >= fadeStart then
+        alpha = 1.0 - Clamp01((bonus.elapsed - fadeStart) / bonus.fadeSeconds)
+    end
+
+    self:SetCachedAlpha("HUD.BonusText", alpha)
+    if bonus.elapsed >= bonus.duration then
+        bonus.visible = false
+        self:SetCachedVisible("HUD.BonusText", false)
+    end
+end
+
 local function EscapeRml(value)
     value = tostring(value or "")
     value = value:gsub("&", "&amp;")
@@ -345,6 +483,55 @@ local function EscapeRml(value)
     value = value:gsub("\"", "&quot;")
     value = value:gsub("'", "&#39;")
     return value
+end
+
+local function PopUtf8LastChar(value)
+    value = tostring(value or "")
+    local length = #value
+    if length <= 0 then
+        return ""
+    end
+
+    local index = length
+    while index > 1 do
+        local byte = string.byte(value, index)
+        if byte == nil or byte < 128 or byte >= 192 then
+            break
+        end
+        index = index - 1
+    end
+
+    return string.sub(value, 1, index - 1)
+end
+
+local RESULT_NAME_MAX_CHARS = 12
+
+local function LimitUtf8Chars(value, maxChars)
+    value = tostring(value or "")
+    maxChars = tonumber(maxChars) or 0
+    if maxChars <= 0 then
+        return ""
+    end
+
+    local index = 1
+    local count = 0
+    while index <= #value and count < maxChars do
+        local byte = string.byte(value, index)
+        if byte == nil then
+            break
+        elseif byte < 0x80 then
+            index = index + 1
+        elseif byte < 0xE0 then
+            index = index + 2
+        elseif byte < 0xF0 then
+            index = index + 3
+        else
+            index = index + 4
+        end
+        count = count + 1
+    end
+
+    return string.sub(value, 1, index - 1)
 end
 
 local function BuildScoreRowRml(index, record)
@@ -360,24 +547,11 @@ local function BuildScoreRowRml(index, record)
     }, "")
 end
 
-local SCOREBOARD_DEBUG_RECORD_COUNT = 0
-
-local function BuildDebugScoreRecords(count)
-    local records = {}
-    for index = 1, count do
-        records[index] = {
-            name = "TEST_PLAYER_" .. tostring(index),
-            score = 100000 - index * 137
-        }
-    end
-    return records
-end
-
 local LOADING_TIPS = {
     "[Tips] 저희 엔진으로 처음 만든 게임이에요.",
     "[Tips] 생각보다 괜찮죠? 저흰 안 괜찮아요.",
     "[Tips] 엔진은 사서 쓰세요. 제발",
-    "[Tips] 이거 버그는 아닙니다.",
+    "[Tips] 지수님 호준님 감사합니다.",
     "[Tips] 엄마가 칼 가지고 장난치지 말랬지!"
 }
 
@@ -435,8 +609,66 @@ function UIManager:SelectLoadingTip()
         return
     end
 
-    local index = math.random(1, count)
+    local index = Engine.API.Random.RandomInt(1, count)
+    if count > 1 and index == self.loadingTipIndex then
+        index = (index % count) + 1
+    end
+
+    self.loadingTipIndex = index
     self:SetCachedText("Loading.Tip", LOADING_TIPS[index])
+end
+
+function UIManager:RequestResultNameInputFocus(frames)
+    self.resultNameFocusFrames = frames or 1
+end
+
+function UIManager:TickResultNameInputFocus()
+    if (self.resultNameFocusFrames or 0) <= 0 then
+        return
+    end
+
+    if Engine.API.UI.IsElementFocused("Result.PlayerNameInput") then
+        self.resultNameFocusFrames = 0
+        return
+    end
+
+    Engine.API.UI.FocusElement("Result.PlayerNameInput", true)
+    self.resultNameFocusFrames = self.resultNameFocusFrames - 1
+end
+
+function UIManager:TickResultNameInputText()
+    local typed = Engine.API.Input.ConsumeTextInput()
+    if self.resultNameEditing ~= true then
+        return
+    end
+
+    local changed = false
+    if typed ~= nil and typed ~= "" then
+        self.resultNameBuffer = LimitUtf8Chars(tostring(self.resultNameBuffer or "") .. typed, RESULT_NAME_MAX_CHARS)
+        changed = true
+    end
+
+    if Engine.API.Input.IsUIKeyPressed("Backspace") then
+        self.resultNameBuffer = PopUtf8LastChar(self.resultNameBuffer)
+        changed = true
+    end
+
+    if Engine.API.Input.IsUIKeyPressed("Enter") then
+        self.context.eventBus:Emit("UI.Action", {
+            name = "SubmitScore"
+        })
+    end
+
+    if changed then
+        Engine.API.UI.SetValue("Result.PlayerNameInput", self.resultNameBuffer)
+        Engine.API.UI.SetText("Result.SubmitStatus", "")
+        self:RequestResultNameInputFocus(1)
+    end
+end
+
+function UIManager:EndResultNameInput()
+    self.resultNameEditing = false
+    self.resultNameFocusFrames = 0
 end
 
 function UIManager:SetIntroText(text)
@@ -455,20 +687,21 @@ function UIManager:SetHUD(snapshot)
     snapshot = snapshot or {}
     self:SetCachedText("HUD.Score", "Score " .. tostring(math.floor(snapshot.score or 0)))
 
-    local totalSeconds = math.floor(snapshot.survivalTime or 0.0)
+    local limitSeconds = tonumber(snapshot.sessionLimitSeconds or self.context.root.SessionLimitSeconds) or 0.0
+    local elapsedSeconds = tonumber(snapshot.survivalTime) or 0.0
+    local totalSeconds = elapsedSeconds
+    if limitSeconds > 0.0 then
+        totalSeconds = math.max(0.0, limitSeconds - elapsedSeconds)
+    end
+
+    totalSeconds = math.ceil(totalSeconds)
     local minutes = math.floor(totalSeconds / 60)
     local seconds = totalSeconds % 60
     self:SetCachedText("HUD.Time", string.format("%02d:%02d", minutes, seconds))
 
-    local maxHealth = self.context.root.PlayerMaxHealth or 100.0
+    local maxHealth = snapshot.playerMaxHealth or self.context.root.PlayerMaxHealth or 100.0
     local health = snapshot.playerHealth or maxHealth
-    local healthRatio = 0.0
-    if maxHealth > 0.0 then
-        healthRatio = Clamp01(health / maxHealth)
-    end
-
-    self:SetCachedProgress("HUD.Health", healthRatio)
-    self:SetCachedText("HUD.HealthText", tostring(math.floor(health)) .. "/" .. tostring(math.floor(maxHealth)))
+    self:SetHealthTarget(health, maxHealth)
 end
 
 function UIManager:SetCombo(snapshot)
@@ -480,11 +713,10 @@ function UIManager:SetCombo(snapshot)
     end
 
     local count = math.max(0, math.floor(snapshot.count or 0))
-    local bonus = math.max(0, math.floor(snapshot.bonus or 0))
     self:SetCachedText("HUD.ComboCount", tostring(count) .. " COMBO")
-    self:SetCachedText("HUD.ComboBonus", "Bonus +" .. tostring(bonus))
     self:SetCachedAlpha("HUD.ComboWrap", snapshot.alpha or 1.0)
     self:SetCachedStyle("HUD.ComboWrap", "right", tostring(44 + (snapshot.shakeOffset or 0.0)) .. "px")
+    self:SetCachedStyle("HUD.ComboWrap", "top", tostring(94 + (snapshot.offsetY or 0.0)) .. "px")
 end
 
 function UIManager:SetResult(snapshot)
@@ -502,20 +734,20 @@ function UIManager:SetResult(snapshot)
     Engine.API.UI.SetText("Result.Score", "Score: " .. tostring(math.floor(snapshot.score or 0)))
     Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
     Engine.API.UI.SetText("Result.PlayerName", "PLAYER")
-    Engine.API.UI.SetValue("Result.PlayerNameInput", "PLAYER")
+    Engine.API.Input.ConsumeTextInput()
+    self.resultNameBuffer = ""
+    self.resultNameEditing = true
+    Engine.API.UI.SetValue("Result.PlayerNameInput", "")
     Engine.API.UI.SetText("Result.SubmitStatus", "")
     Engine.API.UI.SetVisible("Result.EntryForm", true)
     Engine.API.UI.SetVisible("Result.EntrySummary", false)
+    self:RequestResultNameInputFocus(2)
     self:RefreshScoreBoard("Result")
 end
 
 function UIManager:RefreshScoreBoard(prefix, limit)
     local data = self.context.managers.Data
     local records = data and data:GetScoreRecords(limit) or {}
-
-    if SCOREBOARD_DEBUG_RECORD_COUNT > 0 then
-        records = BuildDebugScoreRecords(SCOREBOARD_DEBUG_RECORD_COUNT)
-    end
 
     local rows = {}
     for index, record in ipairs(records) do
@@ -537,10 +769,15 @@ function UIManager:SubmitResultScore(snapshot)
         return
     end
 
-    local userName = Engine.API.UI.GetValue("Result.PlayerNameInput")
-    local ok, result = data:RegisterScore(userName, snapshot.score or 0)
+    local userName = self.resultNameBuffer
+    if userName == nil or userName == "" then
+        userName = Engine.API.UI.GetValue("Result.PlayerNameInput")
+    end
+
+    local ok, result, record = data:RegisterScore(userName, snapshot.score or 0)
     if ok then
-        Engine.API.UI.SetText("Result.PlayerName", tostring(userName or "PLAYER"))
+        local savedName = record and record.name or userName or "PLAYER"
+        Engine.API.UI.SetText("Result.PlayerName", tostring(savedName))
         Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
         Engine.API.UI.SetVisible("Result.EntryForm", false)
         Engine.API.UI.SetVisible("Result.EntrySummary", true)
@@ -552,20 +789,29 @@ function UIManager:SubmitResultScore(snapshot)
         else
             Engine.API.UI.SetText("Result.SubmitStatus", "Saved.")
         end
+        self.resultNameEditing = false
+        self.resultNameFocusFrames = 0
         self:RefreshScoreBoard("Result")
     elseif result == "InvalidName" then
         Engine.API.UI.SetText("Result.SubmitStatus", "Enter a player name.")
+        self.resultNameEditing = true
+        self:RequestResultNameInputFocus(2)
     else
         Engine.API.UI.SetText("Result.SubmitStatus", "Save failed.")
+        self.resultNameEditing = true
+        self:RequestResultNameInputFocus(2)
     end
 end
 
 function UIManager:RenewResultName()
+    Engine.API.Input.ConsumeTextInput()
+    self.resultNameBuffer = ""
+    self.resultNameEditing = true
     Engine.API.UI.SetValue("Result.PlayerNameInput", "")
     Engine.API.UI.SetText("Result.SubmitStatus", "")
     Engine.API.UI.SetVisible("Result.EntryForm", true)
     Engine.API.UI.SetVisible("Result.EntrySummary", false)
-    Engine.API.UI.FocusElement("Result.PlayerNameInput", true)
+    self:RequestResultNameInputFocus(2)
 end
 
 return UIManager

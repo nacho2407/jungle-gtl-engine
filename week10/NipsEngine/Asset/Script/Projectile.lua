@@ -205,6 +205,9 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
     Log("[Projectile OnBeginOverlap] " .. tostring(self.owner.UUID))
 
     if OtherActor ~= nil and OtherActor:HasTag("Player") then
+        if _G.GameJam and _G.GameJam.DamagePlayer then
+            _G.GameJam.DamagePlayer(nil, self.owner)
+        end
         self:ReleaseSelf()
         return
     end

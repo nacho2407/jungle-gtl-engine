@@ -21,20 +21,28 @@ function ComboManager.new(context)
         remaining = 0.0,
         alpha = 0.0,
         isVisible = false,
+        isAppearing = false,
         isFading = false,
+        appearElapsed = 0.0,
         shakeTime = 0.0,
-        timeoutSeconds = 2.4,
-        fadeSeconds = 0.45,
+        timeoutSeconds = 5.0,
+        appearSeconds = 0.28,
+        fadeSeconds = 0.30,
         shakeSeconds = 0.18,
         shakeMagnitude = 10.0,
-        bonusRatio = 0.25
+        appearOffsetY = 34.0,
+        bonusPerKill = 2.0
     }, ComboManager)
 end
 
 function ComboManager:BeginPlay()
     local root = self.context.root
-    self.timeoutSeconds = root.ComboTimeoutSeconds or self.timeoutSeconds
-    self.bonusRatio = root.ComboBonusRatio or self.bonusRatio
+    self.timeoutSeconds = 5.0
+    local configuredTimeout = tonumber(root.ComboTimeoutSeconds)
+    if configuredTimeout ~= nil and configuredTimeout > 0.0 then
+        self.timeoutSeconds = configuredTimeout
+    end
+    self.bonusPerKill = tonumber(root.ComboBonusPerKill) or self.bonusPerKill
 
     self.context.eventBus:Subscribe("Game.Started", self, function()
         self:Reset()
@@ -69,8 +77,16 @@ function ComboManager:Reset()
     self.remaining = 0.0
     self.alpha = 0.0
     self.isVisible = false
+    self.isAppearing = false
     self.isFading = false
+    self.appearElapsed = 0.0
     self.shakeTime = 0.0
+end
+
+local function EaseOutCubic(t)
+    t = Clamp01(t)
+    local inverse = 1.0 - t
+    return 1.0 - inverse * inverse * inverse
 end
 
 function ComboManager:AddKill(payload)
@@ -79,22 +95,27 @@ function ComboManager:AddKill(payload)
         return
     end
 
-    local score = 100
+    local score = 1
     if payload and payload.score then
         score = payload.score
     end
 
+    local wasVisible = self.isVisible == true and self.isFading ~= true
+
     self.comboCount = self.comboCount + 1
     self.displayCount = self.comboCount
     self.pendingScore = self.pendingScore + score
-    self.lastBonus = self.comboCount >= 2 and math.floor(self.pendingScore * self.bonusRatio) or 0
+    self.lastBonus = self.comboCount >= 2 and math.floor(self.comboCount * self.bonusPerKill) or 0
     self.remaining = self.timeoutSeconds
-    self.alpha = 1.0
     self.isVisible = true
     self.isFading = false
+    self.isAppearing = not wasVisible
+    self.appearElapsed = 0.0
+    self.alpha = wasVisible and 1.0 or 0.0
     self.shakeTime = self.shakeSeconds
 
     self.context.eventBus:Emit("Combo.Changed", self:GetSnapshot())
+    self:UpdateUI()
 end
 
 function ComboManager:CloseCombo(reason)
@@ -104,7 +125,7 @@ function ComboManager:CloseCombo(reason)
 
     local bonus = 0
     if self.comboCount >= 2 then
-        bonus = math.floor(self.pendingScore * self.bonusRatio)
+        bonus = math.floor(self.comboCount * self.bonusPerKill)
     end
 
     if bonus > 0 and self.context.managers.Game then
@@ -116,11 +137,13 @@ function ComboManager:CloseCombo(reason)
     self.comboCount = 0
     self.pendingScore = 0
     self.remaining = 0.0
+    self.isAppearing = false
     self.isFading = true
     self.context.eventBus:Emit("Combo.Closed", {
         reason = reason or "Timeout",
         bonus = bonus
     })
+    self:UpdateUI()
 end
 
 function ComboManager:Tick(dt)
@@ -130,7 +153,16 @@ function ComboManager:Tick(dt)
         return
     end
 
-    if self.comboCount > 0 then
+    if self.isAppearing then
+        self.appearElapsed = self.appearElapsed + (dt or 0.0)
+        local t = self.appearElapsed / self.appearSeconds
+        if t >= 1.0 then
+            self.isAppearing = false
+            self.alpha = 1.0
+        else
+            self.alpha = EaseOutCubic(t)
+        end
+    elseif self.comboCount > 0 then
         self.remaining = self.remaining - (dt or 0.0)
         if self.remaining <= 0.0 then
             self:CloseCombo("Timeout")
@@ -159,15 +191,26 @@ function ComboManager:GetShakeOffset()
     return wave * self.shakeMagnitude * normalized
 end
 
+function ComboManager:GetAppearOffsetY()
+    if not self.isAppearing then
+        return 0.0
+    end
+
+    local t = self.appearElapsed / self.appearSeconds
+    return self.appearOffsetY * (1.0 - EaseOutCubic(t))
+end
+
 function ComboManager:GetSnapshot()
     return {
         isVisible = self.isVisible,
+        isAppearing = self.isAppearing,
         isFading = self.isFading,
         count = self.displayCount,
         bonus = self.lastBonus,
         alpha = Clamp01(self.alpha),
         remaining = self.remaining,
-        shakeOffset = self:GetShakeOffset()
+        shakeOffset = self:GetShakeOffset(),
+        offsetY = self:GetAppearOffsetY()
     }
 end
 

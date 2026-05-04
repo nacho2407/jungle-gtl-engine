@@ -27,7 +27,7 @@ body
 .player-board
 {
     position: absolute;
-    left: 136px;
+    left: 250px;
     top: 260px;
     width: 560px;
     height: 560px;
@@ -39,7 +39,7 @@ body
 .player-content
 {
     position: absolute;
-    left: 64px;
+    left: 50px;
     top: 96px;
     width: 432px;
     height: 368px;
@@ -57,7 +57,7 @@ body
     margin-bottom: 0px;
     font-size: 56px;
     font-weight: bold;
-    color: rgb(255, 224, 154);
+    color: rgb(255, 255, 255);
     text-align: center;
 }
 
@@ -79,7 +79,7 @@ body
     margin-bottom: 14px;
     font-size: 42px;
     font-weight: bold;
-    color: rgb(255, 248, 232);
+    color: rgb(255, 255, 255);
 }
 
 .result-score
@@ -90,10 +90,9 @@ body
     top: 112px;
     width: 432px;
     height: 42px;
-    margin-bottom: 0px;
-    font-size: 29px;
+    font-size: 32px;
     font-weight: bold;
-    color: rgb(255, 224, 154);
+    color: rgb(161, 161, 161);
     text-align: center;
 }
 
@@ -106,9 +105,10 @@ body
 {
     display: block;
     margin-top: 0px;
-    margin-bottom: 16px;
-    font-size: 20px;
-    color: rgb(238, 242, 247);
+    margin-bottom: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(255, 224, 154);
     text-align: center;
 }
 
@@ -127,41 +127,62 @@ body
 {
     display: block;
     position: relative;
-    width: 360px;
-    height: 48px;
-    margin-left: 36px;
-    margin-bottom: 18px;
+    width: 350px;
+    height: 58px;
+    margin-left: 25px;
+    margin-top: 18px;
+    decorator: image("Asset/UIImage/InputPanel.PNG" fill);
 }
 
-.input-bg
+.input-wrap:hover
 {
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    width: 360px;
-    height: 48px;
+    background-color: rgba(255, 60, 110, 32);
 }
 
 .name-input
 {
     position: absolute;
-    left: 16px;
-    top: 8px;
-    width: 328px;
-    height: 32px;
-    background-color: transparent;
-    border-width: 0px;
+    left: 0px;
+    top: 0px;
+    width: 350px;
+    height: 58px;
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-top: 13px;
+    background-color: rgba(0, 8, 12, 180);
+    border-width: 1px;
+    border-color: rgb(255, 48, 104);
     color: rgb(255, 248, 232);
     font-size: 22px;
+    text-align: left;
+}
+
+.name-input:hover
+{
+    background-color: rgba(20, 18, 24, 220);
+    border-color: rgb(255, 112, 150);
+}
+
+.name-input:focus
+{
+    background-color: rgba(24, 14, 22, 235);
+    border-width: 2px;
+    border-color: rgb(255, 224, 154);
+    color: rgb(255, 255, 255);
+}
+
+.name-input:placeholder-shown
+{
+    color: rgb(184, 202, 208);
 }
 
 .default-button
 {
     display: block;
-    width: 250px;
-    height: 58px;
+    width: 200px;
+    height: 35px;
     margin-left: 115px;
-    margin-bottom: 14px;
+    margin-top: 60px;
     padding-top: 17px;
     border-width: 0px;
     decorator: image("Asset/UIImage/ButtonDefault.PNG" fill);
@@ -233,17 +254,19 @@ body
     width: 432px;
     height: 42px;
     margin-top: 0px;
-    color: rgb(255, 180, 100);
+    color: rgb(255, 224, 154);
     font-size: 18px;
     line-height: 24px;
+    text-align: center;
 }
 
 .score-scroll
 {
     position: relative;
     width: 580px;
-    height: 482px;
+    height: 520px;
     margin-left: 45px;
+    margin-top : 30px;
     overflow-y: scroll;
     overflow-x: hidden;
     padding: 18px 44px 18px 20px;
@@ -271,14 +294,14 @@ body
 .score-empty
 {
     position: absolute;
-    left: 0px;
-    top: 206px;
+    left: 32px;
+    top: 220px;
     width: 500px;
     height: 46px;
     padding-top: 20px;
     text-align: center;
     color: rgb(170, 190, 200);
-    font-size: 25px;
+    font-size: 32px;
 }
 
 .score-rank

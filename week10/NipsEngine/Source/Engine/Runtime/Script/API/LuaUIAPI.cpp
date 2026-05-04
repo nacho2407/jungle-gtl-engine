@@ -182,6 +182,11 @@ namespace FLuaEngineAPI
                 return GEngine ? GEngine->FocusRmlUIElement(ElementId, bFocusVisible) : false;
             });
 
+        UI["IsElementFocused"] = [](const FString& ElementId) -> bool
+        {
+            return GEngine ? GEngine->IsRmlUIElementFocused(ElementId) : false;
+        };
+
         UI["BlurElement"] = [](const FString& ElementId) -> bool
         {
             return GEngine ? GEngine->BlurRmlUIElement(ElementId) : false;

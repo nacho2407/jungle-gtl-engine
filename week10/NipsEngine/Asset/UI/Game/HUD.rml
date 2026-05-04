@@ -20,11 +20,11 @@
             <div class="score-wrap">
                 <img class="score-bg" src="Asset/UIImage/InGameScoreBoard.PNG"/>
                 <div id="HUD.Score" class="score-text">Score 0</div>
+                <div id="HUD.BonusText" class="bonus-text">Bonus + 0</div>
             </div>
 
             <div id="HUD.ComboWrap" class="combo-wrap">
                 <div id="HUD.ComboCount" class="combo-count">0 COMBO</div>
-                <div id="HUD.ComboBonus" class="combo-bonus">Bonus +0</div>
             </div>
         </div>
     </body>

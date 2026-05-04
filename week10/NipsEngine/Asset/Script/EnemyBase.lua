@@ -3,6 +3,28 @@ local Script = {}
 
 Script.__index = Script
 
+local ATTACK_ID_PREFIX = "AttackId:"
+
+local function ExtractAttackId(actor)
+    if actor == nil or actor.GetTags == nil then
+        return nil
+    end
+
+    local tags = actor:GetTags()
+    if tags == nil then
+        return nil
+    end
+
+    for _, tag in ipairs(tags) do
+        tag = tostring(tag or "")
+        if string.sub(tag, 1, #ATTACK_ID_PREFIX) == ATTACK_ID_PREFIX then
+            return string.sub(tag, #ATTACK_ID_PREFIX + 1)
+        end
+    end
+
+    return nil
+end
+
 Script.Properties = {
     Speed = {
         Type = "Float",
@@ -30,6 +52,9 @@ function Script.new(component, properties)
     self.owner = component:GetOwner()
     self.target = nil
     self.bMovementLocked = false
+    self.bWasCutByBlade = false
+    self.bScoreReported = false
+    self.lastAttackId = nil
 
     -- 런타임 전용 상태
     self.bIsHitReacting = false
@@ -60,6 +85,7 @@ function Script:HitReaction()
     coroutine.yield(WaitForSeconds(1.0))
 
     self.bIsHitReacting = false
+    self.bMovementLocked = false
 
     Log("[Lua] HitReaction end")
 end
@@ -77,7 +103,7 @@ function Script:BeginPlay()
 end
 
 function Script:Tick(dt)
-    if not self.bCanMove or self.bMovementLocked then
+    if not self.bCanMove or self.bMovementLocked or self.target == nil then
         return
     end
 
@@ -104,6 +130,17 @@ end
 
 function Script:EndPlay()
     Log("[Enemy EndPlay] " .. tostring(self.owner.UUID))
+
+    if self.bWasCutByBlade and not self.bScoreReported then
+        self.bScoreReported = true
+        if _G.GameJam and _G.GameJam.NotifyEnemyKilled then
+            _G.GameJam.NotifyEnemyKilled({
+                enemy = self.owner,
+                score = 1,
+                attackId = self.lastAttackId
+            })
+        end
+    end
 end
 
 function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
@@ -112,9 +149,28 @@ end
 
 function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
     Log("[Enemy OnBeginOverlap] " .. tostring(self.owner.UUID))
+
+    if OtherActor == nil then
+        return
+    end
+
+    if OtherActor:IsA("ABladeSlash") then
+        self.bWasCutByBlade = true
+        self.lastAttackId = ExtractAttackId(OtherActor)
+        if self.lastAttackId ~= nil and _G.GameJam and _G.GameJam.NotifyPlayerAttackHit then
+            _G.GameJam.NotifyPlayerAttackHit(self.lastAttackId)
+        end
+        return
+    end
     
     if OtherActor:HasTag("Enemy") then
         return
+    end
+
+    if OtherActor:HasTag("Player") then
+        if _G.GameJam and _G.GameJam.DamagePlayer then
+            _G.GameJam.DamagePlayer(nil, self.owner)
+        end
     end
 
     StartCoroutine(function()
