@@ -183,7 +183,8 @@ void UWorld::UpdateOverlaps()
             for (int j = i+1; j < CollisionCandidates.size(); ++j)
 			{
                 UPrimitiveComponent* B = CollisionCandidates[j];
-                if (A != B)
+				// 같은 액터 타입 끼리는 Overlap 하지 않는다 => 게임잼 내 가정
+                if (A != B && A->GetOwner()->GetTypeInfo() != B->GetOwner()->GetTypeInfo())
 				{
 					// Normal 의 경우 A -> B 방향
 					FCollisionResult CollisionResult = FCollision::CheckOverlap(A, B);
