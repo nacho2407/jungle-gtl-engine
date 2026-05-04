@@ -11,5 +11,11 @@
       "name" : "Player",
       "score" : 0.687487,
       "timestamp" : "2026-05-04 07:06:21"
+    }, {
+      "documentCount" : 0,
+      "hp" : 75.964425,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timestamp" : "2026-05-04 10:44:31"
     }]
 }

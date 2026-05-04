@@ -1,7 +1,7 @@
 local Player = nil
 local IsZooming = false
 local ZoomAlpha = 0.0
-local ZoomSpeed = 16.0
+local ZoomSpeed = 25.0
 local AimYaw = 0.0
 local MouseSensitivity = 0.15
 function BeginPlay()
@@ -37,7 +37,7 @@ function Tick(dt)
         local Right = Player:GetRightVector()
         Forward = Forward * math.cos(RadYaw) + Right * math.sin(RadYaw)
     end
-    local NormalCameraLocation = PlayerPos + Vector.new(-25.0, -10.0, 20.0)
+    local NormalCameraLocation = PlayerPos + Vector.new(25.0, 20.0, 50.0)
     local NormalLookAtLocation = PlayerPos
     local ZoomCameraLocation = PlayerPos
     local ZoomLookAtLocation = PlayerPos + Up * 1.2 + Forward * 20.0

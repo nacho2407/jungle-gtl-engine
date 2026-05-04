@@ -276,6 +276,8 @@ bool ULuaScriptComponent::LoadScript()
         { return WorldProxy.FindPlayer(); });
     WorldTable.set_function("FindActorByTag", [this](const FString& Tag)
         { return WorldProxy.FindActorByTag(Tag); });
+    WorldTable.set_function("FindActorsByTag", [this](const FString& Tag)
+        { return sol::as_table(WorldProxy.FindActorsByTag(Tag)); });
     WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
     WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)
