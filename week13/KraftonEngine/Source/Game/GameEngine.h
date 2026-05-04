@@ -21,7 +21,7 @@ public:
 	// 호출은 Lua / GameMode 어디서든 안전 — 실제 destroy/load 는 World->Tick 바깥에서 일어나
 	// 호출 stack 위의 액터/컴포넌트가 destroy 되어 use-after-free 가 나지 않는다.
 	// "Go To Intro" / 매치 재시작 등 동적 상태 전체 리셋이 필요한 경우 사용.
-	void RequestTransitionToScene(const FString& InScenePath);
+	void RequestTransitionToScene(const FString& InScenePath) override;
 
 private:
 	void LoadStartLevel();

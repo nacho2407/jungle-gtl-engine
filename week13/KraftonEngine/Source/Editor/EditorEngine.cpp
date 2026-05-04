@@ -218,6 +218,13 @@ void UEditorEngine::RequestEndPlayMap()
 	bRequestEndPlayMapQueued = true;
 }
 
+void UEditorEngine::RequestTransitionToScene(const FString& /*InScenePath*/)
+{
+	// PIE 중이면 세션 종료(에디터 복귀)로 매핑. PIE 가 아닌 상태(에디터 직접)에서 호출되면
+	// 아무 의미 없으므로 no-op.
+	RequestEndPlayMap();
+}
+
 void UEditorEngine::StartQueuedPlaySessionRequest()
 {
 	if (!PlaySessionRequest.has_value())

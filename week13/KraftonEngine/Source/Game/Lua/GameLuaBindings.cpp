@@ -178,9 +178,10 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		// deferred 처리 — UGameEngine::Tick 끝에서 ProcessPendingTransition 가 실행.
 		// "Go To Intro" 등 동적 상태 전체 리셋 시 사용 (같은 scene 재로드도 OK — 액터 / PhysX
 		// / 타이머 / 동적 스폰 모두 새 인스턴스로 시작).
-		if (UGameEngine* Game = Cast<UGameEngine>(GEngine))
+		// PIE(UEditorEngine)에서는 override 가 PIE 종료로 매핑됨 — Lua 측 코드는 동일.
+		if (GEngine)
 		{
-			Game->RequestTransitionToScene(Path);
+			GEngine->RequestTransitionToScene(Path);
 		}
 	});
 }
