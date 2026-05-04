@@ -11,7 +11,11 @@ end
 function ResultState:Enter(context, snapshot)
     self.snapshot = snapshot or {}
     Engine.API.Time.SetTimeScale(0.0)
-    context.managers.Sound:StopBGM(0.5)
+    if self.snapshot.isClear == true then
+        context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Clear, 0.5)
+    else
+        context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Failed, 0.5)
+    end
     context.managers.UI:ShowOverlay("Result")
     context.managers.UI:SetResult(self.snapshot)
     Engine.API.Input.SetInputModeUIOnly()

@@ -9,7 +9,8 @@ function UIManager.new(context)
         visibleOverlays = {},
         titlePanel = "Menu",
         pausePanel = "Menu",
-        uiCache = {}
+        uiCache = {},
+        titleLogoAnimation = nil
     }, UIManager)
 end
 
@@ -82,16 +83,98 @@ function UIManager:SetCachedStyle(elementId, name, value)
 end
 
 function UIManager:Tick(dt)
+    self:TickTitleLogoAnimation(dt)
+
     local events = Engine.API.UI.PollActionEvents()
     if events == nil then
         return
     end
 
     for _, eventName in ipairs(events) do
+        local sound = self.context.managers.Sound
+        if sound ~= nil then
+            sound:PlayUIAction(eventName)
+        end
+
         self.context.eventBus:Emit("UI.Action", {
             name = eventName
         })
     end
+end
+
+local TITLE_LOGO_LAYERS = {
+    { mark = "Title.Cyber.Mark1", logo = "Title.Cyber.Logo1", finalLeft = 170, startLeft = 70, color = { 0, 255, 255 } },
+    { mark = "Title.Cyber.Mark2", logo = "Title.Cyber.Logo2", finalLeft = 160, startLeft = 60, color = { 0, 183, 255 } },
+    { mark = "Title.Cyber.Mark3", logo = "Title.Cyber.Logo3", finalLeft = 165, startLeft = 65, color = { 255, 237, 72 } },
+    { mark = "Title.Psycho.Mark1", logo = "Title.Psycho.Logo1", finalLeft = 330, startLeft = 430, color = { 0, 255, 255 } },
+    { mark = "Title.Psycho.Mark2", logo = "Title.Psycho.Logo2", finalLeft = 320, startLeft = 420, color = { 0, 183, 255 } },
+    { mark = "Title.Psycho.Mark3", logo = "Title.Psycho.Logo3", finalLeft = 325, startLeft = 425, color = { 255, 237, 72 } },
+}
+
+local function Lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+local function EaseOutCubic(t)
+    t = tonumber(t) or 0.0
+    if t < 0.0 then
+        t = 0.0
+    elseif t > 1.0 then
+        t = 1.0
+    end
+
+    local inverse = 1.0 - t
+    return 1.0 - inverse * inverse * inverse
+end
+
+local function RgbString(r, g, b)
+    return string.format("rgb(%d, %d, %d)", math.floor(r + 0.5), math.floor(g + 0.5), math.floor(b + 0.5))
+end
+
+function UIManager:ApplyTitleLogoAnimation(t)
+    local eased = EaseOutCubic(t)
+
+    for _, layer in ipairs(TITLE_LOGO_LAYERS) do
+        local left = Lerp(layer.startLeft, layer.finalLeft, eased)
+        local r = Lerp(255, layer.color[1], eased)
+        local g = Lerp(255, layer.color[2], eased)
+        local b = Lerp(255, layer.color[3], eased)
+
+        self:SetCachedStyle(layer.mark, "left", string.format("%.1fpx", left))
+        self:SetCachedAlpha(layer.logo, eased)
+        self:SetCachedStyle(layer.logo, "color", RgbString(r, g, b))
+    end
+end
+
+function UIManager:StartTitleLogoAnimation()
+    self.titleLogoAnimation = {
+        elapsed = 0.0,
+        duration = 1.0
+    }
+
+    self:ApplyTitleLogoAnimation(0.0)
+end
+
+function UIManager:TickTitleLogoAnimation(dt)
+    local animation = self.titleLogoAnimation
+    if animation == nil then
+        return
+    end
+
+    local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+    if realDt == nil or realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
+
+    animation.elapsed = animation.elapsed + realDt
+    local t = animation.elapsed / animation.duration
+    if t >= 1.0 then
+        self:ApplyTitleLogoAnimation(1.0)
+        self.titleLogoAnimation = nil
+        return
+    end
+
+    self:ApplyTitleLogoAnimation(t)
 end
 
 function UIManager:Show(screenId)
@@ -222,7 +305,7 @@ function UIManager:SetTitlePanel(panelName)
     Engine.API.UI.SetVisible("Title.ModalClose", isModalOpen)
 
     if panelName == "ScoreBoard" then
-        self:RefreshScoreBoard("Title", 10)
+        self:RefreshScoreBoard("Title")
     elseif panelName == "Settings" then
         self:RefreshSettings()
     end
@@ -253,6 +336,50 @@ end
 local function FormatPercent(value)
     return tostring(math.floor(Clamp01(value) * 100 + 0.5)) .. "%"
 end
+
+local function EscapeRml(value)
+    value = tostring(value or "")
+    value = value:gsub("&", "&amp;")
+    value = value:gsub("<", "&lt;")
+    value = value:gsub(">", "&gt;")
+    value = value:gsub("\"", "&quot;")
+    value = value:gsub("'", "&#39;")
+    return value
+end
+
+local function BuildScoreRowRml(index, record)
+    local rank = string.format("%02d", index)
+    local name = EscapeRml(record.name or "PLAYER")
+    local score = tostring(math.floor(record.score or 0))
+    return table.concat({
+        "<div class=\"score-row\">",
+        "<div class=\"score-rank\">", rank, "</div>",
+        "<div class=\"score-name\">", name, "</div>",
+        "<div class=\"score-value\">", score, "</div>",
+        "</div>"
+    }, "")
+end
+
+local SCOREBOARD_DEBUG_RECORD_COUNT = 0
+
+local function BuildDebugScoreRecords(count)
+    local records = {}
+    for index = 1, count do
+        records[index] = {
+            name = "TEST_PLAYER_" .. tostring(index),
+            score = 100000 - index * 137
+        }
+    end
+    return records
+end
+
+local LOADING_TIPS = {
+    "[Tips] 저희 엔진으로 처음 만든 게임이에요.",
+    "[Tips] 생각보다 괜찮죠? 저흰 안 괜찮아요.",
+    "[Tips] 엔진은 사서 쓰세요. 제발",
+    "[Tips] 이거 버그는 아닙니다.",
+    "[Tips] 엄마가 칼 가지고 장난치지 말랬지!"
+}
 
 function UIManager:RefreshSettings()
     local sound = self.context.managers.Sound
@@ -292,7 +419,24 @@ function UIManager:ApplyVolumeFromSlider(kind, sliderElementId)
 end
 
 function UIManager:SetLoadingReady(isReady)
-    Engine.API.UI.SetText("Loading.Status", isReady and "Press Space to Start" or "Preparing Game Scene...")
+    self:SetCachedVisible("Loading.Cycle", isReady ~= true)
+    self:SetCachedVisible("Loading.Status", isReady == true)
+    self:SetCachedText("Loading.Status", "Press Space to Start")
+end
+
+function UIManager:SetLoadingCycleRotation(degrees)
+    local value = (tonumber(degrees) or 0.0) % 360.0
+    self:SetCachedStyle("Loading.Cycle", "transform", "rotate(" .. tostring(value) .. "deg)")
+end
+
+function UIManager:SelectLoadingTip()
+    local count = #LOADING_TIPS
+    if count <= 0 then
+        return
+    end
+
+    local index = math.random(1, count)
+    self:SetCachedText("Loading.Tip", LOADING_TIPS[index])
 end
 
 function UIManager:SetIntroText(text)
@@ -346,38 +490,43 @@ end
 function UIManager:SetResult(snapshot)
     snapshot = snapshot or {}
 
-    local data = self.context.managers.Data
-    local bestScore = data and data:GetBestScore() or 0
-
+    local reason = snapshot.finishReason or ""
+    local isClear = snapshot.isClear == true
+        or reason == "Clear"
+        or reason == "Victory"
+        or reason == "Win"
+        or reason == "Completed"
+        or reason == "TimeUp"
+    local outcome = isClear and "Victory" or "Defeat"
+    self:SetCachedText("Result.Outcome", outcome)
     Engine.API.UI.SetText("Result.Score", "Score: " .. tostring(math.floor(snapshot.score or 0)))
-    Engine.API.UI.SetText("Result.Best", "Best: " .. tostring(math.floor(bestScore)))
+    Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
+    Engine.API.UI.SetText("Result.PlayerName", "PLAYER")
     Engine.API.UI.SetValue("Result.PlayerNameInput", "PLAYER")
     Engine.API.UI.SetText("Result.SubmitStatus", "")
-    self:RefreshScoreBoard("Result", 10)
+    Engine.API.UI.SetVisible("Result.EntryForm", true)
+    Engine.API.UI.SetVisible("Result.EntrySummary", false)
+    self:RefreshScoreBoard("Result")
 end
 
 function UIManager:RefreshScoreBoard(prefix, limit)
     local data = self.context.managers.Data
-    local records = data and data:GetScoreRecords(limit or 10) or {}
-    local bestScore = data and data:GetBestScore() or 0
+    local records = data and data:GetScoreRecords(limit) or {}
 
-    if prefix == "Title" then
-        Engine.API.UI.SetText("Title.BestScore", "Best Score: " .. tostring(math.floor(bestScore)))
-    elseif prefix == "Result" then
-        Engine.API.UI.SetText("Result.Best", "Best: " .. tostring(math.floor(bestScore)))
+    if SCOREBOARD_DEBUG_RECORD_COUNT > 0 then
+        records = BuildDebugScoreRecords(SCOREBOARD_DEBUG_RECORD_COUNT)
     end
 
-    for index = 1, (limit or 10) do
-        local elementId = prefix .. ".ScoreRow." .. tostring(index)
-        local record = records[index]
-        if record ~= nil then
-            Engine.API.UI.SetText(elementId, string.format("%02d  %s  %d", index, tostring(record.name or "PLAYER"), math.floor(record.score or 0)))
-        elseif index == 1 then
-            Engine.API.UI.SetText(elementId, "--  No Records  0")
-        else
-            Engine.API.UI.SetText(elementId, "")
-        end
+    local rows = {}
+    for index, record in ipairs(records) do
+        rows[#rows + 1] = BuildScoreRowRml(index, record)
     end
+
+    if #rows == 0 then
+        rows[1] = "<div class=\"score-empty\">No Records</div>"
+    end
+
+    Engine.API.UI.SetText(prefix .. ".ScoreRows", table.concat(rows, ""))
 end
 
 function UIManager:SubmitResultScore(snapshot)
@@ -391,8 +540,19 @@ function UIManager:SubmitResultScore(snapshot)
     local userName = Engine.API.UI.GetValue("Result.PlayerNameInput")
     local ok, result = data:RegisterScore(userName, snapshot.score or 0)
     if ok then
-        Engine.API.UI.SetText("Result.SubmitStatus", "Saved.")
-        self:RefreshScoreBoard("Result", 10)
+        Engine.API.UI.SetText("Result.PlayerName", tostring(userName or "PLAYER"))
+        Engine.API.UI.SetText("Result.FinalScore", tostring(math.floor(snapshot.score or 0)))
+        Engine.API.UI.SetVisible("Result.EntryForm", false)
+        Engine.API.UI.SetVisible("Result.EntrySummary", true)
+
+        if result == "Updated" then
+            Engine.API.UI.SetText("Result.SubmitStatus", "Score updated.")
+        elseif result == "Kept" then
+            Engine.API.UI.SetText("Result.SubmitStatus", "Existing score is higher.")
+        else
+            Engine.API.UI.SetText("Result.SubmitStatus", "Saved.")
+        end
+        self:RefreshScoreBoard("Result")
     elseif result == "InvalidName" then
         Engine.API.UI.SetText("Result.SubmitStatus", "Enter a player name.")
     else
@@ -403,6 +563,8 @@ end
 function UIManager:RenewResultName()
     Engine.API.UI.SetValue("Result.PlayerNameInput", "")
     Engine.API.UI.SetText("Result.SubmitStatus", "")
+    Engine.API.UI.SetVisible("Result.EntryForm", true)
+    Engine.API.UI.SetVisible("Result.EntrySummary", false)
     Engine.API.UI.FocusElement("Result.PlayerNameInput", true)
 end
 

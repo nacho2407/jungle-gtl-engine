@@ -43,6 +43,49 @@ body
     text-align: center;
 }
 
+.settings-panel .headline
+{
+    position: absolute;
+    left: 58px;
+    top: 62px;
+    width: 470px;
+    height: 58px;
+    margin-bottom: 0px;
+    z-index: 2;
+}
+
+.settings-backdrop
+{
+    position: absolute;
+    left: 52px;
+    top: 128px;
+    width: 500px;
+    height: 360px;
+    background-color: rgba(0, 5, 8, 215);
+    z-index: 1;
+}
+
+.settings-panel .setting-row
+{
+    position: absolute;
+    left: 58px;
+    width: 500px;
+    height: 74px;
+    margin-left: 0px;
+    margin-bottom: 0px;
+    z-index: 2;
+}
+
+.settings-panel .bgm-setting
+{
+    top: 150px;
+}
+
+.settings-panel .sfx-setting
+{
+    top: 238px;
+}
+
 .headline
 {
     margin-bottom: 34px;
@@ -120,29 +163,35 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 60px;
+    width: 76px;
+    height: 40px;
     padding-top: 18px;
+    font-size: 22px;
+    font-weight: bold;
 }
 
 .setting-value
 {
     position: absolute;
-    left: 352px;
+    left: 426px;
     top: 0px;
-    width: 70px;
+    width: 74px;
+    height: 40px;
     padding-top: 18px;
     text-align: right;
     color: rgb(255, 224, 154);
+    font-size: 22px;
+    font-weight: bold;
 }
 
 .volume-slider
 {
     position: absolute;
-    left: 70px;
-    top: 0px;
-    width: 270px;
-    height: 42px;
-    margin-top: 10px;
+    left: 88px;
+    top: 8px;
+    width: 326px;
+    height: 46px;
+    margin-top: 0px;
 }
 
 slidertrack

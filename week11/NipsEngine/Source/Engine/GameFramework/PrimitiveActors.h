@@ -275,3 +275,59 @@ private:
 	// 물리 시뮬레이션 흉내용
     UProjectileMovementComponent* ProjMoveComp = nullptr;
 };
+
+class AMainSceneDestructibleActor;
+
+class UMainSceneDestructibleComponent : public UActorComponent
+{
+public:
+    DECLARE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
+
+    void BeginPlay() override;
+    void Serialize(FArchive& Ar) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
+protected:
+    void TickComponent(float DeltaTime) override;
+
+private:
+    float GetRealDeltaTime(float DeltaTime) const;
+    bool StartSlice();
+
+    bool bAutoStart = true;
+    float SliceDuration = 1.0f;
+    float SliceSpeed = 1.2f;
+    float PatrolAmplitude = 0.18f;
+    float PatrolSpeed = 1.15f;
+
+    bool bSlicePending = false;
+    bool bSliced = false;
+    float Elapsed = 0.0f;
+    float PatrolElapsed = 0.0f;
+    TArray<AMainSceneDestructibleActor*> Fragments;
+    TArray<FVector> FragmentStartLocations;
+    TArray<FVector> FragmentTargetLocations;
+};
+
+class AMainSceneDestructibleActor : public AActor
+{
+public:
+    DECLARE_CLASS(AMainSceneDestructibleActor, AActor)
+
+    void InitDefaultComponents() override;
+    void PostComponentRegistered(UActorComponent* Comp) override;
+    void PostDuplicate(UObject* Original) override;
+
+    TArray<AMainSceneDestructibleActor*> SliceForMainScene(const FVector& PlanePointWorld, const FVector& PlaneNormalWorld, float SeparateSpeed);
+    void StopPresentationMotion();
+
+private:
+    void InitFromStaticMesh(UStaticMesh* StaticMesh, bool bAddPresentationComponent);
+    void InitFromProceduralMesh(UProceduralMeshComponent* InProcMeshComp, bool bAddPresentationComponent);
+    void RebindComponents();
+
+    UProceduralMeshComponent* ProcMeshComp = nullptr;
+    UBoxComponent* BoxComponent = nullptr;
+    UProjectileMovementComponent* ProjMoveComp = nullptr;
+    UMainSceneDestructibleComponent* PresentationComponent = nullptr;
+};

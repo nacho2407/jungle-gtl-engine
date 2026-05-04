@@ -71,9 +71,9 @@ body
     font-weight: normal;
 }
 
-.title-logo1, .title-logo4 { color: rgb(0, 236, 0); }
-.title-logo2, .title-logo5 { color: rgb(255, 51, 0); }
-.title-logo3, .title-logo6 { color: rgb(255, 255, 255); }
+.title-logo1, .title-logo4 { color: rgb(0, 255, 255); }
+.title-logo2, .title-logo5 { color: rgb(0, 183, 255); }
+.title-logo3, .title-logo6 { color: rgb(255, 237, 72); }
 
 .title-panel
 {
@@ -81,6 +81,7 @@ body
     left: 630px;
     top: 210px;
     width: 560px;
+    height: 560px;
     min-height: 560px;
     padding: 42px 52px;
     decorator: image("Asset/UIImage/TitlePanel.PNG" fill);
@@ -208,6 +209,141 @@ body
     color: rgb(255, 248, 232);
 }
 
+.settings-panel
+{
+    height: 560px;
+    min-height: 560px;
+}
+
+.settings-panel .panel-title
+{
+    position: absolute;
+    left: 58px;
+    top: 64px;
+    width: 470px;
+    height: 54px;
+    margin-bottom: 0px;
+    z-index: 2;
+}
+
+.settings-backdrop
+{
+    position: absolute;
+    left: 52px;
+    top: 128px;
+    width: 550px;
+    height: 360px;
+    background-color: rgba(0, 5, 8, 215);
+    z-index: 1;
+}
+
+.settings-panel .setting-row
+{
+    position: absolute;
+    left: 58px;
+    width: 500px;
+    height: 74px;
+    margin-bottom: 0px;
+    z-index: 2;
+}
+
+.settings-panel .bgm-setting
+{
+    top: 150px;
+}
+
+.settings-panel .sfx-setting
+{
+    top: 238px;
+}
+
+.credits-panel .panel-title
+{
+    position: absolute;
+    left: 58px;
+    top: 64px;
+    width: 470px;
+    height: 54px;
+    margin-bottom: 0px;
+    z-index: 2;
+}
+
+.credits-backdrop
+{
+    position: absolute;
+    left: 52px;
+    top: 128px;
+    width: 550px;
+    height: 360px;
+    background-color: rgba(0, 5, 8, 215);
+    z-index: 1;
+}
+
+.credits-content
+{
+    position: absolute;
+    left: 72px;
+    top: 170px;
+    width: 510px;
+    height: 280px;
+    z-index: 2;
+}
+
+.credit-row
+{
+    display: block;
+    width: 510px;
+    height: 48px;
+    margin-bottom: 18px;
+    font-size: 22px;
+    color: rgb(238, 242, 247);
+}
+
+.credit-role
+{
+    display: inline-block;
+    width: 178px;
+    height: 36px;
+    color: rgb(255, 224, 154);
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.credit-name
+{
+    display: inline-block;
+    width: 318px;
+    height: 36px;
+    color: rgb(238, 242, 247);
+    vertical-align: top;
+}
+
+.credit-period
+{
+    position: absolute;
+    left: 0px;
+    top: 202px;
+    width: 510px;
+    height: 28px;
+    margin-top: 0px;
+    font-size: 20px;
+    color: rgb(170, 220, 225);
+    text-align: center;
+}
+
+.credit-build
+{
+    position: absolute;
+    left: 0px;
+    top: 246px;
+    width: 510px;
+    height: 46px;
+    margin-top: 0px;
+    font-size: 14px;
+    color: rgb(255, 224, 154);
+    text-align: center;
+}
+
 .panel-best
 {
     margin-bottom: 14px;
@@ -219,42 +355,103 @@ body
 .scroll-box
 {
     position: relative;
-    width: 468px;
+    width: 500px;
     height: 360px;
-    overflow-y: auto;
-    padding-right: 32px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding: 16px 34px 16px 18px;
+    margin-top: 20px;
+    background-color: rgba(0, 5, 8, 215);
 }
 
 .score-list
 {
-    width: 430px;
+    position: relative;
+    width: 420px;
+    min-height: 360px;
 }
 
 .score-row
 {
+    display: block;
     width: 400px;
-    height: 34px;
-    margin-bottom: 8px;
+    height: 46px;
+    margin-bottom: 6px;
     color: rgb(235, 242, 245);
-    font-size: 21px;
+    font-size: 19px;
+    overflow: hidden;
 }
 
-.scroll-bg
+.score-empty
 {
     position: absolute;
-    right: 0px;
-    top: 0px;
-    width: 16px;
-    height: 360px;
+    left: 0px;
+    top: 145px;
+    width: 400px;
+    height: 40px;
+    padding-top: 18px;
+    text-align: center;
+    color: rgb(170, 190, 200);
+    font-size: 22px;
 }
 
-.scroll-thumb
+.score-rank
 {
-    position: absolute;
-    right: -8px;
-    top: 10px;
-    width: 32px;
-    height: 72px;
+    display: inline-block;
+    width: 54px;
+    height: 34px;
+    padding-top: 6px;
+    color: rgb(255, 224, 154);
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.score-name
+{
+    display: inline-block;
+    width: 220px;
+    height: 34px;
+    padding-top: 6px;
+    color: rgb(238, 242, 247);
+    vertical-align: top;
+}
+
+.score-value
+{
+    display: inline-block;
+    width: 104px;
+    height: 34px;
+    padding-top: 6px;
+    text-align: right;
+    color: rgb(255, 248, 232);
+    font-weight: bold;
+    vertical-align: top;
+}
+
+scrollbarvertical
+{
+    width: 34px;
+    background-color: rgba(0, 0, 0, 190);
+}
+
+scrollbarvertical slidertrack
+{
+    width: 34px;
+    background-color: transparent;
+}
+
+scrollbarvertical sliderbar
+{
+    width: 34px;
+    min-height: 64px;
+    decorator: image("Asset/UIImage/ScrollButton.PNG" fill);
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc
+{
+    width: 0px;
+    height: 0px;
 }
 
 .setting-row
@@ -270,30 +467,36 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 70px;
+    width: 76px;
+    height: 40px;
     padding-top: 18px;
     color: rgb(238, 242, 247);
+    font-size: 22px;
+    font-weight: bold;
 }
 
 .setting-value
 {
     position: absolute;
-    left: 386px;
+    left: 426px;
     top: 0px;
-    width: 72px;
+    width: 74px;
+    height: 40px;
     padding-top: 18px;
     text-align: right;
     color: rgb(255, 224, 154);
+    font-size: 22px;
+    font-weight: bold;
 }
 
 .volume-slider
 {
     position: absolute;
-    left: 86px;
-    top: 0px;
-    width: 290px;
-    height: 42px;
-    margin-top: 10px;
+    left: 88px;
+    top: 8px;
+    width: 326px;
+    height: 46px;
+    margin-top: 0px;
 }
 
 slidertrack
