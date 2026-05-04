@@ -606,11 +606,12 @@ local function BuildScoreRowRml(index, record)
 end
 
 local LOADING_TIPS = {
-    "[Tips] 저희 엔진으로 처음 만든 게임이에요.",
-    "[Tips] 생각보다 괜찮죠? 저흰 안 괜찮아요.",
-    "[Tips] 엔진은 사서 쓰세요. 제발",
-    "[Tips] 지수님 호준님 감사합니다.",
-    "[Tips] 엄마가 칼 가지고 장난치지 말랬지!"
+    "[Tips] 저희 엔진으로 처음 만든 게임이에요",
+    "[Tips] 생각보다 괜찮죠? 저흰 안 괜찮아요",
+    "[Tips] 엔진은 사서 쓰세요 제발",
+    "[Tips] 사실 무고한 시민들을 썰고 있었습니다",
+    "[Tips] 3연속 3인팀은 좀..",
+    "[Tips] 퇴근을 꼭 찍으십쇼"
 }
 
 function UIManager:RefreshSettings()
