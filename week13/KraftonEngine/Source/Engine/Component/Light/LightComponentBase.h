@@ -42,6 +42,10 @@ public:
 	bool IsVisible() const { return bVisible; }
 	bool CastShadows() const { return bCastShadows; }
 
+	// 런타임 동적 변경 — 값 갱신 후 PushToScene 으로 렌더 측에 즉시 반영.
+	void SetIntensity(float V) { Intensity = V; PushToScene(); }
+	void SetLightColor(const FVector4& V) { LightColor = V; PushToScene(); }
+
 	virtual ELightComponentType GetLightType() const { return ELightComponentType::Unknown; }
 	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const { return false; }
 	class UBillboardComponent* EnsureEditorBillboard();

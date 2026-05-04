@@ -14,6 +14,7 @@ public:
 	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const override;
 
 	float GetAttenuationRadius() const { return AttenuationRadius; }
+	void  SetAttenuationRadius(float V) { AttenuationRadius = V; PushToScene(); }
 
 protected:
 	float AttenuationRadius = 1.f;

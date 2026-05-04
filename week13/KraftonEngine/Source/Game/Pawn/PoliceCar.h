@@ -4,6 +4,7 @@
 
 class APawn;
 class UPrimitiveComponent;
+class UPointLightComponent;
 struct FHitResult;
 
 // ============================================================
@@ -30,6 +31,7 @@ public:
 	void InitDefaultPoliceComponents();
 
 	void BeginPlay() override;
+	void Tick(float DeltaTime) override;
 
 	void SetTarget(APawn* InTarget) { Target = InTarget; }
 	APawn* GetTarget() const { return Target; }
@@ -40,4 +42,13 @@ private:
 
 	APawn* Target = nullptr;
 	bool   bAlreadyCaught = false;  // OnPlayerCaught를 한 번만 호출하기 위한 가드 (A→B / B→A 양쪽 hit 발생 대비)
+
+	// 사이렌 — 차체 위 좌/우 PointLight 두 개. Tick 에서 sin 파동으로 교차 점멸 (red/blue).
+	UPointLightComponent* LeftSiren  = nullptr;
+	UPointLightComponent* RightSiren = nullptr;
+	float SirenTime = 0.0f;
+
+	static constexpr float SirenBlinkRate     = 4.0f;   // Hz — 초당 4번 사이클 (좌/우 각 2번씩 점멸)
+	static constexpr float SirenMaxIntensity  = 30.0f;
+	static constexpr float SirenAttenRadius   = 6.0f;
 };
