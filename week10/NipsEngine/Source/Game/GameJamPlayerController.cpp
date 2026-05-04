@@ -58,41 +58,6 @@ void AGameJamPlayerController::HandleMouseMoveAbsolute(float X, float Y)
 void AGameJamPlayerController::HandleMouseButtonPressed(int VK, float X, float Y)
 {
 	APlayerController::HandleMouseButtonPressed(VK, X, Y);
-
-    switch (VK)
-    {
-    case VK_LBUTTON:
-	{
-        if (PossessedActor)
-        {
-            UWorld* World = PossessedActor->GetFocusedWorld();
-            if (World)
-            {
-                ABladeSlash* Slash = World->SpawnActor<ABladeSlash>();
-                Slash->InitDefaultComponents();
-                Slash->SetActorLocation(PossessedActor->GetActorLocation());
-                Slash->SetActorRotation(PossessedActor->GetActorRotation());
-                Slash->SetActorScale(FVector(10.0f, 1.0f, 0.1f));
-            }
-        }
-        break;
-	}
-    case VK_RBUTTON:
-    {
-        if (PossessedActor)
-        {
-            UWorld* World = PossessedActor->GetFocusedWorld();
-            if (World)
-            {
-                ABullet* Bullet = World->SpawnActor<ABullet>();
-                Bullet->InitDefaultComponents();
-                Bullet->SetActorLocation(PossessedActor->GetActorLocation());
-                Bullet->SetProjectileVelocity(PossessedActor->GetActorForward() * 40);
-            }
-        }
-        break;
-    }
-    }
 }
 
 void AGameJamPlayerController::HandleMouseButtonDown(int VK, float DeltaX, float DeltaY)
