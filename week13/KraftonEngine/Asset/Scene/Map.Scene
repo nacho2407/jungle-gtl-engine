@@ -2766,7 +2766,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-122.421745, -255.138290, 0.734741],
-        "Rotation" : [-0.000000, 179.290344, -0.000000],
+        "Rotation" : [-0.000000, 179.290344, 0.000000],
         "Scale" : [1.500000, 1.500000, 1.500000],
         "Tags" : "",
         "Visible" : true
@@ -2843,7 +2843,7 @@
           "Location" : [-122.421745, -255.138290, 0.734741],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 179.287598, 0.000000],
+          "Rotation" : [0.000000, 179.290344, 0.000000],
           "Scale" : [1.500000, 1.500000, 1.500000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/GasStation/GASSTATION .obj",
@@ -3109,7 +3109,7 @@
           "Location" : [-95.297409, -248.839996, 9.621486],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [0.000000, 1.916183, 0.000000],
+          "Rotation" : [0.000000, 1.919342, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -3954,7 +3954,7 @@
         }],
       "Properties" : {
         "Location" : [147.190277, -160.682205, 11.441320],
-        "Rotation" : [0.000000, -5.591673, 0.000000],
+        "Rotation" : [0.000000, -5.591672, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "TriggerTag" : "DodgeMeteor",
@@ -3980,7 +3980,7 @@
           "Location" : [147.190277, -160.682205, 11.441320],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [0.000000, -5.592117, 0.000000],
+          "Rotation" : [0.000000, -5.591675, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -5111,7 +5111,7 @@
       "Properties" : {
         "Location" : [-23.014721, -119.216591, 2.998577],
         "Quest Target" : false,
-        "Rotation" : [0.000000, -100.543633, 0.000000],
+        "Rotation" : [0.000000, -100.543625, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "Visible" : true
@@ -5166,7 +5166,7 @@
           "Location" : [-23.014721, -119.216591, 2.998577],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, -100.543640, 0.000000],
+          "Rotation" : [0.000000, -100.543633, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5267,9 +5267,9 @@
           }
         }],
       "Properties" : {
-        "Location" : [153.586029, -173.095779, 5.045566],
+        "Location" : [114.239723, -164.685303, 5.045566],
         "Quest Target" : false,
-        "Rotation" : [-0.000000, 77.934311, 0.000000],
+        "Rotation" : [-0.000000, 77.934303, 0.000000],
         "Scale" : [3.000000, 3.000000, 3.000000],
         "Tags" : "",
         "Visible" : true
@@ -5346,7 +5346,7 @@
         "Properties" : {
           "Box Extent" : [1.000000, 1.000000, 1.000000],
           "Cast Shadow" : false,
-          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.500000],
           "Collision Enabled" : 3,
           "Collision Responses" : {
             "Pawn" : 2,
@@ -5357,13 +5357,139 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [153.586029, -173.095779, 5.045566],
-          "Mass (kg)" : 50.000000,
+          "Location" : [114.239723, -164.685303, 5.045566],
+          "Mass (kg)" : 80.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, 77.934296, 0.000000],
+          "Rotation" : [0.000000, 77.934326, 0.000000],
           "Scale" : [3.000000, 3.000000, 3.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_44",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [168.014313, -183.554764, 1.599999],
+        "Rotation" : [36.947723, 0.000000, 0.000000],
+        "Scale" : [20.000000, 20.000000, 20.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/meteor.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [168.014313, -183.554764, 1.599999],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [36.946320, 0.000000, 0.000000],
+          "Scale" : [20.000000, 20.000000, 20.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/meteor/meteor.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_44",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [140.295105, -177.302322, 2.189528],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [5.000000, 5.000000, 5.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/meteor.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [140.295105, -177.302322, 2.189528],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/meteor/meteor.obj",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_44",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [161.855591, -153.581970, 2.289528],
+        "Rotation" : [0.000000, 0.000000, -33.258537],
+        "Scale" : [5.000000, 5.000000, 5.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/meteor.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [161.855591, -153.581970, 2.289528],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 0.000000, -33.258240],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/meteor/meteor.obj",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -5378,9 +5504,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [145.233932, -149.847046, 11.651029],
+    "Location" : [144.774628, -80.486809, 30.839771],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 20.414244, -69.146957]
+    "Rotation" : [0.000000, 7.964233, -99.746895]
   },
   "Version" : 2,
   "WorldSettings" : {
