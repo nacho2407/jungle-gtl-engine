@@ -33,6 +33,8 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
         return "UCapsuleComponent";
     if (TypeName == "LuaScriptComponent")
         return "ULuaScriptComponent";
+    if (TypeName == "SubUVComponent")
+        return "USubUVComponent";
     if (TypeName == "PatrolAgentComponent")
         return "UPatrolAgentComponent";
     if (TypeName == "PatrolPointComponent")
@@ -53,8 +55,7 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "UBoxComponent"
 		|| ClassName == "UCapsuleComponent"
 		|| ClassName == "ULuaScriptComponent"
-        || ClassName == "USubUVComponent";
-		|| ClassName == "ULuaScriptComponent"
+        || ClassName == "USubUVComponent"
 		|| ClassName == "UPatrolAgentComponent"
 		|| ClassName == "UPatrolPointComponent";
 }
