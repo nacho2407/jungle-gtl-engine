@@ -89,6 +89,7 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
 
 void UWorld::Tick(float DeltaTime)
 {
+    DeltaTime *= GlobalTimeScale;
     if (!PersistentLevel)
         return;
 

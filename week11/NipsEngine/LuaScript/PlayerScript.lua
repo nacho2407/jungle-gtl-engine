@@ -196,6 +196,13 @@ function Script:Tick(dt)
         self.BodySection.Rotation = Vector(0, clampedPitch, 0)
     end
 
+    if (Engine.API.Input.IsMousePressed("RMB")) then
+        Engine.API.World.SetTimeScale(0.5)
+    end
+
+    if (Engine.API.Input.IsMouseReleased("RMB")) then
+        Engine.API.World.SetTimeScale(1)
+    end
 
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
@@ -216,7 +223,7 @@ function Script:Tick(dt)
         local pitch_x = degree * math.sin(yaw_rad)
         local pitch_y = degree * math.cos(yaw_rad)
         local scale_long = 7.5
-        local scale_short = 1
+        local scale_short = 3
         local fx = math.abs(math.sin(yaw_rad))
         local fz = math.abs(math.cos(yaw_rad))
         local scale_x = scale_short + (scale_long - scale_short) * fx
