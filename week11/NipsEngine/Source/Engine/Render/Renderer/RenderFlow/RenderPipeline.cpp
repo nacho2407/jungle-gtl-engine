@@ -16,6 +16,7 @@
 #include "DepthLessRenderPass.h"
 #include "PostProcessOutlineRenderPass.h"
 #include "VSMConversionRenderPass.h";
+#include "SandervistanRenderPass.h"
 #include "Core/Logging/GPUProfiler.h"
 
 #include <cstddef>
@@ -33,6 +34,7 @@ namespace
             "RenderPass.Opaque",
             "RenderPass.Light",
             "RenderPass.Fog",
+            "RenderPass.Sandervistan",
             "RenderPass.FXAA",
             "RenderPass.Font",
             "RenderPass.SubUV",
@@ -98,6 +100,9 @@ bool FRenderPipeline::Initialize()
 	VSMConversionRenderPass = std::make_shared<FVSMConversionRenderPass>();
     VSMConversionRenderPass->Initialize();
 
+	SandevistanRenderPass = std::make_shared<FSandevistanRenderPass>();
+    SandevistanRenderPass->Initialize();
+
 	LightRenderPass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
@@ -116,6 +121,7 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(LightRenderPass);
 
     RenderPasses.push_back(FogRenderPass);
+    RenderPasses.push_back(SandevistanRenderPass);
     RenderPasses.push_back(FXAARenderPass);   
 	RenderPasses.push_back(FontRenderPass);
     RenderPasses.push_back(SubUVRenderPass);

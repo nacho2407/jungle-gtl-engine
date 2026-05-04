@@ -20,6 +20,8 @@ class FDepthPrePass;
 class FShadowPass;
 class FBaseRenderPass;
 class FVSMConversionRenderPass;
+class FSandevistanRenderPass;
+
 class FRenderPipeline
 {
 public:
@@ -46,6 +48,7 @@ private:
     std::shared_ptr<FEditorRenderPass> EditorRenderPass;
     std::shared_ptr<FDepthLessRenderPass> DepthLessRenderPass;
     std::shared_ptr<FPostProcessOutlineRenderPass> PostProcessOutlineRenderPass;
+    std::shared_ptr<FSandevistanRenderPass> SandevistanRenderPass;
     ID3D11ShaderResourceView* OutSRV = nullptr;
     ID3D11RenderTargetView* OutRTV = nullptr;
 
