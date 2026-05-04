@@ -2,11 +2,42 @@ body {
 	width: 100%;
 	height: 100%;
 	margin: 0px;
-	background-color: #15171c;
+	background-color: transparent;
 	color: #ffffff;
 	font-family: Maplestory;
 	font-weight: bold;
 	text-align: center;
+}
+
+@keyframes intro-title-pop-in {
+	from {
+		opacity: 0;
+		transform: scale(0.82);
+	}
+
+	60% {
+		opacity: 1;
+		transform: scale(1.08);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes intro-title-pulse {
+	from {
+		transform: scale(1);
+	}
+
+	50% {
+		transform: scale(1.05);
+	}
+
+	to {
+		transform: scale(1);
+	}
 }
 
 #intro-frame {
@@ -16,6 +47,23 @@ body {
 	width: 100%;
 	height: 100%;
 	background-color: #15171c;
+}
+
+#intro-background {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+#intro-dim {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #000000aa;
 }
 
 #intro-top-line {
@@ -39,7 +87,7 @@ body {
 #intro-kicker {
 	position: absolute;
 	left: 0%;
-	top: 17%;
+	top: 14%;
 	width: 100%;
 	height: 32dp;
 	color: #f0c85a;
@@ -50,24 +98,27 @@ body {
 	text-align: center;
 }
 
-#intro-title {
+#intro-title-pop {
 	position: absolute;
-	left: 0%;
-	top: 27%;
-	width: 100%;
-	height: 96dp;
-	color: #ffffff;
-	font-family: Maplestory;
-	font-weight: bold;
-	font-size: 64dp;
-	line-height: 96dp;
-	text-align: center;
+	left: 50%;
+	top: 16%;
+	width: 480dp;
+	height: 480dp;
+	margin-top: 50dp;
+	margin-left: -240dp;
+	animation: 0.58s cubic-out intro-title-pop-in;
+}
+
+#intro-title {
+	width: 480dp;
+	height: 480dp;
+	animation: 1.6s sine-in-out infinite intro-title-pulse;
 }
 
 #intro-subtitle {
 	position: absolute;
 	left: 0%;
-	top: 43%;
+	top: 58%;
 	width: 100%;
 	height: 32dp;
 	color: #aeb6c8;
@@ -81,7 +132,7 @@ body {
 #start-button {
 	position: absolute;
 	left: 50%;
-	top: 52%;
+	top: 65%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;
@@ -113,7 +164,7 @@ body {
 #scoreboard-button {
 	position: absolute;
 	left: 50%;
-	top: 62%;
+	top: 74%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;
@@ -131,7 +182,7 @@ body {
 #exit-button {
 	position: absolute;
 	left: 50%;
-	top: 72%;
+	top: 83%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;
@@ -149,7 +200,7 @@ body {
 #intro-footer {
 	position: absolute;
 	left: 0%;
-	top: 86%;
+	top: 90%;
 	width: 100%;
 	height: 28dp;
 	color: #747d91;
