@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <sol/coroutine.hpp>
+#include <sol/function.hpp>
 #include <sol/thread.hpp>
 
 enum class ECoroutineWaitType
@@ -12,7 +12,7 @@ enum class ECoroutineWaitType
 struct FCoroutine
 {
     sol::thread Thread;
-    sol::coroutine Routine;
+    lua_State* ThreadState = nullptr;
     
     ECoroutineWaitType WaitType = ECoroutineWaitType::None;
     

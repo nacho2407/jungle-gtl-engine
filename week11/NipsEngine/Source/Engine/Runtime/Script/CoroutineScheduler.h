@@ -20,6 +20,6 @@ private:
     FCoroutine MakeCoroutine(sol::function Function);
     
     void Resume(FCoroutine & Coroutine);
-    void ProcessYieldResult(FCoroutine & Coroutine, const sol::protected_function_result & Result);
+    void ProcessYieldResult(FCoroutine & Coroutine, lua_State* ThreadState, int ReturnCount);
     
 };
