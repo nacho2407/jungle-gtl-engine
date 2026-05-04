@@ -34,6 +34,44 @@ namespace
 		default:                          return "Phase";
 		}
 	}
+
+	int32 CountUnwashedDirtComponentsInWorld(UWorld* World)
+	{
+		if (!World)
+		{
+			return 0;
+		}
+
+		int32 Count = 0;
+		for (AActor* Actor : World->GetActors())
+		{
+			if (!Actor)
+			{
+				continue;
+			}
+
+			Count += UDirtComponent::CountUnwashedDirtComponents(*Actor);
+		}
+		return Count;
+	}
+
+	void ResetDirtComponentsInWorld(UWorld* World)
+	{
+		if (!World)
+		{
+			return;
+		}
+
+		for (AActor* Actor : World->GetActors())
+		{
+			if (!Actor)
+			{
+				continue;
+			}
+
+			UDirtComponent::ResetAllOnActor(*Actor);
+		}
+	}
 }
 
 AGameModeCarGame::AGameModeCarGame()
@@ -189,6 +227,13 @@ void AGameModeCarGame::OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger
 
 	if (GS->GetPhase() != ECarGamePhase::None) return;
 
+	if (Target == ECarGamePhase::CarWash
+		&& CountUnwashedDirtComponentsInWorld(GetWorld()) <= 0)
+	{
+		UE_LOG("[CarGame] Ignore CarWash trigger — no unwashed dirt components remain.");
+		return;
+	}
+
 	BeginPhase(Target, Pawn);
 }
 
@@ -249,17 +294,7 @@ void AGameModeCarGame::BeginPhase(ECarGamePhase Target, APawn* TriggerPawn)
 	{
 		// replay 진입 — 이전 클리어 시 invisible/washed 처리된 dirt 컴포넌트들을
 		// 모두 dirty 상태로 되돌려놓고 다시 시작. 첫 진입에서도 idempotent.
-		if (UWorld* World = GetWorld())
-		{
-			for (AActor* Actor : World->GetActors())
-			{
-				if (Actor && Actor->GetFName() == FName("DirtyCar"))
-				{
-					UDirtComponent::ResetAllOnActor(*Actor);
-					break;
-				}
-			}
-		}
+		ResetDirtComponentsInWorld(GetWorld());
 	}
 	else if (Target == ECarGamePhase::Goal)
 	{
