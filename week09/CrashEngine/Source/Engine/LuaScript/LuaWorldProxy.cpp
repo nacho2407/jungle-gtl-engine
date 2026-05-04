@@ -3,6 +3,7 @@
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "GameFramework/LuaScriptActor.h"
+#include "GameFramework/SubUVActor.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
@@ -31,6 +32,8 @@ FString NormalizeLuaActorClassName(const FString& Name)
         return "ALuaScriptActor";
     if (Name == "DecalActor")
         return "ADecalActor";
+    if (Name == "SubUVActor")
+        return "ASubUVActor";
 
     return Name;
 }
@@ -44,7 +47,8 @@ bool IsLuaSpawnableActorClassName(const FString& ClassName)
 		|| ClassName == "ADirectionalLightActor" 
 		|| ClassName == "AHeightFogActor" 
 		|| ClassName == "ALuaScriptActor" 
-		|| ClassName == "ADecalActor";
+		|| ClassName == "ADecalActor"
+        || ClassName == "ASubUVActor";
 }
 
 } // namespace
@@ -98,6 +102,10 @@ FLuaGameObjectProxy FLuaWorldProxy::SpawnActor(const FString& ActorClassName)
     if (ALuaScriptActor* LuaScriptActor = Cast<ALuaScriptActor>(Actor))
     {
         LuaScriptActor->InitDefaultComponents();
+    }
+    else if (ASubUVActor* SubUVActor = Cast<ASubUVActor>(Actor))
+    {
+        SubUVActor->InitDefaultComponents();
     }
 
     return FLuaGameObjectProxy(Actor);

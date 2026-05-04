@@ -37,6 +37,7 @@ PS_Input_Tex VS(VS_Input_PNCT input)
 
 float4 PS(PS_Input_Tex input) : SV_TARGET
 {
+
     float4 col = SubUVAtlas.Sample(LinearClampSampler, input.texcoord);
     if (!bIsWireframe && ShouldDiscardFontPixel(col.r))
         discard;

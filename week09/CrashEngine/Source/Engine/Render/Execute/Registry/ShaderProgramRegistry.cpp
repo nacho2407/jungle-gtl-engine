@@ -62,7 +62,7 @@ void FShaderProgramRegistry::Initialize()
     Add(EShaderType::FXAA, MakeGraphicsProgramDesc("FXAA", "Shaders/Passes/PostProcess/FXAAPass.hlsl"));
     Add(EShaderType::Font, MakeGraphicsProgramDesc("Font", "Shaders/Render/Editor/ShaderFont.hlsl"));
     Add(EShaderType::OverlayFont, MakeGraphicsProgramDesc("OverlayFont", "Shaders/Render/Editor/ShaderOverlayFont.hlsl"));
-    Add(EShaderType::SubUV, MakeGraphicsProgramDesc("SubUV", "Shaders/Render/Editor/ShaderSubUV.hlsl"));
+    Add(EShaderType::SubUV, MakeGraphicsProgramDesc("SubUV", "Shaders/Render/Editor/subUV_sample.hlsl"));
     Add(EShaderType::Billboard, MakeGraphicsProgramDesc("Billboard", "Shaders/Render/Editor/ShaderBillboard.hlsl"));
     Add(EShaderType::HeightFog, MakeGraphicsProgramDesc("HeightFog", "Shaders/Passes/PostProcess/HeightFogPass.hlsl"));
     Add(EShaderType::DepthOnly, MakeGraphicsProgramDesc("DepthOnly", "Shaders/Passes/Scene/Shared/DepthOnlyPass.hlsl"));

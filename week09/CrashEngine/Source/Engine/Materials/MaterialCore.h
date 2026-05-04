@@ -1,9 +1,11 @@
-﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
+#include "Render/Resources/State/RenderStateTypes.h"
 
 #include <memory>
 
@@ -15,6 +17,14 @@ struct FMaterialParameterInfo
     uint32 Offset = 0;
     uint32 Size = 0;
     uint32 BufferSize = 0;
+};
+
+struct FMaterialRenderState
+{
+    ERenderPass RenderPass = ERenderPass::Opaque;
+    EBlendState Blend = EBlendState::Opaque;
+    EDepthStencilState DepthStencil = EDepthStencilState::Default;
+    ERasterizerState Rasterizer = ERasterizerState::SolidBackCull;
 };
 
 // FMaterialTemplate는 머티리얼 파라미터와 렌더 리소스를 다룹니다.

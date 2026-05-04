@@ -1,4 +1,4 @@
-﻿// 머티리얼 영역의 세부 동작을 구현합니다.
+// 머티리얼 영역의 세부 동작을 구현합니다.
 #include "MaterialManager.h"
 #include <algorithm>
 #include <filesystem>
@@ -8,7 +8,9 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialSemantics.h"
 #include "Platform/Paths.h"
+#include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/RHI/D3D11/Buffers/Buffers.h"
+#include "Render/Resources/State/RenderStateNames.h"
 #include "Texture/Texture2D.h"
 #include "Render/Renderer.h"
 
@@ -17,6 +19,10 @@ namespace MatKeys
 static constexpr const char* PathFileName = "PathFileName";
 static constexpr const char* Parameters = "Parameters";
 static constexpr const char* Textures = "Textures";
+static constexpr const char* RenderPass = "RenderPass";
+static constexpr const char* BlendState = "BlendState";
+static constexpr const char* DepthStencilState = "DepthStencilState";
+static constexpr const char* RasterizerState = "RasterizerState";
 } // namespace MatKeys
 
 
@@ -128,6 +134,27 @@ uint64 BuildDependencyHash(const std::filesystem::path& FilePath)
     std::unordered_set<std::wstring> Visited;
     return BuildDependencyHashRecursive(FilePath, Visited);
 }
+
+ERenderPass RenderPassFromString(const FString& Value, ERenderPass Default)
+{
+    if (Value == "Opaque" || Value == "RenderPass::Opaque")
+    {
+        return ERenderPass::Opaque;
+    }
+    if (Value == "AlphaBlend" || Value == "Transparent" || Value == "Translucent" || Value == "RenderPass::AlphaBlend")
+    {
+        return ERenderPass::AlphaBlend;
+    }
+    if (Value == "Decal" || Value == "RenderPass::Decal")
+    {
+        return ERenderPass::Decal;
+    }
+    if (Value == "AdditiveDecal" || Value == "RenderPass::AdditiveDecal")
+    {
+        return ERenderPass::AdditiveDecal;
+    }
+    return Default;
+}
 } // namespace
 
 void FMaterialManager::ScanMaterialAssets()
@@ -237,6 +264,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 
     ApplyParameters(Material, JsonData);
     ApplyTextures(Material, JsonData, CacheKey);
+    ApplyRenderState(Material, JsonData);
 
     FMaterialCacheEntry NewEntry;
     NewEntry.Material = Material;
@@ -339,6 +367,39 @@ void FMaterialManager::ApplyTextures(UMaterial* Material, json::JSON& JsonData, 
             Material->SetTextureParameter(SlotName, Texture);
         }
     }
+}
+
+void FMaterialManager::ApplyRenderState(UMaterial* Material, json::JSON& JsonData)
+{
+    if (!Material)
+    {
+        return;
+    }
+
+    FMaterialRenderState State = Material->GetRenderState();
+    if (JsonData.hasKey(MatKeys::RenderPass))
+    {
+        State.RenderPass = RenderPassFromString(JsonData[MatKeys::RenderPass].ToString().c_str(), State.RenderPass);
+    }
+    if (JsonData.hasKey(MatKeys::BlendState))
+    {
+        State.Blend = RenderStateNames::FromString(RenderStateNames::BlendStateMap, JsonData[MatKeys::BlendState].ToString().c_str(), State.Blend);
+    }
+    if (JsonData.hasKey(MatKeys::DepthStencilState))
+    {
+        State.DepthStencil = RenderStateNames::FromString(RenderStateNames::DepthStencilStateMap, JsonData[MatKeys::DepthStencilState].ToString().c_str(), State.DepthStencil);
+    }
+    if (JsonData.hasKey(MatKeys::RasterizerState))
+    {
+        State.Rasterizer = RenderStateNames::FromString(RenderStateNames::RasterizerStateMap, JsonData[MatKeys::RasterizerState].ToString().c_str(), State.Rasterizer);
+    }
+
+    if (State.RenderPass == ERenderPass::AlphaBlend && State.Blend == EBlendState::Opaque)
+    {
+        State.Blend = EBlendState::AlphaBlend;
+    }
+
+    Material->SetRenderState(State);
 }
 
 FMaterialTemplate* FMaterialManager::GetOrCreateTemplate()
