@@ -19,7 +19,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/T_ConcreteGround_BC_sRGB.png"
+            "Value" : "Asset/Mesh/Map/T_ConcreteGround_BC_sRGB.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
@@ -47,7 +47,7 @@
           }, {
             "Name" : "BumpMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/T_ConcreteGround_N.png"
+            "Value" : "Asset/Mesh/Map/T_ConcreteGround_N.png"
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",

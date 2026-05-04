@@ -19,7 +19,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/T_Pillar01_BC.png"
+            "Value" : "Asset/Mesh/Map/T_Pillar01_BC.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
@@ -47,7 +47,7 @@
           }, {
             "Name" : "BumpMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/T_Pillar01_N.png"
+            "Value" : "Asset/Mesh/Map/T_Pillar01_N.png"
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",
