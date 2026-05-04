@@ -527,6 +527,14 @@ function UIManager.Init()
     Engine.SetOnEscape(UIManager.OnEscapePressed)
 end
 
+-- GameManager EndPlay 에서 호출. UIManager 가 보유한 coroutine 핸들들을 정리해 다음
+-- BeginPlay (또는 씬 전환) 시점에 stale routine 이 남지 않게 한다. 위젯 자체는 UUIManager
+-- 싱글턴 소유라 destroy 하지 않고 Hide 만.
+function UIManager.Shutdown()
+    StopGameOverScoreRoutine()
+    StopCriticalWarningRoutine()
+end
+
 function UIManager.OnEscapePressed()
     -- 인트로 / 결과 화면 등 다른 fullscreen 모달이 떠 있으면 ESC 무시.
     if UIManager.IsVisible("intro") or UIManager.IsVisible("gameOver") then

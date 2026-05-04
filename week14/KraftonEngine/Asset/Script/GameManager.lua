@@ -51,6 +51,9 @@ local quests = {
 local state = QuestState.NotStarted
 local currentQuestIndex = 0
 local scoreSubmitted = false
+-- 다음 퀘스트 진행 coroutine 핸들 — 씬 전환 / EndPlay 시 정리해야 stale 상태로
+-- 새 월드의 lua tick 에 끼어들지 않는다.
+local nextQuestRoutine = nil
 
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
@@ -243,8 +246,14 @@ local function CompleteCurrentQuest()
     state = QuestState.Completed
     UIManager.SetQuestHud("-", "&#8593;", false)
 
-    StartCoroutine(function()
+    if nextQuestRoutine ~= nil then
+        StopCoroutine(nextQuestRoutine)
+        nextQuestRoutine = nil
+    end
+
+    nextQuestRoutine = StartCoroutine(function()
         Wait(1.0)
+        nextQuestRoutine = nil
         if currentQuestIndex < #quests then
             ShowQuest(currentQuestIndex + 1)
         else
@@ -305,6 +314,9 @@ function BeginPlay()
     scoreSubmitted = false
     activeTarget = nil
     car = nil
+    -- 이전 BeginPlay 에서 남은 coroutine 핸들이 살아있을 수 있으니 리셋. 옛 핸들은
+    -- FireWorldReset 으로 무효화됐으므로 nil 처리만 충분.
+    nextQuestRoutine = nil
 
     UIManager.Init()
     gameState = GetGameState()
@@ -362,6 +374,11 @@ function BeginPlay()
 end
 
 function EndPlay()
+    if nextQuestRoutine ~= nil then
+        StopCoroutine(nextQuestRoutine)
+        nextQuestRoutine = nil
+    end
+    UIManager.Shutdown()
 end
 
 function OnOverlap(OtherActor)
