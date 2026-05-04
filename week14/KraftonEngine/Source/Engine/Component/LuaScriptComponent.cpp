@@ -34,7 +34,15 @@ void ULuaScriptComponent::InitializeLua()
 	Env["this"] = this;
 
 	const FString ResolvedPath = FLuaScriptManager::ResolveScriptPath(ScriptFile);
-	sol::protected_function_result Result = Lua.safe_script_file(ResolvedPath.c_str(), Env, sol::script_pass_on_error);
+	// 한글 경로 호환 — safe_script_file 은 fopen(UTF-8) 경로라 ANSI 코드페이지에서 깨짐.
+	// wide ifstream 으로 읽어 safe_script(string, env, ...) 로 우회.
+	FString Content;
+	if (!FLuaScriptManager::ReadScriptFileContent(ScriptFile, Content))
+	{
+		UE_LOG("Failed to read Lua script %s", ResolvedPath.c_str());
+		return;
+	}
+	sol::protected_function_result Result = Lua.safe_script(Content, Env, sol::script_pass_on_error, ResolvedPath);
 
 	if (!Result.valid())
 	{
