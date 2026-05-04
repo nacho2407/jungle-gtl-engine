@@ -5,7 +5,8 @@ function LoadingState.new()
     return setmetatable({
         elapsed = 0.0,
         ready = false,
-        waitingForSceneOpen = false
+        waitingForSceneOpen = false,
+        minDisplaySeconds = 3.0
     }, LoadingState)
 end
 
@@ -15,7 +16,10 @@ function LoadingState:Enter(context, payload)
     self.waitingForSceneOpen = false
 
     context.managers.UI:Show("Loading")
+    context.managers.UI:SelectLoadingTip()
     context.managers.UI:SetLoadingReady(false)
+    context.managers.UI:SetLoadingCycleRotation(0.0)
+    context.managers.Sound:StopBGM(0.5)
     Engine.API.Input.SetInputModeGameAndUI()
     Engine.API.Time.SetTimeScale(1.0)
 
@@ -37,9 +41,11 @@ function LoadingState:Tick(context, dt)
 
     local realDt = Engine.API.Time.GetUnscaledDeltaTime()
     self.elapsed = self.elapsed + realDt
+    context.managers.UI:SetLoadingCycleRotation((self.elapsed * 360.0) % 360.0)
 
-    if not self.ready and self.elapsed >= 0.6 then
+    if not self.ready and self.elapsed >= self.minDisplaySeconds then
         self.ready = true
+        context.managers.Sound:PlayLoadingDone()
         context.managers.UI:SetLoadingReady(true)
     end
 

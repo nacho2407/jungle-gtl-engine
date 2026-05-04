@@ -27,38 +27,78 @@ body
 .controls-panel
 {
     position: absolute;
-    left: 606px;
-    top: 170px;
-    width: 600px;
-    min-height: 390px;
+    left: 466px;
+    top: 250px;
+    width: 860px;
+    min-height: 430px;
     padding: 52px 62px;
     decorator: image("Asset/UIImage/ScoreBoardPanel.PNG" fill);
     text-align: center;
 }
 
-.panel-line
+.panel-title
 {
-    margin-bottom: 24px;
-    font-size: 28px;
+    position: absolute;
+    left: 92px;
+    top: 70px;
+    width: 320px;
+    height: 50px;
+    margin-bottom: 0px;
+    font-size: 38px;
     font-weight: bold;
     color: rgb(255, 224, 154);
+    text-align: left;
 }
 
-.control-copy
+.controls-list
 {
-    width: 470px;
-    margin-left: 62px;
-    margin-top: 54px;
-    color: rgb(204, 216, 222);
-    font-size: 20px;
-    line-height: 30px;
+    position: absolute;
+    left: 92px;
+    top: 150px;
+    width: 640px;
+    margin-left: 0px;
+    margin-top: 0px;
+}
+
+.control-row
+{
+    display: block;
+    width: 640px;
+    height: 58px;
+    margin-bottom: 24px;
+    font-size: 24px;
+}
+
+.control-key
+{
+    display: inline-block;
+    width: 280px;
+    height: 42px;
+    padding-top: 8px;
+    color: rgb(255, 224, 154);
+    font-weight: bold;
+    text-align: left;
+    vertical-align: top;
+}
+
+.control-desc
+{
+    display: inline-block;
+    width: 180px;
+    height: 42px;
+    padding-top: 8px;
+    color: rgb(238, 242, 247);
+    font-weight: bold;
+    text-align: left;
+    vertical-align: top;
+    margin-right: 48px;
 }
 
 .tips-block
 {
     position: absolute;
     left: 490px;
-    bottom: 154px;
+    bottom: 120px;
     width: 940px;
     text-align: center;
 }
@@ -66,16 +106,27 @@ body
 .tip-line
 {
     width: 940px;
-    font-size: 22px;
-    line-height: 32px;
-    color: rgb(204, 216, 222);
+    font-size: 26px;
+    font-weight: lighter;
+    line-height: 36px;
+    color: rgb(255, 255, 255);
+}
+
+.loading-cycle
+{
+    position: absolute;
+    right: 82px;
+    bottom: 58px;
+    width: 96px;
+    height: 96px;
+    transform-origin: 50% 50%;
 }
 
 .status-text
 {
     position: absolute;
-    right: 68px;
-    bottom: 58px;
+    right: 82px;
+    bottom: 84px;
     width: 420px;
     font-size: 24px;
     text-align: right;

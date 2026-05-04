@@ -248,20 +248,46 @@ bool FAudioSystem::Initialize()
     }
 
     const unsigned int Flags = SoLoud::Soloud::CLIP_ROUNDOFF | SoLoud::Soloud::LEFT_HANDED_3D;
-    const SoLoud::result Result = Impl->Engine.init(Flags, SoLoud::Soloud::MINIAUDIO);
-    if (Result != SoLoud::SO_NO_ERROR)
+    struct FAudioInitAttempt
     {
-        UE_LOG_ERROR("[AudioSystem] Failed to initialize SoLoud MiniAudio backend: %s", Impl->Engine.getErrorString(Result));
-        UE_LOG_WARNING("[AudioSystem] Audio will be disabled. Check the default playback device, Windows audio service, or exclusive device access.");
-        return false;
+        unsigned int SampleRate;
+        unsigned int BufferSize;
+        unsigned int Channels;
+        const char* Label;
+    };
+
+    constexpr FAudioInitAttempt Attempts[] = {
+        { SoLoud::Soloud::AUTO, SoLoud::Soloud::AUTO, 2, "default" },
+        { 48000, 2048, 2, "48k/2048/stereo" },
+        { 44100, 2048, 2, "44.1k/2048/stereo" },
+        { 48000, 4096, 2, "48k/4096/stereo" },
+        { 48000, 2048, 1, "48k/2048/mono" },
+    };
+
+    for (const FAudioInitAttempt& Attempt : Attempts)
+    {
+        const SoLoud::result Result = Impl->Engine.init(
+            Flags,
+            SoLoud::Soloud::MINIAUDIO,
+            Attempt.SampleRate,
+            Attempt.BufferSize,
+            Attempt.Channels);
+        if (Result == SoLoud::SO_NO_ERROR)
+        {
+            Impl->Engine.setMaxActiveVoiceCount(64);
+            Impl->Engine.setGlobalVolume(Impl->MasterVolume);
+            Impl->bInitialized = true;
+            ReloadSoundRegistry();
+            UE_LOG("[AudioSystem] Initialized. Backend=%s Attempt=%s", Impl->Engine.getBackendString(), Attempt.Label);
+            return true;
+        }
+
+        UE_LOG_WARNING("[AudioSystem] MiniAudio init failed. Attempt=%s Error=%s", Attempt.Label, Impl->Engine.getErrorString(Result));
     }
 
-    Impl->Engine.setMaxActiveVoiceCount(64);
-    Impl->Engine.setGlobalVolume(Impl->MasterVolume);
-    Impl->bInitialized = true;
-    ReloadSoundRegistry();
-    UE_LOG("[AudioSystem] Initialized. Backend=%s", Impl->Engine.getBackendString());
-    return true;
+    UE_LOG_ERROR("[AudioSystem] Failed to initialize SoLoud MiniAudio backend after all attempts.");
+    UE_LOG_WARNING("[AudioSystem] Audio will be disabled. Check the default playback device, Windows audio service, or exclusive device access.");
+    return false;
 }
 
 void FAudioSystem::Shutdown()
@@ -382,20 +408,32 @@ void FAudioSystem::PlayBGM(const FString& KeyOrPath, float FadeInSeconds)
 {
     if (!Impl->bInitialized)
     {
-        return;
+        UE_LOG_WARNING("[AudioSystem] PlayBGM requested while audio is not initialized. Retrying initialization.");
+        if (!Initialize())
+        {
+            return;
+        }
     }
 
-    SoLoud::WavStream* Stream = Impl->LoadStream(KeyOrPath);
-    if (!Stream)
+    const FString NormalizedPath = Impl->ResolveSoundPath(KeyOrPath);
+    SoLoud::Wav* Clip = Impl->LoadSFX(NormalizedPath, true);
+    if (!Clip)
     {
+        UE_LOG_WARNING("[AudioSystem] PlayBGM failed to load clip: %s", NormalizedPath.c_str());
         return;
     }
 
     StopBGM(FadeInSeconds > 0.0f ? std::min(FadeInSeconds, 0.25f) : 0.0f);
 
     const float StartVolume = FadeInSeconds > 0.0f ? 0.0f : Impl->BGMVolume;
-    Impl->BGMHandle = Impl->Engine.playBackground(*Stream, StartVolume);
-    Impl->CurrentBGMPath = Impl->ResolveSoundPath(KeyOrPath);
+    Impl->BGMHandle = Impl->Engine.playBackground(*Clip, StartVolume);
+    Impl->CurrentBGMPath = NormalizedPath;
+    UE_LOG("[AudioSystem] PlayBGM Path=%s Handle=%u Volume=%.2f FadeIn=%.2f Mode=DecodedClip", Impl->CurrentBGMPath.c_str(), Impl->BGMHandle, Impl->BGMVolume, FadeInSeconds);
+    if (Impl->BGMHandle == 0)
+    {
+        UE_LOG_WARNING("[AudioSystem] PlayBGM failed to create a voice handle: %s", Impl->CurrentBGMPath.c_str());
+        return;
+    }
     if (FadeInSeconds > 0.0f && Impl->BGMHandle != 0)
     {
         Impl->Engine.fadeVolume(Impl->BGMHandle, Impl->BGMVolume, FadeInSeconds);

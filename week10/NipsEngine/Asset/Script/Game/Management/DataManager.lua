@@ -124,14 +124,22 @@ function DataManager:RegisterScore(userName, score)
             score = score
         }
         table.insert(self.scoreRecords, record)
+        self.bestScore = math.max(self.bestScore, score)
+        SortScoreRecords(self.scoreRecords)
+        self:Save()
+        return true, "Inserted", record
     elseif score > (record.score or 0) then
         record.score = score
+        self.bestScore = math.max(self.bestScore, score)
+        SortScoreRecords(self.scoreRecords)
+        self:Save()
+        return true, "Updated", record
     end
 
     self.bestScore = math.max(self.bestScore, score)
     SortScoreRecords(self.scoreRecords)
     self:Save()
-    return true, record
+    return true, "Kept", record
 end
 
 function DataManager:GetScoreRecords(limit)

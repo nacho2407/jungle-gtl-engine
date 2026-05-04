@@ -10,21 +10,21 @@ end
 function TitleState:Enter(context)
     context.managers.UI:Show("Title")
     context.managers.UI:SetTitlePanel("Menu")
+    context.managers.UI:StartTitleLogoAnimation()
     Engine.API.Input.SetInputModeUIOnly()
 
     Engine.API.Debug.Log("Title State")
 
-    context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Title)
+    context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Main)
+    context.managers.Sound:PlayMainLogo()
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "StartGame" then
-            context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
             if context.root:OpenGameScene() then
                 return
             end
             context.stateMachine:Change("Loading")
         elseif event.name == "ShowIntro" then
-            context.managers.Sound:PlaySFX(context.managers.Sound.SFX.Button)
             if context.root:OpenIntroScene() then
                 return
             end

@@ -25,12 +25,49 @@
 #include "Component/Movement/ProjectileMovementComponent.h"
 #include "GameFramework/World.h"
 
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
 
 namespace
 {
 	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
 	constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
 	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
+
+    bool GetProceduralMeshLocalCenter(UProceduralMeshComponent* MeshComp, FVector& OutCenter)
+    {
+        if (!MeshComp)
+        {
+            return false;
+        }
+
+        bool bHasVertex = false;
+        FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+        FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+        for (const UProceduralMeshComponent::FMeshSection& Section : MeshComp->GetSections())
+        {
+            for (const FNormalVertex& Vertex : Section.Vertices)
+            {
+                bHasVertex = true;
+                Min.X = std::min(Min.X, Vertex.Position.X);
+                Min.Y = std::min(Min.Y, Vertex.Position.Y);
+                Min.Z = std::min(Min.Z, Vertex.Position.Z);
+                Max.X = std::max(Max.X, Vertex.Position.X);
+                Max.Y = std::max(Max.Y, Vertex.Position.Y);
+                Max.Z = std::max(Max.Z, Vertex.Position.Z);
+            }
+        }
+
+        if (!bHasVertex)
+        {
+            return false;
+        }
+
+        OutCenter = (Min + Max) * 0.5f;
+        return true;
+    }
 }
 
 DEFINE_CLASS(ACubeActor, AActor)
@@ -98,6 +135,12 @@ REGISTER_FACTORY(ABullet)
 
 DEFINE_CLASS(ADestructibleActor, AActor)
 REGISTER_FACTORY(ADestructibleActor)
+
+DEFINE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
+REGISTER_FACTORY(UMainSceneDestructibleComponent)
+
+DEFINE_CLASS(AMainSceneDestructibleActor, AActor)
+REGISTER_FACTORY(AMainSceneDestructibleActor)
 
 DEFINE_CLASS(ABladeSlash, AActor)
 REGISTER_FACTORY(ABladeSlash)
@@ -737,6 +780,379 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
 		}
 
         if (ProcMeshComp && BoxComponent && ProjMoveComp) break;
+    }
+}
+
+void UMainSceneDestructibleComponent::BeginPlay()
+{
+    UActorComponent::BeginPlay();
+
+    bSlicePending = bAutoStart;
+    bSliced = false;
+    Elapsed = 0.0f;
+    PatrolElapsed = 0.0f;
+    Fragments.clear();
+    FragmentStartLocations.clear();
+    FragmentTargetLocations.clear();
+}
+
+bool UMainSceneDestructibleComponent::StartSlice()
+{
+    AMainSceneDestructibleActor* Destructible = Cast<AMainSceneDestructibleActor>(GetOwner());
+    if (!Destructible)
+    {
+        return false;
+    }
+
+    Fragments = Destructible->SliceForMainScene(
+        Destructible->GetActorLocation(),
+        FVector::UpVector,
+        0.0f);
+
+    if (Fragments.empty())
+    {
+        UE_LOG_WARNING("[MainSceneDestructible] Slice failed: %s", Destructible->GetName().c_str());
+        return false;
+    }
+
+    FragmentStartLocations.clear();
+    FragmentTargetLocations.clear();
+    const float DirectionDistance = SliceSpeed * SliceDuration;
+    for (size_t Index = 0; Index < Fragments.size(); ++Index)
+    {
+        AMainSceneDestructibleActor* Fragment = Fragments[Index];
+        if (!Fragment)
+        {
+            continue;
+        }
+
+        Fragment->StopPresentationMotion();
+        const FVector StartLocation = Fragment->GetActorLocation();
+        const float Direction = (Index % 2 == 0) ? 1.0f : -1.0f;
+        FragmentStartLocations.push_back(StartLocation);
+        FragmentTargetLocations.push_back(StartLocation + FVector::UpVector * DirectionDistance * Direction);
+    }
+
+    Destructible->SetVisible(false);
+    bSliced = true;
+    Elapsed = 0.0f;
+    PatrolElapsed = 0.0f;
+    UE_LOG("[MainSceneDestructible] Slice started: %s Fragments=%d", Destructible->GetName().c_str(), static_cast<int32>(Fragments.size()));
+    return true;
+}
+
+void UMainSceneDestructibleComponent::Serialize(FArchive& Ar)
+{
+    UActorComponent::Serialize(Ar);
+    Ar << "Auto Start" << bAutoStart;
+    Ar << "Slice Duration" << SliceDuration;
+    Ar << "Slice Speed" << SliceSpeed;
+    Ar << "Patrol Amplitude" << PatrolAmplitude;
+    Ar << "Patrol Speed" << PatrolSpeed;
+
+    if (Ar.IsLoading()
+        && !bAutoStart
+        && SliceDuration <= 0.0f
+        && SliceSpeed <= 0.0f
+        && PatrolAmplitude <= 0.0f
+        && PatrolSpeed <= 0.0f)
+    {
+        bAutoStart = true;
+        SliceDuration = 1.0f;
+        SliceSpeed = 1.2f;
+        PatrolAmplitude = 0.18f;
+        PatrolSpeed = 1.15f;
+    }
+}
+
+void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UActorComponent::GetEditableProperties(OutProps);
+
+    OutProps.push_back({"Auto Start", EPropertyType::Bool, &bAutoStart});
+    OutProps.push_back({"Slice Duration", EPropertyType::Float, &SliceDuration, 0.05f, 10.0f, 0.05f});
+    OutProps.push_back({"Slice Speed", EPropertyType::Float, &SliceSpeed, 0.0f, 10.0f, 0.05f});
+    OutProps.push_back({"Patrol Amplitude", EPropertyType::Float, &PatrolAmplitude, 0.0f, 10.0f, 0.01f});
+    OutProps.push_back({"Patrol Speed", EPropertyType::Float, &PatrolSpeed, 0.0f, 20.0f, 0.05f});
+}
+
+float UMainSceneDestructibleComponent::GetRealDeltaTime(float DeltaTime) const
+{
+    return DeltaTime;
+}
+
+void UMainSceneDestructibleComponent::TickComponent(float DeltaTime)
+{
+    if (bSlicePending)
+    {
+        bSlicePending = false;
+        StartSlice();
+    }
+
+    if (!bSliced)
+    {
+        return;
+    }
+
+    const float RealDeltaTime = GetRealDeltaTime(DeltaTime);
+    Elapsed += RealDeltaTime;
+
+    if (Elapsed < SliceDuration)
+    {
+        const float Alpha = SliceDuration > 0.0f ? Elapsed / SliceDuration : 1.0f;
+        const float EaseOut = 1.0f - (1.0f - Alpha) * (1.0f - Alpha);
+
+        for (size_t Index = 0; Index < Fragments.size() && Index < FragmentStartLocations.size() && Index < FragmentTargetLocations.size(); ++Index)
+        {
+            AMainSceneDestructibleActor* Fragment = Fragments[Index];
+            if (!Fragment || Fragment->IsPendingKill())
+            {
+                continue;
+            }
+
+            const FVector Location = FragmentStartLocations[Index] + (FragmentTargetLocations[Index] - FragmentStartLocations[Index]) * EaseOut;
+            Fragment->SetActorLocation(Location);
+        }
+        return;
+    }
+
+    PatrolElapsed += RealDeltaTime;
+    const float Offset = std::sin(PatrolElapsed * PatrolSpeed) * PatrolAmplitude;
+
+    for (size_t Index = 0; Index < Fragments.size() && Index < FragmentTargetLocations.size(); ++Index)
+    {
+        AMainSceneDestructibleActor* Fragment = Fragments[Index];
+        if (!Fragment || Fragment->IsPendingKill())
+        {
+            continue;
+        }
+
+        const float Direction = (Index % 2 == 0) ? 1.0f : -1.0f;
+        Fragment->SetActorLocation(FragmentTargetLocations[Index] + FVector::UpVector * Offset * Direction);
+    }
+}
+
+void AMainSceneDestructibleActor::InitDefaultComponents()
+{
+    UStaticMesh* Mesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+    InitFromStaticMesh(Mesh, true);
+}
+
+void AMainSceneDestructibleActor::InitFromStaticMesh(UStaticMesh* StaticMesh, bool bAddPresentationComponent)
+{
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(StaticMesh);
+    SetRootComponent(ProcMeshComp);
+
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+    BoxComponent->SetGenerateOverlapEvents(false);
+
+    ProjMoveComp = AddComponent<UProjectileMovementComponent>();
+    ProjMoveComp->SetVelocity(FVector(0, 0, 0));
+    ProjMoveComp->SetInitialSpeed(0);
+    ProjMoveComp->SetComponentTickEnabled(false);
+    ProjMoveComp->SetGravityScale(0);
+    ProjMoveComp->SetUpdatedComponent(GetRootComponent());
+
+    if (bAddPresentationComponent)
+    {
+        PresentationComponent = AddComponent<UMainSceneDestructibleComponent>();
+    }
+}
+
+void AMainSceneDestructibleActor::InitFromProceduralMesh(UProceduralMeshComponent* InProcMeshComp, bool bAddPresentationComponent)
+{
+    ProcMeshComp = AddComponent<UProceduralMeshComponent>();
+    ProcMeshComp->CreateFrom(InProcMeshComp);
+    SetRootComponent(ProcMeshComp);
+
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+    BoxComponent->SetGenerateOverlapEvents(false);
+
+    ProjMoveComp = AddComponent<UProjectileMovementComponent>();
+    ProjMoveComp->SetVelocity(FVector(0, 0, 0));
+    ProjMoveComp->SetInitialSpeed(0);
+    ProjMoveComp->SetComponentTickEnabled(true);
+    ProjMoveComp->SetGravityScale(0);
+    ProjMoveComp->SetUpdatedComponent(GetRootComponent());
+
+    if (bAddPresentationComponent)
+    {
+        PresentationComponent = AddComponent<UMainSceneDestructibleComponent>();
+    }
+}
+
+void AMainSceneDestructibleActor::PostComponentRegistered(UActorComponent* Comp)
+{
+    AActor::PostComponentRegistered(Comp);
+
+    if (!Comp)
+    {
+        return;
+    }
+
+    if (!ProcMeshComp && Comp->IsA<UProceduralMeshComponent>())
+    {
+        ProcMeshComp = static_cast<UProceduralMeshComponent*>(Comp);
+    }
+    else if (!BoxComponent && Comp->IsA<UBoxComponent>())
+    {
+        BoxComponent = static_cast<UBoxComponent*>(Comp);
+    }
+    else if (!ProjMoveComp && Comp->IsA<UProjectileMovementComponent>())
+    {
+        ProjMoveComp = static_cast<UProjectileMovementComponent*>(Comp);
+    }
+    else if (!PresentationComponent && Comp->IsA<UMainSceneDestructibleComponent>())
+    {
+        PresentationComponent = static_cast<UMainSceneDestructibleComponent*>(Comp);
+    }
+}
+
+void AMainSceneDestructibleActor::PostDuplicate(UObject* Original)
+{
+    AActor::PostDuplicate(Original);
+    RebindComponents();
+}
+
+void AMainSceneDestructibleActor::RebindComponents()
+{
+    ProcMeshComp = nullptr;
+    BoxComponent = nullptr;
+    ProjMoveComp = nullptr;
+    PresentationComponent = nullptr;
+
+    for (UActorComponent* Comp : GetComponents())
+    {
+        if (!Comp)
+        {
+            continue;
+        }
+
+        if (!ProcMeshComp && Comp->IsA<UProceduralMeshComponent>())
+        {
+            ProcMeshComp = static_cast<UProceduralMeshComponent*>(Comp);
+        }
+        else if (!BoxComponent && Comp->IsA<UBoxComponent>())
+        {
+            BoxComponent = static_cast<UBoxComponent*>(Comp);
+        }
+        else if (!ProjMoveComp && Comp->IsA<UProjectileMovementComponent>())
+        {
+            ProjMoveComp = static_cast<UProjectileMovementComponent*>(Comp);
+        }
+        else if (!PresentationComponent && Comp->IsA<UMainSceneDestructibleComponent>())
+        {
+            PresentationComponent = static_cast<UMainSceneDestructibleComponent*>(Comp);
+        }
+    }
+}
+
+TArray<AMainSceneDestructibleActor*> AMainSceneDestructibleActor::SliceForMainScene(
+    const FVector& PlanePointWorld,
+    const FVector& PlaneNormalWorld,
+    float SeparateSpeed)
+{
+    (void)PlanePointWorld;
+
+    TArray<AMainSceneDestructibleActor*> Result;
+    if (!ProcMeshComp)
+    {
+        RebindComponents();
+    }
+    if (!ProcMeshComp)
+    {
+        return Result;
+    }
+
+    FVector PlanePointLocal;
+    if (!GetProceduralMeshLocalCenter(ProcMeshComp, PlanePointLocal))
+    {
+        UStaticMesh* FallbackMesh = FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Dice/Dice.obj");
+        if (FallbackMesh)
+        {
+            ProcMeshComp->CreateFrom(FallbackMesh);
+        }
+    }
+
+    if (!GetProceduralMeshLocalCenter(ProcMeshComp, PlanePointLocal))
+    {
+        UE_LOG_WARNING("[MainSceneDestructible] Slice failed: empty procedural mesh");
+        return Result;
+    }
+
+    const FVector SafeNormalWorld = PlaneNormalWorld.GetSafeNormal();
+    if (SafeNormalWorld.SizeSquared() <= 0.000001f)
+    {
+        return Result;
+    }
+
+    const FTransform MeshTransform = ProcMeshComp->GetWorldTransform();
+    const FQuat MeshRotation = MeshTransform.GetRotation();
+    const FMatrix RotationMatrix = MeshRotation.ToMatrix();
+
+    const FVector PlaneNormalLocal = RotationMatrix.GetTransposed().TransformVector(SafeNormalWorld).GetSafeNormal();
+
+    FPlane SlicePlane;
+    SlicePlane.Normal = PlaneNormalLocal;
+    SlicePlane.D = -FVector::DotProduct(PlaneNormalLocal, PlanePointLocal);
+
+    UProceduralMeshComponent* TempMesh1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+    UProceduralMeshComponent* TempMesh2 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
+
+    FMeshSlicer::SliceComponent(ProcMeshComp, SlicePlane, TempMesh1, TempMesh2);
+
+    const bool bFirstMeshEmpty = (TempMesh1->GetSections().empty() || TempMesh1->GetSections()[0].Vertices.empty());
+    const bool bSecondMeshEmpty = (TempMesh2->GetSections().empty() || TempMesh2->GetSections()[0].Vertices.empty());
+
+    UWorld* World = GetFocusedWorld();
+    if (!bFirstMeshEmpty && !bSecondMeshEmpty && World)
+    {
+        AMainSceneDestructibleActor* Actor1 = World->SpawnActor<AMainSceneDestructibleActor>();
+        AMainSceneDestructibleActor* Actor2 = World->SpawnActor<AMainSceneDestructibleActor>();
+        Actor1->InitFromProceduralMesh(TempMesh1, false);
+        Actor2->InitFromProceduralMesh(TempMesh2, false);
+
+        Actor1->SetActorLocation(GetActorLocation());
+        Actor1->SetActorRotation(GetActorRotation());
+        Actor1->SetActorScale(GetActorScale());
+        Actor2->SetActorLocation(GetActorLocation());
+        Actor2->SetActorRotation(GetActorRotation());
+        Actor2->SetActorScale(GetActorScale());
+
+        Actor1->ProjMoveComp->SetVelocity(SafeNormalWorld * SeparateSpeed);
+        Actor2->ProjMoveComp->SetVelocity(-SafeNormalWorld * SeparateSpeed);
+
+        Result.push_back(Actor1);
+        Result.push_back(Actor2);
+    }
+    else
+    {
+        UE_LOG_WARNING("[MainSceneDestructible] Slice produced empty result: FrontEmpty=%d BackEmpty=%d World=%p",
+            bFirstMeshEmpty ? 1 : 0,
+            bSecondMeshEmpty ? 1 : 0,
+            World);
+    }
+
+    UObjectManager::Get().DestroyObject(TempMesh1);
+    UObjectManager::Get().DestroyObject(TempMesh2);
+    return Result;
+}
+
+void AMainSceneDestructibleActor::StopPresentationMotion()
+{
+    if (!ProjMoveComp)
+    {
+        RebindComponents();
+    }
+
+    if (ProjMoveComp)
+    {
+        ProjMoveComp->SetVelocity(FVector::ZeroVector);
+        ProjMoveComp->SetGravityScale(0.0f);
+        ProjMoveComp->SetComponentTickEnabled(false);
     }
 }
 

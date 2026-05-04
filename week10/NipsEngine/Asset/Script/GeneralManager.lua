@@ -35,7 +35,7 @@ Script.__index = Script
 local ScenePaths = {
     Intro = "Asset/Scene/Intro.Scene",
     Main = "Asset/Scene/Main.Scene",
-    Game = "Asset/Scene/Playing.Scene"
+    Game = "Asset/Scene/MapScene.Scene"
 }
 
 -- ScriptComponent Details에 노출되는 값입니다.
@@ -53,7 +53,7 @@ Script.Properties = {
     },
     SessionLimitSeconds = {
         Type = "Float",
-        Default = 300.0,
+        Default = 5.0,
         Category = "Management"
     },
     PlayerMaxHealth = {

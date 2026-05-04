@@ -3,7 +3,9 @@ PlayingState.__index = PlayingState
 
 function PlayingState.new()
     return setmetatable({
-        finishHandle = nil
+        finishHandle = nil,
+        pendingResult = nil,
+        resultDelayRemaining = 0.0
     }, PlayingState)
 end
 
@@ -16,13 +18,21 @@ function PlayingState:Enter(context)
     Engine.API.Input.SetInputModeGameOnly()
 
     self.finishHandle = context.eventBus:Subscribe("Game.Finished", self, function(snapshot)
-        context.stateMachine:Change("Result", snapshot)
+        if self.pendingResult ~= nil then
+            return
+        end
+
+        self.pendingResult = snapshot or {}
+        self.resultDelayRemaining = 2.0
+        context.managers.Sound:StopBGM(2.0)
     end)
 end
 
 function PlayingState:Exit(context)
     context.eventBus:Unsubscribe(self.finishHandle)
     self.finishHandle = nil
+    self.pendingResult = nil
+    self.resultDelayRemaining = 0.0
 end
 
 function PlayingState:Pause(context)
@@ -37,6 +47,18 @@ function PlayingState:Resume(context)
 end
 
 function PlayingState:Tick(context, dt)
+    if self.pendingResult ~= nil then
+        local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+        self.resultDelayRemaining = self.resultDelayRemaining - realDt
+        if self.resultDelayRemaining <= 0.0 then
+            local snapshot = self.pendingResult
+            self.pendingResult = nil
+            self.resultDelayRemaining = 0.0
+            context.stateMachine:Change("Result", snapshot)
+        end
+        return
+    end
+
     local game = context.managers.Game
     context.managers.UI:SetHUD(game:GetSnapshot())
 
