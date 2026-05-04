@@ -317,6 +317,21 @@ void ADefaultPlayerActor::InitDefaultComponents()
 	SpringArmComp->UpdateSocketChildren();
 }
 
+void ADefaultPlayerActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    AActor::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+}
+
+void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
 void APlayerStart::InitDefaultComponents()
 {
 	auto* SceneRoot = AddComponent<USceneComponent>();
@@ -1254,6 +1269,7 @@ void ABoundsBoxActor::InitDefaultComponents()
     // 잘린 애들을 무한히 자를 수 없게 제한
     BoxComponent->SetGenerateOverlapEvents(true);
     SetRootComponent(BoxComponent);
+    SetTagsFromText("BoundingBox");
 
 	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->AttachToComponent(BoxComponent);

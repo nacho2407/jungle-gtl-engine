@@ -63,6 +63,8 @@ void FScriptManager::BindComponentTypes()
     LUA_SET(GetActor, &LuaGetComponentActor);
     LUA_SET(AsSceneComponent, [](UActorComponent& Self) -> USceneComponent*
 				 { return Cast<USceneComponent>(&Self); });
+    LUA_SET(AsBoxComponent, [](UActorComponent& Self) -> UBoxComponent*
+            { return Cast<UBoxComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
     LUA_METHOD(SetActive, SetActive);
     LUA_METHOD(IsAutoActivate, IsAutoActivate);
