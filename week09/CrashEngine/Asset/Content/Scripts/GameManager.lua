@@ -9,7 +9,7 @@ local ScoreboardLimit = 5
 local SpawnMaxCounts = {
     Battery = 3,
     Document = 3,
-    Turret = 3
+    Turret = 10
 }
 
 -- Key는 Scene에서 찾을 Candidate Tag, Value는 바꿔치기할 실제 Actor 설정이다.
