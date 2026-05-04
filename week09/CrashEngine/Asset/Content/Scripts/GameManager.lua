@@ -31,6 +31,7 @@ function GameOver(finalHP, finalDocumentCount)
     Prefs.SetNumber("LastScore", score)
     Prefs.SetNumber("LastHP", finalHP)
     Prefs.SetNumber("LastDocumentCount", finalDocumentCount)
+    Prefs.SetNumber("LastTimer", Timer)
 
     print("GAME OVER")
     print("Score : ", score)

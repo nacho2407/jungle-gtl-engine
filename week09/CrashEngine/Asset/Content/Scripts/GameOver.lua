@@ -4,6 +4,7 @@ local max_name_length = 10
 local score = 1000
 local hp = 10
 local document_count = 0
+local timer = 0.0
 local text_width = 560
 
 local function setText(element_id, text, red, green, blue, font_size)
@@ -15,7 +16,9 @@ local function refreshName()
 end
 
 local function refreshScore()
-    local score_text = string.format("Score %d   HP %d   Doc %d", score, hp, document_count)
+    local minutes = math.floor(timer / 60)
+    local seconds = math.floor(timer % 60)
+    local score_text = string.format("Score %d   HP %d   Doc %d   Timer %02d:%02d", score, hp, document_count, minutes, seconds)
     setText("game_over_score", score_text, 255, 255, 255, 20)
 end
 
@@ -25,7 +28,7 @@ local function submitName()
         final_name = "Player"
     end
 
-    Scoreboard.AddScore(final_name, score, hp, document_count)
+    Scoreboard.AddScore(final_name, score, hp, document_count, timer)
     LoadScene("StartScene.Scene")
 end
 
@@ -39,13 +42,13 @@ function BeginPlay()
         score = math.floor(Prefs.GetNumber("LastScore", score) + 0.5)
         hp = math.floor(Prefs.GetNumber("LastHP", hp) + 0.5)
         document_count = math.floor(Prefs.GetNumber("LastDocumentCount", document_count) + 0.5)
+        timer = Prefs.GetNumber("LastTimer", timer)
     end
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(100)
     ui_document:SetTexture("background", "Textures/GameOver.jpg")
 
-    setText("game_over_title", "GAME OVER", 255, 64, 64, 42)
     setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, 20)
     refreshScore()
     refreshName()

@@ -97,11 +97,10 @@
         #scoreboard_view
         {
             position: absolute;
-            left: 50%;
+            right: 30px;
             top: 50%;
-            width: 520px;
+            width: 620px;
             height: 276px;
-            margin-left: -160px;
             margin-top: -220px;
             display: none;
         }
@@ -110,7 +109,7 @@
         {
             position: absolute;
             left: 0px;
-            width: 520px;
+            width: 620px;
             height: 44px;
             background-color: transparent;
         }
@@ -123,6 +122,43 @@
             width: 100%;
             font-size: 15px;
             text-align: center;
+        }
+
+        .scoreboard-cell
+        {
+            position: absolute;
+            top: 0px;
+            height: 44px;
+        }
+
+        .scoreboard-name-cell
+        {
+            left: 0px;
+            width: 180px;
+        }
+
+        .scoreboard-score-cell
+        {
+            left: 180px;
+            width: 120px;
+        }
+
+        .scoreboard-hp-cell
+        {
+            left: 300px;
+            width: 80px;
+        }
+
+        .scoreboard-doc-cell
+        {
+            left: 380px;
+            width: 80px;
+        }
+
+        .scoreboard-timer-cell
+        {
+            left: 460px;
+            width: 120px;
         }
     </style>
 </head>
@@ -157,20 +193,47 @@
         </div>
     </div>
     <div id="scoreboard_view">
+        <div id="scoreboard_header_line" class="scoreboard-line">
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_header_name" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_header_score" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_header_hp" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_header_doc" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_header_timer" class="scoreboard-label"></div></div>
+        </div>
         <div id="scoreboard_line_1" class="scoreboard-line">
-            <div id="scoreboard_text_1" class="scoreboard-label"></div>
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_name_1" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_score_1" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_hp_1" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_doc_1" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_timer_1" class="scoreboard-label"></div></div>
         </div>
         <div id="scoreboard_line_2" class="scoreboard-line">
-            <div id="scoreboard_text_2" class="scoreboard-label"></div>
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_name_2" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_score_2" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_hp_2" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_doc_2" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_timer_2" class="scoreboard-label"></div></div>
         </div>
         <div id="scoreboard_line_3" class="scoreboard-line">
-            <div id="scoreboard_text_3" class="scoreboard-label"></div>
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_name_3" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_score_3" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_hp_3" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_doc_3" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_timer_3" class="scoreboard-label"></div></div>
         </div>
         <div id="scoreboard_line_4" class="scoreboard-line">
-            <div id="scoreboard_text_4" class="scoreboard-label"></div>
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_name_4" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_score_4" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_hp_4" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_doc_4" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_timer_4" class="scoreboard-label"></div></div>
         </div>
         <div id="scoreboard_line_5" class="scoreboard-line">
-            <div id="scoreboard_text_5" class="scoreboard-label"></div>
+            <div class="scoreboard-cell scoreboard-name-cell"><div id="scoreboard_name_5" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-score-cell"><div id="scoreboard_score_5" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-hp-cell"><div id="scoreboard_hp_5" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-doc-cell"><div id="scoreboard_doc_5" class="scoreboard-label"></div></div>
+            <div class="scoreboard-cell scoreboard-timer-cell"><div id="scoreboard_timer_5" class="scoreboard-label"></div></div>
         </div>
     </div>
 </body>

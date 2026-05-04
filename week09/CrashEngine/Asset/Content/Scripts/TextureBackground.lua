@@ -77,31 +77,97 @@ local scoreboard_text_style = {
     blue = 64,
     font_size = 18,
     bold = true,
-    center_width = 520
+    center_width = 120
+}
+
+local scoreboard_columns = {
+    {
+        key = "name",
+        header = "Name",
+        width = 180
+    },
+    {
+        key = "score",
+        header = "Score",
+        width = 120
+    },
+    {
+        key = "hp",
+        header = "HP",
+        width = 80
+    },
+    {
+        key = "doc",
+        header = "Doc",
+        width = 80
+    },
+    {
+        key = "timer",
+        header = "Timer",
+        width = 120
+    }
 }
 
 local scoreboard_items = {
     {
         line_id = "scoreboard_line_1",
-        label_id = "scoreboard_text_1"
+        labels = {
+            name = "scoreboard_name_1",
+            score = "scoreboard_score_1",
+            hp = "scoreboard_hp_1",
+            doc = "scoreboard_doc_1",
+            timer = "scoreboard_timer_1"
+        }
     },
     {
         line_id = "scoreboard_line_2",
-        label_id = "scoreboard_text_2"
+        labels = {
+            name = "scoreboard_name_2",
+            score = "scoreboard_score_2",
+            hp = "scoreboard_hp_2",
+            doc = "scoreboard_doc_2",
+            timer = "scoreboard_timer_2"
+        }
     },
     {
         line_id = "scoreboard_line_3",
-        label_id = "scoreboard_text_3"
+        labels = {
+            name = "scoreboard_name_3",
+            score = "scoreboard_score_3",
+            hp = "scoreboard_hp_3",
+            doc = "scoreboard_doc_3",
+            timer = "scoreboard_timer_3"
+        }
     },
     {
         line_id = "scoreboard_line_4",
-        label_id = "scoreboard_text_4"
+        labels = {
+            name = "scoreboard_name_4",
+            score = "scoreboard_score_4",
+            hp = "scoreboard_hp_4",
+            doc = "scoreboard_doc_4",
+            timer = "scoreboard_timer_4"
+        }
     },
     {
         line_id = "scoreboard_line_5",
-        label_id = "scoreboard_text_5"
+        labels = {
+            name = "scoreboard_name_5",
+            score = "scoreboard_score_5",
+            hp = "scoreboard_hp_5",
+            doc = "scoreboard_doc_5",
+            timer = "scoreboard_timer_5"
+        }
     }
 }
+
+local function formatTimer(total_seconds)
+    total_seconds = math.floor((total_seconds or 0) + 0.5)
+    local minutes = math.floor(total_seconds / 60)
+    local seconds = total_seconds % 60
+
+    return string.format("%02d:%02d", minutes, seconds)
+end
 
 local function setMenuText(item, highlighted)
     if highlighted then
@@ -151,27 +217,65 @@ local function setScoreboardText(item, text)
         scoreboard_text_style.blue,
         scoreboard_text_style.font_size,
         scoreboard_text_style.bold,
-        scoreboard_text_style.center_width
+        item.width or scoreboard_text_style.center_width
     )
 end
 
 -- scoreboard
-local function formatScoreEntry(entry)
+local function getScoreEntryValues(entry)
     if entry == nil then
-        return "--"
+        return {
+            name = "--",
+            score = "--",
+            hp = "--",
+            doc = "--",
+            timer = "--"
+        }
     end
 
-    local rank = entry.rank or 0
     local name = entry.name or "Player"
     local score = math.floor((entry.score or 0) + 0.5)
     local hp = math.floor((entry.hp or 0) + 0.5)
     local document_count = entry.documentCount or 0
+    local timer = formatTimer(entry.timer)
 
-    return string.format("%d. %s  Score %d  HP %d  Doc %d", rank, name, score, hp, document_count)
+    return {
+        name = name,
+        score = tostring(score),
+        hp = tostring(hp),
+        doc = tostring(document_count),
+        timer = timer
+    }
+end
+
+local function setScoreboardRow(item, values)
+    for _, column in ipairs(scoreboard_columns) do
+        setScoreboardText(
+            {
+                label_id = item.labels[column.key],
+                width = column.width
+            },
+            values[column.key]
+        )
+    end
 end
 
 local function refreshScoreboard()
     local scores = Scoreboard.GetTopScores(scoreboard_limit)
+
+    ui_document:SetProperty("scoreboard_header_line", "background-color", "transparent")
+    ui_document:SetProperty("scoreboard_header_line", "border-width", "0px")
+    ui_document:SetProperty("scoreboard_header_line", "top", "220px")
+    ui_document:SetProperty("scoreboard_header_line", "right", "220px")
+    for _, column in ipairs(scoreboard_columns) do
+        setScoreboardText(
+            {
+                label_id = "scoreboard_header_" .. column.key,
+                width = column.width
+            },
+            column.header
+        )
+    end
 
     for index, item in ipairs(scoreboard_items) do
         local entry = scores[index]
@@ -179,7 +283,7 @@ local function refreshScoreboard()
         ui_document:SetProperty(item.line_id, "border-width", "0px")
         ui_document:SetProperty(item.line_id, "top", tostring(250 + (index - 1) * 30) .. "px")
         ui_document:SetProperty(item.line_id, "right", tostring(250 + (index - 1) * 30) .. "px")
-        setScoreboardText(item, formatScoreEntry(entry))
+        setScoreboardRow(item, getScoreEntryValues(entry))
     end
 end
 

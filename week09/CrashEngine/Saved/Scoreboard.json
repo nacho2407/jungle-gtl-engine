@@ -4,48 +4,105 @@
       "hp" : 10.000000,
       "name" : "HIHI",
       "score" : 1000.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 17:07:07"
+    }, {
+      "documentCount" : 0,
+      "hp" : 10.000000,
+      "name" : "PLAYER",
+      "score" : 1000.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 17:20:37"
     }, {
       "documentCount" : 10,
       "hp" : 92.000000,
       "name" : "Tester A",
       "score" : 920.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 09:00:00"
     }, {
       "documentCount" : 10,
       "hp" : 61.000000,
       "name" : "Tester B",
       "score" : 610.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 09:05:00"
     }, {
       "documentCount" : 5,
       "hp" : 50.000000,
       "name" : "Tester C",
       "score" : 250.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 09:10:00"
     }, {
       "documentCount" : 4,
       "hp" : 35.000000,
       "name" : "Tester D",
       "score" : 140.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 09:15:00"
+    }, {
+      "documentCount" : 1,
+      "hp" : 73.000000,
+      "name" : "PLAY1",
+      "score" : 73.000000,
+      "timer" : 2.654754,
+      "timestamp" : "2026-05-04 17:50:39"
+    }, {
+      "documentCount" : 1,
+      "hp" : 72.000000,
+      "name" : "PLAYER1",
+      "score" : 72.000000,
+      "timer" : 2.824610,
+      "timestamp" : "2026-05-04 17:48:44"
+    }, {
+      "documentCount" : 1,
+      "hp" : 60.000000,
+      "name" : "PLAYER222",
+      "score" : 60.000000,
+      "timer" : 3.999871,
+      "timestamp" : "2026-05-04 17:50:48"
+    }, {
+      "documentCount" : 1,
+      "hp" : 56.000000,
+      "name" : "SCORE",
+      "score" : 56.000000,
+      "timer" : 4.372806,
+      "timestamp" : "2026-05-04 17:36:12"
     }, {
       "documentCount" : 1,
       "hp" : 10.000000,
       "name" : "Tester E",
       "score" : 10.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 09:20:00"
     }, {
       "documentCount" : 0,
       "hp" : 0.000000,
       "name" : "A231ASD",
       "score" : 0.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 16:19:01"
     }, {
       "documentCount" : 0,
       "hp" : 0.000000,
       "name" : "GAMER",
       "score" : 0.000000,
+      "timer" : 0.000000,
       "timestamp" : "2026-05-04 17:02:52"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 45.277913,
+      "timestamp" : "2026-05-04 17:37:25"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER123",
+      "score" : 0.000000,
+      "timer" : 141.163237,
+      "timestamp" : "2026-05-04 17:40:03"
     }]
 }
