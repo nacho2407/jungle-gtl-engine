@@ -274,9 +274,13 @@ body {
 	position: absolute;
 	left: 40dp;
 	bottom: 38dp;
-	width: 210dp;
-	height: 28dp;
-	color: #aeb6c8;
-	font-size: 16dp;
-	line-height: 28dp;
+	width: 260dp;
+	height: 34dp;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	background-color: #15171ce6;
+	color: #f0c85a;
+	font-size: 17dp;
+	line-height: 30dp;
+	text-align: center;
 }

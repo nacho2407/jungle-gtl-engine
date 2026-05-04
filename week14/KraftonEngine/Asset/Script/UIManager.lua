@@ -798,6 +798,10 @@ local PHASE_NAME = {
     [ECarGamePhase.Goal]         = "GOAL",
 }
 
+local PHASE_HINT = {
+    [ECarGamePhase.CarWash] = "SPACE : 물 뿌리기",
+}
+
 local function FormatTime(seconds)
     if seconds == nil or seconds < 0 then seconds = 0 end
     local m = math.floor(seconds / 60)
@@ -846,6 +850,8 @@ function UIManager.UpdateHUD()
 
     -- objective + 점수 — 매 프레임 호출 비용 미미하므로 같이 갱신
     widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
+    widget:set_text("hud-bottom-tip", PHASE_HINT[phase] or "F2 : CAMERA")
+
     local score = gs:GetScore()
     if not scoreCounter.initialized then
         scoreCounter.initialized = true
