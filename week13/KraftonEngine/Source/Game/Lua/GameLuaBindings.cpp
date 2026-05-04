@@ -110,7 +110,8 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"EscapePolice", ECarGamePhase::EscapePolice,
 		"DodgeMeteor",  ECarGamePhase::DodgeMeteor,
 		"Result",       ECarGamePhase::Result,
-		"Finished",     ECarGamePhase::Finished);
+		"Finished",     ECarGamePhase::Finished,
+		"Goal",         ECarGamePhase::Goal);
 
 	Lua.new_enum("EPhaseResult",
 		"None",    EPhaseResult::None,

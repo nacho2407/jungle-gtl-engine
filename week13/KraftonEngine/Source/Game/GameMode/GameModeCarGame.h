@@ -48,6 +48,7 @@ public:
 	static constexpr float CarGasDuration      = 15.0f;
 	static constexpr float EscapePoliceDuration= 45.0f;
 	static constexpr float DodgeMeteorDuration = 30.0f;
+	static constexpr float GoalDuration        = 60.0f;  // 사실상 즉시 Success 라 timer 미사용
 	static constexpr float ResultDisplayDuration = 1.5f; // 결과 표시 페이즈 길이
 
 	// --- 페이즈 성공 임계치 ---
