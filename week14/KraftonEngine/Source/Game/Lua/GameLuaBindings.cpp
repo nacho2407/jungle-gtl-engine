@@ -139,6 +139,7 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"GetHealth",             &AGameStateCarGame::GetHealth,
 		"GetMaxHealth",          &AGameStateCarGame::GetMaxHealth,
 		"GetFinishOutcome",      &AGameStateCarGame::GetFinishOutcome,
+		"GetScore",              &AGameStateCarGame::GetScore,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable

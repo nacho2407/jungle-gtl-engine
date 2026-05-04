@@ -42,6 +42,7 @@ void AGameModeCarGame::StartMatch()
 		GS->SetLastPhaseResult(EPhaseResult::None);
 		GS->SetHealth(GS->GetMaxHealth());
 		GS->SetFinishOutcome(EFinishOutcome::None);
+		GS->SetScore(0);
 		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs, HP=%d/%d",
 			MatchDuration, GS->GetHealth(), GS->GetMaxHealth());
 	}
@@ -83,6 +84,7 @@ void AGameModeCarGame::Tick(float DeltaTime)
 			const bool bAllCleared = (GS->GetClearedPhasesMask() & AllPhases) == AllPhases;
 			GS->SetFinishOutcome(bAllCleared ? EFinishOutcome::Win : EFinishOutcome::Lose);
 
+			ApplyMatchEndBonus();
 			GS->SetPhase(ECarGamePhase::Finished);
 			UE_LOG("[CarGame] Match time elapsed — Phase = Finished, Outcome=%s",
 				bAllCleared ? "Win" : "Lose");
@@ -216,6 +218,16 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 	if (Result == EPhaseResult::Success)
 	{
 		GS->MarkPhaseCleared(Cur);
+
+		// Base + 잔여시간 비례 보너스. 시간 다 써서 클리어해도 base 는 보장.
+		const float Duration  = GetPhaseDuration(Cur);
+		const float Remaining = GS->GetRemainingPhaseTime();
+		const float Ratio     = (Duration > 0.0f) ? (Remaining / Duration) : 0.0f;
+		const int32 TimeBonus = static_cast<int32>(Ratio * static_cast<float>(PhaseTimeBonusMax));
+		const int32 PhaseScore = BasePhaseScore + TimeBonus;
+		GS->AddScore(PhaseScore);
+		UE_LOG("[CarGame] Phase score +%d (base=%d, time=%d, total=%d)",
+			PhaseScore, BasePhaseScore, TimeBonus, GS->GetScore());
 	}
 	else if (Result == EPhaseResult::Failed)
 	{
@@ -231,6 +243,7 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 	{
 		GS->SetRemainingPhaseTime(0.0f);
 		GS->SetFinishOutcome(EFinishOutcome::Lose);
+		ApplyMatchEndBonus();
 		GS->SetPhase(ECarGamePhase::Finished);
 		UE_LOG("[CarGame] HP depleted — Phase = Finished, Outcome=Lose");
 		return;
@@ -296,6 +309,22 @@ EPhaseResult AGameModeCarGame::JudgePhaseResult(ECarGamePhase Phase) const
 	}
 }
 
+void AGameModeCarGame::ApplyMatchEndBonus()
+{
+	auto* GS = Cast<AGameStateCarGame>(GetGameState());
+	if (!GS) return;
+
+	const int32 TimeBonus   = static_cast<int32>(GS->GetRemainingMatchTime()) * MatchTimeBonusPerSec;
+	const int32 HealthBonus = GS->GetHealth() * HealthBonusPerHP;
+	const int32 Total       = TimeBonus + HealthBonus;
+	if (Total != 0)
+	{
+		GS->AddScore(Total);
+	}
+	UE_LOG("[CarGame] Match-end bonus: time=%d, hp=%d, total=%d (score=%d)",
+		TimeBonus, HealthBonus, Total, GS->GetScore());
+}
+
 bool AGameModeCarGame::TryFinishOnAllCleared()
 {
 	auto* GS = Cast<AGameStateCarGame>(GetGameState());
@@ -310,6 +339,7 @@ bool AGameModeCarGame::TryFinishOnAllCleared()
 	if ((GS->GetClearedPhasesMask() & AllPhases) == AllPhases)
 	{
 		GS->SetFinishOutcome(EFinishOutcome::Win);
+		ApplyMatchEndBonus();
 		GS->SetPhase(ECarGamePhase::Finished);
 		UE_LOG("[CarGame] All phases cleared — Phase = Finished, Outcome=Win");
 		return true;
