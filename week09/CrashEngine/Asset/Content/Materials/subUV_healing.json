@@ -1,5 +1,5 @@
 {
-  "PathFileName": "Asset/Content/Materials/subUV_sample.json",
+  "PathFileName": "Asset/Content/Materials/subUV_healing.json",
   "ShaderType": "SubUV",
   "ShaderPath": "Shaders/Render/Editor/subUV_sample.hlsl",
   "RenderPass": "AlphaBlend",
