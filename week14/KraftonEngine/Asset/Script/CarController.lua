@@ -36,9 +36,20 @@ function BeginPlay()
     ObjRegistry.RegisterCar(car)
     movement = car:GetCarMovement()
 
-    handleComp = car:GetComponentByName("UStaticMeshComponent_41")
-    wheelComp0 = car:GetComponentByName("UStaticMeshComponent_42")
-    wheelComp1 = car:GetComponentByName("UStaticMeshComponent_43")
+    -- 자동 생성 FName ("UStaticMeshComponent_41" 등) 은 월드 초기화 순서에 따라 카운터가
+    -- 달라져 PIE 와 Game 빌드에서 매칭이 깨질 수 있다. 메시 에셋 경로는 씬 파일에 명시
+    -- 저장돼 빌드 무관하게 같으므로, 그쪽으로 식별한다.
+    handleComp = car:FindFirstMeshComponentByPath("Data/Truck/TruckHandle.obj")
+    -- 타이어 4 개 중 RelativeLocation.X > 0 인 두 개가 앞바퀴 — 조향에 따라 회전시킬 대상.
+    local tires = car:FindMeshComponentsByPath("Data/Truck/TruckTire.obj")
+    local frontWheels = {}
+    for i = 1, #tires do
+        if tires[i].RelativeLocation.X > 0 then
+            table.insert(frontWheels, tires[i])
+        end
+    end
+    wheelComp0 = frontWheels[1]
+    wheelComp1 = frontWheels[2]
 
     -- 시작 위치 액터를 1회 lookup. 매 frame 재검색하지 않도록 캐시 — World.FindFirstActorByTag
     -- 가 actors 선형 스캔이라 비싸진 않지만, 주기적 호출은 피한다.
