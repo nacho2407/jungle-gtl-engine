@@ -8,7 +8,7 @@ Script.Properties = {
         Category = "Script"
     }
 }
-function Script:Attack(degree, yaw)
+function Script:Attack(mode, degree, yaw)
     self.bDoingAttack = true
 
     local BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
@@ -16,8 +16,6 @@ function Script:Attack(degree, yaw)
         self.bDoingAttack = false
         return
     end
-
-    local mode = math.random(1, 3)
 
     local swingSign = math.sin(math.rad(degree)) > 0 and 1 or -1
     local swingStart = 0
@@ -199,7 +197,17 @@ function Script:Tick(dt)
 
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
-        local degree = math.random(0, 180)
+
+        local mode = math.random(1, 3)
+        local degree
+        if mode == 1 then
+            degree = 90
+        elseif mode == 2 then
+            degree = 45
+        else
+            degree = 135
+        end
+
         local pitch_x = degree * math.sin(yaw_rad)
         local pitch_y = degree * math.cos(yaw_rad)
         local scale_long = 5
@@ -222,13 +230,12 @@ function Script:Tick(dt)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
 
         StartCoroutine(function()
-            self:Attack(degree, yaw)
+            self:Attack(mode, degree, yaw)
         end)
 
         StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
         end)
-
     end
 end
 
