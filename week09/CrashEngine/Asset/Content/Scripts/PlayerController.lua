@@ -14,6 +14,10 @@ local pressedKeys = {}
 local movementState = nil
 local PlayerShotCooldown = 1
 local PlayerShotTimer = 0.0
+local GamepadControllerId = 0
+local GamepadRightTriggerPressThreshold = 0.5
+local GamepadRightTriggerReleaseThreshold = 0.25
+local bGamepadRightTriggerHeld = false
 local bGameOverRequested = false
 
 -- Player의 생존/점수 관련 상태.
@@ -291,6 +295,49 @@ local function firePlayerBullet()
     PlayerShotTimer = PlayerShotCooldown
 end
 
+local function isGamepadConnected()
+    if Input.IsGamepadConnected == nil then
+        return false
+    end
+
+    return Input:IsGamepadConnected(GamepadControllerId)
+end
+
+local function getGamepadMoveInput()
+    if not isGamepadConnected() then
+        return nil
+    end
+
+    return Vector.new(
+        Input:GetAxis("GamepadLeftX", GamepadControllerId),
+        Input:GetAxis("GamepadLeftY", GamepadControllerId),
+        0.0
+    )
+end
+
+local function consumeGamepadFirePressed()
+    if not isGamepadConnected() then
+        bGamepadRightTriggerHeld = false
+        return false
+    end
+
+    local triggerValue = Input:GetAxis("GamepadRightTrigger", GamepadControllerId)
+    if bGamepadRightTriggerHeld then
+        if triggerValue <= GamepadRightTriggerReleaseThreshold then
+            bGamepadRightTriggerHeld = false
+        end
+
+        return false
+    end
+
+    if triggerValue >= GamepadRightTriggerPressThreshold then
+        bGamepadRightTriggerHeld = true
+        return true
+    end
+
+    return false
+end
+
 -- 키 이벤트에서 movement 관련 키만 pressedKeys에 저장한다.
 local movementKeys = {
     W = true,
@@ -363,6 +410,7 @@ function BeginPlay()
     -- BeginPlay는 Actor가 월드에서 플레이를 시작할 때 한 번 호출된다.
     pressedKeys = {}
     bGameOverRequested = false
+    bGamepadRightTriggerHeld = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
         forward = CameraConfig.GetMoveForward(),
@@ -425,7 +473,7 @@ function Tick(dt)
     updatePlayerLight(dt)
 
     if isZooming() then
-        -- 줌 중에는 이동을 막고, 플레이어 mesh를 숨긴 뒤 좌클릭 발사만 허용한다.
+        -- 줌 중에는 이동을 막고, 플레이어 mesh를 숨긴 뒤 좌클릭/오른쪽 트리거 발사만 허용한다.
         obj.Velocity = Vector.new(0.0, 0.0, 0.0)
         movementState.velocity = Vector.new(0.0, 0.0, 0.0)
         syncPlayerAimState()
@@ -435,14 +483,15 @@ function Tick(dt)
             MeshComponent:SetVisibleInGame(false)
         end
 
-        if Input:WasMouseButtonPressed("LeftMouseButton") then
+        local bGamepadFirePressed = consumeGamepadFirePressed()
+        if Input:WasMouseButtonPressed("LeftMouseButton") or bGamepadFirePressed then
             firePlayerBullet()
         end
 
         return
     end
 
-    local moveDelta = PlayerMovement.Update(movementState, pressedKeys, dt)
+    local moveDelta = PlayerMovement.Update(movementState, pressedKeys, dt, getGamepadMoveInput())
     obj.Velocity = movementState.velocity
     syncPlayerAimState()
 
@@ -474,6 +523,7 @@ function EndPlay()
     BulletSystem.Clear(false)
 
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+    bGamepadRightTriggerHeld = false
     if _G.PlayerState ~= nil then
         _G.PlayerState.HP = HP
         _G.PlayerState.DocumentCount = DocumentCount
