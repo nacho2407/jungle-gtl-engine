@@ -51,6 +51,7 @@ public:
 	void ReleaseTexture(Rml::TextureHandle Texture) override;
 	void EnableScissorRegion(bool Enable) override;
 	void SetScissorRegion(Rml::Rectanglei Region) override;
+	void SetTransform(const Rml::Matrix4f* Transform) override;
 
 private:
 	void CreateConstantBuffer();
@@ -62,6 +63,7 @@ private:
 	ID3D11Buffer* PerFrameCB = nullptr;
 	ID3D11ShaderResourceView* WhiteTextureSRV = nullptr;
 	ID3D11RasterizerState* ScissorRasterizerState = nullptr;
+	Rml::Matrix4f CurrentTransform;
 	const FPassContext* Ctx = nullptr;
 };
 

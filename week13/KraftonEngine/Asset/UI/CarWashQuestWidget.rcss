@@ -9,6 +9,18 @@ body {
 	font-weight: bold;
 }
 
+@keyframes quest-panel-pop-in {
+	from {
+		opacity: 0;
+		transform: scale(0.92);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
 #quest-root {
 	position: absolute;
 	left: 0px;
@@ -29,6 +41,7 @@ body {
 	border-width: 2dp;
 	border-color: #5bd7ff;
 	background-color: #141922ee;
+	animation: 0.5s cubic-out quest-panel-pop-in;
 }
 
 .quest-badge {
@@ -77,4 +90,11 @@ body {
 	font-size: 18dp;
 	line-height: 38dp;
 	text-align: center;
+	transition: background-color border-color color 0.16s sine-out;
+}
+
+.quest-button:hover {
+	border-color: #a8ecff;
+	background-color: #5bd7ff;
+	color: #141922;
 }

@@ -16,6 +16,7 @@ cbuffer UIRenderCB : register(b0)
 {
 	float2 ViewportSize;
 	float2 Translation;
+	column_major float4x4 Transform;
 };
 
 Texture2D UITexture : register(t0);
@@ -24,7 +25,8 @@ SamplerState UISampler : register(s0);
 VSOutput VS(VSInput Input)
 {
 	VSOutput Output;
-	float2 PixelPosition = Input.Position + Translation;
+	float4 PixelPosition = float4(Input.Position + Translation, 0.0f, 1.0f);
+	PixelPosition = mul(Transform, PixelPosition);
 	float2 NdcPosition = float2(
 		(PixelPosition.x / ViewportSize.x) * 2.0f - 1.0f,
 		1.0f - (PixelPosition.y / ViewportSize.y) * 2.0f
