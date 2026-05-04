@@ -326,8 +326,13 @@ void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponen
 {
 	// 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
     ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
-    if (Enemy && Enemy->GetSliceCount() == 0)
-	    AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	if (Enemy && Enemy->GetSliceCount() == 0)
+	{
+        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+        OnTakeDamage(20);
+
+s		int32 H = Health;
+	}
 }
 
 void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
