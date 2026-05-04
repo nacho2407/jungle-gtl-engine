@@ -252,11 +252,12 @@ function Tick(dt)
         playerDistanceSq = toPlayer:LengthSquared()
     end
 
-    tickPatrol(dt)
-
     if playerDistanceSq ~= nil and playerDistanceSq <= AttackRange * AttackRange then
         tickAttack(player, toPlayer)
+        return
     end
+
+    tickPatrol(dt)
 end
 
 function EndPlay()

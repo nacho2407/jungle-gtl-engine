@@ -6,15 +6,15 @@
     },
     "LastHP" : {
       "type" : "number",
-      "value" : 0.000000
+      "value" : 15.018957
     },
     "LastScore" : {
       "type" : "number",
-      "value" : 17.644025
+      "value" : 6926.000000
     },
     "LastTimer" : {
       "type" : "number",
-      "value" : 93.106815
+      "value" : 74.981043
     }
   }
 }
