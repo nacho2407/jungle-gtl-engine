@@ -1,0 +1,16 @@
+<rml>
+<head>
+	<title>Meteor Quest</title>
+	<link type="text/rcss" href="MeteorQuestWidget.rcss"/>
+</head>
+<body>
+	<div id="quest-root">
+		<div id="quest-panel">
+			<div class="quest-badge">QUEST 04</div>
+			<div class="quest-title">운석 피하기</div>
+			<div class="quest-body">목표 지점으로 이동해 운석 회피 이벤트를 시작하세요.</div>
+			<button id="meteor-quest-ok-button" class="quest-button">Okay</button>
+		</div>
+	</div>
+</body>
+</rml>

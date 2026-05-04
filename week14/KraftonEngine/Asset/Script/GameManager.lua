@@ -31,6 +31,13 @@ local quests = {
         targetName = "EscapePolice",
         fallbackTargetName = nil,
         phase = ECarGamePhase.EscapePolice
+    },
+    {
+        id = "meteor",
+        uiKey = "meteorQuest",
+        targetName = "MeteorVolume",
+        fallbackTargetName = nil,
+        phase = ECarGamePhase.DodgeMeteor
     }
 }
 
@@ -119,6 +126,10 @@ local function GetQuestText(quest)
 
     if quest.id == "hitPerson" then
         return "사람치기"
+    end
+
+    if quest.id == "meteor" then
+        return "운석 피하기"
     end
 
     return quest.id
@@ -282,6 +293,11 @@ function BeginPlay()
     end)
     UIManager.SetPersonQuestOkCallback(function()
         if currentQuestIndex == 3 and state == QuestState.WaitingAccept then
+            StartCurrentQuest()
+        end
+    end)
+    UIManager.SetMeteorQuestOkCallback(function()
+        if currentQuestIndex == 4 and state == QuestState.WaitingAccept then
             StartCurrentQuest()
         end
     end)
