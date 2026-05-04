@@ -56,6 +56,27 @@
       "timer" : 6.647885,
       "timestamp" : "2026-05-04 18:01:55"
     }, {
+      "documentCount" : 2,
+      "hp" : 8.822013,
+      "name" : "Player",
+      "score" : 17.644025,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:10:06"
+    }, {
+      "documentCount" : 1,
+      "hp" : 15.078794,
+      "name" : "Player",
+      "score" : 15.078794,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:41:34"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 15.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 23:41:41"
+    }, {
       "documentCount" : 0,
       "hp" : 85.000000,
       "name" : "PLAYER",

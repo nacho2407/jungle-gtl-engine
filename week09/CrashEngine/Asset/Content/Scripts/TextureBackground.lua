@@ -64,7 +64,7 @@ local credit_text_style = {
     red = 255,
     green = 220,
     blue = 64,
-    font_size = 20,
+    font_size = 32,
     bold = true,
     center_width = 300
 }
@@ -75,7 +75,16 @@ local scoreboard_text_style = {
     red = 255,
     green = 220,
     blue = 64,
-    font_size = 18,
+    font_size = 25,
+    bold = true,
+    center_width = 120
+}
+
+local scoreboard_header_text_style = {
+    red = 0,
+    green = 255,
+    blue = 255,
+    font_size = 25,
     bold = true,
     center_width = 120
 }
@@ -161,6 +170,12 @@ local scoreboard_items = {
     }
 }
 
+local function playBackgroundBGM()
+    local sound_mgr = GetSoundManager()
+    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/backgroundbgm.mp3", true)
+    sound_mgr:PlayBGM("backgroundbgm")
+end
+
 local function formatTimer(total_seconds)
     total_seconds = math.floor((total_seconds or 0) + 0.5)
     local minutes = math.floor(total_seconds / 60)
@@ -208,16 +223,18 @@ local function setCreditText(item)
     )
 end
 
-local function setScoreboardText(item, text)
+local function setScoreboardText(item, text, style)
+    style = style or scoreboard_text_style
+
     ui_document:SetTextStyle(
         item.label_id,
         text,
-        scoreboard_text_style.red,
-        scoreboard_text_style.green,
-        scoreboard_text_style.blue,
-        scoreboard_text_style.font_size,
-        scoreboard_text_style.bold,
-        item.width or scoreboard_text_style.center_width
+        style.red,
+        style.green,
+        style.blue,
+        style.font_size,
+        style.bold,
+        item.width or style.center_width
     )
 end
 
@@ -265,7 +282,7 @@ local function refreshScoreboard()
 
     ui_document:SetProperty("scoreboard_header_line", "background-color", "transparent")
     ui_document:SetProperty("scoreboard_header_line", "border-width", "0px")
-    ui_document:SetProperty("scoreboard_header_line", "top", "220px")
+    ui_document:SetProperty("scoreboard_header_line", "top", "-38px")
     ui_document:SetProperty("scoreboard_header_line", "right", "220px")
     for _, column in ipairs(scoreboard_columns) do
         setScoreboardText(
@@ -273,7 +290,8 @@ local function refreshScoreboard()
                 label_id = "scoreboard_header_" .. column.key,
                 width = column.width
             },
-            column.header
+            column.header,
+            scoreboard_header_text_style
         )
     end
 
@@ -281,8 +299,8 @@ local function refreshScoreboard()
         local entry = scores[index]
         ui_document:SetProperty(item.line_id, "background-color", "transparent")
         ui_document:SetProperty(item.line_id, "border-width", "0px")
-        ui_document:SetProperty(item.line_id, "top", tostring(250 + (index - 1) * 30) .. "px")
-        ui_document:SetProperty(item.line_id, "right", tostring(250 + (index - 1) * 30) .. "px")
+        ui_document:SetProperty(item.line_id, "top", tostring((index - 1) * 30) .. "px")
+        ui_document:SetProperty(item.line_id, "right", tostring((index - 1) * 30) .. "px")
         setScoreboardRow(item, getScoreEntryValues(entry))
     end
 end
@@ -332,6 +350,7 @@ function BeginPlay()
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
+    playBackgroundBGM()
     ui_document:SetTexture("background", main_background_texture)
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")
@@ -348,7 +367,7 @@ function BeginPlay()
     for index, item in ipairs(credit_items) do
         ui_document:SetProperty(item.line_id, "background-color", "transparent")
         ui_document:SetProperty(item.line_id, "border-width", "0px")
-        ui_document:SetProperty(item.line_id, "top", tostring(250 + (index - 1) * 30) .. "px")
+        ui_document:SetProperty(item.line_id, "top", tostring((index - 1) * 50) .. "px")
         setCreditText(item)
     end
 
