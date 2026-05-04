@@ -338,6 +338,39 @@ local function consumeGamepadFirePressed()
     return false
 end
 
+local function moveActorWithWallSlide(actor, delta)
+    if delta == nil or delta:LengthSquared() <= 0.0 then
+        return true
+    end
+
+    local originalLocation = actor.Location
+    if World.MoveActorWithBlock(actor, delta, "Wall") then
+        return true
+    end
+
+    actor.Location = originalLocation
+
+    local deltaX = Vector.new(delta.X, 0.0, 0.0)
+    local deltaY = Vector.new(0.0, delta.Y, 0.0)
+
+    local firstDelta = deltaX
+    local secondDelta = deltaY
+    if math.abs(delta.Y) > math.abs(delta.X) then
+        firstDelta = deltaY
+        secondDelta = deltaX
+    end
+
+    local bMoved = false
+    if firstDelta:LengthSquared() > 0.0 then
+        bMoved = World.MoveActorWithBlock(actor, firstDelta, "Wall") or bMoved
+    end
+    if secondDelta:LengthSquared() > 0.0 then
+        bMoved = World.MoveActorWithBlock(actor, secondDelta, "Wall") or bMoved
+    end
+
+    return bMoved
+end
+
 -- 키 이벤트에서 movement 관련 키만 pressedKeys에 저장한다.
 local movementKeys = {
     W = true,
@@ -502,8 +535,8 @@ function Tick(dt)
     end
 
     if moveDelta:LengthSquared() > 0.0 then
-        -- 실제 위치 이동은 C++ World API가 Wall Tag Actor와의 충돌을 막아준다.
-        World.MoveActorWithBlock(obj, moveDelta, "Wall")
+        -- 대각선 이동이 벽에 막히면 가능한 축 이동만 다시 시도해서 벽을 타고 미끄러지게 한다.
+        moveActorWithWallSlide(obj, moveDelta)
     end
 
 
