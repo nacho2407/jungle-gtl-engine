@@ -50,6 +50,7 @@ local quests = {
 
 local state = QuestState.NotStarted
 local currentQuestIndex = 0
+local scoreSubmitted = false
 
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
@@ -108,6 +109,10 @@ local function OnPhaseChanged(phase)
         if gameState ~= nil then
             outcome = gameState:GetFinishOutcome()
             score = gameState:GetScore()
+        end
+        if not scoreSubmitted then
+            scoreSubmitted = true
+            Scoreboard.SubmitScore(score)
         end
         UIManager.ShowGameOver(outcome, score, function()
             Engine.PauseGame()
@@ -297,6 +302,7 @@ function BeginPlay()
     -- 초기화는 두 번째 BeginPlay 에선 다시 실행되지 않으므로 명시적으로 리셋해야 함.
     state = QuestState.NotStarted
     currentQuestIndex = 0
+    scoreSubmitted = false
     activeTarget = nil
     car = nil
 

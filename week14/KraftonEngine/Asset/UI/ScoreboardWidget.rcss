@@ -1,0 +1,133 @@
+html,
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+#scoreboard-panel {
+	position: absolute;
+	left: 28%;
+	top: 13%;
+	width: 44%;
+	height: 74%;
+	background-color: #1d222b;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	text-align: center;
+}
+
+#scoreboard-title {
+	position: absolute;
+	left: 0%;
+	top: 5%;
+	width: 100%;
+	height: 48dp;
+	color: #f0c85a;
+	font-size: 32dp;
+	line-height: 48dp;
+	text-align: center;
+}
+
+#scoreboard-header-rank,
+#scoreboard-header-score {
+	position: absolute;
+	top: 19%;
+	height: 28dp;
+	color: #8f98aa;
+	font-size: 16dp;
+	line-height: 28dp;
+	text-align: center;
+}
+
+#scoreboard-header-rank {
+	left: 13%;
+	width: 22%;
+}
+
+#scoreboard-header-score {
+	left: 42%;
+	width: 45%;
+}
+
+.scoreboard-rank,
+.scoreboard-score {
+	position: absolute;
+	height: 30dp;
+	font-size: 20dp;
+	line-height: 30dp;
+	text-align: center;
+}
+
+.scoreboard-rank {
+	left: 13%;
+	width: 22%;
+	color: #f0c85a;
+}
+
+.scoreboard-score {
+	left: 42%;
+	width: 45%;
+	color: #ffffff;
+}
+
+#scoreboard-rank-0,
+#scoreboard-score-0 { top: 25%; }
+#scoreboard-rank-1,
+#scoreboard-score-1 { top: 30%; }
+#scoreboard-rank-2,
+#scoreboard-score-2 { top: 35%; }
+#scoreboard-rank-3,
+#scoreboard-score-3 { top: 40%; }
+#scoreboard-rank-4,
+#scoreboard-score-4 { top: 45%; }
+#scoreboard-rank-5,
+#scoreboard-score-5 { top: 50%; }
+#scoreboard-rank-6,
+#scoreboard-score-6 { top: 55%; }
+#scoreboard-rank-7,
+#scoreboard-score-7 { top: 60%; }
+#scoreboard-rank-8,
+#scoreboard-score-8 { top: 65%; }
+#scoreboard-rank-9,
+#scoreboard-score-9 { top: 70%; }
+
+#scoreboard-empty {
+	position: absolute;
+	left: 0%;
+	top: 46%;
+	width: 100%;
+	height: 32dp;
+	color: #8f98aa;
+	font-size: 20dp;
+	line-height: 32dp;
+	text-align: center;
+}
+
+#scoreboard-close-button {
+	position: absolute;
+	left: 50%;
+	top: 84%;
+	width: 160dp;
+	height: 44dp;
+	margin-left: -80dp;
+	background-color: #303642;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 20dp;
+	line-height: 40dp;
+	text-align: center;
+	transition: background-color border-color color 0.16s sine-out;
+}
+
+#scoreboard-close-button:hover {
+	background-color: #f0c85a;
+	border-color: #ffe58a;
+	color: #15171c;
+}

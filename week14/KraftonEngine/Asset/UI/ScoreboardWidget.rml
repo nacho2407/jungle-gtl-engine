@@ -1,0 +1,36 @@
+<rml>
+<head>
+	<link type="text/rcss" href="ScoreboardWidget.rcss"/>
+</head>
+<body>
+	<div id="scoreboard-panel">
+		<div id="scoreboard-title">SCOREBOARD</div>
+		<div id="scoreboard-header-rank">RANK</div>
+		<div id="scoreboard-header-score">SCORE</div>
+
+		<div id="scoreboard-rank-0" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-0" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-1" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-1" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-2" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-2" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-3" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-3" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-4" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-4" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-5" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-5" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-6" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-6" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-7" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-7" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-8" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-8" class="scoreboard-score">-</div>
+		<div id="scoreboard-rank-9" class="scoreboard-rank">-</div>
+		<div id="scoreboard-score-9" class="scoreboard-score">-</div>
+
+		<div id="scoreboard-empty">NO SCORES YET</div>
+		<div id="scoreboard-close-button">Close</div>
+	</div>
+</body>
+</rml>

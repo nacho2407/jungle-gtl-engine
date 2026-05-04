@@ -81,7 +81,7 @@ body {
 #start-button {
 	position: absolute;
 	left: 50%;
-	top: 56%;
+	top: 52%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;
@@ -97,21 +97,41 @@ body {
 }
 
 #start-button,
+#scoreboard-button,
 #exit-button {
 	transition: background-color border-color color 0.16s sine-out;
 }
 
 #start-button:hover,
+#scoreboard-button:hover,
 #exit-button:hover {
 	border-color: #ffe58a;
 	background-color: #f0c85a;
 	color: #15171c;
 }
 
+#scoreboard-button {
+	position: absolute;
+	left: 50%;
+	top: 62%;
+	width: 300dp;
+	height: 58dp;
+	margin-left: -150dp;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	background-color: #252a34;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 24dp;
+	line-height: 52dp;
+	text-align: center;
+}
+
 #exit-button {
 	position: absolute;
 	left: 50%;
-	top: 68%;
+	top: 72%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;

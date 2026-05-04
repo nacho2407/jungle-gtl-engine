@@ -65,7 +65,7 @@ local function GetGasColor(ratio)
 end
 
 local function FormatScore(score)
-    return string.format("%06d", math.floor(score + 0.5))
+    return string.format("%d", math.floor(score + 0.5))
 end
 
 local function SetHudScoreText(score)
@@ -84,6 +84,37 @@ local function SetGameOverScoreText(score)
     end
 
     widget:set_text("final-score-value", FormatScore(score))
+end
+
+local function UpdateScoreboardWidget()
+    local widget = widgets["scoreboard"]
+    if widget == nil or not widget:IsInViewport() then
+        return
+    end
+
+    Scoreboard.Load()
+
+    local count = Scoreboard.GetEntryCount()
+    for i = 0, 9 do
+        local entry = nil
+        if i < count then
+            entry = Scoreboard.GetEntry(i)
+        end
+
+        if entry ~= nil then
+            widget:set_text("scoreboard-rank-" .. tostring(i), tostring(i + 1))
+            widget:set_text("scoreboard-score-" .. tostring(i), FormatScore(entry.Score))
+        else
+            widget:set_text("scoreboard-rank-" .. tostring(i), "-")
+            widget:set_text("scoreboard-score-" .. tostring(i), "-")
+        end
+    end
+
+    if count > 0 then
+        widget:set_text("scoreboard-empty", "")
+    else
+        widget:set_text("scoreboard-empty", "NO SCORES YET")
+    end
 end
 
 local function FormatScoreFeedback(amount, reason)
@@ -308,6 +339,7 @@ function UIManager.Init()
         UIManager.Hide("intro")
         UIManager.Hide("gameOverlay")
         UIManager.Hide("gameOver")
+        UIManager.Hide("scoreboard")
         UIManager.Hide("gasWidget")
         UIManager.Hide("gasFeedback")
         UIManager.Hide("meteorHp")
@@ -337,8 +369,13 @@ function UIManager.Init()
         AudioManager.Play("Click", 1.0)
         UIManager.FadeOut(0.5, function()
             UIManager.Hide("intro")
-            Engine.TransitionToScene("Map")
+        Engine.TransitionToScene("Map")
         end)
+    end)
+    introWidget:bind_click("scoreboard-button", function()
+        AudioManager.Play("Click", 1.0)
+        UIManager.Show("scoreboard")
+        UpdateScoreboardWidget()
     end)
     introWidget:bind_click("exit-button", function()
         AudioManager.Play("Click", 1.0)
@@ -361,6 +398,13 @@ function UIManager.Init()
         if onStartStoryOk ~= nil then
             onStartStoryOk()
         end
+    end)
+
+    local scoreboardWidget = UI.CreateWidget("Asset/UI/ScoreboardWidget.rml")
+    scoreboardWidget:SetWantsMouse(true)
+    scoreboardWidget:bind_click("scoreboard-close-button", function()
+        AudioManager.Play("Click", 1.0)
+        UIManager.Hide("scoreboard")
     end)
 
     local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
@@ -451,6 +495,7 @@ function UIManager.Init()
     UIManager.Register("intro", introWidget)
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
+    UIManager.Register("scoreboard", scoreboardWidget)
     UIManager.Register("gameOverlay", UI.CreateWidget("Asset/UI/GameOverlayWidget.rml"))
     UIManager.Register("startStory", startStoryWidget)
     UIManager.Register("carWashQuest", carWashQuestWidget)
