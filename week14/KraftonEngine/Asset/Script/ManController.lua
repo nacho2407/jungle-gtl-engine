@@ -8,6 +8,7 @@ end
 
 function EndPlay()
     print("[EndPlay] " .. obj.UUID)
+    ObjRegistry.UnregisterMan(obj)
 end
 
 function OnOverlap(OtherActor)

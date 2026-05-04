@@ -87,6 +87,7 @@ function BeginPlay()
 end
 
 function EndPlay()
+    ObjRegistry.UnregisterPoliceCar(police)
 end
 
 function Tick(dt)

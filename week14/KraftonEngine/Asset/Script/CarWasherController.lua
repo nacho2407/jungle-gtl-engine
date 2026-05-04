@@ -66,6 +66,7 @@ end
 
 function EndPlay()
     SetWaterLoopPlaying(false)
+    ObjRegistry.UnregisterCarWasher(obj)
 end
 
 function Tick(dt)

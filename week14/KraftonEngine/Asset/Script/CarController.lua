@@ -131,6 +131,7 @@ end
 function EndPlay()
     AudioManager.StopLoop(ENGINE_LOOP_NAME)
     SetSirenLoopPlaying(false)
+    ObjRegistry.UnregisterCar(car)
 end
 
 function OnOverlap(OtherActor)
