@@ -37,6 +37,7 @@ function Tick(dt)
             ObjRegistry.car:GetCarGas():AddGas(5.0 * dt)
 
             if ObjRegistry.car:GetCarGas():GetGas() >= 100 then
+                AudioManager.Play("Complete", 1.0)
                 GetGameMode():SuccessPhase()
             end
         end
