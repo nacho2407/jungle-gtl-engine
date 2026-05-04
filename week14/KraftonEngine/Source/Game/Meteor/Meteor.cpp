@@ -67,7 +67,7 @@ void AMeteor::BeginPlay()
 {
 	if (!CollisionSphere)
 	{
-		ResolveCachedComponents();
+		InitDefaultComponents();
 	}
 
 	Super::BeginPlay();
