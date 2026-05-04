@@ -273,11 +273,16 @@ public:
 
 	void PostDuplicate(UObject* Original) override;
 
+	uint32 GetSliceCount() const { return SliceCount; }
+    void SetSliceCount(uint32 NewSliceCount) { SliceCount = NewSliceCount; }
+
 private:
 	UProceduralMeshComponent* ProcMeshComp = nullptr;
     UBoxComponent* BoxComponent = nullptr;
 	// 물리 시뮬레이션 흉내용
     UProjectileMovementComponent* ProjMoveComp = nullptr;
+	// 현재까지 잘려진 횟수
+	uint32 SliceCount = 0;
 };
 
 class ABoundsBoxActor : public AActor
