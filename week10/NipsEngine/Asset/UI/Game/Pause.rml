@@ -13,16 +13,17 @@
             </div>
 
             <div id="Pause.SettingsPanel" class="pause-panel settings-panel">
+                <div class="settings-backdrop"></div>
                 <button class="panel-close" data-action="BackToPauseMenu">
                     <img class="panel-close-icon" src="Asset/UIImage/13_Escape_r.PNG"/>
                 </button>
                 <div class="headline">Settings</div>
-                <div class="setting-row">
+                <div class="setting-row bgm-setting">
                     <div class="setting-label">BGM</div>
                     <input id="Pause.Settings.BGMSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="BGMVolumeChanged"/>
                     <div id="Pause.Settings.BGMValue" class="setting-value">100%</div>
                 </div>
-                <div class="setting-row">
+                <div class="setting-row sfx-setting">
                     <div class="setting-label">SFX</div>
                     <input id="Pause.Settings.SFXSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="SFXVolumeChanged"/>
                     <div id="Pause.Settings.SFXValue" class="setting-value">100%</div>

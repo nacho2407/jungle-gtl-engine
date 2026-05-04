@@ -21,6 +21,7 @@ cbuffer RmlUiFrameConstants : register(b0)
     float2 RenderScale;
     uint UseTexture;
     float Padding;
+    float4x4 Transform;
 };
 
 Texture2D RmlUiTexture : register(t0);
@@ -43,7 +44,9 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output;
-    float2 PixelPosition = (Input.Position + Translation) * RenderScale;
+    float4 LocalPosition = float4(Input.Position + Translation, 0.0f, 1.0f);
+    float4 TransformedPosition = mul(Transform, LocalPosition);
+    float2 PixelPosition = TransformedPosition.xy * RenderScale;
     float2 ClipPosition;
     ClipPosition.x = (PixelPosition.x / max(ViewportSize.x, 1.0f)) * 2.0f - 1.0f;
     ClipPosition.y = 1.0f - (PixelPosition.y / max(ViewportSize.y, 1.0f)) * 2.0f;
@@ -177,6 +180,7 @@ void FRmlUiRenderInterfaceD3D11::BeginFrame(
     ViewportMin = InViewportMin;
     ViewportSize = Rml::Vector2f(std::max(InViewportSize.x, 1.0f), std::max(InViewportSize.y, 1.0f));
     RenderScale = Rml::Vector2f(std::max(InRenderScale.x, 0.001f), std::max(InRenderScale.y, 0.001f));
+    CurrentTransform = Rml::Matrix4f::Identity();
     bScissorEnabled = false;
     CurrentScissorRegion = Rml::Rectanglei::MakeInvalid();
 
@@ -266,6 +270,7 @@ void FRmlUiRenderInterfaceD3D11::RenderGeometry(Rml::CompiledGeometryHandle Geom
     Constants.RenderScale[0] = RenderScale.x;
     Constants.RenderScale[1] = RenderScale.y;
     Constants.bUseTexture = bUseTexture ? 1u : 0u;
+    std::copy(CurrentTransform.data(), CurrentTransform.data() + 16, Constants.Transform);
     Context->UpdateSubresource(ConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
     Context->VSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(0, 1, ConstantBuffer.GetAddressOf());
@@ -369,6 +374,11 @@ Rml::TextureHandle FRmlUiRenderInterfaceD3D11::GenerateTexture(Rml::Span<const R
 void FRmlUiRenderInterfaceD3D11::ReleaseTexture(Rml::TextureHandle Texture)
 {
     GeneratedTextures.erase(Texture);
+}
+
+void FRmlUiRenderInterfaceD3D11::SetTransform(const Rml::Matrix4f* Transform)
+{
+    CurrentTransform = Transform ? *Transform : Rml::Matrix4f::Identity();
 }
 
 void FRmlUiRenderInterfaceD3D11::EnableScissorRegion(bool bEnable)

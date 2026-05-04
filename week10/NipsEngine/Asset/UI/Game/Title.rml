@@ -4,24 +4,24 @@
     </head>
     <body>
         <div class="screen-root title-screen">
-            <div class="title-mark1">
-                <div id="Title.Name.Green" class="title-logo1">CYBER</div>
+            <div id="Title.Cyber.Mark1" class="title-mark1">
+                <div id="Title.Cyber.Logo1" class="title-logo1">CYBER</div>
             </div>
-            <div class="title-mark2">
-                <div id="Title.Name.Red" class="title-logo2">CYBER</div>
+            <div id="Title.Cyber.Mark2" class="title-mark2">
+                <div id="Title.Cyber.Logo2" class="title-logo2">CYBER</div>
             </div>
-            <div class="title-mark3">
-                <div id="Title.Name" class="title-logo3">CYBER</div>
+            <div id="Title.Cyber.Mark3" class="title-mark3">
+                <div id="Title.Cyber.Logo3" class="title-logo3">CYBER</div>
             </div>
 
-            <div class="title-mark4">
-                <div id="Title.Name.Green" class="title-logo4">PSYCHO</div>
+            <div id="Title.Psycho.Mark1" class="title-mark4">
+                <div id="Title.Psycho.Logo1" class="title-logo4">PSYCHO</div>
             </div>
-            <div class="title-mark5">
-                <div id="Title.Name.Red" class="title-logo5">PSYCHO</div>
+            <div id="Title.Psycho.Mark2" class="title-mark5">
+                <div id="Title.Psycho.Logo2" class="title-logo5">PSYCHO</div>
             </div>
-            <div class="title-mark6">
-                <div id="Title.Name" class="title-logo6">PSYCHO</div>
+            <div id="Title.Psycho.Mark3" class="title-mark6">
+                <div id="Title.Psycho.Logo3" class="title-logo6">PSYCHO</div>
             </div>
 
             <div id="Title.MenuPanel" class="menu-panel">
@@ -48,44 +48,51 @@
 
             <div id="Title.ScoreBoardPanel" class="title-panel title-sub-panel">
                 <div class="panel-title">Score Board</div>
-                <div id="Title.BestScore" class="panel-best">Best Score: 0</div>
                 <div class="scroll-box scoreboard-scroll">
                     <div id="Title.ScoreRows" class="score-list">
-                        <div id="Title.ScoreRow.1" class="score-row">--  No Records  0</div>
-                        <div id="Title.ScoreRow.2" class="score-row"></div>
-                        <div id="Title.ScoreRow.3" class="score-row"></div>
-                        <div id="Title.ScoreRow.4" class="score-row"></div>
-                        <div id="Title.ScoreRow.5" class="score-row"></div>
-                        <div id="Title.ScoreRow.6" class="score-row"></div>
-                        <div id="Title.ScoreRow.7" class="score-row"></div>
-                        <div id="Title.ScoreRow.8" class="score-row"></div>
-                        <div id="Title.ScoreRow.9" class="score-row"></div>
-                        <div id="Title.ScoreRow.10" class="score-row"></div>
+                        <div class="score-empty">No Records</div>
                     </div>
-                    <img class="scroll-bg" src="Asset/UIImage/ScrollBackground.PNG"/>
-                    <img class="scroll-thumb" src="Asset/UIImage/ScrollButton.PNG"/>
                 </div>
             </div>
 
-            <div id="Title.SettingsPanel" class="title-panel title-sub-panel">
+            <div id="Title.SettingsPanel" class="title-panel title-sub-panel settings-panel">
+                <div class="settings-backdrop"></div>
                 <div class="panel-title">Settings</div>
-                <div class="setting-row">
+                <div class="setting-row bgm-setting">
                     <div class="setting-label">BGM</div>
                     <input id="Title.Settings.BGMSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="BGMVolumeChanged"/>
                     <div id="Title.Settings.BGMValue" class="setting-value">100%</div>
                 </div>
-                <div class="setting-row">
+                <div class="setting-row sfx-setting">
                     <div class="setting-label">SFX</div>
                     <input id="Title.Settings.SFXSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="100" data-action="SFXVolumeChanged"/>
                     <div id="Title.Settings.SFXValue" class="setting-value">100%</div>
                 </div>
             </div>
 
-            <div id="Title.CreditsPanel" class="title-panel title-sub-panel">
+
+            <div id="Title.CreditsPanel" class="title-panel title-sub-panel credits-panel">
+                <div class="credits-backdrop"></div>
                 <div class="panel-title">Credits</div>
-                <div class="panel-line">Management / UI</div>
-                <div class="panel-line strong">Project Week09 Team03</div>
-                <div class="panel-line muted">Game Jam Build</div>
+                <div class="credits-content">
+                    <div class="credit-row">
+                        <div class="credit-role">Player</div>
+                        <div class="credit-name">김지수 (Ji-Soo KIM)</div>
+                    </div>
+                    <div class="credit-row">
+                        <div class="credit-role">Enemy</div>
+                        <div class="credit-name">김호준 (Ho-Joon KIM)</div>
+                    </div>
+                    <div class="credit-row">
+                        <div class="credit-role">UI/Manager</div>
+                        <div class="credit-name">양현석 (Hyun-Seok YANG)</div>
+                    </div>
+                    <div class="credit-period">Development Period 20260430-20260504</div>
+                    <div class="credit-build">
+                        <div>KRAFTON JUNGLE GAMETECHLAB 3기 Week09</div>
+                        <div>Team03 GAME JAM</div>
+                    </div>
+                </div>
             </div>
 
             <button id="Title.ModalClose" class="panel-close" data-action="BackToTitleMenu">

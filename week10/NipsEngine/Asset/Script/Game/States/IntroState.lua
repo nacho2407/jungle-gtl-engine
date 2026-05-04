@@ -48,12 +48,13 @@ function IntroState.new()
         returnTo = "Title",
         pageIndex = 1,
         visibleChars = 0.0,
+        lastSoundCharCount = 0,
         pageCharCount = 0,
         pageFinished = false,
         finished = false,
         charsPerSecond = 34.0,
         pages = {
-            "안녕하세요. 저희는 개발조무사들입니다.",
+            "엄마가 칼 가지고 장난치지 말랬지!",
             "마감일이 하루 남았네요 샤갈",
             "네 이제 게임을 시작합니다 야호"
         }
@@ -66,10 +67,12 @@ function IntroState:Enter(context, payload)
     self.returnTo = payload.returnTo or "Title"
     self.pageIndex = 1
     self.visibleChars = 0.0
+    self.lastSoundCharCount = 0
     self.pageFinished = false
     self.finished = false
 
     context.managers.UI:Show("Intro")
+    context.managers.Sound:StopBGM(0.5)
     Engine.API.Input.SetInputModeGameAndUI()
     Engine.API.Debug.Log("Intro State")
 
@@ -98,6 +101,7 @@ function IntroState:Tick(context, dt)
         else
             self.visibleChars = self.pageCharCount
             self.pageFinished = true
+            self.lastSoundCharCount = self.pageCharCount
             self:RefreshPage(context)
         end
 
@@ -127,6 +131,7 @@ function IntroState:Advance(context)
 
     self.pageIndex = self.pageIndex + 1
     self.visibleChars = 0.0
+    self.lastSoundCharCount = 0
     self.pageFinished = false
     self:RefreshPage(context)
 end
@@ -150,6 +155,11 @@ function IntroState:RefreshPage(context)
     local visibleCount = math.floor(self.visibleChars)
     if visibleCount > self.pageCharCount then
         visibleCount = self.pageCharCount
+    end
+
+    if visibleCount > self.lastSoundCharCount then
+        context.managers.Sound:PlayIntroText()
+        self.lastSoundCharCount = visibleCount
     end
 
     context.managers.UI:SetIntroText(Utf8SubChars(text, visibleCount))

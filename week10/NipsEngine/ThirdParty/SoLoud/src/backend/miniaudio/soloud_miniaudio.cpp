@@ -61,7 +61,7 @@ namespace SoLoud
     result miniaudio_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer, unsigned int aChannels)
     {
         ma_device_config config = ma_device_config_init(ma_device_type_playback);
-        config.bufferSizeInFrames = 128;
+        config.bufferSizeInFrames = aBuffer > 0 ? aBuffer : 2048;
         config.playback.format    = ma_format_f32;
         config.playback.channels  = aChannels;
         config.sampleRate         = aSamplerate;
@@ -77,7 +77,11 @@ namespace SoLoud
 
         aSoloud->mBackendCleanupFunc = soloud_miniaudio_deinit;
 
-        ma_device_start(&gDevice);
+        if (ma_device_start(&gDevice) != MA_SUCCESS)
+        {
+            ma_device_uninit(&gDevice);
+            return UNKNOWN_ERROR;
+        }
         aSoloud->mBackendString = "MiniAudio";
         return 0;
     }
