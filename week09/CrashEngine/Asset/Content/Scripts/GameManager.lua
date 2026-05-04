@@ -269,6 +269,9 @@ function GameOver(finalHP, finalDocumentCount)
     local score = finalHP * finalDocumentCount
 
     Prefs.SetNumber("LastScore", score)
+    Prefs.SetNumber("LastHP", finalHP)
+    Prefs.SetNumber("LastDocumentCount", finalDocumentCount)
+    Prefs.SetNumber("LastTimer", Timer)
     Scoreboard.AddScore("Player", score, finalHP, finalDocumentCount)
 
     print("GAME OVER")
