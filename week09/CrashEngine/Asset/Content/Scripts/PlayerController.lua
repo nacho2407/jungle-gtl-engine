@@ -15,7 +15,7 @@ local bGameOverRequested = false
 
 -- Player의 생존/점수 관련 상태.
 local HP = 100.0
-local HP_reduction  = 10;
+local HP_reduction  = 0;
 
 -- Scene에 붙어있는 Component를 캐싱해두면 Tick마다 다시 찾지 않아도 된다.
 local LightComponet = nil
@@ -170,8 +170,10 @@ function OnOverlapBegin(other)
 
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
-        print("Game Finish!");
-        callGameOver()
+        if DocumentCount>0 then
+            print("Game Finish!");
+            callGameOver()
+        end
     end
 end
 
