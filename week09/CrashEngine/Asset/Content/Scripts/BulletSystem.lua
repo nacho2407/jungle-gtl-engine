@@ -4,13 +4,13 @@ local BulletSystem = _G.BulletSystem or {}
 
 -- 총알 모델/속도/수명/피격 반경 같은 튜닝 값.
 local BulletMeshPath = "Asset/Content/Models/Bullet/Bullet.obj"
-local BulletSpeed = 45.0
+local BulletSpeed = 90.0
 local BulletLifeTime = 3.0
 local BulletScale = Vector.new(0.15, 0.15, 0.15)
 local BulletColliderRadius = 0.6
 local PlayerHitRadius = 1.2
 local TurretHitRadius = 2.0
-local BulletMeshRollOffset = 180.0
+local BulletMeshRollOffset = 0.0
 local BulletMeshYawOffset = 180.0
 
 -- 현재 월드에 살아있는 총알들의 런타임 정보.

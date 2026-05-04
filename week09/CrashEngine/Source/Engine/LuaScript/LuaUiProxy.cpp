@@ -101,6 +101,18 @@ bool FLuaUiDocumentProxy::SetText(const FString& ElementId, const FString& Text)
     return Manager && Manager->SetElementText(Name, ElementId, Text);
 }
 
+bool FLuaUiDocumentProxy::SetTextColor(const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B)
+{
+    FRmlUiManager* Manager = GetManager();
+    return Manager && Manager->SetElementTextColor(Name, ElementId, Text, R, G, B);
+}
+
+bool FLuaUiDocumentProxy::SetTextStyle(const FString& ElementId, const FString& Text, int32 R, int32 G, int32 B, int32 FontSize, bool bBold, int32 CenterWidth)
+{
+    FRmlUiManager* Manager = GetManager();
+    return Manager && Manager->SetElementTextStyle(Name, ElementId, Text, R, G, B, FontSize, bBold, CenterWidth);
+}
+
 bool FLuaUiDocumentProxy::SetClass(const FString& ElementId, const FString& ClassName, bool bEnabled)
 {
     FRmlUiManager* Manager = GetManager();
@@ -133,6 +145,8 @@ void LuaUiProxy::Bind(sol::state& Lua)
         "SetZOrder", &FLuaUiDocumentProxy::SetZOrder,
         "SetLayout", &FLuaUiDocumentProxy::SetLayout,
         "SetText", &FLuaUiDocumentProxy::SetText,
+        "SetTextColor", &FLuaUiDocumentProxy::SetTextColor,
+        "SetTextStyle", &FLuaUiDocumentProxy::SetTextStyle,
         "SetClass", &FLuaUiDocumentProxy::SetClass,
         "SetProperty", &FLuaUiDocumentProxy::SetProperty,
         "SetTexture", &FLuaUiDocumentProxy::SetTexture

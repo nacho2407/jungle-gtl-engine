@@ -230,6 +230,7 @@ struct FLuaScoreEntry
     double Score = 0.0;
     double HP = 0.0;
     int32 DocumentCount = 0;
+    double Timer = 0.0;
     FString Timestamp;
 };
 
@@ -257,6 +258,10 @@ FLuaScoreEntry ReadScoreEntry(const json::JSON& Entry)
     {
         Result.DocumentCount = static_cast<int32>(JsonNumberOrDefault(Entry.at("documentCount"), 0.0));
     }
+    if (Entry.hasKey("timer"))
+    {
+        Result.Timer = JsonNumberOrDefault(Entry.at("timer"), 0.0);
+    }
     if (Entry.hasKey("timestamp"))
     {
         Result.Timestamp = JsonStringOrDefault(Entry.at("timestamp"), "");
@@ -272,6 +277,7 @@ json::JSON WriteScoreEntry(const FLuaScoreEntry& Entry)
     Result["score"] = Entry.Score;
     Result["hp"] = Entry.HP;
     Result["documentCount"] = Entry.DocumentCount;
+    Result["timer"] = Entry.Timer;
     Result["timestamp"] = Entry.Timestamp;
     return Result;
 }
@@ -309,7 +315,7 @@ bool SaveScoreEntries(const TArray<FLuaScoreEntry>& Entries)
     return SaveJsonFile(GetScoreboardFilePath(), Root);
 }
 
-bool ScoreboardAddScore(const FString& Name, double Score, double HP, int32 DocumentCount)
+bool ScoreboardAddScore(const FString& Name, double Score, double HP, int32 DocumentCount, sol::optional<double> Timer)
 {
     json::JSON Root = LoadScoreboard();
     TArray<FLuaScoreEntry> Entries = ReadScoreEntries(Root);
@@ -319,6 +325,7 @@ bool ScoreboardAddScore(const FString& Name, double Score, double HP, int32 Docu
     NewEntry.Score = Score;
     NewEntry.HP = HP;
     NewEntry.DocumentCount = DocumentCount;
+    NewEntry.Timer = Timer.value_or(0.0);
     NewEntry.Timestamp = GetTimestamp();
 
     Entries.push_back(NewEntry);
@@ -350,6 +357,7 @@ sol::table ScoreboardGetTopScores(sol::this_state State, int32 Limit)
         Row["score"] = Entry.Score;
         Row["hp"] = Entry.HP;
         Row["documentCount"] = Entry.DocumentCount;
+        Row["timer"] = Entry.Timer;
         Row["timestamp"] = Entry.Timestamp;
 
         Result[Index + 1] = Row;

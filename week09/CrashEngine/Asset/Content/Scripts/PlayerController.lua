@@ -6,11 +6,12 @@ local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
 BulletSystem.BindWorld(World)
 
 -- local 변수는 이 파일 안에서만 쓰이는 상태다.
-local moveSpeed = 10.0
+local moveSpeed = 20.0
 local pressedKeys = {}
 local movementState = nil
-local PlayerShotCooldown = 0.25
+local PlayerShotCooldown = 1
 local PlayerShotTimer = 0.0
+local bGameOverRequested = false
 
 -- Player의 생존/점수 관련 상태.
 local HP = 100.0
@@ -70,6 +71,12 @@ end
 -- GameManager Actor의 LuaScriptComponent를 직접 호출하고,
 -- 실패하면 _G.GameManager 전역 함수로 fallback한다.
 local function callGameOver()
+    if bGameOverRequested then
+        return
+    end
+
+    bGameOverRequested = true
+
     local gameManager = World.FindActorByTag("GameManager")
     if gameManager:IsValid() then
         GameManagerLuaComponent = gameManager:GetComponent("LuaScriptComponent", 0)
@@ -171,12 +178,12 @@ end
 function BeginPlay()
     -- BeginPlay는 Actor가 월드에서 플레이를 시작할 때 한 번 호출된다.
     pressedKeys = {}
+    bGameOverRequested = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
         forward = CameraConfig.GetMoveForward(),
         right = CameraConfig.GetMoveRight(),
         meshYawOffset = CameraConfig.GetMeshYawOffset(),
-        meshBaseRotation = CameraConfig.GetPlayerMeshBaseRotation(),
         moveSpeed = moveSpeed,
         velocityInterpSpeed = 12.0,
         turnInterpSpeed = 14.0,
@@ -213,6 +220,13 @@ function Tick(dt)
         HP = HP - dt * HP_reduction
     else
         HP = 0
+    end
+
+    if HP <= 0.0 then
+        HP = 0.0
+        syncPlayerState()
+        callGameOver()
+        return
     end
 
     syncPlayerState()
