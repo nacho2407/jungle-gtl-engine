@@ -34,6 +34,20 @@ private:
 	std::chrono::steady_clock::time_point StartTime = std::chrono::steady_clock::now();
 };
 
+// 한글 경로 호환 — RmlUi 기본 FileInterface 는 fopen(UTF-8 bytes) 로 동작하는데, Windows
+// fopen 은 인자를 ANSI 코드페이지(예: CP949) 로 해석해 한글 경로의 UTF-8 바이트를 깨뜨린다.
+// 이 인터페이스는 항상 wide(_wfopen) 로 열어 한글 경로 디렉토리에서도 RML / 폰트 / CSS 가
+// 정상 로드되게 한다.
+class FRmlFileInterfaceWide final : public Rml::FileInterface
+{
+public:
+	Rml::FileHandle Open(const Rml::String& Path) override;
+	void Close(Rml::FileHandle FileHandle) override;
+	size_t Read(void* Buffer, size_t Size, Rml::FileHandle FileHandle) override;
+	bool Seek(Rml::FileHandle FileHandle, long Offset, int Origin) override;
+	size_t Tell(Rml::FileHandle FileHandle) override;
+};
+
 class FRmlRenderInterfaceD3D11 final : public Rml::RenderInterface
 {
 public:
@@ -108,6 +122,7 @@ private:
 
 	ID3D11Device* CachedDevice = nullptr;
 	FRmlSystemInterface* SystemInterface = nullptr;
+	FRmlFileInterfaceWide* FileInterface = nullptr;
 	FRmlRenderInterfaceD3D11* RenderInterface = nullptr;
 	Rml::Context* RmlContext = nullptr;
 	bool bRmlInitialized = false;

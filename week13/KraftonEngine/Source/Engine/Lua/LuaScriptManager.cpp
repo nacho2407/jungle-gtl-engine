@@ -24,6 +24,7 @@
 #include "UI/UserWidget.h"
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <windows.h>  // PostQuitMessage
 
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
@@ -85,6 +86,36 @@ void FLuaScriptManager::Initialize()
 	Lua = std::make_unique<sol::state>();
 	Lua->open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::string, sol::lib::table, sol::lib::coroutine);
 	(*Lua)["package"]["path"] = FPaths::ToUtf8(FPaths::Combine(FPaths::ScriptDir(), L"?.lua").c_str());
+
+	// 한글 경로 호환을 위해 require 의 파일 검색을 wide-aware 로 교체.
+	// package.searchers[2] 는 기본 Lua loader (package.path 기반 fopen) — 이걸 ifstream(wide)
+	// + load_buffer 로 갈음한다. searchers[1] (preload), [3] (C loader), [4] (C root) 는 유지.
+	(*Lua)["package"]["searchers"][2] = [](sol::this_state ts, const std::string& ModName) -> sol::object
+	{
+		sol::state_view L(ts);
+		const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ModName + ".lua"));
+		std::error_code EC;
+		if (!std::filesystem::exists(WidePath, EC))
+		{
+			return sol::make_object(L, std::string("\n\tno file '") + FPaths::ToUtf8(WidePath) + "'");
+		}
+
+		FString Content;
+		if (!ReadScriptFileContent(ModName + ".lua", Content))
+		{
+			return sol::make_object(L, std::string("\n\tcannot read '") + FPaths::ToUtf8(WidePath) + "'");
+		}
+
+		const FString ChunkName = FPaths::ToUtf8(WidePath);
+		sol::load_result LR = L.load(Content, ChunkName);
+		if (!LR.valid())
+		{
+			sol::error Err = LR;
+			return sol::make_object(L, std::string("\n\t") + Err.what());
+		}
+		return LR.get<sol::object>();
+	};
+
 	RegisterBindings(*Lua);
 }
 
@@ -103,6 +134,20 @@ FString FLuaScriptManager::ResolveScriptPath(const FString& ScriptFile)
 {
 	std::wstring FullPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
 	return FPaths::ToUtf8(FullPath);
+}
+
+bool FLuaScriptManager::ReadScriptFileContent(const FString& ScriptFile, FString& OutContent)
+{
+	const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
+	std::ifstream File(WidePath.c_str(), std::ios::binary);
+	if (!File.is_open())
+	{
+		return false;
+	}
+	std::ostringstream SS;
+	SS << File.rdbuf();
+	OutContent = SS.str();
+	return true;
 }
 
 bool FLuaScriptManager::OpenOrCreateScript(const FString& ScriptFile)
@@ -173,8 +218,21 @@ FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
 
 void FLuaScriptManager::RegisterLuaHelpers(sol::state& Lua)
 {
-	FString CoroutineManagerPath = ResolveScriptPath("CoroutineManager.lua");
-	Lua.safe_script_file(CoroutineManagerPath, sol::script_pass_on_error);
+	// 한글 경로 호환 — safe_script_file 은 내부적으로 fopen(UTF-8) 을 쓰므로 ANSI 해석에서
+	// 깨진다. wide ifstream 으로 직접 읽어 safe_script(string) 으로 실행.
+	FString Content;
+	if (!ReadScriptFileContent("CoroutineManager.lua", Content))
+	{
+		UE_LOG("[Lua] Failed to load CoroutineManager.lua");
+		return;
+	}
+	const FString ChunkName = ResolveScriptPath("CoroutineManager.lua");
+	sol::protected_function_result Result = Lua.safe_script(Content, sol::script_pass_on_error, ChunkName);
+	if (!Result.valid())
+	{
+		sol::error Err = Result;
+		UE_LOG("[Lua] CoroutineManager.lua error: %s", Err.what());
+	}
 }
 
 void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)

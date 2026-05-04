@@ -105,6 +105,46 @@ bool FRmlSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& Mes
 	return Type != Rml::Log::LT_ASSERT;
 }
 
+// FRmlFileInterfaceWide — 모든 RmlUi 파일 열기를 wide API 로 우회. 한글 경로의 디렉토리
+// 에서 실행될 때 기본 fopen 경로가 ANSI 로 해석되며 깨지는 것을 방지.
+Rml::FileHandle FRmlFileInterfaceWide::Open(const Rml::String& Path)
+{
+	const std::wstring WidePath = FPaths::ToWide(Path);
+	FILE* Fp = nullptr;
+	if (_wfopen_s(&Fp, WidePath.c_str(), L"rb") != 0 || !Fp)
+	{
+		return Rml::FileHandle{};
+	}
+	return reinterpret_cast<Rml::FileHandle>(Fp);
+}
+
+void FRmlFileInterfaceWide::Close(Rml::FileHandle FileHandle)
+{
+	if (FileHandle)
+	{
+		fclose(reinterpret_cast<FILE*>(FileHandle));
+	}
+}
+
+size_t FRmlFileInterfaceWide::Read(void* Buffer, size_t Size, Rml::FileHandle FileHandle)
+{
+	if (!FileHandle) return 0;
+	return fread(Buffer, 1, Size, reinterpret_cast<FILE*>(FileHandle));
+}
+
+bool FRmlFileInterfaceWide::Seek(Rml::FileHandle FileHandle, long Offset, int Origin)
+{
+	if (!FileHandle) return false;
+	return fseek(reinterpret_cast<FILE*>(FileHandle), Offset, Origin) == 0;
+}
+
+size_t FRmlFileInterfaceWide::Tell(Rml::FileHandle FileHandle)
+{
+	if (!FileHandle) return 0;
+	const long Pos = ftell(reinterpret_cast<FILE*>(FileHandle));
+	return Pos < 0 ? 0 : static_cast<size_t>(Pos);
+}
+
 FRmlRenderInterfaceD3D11::FRmlRenderInterfaceD3D11(ID3D11Device* InDevice)
 	: Device(InDevice)
 	, CurrentTransform(Rml::Matrix4f::Identity())
@@ -506,9 +546,12 @@ void UUIManager::Initialize(ID3D11Device* InDevice)
 	}
 
 	SystemInterface = new FRmlSystemInterface();
+	FileInterface = new FRmlFileInterfaceWide();
 	RenderInterface = new FRmlRenderInterfaceD3D11(CachedDevice);
 
 	Rml::SetSystemInterface(SystemInterface);
+	// Initialise 전에 등록해야 RmlUi 가 default file 인터페이스 대신 우리 wide 버전을 쓴다.
+	Rml::SetFileInterface(FileInterface);
 	Rml::SetRenderInterface(RenderInterface);
 	bRmlInitialized = Rml::Initialise();
 	if (!bRmlInitialized)
@@ -548,6 +591,8 @@ void UUIManager::Shutdown()
 
 	delete RenderInterface;
 	RenderInterface = nullptr;
+	delete FileInterface;
+	FileInterface = nullptr;
 	delete SystemInterface;
 	SystemInterface = nullptr;
 	CachedDevice = nullptr;

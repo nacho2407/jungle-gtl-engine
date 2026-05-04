@@ -13,6 +13,10 @@ public:
 	static FString ResolveScriptPath(const FString& ScriptFile);
 	static bool OpenOrCreateScript(const FString& ScriptFile);
 
+	// 한글 경로 호환 — wide ifstream 으로 스크립트 파일 내용을 읽어 반환. fopen(UTF-8) 은
+	// Windows 에서 ANSI 코드페이지로 해석돼 한글 경로에서 실패하므로 항상 wide 로 우회.
+	static bool ReadScriptFileContent(const FString& ScriptFile, FString& OutContent);
+
 	static sol::state& GetState();
 	static void RegisterBindings(sol::state& Lua);
 
