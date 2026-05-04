@@ -23,6 +23,11 @@ public:
 	static void SetOnEscapePressed(sol::protected_function Callback);
 	static void FireOnEscapePressed();
 
+	// 씬 전환 시 호출. require 캐시된 모듈 (ObjRegistry / CoroutineManager) 이 보유한 stale
+	// actor 포인터와 dangling 코루틴을 비운다. 안 하면 새 월드의 첫 Tick 에서 옛 코루틴이
+	// Wait(30) 만료 후 재개되며 freed AActor* 를 deref → 크래시.
+	static void FireWorldReset();
+
 private:
 	static void RegisterLuaHelpers(sol::state& Lua);
 	static void RegisterCoreBindings(sol::state& Lua);
