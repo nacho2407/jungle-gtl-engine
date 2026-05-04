@@ -19,6 +19,30 @@
                         <div class="control-desc">Dash</div>
                         <div class="control-key">Shift</div>
                     </div>
+                    <div class="control-row">
+                        <div class="control-desc">Slam</div>
+                        <div class="control-key">R</div>
+                    </div>
+                </div>
+
+                <div class="rules-title">Rules</div>
+                <div class="rules-list">
+                    <div class="rule-row">
+                        <div class="rule-desc">Goal</div>
+                        <div class="rule-text">제한 시간동안 살아남으세요.</div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-desc">Score</div>
+                        <div class="rule-text">적을 썰 때마다 점수가 오릅니다.</div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-desc">Combo</div>
+                        <div class="rule-text">콤보가 초기화되기 전에 적을 처치하세요.</div>
+                    </div>
+                    <div class="rule-row">
+                        <div class="rule-desc">Items</div>
+                        <div class="rule-text">회복 아이템과 시간 감속 아이템을 잘 사용하세요.</div>
+                    </div>
                 </div>
             </div>
 

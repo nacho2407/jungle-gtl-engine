@@ -28,9 +28,9 @@ body
 {
     position: absolute;
     left: 466px;
-    top: 250px;
+    top: 190px;
     width: 860px;
-    min-height: 430px;
+    min-height: 610px;
     padding: 52px 62px;
     decorator: image("Asset/UIImage/ScoreBoardPanel.PNG" fill);
     text-align: center;
@@ -55,7 +55,7 @@ body
     position: absolute;
     left: 92px;
     top: 150px;
-    width: 640px;
+    width: 700px;
     margin-left: 0px;
     margin-top: 0px;
 }
@@ -63,18 +63,18 @@ body
 .control-row
 {
     display: block;
-    width: 640px;
-    height: 58px;
-    margin-bottom: 24px;
-    font-size: 24px;
+    width: 700px;
+    height: 42px;
+    margin-bottom: 8px;
+    font-size: 21px;
 }
 
 .control-key
 {
     display: inline-block;
-    width: 280px;
-    height: 42px;
-    padding-top: 8px;
+    width: 500px;
+    height: 34px;
+    padding-top: 4px;
     color: rgb(255, 224, 154);
     font-weight: bold;
     text-align: left;
@@ -84,14 +84,70 @@ body
 .control-desc
 {
     display: inline-block;
-    width: 180px;
-    height: 42px;
-    padding-top: 8px;
+    width: 150px;
+    height: 34px;
+    padding-top: 4px;
     color: rgb(238, 242, 247);
     font-weight: bold;
     text-align: left;
     vertical-align: top;
-    margin-right: 48px;
+    margin-right: 24px;
+}
+
+.rules-title
+{
+    position: absolute;
+    left: 92px;
+    top: 378px;
+    width: 320px;
+    height: 44px;
+    font-size: 34px;
+    font-weight: bold;
+    color: rgb(255, 224, 154);
+    text-align: left;
+}
+
+.rules-list
+{
+    position: absolute;
+    left: 92px;
+    top: 438px;
+    width: 700px;
+    margin-left: 0px;
+    margin-top: 0px;
+}
+
+.rule-row
+{
+    display: block;
+    width: 700px;
+    height: 42px;
+    margin-bottom: 8px;
+    font-size: 21px;
+}
+
+.rule-desc
+{
+    display: inline-block;
+    width: 150px;
+    height: 34px;
+    padding-top: 4px;
+    margin-right: 24px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    text-align: left;
+    vertical-align: top;
+}
+
+.rule-text
+{
+    display: inline-block;
+    width: 500px;
+    height: 34px;
+    padding-top: 4px;
+    color: rgb(255, 224, 154);
+    text-align: left;
+    vertical-align: top;
 }
 
 .tips-block
