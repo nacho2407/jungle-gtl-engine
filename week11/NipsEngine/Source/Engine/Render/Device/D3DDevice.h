@@ -21,7 +21,9 @@ struct FRenderTargetSet
     ID3D11RenderTargetView*     SceneLightRTV = nullptr;
     ID3D11ShaderResourceView*     SceneLightSRV = nullptr;
     ID3D11RenderTargetView*       SceneFogRTV = nullptr;
-    ID3D11ShaderResourceView*     SceneFogSRV = nullptr;
+    ID3D11ShaderResourceView* SceneFogSRV = nullptr;
+    ID3D11RenderTargetView* SceneSandervistanRTV = nullptr;
+    ID3D11ShaderResourceView* SceneSandervistanSRV = nullptr;
     ID3D11RenderTargetView*       SceneWorldPosRTV = nullptr;
     ID3D11ShaderResourceView*     SceneWorldPosSRV = nullptr;
     ID3D11RenderTargetView*       SceneFXAARTV = nullptr;

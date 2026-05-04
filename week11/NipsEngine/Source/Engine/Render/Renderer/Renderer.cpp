@@ -35,6 +35,8 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/SandervistanPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
@@ -85,6 +87,7 @@ void FRenderer::CreateResources()
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
+    Resources.SandevistanCB.Create(Device.GetDevice(), sizeof(FSandevistanConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 	Resources.DecalStructuredBuffer.Create(Device.GetDevice(), sizeof(FDecalInfo), 256);
@@ -141,6 +144,7 @@ void FRenderer::Release()
 	Resources.DecalStructuredBuffer.Release();
 
     Resources.FogPassConstantBuffer.Release();
+    Resources.SandevistanCB.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
     Resources.VSMConstantBuffer.Release();
@@ -244,13 +248,14 @@ FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)
 
     if (!bLoggedGameFrameTargets)
     {
-        UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d",
+        UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d, Sandervistan=%d",
                Width, Height,
                Targets.SceneColorRTV != nullptr,
                Targets.SceneLightRTV != nullptr,
                Targets.SceneFogRTV != nullptr,
                Targets.SceneFXAARTV != nullptr,
-               Targets.SceneDepthSRV != nullptr);
+               Targets.SceneDepthSRV != nullptr,
+			   Targets.SceneSandervistanSRV != nullptr);
         bLoggedGameFrameTargets = true;
     }
 
@@ -494,6 +499,11 @@ void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Wi
     Res.FogTex = RT.Texture;
     Res.FogRTV = RT.RTV;
     Res.FogSRV = RT.SRV;
+
+	RT = FRenderTargetFactory::CreateSceneSandervistan(Device.GetDevice(), Width, Height);
+    Res.SandervistanTex = RT.Texture;
+    Res.SandervistanRTV = RT.RTV;
+    Res.SandervistanSRV = RT.SRV;
 
     RT = FRenderTargetFactory::CreateSceneWorldPos(Device.GetDevice(), Width, Height);
     Res.WorldPosTex = RT.Texture;
@@ -785,6 +795,11 @@ void FRenderer::ApplyPassRenderState(ERenderPass Pass, ID3D11DeviceContext* Cont
             RTVs[0] = CurrentRenderTargets.SceneFogRTV;
             SceneFinalRTV = CurrentRenderTargets.SceneFogRTV;
             SceneFinalSRV = CurrentRenderTargets.SceneFogSRV;
+            break;
+        case ERenderPass::Sandervistan:
+            RTVs[0] = CurrentRenderTargets.SceneSandervistanRTV;
+            SceneFinalRTV = CurrentRenderTargets.SceneSandervistanRTV;
+            SceneFinalSRV = CurrentRenderTargets.SceneSandervistanSRV;
             break;
         case ERenderPass::SelectionMask:
             RTVs[0] = CurrentRenderTargets.SelectionMaskRTV;

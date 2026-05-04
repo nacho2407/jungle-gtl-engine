@@ -49,6 +49,7 @@ enum class ERenderPass : uint32
 	Decal,
 	Light,
     Fog,
+	Sandervistan,
     FXAA,
 	Font, // TextRenderComponent → FontBatcher 경유
 	SubUV, // SubUVComponent     → SubUVBatcher 경유

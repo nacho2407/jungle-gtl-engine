@@ -294,6 +294,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
     <ClCompile Include="ThirdParty\SoLoud\src\core\soloud.cpp" />
     <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_audiosource.cpp" />
     <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_bus.cpp" />
@@ -644,6 +645,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
@@ -967,6 +969,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewer|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Multipass\SandervistanPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\OcclusionCull.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

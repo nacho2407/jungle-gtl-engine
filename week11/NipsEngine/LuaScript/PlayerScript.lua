@@ -214,12 +214,14 @@ function Script:Tick(dt)
     -- Release 는 Tick 이 꺼져도 받아야 함
     if (Engine.API.Input.IsMouseReleased("RMB")) then
         Engine.API.World.SetTimeScale(1)
+        Engine.API.World.DeactivateSandervistan()
     end
 
     if not self.bCanTick then return end
 
     if (Engine.API.Input.IsMousePressed("RMB")) then
         Engine.API.World.SetTimeScale(0.1)
+        Engine.API.World.ActivateSandervistan()
     end
 
     local WorldTimeScale = Engine.API.World.GetTimeScale()
