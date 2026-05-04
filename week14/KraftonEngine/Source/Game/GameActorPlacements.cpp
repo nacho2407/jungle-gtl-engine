@@ -7,6 +7,7 @@
 
 #include "Game/Pawn/CarPawn.h"
 #include "Game/Pawn/PoliceCar.h"
+#include "Game/Pawn/WalkingPersonActor.h"
 
 void RegisterGameActorPlacements()
 {
@@ -30,6 +31,18 @@ void RegisterGameActorPlacements()
 			APoliceCar* Actor = World->SpawnActor<APoliceCar>();
 			if (!Actor) return nullptr;
 			Actor->InitDefaultPoliceComponents();
+			Actor->SetActorLocation(Location);
+			return Actor;
+		});
+
+	FActorPlacementRegistry::Get().RegisterEntry(
+		"Walking Person",
+		[](UWorld* World, const FVector& Location) -> AActor*
+		{
+			if (!World) return nullptr;
+			AWalkingPersonActor* Actor = World->SpawnActor<AWalkingPersonActor>();
+			if (!Actor) return nullptr;
+			Actor->InitDefaultComponents();
 			Actor->SetActorLocation(Location);
 			return Actor;
 		});

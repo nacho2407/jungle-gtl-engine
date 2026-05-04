@@ -17,6 +17,25 @@ local function GetFlatForward()
     return forward:Normalized()
 end
 
+-- 기존(stale) 회전 coroutine 이 Wait(30) 도중에 reset 을 만나면, reset 후 0~30초 사이에
+-- 깨어나서 복원된 rotation 에 또 +180° 를 얹어버린다. generation 카운터로 stale coroutine
+-- 이 자기 차례에서 자체 종료되도록 만든다.
+local turnGen = 0
+
+local function StartTurnCoroutine()
+    turnGen = turnGen + 1
+    local myGen = turnGen
+    StartCoroutine(function()
+        while isMoving and turnGen == myGen do
+            Wait(TURN_INTERVAL)
+            if isMoving and turnGen == myGen then
+                local rotation = obj.Rotation
+                obj.Rotation = Vector.new(rotation.X, rotation.Y, rotation.Z + 180.0)
+            end
+        end
+    end)
+end
+
 function BeginPlay()
     root = obj:GetRootPrimitiveComponent()
     if root == nil then
@@ -27,15 +46,15 @@ function BeginPlay()
         root:SetSimulatePhysics(true)
     end
 
-    StartCoroutine(function()
-        while isMoving do
-            Wait(TURN_INTERVAL)
-            if isMoving then
-                local rotation = obj.Rotation
-                obj.Rotation = Vector.new(rotation.X, rotation.Y, rotation.Z + 180.0)
-            end
-        end
-    end)
+    StartTurnCoroutine()
+end
+
+-- C++ AWalkingPersonActor::ResetToInitialTransform 가 phase 전환 시 호출.
+-- 정지/걷는 중 어느 쪽이든 회전 cycle 을 0 부터 다시 시작 (기존 coroutine 은 generation
+-- mismatch 로 다음 Wait 종료 시 알아서 빠짐).
+function ResetWalkingState()
+    isMoving = true
+    StartTurnCoroutine()
 end
 
 function EndPlay()
