@@ -222,7 +222,7 @@ function Script:Tick(dt)
 
         local pitch_x = degree * math.sin(yaw_rad)
         local pitch_y = degree * math.cos(yaw_rad)
-        local scale_long = 10
+        local scale_long = 15
         local scale_short = 5
         local fx = math.abs(math.sin(yaw_rad))
         local fz = math.abs(math.cos(yaw_rad))
