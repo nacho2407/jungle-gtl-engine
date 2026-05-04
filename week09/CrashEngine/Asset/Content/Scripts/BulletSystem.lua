@@ -10,6 +10,7 @@ local BulletScale = Vector.new(0.15, 0.15, 0.15)
 local BulletColliderRadius = 0.6
 local PlayerHitRadius = 1.2
 local TurretHitRadius = 2.0
+local MonsterHitRadius = 2.0
 local BulletMeshRollOffset = 0.0
 local BulletMeshYawOffset = 180.0
 
@@ -155,23 +156,31 @@ end
 
 -- 플레이어 총알이 맞출 수 있는 Turret을 찾는다.
 -- 현재는 모든 Turret 태그 Actor와 거리 비교하는 방식이다.
-local function hitTurret(bulletInfo)
+local function hitActorByTag(bulletInfo, tag, hitRadius)
     local world = getWorld()
     if world.FindActorsByTag == nil then
         return nil
     end
 
-    local turrets = world.FindActorsByTag("Turret")
-    for i, turret in ipairs(turrets) do
-        if turret:IsValid() then
-            local toTurret = turret.Location - bulletInfo.Actor.Location
-            if toTurret:LengthSquared() <= TurretHitRadius * TurretHitRadius then
-                return turret
+    local actors = world.FindActorsByTag(tag)
+    for i, actor in ipairs(actors) do
+        if actor:IsValid() then
+            local toActor = actor.Location - bulletInfo.Actor.Location
+            if toActor:LengthSquared() <= hitRadius * hitRadius then
+                return actor
             end
         end
     end
 
     return nil
+end
+
+local function hitTurret(bulletInfo)
+    return hitActorByTag(bulletInfo, "Turret", TurretHitRadius)
+end
+
+local function hitMonster(bulletInfo)
+    return hitActorByTag(bulletInfo, "Monster", MonsterHitRadius)
 end
 
 -- 매 프레임 총알을 이동시키고, 벽/플레이어/터렛 피격을 처리한다.
@@ -208,6 +217,12 @@ function BulletSystem.Tick(dt)
                     if turret ~= nil and turret:IsValid() then
                         applyDamage(turret, 1, bullet)
                         destroyBullet(i)
+                    else
+                        local monster = hitMonster(bulletInfo)
+                        if monster ~= nil and monster:IsValid() then
+                            applyDamage(monster, 1, bullet)
+                            destroyBullet(i)
+                        end
                     end
                 end
             end

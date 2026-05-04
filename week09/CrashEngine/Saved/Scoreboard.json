@@ -1,11 +1,25 @@
 {
   "scores" : [{
       "documentCount" : 1,
+      "hp" : 120.000000,
+      "name" : "Player",
+      "score" : 120.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:16:28"
+    }, {
+      "documentCount" : 1,
       "hp" : 100.000000,
       "name" : "Player",
       "score" : 100.000000,
       "timer" : 0.000000,
       "timestamp" : "2026-05-04 21:00:05"
+    }, {
+      "documentCount" : 1,
+      "hp" : 100.000000,
+      "name" : "Player",
+      "score" : 100.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:19:43"
     }, {
       "documentCount" : 1,
       "hp" : 34.000000,
