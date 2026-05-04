@@ -20,8 +20,8 @@ function LoadingState:Enter(context, payload)
     context.managers.UI:SetLoadingReady(false)
     context.managers.UI:SetLoadingCycleRotation(0.0)
     context.managers.Sound:StopBGM(0.5)
-    Engine.API.Input.SetInputModeGameAndUI()
-    Engine.API.World.SetTimeScale(1.0)
+    Engine.API.Input.SetInputModeUIOnly()
+    Engine.API.World.SetTimeScale(0.0)
 
     if payload and payload.reopenGameScene then
         self.waitingForSceneOpen = context.root:OpenGameScene()
@@ -49,7 +49,7 @@ function LoadingState:Tick(context, dt)
         context.managers.UI:SetLoadingReady(true)
     end
 
-    if self.ready and Engine.API.Input.IsKeyPressed("Space") then
+    if self.ready and Engine.API.Input.IsUIKeyPressed("Space") then
         context.stateMachine:Change("Playing")
     end
 end

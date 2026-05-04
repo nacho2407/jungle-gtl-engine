@@ -70,6 +70,7 @@ class InputSystem : public TSingleton<InputSystem>
     void AddRawMouseDelta(int DeltaX, int DeltaY);
     void AddTextInput(uint32_t Codepoint);
     std::vector<uint32_t> ConsumeTextInput();
+    std::vector<uint32_t> ConsumeScriptTextInput();
 
     // Keyboard
     bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
@@ -189,6 +190,7 @@ class InputSystem : public TSingleton<InputSystem>
     int ScrollDelta = 0;
     int PrevScrollDelta = 0;
     std::vector<uint32_t> TextInputQueue;
+    std::vector<uint32_t> ScriptTextInputQueue;
 
     // Window handle for focus check
     HWND OwnerHWnd = nullptr;

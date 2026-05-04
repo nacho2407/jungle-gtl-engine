@@ -10,10 +10,9 @@
                     <div id="Result.Score" class="result-score">Score: 0</div>
 
                     <div id="Result.EntryForm" class="entry-form">
-                        <div class="input-label">Player Name</div>
+                        <div class="input-label">TYPE PLAYER NAME</div>
                         <div class="input-wrap">
-                            <img class="input-bg" src="Asset/UIImage/InputPanel.PNG"/>
-                            <input id="Result.PlayerNameInput" class="name-input" type="text" value="PLAYER"/>
+                            <input id="Result.PlayerNameInput" class="name-input" type="text" maxlength="12" placeholder="ENTER NAME" value=""/>
                         </div>
                         <button id="Result.Submit" class="default-button submit-button" data-action="SubmitScore">Submit</button>
                     </div>
@@ -38,7 +37,7 @@
                 </div>
             </div>
 
-            <button id="Result.Renew" class="renew-button" data-action="RenewResultName">
+            <button id="Result.BackToTitle" class="renew-button" data-action="BackToTitle">
                 <img class="renew-icon" src="Asset/UIImage/53_Renew.PNG"/>
             </button>
         </div>

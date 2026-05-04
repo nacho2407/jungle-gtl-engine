@@ -180,7 +180,24 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(IsPlaying, IsPlaying);
     LUA_METHOD(SetSound, SetSound);
     LUA_METHOD(GetSound, GetSound);
+    LUA_METHOD(SetPlayOnBeginPlay, SetPlayOnBeginPlay);
+    LUA_METHOD(IsPlayOnBeginPlay, IsPlayOnBeginPlay);
+    LUA_METHOD(SetLoop, SetLoop);
+    LUA_METHOD(IsLooping, IsLooping);
+    LUA_METHOD(SetSpatialized, SetSpatialized);
+    LUA_METHOD(IsSpatialized, IsSpatialized);
+    LUA_METHOD(SetVolumeScale, SetVolumeScale);
+    LUA_METHOD(GetVolumeScale, GetVolumeScale);
+    LUA_METHOD(Set3DMinMaxDistance, Set3DMinMaxDistance);
+    LUA_METHOD(Get3DMinDistance, Get3DMinDistance);
+    LUA_METHOD(Get3DMaxDistance, Get3DMaxDistance);
+    LUA_METHOD(Set3DAttenuation, Set3DAttenuation);
+    LUA_METHOD(Get3DAttenuationModel, Get3DAttenuationModel);
+    LUA_METHOD(Get3DRolloffFactor, Get3DRolloffFactor);
     LUA_RW_PROPERTY(Sound, GetSound, SetSound);
+    LUA_RW_PROPERTY(Looping, IsLooping, SetLoop);
+    LUA_RW_PROPERTY(Spatialized, IsSpatialized, SetSpatialized);
+    LUA_RW_PROPERTY(VolumeScale, GetVolumeScale, SetVolumeScale);
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UScriptComponent, "ScriptComponent", UActorComponent, UObject)

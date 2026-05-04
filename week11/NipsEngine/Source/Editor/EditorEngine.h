@@ -85,6 +85,7 @@ public:
 	bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) override;
 	bool RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name) override;
 	bool FocusRmlUIElement(const FString& ElementId, bool bFocusVisible) override;
+	bool IsRmlUIElementFocused(const FString& ElementId) override;
 	bool BlurRmlUIElement(const FString& ElementId) override;
 	bool ClickRmlUIElement(const FString& ElementId) override;
 	TArray<FString> PollRmlUIActionEvents() override;

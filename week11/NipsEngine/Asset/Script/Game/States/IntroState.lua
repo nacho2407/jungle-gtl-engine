@@ -48,7 +48,7 @@ function IntroState.new()
         returnTo = "Title",
         pageIndex = 1,
         visibleChars = 0.0,
-        lastSoundCharCount = 0,
+        pageSoundPlayed = false,
         pageCharCount = 0,
         pageFinished = false,
         finished = false,
@@ -67,7 +67,7 @@ function IntroState:Enter(context, payload)
     self.returnTo = payload.returnTo or "Title"
     self.pageIndex = 1
     self.visibleChars = 0.0
-    self.lastSoundCharCount = 0
+    self.pageSoundPlayed = false
     self.pageFinished = false
     self.finished = false
 
@@ -101,7 +101,6 @@ function IntroState:Tick(context, dt)
         else
             self.visibleChars = self.pageCharCount
             self.pageFinished = true
-            self.lastSoundCharCount = self.pageCharCount
             self:RefreshPage(context)
         end
 
@@ -131,7 +130,7 @@ function IntroState:Advance(context)
 
     self.pageIndex = self.pageIndex + 1
     self.visibleChars = 0.0
-    self.lastSoundCharCount = 0
+    self.pageSoundPlayed = false
     self.pageFinished = false
     self:RefreshPage(context)
 end
@@ -157,9 +156,9 @@ function IntroState:RefreshPage(context)
         visibleCount = self.pageCharCount
     end
 
-    if visibleCount > self.lastSoundCharCount then
+    if visibleCount > 0 and not self.pageSoundPlayed then
         context.managers.Sound:PlayIntroText()
-        self.lastSoundCharCount = visibleCount
+        self.pageSoundPlayed = true
     end
 
     context.managers.UI:SetIntroText(Utf8SubChars(text, visibleCount))

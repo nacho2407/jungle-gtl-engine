@@ -1,3 +1,11 @@
+@font-face
+{
+    font-family: "Glitch Goblin";
+    font-style: normal;
+    font-weight: normal;
+    src: "Asset/UIFont/GlitchGoblin_Font_1_1/GlitchGoblin.ttf";
+}
+
 body
 {
     width: 100%;
@@ -23,16 +31,16 @@ body
 {
     position: absolute;
     left: 34px;
-    top: 26px;
+    top: 18px;
     width: 382px;
-    height: 72px;
+    height: 62px;
 }
 
 .hp-icon
 {
     position: absolute;
     left: 0px;
-    top: 4px;
+    top: 0px;
     width: 62px;
     height: 62px;
 }
@@ -41,7 +49,7 @@ body
 {
     position: absolute;
     left: 70px;
-    top: 14px;
+    top: 10px;
     width: 300px;
     height: 42px;
     decorator: image("Asset/UIImage/HPLine.PNG" fill);
@@ -67,9 +75,10 @@ body
 {
     position: absolute;
     left: 0px;
-    top: 8px;
+    top: 0px;
     width: 300px;
-    height: 28px;
+    height: 42px;
+    line-height: 42px;
     text-align: center;
     color: rgb(255, 244, 226);
     font-size: 18px;
@@ -78,31 +87,33 @@ body
 .timer-wrap
 {
     position: absolute;
-    left: 760px;
-    top: 24px;
-    width: 400px;
-    height: 72px;
+    left: 50%;
+    margin-left: -100px;
+    top: 31px;
+    width: 200px;
+    height: 36px;
 }
 
 .timer-bg
 {
-    position: absolute;
+    position: absolute center;
     left: 0px;
     top: 0px;
-    width: 400px;
-    height: 72px;
+    width: 200px;
+    height: 36px;
 }
 
 .timer-text
 {
     position: absolute;
     left: 0px;
-    top: 16px;
-    width: 400px;
-    height: 42px;
+    top: 0px;
+    width: 200px;
+    height: 36px;
+    line-height: 36px;
     text-align: center;
     color: rgb(255, 145, 48);
-    font-size: 34px;
+    font-size: 22px;
     font-weight: bold;
 }
 
@@ -110,9 +121,9 @@ body
 {
     position: absolute;
     right: 44px;
-    top: 30px;
-    width: 340px;
-    height: 58px;
+    top: 35px;
+    width: 200px;
+    height: 34px;
 }
 
 .score-bg
@@ -120,20 +131,35 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 340px;
-    height: 58px;
+    width: 200px;
+    height: 34px;
 }
 
 .score-text
 {
     position: absolute;
-    left: 18px;
-    top: 13px;
-    width: 304px;
+    left: 10px;
+    top: 0px;
+    width: 180px;
     height: 34px;
-    text-align: right;
+    line-height: 34px;
+    text-align: center;
     color: rgb(255, 248, 232);
-    font-size: 25px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.bonus-text
+{
+    position: absolute;
+    left: 10px;
+    top: 38px;
+    width: 180px;
+    height: 26px;
+    line-height: 26px;
+    text-align: center;
+    color: rgb(255, 237, 120);
+    font-size: 16px;
     font-weight: bold;
 }
 
@@ -143,23 +169,17 @@ body
     right: 44px;
     top: 94px;
     width: 340px;
-    height: 76px;
+    height: 58px;
     text-align: right;
 }
 
 .combo-count
 {
     width: 340px;
-    height: 42px;
-    color: rgb(255, 145, 48);
-    font-size: 34px;
-    font-weight: bold;
-}
-
-.combo-bonus
-{
-    width: 340px;
-    height: 26px;
-    color: rgb(255, 224, 154);
-    font-size: 20px;
+    height: 58px;
+    line-height: 58px;
+    color: rgb(255, 255, 255);
+    font-family: "Glitch Goblin";
+    font-size: 42px;
+    font-weight: normal;
 }

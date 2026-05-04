@@ -63,12 +63,22 @@ Script.Properties = {
     },
     ComboTimeoutSeconds = {
         Type = "Float",
-        Default = 2.4,
+        Default = 5.0,
         Category = "Management"
     },
-    ComboBonusRatio = {
+    ComboBonusPerKill = {
         Type = "Float",
-        Default = 0.25,
+        Default = 2.0,
+        Category = "Management"
+    },
+    PlayerDamagePerHit = {
+        Type = "Float",
+        Default = 20.0,
+        Category = "Management"
+    },
+    PlayerInvulnerableSeconds = {
+        Type = "Float",
+        Default = 3.0,
         Category = "Management"
     }
 }
@@ -133,8 +143,80 @@ function Script:OpenGameScene()
     return Engine.API.Scene.Open(ScenePaths.Game)
 end
 
+function Script:NotifyEnemyKilled(score)
+    self.context.eventBus:Emit("Enemy.Killed", {
+        score = score or 1
+    })
+end
+
+function Script:AddComboKill(score)
+    self:NotifyEnemyKilled(score)
+end
+
+function Script:DamagePlayer(amount, source)
+    local game = self.context.managers.Game
+    if game and game.DamagePlayer then
+        return game:DamagePlayer(amount or self.PlayerDamagePerHit, source)
+    end
+
+    return false
+end
+
+function Script:RecoverPlayer(amount, source)
+    local game = self.context.managers.Game
+    if game and game.RecoverPlayer then
+        return game:RecoverPlayer(amount, source)
+    end
+
+    return false
+end
+
+function Script:InstallGameJamBridge()
+    _G.GameJam = _G.GameJam or {}
+    _G.GameJam.Manager = self
+    _G.GameJam.EventBus = self.context.eventBus
+    _G.GameJam.NotifyEnemyKilled = function(payload)
+        if self.context == nil or self.context.eventBus == nil then
+            return false
+        end
+
+        if type(payload) == "table" then
+            self.context.eventBus:Emit("Enemy.Killed", payload)
+        else
+            self:NotifyEnemyKilled(payload)
+        end
+
+        return true
+    end
+    _G.GameJam.DamagePlayer = function(amount, source)
+        return self:DamagePlayer(amount, source)
+    end
+    _G.GameJam.RecoverPlayer = function(amount, source)
+        return self:RecoverPlayer(amount, source)
+    end
+    _G.GameJam.NotifyPlayerAttackStarted = function(attackId)
+        self.context.eventBus:Emit("Player.AttackStarted", { attackId = tostring(attackId or "") })
+    end
+    _G.GameJam.NotifyPlayerAttackHit = function(attackId)
+        self.context.eventBus:Emit("Player.AttackHit", { attackId = tostring(attackId or "") })
+    end
+    _G.GameJam.NotifyPlayerAttackFinished = function(attackId)
+        self.context.eventBus:Emit("Player.AttackFinished", { attackId = tostring(attackId or "") })
+    end
+    _G.GameJam.NotifyPlayerAttackGround = function(payload)
+        self.context.eventBus:Emit("Player.AttackGround", payload or {})
+    end
+    _G.GameJam.NotifyTimeSlowStarted = function()
+        self.context.eventBus:Emit("TimeSlow.Started", {})
+    end
+    _G.GameJam.NotifyTimeSlowEnded = function()
+        self.context.eventBus:Emit("TimeSlow.Ended", {})
+    end
+end
+
 function Script:BeginPlay()
     Engine.API.Debug.Log("[GeneralManager] BeginPlay")
+    self:InstallGameJamBridge()
 
     for _, manager in pairs(self.context.managers) do
         if manager.BeginPlay then
@@ -178,6 +260,20 @@ function Script:EndPlay()
     end
 
     self.context.eventBus:Clear()
+
+    if _G.GameJam and _G.GameJam.Manager == self then
+        _G.GameJam.Manager = nil
+        _G.GameJam.EventBus = nil
+        _G.GameJam.NotifyEnemyKilled = nil
+        _G.GameJam.DamagePlayer = nil
+        _G.GameJam.RecoverPlayer = nil
+        _G.GameJam.NotifyPlayerAttackStarted = nil
+        _G.GameJam.NotifyPlayerAttackHit = nil
+        _G.GameJam.NotifyPlayerAttackFinished = nil
+        _G.GameJam.NotifyPlayerAttackGround = nil
+        _G.GameJam.NotifyTimeSlowStarted = nil
+        _G.GameJam.NotifyTimeSlowEnded = nil
+    end
 end
 
 return Script

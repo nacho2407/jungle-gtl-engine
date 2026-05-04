@@ -445,7 +445,7 @@ namespace json {
 		JSON parse_next(const string&, size_t&);
 
 		void consume_ws(const string& str, size_t& offset) {
-			while (isspace(str[offset])) ++offset;
+			while (offset < str.size() && isspace(static_cast<unsigned char>(str[offset]))) ++offset;
 		}
 
 		JSON parse_object(const string& str, size_t& offset) {
@@ -646,6 +646,12 @@ namespace json {
 
 	inline JSON JSON::Load(const string& str) {
 		size_t offset = 0;
+		if (str.size() >= 3 &&
+			static_cast<unsigned char>(str[0]) == 0xEF &&
+			static_cast<unsigned char>(str[1]) == 0xBB &&
+			static_cast<unsigned char>(str[2]) == 0xBF) {
+			offset = 3;
+		}
 		return std::move(parse_next(str, offset));
 	}
 

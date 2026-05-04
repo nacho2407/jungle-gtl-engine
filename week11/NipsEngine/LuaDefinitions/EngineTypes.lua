@@ -294,6 +294,9 @@ function InterpToMovementComponent:ResetAndHalt() end
 
 ---@class SoundComponent: SceneComponent
 ---@field Sound string
+---@field Looping boolean
+---@field Spatialized boolean
+---@field VolumeScale number
 local SoundComponent = {}
 
 function SoundComponent:Play() end
@@ -307,6 +310,51 @@ function SoundComponent:SetSound(soundPath) end
 
 ---@return string
 function SoundComponent:GetSound() end
+
+---@param enabled boolean
+function SoundComponent:SetPlayOnBeginPlay(enabled) end
+
+---@return boolean
+function SoundComponent:IsPlayOnBeginPlay() end
+
+---@param enabled boolean
+function SoundComponent:SetLoop(enabled) end
+
+---@return boolean
+function SoundComponent:IsLooping() end
+
+---@param enabled boolean
+function SoundComponent:SetSpatialized(enabled) end
+
+---@return boolean
+function SoundComponent:IsSpatialized() end
+
+---@param volumeScale number
+function SoundComponent:SetVolumeScale(volumeScale) end
+
+---@return number
+function SoundComponent:GetVolumeScale() end
+
+---@param minDistance number
+---@param maxDistance number
+function SoundComponent:Set3DMinMaxDistance(minDistance, maxDistance) end
+
+---@return number
+function SoundComponent:Get3DMinDistance() end
+
+---@return number
+function SoundComponent:Get3DMaxDistance() end
+
+---attenuationModel: 0=None, 1=Inverse, 2=Linear, 3=Exponential.
+---@param attenuationModel integer
+---@param rolloffFactor number
+function SoundComponent:Set3DAttenuation(attenuationModel, rolloffFactor) end
+
+---@return integer
+function SoundComponent:Get3DAttenuationModel() end
+
+---@return number
+function SoundComponent:Get3DRolloffFactor() end
 
 ---@class StaticMesh: Object
 local StaticMesh = {}

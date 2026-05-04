@@ -239,6 +239,48 @@ namespace
         default: return KI_UNKNOWN;
         }
     }
+
+    bool IsElementOrAncestorFormControl(Rml::Element* Element)
+    {
+        for (Rml::Element* Current = Element; Current != nullptr; Current = Current->GetParentNode())
+        {
+            if (rmlui_dynamic_cast<Rml::ElementFormControl*>(Current) != nullptr)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool IsElementOrDescendantFocused(Rml::Element* Element, Rml::Element* FocusedElement)
+    {
+        if (!Element || !FocusedElement)
+        {
+            return false;
+        }
+
+        for (Rml::Element* Current = FocusedElement; Current != nullptr; Current = Current->GetParentNode())
+        {
+            if (Current == Element)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void CaptureTextInputForFocusedRmlElement(Rml::Element* Element)
+    {
+        if (!IsElementOrAncestorFormControl(Element))
+        {
+            return;
+        }
+
+        InputSystem& Input = InputSystem::Get();
+        Input.SetGuiKeyboardCapture(true);
+        Input.SetGuiTextInputCapture(true);
+        Input.SetGuiViewportMouseBlock(true);
+    }
 }
 
 //  Init
@@ -1092,9 +1134,20 @@ bool UEditorEngine::FocusRmlUIElement(const FString& ElementId, bool bFocusVisib
 {
     if (Rml::Element* Element = FindRmlUIElement(ElementId))
     {
-        return Element->Focus(bFocusVisible);
+        const bool bFocused = Element->Focus(bFocusVisible);
+        if (bFocused)
+        {
+            CaptureTextInputForFocusedRmlElement(Element);
+        }
+        return bFocused;
     }
     return false;
+}
+
+bool UEditorEngine::IsRmlUIElementFocused(const FString& ElementId)
+{
+    Rml::Element* Element = FindRmlUIElement(ElementId);
+    return Element && RmlUiContext && IsElementOrDescendantFocused(Element, RmlUiContext->GetFocusElement());
 }
 
 bool UEditorEngine::BlurRmlUIElement(const FString& ElementId)
@@ -1257,8 +1310,9 @@ bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect, int32 L
         ClientMousePos.x >= ViewportRect.X && ClientMousePos.y >= ViewportRect.Y
         && ClientMousePos.x < ViewportRect.X + ViewportRect.Width
         && ClientMousePos.y < ViewportRect.Y + ViewportRect.Height;
+    const bool bHasFocusedElement = RmlUiContext->GetFocusElement() != nullptr;
 
-    if (!bInsideViewport && !RmlUiContext->IsMouseInteracting())
+    if (!bInsideViewport && !RmlUiContext->IsMouseInteracting() && !bHasFocusedElement)
     {
         return false;
     }
@@ -1347,6 +1401,8 @@ bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect, int32 L
     RestoreRmlUIDocumentVisibility(VisibilitySnapshot);
 
     bConsumed = bKeyboardConsumed || bConsumed;
+    const bool bTextInputFocused = IsElementOrAncestorFormControl(RmlUiContext->GetFocusElement());
+
     if (bConsumed)
     {
         Input.SetGuiMouseCapture(true);
@@ -1355,6 +1411,11 @@ bool UEditorEngine::PumpPIERmlUiInput(const FViewportRect& ViewportRect, int32 L
         {
             Input.SetGuiKeyboardCapture(true);
         }
+    }
+    if (bTextInputFocused)
+    {
+        Input.SetGuiKeyboardCapture(true);
+        Input.SetGuiTextInputCapture(true);
     }
 
     return bConsumed;
