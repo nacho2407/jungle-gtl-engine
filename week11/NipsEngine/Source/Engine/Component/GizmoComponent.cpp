@@ -1,6 +1,7 @@
 ﻿#include "GizmoComponent.h"
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
+#include "Object/Object.h"
 #include "Render/Mesh/MeshManager.h"
 #include "Core/ResourceManager.h"
 
@@ -221,9 +222,9 @@ USceneComponent* UGizmoComponent::GetTargetSceneComponent() const
 {
 	if (TargetComponent)
 	{
-		return TargetComponent;
+		return IsTargetComponentAlive() ? TargetComponent : nullptr;
 	}
-	return TargetActor ? TargetActor->GetRootComponent() : nullptr;
+	return IsTargetActorAlive() ? TargetActor->GetRootComponent() : nullptr;
 }
 
 FVector UGizmoComponent::GetTargetLocation() const
@@ -239,18 +240,37 @@ FVector UGizmoComponent::GetTargetRotation() const
 {
 	if (TargetComponent)
 	{
-		return TargetComponent->GetWorldTransform().GetRotation().Euler();
+		return IsTargetComponentAlive() ? TargetComponent->GetWorldTransform().GetRotation().Euler() : FVector::ZeroVector;
 	}
-	return TargetActor ? TargetActor->GetActorRotation() : FVector::ZeroVector;
+	return IsTargetActorAlive() ? TargetActor->GetActorRotation() : FVector::ZeroVector;
 }
 
 FVector UGizmoComponent::GetTargetScale() const
 {
 	if (TargetComponent)
 	{
-		return TargetComponent->GetRelativeScale();
+		return IsTargetComponentAlive() ? TargetComponent->GetRelativeScale() : FVector::OneVector;
 	}
-	return TargetActor ? TargetActor->GetActorScale() : FVector::OneVector;
+	return IsTargetActorAlive() ? TargetActor->GetActorScale() : FVector::OneVector;
+}
+
+bool UGizmoComponent::IsTargetActorAlive() const
+{
+	return TargetActor && TargetActorUUID != 0 && UObjectManager::Get().FindByUUID(TargetActorUUID) == TargetActor;
+}
+
+bool UGizmoComponent::IsTargetComponentAlive() const
+{
+	return TargetComponent && TargetComponentUUID != 0 && UObjectManager::Get().FindByUUID(TargetComponentUUID) == TargetComponent;
+}
+
+bool UGizmoComponent::HasTarget() const
+{
+	if (TargetComponent)
+	{
+		return IsTargetComponentAlive();
+	}
+	return IsTargetActorAlive();
 }
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
@@ -262,7 +282,7 @@ void UGizmoComponent::TranslateTarget(float DragAmount)
 
 	AddWorldOffset(ConstrainedDelta);
 
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		TargetComponent->AddWorldOffset(ConstrainedDelta);
 	}
@@ -289,7 +309,7 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 	FQuat DeltaQuat(RotationAxis, DragAmount);
 	const FVector Pivot = GetTargetLocation();
 
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		FQuat CurrentQuat = TargetComponent->GetRelativeQuat();
 		FQuat NewQuat = CurrentQuat * DeltaQuat;
@@ -335,7 +355,7 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	ScaleAxis.NormalizeSafe();
 	const float PivotScaleFactor = std::max(0.001f, 1.0f + ScaleDelta);
 
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		FVector NewScale = TargetComponent->GetRelativeScale();
 		switch (SelectedAxis)
@@ -392,7 +412,7 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 
 void UGizmoComponent::SetTargetLocation(FVector NewLocation)
 {
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		TargetComponent->SetWorldLocation(NewLocation);
 		UpdateGizmoTransform();
@@ -406,7 +426,7 @@ void UGizmoComponent::SetTargetLocation(FVector NewLocation)
 
 void UGizmoComponent::SetTargetRotation(FVector NewRotation)
 {
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		TargetComponent->SetRelativeRotation(NewRotation);
 		UpdateGizmoTransform();
@@ -425,7 +445,7 @@ void UGizmoComponent::SetTargetScale(FVector NewScale)
 	if (SafeScale.Y < 0.001f) SafeScale.Y = 0.001f;
 	if (SafeScale.Z < 0.001f) SafeScale.Z = 0.001f;
 
-	if (TargetComponent)
+	if (IsTargetComponentAlive())
 	{
 		TargetComponent->SetRelativeScale(SafeScale);
 		UpdateGizmoTransform();
@@ -505,11 +525,14 @@ void UGizmoComponent::SetTarget(AActor* NewTarget)
 {
 	if (!NewTarget || !NewTarget->GetRootComponent())
 	{
+		Deactivate();
 		return;
 	}
 
 	TargetActor = NewTarget;
 	TargetComponent = nullptr;
+	TargetActorUUID = TargetActor->GetUUID();
+	TargetComponentUUID = 0;
 
 	SetWorldLocation(TargetActor->GetActorLocation());
 	UpdateGizmoTransform();
@@ -520,11 +543,14 @@ void UGizmoComponent::SetTargetComponent(USceneComponent* NewTarget)
 {
 	if (!NewTarget)
 	{
+		Deactivate();
 		return;
 	}
 
 	TargetActor = NewTarget->GetOwner();
 	TargetComponent = NewTarget;
+	TargetActorUUID = TargetActor ? TargetActor->GetUUID() : 0;
+	TargetComponentUUID = TargetComponent->GetUUID();
 	AllSelectedActors = nullptr;
 
 	SetWorldLocation(TargetComponent->GetWorldLocation());
@@ -642,6 +668,10 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 
 	if (SelectedAxis == -1 || !HasTarget())
 	{
+		if (!HasTarget())
+		{
+			Deactivate();
+		}
 		return;
 	}
 
@@ -679,7 +709,11 @@ void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 void UGizmoComponent::UpdateGizmoTransform()
 {
 	USceneComponent* TargetSceneComponent = GetTargetSceneComponent();
-	if (!TargetSceneComponent) return;
+	if (!TargetSceneComponent)
+	{
+		Deactivate();
+		return;
+	}
 
 	SetWorldLocation(TargetSceneComponent->GetWorldLocation());
 
@@ -733,6 +767,8 @@ void UGizmoComponent::Deactivate()
 {
 	TargetActor = nullptr;
 	TargetComponent = nullptr;
+	TargetActorUUID = 0;
+	TargetComponentUUID = 0;
 	AllSelectedActors = nullptr;
 	SetVisibility(false);
 	SelectedAxis = -1;

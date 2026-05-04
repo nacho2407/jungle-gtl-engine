@@ -9,9 +9,15 @@ function GameManager.new(context)
         survivalTime = 0.0,
         killCount = 0,
         score = 0,
+        killScore = 0,
+        comboBonusScore = 0,
         playerHealth = 100.0,
         finishReason = "None"
     }, GameManager)
+end
+
+function GameManager:RecalculateScore()
+    self.score = self.killScore + self.comboBonusScore + math.floor(self.survivalTime)
 end
 
 function GameManager:BeginPlay()
@@ -32,6 +38,8 @@ function GameManager:StartRun()
     self.survivalTime = 0.0
     self.killCount = 0
     self.score = 0
+    self.killScore = 0
+    self.comboBonusScore = 0
     self.playerHealth = self.context.root.PlayerMaxHealth or 100.0
     self.finishReason = "None"
 
@@ -66,6 +74,11 @@ function GameManager:FinishRun(reason)
     self.finishReason = reason or "Finished"
     Engine.API.Time.SetTimeScale(1.0)
 
+    local combo = self.context.managers.Combo
+    if combo and combo.CloseCombo then
+        combo:CloseCombo("Finished")
+    end
+
     local data = self.context.managers.Data
     if data then
         data:SaveBestScore(self.score)
@@ -98,7 +111,29 @@ function GameManager:AddKill(payload)
     end
 
     self.killCount = self.killCount + 1
-    self.score = self.score + bonus
+    self.killScore = self.killScore + bonus
+    self:RecalculateScore()
+    self.context.eventBus:Emit("Combo.Kill", payload or { score = bonus })
+    self.context.eventBus:Emit("Score.Changed", self:GetSnapshot())
+end
+
+function GameManager:AddScoreBonus(amount, reason)
+    if not self.isRunning then
+        return
+    end
+
+    amount = math.floor(amount or 0)
+    if amount <= 0 then
+        return
+    end
+
+    self.comboBonusScore = self.comboBonusScore + amount
+    self:RecalculateScore()
+    self.context.eventBus:Emit("Score.Bonus", {
+        amount = amount,
+        reason = reason or "Bonus",
+        snapshot = self:GetSnapshot()
+    })
     self.context.eventBus:Emit("Score.Changed", self:GetSnapshot())
 end
 
@@ -108,6 +143,10 @@ function GameManager:DamagePlayer(amount)
     end
 
     self.playerHealth = math.max(0.0, self.playerHealth - (amount or 0.0))
+    self.context.eventBus:Emit("Player.Damaged", {
+        amount = amount or 0.0,
+        snapshot = self:GetSnapshot()
+    })
     if self.playerHealth <= 0.0 then
         self:FinishRun("Dead")
     end
@@ -119,7 +158,7 @@ function GameManager:Tick(dt)
     end
 
     self.survivalTime = self.survivalTime + dt
-    self.score = self.killCount * 100 + math.floor(self.survivalTime)
+    self:RecalculateScore()
 
     local limit = self.context.root.SessionLimitSeconds or 300.0
     if limit > 0.0 and self.survivalTime >= limit then
@@ -134,6 +173,8 @@ function GameManager:GetSnapshot()
         survivalTime = self.survivalTime,
         killCount = self.killCount,
         score = self.score,
+        killScore = self.killScore,
+        comboBonusScore = self.comboBonusScore,
         playerHealth = self.playerHealth,
         finishReason = self.finishReason
     }

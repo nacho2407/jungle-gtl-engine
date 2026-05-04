@@ -491,6 +491,10 @@ namespace
 
             const Rml::byte* Source = static_cast<const Rml::byte*>(Bits);
             const float OpacityScale = std::clamp(Opacity, 0.0f, 1.0f);
+            const float ColourAlpha = Colour.alpha / 255.0f;
+            const Rml::byte StraightRed = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.red / ColourAlpha, 0.0f, 255.0f)) : Colour.red;
+            const Rml::byte StraightGreen = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.green / ColourAlpha, 0.0f, 255.0f)) : Colour.green;
+            const Rml::byte StraightBlue = ColourAlpha > 0.0f ? static_cast<Rml::byte>(std::clamp(Colour.blue / ColourAlpha, 0.0f, 255.0f)) : Colour.blue;
             for (int Y = 0; Y < Height; ++Y)
             {
                 for (int X = 0; X < Width; ++X)
@@ -498,9 +502,9 @@ namespace
                     const size_t Index = (static_cast<size_t>(Y) * Width + X) * 4;
                     const Rml::byte Coverage = std::max(Source[Index + 0], std::max(Source[Index + 1], Source[Index + 2]));
                     const float AlphaScale = (Coverage / 255.0f) * OpacityScale;
-                    Pixels[Index + 0] = static_cast<Rml::byte>(Colour.red * AlphaScale);
-                    Pixels[Index + 1] = static_cast<Rml::byte>(Colour.green * AlphaScale);
-                    Pixels[Index + 2] = static_cast<Rml::byte>(Colour.blue * AlphaScale);
+                    Pixels[Index + 0] = StraightRed;
+                    Pixels[Index + 1] = StraightGreen;
+                    Pixels[Index + 2] = StraightBlue;
                     Pixels[Index + 3] = static_cast<Rml::byte>(Colour.alpha * AlphaScale);
                 }
             }

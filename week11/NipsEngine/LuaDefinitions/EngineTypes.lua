@@ -620,6 +620,20 @@ function PlayerController:IsMouseCaptured() end
 function PlayerController:SetInputModeGameOnly() end
 function PlayerController:SetInputModeUIOnly() end
 function PlayerController:SetInputModeGameAndUI() end
+---@param intensity number 1.0 is a normal hit shake.
+---@param duration number seconds
+function PlayerController:PlayCameraShake(intensity, duration) end
+---@param location_amplitude number world-unit camera offset
+---@param rotation_amplitude_degrees number camera rotation offset in degrees
+---@param frequency number shake cycles per second
+---@param duration number seconds
+function PlayerController:PlayCameraShakeDetailed(location_amplitude, rotation_amplitude_degrees, frequency, duration) end
+---@param target_fov_degrees number final vertical FOV in degrees
+---@param duration number seconds
+function PlayerController:LerpCameraFOVDegrees(target_fov_degrees, duration) end
+---@param duration number seconds
+function PlayerController:ResetCameraFOV(duration) end
+function PlayerController:StopCameraEffects() end
 ---@return AActor|nil
 function PlayerController:GetPossessedActor() end
 ---@return AActor|nil

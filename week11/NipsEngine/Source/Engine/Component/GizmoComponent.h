@@ -21,6 +21,8 @@ private:
 
 	AActor* TargetActor = nullptr;
 	USceneComponent* TargetComponent = nullptr;
+	uint32 TargetActorUUID = 0;
+	uint32 TargetComponentUUID = 0;
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
@@ -56,6 +58,8 @@ private:
 	FVector GetTargetLocation() const;
 	FVector GetTargetRotation() const;
 	FVector GetTargetScale() const;
+	bool IsTargetActorAlive() const;
+	bool IsTargetComponentAlive() const;
 
 public:
 	DECLARE_CLASS(UGizmoComponent, UPrimitiveComponent)
@@ -75,7 +79,7 @@ public:
 	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
-	inline bool HasTarget() const { return TargetActor != nullptr || TargetComponent != nullptr; }
+	bool HasTarget() const;
 	inline AActor* GetTarget() const { return TargetActor; }
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 

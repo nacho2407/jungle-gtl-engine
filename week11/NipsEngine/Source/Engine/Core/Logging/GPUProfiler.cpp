@@ -24,6 +24,7 @@ void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InCon
 	{
 		Device->CreateQuery(&disjointDesc, Frames[f].DisjointQuery.ReleaseAndGetAddressOf());
 		Frames[f].UsedCount = 0;
+		Frames[f].bSubmitted = false;
 
 		for (uint32 i = 0; i < MAX_TIMESTAMPS; ++i)
 		{
@@ -33,6 +34,8 @@ void FGPUProfiler::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InCon
 		}
 	}
 
+	WriteIndex = 0;
+	bSkipFrame = false;
 	bInitialized = true;
 }
 
@@ -43,6 +46,8 @@ void FGPUProfiler::Shutdown()
 	for (uint32 f = 0; f < FRAME_COUNT; ++f)
 	{
 		Frames[f].DisjointQuery.Reset();
+		Frames[f].UsedCount = 0;
+		Frames[f].bSubmitted = false;
 
 		for (uint32 i = 0; i < MAX_TIMESTAMPS; ++i)
 		{
@@ -53,6 +58,8 @@ void FGPUProfiler::Shutdown()
 
 	Device.Reset();
 	Context.Reset();
+	WriteIndex = 0;
+	bSkipFrame = false;
 	bInitialized = false;
 }
 
@@ -63,18 +70,18 @@ void FGPUProfiler::BeginFrame()
 	// 이전 프레임 결과 수집
 	CollectPreviousFrame();
 
-	// 쿼리 재사용 전에 결과가 준비됐는지 확인 (GPU가 느리면 스킵)
-	if (Context->GetData(Frames[WriteIndex].DisjointQuery.Get(), nullptr, 0,
-		D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK)
+	if (Frames[WriteIndex].bSubmitted)
 	{
 		bSkipFrame = true;
 		return;
 	}
+
 	bSkipFrame = false;
 
 	// 현재 프레임 시작
 	FFrameData& Write = Frames[WriteIndex];
 	Write.UsedCount = 0;
+	Write.bSubmitted = false;
 	Context->Begin(Write.DisjointQuery.Get());
 }
 
@@ -84,6 +91,7 @@ void FGPUProfiler::EndFrame()
 	if (bSkipFrame) return;
 
 	Context->End(Frames[WriteIndex].DisjointQuery.Get());
+	Frames[WriteIndex].bSubmitted = true;
 
 	// 프레임 스왑
 	WriteIndex = 1 - WriteIndex;
@@ -118,23 +126,40 @@ void FGPUProfiler::CollectPreviousFrame()
 {
 	uint32 ReadIndex = 1 - WriteIndex;
 	FFrameData& Read = Frames[ReadIndex];
-
-	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
-	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
-	HRESULT hr = Context->GetData(Read.DisjointQuery.Get(), &disjointData, sizeof(disjointData), 0);
-	if (hr != S_OK || disjointData.Disjoint || Read.UsedCount == 0)
+	if (!Read.bSubmitted)
 	{
 		return;
 	}
 
+	// Disjoint 결과 확인 (UsedCount와 무관하게 항상 읽어서 Query 상태를 소비)
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData;
+	HRESULT hr = Context->GetData(Read.DisjointQuery.Get(), &disjointData, sizeof(disjointData), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+	if (hr != S_OK)
+	{
+		return;
+	}
+
+	if (disjointData.Disjoint || Read.UsedCount == 0)
+	{
+		Read.bSubmitted = false;
+		Read.UsedCount = 0;
+		return;
+	}
+
 	double InvFrequency = 1000.0 / static_cast<double>(disjointData.Frequency); // ms 단위
+	UINT64 TimestampBegins[MAX_TIMESTAMPS] = {};
+	UINT64 TimestampEnds[MAX_TIMESTAMPS] = {};
 
 	for (uint32 i = 0; i < Read.UsedCount; ++i)
 	{
-		UINT64 tsBegin = 0, tsEnd = 0;
-		if (Context->GetData(Read.Timestamps[i].BeginQuery.Get(), &tsBegin, sizeof(UINT64), 0) != S_OK) continue;
-		if (Context->GetData(Read.Timestamps[i].EndQuery.Get(), &tsEnd, sizeof(UINT64), 0) != S_OK) continue;
+		if (Context->GetData(Read.Timestamps[i].BeginQuery.Get(), &TimestampBegins[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
+		if (Context->GetData(Read.Timestamps[i].EndQuery.Get(), &TimestampEnds[i], sizeof(UINT64), D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) return;
+	}
 
+	for (uint32 i = 0; i < Read.UsedCount; ++i)
+	{
+		const UINT64 tsBegin = TimestampBegins[i];
+		const UINT64 tsEnd = TimestampEnds[i];
 		double ElapsedMs = static_cast<double>(tsEnd - tsBegin) * InvFrequency;
 		double ElapsedSec = ElapsedMs * 0.001;
 
@@ -161,6 +186,9 @@ void FGPUProfiler::CollectPreviousFrame()
 			Entry.LastTime = ElapsedSec;
 		}
 	}
+
+	Read.bSubmitted = false;
+	Read.UsedCount = 0;
 }
 
 void FGPUProfiler::TakeSnapshot()

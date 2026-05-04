@@ -303,6 +303,20 @@ function PlayerController:IsMouseCaptured() end
 function PlayerController:SetInputModeGameOnly() end
 function PlayerController:SetInputModeUIOnly() end
 function PlayerController:SetInputModeGameAndUI() end
+---@param intensity number 1.0 is a normal hit shake.
+---@param duration number seconds
+function PlayerController:PlayCameraShake(intensity, duration) end
+---@param location_amplitude number world-unit camera offset
+---@param rotation_amplitude_degrees number camera rotation offset in degrees
+---@param frequency number shake cycles per second
+---@param duration number seconds
+function PlayerController:PlayCameraShakeDetailed(location_amplitude, rotation_amplitude_degrees, frequency, duration) end
+---@param target_fov_degrees number final vertical FOV in degrees
+---@param duration number seconds
+function PlayerController:LerpCameraFOVDegrees(target_fov_degrees, duration) end
+---@param duration number seconds
+function PlayerController:ResetCameraFOV(duration) end
+function PlayerController:StopCameraEffects() end
 ---@return Actor|nil
 function PlayerController:GetPossessedActor() end
 ---@return Actor|nil
@@ -582,6 +596,15 @@ function EngineAPIUI.SetElementText(elementId, text) end
 function EngineAPIUI.GetElementText(elementId) end
 
 ---@param elementId string
+---@return string
+function EngineAPIUI.GetElementValue(elementId) end
+
+---@param elementId string
+---@param value string
+---@return boolean
+function EngineAPIUI.SetElementValue(elementId, value) end
+
+---@param elementId string
 ---@param visible boolean
 ---@return boolean
 function EngineAPIUI.SetElementVisible(elementId, visible) end
@@ -665,6 +688,15 @@ function EngineAPIUI.ClickElement(elementId) end
 ---@param text string
 ---@return boolean
 function EngineAPIUI.SetText(elementId, text) end
+
+---@param elementId string
+---@return string
+function EngineAPIUI.GetValue(elementId) end
+
+---@param elementId string
+---@param value string
+---@return boolean
+function EngineAPIUI.SetValue(elementId, value) end
 
 ---@param elementId string
 ---@param imagePath string

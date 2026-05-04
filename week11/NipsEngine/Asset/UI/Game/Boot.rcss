@@ -16,20 +16,34 @@ body
     top: 0px;
     width: 100%;
     height: 100%;
+    background-color: rgb(10, 13, 16);
 }
 
 .center-stack
 {
     position: absolute;
-    left: 760px;
-    top: 250px;
-    width: 400px;
+    left: 710px;
+    top: 420px;
+    width: 500px;
+    height: 116px;
     text-align: center;
+}
+
+.boot-bg
+{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 500px;
+    height: 116px;
 }
 
 .headline
 {
-    margin-bottom: 34px;
+    position: absolute;
+    left: 0px;
+    top: 34px;
+    width: 500px;
     font-size: 42px;
     color: rgb(255, 248, 232);
 }

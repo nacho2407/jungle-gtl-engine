@@ -1,6 +1,9 @@
 ﻿#include "D3DDevice.h"
 
 #include <d3d11sdklayers.h>
+#include <chrono>
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Stats.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 
@@ -29,6 +32,10 @@ void FD3DDevice::Release()
 
 void FD3DDevice::BeginFrame()
 {
+#if STATS
+	BeginGpuFrameTrace();
+#endif
+
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -41,8 +48,45 @@ void FD3DDevice::BeginFrame()
 
 void FD3DDevice::EndFrame()
 {
-	UINT PresentFlags = bTearingSupported ? DXGI_PRESENT_ALLOW_TEARING : 0;
-	SwapChain->Present(0, PresentFlags);
+#if STATS
+	EndGpuFrameTrace();
+#endif
+
+	BOOL bFullscreen = FALSE;
+	SwapChain->GetFullscreenState(&bFullscreen, nullptr);
+
+	UINT PresentFlags = (SwapChainFlags & DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING) && !bFullscreen ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+#if STATS
+	const auto PresentStart = std::chrono::steady_clock::now();
+#endif
+	HRESULT PresentHr = SwapChain->Present(0, PresentFlags);
+#if STATS
+	const auto PresentEnd = std::chrono::steady_clock::now();
+	const double PresentMs = std::chrono::duration<double, std::milli>(PresentEnd - PresentStart).count();
+
+	static auto LastSlowPresentLogTime = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+	const bool bShouldLogSlowPresent = PresentMs >= 10.0 &&
+		std::chrono::duration<double>(PresentEnd - LastSlowPresentLogTime).count() >= 0.5;
+	if (bShouldLogSlowPresent || FAILED(PresentHr))
+	{
+		LastSlowPresentLogTime = PresentEnd;
+		UE_LOG("[D3DPresentPerf] Present=%.2fms Hr=0x%08X TearingSupported=%d Fullscreen=%d Flags=0x%X",
+			PresentMs,
+			static_cast<unsigned int>(PresentHr),
+			bTearingSupported ? 1 : 0,
+			bFullscreen ? 1 : 0,
+			PresentFlags);
+	}
+#else
+	if (FAILED(PresentHr))
+	{
+		UE_LOG("[D3DPresentPerf] Present failed. Hr=0x%08X Fullscreen=%d Flags=0x%X",
+			static_cast<unsigned int>(PresentHr),
+			bFullscreen ? 1 : 0,
+			PresentFlags);
+	}
+#endif
 }
 
 void FD3DDevice::BeginViewportFrame(FRenderTargetSet& InRenderTargetSet)
@@ -164,6 +208,18 @@ void FD3DDevice::CreateDeviceAndSwapChain(HWND InHWindow)
 		DeviceContext.GetAddressOf());
 
 	SwapChain->GetDesc(&swapChainDesc);
+#if STATS
+	CreateGpuFrameTraceQueries();
+
+	UE_LOG("[D3DPresentPerf] SwapChain Width=%u Height=%u BufferCount=%u Format=%u SwapEffect=%u Flags=0x%X TearingSupported=%d",
+		swapChainDesc.BufferDesc.Width,
+		swapChainDesc.BufferDesc.Height,
+		swapChainDesc.BufferCount,
+		static_cast<unsigned int>(swapChainDesc.BufferDesc.Format),
+		static_cast<unsigned int>(swapChainDesc.SwapEffect),
+		swapChainDesc.Flags,
+		bTearingSupported ? 1 : 0);
+#endif
 
 	ViewportInfo = { 0, 0, float(swapChainDesc.BufferDesc.Width), float(swapChainDesc.BufferDesc.Height), 0, 1 };
 
@@ -188,9 +244,143 @@ void FD3DDevice::ReleaseDeviceAndSwapChain()
 		DeviceContext->Flush();
 	}
 
+#if STATS
+	ReleaseGpuFrameTraceQueries();
+#endif
 	SwapChain.Reset();
 	Device.Reset();
 	DeviceContext.Reset();
+}
+
+void FD3DDevice::CreateGpuFrameTraceQueries()
+{
+	if (!Device)
+	{
+		return;
+	}
+
+	D3D11_QUERY_DESC DisjointDesc = {};
+	DisjointDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+
+	D3D11_QUERY_DESC TimestampDesc = {};
+	TimestampDesc.Query = D3D11_QUERY_TIMESTAMP;
+
+	for (FGpuFrameTrace& Trace : GpuFrameTraces)
+	{
+		Trace.bInFlight = false;
+		Device->CreateQuery(&DisjointDesc, Trace.DisjointQuery.ReleaseAndGetAddressOf());
+		Device->CreateQuery(&TimestampDesc, Trace.BeginTimestamp.ReleaseAndGetAddressOf());
+		Device->CreateQuery(&TimestampDesc, Trace.EndTimestamp.ReleaseAndGetAddressOf());
+	}
+
+	GpuFrameTraceWriteIndex = 0;
+	bGpuFrameTraceRecording = false;
+}
+
+void FD3DDevice::ReleaseGpuFrameTraceQueries()
+{
+	for (FGpuFrameTrace& Trace : GpuFrameTraces)
+	{
+		Trace.DisjointQuery.Reset();
+		Trace.BeginTimestamp.Reset();
+		Trace.EndTimestamp.Reset();
+		Trace.bInFlight = false;
+	}
+
+	GpuFrameTraceWriteIndex = 0;
+	bGpuFrameTraceRecording = false;
+}
+
+bool FD3DDevice::CollectGpuFrameTrace(uint32 TraceIndex)
+{
+	if (!DeviceContext || TraceIndex >= GpuFrameTraceCount)
+	{
+		return true;
+	}
+
+	FGpuFrameTrace& Trace = GpuFrameTraces[TraceIndex];
+	if (!Trace.bInFlight)
+	{
+		return true;
+	}
+
+	D3D11_QUERY_DATA_TIMESTAMP_DISJOINT DisjointData = {};
+	HRESULT Hr = DeviceContext->GetData(Trace.DisjointQuery.Get(), &DisjointData, sizeof(DisjointData), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+	if (Hr != S_OK)
+	{
+		return false;
+	}
+
+	UINT64 BeginTimestamp = 0;
+	UINT64 EndTimestamp = 0;
+	const HRESULT BeginHr = DeviceContext->GetData(Trace.BeginTimestamp.Get(), &BeginTimestamp, sizeof(BeginTimestamp), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+	const HRESULT EndHr = DeviceContext->GetData(Trace.EndTimestamp.Get(), &EndTimestamp, sizeof(EndTimestamp), D3D11_ASYNC_GETDATA_DONOTFLUSH);
+	if (BeginHr != S_OK || EndHr != S_OK)
+	{
+		return false;
+	}
+
+	Trace.bInFlight = false;
+
+	if (DisjointData.Disjoint || DisjointData.Frequency == 0 || EndTimestamp < BeginTimestamp)
+	{
+		return true;
+	}
+
+	const double GpuMs = static_cast<double>(EndTimestamp - BeginTimestamp) * 1000.0 / static_cast<double>(DisjointData.Frequency);
+	static auto LastGpuFrameLogTime = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+	const auto Now = std::chrono::steady_clock::now();
+	const bool bCanLog = std::chrono::duration<double>(Now - LastGpuFrameLogTime).count() >= 0.5;
+	if (GpuMs >= 2.0 && bCanLog)
+	{
+		LastGpuFrameLogTime = Now;
+		UE_LOG("[GPUFramePerf] D3DFrame=%.2fms TraceIndex=%u Frequency=%llu",
+			GpuMs,
+			TraceIndex,
+			static_cast<unsigned long long>(DisjointData.Frequency));
+	}
+
+	return true;
+}
+
+void FD3DDevice::BeginGpuFrameTrace()
+{
+	if (!DeviceContext)
+	{
+		return;
+	}
+
+	if (!CollectGpuFrameTrace(GpuFrameTraceWriteIndex))
+	{
+		bGpuFrameTraceRecording = false;
+		return;
+	}
+
+	FGpuFrameTrace& Trace = GpuFrameTraces[GpuFrameTraceWriteIndex];
+	if (!Trace.DisjointQuery || !Trace.BeginTimestamp || !Trace.EndTimestamp)
+	{
+		bGpuFrameTraceRecording = false;
+		return;
+	}
+
+	DeviceContext->Begin(Trace.DisjointQuery.Get());
+	DeviceContext->End(Trace.BeginTimestamp.Get());
+	bGpuFrameTraceRecording = true;
+}
+
+void FD3DDevice::EndGpuFrameTrace()
+{
+	if (!DeviceContext || !bGpuFrameTraceRecording)
+	{
+		return;
+	}
+
+	FGpuFrameTrace& Trace = GpuFrameTraces[GpuFrameTraceWriteIndex];
+	DeviceContext->End(Trace.EndTimestamp.Get());
+	DeviceContext->End(Trace.DisjointQuery.Get());
+	Trace.bInFlight = true;
+	GpuFrameTraceWriteIndex = (GpuFrameTraceWriteIndex + 1) % GpuFrameTraceCount;
+	bGpuFrameTraceRecording = false;
 }
 
 void FD3DDevice::CreateFrameBuffer()

@@ -612,6 +612,7 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 
 	if (!bDetailsLocked && SelectionManager)
 	{
+		SelectionManager->ValidateSelection();
 		UActorComponent* ManagerComponent = SelectionManager->GetSelectedComponent();
 		if (ManagerComponent && ManagerComponent->GetOwner() == PrimaryActor)
 		{
@@ -1004,7 +1005,7 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	bActorSelected = true;
 	if (SelectionManager)
 	{
-		SelectionManager->ClearComponentSelection();
+		SelectionManager->OnComponentDestroyed(ComponentToDelete);
 	}
 	Owner->RemoveComponent(ComponentToDelete);
 	if (EditorEngine)
