@@ -94,9 +94,10 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	},
 		"GetCarGas",          &ACarPawn::GetGas,
 		"GetGas",             &ACarPawn::GetGas,
-		"TakeDamage",         &ACarPawn::TakeDamage,
-		"GetHealth",          &ACarPawn::GetHealth,
-		"IsFirstPersonView",  &ACarPawn::IsFirstPersonView);
+		"TakeMeteorDamage",     &ACarPawn::TakeMeteorDamage,
+		"GetMeteorHealth",      &ACarPawn::GetMeteorHealth,
+		"GetMaxMeteorHealth",   &ACarPawn::GetMaxMeteorHealth,
+		"IsFirstPersonView",    &ACarPawn::IsFirstPersonView);
 
 	Lua.new_usertype<APoliceCar>("PoliceCar",
 		sol::base_classes, sol::bases<ACarPawn, APawn, AActor>(),

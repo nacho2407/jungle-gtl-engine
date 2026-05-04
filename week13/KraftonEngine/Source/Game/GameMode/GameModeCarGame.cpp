@@ -233,6 +233,14 @@ void AGameModeCarGame::BeginPhase(ECarGamePhase Target, APawn* TriggerPawn)
 		// 에서 Goal 비트까지 set 되었음을 보고 Phase=Finished, Outcome=Win.
 		EndPhase(EPhaseResult::Success);
 	}
+	else if (Target == ECarGamePhase::DodgeMeteor)
+	{
+		// 운석 페이즈 시작 — 차량 MeteorHealth 를 max 로 리셋. replay 시에도 동일 시작 조건.
+		if (auto* Car = Cast<ACarPawn>(GetPlayerPawn()))
+		{
+			Car->SetMeteorHealth(Car->GetMaxMeteorHealth());
+		}
+	}
 }
 
 void AGameModeCarGame::EndPhase(EPhaseResult Result)
@@ -337,7 +345,7 @@ EPhaseResult AGameModeCarGame::JudgePhaseResult(ECarGamePhase Phase) const
 		return EPhaseResult::Success;
 
 	case ECarGamePhase::DodgeMeteor:
-		return Car && Car->GetHealth() > 0.0f
+		return Car && Car->GetMeteorHealth() > 0.0f
 			? EPhaseResult::Success : EPhaseResult::Failed;
 
 	case ECarGamePhase::Goal:

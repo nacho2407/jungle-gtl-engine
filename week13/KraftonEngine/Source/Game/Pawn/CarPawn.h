@@ -56,9 +56,13 @@ public:
 	UCameraComponent* GetThirdPersonCamera() const { return ThirdPersonCamera; }
 	UCarGasComponent* GetGas() const { return Gas; }
 
-	// --- Health / Damage ---
-	void TakeDamage(float Amount);
-	float GetHealth() const { return Health; }
+	// --- Meteor Health / Damage ---
+	// MeteorPhase 전용 차량 HP. GameState 의 페이즈-실패 카운트와 별개로,
+	// 운석 충돌 누적 데미지를 받아 0 이 되면 페이즈 실패. UI 의 메테오 HP 바가 이 값을 폴링.
+	void  TakeMeteorDamage(float Amount);
+	float GetMeteorHealth() const { return MeteorHealth; }
+	float GetMaxMeteorHealth() const { return MaxMeteorHealth; }
+	void  SetMeteorHealth(float V) { MeteorHealth = V; }
 
 	bool IsFirstPersonView() const;
 
@@ -74,5 +78,6 @@ private:
 	UCarMovementComponent* Movement = nullptr;
 	UCarGasComponent* Gas = nullptr;
 
-	float Health = 100.0f;  // 0 이하 시 사망 처리는 후속 — 현재는 로그만
+	static constexpr float MaxMeteorHealth = 50.0f;
+	float MeteorHealth = MaxMeteorHealth;   // MeteorPhase 동안만 의미. 운석 충돌마다 차감.
 };

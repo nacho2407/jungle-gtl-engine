@@ -1,0 +1,17 @@
+<rml>
+<head>
+	<title>Meteor HP</title>
+	<link type="text/rcss" href="MeteorHpWidget.rcss"/>
+</head>
+<body>
+	<div id="meteor-hp-root">
+		<div id="meteor-hp-panel">
+			<div id="meteor-hp-label">CAR HP</div>
+			<div id="meteor-hp-value">50 / 50</div>
+			<div id="meteor-hp-bar-track">
+				<div id="meteor-hp-bar-fill"></div>
+			</div>
+		</div>
+	</div>
+</body>
+</rml>

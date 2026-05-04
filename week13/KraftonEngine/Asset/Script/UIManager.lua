@@ -82,6 +82,7 @@ function UIManager.Init()
         UIManager.Hide("gameOverlay")
         UIManager.Hide("gameOver")
         UIManager.Hide("gasWidget")
+        UIManager.Hide("meteorHp")
         UIManager.Hide("carWashQuest")
         UIManager.Hide("gasQuest")
         UIManager.Hide("personQuest")
@@ -217,6 +218,7 @@ function UIManager.Init()
     UIManager.Register("meteorQuest", meteorQuestWidget)
     UIManager.Register("goalQuest", goalQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
+    UIManager.Register("meteorHp", UI.CreateWidget("Asset/UI/MeteorHpWidget.rml"))
     UIManager.Register("gameOver", gameOverWidget)
     UIManager.Register("pauseMenu", pauseMenuWidget)
     UIManager.Register("fade", UI.CreateWidget("Asset/UI/FadeWidget.rml"))
@@ -387,6 +389,7 @@ function UIManager.Tick(dt)
     end
 
     UIManager.UpdateGasWidget()
+    UIManager.UpdateMeteorHpWidget()
 end
 
 function UIManager.GetWidget(key)
@@ -509,6 +512,54 @@ function UIManager.UpdateGasWidget()
     widget:set_property("gas-bar-fill", "width", string.format("%.1f%%", ratio * 100))
     widget:set_property("gas-bar-fill", "background-color", color)
     widget:set_property("gas-value", "color", color)
+end
+
+-- 메테오 HP 바 — Phase==DodgeMeteor 일 때만 표시. ObjRegistry.car 의 MeteorHealth 폴링.
+function UIManager.UpdateMeteorHpWidget()
+    local widget = widgets["meteorHp"]
+    if widget == nil then return end
+
+    local gs = GetGameState()
+    if gs == nil then
+        if widget:IsInViewport() then widget:hide() end
+        return
+    end
+
+    local phase = gs:GetPhase()
+    local bShouldShow = (phase == ECarGamePhase.DodgeMeteor)
+    if not bShouldShow then
+        if widget:IsInViewport() then widget:hide() end
+        return
+    end
+
+    local car = ObjRegistry.car
+    if car == nil then
+        if widget:IsInViewport() then widget:hide() end
+        return
+    end
+
+    if not widget:IsInViewport() then
+        widget:show()
+    end
+
+    local hp    = car:GetMeteorHealth()
+    local maxHp = car:GetMaxMeteorHealth()
+    if maxHp <= 0 then maxHp = 1 end
+    local ratio = Clamp(hp / maxHp, 0, 1)
+
+    -- HP 비율에 따라 색 — 높음 빨강 / 낮음 더 진한 빨강(거의 죽음 경고)
+    local color
+    if ratio <= 0.25 then
+        color = "#a01010"
+    elseif ratio <= 0.5 then
+        color = "#d83030"
+    else
+        color = "#f04444"
+    end
+
+    widget:set_text("meteor-hp-value", string.format("%d / %d", math.floor(hp + 0.5), math.floor(maxHp + 0.5)))
+    widget:set_property("meteor-hp-bar-fill", "width", string.format("%.1f%%", ratio * 100))
+    widget:set_property("meteor-hp-bar-fill", "background-color", color)
 end
 
 return UIManager

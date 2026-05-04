@@ -1,0 +1,74 @@
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	background-color: transparent;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	pointer-events: none;
+}
+
+#meteor-hp-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+#meteor-hp-panel {
+	position: absolute;
+	left: 50%;
+	bottom: 60dp;
+	width: 520dp;
+	height: 88dp;
+	margin-left: -260dp;
+	border-width: 2dp;
+	border-color: #f04444;
+	background-color: #15171ce6;
+	pointer-events: none;
+}
+
+#meteor-hp-label {
+	position: absolute;
+	left: 18dp;
+	top: 10dp;
+	width: 200dp;
+	height: 22dp;
+	color: #ff8888;
+	font-size: 16dp;
+	line-height: 22dp;
+}
+
+#meteor-hp-value {
+	position: absolute;
+	right: 18dp;
+	top: 10dp;
+	width: 200dp;
+	height: 22dp;
+	color: #ffffff;
+	font-size: 18dp;
+	line-height: 22dp;
+	text-align: right;
+}
+
+#meteor-hp-bar-track {
+	position: absolute;
+	left: 18dp;
+	top: 44dp;
+	width: 484dp;
+	height: 28dp;
+	background-color: #30333bcc;
+}
+
+#meteor-hp-bar-fill {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 484dp;
+	height: 28dp;
+	background-color: #f04444;
+}
