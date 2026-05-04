@@ -70,8 +70,8 @@
             top: 50%;
             width: 300px;
             height: 276px;
-            margin-left: -150px;
-            margin-top: -138px;
+            margin-left: -160px;
+            margin-top: -220px;
             display: none;
         }
 
@@ -85,6 +85,37 @@
         }
 
         .credit-label
+        {
+            position: absolute;
+            left: 0px;
+            top: 9px;
+            width: 100%;
+            font-size: 15px;
+            text-align: center;
+        }
+
+        #scoreboard_view
+        {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 520px;
+            height: 276px;
+            margin-left: -160px;
+            margin-top: -220px;
+            display: none;
+        }
+
+        .scoreboard-line
+        {
+            position: absolute;
+            left: 0px;
+            width: 520px;
+            height: 44px;
+            background-color: transparent;
+        }
+
+        .scoreboard-label
         {
             position: absolute;
             left: 0px;
@@ -123,6 +154,23 @@
         </div>
         <div id="credit_line_5" class="credit-line">
             <div id="credit_text_5" class="credit-label"></div>
+        </div>
+    </div>
+    <div id="scoreboard_view">
+        <div id="scoreboard_line_1" class="scoreboard-line">
+            <div id="scoreboard_text_1" class="scoreboard-label"></div>
+        </div>
+        <div id="scoreboard_line_2" class="scoreboard-line">
+            <div id="scoreboard_text_2" class="scoreboard-label"></div>
+        </div>
+        <div id="scoreboard_line_3" class="scoreboard-line">
+            <div id="scoreboard_text_3" class="scoreboard-label"></div>
+        </div>
+        <div id="scoreboard_line_4" class="scoreboard-line">
+            <div id="scoreboard_text_4" class="scoreboard-label"></div>
+        </div>
+        <div id="scoreboard_line_5" class="scoreboard-line">
+            <div id="scoreboard_text_5" class="scoreboard-label"></div>
         </div>
     </div>
 </body>

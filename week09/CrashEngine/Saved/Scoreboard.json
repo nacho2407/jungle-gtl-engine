@@ -1,21 +1,39 @@
 {
-  "scores" : [{
-      "documentCount" : 2,
-      "hp" : 58.911691,
-      "name" : "Player",
-      "score" : 117.823382,
-      "timestamp" : "2026-05-04 07:06:01"
-    }, {
-      "documentCount" : 1,
-      "hp" : 0.687487,
-      "name" : "Player",
-      "score" : 0.687487,
-      "timestamp" : "2026-05-04 07:06:21"
-    }, {
-      "documentCount" : 2,
-      "hp" : 0.000000,
-      "name" : "Player",
-      "score" : 0.000000,
-      "timestamp" : "2026-05-04 07:44:36"
-    }]
+  "scores": [
+    {
+      "name": "Tester C",
+      "score": 250,
+      "hp": 50,
+      "documentCount": 5,
+      "timestamp": "2026-05-04 09:10:00"
+    },
+    {
+      "name": "Tester A",
+      "score": 920,
+      "hp": 92,
+      "documentCount": 10,
+      "timestamp": "2026-05-04 09:00:00"
+    },
+    {
+      "name": "Tester E",
+      "score": 10,
+      "hp": 10,
+      "documentCount": 1,
+      "timestamp": "2026-05-04 09:20:00"
+    },
+    {
+      "name": "Tester B",
+      "score": 610,
+      "hp": 61,
+      "documentCount": 10,
+      "timestamp": "2026-05-04 09:05:00"
+    },
+    {
+      "name": "Tester D",
+      "score": 140,
+      "hp": 35,
+      "documentCount": 4,
+      "timestamp": "2026-05-04 09:15:00"
+    }
+  ]
 }
