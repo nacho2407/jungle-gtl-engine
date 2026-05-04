@@ -3,10 +3,14 @@
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/PointLightComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/LightComponentBase.h"
 #include "Component/LuaScriptComponent.h"
+#include "Component/PatrolAgentComponent.h"
+#include "Component/PatrolPointComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -78,6 +82,11 @@ UPrimitiveComponent* FLuaComponentProxy::ResolvePrimitiveComponent() const
 UStaticMeshComponent* FLuaComponentProxy::ResolveStaticMeshComponent() const
 {
     return Cast<UStaticMeshComponent>(ResolveComponent());
+}
+
+USubUVComponent* FLuaComponentProxy::ResolveSubUVComponent() const
+{
+    return Cast<USubUVComponent>(ResolveComponent());
 }
 
 AActor* FLuaComponentProxy::ResolveActor() const
@@ -214,6 +223,26 @@ int32 FLuaComponentProxy::GetNumMaterials() const
 
 bool FLuaComponentProxy::SetMaterial(int32 ElementIndex, const FString& MaterialPath)
 {
+    if (USubUVComponent* SubUVComp = ResolveSubUVComponent())
+    {
+        if (MaterialPath.empty() || MaterialPath == "None")
+        {
+            SubUVComp->SetSubUVMaterial(nullptr);
+            SubUVComp->MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
+            return true;
+        }
+
+        UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);
+        if (!Material)
+        {
+            return false;
+        }
+
+        SubUVComp->SetSubUVMaterial(Material);
+        SubUVComp->MarkProxyDirty(ESceneProxyDirtyFlag::Mesh);
+        return true;
+    }
+
     UStaticMeshComponent* MeshComp = ResolveStaticMeshComponent();
     if (!MeshComp)
     {
@@ -233,6 +262,30 @@ bool FLuaComponentProxy::SetMaterial(int32 ElementIndex, const FString& Material
     }
 
     MeshComp->SetMaterial(ElementIndex, Material);
+    return true;
+}
+
+bool FLuaComponentProxy::SetSubUVGrid(int32 Rows, int32 Columns)
+{
+    USubUVComponent* SubUVComp = ResolveSubUVComponent();
+    if (!SubUVComp)
+    {
+        return false;
+    }
+
+    SubUVComp->SetCellCount(Columns, Rows);
+    return true;
+}
+
+bool FLuaComponentProxy::SetCastShadow(bool bCastShadow)
+{
+    UPrimitiveComponent* Comp = ResolvePrimitiveComponent();
+    if (!Comp)
+    {
+        return false;
+    }
+
+    Comp->SetCastShadow(bCastShadow);
     return true;
 }
 
@@ -299,6 +352,24 @@ bool FLuaComponentProxy::SetLightColor(float R, float G, float B, float A)
     }
 
     Light->SetLightColor(FVector4(R, G, B, A));
+    return true;
+}
+
+float FLuaComponentProxy::GetAttenuationRadius() const
+{
+    UPointLightComponent* Light = Cast<UPointLightComponent>(ResolveComponent());
+    return Light ? Light->GetAttenuationRadius() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetAttenuationRadius(float Radius)
+{
+    UPointLightComponent* Light = Cast<UPointLightComponent>(ResolveComponent());
+    if (!Light)
+    {
+        return false;
+    }
+
+    Light->SetAttenuationRadius(Radius);
     return true;
 }
 
@@ -383,6 +454,110 @@ bool FLuaComponentProxy::SetCapsuleHalfHeight(float HalfHeight)
     }
 
     Capsule->SetCapsuleHalfHeight(HalfHeight);
+    return true;
+}
+
+FString FLuaComponentProxy::GetPatrolGroup() const
+{
+    if (UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent()))
+    {
+        return Agent->GetPatrolGroup();
+    }
+
+    if (UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent()))
+    {
+        return Point->GetPatrolGroup();
+    }
+
+    return "";
+}
+
+bool FLuaComponentProxy::SetPatrolGroup(const FString& PatrolGroup)
+{
+    if (UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent()))
+    {
+        Agent->SetPatrolGroup(PatrolGroup);
+        return true;
+    }
+
+    if (UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent()))
+    {
+        Point->SetPatrolGroup(PatrolGroup);
+        return true;
+    }
+
+    return false;
+}
+
+int32 FLuaComponentProxy::GetPatrolOrder() const
+{
+    UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent());
+    return Point ? Point->GetPatrolOrder() : 0;
+}
+
+bool FLuaComponentProxy::SetPatrolOrder(int32 PatrolOrder)
+{
+    UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent());
+    if (!Point)
+    {
+        return false;
+    }
+
+    Point->SetPatrolOrder(PatrolOrder);
+    return true;
+}
+
+float FLuaComponentProxy::GetPatrolMoveSpeed() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->GetMoveSpeed() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetPatrolMoveSpeed(float MoveSpeed)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetMoveSpeed(MoveSpeed);
+    return true;
+}
+
+float FLuaComponentProxy::GetPatrolReachDistance() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->GetReachDistance() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetPatrolReachDistance(float ReachDistance)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetReachDistance(ReachDistance);
+    return true;
+}
+
+bool FLuaComponentProxy::IsPatrolLoop() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->IsLoop() : false;
+}
+
+bool FLuaComponentProxy::SetPatrolLoop(bool bLoop)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetLoop(bLoop);
     return true;
 }
 

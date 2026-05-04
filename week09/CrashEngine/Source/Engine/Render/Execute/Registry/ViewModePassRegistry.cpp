@@ -1,4 +1,4 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Execute/Registry/ViewModePassRegistry.h"
 #include "Render/Resources/Shadows/ShadowFilterSettings.h"
 
@@ -329,7 +329,7 @@ void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewM
         Config.bEnableDecal          = false;
         Config.bEnableLighting       = false;
         Config.bEnableAdditiveDecal  = false;
-        Config.bEnableAlphaBlend     = false;
+        Config.bEnableAlphaBlend     = true;
         Config.bEnableNonLitViewMode = false;
         Config.bEnableHeightFog      = false;
         Config.bEnableFXAA           = false;
@@ -368,7 +368,7 @@ void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewM
         Config.bEnableDecal          = true;
         Config.bEnableLighting       = false;
         Config.bEnableAdditiveDecal  = false;
-        Config.bEnableAlphaBlend     = false;
+        Config.bEnableAlphaBlend     = true;
         Config.bEnableNonLitViewMode = false;
         Config.bEnableHeightFog      = true;
         Config.bEnableFXAA           = true;
@@ -384,7 +384,7 @@ void InitializeViewModePassConfig(FViewModePassConfig& Config, EViewMode InViewM
         Config.bEnableDecal          = true;
         Config.bEnableLighting       = true;
         Config.bEnableAdditiveDecal  = false;
-        Config.bEnableAlphaBlend     = false;
+        Config.bEnableAlphaBlend     = true;
         Config.bEnableNonLitViewMode = false;
         Config.bEnableHeightFog      = true;
         Config.bEnableFXAA           = true;

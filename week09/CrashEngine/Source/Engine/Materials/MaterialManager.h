@@ -1,4 +1,4 @@
-﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Core/Singleton.h"
@@ -84,6 +84,7 @@ private:
 
     void ApplyParameters(UMaterial* Material, json::JSON& JsonData);
     void ApplyTextures(UMaterial* Material, json::JSON& JsonData, const FString& MatFilePath);
+    void ApplyRenderState(UMaterial* Material, json::JSON& JsonData);
 
     std::filesystem::path ResolveFullPath(const FString& FilePath) const;
     FString NormalizeCacheKey(const FString& FilePath) const;

@@ -1,0 +1,19 @@
+{
+    "BlendState": "AlphaBlend",
+    "DepthStencilState": "NoDepth",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 18.0,
+        "SpecularStrength": 0.0
+    },
+    "PathFileName": "Asset/Content/Materials/game_tech_Lab_Logo_M.json",
+    "RasterizerState": "SolidNoCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/game_tech_Lab_Logo_M.png"
+    }
+}

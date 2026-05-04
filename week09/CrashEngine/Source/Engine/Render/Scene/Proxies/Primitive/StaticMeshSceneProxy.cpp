@@ -1,4 +1,4 @@
-﻿// 렌더 영역의 세부 동작을 구현합니다.
+// 렌더 영역의 세부 동작을 구현합니다.
 #include "Render/Resources/State/RenderStateTypes.h"
 #include "Render/Execute/Registry/RenderPassTypes.h"
 #include "Render/Resources/Buffers/ConstantBufferData.h"
@@ -214,6 +214,7 @@ void FStaticMeshSceneProxy::RebuildSectionRenderData()
 
     for (uint32 lod = 0; lod < LODCount; ++lod)
     {
+        bool bHasAlphaBlendSection = false;
         const auto& Sections    = Mesh->GetLODSections(lod);
         LODData[lod].MeshBuffer = Mesh->GetLODMeshBuffer(lod);
         LODData[lod].SectionRenderData.clear();
@@ -248,6 +249,15 @@ void FStaticMeshSceneProxy::RebuildSectionRenderData()
 
             if (Mat)
             {
+                const FMaterialRenderState& MaterialRenderState = Mat->GetRenderState();
+                Draw.Blend = MaterialRenderState.Blend;
+                Draw.DepthStencil = MaterialRenderState.DepthStencil;
+                Draw.Rasterizer = MaterialRenderState.Rasterizer;
+                if (MaterialRenderState.RenderPass == ERenderPass::AlphaBlend || MaterialRenderState.Blend == EBlendState::AlphaBlend)
+                {
+                    bHasAlphaBlendSection = true;
+                }
+
                 TryGetTextureSRV(Mat, { MaterialSemantics::DiffuseTextureSlot, "BaseColorTexture", "AlbedoTexture", "BaseTexture", "DiffuseMap" }, Draw.DiffuseSRV);
                 TryGetTextureSRV(Mat, { MaterialSemantics::NormalTextureSlot, "NormalMap", "NormalMapTexture", "BumpTexture", "BumpMap" }, Draw.NormalSRV);
                 TryGetTextureSRV(Mat, { MaterialSemantics::SpecularTextureSlot, "SpecularMap", "SpecularMapTexture", "SpecularMask", "SpecularMaskTexture", "GlossMap" }, Draw.SpecularSRV);
@@ -264,6 +274,11 @@ void FStaticMeshSceneProxy::RebuildSectionRenderData()
         }
 
         SortSectionRenderDataByMaterial(LODData[lod].SectionRenderData);
+        if (lod == 0)
+        {
+            Pass = bHasAlphaBlendSection ? ERenderPass::AlphaBlend : ERenderPass::Opaque;
+            Blend = bHasAlphaBlendSection ? EBlendState::AlphaBlend : EBlendState::Opaque;
+        }
     }
 
     CurrentLOD = 0;

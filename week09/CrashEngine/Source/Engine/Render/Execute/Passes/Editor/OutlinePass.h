@@ -22,4 +22,7 @@ public:
         (void)Proxy;
     }
     void SubmitDrawCommands(FRenderPipelineContext& Context) override;
+
+protected:
+    bool IsEnabled(const FRenderPipelineContext& Context) const override;
 };

@@ -1,4 +1,4 @@
-#include "LuaGameObjectProxy.h"
+﻿#include "LuaGameObjectProxy.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/SceneComponent.h"
@@ -33,6 +33,12 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
         return "UCapsuleComponent";
     if (TypeName == "LuaScriptComponent")
         return "ULuaScriptComponent";
+    if (TypeName == "SubUVComponent")
+        return "USubUVComponent";
+    if (TypeName == "PatrolAgentComponent")
+        return "UPatrolAgentComponent";
+    if (TypeName == "PatrolPointComponent")
+        return "UPatrolPointComponent";
 
     return TypeName;
 }
@@ -48,7 +54,10 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "USphereComponent"
 		|| ClassName == "UBoxComponent"
 		|| ClassName == "UCapsuleComponent"
-		|| ClassName == "ULuaScriptComponent";
+		|| ClassName == "ULuaScriptComponent"
+        || ClassName == "USubUVComponent"
+		|| ClassName == "UPatrolAgentComponent"
+		|| ClassName == "UPatrolPointComponent";
 }
 
 UClass* FindClassByName(const FString& ClassName)

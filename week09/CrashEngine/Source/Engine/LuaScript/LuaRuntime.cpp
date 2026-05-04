@@ -275,6 +275,8 @@ void FLuaRuntime::BindEngineTypes()
 		"GetStaticMeshPath", &FLuaComponentProxy::GetStaticMeshPath,
 		"GetNumMaterials", &FLuaComponentProxy::GetNumMaterials,
 		"SetMaterial", &FLuaComponentProxy::SetMaterial,
+        "SetSubUVGrid", &FLuaComponentProxy::SetSubUVGrid,
+        "SetCastShadow", &FLuaComponentProxy::SetCastShadow,
 
 		"SetText", &FLuaComponentProxy::SetText,
 		"GetText", &FLuaComponentProxy::GetText,
@@ -283,6 +285,8 @@ void FLuaRuntime::BindEngineTypes()
 
 		"SetIntensity", &FLuaComponentProxy::SetIntensity,
 		"SetLightColor", &FLuaComponentProxy::SetLightColor,
+        "GetAttenuationRadius", &FLuaComponentProxy::GetAttenuationRadius,
+        "SetAttenuationRadius", &FLuaComponentProxy::SetAttenuationRadius,
 		"SetAffectsWorld", &FLuaComponentProxy::SetAffectsWorld,
 		"SetCastShadows", &FLuaComponentProxy::SetCastShadows,
 
@@ -291,6 +295,17 @@ void FLuaRuntime::BindEngineTypes()
 		"SetCapsuleSize", &FLuaComponentProxy::SetCapsuleSize,
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
 		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
+
+        "GetPatrolGroup", &FLuaComponentProxy::GetPatrolGroup,
+        "SetPatrolGroup", &FLuaComponentProxy::SetPatrolGroup,
+        "GetPatrolOrder", &FLuaComponentProxy::GetPatrolOrder,
+        "SetPatrolOrder", &FLuaComponentProxy::SetPatrolOrder,
+        "GetPatrolMoveSpeed", &FLuaComponentProxy::GetPatrolMoveSpeed,
+        "SetPatrolMoveSpeed", &FLuaComponentProxy::SetPatrolMoveSpeed,
+        "GetPatrolReachDistance", &FLuaComponentProxy::GetPatrolReachDistance,
+        "SetPatrolReachDistance", &FLuaComponentProxy::SetPatrolReachDistance,
+        "IsPatrolLoop", &FLuaComponentProxy::IsPatrolLoop,
+        "SetPatrolLoop", &FLuaComponentProxy::SetPatrolLoop,
 
         "SetScriptPath", &FLuaComponentProxy::SetScriptPath,
         "CallFunction", &FLuaComponentProxy::CallFunction

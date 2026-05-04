@@ -1,4 +1,4 @@
-﻿// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+// 머티리얼 영역에서 공유되는 타입과 인터페이스를 정의합니다.
 #pragma once
 
 #include "Object/ObjectFactory.h"
@@ -34,6 +34,7 @@ private:
     FString PathFileName;
     uint32 MaterialInstanceID = 0;
     FMaterialTemplate* Template = nullptr;
+    FMaterialRenderState RenderState;
 
     TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
     TMap<FString, UTexture2D*> TextureParameters;
@@ -72,6 +73,8 @@ public:
     const FString& GetTexturePathFileName(const FString& TextureName) const;
     const FString& GetAssetPathFileName() const { return PathFileName; }
     void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
+    const FMaterialRenderState& GetRenderState() const { return RenderState; }
+    void SetRenderState(const FMaterialRenderState& InRenderState) { RenderState = InRenderState; }
     void Serialize(FArchive& Ar);
 
     FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const
