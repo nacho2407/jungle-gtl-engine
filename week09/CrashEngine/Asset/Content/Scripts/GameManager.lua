@@ -1,5 +1,6 @@
 local isGameOver = false
 local Timer = 0.0
+local ScoreboardLimit = 5
 
 local function getPlayerHP()
     if _G.PlayerState == nil then
@@ -17,16 +18,35 @@ local function getDocumentCount()
     return _G.PlayerState.DocumentCount or 0
 end
 
-function GameOver()
+function GameOver(finalHP, finalDocumentCount)
     if isGameOver then
         return
     end
 
     isGameOver = true
+    finalHP = finalHP or getPlayerHP()
+    finalDocumentCount = finalDocumentCount or getDocumentCount()
+    local score = finalHP * finalDocumentCount
+
+    Prefs.SetNumber("LastScore", score)
+    Scoreboard.AddScore("Player", score, finalHP, finalDocumentCount)
+
     print("GAME OVER")
-    print("Final HP : ", getPlayerHP())
-    print("Final Document Count : ", getDocumentCount())
+    print("Score : ", score)
+    print("Final HP : ", finalHP)
+    print("Final Document Count : ", finalDocumentCount)
     print("Timer : ", Timer)
+    ShowScoreboard(ScoreboardLimit)
+end
+
+function ShowScoreboard(limit)
+    limit = limit or ScoreboardLimit
+    local scores = Scoreboard.GetTopScores(limit)
+
+    print("SCOREBOARD")
+    for i, entry in ipairs(scores) do
+        print(entry.rank, entry.name, entry.score, entry.hp, entry.documentCount, entry.timestamp)
+    end
 end
 
 function BeginPlay()

@@ -13,6 +13,7 @@
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaInputProxy.h"
 #include "LuaScript/LuaUiProxy.h"
+#include "LuaScript/LuaPersistentStorage.h"
 #include "Math/Vector.h"
 
 namespace
@@ -105,7 +106,7 @@ void FLuaRuntime::Shutdown()
     {
         return;
     }
-    
+
     if (Lua)
     {
         Lua->collect_garbage();
@@ -157,7 +158,7 @@ void FLuaRuntime::BindUtilityFunctions()
 				bFirst = false;
 			}
 
-			UE_LOG(Lua, Info, "%s", Message.c_str()); 
+			UE_LOG(Lua, Info, "%s", Message.c_str());
 		}
 	);
 }
@@ -246,6 +247,7 @@ void FLuaRuntime::BindEngineTypes()
     // Coroutine 관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
     LuaUiProxy::Bind(*Lua);
+    FLuaPersistentStorage::Bind(*Lua);
 
 	Lua->new_usertype<FLuaComponentProxy>("Component", sol::no_constructor,
 		"UUID", sol::property(&FLuaComponentProxy::GetUUID),
@@ -286,6 +288,8 @@ void FLuaRuntime::BindEngineTypes()
         "SetBoxExtent", &FLuaComponentProxy::SetBoxExtent,
 		"SetCapsuleSize", &FLuaComponentProxy::SetCapsuleSize,
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
-		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight
+		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
+
+        "CallFunction", &FLuaComponentProxy::CallFunction
 	);
 }

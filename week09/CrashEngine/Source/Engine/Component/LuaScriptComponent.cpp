@@ -1,4 +1,4 @@
-﻿#include "LuaScriptComponent.h"
+#include "LuaScriptComponent.h"
 
 #include <cstring>
 #include <fstream>
@@ -86,10 +86,10 @@ bool CallLuaFunction(const char* FunctionName, sol::protected_function& Function
 
 bool IsMouseButtonVK(int32 VK)
 {
-    return VK == VK_LBUTTON 
-		|| VK == VK_RBUTTON 
-		|| VK == VK_MBUTTON 
-		|| VK == VK_XBUTTON1 
+    return VK == VK_LBUTTON
+		|| VK == VK_RBUTTON
+		|| VK == VK_MBUTTON
+		|| VK == VK_XBUTTON1
 		|| VK == VK_XBUTTON2;
 }
 
@@ -194,6 +194,36 @@ void ULuaScriptComponent::StartCoroutine(const FString& FunctionName, sol::varia
     }
 }
 
+bool ULuaScriptComponent::CallFunction(const FString& FunctionName, sol::variadic_args Args)
+{
+    if (FunctionName.empty())
+    {
+        SetLastError("Lua CallFunction failed: function name is empty.");
+        return false;
+    }
+
+    if (!bScriptLoaded && !LoadScript())
+    {
+        return false;
+    }
+
+    sol::object Candidate = Env[FunctionName.c_str()];
+    if (Candidate.get_type() == sol::type::nil)
+    {
+        SetLastError(FString("Lua CallFunction failed: function was not found: ") + FunctionName);
+        return false;
+    }
+
+    if (Candidate.get_type() != sol::type::function)
+    {
+        SetLastError(FString("Lua CallFunction failed: global is not a function: ") + FunctionName);
+        return false;
+    }
+
+    sol::protected_function Function = Candidate.as<sol::protected_function>();
+    return CallLuaFunction(FunctionName.c_str(), Function, LastError, Args);
+}
+
 void ULuaScriptComponent::ClearScript()
 {
     LuaScriptPath = "None";
@@ -259,6 +289,8 @@ bool ULuaScriptComponent::LoadScript()
                             { return WorldProxy.GetActiveCameraUp(); });
     WorldTable.set_function("FindPlayer",[this]()
         { return WorldProxy.FindPlayer(); });
+    WorldTable.set_function("FindActorByTag", [this](const FString& Tag)
+        { return WorldProxy.FindActorByTag(Tag); });
     WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
     WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)

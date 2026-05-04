@@ -1,4 +1,4 @@
-﻿#include "LuaWorldProxy.h"
+#include "LuaWorldProxy.h"
 
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
@@ -34,12 +34,12 @@ FString NormalizeLuaActorClassName(const FString& Name)
 
 bool IsLuaSpawnableActorClassName(const FString& ClassName)
 {
-    return ClassName == "AActor" 
-		|| ClassName == "AStaticMeshActor" 
-		|| ClassName == "APointLightActor" 
-		|| ClassName == "ASpotLightActor" 
-		|| ClassName == "ADirectionalLightActor" 
-		|| ClassName == "AHeightFogActor" 
+    return ClassName == "AActor"
+		|| ClassName == "AStaticMeshActor"
+		|| ClassName == "APointLightActor"
+		|| ClassName == "ASpotLightActor"
+		|| ClassName == "ADirectionalLightActor"
+		|| ClassName == "AHeightFogActor"
 		|| ClassName == "ADecalActor";
 }
 
@@ -123,10 +123,30 @@ FLuaGameObjectProxy FLuaWorldProxy::FindPlayer()
         {
             if (Tag==FName("Player"))
             {
-                return FLuaGameObjectProxy(Actor); 
+                return FLuaGameObjectProxy(Actor);
             }
         }
     }
+    return FLuaGameObjectProxy();
+}
+
+FLuaGameObjectProxy FLuaWorldProxy::FindActorByTag(const FString& Tag)
+{
+    UWorld* World = ResolveWorld();
+    if (!World || Tag.empty())
+    {
+        return FLuaGameObjectProxy();
+    }
+
+    TArray<AActor*> Actors = World->GetActors();
+    for (AActor* Actor : Actors)
+    {
+        if (Actor && Actor->HasTag(Tag))
+        {
+            return FLuaGameObjectProxy(Actor);
+        }
+    }
+
     return FLuaGameObjectProxy();
 }
 

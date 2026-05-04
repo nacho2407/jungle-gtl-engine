@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/CoreTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
@@ -21,6 +21,7 @@ public:
     FLuaGameObjectProxy SpawnActor(const FString& ActorClassName);
     bool DestroyActor(const FLuaGameObjectProxy& ActorProxy);
     FLuaGameObjectProxy FindPlayer();
+    FLuaGameObjectProxy FindActorByTag(const FString& Tag);
     bool SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees);
     bool MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, const FVector& Delta, const FString& BlockingTag);
     FVector GetActiveCameraForward() const;

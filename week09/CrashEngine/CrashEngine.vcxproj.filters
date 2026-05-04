@@ -1103,6 +1103,7 @@
     <ClCompile Include="Source\Editor\Settings\ReleaseSettings.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaInputProxy.cpp" />
+    <ClCompile Include="Source\Engine\LuaScript\LuaPersistentStorage.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaWorldProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaComponentProxy.cpp" />
   </ItemGroup>
@@ -2000,6 +2001,7 @@
     <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaInputProxy.h" />
+    <ClInclude Include="Source\Engine\LuaScript\LuaPersistentStorage.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaWorldProxy.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
