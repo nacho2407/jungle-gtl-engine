@@ -80,7 +80,7 @@ function Script:Dash(dir)
 end
 
 function Script:DestroyActorAfter(actor, time)
-    coroutine.yield(WaitForSeconds(0.3))
+    coroutine.yield(time)
     Engine.API.World.DestroyActor(actor)
 end
 
@@ -194,7 +194,6 @@ function Script:Tick(dt)
     end
 
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
-        Log("ATTACK TRIGGERED, bDoingAttack=" .. tostring(self.bDoingAttack))
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
 
         local yaw = rotation.z
@@ -224,7 +223,10 @@ function Script:Tick(dt)
         StartCoroutine(function()
             self:Attack(degree, yaw)
         end)
-        Log("AFTER SET, bDoingAttack=" .. tostring(self.bDoingAttack))
+
+        StartCoroutine(function()
+            self:DestroyActorAfter(slash, 0.1)
+        end)
 
     end
 end
