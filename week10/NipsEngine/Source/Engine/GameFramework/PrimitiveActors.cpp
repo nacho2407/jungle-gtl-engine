@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <random>
 
 namespace
 {
@@ -67,6 +68,36 @@ namespace
 
         OutCenter = (Min + Max) * 0.5f;
         return true;
+    }
+
+    std::mt19937& GetMainSceneDestructibleRng()
+    {
+        static std::mt19937 Rng(std::random_device{}());
+        return Rng;
+    }
+
+    float RandomRange(float Min, float Max)
+    {
+        std::uniform_real_distribution<float> Distribution(Min, Max);
+        return Distribution(GetMainSceneDestructibleRng());
+    }
+
+    FVector RandomUnitVector()
+    {
+        for (int32 Attempt = 0; Attempt < 8; ++Attempt)
+        {
+            const FVector Candidate(
+                RandomRange(-1.0f, 1.0f),
+                RandomRange(-1.0f, 1.0f),
+                RandomRange(-1.0f, 1.0f));
+
+            if (Candidate.SizeSquared() > 0.0001f)
+            {
+                return Candidate.GetSafeNormal();
+            }
+        }
+
+        return FVector::UpVector;
     }
 }
 
@@ -804,12 +835,53 @@ bool UMainSceneDestructibleComponent::StartSlice()
         return false;
     }
 
-    Fragments = Destructible->SliceForMainScene(
-        Destructible->GetActorLocation(),
-        FVector::UpVector,
-        0.0f);
+    TArray<AMainSceneDestructibleActor*> ActiveFragments;
+    ActiveFragments.push_back(Destructible);
 
-    if (Fragments.empty())
+    const int32 RequestedSliceCount = std::max(1, SliceCount);
+    int32 CompletedSliceCount = 0;
+    for (int32 SliceIndex = 0; SliceIndex < RequestedSliceCount && !ActiveFragments.empty(); ++SliceIndex)
+    {
+        std::uniform_int_distribution<size_t> IndexDistribution(0, ActiveFragments.size() - 1);
+        const size_t TargetIndex = IndexDistribution(GetMainSceneDestructibleRng());
+        AMainSceneDestructibleActor* Target = ActiveFragments[TargetIndex];
+        if (!Target || Target->IsPendingKill())
+        {
+            ActiveFragments.erase(ActiveFragments.begin() + TargetIndex);
+            --SliceIndex;
+            continue;
+        }
+
+        TArray<AMainSceneDestructibleActor*> NewFragments;
+        for (int32 Attempt = 0; Attempt < 5 && NewFragments.empty(); ++Attempt)
+        {
+            NewFragments = Target->SliceForMainScene(
+                Target->GetActorLocation(),
+                RandomUnitVector(),
+                0.0f);
+        }
+
+        if (NewFragments.empty())
+        {
+            continue;
+        }
+
+        Target->StopPresentationMotion();
+        Target->SetVisible(false);
+        ActiveFragments.erase(ActiveFragments.begin() + TargetIndex);
+        for (AMainSceneDestructibleActor* Fragment : NewFragments)
+        {
+            if (Fragment)
+            {
+                ActiveFragments.push_back(Fragment);
+            }
+        }
+        ++CompletedSliceCount;
+    }
+
+    Fragments = ActiveFragments;
+
+    if (CompletedSliceCount == 0 || Fragments.empty())
     {
         UE_LOG_WARNING("[MainSceneDestructible] Slice failed: %s", Destructible->GetName().c_str());
         return false;
@@ -828,16 +900,16 @@ bool UMainSceneDestructibleComponent::StartSlice()
 
         Fragment->StopPresentationMotion();
         const FVector StartLocation = Fragment->GetActorLocation();
-        const float Direction = (Index % 2 == 0) ? 1.0f : -1.0f;
+        const FVector ScatterDirection = RandomUnitVector();
+        const float DistanceScale = RandomRange(0.65f, 1.15f);
         FragmentStartLocations.push_back(StartLocation);
-        FragmentTargetLocations.push_back(StartLocation + FVector::UpVector * DirectionDistance * Direction);
+        FragmentTargetLocations.push_back(StartLocation + ScatterDirection * DirectionDistance * DistanceScale);
     }
 
-    Destructible->SetVisible(false);
     bSliced = true;
     Elapsed = 0.0f;
     PatrolElapsed = 0.0f;
-    UE_LOG("[MainSceneDestructible] Slice started: %s Fragments=%d", Destructible->GetName().c_str(), static_cast<int32>(Fragments.size()));
+    UE_LOG("[MainSceneDestructible] Slice started: %s Cuts=%d Fragments=%d", Destructible->GetName().c_str(), CompletedSliceCount, static_cast<int32>(Fragments.size()));
     return true;
 }
 
@@ -849,6 +921,7 @@ void UMainSceneDestructibleComponent::Serialize(FArchive& Ar)
     Ar << "Slice Speed" << SliceSpeed;
     Ar << "Patrol Amplitude" << PatrolAmplitude;
     Ar << "Patrol Speed" << PatrolSpeed;
+    Ar << "Slice Count" << SliceCount;
 
     if (Ar.IsLoading()
         && !bAutoStart
@@ -863,6 +936,11 @@ void UMainSceneDestructibleComponent::Serialize(FArchive& Ar)
         PatrolAmplitude = 0.18f;
         PatrolSpeed = 1.15f;
     }
+
+    if (Ar.IsLoading() && SliceCount <= 0)
+    {
+        SliceCount = 5;
+    }
 }
 
 void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -874,6 +952,7 @@ void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDesc
     OutProps.push_back({"Slice Speed", EPropertyType::Float, &SliceSpeed, 0.0f, 10.0f, 0.05f});
     OutProps.push_back({"Patrol Amplitude", EPropertyType::Float, &PatrolAmplitude, 0.0f, 10.0f, 0.01f});
     OutProps.push_back({"Patrol Speed", EPropertyType::Float, &PatrolSpeed, 0.0f, 20.0f, 0.05f});
+    OutProps.push_back({"Slice Count", EPropertyType::Int, &SliceCount, 1.0f, 12.0f, 1.0f});
 }
 
 float UMainSceneDestructibleComponent::GetRealDeltaTime(float DeltaTime) const
@@ -1128,14 +1207,6 @@ TArray<AMainSceneDestructibleActor*> AMainSceneDestructibleActor::SliceForMainSc
         Result.push_back(Actor1);
         Result.push_back(Actor2);
     }
-    else
-    {
-        UE_LOG_WARNING("[MainSceneDestructible] Slice produced empty result: FrontEmpty=%d BackEmpty=%d World=%p",
-            bFirstMeshEmpty ? 1 : 0,
-            bSecondMeshEmpty ? 1 : 0,
-            World);
-    }
-
     UObjectManager::Get().DestroyObject(TempMesh1);
     UObjectManager::Get().DestroyObject(TempMesh2);
     return Result;
