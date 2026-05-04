@@ -287,6 +287,8 @@ bool ULuaScriptComponent::LoadScript()
                             { return WorldProxy.GetActiveCameraRight(); });
     WorldTable.set_function("GetActiveCameraUp", [this]()
                             { return WorldProxy.GetActiveCameraUp(); });
+    WorldTable.set_function("GetMouseWorldPointOnPlane", [this](float PlaneZ)
+                            { return WorldProxy.GetMouseWorldPointOnPlane(PlaneZ); });
     WorldTable.set_function("FindPlayer",[this]()
         { return WorldProxy.FindPlayer(); });
     WorldTable.set_function("FindActorByTag", [this](const FString& Tag)

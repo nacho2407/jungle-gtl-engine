@@ -1,6 +1,7 @@
 #include "LuaComponentProxy.h"
 
 #include "Component/ActorComponent.h"
+#include "Component/BillboardComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
@@ -242,6 +243,24 @@ bool FLuaComponentProxy::SetMaterial(int32 ElementIndex, const FString& Material
         return true;
     }
 
+    if (UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(ResolveComponent()))
+    {
+        if (MaterialPath.empty() || MaterialPath == "None")
+        {
+            BillboardComp->SetMaterial(nullptr);
+            return true;
+        }
+
+        UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);
+        if (!Material)
+        {
+            return false;
+        }
+
+        BillboardComp->SetMaterial(Material);
+        return true;
+    }
+
     UStaticMeshComponent* MeshComp = ResolveStaticMeshComponent();
     if (!MeshComp)
     {
@@ -315,6 +334,20 @@ bool FLuaComponentProxy::SetBillboard(bool bBillboard)
     }
 
     TextComp->SetBillboard(bBillboard);
+    return true;
+}
+
+bool FLuaComponentProxy::SetSpriteSize(float Width, float Height)
+{
+    UBillboardComponent* BillboardComp = Cast<UBillboardComponent>(ResolveComponent());
+    if (!BillboardComp)
+    {
+        return false;
+    }
+
+    BillboardComp->SetSpriteSize(Width, Height);
+    BillboardComp->MarkProxyDirty(ESceneProxyDirtyFlag::Transform);
+    BillboardComp->MarkWorldBoundsDirty();
     return true;
 }
 

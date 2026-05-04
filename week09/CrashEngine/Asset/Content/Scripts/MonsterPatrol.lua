@@ -200,6 +200,24 @@ function BeginPlay()
     end
 end
 
+function OnOverlapBegin(other)
+    if other == nil or not other:IsValid() then
+        return
+    end
+
+    if not other:HasTag("PlayerBullet") then
+        return
+    end
+
+    if other:HasTag("DamageApplied") then
+        return
+    end
+
+    other:AddTag("DamageApplied")
+    obj:ApplyDamage(1, other)
+    World.DestroyActor(other)
+end
+
 function OnTakeDamage(damage, instigator)
     HP = HP - damage
     print("Monster HP : ", HP)

@@ -28,6 +28,7 @@ public:
     FVector GetActiveCameraForward() const;
     FVector GetActiveCameraRight() const;
     FVector GetActiveCameraUp() const;
+    FVector GetMouseWorldPointOnPlane(float PlaneZ) const;
 
 private:
     uint32 WorldUUID = 0;

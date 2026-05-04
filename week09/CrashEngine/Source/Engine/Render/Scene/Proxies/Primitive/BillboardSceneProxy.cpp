@@ -80,6 +80,11 @@ void FBillboardSceneProxy::UpdateMesh()
 
     if (Mat)
     {
+        const FMaterialRenderState& RenderState = Mat->GetRenderState();
+        Blend        = RenderState.Blend;
+        DepthStencil = RenderState.DepthStencil;
+        Rasterizer   = RenderState.Rasterizer;
+
         DiffuseSRV    = ResolveBillboardTextureSRV(Mat);
         MaterialCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
         MaterialCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);

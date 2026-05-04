@@ -2,6 +2,10 @@
 
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
+#include "Engine/Core/RayTypes.h"
+#include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/Engine.h"
+#include "Engine/Runtime/WindowsWindow.h"
 #include "GameFramework/LuaScriptActor.h"
 #include "GameFramework/SubUVActor.h"
 #include "GameFramework/World.h"
@@ -9,6 +13,8 @@
 #include "Math/MathUtils.h"
 #include "Object/Object.h"
 #include "Physics/CollisionManager.h"
+
+#include <cmath>
 
 namespace
 {
@@ -233,4 +239,35 @@ FVector FLuaWorldProxy::GetActiveCameraUp() const
     UWorld* World = ResolveWorld();
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
     return Camera ? Camera->GetUpVector() : FVector(0.0f, 0.0f, 1.0f);
+}
+
+FVector FLuaWorldProxy::GetMouseWorldPointOnPlane(float PlaneZ) const
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    FWindowsWindow* Window = GEngine ? GEngine->GetWindow() : nullptr;
+    if (!Camera || !Window || Window->GetWidth() <= 0.0f || Window->GetHeight() <= 0.0f)
+    {
+        return FVector::ZeroVector;
+    }
+
+    POINT MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetSnapshot().MouseScreenPos);
+    FRay MouseRay = Camera->DeprojectScreenToWorld(
+        static_cast<float>(MouseClientPos.x),
+        static_cast<float>(MouseClientPos.y),
+        Window->GetWidth(),
+        Window->GetHeight());
+
+    if (std::abs(MouseRay.Direction.Z) < 0.0001f)
+    {
+        return MouseRay.Origin + MouseRay.Direction * 100.0f;
+    }
+
+    const float T = (PlaneZ - MouseRay.Origin.Z) / MouseRay.Direction.Z;
+    if (T <= 0.0f)
+    {
+        return MouseRay.Origin + MouseRay.Direction * 100.0f;
+    }
+
+    return MouseRay.Origin + MouseRay.Direction * T;
 }

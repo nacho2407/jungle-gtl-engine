@@ -270,6 +270,22 @@ float FLuaInputProxy::GetAxis(const FString& AxisName, int32 ControllerId) const
     return 0.0f;
 }
 
+void FLuaInputProxy::SetCursorVisible(bool bVisible) const
+{
+    if (bVisible)
+    {
+        while (ShowCursor(TRUE) < 0)
+        {
+        }
+    }
+    else
+    {
+        while (ShowCursor(FALSE) >= 0)
+        {
+        }
+    }
+}
+
 FString LuaKeyNameFromVK(int32 VK)
 {
     if (VK >= 'A' && VK <= 'Z')

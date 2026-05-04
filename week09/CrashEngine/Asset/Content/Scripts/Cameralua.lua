@@ -9,14 +9,17 @@ local ZoomAlpha = 0.0
 local ZoomSpeed = 25.0
 local AimYaw = 0.0
 local AimPitch = 0.0
+local ZoomBaseForward = nil
 local MouseSensitivity = 0.15
 local MinAimPitch = -45.0
 local MaxAimPitch = 45.0
 
--- 조준선은 TextRenderComponent를 가진 별도 Actor로 만든다.
+-- 조준선은 Aim.png를 머티리얼로 쓰는 BillboardComponent Actor로 만든다.
 local AimActor = nil
-local AimText = nil
+local AimBillboard = nil
 local AimDistance = 30.0
+local AimMaterial = "Asset/Content/Materials/Aim.json"
+local AimSize = 3.0
 
 -- 카메라 상태는 PlayerController가 읽을 수 있게 _G.CameraState에 공유한다.
 local function ensureCameraState()
@@ -60,6 +63,26 @@ local function getPlayerUp()
     return Player:GetUpVector()
 end
 
+local function getMouseAimForward(playerPos, cameraLocation, fallbackForward)
+    if World.GetMouseWorldPointOnPlane == nil then
+        return fallbackForward
+    end
+
+    local mouseWorldPoint = World.GetMouseWorldPointOnPlane(playerPos.Z)
+    local direction = mouseWorldPoint - cameraLocation
+    if direction:LengthSquared() > 0.0001 then
+        return direction:Normalized()
+    end
+
+    return fallbackForward
+end
+
+local function setMouseCursorVisible(visible)
+    if Input.SetCursorVisible ~= nil then
+        Input:SetCursorVisible(visible)
+    end
+end
+
 -- 줌 중 화면에 보일 조준선 Actor를 만든다.
 local function createAim()
     AimActor = World.SpawnActor("Actor")
@@ -67,14 +90,13 @@ local function createAim()
         return
     end
 
-    AimText = AimActor:AddComponent("TextRenderComponent")
-    if AimText:IsValid() then
-        AimText:SetText("+")
-        AimText:SetFontSize(20.0)
-        AimText:SetBillboard(true)
-        AimText:SetVisible(false)
-        AimText:SetVisibleInEditor(false)
-        AimText:SetVisibleInGame(false)
+    AimBillboard = AimActor:AddComponent("BillboardComponent")
+    if AimBillboard:IsValid() then
+        AimBillboard:SetMaterial(0, AimMaterial)
+        AimBillboard:SetSpriteSize(AimSize, AimSize)
+        AimBillboard:SetVisible(false)
+        AimBillboard:SetVisibleInEditor(false)
+        AimBillboard:SetVisibleInGame(false)
     end
 end
 
@@ -86,9 +108,9 @@ local function updateAim(aimOrigin, aimPoint, aimDirection)
 
     AimActor.Location = aimPoint
 
-    if AimText ~= nil and AimText:IsValid() then
-        AimText:SetVisible(IsZooming)
-        AimText:SetVisibleInGame(IsZooming)
+    if AimBillboard ~= nil and AimBillboard:IsValid() then
+        AimBillboard:SetVisible(IsZooming)
+        AimBillboard:SetVisibleInGame(IsZooming)
     end
 end
 
@@ -98,8 +120,10 @@ function BeginPlay()
     ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
+    ZoomBaseForward = nil
     syncCameraState()
     createAim()
+    setMouseCursorVisible(true)
 end
 
 function EndPlay()
@@ -107,10 +131,12 @@ function EndPlay()
     ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
+    ZoomBaseForward = nil
     syncCameraState()
 
     AimActor = nil
-    AimText = nil
+    AimBillboard = nil
+    setMouseCursorVisible(true)
 end
 
 function OnOverlap(OtherActor)
@@ -132,6 +158,10 @@ function Tick(dt)
     local Forward = getPlayerForward()
     local Up = getPlayerUp()
     if IsZooming == true then
+        if ZoomBaseForward ~= nil and ZoomBaseForward:LengthSquared() > 0.0001 then
+            Forward = ZoomBaseForward
+        end
+
         -- 줌 중에만 마우스 X 입력으로 조준 방향을 좌우 회전한다.
         AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity
         AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity
@@ -194,8 +224,22 @@ function OnMouseButtonPressed(button)
     -- 우클릭을 누르면 줌 상태로 진입하고, 이전 줌에서 쌓인 회전은 초기화한다.
     if button == "RightMouseButton" then
         IsZooming = true
+        setMouseCursorVisible(false)
         AimYaw = 0.0
         AimPitch = 0.0
+
+        if Player ~= nil and Player:IsValid() then
+            local playerPos = Player.Location
+            local up = getPlayerUp()
+            if up:LengthSquared() > 0.0001 then
+                up = up:Normalized()
+            end
+
+            local cameraLocation = playerPos + up * 1.2
+            ZoomBaseForward = getMouseAimForward(playerPos, cameraLocation, getPlayerForward())
+        else
+            ZoomBaseForward = nil
+        end
     end
 end
 
@@ -203,7 +247,9 @@ function OnMouseButtonReleased(button)
     -- 우클릭을 떼면 쿼터뷰로 돌아가며 조준 회전도 다음 줌을 위해 초기화한다.
     if button == "RightMouseButton" then
         IsZooming = false
+        setMouseCursorVisible(true)
         AimYaw = 0.0
         AimPitch = 0.0
+        ZoomBaseForward = nil
     end
 end

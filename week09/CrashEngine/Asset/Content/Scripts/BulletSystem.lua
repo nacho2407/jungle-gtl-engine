@@ -7,10 +7,11 @@ local BulletMeshPath = "Asset/Content/Models/Bullet/Bullet.obj"
 local BulletSpeed = 90.0
 local BulletLifeTime = 3.0
 local BulletScale = Vector.new(0.15, 0.15, 0.15)
-local BulletColliderRadius = 0.6
-local PlayerHitRadius = 1.2
-local TurretHitRadius = 2.0
-local MonsterHitRadius = 2.0
+local BulletColliderLocation = Vector.new(-10.0, 0.0, 2.4)
+local BulletColliderRotation = Vector.new(0.0, 90.0, 0.0)
+local BulletColliderScale = Vector.new(1.0, 1.0, 1.0)
+local BulletColliderHalfHeight = 8.25
+local BulletColliderRadius = 6.77
 local BulletMeshRollOffset = 0.0
 local BulletMeshYawOffset = 180.0
 
@@ -72,21 +73,26 @@ local function directionToBulletRotation(direction)
     return Vector.new(BulletMeshRollOffset, 0.0, yaw)
 end
 
--- 총알 Actor에 StaticMesh와 SphereCollider를 붙인다.
--- 실제 충돌 판정은 아래 거리 체크와 MoveActorWithBlock을 같이 사용한다.
+-- 총알 Actor에 중립 Root, StaticMesh, CapsuleCollider를 붙인다.
+-- Mesh scale이 Collider에 상속되지 않도록 Root를 따로 만든다.
 local function addBulletVisual(actor)
+    local root = actor:AddComponent("SceneComponent")
+
     local mesh = actor:AddComponent("StaticMeshComponent")
     if mesh:IsValid() then
         mesh:SetStaticMesh(BulletMeshPath)
         mesh:SetRelativeScale(BulletScale)
     end
 
-    local collider = actor:AddComponent("SphereComponent")
+    local collider = actor:AddComponent("CapsuleComponent")
     if collider:IsValid() then
-        collider:SetSphereRadius(BulletColliderRadius)
-        collider:SetVisible(false)
-        collider:SetVisibleInEditor(false)
-        collider:SetVisibleInGame(false)
+        collider:SetRelativeLocation(BulletColliderLocation)
+        collider:SetRelativeRotation(BulletColliderRotation)
+        collider:SetRelativeScale(BulletColliderScale)
+        collider:SetCapsuleSize(BulletColliderRadius, BulletColliderHalfHeight)
+        collider:SetVisible(true)
+        collider:SetVisibleInEditor(true)
+        collider:SetVisibleInGame(true)
     end
 
     return mesh
@@ -137,56 +143,10 @@ local function destroyBullet(index)
     table.remove(bullets, index)
 end
 
--- 적 총알이 Player 근처에 왔는지 간단한 거리 기반으로 판정한다.
-local function hitPlayer(bulletInfo, player)
-    if player == nil or not player:IsValid() then
-        return false
-    end
-
-    local toPlayer = player.Location - bulletInfo.Actor.Location
-    return toPlayer:LengthSquared() <= PlayerHitRadius * PlayerHitRadius
-end
-
--- 데미지 적용은 Actor의 OnTakeDamage 이벤트로 이어진다.
-local function applyDamage(target, damage, instigator)
-    if target ~= nil and target:IsValid() then
-        target:ApplyDamage(damage, instigator)
-    end
-end
-
--- 플레이어 총알이 맞출 수 있는 Turret을 찾는다.
--- 현재는 모든 Turret 태그 Actor와 거리 비교하는 방식이다.
-local function hitActorByTag(bulletInfo, tag, hitRadius)
-    local world = getWorld()
-    if world.FindActorsByTag == nil then
-        return nil
-    end
-
-    local actors = world.FindActorsByTag(tag)
-    for i, actor in ipairs(actors) do
-        if actor:IsValid() then
-            local toActor = actor.Location - bulletInfo.Actor.Location
-            if toActor:LengthSquared() <= hitRadius * hitRadius then
-                return actor
-            end
-        end
-    end
-
-    return nil
-end
-
-local function hitTurret(bulletInfo)
-    return hitActorByTag(bulletInfo, "Turret", TurretHitRadius)
-end
-
-local function hitMonster(bulletInfo)
-    return hitActorByTag(bulletInfo, "Monster", MonsterHitRadius)
-end
-
--- 매 프레임 총알을 이동시키고, 벽/플레이어/터렛 피격을 처리한다.
+-- 매 프레임 총알 이동과 수명, 벽 충돌만 처리한다.
+-- Player/Turret/Monster 피격은 각 대상 스크립트의 OnOverlapBegin에서 총알 Tag로 처리한다.
 function BulletSystem.Tick(dt)
     local world = getWorld()
-    local player = world.FindPlayer()
 
     for i = #bullets, 1, -1 do
         local bulletInfo = bullets[i]
@@ -195,34 +155,19 @@ function BulletSystem.Tick(dt)
         if bullet == nil or not bullet:IsValid() then
             table.remove(bullets, i)
         else
-            bulletInfo.LifeTime = bulletInfo.LifeTime - dt
-
-            if bulletInfo.LifeTime <= 0.0 then
+            if bullet:HasTag("DamageApplied") then
                 destroyBullet(i)
             else
-                local moveDelta = bulletInfo.Direction * BulletSpeed * dt
-                local moved = world.MoveActorWithBlock(bullet, moveDelta, "Wall")
+                bulletInfo.LifeTime = bulletInfo.LifeTime - dt
 
-                if not moved then
+                if bulletInfo.LifeTime <= 0.0 then
                     destroyBullet(i)
-                elseif bulletInfo.OwnerTag == "EnemyBullet" and hitPlayer(bulletInfo, player) then
-                    if not bullet:HasTag("DamageApplied") then
-                        bullet:AddTag("DamageApplied")
-                        applyDamage(player, 10, bullet)
-                    end
+                else
+                    local moveDelta = bulletInfo.Direction * BulletSpeed * dt
+                    local moved = world.MoveActorWithBlock(bullet, moveDelta, "Wall")
 
-                    destroyBullet(i)
-                elseif bulletInfo.OwnerTag == "PlayerBullet" then
-                    local turret = hitTurret(bulletInfo)
-                    if turret ~= nil and turret:IsValid() then
-                        applyDamage(turret, 1, bullet)
+                    if not moved then
                         destroyBullet(i)
-                    else
-                        local monster = hitMonster(bulletInfo)
-                        if monster ~= nil and monster:IsValid() then
-                            applyDamage(monster, 1, bullet)
-                            destroyBullet(i)
-                        end
                     end
                 end
             end

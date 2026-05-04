@@ -238,7 +238,8 @@ void FLuaRuntime::BindEngineTypes()
 		"WasGamepadButtonPressed", &FLuaInputProxy::WasGamepadButtonPressed,
 		"WasGamepadButtonReleased", &FLuaInputProxy::WasGamepadButtonReleased,
 
-		"GetAxis", &FLuaInputProxy::GetAxis
+		"GetAxis", &FLuaInputProxy::GetAxis,
+        "SetCursorVisible", &FLuaInputProxy::SetCursorVisible
 	);
 
     static FLuaInputProxy GLuaInputProxy;
@@ -281,6 +282,7 @@ void FLuaRuntime::BindEngineTypes()
 		"GetText", &FLuaComponentProxy::GetText,
 		"SetFontSize", &FLuaComponentProxy::SetFontSize,
 		"SetBillboard", &FLuaComponentProxy::SetBillboard,
+        "SetSpriteSize", &FLuaComponentProxy::SetSpriteSize,
 
 		"SetIntensity", &FLuaComponentProxy::SetIntensity,
 		"SetLightColor", &FLuaComponentProxy::SetLightColor,

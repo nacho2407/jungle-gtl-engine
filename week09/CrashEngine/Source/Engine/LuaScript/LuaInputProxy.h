@@ -19,6 +19,7 @@ public:
     bool WasGamepadButtonReleased(const FString& ButtonName, int32 ControllerId = 0) const;
 
     float GetAxis(const FString& AxisName, int32 ControllerId = 0) const;
+    void SetCursorVisible(bool bVisible) const;
 };
 
 /*
