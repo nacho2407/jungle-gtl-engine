@@ -153,12 +153,12 @@ function UIManager.Init()
 
     local gameOverWidget = UI.CreateWidget("Asset/UI/GameOverWidget.rml")
     gameOverWidget:SetWantsMouse(true)
-    gameOverWidget:bind_click("restart-button", function()
-        -- Map.Scene 으로 재진입 — World destroy + 새 PhysX scene + StartMatch 가 HP/페이즈/타이머
-        -- 모두 리셋. PauseGame 풀어두지 않으면 새 scene 도 paused 상태로 시작.
+    gameOverWidget:bind_click("lobby-button", function()
+        -- Intro 씬으로 복귀 — Map 재진입 시 일부 상태가 stale 하게 남는 증상이 있어
+        -- 로비를 거쳐 새로 시작하도록. Intro 의 start-button 이 Map 으로 다시 transition.
         UIManager.Hide("gameOver")
         Engine.ResumeGame()
-        Engine.TransitionToScene("Map")
+        Engine.TransitionToScene("Intro")
     end)
     gameOverWidget:bind_click("game-over-exit-button", function()
         Engine.Exit()

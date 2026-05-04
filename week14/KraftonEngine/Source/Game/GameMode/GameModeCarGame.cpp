@@ -170,9 +170,12 @@ void AGameModeCarGame::SuccessPhase()
 
 	EPhaseResult Result = EPhaseResult::Success;
 
-	UE_LOG("[CarGame] SuccessPhase called — Phase=%d Result=%d", static_cast<int32>(GS->GetPhase()), static_cast<int32>(Result));
+	UE_LOG("[CarGame] SuccessPhase called — Phase=%d Result=%d, RemainingPhaseTime=%.2f",
+		static_cast<int32>(GS->GetPhase()), static_cast<int32>(Result), GS->GetRemainingPhaseTime());
 
-	GS->SetRemainingPhaseTime(0.0f);
+	// EndPhase 가 Result 페이즈로 전이하면서 RemainingPhaseTime 을 ResultDisplayDuration
+	// 로 덮어쓰므로 여기서 0 으로 만들 필요 없음. 오히려 0 으로 만들면 Score Time Bonus
+	// 계산이 항상 0 이 돼서 Lua-driven 페이즈 클리어가 base 점수만 받음.
 	EndPhase(Result);
 }
 
@@ -314,7 +317,8 @@ void AGameModeCarGame::ApplyMatchEndBonus()
 	auto* GS = Cast<AGameStateCarGame>(GetGameState());
 	if (!GS) return;
 
-	const int32 TimeBonus   = static_cast<int32>(GS->GetRemainingMatchTime()) * MatchTimeBonusPerSec;
+	const float SafeRemaining = GS->GetRemainingMatchTime() < 0.0f ? 0.0f : GS->GetRemainingMatchTime();
+	const int32 TimeBonus   = static_cast<int32>(SafeRemaining) * MatchTimeBonusPerSec;
 	const int32 HealthBonus = GS->GetHealth() * HealthBonusPerHP;
 	const int32 Total       = TimeBonus + HealthBonus;
 	if (Total != 0)

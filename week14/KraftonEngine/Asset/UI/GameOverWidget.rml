@@ -12,7 +12,7 @@
 		<div id="game-over-subtitle">FINAL SCORE</div>
 		<div id="final-score-value">000000</div>
 
-		<button id="restart-button">RESTART</button>
+		<button id="lobby-button">LOBBY</button>
 		<button id="game-over-exit-button">EXIT</button>
 
 		<div id="game-over-bottom-line"></div>
