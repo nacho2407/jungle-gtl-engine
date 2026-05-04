@@ -173,8 +173,10 @@ function OnOverlapBegin(other)
 
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
-        print("Game Finish!");
-        callGameOver()
+        if DocumentCount>0 then
+            print("Game Finish!");
+            callGameOver()
+        end
     end
 end
 
