@@ -54,6 +54,7 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
     Ar << bIsVisible;
     Ar << bVisibleInEditor;
     Ar << bVisibleInGame;
+    Ar << bCastShadow;
     Ar << bIsEditorHelper;
 }
 
@@ -91,6 +92,17 @@ void UPrimitiveComponent::SetVisibleInGame(bool bNewVisible)
 
     bVisibleInGame = bNewVisible;
     MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetCastShadow(bool bNewCastShadow)
+{
+    if (bCastShadow == bNewCastShadow)
+    {
+        return;
+    }
+
+    bCastShadow = bNewCastShadow;
+    MarkProxyDirty(ESceneProxyDirtyFlag::Shadow);
 }
 
 void UPrimitiveComponent::SetEditorHelper(bool bNewHelper)
@@ -169,6 +181,7 @@ void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "Visible", EPropertyType::Bool, &bIsVisible });
     OutProps.push_back({ "Visible In Editor", EPropertyType::Bool, &bVisibleInEditor });
     OutProps.push_back({ "Visible In Game", EPropertyType::Bool, &bVisibleInGame });
+    OutProps.push_back({ "Cast Shadow", EPropertyType::Bool, &bCastShadow });
     OutProps.push_back({ "Is Editor Helper", EPropertyType::Bool, &bIsEditorHelper });
 }
 
@@ -185,6 +198,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
     else if (strcmp(PropertyName, "Visible In Editor") == 0 || strcmp(PropertyName, "Visible In Game") == 0 || strcmp(PropertyName, "Is Editor Helper") == 0)
     {
         MarkRenderVisibilityDirty();
+    }
+    else if (strcmp(PropertyName, "Cast Shadow") == 0)
+    {
+        MarkProxyDirty(ESceneProxyDirtyFlag::Shadow);
     }
 }
 

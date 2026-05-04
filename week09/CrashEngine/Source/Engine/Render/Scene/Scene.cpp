@@ -190,6 +190,10 @@ void FScene::UpdateDirtyProxies()
         {
             Proxy->UpdateVisibility();
         }
+        if (HasFlag(FlagsToProcess, ESceneProxyDirtyFlag::Shadow))
+        {
+            Proxy->UpdateShadow();
+        }
     }
 }
 

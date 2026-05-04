@@ -37,11 +37,13 @@ public:
     void SetVisibility(bool bNewVisible);
     void SetVisibleInEditor(bool bNewVisible);
     void SetVisibleInGame(bool bNewVisible);
+    void SetCastShadow(bool bNewCastShadow);
     void SetEditorHelper(bool bNewHelper);
 
     inline bool IsVisible() const { return bIsVisible; }
     inline bool IsVisibleInEditor() const { return bVisibleInEditor; }
     inline bool IsVisibleInGame() const { return bVisibleInGame; }
+    inline bool DoesCastShadow() const { return bCastShadow; }
     inline bool IsEditorHelper() const { return bIsEditorHelper; }
 
     bool ShouldRenderInWorld(EWorldType WorldType) const;
@@ -174,6 +176,7 @@ protected:
     bool bIsVisible = true;
     bool bVisibleInEditor = true;
     bool bVisibleInGame = true;
+    bool bCastShadow = true;
     bool bIsEditorHelper = false;
     FPrimitiveProxy* SceneProxy = nullptr;
 
