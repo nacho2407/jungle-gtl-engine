@@ -118,6 +118,10 @@ void FScene::RemovePrimitive(FPrimitiveProxy* Proxy)
     }
 
     const uint32 Slot = Proxy->ProxyId;
+    if (Slot >= PrimitiveProxyRegistry.Proxies.size() || PrimitiveProxyRegistry.Proxies[Slot] != Proxy)
+    {
+        return;
+    }
 
     if (Proxy->bQueuedForDirtyUpdate)
     {

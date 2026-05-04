@@ -1,0 +1,52 @@
+<rml>
+<head>
+    <style>
+        body
+        {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background-color: transparent;
+        }
+
+        #background
+        {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-over-label
+        {
+            position: absolute;
+            left: 0px;
+            width: 100%;
+            height: 44px;
+        }
+
+        #game_over_score
+        {
+            top: 300px;
+        }
+
+        #game_over_prompt
+        {
+            top: 330px;
+        }
+
+        #game_over_name
+        {
+            top: 360px;
+        }
+    </style>
+</head>
+<body>
+    <img id="background" src="" />
+    <div id="game_over_title" class="game-over-label"></div>
+    <div id="game_over_score" class="game-over-label"></div>
+    <div id="game_over_prompt" class="game-over-label"></div>
+    <div id="game_over_name" class="game-over-label"></div>
+</body>
+</rml>
