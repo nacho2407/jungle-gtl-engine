@@ -970,6 +970,23 @@ function GameJam.DamagePlayer(amount, source) end
 ---@return boolean
 function GameJam.RecoverPlayer(amount, source) end
 
+---@return table|nil
+function GameJam.GetPlayerHealthSnapshot() end
+
+---@param maxHealth? number
+---@return table|nil
+function GameJam.ResetPlayerHealth(maxHealth) end
+
+---@param amount number
+---@param source? Actor
+---@return number, table|nil
+function GameJam.ApplyPlayerDamage(amount, source) end
+
+---@param amount number
+---@param source? Actor
+---@return number, table|nil
+function GameJam.RecoverPlayerHealth(amount, source) end
+
 ---@param attackId string
 function GameJam.NotifyPlayerAttackStarted(attackId) end
 

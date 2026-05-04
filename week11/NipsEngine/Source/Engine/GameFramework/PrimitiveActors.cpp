@@ -408,7 +408,6 @@ void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	if (Enemy && Enemy->GetSliceCount() == 0)
 	{
         AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-        OnTakeDamage(20);
 	}
 }
 
