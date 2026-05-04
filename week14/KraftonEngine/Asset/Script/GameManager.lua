@@ -42,8 +42,8 @@ local quests = {
     {
         id = "goal",
         uiKey = "goalQuest",
-        targetName = "GoalTrigger",
-        fallbackTargetName = nil,
+        targetName = "Goal",                 -- Map.Scene 의 트리거 액터 Name 과 일치
+        fallbackTargetName = "GoalTrigger",  -- 옛 이름 fallback
         phase = ECarGamePhase.Goal
     }
 }

@@ -1,11 +1,15 @@
-#include "Game/Pawn/PoliceCar.h"
+﻿#include "Game/Pawn/PoliceCar.h"
 #include "Game/GameMode/GameModeCarGame.h"
 
 #include "Component/BoxComponent.h"
 #include "Component/LuaScriptComponent.h"
+#include "Component/Light/PointLightComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
+#include "Math/Vector.h"
 #include "Core/Log.h"
+
+#include <cmath>
 
 IMPLEMENT_CLASS(APoliceCar, ACarPawn)
 
@@ -24,6 +28,25 @@ void APoliceCar::InitDefaultPoliceComponents()
 
 	// AI 차량은 player가 자동 Possess하지 않도록
 	SetAutoPossessPlayer(false);
+
+	// 사이렌 — 차체 위 좌/우에 PointLight 두 개. 차체 CollisionBox extent 가 (2.0, 1.0, 0.5) 이라
+	// Y 방향 ±0.6, Z+0.7 위치에 둠. 색은 빨강/파랑 (전형적인 경찰차).
+	if (UBoxComponent* Box = GetCollisionBox())
+	{
+		LeftSiren = AddComponent<UPointLightComponent>();
+		LeftSiren->AttachToComponent(Box);
+		LeftSiren->SetRelativeLocation(FVector(0.0f, -0.4f, 1.2f));
+		LeftSiren->SetLightColor(FVector4(1.0f, 0.05f, 0.05f, 1.0f));   // red
+		LeftSiren->SetAttenuationRadius(SirenAttenRadius);
+		LeftSiren->SetIntensity(0.0f);
+
+		RightSiren = AddComponent<UPointLightComponent>();
+		RightSiren->AttachToComponent(Box);
+		RightSiren->SetRelativeLocation(FVector(0.0f, 0.4f, 1.2f));
+		RightSiren->SetLightColor(FVector4(0.1f, 0.3f, 1.0f, 1.0f));    // blue
+		RightSiren->SetAttenuationRadius(SirenAttenRadius);
+		RightSiren->SetIntensity(0.0f);
+	}
 }
 
 void APoliceCar::BeginPlay()
@@ -43,6 +66,25 @@ void APoliceCar::BeginPlay()
 	{
 		Box->OnComponentHit.AddRaw(this, &APoliceCar::HandleHit);
 	}
+}
+
+void APoliceCar::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// 사이렌 점멸 — 좌/우 PointLight 가 sin 파동으로 교차 점멸. 음수 영역은 0 으로 clamp 해
+	// off → on → off 의 절반 cycle 형태. PI 만큼 phase shift 해서 좌가 켜질 때 우는 꺼짐.
+	if (!LeftSiren && !RightSiren) return;
+
+	SirenTime += DeltaTime;
+	const float Phase = SirenTime * SirenBlinkRate * 6.28318530718f;
+	const float LeftWave  = std::sin(Phase);
+	const float RightWave = std::sin(Phase + 3.14159265359f);
+	const float LeftI  = (LeftWave  > 0.0f ? LeftWave  : 0.0f) * SirenMaxIntensity;
+	const float RightI = (RightWave > 0.0f ? RightWave : 0.0f) * SirenMaxIntensity;
+
+	if (LeftSiren)  LeftSiren->SetIntensity(LeftI);
+	if (RightSiren) RightSiren->SetIntensity(RightI);
 }
 
 void APoliceCar::HandleHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
