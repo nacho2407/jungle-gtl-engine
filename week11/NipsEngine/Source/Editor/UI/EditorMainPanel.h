@@ -82,6 +82,8 @@ private:
 	void RenderEditorToolbar();
 	void RenderDockSpace();
 	void RenderViewportHostWindow();
+	FViewportRect GetPIEFixedAspectViewportRect(const FViewportRect& SourceRect) const;
+	void ApplyPIEFixedAspectViewportRect();
 	void RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime);
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
@@ -206,6 +208,9 @@ private:
 	bool bHideEditorWindowsForPIE = false;
 	bool bHasSavedPIEPanelVisibility = false;
 	bool bPIEViewportFullscreenEnabled = true;
+	bool bPIEUseFixedUILayout = true;
+	int32 PIEUILayoutWidth = 1920;
+	int32 PIEUILayoutHeight = 1080;
 	FPIEPanelVisibilitySnapshot SavedPIEPanelVisibility;
 	FPIEViewportLayoutSnapshot SavedPIEViewportLayout;
 	FViewportContextMenuState ViewportContextMenuState;
