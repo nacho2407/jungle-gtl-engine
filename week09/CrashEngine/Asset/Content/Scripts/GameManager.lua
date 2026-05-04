@@ -232,6 +232,10 @@ local function getDocumentCount()
     return _G.PlayerState.DocumentCount or 0
 end
 
+local function getTimer()
+    return Timer
+end
+
 function GameOver(finalHP, finalDocumentCount)
     if isGameOver then
         return
@@ -269,7 +273,8 @@ function BeginPlay()
     _G.GameManager = {
         GameOver = GameOver,
         GetPlayerHP = getPlayerHP,
-        GetDocumentCount = getDocumentCount
+        GetDocumentCount = getDocumentCount,
+        GetTimer = getTimer
     }
 
     print("[BeginPlay] " .. obj.UUID)

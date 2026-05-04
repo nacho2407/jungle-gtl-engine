@@ -10,6 +10,7 @@ local PlayerShotCooldown = 0.25
 local PlayerShotTimer = 0.0
 
 local HP = 100.0
+local MaxHP = 100.0
 local HP_reduction  = 10;
 
 local LightComponet = nil
@@ -22,6 +23,7 @@ local GameManagerLuaComponent = nil
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
     return _G.PlayerState
 end
@@ -33,6 +35,7 @@ local function syncPlayerState()
     end
 
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
 end
 
