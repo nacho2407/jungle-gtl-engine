@@ -28,10 +28,10 @@ body
 {
     position: absolute;
     left: 300px;
-    top: 394px;
+    top: 550px;
     width: 1320px;
     min-height: 180px;
-    font-size: 38px;
+    font-size: 52px;
     font-weight: bold;
     line-height: 58px;
     text-align: center;
@@ -42,11 +42,11 @@ body
 {
     position: absolute;
     left: 760px;
-    top: 604px;
+    top: 700px;
     width: 400px;
-    font-size: 22px;
+    font-size: 28px;
     text-align: center;
-    color: rgb(255, 224, 154);
+    color: rgb(134, 134, 134);
 }
 
 .intro-skip
@@ -59,13 +59,13 @@ body
 .default-button
 {
     display: block;
-    width: 210px;
-    height: 62px;
-    padding-top: 18px;
+    width: 180px;
+    height: 55px;
+    padding-top: 24px;
     border-width: 0px;
     decorator: image("Asset/UIImage/ButtonDefault.PNG" fill);
     color: rgb(244, 248, 252);
-    font-size: 22px;
+    font-size: 30px;
     text-align: center;
 }
 

@@ -574,6 +574,7 @@ void UEditorEngine::ShutdownRmlUiRuntime()
     {
         RmlUiContext->UnloadAllDocuments();
         RmlUiContext->Update();
+        RmlUiRuntimeModule.ReleaseCachedFontRenderResources();
         Rml::RemoveContext("EditorPIE");
         RmlUiContext = nullptr;
     }

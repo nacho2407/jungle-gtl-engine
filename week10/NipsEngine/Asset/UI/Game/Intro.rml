@@ -4,7 +4,7 @@
     </head>
     <body>
         <div class="screen-root intro-screen">
-            <div id="Intro.Text" class="intro-text"></div>
+            <div id="Intro.Text" class="intro-text">Hello, World!</div>
             <div id="Intro.Continue" class="intro-continue">Press Space</div>
             <button id="Intro.Skip" class="default-button intro-skip" data-action="SkipIntro">Skip</button>
         </div>
