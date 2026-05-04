@@ -240,4 +240,5 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("Crash", "crash.mp3");
 	LoadAudio("Water", "water.mp3", true);
 	LoadAudio("Siren", "siren.mp3", true);
+	LoadAudio("Fueling", "fueling.mp3", true);
 }
