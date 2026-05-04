@@ -977,6 +977,9 @@
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp">
       <Filter>Source\Game</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\GameScoreboard.cpp">
+      <Filter>Source\Game</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp">
       <Filter>Source\Game\Component</Filter>
     </ClCompile>
@@ -1773,6 +1776,9 @@
       <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\GameRenderPipeline.h">
+      <Filter>Source\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\GameScoreboard.h">
       <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Component\CarDirtComponent.h">

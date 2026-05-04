@@ -12,6 +12,7 @@
 		<div id="intro-subtitle">A NEW ADVENTURE BEGINS</div>
 
 		<button id="start-button">게임 시작</button>
+		<button id="scoreboard-button">스코어보드</button>
 		<button id="exit-button">종료</button>
 
 		<div id="intro-bottom-line"></div>

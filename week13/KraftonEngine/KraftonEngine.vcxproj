@@ -556,6 +556,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClCompile Include="Source\Game\GameActorPlacements.cpp" />
     <ClCompile Include="Source\Game\GameEngine.cpp" />
     <ClCompile Include="Source\Game\GameRenderPipeline.cpp" />
+    <ClCompile Include="Source\Game\GameScoreboard.cpp" />
     <ClCompile Include="Source\Game\Component\CarDirtComponent.cpp" />
     <ClCompile Include="Source\Game\Component\CarGasComponent.cpp" />
     <ClCompile Include="Source\Game\Component\CompletionOutlineComponent.cpp" />
@@ -822,6 +823,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="Source\Game\GameActorPlacements.h" />
     <ClInclude Include="Source\Game\GameEngine.h" />
     <ClInclude Include="Source\Game\GameRenderPipeline.h" />
+    <ClInclude Include="Source\Game\GameScoreboard.h" />
     <ClInclude Include="Source\Game\Component\CarDirtComponent.h" />
     <ClInclude Include="Source\Game\Component\CarGasComponent.h" />
     <ClInclude Include="Source\Game\Component\CompletionOutlineComponent.h" />

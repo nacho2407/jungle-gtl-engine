@@ -16,6 +16,7 @@
 #include "Game/Component/DirtComponent.h"
 
 #include "Game/GameEngine.h"
+#include "Game/GameScoreboard.h"
 #include "Game/GameMode/GameModeCarGame.h"
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
@@ -150,6 +151,18 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"Reason",             &FScoreEvent::Reason,
 		"RemainingMatchTime", &FScoreEvent::RemainingMatchTime,
 		"RemainingPhaseTime", &FScoreEvent::RemainingPhaseTime);
+
+	Lua.new_usertype<FScoreboardEntry>("ScoreboardEntry",
+		"Score", &FScoreboardEntry::Score);
+
+	sol::table ScoreboardTable = Lua.create_named_table("Scoreboard");
+	ScoreboardTable.set_function("SubmitScore", &FGameScoreboard::SubmitScore);
+	ScoreboardTable.set_function("AddScore", &FGameScoreboard::AddScore);
+	ScoreboardTable.set_function("Clear", &FGameScoreboard::Clear);
+	ScoreboardTable.set_function("Load", &FGameScoreboard::Load);
+	ScoreboardTable.set_function("Save", &FGameScoreboard::Save);
+	ScoreboardTable.set_function("GetEntryCount", &FGameScoreboard::GetEntryCount);
+	ScoreboardTable.set_function("GetEntry", &FGameScoreboard::GetEntry);
 
 	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
 		"SuccessPhase", &AGameModeCarGame::SuccessPhase);
