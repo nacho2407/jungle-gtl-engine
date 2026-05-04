@@ -8,16 +8,13 @@ Script.Properties = {
         Category = "Script"
     }
 }
-function Script:Attack(degree, yaw)
+function Script:Attack(mode, degree, yaw)
     self.bDoingAttack = true
 
-    local BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
-    if not BodySection then
+    if not self.BodySection then
         self.bDoingAttack = false
         return
     end
-
-    local mode = math.random(1, 3)
 
     local swingSign = math.sin(math.rad(degree)) > 0 and 1 or -1
     local swingStart = 0
@@ -46,7 +43,7 @@ function Script:Attack(degree, yaw)
     for i = 1, 8 do
         local t = i / 8
         local ease = 1 - (1 - t) * (1 - t)
-        BodySection.Rotation = Vector(
+        self.BodySection.Rotation = Vector(
             pitchStart + (pitchEnd - pitchStart) * ease,
             0,
             swingStart + (swingEnd - swingStart) * ease  -- yaw 없음
@@ -58,7 +55,7 @@ function Script:Attack(degree, yaw)
     for i = 1, 5 do
         local t = i / 5
         local ease = t * t
-        BodySection.Rotation = Vector(
+        self.BodySection.Rotation = Vector(
             pitchEnd * (1 - ease),
             0,
             swingEnd * (1 - ease)
@@ -66,9 +63,7 @@ function Script:Attack(degree, yaw)
         coroutine.yield(WaitForSeconds(0.02))
     end
 
-    coroutine.yield(WaitForSeconds(0.1))
-
-    BodySection.Rotation = Vector(0, 0, 0)
+    self.BodySection.Rotation = Vector(0, 0, 0)
     self.bDoingAttack = false
 end
 
@@ -97,6 +92,7 @@ function Script.new(component, properties)
     self.dashDir = Vector(0, 0, 0)
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
+    self.BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -194,15 +190,32 @@ function Script:Tick(dt)
         self:Dash(dir)
     end
 
+    local clampedPitch = 0
+    if self.BodySection and not self.bDoingAttack then
+        clampedPitch = math.max(-80, math.min(80, self.camera_pitch))
+        self.BodySection.Rotation = Vector(0, clampedPitch, 0)
+    end
+
+
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
 
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
-        local degree = math.random(0, 180)
+
+        local mode = math.random(1, 3)
+        local degree
+        if mode == 1 then
+            degree = 90
+        elseif mode == 2 then
+            degree = 45
+        else
+            degree = 135
+        end
+
         local pitch_x = degree * math.sin(yaw_rad)
         local pitch_y = degree * math.cos(yaw_rad)
-        local scale_long = 5
+        local scale_long = 7.5
         local scale_short = 1
         local fx = math.abs(math.sin(yaw_rad))
         local fz = math.abs(math.cos(yaw_rad))
@@ -217,18 +230,17 @@ function Script:Tick(dt)
             -math.sin(pitch_rad)
         )
 
-        slash.Rotation = Vector(pitch_y, pitch_x, yaw)
+        slash.Rotation = Vector(pitch_y, pitch_x + clampedPitch, yaw)
         slash.Location = self.owner.Location + self.owner.Scale / 2 + fwd_pitched * (scale_long / 2)
         slash.Scale = Vector(scale_x, 0.1, scale_z)
 
         StartCoroutine(function()
-            self:Attack(degree, yaw)
+            self:Attack(mode, degree, yaw)
         end)
 
         StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
         end)
-
     end
 end
 

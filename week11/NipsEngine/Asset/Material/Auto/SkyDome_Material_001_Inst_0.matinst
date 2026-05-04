@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/SkyDome_Material_001_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.500000, 0.300000, 0.200000]
+          }],
+        "Parent" : "Asset/Material/Auto/SkyDome_Material_001.mat"
+      }

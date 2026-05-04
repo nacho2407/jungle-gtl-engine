@@ -88,10 +88,17 @@ function Script:Tick(dt)
 
     if distance > 0.1 then
         local direction = delta:Normalized()
-        
+
+        -- Yaw (Z축) - 플레이어 방향 바라보기
+        local targetYaw = math.atan2(direction.Y, direction.X) * (180 / math.pi)
+        local currentRot = self.owner.Rotation
+        local diff = (targetYaw - currentRot.Z + 540) % 360 - 180
+        local newYaw = currentRot.Z + diff * math.min(1.0, dt * 10)
+        self.owner.Rotation = Vector(currentRot.X, currentRot.Y, newYaw)
+
+        -- 이동
         local step = math.min(distance, dt * self.Speed)
-        local moveDelta = direction * step
-        self.owner.Location = self.owner.Location + moveDelta
+        self.owner.Location = self.owner.Location + direction * step
     end
 end
 
