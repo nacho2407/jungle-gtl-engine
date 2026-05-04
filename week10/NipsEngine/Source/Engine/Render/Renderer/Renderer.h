@@ -43,6 +43,10 @@ struct FViewportRenderResource
     TComPtr<ID3D11RenderTargetView> FogRTV;
     TComPtr<ID3D11ShaderResourceView> FogSRV;
 
+	TComPtr<ID3D11Texture2D> SandervistanTex;
+    TComPtr<ID3D11RenderTargetView> SandervistanRTV;
+    TComPtr<ID3D11ShaderResourceView> SandervistanSRV;
+
     TComPtr<ID3D11Texture2D> WorldPosTex;
     TComPtr<ID3D11RenderTargetView> WorldPosRTV;
     TComPtr<ID3D11ShaderResourceView> WorldPosSRV;
@@ -81,6 +85,9 @@ struct FViewportRenderResource
 
         RenderTargetSet.SceneFogRTV = FogRTV.Get();
         RenderTargetSet.SceneFogSRV = FogSRV.Get();
+
+		RenderTargetSet.SceneSandervistanRTV = SandervistanRTV.Get();
+        RenderTargetSet.SceneSandervistanSRV = SandervistanSRV.Get();
 
         RenderTargetSet.SceneWorldPosRTV = WorldPosRTV.Get();
         RenderTargetSet.SceneWorldPosSRV = WorldPosSRV.Get();

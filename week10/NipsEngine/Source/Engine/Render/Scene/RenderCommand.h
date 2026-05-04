@@ -323,6 +323,17 @@ struct FFXAAConstants
     float  Padding;
 };
 
+struct FSandevistanConstants
+{
+    float Time;
+    float Intensity;
+    float Padding0;
+    float Padding1;
+
+    float Center[2];
+    float InvResolution[2];
+};
+
 struct FLightData
 {
     FVector WorldPos;

@@ -100,6 +100,10 @@ public:
 	void SetGlobalTimeScale(float NewTimeScale) { GlobalTimeScale = NewTimeScale; }
     float GetGlobalTimeScale() const { return GlobalTimeScale; }
 
+	void ActivateSandervistan() { bActivateSandervistan = true; }
+    void DeactivateSandervistan() { bActivateSandervistan = false; }
+    bool IsSandervistanActivated() const { return bActivateSandervistan; }
+
 private:
 	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
@@ -111,4 +115,7 @@ private:
     TMap<int32, FActorDestroyedListener> ActorDestroyedListeners;
 
 	float GlobalTimeScale = 1;
+
+	// 게임잼을 위한 임시용 변수
+	bool bActivateSandervistan = false;
 };
