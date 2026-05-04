@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.810370, 0.786235, 0.786235, 1.000000],
+    "SpecularPower" : 587.641357,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/ai_whitePlastic.json",
+  "RasterizerState" : "SolidBackCull"
+}

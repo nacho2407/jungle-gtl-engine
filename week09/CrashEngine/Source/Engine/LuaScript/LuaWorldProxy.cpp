@@ -2,6 +2,7 @@
 
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
+#include "GameFramework/LuaScriptActor.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
@@ -26,6 +27,8 @@ FString NormalizeLuaActorClassName(const FString& Name)
         return "ADirectionalLightActor";
     if (Name == "HeightFogActor")
         return "AHeightFogActor";
+    if (Name == "LuaScriptActor")
+        return "ALuaScriptActor";
     if (Name == "DecalActor")
         return "ADecalActor";
 
@@ -37,9 +40,10 @@ bool IsLuaSpawnableActorClassName(const FString& ClassName)
     return ClassName == "AActor"
 		|| ClassName == "AStaticMeshActor"
 		|| ClassName == "APointLightActor"
-		|| ClassName == "ASpotLightActor"
-		|| ClassName == "ADirectionalLightActor"
-		|| ClassName == "AHeightFogActor"
+		|| ClassName == "ASpotLightActor" 
+		|| ClassName == "ADirectionalLightActor" 
+		|| ClassName == "AHeightFogActor" 
+		|| ClassName == "ALuaScriptActor" 
 		|| ClassName == "ADecalActor";
 }
 
@@ -91,6 +95,11 @@ FLuaGameObjectProxy FLuaWorldProxy::SpawnActor(const FString& ActorClassName)
         return FLuaGameObjectProxy();
     }
 
+    if (ALuaScriptActor* LuaScriptActor = Cast<ALuaScriptActor>(Actor))
+    {
+        LuaScriptActor->InitDefaultComponents();
+    }
+
     return FLuaGameObjectProxy(Actor);
 }
 
@@ -103,7 +112,7 @@ bool FLuaWorldProxy::DestroyActor(const FLuaGameObjectProxy& ActorProxy)
         return false;
     }
 
-    World->DestroyActor(Actor);
+    World->QueueDestroyActor(Actor);
     return true;
 }
 
@@ -148,6 +157,27 @@ FLuaGameObjectProxy FLuaWorldProxy::FindActorByTag(const FString& Tag)
     }
 
     return FLuaGameObjectProxy();
+}
+
+TArray<FLuaGameObjectProxy> FLuaWorldProxy::FindActorsByTag(const FString& Tag)
+{
+    TArray<FLuaGameObjectProxy> Result;
+
+    UWorld* World = ResolveWorld();
+    if (!World || Tag.empty())
+    {
+        return Result;
+    }
+
+    for (AActor* Actor : World->GetActors())
+    {
+        if (Actor && Actor->HasTag(Tag))
+        {
+            Result.emplace_back(Actor);
+        }
+    }
+
+    return Result;
 }
 
 bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees)

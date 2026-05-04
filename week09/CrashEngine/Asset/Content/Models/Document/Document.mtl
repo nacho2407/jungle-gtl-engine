@@ -1,0 +1,57 @@
+# Blender 5.1.0 MTL File: 'Untitled.blend'
+# www.blender.org
+
+newmtl A4_Page1Shape
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Image_0_004.png
+map_Bump -bm 1.000000 Image_2_003.png
+
+newmtl A4_Page2Shape
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Image_0_004.png
+map_Bump -bm 1.000000Image_2_003.png
+
+newmtl A4_Page3Shape
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Image_0_004.png
+map_Bump -bm 1.000000 Image_2_003.png
+
+newmtl A4_Paper_StackShape
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Image_0_004.png
+map_Bump -bm 1.000000 Image_2_003.png
+
+newmtl Folder_1Shape
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd Image_3_001.png
+map_Bump -bm 1.000000 Image_5_001.png

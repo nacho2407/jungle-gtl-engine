@@ -1,4 +1,4 @@
-#include "LuaRuntime.h"
+﻿#include "LuaRuntime.h"
 
 #include <cstdio>
 #include <iomanip>
@@ -12,6 +12,7 @@
 #include "LuaScript/LuaComponentProxy.h"
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "LuaScript/LuaInputProxy.h"
+#include "LuaScript/LuaUiProxy.h"
 #include "LuaScript/LuaPersistentStorage.h"
 #include "Math/Vector.h"
 
@@ -188,6 +189,8 @@ void FLuaRuntime::BindEngineTypes()
     Lua->new_usertype<FLuaGameObjectProxy>("GameObject", sol::no_constructor,
 		"UUID", sol::property(&FLuaGameObjectProxy::GetUUID),
 		"Location", sol::property(&FLuaGameObjectProxy::GetLocation, &FLuaGameObjectProxy::SetLocation),
+		"Rotation", sol::property(&FLuaGameObjectProxy::GetRotation, &FLuaGameObjectProxy::SetRotation),
+		"Scale", sol::property(&FLuaGameObjectProxy::GetScale, &FLuaGameObjectProxy::SetScale),
 		"Velocity", &FLuaGameObjectProxy::Velocity,
 		"IsValid", &FLuaGameObjectProxy::IsValid,
         "GetForwardVector", &FLuaGameObjectProxy::GetForwardVector,
@@ -245,6 +248,7 @@ void FLuaRuntime::BindEngineTypes()
 
     // Coroutine 관련 함수 바인딩
     LuaActionLibrary::Bind(*Lua);
+    LuaUiProxy::Bind(*Lua);
     FLuaPersistentStorage::Bind(*Lua);
 
 	Lua->new_usertype<FLuaComponentProxy>("Component", sol::no_constructor,
@@ -288,6 +292,7 @@ void FLuaRuntime::BindEngineTypes()
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
 		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
 
+        "SetScriptPath", &FLuaComponentProxy::SetScriptPath,
         "CallFunction", &FLuaComponentProxy::CallFunction
 	);
 }

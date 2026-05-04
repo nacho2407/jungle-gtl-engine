@@ -1,6 +1,7 @@
 #include "LuaScriptComponent.h"
 
 #include <cstring>
+#include <fstream>
 #include <filesystem>
 #include <utility>
 
@@ -90,6 +91,20 @@ bool IsMouseButtonVK(int32 VK)
 		|| VK == VK_MBUTTON
 		|| VK == VK_XBUTTON1
 		|| VK == VK_XBUTTON2;
+}
+
+bool ReadTextFile(const std::filesystem::path& Path, std::string& OutText)
+{
+    std::ifstream File(Path, std::ios::binary);
+    if (!File)
+    {
+        return false;
+    }
+
+    OutText.assign(
+        std::istreambuf_iterator<char>(File),
+        std::istreambuf_iterator<char>());
+    return true;
 }
 } // namespace
 
@@ -276,6 +291,8 @@ bool ULuaScriptComponent::LoadScript()
         { return WorldProxy.FindPlayer(); });
     WorldTable.set_function("FindActorByTag", [this](const FString& Tag)
         { return WorldProxy.FindActorByTag(Tag); });
+    WorldTable.set_function("FindActorsByTag", [this](const FString& Tag)
+        { return sol::as_table(WorldProxy.FindActorsByTag(Tag)); });
     WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
     WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)
@@ -285,7 +302,14 @@ bool ULuaScriptComponent::LoadScript()
 
     const FString FullPathUtf8 = FPaths::FromPath(FullPath);
 
-    sol::load_result Loaded = Lua.load_file(FullPathUtf8);
+    std::string ScriptSource;
+    if (!ReadTextFile(FullPath, ScriptSource))
+    {
+        SetLastError(FString("Failed to read Lua script: ") + FullPathUtf8);
+        return false;
+    }
+
+    sol::load_result Loaded = Lua.load(ScriptSource, FullPathUtf8);
     if (!Loaded.valid())
     {
         sol::error Error = Loaded;
@@ -293,7 +317,7 @@ bool ULuaScriptComponent::LoadScript()
         return false;
     }
 
-	// Lua.load_file()이 성공하면 파일 전체가 하나의 익명 함수 chunk처럼 로드됨
+	// Lua.load()가 성공하면 파일 전체가 하나의 익명 함수 chunk처럼 로드됨
     sol::protected_function Script = Loaded;
     sol::set_environment(Env, Script);
 

@@ -1,8 +1,13 @@
 local PlayerMovement = dofile("Asset/Content/Scripts/PlayerMovement.lua")
+local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
+local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
+BulletSystem.BindWorld(World)
 
 local moveSpeed = 10.0
 local pressedKeys = {}
 local movementState = nil
+local PlayerShotCooldown = 0.25
+local PlayerShotTimer = 0.0
 
 local HP = 100.0
 local HP_reduction  = 10;
@@ -31,6 +36,28 @@ local function syncPlayerState()
     _G.PlayerState.DocumentCount = DocumentCount
 end
 
+local function syncPlayerAimState()
+    _G.PlayerAimState = _G.PlayerAimState or {}
+
+    if movementState ~= nil and movementState.visualForward ~= nil then
+        _G.PlayerAimState.Forward = movementState.visualForward
+    else
+        _G.PlayerAimState.Forward = obj:GetForwardVector()
+    end
+
+    _G.PlayerAimState.Up = obj:GetUpVector()
+end
+
+local function takeDamage(damage)
+    HP = HP - damage
+    if HP < 0.0 then
+        HP = 0.0
+    end
+
+    syncPlayerState()
+    print("Player HP : ", HP);
+end
+
 local function callGameOver()
     local gameManager = World.FindActorByTag("GameManager")
     if gameManager:IsValid() then
@@ -48,6 +75,35 @@ local function callGameOver()
     else
         print("GameManager is not ready")
     end
+end
+
+local function isZooming()
+    return _G.CameraState ~= nil and _G.CameraState.IsZooming == true
+end
+
+local function getAimDirection()
+    if _G.CameraState ~= nil and _G.CameraState.AimDirection ~= nil then
+        return _G.CameraState.AimDirection
+    end
+
+    return obj:GetForwardVector()
+end
+
+local function getBulletSpawnLocation(aimDirection)
+    return obj.Location + Vector.new(0.0, 0.0, 1.0) + aimDirection * 0.5
+end
+
+local function firePlayerBullet()
+    if PlayerShotTimer > 0.0 then
+        return
+    end
+
+    local aimDirection = getAimDirection()
+    local spawnLocation = getBulletSpawnLocation(aimDirection)
+    print("Player Fire Direction : ", aimDirection)
+    print("Player Fire Location : ", spawnLocation)
+    BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet")
+    PlayerShotTimer = PlayerShotCooldown
 end
 
 local movementKeys = {
@@ -82,10 +138,12 @@ function OnOverlapBegin(other)
         syncPlayerState()
         print("Player HP : ", HP);
         World.DestroyActor(other)
-    elseif other:HasTag("Bullet") then
-        HP = HP - 10
-        syncPlayerState()
-        print("Player HP : ", HP);
+    elseif other:HasTag("EnemyBullet") then
+        if not other:HasTag("DamageApplied") then
+            other:AddTag("DamageApplied")
+            obj:ApplyDamage(10, other)
+        end
+
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         print("Game Finish!");
@@ -97,13 +155,16 @@ function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
-        forward = Vector.new(1.0, 0.0, 0.0),
-        meshYawOffset = 90.0,
+        forward = CameraConfig.GetMoveForward(),
+        right = CameraConfig.GetMoveRight(),
+        meshYawOffset = CameraConfig.GetMeshYawOffset(),
+        meshBaseRotation = CameraConfig.GetPlayerMeshBaseRotation(),
         moveSpeed = moveSpeed,
         velocityInterpSpeed = 12.0,
         turnInterpSpeed = 14.0,
     })
     ensurePlayerState()
+    syncPlayerAimState()
 
     local gameManager = World.FindActorByTag("GameManager")
     if gameManager:IsValid() then
@@ -122,6 +183,13 @@ function BeginPlay()
 end
 
 function Tick(dt)
+    BulletSystem.Tick(dt)
+
+    PlayerShotTimer = PlayerShotTimer - dt
+    if PlayerShotTimer < 0.0 then
+        PlayerShotTimer = 0.0
+    end
+
     if(HP > 0) then
         HP = HP - dt * HP_reduction
     else
@@ -134,10 +202,30 @@ function Tick(dt)
         LightComponet:SetIntensity(HP)
     end
 
+    if isZooming() then
+        obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+        movementState.velocity = Vector.new(0.0, 0.0, 0.0)
+        syncPlayerAimState()
+
+        if MeshComponent ~= nil and MeshComponent:IsValid() then
+            MeshComponent:SetVisible(false)
+            MeshComponent:SetVisibleInGame(false)
+        end
+
+        if Input:WasMouseButtonPressed("LeftMouseButton") then
+            firePlayerBullet()
+        end
+
+        return
+    end
+
     local moveDelta = PlayerMovement.Update(movementState, pressedKeys, dt)
     obj.Velocity = movementState.velocity
+    syncPlayerAimState()
 
     if MeshComponent ~= nil and MeshComponent:IsValid() then
+        MeshComponent:SetVisible(true)
+        MeshComponent:SetVisibleInGame(true)
         MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
     end
 
@@ -149,11 +237,21 @@ function Tick(dt)
 end
 
 function EndPlay()
+    BulletSystem.Clear(false)
+
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     if _G.PlayerState ~= nil then
         _G.PlayerState.HP = HP
         _G.PlayerState.DocumentCount = DocumentCount
     end
+
+    if _G.PlayerAimState ~= nil then
+        _G.PlayerAimState = nil
+    end
+end
+
+function OnTakeDamage(damage, instigator)
+    takeDamage(damage)
 end
 
 function OnKeyPressed(key)
