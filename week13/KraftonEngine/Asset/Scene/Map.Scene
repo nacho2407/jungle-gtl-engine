@@ -2725,7 +2725,7 @@
       "Properties" : {
         "Location" : [0.000000, 0.000000, -46.858231],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [15.000000, 15.000000, 15.000000],
+        "Scale" : [15.000000, 15.000000, 3.000000],
         "Tags" : "",
         "Visible" : true
       },
@@ -2751,7 +2751,7 @@
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [15.000000, 15.000000, 15.000000],
+          "Scale" : [15.000000, 15.000000, 3.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/Sky/Sky.obj",
           "Two Sided Shadow" : false,
@@ -2765,8 +2765,8 @@
       "Name" : "GasStation",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [150.440903, -124.145973, 0.734741],
-        "Rotation" : [0.000000, -98.215591, 0.000000],
+        "Location" : [-122.421745, -255.138290, 0.734741],
+        "Rotation" : [-0.000000, 179.290344, -0.000000],
         "Scale" : [1.500000, 1.500000, 1.500000],
         "Tags" : "",
         "Visible" : true
@@ -2840,10 +2840,10 @@
             "Path" : "Asset/Materials/Auto/ALUCOBON_GRIS.mat"
           },
           "Generate Overlap Events" : false,
-          "Location" : [150.440903, -124.145973, 0.734741],
+          "Location" : [-122.421745, -255.138290, 0.734741],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, -98.215591, 0.000000],
+          "Rotation" : [0.000000, 179.287598, 0.000000],
           "Scale" : [1.500000, 1.500000, 1.500000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/Map/GasStation/GASSTATION .obj",
@@ -3082,8 +3082,8 @@
       "Name" : "GasStationTrigger",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [143.543884, -98.167198, 9.621486],
-        "Rotation" : [0.000000, -10.974365, 0.000000],
+        "Location" : [-95.297409, -248.839996, 9.621486],
+        "Rotation" : [-0.000000, 1.919343, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "TriggerTag" : "CarGas",
@@ -3106,10 +3106,10 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : true,
-          "Location" : [143.543884, -98.167198, 9.621486],
+          "Location" : [-95.297409, -248.839996, 9.621486],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [0.000000, -10.974365, 0.000000],
+          "Rotation" : [0.000000, 1.916183, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -3953,9 +3953,9 @@
           }
         }],
       "Properties" : {
-        "Location" : [15.969803, 145.687912, 48.246155],
-        "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [50.000000, 50.000000, 50.000000],
+        "Location" : [147.190277, -160.682205, 11.441320],
+        "Rotation" : [0.000000, -5.591673, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "TriggerTag" : "DodgeMeteor",
         "Visible" : true
@@ -3964,7 +3964,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Properties" : {
-          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Box Extent" : [10.000000, 10.000000, 10.000000],
           "Cast Shadow" : false,
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
           "Collision Enabled" : 1,
@@ -3977,12 +3977,12 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : true,
-          "Location" : [15.969803, 145.687912, 48.246155],
+          "Location" : [147.190277, -160.682205, 11.441320],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
-          "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [50.000000, 50.000000, 50.000000],
-          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Rotation" : [0.000000, -5.592117, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
           "Visible" : true,
@@ -4090,7 +4090,7 @@
           "Object Type" : 4,
           "Rotation" : [0.000000, -5.563553, 0.000000],
           "Scale" : [25.000000, 25.000000, 20.000000],
-          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
           "Visible" : true,
@@ -4110,7 +4110,7 @@
           }
         }],
       "Properties" : {
-        "Location" : [104.880875, -128.580109, 3.433834],
+        "Location" : [-78.393578, -296.795837, 3.433834],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
@@ -4190,7 +4190,7 @@
             "WorldStatic" : 2
           },
           "Generate Overlap Events" : false,
-          "Location" : [104.880875, -128.580109, 3.433834],
+          "Location" : [-78.393578, -296.795837, 3.433834],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
@@ -4648,7 +4648,7 @@
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, 175.778046, 0.000000],
+          "Rotation" : [0.000000, 175.778015, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -4754,9 +4754,9 @@
       "Name" : "Goal",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [54.424679, 286.537476, 6.375870],
+        "Location" : [54.424679, 286.537476, 15.157566],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Scale" : [3.000000, 3.000000, 3.000000],
         "Tags" : "GoalTrigger",
         "TriggerTag" : "GoalTrigger",
         "Visible" : true
@@ -4777,16 +4777,19 @@
                 "WorldStatic" : 2
               },
               "Element 0" : {
-                "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+                "Path" : "Asset/Materials/Auto/post.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/rope.mat"
               },
               "Generate Overlap Events" : false,
-              "Location" : [0.000000, 0.000000, 0.000000],
+              "Location" : [0.000000, -2.044197, -4.618125],
               "Mass (kg)" : 1.000000,
               "Object Type" : 0,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Rotation" : [89.899994, -90.000000, 0.000000],
+              "Scale" : [2.000000, 2.000000, 2.000000],
               "Simulate Physics" : false,
-              "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+              "Static Mesh" : "Data/FootballGoal/FootballGoal.obj",
               "Two Sided Shadow" : false,
               "Visible" : true,
               "bEditorOnly" : false,
@@ -4808,11 +4811,11 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : true,
-          "Location" : [54.424679, 286.537476, 6.375870],
+          "Location" : [54.424679, 286.537476, 15.157566],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Scale" : [3.000000, 3.000000, 3.000000],
           "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -4833,7 +4836,7 @@
           }
         }],
       "Properties" : {
-        "Location" : [-18.299124, 82.216103, 2.917960],
+        "Location" : [-18.299124, 82.216103, 2.887465],
         "Quest Target" : true,
         "Rotation" : [0.000000, -9.394192, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
@@ -4856,16 +4859,52 @@
                 "WorldStatic" : 2
               },
               "Element 0" : {
-                "Path" : "Asset/Materials/Auto/material_0.mat"
+                "Path" : "Asset/Materials/Auto/Eyes.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/EyeWhites.mat"
+              },
+              "Element 10" : {
+                "Path" : "Asset/Materials/Auto/Skirt.mat"
+              },
+              "Element 11" : {
+                "Path" : "Asset/Materials/Auto/Shoes.mat"
+              },
+              "Element 12" : {
+                "Path" : "Asset/Materials/Auto/Gloves.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Neck.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Face.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/Hair.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/Expression.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/Skin.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/Clothes.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Pants.mat"
+              },
+              "Element 9" : {
+                "Path" : "Asset/Materials/Auto/BackAccessory.mat"
               },
               "Generate Overlap Events" : false,
-              "Location" : [0.000000, 0.000000, 0.677000],
+              "Location" : [0.000000, 0.000000, -0.921229],
               "Mass (kg)" : 1.000000,
               "Object Type" : 0,
-              "Rotation" : [89.899994, 0.000000, 0.000000],
+              "Rotation" : [0.000000, -90.000000, 0.000000],
               "Scale" : [1.500000, 1.500000, 1.500000],
               "Simulate Physics" : false,
-              "Static Mesh" : "Data/Map/Person/model_mesh.obj",
+              "Static Mesh" : "Data/Lumine/LumineModel.obj",
               "Two Sided Shadow" : false,
               "Visible" : true,
               "bEditorOnly" : false,
@@ -4887,7 +4926,7 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [-18.299124, 82.216103, 2.917960],
+          "Location" : [-18.299124, 82.216103, 2.887465],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
           "Rotation" : [0.000000, -9.394196, 0.000000],
@@ -4969,7 +5008,7 @@
           "Location" : [-28.394482, 11.636257, 2.946837],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5048,7 +5087,7 @@
           "Location" : [-6.097270, -9.359831, 2.902926],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, 166.720520, 0.000000],
+          "Rotation" : [0.000000, 166.722321, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5072,7 +5111,7 @@
       "Properties" : {
         "Location" : [-23.014721, -119.216591, 2.998577],
         "Quest Target" : false,
-        "Rotation" : [0.000000, -100.543640, 0.000000],
+        "Rotation" : [0.000000, -100.543633, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "Visible" : true
@@ -5127,7 +5166,7 @@
           "Location" : [-23.014721, -119.216591, 2.998577],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [0.000000, -100.543686, 0.000000],
+          "Rotation" : [0.000000, -100.543640, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
@@ -5206,8 +5245,123 @@
           "Location" : [80.726562, -135.343979, 3.036079],
           "Mass (kg)" : 50.000000,
           "Object Type" : 2,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AWalkingPersonActor",
+      "Name" : "AWalkingPersonActor_5",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [153.586029, -173.095779, 5.045566],
+        "Quest Target" : false,
+        "Rotation" : [-0.000000, 77.934311, 0.000000],
+        "Scale" : [3.000000, 3.000000, 3.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/Eyes.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/EyeWhites.mat"
+              },
+              "Element 10" : {
+                "Path" : "Asset/Materials/Auto/Skirt.mat"
+              },
+              "Element 11" : {
+                "Path" : "Asset/Materials/Auto/Shoes.mat"
+              },
+              "Element 12" : {
+                "Path" : "Asset/Materials/Auto/Gloves.mat"
+              },
+              "Element 2" : {
+                "Path" : "Asset/Materials/Auto/Neck.mat"
+              },
+              "Element 3" : {
+                "Path" : "Asset/Materials/Auto/Face.mat"
+              },
+              "Element 4" : {
+                "Path" : "Asset/Materials/Auto/Hair.mat"
+              },
+              "Element 5" : {
+                "Path" : "Asset/Materials/Auto/Expression.mat"
+              },
+              "Element 6" : {
+                "Path" : "Asset/Materials/Auto/Skin.mat"
+              },
+              "Element 7" : {
+                "Path" : "Asset/Materials/Auto/Clothes.mat"
+              },
+              "Element 8" : {
+                "Path" : "Asset/Materials/Auto/Pants.mat"
+              },
+              "Element 9" : {
+                "Path" : "Asset/Materials/Auto/BackAccessory.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-0.054633, 0.007998, -0.966194],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [1.807388, -70.951393, 0.000000],
+              "Scale" : [1.500000, 1.500000, 1.500000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Lumine/LumineModel.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [153.586029, -173.095779, 5.045566],
+          "Mass (kg)" : 50.000000,
+          "Object Type" : 2,
+          "Rotation" : [0.000000, 77.934296, 0.000000],
+          "Scale" : [3.000000, 3.000000, 3.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
           "Two Sided Shadow" : false,
@@ -5224,9 +5378,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [76.408966, -137.301407, 10.124487],
+    "Location" : [145.233932, -149.847046, 11.651029],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, -5.386383, 71.254303]
+    "Rotation" : [0.000000, 20.414244, -69.146957]
   },
   "Version" : 2,
   "WorldSettings" : {
