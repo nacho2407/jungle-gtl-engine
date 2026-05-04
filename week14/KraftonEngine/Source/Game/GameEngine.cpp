@@ -163,6 +163,11 @@ void UGameEngine::ProcessPendingTransition()
 	const FName OldHandle = GetActiveWorldHandle();
 	DestroyWorldContext(OldHandle);
 
+	// require 캐시된 lua 모듈 (CoroutineManager / ObjRegistry) 이 보유한 죽은-월드 참조 정리.
+	// 안 하면 옛 WalkingPerson 의 Wait(30) 코루틴이 새 월드 Tick 에서 만료되며 freed actor
+	// 를 deref → FQuat::ToRotator 크래시.
+	FLuaScriptManager::FireWorldReset();
+
 	// 새 scene 로드 — World/Level/PhysicsScene 새로 만들고 WorldList push + SetActiveWorld 까지.
 	if (!LoadSceneFromPath(FilePath))
 	{

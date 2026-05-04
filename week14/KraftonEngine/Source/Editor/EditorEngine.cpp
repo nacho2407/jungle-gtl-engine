@@ -22,6 +22,7 @@
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
 #include "Engine/Platform/Paths.h"
+#include "Lua/LuaScriptManager.h"
 #include <filesystem>
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
@@ -423,6 +424,10 @@ void UEditorEngine::EndPlayMap()
 
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
+
+	// require 캐시된 lua 모듈 (CoroutineManager / ObjRegistry) 의 stale 액터 참조 정리.
+	// 안 하면 다음 PIE 시작 시 옛 코루틴이 freed AActor* 를 deref → 크래시.
+	FLuaScriptManager::FireWorldReset();
 
 	// PIE 월드의 프록시가 모두 파괴됐으므로 GPU Occlusion readback 무효화.
 	if (IRenderPipeline* Pipeline = GetRenderPipeline())

@@ -46,6 +46,38 @@ void FLuaScriptManager::FireOnEscapePressed()
 	}
 }
 
+void FLuaScriptManager::FireWorldReset()
+{
+	if (!Lua) return;
+
+	// require 로 한 번 로드된 모듈 테이블은 package.loaded 에 캐시된다. 씬 전환 시에도
+	// 살아남기 때문에, 이 두 모듈이 보유한 죽은-월드 참조를 비워준다.
+	sol::table Loaded = (*Lua)["package"]["loaded"];
+	if (!Loaded.valid()) return;
+
+	// 1) CoroutineManager — 옛 액터의 lua 클로저가 캡처한 환경의 obj 가 dangling.
+	//    Wait(30) 도중에 씬 전환되면 새 월드 Tick 에서 만료되면서 freed AActor* deref.
+	if (sol::object Coro = Loaded["CoroutineManager"]; Coro.valid() && Coro.get_type() == sol::type::table)
+	{
+		Coro.as<sol::table>()["coroutines"] = Lua->create_table();
+	}
+
+	// 2) ObjRegistry — 액터 핸들 캐시. 새 월드의 BeginPlay 가 다시 등록해줄 때까지 nil 로.
+	if (sol::object Reg = Loaded["ObjRegistry"]; Reg.valid() && Reg.get_type() == sol::type::table)
+	{
+		sol::table T = Reg.as<sol::table>();
+		T["car"]        = sol::nil;
+		T["carCamera"]  = sol::nil;
+		T["carGas"]     = sol::nil;
+		T["manObj"]     = sol::nil;
+		T["manCamera"]  = sol::nil;
+		T["gasNozzle"]  = sol::nil;
+		T["carWasher"]  = sol::nil;
+		T["dirtyCar"]   = sol::nil;
+		T["policeCars"] = Lua->create_table();
+	}
+}
+
 void FLuaScriptManager::Initialize()
 {
 	Lua = std::make_unique<sol::state>();
