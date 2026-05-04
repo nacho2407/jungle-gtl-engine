@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 48.0,
+        "SpecularStrength": 0.75
+    },
+    "PathFileName": "Asset/Content/Materials/DiamondPlate008D.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/DiamondPlate008D/DiamondPlate008D_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/DiamondPlate008D/DiamondPlate008D_NormalDX.jpg"
+    }
+}
