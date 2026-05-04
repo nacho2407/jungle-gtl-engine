@@ -6,7 +6,6 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Profiling/Stats.h"
-#include "Debug/DrawDebugHelpers.h"
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Resource/ResourceManager.h"
 #include "Mesh/ObjManager.h"
@@ -25,7 +24,6 @@ void UDecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 
 	UpdateReceivers();
-	DrawDebugBox();
 }
 
 FPrimitiveSceneProxy* UDecalComponent::CreateSceneProxy()
@@ -219,38 +217,6 @@ void UDecalComponent::UpdateReceivers()
 	}
 
 	MarkProxyDirty(EDirtyFlag::Mesh);
-}
-
-void UDecalComponent::DrawDebugBox()
-{
-	const FMatrix& WorldMatrix = GetWorldMatrix();
-	FVector P[8] = {
-		FVector(-0.5f, -0.5f, -0.5f) * WorldMatrix,
-		FVector( 0.5f, -0.5f, -0.5f) * WorldMatrix,
-		FVector( 0.5f,  0.5f, -0.5f) * WorldMatrix,
-		FVector(-0.5f,  0.5f, -0.5f) * WorldMatrix,
-		FVector(-0.5f, -0.5f,  0.5f) * WorldMatrix,
-		FVector( 0.5f, -0.5f,  0.5f) * WorldMatrix,
-		FVector( 0.5f,  0.5f,  0.5f) * WorldMatrix,
-		FVector(-0.5f,  0.5f,  0.5f) * WorldMatrix
-	};
-
-	UWorld* World = GetOwner()->GetWorld();
-
-	DrawDebugLine(World, P[0], P[1], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[1], P[2], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[2], P[3], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[3], P[0], FColor::Green(), 0.0f);
-
-	DrawDebugLine(World, P[4], P[5], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[5], P[6], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[6], P[7], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[7], P[4], FColor::Green(), 0.0f);
-
-	DrawDebugLine(World, P[0], P[4], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[1], P[5], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[2], P[6], FColor::Green(), 0.0f);
-	DrawDebugLine(World, P[3], P[7], FColor::Green(), 0.0f);
 }
 
 UBillboardComponent* UDecalComponent::EnsureEditorBillboard()

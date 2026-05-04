@@ -1,9 +1,9 @@
 ﻿#include "Game/Component/DirtComponent.h"
 
 #include "Collision/RayUtils.h"
-#include "Game/Component/CompletionOutlineComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Debug/DrawDebugHelpers.h"
+#include "Game/Component/CompletionOutlineComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Materials/MaterialManager.h"
@@ -133,12 +133,9 @@ void UDirtComponent::ResetAllOnActor(AActor& Actor)
 
 UStaticMeshComponent* UDirtComponent::FindWaterGunComponent(AActor& Actor)
 {
+	UStaticMeshComponent* FirstStaticMeshWithMesh = nullptr;
 	UStaticMeshComponent* FirstStaticMesh = nullptr;
 	USceneComponent* RootComponent = Actor.GetRootComponent();
-	if (UStaticMeshComponent* RootStaticMesh = Cast<UStaticMeshComponent>(RootComponent))
-	{
-		return RootStaticMesh;
-	}
 
 	for (UActorComponent* Component : Actor.GetComponents())
 	{
@@ -152,6 +149,32 @@ UStaticMeshComponent* UDirtComponent::FindWaterGunComponent(AActor& Actor)
 		{
 			FirstStaticMesh = StaticMesh;
 		}
+
+		if (StaticMesh->GetStaticMeshPath() != "None" && !FirstStaticMeshWithMesh)
+		{
+			FirstStaticMeshWithMesh = StaticMesh;
+		}
+
+		for (USceneComponent* Child : StaticMesh->GetChildren())
+		{
+			UStaticMeshComponent* ChildStaticMesh = Cast<UStaticMeshComponent>(Child);
+			if (StaticMesh->GetStaticMeshPath() != "None"
+				&& ChildStaticMesh
+				&& ChildStaticMesh->GetStaticMeshPath() != "None")
+			{
+				return StaticMesh;
+			}
+		}
+	}
+
+	if (FirstStaticMeshWithMesh)
+	{
+		return FirstStaticMeshWithMesh;
+	}
+
+	if (UStaticMeshComponent* RootStaticMesh = Cast<UStaticMeshComponent>(RootComponent))
+	{
+		return RootStaticMesh;
 	}
 
 	return FirstStaticMesh;
@@ -226,18 +249,24 @@ bool UDirtComponent::IsCarWashStreamVisible(AActor& Actor)
 
 bool UDirtComponent::AreAllDirtComponentsWashed(AActor& Actor)
 {
+	return CountUnwashedDirtComponents(Actor) == 0;
+}
+
+int32 UDirtComponent::CountUnwashedDirtComponents(AActor& Actor)
+{
+	int32 Count = 0;
 	for (UActorComponent* Component : Actor.GetComponents())
 	{
 		if (UDirtComponent* Dirt = Cast<UDirtComponent>(Component))
 		{
 			if (!Dirt->IsWashed())
 			{
-				return false;
+				++Count;
 			}
 		}
 	}
 
-	return true;
+	return Count;
 }
 
 bool UDirtComponent::WashFirstHitDirt(UWorld* World, const FVector& Start, const FVector& Direction, float MaxDistance)

@@ -34,6 +34,7 @@ public:
 
 	// --- 선택 ---
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
+	void SetProxyOutlineOnly(FPrimitiveSceneProxy* Proxy, bool bEnabled);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
 	const TSet<AActor*>& GetSelectedActors() const { return SelectedActors; }
 

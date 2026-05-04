@@ -274,6 +274,24 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 	}
 }
 
+void FScene::SetProxyOutlineOnly(FPrimitiveSceneProxy* Proxy, bool bEnabled)
+{
+	if (!Proxy) return;
+	Proxy->bSelected = bEnabled;
+
+	if (bEnabled)
+	{
+		if (Proxy->SelectedListIndex == UINT32_MAX)
+		{
+			Proxy->SelectedListIndex = static_cast<uint32>(SelectedProxies.size());
+			SelectedProxies.push_back(Proxy);
+		}
+		return;
+	}
+
+	RemoveSelectedProxyFast(SelectedProxies, Proxy);
+}
+
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->SelectedListIndex != UINT32_MAX;
