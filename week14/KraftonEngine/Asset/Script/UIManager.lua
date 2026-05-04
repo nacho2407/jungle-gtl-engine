@@ -28,6 +28,7 @@ local scoreFeedback = {
 }
 local gameOverScoreRoutine = nil
 local gasFeedbackActive = false
+local onStartStoryOk = nil
 local onCarWashQuestOk = nil
 local onGasQuestOk = nil
 local onPersonQuestOk = nil
@@ -273,6 +274,10 @@ function UIManager.SetStartGameCallback(callback)
     onStartGame = callback
 end
 
+function UIManager.SetStartStoryOkCallback(callback)
+    onStartStoryOk = callback
+end
+
 function UIManager.SetCarWashQuestOkCallback(callback)
     onCarWashQuestOk = callback
 end
@@ -306,6 +311,7 @@ function UIManager.Init()
         UIManager.Hide("gasWidget")
         UIManager.Hide("gasFeedback")
         UIManager.Hide("meteorHp")
+        UIManager.Hide("startStory")
         UIManager.Hide("carWashQuest")
         UIManager.Hide("gasQuest")
         UIManager.Hide("personQuest")
@@ -344,6 +350,17 @@ function UIManager.Init()
     contributorWidget:bind_click("contributor-close-button", function()
         AudioManager.Play("Click", 1.0)
         UIManager.Hide("contributor")
+    end)
+
+    local startStoryWidget = UI.CreateWidget("Asset/UI/StartStory.rml")
+    startStoryWidget:SetWantsMouse(true)
+    startStoryWidget:bind_click("start-story-ok-button", function()
+        AudioManager.Play("Click", 1.0)
+        UIManager.Hide("startStory")
+
+        if onStartStoryOk ~= nil then
+            onStartStoryOk()
+        end
     end)
 
     local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
@@ -435,6 +452,7 @@ function UIManager.Init()
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
     UIManager.Register("gameOverlay", UI.CreateWidget("Asset/UI/GameOverlayWidget.rml"))
+    UIManager.Register("startStory", startStoryWidget)
     UIManager.Register("carWashQuest", carWashQuestWidget)
     UIManager.Register("gasQuest", gasQuestWidget)
     UIManager.Register("personQuest", personQuestWidget)

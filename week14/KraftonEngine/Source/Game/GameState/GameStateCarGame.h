@@ -83,6 +83,8 @@ public:
 	// --- Timers (read by UI / Lua) ---
 	float GetRemainingMatchTime() const { return RemainingMatchTime; }
 	float GetRemainingPhaseTime() const { return RemainingPhaseTime; }
+	bool  IsMatchTimerRunning() const { return bMatchTimerRunning; }
+	void  SetMatchTimerRunning(bool bRunning) { bMatchTimerRunning = bRunning; }
 
 	// --- 결과 / 진행도 누적 ---
 	ECarGamePhase GetLastEndedPhase() const { return LastEndedPhase; }
@@ -128,6 +130,7 @@ private:
 
 	float RemainingMatchTime = 0.0f;   // 매치 전체 카운트다운 (GameMode 가 StartMatch 에서 초기화)
 	float RemainingPhaseTime = 0.0f;   // 활성 페이즈 카운트다운
+	bool bMatchTimerRunning = false;
 
 	ECarGamePhase LastEndedPhase  = ECarGamePhase::None; // Result 페이즈 동안 UI 가 참조
 	EPhaseResult  LastPhaseResult = EPhaseResult::None;

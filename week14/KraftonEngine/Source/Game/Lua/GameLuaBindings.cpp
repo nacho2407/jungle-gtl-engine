@@ -162,6 +162,8 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"GetRemainingMatchTime", &AGameStateCarGame::GetRemainingMatchTime,
 		"GetRemainingPhaseTime", &AGameStateCarGame::GetRemainingPhaseTime,
 		"SetRemainingPhaseTime", &AGameStateCarGame::SetRemainingPhaseTime,
+		"IsMatchTimerRunning",   &AGameStateCarGame::IsMatchTimerRunning,
+		"SetMatchTimerRunning",  &AGameStateCarGame::SetMatchTimerRunning,
 		"GetLastEndedPhase",     &AGameStateCarGame::GetLastEndedPhase,
 		"GetLastPhaseResult",    &AGameStateCarGame::GetLastPhaseResult,
 		"GetClearedPhasesMask",  &AGameStateCarGame::GetClearedPhasesMask,

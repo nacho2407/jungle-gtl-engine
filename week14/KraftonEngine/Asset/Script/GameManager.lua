@@ -303,9 +303,24 @@ function BeginPlay()
     UIManager.Init()
     gameState = GetGameState()
     if gameState ~= nil then
+        gameState:SetMatchTimerRunning(false)
         gameState:BindPhaseChanged(OnPhaseChanged)
         gameState:BindPhaseChanged(HandleQuestPhaseChanged)
     end
+
+    UIManager.SetStartStoryOkCallback(function()
+        if state ~= QuestState.NotStarted then
+            return
+        end
+
+        print("Start Story accepted.")
+        if gameState ~= nil then
+            gameState:SetMatchTimerRunning(true)
+        end
+
+        UIManager.Show("gameOverlay")
+        ShowQuest(1)
+    end)
 
     UIManager.SetCarWashQuestOkCallback(function()
         if currentQuestIndex == 1 and state == QuestState.WaitingAccept then
@@ -337,8 +352,7 @@ function BeginPlay()
     -- intro 가 별도 scene 이라 클릭이 곧 transition 이고, 여기서 (Map 의 BeginPlay) 가
     -- 본격 게임 진입 시점.
     print("Start Game!")
-    UIManager.Show("gameOverlay")
-    ShowQuest(1)
+    UIManager.Show("startStory")
 end
 
 function EndPlay()

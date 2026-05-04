@@ -56,6 +56,7 @@ void AGameModeCarGame::StartMatch()
 		GS->SetQuestPhase(ECarGamePhase::None);
 		GS->SetRemainingMatchTime(MatchDuration);
 		GS->SetRemainingPhaseTime(0.0f);
+		GS->SetMatchTimerRunning(false);
 		GS->SetLastEndedPhase(ECarGamePhase::None);
 		GS->SetLastPhaseResult(EPhaseResult::None);
 		GS->SetHealth(GS->GetMaxHealth());
@@ -75,6 +76,7 @@ void AGameModeCarGame::Tick(float DeltaTime)
 	if (GS->GetPhase() == ECarGamePhase::Finished) return;
 
 	// ── 매치 전체 타이머 ──
+	if (GS->IsMatchTimerRunning())
 	{
 		float t = GS->GetRemainingMatchTime() - DeltaTime;
 		if (t <= 0.0f)
