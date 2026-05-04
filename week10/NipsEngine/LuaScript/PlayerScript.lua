@@ -6,8 +6,31 @@ Script.Properties = {
         Type = "Bool",
         Default = true,
         Category = "Script"
+    },
+
+    MaxHealth = {
+        Type = "Float",
+        Default = 100.0,
+        Category = "Stats"
+    },
+
+    Health = {
+        Type = "Float",
+        Default = 100.0,
+        Category = "Stats"
     }
 }
+
+local function Clamp(value, minValue, maxValue)
+    value = tonumber(value) or minValue
+    if value < minValue then
+        return minValue
+    end
+    if value > maxValue then
+        return maxValue
+    end
+    return value
+end
 
 function Script:Attack(mode, degree, yaw)
     self.bDoingAttack = true
@@ -228,6 +251,78 @@ function Script:HitReact(fromActor)
     end)
 end
 
+function Script:GetHealthSnapshot()
+    local maxHealth = math.max(1.0, tonumber(self.MaxHealth) or 100.0)
+    local health = Clamp(self.Health, 0.0, maxHealth)
+    self.MaxHealth = maxHealth
+    self.Health = health
+
+    return {
+        health = health,
+        maxHealth = maxHealth,
+        ratio = health / maxHealth
+    }
+end
+
+function Script:ResetHealth(maxHealth)
+    if maxHealth ~= nil then
+        self.MaxHealth = math.max(1.0, tonumber(maxHealth) or self.MaxHealth or 100.0)
+    else
+        self.MaxHealth = math.max(1.0, tonumber(self.MaxHealth) or 100.0)
+    end
+
+    self.Health = self.MaxHealth
+    return self:GetHealthSnapshot()
+end
+
+function Script:ApplyDamage(amount, source)
+    local snapshot = self:GetHealthSnapshot()
+    local damage = math.max(0.0, tonumber(amount) or 0.0)
+    if damage <= 0.0 or snapshot.health <= 0.0 then
+        return 0.0, snapshot
+    end
+
+    local oldHealth = snapshot.health
+    self.Health = Clamp(oldHealth - damage, 0.0, snapshot.maxHealth)
+    snapshot = self:GetHealthSnapshot()
+
+    if self.Health < oldHealth then
+        self:HitReact(source)
+    end
+
+    return oldHealth - self.Health, snapshot
+end
+
+function Script:RecoverHealth(amount, source)
+    local snapshot = self:GetHealthSnapshot()
+    local recover = math.max(0.0, tonumber(amount) or 0.0)
+    if recover <= 0.0 or snapshot.health >= snapshot.maxHealth then
+        return 0.0, snapshot
+    end
+
+    local oldHealth = snapshot.health
+    self.Health = Clamp(oldHealth + recover, 0.0, snapshot.maxHealth)
+    snapshot = self:GetHealthSnapshot()
+    return self.Health - oldHealth, snapshot
+end
+
+function Script:InstallHealthBridge()
+    _G.GameJam = _G.GameJam or {}
+    _G.GameJam.PlayerHealthOwner = self
+    _G.GameJam.GetPlayerHealthSnapshot = function()
+        return self:GetHealthSnapshot()
+    end
+    _G.GameJam.ResetPlayerHealth = function(maxHealth)
+        return self:ResetHealth(maxHealth)
+    end
+    _G.GameJam.ApplyPlayerDamage = function(amount, source)
+        return self:ApplyDamage(amount, source)
+    end
+    _G.GameJam.RecoverPlayerHealth = function(amount, source)
+        return self:RecoverHealth(amount, source)
+    end
+end
+
 
 function Script.new(component, properties)
     local self = setmetatable({}, Script)
@@ -268,6 +363,8 @@ end
 
 function Script:BeginPlay()
     Log("[BeginPlay] " .. tostring(self.owner.UUID))
+    self:ResetHealth(self.MaxHealth)
+    self:InstallHealthBridge()
 
     StartCoroutine(function()
         Log("Coroutine Start")
@@ -481,6 +578,13 @@ end
 
 function Script:EndPlay()
     Log("[EndPlay] " .. tostring(self.owner.UUID))
+    if _G.GameJam and _G.GameJam.PlayerHealthOwner == self then
+        _G.GameJam.PlayerHealthOwner = nil
+        _G.GameJam.GetPlayerHealthSnapshot = nil
+        _G.GameJam.ResetPlayerHealth = nil
+        _G.GameJam.ApplyPlayerDamage = nil
+        _G.GameJam.RecoverPlayerHealth = nil
+    end
 end
 
 function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
@@ -491,8 +595,27 @@ function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
 end
 
 function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
-    if OtherActor then
-        self:HitReact(OtherActor)
+    Log("[OnBeginOverlap] " .. tostring(self.owner.UUID))
+    if OtherActor ~= nil then
+        Log("OtherActor: " .. tostring(OtherActor.Name))
+    end
+    if bFromSweep then
+        Log("BeginOverlap from sweep")
+    end
+
+    if OtherActor == nil then
+        return
+    end
+
+    local isDamageSource = (OtherActor.HasTag ~= nil and OtherActor:HasTag("Enemy"))
+        or (OtherActor.IsA ~= nil and OtherActor:IsA("ADestructibleActor"))
+
+    if isDamageSource then
+        if _G.GameJam and _G.GameJam.DamagePlayer then
+            _G.GameJam.DamagePlayer(nil, OtherActor)
+        else
+            self:ApplyDamage(20.0, OtherActor)
+        end
     end
 end
 

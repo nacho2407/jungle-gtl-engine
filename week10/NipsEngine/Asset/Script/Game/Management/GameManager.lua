@@ -34,6 +34,39 @@ function GameManager:RecalculateScore()
     self.score = self.killScore + self.comboBonusScore
 end
 
+function GameManager:GetPlayerHealthSnapshot()
+    if _G.GameJam and _G.GameJam.GetPlayerHealthSnapshot then
+        local snapshot = _G.GameJam.GetPlayerHealthSnapshot()
+        if type(snapshot) == "table" then
+            self.playerHealth = tonumber(snapshot.health) or self.playerHealth
+            self.playerMaxHealth = tonumber(snapshot.maxHealth) or self.playerMaxHealth
+            return snapshot
+        end
+    end
+
+    return {
+        health = self.playerHealth,
+        maxHealth = self.playerMaxHealth,
+        ratio = self.playerMaxHealth > 0.0 and (self.playerHealth / self.playerMaxHealth) or 0.0
+    }
+end
+
+function GameManager:ResetPlayerHealth()
+    local maxHealth = tonumber(self.context.root.PlayerMaxHealth) or self.playerMaxHealth or 100.0
+    if _G.GameJam and _G.GameJam.ResetPlayerHealth then
+        local snapshot = _G.GameJam.ResetPlayerHealth(maxHealth)
+        if type(snapshot) == "table" then
+            self.playerMaxHealth = tonumber(snapshot.maxHealth) or maxHealth
+            self.playerHealth = tonumber(snapshot.health) or self.playerMaxHealth
+            return snapshot
+        end
+    end
+
+    self.playerMaxHealth = maxHealth
+    self.playerHealth = self.playerMaxHealth
+    return self:GetPlayerHealthSnapshot()
+end
+
 function GameManager:BeginPlay()
     self.context.eventBus:Subscribe("Enemy.Killed", self, function(payload)
         self:AddKill(payload)
@@ -62,6 +95,7 @@ function GameManager:StartRun()
     self.comboBonusScore = 0
     self.playerMaxHealth = self.context.root.PlayerMaxHealth or 100.0
     self.playerHealth = self.playerMaxHealth
+    self:ResetPlayerHealth()
     self.invulnerableRemaining = 0.0
     self.timeSlowActive = false
     self.timeSlowRemaining = 0.0
@@ -193,7 +227,24 @@ function GameManager:DamagePlayer(amount, source)
         return false
     end
 
-    self.playerHealth = math.max(0.0, self.playerHealth - damage)
+    local appliedDamage = damage
+    if _G.GameJam and _G.GameJam.ApplyPlayerDamage then
+        local actualDamage, snapshot = _G.GameJam.ApplyPlayerDamage(damage, source)
+        appliedDamage = tonumber(actualDamage) or 0.0
+        if type(snapshot) == "table" then
+            self.playerHealth = tonumber(snapshot.health) or self.playerHealth
+            self.playerMaxHealth = tonumber(snapshot.maxHealth) or self.playerMaxHealth
+        else
+            self:GetPlayerHealthSnapshot()
+        end
+    else
+        self.playerHealth = math.max(0.0, self.playerHealth - damage)
+    end
+
+    if appliedDamage <= 0.0 then
+        return false
+    end
+
     if self.playerHealth > 0.0 then
         self.invulnerableRemaining = tonumber(self.context.root.PlayerInvulnerableSeconds) or 3.0
     else
@@ -201,7 +252,7 @@ function GameManager:DamagePlayer(amount, source)
     end
 
     self.context.eventBus:Emit("Player.Damaged", {
-        amount = damage,
+        amount = appliedDamage,
         source = source,
         invulnerableSeconds = self.invulnerableRemaining,
         snapshot = self:GetSnapshot()
@@ -223,14 +274,28 @@ function GameManager:RecoverPlayer(amount, source)
         return false
     end
 
-    local oldHealth = self.playerHealth
-    self.playerHealth = math.min(self.playerMaxHealth or 100.0, self.playerHealth + recoverAmount)
-    if self.playerHealth <= oldHealth then
+    local actualRecover = recoverAmount
+    if _G.GameJam and _G.GameJam.RecoverPlayerHealth then
+        local recovered, snapshot = _G.GameJam.RecoverPlayerHealth(recoverAmount, source)
+        actualRecover = tonumber(recovered) or 0.0
+        if type(snapshot) == "table" then
+            self.playerHealth = tonumber(snapshot.health) or self.playerHealth
+            self.playerMaxHealth = tonumber(snapshot.maxHealth) or self.playerMaxHealth
+        else
+            self:GetPlayerHealthSnapshot()
+        end
+    else
+        local oldHealth = self.playerHealth
+        self.playerHealth = math.min(self.playerMaxHealth or 100.0, self.playerHealth + recoverAmount)
+        actualRecover = self.playerHealth - oldHealth
+    end
+
+    if actualRecover <= 0.0 then
         return false
     end
 
     self.context.eventBus:Emit("Player.Recovered", {
-        amount = self.playerHealth - oldHealth,
+        amount = actualRecover,
         source = source,
         snapshot = self:GetSnapshot()
     })
@@ -310,6 +375,7 @@ end
 
 function GameManager:GetSnapshot()
     local limit = self.context.root.SessionLimitSeconds or 5.0
+    self:GetPlayerHealthSnapshot()
     local maxHealth = self.playerMaxHealth or self.context.root.PlayerMaxHealth or 100.0
     return {
         isRunning = self.isRunning,
