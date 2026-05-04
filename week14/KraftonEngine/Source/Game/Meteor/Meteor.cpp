@@ -94,7 +94,7 @@ void AMeteor::HandleHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
 	// 차량에 데미지 적용 — 차량 외 액터(지면 등)와 충돌이면 데미지 없이 destroy만
 	if (auto* Car = Cast<ACarPawn>(OtherActor))
 	{
-		Car->TakeDamage(DamagePerHit);
+		Car->TakeMeteorDamage(DamagePerHit);
 	}
 
 	// PhysX onContact 콜백 안에서 즉시 DestroyActor 호출하면 PhysX scene 변경 시점이

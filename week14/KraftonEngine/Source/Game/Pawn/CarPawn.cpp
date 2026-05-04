@@ -141,11 +141,12 @@ USphereComponent* ACarPawn::GetWheel(int Index) const
 	return (Index >= 0 && Index < 4) ? Wheels[Index] : nullptr;
 }
 
-void ACarPawn::TakeDamage(float Amount)
+void ACarPawn::TakeMeteorDamage(float Amount)
 {
-	Health -= Amount;
-	UE_LOG("[Car] Damage %.1f, Health=%.1f", Amount, Health);
-	// 사망 처리(페이즈 종료, 게임오버 UI 등)는 후속 작업
+	MeteorHealth -= Amount;
+	if (MeteorHealth < 0.0f) MeteorHealth = 0.0f;
+	UE_LOG("[Car] Meteor damage %.1f, MeteorHealth=%.1f/%.1f", Amount, MeteorHealth, MaxMeteorHealth);
+	// 0 도달 시 GameMode JudgePhaseResult(DodgeMeteor) 가 Failed 로 판정.
 }
 
 bool ACarPawn::IsFirstPersonView() const
