@@ -15,6 +15,7 @@ local fade = {
 local onCarWashQuestOk = nil
 local onGasQuestOk = nil
 local onPersonQuestOk = nil
+local onMeteorQuestOk = nil
 
 local function Clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -61,6 +62,10 @@ function UIManager.SetPersonQuestOkCallback(callback)
     onPersonQuestOk = callback
 end
 
+function UIManager.SetMeteorQuestOkCallback(callback)
+    onMeteorQuestOk = callback
+end
+
 function UIManager.Init()
     -- Scene reload 대응 — UI 위젯은 UUIManager 싱글턴이 보유 (월드와 별개) 라 첫 init 후
     -- 유지된다. 두 번째 Init 호출 시 위젯 재생성 없이 표시만 인트로 화면으로 정리.
@@ -75,6 +80,7 @@ function UIManager.Init()
         UIManager.Hide("carWashQuest")
         UIManager.Hide("gasQuest")
         UIManager.Hide("personQuest")
+        UIManager.Hide("meteorQuest")
         UIManager.Hide("contributor")
         UIManager.Hide("whiteBox")
         UIManager.Hide("pauseMenu")
@@ -137,6 +143,16 @@ function UIManager.Init()
         end
     end)
 
+    local meteorQuestWidget = UI.CreateWidget("Asset/UI/MeteorQuestWidget.rml")
+    meteorQuestWidget:SetWantsMouse(true)
+    meteorQuestWidget:bind_click("meteor-quest-ok-button", function()
+        UIManager.Hide("meteorQuest")
+
+        if onMeteorQuestOk ~= nil then
+            onMeteorQuestOk()
+        end
+    end)
+
     local pauseMenuWidget = UI.CreateWidget("Asset/UI/PauseMenuWidget.rml")
     pauseMenuWidget:SetWantsMouse(true)
     pauseMenuWidget:bind_click("pause-menu-go-intro-button", function()
@@ -171,6 +187,7 @@ function UIManager.Init()
     UIManager.Register("carWashQuest", carWashQuestWidget)
     UIManager.Register("gasQuest", gasQuestWidget)
     UIManager.Register("personQuest", personQuestWidget)
+    UIManager.Register("meteorQuest", meteorQuestWidget)
     UIManager.Register("gasWidget", UI.CreateWidget("Asset/UI/GasWidget.rml"))
     UIManager.Register("gameOver", gameOverWidget)
     UIManager.Register("pauseMenu", pauseMenuWidget)
