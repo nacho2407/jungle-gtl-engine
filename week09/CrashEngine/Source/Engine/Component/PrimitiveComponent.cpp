@@ -43,9 +43,9 @@ UPrimitiveComponent::~UPrimitiveComponent()
 
 void UPrimitiveComponent::MarkProxyDirty(ESceneProxyDirtyFlag Flag) const
 {
-    if (!SceneProxy || !Owner || !Owner->GetWorld())
+    if (!SceneProxy || !SceneProxyOwnerScene)
         return;
-    Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
+    SceneProxyOwnerScene->MarkProxyDirty(SceneProxy, Flag);
 }
 
 void UPrimitiveComponent::Serialize(FArchive& Ar)
@@ -304,6 +304,7 @@ void UPrimitiveComponent::CreateRenderState()
     {
         FScene& Scene = World->GetScene();
         SceneProxy = Scene.AddPrimitive(this);
+        SceneProxyOwnerScene = SceneProxy ? &Scene : nullptr;
     }
 
     World->GetPartition().AddSinglePrimitive(this);
@@ -312,20 +313,34 @@ void UPrimitiveComponent::CreateRenderState()
 
 void UPrimitiveComponent::DestroyRenderState()
 {
+    FPrimitiveProxy* ProxyToRemove = SceneProxy;
+    FScene* SceneToRemoveFrom = SceneProxyOwnerScene;
+    SceneProxy = nullptr;
+    SceneProxyOwnerScene = nullptr;
+
     if (Owner)
     {
         if (UWorld* World = Owner->GetWorld())
         {
             World->GetPartition().RemoveSinglePrimitive(this);
             World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
+        }
+    }
 
-            if (SceneProxy)
+    if (ProxyToRemove)
+    {
+        if (SceneToRemoveFrom)
+        {
+            SceneToRemoveFrom->RemovePrimitive(ProxyToRemove);
+        }
+        else if (Owner)
+        {
+            if (UWorld* World = Owner->GetWorld())
             {
-                World->GetScene().RemovePrimitive(SceneProxy);
+                World->GetScene().RemovePrimitive(ProxyToRemove);
             }
         }
     }
-    SceneProxy = nullptr;
 }
 
 void UPrimitiveComponent::BroadcastComponentBeginOverlap(AActor* OtherActor)

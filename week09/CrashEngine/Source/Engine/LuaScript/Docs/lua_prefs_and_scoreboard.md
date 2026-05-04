@@ -63,9 +63,10 @@ end
 ```lua
 local hp = 80
 local documentCount = 3
+local timer = 125.0
 local score = hp * documentCount
 
-Scoreboard.AddScore("Player", score, hp, documentCount)
+Scoreboard.AddScore("Player", score, hp, documentCount, timer)
 ```
 
 저장되는 값:
@@ -74,6 +75,7 @@ Scoreboard.AddScore("Player", score, hp, documentCount)
 - `score`
 - `hp`
 - `documentCount`
+- `timer`
 - `timestamp`
 
 ### GetTopScores
@@ -88,6 +90,7 @@ for i, entry in ipairs(scores) do
         entry.score,
         entry.hp,
         entry.documentCount,
+        entry.timer,
         entry.timestamp
     )
 end

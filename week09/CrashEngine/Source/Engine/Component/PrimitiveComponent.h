@@ -179,6 +179,7 @@ protected:
     bool bCastShadow = true;
     bool bIsEditorHelper = false;
     FPrimitiveProxy* SceneProxy = nullptr;
+    FScene* SceneProxyOwnerScene = nullptr;
 
     FOctree* OctreeNode = nullptr;
     bool bInOctreeOverflow = false;

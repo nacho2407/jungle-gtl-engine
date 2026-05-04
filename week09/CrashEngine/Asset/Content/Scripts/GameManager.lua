@@ -243,14 +243,16 @@ function GameOver(finalHP, finalDocumentCount)
     local score = finalHP * finalDocumentCount
 
     Prefs.SetNumber("LastScore", score)
-    Scoreboard.AddScore("Player", score, finalHP, finalDocumentCount)
+    Prefs.SetNumber("LastHP", finalHP)
+    Prefs.SetNumber("LastDocumentCount", finalDocumentCount)
+    Prefs.SetNumber("LastTimer", Timer)
 
     print("GAME OVER")
     print("Score : ", score)
     print("Final HP : ", finalHP)
     print("Final Document Count : ", finalDocumentCount)
     print("Timer : ", Timer)
-    ShowScoreboard(ScoreboardLimit)
+    LoadScene("GameOver.Scene")
 end
 
 function ShowScoreboard(limit)
