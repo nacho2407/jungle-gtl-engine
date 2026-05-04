@@ -1,39 +1,17 @@
 {
   "scores" : [{
-      "documentCount" : 2,
-      "hp" : 58.911691,
-      "name" : "Player",
-      "score" : 117.823382,
-      "timestamp" : "2026-05-04 07:06:01"
-    }, {
       "documentCount" : 1,
-      "hp" : 0.687487,
-      "name" : "Player",
-      "score" : 0.687487,
-      "timestamp" : "2026-05-04 07:06:21"
-    }, {
-      "documentCount" : 2,
-      "hp" : 0.000000,
-      "name" : "Player",
-      "score" : 0.000000,
-      "timestamp" : "2026-05-04 07:44:36"
+      "hp" : 34.000000,
+      "name" : "PLAYERS",
+      "score" : 34.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 18:01:55"
     }, {
       "documentCount" : 0,
-      "hp" : 87.159739,
-      "name" : "Player",
+      "hp" : 85.000000,
+      "name" : "PLAYER",
       "score" : 0.000000,
-      "timestamp" : "2026-05-04 12:59:12"
-    }, {
-      "documentCount" : 0,
-      "hp" : 89.157884,
-      "name" : "Player",
-      "score" : 0.000000,
-      "timestamp" : "2026-05-04 13:01:31"
-    }, {
-      "documentCount" : 0,
-      "hp" : 89.995925,
-      "name" : "Player",
-      "score" : 0.000000,
-      "timestamp" : "2026-05-04 13:01:56"
+      "timer" : 1.523182,
+      "timestamp" : "2026-05-04 18:01:44"
     }]
 }
