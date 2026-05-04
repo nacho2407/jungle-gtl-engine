@@ -14,6 +14,9 @@ function GameManager.new(context)
         playerHealth = 100.0,
         playerMaxHealth = 100.0,
         invulnerableRemaining = 0.0,
+        timeSlowActive = false,
+        timeSlowRemaining = 0.0,
+        timeSlowScale = 0.5,
         finishReason = "None",
         isClear = false
     }, GameManager)
@@ -47,6 +50,7 @@ function GameManager:EndPlay()
 end
 
 function GameManager:StartRun()
+    self:StopTimeSlow(false)
     Engine.API.World.SetTimeScale(1.0)
 
     self.isRunning = true
@@ -59,6 +63,9 @@ function GameManager:StartRun()
     self.playerMaxHealth = self.context.root.PlayerMaxHealth or 100.0
     self.playerHealth = self.playerMaxHealth
     self.invulnerableRemaining = 0.0
+    self.timeSlowActive = false
+    self.timeSlowRemaining = 0.0
+    self.timeSlowScale = 0.5
     self.finishReason = "None"
     self.isClear = false
 
@@ -79,7 +86,7 @@ function GameManager:Resume()
         return
     end
     self.isPaused = false
-    Engine.API.World.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(self.timeSlowActive and self.timeSlowScale or 1.0)
     self.context.eventBus:Emit("Game.Resumed", self:GetSnapshot())
 end
 
@@ -97,6 +104,7 @@ function GameManager:FinishRun(reason)
     self.isPaused = false
     self.finishReason = reason or "Finished"
     self.isClear = IsClearReason(self.finishReason)
+    self:StopTimeSlow(true)
     Engine.API.World.SetTimeScale(1.0)
 
     local data = self.context.managers.Data
@@ -112,6 +120,7 @@ function GameManager:CancelRun(reason)
     self.isPaused = false
     self.finishReason = reason or "Canceled"
     self.isClear = false
+    self:StopTimeSlow(false)
     Engine.API.World.SetTimeScale(1.0)
     self.context.eventBus:Emit("Game.Canceled", self:GetSnapshot())
 end
@@ -228,9 +237,62 @@ function GameManager:RecoverPlayer(amount, source)
     return true
 end
 
+function GameManager:ActivateTimeSlow(duration, scale, source)
+    if not self.isRunning or self.isPaused then
+        return false
+    end
+
+    self.timeSlowScale = math.max(0.05, math.min(1.0, tonumber(scale) or 0.5))
+    self.timeSlowRemaining = math.max(0.0, tonumber(duration) or 10.0)
+    if self.timeSlowRemaining <= 0.0 then
+        return false
+    end
+
+    local wasActive = self.timeSlowActive
+    self.timeSlowActive = true
+    Engine.API.World.SetTimeScale(self.timeSlowScale)
+    Engine.API.World.ActivateSandervistan()
+
+    if not wasActive then
+        self.context.eventBus:Emit("TimeSlow.Started", {
+            duration = self.timeSlowRemaining,
+            scale = self.timeSlowScale,
+            source = source,
+            snapshot = self:GetSnapshot()
+        })
+    end
+
+    return true
+end
+
+function GameManager:StopTimeSlow(emitEvent)
+    if self.timeSlowActive then
+        self.timeSlowActive = false
+        self.timeSlowRemaining = 0.0
+        Engine.API.World.DeactivateSandervistan()
+        Engine.API.World.SetTimeScale(1.0)
+
+        if emitEvent then
+            self.context.eventBus:Emit("TimeSlow.Ended", self:GetSnapshot())
+        end
+    end
+end
+
 function GameManager:Tick(dt)
     if not self.isRunning or self.isPaused then
         return
+    end
+
+    if self.timeSlowActive then
+        local realDt = Engine.API.World.GetUnscaledDeltaTime()
+        if realDt <= 0.0 then
+            realDt = dt or 0.0
+        end
+
+        self.timeSlowRemaining = math.max(0.0, self.timeSlowRemaining - realDt)
+        if self.timeSlowRemaining <= 0.0 then
+            self:StopTimeSlow(true)
+        end
     end
 
     if self.invulnerableRemaining > 0.0 then
@@ -262,6 +324,9 @@ function GameManager:GetSnapshot()
         playerMaxHealth = maxHealth,
         playerHealthRatio = maxHealth > 0.0 and (self.playerHealth / maxHealth) or 0.0,
         invulnerableRemaining = self.invulnerableRemaining,
+        timeSlowActive = self.timeSlowActive,
+        timeSlowRemaining = self.timeSlowRemaining,
+        timeSlowScale = self.timeSlowScale,
         finishReason = self.finishReason,
         isClear = self.isClear
     }

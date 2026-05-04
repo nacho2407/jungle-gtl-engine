@@ -189,10 +189,10 @@ body
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 36px;
-    height: 36px;
-    margin-left: -18px;
-    margin-top: -18px;
+    width: 72px;
+    height: 72px;
+    margin-left: -36px;
+    margin-top: -36px;
 }
 
 .crosshair-image

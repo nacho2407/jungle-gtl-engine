@@ -53,7 +53,6 @@ function Script.new(component, properties)
     self.target = nil
     self.bMovementLocked = false
     self.bWasCutByBlade = false
-    self.bScoreReported = false
     self.lastAttackId = nil
 
     -- 런타임 전용 상태
@@ -130,17 +129,6 @@ end
 
 function Script:EndPlay()
     Log("[Enemy EndPlay] " .. tostring(self.owner.UUID))
-
-    if self.bWasCutByBlade and not self.bScoreReported then
-        self.bScoreReported = true
-        if _G.GameJam and _G.GameJam.NotifyEnemyKilled then
-            _G.GameJam.NotifyEnemyKilled({
-                enemy = self.owner,
-                score = 1,
-                attackId = self.lastAttackId
-            })
-        end
-    end
 end
 
 function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
@@ -157,9 +145,6 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
     if OtherActor:IsA("ABladeSlash") then
         self.bWasCutByBlade = true
         self.lastAttackId = ExtractAttackId(OtherActor)
-        if self.lastAttackId ~= nil and _G.GameJam and _G.GameJam.NotifyPlayerAttackHit then
-            _G.GameJam.NotifyPlayerAttackHit(self.lastAttackId)
-        end
         return
     end
     

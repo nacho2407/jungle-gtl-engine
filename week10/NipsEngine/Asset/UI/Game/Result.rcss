@@ -235,11 +235,15 @@ body
 
 .summary-name
 {
+    display: block;
     width: 432px;
+    height: 44px;
     margin-bottom: 18px;
     font-size: 30px;
     font-weight: bold;
+    line-height: 44px;
     color: rgb(255, 248, 232);
+    text-align: center;
 }
 
 .score-summary-label
@@ -249,10 +253,13 @@ body
 
 .summary-score
 {
+    display: block;
     width: 432px;
+    height: 38px;
     margin-top: 30px;
     font-size: 26px;
     font-weight: bold;
+    line-height: 38px;
     color: rgb(255, 224, 154);
     text-align: center;
 }

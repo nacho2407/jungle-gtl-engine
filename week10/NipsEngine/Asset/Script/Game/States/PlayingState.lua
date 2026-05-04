@@ -23,6 +23,7 @@ function PlayingState:Enter(context)
         end
 
         self.pendingResult = snapshot or {}
+        context.managers.UI:SetHUD(self.pendingResult)
         self.resultDelayRemaining = 2.0
         context.managers.Sound:StopBGM(2.0)
     end)
@@ -48,6 +49,7 @@ end
 
 function PlayingState:Tick(context, dt)
     if self.pendingResult ~= nil then
+        context.managers.UI:SetHUD(self.pendingResult)
         local realDt = Engine.API.World.GetUnscaledDeltaTime()
         self.resultDelayRemaining = self.resultDelayRemaining - realDt
         if self.resultDelayRemaining <= 0.0 then

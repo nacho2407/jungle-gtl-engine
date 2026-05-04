@@ -202,7 +202,6 @@ function Script.new(component, properties)
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
     self.attackSequence = 0
-    self.bTimeSlowActive = false
     self.BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
     self.slamPitchOffset    = 0      -- 현재 적용 중인 슬램 pitch 오프셋
     self.slamPitchTarget    = 0      -- 목표 오프셋
@@ -231,18 +230,7 @@ function Script:BeginPlay()
 end
 
 function Script:Tick(dt)
-    -- Release 는 Tick 이 꺼져도 받아야 함
-    if (Engine.API.Input.IsMouseReleased("RMB")) then
-        Engine.API.World.SetTimeScale(1)
-        Engine.API.World.DeactivateSandervistan()
-    end
-
     if not self.bCanTick then return end
-
-    if (Engine.API.Input.IsMousePressed("RMB")) then
-        Engine.API.World.SetTimeScale(0.1)
-        Engine.API.World.ActivateSandervistan()
-    end
 
     local WorldTimeScale = Engine.API.World.GetTimeScale()
     if WorldTimeScale ~= 0 then
@@ -365,26 +353,6 @@ function Script:Tick(dt)
         self.BodySection.Rotation = Vector(0, clampedPitch, 0)
     end
 
-    if (Engine.API.Input.IsMousePressed("RMB")) then
-        Engine.API.World.SetTimeScale(0.5)
-        if not self.bTimeSlowActive then
-            self.bTimeSlowActive = true
-            if _G.GameJam and _G.GameJam.NotifyTimeSlowStarted then
-                _G.GameJam.NotifyTimeSlowStarted()
-            end
-        end
-    end
-
-    if (Engine.API.Input.IsMouseReleased("RMB")) then
-        Engine.API.World.SetTimeScale(1)
-        if self.bTimeSlowActive then
-            self.bTimeSlowActive = false
-            if _G.GameJam and _G.GameJam.NotifyTimeSlowEnded then
-                _G.GameJam.NotifyTimeSlowEnded()
-            end
-        end
-    end
-
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
         local slash = Engine.API.World.SpawnActor("ABladeSlash")
         if slash == nil then
@@ -458,13 +426,6 @@ end
 
 function Script:EndPlay()
     Log("[EndPlay] " .. tostring(self.owner.UUID))
-    if self.bTimeSlowActive and _G.GameJam and _G.GameJam.NotifyTimeSlowEnded then
-        _G.GameJam.NotifyTimeSlowEnded()
-    end
-    if self.bTimeSlowActive then
-        Engine.API.World.SetTimeScale(1)
-        self.bTimeSlowActive = false
-    end
 end
 
 function Script:OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)

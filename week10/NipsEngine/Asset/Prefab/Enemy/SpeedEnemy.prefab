@@ -98,7 +98,7 @@
         "Tags" : [],
         "Type" : "USoundComponent",
         "UUID" : 5894,
-        "Volume Scale" : 0.350000
+        "Volume Scale" : 1.000000
       }],
     "EditorOnly" : false,
     "Name" : "SpeedEnemy",
