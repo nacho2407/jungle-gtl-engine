@@ -10,7 +10,7 @@
     },
     "LastScore" : {
       "type" : "number",
-      "value" : 0.000000
+      "value" : 100.000000
     },
     "LastTimer" : {
       "type" : "number",

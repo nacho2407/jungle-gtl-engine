@@ -1,5 +1,6 @@
 local PlayerMovement = {}
 
+-- 값을 0~1로 보간하는 함수
 local function clamp01(value)
     if value < 0.0 then
         return 0.0
@@ -10,10 +11,12 @@ local function clamp01(value)
     return value
 end
 
+-- 보간용 alpha값을 dt에 맞춰서 계산하기 ( current = current (target-current)*alpha )
 local function interpAlpha(speed, dt)
     return clamp01(1.0 - math.exp(-speed * dt))
 end
 
+-- Z값을 뺀 값만 Return
 local function normalizePlanar(vector)
     local planar = Vector.new(vector.X, vector.Y, 0.0)
 
@@ -23,7 +26,7 @@ local function normalizePlanar(vector)
 
     return Vector.new(0.0, 0.0, 0.0)
 end
-
+-- 두 각 사이의 가장 작은 차이를 구하기
 local function shortestAngleDelta(fromDegrees, toDegrees)
     local delta = (toDegrees - fromDegrees + 180.0) % 360.0 - 180.0
     return delta
@@ -31,22 +34,23 @@ end
 
 function PlayerMovement.CreateState(options)
     options = options or {}
-
+    --Forward의 z값제외
     local forward = normalizePlanar(options.forward or Vector.new(1.0, 0.0, 0.0))
+    -- Right의 z값제외
     local right = normalizePlanar(options.right or Vector.new(-forward.Y, forward.X, 0.0))
+
     local yaw = PlayerMovement.ForwardToYaw(forward)
 
     return {
-        moveForward = forward,
-        moveRight = right,
-        visualForward = forward,
-        velocity = Vector.new(0.0, 0.0, 0.0),
-        visualYaw = yaw,
-        meshYawOffset = options.meshYawOffset or 0.0,
-        meshBaseRotation = options.meshBaseRotation or Vector.new(0.0, 0.0, 0.0),
-        moveSpeed = options.moveSpeed or 10.0,
-        velocityInterpSpeed = options.velocityInterpSpeed or 12.0,
-        turnInterpSpeed = options.turnInterpSpeed or 14.0,
+        moveForward = forward, -- W / S 카메라 기준 앞/뒤
+        moveRight = right, -- A / D 카메라 기준 왼/오
+        visualForward = forward, -- Mesh가 현재 바라보는 방향
+        velocity = Vector.new(0.0, 0.0, 0.0), -- 현재 속도
+        visualYaw = yaw, -- Mesh의 현재 yaw
+        meshYawOffset = options.meshYawOffset or 0.0, --Mesh의 Yaw방향이 다르면 Offset 보정값
+        moveSpeed = options.moveSpeed or 10.0, -- 최대 이동속도
+        velocityInterpSpeed = options.velocityInterpSpeed or 12.0, -- 가감속 정도
+        turnInterpSpeed = options.turnInterpSpeed or 14.0, -- 회전 속도
     }
 end
 
@@ -100,11 +104,7 @@ function PlayerMovement.Update(state, pressedKeys, dt)
 end
 
 function PlayerMovement.MakeYawRotation(state)
-    return Vector.new(
-        state.meshBaseRotation.X,
-        state.meshBaseRotation.Y,
-        state.meshBaseRotation.Z + state.visualYaw + state.meshYawOffset
-    )
+    return Vector.new(0.0, 0.0, state.visualYaw + state.meshYawOffset)
 end
 
 return PlayerMovement

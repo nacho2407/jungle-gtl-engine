@@ -50,6 +50,11 @@ void FPrimitiveProxy::UpdateVisibility()
     }
 }
 
+void FPrimitiveProxy::UpdateShadow()
+{
+    bCastShadow = Owner ? Owner->DoesCastShadow() : false;
+}
+
 void FPrimitiveProxy::UpdateMesh()
 {
     MeshBuffer = Owner->GetMeshBuffer();
