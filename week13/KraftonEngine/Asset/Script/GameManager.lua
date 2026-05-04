@@ -83,13 +83,14 @@ local function OnPhaseChanged(phase)
         end
     elseif phase == ECarGamePhase.Finished then
         local outcome = EFinishOutcome.None
+        local score = 0
         if gameState ~= nil then
             outcome = gameState:GetFinishOutcome()
+            score = gameState:GetScore()
         end
-        -- Score 시스템 도입 후엔 두 번째 인자로 최종 점수를 같이 넘겨준다.
-        UIManager.ShowGameOver(outcome, nil)
+        UIManager.ShowGameOver(outcome, score)
         Engine.PauseGame()
-        print("Run Lua logic for Finished, outcome=" .. tostring(outcome))
+        print("Run Lua logic for Finished, outcome=" .. tostring(outcome) .. ", score=" .. tostring(score))
     end
 end
 

@@ -37,6 +37,7 @@ enum class EFinishOutcome : uint8
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGamePhaseChangedSignature, ECarGamePhase /*NewPhase*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameHealthChangedSignature, int32 /*NewHealth*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameScoreChangedSignature,  int32 /*NewScore*/);
 
 // ============================================================
 // AGameStateCarGame — 자동차 게임의 현재 페이즈/타이머/누적 결과 데이터 보유
@@ -76,6 +77,11 @@ public:
 	EFinishOutcome GetFinishOutcome() const { return FinishOutcome; }
 	void           SetFinishOutcome(EFinishOutcome V) { FinishOutcome = V; }
 
+	// --- Score (페이즈 성공 보너스 + 매치 종료 보너스 누적) ---
+	int32 GetScore() const { return CurrentScore; }
+	void  SetScore(int32 V);
+	void  AddScore(int32 Delta);
+
 	// --- GameMode 전용 setter (private 으로 두지 않은 이유: friend 회피 + 단일 호출자 가정) ---
 	void SetRemainingMatchTime(float V) { RemainingMatchTime = V; }
 	void SetRemainingPhaseTime(float V) { RemainingPhaseTime = V; }
@@ -85,6 +91,7 @@ public:
 
 	FCarGamePhaseChangedSignature OnPhaseChanged;
 	FCarGameHealthChangedSignature OnHealthChanged;
+	FCarGameScoreChangedSignature  OnScoreChanged;
 
 	void Serialize(FArchive& Ar) override;
 
@@ -105,4 +112,6 @@ private:
 	int32 CurrentHealth = DefaultMaxHealth;
 
 	EFinishOutcome FinishOutcome = EFinishOutcome::None;
+
+	int32 CurrentScore = 0;
 };

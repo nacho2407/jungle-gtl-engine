@@ -8,8 +8,8 @@
 		<div id="hud-top-line"></div>
 
 		<div id="hud-score-panel">
-			<div class="hud-label">CLEARED</div>
-			<div id="score-value" class="hud-main-value">0/4</div>
+			<div class="hud-label">SCORE</div>
+			<div id="score-value" class="hud-main-value">000000</div>
 		</div>
 
 		<div id="hud-hp-panel">

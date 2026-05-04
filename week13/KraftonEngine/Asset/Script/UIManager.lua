@@ -308,7 +308,7 @@ function UIManager.ShowGameOver(outcome, finalScore)
     end
 
     if finalScore ~= nil then
-        widget:set_text("final-score-value", tostring(finalScore))
+        widget:set_text("final-score-value", string.format("%06d", finalScore))
     end
 
     UIManager.Show("gameOver")
@@ -416,9 +416,9 @@ function UIManager.UpdateHUD()
         widget:set_text("combo-value", FormatTime(gs:GetRemainingPhaseTime()))
     end
 
-    -- objective + 클리어 카운트 — 매 프레임 호출 비용 미미하므로 같이 갱신
+    -- objective + 점수 — 매 프레임 호출 비용 미미하므로 같이 갱신
     widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
-    widget:set_text("score-value", PopCount(gs:GetClearedPhasesMask()) .. "/4")
+    widget:set_text("score-value", string.format("%06d", gs:GetScore()))
 
     -- HP — RML 에 hp-slot-0/1/2 슬롯이 있고 색만 채워진(빨강)/빈(회색) 으로 토글.
     local hp = gs:GetHealth()

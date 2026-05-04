@@ -53,6 +53,14 @@ public:
 	// --- 페이즈 성공 임계치 ---
 	static constexpr float CarGasSuccessRatio = 0.8f;     // 80% 이상 채워져야 Success
 
+	// --- 점수 가중치 ---
+	// Phase Success: BasePhaseScore + 잔여시간 비율 × PhaseTimeBonusMax (Failed 는 0)
+	// Match-end:     매치 잔여 초 × MatchTimeBonusPerSec  +  잔여 HP × HealthBonusPerHP
+	static constexpr int32 BasePhaseScore       = 1000;
+	static constexpr int32 PhaseTimeBonusMax    = 500;
+	static constexpr int32 MatchTimeBonusPerSec = 10;
+	static constexpr int32 HealthBonusPerHP     = 500;
+
 private:
 	// 트리거 태그 → 페이즈 매핑
 	static ECarGamePhase TagToPhase(const FName& Tag);
@@ -70,6 +78,9 @@ private:
 
 	// 모든 페이즈 1회 클리어 시 Finished 로 전이. true 반환하면 Finished 진입.
 	bool TryFinishOnAllCleared();
+
+	// Phase=Finished 진입 직전 매치 잔여 시간 + 잔여 HP 보너스를 누적 점수에 합산.
+	void ApplyMatchEndBonus();
 
 	void SpawnPoliceCars(APawn* PlayerPawn);
 	void DespawnPoliceCars();
