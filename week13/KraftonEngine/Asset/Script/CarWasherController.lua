@@ -1,8 +1,8 @@
 local ObjRegistry = require("ObjRegistry")
 local bCarWashSucceeded = false
 local previousPhase = nil
-local gunForwardOffset = 0.5
-local gunRightOffset = 0.2
+local gunForwardOffset = 1.0
+local gunRightOffset = 0.3
 
 local function UpdateCarWasherTransform()
     local man = ObjRegistry.manObj
@@ -12,14 +12,14 @@ local function UpdateCarWasherTransform()
     end
 
     obj.Location = man.Location + manCamera.Forward * gunForwardOffset + manCamera.Right * gunRightOffset
-    obj.Rotation = manCamera.Rotation
+    obj.Rotation = Vector.new(manCamera.Rotation.X * (-1.0), manCamera.Rotation.Y * (-1.0), manCamera.Rotation.Z + 180)
 end
 
 function BeginPlay()
     ObjRegistry.RegisterCarWasher(obj)
     obj:SetVisible(false)
     obj:SetCarWashStreamVisible(false)
-end
+end 
 
 function Tick(dt)
     local gs = GetGameState()
