@@ -37,7 +37,7 @@ body
 .title-mark3
 {
     position: absolute;
-    top: 350px;
+    top: 250px;
     width: 700px;
 }
 
@@ -46,17 +46,17 @@ body
 .title-mark6
 {
     position: absolute;
-    top: 500px;
+    top: 410px;
     width: 700px;
 }
 
-.title-mark1 { left: 150px; }
-.title-mark2 { left: 140px; }
-.title-mark3 { left: 145px; }
+.title-mark1 { left: 170px; }
+.title-mark2 { left: 160px; }
+.title-mark3 { left: 165px; }
 
-.title-mark4 { left: 300px; }
-.title-mark5 { left: 290px; }
-.title-mark6 { left: 295px; }
+.title-mark4 { left: 330px; }
+.title-mark5 { left: 320px; }
+.title-mark6 { left: 325px; }
 
 
 .title-logo1,
@@ -67,7 +67,7 @@ body
 .title-logo6
 {
     font-family: "Glitch Goblin";
-    font-size: 165px;
+    font-size: 180px;
     font-weight: normal;
 }
 
@@ -90,8 +90,8 @@ body
 .menu-panel
 {
     position: absolute;
-    right: 90px;
-    top: 530px;
+    right: 170px;
+    top: 500px;
     width: 500px;
     min-height: 260px;
     z-index: 1;
@@ -111,14 +111,15 @@ body
 .title-button
 {
     display: block;
-    width: 390px;
-    height: 76px;
+    width: 340px;
+    height: 64px;
     margin-left: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     padding-top: 24px;
     border-width: 0px;
     decorator: image("Asset/UIImage/TitleButtonDefault.PNG" fill);
     color: rgb(244, 248, 252);
+    font-weight: bold;
     font-size: 36px;
     text-align: center;
 }
