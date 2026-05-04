@@ -3,6 +3,10 @@
 local PlayerMovement = dofile("Asset/Content/Scripts/PlayerMovement.lua")
 local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
+local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
+BulletSystem.BindWorld(World, "Player")
+print("[BindWorld] Player", obj ~= nil and obj.UUID or "nil")
+DebugLog.Write("Player.BindWorld", "Player=" .. DebugLog.Actor(obj))
 
 -- local 변수는 이 파일 안에서만 쓰이는 상태다.
 local moveSpeed = 20.0
@@ -246,6 +250,13 @@ end
 -- 좌클릭 발사. 쿨타임 중이면 아무 것도 하지 않는다.
 local function firePlayerBullet()
     if PlayerShotTimer > 0.0 then
+        DebugLog.Write(
+            "Player.Fire.Skip",
+            "Reason=Cooldown",
+            "ShotTimer=" .. tostring(PlayerShotTimer),
+            "Zooming=" .. tostring(isZooming()),
+            "Player=" .. DebugLog.Actor(obj)
+        )
         return
     end
 
@@ -253,12 +264,27 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
     print("Player Fire Direction : ", aimDirection)
     print("Player Fire Location : ", spawnLocation)
-    local bullet = BulletSystem.SpawnBullet(World, spawnLocation, aimDirection, "PlayerBullet", obj)
-    if bullet == nil or not bullet:IsValid() then
-        print("Player Fire Failed")
-        return
-    end
+    DebugLog.Write(
+        "Player.Fire.Request",
+        "Player=" .. DebugLog.Actor(obj),
+        "PlayerLocation=" .. DebugLog.Vector(obj.Location),
+        "AimDirection=" .. DebugLog.Vector(aimDirection),
+        "SpawnLocation=" .. DebugLog.Vector(spawnLocation),
+        "Zooming=" .. tostring(isZooming()),
+        "CameraStateExists=" .. tostring(_G.CameraState ~= nil),
+        "CameraAimOrigin=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimOrigin or nil),
+        "CameraAimPoint=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimPoint or nil),
+        "CameraAimDirection=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimDirection or nil),
+        "ShotTimerBefore=" .. tostring(PlayerShotTimer)
+    )
 
+    local bullet = BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
+    DebugLog.Write(
+        "Player.Fire.Result",
+        "Bullet=" .. DebugLog.Actor(bullet),
+        "SoundWillPlay=true",
+        "CooldownWillStart=true"
+    )
     playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -371,7 +397,7 @@ end
 
 function Tick(dt)
     -- BulletSystem은 전역 시스템처럼 동작하므로 Player 쪽 Tick에서 한 번씩 갱신한다.
-    BulletSystem.Tick(World, dt)
+    BulletSystem.Tick(dt)
 
     PlayerShotTimer = PlayerShotTimer - dt
     if PlayerShotTimer < 0.0 then
@@ -433,8 +459,17 @@ function Tick(dt)
 end
 
 function EndPlay()
+    print("[Player] EndPlay", obj ~= nil and obj.UUID or "nil")
+    DebugLog.Write(
+        "Player.EndPlay",
+        "Player=" .. DebugLog.Actor(obj),
+        "HP=" .. tostring(HP),
+        "DocumentCount=" .. tostring(DocumentCount),
+        "ShotTimer=" .. tostring(PlayerShotTimer)
+    )
+
     -- PIE 종료 시 남아있는 총알/전역 aim 상태를 정리한다.
-    BulletSystem.Clear(World, false)
+    BulletSystem.Clear(false)
 
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     if _G.PlayerState ~= nil then

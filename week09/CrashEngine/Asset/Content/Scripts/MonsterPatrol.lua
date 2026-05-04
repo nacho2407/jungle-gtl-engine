@@ -1,4 +1,8 @@
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
+local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
+BulletSystem.BindWorld(World, "Monster")
+print("[BindWorld] Monster", obj ~= nil and obj.UUID or "nil")
+DebugLog.Write("Monster.BindWorld", "Monster=" .. DebugLog.Actor(obj))
 
 local PatrolAgent = nil
 local PatrolTargets = {}
@@ -68,12 +72,14 @@ end
 
 local function fireAtPlayer(player)
     if ShotTimer > 0.0 then
+        DebugLog.Write("Monster.Fire.Skip", "Reason=Cooldown", "Monster=" .. DebugLog.Actor(obj), "ShotTimer=" .. tostring(ShotTimer))
         return
     end
 
     local targetLocation = player.Location + PlayerAimOffset
     local toPlayer = targetLocation - obj.Location
     if toPlayer:LengthSquared() <= 0.0001 then
+        DebugLog.Write("Monster.Fire.Skip", "Reason=ZeroDirection", "Monster=" .. DebugLog.Actor(obj), "Player=" .. DebugLog.Actor(player))
         return
     end
 
@@ -82,12 +88,25 @@ local function fireAtPlayer(player)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, BulletSpawnHeight) + direction * BulletSpawnForwardOffset
     print("[Monster] Fire EnemyBullet", "Monster:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
-    local bullet = BulletSystem.SpawnBullet(World, spawnLocation, direction, "EnemyBullet", obj)
-    if bullet == nil or not bullet:IsValid() then
-        print("[Monster] Fire failed", "Monster:", obj.UUID)
-        return
-    end
+    DebugLog.Write(
+        "Monster.Fire.Request",
+        "Monster=" .. DebugLog.Actor(obj),
+        "Player=" .. DebugLog.Actor(player),
+        "MonsterLocation=" .. DebugLog.Vector(obj.Location),
+        "PlayerLocation=" .. DebugLog.Vector(player.Location),
+        "TargetLocation=" .. DebugLog.Vector(targetLocation),
+        "SpawnLocation=" .. DebugLog.Vector(spawnLocation),
+        "Direction=" .. DebugLog.Vector(direction),
+        "ShotTimerBefore=" .. tostring(ShotTimer)
+    )
 
+    local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    DebugLog.Write(
+        "Monster.Fire.Result",
+        "Monster=" .. DebugLog.Actor(obj),
+        "Bullet=" .. DebugLog.Actor(bullet),
+        "CooldownWillStart=true"
+    )
     ShotTimer = ShotCooldown
 end
 
@@ -231,9 +250,11 @@ end
 function OnTakeDamage(damage, instigator)
     HP = HP - damage
     print("Monster HP : ", HP)
+    DebugLog.Write("Monster.TakeDamage", "Monster=" .. DebugLog.Actor(obj), "Damage=" .. tostring(damage), "Instigator=" .. DebugLog.Actor(instigator), "HP=" .. tostring(HP))
 
     if HP <= 0 then
         print("Monster Destroyed")
+        DebugLog.Write("Monster.Destroyed", "Monster=" .. DebugLog.Actor(obj), "Location=" .. DebugLog.Vector(obj.Location))
         World.DestroyActor(obj)
     end
 end
@@ -265,6 +286,8 @@ function Tick(dt)
 end
 
 function EndPlay()
+    print("[Monster] EndPlay", obj ~= nil and obj.UUID or "nil")
+    DebugLog.Write("Monster.EndPlay", "Monster=" .. DebugLog.Actor(obj), "HP=" .. tostring(HP), "ShotTimer=" .. tostring(ShotTimer))
     PatrolAgent = nil
     PatrolTargets = {}
     CurrentTargetIndex = 1

@@ -96,6 +96,10 @@ bool FOctree::RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow)
     auto It = std::find(PrimitiveList.begin(), PrimitiveList.end(), Primitive);
     if (It == PrimitiveList.end())
     {
+        if (Primitive->GetOctreeNode() == this)
+        {
+            Primitive->ClearOctreeLocation();
+        }
         return false;
     }
 
@@ -329,6 +333,29 @@ bool FOctree::HasPrimitive(const UPrimitiveComponent* Primitive)
     for (int i = 0; i < 8; ++i)
     {
         if (Children[i]->HasPrimitive(Primitive))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool FOctree::ContainsNode(const FOctree* Node) const
+{
+    if (!Node)
+    {
+        return false;
+    }
+
+    if (Node == this)
+    {
+        return true;
+    }
+
+    for (FOctree* Child : Children)
+    {
+        if (Child && Child->ContainsNode(Node))
         {
             return true;
         }

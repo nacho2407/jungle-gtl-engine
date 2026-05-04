@@ -51,6 +51,11 @@ FBoundingBox MakePaddedRootBounds(const FBoundingBox& Bounds)
     return FBoundingBox(Bounds.Min - Padding, Bounds.Max + Padding);
 }
 
+bool IsLiveOctreeNode(const FOctree* Root, const FOctree* Node)
+{
+    return Root && Node && Root->ContainsNode(Node);
+}
+
 } // namespace
 
 void FSpatialPartition::ClearQueuedActorFlags()
@@ -222,7 +227,18 @@ void FSpatialPartition::FlushPrimitive()
                 }
                 else if (FOctree* Node = Prim->GetOctreeNode())
                 {
-                    Node->RemoveDirect(Prim, false);
+                    if (IsLiveOctreeNode(Octree.get(), Node))
+                    {
+                        if (!Node->RemoveDirect(Prim, false))
+                        {
+                            Octree->Remove(Prim);
+                        }
+                    }
+                    else
+                    {
+                        Prim->ClearOctreeLocation();
+                        Octree->Remove(Prim);
+                    }
                 }
                 continue;
             }
@@ -242,12 +258,27 @@ void FSpatialPartition::FlushPrimitive()
 
             if (FOctree* Node = Prim->GetOctreeNode())
             {
+                if (!IsLiveOctreeNode(Octree.get(), Node))
+                {
+                    Prim->ClearOctreeLocation();
+                    Octree->Remove(Prim);
+
+                    if (!Octree->Insert(Prim))
+                    {
+                        InsertPrimitive(Prim);
+                    }
+                    continue;
+                }
+
                 if (Node->GetLooseBounds().IsContains(PrimBox))
                 {
                     continue;
                 }
 
-                Node->RemoveDirect(Prim, false);
+                if (!Node->RemoveDirect(Prim, false))
+                {
+                    Octree->Remove(Prim);
+                }
 
                 if (!Octree->Insert(Prim))
                 {
@@ -512,7 +543,21 @@ void FSpatialPartition::RemoveSinglePrimitive(UPrimitiveComponent* Primitive)
     }
     else if (FOctree* Node = Primitive->GetOctreeNode())
     {
-        Node->RemoveDirect(Primitive);
+        bool bRemoved = false;
+        if (IsLiveOctreeNode(Octree.get(), Node))
+        {
+            bRemoved = Node->RemoveDirect(Primitive);
+        }
+
+        if (!bRemoved && Octree)
+        {
+            bRemoved = Octree->Remove(Primitive);
+        }
+
+        if (!bRemoved && Primitive->GetOctreeNode() == Node)
+        {
+            Primitive->ClearOctreeLocation();
+        }
     }
     else if (Octree)
     {

@@ -1,5 +1,6 @@
 local BulletSystem = _G.BulletSystem or {}
-BulletSystem.World = nil
+local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
+DebugLog.SessionStart("BulletSystem")
 
 local BulletMeshPath = "Asset/Content/Models/Bullet/Bullet.obj"
 local BulletSpeed = 90.0
@@ -13,26 +14,74 @@ local BulletSpawnBlockProbeDistance = 0.05
 local bullets = BulletSystem.Bullets or {}
 BulletSystem.Bullets = bullets
 
-local function getWorld(world)
-    return world or BulletSystem.World or World
-end
-
-function BulletSystem.BindWorld(world)
-    BulletSystem.World = world
-end
-
-function BulletSystem.Clear(world, destroyActors)
-    if type(world) == "boolean" then
-        destroyActors = world
-        world = nil
+local function isWorldUsable(world)
+    if world == nil or world.SpawnActor == nil then
+        return false
     end
 
+    if world.IsValid ~= nil and not world.IsValid() then
+        return false
+    end
+
+    return true
+end
+
+local function getWorld()
+    if isWorldUsable(BulletSystem.World) then
+        return BulletSystem.World
+    end
+
+    return World
+end
+
+function BulletSystem.BindWorld(world, ownerLabel)
+    ownerLabel = ownerLabel or "unknown"
+    local worldChanged = BulletSystem.World ~= world
+    local currentWorldValid = isWorldUsable(BulletSystem.World)
+    local incomingWorldValid = isWorldUsable(world)
+    local shouldBind = incomingWorldValid and (not currentWorldValid or ownerLabel == "Player" or BulletSystem.WorldOwner ~= "Player")
+
+    print("[BulletSystem] BindWorld", "Owner:", ownerLabel, "WorldChanged:", worldChanged, "ShouldBind:", shouldBind, "BulletCount:", #bullets)
+    DebugLog.Write(
+        "BulletSystem.BindWorld",
+        "Owner=" .. ownerLabel,
+        "WorldChanged=" .. tostring(worldChanged),
+        "ShouldBind=" .. tostring(shouldBind),
+        "BulletCount=" .. tostring(#bullets),
+        "IncomingWorldHasSpawnActor=" .. tostring(world ~= nil and world.SpawnActor ~= nil),
+        "IncomingWorldValid=" .. tostring(incomingWorldValid),
+        "PreviousWorldOwner=" .. tostring(BulletSystem.WorldOwner),
+        "PreviousWorldHasSpawnActor=" .. tostring(BulletSystem.World ~= nil and BulletSystem.World.SpawnActor ~= nil),
+        "PreviousWorldValid=" .. tostring(currentWorldValid)
+    )
+
+    if not shouldBind then
+        return
+    end
+
+    if worldChanged then
+        BulletSystem.Clear(false)
+    end
+
+    BulletSystem.World = world
+    BulletSystem.WorldOwner = ownerLabel
+end
+
+function BulletSystem.Clear(destroyActors)
+    DebugLog.Write("BulletSystem.Clear", "DestroyActors=" .. tostring(destroyActors), "BeforeCount=" .. tostring(#bullets))
+
     if destroyActors then
-        local activeWorld = getWorld(world)
+        local world = getWorld()
         for i = #bullets, 1, -1 do
             local bulletInfo = bullets[i]
             if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
-                activeWorld.DestroyActor(bulletInfo.Actor)
+                DebugLog.Write(
+                    "BulletSystem.Clear.Destroy",
+                    "Index=" .. tostring(i),
+                    "Bullet=" .. DebugLog.Actor(bulletInfo.Actor),
+                    "OwnerTag=" .. tostring(bulletInfo.OwnerTag)
+                )
+                world.DestroyActor(bulletInfo.Actor)
             end
         end
     end
@@ -79,19 +128,47 @@ local function addBulletVisual(actor)
     return mesh
 end
 
-function BulletSystem.SpawnBullet(world, location, direction, ownerTag, instigator)
+function BulletSystem.SpawnBullet(location, direction, ownerTag, instigator)
+    local world = getWorld()
+    local instigatorId = "nil"
+    if instigator ~= nil then
+        instigatorId = instigator.UUID
+    end
+
+    print("[BulletSystem] SpawnBullet Request", "OwnerTag:", ownerTag or "nil", "Instigator:", instigatorId, "Location:", location, "Direction:", direction)
+    DebugLog.Write(
+        "BulletSystem.Spawn.Request",
+        "OwnerTag=" .. tostring(ownerTag),
+        "Instigator=" .. DebugLog.Actor(instigator),
+        "Location=" .. DebugLog.Vector(location),
+        "Direction=" .. DebugLog.Vector(direction),
+        "WorldHasSpawnActor=" .. tostring(world ~= nil and world.SpawnActor ~= nil),
+        "WorldHasMoveActorWithBlock=" .. tostring(world ~= nil and world.MoveActorWithBlock ~= nil),
+        "BulletCountBefore=" .. tostring(#bullets)
+    )
+
     if world == nil or world.SpawnActor == nil then
-        print("[BulletSystem] SpawnBullet failed: invalid world")
+        print("[BulletSystem] SpawnBullet Failed: invalid world")
+        DebugLog.Write("BulletSystem.Spawn.Fail", "Reason=InvalidWorld", "OwnerTag=" .. tostring(ownerTag), "Instigator=" .. DebugLog.Actor(instigator))
         return nil
     end
 
     local bullet = world.SpawnActor("StaticMeshActor")
     if bullet == nil or not bullet:IsValid() then
-        print("[BulletSystem] SpawnBullet failed: SpawnActor returned invalid actor")
+        print("[BulletSystem] SpawnBullet Failed: SpawnActor returned invalid actor")
+        DebugLog.Write("BulletSystem.Spawn.Fail", "Reason=InvalidSpawnActorResult", "OwnerTag=" .. tostring(ownerTag), "Instigator=" .. DebugLog.Actor(instigator), "Bullet=" .. DebugLog.Actor(bullet))
         return nil
     end
 
     local shotDirection = normalize(direction)
+    DebugLog.Write(
+        "BulletSystem.Spawn.ActorCreated",
+        "Bullet=" .. DebugLog.Actor(bullet),
+        "ShotDirection=" .. DebugLog.Vector(shotDirection),
+        "Scale=" .. DebugLog.Vector(BulletScale),
+        "ColliderRadius=" .. tostring(BulletColliderRadius),
+        "ProbeDistance=" .. tostring(BulletSpawnBlockProbeDistance)
+    )
     bullet:AddTag("Bullet")
 
     if ownerTag ~= nil then
@@ -100,13 +177,30 @@ function BulletSystem.SpawnBullet(world, location, direction, ownerTag, instigat
 
     local mesh = addBulletVisual(bullet)
     bullet.Location = location
+    DebugLog.Write(
+        "BulletSystem.Spawn.VisualReady",
+        "Bullet=" .. DebugLog.Actor(bullet),
+        "MeshValid=" .. tostring(mesh ~= nil and mesh:IsValid()),
+        "BulletLocation=" .. DebugLog.Vector(bullet.Location),
+        "OwnerTag=" .. tostring(ownerTag)
+    )
 
     if mesh:IsValid() then
         mesh:SetRelativeRotation(directionToBulletRotation(shotDirection))
     end
 
     if not world.MoveActorWithBlock(bullet, shotDirection * BulletSpawnBlockProbeDistance, "Wall") then
-        print("[BulletSystem] SpawnBullet failed: spawn point is blocked by Wall", "Location:", location, "Direction:", shotDirection)
+        print("[BulletSystem] SpawnBullet Failed: spawn probe blocked by Wall", "Bullet:", bullet.UUID, "Location:", location, "Direction:", shotDirection)
+        DebugLog.Write(
+            "BulletSystem.Spawn.Fail",
+            "Reason=SpawnProbeBlockedByWall",
+            "Bullet=" .. DebugLog.Actor(bullet),
+            "Location=" .. DebugLog.Vector(location),
+            "ShotDirection=" .. DebugLog.Vector(shotDirection),
+            "ProbeDelta=" .. DebugLog.Vector(shotDirection * BulletSpawnBlockProbeDistance),
+            "OwnerTag=" .. tostring(ownerTag),
+            "Instigator=" .. DebugLog.Actor(instigator)
+        )
         world.DestroyActor(bullet)
         return nil
     end
@@ -120,46 +214,73 @@ function BulletSystem.SpawnBullet(world, location, direction, ownerTag, instigat
         LifeTime = BulletLifeTime
     }
 
+    print("[BulletSystem] SpawnBullet Success", "Bullet:", bullet.UUID, "OwnerTag:", ownerTag or "Bullet")
+    DebugLog.Write(
+        "BulletSystem.Spawn.Success",
+        "Bullet=" .. DebugLog.Actor(bullet),
+        "OwnerTag=" .. tostring(ownerTag or "Bullet"),
+        "FinalLocation=" .. DebugLog.Vector(bullet.Location),
+        "Direction=" .. DebugLog.Vector(shotDirection),
+        "BulletCountAfter=" .. tostring(#bullets)
+    )
     return bullet
 end
 
-local function destroyBullet(world, index)
+local function destroyBullet(index)
+    local world = getWorld()
     local bulletInfo = bullets[index]
     if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
+        DebugLog.Write(
+            "BulletSystem.DestroyBullet",
+            "Index=" .. tostring(index),
+            "Bullet=" .. DebugLog.Actor(bulletInfo.Actor),
+            "OwnerTag=" .. tostring(bulletInfo.OwnerTag),
+            "Location=" .. DebugLog.Vector(bulletInfo.Actor.Location),
+            "RemainingLife=" .. tostring(bulletInfo.LifeTime)
+        )
         world.DestroyActor(bulletInfo.Actor)
     end
 
     table.remove(bullets, index)
 end
 
-function BulletSystem.Tick(world, dt)
-    if type(world) == "number" then
-        dt = world
-        world = getWorld()
-    end
-
-    if world == nil or world.MoveActorWithBlock == nil then
-        print("[BulletSystem] Tick skipped: invalid world")
-        return
-    end
+function BulletSystem.Tick(dt)
+    local world = getWorld()
 
     for i = #bullets, 1, -1 do
         local bulletInfo = bullets[i]
         local bullet = bulletInfo.Actor
 
         if bullet == nil or not bullet:IsValid() then
+            print("[BulletSystem] Tick removed invalid bullet", "Index:", i, "OwnerTag:", bulletInfo.OwnerTag or "nil")
+            DebugLog.Write("BulletSystem.Tick.Remove", "Reason=InvalidBullet", "Index=" .. tostring(i), "OwnerTag=" .. tostring(bulletInfo.OwnerTag))
             table.remove(bullets, i)
         elseif bullet:HasTag("DamageApplied") then
-            destroyBullet(world, i)
+            print("[BulletSystem] Tick destroy bullet: damage applied", "Bullet:", bullet.UUID, "OwnerTag:", bulletInfo.OwnerTag or "nil")
+            DebugLog.Write("BulletSystem.Tick.Remove", "Reason=DamageApplied", "Bullet=" .. DebugLog.Actor(bullet), "OwnerTag=" .. tostring(bulletInfo.OwnerTag), "Location=" .. DebugLog.Vector(bullet.Location))
+            destroyBullet(i)
         else
             bulletInfo.LifeTime = bulletInfo.LifeTime - dt
 
             if bulletInfo.LifeTime <= 0.0 then
-                destroyBullet(world, i)
+                print("[BulletSystem] Tick destroy bullet: lifetime expired", "Bullet:", bullet.UUID, "OwnerTag:", bulletInfo.OwnerTag or "nil")
+                DebugLog.Write("BulletSystem.Tick.Remove", "Reason=LifeTimeExpired", "Bullet=" .. DebugLog.Actor(bullet), "OwnerTag=" .. tostring(bulletInfo.OwnerTag), "Location=" .. DebugLog.Vector(bullet.Location))
+                destroyBullet(i)
             else
                 local moveDelta = bulletInfo.Direction * BulletSpeed * dt
                 if not world.MoveActorWithBlock(bullet, moveDelta, "Wall") then
-                    destroyBullet(world, i)
+                    print("[BulletSystem] Tick destroy bullet: blocked by Wall", "Bullet:", bullet.UUID, "OwnerTag:", bulletInfo.OwnerTag or "nil", "Location:", bullet.Location, "MoveDelta:", moveDelta)
+                    DebugLog.Write(
+                        "BulletSystem.Tick.Remove",
+                        "Reason=MoveBlockedByWall",
+                        "Bullet=" .. DebugLog.Actor(bullet),
+                        "OwnerTag=" .. tostring(bulletInfo.OwnerTag),
+                        "Location=" .. DebugLog.Vector(bullet.Location),
+                        "Direction=" .. DebugLog.Vector(bulletInfo.Direction),
+                        "MoveDelta=" .. DebugLog.Vector(moveDelta),
+                        "DeltaTime=" .. tostring(dt)
+                    )
+                    destroyBullet(i)
                 end
             end
         end

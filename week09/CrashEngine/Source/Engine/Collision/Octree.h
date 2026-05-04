@@ -31,6 +31,7 @@ public:
     void TryMergeRecursive();
 
     bool HasPrimitive(const UPrimitiveComponent* p);
+    bool ContainsNode(const FOctree* Node) const;
     void GetAllPrimitives(TArray<UPrimitiveComponent*>& OutPremitive);
     inline bool IsLeaf() const { return Children.empty(); }
 

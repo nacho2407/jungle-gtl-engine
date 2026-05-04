@@ -2,7 +2,7 @@
   "values" : {
     "LastDocumentCount" : {
       "type" : "number",
-      "value" : 3.000000
+      "value" : 1.000000
     },
     "LastHP" : {
       "type" : "number",
@@ -14,7 +14,7 @@
     },
     "LastTimer" : {
       "type" : "number",
-      "value" : 108.345742
+      "value" : 118.187351
     }
   }
 }

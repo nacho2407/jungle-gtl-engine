@@ -1,6 +1,7 @@
 ﻿#include "LuaRuntime.h"
 
 #include <cstdio>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -15,6 +16,7 @@
 #include "LuaScript/LuaUiProxy.h"
 #include "LuaScript/LuaPersistentStorage.h"
 #include "Math/Vector.h"
+#include "Platform/Paths.h"
 
 namespace
 {
@@ -62,6 +64,29 @@ FString LuaObjectToString(const sol::object& Object)
 
     default:
         return "unknown";
+    }
+}
+
+bool AppendLuaDebugLogToFile(const std::string& Line)
+{
+    try
+    {
+        FPaths::CreateDir(FPaths::SavedDir());
+        const std::filesystem::path LogPath = std::filesystem::path(FPaths::SavedDir()) / L"BulletDebugLog.txt";
+        std::ofstream File(LogPath, std::ios::app | std::ios::binary);
+        if (!File)
+        {
+            UE_LOG(Lua, Warning, "Failed to open Lua debug log file: %s", FPaths::FromPath(LogPath).c_str());
+            return false;
+        }
+
+        File << Line << '\n';
+        return true;
+    }
+    catch (const std::exception& Exception)
+    {
+        UE_LOG(Lua, Warning, "Failed to append Lua debug log: %s", Exception.what());
+        return false;
     }
 }
 } // namespace
@@ -161,6 +186,17 @@ void FLuaRuntime::BindUtilityFunctions()
 			UE_LOG(Lua, Info, "%s", Message.c_str());
 		}
 	);
+
+    Lua->set_function("AppendDebugLog", [](const std::string& Line) {
+            return AppendLuaDebugLogToFile(Line);
+        }
+    );
+
+    Lua->set_function("GetDebugLogPath", []() {
+            const std::filesystem::path LogPath = std::filesystem::path(FPaths::SavedDir()) / L"BulletDebugLog.txt";
+            return FPaths::FromPath(LogPath);
+        }
+    );
 }
 
 void FLuaRuntime::BindEngineTypes()
