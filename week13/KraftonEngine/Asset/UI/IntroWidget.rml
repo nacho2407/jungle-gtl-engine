@@ -5,18 +5,22 @@
 </head>
 <body>
 	<div id="intro-frame">
+		<img id="intro-background" src="StartStory.png"/>
+		<div id="intro-dim"></div>
+
 		<div id="intro-top-line"></div>
 
 		<div id="intro-kicker">TEAM 5 PROJECT</div>
-		<div id="intro-title">게임 제목</div>
-		<div id="intro-subtitle">A NEW ADVENTURE BEGINS</div>
+		<div id="intro-title-pop">
+			<img id="intro-title" src="title.png"/>
+		</div>
+		<div id="intro-subtitle"></div>
 
 		<button id="start-button">게임 시작</button>
 		<button id="scoreboard-button">스코어보드</button>
 		<button id="exit-button">종료</button>
 
 		<div id="intro-bottom-line"></div>
-		<div id="intro-footer">PRESS START TO PLAY</div>
 	</div>
 </body>
 </rml>

@@ -35,6 +35,10 @@ local onGasQuestOk = nil
 local onPersonQuestOk = nil
 local onMeteorQuestOk = nil
 local onGoalQuestOk = nil
+local introLayout = {
+    width = 0,
+    height = 0
+}
 
 local function Clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -76,6 +80,80 @@ local function SetHudScoreText(score)
     end
 
     widget:set_text("score-value", FormatScore(score))
+end
+
+local function SetDpProperty(widget, elementId, propertyName, value)
+    widget:set_property(elementId, propertyName, string.format("%.0fdp", value))
+end
+
+local function ApplyIntroLayout()
+    local widget = widgets["intro"]
+    if widget == nil or not widget:IsInViewport() then
+        return
+    end
+
+    if Engine.GetViewportSize == nil then
+        return
+    end
+
+    local viewport = Engine.GetViewportSize()
+    if viewport == nil then
+        return
+    end
+
+    local width = viewport.Width or 0
+    local height = viewport.Height or 0
+    if width <= 0 or height <= 0 then
+        return
+    end
+
+    if introLayout.width == width and introLayout.height == height then
+        return
+    end
+
+    introLayout.width = width
+    introLayout.height = height
+
+    local minSize = width
+    if height < minSize then minSize = height end
+
+    local titleSize = Clamp(minSize * 0.44, 260, 520)
+    local titleTop = Clamp(height * 0.09 + 50, 80, height * 0.24)
+    local titleLeft = width * 0.5 - titleSize * 0.5
+    local titleBottom = titleTop + titleSize
+
+    local subtitleTop = titleBottom + Clamp(height * 0.012, 8, 18)
+    local startTop = subtitleTop + Clamp(height * 0.045, 36, 54)
+    local buttonGap = Clamp(height * 0.022, 10, 24)
+    local scoreboardTop = startTop + 58 + buttonGap
+    local exitTop = scoreboardTop + 58 + buttonGap
+    local footerTop = exitTop + 58 + Clamp(height * 0.018, 8, 20)
+
+    local maxFooterTop = height * 0.9
+    if footerTop > maxFooterTop then
+        local overflow = footerTop - maxFooterTop
+        subtitleTop = subtitleTop - overflow
+        startTop = startTop - overflow
+        scoreboardTop = scoreboardTop - overflow
+        exitTop = exitTop - overflow
+        footerTop = maxFooterTop
+    end
+
+    SetDpProperty(widget, "intro-title-pop", "left", titleLeft)
+    SetDpProperty(widget, "intro-title-pop", "top", titleTop)
+    SetDpProperty(widget, "intro-title-pop", "width", titleSize)
+    SetDpProperty(widget, "intro-title-pop", "height", titleSize)
+    widget:set_property("intro-title-pop", "margin-left", "0dp")
+    widget:set_property("intro-title-pop", "margin-top", "0dp")
+
+    SetDpProperty(widget, "intro-title", "width", titleSize)
+    SetDpProperty(widget, "intro-title", "height", titleSize)
+
+    SetDpProperty(widget, "intro-subtitle", "top", subtitleTop)
+    SetDpProperty(widget, "start-button", "top", startTop)
+    SetDpProperty(widget, "scoreboard-button", "top", scoreboardTop)
+    SetDpProperty(widget, "exit-button", "top", exitTop)
+    SetDpProperty(widget, "intro-footer", "top", footerTop)
 end
 
 local function SetGameOverScoreText(score)
@@ -558,6 +636,11 @@ function UIManager.Show(key)
     local widget = widgets[key]
     if widget ~= nil then
         widget:show()
+        if key == "intro" then
+            introLayout.width = 0
+            introLayout.height = 0
+            ApplyIntroLayout()
+        end
         return true
     end
     return false
@@ -745,6 +828,8 @@ function UIManager.ShowGameOver(outcome, finalScore, onScoreComplete)
 end
 
 function UIManager.Tick(dt)
+    ApplyIntroLayout()
+
     if fade.active then
         fade.elapsed = fade.elapsed + dt
         local alpha = Clamp(fade.elapsed / fade.duration, 0, 1)

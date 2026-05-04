@@ -18,6 +18,7 @@
 #include "Object/UClass.h"
 #include "Platform/Paths.h"
 #include "Math/Vector.h"
+#include "Runtime/WindowsWindow.h"
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
 #include <filesystem>
@@ -251,6 +252,23 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			}
 		}
 		return false;
+	});
+	Engine.set_function("GetViewportSize", []() -> sol::table
+	{
+		sol::table Result = FLuaScriptManager::GetState().create_table();
+		Result["Width"] = 0.0f;
+		Result["Height"] = 0.0f;
+
+		if (GEngine)
+		{
+			if (FWindowsWindow* Window = GEngine->GetWindow())
+			{
+				Result["Width"] = Window->GetWidth();
+				Result["Height"] = Window->GetHeight();
+			}
+		}
+
+		return Result;
 	});
 	Engine.set_function("Exit", []()
 	{
