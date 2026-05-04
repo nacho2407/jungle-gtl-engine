@@ -26,6 +26,16 @@ local function normalizePlanar(vector)
 
     return Vector.new(0.0, 0.0, 0.0)
 end
+
+local function clampPlanarMagnitude(vector)
+    local planar = Vector.new(vector.X, vector.Y, 0.0)
+    if planar:LengthSquared() > 1.0 then
+        return planar:Normalized()
+    end
+
+    return planar
+end
+
 -- 두 각 사이의 가장 작은 차이를 구하기
 local function shortestAngleDelta(fromDegrees, toDegrees)
     local delta = (toDegrees - fromDegrees + 180.0) % 360.0 - 180.0
@@ -75,9 +85,24 @@ function PlayerMovement.GetDesiredMoveDirection(pressedKeys, moveForward, moveRi
     return normalizePlanar(direction)
 end
 
+function PlayerMovement.GetDesiredMoveVector(pressedKeys, moveForward, moveRight, analogMove)
+    local worldForward = normalizePlanar(moveForward or Vector.new(1.0, 0.0, 0.0))
+    local worldRight = normalizePlanar(moveRight or Vector.new(0.0, 1.0, 0.0))
+    local moveVector = PlayerMovement.GetDesiredMoveDirection(pressedKeys, worldForward, worldRight)
+
+    if analogMove ~= nil then
+        local analogX = analogMove.X or 0.0
+        local analogY = analogMove.Y or 0.0
+        local analogVector = worldRight * analogX + worldForward * analogY
+        moveVector = moveVector + clampPlanarMagnitude(analogVector)
+    end
+
+    return clampPlanarMagnitude(moveVector)
+end
+
 function PlayerMovement.GetDesiredVisualForward(currentForward, desiredDirection)
     if desiredDirection ~= nil and desiredDirection:LengthSquared() > 0.0001 then
-        return desiredDirection
+        return desiredDirection:Normalized()
     end
 
     return currentForward
@@ -87,14 +112,14 @@ function PlayerMovement.ForwardToYaw(forward)
     return math.deg(math.atan2(forward.Y, forward.X))
 end
 
-function PlayerMovement.Update(state, pressedKeys, dt)
-    local desiredDirection = PlayerMovement.GetDesiredMoveDirection(pressedKeys, state.moveForward, state.moveRight)
-    local desiredVelocity = desiredDirection * state.moveSpeed
+function PlayerMovement.Update(state, pressedKeys, dt, analogMove)
+    local desiredMove = PlayerMovement.GetDesiredMoveVector(pressedKeys, state.moveForward, state.moveRight, analogMove)
+    local desiredVelocity = desiredMove * state.moveSpeed
     local moveAlpha = interpAlpha(state.velocityInterpSpeed, dt)
 
     state.velocity = state.velocity + (desiredVelocity - state.velocity) * moveAlpha
 
-    state.visualForward = PlayerMovement.GetDesiredVisualForward(state.visualForward, desiredDirection)
+    state.visualForward = PlayerMovement.GetDesiredVisualForward(state.visualForward, desiredMove)
 
     local targetYaw = PlayerMovement.ForwardToYaw(state.visualForward)
     local turnAlpha = interpAlpha(state.turnInterpSpeed, dt)

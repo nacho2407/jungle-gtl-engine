@@ -10,7 +10,14 @@ local ZoomSpeed = 25.0
 local AimYaw = 0.0
 local AimPitch = 0.0
 local ZoomBaseForward = nil
+local MouseZoomHeld = false
+local GamepadZoomHeld = false
 local MouseSensitivity = 0.15
+local GamepadControllerId = 0
+local GamepadZoomPressThreshold = 0.5
+local GamepadZoomReleaseThreshold = 0.25
+local GamepadAimYawSpeed = 120.0
+local GamepadAimPitchSpeed = 90.0
 local MinAimPitch = -45.0
 local MaxAimPitch = 45.0
 
@@ -83,6 +90,106 @@ local function setMouseCursorVisible(visible)
     end
 end
 
+local function isGamepadConnected()
+    if Input.IsGamepadConnected == nil then
+        return false
+    end
+
+    return Input:IsGamepadConnected(GamepadControllerId)
+end
+
+local function setupZoomBaseForward(useMouseAim)
+    if Player == nil or not Player:IsValid() then
+        ZoomBaseForward = nil
+        return
+    end
+
+    local playerPos = Player.Location
+    local up = getPlayerUp()
+    if up:LengthSquared() > 0.0001 then
+        up = up:Normalized()
+    end
+
+    local cameraLocation = playerPos + up * 1.2
+    if useMouseAim then
+        ZoomBaseForward = getMouseAimForward(playerPos, cameraLocation, getPlayerForward())
+    else
+        ZoomBaseForward = getPlayerForward()
+    end
+end
+
+local function beginZoom(useMouseAim)
+    if IsZooming then
+        return
+    end
+
+    IsZooming = true
+    setMouseCursorVisible(false)
+    AimYaw = 0.0
+    AimPitch = 0.0
+    setupZoomBaseForward(useMouseAim)
+end
+
+local function endZoom()
+    if not IsZooming then
+        return
+    end
+
+    IsZooming = false
+    setMouseCursorVisible(true)
+    AimYaw = 0.0
+    AimPitch = 0.0
+    ZoomBaseForward = nil
+end
+
+local function refreshZoomState(useMouseAim)
+    if MouseZoomHeld or GamepadZoomHeld then
+        beginZoom(useMouseAim)
+    else
+        endZoom()
+    end
+end
+
+local function updateGamepadZoomInput()
+    if not isGamepadConnected() then
+        if GamepadZoomHeld then
+            GamepadZoomHeld = false
+            refreshZoomState(false)
+        end
+        return
+    end
+
+    local triggerValue = Input:GetAxis("GamepadLeftTrigger", GamepadControllerId)
+    if GamepadZoomHeld then
+        if triggerValue <= GamepadZoomReleaseThreshold then
+            GamepadZoomHeld = false
+            refreshZoomState(false)
+        end
+        return
+    end
+
+    if triggerValue >= GamepadZoomPressThreshold then
+        GamepadZoomHeld = true
+        refreshZoomState(false)
+    end
+end
+
+local function updateAimInput(dt)
+    AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity
+    AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity
+
+    if isGamepadConnected() then
+        AimYaw = AimYaw + Input:GetAxis("GamepadRightX", GamepadControllerId) * GamepadAimYawSpeed * dt
+        AimPitch = AimPitch + Input:GetAxis("GamepadRightY", GamepadControllerId) * GamepadAimPitchSpeed * dt
+    end
+
+    if AimPitch < MinAimPitch then
+        AimPitch = MinAimPitch
+    elseif AimPitch > MaxAimPitch then
+        AimPitch = MaxAimPitch
+    end
+end
+
 -- 줌 중 화면에 보일 조준선 Actor를 만든다.
 local function createAim()
     AimActor = World.SpawnActor("Actor")
@@ -118,10 +225,13 @@ end
 function BeginPlay()
     -- Camera Actor가 시작될 때 Player를 찾아 캐싱한다.
     Player = World.FindPlayer();
+    IsZooming = false
     ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
     ZoomBaseForward = nil
+    MouseZoomHeld = false
+    GamepadZoomHeld = false
     syncCameraState()
     createAim()
     setMouseCursorVisible(true)
@@ -129,10 +239,13 @@ end
 
 function EndPlay()
     -- World가 끝날 때 전역 카메라 상태와 조준선 참조를 정리한다.
+    IsZooming = false
     ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
     ZoomBaseForward = nil
+    MouseZoomHeld = false
+    GamepadZoomHeld = false
     syncCameraState()
 
     AimActor = nil
@@ -151,6 +264,8 @@ function Tick(dt)
         return
     end
 
+    updateGamepadZoomInput()
+
     local TargetZoomAlpha = IsZooming and 1.0 or 0.0
     -- ZoomAlpha는 0=쿼터뷰, 1=줌뷰이며 dt 기반으로 부드럽게 따라간다.
     ZoomAlpha = ZoomAlpha + (TargetZoomAlpha - ZoomAlpha) * math.min(dt * ZoomSpeed, 1.0)
@@ -163,14 +278,7 @@ function Tick(dt)
             Forward = ZoomBaseForward
         end
 
-        -- 줌 중에만 마우스 X 입력으로 조준 방향을 좌우 회전한다.
-        AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity
-        AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity
-        if AimPitch < MinAimPitch then
-            AimPitch = MinAimPitch
-        elseif AimPitch > MaxAimPitch then
-            AimPitch = MaxAimPitch
-        end
+        updateAimInput(dt)
 
         local RadYaw = math.rad(AimYaw)
         local RadPitch = math.rad(AimPitch)
@@ -224,33 +332,15 @@ end
 function OnMouseButtonPressed(button)
     -- 우클릭을 누르면 줌 상태로 진입하고, 이전 줌에서 쌓인 회전은 초기화한다.
     if button == "RightMouseButton" then
-        IsZooming = true
-        setMouseCursorVisible(false)
-        AimYaw = 0.0
-        AimPitch = 0.0
-
-        if Player ~= nil and Player:IsValid() then
-            local playerPos = Player.Location
-            local up = getPlayerUp()
-            if up:LengthSquared() > 0.0001 then
-                up = up:Normalized()
-            end
-
-            local cameraLocation = playerPos + up * 1.2
-            ZoomBaseForward = getMouseAimForward(playerPos, cameraLocation, getPlayerForward())
-        else
-            ZoomBaseForward = nil
-        end
+        MouseZoomHeld = true
+        refreshZoomState(true)
     end
 end
 
 function OnMouseButtonReleased(button)
     -- 우클릭을 떼면 쿼터뷰로 돌아가며 조준 회전도 다음 줌을 위해 초기화한다.
     if button == "RightMouseButton" then
-        IsZooming = false
-        setMouseCursorVisible(true)
-        AimYaw = 0.0
-        AimPitch = 0.0
-        ZoomBaseForward = nil
+        MouseZoomHeld = false
+        refreshZoomState(false)
     end
 end

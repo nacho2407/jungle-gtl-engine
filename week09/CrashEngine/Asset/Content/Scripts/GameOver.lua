@@ -6,6 +6,8 @@ local hp = 10
 local document_count = 0
 local timer = 0.0
 local text_width = 560
+local gamepad_controller_id = 0
+local bSubmitted = false
 
 local function setText(element_id, text, red, green, blue, font_size)
     ui_document:SetTextStyle(element_id, text, red, green, blue, font_size, true, text_width)
@@ -23,6 +25,11 @@ local function refreshScore()
 end
 
 local function submitName()
+    if bSubmitted then
+        return
+    end
+
+    bSubmitted = true
     local final_name = player_name
     if final_name == "" then
         final_name = "Player"
@@ -32,7 +39,19 @@ local function submitName()
     LoadScene("StartScene.Scene")
 end
 
+local function returnToStartScene()
+    LoadScene("StartScene.Scene")
+end
+
+local function deleteLastCharacter()
+    if #player_name > 0 then
+        player_name = string.sub(player_name, 1, #player_name - 1)
+        refreshName()
+    end
+end
+
 function BeginPlay()
+    bSubmitted = false
     ui_document = UI.Load("UI/GameOver.rml", "game_over")
     if ui_document == nil or not ui_document:IsValid() then
         return
@@ -76,15 +95,12 @@ function OnKeyPressed(key)
     end
 
     if key == "Escape" or key == "Esc" then
-        LoadScene("StartScene.Scene")
+        returnToStartScene()
         return
     end
 
     if key == "Backspace" then
-        if #player_name > 0 then
-            player_name = string.sub(player_name, 1, #player_name - 1)
-            refreshName()
-        end
+        deleteLastCharacter()
         return
     end
 
@@ -98,4 +114,22 @@ function OnKeyPressed(key)
 
     player_name = player_name .. key
     refreshName()
+end
+
+function OnGamepadButtonPressed(button, controller_id)
+    if controller_id ~= nil and controller_id ~= gamepad_controller_id then
+        return
+    end
+
+    if ui_document == nil or not ui_document:IsValid() then
+        return
+    end
+
+    if button == "A" or button == "Start" then
+        submitName()
+    elseif button == "B" then
+        returnToStartScene()
+    elseif button == "X" or button == "Back" then
+        deleteLastCharacter()
+    end
 end

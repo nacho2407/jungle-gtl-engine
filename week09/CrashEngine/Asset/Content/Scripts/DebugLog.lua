@@ -6,7 +6,7 @@ DebugLog.FallbackPaths = DebugLog.FallbackPaths or {
     "CrashEngine/Saved/BulletDebugLog.txt",
     "BulletDebugLog.txt"
 }
-DebugLog.Enabled = true
+DebugLog.Enabled = false
 
 local function safeToString(value)
     if value == nil then
@@ -42,55 +42,7 @@ function DebugLog.Actor(value)
 end
 
 function DebugLog.Write(category, ...)
-    if not DebugLog.Enabled then
-        return
-    end
-
-    local parts = {}
-    local now = "time-unavailable"
-    if os ~= nil and os.date ~= nil then
-        now = os.date("%Y-%m-%d %H:%M:%S")
-    end
-
-    parts[#parts + 1] = "[" .. now .. "]"
-    parts[#parts + 1] = "[" .. safeToString(category) .. "]"
-
-    local values = { ... }
-    for i = 1, #values do
-        parts[#parts + 1] = safeToString(values[i])
-    end
-
-    local line = table.concat(parts, " ")
-    print(line)
-
-    if AppendDebugLog ~= nil then
-        if AppendDebugLog(line) then
-            return
-        end
-    end
-
-    if io == nil or io.open == nil then
-        return
-    end
-
-    local file = io.open(DebugLog.Path, "a")
-    if file == nil then
-        for i = 1, #DebugLog.FallbackPaths do
-            file = io.open(DebugLog.FallbackPaths[i], "a")
-            if file ~= nil then
-                DebugLog.Path = DebugLog.FallbackPaths[i]
-                break
-            end
-        end
-    end
-
-    if file == nil then
-        return
-    end
-
-    file:write(line)
-    file:write("\n")
-    file:close()
+    return
 end
 
 function DebugLog.SessionStart(label)

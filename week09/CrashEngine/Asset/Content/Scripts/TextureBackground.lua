@@ -4,6 +4,11 @@ local selected_index = 1
 local current_screen = "menu"
 local main_background_texture = "Textures/background.jpg"
 local sub_background_texture = "Textures/Credit.jpg"
+local gamepad_controller_id = 0
+local gamepad_stick_threshold = 0.55
+local gamepad_stick_repeat_delay = 0.22
+local gamepad_stick_repeat_timer = 0.0
+local gamepad_stick_direction = 0
 
 local menu_items = {
     {
@@ -341,6 +346,90 @@ local function refreshMenuHighlight()
     end
 end
 
+local function returnToMainMenu()
+    setMainMenuVisible(true)
+    refreshMenuHighlight()
+end
+
+local function moveSelection(delta)
+    if current_screen ~= "menu" then
+        return
+    end
+
+    selected_index = selected_index + delta
+    if selected_index < 1 then
+        selected_index = #menu_items
+    elseif selected_index > #menu_items then
+        selected_index = 1
+    end
+
+    refreshMenuHighlight()
+end
+
+local function activateSelected()
+    if current_screen == "credit" or current_screen == "scoreboard" then
+        returnToMainMenu()
+        return
+    end
+
+    if selected_index == 1 then
+        LoadScene("DroneLevel.Scene")
+    elseif selected_index == 2 then
+        setMainMenuVisible(false)
+    elseif selected_index == 3 then
+        setScoreboardVisible()
+    end
+end
+
+local function handleBack()
+    if current_screen == "credit" or current_screen == "scoreboard" then
+        returnToMainMenu()
+    end
+end
+
+local function isGamepadConnected()
+    if Input.IsGamepadConnected == nil then
+        return false
+    end
+
+    return Input:IsGamepadConnected(gamepad_controller_id)
+end
+
+local function updateGamepadStickMenu(dt)
+    if current_screen ~= "menu" or not isGamepadConnected() then
+        gamepad_stick_repeat_timer = 0.0
+        gamepad_stick_direction = 0
+        return
+    end
+
+    local y = Input:GetAxis("GamepadLeftY", gamepad_controller_id)
+    local direction = 0
+    if y > gamepad_stick_threshold then
+        direction = -1
+    elseif y < -gamepad_stick_threshold then
+        direction = 1
+    end
+
+    if direction == 0 then
+        gamepad_stick_repeat_timer = 0.0
+        gamepad_stick_direction = 0
+        return
+    end
+
+    if direction ~= gamepad_stick_direction then
+        gamepad_stick_direction = direction
+        gamepad_stick_repeat_timer = gamepad_stick_repeat_delay
+        moveSelection(direction)
+        return
+    end
+
+    gamepad_stick_repeat_timer = gamepad_stick_repeat_timer - dt
+    if gamepad_stick_repeat_timer <= 0.0 then
+        gamepad_stick_repeat_timer = gamepad_stick_repeat_delay
+        moveSelection(direction)
+    end
+end
+
 function BeginPlay()
     ui_document = UI.Load("UI/TextureBackground.rml", "texture_background")
 
@@ -378,6 +467,8 @@ function BeginPlay()
     ui_document:SetProperty("scoreboard_button", "top", "346px")
 
     selected_index = 1
+    gamepad_stick_repeat_timer = 0.0
+    gamepad_stick_direction = 0
     setMainMenuVisible(true)
     refreshMenuHighlight()
 
@@ -392,37 +483,46 @@ function EndPlay()
     ui_document = nil
 end
 
+function Tick(dt)
+    if ui_document == nil or not ui_document:IsValid() then
+        return
+    end
+
+    updateGamepadStickMenu(dt)
+end
+
 function OnKeyPressed(key)
     if current_screen == "credit" or current_screen == "scoreboard" then
         if key == "Escape" or key == "Esc" or key == "Enter" then
-            setMainMenuVisible(true)
-            refreshMenuHighlight()
+            returnToMainMenu()
         end
 
         return
     end
 
     if key == "Up" then
-        selected_index = selected_index - 1
-        if selected_index < 1 then
-            selected_index = #menu_items
-        end
-
-        refreshMenuHighlight()
+        moveSelection(-1)
     elseif key == "Down" then
-        selected_index = selected_index + 1
-        if selected_index > #menu_items then
-            selected_index = 1
-        end
-
-        refreshMenuHighlight()
+        moveSelection(1)
     elseif key == "Enter" then
-        if selected_index == 1 then
-            LoadScene("DroneLevel.Scene")
-        elseif selected_index == 2 then
-            setMainMenuVisible(false)
-        elseif selected_index == 3 then
-            setScoreboardVisible()
-        end
+        activateSelected()
+    elseif key == "Escape" or key == "Esc" then
+        handleBack()
+    end
+end
+
+function OnGamepadButtonPressed(button, controller_id)
+    if controller_id ~= nil and controller_id ~= gamepad_controller_id then
+        return
+    end
+
+    if button == "DPadUp" then
+        moveSelection(-1)
+    elseif button == "DPadDown" then
+        moveSelection(1)
+    elseif button == "A" or button == "Start" then
+        activateSelected()
+    elseif button == "B" then
+        handleBack()
     end
 end
