@@ -8,7 +8,10 @@ local IsZooming = false
 local ZoomAlpha = 0.0
 local ZoomSpeed = 25.0
 local AimYaw = 0.0
+local AimPitch = 0.0
 local MouseSensitivity = 0.15
+local MinAimPitch = -45.0
+local MaxAimPitch = 45.0
 
 -- 조준선은 TextRenderComponent를 가진 별도 Actor로 만든다.
 local AimActor = nil
@@ -94,6 +97,7 @@ function BeginPlay()
     Player = World.FindPlayer();
     ZoomAlpha = 0.0
     AimYaw = 0.0
+    AimPitch = 0.0
     syncCameraState()
     createAim()
 end
@@ -102,6 +106,7 @@ function EndPlay()
     -- World가 끝날 때 전역 카메라 상태와 조준선 참조를 정리한다.
     ZoomAlpha = 0.0
     AimYaw = 0.0
+    AimPitch = 0.0
     syncCameraState()
 
     AimActor = nil
@@ -129,7 +134,15 @@ function Tick(dt)
     if IsZooming == true then
         -- 줌 중에만 마우스 X 입력으로 조준 방향을 좌우 회전한다.
         AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity
+        AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity
+        if AimPitch < MinAimPitch then
+            AimPitch = MinAimPitch
+        elseif AimPitch > MaxAimPitch then
+            AimPitch = MaxAimPitch
+        end
+
         local RadYaw = math.rad(AimYaw)
+        local RadPitch = math.rad(AimPitch)
         local Right = Vector.new(-Forward.Y, Forward.X, 0.0)
         if Right:LengthSquared() > 0.0001 then
             Right = Right:Normalized()
@@ -137,6 +150,10 @@ function Tick(dt)
             Right = Player:GetRightVector()
         end
         Forward = Forward * math.cos(RadYaw) + Right * math.sin(RadYaw)
+        if Up:LengthSquared() > 0.0001 then
+            Up = Up:Normalized()
+        end
+        Forward = Forward * math.cos(RadPitch) + Up * math.sin(RadPitch)
     end
     if Forward:LengthSquared() > 0.0001 then
         Forward = Forward:Normalized()
@@ -178,6 +195,7 @@ function OnMouseButtonPressed(button)
     if button == "RightMouseButton" then
         IsZooming = true
         AimYaw = 0.0
+        AimPitch = 0.0
     end
 end
 
@@ -186,5 +204,6 @@ function OnMouseButtonReleased(button)
     if button == "RightMouseButton" then
         IsZooming = false
         AimYaw = 0.0
+        AimPitch = 0.0
     end
 end

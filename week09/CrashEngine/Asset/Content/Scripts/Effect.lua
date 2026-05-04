@@ -40,6 +40,8 @@ function SetMaterial(materialPath)
     local comp = ensureSubUVComponent()
     if comp ~= nil and comp:IsValid() then
         comp:SetMaterial(0, materialPath)
+    else
+        print("Effect SubUVComponent is not valid")
     end
 end
 
@@ -47,6 +49,8 @@ function SetRowColumn(row, column)
     local comp = ensureSubUVComponent()
     if comp ~= nil and comp:IsValid() then
         comp:SetSubUVGrid(row, column)
+    else
+        print("Effect SubUVComponent is not valid")
     end
 end
 

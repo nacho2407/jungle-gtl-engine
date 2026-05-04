@@ -296,6 +296,17 @@ void FLuaRuntime::BindEngineTypes()
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
 		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
 
+        "GetPatrolGroup", &FLuaComponentProxy::GetPatrolGroup,
+        "SetPatrolGroup", &FLuaComponentProxy::SetPatrolGroup,
+        "GetPatrolOrder", &FLuaComponentProxy::GetPatrolOrder,
+        "SetPatrolOrder", &FLuaComponentProxy::SetPatrolOrder,
+        "GetPatrolMoveSpeed", &FLuaComponentProxy::GetPatrolMoveSpeed,
+        "SetPatrolMoveSpeed", &FLuaComponentProxy::SetPatrolMoveSpeed,
+        "GetPatrolReachDistance", &FLuaComponentProxy::GetPatrolReachDistance,
+        "SetPatrolReachDistance", &FLuaComponentProxy::SetPatrolReachDistance,
+        "IsPatrolLoop", &FLuaComponentProxy::IsPatrolLoop,
+        "SetPatrolLoop", &FLuaComponentProxy::SetPatrolLoop,
+
         "SetScriptPath", &FLuaComponentProxy::SetScriptPath,
         "CallFunction", &FLuaComponentProxy::CallFunction
 	);
