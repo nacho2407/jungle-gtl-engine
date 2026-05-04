@@ -1,6 +1,6 @@
 <rml>
 <head>
-	<title>일시정지</title>
+	<title>일시 정지</title>
 	<link type="text/rcss" href="PauseMenuWidget.rcss"/>
 </head>
 <body>

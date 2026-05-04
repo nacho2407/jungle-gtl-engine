@@ -17,11 +17,11 @@
 				<div class="story-line">
 					보상: ???	실패 시: ???<br/><br/>
 			</div>
-				<div class="story-line">세계 너머의 ???들이 주인공의 멸망을 지켜보는 세계다.<br/>
+				<div class="story-line">정글 너머의 ???들이 당신의 멸망을 지켜본다.<br/>
 			</div>
-				<div class="story-line">주인공은 그들이 원하는 행동을 수행해야 점수를 얻는다.<br/>
+				<div class="story-line">당신은 그들이 원하는 행동을 수행해야 점수를 얻는다.<br/>
 			</div>
-				<div class="story-line">???에게 지시 받는 모든 퀘스트를 끝내고 가장 높은 점수를 얻어야 이 세계에서 탈출할 수 있다.<br/>
+				<div class="story-line">???에게 지시받는 모든 퀘스트를 끝내고 가장 높은 점수를 얻어야 이 세계에서 탈출할 수 있다.<br/>
 			</div>
 			</div>
 			<button id="start-story-ok-button" class="story-button">Okay</button>

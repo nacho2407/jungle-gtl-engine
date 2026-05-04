@@ -7,7 +7,7 @@
 	<div id="quest-root">
 		<div id="quest-panel">
 			<div class="quest-badge">QUEST 03</div>
-			<div class="quest-title">사람치기</div>
+			<div class="quest-title">사람 치기</div>
 			<div class="quest-body">지나가는 사람을 힘껏 치세요.</div>
 			<button id="person-quest-ok-button" class="quest-button">Okay</button>
 		</div>

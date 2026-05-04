@@ -776,8 +776,8 @@ function UIManager.ShowGameOver(outcome, finalScore, onScoreComplete)
     UIManager.Show("gameOver")
 
     if outcome == EFinishOutcome.Win then
-        widget:set_text("game-over-title", "VICTORY")
-        widget:set_text("game-over-kicker", "MATCH COMPLETE")
+        widget:set_text("game-over-title", "GOAL IN")
+        widget:set_text("game-over-kicker", "당신은 탈출할 수 없습니다.")
     else
         widget:set_text("game-over-title", "GAME OVER")
         widget:set_text("game-over-kicker", "GAME RESULT")
