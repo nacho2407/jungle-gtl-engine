@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -150,6 +151,7 @@ namespace
         {
             Rml::String Family;
             int Size = 16;
+            Rml::Style::FontWeight Weight = Rml::Style::FontWeight::Normal;
         };
 
     public:
@@ -184,7 +186,11 @@ namespace
                 const Rml::String ActualFamily = ExtractFontFamilyName(ResolveFontPath(FileName));
                 if (!ActualFamily.empty())
                 {
-                    FontFamilyAliases[Family] = ActualFamily;
+                    FontFamilyAliases[MakeFontAliasKey(Family, Weight)] = ActualFamily;
+                    if (Weight == Rml::Style::FontWeight::Normal || Weight == Rml::Style::FontWeight::Auto)
+                    {
+                        FontFamilyAliases[Family] = ActualFamily;
+                    }
                     UE_LOG("[RmlUi] Font family alias: %s -> %s", Family.c_str(), ActualFamily.c_str());
                 }
             }
@@ -221,8 +227,9 @@ namespace
             EnsureMetrics(ClampedSize);
             const int Handle = NextHandle++;
             FaceByHandle[Handle] = FFontFaceInfo{
-                ResolveFamilyName(Family),
-                ClampedSize
+                ResolveFamilyName(Family, Weight),
+                ClampedSize,
+                Weight
             };
             return static_cast<Rml::FontFaceHandle>(Handle);
         }
@@ -255,7 +262,7 @@ namespace
             }
 
             const FFontFaceInfo Face = GetFaceInfo(Handle);
-            HFONT Font = CreateGdiFont(Face.Size, Face.Family);
+            HFONT Font = CreateGdiFont(Face.Size, Face.Family, Face.Weight);
             HDC DC = ::CreateCompatibleDC(nullptr);
             HGDIOBJ OldFont = ::SelectObject(DC, Font);
             SIZE TextSize = {};
@@ -295,7 +302,7 @@ namespace
             const int Height = std::max(static_cast<int>(Metrics.line_spacing + 2.0f), Face.Size + 4) + PaddingY * 2;
             std::vector<Rml::byte> Pixels(static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4, 0);
 
-            RenderTextToPixels(Wide, Face.Size, Face.Family, Width, Height, PaddingX, PaddingY, Colour, Opacity, Pixels);
+            RenderTextToPixels(Wide, Face.Size, Face.Family, Face.Weight, Width, Height, PaddingX, PaddingY, Colour, Opacity, Pixels);
 
             const Rml::Vector2i Dimensions(Width, Height);
             Rml::CallbackTexture TextureResource = RenderManager.MakeCallbackTexture(
@@ -349,22 +356,33 @@ namespace
             {
                 return It->second;
             }
-            return FFontFaceInfo{ "Malgun Gothic", std::max(Key, 8) };
+            return FFontFaceInfo{ "Malgun Gothic", std::max(Key, 8), Rml::Style::FontWeight::Normal };
         }
 
-        Rml::String ResolveFamilyName(const Rml::String& Family) const
+        Rml::String ResolveFamilyName(const Rml::String& Family, Rml::Style::FontWeight Weight = Rml::Style::FontWeight::Normal) const
         {
             if (Family.empty())
             {
                 return "Malgun Gothic";
             }
 
-            auto It = FontFamilyAliases.find(Family);
+            auto It = FontFamilyAliases.find(MakeFontAliasKey(Family, Weight));
+            if (It != FontFamilyAliases.end() && !It->second.empty())
+            {
+                return It->second;
+            }
+
+            It = FontFamilyAliases.find(Family);
             if (It != FontFamilyAliases.end() && !It->second.empty())
             {
                 return It->second;
             }
             return Family;
+        }
+
+        Rml::String MakeFontAliasKey(const Rml::String& Family, Rml::Style::FontWeight Weight) const
+        {
+            return Family + "#" + std::to_string(static_cast<int>(Weight));
         }
 
         const Rml::FontMetrics& EnsureMetrics(int Size)
@@ -389,13 +407,21 @@ namespace
 
         HFONT CreateGdiFont(int Size, const Rml::String& FamilyName) const
         {
+            return CreateGdiFont(Size, FamilyName, Rml::Style::FontWeight::Normal);
+        }
+
+        HFONT CreateGdiFont(int Size, const Rml::String& FamilyName, Rml::Style::FontWeight Weight) const
+        {
             const std::wstring Family = Utf8ToWide(FamilyName.empty() ? Rml::String("Malgun Gothic") : FamilyName);
+            const int GdiWeight = static_cast<int>(Weight) >= static_cast<int>(Rml::Style::FontWeight::Bold)
+                ? FW_BOLD
+                : FW_NORMAL;
             return ::CreateFontW(
                 -Size,
                 0,
                 0,
                 0,
-                FW_NORMAL,
+                GdiWeight,
                 FALSE,
                 FALSE,
                 FALSE,
@@ -449,6 +475,7 @@ namespace
             const std::wstring& Text,
             int FontSize,
             const Rml::String& FamilyName,
+            Rml::Style::FontWeight Weight,
             int Width,
             int Height,
             int TextOffsetX,
@@ -479,7 +506,7 @@ namespace
             }
 
             HGDIOBJ OldBitmap = ::SelectObject(DC, Bitmap);
-            HFONT Font = CreateGdiFont(FontSize, FamilyName);
+            HFONT Font = CreateGdiFont(FontSize, FamilyName, Weight);
             HGDIOBJ OldFont = ::SelectObject(DC, Font);
             RECT Rect{ TextOffsetX, TextOffsetY, Width, Height };
             HBRUSH BlackBrush = ::CreateSolidBrush(RGB(0, 0, 0));
@@ -778,6 +805,8 @@ bool FRmlUiRuntimeModule::Initialize()
     }
 
     Rml::LoadFontFace("C:/Windows/Fonts/malgun.ttf", "Malgun Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
+    Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicRegular.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
+    Rml::LoadFontFace("Asset/UIFont/Nexon/NEXONLv1GothicBold.ttf", "Nexon Lv1 Gothic", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold, false);
     UE_LOG("[RmlUi] Initialized RmlUi core: %s", Rml::GetVersion().c_str());
     return true;
 }

@@ -1,6 +1,22 @@
 ﻿#include "VSMConversionRenderPass.h"
 #include "Render/Resource/ShadowAtlasManager.h"
+#include "Render/Resource/ShaderHelper.h"
 #include "Core/ResourceManager.h"
+#if WITH_EDITOR
+#include "Editor/Settings/EditorSettings.h"
+#endif
+
+namespace
+{
+    bool ShouldRunVSMConversion()
+    {
+#if WITH_EDITOR
+        return FEditorSettings::Get().ShadowFilterMode == EShadowFilter::VSM;
+#else
+        return false;
+#endif
+    }
+}
 
 bool FVSMConversionRenderPass::Initialize()
 {
@@ -38,6 +54,13 @@ bool FVSMConversionRenderPass::Begin(const FRenderPassContext* Context)
     }
 
     if (Context == nullptr || Context->RenderBus == nullptr || !Context->RenderBus->GetShowFlags().bShadow)
+    {
+        return true;
+    }
+
+    // Default shadows use PCF and sample the depth atlas directly.
+    // VSM conversion should only run when the explicit VSM filter is selected.
+    if (!ShouldRunVSMConversion())
     {
         return true;
     }

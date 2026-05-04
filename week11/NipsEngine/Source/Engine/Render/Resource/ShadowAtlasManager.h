@@ -5,7 +5,7 @@
 #include "Core/CoreMinimal.h"
 #include <d3d11.h>
 
-static constexpr uint32 ShadowAtlasResolution2D = 8192;
+static constexpr uint32 ShadowAtlasResolution2D = 4096;
 static constexpr int CUBE_FACE_COUNT = 6;
 static constexpr int MAX_SHADOW_CUBES = 32;
 static constexpr uint32 SHADOW_CUBE_SIZE = 512;
