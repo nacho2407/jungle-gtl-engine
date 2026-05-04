@@ -7,14 +7,14 @@
         "Enable Cull" : true,
         "Enable Tick" : true,
         "GenerateOverlapEvents" : false,
-        "Location" : [7.195462, 0.000000, 0.784912],
+        "Location" : [-2.783836, 5.227935, 1.153585],
         "Materials" : ["Asset/Material/Auto/cube______________Inst_3.matinst"],
         "ObjectName" : "UProceduralMeshComponent_128",
         "Rotation" : [-0.000000, 0.000000, -0.000000],
         "Scale" : [1.500000, 1.500000, 2.000000],
         "Tags" : [],
         "Type" : "UProceduralMeshComponent",
-        "UUID" : 1256,
+        "UUID" : 5872,
         "Visible" : true
       }, {
         "ClassName" : "UBoxComponent",
@@ -26,13 +26,13 @@
         "GenerateOverlapEvents" : true,
         "Location" : [0.000000, 0.000000, 0.000000],
         "ObjectName" : "UBoxComponent_80",
-        "ParentUUID" : 1256,
+        "ParentUUID" : 5872,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "ShapeColor" : [0.000000, 0.000000, 0.000000, 1.000000],
         "Tags" : [],
         "Type" : "UBoxComponent",
-        "UUID" : 1257,
+        "UUID" : 5873,
         "Visible" : true
       }, {
         "ClassName" : "UProjectileMovementComponent",
@@ -41,7 +41,7 @@
         "ObjectName" : "UProjectileMovementComponent_50",
         "Tags" : [],
         "Type" : "UProjectileMovementComponent",
-        "UUID" : 1258
+        "UUID" : 5874
       }, {
         "ClassName" : "UScriptComponent",
         "Editor Only" : false,
@@ -83,13 +83,36 @@
         "ScriptName" : "ADEnemy",
         "Tags" : [],
         "Type" : "UScriptComponent",
-        "UUID" : 1259
+        "UUID" : 5875
+      }, {
+        "ClassName" : "USoundComponent",
+        "Editor Only" : false,
+        "Enable Tick" : true,
+        "Fade In" : 0.000000,
+        "Fade Out" : 0.150000,
+        "3D Min Distance" : 2.500000,
+        "3D Max Distance" : 22.000000,
+        "3D Attenuation Model" : 2,
+        "3D Rolloff Factor" : 1.000000,
+        "Location" : [0.000000, 0.000000, 0.000000],
+        "Loop" : true,
+        "ObjectName" : "USoundComponent_0",
+        "ParentUUID" : 5872,
+        "Play On BeginPlay" : true,
+        "Rotation" : [0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Sound" : "Asset/Audio/SFX/GameEnemy.mp3",
+        "Spatialized" : true,
+        "Tags" : [],
+        "Type" : "USoundComponent",
+        "UUID" : 5891,
+        "Volume Scale" : 0.350000
       }],
     "EditorOnly" : false,
     "Name" : "ADEnemy",
-    "RootComponent" : 1256,
+    "RootComponent" : 5872,
     "Tags" : [],
-    "UUID" : 1254,
+    "UUID" : 5871,
     "Visible" : true
   },
   "ClassName" : "NipsPrefab",

@@ -339,6 +339,25 @@ function EngineAPIInput.IsKeyPressed(key) end
 ---@return boolean
 function EngineAPIInput.IsKeyReleased(key) end
 
+---Reads keyboard state for UI-only screens such as Loading or modal UI.
+---@param key InputKey
+---@return boolean
+function EngineAPIInput.IsUIKeyDown(key) end
+
+---Reads key press edge for UI-only screens such as Loading or modal UI.
+---@param key InputKey
+---@return boolean
+function EngineAPIInput.IsUIKeyPressed(key) end
+
+---Reads key release edge for UI-only screens such as Loading or modal UI.
+---@param key InputKey
+---@return boolean
+function EngineAPIInput.IsUIKeyReleased(key) end
+
+---Consumes printable text typed since the previous script consume.
+---@return string
+function EngineAPIInput.ConsumeTextInput() end
+
 ---@param button MouseButton
 ---@return boolean
 function EngineAPIInput.IsMouseDown(button) end
@@ -527,7 +546,8 @@ function EngineAPIAudio.SetListener(position, forward, up) end
 ---@param pathOrKey string
 ---@param maxConcurrent integer
 ---@param cooldownSeconds number
-function EngineAPIAudio.SetPlaybackPolicy(pathOrKey, maxConcurrent, cooldownSeconds) end
+---@param stopOldestWhenFull? boolean
+function EngineAPIAudio.SetPlaybackPolicy(pathOrKey, maxConcurrent, cooldownSeconds, stopOldestWhenFull) end
 
 ---@param pathOrKey string
 function EngineAPIAudio.ClearPlaybackPolicy(pathOrKey) end
@@ -672,6 +692,10 @@ function EngineAPIUI.RemoveElementStyle(elementId, name) end
 ---@param focusVisible? boolean
 ---@return boolean
 function EngineAPIUI.FocusElement(elementId, focusVisible) end
+
+---@param elementId string
+---@return boolean
+function EngineAPIUI.IsElementFocused(elementId) end
 
 ---@param elementId string
 ---@return boolean
@@ -926,6 +950,40 @@ function EngineAPI.GetViewTargetCamera() end
 ---@class EngineGlobal
 ---@field API EngineAPI
 Engine = {}
+
+---@class GameJamBridge
+---@field Manager any
+---@field EventBus any
+GameJam = {}
+
+---@param scoreOrPayload number|table
+---@return boolean
+function GameJam.NotifyEnemyKilled(scoreOrPayload) end
+
+---@param amount? number
+---@param source? Actor
+---@return boolean
+function GameJam.DamagePlayer(amount, source) end
+
+---@param amount number
+---@param source? Actor
+---@return boolean
+function GameJam.RecoverPlayer(amount, source) end
+
+---@param attackId string
+function GameJam.NotifyPlayerAttackStarted(attackId) end
+
+---@param attackId string
+function GameJam.NotifyPlayerAttackHit(attackId) end
+
+---@param attackId string
+function GameJam.NotifyPlayerAttackFinished(attackId) end
+
+---@param payload? table
+function GameJam.NotifyPlayerAttackGround(payload) end
+
+function GameJam.NotifyTimeSlowStarted() end
+function GameJam.NotifyTimeSlowEnded() end
 
 ---@param message string
 function Log(message) end

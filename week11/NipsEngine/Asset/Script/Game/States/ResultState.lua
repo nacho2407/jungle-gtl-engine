@@ -19,6 +19,7 @@ function ResultState:Enter(context, snapshot)
     context.managers.UI:ShowOverlay("Result")
     context.managers.UI:SetResult(self.snapshot)
     Engine.API.Input.SetInputModeUIOnly()
+    context.managers.UI:RequestResultNameInputFocus(2)
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "RestartGame" then
@@ -42,6 +43,7 @@ function ResultState:Exit(context)
     context.eventBus:Unsubscribe(self.uiHandle)
     self.uiHandle = nil
     self.snapshot = nil
+    context.managers.UI:EndResultNameInput()
     context.managers.UI:HideOverlay("Result")
     Engine.API.World.SetTimeScale(1.0)
 end

@@ -709,7 +709,16 @@ void ADestructibleActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 
 void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+    if (!OtherActor)
+        return;
+
     if (!OtherActor->IsA<ABladeSlash>())
+    {
+        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+        return;
+    }
+
+    if (!OtherComp)
         return;
 
     const FTransform& BladeTransform = OtherComp->GetWorldTransform();
@@ -772,6 +781,7 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor1->ProjMoveComp->SetVelocity(N_World * 5);
         Actor2->ProjMoveComp->SetVelocity(-N_World * 5);
 
+        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
         OtherActor->MarkPendingKill();
         this->MarkPendingKill();
     }

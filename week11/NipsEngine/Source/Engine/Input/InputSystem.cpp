@@ -169,6 +169,8 @@ void InputSystem::ResetAllInputStateOnFocusLoss()
 
     PrevScrollDelta = ScrollDelta;
     ScrollDelta = 0;
+    TextInputQueue.clear();
+    ScriptTextInputQueue.clear();
     FrameMouseDeltaX = 0;
     FrameMouseDeltaY = 0;
     RawMouseDeltaAccumX = 0;
@@ -228,12 +230,20 @@ void InputSystem::AddTextInput(uint32_t Codepoint)
     }
 
     TextInputQueue.push_back(Codepoint);
+    ScriptTextInputQueue.push_back(Codepoint);
 }
 
 std::vector<uint32_t> InputSystem::ConsumeTextInput()
 {
     std::vector<uint32_t> Result;
     Result.swap(TextInputQueue);
+    return Result;
+}
+
+std::vector<uint32_t> InputSystem::ConsumeScriptTextInput()
+{
+    std::vector<uint32_t> Result;
+    Result.swap(ScriptTextInputQueue);
     return Result;
 }
 

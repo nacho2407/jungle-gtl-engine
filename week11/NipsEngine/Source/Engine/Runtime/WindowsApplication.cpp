@@ -35,7 +35,7 @@ LRESULT FWindowsApplication::WndProc(HWND hWnd, unsigned int Msg, WPARAM wParam,
 	if (Msg == WM_CHAR)
 	{
 		const uint32_t Codepoint = static_cast<uint32_t>(wParam);
-		if (Codepoint >= 0x20 && Codepoint != 0x7F && !InputSystem::Get().GetGuiInputState().bUsingTextInput)
+		if (Codepoint >= 0x20 && Codepoint != 0x7F)
 		{
 			InputSystem::Get().AddTextInput(Codepoint);
 		}

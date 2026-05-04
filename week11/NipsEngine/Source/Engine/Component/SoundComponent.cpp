@@ -3,6 +3,8 @@
 #include "Engine/Runtime/Engine.h"
 #include "Serialization/Archive.h"
 
+#include <algorithm>
+
 DEFINE_CLASS(USoundComponent, USceneComponent)
 REGISTER_FACTORY(USoundComponent)
 
@@ -32,6 +34,10 @@ void USoundComponent::Serialize(FArchive& Ar)
     Ar << "Volume Scale" << VolumeScale;
     Ar << "Fade In" << FadeInSeconds;
     Ar << "Fade Out" << FadeOutSeconds;
+    Ar << "3D Min Distance" << MinDistance;
+    Ar << "3D Max Distance" << MaxDistance;
+    Ar << "3D Attenuation Model" << AttenuationModel;
+    Ar << "3D Rolloff Factor" << RolloffFactor;
 }
 
 void USoundComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -44,6 +50,10 @@ void USoundComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
     OutProps.push_back({ "Volume Scale", EPropertyType::Float, &VolumeScale, 0.0f, 2.0f, 0.01f });
     OutProps.push_back({ "Fade In", EPropertyType::Float, &FadeInSeconds, 0.0f, 10.0f, 0.01f });
     OutProps.push_back({ "Fade Out", EPropertyType::Float, &FadeOutSeconds, 0.0f, 10.0f, 0.01f });
+    OutProps.push_back({ "3D Min Distance", EPropertyType::Float, &MinDistance, 0.0f, 100.0f, 0.1f });
+    OutProps.push_back({ "3D Max Distance", EPropertyType::Float, &MaxDistance, 0.1f, 500.0f, 0.1f });
+    OutProps.push_back({ "3D Attenuation Model", EPropertyType::Int, &AttenuationModel, 0.0f, 3.0f, 1.0f });
+    OutProps.push_back({ "3D Rolloff Factor", EPropertyType::Float, &RolloffFactor, 0.0f, 8.0f, 0.1f });
 }
 
 void USoundComponent::Play()
@@ -54,13 +64,19 @@ void USoundComponent::Play()
     }
 
     Stop();
+    FAudio3DSettings SpatialSettings;
+    SpatialSettings.MinDistance = MinDistance;
+    SpatialSettings.MaxDistance = MaxDistance;
+    SpatialSettings.AttenuationModel = AttenuationModel;
+    SpatialSettings.RolloffFactor = RolloffFactor;
     ActiveHandle = GEngine->GetAudioSystem().PlaySoundCue(
         SoundKeyOrPath,
         bLoop,
         bSpatialized,
         GetWorldLocation(),
         VolumeScale,
-        FadeInSeconds);
+        FadeInSeconds,
+        SpatialSettings);
 }
 
 void USoundComponent::Stop()
@@ -78,6 +94,18 @@ void USoundComponent::Stop()
 bool USoundComponent::IsPlaying() const
 {
     return GEngine && ActiveHandle != 0 && GEngine->GetAudioSystem().IsHandleValid(ActiveHandle);
+}
+
+void USoundComponent::Set3DMinMaxDistance(float InMinDistance, float InMaxDistance)
+{
+    MinDistance = std::max(0.0f, InMinDistance);
+    MaxDistance = std::max(MinDistance + 0.01f, InMaxDistance);
+}
+
+void USoundComponent::Set3DAttenuation(int InAttenuationModel, float InRolloffFactor)
+{
+    AttenuationModel = std::clamp(InAttenuationModel, 0, 3);
+    RolloffFactor = std::max(0.0f, InRolloffFactor);
 }
 
 void USoundComponent::TickComponent(float DeltaTime)

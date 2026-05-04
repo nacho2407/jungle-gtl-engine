@@ -18,11 +18,72 @@ function SoundManager.new(context)
             IntroText = "Asset/Audio/SFX/UIIntroText.mp3",
             LoadingDone = "Asset/Audio/SFX/UILoadingDone.mp3",
             MainLogo = "Asset/Audio/SFX/UIMainLogo.mp3",
+            Attack = {
+                "Asset/Audio/SFX/GameAttack1.WAV",
+                "Asset/Audio/SFX/GameAttack2.WAV",
+                "Asset/Audio/SFX/GameAttack3.WAV",
+                "Asset/Audio/SFX/GameAttack4.WAV"
+            },
+            AttackNone = "Asset/Audio/SFX/GameAttackNone.WAV",
+            AttackGround = "Asset/Audio/SFX/GameAttackGround.WAV",
+            PlayerHit = "Asset/Audio/SFX/GamePlayerHit.mp3",
+            PlayerRecover = "Asset/Audio/SFX/GamePlayerRecovery.mp3",
+            TimeSlowStart = "Asset/Audio/SFX/GameTimeSlowStart.mp3",
+            TimeSlowEnd = "Asset/Audio/SFX/GameTimeSlowEnd.mp3",
         },
 
         bgmVolume = Engine.API.Audio.GetBGMVolume(),
-        sfxVolume = Engine.API.Audio.GetSFXVolume()
+        sfxVolume = Engine.API.Audio.GetSFXVolume(),
+        activeAttacks = {}
     }, SoundManager)
+end
+
+function SoundManager:BeginPlay()
+    self.activeAttacks = {}
+
+    self.context.eventBus:Subscribe("Player.AttackStarted", self, function(payload)
+        self:BeginAttack(payload and payload.attackId)
+    end)
+
+    self.context.eventBus:Subscribe("Player.AttackHit", self, function(payload)
+        self:MarkAttackHit(payload and payload.attackId)
+    end)
+
+    self.context.eventBus:Subscribe("Player.AttackFinished", self, function(payload)
+        self:FinishAttack(payload and payload.attackId)
+    end)
+
+    self.context.eventBus:Subscribe("Player.AttackGround", self, function()
+        self:PlayAttackGround()
+    end)
+
+    self.context.eventBus:Subscribe("Player.Damaged", self, function()
+        self:PlayPlayerHit()
+    end)
+
+    self.context.eventBus:Subscribe("Player.Recovered", self, function()
+        self:PlayPlayerRecover()
+    end)
+
+    self.context.eventBus:Subscribe("TimeSlow.Started", self, function()
+        self:PlayTimeSlowStart()
+    end)
+
+    self.context.eventBus:Subscribe("TimeSlow.Ended", self, function()
+        self:PlayTimeSlowEnd()
+    end)
+
+    self.context.eventBus:Subscribe("Game.Started", self, function()
+        self.activeAttacks = {}
+    end)
+
+    self.context.eventBus:Subscribe("Game.Finished", self, function()
+        self.activeAttacks = {}
+    end)
+
+    self.context.eventBus:Subscribe("Game.Canceled", self, function()
+        self.activeAttacks = {}
+    end)
 end
 
 function SoundManager:PlayBGM(path, fadeIn)
@@ -64,6 +125,86 @@ function SoundManager:PlaySFX(path, volumeScale)
     Engine.API.Audio.PlaySFX(path, volumeScale or 1.0)
 end
 
+function SoundManager:PlayRandomAttack()
+    local attacks = self.SFX.Attack
+    if attacks == nil or #attacks <= 0 then
+        return
+    end
+
+    local index = Engine.API.Random.RandomInt(1, #attacks)
+    self:PlaySFX(attacks[index])
+end
+
+function SoundManager:PlayAttackNone()
+    self:PlaySFX(self.SFX.AttackNone)
+end
+
+function SoundManager:PlayAttackGround()
+    self:PlaySFX(self.SFX.AttackGround)
+end
+
+function SoundManager:PlayPlayerHit()
+    self:PlaySFX(self.SFX.PlayerHit)
+end
+
+function SoundManager:PlayPlayerRecover()
+    self:PlaySFX(self.SFX.PlayerRecover)
+end
+
+function SoundManager:PlayTimeSlowStart()
+    self:PlaySFX(self.SFX.TimeSlowStart)
+end
+
+function SoundManager:PlayTimeSlowEnd()
+    self:PlaySFX(self.SFX.TimeSlowEnd)
+end
+
+function SoundManager:BeginAttack(attackId)
+    if attackId == nil or attackId == "" then
+        return
+    end
+
+    self.activeAttacks[attackId] = {
+        hit = false
+    }
+end
+
+function SoundManager:MarkAttackHit(attackId)
+    if attackId == nil or attackId == "" then
+        return
+    end
+
+    local attack = self.activeAttacks[attackId]
+    if attack == nil then
+        attack = { hit = false }
+        self.activeAttacks[attackId] = attack
+    end
+
+    if attack.hit then
+        return
+    end
+
+    attack.hit = true
+    self:PlayRandomAttack()
+end
+
+function SoundManager:FinishAttack(attackId)
+    if attackId == nil or attackId == "" then
+        return
+    end
+
+    local attack = self.activeAttacks[attackId]
+    if attack == nil then
+        return
+    end
+
+    if not attack.hit then
+        self:PlayAttackNone()
+    end
+
+    self.activeAttacks[attackId] = nil
+end
+
 function SoundManager:PlayButtonClick()
     self:PlaySFX(self.SFX.Button)
 end
@@ -97,6 +238,8 @@ function SoundManager:PlaySFX3D(path, position, volumeScale)
 end
 
 function SoundManager:EndPlay()
+    self.context.eventBus:ClearOwner(self)
+    self.activeAttacks = {}
     Engine.API.Audio.StopAll()
 end
 

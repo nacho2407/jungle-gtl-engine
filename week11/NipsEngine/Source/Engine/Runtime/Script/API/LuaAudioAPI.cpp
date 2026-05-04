@@ -126,7 +126,7 @@ namespace FLuaEngineAPI
             }
         };
 
-        Audio["SetPlaybackPolicy"] = [](const FString& Path, int MaxConcurrent, float CooldownSeconds)
+        Audio["SetPlaybackPolicy"] = [](const FString& Path, int MaxConcurrent, float CooldownSeconds, sol::optional<bool> bStopOldestWhenFull)
         {
             if (!GEngine)
             {
@@ -136,6 +136,7 @@ namespace FLuaEngineAPI
             FAudioPlaybackPolicy Policy;
             Policy.MaxConcurrent = std::max(0, MaxConcurrent);
             Policy.CooldownSeconds = std::max(0.0f, CooldownSeconds);
+            Policy.bStopOldestWhenFull = bStopOldestWhenFull.value_or(true);
             GEngine->GetAudioSystem().SetPlaybackPolicy(Path, Policy);
         };
 
