@@ -3,6 +3,9 @@ local bCarWashSucceeded = false
 local previousPhase = nil
 local gunForwardOffset = 1.0
 local gunRightOffset = 0.3
+local WATER_LOOP_SOUND_NAME = "Water"
+local WATER_LOOP_NAME = "CarWashWaterLoop"
+local bWaterLoopPlaying = false
 
 local function UpdateCarWasherTransform()
     local man = ObjRegistry.manObj
@@ -21,6 +24,23 @@ function BeginPlay()
     obj:SetCarWashStreamVisible(false)
 end 
 
+local function SetWaterLoopPlaying(bShouldPlay)
+    if bShouldPlay == bWaterLoopPlaying then
+        return
+    end
+
+    bWaterLoopPlaying = bShouldPlay
+    if bWaterLoopPlaying then
+        AudioManager.PlayLoop(WATER_LOOP_SOUND_NAME, WATER_LOOP_NAME, 0.8, 1.0)
+    else
+        AudioManager.StopLoop(WATER_LOOP_NAME)
+    end
+end
+
+function EndPlay()
+    SetWaterLoopPlaying(false)
+end
+
 function Tick(dt)
     local gs = GetGameState()
     if gs == nil then return false end
@@ -36,6 +56,7 @@ function Tick(dt)
         else
             obj:SetVisible(false)
             obj:SetCarWashStreamVisible(false)
+            SetWaterLoopPlaying(false)
         end
     end
 
@@ -44,6 +65,7 @@ function Tick(dt)
 
         local isSpraying = Input.GetKey(Key.Space)
         obj:SetCarWashStreamVisible(isSpraying)
+        SetWaterLoopPlaying(isSpraying)
 
         if obj:IsCarWashStreamVisible() then
             obj:FireCarWashRay()
@@ -53,6 +75,7 @@ function Tick(dt)
         if not bCarWashSucceeded and car ~= nil and car:AreAllDirtComponentsWashed() then
             bCarWashSucceeded = true
             obj:SetCarWashStreamVisible(false)
+            SetWaterLoopPlaying(false)
             local gameMode = GetGameMode()
             if gameMode ~= nil then
                 gameMode:SuccessPhase()
@@ -60,5 +83,6 @@ function Tick(dt)
         end
     else
         obj:SetCarWashStreamVisible(false)
+        SetWaterLoopPlaying(false)
     end
 end

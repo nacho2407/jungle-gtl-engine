@@ -238,4 +238,6 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("Notify", "notify.mp3");
 	LoadAudio("Complete", "complete.mp3");
 	LoadAudio("Crash", "crash.mp3");
+	LoadAudio("Water", "water.mp3", true);
+	LoadAudio("Siren", "siren.mp3", true);
 }
