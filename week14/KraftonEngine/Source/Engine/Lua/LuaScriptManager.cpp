@@ -4,7 +4,9 @@
 #include "Audio/AudioManager.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
+#include "Core/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
@@ -445,6 +447,27 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		Component.SetRelativeRotation(Rotation);
 	});
+
+	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
+		sol::base_classes, sol::bases<USceneComponent>(),
+		"GetLinearVelocity", &UPrimitiveComponent::GetLinearVelocity,
+		"SetLinearVelocity", &UPrimitiveComponent::SetLinearVelocity,
+		"GetAngularVelocity", &UPrimitiveComponent::GetAngularVelocity,
+		"SetAngularVelocity", &UPrimitiveComponent::SetAngularVelocity,
+		"GetMass", &UPrimitiveComponent::GetMass,
+		"SetMass", &UPrimitiveComponent::SetMass,
+		"GetGenerateOverlapEvents", &UPrimitiveComponent::GetGenerateOverlapEvents);
+
+	Lua.new_usertype<FHitResult>("HitResult",
+		"HitComponent", &FHitResult::HitComponent,
+		"HitActor", &FHitResult::HitActor,
+		"Distance", &FHitResult::Distance,
+		"PenetrationDepth", &FHitResult::PenetrationDepth,
+		"WorldHitLocation", &FHitResult::WorldHitLocation,
+		"WorldNormal", &FHitResult::WorldNormal,
+		"ImpactNormal", &FHitResult::ImpactNormal,
+		"FaceIndex", &FHitResult::FaceIndex,
+		"bHit", &FHitResult::bHit);
 
 	Lua.new_usertype<UCameraComponent>("CameraComponent",
 		sol::base_classes, sol::bases<USceneComponent>());

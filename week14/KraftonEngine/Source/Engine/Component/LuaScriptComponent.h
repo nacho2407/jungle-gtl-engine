@@ -2,6 +2,7 @@
 
 #include "Component/ActorComponent.h"
 #include "Core/Delegate.h"
+#include "Math/Vector.h"
 #include <sol/sol.hpp>
 
 class UPrimitiveComponent;
@@ -33,8 +34,8 @@ protected:
 
 private:
 	void EnsureDefaultScriptFile();
-	void BindOwnerOverlapEvents();
-	void ClearOverlapBindings();
+	void BindOwnerCollisionEvents();
+	void ClearCollisionBindings();
 	void HandleBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -47,6 +48,12 @@ private:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
+	void HandleHit(
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		FVector NormalImpulse,
+		const FHitResult& HitResult);
 
 	FString ScriptFile;
 	
@@ -56,7 +63,10 @@ private:
 	sol::protected_function LuaEndPlay;
 	sol::protected_function LuaOnOverlap;
 	sol::protected_function LuaOnEndOverlap;
+	sol::protected_function LuaOnHit;
 	TArray<UPrimitiveComponent*> BoundOverlapComponents;
+	TArray<UPrimitiveComponent*> BoundHitComponents;
 	TArray<FDelegateHandle> BeginOverlapHandles;
 	TArray<FDelegateHandle> EndOverlapHandles;
+	TArray<FDelegateHandle> HitHandles;
 };

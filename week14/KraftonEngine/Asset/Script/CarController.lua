@@ -7,6 +7,11 @@ local ENGINE_LOOP_NAME = "PlayerCarEngine"
 local ENGINE_IDLE_PITCH = 0.8
 local ENGINE_MAX_PITCH = 3.0
 local ENGINE_MAX_PITCH_SPEED = 100.0
+local CRASH_SOUND_COOLDOWN = 0.25
+local CRASH_MIN_SPEED = 5.0
+local CRASH_MAX_SPEED = 50.0
+local elapsedTime = 0.0
+local lastCrashSoundTime = -999.0
 
 function BeginPlay()
     car = obj:AsCarPawn()
@@ -45,7 +50,29 @@ end
 function OnOverlap(OtherActor)
 end
 
+function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
+    if car == nil or movement == nil then
+        return
+    end
+
+    if elapsedTime - lastCrashSoundTime < CRASH_SOUND_COOLDOWN then
+        return
+    end
+
+    local speed = math.abs(movement:GetForwardSpeed())
+    if speed < CRASH_MIN_SPEED then
+        return
+    end
+
+    local crashRatio = math.min((speed - CRASH_MIN_SPEED) / (CRASH_MAX_SPEED - CRASH_MIN_SPEED), 1.0)
+    local volume = 0.35 + 0.65 * crashRatio
+    AudioManager.Play("Crash", volume)
+    lastCrashSoundTime = elapsedTime
+end
+
 function Tick(dt)
+    elapsedTime = elapsedTime + dt
+
     if car == nil or movement == nil then
         return
     end

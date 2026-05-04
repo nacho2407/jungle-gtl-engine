@@ -25,6 +25,7 @@ void ULuaScriptComponent::InitializeLua()
 	LuaEndPlay = sol::nil;
 	LuaOnOverlap = sol::nil;
 	LuaOnEndOverlap = sol::nil;
+	LuaOnHit = sol::nil;
 
 	sol::state& Lua = FLuaScriptManager::GetState();
 
@@ -47,6 +48,7 @@ void ULuaScriptComponent::InitializeLua()
 	LuaEndPlay = Env["EndPlay"];
 	LuaOnOverlap = Env["OnOverlap"];
 	LuaOnEndOverlap = Env["OnEndOverlap"];
+	LuaOnHit = Env["OnHit"];
 }
 
 void ULuaScriptComponent::BeginPlay()
@@ -66,13 +68,13 @@ void ULuaScriptComponent::BeginPlay()
 		}
 	}
 
-	BindOwnerOverlapEvents();
+	BindOwnerCollisionEvents();
 }
 
 void ULuaScriptComponent::EndPlay()
 {
 	UActorComponent::EndPlay();
-	ClearOverlapBindings();
+	ClearCollisionBindings();
 	if (LuaEndPlay)
 	{
 		sol::protected_function_result Result = LuaEndPlay();
@@ -84,11 +86,11 @@ void ULuaScriptComponent::EndPlay()
 	}
 }
 
-void ULuaScriptComponent::BindOwnerOverlapEvents()
+void ULuaScriptComponent::BindOwnerCollisionEvents()
 {
-	ClearOverlapBindings();
+	ClearCollisionBindings();
 
-	if (!LuaOnOverlap && !LuaOnEndOverlap)
+	if (!LuaOnOverlap && !LuaOnEndOverlap && !LuaOnHit)
 	{
 		return;
 	}
@@ -101,18 +103,27 @@ void ULuaScriptComponent::BindOwnerOverlapEvents()
 
 	for (UPrimitiveComponent* PrimitiveComponent : OwnerActor->GetPrimitiveComponents())
 	{
-		if (!PrimitiveComponent || !PrimitiveComponent->GetGenerateOverlapEvents())
+		if (!PrimitiveComponent)
 		{
 			continue;
 		}
 
-		BoundOverlapComponents.push_back(PrimitiveComponent);
-		BeginOverlapHandles.push_back(PrimitiveComponent->OnComponentBeginOverlap.AddRaw(this, &ULuaScriptComponent::HandleBeginOverlap));
-		EndOverlapHandles.push_back(PrimitiveComponent->OnComponentEndOverlap.AddRaw(this, &ULuaScriptComponent::HandleEndOverlap));
+		if ((LuaOnOverlap || LuaOnEndOverlap) && PrimitiveComponent->GetGenerateOverlapEvents())
+		{
+			BoundOverlapComponents.push_back(PrimitiveComponent);
+			BeginOverlapHandles.push_back(PrimitiveComponent->OnComponentBeginOverlap.AddRaw(this, &ULuaScriptComponent::HandleBeginOverlap));
+			EndOverlapHandles.push_back(PrimitiveComponent->OnComponentEndOverlap.AddRaw(this, &ULuaScriptComponent::HandleEndOverlap));
+		}
+
+		if (LuaOnHit)
+		{
+			BoundHitComponents.push_back(PrimitiveComponent);
+			HitHandles.push_back(PrimitiveComponent->OnComponentHit.AddRaw(this, &ULuaScriptComponent::HandleHit));
+		}
 	}
 }
 
-void ULuaScriptComponent::ClearOverlapBindings()
+void ULuaScriptComponent::ClearCollisionBindings()
 {
 	for (int32 Index = 0; Index < static_cast<int32>(BoundOverlapComponents.size()); ++Index)
 	{
@@ -136,6 +147,23 @@ void ULuaScriptComponent::ClearOverlapBindings()
 	BoundOverlapComponents.clear();
 	BeginOverlapHandles.clear();
 	EndOverlapHandles.clear();
+
+	for (int32 Index = 0; Index < static_cast<int32>(BoundHitComponents.size()); ++Index)
+	{
+		UPrimitiveComponent* PrimitiveComponent = BoundHitComponents[Index];
+		if (!PrimitiveComponent)
+		{
+			continue;
+		}
+
+		if (Index < static_cast<int32>(HitHandles.size()) && HitHandles[Index].IsValid())
+		{
+			PrimitiveComponent->OnComponentHit.Remove(HitHandles[Index]);
+		}
+	}
+
+	BoundHitComponents.clear();
+	HitHandles.clear();
 }
 
 void ULuaScriptComponent::HandleBeginOverlap(
@@ -170,6 +198,24 @@ void ULuaScriptComponent::HandleEndOverlap(
 		{
 			sol::error Err = Result;
 			UE_LOG("Lua OnEndOverlap error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+}
+
+void ULuaScriptComponent::HandleHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse,
+	const FHitResult& HitResult)
+{
+	if (LuaOnHit)
+	{
+		sol::protected_function_result Result = LuaOnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, HitResult);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua OnHit error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
 }

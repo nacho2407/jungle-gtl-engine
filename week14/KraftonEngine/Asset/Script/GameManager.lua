@@ -227,6 +227,8 @@ local function CompleteCurrentQuest()
         print("Quest completed:", quest.id)
     end
 
+    AudioManager.Play("Complete", 1.0)
+
     state = QuestState.Completed
     UIManager.SetQuestHud("-", "&#8593;", false)
 

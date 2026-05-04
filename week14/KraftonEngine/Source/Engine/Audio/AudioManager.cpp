@@ -236,4 +236,6 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("Click", "pop.mp3");
 	LoadAudio("CarEngineLoop", "car_engine_loop.mp3", true);
 	LoadAudio("Notify", "notify.mp3");
+	LoadAudio("Complete", "complete.mp3");
+	LoadAudio("Crash", "crash.mp3");
 }
