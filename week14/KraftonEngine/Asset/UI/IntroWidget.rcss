@@ -96,6 +96,18 @@ body {
 	text-align: center;
 }
 
+#start-button,
+#exit-button {
+	transition: background-color border-color color 0.16s sine-out;
+}
+
+#start-button:hover,
+#exit-button:hover {
+	border-color: #ffe58a;
+	background-color: #f0c85a;
+	color: #15171c;
+}
+
 #exit-button {
 	position: absolute;
 	left: 50%;

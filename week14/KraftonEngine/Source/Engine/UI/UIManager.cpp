@@ -52,6 +52,12 @@ namespace
 		float ViewportHeight = 1.0f;
 		float TranslationX = 0.0f;
 		float TranslationY = 0.0f;
+		float Transform[16] = {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f,
+		};
 	};
 
 	constexpr const char* UIShaderPath = "Shaders/UI/RmlUi.hlsl";
@@ -100,6 +106,7 @@ bool FRmlSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& Mes
 
 FRmlRenderInterfaceD3D11::FRmlRenderInterfaceD3D11(ID3D11Device* InDevice)
 	: Device(InDevice)
+	, CurrentTransform(Rml::Matrix4f::Identity())
 {
 	CreateConstantBuffer();
 }
@@ -142,6 +149,11 @@ void FRmlRenderInterfaceD3D11::BeginFrame(const FPassContext& InCtx)
 void FRmlRenderInterfaceD3D11::EndFrame()
 {
 	Ctx = nullptr;
+}
+
+void FRmlRenderInterfaceD3D11::SetTransform(const Rml::Matrix4f* Transform)
+{
+	CurrentTransform = Transform ? *Transform : Rml::Matrix4f::Identity();
 }
 
 Rml::CompiledGeometryHandle FRmlRenderInterfaceD3D11::CompileGeometry(Rml::Span<const Rml::Vertex> Vertices, Rml::Span<const int> Indices)
@@ -239,6 +251,8 @@ void FRmlRenderInterfaceD3D11::RenderGeometry(Rml::CompiledGeometryHandle Geomet
 	CBData.ViewportHeight = Ctx->Frame.ViewportHeight;
 	CBData.TranslationX = Translation.x;
 	CBData.TranslationY = Translation.y;
+	const float* TransformData = CurrentTransform.data();
+	std::copy(TransformData, TransformData + 16, CBData.Transform);
 	DC->UpdateSubresource(PerFrameCB, 0, nullptr, &CBData, 0, 0);
 	DC->VSSetConstantBuffers(0, 1, &PerFrameCB);
 

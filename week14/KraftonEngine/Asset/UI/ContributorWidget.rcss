@@ -53,4 +53,10 @@ body {
 	font-size: 20px;
 	line-height: 44px;
 	text-align: center;
+	transition: background-color color 0.16s sine-out;
+}
+
+#contributor-close-button:hover {
+	background-color: #f0c85a;
+	color: #202020;
 }
