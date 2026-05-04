@@ -29,6 +29,10 @@ public:
 	void SetScriptFile(const FString& InScriptFile) { ScriptFile = InScriptFile; }
 	void DispatchOverlap(class AActor* OtherActor);
 
+	// Lua script 의 환경(env)에서 인자 없는 전역 함수 하나를 호출. 함수가 없거나
+	// nil 이면 조용히 false 반환 — 호출자는 lua 쪽 함수 정의 여부에 신경 쓸 필요 없음.
+	bool CallFunction(const FString& FunctionName);
+
 protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 

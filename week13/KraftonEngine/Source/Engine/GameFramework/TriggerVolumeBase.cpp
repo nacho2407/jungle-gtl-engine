@@ -35,7 +35,15 @@ void ATriggerVolumeBase::GetEditableProperties(TArray<FPropertyDescriptor>& OutP
 
 void ATriggerVolumeBase::BeginPlay()
 {
-	// 직렬화 경로(씬 로드)에서 PostDuplicate가 안 거쳐졌을 수 있어 한 번 더 잡는다.
+	// 신규 spawn (World->SpawnActor<ATriggerVolumeBase>()) 경로 — 호출자가 컴포넌트를 채울
+	// 시점이 없어 RootComponent 가 비어있다. AMeteor / APoliceCar 와 동일 패턴으로 여기서
+	// 직접 default 셋업. 직렬화/Duplicate 경로에선 RootComponent 가 deserialize 돼 있어
+	// InitDefaultComponents 안 부르고 cast 만.
+	if (!GetRootComponent())
+	{
+		InitDefaultComponents();
+	}
+
 	if (!TriggerBox)
 	{
 		TriggerBox = Cast<UBoxComponent>(GetRootComponent());

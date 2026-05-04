@@ -220,6 +220,30 @@ void ULuaScriptComponent::HandleHit(
 	}
 }
 
+bool ULuaScriptComponent::CallFunction(const FString& FunctionName)
+{
+	if (!Env.valid())
+	{
+		return false;
+	}
+
+	sol::object Target = Env[FunctionName.c_str()];
+	if (!Target.valid() || Target.get_type() != sol::type::function)
+	{
+		return false;
+	}
+
+	sol::protected_function Fn = Target;
+	sol::protected_function_result Result = Fn();
+	if (!Result.valid())
+	{
+		sol::error Err = Result;
+		UE_LOG("Lua %s error in %s: %s", FunctionName.c_str(), ScriptFile.c_str(), Err.what());
+		return false;
+	}
+	return true;
+}
+
 void ULuaScriptComponent::DispatchOverlap(AActor* OtherActor)
 {
 	if (LuaOnOverlap)

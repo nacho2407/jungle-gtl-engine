@@ -124,11 +124,6 @@ void UEngine::Tick(float DeltaTime)
 	FAudioManager::Get().Tick();
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
-
-	// WorldTick / Render 가 모두 끝나고 호출 stack 이 단순해진 시점에 deferred destroy 처리.
-	// PhysX onContact 콜백 / TickManager / actor self-destroy 경로에서 들어온 DestroyObject
-	// 는 단순히 UObjectManager::PendingKill 에 push 만 됐고, 실제 delete 는 여기서 일괄.
-	UObjectManager::Get().FlushPendingKill();
 }
 
 void UEngine::Render(float DeltaTime)

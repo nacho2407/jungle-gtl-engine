@@ -425,9 +425,6 @@
     <ClCompile Include="Source\Editor\UI\EditorProjectSettingsWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
-      <Filter>Source\Editor\UI</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -444,6 +441,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp">
@@ -629,10 +629,10 @@
     <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameplayStatics.cpp">
+    <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameStateBase.cpp">
+    <ClCompile Include="Source\Engine\GameFramework\GameplayStatics.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\HeightFogActor.cpp">
@@ -1016,6 +1016,9 @@
     <ClCompile Include="Source\Game\Pawn\PoliceCar.cpp">
       <Filter>Source\Game\Pawn</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Pawn\WalkingPersonActor.cpp">
+      <Filter>Source\Game\Pawn</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\PlayerController\PlayerControllerCarGame.cpp">
       <Filter>Source\Game\PlayerController</Filter>
     </ClCompile>
@@ -1097,9 +1100,6 @@
     <ClInclude Include="Source\Editor\UI\EditorProjectSettingsWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
-      <Filter>Source\Editor\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -1116,6 +1116,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h">
@@ -1337,10 +1340,10 @@
     <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameplayStatics.h">
+    <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameStateBase.h">
+    <ClInclude Include="Source\Engine\GameFramework\GameplayStatics.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\HeightFogActor.h">
@@ -1815,6 +1818,9 @@
       <Filter>Source\Game\Pawn</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Pawn\PoliceCar.h">
+      <Filter>Source\Game\Pawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Pawn\WalkingPersonActor.h">
       <Filter>Source\Game\Pawn</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\PlayerController\PlayerControllerCarGame.h">

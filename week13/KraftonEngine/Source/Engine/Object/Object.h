@@ -33,6 +33,11 @@ class FArchive;
 
 // ---------------------------------------------------------------------------
 
+// Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
+// non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
+class UObject;
+inline bool IsValid(const UObject* Object);
+
 class UObject
 {
 public:
@@ -49,10 +54,14 @@ public:
 	void SetOuter(UObject* InOuter) { Outer = InOuter; }
 
 	// Outer 체인을 따라 첫 번째 T를 찾는다 (UE의 GetTypedOuter<T>와 동일 시맨틱).
+	// PendingKill 처리 도중 World 가 actor 보다 먼저 delete 되면 component 의
+	// DestroyRenderState 가 Owner->GetWorld → GetTypedOuter<UWorld> 경로를 타다가
+	// freed Outer 를 deref 해 crash 났음. 매 iteration 에서 IsValid 로 살아있는 UObject
+	// 만 따라가도록 가드.
 	template<typename T>
 	T* GetTypedOuter() const
 	{
-		for (UObject* O = Outer; O; O = O->Outer)
+		for (UObject* O = Outer; IsValid(O); O = O->Outer)
 		{
 			if (T* Hit = Cast<T>(O))
 			{
@@ -148,50 +157,16 @@ public:
 		return Obj;
 	}
 
-	// 즉시 destroy — 호출자가 lifetime 을 안전하게 보장한 경우에만 사용 (예: ~AActor 가
-	// 자기 컴포넌트들을 정리하는 destructor 흐름, 단발성 transient material 해제 등).
-	// gameplay 코드가 액터를 destroy 하려는 경우엔 World::DestroyActor 를 통해 MarkPendingKill
-	// 경로를 타야 함 — 그 쪽은 frame 끝에 일괄 delete.
+	// 즉시 destroy. dangling 포인터 위험은 octree / spatial partition / UObject 추적 set
+	// 측에서 IsValid 가드로 처리하므로 별도 deferred 큐 (PendingKill) 는 두지 않는다.
 	void DestroyObject(UObject* Obj)
 	{
 		if (!Obj) return;
 		delete Obj;
 	}
 
-	// PendingKill 큐에 추가만 — 실제 delete 는 UEngine::Tick 끝의 FlushPendingKill 시점.
-	// PhysX onContact 콜백 / TickManager 순회 / 자기 callback 안에서의 self-destroy 등
-	// "delete this" 가 호출 stack 위의 코드를 dangling 으로 만드는 사고를 방지하는 용도.
-	void MarkPendingKill(UObject* Obj)
-	{
-		if (!Obj) return;
-		if (std::find(PendingKill.begin(), PendingKill.end(), Obj) != PendingKill.end()) return;
-		PendingKill.push_back(Obj);
-	}
-
-	bool IsPendingKill(const UObject* Obj) const
-	{
-		return Obj && std::find(PendingKill.begin(), PendingKill.end(), Obj) != PendingKill.end();
-	}
-
-	// 매 frame UEngine::Tick 끝에서 호출 — 중간 작업이 새 PendingKill 을 추가할 수도 있어
-	// (예: Actor 소멸 시 ~AActor 가 RemoveComponent → DestroyObject) swap-and-process 패턴으로
-	// cascade 처리. 처리 도중 vector 가 reallocate 돼도 안전.
-	void FlushPendingKill()
-	{
-		while (!PendingKill.empty())
-		{
-			TArray<UObject*> Local;
-			std::swap(Local, PendingKill);
-			for (UObject* Obj : Local)
-			{
-				if (Obj) delete Obj;
-			}
-		}
-	}
-
 private:
 	TMap<FString, uint32> NameCounters;
-	TArray<UObject*> PendingKill;
 
 public:
 	UObject* FindByUUID(uint32 InUUID)
