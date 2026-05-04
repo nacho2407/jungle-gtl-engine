@@ -10,6 +10,11 @@
 		<div id="hud-score-panel">
 			<div class="hud-label">SCORE</div>
 			<div id="score-value" class="hud-main-value">000000</div>
+			<div id="score-feedback-layer">
+				<div id="score-feedback-0" class="score-feedback-text"></div>
+				<div id="score-feedback-1" class="score-feedback-text"></div>
+				<div id="score-feedback-2" class="score-feedback-text"></div>
+			</div>
 		</div>
 
 		<div id="hud-hp-panel">

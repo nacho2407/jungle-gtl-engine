@@ -134,6 +134,23 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"Win",  EFinishOutcome::Win,
 		"Lose", EFinishOutcome::Lose);
 
+	Lua.new_enum("EScoreCategory",
+		"None",     EScoreCategory::None,
+		"Phase",    EScoreCategory::Phase,
+		"MatchEnd", EScoreCategory::MatchEnd,
+		"Bonus",    EScoreCategory::Bonus,
+		"Penalty",  EScoreCategory::Penalty);
+
+	Lua.new_usertype<FScoreEvent>("ScoreEvent",
+		"SequenceId",         &FScoreEvent::SequenceId,
+		"Amount",             &FScoreEvent::Amount,
+		"TotalScoreAfter",    &FScoreEvent::TotalScoreAfter,
+		"Category",           &FScoreEvent::Category,
+		"SourcePhase",        &FScoreEvent::SourcePhase,
+		"Reason",             &FScoreEvent::Reason,
+		"RemainingMatchTime", &FScoreEvent::RemainingMatchTime,
+		"RemainingPhaseTime", &FScoreEvent::RemainingPhaseTime);
+
 	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
 		"SuccessPhase", &AGameModeCarGame::SuccessPhase);
 
@@ -152,6 +169,18 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"GetMaxHealth",          &AGameStateCarGame::GetMaxHealth,
 		"GetFinishOutcome",      &AGameStateCarGame::GetFinishOutcome,
 		"GetScore",              &AGameStateCarGame::GetScore,
+		"AddScore", [](AGameStateCarGame& GameState, int32 Delta, sol::optional<EScoreCategory> Category, sol::optional<FString> Reason, sol::optional<ECarGamePhase> SourcePhase)
+		{
+			GameState.AddScore(
+				Delta,
+				Category.value_or(EScoreCategory::Bonus),
+				Reason.value_or(FString()),
+				SourcePhase.value_or(ECarGamePhase::None));
+		},
+		"GetScoreEventCount",    &AGameStateCarGame::GetScoreEventCount,
+		"GetLastScoreEventId",   &AGameStateCarGame::GetLastScoreEventId,
+		"GetScoreEvent",         &AGameStateCarGame::GetScoreEvent,
+		"GetLatestScoreEvent",   &AGameStateCarGame::GetLatestScoreEvent,
 		"BindPhaseChanged", [](AGameStateCarGame& GameState, sol::protected_function Callback)
 	{
 		GameState.OnPhaseChanged.AddLambda([Callback](ECarGamePhase NewPhase) mutable
