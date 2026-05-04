@@ -659,7 +659,8 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
 
     FPlane SlicePlane;
     SlicePlane.Normal = N_Local;
-    SlicePlane.D = -FVector::DotProduct(N_Local, P_Local);
+    // SlicePlane.D = -FVector::DotProduct(N_Local, P_Local);
+    SlicePlane.D = 0;
 
     // 절단된 메쉬를 담을 임시 컴포넌트 생성
     UProceduralMeshComponent* TempMesh1 = UObjectManager::Get().CreateObject<UProceduralMeshComponent>();
