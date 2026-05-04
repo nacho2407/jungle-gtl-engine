@@ -222,7 +222,7 @@ function Script:Tick(dt)
 
         local pitch_x = degree * math.sin(yaw_rad)
         local pitch_y = degree * math.cos(yaw_rad)
-        local scale_long = 15
+        local scale_long = 7.5
         local scale_short = 5
         local fx = math.abs(math.sin(yaw_rad))
         local fz = math.abs(math.cos(yaw_rad))
@@ -238,8 +238,8 @@ function Script:Tick(dt)
         )
 
         slash.Rotation = Vector(pitch_y, pitch_x + clampedPitch, yaw)
-        slash.Location = self.owner.Location + self.owner.Scale / 2 -- + fwd_pitched * (scale_long / 2)
-        slash.Scale = Vector(scale_x, 0.1, scale_z)
+        slash.Location = self.owner.Location + self.owner.Scale / 2 + fwd_pitched * (scale_long / 2)
+        slash.Scale = Vector(scale_x, 2, scale_z)
 
         StartCoroutine(function()
             self:Attack(mode, degree, yaw)
