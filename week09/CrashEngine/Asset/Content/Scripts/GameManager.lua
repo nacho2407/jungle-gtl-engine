@@ -53,8 +53,9 @@ local CandidateSpawnInfos = {
         Tag = "Turret",
         MaxCount = SpawnMaxCounts.Turret,
         Mesh = "Asset/Content/Models/Turret/Turret.obj",
-        Rotation = Vector.new(90.0, 178.948853, 0.0),
+        Rotation = Vector.new(0.0, 0.0, 0.0),
         Scale = Vector.new(0.3, 0.3, 0.3),
+        UseCandidateRotation = true,
         Materials = {
             "Asset/Content/Materials/T_smooth.json",
             "Asset/Content/Materials/T_Black.json",
@@ -62,6 +63,7 @@ local CandidateSpawnInfos = {
             "Asset/Content/Materials/T_D_yellow.json",
             "Asset/Content/Materials/T_Grey.json"
         },
+        Script = "Turret.lua",
         Collider = {
             Type = "BoxComponent",
             BoxExtent = Vector.new(44.799999, 30.799999, 60.700001),
@@ -153,6 +155,19 @@ local function applySpawnInfo(actor, spawnInfo)
     return true
 end
 
+local function attachScript(actor, scriptPath)
+    if scriptPath == nil then
+        return true
+    end
+
+    local script = actor:AddComponent("LuaScriptComponent")
+    if not script:IsValid() then
+        return false
+    end
+
+    return script:SetScriptPath(scriptPath)
+end
+
 local function replaceCandidate(candidate, spawnInfo)
     local spawned = World.SpawnActor("StaticMeshActor")
 
@@ -161,12 +176,25 @@ local function replaceCandidate(candidate, spawnInfo)
     end
 
     local spawnLocation = candidate.Location
+    local spawnRotation = nil
+    if spawnInfo.UseCandidateRotation then
+        spawnRotation = candidate.Rotation
+    end
     if not applySpawnInfo(spawned, spawnInfo) then
         World.DestroyActor(spawned)
         return false
     end
 
     spawned.Location = spawnLocation
+    if spawnInfo.UseCandidateRotation then
+        spawned.Rotation = spawnRotation
+    end
+
+    if not attachScript(spawned, spawnInfo.Script) then
+        World.DestroyActor(spawned)
+        return false
+    end
+
     World.DestroyActor(candidate)
     return true
 end

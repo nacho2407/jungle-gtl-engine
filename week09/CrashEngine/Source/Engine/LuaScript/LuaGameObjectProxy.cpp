@@ -47,7 +47,8 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "UAmbientLightComponent"
 		|| ClassName == "USphereComponent"
 		|| ClassName == "UBoxComponent"
-		|| ClassName == "UCapsuleComponent";
+		|| ClassName == "UCapsuleComponent"
+		|| ClassName == "ULuaScriptComponent";
 }
 
 UClass* FindClassByName(const FString& ClassName)
@@ -119,6 +120,40 @@ void FLuaGameObjectProxy::SetLocation(const FVector& InLocation)
     Actor->SetActorLocation(InLocation);
 }
 
+FVector FLuaGameObjectProxy::GetRotation() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorRotation().ToVector() : FVector(0.0f, 0.0f, 0.0f);
+}
+
+void FLuaGameObjectProxy::SetRotation(const FVector& InRotation)
+{
+    AActor* Actor = ResolveActor();
+    if (!Actor)
+    {
+        return;
+    }
+
+    Actor->SetActorRotation(InRotation);
+}
+
+FVector FLuaGameObjectProxy::GetScale() const
+{
+    AActor* Actor = ResolveActor();
+    return Actor ? Actor->GetActorScale() : FVector(1.0f, 1.0f, 1.0f);
+}
+
+void FLuaGameObjectProxy::SetScale(const FVector& InScale)
+{
+    AActor* Actor = ResolveActor();
+    if (!Actor)
+    {
+        return;
+    }
+
+    Actor->SetActorScale(InScale);
+}
+
 FVector FLuaGameObjectProxy::GetForwardVector() const
 {
     AActor* Actor = ResolveActor();
@@ -153,6 +188,13 @@ void FLuaGameObjectProxy::ApplyDamage(float Damage, const FLuaGameObjectProxy& I
     AActor* Actor = ResolveActor();
     if (!Actor)
     {
+        return;
+    }
+
+    UWorld* World = Actor->GetWorld();
+    if (World)
+    {
+        World->QueueDamage(Actor, Damage, Instigator.GetActor());
         return;
     }
 

@@ -33,22 +33,26 @@ function PlayerMovement.CreateState(options)
     options = options or {}
 
     local forward = normalizePlanar(options.forward or Vector.new(1.0, 0.0, 0.0))
+    local right = normalizePlanar(options.right or Vector.new(-forward.Y, forward.X, 0.0))
     local yaw = PlayerMovement.ForwardToYaw(forward)
 
     return {
+        moveForward = forward,
+        moveRight = right,
         visualForward = forward,
         velocity = Vector.new(0.0, 0.0, 0.0),
         visualYaw = yaw,
         meshYawOffset = options.meshYawOffset or 0.0,
+        meshBaseRotation = options.meshBaseRotation or Vector.new(0.0, 0.0, 0.0),
         moveSpeed = options.moveSpeed or 10.0,
         velocityInterpSpeed = options.velocityInterpSpeed or 12.0,
         turnInterpSpeed = options.turnInterpSpeed or 14.0,
     }
 end
 
-function PlayerMovement.GetDesiredMoveDirection(pressedKeys)
-    local worldForward = Vector.new(1.0, 0.0, 0.0)
-    local worldRight = Vector.new(0.0, 1.0, 0.0)
+function PlayerMovement.GetDesiredMoveDirection(pressedKeys, moveForward, moveRight)
+    local worldForward = normalizePlanar(moveForward or Vector.new(1.0, 0.0, 0.0))
+    local worldRight = normalizePlanar(moveRight or Vector.new(0.0, 1.0, 0.0))
     local direction = Vector.new(0.0, 0.0, 0.0)
 
     if pressedKeys.W or pressedKeys.Up then
@@ -67,12 +71,9 @@ function PlayerMovement.GetDesiredMoveDirection(pressedKeys)
     return normalizePlanar(direction)
 end
 
-function PlayerMovement.GetDesiredVisualForward(pressedKeys, currentForward)
-    if pressedKeys.W or pressedKeys.Up then
-        return Vector.new(1.0, 0.0, 0.0)
-    end
-    if pressedKeys.S or pressedKeys.Down then
-        return Vector.new(-1.0, 0.0, 0.0)
+function PlayerMovement.GetDesiredVisualForward(currentForward, desiredDirection)
+    if desiredDirection ~= nil and desiredDirection:LengthSquared() > 0.0001 then
+        return desiredDirection
     end
 
     return currentForward
@@ -83,13 +84,13 @@ function PlayerMovement.ForwardToYaw(forward)
 end
 
 function PlayerMovement.Update(state, pressedKeys, dt)
-    local desiredDirection = PlayerMovement.GetDesiredMoveDirection(pressedKeys)
+    local desiredDirection = PlayerMovement.GetDesiredMoveDirection(pressedKeys, state.moveForward, state.moveRight)
     local desiredVelocity = desiredDirection * state.moveSpeed
     local moveAlpha = interpAlpha(state.velocityInterpSpeed, dt)
 
     state.velocity = state.velocity + (desiredVelocity - state.velocity) * moveAlpha
 
-    state.visualForward = PlayerMovement.GetDesiredVisualForward(pressedKeys, state.visualForward)
+    state.visualForward = PlayerMovement.GetDesiredVisualForward(state.visualForward, desiredDirection)
 
     local targetYaw = PlayerMovement.ForwardToYaw(state.visualForward)
     local turnAlpha = interpAlpha(state.turnInterpSpeed, dt)
@@ -99,7 +100,11 @@ function PlayerMovement.Update(state, pressedKeys, dt)
 end
 
 function PlayerMovement.MakeYawRotation(state)
-    return Vector.new(0.0, 0.0,-1 *( state.visualYaw + state.meshYawOffset))
+    return Vector.new(
+        state.meshBaseRotation.X,
+        state.meshBaseRotation.Y,
+        state.meshBaseRotation.Z + state.visualYaw + state.meshYawOffset
+    )
 end
 
 return PlayerMovement
