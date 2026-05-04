@@ -12,6 +12,11 @@ local fade = {
     onComplete = nil,
     hideWhenDone = false
 }
+local scoreCounter = {
+    initialized = false,
+    display = 0,
+    target = 0
+}
 local onCarWashQuestOk = nil
 local onGasQuestOk = nil
 local onPersonQuestOk = nil
@@ -45,6 +50,49 @@ local function GetGasColor(ratio)
         return "#f09a3e"
     end
     return "#f0c85a"
+end
+
+local function FormatScore(score)
+    return string.format("%06d", math.floor(score + 0.5))
+end
+
+local function SetHudScoreText(score)
+    local widget = widgets["gameOverlay"]
+    if widget == nil or not widget:IsInViewport() then
+        return
+    end
+
+    widget:set_text("score-value", FormatScore(score))
+end
+
+local function UpdateScoreCounter(dt)
+    dt = dt or 0
+
+    local widget = widgets["gameOverlay"]
+    if widget == nil or not widget:IsInViewport() or not scoreCounter.initialized then
+        return
+    end
+
+    if scoreCounter.display == scoreCounter.target then
+        return
+    end
+
+    if scoreCounter.display > scoreCounter.target then
+        scoreCounter.display = scoreCounter.target
+        SetHudScoreText(scoreCounter.display)
+        return
+    end
+
+    local remaining = scoreCounter.target - scoreCounter.display
+    local minSpeed = 240.0
+    local speed = math.max(minSpeed, remaining * 8.0)
+    scoreCounter.display = scoreCounter.display + speed * dt
+
+    if scoreCounter.display >= scoreCounter.target then
+        scoreCounter.display = scoreCounter.target
+    end
+
+    SetHudScoreText(scoreCounter.display)
 end
 
 function UIManager.SetStartGameCallback(callback)
@@ -390,6 +438,7 @@ function UIManager.Tick(dt)
 
     UIManager.UpdateGasWidget()
     UIManager.UpdateMeteorHpWidget()
+    UpdateScoreCounter(dt)
 end
 
 function UIManager.GetWidget(key)
@@ -470,7 +519,19 @@ function UIManager.UpdateHUD()
 
     -- objective + 점수 — 매 프레임 호출 비용 미미하므로 같이 갱신
     widget:set_text("objective-value", GetObjectiveText(phase, gs:GetLastEndedPhase(), gs:GetLastPhaseResult()))
-    widget:set_text("score-value", string.format("%06d", gs:GetScore()))
+    local score = gs:GetScore()
+    if not scoreCounter.initialized then
+        scoreCounter.initialized = true
+        scoreCounter.display = score
+        scoreCounter.target = score
+        SetHudScoreText(scoreCounter.display)
+    elseif score ~= scoreCounter.target then
+        scoreCounter.target = score
+        if scoreCounter.display > scoreCounter.target then
+            scoreCounter.display = scoreCounter.target
+            SetHudScoreText(scoreCounter.display)
+        end
+    end
 
     -- HP — RML 에 hp-slot-0/1/2 슬롯이 있고 색만 채워진(빨강)/빈(회색) 으로 토글.
     local hp = gs:GetHealth()

@@ -232,16 +232,19 @@ local function CompleteCurrentQuest()
     state = QuestState.Completed
     UIManager.SetQuestHud("-", "&#8593;", false)
 
-    if currentQuestIndex < #quests then
-        ShowQuest(currentQuestIndex + 1)
-    else
-        state = QuestState.AllCompleted
-        UIManager.SetQuestHud("완료", "&#8593;", false)
-        if gameState ~= nil then
-            gameState:SetQuestPhase(ECarGamePhase.None)
+    StartCoroutine(function()
+        Wait(1.0)
+        if currentQuestIndex < #quests then
+            ShowQuest(currentQuestIndex + 1)
+        else
+            state = QuestState.AllCompleted
+            UIManager.SetQuestHud("완료", "&#8593;", false)
+            if gameState ~= nil then
+                gameState:SetQuestPhase(ECarGamePhase.None)
+            end
+            print("All quests completed.")
         end
-        print("All quests completed.")
-    end
+    end)
 end
 
 local function UpdateQuestHud()
@@ -350,4 +353,5 @@ function Tick(dt)
     end
 
     UpdateQuestHud()
+    UpdateCoroutines(dt)
 end
