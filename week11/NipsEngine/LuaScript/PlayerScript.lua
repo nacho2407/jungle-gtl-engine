@@ -168,10 +168,11 @@ function Script:Tick(dt)
     end
 
     local delta = CurLoc - self.PrevLocation
-    local speed = delta:Size() / math.max(dt, 1e-6)
+    -- Speed 에 따라 바꿀 경우 jittering 현상이 있어 현재 배제
+    -- local speed = delta:Size() / math.max(dt, 1e-6)
 
-    local amplitude = 0.0001 + speed * 0.002
-    local freq = 6.0 + speed * 0.02
+    local amplitude = 0.0001 + 5 * 0.002
+    local freq = 6.0
     local offsetZ = math.cos(self.time * freq) * amplitude
     local offsetX = math.sin(self.time * freq * 0.5) * amplitude * 0.5
     Engine.API.World.AddViewTargetCameraLocation(Vector(offsetX, 0, offsetZ))
