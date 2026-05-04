@@ -295,9 +295,13 @@ end
 
 -- 게임 종료 화면 표시 — outcome 에 따라 타이틀 텍스트 swap.
 -- finalScore 는 Score 시스템 도입 시 채워서 호출 (지금은 nil 이면 placeholder 유지).
+-- 주의: UUIManager 가 RML Document 를 첫 AddToViewport 시점에 lazy-load 하므로
+-- set_text 는 Show 이후에 호출해야 한다. 그 전엔 Document=null 이라 silent no-op.
 function UIManager.ShowGameOver(outcome, finalScore)
     local widget = widgets["gameOver"]
     if widget == nil then return end
+
+    UIManager.Show("gameOver")
 
     if outcome == EFinishOutcome.Win then
         widget:set_text("game-over-title", "VICTORY")
@@ -310,8 +314,6 @@ function UIManager.ShowGameOver(outcome, finalScore)
     if finalScore ~= nil then
         widget:set_text("final-score-value", string.format("%06d", finalScore))
     end
-
-    UIManager.Show("gameOver")
 end
 
 function UIManager.Tick(dt)

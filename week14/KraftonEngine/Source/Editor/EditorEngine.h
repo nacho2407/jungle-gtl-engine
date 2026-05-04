@@ -116,6 +116,11 @@ public:
 	// PIE 중이 아니면 no-op.
 	void StopPlayInEditorImmediate() { if (IsPlayingInEditor()) EndPlayMap(); }
 
+	// PIE 안에서 Lua 가 Engine.TransitionToScene 호출 시: scene 교체 대신 PIE 세션을 종료해
+	// 에디터 화면으로 복귀. UE 의 Stop Play 와 동일 의미로 매핑 (PIE 중간에 다른 scene 으로
+	// 점프하는 의미가 모호하므로). InScenePath 는 무시.
+	void RequestTransitionToScene(const FString& InScenePath) override;
+
 private:
 	// Tick 내에서 호출 — 큐에 요청이 있으면 StartPlayInEditorSession 실행
 	void StartQueuedPlaySessionRequest();

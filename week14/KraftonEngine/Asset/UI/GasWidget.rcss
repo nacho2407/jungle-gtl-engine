@@ -22,7 +22,7 @@ body {
 #gas-panel {
 	position: absolute;
 	left: 4%;
-	top: 154dp;
+	top: 250dp;
 	width: 260dp;
 	height: 100dp;
 	border-width: 2dp;
