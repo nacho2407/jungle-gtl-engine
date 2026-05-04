@@ -141,7 +141,16 @@ void AGameModeCarGame::OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger
 	// Phase != None 인 동안엔 다른 트리거 무시 (사용자 결정 — 페이즈 동시 진행 X).
 	const ECarGamePhase Target = TagToPhase(Trigger->GetTriggerTag());
 	if (Target == ECarGamePhase::None) return;
-	if (GS->GetQuestPhase() != Target) return;
+
+	// 현재 quest 의 트리거는 그대로 진입 허용. 이미 클리어한 페이즈는 quest 와 무관하게
+	// 자유 재진입(replay) 허용. 아직 클리어 안 했고 quest 도 다른 페이즈를 가리키고 있으면
+	// 차단 — 페이즈 순서 / 진행 가드 유지.
+	if (GS->GetQuestPhase() != Target)
+	{
+		const uint32 ClearedBit = 1u << static_cast<uint32>(Target);
+		if ((GS->GetClearedPhasesMask() & ClearedBit) == 0) return;
+	}
+
 	if (GS->GetPhase() != ECarGamePhase::None) return;
 
 	BeginPhase(Target, Pawn);
@@ -199,6 +208,22 @@ void AGameModeCarGame::BeginPhase(ECarGamePhase Target, APawn* TriggerPawn)
 		// trigger 콜백이 전달한 pawn 우선, 없으면 PlayerController 경로
 		APawn* PlayerPawn = TriggerPawn ? TriggerPawn : GetPlayerPawn();
 		SpawnPoliceCars(PlayerPawn);
+	}
+	else if (Target == ECarGamePhase::CarWash)
+	{
+		// replay 진입 — 이전 클리어 시 invisible/washed 처리된 dirt 컴포넌트들을
+		// 모두 dirty 상태로 되돌려놓고 다시 시작. 첫 진입에서도 idempotent.
+		if (UWorld* World = GetWorld())
+		{
+			for (AActor* Actor : World->GetActors())
+			{
+				if (Actor && Actor->GetFName() == FName("DirtyCar"))
+				{
+					UDirtComponent::ResetAllOnActor(*Actor);
+					break;
+				}
+			}
+		}
 	}
 }
 

@@ -106,9 +106,28 @@ void UDirtComponent::WashOff()
 		}
 	}
 
-	if (AActor* OwnerActor = GetOwner())
+	// 이전엔 OwnerActor->RemoveComponent(this) 로 컴포넌트를 destroy 했으나,
+	// CarWash 페이즈 replay 시 dirt 를 다시 dirty 상태로 되돌릴 수 있도록 컴포넌트는 보존하고
+	// 가시성만 off 한다. ResetWash 가 다시 켜는 진입점.
+	SetVisibility(false);
+}
+
+void UDirtComponent::ResetWash()
+{
+	bWashed      = false;
+	CurrentAlpha = InitialAlpha;
+	SetColor(FVector4(DirtColor, CurrentAlpha));
+	SetVisibility(true);
+}
+
+void UDirtComponent::ResetAllOnActor(AActor& Actor)
+{
+	for (UActorComponent* Component : Actor.GetComponents())
 	{
-		OwnerActor->RemoveComponent(this);
+		if (UDirtComponent* Dirt = Cast<UDirtComponent>(Component))
+		{
+			Dirt->ResetWash();
+		}
 	}
 }
 
