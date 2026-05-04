@@ -104,16 +104,9 @@ public:
 	bool IsRuntimeCursorVisible() const { return bRuntimeCursorVisible; }
 	void SetRuntimeCursorLocked(bool bLocked);
 	bool IsRuntimeCursorLocked() const { return bRuntimeCursorLocked; }
-	void SetTimeScale(float InTimeScale);
-	float GetTimeScale() const { return TimeScale; }
-	float GetDeltaTime() const { return LastDeltaTime; }
-	float GetUnscaledDeltaTime() const { return LastUnscaledDeltaTime; }
-	double GetGameTime() const { return GameTimeSeconds; }
-	double GetRealTime() const { return RealTimeSeconds; }
 	virtual void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) {}
 
 protected:
-	void UpdateTimeState(float DeltaTime);
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
 	virtual void WorldTick(float DeltaTime);
@@ -136,11 +129,6 @@ protected:
 	ERuntimeInputMode RuntimeInputMode = ERuntimeInputMode::GameOnly;
 	bool bRuntimeCursorVisible = false;
 	bool bRuntimeCursorLocked = true;
-	float TimeScale = 1.0f;
-	float LastDeltaTime = 0.0f;
-	float LastUnscaledDeltaTime = 0.0f;
-	double GameTimeSeconds = 0.0;
-	double RealTimeSeconds = 0.0;
 	bool bPendingSceneOpen = false;
 	FString PendingSceneOpenPath;
 	FString CurrentScenePath;

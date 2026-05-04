@@ -97,8 +97,12 @@ public:
 	void UpdateOverlaps();
     void CheckPendingKill();
 
-	void SetGlobalTimeScale(float NewTimeScale) { GlobalTimeScale = NewTimeScale; }
+	void SetGlobalTimeScale(float NewTimeScale);
     float GetGlobalTimeScale() const { return GlobalTimeScale; }
+	float GetDeltaTime() const { return LastDeltaTime; }
+	float GetUnscaledDeltaTime() const { return LastUnscaledDeltaTime; }
+	double GetGameTime() const { return GameTimeSeconds; }
+	double GetRealTime() const { return RealTimeSeconds; }
 
 private:
 	EWorldType WorldType = EWorldType::Editor;
@@ -111,4 +115,8 @@ private:
     TMap<int32, FActorDestroyedListener> ActorDestroyedListeners;
 
 	float GlobalTimeScale = 1;
+	float LastDeltaTime = 0.0f;
+	float LastUnscaledDeltaTime = 0.0f;
+	double GameTimeSeconds = 0.0;
+	double RealTimeSeconds = 0.0;
 };

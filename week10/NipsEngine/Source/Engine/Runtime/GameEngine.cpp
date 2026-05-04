@@ -191,7 +191,6 @@ void UGameEngine::BeginPlay()
 
 void UGameEngine::Tick(float DeltaTime)
 {
-    UpdateTimeState(DeltaTime);
     InputSystem& Input = InputSystem::Get();
     MaintainGameInputCapture(Input);
     Input.Tick();
@@ -851,7 +850,10 @@ void UGameEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
     PlayerController = nullptr;
     UnloadAllRmlUIDocuments();
     GetAudioSystem().StopAll();
-    SetTimeScale(1.0f);
+    if (OldWorld)
+    {
+        OldWorld->SetGlobalTimeScale(1.0f);
+    }
 }
 
 void UGameEngine::OnSceneWorldLoaded(UWorld* NewWorld)

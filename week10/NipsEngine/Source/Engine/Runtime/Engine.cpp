@@ -15,7 +15,6 @@
 #include "Runtime/Script/ScriptManager.h"
 #include "Serialization/SceneSaveManager.h"
 
-#include <algorithm>
 #include <chrono>
 #include <filesystem>
 
@@ -64,7 +63,6 @@ void UEngine::BeginPlay()
 
 void UEngine::Tick(float DeltaTime)
 {
-	UpdateTimeState(DeltaTime);
 	InputSystem::Get().Tick();
 	WorldTick(DeltaTime);
 	ProcessPendingSceneOpen();
@@ -143,35 +141,12 @@ bool UEngine::RequestReloadScene()
 	return RequestOpenScene(CurrentScenePath);
 }
 
-void UEngine::SetTimeScale(float InTimeScale)
-{
-	TimeScale = std::max(0.0f, InTimeScale);
-}
-
-void UEngine::UpdateTimeState(float DeltaTime)
-{
-	LastUnscaledDeltaTime = std::max(0.0f, DeltaTime);
-
-	const UWorld* World = GetWorld();
-	const bool bScaleWorldTime =
-		World &&
-		(World->GetWorldType() == EWorldType::Game ||
-		 World->GetWorldType() == EWorldType::PIE);
-
-	LastDeltaTime = bScaleWorldTime ? LastUnscaledDeltaTime * TimeScale : LastUnscaledDeltaTime;
-	RealTimeSeconds += LastUnscaledDeltaTime;
-	GameTimeSeconds += LastDeltaTime;
-}
-
 void UEngine::WorldTick(float DeltaTime)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		const bool bScaleWorldTime =
-			World->GetWorldType() == EWorldType::Game ||
-			World->GetWorldType() == EWorldType::PIE;
-		World->Tick(bScaleWorldTime ? DeltaTime * TimeScale : DeltaTime);
+		World->Tick(DeltaTime);
 		if (FViewportCamera* ActiveCamera = World->GetActiveCamera())
 		{
 			AudioSystem.SetListener(

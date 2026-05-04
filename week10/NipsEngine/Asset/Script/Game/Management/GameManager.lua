@@ -40,7 +40,7 @@ function GameManager:EndPlay()
 end
 
 function GameManager:StartRun()
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
 
     self.isRunning = true
     self.isPaused = false
@@ -61,7 +61,7 @@ function GameManager:Pause()
         return
     end
     self.isPaused = true
-    Engine.API.Time.SetTimeScale(0.0)
+    Engine.API.World.SetTimeScale(0.0)
     self.context.eventBus:Emit("Game.Paused", self:GetSnapshot())
 end
 
@@ -70,7 +70,7 @@ function GameManager:Resume()
         return
     end
     self.isPaused = false
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
     self.context.eventBus:Emit("Game.Resumed", self:GetSnapshot())
 end
 
@@ -83,7 +83,7 @@ function GameManager:FinishRun(reason)
     self.isPaused = false
     self.finishReason = reason or "Finished"
     self.isClear = IsClearReason(self.finishReason)
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
 
     local combo = self.context.managers.Combo
     if combo and combo.CloseCombo then
@@ -103,7 +103,7 @@ function GameManager:CancelRun(reason)
     self.isPaused = false
     self.finishReason = reason or "Canceled"
     self.isClear = false
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
     self.context.eventBus:Emit("Game.Canceled", self:GetSnapshot())
 end
 

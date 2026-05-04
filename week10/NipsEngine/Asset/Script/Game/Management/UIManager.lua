@@ -161,7 +161,7 @@ function UIManager:TickTitleLogoAnimation(dt)
         return
     end
 
-    local realDt = Engine.API.Time.GetUnscaledDeltaTime()
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
     if realDt == nil or realDt <= 0.0 then
         realDt = dt or 0.0
     end

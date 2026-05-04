@@ -431,6 +431,10 @@ void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
     assert(Index < 4 && "Index Out of Bound");
 
     FViewportRenderResource& Res = ViewportResources[Index];
+    if (VP && VP->GetRenderTargetSet() == &Res.RenderTargetSet)
+    {
+        VP->SetRenderTargetSet(nullptr);
+    }
 	ReleaseRenderResource(Res);
 }
 
@@ -552,6 +556,7 @@ void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
     Res.FXAASRV.Reset();
     Res.FXAATex.Reset();
 
+    Res.RenderTargetSet = FRenderTargetSet();
     Res.Width = 0;
     Res.Height = 0;
 }

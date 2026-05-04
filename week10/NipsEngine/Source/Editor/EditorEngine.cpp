@@ -319,7 +319,6 @@ void UEditorEngine::Tick(float DeltaTime)
     const EViewportPlayState StateAtFrameStart = GetEditorState();
 
     const auto UpdateStart = std::chrono::steady_clock::now();
-    UpdateTimeState(DeltaTime);
     const auto UpdateEnd = std::chrono::steady_clock::now();
 
     const auto PlayRequestStart = std::chrono::steady_clock::now();
@@ -701,7 +700,10 @@ void UEditorEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
 
     UnloadAllRmlUIDocuments();
     GetAudioSystem().StopAll();
-    SetTimeScale(1.0f);
+    if (OldWorld)
+    {
+        OldWorld->SetGlobalTimeScale(1.0f);
+    }
 }
 
 void UEditorEngine::OnSceneWorldLoaded(UWorld* NewWorld)
@@ -1423,10 +1425,7 @@ void UEditorEngine::WorldTick(float DeltaTime)
         if (!Ctx.World || Ctx.bPaused)
             continue;
 
-        const bool bScaleWorldTime =
-            Ctx.World->GetWorldType() == EWorldType::Game ||
-            Ctx.World->GetWorldType() == EWorldType::PIE;
-        Ctx.World->Tick(bScaleWorldTime ? DeltaTime * TimeScale : DeltaTime);
+        Ctx.World->Tick(DeltaTime);
     }
 
     ProcessPendingSceneOpen();
@@ -1804,7 +1803,7 @@ void UEditorEngine::StartPlaySessionNow()
     bPendingSceneOpen = false;
     PendingSceneOpenPath.clear();
     CurrentScenePath = MainPanel.GetSceneWidget().GetCurrentSceneFilePath();
-    SetTimeScale(1.0f);
+    SourceWorld->SetGlobalTimeScale(1.0f);
     SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
     UnloadGameplayRmlUIDocuments();
     FScriptManager::Get().ResetLuaState();
@@ -1913,7 +1912,10 @@ void UEditorEngine::StopPlaySessionNow()
     bPendingSceneOpen = false;
     PendingSceneOpenPath.clear();
     CurrentScenePath.clear();
-    SetTimeScale(1.0f);
+    if (UWorld* World = GetWorld())
+    {
+        World->SetGlobalTimeScale(1.0f);
+    }
     SetRuntimeInputMode(ERuntimeInputMode::GameAndUI);
 
     int32 FocusedIdx = (ActivePIEViewportIndex >= 0) ? ActivePIEViewportIndex : ViewportLayout.GetLastFocusedViewportIndex();

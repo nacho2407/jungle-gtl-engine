@@ -10,7 +10,7 @@ end
 
 function ResultState:Enter(context, snapshot)
     self.snapshot = snapshot or {}
-    Engine.API.Time.SetTimeScale(0.0)
+    Engine.API.World.SetTimeScale(0.0)
     if self.snapshot.isClear == true then
         context.managers.Sound:PlayBGM(context.managers.Sound.BGM.Clear, 0.5)
     else
@@ -22,10 +22,10 @@ function ResultState:Enter(context, snapshot)
 
     self.uiHandle = context.eventBus:Subscribe("UI.Action", self, function(event)
         if event.name == "RestartGame" then
-            Engine.API.Time.SetTimeScale(1.0)
+            Engine.API.World.SetTimeScale(1.0)
             context.managers.Game:Restart()
         elseif event.name == "BackToTitle" then
-            Engine.API.Time.SetTimeScale(1.0)
+            Engine.API.World.SetTimeScale(1.0)
             if context.root:OpenMainScene() then
                 return
             end
@@ -43,7 +43,7 @@ function ResultState:Exit(context)
     self.uiHandle = nil
     self.snapshot = nil
     context.managers.UI:HideOverlay("Result")
-    Engine.API.Time.SetTimeScale(1.0)
+    Engine.API.World.SetTimeScale(1.0)
 end
 
 return ResultState

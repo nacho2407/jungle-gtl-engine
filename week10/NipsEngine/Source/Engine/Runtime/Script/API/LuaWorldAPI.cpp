@@ -313,9 +313,41 @@ namespace FLuaEngineAPI
 
 		World["SetTimeScale"] = [](float NewTimeScale) {
             UWorld* ActiveWorld = GetEngineAPIWorld();
-            ActiveWorld->SetGlobalTimeScale(NewTimeScale);
+            if (ActiveWorld)
+            {
+                ActiveWorld->SetGlobalTimeScale(NewTimeScale);
+            }
         };
 
+        World["GetTimeScale"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetGlobalTimeScale() : 1.0f;
+        };
+
+        World["GetDeltaTime"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetDeltaTime() : 0.0f;
+        };
+
+        World["GetUnscaledDeltaTime"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetUnscaledDeltaTime() : 0.0f;
+        };
+
+        World["GetGameTime"] = []() -> double
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetGameTime() : 0.0;
+        };
+
+        World["GetRealTime"] = []() -> double
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetRealTime() : 0.0;
+        };
 
         API["World"] = World;
     }

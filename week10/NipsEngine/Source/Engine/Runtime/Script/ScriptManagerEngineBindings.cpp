@@ -13,7 +13,6 @@ void FScriptManager::BindEngineAPI()
     sol::table Engine = GLuaState->create_table();
     sol::table API = GLuaState->create_table();
 
-    FLuaEngineAPI::BindTime(*GLuaState, API);
     FLuaEngineAPI::BindInput(*GLuaState, API);
     FLuaEngineAPI::BindSave(*GLuaState, API);
     FLuaEngineAPI::BindJson(*GLuaState, API);
