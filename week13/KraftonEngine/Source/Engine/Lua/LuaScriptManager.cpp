@@ -450,6 +450,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
 		sol::base_classes, sol::bases<USceneComponent>(),
+		"SetSimulatePhysics", &UPrimitiveComponent::SetSimulatePhysics,
+		"GetSimulatePhysics", &UPrimitiveComponent::GetSimulatePhysics,
+		"AddForce", &UPrimitiveComponent::AddForce,
+		"AddForceAtLocation", &UPrimitiveComponent::AddForceAtLocation,
+		"AddTorque", &UPrimitiveComponent::AddTorque,
 		"GetLinearVelocity", &UPrimitiveComponent::GetLinearVelocity,
 		"SetLinearVelocity", &UPrimitiveComponent::SetLinearVelocity,
 		"GetAngularVelocity", &UPrimitiveComponent::GetAngularVelocity,
@@ -555,6 +560,29 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetCamera", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UCameraComponent>();
+	},
+
+		"GetRootPrimitiveComponent", [](AActor& Actor) -> UPrimitiveComponent*
+	{
+		return Cast<UPrimitiveComponent>(Actor.GetRootComponent());
+	},
+
+		"GetPrimitiveComponent", [](AActor& Actor) -> UPrimitiveComponent*
+	{
+		return Actor.GetComponentByClass<UPrimitiveComponent>();
+	},
+
+		"GetPrimitiveComponentByName", [](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
+	{
+		for (UActorComponent* Component : Actor.GetComponents())
+		{
+			UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+			if (PrimitiveComponent && PrimitiveComponent->GetFName().ToString() == ComponentName)
+			{
+				return PrimitiveComponent;
+			}
+		}
+		return nullptr;
 	},
 
 		"GetComponentByName", [](AActor& Actor, const FString& ComponentName) -> USceneComponent*
