@@ -167,6 +167,9 @@ REGISTER_FACTORY(ABullet)
 DEFINE_CLASS(ADestructibleActor, AActor)
 REGISTER_FACTORY(ADestructibleActor)
 
+DEFINE_CLASS(ABoundsBoxActor, AActor)
+REGISTER_FACTORY(ABoundsBoxActor)
+
 DEFINE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
 REGISTER_FACTORY(UMainSceneDestructibleComponent)
 
@@ -1242,4 +1245,60 @@ void ABladeSlash::InitDefaultComponents()
 void ABladeSlash::Tick(float DeltaTime)
 {
     AActor::Tick(DeltaTime);
+}
+
+void ABoundsBoxActor::InitDefaultComponents()
+{
+    BoxComponent = AddComponent<UBoxComponent>();
+    BoxComponent->AttachToComponent(GetRootComponent());
+    // 잘린 애들을 무한히 자를 수 없게 제한
+    BoxComponent->SetGenerateOverlapEvents(true);
+    SetRootComponent(BoxComponent);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(BoxComponent);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
+}
+
+void ABoundsBoxActor::Tick(float DeltaTime)
+{
+    AActor::Tick(DeltaTime);
+}
+
+void ABoundsBoxActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+}
+
+void ABoundsBoxActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//Enemy거나 Player일때만 Overlap Event
+    if (!OtherActor->IsA<ADestructibleActor>() && !OtherActor->IsA<ADefaultPlayerActor>())
+        return;
+
+	AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void ABoundsBoxActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+}
+
+void ABoundsBoxActor::PostDuplicate(UObject* Original)
+{
+    // 해당 함수에서 모든 걸 복사하기 때문에 추가로 복사를 고려할 필요 없음
+    AActor::PostDuplicate(Original);
+
+    // 복사된 것중 필요한 Comp 만 연결하는 과정
+    BoxComponent = nullptr;
+
+    for (UActorComponent* Comp : GetComponents())
+    {
+        if (!Comp)
+            continue;
+		if (BoxComponent == nullptr && Comp->IsA<UBoxComponent>())
+        {
+            BoxComponent = static_cast<UBoxComponent*>(Comp);
+        }
+        if (BoxComponent) break;
+    }
 }
