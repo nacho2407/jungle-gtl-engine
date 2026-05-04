@@ -3,7 +3,7 @@ local ObjRegistry = require("ObjRegistry")
 local previousPhase = nil
 
 local function SetDirtyCarVisibleByPhase(phase)
-    obj:SetVisible(phase == ECarGamePhase.CarWash)
+    --obj:SetVisible(phase == ECarGamePhase.CarWash)
 end
 
 function BeginPlay()
