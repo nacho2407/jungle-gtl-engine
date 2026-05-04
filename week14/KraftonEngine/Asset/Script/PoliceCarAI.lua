@@ -1,4 +1,5 @@
 -- PoliceCarAI.lua
+local ObjRegistry = require("ObjRegistry")
 -- APoliceCar의 추적 AI. obj는 APoliceCar 인스턴스로 spawn된다.
 -- 게임모드가 EscapePolice 페이즈 진입 시 동적 spawn, 이탈/잡힘 시 destroy 한다.
 --
@@ -81,6 +82,7 @@ end
 
 function BeginPlay()
     police = obj:AsPoliceCar()
+    ObjRegistry.RegisterPoliceCar(police)
     resetAIState()
 end
 

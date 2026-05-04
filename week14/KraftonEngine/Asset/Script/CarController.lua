@@ -10,8 +10,14 @@ local ENGINE_MAX_PITCH_SPEED = 100.0
 local CRASH_SOUND_COOLDOWN = 0.25
 local CRASH_MIN_SPEED = 5.0
 local CRASH_MAX_SPEED = 50.0
+local SIREN_LOOP_SOUND_NAME = "Siren"
+local SIREN_LOOP_NAME = "PoliceSirenLoop"
+local SIREN_MIN_DISTANCE = 8.0
+local SIREN_MAX_DISTANCE = 90.0
+local SIREN_MAX_VOLUME = 0.85
 local elapsedTime = 0.0
 local lastCrashSoundTime = -999.0
+local bSirenLoopPlaying = false
 
 local handleComp = nil
 local wheelComp0 = nil
@@ -89,8 +95,42 @@ local function UpdateWheelSteeringRotation(steering, dt)
     end
 end
 
+local function SetSirenLoopPlaying(bShouldPlay)
+    if bShouldPlay == bSirenLoopPlaying then
+        return
+    end
+
+    bSirenLoopPlaying = bShouldPlay
+    if bSirenLoopPlaying then
+        AudioManager.PlayLoop(SIREN_LOOP_SOUND_NAME, SIREN_LOOP_NAME, 0.0, 1.0)
+    else
+        AudioManager.StopLoop(SIREN_LOOP_NAME)
+    end
+end
+
+local function UpdatePoliceSiren(phase)
+    if phase ~= ECarGamePhase.EscapePolice then
+        SetSirenLoopPlaying(false)
+        return
+    end
+
+    local nearestDistance = ObjRegistry.GetNearestPoliceDistance(car.Location)
+    if nearestDistance == nil or nearestDistance >= SIREN_MAX_DISTANCE then
+        SetSirenLoopPlaying(false)
+        return
+    end
+
+    local distanceRatio = (nearestDistance - SIREN_MIN_DISTANCE) / (SIREN_MAX_DISTANCE - SIREN_MIN_DISTANCE)
+    distanceRatio = math.max(math.min(distanceRatio, 1.0), 0.0)
+    local volumeRatio = 1.0 - distanceRatio
+
+    SetSirenLoopPlaying(true)
+    AudioManager.SetLoopVolume(SIREN_LOOP_NAME, SIREN_MAX_VOLUME * volumeRatio)
+end
+
 function EndPlay()
     AudioManager.StopLoop(ENGINE_LOOP_NAME)
+    SetSirenLoopPlaying(false)
 end
 
 function OnOverlap(OtherActor)
@@ -125,8 +165,10 @@ function Tick(dt)
 
     local gs = GetGameState()
     if gs == nil then return false end
+    local phase = gs:GetPhase()
+    UpdatePoliceSiren(phase)
 
-    if gs:GetPhase() == ECarGamePhase.CarWash or gs:GetPhase() == ECarGamePhase.CarGas then
+    if phase == ECarGamePhase.CarWash or phase == ECarGamePhase.CarGas then
         movement:StopImmediately()
         movement:SetThrottleInput(0)
         movement:SetSteeringInput(0)
