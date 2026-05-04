@@ -557,6 +557,19 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Actor.GetComponentByClass<UCameraComponent>();
 	},
 
+		"GetComponentByName", [](AActor& Actor, const FString& ComponentName) -> USceneComponent*
+	{
+		for (UActorComponent* Component : Actor.GetComponents())
+		{
+			USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
+			if (SceneComponent && SceneComponent->GetFName().ToString() == ComponentName)
+			{
+				return SceneComponent;
+			}
+		}
+		return nullptr;
+	},
+
 		"UUID", sol::property([](AActor& Actor)
 	{
 		return Actor.GetUUID();
