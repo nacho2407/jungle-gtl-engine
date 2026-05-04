@@ -4,7 +4,8 @@ body
     height: 100%;
     margin: 0px;
     background-color: transparent;
-    font-family: "Malgun Gothic";
+    font-family: "Nexon Lv1 Gothic";
+    font-weight: normal;
     font-size: 20px;
     color: rgb(238, 242, 247);
 }
@@ -46,6 +47,7 @@ body
 {
     margin-bottom: 34px;
     font-size: 46px;
+    font-weight: bold;
     color: rgb(255, 248, 232);
 }
 

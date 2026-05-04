@@ -4,7 +4,8 @@ body
     height: 100%;
     margin: 0px;
     background-color: transparent;
-    font-family: "Malgun Gothic";
+    font-family: "Nexon Lv1 Gothic";
+    font-weight: normal;
     font-size: 20px;
     color: rgb(238, 242, 247);
 }
@@ -102,6 +103,7 @@ body
     text-align: center;
     color: rgb(255, 145, 48);
     font-size: 34px;
+    font-weight: bold;
 }
 
 .score-wrap
@@ -132,6 +134,7 @@ body
     text-align: right;
     color: rgb(255, 248, 232);
     font-size: 25px;
+    font-weight: bold;
 }
 
 .combo-wrap
@@ -150,6 +153,7 @@ body
     height: 42px;
     color: rgb(255, 145, 48);
     font-size: 34px;
+    font-weight: bold;
 }
 
 .combo-bonus
