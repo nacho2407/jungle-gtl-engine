@@ -78,6 +78,10 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	{
 		return UDirtComponent::AreAllDirtComponentsWashed(Actor);
 	};
+	ActorType["CountUnwashedDirtComponents"] = [](AActor& Actor)
+	{
+		return UDirtComponent::CountUnwashedDirtComponents(Actor);
+	};
 	ActorType["SetVisible"] = [](AActor& Actor, bool bVisible)
 	{
 		Actor.SetVisible(bVisible);

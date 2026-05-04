@@ -24,6 +24,7 @@ public:
 	static void SetCarWashStreamVisible(AActor& Actor, bool bVisible);
 	static bool IsCarWashStreamVisible(AActor& Actor);
 	static bool AreAllDirtComponentsWashed(AActor& Actor);
+	static int32 CountUnwashedDirtComponents(AActor& Actor);
 	static void ResetAllOnActor(AActor& Actor);   // Actor 의 모든 UDirtComponent ResetWash
 	static bool WashFirstHitDirt(UWorld* World, const FVector& Start, const FVector& Direction, float MaxDistance);
 

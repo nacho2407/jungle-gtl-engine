@@ -1,4 +1,4 @@
-#include "Game/Component/CompletionOutlineComponent.h"
+﻿#include "Game/Component/CompletionOutlineComponent.h"
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -52,7 +52,7 @@ void UCompletionOutlineComponent::CreateRenderState()
 	{
 		if (UWorld* World = OwnerActor->GetWorld())
 		{
-			World->GetScene().SetProxySelected(GetSceneProxy(), true);
+			World->GetScene().SetProxyOutlineOnly(GetSceneProxy(), true);
 		}
 	}
 }
@@ -63,7 +63,7 @@ void UCompletionOutlineComponent::DestroyRenderState()
 	{
 		if (UWorld* World = OwnerActor->GetWorld())
 		{
-			World->GetScene().SetProxySelected(GetSceneProxy(), false);
+			World->GetScene().SetProxyOutlineOnly(GetSceneProxy(), false);
 		}
 	}
 

@@ -349,23 +349,34 @@ EPhaseResult AGameModeCarGame::JudgePhaseResult(ECarGamePhase Phase) const
 	{
 	case ECarGamePhase::CarWash:
 	{
-		// v1: car에 부착된 모든 UDirtComponent 가 IsWashed 면 Success.
-		// 향후 ratio 기반 정밀 판정으로 확장 예정.
 		UWorld* World = GetWorld();
 		if (!World) return EPhaseResult::Failed;
 
-		AActor* DirtyCar = nullptr;
+		AActor* DirtOwner = nullptr;
 		for (AActor* Actor : World->GetActors())
 		{
-			if (Actor && Actor->GetFName() == FName("DirtyCar"))
+			if (!Actor)
 			{
-				DirtyCar = Actor;
+				continue;
+			}
+
+			for (UActorComponent* Component : Actor->GetComponents())
+			{
+				if (Cast<UDirtComponent>(Component))
+				{
+					DirtOwner = Actor;
+					break;
+				}
+			}
+
+			if (DirtOwner)
+			{
 				break;
 			}
 		}
 
-		if (!DirtyCar) return EPhaseResult::Failed;
-		return UDirtComponent::AreAllDirtComponentsWashed(*DirtyCar)
+		if (!DirtOwner) return EPhaseResult::Failed;
+		return UDirtComponent::AreAllDirtComponentsWashed(*DirtOwner)
 			? EPhaseResult::Success : EPhaseResult::Failed;
 	}
 	case ECarGamePhase::CarGas:

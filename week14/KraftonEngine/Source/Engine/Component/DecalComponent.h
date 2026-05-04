@@ -52,7 +52,6 @@ protected:
 private:
 	void HandleFade(float DeltaTime);
 	void UpdateReceivers();
-	void DrawDebugBox();
 
 private:
 	FConvexVolume ConvexVolume;

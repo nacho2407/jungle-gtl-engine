@@ -5,7 +5,11 @@ local gunForwardOffset = 1.0
 local gunRightOffset = 0.3
 local WATER_LOOP_SOUND_NAME = "Water"
 local WATER_LOOP_NAME = "CarWashWaterLoop"
+local COMPLETE_SOUND_NAME = "Complete"
+local COMPLETE_SOUND_PATH = "complete.mp3"
 local bWaterLoopPlaying = false
+local previousUnwashedDirtCount = nil
+local bCompleteSoundLoaded = false
 
 local function UpdateCarWasherTransform()
     local man = ObjRegistry.manObj
@@ -20,6 +24,8 @@ end
 
 function BeginPlay()
     ObjRegistry.RegisterCarWasher(obj)
+    LoadAudio(COMPLETE_SOUND_NAME, COMPLETE_SOUND_PATH)
+    bCompleteSoundLoaded = true
     obj:SetVisible(false)
     obj:SetCarWashStreamVisible(false)
 end 
@@ -37,6 +43,27 @@ local function SetWaterLoopPlaying(bShouldPlay)
     end
 end
 
+local function PlayDirtCompleteSound()
+    if not bCompleteSoundLoaded then
+        LoadAudio(COMPLETE_SOUND_NAME, COMPLETE_SOUND_PATH)
+        bCompleteSoundLoaded = true
+    end
+
+    AudioManager.Play(COMPLETE_SOUND_NAME, 1.0)
+end
+
+local function UpdateDirtCompleteSound(car)
+    local unwashedDirtCount = car:CountUnwashedDirtComponents()
+    if previousUnwashedDirtCount ~= nil and unwashedDirtCount < previousUnwashedDirtCount then
+        for i = 1, previousUnwashedDirtCount - unwashedDirtCount do
+            PlayDirtCompleteSound()
+        end
+    end
+
+    previousUnwashedDirtCount = unwashedDirtCount
+    return unwashedDirtCount
+end
+
 function EndPlay()
     SetWaterLoopPlaying(false)
 end
@@ -52,8 +79,10 @@ function Tick(dt)
         previousPhase = phase
         if bIsCarWashPhase then
             bCarWashSucceeded = false
+            previousUnwashedDirtCount = nil
             obj:SetVisible(true)
         else
+            previousUnwashedDirtCount = nil
             obj:SetVisible(false)
             obj:SetCarWashStreamVisible(false)
             SetWaterLoopPlaying(false)
@@ -72,13 +101,16 @@ function Tick(dt)
         end
 
         local car = ObjRegistry.dirtyCar
-        if not bCarWashSucceeded and car ~= nil and car:AreAllDirtComponentsWashed() then
-            bCarWashSucceeded = true
-            obj:SetCarWashStreamVisible(false)
-            SetWaterLoopPlaying(false)
-            local gameMode = GetGameMode()
-            if gameMode ~= nil then
-                gameMode:SuccessPhase()
+        if car ~= nil then
+            local unwashedDirtCount = UpdateDirtCompleteSound(car)
+            if not bCarWashSucceeded and unwashedDirtCount == 0 then
+                bCarWashSucceeded = true
+                obj:SetCarWashStreamVisible(false)
+                SetWaterLoopPlaying(false)
+                local gameMode = GetGameMode()
+                if gameMode ~= nil then
+                    gameMode:SuccessPhase()
+                end
             end
         end
     else
