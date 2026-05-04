@@ -150,6 +150,12 @@ void UEditorEngine::Tick(float DeltaTime)
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 	SelectionManager.Tick();
+
+	// UGameEngine::Tick 은 UEngine::Tick 으로 위임해 자동 처리되지만, UEditorEngine 은
+	// 자체 Tick 으로 분기해서 누락. PIE 에서 World::DestroyActor 가 MarkPendingKill 만
+	// 하고 끝나면 객체가 영구적으로 GUObjectSet 에 남아 IsValid 가 true 를 계속 리턴 →
+	// MeteorSpawner.lua 같은 곳에서 dead 메테오를 안 정리해 saturation 발생.
+	UObjectManager::Get().FlushPendingKill();
 }
 
 UCameraComponent* UEditorEngine::GetCamera() const
