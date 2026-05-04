@@ -10,6 +10,7 @@ end
 
 function OnOverlap(OtherActor)
     if ObjRegistry.car ~= nil and OtherActor.UUID == ObjRegistry.car.UUID then
+        print("Car entered gas nozzle trigger")
         bIsOverlapping = true
     end
 end
@@ -32,10 +33,10 @@ function Tick(dt)
             obj.Rotation = manCamera.Rotation
         end
 
-        if bIsOverlapping and ObjRegistry.carGas ~= nil then
-            ObjRegistry.carGas:AddGas(5.0 * dt)
+        if bIsOverlapping and ObjRegistry.car ~= nil then
+            ObjRegistry.car:GetCarGas():AddGas(5.0 * dt)
 
-            if ObjRegistry.carGas:GetGas() >= 100 then
+            if ObjRegistry.car:GetCarGas():GetGas() >= 100 then
                 GetGameMode():SuccessPhase()
             end
         end

@@ -3738,7 +3738,7 @@
               "Mass (kg)" : 1.000000,
               "Object Type" : 0,
               "Rotation" : [-9.000000, 1.000000, -180.000000],
-              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Scale" : [5.000000, 5.000000, 5.000000],
               "Simulate Physics" : false,
               "Static Mesh" : "Data/FuelNozzle/fuel_nozzle.obj",
               "Two Sided Shadow" : false,
@@ -4328,7 +4328,7 @@
           "Location" : [144.304993, -62.317932, 5.239977],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 90.000000, 0.000000],
+          "Rotation" : [0.000000, 89.999969, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/WaterGun/WaterGun.obj",
@@ -4346,9 +4346,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-85.820892, 73.392769, 29.411638],
+    "Location" : [100.464745, -130.924744, 3.456294],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 0.257370, 27.964952]
+    "Rotation" : [0.000000, 0.257370, 27.964964]
   },
   "Version" : 2,
   "WorldSettings" : {
