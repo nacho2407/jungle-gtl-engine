@@ -28,7 +28,7 @@ local quests = {
     {
         id = "hitPerson",
         uiKey = "personQuest",
-        targetName = "ATriggerVolumeBase_2",
+        targetName = "EscapePolice",
         fallbackTargetName = nil,
         phase = ECarGamePhase.EscapePolice
     }
@@ -82,7 +82,15 @@ local function OnPhaseChanged(phase)
             end)
         end
     elseif phase == ECarGamePhase.Finished then
-        print("Run Lua logic for Finished")
+        local outcome = EFinishOutcome.None
+        local score = 0
+        if gameState ~= nil then
+            outcome = gameState:GetFinishOutcome()
+            score = gameState:GetScore()
+        end
+        UIManager.ShowGameOver(outcome, score)
+        Engine.PauseGame()
+        print("Run Lua logic for Finished, outcome=" .. tostring(outcome) .. ", score=" .. tostring(score))
     end
 end
 
