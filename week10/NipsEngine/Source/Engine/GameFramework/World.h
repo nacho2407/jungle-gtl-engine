@@ -97,6 +97,9 @@ public:
 	void UpdateOverlaps();
     void CheckPendingKill();
 
+	void SetGlobalTimeScale(float NewTimeScale) { GlobalTimeScale = NewTimeScale; }
+    float GetGlobalTimeScale() const { return GlobalTimeScale; }
+
 private:
 	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
@@ -106,4 +109,6 @@ private:
 
 	int32 NextActorDestroyedListenerId = 1;
     TMap<int32, FActorDestroyedListener> ActorDestroyedListeners;
+
+	float GlobalTimeScale = 1;
 };
