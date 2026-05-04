@@ -3549,7 +3549,7 @@
       }
     }, {
       "ClassName" : "ATriggerVolumeBase",
-      "Name" : "ATriggerVolumeBase_2",
+      "Name" : "EscapePolice",
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-142.095993, 201.179596, 27.956924],
@@ -3856,14 +3856,14 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 488",
-              "Visible" : true,
+              "Visible" : false,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UDecalComponent",
         "Properties" : {
-          "Cast Shadow" : true,
+          "Cast Shadow" : false,
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
           "Collision Enabled" : 0,
           "Collision Responses" : {
@@ -4260,7 +4260,7 @@
         }],
       "Properties" : {
         "Location" : [144.304993, -62.317932, 5.239977],
-        "Rotation" : [-0.000000, 89.999985, 0.000000],
+        "Rotation" : [-0.000000, 89.999977, 0.000000],
         "Scale" : [5.000000, 5.000000, 5.000000],
         "Tags" : "",
         "Visible" : true
@@ -4346,9 +4346,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [111.669823, -42.451359, 21.357510],
+    "Location" : [-85.820892, 73.392769, 29.411638],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000000, 21.107328, -16.734861]
+    "Rotation" : [0.000000, 0.257370, 27.964952]
   },
   "Version" : 2,
   "WorldSettings" : {
