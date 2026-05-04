@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Mesh/PreviewSphere_Inst_6.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Map/T_Aircon_N.png"
+          }],
+        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+      }

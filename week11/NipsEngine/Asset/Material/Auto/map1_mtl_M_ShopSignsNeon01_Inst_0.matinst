@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/map1_mtl_M_ShopSignsNeon01_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.200000, 0.200000, 0.000000]
+          }],
+        "Parent" : "Asset/Material/Auto/map1_mtl_M_ShopSignsNeon01.mat"
+      }

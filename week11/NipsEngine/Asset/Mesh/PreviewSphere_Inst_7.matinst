@@ -1,0 +1,37 @@
+{
+        "Name" : "Asset/Mesh/PreviewSphere_Inst_7.matinst",
+        "OverridedParams" : [{
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 0.000000]
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/Decal/T_Graffiti12_MSK.png"
+          }, {
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : true
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 250.000000
+          }, {
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.360000
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 0.000000]
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 1.000000]
+          }, {
+            "Name" : "AmbientColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 1.000000]
+          }],
+        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+      }
