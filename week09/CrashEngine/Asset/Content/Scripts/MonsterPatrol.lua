@@ -13,6 +13,7 @@ local AttackRange = 25.0
 local ShotCooldown = 1.5
 local BulletSpawnHeight = 1.5
 local BulletSpawnForwardOffset = 2.0
+local PlayerAimOffset = Vector.new(0.0, 0.0, -1.0)
 
 local function atan2(y, x)
     if math.atan2 ~= nil then
@@ -71,7 +72,7 @@ local function fireAtPlayer(player)
         return
     end
 
-    local targetLocation = player.Location + Vector.new(0.0, 0.0, 1.0)
+    local targetLocation = player.Location + PlayerAimOffset
     local toPlayer = targetLocation - obj.Location
     if toPlayer:LengthSquared() <= 0.0001 then
         return
