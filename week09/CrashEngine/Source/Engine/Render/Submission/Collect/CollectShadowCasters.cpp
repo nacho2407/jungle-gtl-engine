@@ -6,6 +6,7 @@
 #include "Render/Resources/Shadows/ShadowMapSettings.h"
 #include "Render/Submission/Atlas/ShadowAtlasTypes.h"
 #include "Render/Scene/Proxies/Light/LightProxy.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -77,6 +78,19 @@ float SnapToTexel(float Value, float WorldUnitsPerTexel)
     }
 
     return std::floor(Value / WorldUnitsPerTexel + 0.5f) * WorldUnitsPerTexel;
+}
+
+void RemoveNonShadowCasters(TArray<FPrimitiveProxy*>& Proxies)
+{
+    Proxies.erase(
+        std::remove_if(
+            Proxies.begin(),
+            Proxies.end(),
+            [](const FPrimitiveProxy* Proxy)
+            {
+                return !Proxy || !Proxy->bVisible || !Proxy->bCastShadow;
+            }),
+        Proxies.end());
 }
 } // namespace
 
@@ -497,6 +511,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
             const FConvexVolume& CasterQueryFrustum =
                 GetShadowMapMethod() == EShadowMapMethod::PSM ? SceneView->FrustumVolume : Light->ShadowViewFrustum;
             World->GetPartition().QueryFrustumAllProxies(CasterQueryFrustum, Light->VisibleShadowCasters);
+            RemoveNonShadowCasters(Light->VisibleShadowCasters);
             continue;
         }
 
@@ -505,6 +520,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
             ComputeSpotShadowMatrices(Light);
             Light->ShadowViewFrustum.UpdateFromMatrix(Light->LightViewProj);
             World->GetPartition().QueryFrustumAllProxies(Light->ShadowViewFrustum, Light->VisibleShadowCasters);
+            RemoveNonShadowCasters(Light->VisibleShadowCasters);
             continue;
         }
 
@@ -513,6 +529,7 @@ void FDrawCollector::CollectShadowCasters(UWorld* World, const FSceneView* Scene
             ComputePointShadowMatrices(Light);
             Light->ShadowViewFrustum.UpdateFromMatrix(Light->LightViewProj);
             World->GetPartition().QuerySphereAllProxies({LC.Position, LC.AttenuationRadius}, Light->VisibleShadowCasters);
+            RemoveNonShadowCasters(Light->VisibleShadowCasters);
         }
     }
 }
