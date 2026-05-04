@@ -11,6 +11,10 @@ function BeginPlay()
     SetDirtyCarVisibleByPhase(ECarGamePhase.None)
 end
 
+function EndPlay()
+    ObjRegistry.UnregisterDirtyCar(obj)
+end
+
 function Tick(dt)
     local gs = GetGameState()
     if gs == nil then return false end

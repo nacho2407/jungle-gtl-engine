@@ -34,6 +34,7 @@ end
 
 function EndPlay()
     SetFuelingLoopPlaying(false)
+    ObjRegistry.UnregisterGasNozzle(obj)
 end
 
 function OnOverlap(OtherActor)
