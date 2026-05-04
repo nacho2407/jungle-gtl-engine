@@ -193,7 +193,14 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 {
 	FWorldContext LoadContext;
 	FPerspectiveCameraData CameraData;
-	FSceneSaveManager::LoadSceneFromJSON(InScenePath, LoadContext, CameraData);
+
+	// LoadSceneFromJSON 에 Game 으로 override 전달 — actor deserialize 전에 World 의
+	// WorldType 이 Game 으로 set 되어, EditorOnly billboard 컴포넌트의 SceneProxy 가 안
+	// 만들어진다. (이 override 없으면 default Editor 라 빌보드 프록시가 생기고, 뒤에서
+	// SetWorldType(Game) 해도 이미 만든 프록시는 안 사라짐 — Game 빌드에서 editor 빌보드
+	// 노출되는 버그.)
+	const EWorldType GameType = EWorldType::Game;
+	FSceneSaveManager::LoadSceneFromJSON(InScenePath, LoadContext, CameraData, &GameType);
 
 	if (!LoadContext.World)
 	{
