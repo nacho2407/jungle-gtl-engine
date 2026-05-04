@@ -3995,9 +3995,9 @@
       "Name" : "EscapePolice",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [-142.095993, 201.179596, 27.956924],
+        "Location" : [-19.742960, 81.421501, 4.608842],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [40.000000, 40.000000, 40.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "TriggerTag" : "EscapePolice",
         "Visible" : true
@@ -4006,7 +4006,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Properties" : {
-          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Box Extent" : [3.000000, 3.000000, 3.000000],
           "Cast Shadow" : false,
           "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
           "Collision Enabled" : 1,
@@ -4019,11 +4019,11 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : true,
-          "Location" : [-142.095993, 201.179596, 27.956924],
+          "Location" : [-19.742960, 81.421501, 4.608842],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [40.000000, 40.000000, 40.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -4515,6 +4515,354 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "ADecalActor",
+      "Name" : "PoliceSpawn1",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [3.817901, 100.979530, 2.875780],
+        "Rotation" : [-0.000000, 160.647003, -0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "SpawnPoliceCar",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/SpotLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 1262",
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDecalComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "FadeInDelay" : 0.000000,
+          "FadeInDuration" : 0.000000,
+          "FadeOutDelay" : 0.000000,
+          "FadeOutDuration" : 0.000000,
+          "Generate Overlap Events" : false,
+          "Location" : [3.817901, 100.979530, 2.875780],
+          "Mass (kg)" : 1.000000,
+          "Material" : {
+            "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
+          },
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 160.645966, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ADecalActor",
+      "Name" : "PoliceSpawn2",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-17.377266, 115.464188, 2.975780],
+        "Rotation" : [-0.000000, 175.778091, -0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "SpawnPoliceCar",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/SpotLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 1262",
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDecalComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "FadeInDelay" : 0.000000,
+          "FadeInDuration" : 0.000000,
+          "FadeOutDelay" : 0.000000,
+          "FadeOutDuration" : 0.000000,
+          "Generate Overlap Events" : false,
+          "Location" : [-17.377266, 115.464188, 2.975780],
+          "Mass (kg)" : 1.000000,
+          "Material" : {
+            "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
+          },
+          "Object Type" : 0,
+          "Rotation" : [-0.000000, 175.778091, -0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ADecalActor",
+      "Name" : "PoliceSpawn3",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-35.529869, 95.709526, 3.075779],
+        "Rotation" : [0.000000, -163.353607, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "SpawnPoliceCar",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Generate Overlap Events" : false,
+              "Height" : 1.000000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Material" : {
+                "Path" : "Asset/Materials/Editor/SpotLight.mat"
+              },
+              "Object Type" : 0,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "Width" : 1.000000,
+              "bEditorOnly" : true,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 1262",
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UDecalComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "FadeInDelay" : 0.000000,
+          "FadeInDuration" : 0.000000,
+          "FadeOutDelay" : 0.000000,
+          "FadeOutDuration" : 0.000000,
+          "Generate Overlap Events" : false,
+          "Location" : [-35.529869, 95.709526, 3.075779],
+          "Mass (kg)" : 1.000000,
+          "Material" : {
+            "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
+          },
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -163.353668, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ATriggerVolumeBase",
+      "Name" : "Goal",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [54.424679, 286.537476, 6.375870],
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "GoalTrigger",
+        "TriggerTag" : "GoalTrigger",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [5.000000, 5.000000, 5.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 1,
+          "Collision Responses" : {
+            "Pawn" : 1,
+            "Projectile" : 1,
+            "Trigger" : 1,
+            "WorldDynamic" : 1,
+            "WorldStatic" : 1
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : true,
+          "Location" : [54.424679, 286.537476, 6.375870],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 4,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Loaded Scene",
@@ -4523,9 +4871,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-78.405159, 97.607750, 3.339844],
+    "Location" : [46.762825, 264.497772, 12.614068],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 6.612304, 65.252922]
+    "Rotation" : [0.000000, 11.562897, 65.104401]
   },
   "Version" : 2,
   "WorldSettings" : {
