@@ -169,7 +169,8 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	ScoreboardTable.set_function("GetEntry", &FGameScoreboard::GetEntry);
 
 	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
-		"SuccessPhase", &AGameModeCarGame::SuccessPhase);
+		"SuccessPhase", &AGameModeCarGame::SuccessPhase,
+		"GameOver",     &AGameModeCarGame::GameOver);
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase",              &AGameStateCarGame::GetPhase,

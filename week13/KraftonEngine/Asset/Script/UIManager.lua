@@ -27,6 +27,7 @@ local scoreFeedback = {
     }
 }
 local gameOverScoreRoutine = nil
+local criticalWarningRoutine = nil
 local gasFeedbackActive = false
 local onStartStoryOk = nil
 local onCarWashQuestOk = nil
@@ -243,6 +244,13 @@ local function StopGameOverScoreRoutine()
     end
 end
 
+local function StopCriticalWarningRoutine()
+    if criticalWarningRoutine ~= nil then
+        StopCoroutine(criticalWarningRoutine)
+        criticalWarningRoutine = nil
+    end
+end
+
 local function StartGameOverScoreRoutine(events, finalScore, onComplete)
     StopGameOverScoreRoutine()
 
@@ -339,6 +347,7 @@ function UIManager.Init()
         UIManager.Hide("intro")
         UIManager.Hide("gameOverlay")
         UIManager.Hide("gameOver")
+        UIManager.Hide("criticalWarning")
         UIManager.Hide("scoreboard")
         UIManager.Hide("gasWidget")
         UIManager.Hide("gasFeedback")
@@ -406,6 +415,8 @@ function UIManager.Init()
         AudioManager.Play("Click", 1.0)
         UIManager.Hide("scoreboard")
     end)
+
+    local criticalWarningWidget = UI.CreateWidget("Asset/UI/CriticalWarningWidget.rml")
 
     local carWashQuestWidget = UI.CreateWidget("Asset/UI/CarWashQuestWidget.rml")
     carWashQuestWidget:SetWantsMouse(true)
@@ -496,6 +507,7 @@ function UIManager.Init()
     UIManager.Register("whiteBox", UI.CreateWidget("Asset/UI/PIEWhiteBox.rml"))
     UIManager.Register("contributor", contributorWidget)
     UIManager.Register("scoreboard", scoreboardWidget)
+    UIManager.Register("criticalWarning", criticalWarningWidget)
     UIManager.Register("gameOverlay", UI.CreateWidget("Asset/UI/GameOverlayWidget.rml"))
     UIManager.Register("startStory", startStoryWidget)
     UIManager.Register("carWashQuest", carWashQuestWidget)
@@ -548,6 +560,8 @@ function UIManager.Hide(key)
     if widget ~= nil then
         if key == "gameOver" then
             StopGameOverScoreRoutine()
+        elseif key == "criticalWarning" then
+            StopCriticalWarningRoutine()
         end
         widget:hide()
         return true
@@ -632,6 +646,32 @@ end
 
 function UIManager.SetGasFeedbackActive(active)
     gasFeedbackActive = active == true
+end
+
+function UIManager.ShowCriticalWarning(title, description, duration, onComplete)
+    local widget = widgets["criticalWarning"]
+    if widget == nil then
+        if onComplete ~= nil then
+            onComplete()
+        end
+        return
+    end
+
+    StopCriticalWarningRoutine()
+    UIManager.Show("criticalWarning")
+
+    widget:set_text("critical-warning-title", title or "WARNING")
+    widget:set_text("critical-warning-description", description or "")
+
+    criticalWarningRoutine = StartCoroutine(function()
+        Wait(duration)
+        criticalWarningRoutine = nil
+        UIManager.Hide("criticalWarning")
+
+        if onComplete ~= nil then
+            onComplete()
+        end
+    end)
 end
 
 -- 게임 종료 화면 표시 — outcome 에 따라 타이틀 텍스트 swap.

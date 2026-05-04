@@ -1,0 +1,61 @@
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	background-color: transparent;
+}
+
+#critical-warning-screen {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #120a0add;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	text-align: center;
+}
+
+#critical-warning-line-top,
+#critical-warning-line-bottom {
+	position: absolute;
+	left: 14%;
+	width: 72%;
+	height: 4dp;
+	background-color: #e65353;
+}
+
+#critical-warning-line-top {
+	top: 32%;
+}
+
+#critical-warning-line-bottom {
+	top: 66%;
+}
+
+#critical-warning-title {
+	position: absolute;
+	left: 0%;
+	top: 39%;
+	width: 100%;
+	height: 76dp;
+	color: #ff6666;
+	font-size: 56dp;
+	line-height: 76dp;
+	text-align: center;
+}
+
+#critical-warning-description {
+	position: absolute;
+	left: 10%;
+	top: 53%;
+	width: 80%;
+	height: 34dp;
+	color: #f1c7c7;
+	font-size: 22dp;
+	line-height: 34dp;
+	text-align: center;
+}
