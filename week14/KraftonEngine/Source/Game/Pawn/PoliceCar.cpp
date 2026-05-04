@@ -18,7 +18,7 @@ void APoliceCar::InitDefaultPoliceComponents()
 	// 부모 셋업을 그대로 사용 — 단, LuaCameraScriptFile 은 빈 문자열로 넘겨도
 	// 부모가 ULuaScriptComponent 를 추가하긴 하므로(EnsureDefaultScriptFile 경로),
 	// 추가 후 RemoveComponent 로 해당 컴포넌트를 제거한다.
-	Super::InitDefaultComponents("Data/Truck/TruckBody.obj", "PoliceCarAI.lua", "");
+	Super::InitDefaultComponents("Data/Map/PoliceCar/PoliceCar.obj", "PoliceCarAI.lua", "");
 
 	// 카메라 Lua 제거 — F2 토글 등 player 카메라 입력과 충돌 방지
 	if (ULuaScriptComponent* CamLua = GetLuaCameraScript())
