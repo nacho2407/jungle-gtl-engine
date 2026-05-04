@@ -91,7 +91,7 @@ body
 {
     position: absolute;
     right: 170px;
-    top: 500px;
+    top: 600px;
     width: 500px;
     min-height: 260px;
     z-index: 1;
@@ -111,10 +111,10 @@ body
 .title-button
 {
     display: block;
-    width: 340px;
+    width: 400px;
     height: 64px;
-    margin-left: 8px;
-    margin-bottom: 30px;
+    margin-left: 10px;
+    margin-bottom: 45px;
     padding-top: 24px;
     border-width: 0px;
     decorator: image("Asset/UIImage/TitleButtonDefault.PNG" fill);
@@ -139,17 +139,17 @@ body
 .title-button:active,
 .default-button:active
 {
-    color: rgb(255, 221, 126);
+    color: rgb(255, 255, 255);
 }
 
 .primary
 {
-    color: rgb(255, 244, 214);
+    color: rgb(255, 255, 255);
 }
 
 .danger
 {
-    color: rgb(255, 180, 170);
+    color: rgb(255, 255, 255);
 }
 
 .quick-menu
@@ -342,8 +342,8 @@ sliderarrowinc
 .version-label
 {
     position: absolute;
-    right: 56px;
-    bottom: 40px;
+    right: 36px;
+    bottom: 30px;
     width: 520px;
     font-size: 18px;
     text-align: right;
