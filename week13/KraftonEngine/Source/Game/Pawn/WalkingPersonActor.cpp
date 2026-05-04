@@ -12,6 +12,8 @@
 #include "Math/Vector.h"
 #include "Core/CollisionTypes.h"
 #include "Core/Log.h"
+#include "Core/PropertyTypes.h"
+#include "Serialization/Archive.h"
 
 IMPLEMENT_CLASS(AWalkingPersonActor, AActor)
 
@@ -141,8 +143,13 @@ void AWalkingPersonActor::SpawnTrigger()
 	Trigger = W->SpawnActor<ATriggerVolumeBase>();
 	if (!Trigger) return;
 
-	Trigger->SetFName(FName("EscapePolice"));
-	Trigger->SetTriggerTag(FName("EscapePolice"));
+	// 씬에 사람 여러 명 깔아도 EscapePolice 퀘스트 트리거 역할은 단 한 명만.
+	// bQuestTarget 인 인스턴스에만 태그가 붙어 GameMode TagToPhase 로 라우팅됨.
+	if (bQuestTarget)
+	{
+		Trigger->SetFName(FName("EscapePolice"));
+		Trigger->SetTriggerTag(FName("EscapePolice"));
+	}
 
 	// Default 1m³ → 사람 주변 5×5×3 으로 확장. SetBoxExtent 가 NotifyPhysicsBodyDirty 까지
 	// 호출해 PhysX shape 도 새 사이즈로 rebuild.
@@ -208,4 +215,16 @@ void AWalkingPersonActor::ResetToInitialTransform()
 	{
 		LuaScript->CallFunction("ResetWalkingState");
 	}
+}
+
+void AWalkingPersonActor::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	Ar << bQuestTarget;
+}
+
+void AWalkingPersonActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	Super::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Quest Target", EPropertyType::Bool, "Walking Person", &bQuestTarget });
 }

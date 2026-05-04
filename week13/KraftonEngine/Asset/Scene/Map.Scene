@@ -4527,7 +4527,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 1262",
-              "Visible" : true,
+              "Visible" : false,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
@@ -4571,7 +4571,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-17.377266, 115.464188, 2.975780],
-        "Rotation" : [-0.000000, 175.778046, 0.000000],
+        "Rotation" : [-0.000000, 175.778030, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "SpawnPoliceCar",
         "Visible" : true
@@ -4619,7 +4619,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 1262",
-              "Visible" : true,
+              "Visible" : false,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
@@ -4648,7 +4648,7 @@
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, 175.778076, 0.000000],
+          "Rotation" : [0.000000, 175.778046, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -4711,7 +4711,7 @@
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Text" : "UUID : 1262",
-              "Visible" : true,
+              "Visible" : false,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
@@ -4740,7 +4740,7 @@
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, -163.353577, 0.000000],
+          "Rotation" : [0.000000, -163.353561, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -4834,6 +4834,7 @@
         }],
       "Properties" : {
         "Location" : [-18.299124, 82.216103, 2.917960],
+        "Quest Target" : true,
         "Rotation" : [0.000000, -9.394192, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
@@ -4899,6 +4900,322 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "AWalkingPersonActor",
+      "Name" : "AWalkingPersonActor_1",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [-28.394482, 11.636257, 2.946837],
+        "Quest Target" : false,
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/material_0.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.677000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [89.899994, 0.000000, 0.000000],
+              "Scale" : [1.500000, 1.500000, 1.500000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Map/Person/model_mesh.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-28.394482, 11.636257, 2.946837],
+          "Mass (kg)" : 50.000000,
+          "Object Type" : 2,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AWalkingPersonActor",
+      "Name" : "AWalkingPersonActor_2",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [-6.097270, -9.359831, 2.902926],
+        "Quest Target" : false,
+        "Rotation" : [-0.000000, 166.722321, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/material_0.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.677000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [89.899994, 0.000000, 0.000000],
+              "Scale" : [1.500000, 1.500000, 1.500000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Map/Person/model_mesh.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-6.097270, -9.359831, 2.902926],
+          "Mass (kg)" : 50.000000,
+          "Object Type" : 2,
+          "Rotation" : [0.000000, 166.720520, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AWalkingPersonActor",
+      "Name" : "AWalkingPersonActor_3",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [-23.014721, -119.216591, 2.998577],
+        "Quest Target" : false,
+        "Rotation" : [0.000000, -100.543640, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/material_0.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.677000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [89.899994, 0.000000, 0.000000],
+              "Scale" : [1.500000, 1.500000, 1.500000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Map/Person/model_mesh.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [-23.014721, -119.216591, 2.998577],
+          "Mass (kg)" : 50.000000,
+          "Object Type" : 2,
+          "Rotation" : [0.000000, -100.543686, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AWalkingPersonActor",
+      "Name" : "AWalkingPersonActor_4",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [80.726562, -135.343979, 3.036079],
+        "Quest Target" : false,
+        "Rotation" : [-0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/material_0.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.000000, 0.000000, 0.677000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [89.899994, 0.000000, 0.000000],
+              "Scale" : [1.500000, 1.500000, 1.500000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Map/Person/model_mesh.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UBoxComponent",
+        "Properties" : {
+          "Box Extent" : [1.000000, 1.000000, 1.000000],
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, -0.200000],
+          "Collision Enabled" : 3,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Draw Only If Selected" : false,
+          "Generate Overlap Events" : false,
+          "Location" : [80.726562, -135.343979, 3.036079],
+          "Mass (kg)" : 50.000000,
+          "Object Type" : 2,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "Simulate Physics" : true,
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Loaded Scene",
@@ -4907,9 +5224,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-7.273688, 2.783118, 9.621748],
+    "Location" : [76.408966, -137.301407, 10.124487],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 1.813278, 74.554718]
+    "Rotation" : [0.000000, -5.386383, 71.254303]
   },
   "Version" : 2,
   "WorldSettings" : {
