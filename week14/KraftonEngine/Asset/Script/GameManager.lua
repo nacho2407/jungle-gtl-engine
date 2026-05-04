@@ -61,7 +61,12 @@ local function OnPhaseChanged(phase)
     if phase == ECarGamePhase.CarWash then
         UIManager.FadeOut(0.5, function()
             if ObjRegistry.manObj ~= nil then
-                ObjRegistry.manObj.Location = Vector.new(150, -23, 5)
+                ObjRegistry.manObj.Location = Vector.new(150, -23, 4)
+            end
+
+            if ObjRegistry.car ~= nil then
+                ObjRegistry.car.Location = Vector.new(150, -30, 4)
+                ObjRegistry.car.Rotation = Vector.new(0, 0, 0)
             end
 
             CameraManager.PossessCamera(ObjRegistry.manCamera)
