@@ -322,8 +322,15 @@ void UPrimitiveComponent::DestroyRenderState()
     {
         if (UWorld* World = Owner->GetWorld())
         {
-            World->GetPartition().RemoveSinglePrimitive(this);
-            World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
+            if (!World->IsEndingPlay())
+            {
+                World->GetPartition().RemoveSinglePrimitive(this);
+                World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
+            }
+            else
+            {
+                ClearOctreeLocation();
+            }
         }
     }
 

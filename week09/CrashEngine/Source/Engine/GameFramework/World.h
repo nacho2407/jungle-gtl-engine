@@ -60,6 +60,7 @@ public:
     void EndPlay();                                  // Cleanup before world is destroyed
 
     bool HasBegunPlay() const { return bHasBegunPlay; }
+    bool IsEndingPlay() const { return bIsEndingPlay; }
 
     // Active Camera — EditorViewportClient 또는 PlayerController가 세팅
     void SetActiveCamera(UCameraComponent* InCamera) { ActiveCamera = InCamera; }

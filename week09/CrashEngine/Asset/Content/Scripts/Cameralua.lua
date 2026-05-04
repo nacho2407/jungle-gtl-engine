@@ -94,6 +94,7 @@ local function createAim()
     if AimBillboard:IsValid() then
         AimBillboard:SetMaterial(0, AimMaterial)
         AimBillboard:SetSpriteSize(AimSize, AimSize)
+        AimBillboard:SetCastShadow(false)
         AimBillboard:SetVisible(false)
         AimBillboard:SetVisibleInEditor(false)
         AimBillboard:SetVisibleInGame(false)
