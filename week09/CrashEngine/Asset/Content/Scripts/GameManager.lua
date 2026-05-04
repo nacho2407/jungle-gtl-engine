@@ -253,6 +253,10 @@ local function getDocumentCount()
     return _G.PlayerState.DocumentCount or 0
 end
 
+local function getTimer()
+    return Timer
+end
+
 -- PlayerController 또는 다른 시스템에서 호출할 수 있는 게임 종료 진입점.
 function GameOver(finalHP, finalDocumentCount)
     if isGameOver then
@@ -273,6 +277,7 @@ function GameOver(finalHP, finalDocumentCount)
     print("Final Document Count : ", finalDocumentCount)
     print("Timer : ", Timer)
     ShowScoreboard(ScoreboardLimit)
+    LoadScene("GameOver.Scene")
 end
 
 -- 저장된 점수 상위 목록을 로그로 출력한다.
@@ -291,7 +296,8 @@ function BeginPlay()
     _G.GameManager = {
         GameOver = GameOver,
         GetPlayerHP = getPlayerHP,
-        GetDocumentCount = getDocumentCount
+        GetDocumentCount = getDocumentCount,
+        GetTimer = getTimer
     }
 
     print("[BeginPlay] " .. obj.UUID)

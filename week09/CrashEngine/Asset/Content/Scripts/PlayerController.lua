@@ -15,7 +15,8 @@ local bGameOverRequested = false
 
 -- Player의 생존/점수 관련 상태.
 local HP = 100.0
-local HP_reduction  = 0;
+local MaxHP = 100.0
+local HP_reduction  = 2.5;
 
 -- Scene에 붙어있는 Component를 캐싱해두면 Tick마다 다시 찾지 않아도 된다.
 local LightComponet = nil
@@ -29,6 +30,7 @@ local GameManagerLuaComponent = nil
 local function ensurePlayerState()
     _G.PlayerState = _G.PlayerState or {}
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
     return _G.PlayerState
 end
@@ -41,6 +43,7 @@ local function syncPlayerState()
     end
 
     _G.PlayerState.HP = HP
+    _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
 end
 
