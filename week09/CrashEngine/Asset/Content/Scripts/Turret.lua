@@ -12,9 +12,11 @@ local HP = MaxHP
 local BulletSpawnForwardOffset = 4.0
 local BulletSpawnUpOffset = 2.2
 local PlayerAimOffset = Vector.new(0.0, 0.0, -1.0)
+local DetectHalfAngleCos = math.cos(math.pi * 0.25)
 
 -- Candidate에서 받은 초기 회전의 X/Y는 유지하고, 공격할 때 Z(Yaw)만 Player 방향으로 바꾼다.
 local BaseRotation = Vector.new(0.0, 0.0, 0.0)
+local BaseForward = Vector.new(1.0, 0.0, 0.0)
 
 local DamagedEffectMaterial = "Asset/Content/Materials/subUV_Damaged.json"
 local DamagedEffectLifeTime = 0.5
@@ -74,6 +76,22 @@ local function findPlayer()
     return nil
 end
 
+local function normalizePlanar(vector)
+    local planar = Vector.new(vector.X, vector.Y, 0.0)
+    if planar:LengthSquared() <= 0.0001 then
+        return Vector.new(1.0, 0.0, 0.0)
+    end
+
+    return planar:Normalized()
+end
+
+local function isInsideSpawnFacingArc(toTarget)
+    local targetDirection = normalizePlanar(toTarget)
+    local facingDirection = normalizePlanar(BaseForward)
+    local dot = facingDirection.X * targetDirection.X + facingDirection.Y * targetDirection.Y
+    return dot >= DetectHalfAngleCos
+end
+
 -- direction을 수평면 XY로 투영한 뒤 yaw를 계산해서 터렛을 그 방향으로 돌린다.
 local function lookAtDirection(direction)
     local planarDirection = Vector.new(direction.X, direction.Y, 0.0)
@@ -115,6 +133,7 @@ function BeginPlay()
     HP = MaxHP
     ShotTimer = 0.0
     BaseRotation = obj.Rotation
+    BaseForward = normalizePlanar(obj:GetForwardVector())
 end
 
 function EndPlay()
@@ -168,8 +187,12 @@ function Tick(dt)
         return
     end
 
-    local toPlayer = player.Location - obj.Location
+    local toPlayer = player.Location + PlayerAimOffset - obj.Location
     if toPlayer:LengthSquared() > DetectRange * DetectRange then
+        return
+    end
+
+    if not isInsideSpawnFacingArc(toPlayer) then
         return
     end
 

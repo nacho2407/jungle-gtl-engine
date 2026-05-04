@@ -356,5 +356,19 @@
       "score" : 0.000000,
       "timer" : 0.000000,
       "timestamp" : "2026-05-05 00:04:56"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:13:15"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-05 00:13:21"
     }]
 }
