@@ -92,6 +92,20 @@ body {
 	text-align: center;
 }
 
+#final-score-detail {
+	position: absolute;
+	left: 0%;
+	top: 56%;
+	width: 100%;
+	height: 28dp;
+	color: #7ee083;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 18dp;
+	line-height: 28dp;
+	text-align: center;
+}
+
 #lobby-button {
 	position: absolute;
 	left: 50%;

@@ -36,6 +36,27 @@ enum class EFinishOutcome : uint8
 	Lose,
 };
 
+enum class EScoreCategory : uint8
+{
+	None = 0,
+	Phase,
+	MatchEnd,
+	Bonus,
+	Penalty,
+};
+
+struct FScoreEvent
+{
+	int32 SequenceId = 0;
+	int32 Amount = 0;
+	int32 TotalScoreAfter = 0;
+	EScoreCategory Category = EScoreCategory::None;
+	ECarGamePhase SourcePhase = ECarGamePhase::None;
+	FString Reason;
+	float RemainingMatchTime = 0.0f;
+	float RemainingPhaseTime = 0.0f;
+};
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGamePhaseChangedSignature, ECarGamePhase /*NewPhase*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameHealthChangedSignature, int32 /*NewHealth*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FCarGameScoreChangedSignature,  int32 /*NewScore*/);
@@ -81,7 +102,12 @@ public:
 	// --- Score (페이즈 성공 보너스 + 매치 종료 보너스 누적) ---
 	int32 GetScore() const { return CurrentScore; }
 	void  SetScore(int32 V);
-	void  AddScore(int32 Delta);
+	void  ResetScore();
+	void  AddScore(int32 Delta, EScoreCategory Category = EScoreCategory::Bonus, const FString& Reason = "", ECarGamePhase SourcePhase = ECarGamePhase::None);
+	int32 GetScoreEventCount() const { return static_cast<int32>(ScoreEvents.size()); }
+	int32 GetLastScoreEventId() const { return NextScoreEventId - 1; }
+	const FScoreEvent* GetScoreEvent(int32 Index) const;
+	const FScoreEvent* GetLatestScoreEvent() const;
 
 	// --- GameMode 전용 setter (private 으로 두지 않은 이유: friend 회피 + 단일 호출자 가정) ---
 	void SetRemainingMatchTime(float V) { RemainingMatchTime = V; }
@@ -115,4 +141,6 @@ private:
 	EFinishOutcome FinishOutcome = EFinishOutcome::None;
 
 	int32 CurrentScore = 0;
+	int32 NextScoreEventId = 1;
+	TArray<FScoreEvent> ScoreEvents;
 };

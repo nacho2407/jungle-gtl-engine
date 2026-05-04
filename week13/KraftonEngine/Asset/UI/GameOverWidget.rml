@@ -11,6 +11,7 @@
 		<div id="game-over-title">GAME OVER</div>
 		<div id="game-over-subtitle">FINAL SCORE</div>
 		<div id="final-score-value">000000</div>
+		<div id="final-score-detail"></div>
 
 		<button id="lobby-button">LOBBY</button>
 		<button id="game-over-exit-button">EXIT</button>

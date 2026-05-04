@@ -174,6 +174,44 @@ body {
 	line-height: 40dp;
 }
 
+#score-feedback-layer {
+	position: absolute;
+	left: 134dp;
+	top: 13dp;
+	width: 112dp;
+	height: 68dp;
+}
+
+.score-feedback-text {
+	position: absolute;
+	left: 0px;
+	width: 112dp;
+	height: 20dp;
+	color: #7ee083;
+	font-size: 13dp;
+	line-height: 20dp;
+	text-align: right;
+	opacity: 0;
+}
+
+#score-feedback-0 {
+	top: 0dp;
+}
+
+#score-feedback-1 {
+	top: 22dp;
+}
+
+#score-feedback-2 {
+	top: 44dp;
+}
+
+#hud-time-panel .hud-label,
+#hud-time-panel .hud-main-value {
+	left: 0px;
+	width: 100%;
+	text-align: center;
+}
 /* TIME 패널이 좌상단으로 옮겨가서 중앙정렬 룰 제거 — 기본 left-aligned 사용 */
 
 .hud-small-label {

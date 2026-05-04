@@ -20,6 +20,22 @@
 
 IMPLEMENT_CLASS(AGameModeCarGame, AGameModeBase)
 
+namespace
+{
+	FString GetScorePhaseName(ECarGamePhase Phase)
+	{
+		switch (Phase)
+		{
+		case ECarGamePhase::CarWash:      return "Car Wash";
+		case ECarGamePhase::CarGas:       return "Gas Fill";
+		case ECarGamePhase::EscapePolice: return "Escape Police";
+		case ECarGamePhase::DodgeMeteor:  return "Dodge Meteor";
+		case ECarGamePhase::Goal:         return "Goal";
+		default:                          return "Phase";
+		}
+	}
+}
+
 AGameModeCarGame::AGameModeCarGame()
 {
 	GameStateClass = AGameStateCarGame::StaticClass();
@@ -44,7 +60,7 @@ void AGameModeCarGame::StartMatch()
 		GS->SetLastPhaseResult(EPhaseResult::None);
 		GS->SetHealth(GS->GetMaxHealth());
 		GS->SetFinishOutcome(EFinishOutcome::None);
-		GS->SetScore(0);
+		GS->ResetScore();
 		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs, HP=%d/%d",
 			MatchDuration, GS->GetHealth(), GS->GetMaxHealth());
 	}
@@ -286,7 +302,7 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 		const float Ratio     = (Duration > 0.0f) ? (Remaining / Duration) : 0.0f;
 		const int32 TimeBonus = static_cast<int32>(Ratio * static_cast<float>(PhaseTimeBonusMax));
 		const int32 PhaseScore = BasePhaseScore + TimeBonus;
-		GS->AddScore(PhaseScore);
+		GS->AddScore(PhaseScore, EScoreCategory::Phase, GetScorePhaseName(Cur), Cur);
 		UE_LOG("[CarGame] Phase score +%d (base=%d, time=%d, total=%d)",
 			PhaseScore, BasePhaseScore, TimeBonus, GS->GetScore());
 	}
@@ -386,7 +402,7 @@ void AGameModeCarGame::ApplyMatchEndBonus()
 	const int32 Total       = TimeBonus + HealthBonus;
 	if (Total != 0)
 	{
-		GS->AddScore(Total);
+		GS->AddScore(Total, EScoreCategory::MatchEnd, "Match End Bonus", ECarGamePhase::Finished);
 	}
 	UE_LOG("[CarGame] Match-end bonus: time=%d, hp=%d, total=%d (score=%d)",
 		TimeBonus, HealthBonus, Total, GS->GetScore());

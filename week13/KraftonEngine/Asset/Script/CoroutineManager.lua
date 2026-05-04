@@ -5,8 +5,16 @@ function StartCoroutine(func)
     return Coroutine:Create(func)
 end
 
+function StopCoroutine(handle)
+    return Coroutine:Stop(handle)
+end
+
 function Wait(seconds)
     Coroutine:Wait(seconds)
+end
+
+function WaitFrame()
+    return Coroutine:WaitFrame()
 end
 
 function WaitUntil(predicate)
@@ -20,17 +28,35 @@ end
 function Coroutine:Create(func)
     local routine = {
         co = coroutine.create(func),
-        wait = nil
+        wait = nil,
+        dead = false
     }
 
     table.insert(self.coroutines, routine)
-    self:Resume(routine)
+    self:Resume(routine, 0)
 
-    return routine.co
+    return routine
 end
 
-function Coroutine:Resume(routine)
-    local success, waitInfo = coroutine.resume(routine.co)
+function Coroutine:Stop(handle)
+    if handle == nil then
+        return false
+    end
+
+    for i = #self.coroutines, 1, -1 do
+        local routine = self.coroutines[i]
+        if routine == handle or routine.co == handle then
+            routine.dead = true
+            table.remove(self.coroutines, i)
+            return true
+        end
+    end
+
+    return false
+end
+
+function Coroutine:Resume(routine, dt)
+    local success, waitInfo = coroutine.resume(routine.co, dt or 0)
 
     if not success then
         print("Error in coroutine: " .. tostring(waitInfo))
@@ -46,6 +72,12 @@ function Coroutine:Wait(seconds)
         type = "wait",
         time = seconds
     })
+end
+
+function Coroutine:WaitFrame()
+    return coroutine.yield({
+        type = "frame"
+    }) or 0
 end
 
 function Coroutine:WaitUntil(predicate)
@@ -70,6 +102,8 @@ function Coroutine:Update(dt)
             elseif wait.type == "wait" then
                 wait.time = wait.time - dt;
                 shouldResume = wait.time <= 0
+            elseif wait.type == "frame" then
+                shouldResume = true
             elseif wait.type == "wait_until" then
                 local ok, result = pcall(wait.predicate)
                 if not ok then
@@ -83,7 +117,7 @@ function Coroutine:Update(dt)
             end
 
             if shouldResume and not routine.dead then
-                self:Resume(routine)
+                self:Resume(routine, dt)
             end
         end
     end

@@ -109,8 +109,9 @@ local function OnPhaseChanged(phase)
             outcome = gameState:GetFinishOutcome()
             score = gameState:GetScore()
         end
-        UIManager.ShowGameOver(outcome, score)
-        Engine.PauseGame()
+        UIManager.ShowGameOver(outcome, score, function()
+            Engine.PauseGame()
+        end)
         print("Run Lua logic for Finished, outcome=" .. tostring(outcome) .. ", score=" .. tostring(score))
     end
 end
@@ -349,6 +350,7 @@ end
 function Tick(dt)
     UIManager.Tick(dt)
     UIManager.UpdateHUD()
+    UpdateCoroutines(dt)
 
     -- ESC 토글은 UIManager.OnEscapePressed 가 담당 — World pause 도중에도 동작해야 해서
     -- C++ UGameEngine::Tick 에서 직접 fire 하는 Engine.SetOnEscape 콜백 경로로 옮김.
@@ -358,5 +360,4 @@ function Tick(dt)
     end
 
     UpdateQuestHud()
-    UpdateCoroutines(dt)
 end

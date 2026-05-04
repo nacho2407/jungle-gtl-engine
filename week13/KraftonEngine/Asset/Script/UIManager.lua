@@ -17,6 +17,16 @@ local scoreCounter = {
     display = 0,
     target = 0
 }
+local scoreFeedback = {
+    lastShownEventId = 0,
+    duration = 1.35,
+    slots = {
+        { active = false, elapsed = 0, text = "" },
+        { active = false, elapsed = 0, text = "" },
+        { active = false, elapsed = 0, text = "" }
+    }
+}
+local gameOverScoreRoutine = nil
 local gasFeedbackActive = false
 local onCarWashQuestOk = nil
 local onGasQuestOk = nil
@@ -66,6 +76,104 @@ local function SetHudScoreText(score)
     widget:set_text("score-value", FormatScore(score))
 end
 
+local function SetGameOverScoreText(score)
+    local widget = widgets["gameOver"]
+    if widget == nil or not widget:IsInViewport() then
+        return
+    end
+
+    widget:set_text("final-score-value", FormatScore(score))
+end
+
+local function FormatScoreFeedback(amount, reason)
+    local prefix = "+"
+    if amount < 0 then
+        prefix = ""
+    end
+
+    if reason == nil or reason == "" then
+        return prefix .. tostring(amount)
+    end
+
+    return prefix .. tostring(amount) .. " " .. reason
+end
+
+local function ApplyScoreFeedbackSlot(index)
+    local widget = widgets["gameOverlay"]
+    if widget == nil or not widget:IsInViewport() then
+        return
+    end
+
+    local slot = scoreFeedback.slots[index]
+    local elementId = "score-feedback-" .. tostring(index - 1)
+
+    if not slot.active then
+        widget:set_text(elementId, "")
+        widget:set_property(elementId, "opacity", "0")
+        return
+    end
+
+    local fadeIn = 0.12
+    local fadeOut = 0.38
+    local opacity = 1.0
+    if slot.elapsed < fadeIn then
+        opacity = slot.elapsed / fadeIn
+    elseif slot.elapsed > scoreFeedback.duration - fadeOut then
+        opacity = (scoreFeedback.duration - slot.elapsed) / fadeOut
+    end
+
+    opacity = Clamp(opacity, 0, 1)
+    widget:set_text(elementId, slot.text)
+    widget:set_property(elementId, "opacity", tostring(opacity))
+end
+
+local function PushScoreFeedback(amount, reason)
+    for i = #scoreFeedback.slots, 2, -1 do
+        scoreFeedback.slots[i].active = scoreFeedback.slots[i - 1].active
+        scoreFeedback.slots[i].elapsed = scoreFeedback.slots[i - 1].elapsed
+        scoreFeedback.slots[i].text = scoreFeedback.slots[i - 1].text
+        ApplyScoreFeedbackSlot(i)
+    end
+
+    scoreFeedback.slots[1].active = true
+    scoreFeedback.slots[1].elapsed = 0
+    scoreFeedback.slots[1].text = FormatScoreFeedback(amount, reason)
+    ApplyScoreFeedbackSlot(1)
+end
+
+local function UpdateScoreFeedback(dt)
+    dt = dt or 0
+
+    for i = 1, #scoreFeedback.slots do
+        local slot = scoreFeedback.slots[i]
+        if slot.active then
+            slot.elapsed = slot.elapsed + dt
+            if slot.elapsed >= scoreFeedback.duration then
+                slot.active = false
+                slot.elapsed = 0
+                slot.text = ""
+            end
+            ApplyScoreFeedbackSlot(i)
+        end
+    end
+end
+
+local function PollScoreEvents(gs)
+    local lastEventId = gs:GetLastScoreEventId()
+    if lastEventId < scoreFeedback.lastShownEventId then
+        scoreFeedback.lastShownEventId = 0
+    end
+
+    local count = gs:GetScoreEventCount()
+    for i = 0, count - 1 do
+        local event = gs:GetScoreEvent(i)
+        if event ~= nil and event.SequenceId > scoreFeedback.lastShownEventId then
+            PushScoreFeedback(event.Amount, event.Reason)
+            scoreFeedback.lastShownEventId = event.SequenceId
+        end
+    end
+end
+
 local function UpdateScoreCounter(dt)
     dt = dt or 0
 
@@ -94,6 +202,71 @@ local function UpdateScoreCounter(dt)
     end
 
     SetHudScoreText(scoreCounter.display)
+end
+
+local function StopGameOverScoreRoutine()
+    if gameOverScoreRoutine ~= nil then
+        StopCoroutine(gameOverScoreRoutine)
+        gameOverScoreRoutine = nil
+    end
+end
+
+local function StartGameOverScoreRoutine(events, finalScore, onComplete)
+    StopGameOverScoreRoutine()
+
+    gameOverScoreRoutine = StartCoroutine(function()
+        local widget = widgets["gameOver"]
+        if widget == nil or not widget:IsInViewport() then
+            gameOverScoreRoutine = nil
+            if onComplete ~= nil then onComplete() end
+            return
+        end
+
+        local display = 0
+        local duration = 1.0
+        SetGameOverScoreText(display)
+        widget:set_text("final-score-detail", "")
+
+        for i = 1, #events do
+            if widget == nil or not widget:IsInViewport() then
+                gameOverScoreRoutine = nil
+                return
+            end
+
+            local event = events[i]
+            local startScore = display
+            local targetScore = display + event.amount
+            local elapsed = 0
+
+            widget:set_text("final-score-detail", FormatScoreFeedback(event.amount, event.reason))
+
+            while elapsed < duration do
+                local dt = WaitFrame()
+                if widget == nil or not widget:IsInViewport() then
+                    gameOverScoreRoutine = nil
+                    return
+                end
+
+                elapsed = elapsed + (dt or 0)
+                local t = Clamp(elapsed / duration, 0, 1)
+                local eased = 1.0 - ((1.0 - t) * (1.0 - t))
+                SetGameOverScoreText(startScore + (targetScore - startScore) * eased)
+            end
+
+            display = targetScore
+            SetGameOverScoreText(display)
+
+            Wait(0.7)
+        end
+
+        SetGameOverScoreText(finalScore)
+        widget:set_text("final-score-detail", "")
+        gameOverScoreRoutine = nil
+
+        if onComplete ~= nil then
+            onComplete()
+        end
+    end)
 end
 
 function UIManager.SetStartGameCallback(callback)
@@ -310,6 +483,9 @@ end
 function UIManager.Hide(key)
     local widget = widgets[key]
     if widget ~= nil then
+        if key == "gameOver" then
+            StopGameOverScoreRoutine()
+        end
         widget:hide()
         return true
     end
@@ -399,7 +575,7 @@ end
 -- finalScore 는 Score 시스템 도입 시 채워서 호출 (지금은 nil 이면 placeholder 유지).
 -- 주의: UUIManager 가 RML Document 를 첫 AddToViewport 시점에 lazy-load 하므로
 -- set_text 는 Show 이후에 호출해야 한다. 그 전엔 Document=null 이라 silent no-op.
-function UIManager.ShowGameOver(outcome, finalScore)
+function UIManager.ShowGameOver(outcome, finalScore, onScoreComplete)
     local widget = widgets["gameOver"]
     if widget == nil then return end
 
@@ -413,8 +589,47 @@ function UIManager.ShowGameOver(outcome, finalScore)
         widget:set_text("game-over-kicker", "GAME RESULT")
     end
 
-    if finalScore ~= nil then
-        widget:set_text("final-score-value", string.format("%06d", finalScore))
+    StopGameOverScoreRoutine()
+    local scoreEvents = {}
+    local targetFinalScore = finalScore or 0
+
+    local gs = GetGameState()
+    local eventTotal = 0
+    if gs ~= nil then
+        local count = gs:GetScoreEventCount()
+        for i = 0, count - 1 do
+            local event = gs:GetScoreEvent(i)
+            if event ~= nil then
+                eventTotal = eventTotal + event.Amount
+                table.insert(scoreEvents, {
+                    amount = event.Amount,
+                    reason = event.Reason
+                })
+            end
+        end
+        if finalScore == nil then
+            targetFinalScore = gs:GetScore()
+        end
+    end
+
+    local remainingScore = targetFinalScore - eventTotal
+    if remainingScore ~= 0 then
+        table.insert(scoreEvents, {
+            amount = remainingScore,
+            reason = "Final"
+        })
+    end
+
+    if #scoreEvents > 0 then
+        widget:set_text("final-score-value", FormatScore(0))
+        widget:set_text("final-score-detail", "")
+        StartGameOverScoreRoutine(scoreEvents, targetFinalScore, onScoreComplete)
+    else
+        widget:set_text("final-score-value", FormatScore(targetFinalScore))
+        widget:set_text("final-score-detail", "")
+        if onScoreComplete ~= nil then
+            onScoreComplete()
+        end
     end
 end
 
@@ -447,6 +662,7 @@ function UIManager.Tick(dt)
     UIManager.UpdateGasFeedbackWidget()
     UIManager.UpdateMeteorHpWidget()
     UpdateScoreCounter(dt)
+    UpdateScoreFeedback(dt)
 end
 
 function UIManager.GetWidget(key)
@@ -542,6 +758,8 @@ function UIManager.UpdateHUD()
     end
 
     -- HP — RML 에 hp-slot-0/1/2 슬롯이 있고 색만 채워진(빨강)/빈(회색) 으로 토글.
+    PollScoreEvents(gs)
+
     local hp = gs:GetHealth()
     local maxHp = gs:GetMaxHealth()
     for i = 0, maxHp - 1 do
