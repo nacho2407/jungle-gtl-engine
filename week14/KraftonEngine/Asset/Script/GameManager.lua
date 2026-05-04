@@ -69,7 +69,7 @@ local function OnPhaseChanged(phase)
             end
 
             if ObjRegistry.car ~= nil then
-                ObjRegistry.car.Location = Vector.new(130, -95, 5)
+                ObjRegistry.car.Location = Vector.new(130, -100, 5)
             end
 
             CameraManager.PossessCamera(ObjRegistry.manCamera)

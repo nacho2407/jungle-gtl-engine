@@ -28,7 +28,7 @@ function Tick(dt)
         local man = ObjRegistry.manObj
         local manCamera = ObjRegistry.manCamera
         if man ~= nil and manCamera ~= nil then
-            obj.Location = man.Location + manCamera.Forward * 0.5 + manCamera.Right * 0.2
+            obj.Location = man.Location + manCamera.Forward * 1.0 + manCamera.Right * 0.2
             obj.Rotation = manCamera.Rotation
         end
 
