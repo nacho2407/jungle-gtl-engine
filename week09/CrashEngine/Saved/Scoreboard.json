@@ -132,5 +132,54 @@
       "score" : 0.000000,
       "timer" : 6.647885,
       "timestamp" : "2026-05-04 21:58:16"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:05:09"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:05:13"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:08:22"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:08:25"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:10:02"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:10:59"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:11:01"
     }]
 }
