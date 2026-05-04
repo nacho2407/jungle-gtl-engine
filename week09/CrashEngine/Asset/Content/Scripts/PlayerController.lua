@@ -1,10 +1,14 @@
+local PlayerMovement = dofile("Asset/Content/Scripts/PlayerMovement.lua")
+
 local moveSpeed = 10.0
 local pressedKeys = {}
+local movementState = nil
 
 local HP = 100.0
 local HP_reduction  = 10;
 
 local LightComponet = nil
+local MeshComponent = nil
 local Initial_Light_Intensity = 0.0
 
 local DocumentCount = 0
@@ -62,43 +66,6 @@ local movementKeys = {
     Ctrl = true,
 }
 
-local function getSafeDirection(direction)
-    if direction:LengthSquared() > 0.0001 then
-        return direction:Normalized()
-    end
-
-    return Vector.new(0.0, 0.0, 0.0)
-end
-
-local function getCameraMoveDirection()
-    local forward =  Vector.new(-1.0, 0.0, 0.0)
-    local right =  Vector.new(0.0, -1.0, 0.0)
-    local direction = Vector.new(0.0, 0.0, 0.0)
-
-    if pressedKeys.W or pressedKeys.Up then
-        direction = direction + forward
-    end
-    if pressedKeys.S or pressedKeys.Down then
-        direction = direction - forward
-    end
-    if pressedKeys.D or pressedKeys.Right then
-        direction = direction + right
-    end
-    if pressedKeys.A or pressedKeys.Left then
-        direction = direction - right
-    end
-
-    if direction:LengthSquared() > 0.0 then
-        return direction:Normalized()
-    end
-
-    return Vector.new(0.0, 0.0, 0.0)
-end
-
-local function updateVelocity()
-    obj.Velocity = getCameraMoveDirection() * moveSpeed
-end
-
 function OnOverlapEnd(other)
     print("Lua OnOverlapEnd", other.UUID);
 end
@@ -129,6 +96,13 @@ end
 function BeginPlay()
     pressedKeys = {}
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
+    movementState = PlayerMovement.CreateState({
+        forward = Vector.new(1.0, 0.0, 0.0),
+        meshYawOffset = 90.0,
+        moveSpeed = moveSpeed,
+        velocityInterpSpeed = 12.0,
+        turnInterpSpeed = 14.0,
+    })
     ensurePlayerState()
 
     local gameManager = World.FindActorByTag("GameManager")
@@ -140,11 +114,14 @@ function BeginPlay()
     if LightComponet:IsValid() then
         LightComponet:SetIntensity(HP)
     end
+
+    MeshComponent = obj:GetComponent("StaticMeshComponent", 0)
+    if MeshComponent:IsValid() then
+        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+    end
 end
 
 function Tick(dt)
-    updateVelocity()
-
     if(HP > 0) then
         HP = HP - dt * HP_reduction
     else
@@ -157,8 +134,15 @@ function Tick(dt)
         LightComponet:SetIntensity(HP)
     end
 
-    if obj.Velocity:LengthSquared() > 0.0 then
-        World.MoveActorWithBlock(obj, obj.Velocity * dt, "Wall")
+    local moveDelta = PlayerMovement.Update(movementState, pressedKeys, dt)
+    obj.Velocity = movementState.velocity
+
+    if MeshComponent ~= nil and MeshComponent:IsValid() then
+        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+    end
+
+    if moveDelta:LengthSquared() > 0.0 then
+        World.MoveActorWithBlock(obj, moveDelta, "Wall")
     end
 
 
@@ -178,7 +162,6 @@ function OnKeyPressed(key)
     end
 
     pressedKeys[key] = true
-    updateVelocity()
 end
 
 function OnKeyReleased(key)
@@ -187,5 +170,4 @@ function OnKeyReleased(key)
     end
 
     pressedKeys[key] = nil
-    updateVelocity()
 end
