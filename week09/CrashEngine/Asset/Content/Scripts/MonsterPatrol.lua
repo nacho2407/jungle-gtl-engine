@@ -1,5 +1,4 @@
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-BulletSystem.BindWorld(World)
 
 local PatrolAgent = nil
 local PatrolTargets = {}
@@ -83,7 +82,12 @@ local function fireAtPlayer(player)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, BulletSpawnHeight) + direction * BulletSpawnForwardOffset
     print("[Monster] Fire EnemyBullet", "Monster:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
-    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    local bullet = BulletSystem.SpawnBullet(World, spawnLocation, direction, "EnemyBullet", obj)
+    if bullet == nil or not bullet:IsValid() then
+        print("[Monster] Fire failed", "Monster:", obj.UUID)
+        return
+    end
+
     ShotTimer = ShotCooldown
 end
 

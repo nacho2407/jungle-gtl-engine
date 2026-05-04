@@ -1,4 +1,5 @@
 local BulletSystem = _G.BulletSystem or {}
+BulletSystem.World = nil
 
 local BulletMeshPath = "Asset/Content/Models/Bullet/Bullet.obj"
 local BulletSpeed = 90.0
@@ -12,25 +13,26 @@ local BulletSpawnBlockProbeDistance = 0.05
 local bullets = BulletSystem.Bullets or {}
 BulletSystem.Bullets = bullets
 
-local function getWorld()
-    return BulletSystem.World or World
+local function getWorld(world)
+    return world or BulletSystem.World or World
 end
 
 function BulletSystem.BindWorld(world)
-    if BulletSystem.World ~= world then
-        BulletSystem.Clear(false)
-    end
-
     BulletSystem.World = world
 end
 
-function BulletSystem.Clear(destroyActors)
+function BulletSystem.Clear(world, destroyActors)
+    if type(world) == "boolean" then
+        destroyActors = world
+        world = nil
+    end
+
     if destroyActors then
-        local world = getWorld()
+        local activeWorld = getWorld(world)
         for i = #bullets, 1, -1 do
             local bulletInfo = bullets[i]
             if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
-                world.DestroyActor(bulletInfo.Actor)
+                activeWorld.DestroyActor(bulletInfo.Actor)
             end
         end
     end
@@ -77,10 +79,15 @@ local function addBulletVisual(actor)
     return mesh
 end
 
-function BulletSystem.SpawnBullet(location, direction, ownerTag, instigator)
-    local world = getWorld()
+function BulletSystem.SpawnBullet(world, location, direction, ownerTag, instigator)
+    if world == nil or world.SpawnActor == nil then
+        print("[BulletSystem] SpawnBullet failed: invalid world")
+        return nil
+    end
+
     local bullet = world.SpawnActor("StaticMeshActor")
-    if not bullet:IsValid() then
+    if bullet == nil or not bullet:IsValid() then
+        print("[BulletSystem] SpawnBullet failed: SpawnActor returned invalid actor")
         return nil
     end
 
@@ -99,6 +106,7 @@ function BulletSystem.SpawnBullet(location, direction, ownerTag, instigator)
     end
 
     if not world.MoveActorWithBlock(bullet, shotDirection * BulletSpawnBlockProbeDistance, "Wall") then
+        print("[BulletSystem] SpawnBullet failed: spawn point is blocked by Wall", "Location:", location, "Direction:", shotDirection)
         world.DestroyActor(bullet)
         return nil
     end
@@ -115,8 +123,7 @@ function BulletSystem.SpawnBullet(location, direction, ownerTag, instigator)
     return bullet
 end
 
-local function destroyBullet(index)
-    local world = getWorld()
+local function destroyBullet(world, index)
     local bulletInfo = bullets[index]
     if bulletInfo ~= nil and bulletInfo.Actor ~= nil and bulletInfo.Actor:IsValid() then
         world.DestroyActor(bulletInfo.Actor)
@@ -125,8 +132,16 @@ local function destroyBullet(index)
     table.remove(bullets, index)
 end
 
-function BulletSystem.Tick(dt)
-    local world = getWorld()
+function BulletSystem.Tick(world, dt)
+    if type(world) == "number" then
+        dt = world
+        world = getWorld()
+    end
+
+    if world == nil or world.MoveActorWithBlock == nil then
+        print("[BulletSystem] Tick skipped: invalid world")
+        return
+    end
 
     for i = #bullets, 1, -1 do
         local bulletInfo = bullets[i]
@@ -135,16 +150,16 @@ function BulletSystem.Tick(dt)
         if bullet == nil or not bullet:IsValid() then
             table.remove(bullets, i)
         elseif bullet:HasTag("DamageApplied") then
-            destroyBullet(i)
+            destroyBullet(world, i)
         else
             bulletInfo.LifeTime = bulletInfo.LifeTime - dt
 
             if bulletInfo.LifeTime <= 0.0 then
-                destroyBullet(i)
+                destroyBullet(world, i)
             else
                 local moveDelta = bulletInfo.Direction * BulletSpeed * dt
                 if not world.MoveActorWithBlock(bullet, moveDelta, "Wall") then
-                    destroyBullet(i)
+                    destroyBullet(world, i)
                 end
             end
         end

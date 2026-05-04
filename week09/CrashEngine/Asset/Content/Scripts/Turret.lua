@@ -1,7 +1,6 @@
 -- Turret.lua는 터렛 Actor 하나에 붙는 전용 스크립트다.
 -- 감지 범위 체크, 플레이어 바라보기, 발사, 체력/파괴를 담당한다.
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-BulletSystem.BindWorld(World)
 
 -- 터렛 튜닝 값.
 local DetectRange = 30.0
@@ -137,7 +136,12 @@ local function fireAtPlayer(player)
 
     local direction = shotDirection:Normalized()
     print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
-    BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    local bullet = BulletSystem.SpawnBullet(World, spawnLocation, direction, "EnemyBullet", obj)
+    if bullet == nil or not bullet:IsValid() then
+        print("[Turret] Fire failed", "Turret:", obj.UUID)
+        return
+    end
+
     playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end

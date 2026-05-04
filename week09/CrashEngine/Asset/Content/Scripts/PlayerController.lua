@@ -3,7 +3,6 @@
 local PlayerMovement = dofile("Asset/Content/Scripts/PlayerMovement.lua")
 local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-BulletSystem.BindWorld(World)
 
 -- local 변수는 이 파일 안에서만 쓰이는 상태다.
 local moveSpeed = 20.0
@@ -254,7 +253,12 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
     print("Player Fire Direction : ", aimDirection)
     print("Player Fire Location : ", spawnLocation)
-    BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
+    local bullet = BulletSystem.SpawnBullet(World, spawnLocation, aimDirection, "PlayerBullet", obj)
+    if bullet == nil or not bullet:IsValid() then
+        print("Player Fire Failed")
+        return
+    end
+
     playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -367,7 +371,7 @@ end
 
 function Tick(dt)
     -- BulletSystem은 전역 시스템처럼 동작하므로 Player 쪽 Tick에서 한 번씩 갱신한다.
-    BulletSystem.Tick(dt)
+    BulletSystem.Tick(World, dt)
 
     PlayerShotTimer = PlayerShotTimer - dt
     if PlayerShotTimer < 0.0 then
@@ -430,7 +434,7 @@ end
 
 function EndPlay()
     -- PIE 종료 시 남아있는 총알/전역 aim 상태를 정리한다.
-    BulletSystem.Clear(false)
+    BulletSystem.Clear(World, false)
 
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     if _G.PlayerState ~= nil then
