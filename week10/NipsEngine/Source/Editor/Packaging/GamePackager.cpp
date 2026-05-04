@@ -1153,6 +1153,16 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     EmitBuildLog("Copied Shaders directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UI", OutputRoot / L"Asset" / L"UI", OutMessage)) return false;
     EmitBuildLog("Copied Asset/UI directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UIImage", OutputRoot / L"Asset" / L"UIImage", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/UIImage directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UIFont", OutputRoot / L"Asset" / L"UIFont", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/UIFont directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Script", OutputRoot / L"Asset" / L"Script", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/Script directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"LuaScript", OutputRoot / L"LuaScript", OutMessage)) return false;
+    EmitBuildLog("Copied LuaScript directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Audio", OutputRoot / L"Asset" / L"Audio", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/Audio directory");
 
     FString PackagedIconPath;
     FString PackagedSplashPath;

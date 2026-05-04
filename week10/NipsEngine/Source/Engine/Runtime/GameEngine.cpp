@@ -228,7 +228,7 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UGameEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
 {
-    RenderRmlUiTestDocument(Context);
+    RenderRmlUiDocuments(Context);
 }
 
 bool UGameEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
@@ -702,15 +702,6 @@ void UGameEngine::InitializeRmlUiRuntime()
     delete RmlUiActionListener;
     RmlUiActionListener = new FRmlUiActionEventListener(this);
     bRmlUiRuntimeInitialized = true;
-
-    if (LoadRmlUIDocument("RuntimeSmokeTest", "Asset/UI/Test/RuntimeSmokeTest.rml"))
-    {
-        RmlUiTestDocument = FindRmlUIDocument("RuntimeSmokeTest");
-    }
-    else
-    {
-        UE_LOG_ERROR("[RmlUi] Failed to load runtime smoke test document.");
-    }
 }
 
 void UGameEngine::ShutdownRmlUiRuntime()
@@ -726,7 +717,6 @@ void UGameEngine::ShutdownRmlUiRuntime()
         RmlUiContext->Update();
         Rml::RemoveContext("GameClient");
         RmlUiContext = nullptr;
-        RmlUiTestDocument = nullptr;
     }
 
     delete RmlUiActionListener;
@@ -759,12 +749,11 @@ void UGameEngine::UnloadAllRmlUIDocuments()
 
     RmlUiDocumentPathByScreenId.clear();
     RmlUiPendingActionEvents.clear();
-    RmlUiTestDocument = nullptr;
 }
 
-void UGameEngine::RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context)
+void UGameEngine::RenderRmlUiDocuments(const FRuntimeUIRenderContext& Context)
 {
-    if (!bRmlUiRuntimeInitialized || !RmlUiContext)
+    if (!bRmlUiRuntimeInitialized || !RmlUiContext || RmlUiDocumentsByScreenId.empty())
     {
         return;
     }
