@@ -1,9 +1,11 @@
 local ObjRegistry = require("ObjRegistry")
 local UIManager = require("UIManager")
 local bIsOverlapping = false
+local previousPhase = nil
 
 function BeginPlay()
     ObjRegistry.RegisterGasNozzle(obj)
+    obj:SetVisible(false)
 end
 
 function EndPlay()
@@ -27,7 +29,20 @@ function Tick(dt)
     local gs = GetGameState()
     if gs == nil then return false end
 
-    if gs:GetPhase() == ECarGamePhase.CarGas then
+    local phase = gs:GetPhase()
+    local bIsCarGasPhase = phase == ECarGamePhase.CarGas
+
+    if previousPhase ~= phase then
+        previousPhase = phase
+        obj:SetVisible(bIsCarGasPhase)
+
+        if not bIsCarGasPhase then
+            bIsOverlapping = false
+            UIManager.SetGasFeedbackActive(false)
+        end
+    end
+
+    if bIsCarGasPhase then
         local man = ObjRegistry.manObj
         local manCamera = ObjRegistry.manCamera
         if man ~= nil and manCamera ~= nil then
