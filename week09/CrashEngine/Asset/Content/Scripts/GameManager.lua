@@ -7,8 +7,8 @@ local ScoreboardLimit = 5
 -- Candidate가 실제 아이템/터렛으로 바뀔 때 종류별 최대 생성 수.
 -- Scene에 Candidate가 더 많아도 여기 숫자까지만 랜덤으로 선택된다.
 local SpawnMaxCounts = {
-    Battery = 3,
-    Document = 3,
+    Battery = 2,
+    Document = 4,
     Turret = 10
 }
 
@@ -73,7 +73,7 @@ local CandidateSpawnInfos = {
         Script = "Turret.lua",
         Collider = {
             Type = "BoxComponent",
-            BoxExtent = Vector.new(44.799999, 30.799999, 60.700001),
+            BoxExtent = Vector.new(44.799999, 30.799999, 60.0),
             Location = Vector.new(0.0, 0.0, 0.0),
             Rotation = Vector.new(0.0, 0.0, 0.0),
             Scale = Vector.new(1.0, 1.0, 1.0)
