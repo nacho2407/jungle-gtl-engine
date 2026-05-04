@@ -28,7 +28,7 @@ local quests = {
     {
         id = "hitPerson",
         uiKey = "personQuest",
-        targetName = "ATriggerVolumeBase_2",
+        targetName = "EscapePolice",
         fallbackTargetName = nil,
         phase = ECarGamePhase.EscapePolice
     }
