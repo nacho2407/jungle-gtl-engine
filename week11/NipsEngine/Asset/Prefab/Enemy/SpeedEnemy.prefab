@@ -7,14 +7,14 @@
         "Enable Cull" : true,
         "Enable Tick" : true,
         "GenerateOverlapEvents" : false,
-        "Location" : [-22.181492, 14.812956, 2.272082],
-        "Materials" : ["Asset/Material/Auto/Dice_DicePaper_Inst_1.matinst"],
+        "Location" : [0.000000, 0.000000, 0.000000],
+        "Materials" : ["Asset/Material/Auto/cube______________Inst_1.matinst"],
         "ObjectName" : "UProceduralMeshComponent_126",
         "Rotation" : [0.000000, 0.000000, 0.000000],
-        "Scale" : [1.700000, 1.700000, 2.500000],
+        "Scale" : [1.500000, 1.500000, 2.700000],
         "Tags" : [],
         "Type" : "UProceduralMeshComponent",
-        "UUID" : 4845,
+        "UUID" : 8868,
         "Visible" : true
       }, {
         "ClassName" : "UBoxComponent",
@@ -26,13 +26,13 @@
         "GenerateOverlapEvents" : true,
         "Location" : [0.000000, 0.000000, 0.000000],
         "ObjectName" : "UBoxComponent_78",
-        "ParentUUID" : 4845,
+        "ParentUUID" : 8868,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "ShapeColor" : [0.000000, 0.000000, 0.000000, 1.000000],
         "Tags" : [],
         "Type" : "UBoxComponent",
-        "UUID" : 4846,
+        "UUID" : 8869,
         "Visible" : true
       }, {
         "ClassName" : "UProjectileMovementComponent",
@@ -41,7 +41,7 @@
         "ObjectName" : "UProjectileMovementComponent_48",
         "Tags" : [],
         "Type" : "UProjectileMovementComponent",
-        "UUID" : 4847
+        "UUID" : 8870
       }, {
         "ClassName" : "UScriptComponent",
         "Editor Only" : false,
@@ -75,13 +75,13 @@
         "ScriptName" : "EnemyBase",
         "Tags" : [],
         "Type" : "UScriptComponent",
-        "UUID" : 4848
+        "UUID" : 8871
       }],
     "EditorOnly" : false,
     "Name" : "SpeedEnemy",
-    "RootComponent" : 4845,
+    "RootComponent" : 8868,
     "Tags" : [],
-    "UUID" : 4844,
+    "UUID" : 8867,
     "Visible" : true
   },
   "ClassName" : "NipsPrefab",

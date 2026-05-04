@@ -973,93 +973,137 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
-	const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
-	if (NormalizedMtlFilePath.empty())
-	{
-		return false;
-	}
+    const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
+    if (NormalizedMtlFilePath.empty())
+    {
+        return false;
+    }
 
-	UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
-	if (!Shader)
-	{
-		UE_LOG_WARNING("Shader not found for material: %s, using default shader", ShaderName.c_str());
-		return false;
-	}
+    UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
+    if (!Shader)
+    {
+        UE_LOG_WARNING("Shader not found for material: %s", ShaderName.c_str());
+        return false;
+    }
 
-	TMap<FString, UMaterial*> Parsed;
-	if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get()))
-	{
-		UE_LOG_WARNING("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
-		return false;
-	}
+    TMap<FString, UMaterial*> Parsed;
+    if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get()))
+    {
+        UE_LOG_WARNING("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
+        return false;
+    }
 
-	if (Parsed.empty())
-	{
-		Parsed["DefaultWhite"] = GetMaterial("DefaultWhite");
-	}
+    if (Parsed.empty())
+    {
+        UMaterial* DefaultMat = GetMaterial("DefaultWhite");
+        if (!DefaultMat)
+        {
+            UE_LOG_WARNING("DefaultWhite material not found.");
+            return false;
+        }
 
-	const fs::path SourceMtlPath(FPaths::ToWide(NormalizedMtlFilePath));
-	const bool bCanPromoteMtlToMaterialAssets = SourceMtlPath.extension() == L".mtl";
-	const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
-	auto SanitizeAssetToken = [](FString Token)
-	{
-		for (char& Ch : Token)
-		{
-			const bool bAlphaNum = (Ch >= '0' && Ch <= '9') || (Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z');
-			if (!bAlphaNum && Ch != '_' && Ch != '-')
-			{
-				Ch = '_';
-			}
-		}
-		return Token.empty() ? FString("Material") : Token;
-	};
+        Parsed["DefaultWhite"] = DefaultMat;
+    }
 
-	for (auto& [Name, Mat] : Parsed)
-	{
-		FString MaterialAssetPath = NormalizedMtlFilePath;
-		if (bCanPromoteMtlToMaterialAssets)
-		{
-			const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
-			const FString MaterialName = SanitizeAssetToken(Name);
-			const fs::path RelativeMatPath = AutoMaterialDir / FPaths::ToWide(SourceStem + "_" + MaterialName + ".mat");
-			MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
-			Mat->Name = SourceStem + "_" + MaterialName;
-		}
+    const fs::path SourceMtlPath(FPaths::ToWide(NormalizedMtlFilePath));
+    const bool bCanPromoteMtlToMaterialAssets = SourceMtlPath.extension() == L".mtl";
+    const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
 
-		Mat->FilePath = MaterialAssetPath;
-		Mat->SetShader(Shader);
+    auto SanitizeAssetToken = [](FString Token)
+    {
+        for (char& Ch : Token)
+        {
+            const bool bAlphaNum =
+                (Ch >= '0' && Ch <= '9') ||
+                (Ch >= 'A' && Ch <= 'Z') ||
+                (Ch >= 'a' && Ch <= 'z');
 
-		if (Materials.find(Name) != Materials.end())
-		{
-			UE_LOG_WARNING("Material with name '%s' already exists. Overwriting.", Name.c_str());
-		}
-		else
-		{
-			Materials[Name] = Mat;
-		}
+            if (!bAlphaNum && Ch != '_' && Ch != '-')
+            {
+                Ch = '_';
+            }
+        }
 
-		if (bCanPromoteMtlToMaterialAssets && !MaterialAssetPath.empty())
-		{
-			const fs::path AbsoluteMatPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(MaterialAssetPath);
-			std::error_code Ec;
-			fs::create_directories(AbsoluteMatPath.parent_path(), Ec);
-			SerializeMaterial(MaterialAssetPath, Mat);
-		}
-	}
+        return Token.empty() ? FString("Material") : Token;
+    };
 
-	// TODO: 개선 필요해보임
-	for (auto& [Name, Mat] : Parsed)
-	{
-		FMaterial& MaterialData = Mat->MaterialData;
+    for (auto& [Name, Mat] : Parsed)
+    {
+        if (!Mat)
+        {
+            continue;
+        }
 
-		if (MaterialData.bHasDiffuseTexture && !MaterialData.DiffuseTexPath.empty())  LoadTexture(MaterialData.DiffuseTexPath, CachedDevice.Get());
-		if (MaterialData.bHasAmbientTexture && !MaterialData.AmbientTexPath.empty())  LoadTexture(MaterialData.AmbientTexPath, CachedDevice.Get());
-		if (MaterialData.bHasSpecularTexture && !MaterialData.SpecularTexPath.empty()) LoadTexture(MaterialData.SpecularTexPath, CachedDevice.Get());
-		if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())     LoadTexture(MaterialData.BumpTexPath, CachedDevice.Get());
-	}
+        const bool bParsedMatIsAlreadyCached = (GetMaterial(Name) == Mat);
 
-	UE_LOG("Loaded MTL: %s", NormalizedMtlFilePath.c_str());
-	return true;
+        FString MaterialAssetPath = NormalizedMtlFilePath;
+
+        if (bCanPromoteMtlToMaterialAssets)
+        {
+            const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
+            const FString MaterialName = SanitizeAssetToken(Name);
+            const fs::path RelativeMatPath =
+                AutoMaterialDir / FPaths::ToWide(SourceStem + "_" + MaterialName + ".mat");
+
+            MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
+            Mat->Name = SourceStem + "_" + MaterialName;
+        }
+
+        Mat->FilePath = MaterialAssetPath;
+        Mat->SetShader(Shader);
+
+        auto It = Materials.find(Name);
+        if (It != Materials.end())
+        {
+            UE_LOG_WARNING("Material with name '%s' already exists. Keeping existing material.", Name.c_str());
+
+            if (It->second != Mat && !bParsedMatIsAlreadyCached)
+            {
+                UObjectManager::Get().DestroyObject(It->second);
+                It->second = Mat;
+            }
+
+            continue;
+        }
+
+        Materials[Name] = Mat;
+
+        FMaterial& MaterialData = Mat->MaterialData;
+
+        if (MaterialData.bHasDiffuseTexture && !MaterialData.DiffuseTexPath.empty())
+        {
+            LoadTexture(MaterialData.DiffuseTexPath, CachedDevice.Get());
+        }
+
+        if (MaterialData.bHasAmbientTexture && !MaterialData.AmbientTexPath.empty())
+        {
+            LoadTexture(MaterialData.AmbientTexPath, CachedDevice.Get());
+        }
+
+        if (MaterialData.bHasSpecularTexture && !MaterialData.SpecularTexPath.empty())
+        {
+            LoadTexture(MaterialData.SpecularTexPath, CachedDevice.Get());
+        }
+
+        if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())
+        {
+            LoadTexture(MaterialData.BumpTexPath, CachedDevice.Get());
+        }
+
+        if (bCanPromoteMtlToMaterialAssets && !MaterialAssetPath.empty())
+        {
+            const fs::path AbsoluteMatPath =
+                fs::path(FPaths::RootDir()) / FPaths::ToWide(MaterialAssetPath);
+
+            std::error_code Ec;
+            fs::create_directories(AbsoluteMatPath.parent_path(), Ec);
+
+            SerializeMaterial(MaterialAssetPath, Mat);
+        }
+    }
+
+    UE_LOG("Loaded MTL: %s", NormalizedMtlFilePath.c_str());
+    return true;
 }
 
 UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
