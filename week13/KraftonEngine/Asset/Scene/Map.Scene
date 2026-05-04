@@ -3452,7 +3452,7 @@
             "Properties" : {
               "FOV" : 1.047198,
               "Far Z" : 1000.000000,
-              "Location" : [0.286000, -0.318000, 0.697000],
+              "Location" : [0.180839, -0.318000, 0.652680],
               "Near Z" : 0.100000,
               "Ortho Width" : 10.000000,
               "Orthographic" : false,
@@ -3467,11 +3467,11 @@
             "Properties" : {
               "FOV" : 1.047198,
               "Far Z" : 1000.000000,
-              "Location" : [-4.500000, 0.000000, 2.500000],
+              "Location" : [-4.678998, 0.000000, 2.999125],
               "Near Z" : 0.100000,
               "Ortho Width" : 10.000000,
               "Orthographic" : false,
-              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Rotation" : [10.195801, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "bEditorOnly" : false,
               "bTickEnable" : true
@@ -3747,6 +3747,168 @@
               "Location" : [0.000000, 0.117119, 0.469036],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/Interior.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [0.735000, -0.340000, 0.210000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckHandle.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Material.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [1.530000, -0.800000, -0.550000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckTire.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Material.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [1.530000, 0.800000, -0.550000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckTire.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Material.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-1.110000, -0.800000, -0.550000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckTire.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UStaticMeshComponent",
+            "Properties" : {
+              "Cast Shadow" : true,
+              "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+              "Collision Enabled" : 0,
+              "Collision Responses" : {
+                "Pawn" : 2,
+                "Projectile" : 2,
+                "Trigger" : 2,
+                "WorldDynamic" : 2,
+                "WorldStatic" : 2
+              },
+              "Element 0" : {
+                "Path" : "Asset/Materials/Auto/MI_Wheel_GreenClaw01.001.mat"
+              },
+              "Element 1" : {
+                "Path" : "Asset/Materials/Auto/Material.001.mat"
+              },
+              "Generate Overlap Events" : false,
+              "Location" : [-1.110000, 0.800000, -0.550000],
+              "Mass (kg)" : 1.000000,
+              "Object Type" : 0,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Simulate Physics" : false,
+              "Static Mesh" : "Data/Truck/TruckTire.obj",
+              "Two Sided Shadow" : false,
+              "Visible" : true,
               "bEditorOnly" : false,
               "bTickEnable" : true
             }
@@ -4343,7 +4505,7 @@
           "Location" : [152.285156, -18.304354, 1.927183],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, -5.696915, 0.000000],
+          "Rotation" : [0.000000, -5.696304, 0.000000],
           "Scale" : [10.328003, 19.331278, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -4361,9 +4523,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [93.599823, 11.359440, 15.832770],
+    "Location" : [-78.405159, 97.607750, 3.339844],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 6.914993, -51.450222]
+    "Rotation" : [0.000000, 6.612304, 65.252922]
   },
   "Version" : 2,
   "WorldSettings" : {

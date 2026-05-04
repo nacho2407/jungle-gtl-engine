@@ -13,6 +13,14 @@ local CRASH_MAX_SPEED = 50.0
 local elapsedTime = 0.0
 local lastCrashSoundTime = -999.0
 
+local handleComp = nil
+local wheelComp0 = nil
+local wheelComp1 = nil
+local HANDLE_MAX_ROTATION_X = 35.0
+local HANDLE_ROTATION_SPEED = 14.0
+local WHEEL_MAX_ROTATION_Z = 28.0
+local WHEEL_ROTATION_SPEED = 14.0
+
 function BeginPlay()
     car = obj:AsCarPawn()
     if car == nil then
@@ -21,6 +29,10 @@ function BeginPlay()
 
     ObjRegistry.RegisterCar(car)
     movement = car:GetCarMovement()
+
+    handleComp = car:GetComponentByName("UStaticMeshComponent_41")
+    wheelComp0 = car:GetComponentByName("UStaticMeshComponent_42")
+    wheelComp1 = car:GetComponentByName("UStaticMeshComponent_43")
 
     -- 시작 위치 액터를 1회 lookup. 매 frame 재검색하지 않도록 캐시 — World.FindFirstActorByTag
     -- 가 actors 선형 스캔이라 비싸진 않지만, 주기적 호출은 피한다.
@@ -41,6 +53,40 @@ local function ResetCarToStart()
     car.Location = startLocationActor.Location
     car.Rotation = startLocationActor.Rotation
     movement:StopImmediately()
+end
+
+local function UpdateHandleRotation(steering, dt)
+    if handleComp == nil then
+        return
+    end
+
+    dt = dt or 0
+
+    local currentRotation = handleComp.Rotation
+    local targetX = -steering * HANDLE_MAX_ROTATION_X
+    local alpha = math.min(dt * HANDLE_ROTATION_SPEED, 1.0)
+    local nextX = currentRotation.X + (targetX - currentRotation.X) * alpha
+
+    handleComp.Rotation = Vector.new(nextX, currentRotation.Y, currentRotation.Z)
+end
+
+local function UpdateWheelSteeringRotation(steering, dt)
+    dt = dt or 0
+
+    local targetZ = steering * WHEEL_MAX_ROTATION_Z
+    local alpha = math.min(dt * WHEEL_ROTATION_SPEED, 1.0)
+
+    if wheelComp0 ~= nil then
+        local currentRotation = wheelComp0.Rotation
+        local nextZ = currentRotation.Z + (targetZ - currentRotation.Z) * alpha
+        wheelComp0.Rotation = Vector.new(currentRotation.X, currentRotation.Y, nextZ)
+    end
+
+    if wheelComp1 ~= nil then
+        local currentRotation = wheelComp1.Rotation
+        local nextZ = currentRotation.Z + (targetZ - currentRotation.Z) * alpha
+        wheelComp1.Rotation = Vector.new(currentRotation.X, currentRotation.Y, nextZ)
+    end
 end
 
 function EndPlay()
@@ -84,6 +130,8 @@ function Tick(dt)
         movement:StopImmediately()
         movement:SetThrottleInput(0)
         movement:SetSteeringInput(0)
+        UpdateHandleRotation(0, dt)
+        UpdateWheelSteeringRotation(0, dt)
         AudioManager.SetLoopPitch(ENGINE_LOOP_NAME, ENGINE_IDLE_PITCH)
         return
     end
@@ -103,6 +151,8 @@ function Tick(dt)
 
     movement:SetThrottleInput(throttle)
     movement:SetSteeringInput(steering)
+    UpdateHandleRotation(steering, dt)
+    UpdateWheelSteeringRotation(steering, dt)
 
     local speedRatio = math.min(math.abs(movement:GetForwardSpeed()) / ENGINE_MAX_PITCH_SPEED, 1.0)
     local pitch = ENGINE_IDLE_PITCH + (ENGINE_MAX_PITCH - ENGINE_IDLE_PITCH) * speedRatio
