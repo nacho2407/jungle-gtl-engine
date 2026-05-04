@@ -12,6 +12,15 @@
 			<div id="score-value" class="hud-main-value">0/4</div>
 		</div>
 
+		<div id="hud-hp-panel">
+			<div class="hud-small-label">HP</div>
+			<div class="hud-hp-row">
+				<span id="hp-slot-0" class="hud-hp-slot">&#9829;</span>
+				<span id="hp-slot-1" class="hud-hp-slot">&#9829;</span>
+				<span id="hp-slot-2" class="hud-hp-slot">&#9829;</span>
+			</div>
+		</div>
+
 		<div id="hud-quest-panel">
 			<div class="hud-small-label">QUEST</div>
 			<div id="quest-value" class="hud-quest-value">-</div>

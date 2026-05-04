@@ -40,7 +40,10 @@ void AGameModeCarGame::StartMatch()
 		GS->SetRemainingPhaseTime(0.0f);
 		GS->SetLastEndedPhase(ECarGamePhase::None);
 		GS->SetLastPhaseResult(EPhaseResult::None);
-		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs", MatchDuration);
+		GS->SetHealth(GS->GetMaxHealth());
+		GS->SetFinishOutcome(EFinishOutcome::None);
+		UE_LOG("[CarGame] StartMatch — Phase = None, MatchTime=%.1fs, HP=%d/%d",
+			MatchDuration, GS->GetHealth(), GS->GetMaxHealth());
 	}
 }
 
@@ -70,8 +73,19 @@ void AGameModeCarGame::Tick(float DeltaTime)
 				GS->SetLastEndedPhase(Cur);
 				GS->SetLastPhaseResult(R);
 			}
+
+			// 매치 시간 만료 시점에 모든 페이즈가 클리어돼 있으면 Win, 아니면 Lose.
+			constexpr uint32 AllPhases =
+				(1u << static_cast<uint32>(ECarGamePhase::CarWash))      |
+				(1u << static_cast<uint32>(ECarGamePhase::CarGas))       |
+				(1u << static_cast<uint32>(ECarGamePhase::EscapePolice)) |
+				(1u << static_cast<uint32>(ECarGamePhase::DodgeMeteor));
+			const bool bAllCleared = (GS->GetClearedPhasesMask() & AllPhases) == AllPhases;
+			GS->SetFinishOutcome(bAllCleared ? EFinishOutcome::Win : EFinishOutcome::Lose);
+
 			GS->SetPhase(ECarGamePhase::Finished);
-			UE_LOG("[CarGame] Match time elapsed — Phase = Finished");
+			UE_LOG("[CarGame] Match time elapsed — Phase = Finished, Outcome=%s",
+				bAllCleared ? "Win" : "Lose");
 			return;
 		}
 		GS->SetRemainingMatchTime(t);
@@ -203,9 +217,24 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 	{
 		GS->MarkPhaseCleared(Cur);
 	}
+	else if (Result == EPhaseResult::Failed)
+	{
+		GS->LoseHealth(1);
+		UE_LOG("[CarGame] Phase failed — HP=%d/%d", GS->GetHealth(), GS->GetMaxHealth());
+	}
 
 	GS->SetLastEndedPhase(Cur);
 	GS->SetLastPhaseResult(Result);
+
+	// HP 소진 시 즉시 게임오버 — Result 페이즈 거치지 않고 Finished 로 전이.
+	if (GS->GetHealth() <= 0)
+	{
+		GS->SetRemainingPhaseTime(0.0f);
+		GS->SetFinishOutcome(EFinishOutcome::Lose);
+		GS->SetPhase(ECarGamePhase::Finished);
+		UE_LOG("[CarGame] HP depleted — Phase = Finished, Outcome=Lose");
+		return;
+	}
 
 	// Result 페이즈로 전이 — 다음 트리거 진입까지 빈 페이즈가 되지 않도록 짧게 표시.
 	GS->SetRemainingPhaseTime(ResultDisplayDuration);
@@ -280,8 +309,9 @@ bool AGameModeCarGame::TryFinishOnAllCleared()
 
 	if ((GS->GetClearedPhasesMask() & AllPhases) == AllPhases)
 	{
+		GS->SetFinishOutcome(EFinishOutcome::Win);
 		GS->SetPhase(ECarGamePhase::Finished);
-		UE_LOG("[CarGame] All phases cleared — Phase = Finished");
+		UE_LOG("[CarGame] All phases cleared — Phase = Finished, Outcome=Win");
 		return true;
 	}
 	return false;
