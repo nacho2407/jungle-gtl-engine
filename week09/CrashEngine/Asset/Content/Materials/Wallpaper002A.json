@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 20.0,
+        "SpecularStrength": 0.25
+    },
+    "PathFileName": "Asset/Content/Materials/Wallpaper002A.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Wallpaper002A/Wallpaper002A_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Wallpaper002A/Wallpaper002A_NormalDX.jpg"
+    }
+}

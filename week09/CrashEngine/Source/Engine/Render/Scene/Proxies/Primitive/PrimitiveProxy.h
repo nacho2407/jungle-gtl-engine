@@ -27,6 +27,7 @@ public:
     virtual void UpdateTransform();
     virtual void UpdateMaterial();
     virtual void UpdateVisibility();
+    virtual void UpdateShadow();
     virtual void UpdateMesh();
 
     UPrimitiveComponent* Owner = nullptr;
@@ -40,6 +41,7 @@ public:
     void CollectSelectedVisuals(FScene& Scene) const;
 
     bool bVisible         = true;
+    bool bCastShadow      = true;
     bool bSelected        = false;
     bool bSupportsOutline = true;
     bool bNeverCull       = false;

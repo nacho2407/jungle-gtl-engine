@@ -571,7 +571,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
         {
             string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
             // If this actor references a PrimitiveKey and that primitive already created an actor,
-            // prefer the primitive-created actor and update it instead of creating a duplicate.
+            // reuse it only when it matches the serialized actor class. Otherwise the JSON actor
+            // class must win, or actors with static mesh components can load as AStaticMeshActor.
             AActor* Actor = nullptr;
             if (ActorJSON.hasKey("PrimitiveKey"))
             {
@@ -579,7 +580,20 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
                 auto it = CreatedFromPrimitives.find(pk);
                 if (it != CreatedFromPrimitives.end())
                 {
-                    Actor = it->second;
+                    AActor* PrimitiveActor = it->second;
+                    const bool bCanReusePrimitiveActor =
+                        PrimitiveActor &&
+                        (ActorClass.empty() || ActorClass == PrimitiveActor->GetClass()->GetName());
+
+                    if (bCanReusePrimitiveActor)
+                    {
+                        Actor = PrimitiveActor;
+                    }
+                    else
+                    {
+                        World->DestroyActor(PrimitiveActor);
+                        CreatedFromPrimitives.erase(it);
+                    }
                 }
             }
 
