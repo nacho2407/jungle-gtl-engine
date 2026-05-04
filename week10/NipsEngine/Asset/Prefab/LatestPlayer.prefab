@@ -5,13 +5,13 @@
         "ClassName" : "USceneComponent",
         "Editor Only" : false,
         "Enable Tick" : true,
-        "Location" : [5.896558, 5.059983, 3.376166],
+        "Location" : [-0.471037, 2.644220, -0.423759],
         "ObjectName" : "USceneComponent_5",
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : [],
         "Type" : "USceneComponent",
-        "UUID" : 911
+        "UUID" : 4342
       }, {
         "ClassName" : "UBillboardComponent",
         "Editor Only" : true,
@@ -21,14 +21,14 @@
         "Height" : 1.000000,
         "Location" : [0.000000, 0.000000, 0.000000],
         "ObjectName" : "UBillboardComponent_10",
-        "ParentUUID" : 911,
+        "ParentUUID" : 4342,
         "Particle" : "Asset/Texture/Pawn_64x.png",
         "PlayRate" : 30.000000,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : [],
         "Type" : "UBillboardComponent",
-        "UUID" : 912,
+        "UUID" : 4343,
         "Visible" : true,
         "Width" : 1.000000,
         "bLoop" : true
@@ -38,12 +38,12 @@
         "Enable Tick" : true,
         "Location" : [0.400000, 0.800000, 1.300000],
         "ObjectName" : "BodySection",
-        "ParentUUID" : 911,
+        "ParentUUID" : 4342,
         "Rotation" : [0.000000, 0.600000, 6.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : [],
         "Type" : "USceneComponent",
-        "UUID" : 913
+        "UUID" : 4344
       }, {
         "ClassName" : "UStaticMeshComponent",
         "Editor Only" : false,
@@ -54,14 +54,14 @@
         "Materials" : ["Asset/Material/Auto/cyberpunk_enigma_-_katana_Handle.mat"],
         "ObjStaticMeshAsset" : "Asset/Mesh/cyberpunk_katana/katana.obj",
         "ObjectName" : "Katana",
-        "ParentUUID" : 913,
+        "ParentUUID" : 4344,
         "Rotation" : [-180.500000, -0.700000, -102.199997],
         "Scale" : [4.000000, 4.000000, 1.000000],
         "Scroll U" : 0.000000,
         "Scroll V" : 0.000000,
         "Tags" : [],
         "Type" : "UStaticMeshComponent",
-        "UUID" : 914,
+        "UUID" : 4345,
         "Visible" : true
       }, {
         "ClassName" : "UStaticMeshComponent",
@@ -73,14 +73,14 @@
         "Materials" : ["Asset/Material/Auto/cyber_arm_right_Prosthetic_Mat.mat"],
         "ObjStaticMeshAsset" : "Asset/Mesh/cyberpunk_arm/cyber_arm_right_small.obj",
         "ObjectName" : "Arm",
-        "ParentUUID" : 913,
+        "ParentUUID" : 4344,
         "Rotation" : [78.099998, 18.500000, 53.400002],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Scroll U" : 0.000000,
         "Scroll V" : 0.000000,
         "Tags" : [],
         "Type" : "UStaticMeshComponent",
-        "UUID" : 915,
+        "UUID" : 4346,
         "Visible" : true
       }, {
         "CameraLagSpeed" : 10.000000,
@@ -90,14 +90,14 @@
         "EnableCameraLag" : false,
         "Location" : [0.000000, 0.000000, 1.600000],
         "ObjectName" : "USpringArmComponent_1",
-        "ParentUUID" : 911,
+        "ParentUUID" : 4342,
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "SocketOffset" : [0.000000, 0.000000, 0.000000],
         "Tags" : [],
         "TargetArmLength" : 0.000000,
         "Type" : "USpringArmComponent",
-        "UUID" : 916
+        "UUID" : 4347
       }, {
         "ClassName" : "UCameraComponent",
         "Editor Only" : false,
@@ -107,12 +107,12 @@
         "Location" : [0.000000, 0.000000, 0.000000],
         "NearClip" : 0.100000,
         "ObjectName" : "UCameraComponent_1",
-        "ParentUUID" : 916,
+        "ParentUUID" : 4347,
         "Rotation" : [-0.000000, 0.000000, -0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : [],
         "Type" : "UCameraComponent",
-        "UUID" : 917
+        "UUID" : 4348
       }, {
         "ClassName" : "UScriptComponent",
         "Editor Only" : false,
@@ -130,13 +130,31 @@
         "ScriptName" : "PlayerScript",
         "Tags" : [],
         "Type" : "UScriptComponent",
-        "UUID" : 918
+        "UUID" : 4349
+      }, {
+        "ClassName" : "UBoxComponent",
+        "DrawOnlyIfSelected" : false,
+        "Editor Only" : false,
+        "Enable Cull" : true,
+        "Enable Tick" : true,
+        "Extent" : [1.000000, 1.000000, 1.000000],
+        "GenerateOverlapEvents" : true,
+        "Location" : [0.000000, 0.000000, 1.000000],
+        "ObjectName" : "UBoxComponent_0",
+        "ParentUUID" : 4342,
+        "Rotation" : [0.000000, 0.000000, 0.000000],
+        "Scale" : [2.000000, 3.000000, 2.000000],
+        "ShapeColor" : [0.000000, 0.000000, 0.000000, 1.000000],
+        "Tags" : [],
+        "Type" : "UBoxComponent",
+        "UUID" : 14010,
+        "Visible" : true
       }],
     "EditorOnly" : false,
     "Name" : "Player",
-    "RootComponent" : 911,
+    "RootComponent" : 4342,
     "Tags" : ["Player"],
-    "UUID" : 910,
+    "UUID" : 4341,
     "Visible" : true
   },
   "ClassName" : "NipsPrefab",

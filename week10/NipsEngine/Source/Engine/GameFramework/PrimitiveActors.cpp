@@ -403,12 +403,21 @@ void ADefaultPlayerActor::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 
 void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	// 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
+    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
+	if (Enemy && Enemy->GetSliceCount() == 0)
+	{
+        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+        OnTakeDamage(20);
+	}
 }
 
 void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+    // 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
+    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
+    if (Enemy && Enemy->GetSliceCount() == 0)
+		AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void APlayerStart::InitDefaultComponents()
@@ -877,6 +886,10 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor2->SetActorScale(GetActorScale());
         Actor1->ProjMoveComp->SetVelocity(N_World * 5);
         Actor2->ProjMoveComp->SetVelocity(-N_World * 5);
+
+		uint32 NewSliceCount = GetSliceCount() + 1;
+		Actor1->SetSliceCount(NewSliceCount);
+        Actor2->SetSliceCount(NewSliceCount);
 
         NotifyGameJamDestructibleCut(ExtractAttackIdFromTags(OtherActor));
         AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
