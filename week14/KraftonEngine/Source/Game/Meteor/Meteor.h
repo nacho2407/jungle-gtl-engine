@@ -39,8 +39,15 @@ public:
 	USphereComponent* GetCollisionSphere() const { return CollisionSphere; }
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 
-	float Lifetime = 10.0f;       // 초 — 만료 시 자기 destroy
-	float DamagePerHit = 10.0f;  // 차량과 충돌 시 가하는 데미지
+	// Spawn 직후 호출하면 초기 launch 속도 부여. CollisionSphere 의 PhysX body 가
+	// BeginPlay 에서 register 된 뒤에만 의미 있음 — World::SpawnActor 가 BeginPlay 까지
+	// 끝낸 상태로 반환하므로 호출자(MeteorSpawner.lua) 시점에 안전.
+	void SetLaunchVelocity(const FVector& Vel);
+
+	float Lifetime = 4.0f;        // 초 — 만료 시 자기 destroy. spawn rate × Lifetime 이
+	                              // MAX_CONCURRENT 보다 작아야 saturation 안 걸림.
+	float DamagePerHit = 10.0f;   // 차량과 충돌 시 가하는 데미지
+	static constexpr float UnderworldZ = -20.0f;  // Z 가 이 값 미만이면 off-map 추락 → 즉시 destroy
 
 private:
 	void HandleHit(UPrimitiveComponent* HitComp, AActor* OtherActor,

@@ -20,6 +20,7 @@
 #include "Game/GameState/GameStateCarGame.h"
 #include "Game/Pawn/CarPawn.h"
 #include "Game/Pawn/PoliceCar.h"
+#include "Game/Meteor/Meteor.h"
 
 void RegisterGameLuaBindings(sol::state& Lua)
 {
@@ -83,6 +84,15 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	ActorType["IsVisible"] = [](AActor& Actor)
 	{
 		return Actor.IsVisible();
+	};
+	ActorType["SetLaunchVelocity"] = [](AActor& Actor, const FVector& Vel)
+	{
+		// Meteor 전용 — World.SpawnActor 가 AActor* 로 반환하기 때문에 cast 없이 부를 수
+		// 있도록 Actor 확장으로 둠. 다른 액터에는 no-op.
+		if (auto* Meteor = Cast<AMeteor>(&Actor))
+		{
+			Meteor->SetLaunchVelocity(Vel);
+		}
 	};
 
 	// --- ACarPawn / APoliceCar usertype ---

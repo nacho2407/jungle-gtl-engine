@@ -24,6 +24,11 @@ void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 	// 마지막으로 호출해야 PhysX가 올바른 값(Dynamic + Block 응답)으로 등록한다.
 	CollisionSphere->SetCollisionObjectType(ECollisionChannel::WorldDynamic);
 	CollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
+	// 운석끼리 충돌하면 HandleHit → 즉시 자기 destroy 로 지면 도달 전에 사라지는 문제.
+	// 같은 WorldDynamic 채널끼리는 Ignore 로 두어 contact 자체가 안 일어나게 함.
+	// (대신 같은 채널의 Capsule/Box/SphereActor 같은 generic 액터도 통과한다는 점 trade-off,
+	// 실제 ground/player 타격은 WorldStatic / Pawn 채널이라 영향 없음.)
+	CollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::WorldDynamic, ECollisionResponse::Ignore);
 	CollisionSphere->SetSimulatePhysics(true);
 	CollisionSphere->SetMass(750.0f);
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -78,6 +83,17 @@ void AMeteor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// off-map 추락 방어 — lateral velocity 로 콜리전 없는 영역에 떨어진 운석이 Lifetime
+	// 다 채울 때까지 살아있으면 spawn 한도(MAX_CONCURRENT) 를 잠식. Z 임계 이하면 즉시 회수.
+	if (GetActorLocation().Z < UnderworldZ)
+	{
+		if (UWorld* W = GetWorld())
+		{
+			W->DestroyActor(this);
+		}
+		return;
+	}
+
 	ElapsedTime += DeltaTime;
 	if (ElapsedTime >= Lifetime)
 	{
@@ -88,9 +104,24 @@ void AMeteor::Tick(float DeltaTime)
 	}
 }
 
+void AMeteor::SetLaunchVelocity(const FVector& Vel)
+{
+	if (CollisionSphere)
+	{
+		CollisionSphere->SetLinearVelocity(Vel);
+	}
+}
+
 void AMeteor::HandleHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
 	UPrimitiveComponent* /*OtherComp*/, FVector /*Impulse*/, const FHitResult& /*Hit*/)
 {
+	// 운석끼리는 destroy 하지 않음. CollisionResponse 로 1차 차단했지만 혹시 contact 가
+	// 들어와도 lifetime 만료 처리는 skip — 두 운석이 동시에 사라지는 사고 방지.
+	if (OtherActor && OtherActor->IsA<AMeteor>())
+	{
+		return;
+	}
+
 	// 차량에 데미지 적용 — 차량 외 액터(지면 등)와 충돌이면 데미지 없이 destroy만
 	if (auto* Car = Cast<ACarPawn>(OtherActor))
 	{

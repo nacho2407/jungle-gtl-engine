@@ -117,6 +117,21 @@ void AGameModeCarGame::Tick(float DeltaTime)
 
 	if (Phase != ECarGamePhase::None && GS->GetRemainingPhaseTime() > 0.0f)
 	{
+		// DodgeMeteor: HP 0 워치독 — JudgePhaseResult 는 timer 만료 시에만 호출되므로
+		// HP 가 mid-phase 에 0 이 되면 timer 만료까지 대기. 폴링으로 즉시 Failed 처리.
+		if (Phase == ECarGamePhase::DodgeMeteor)
+		{
+			if (auto* Car = Cast<ACarPawn>(GetPlayerPawn()))
+			{
+				if (Car->GetMeteorHealth() <= 0.0f)
+				{
+					GS->SetRemainingPhaseTime(0.0f);
+					EndPhase(EPhaseResult::Failed);
+					return;
+				}
+			}
+		}
+
 		float t = GS->GetRemainingPhaseTime() - DeltaTime;
 		if (t <= 0.0f)
 		{
