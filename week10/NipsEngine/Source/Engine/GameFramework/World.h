@@ -104,6 +104,10 @@ public:
 	double GetGameTime() const { return GameTimeSeconds; }
 	double GetRealTime() const { return RealTimeSeconds; }
 
+	void ActivateSandervistan() { bActivateSandervistan = true; }
+    void DeactivateSandervistan() { bActivateSandervistan = false; }
+    bool IsSandervistanActivated() const { return bActivateSandervistan; }
+
 private:
 	EWorldType WorldType = EWorldType::Editor;
 	ULevel* PersistentLevel = nullptr;
@@ -119,4 +123,7 @@ private:
 	float LastUnscaledDeltaTime = 0.0f;
 	double GameTimeSeconds = 0.0;
 	double RealTimeSeconds = 0.0;
+
+	// 게임잼을 위한 임시용 변수
+	bool bActivateSandervistan = false;
 };

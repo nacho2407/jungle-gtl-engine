@@ -50,6 +50,12 @@ public:
     float GetNearPlane() const { return NearPlane; }
     float GetFarPlane() const { return FarPlane; }
 
+    bool bSandevistanEnabled = false;
+    float SandevistanIntensity = 0.0f;
+
+    bool IsSandevistanEnabled() const { return bSandevistanEnabled; }
+    float GetSandevistanIntensity() const { return SandevistanIntensity; }
+
 public:
 	// Light
 	FAmbientLightInfo		AmbientLightInfo;

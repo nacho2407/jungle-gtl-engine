@@ -237,6 +237,17 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
     Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
 
+	if (World->IsSandervistanActivated())
+	{
+        Bus.bSandevistanEnabled = true;
+        Bus.SandevistanIntensity = 1.0f;
+	}
+	else
+	{
+        Bus.bSandevistanEnabled = false;
+        Bus.SandevistanIntensity = 0.0f;
+	}
+	
     const FFrustum& ViewFrustum = SceneView.CameraFrustum;
     Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();

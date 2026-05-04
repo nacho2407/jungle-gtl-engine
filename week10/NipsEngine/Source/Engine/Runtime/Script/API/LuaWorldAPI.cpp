@@ -348,6 +348,22 @@ namespace FLuaEngineAPI
             UWorld* ActiveWorld = GetEngineAPIWorld();
             return ActiveWorld ? ActiveWorld->GetRealTime() : 0.0;
         };
+        World["GetTimeScale"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld->GetGlobalTimeScale();
+        };
+
+		World["ActivateSandervistan"] = []() {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            ActiveWorld->ActivateSandervistan();
+        };
+
+        World["DeactivateSandervistan"] = []()
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            ActiveWorld->DeactivateSandervistan();
+        };
 
         API["World"] = World;
     }
