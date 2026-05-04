@@ -559,6 +559,16 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
 	if (!Scene || DeltaTime <= 0.0f) return;
 
+	// 어떤 이유로든 frame hitch (씬 로드 / 큰 OBJ 동기 로딩 / Alt-Tab / OS 스파이크) 가
+	// 발생해도 PhysX 가 큰 dt 한 번에 적분해 차량·메테오가 콜리전을 뚫는 tunneling 사고를
+	// 막기 위한 클램프. 0.1s 는 60 m/s 차량이 한 step 에 6m 이동 — 충돌 박스 내에서 풀림
+	// 가능한 수준이고, 그 이상 hitch 면 게임을 느리게 진행시키더라도 안전이 우선.
+	constexpr float MaxPhysicsDeltaTime = 0.1f;
+	if (DeltaTime > MaxPhysicsDeltaTime)
+	{
+		DeltaTime = MaxPhysicsDeltaTime;
+	}
+
 	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
 	// 한 PxActor가 여러 컴포넌트를 가지므로 RootComp 기준으로만 한 번 동기화.
 	//
