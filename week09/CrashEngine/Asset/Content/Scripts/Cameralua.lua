@@ -37,7 +37,7 @@ function Tick(dt)
         local Right = Player:GetRightVector()
         Forward = Forward * math.cos(RadYaw) + Right * math.sin(RadYaw)
     end
-    local NormalCameraLocation = PlayerPos + Vector.new(25.0, 20.0, 50.0)
+    local NormalCameraLocation = PlayerPos + Vector.new(-25.0, -20.0, 50.0)
     local NormalLookAtLocation = PlayerPos
     local ZoomCameraLocation = PlayerPos
     local ZoomLookAtLocation = PlayerPos + Up * 1.2 + Forward * 20.0
