@@ -36,9 +36,13 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 		RenderTargets->SceneColorRTV, 
 		RenderTargets->SceneNormalRTV,
 		RenderTargets->SceneWorldPosRTV
-	};
+    };
     ID3D11DepthStencilView* DSV = RenderTargets->DepthStencilView;
 
+    // DepthPrePass is used as an input for earlier screen-space/light-culling work.
+    // Opaque rendering must not depend on exact depth equality with that prepass,
+    // otherwise runtime camera precision can leave horizontal holes in the GBuffer.
+    Context->DeviceContext->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
     OutSRV = RenderTargets->SceneColorSRV;
     OutRTV = RenderTargets->SceneColorRTV;
@@ -182,7 +186,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            Cmd.Material->Bind(Context->DeviceContext, PermutationKey);
        }
 
-       auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+       auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
        Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
 
        CheckOverrideViewMode(Context);  

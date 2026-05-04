@@ -79,7 +79,7 @@ private:
     void InitializeRmlUiRuntime();
     void ShutdownRmlUiRuntime();
     void UnloadAllRmlUIDocuments();
-    void RenderRmlUiTestDocument(const FRuntimeUIRenderContext& Context);
+    void RenderRmlUiDocuments(const FRuntimeUIRenderContext& Context);
     bool PumpRmlUiInput(InputSystem& Input);
     int GetRmlUiKeyModifierState(const InputSystem& Input) const;
     Rml::ElementDocument* FindRmlUIDocument(const FString& ScreenId) const;
@@ -95,7 +95,6 @@ private:
     FRmlUiRuntimeModule RmlUiRuntimeModule;
     FRmlUiRenderInterfaceD3D11 RmlUiRenderInterface;
     Rml::Context* RmlUiContext = nullptr;
-    Rml::ElementDocument* RmlUiTestDocument = nullptr;
     TMap<FString, FString> RmlUiDocumentPathByScreenId;
     TMap<FString, Rml::ElementDocument*> RmlUiDocumentsByScreenId;
     TArray<FString> RmlUiPendingActionEvents;

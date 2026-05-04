@@ -2665,8 +2665,15 @@ void FEditorMainPanel::RenderViewportHostWindow()
 
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
+        const bool bPIEActive = EditorEngine->GetEditorState() != EViewportPlayState::Editing;
+        const int32 ActivePIEViewportIndex = EditorEngine->GetActivePIEViewportIndex();
         auto DrawSceneViewport = [&](int32 ViewportIndex)
         {
+            if (bPIEActive && ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
+            {
+                return;
+            }
+
             auto& VP = Layout.GetSceneViewport(ViewportIndex);
             const FViewportRect ViewportRect = VP.GetRect();
             if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
@@ -2697,7 +2704,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
                 ImGui::Dummy(Size);
             }
 
-            if (EditorEngine->GetEditorState() != EViewportPlayState::Editing && ViewportIndex == FocusedViewportIndex)
+            if (bPIEActive && ViewportIndex == FocusedViewportIndex)
             {
                 RenderRuntimeUIForPIEViewport(ViewportRect, ImGui::GetIO().DeltaTime);
             }
@@ -2734,11 +2741,13 @@ void FEditorMainPanel::RenderViewportHostWindow()
         {
             DrawSceneViewport(FocusedViewportIndex);
         }
-        ViewportOverlayWidget.RenderSplitterBar(ImGui::GetWindowDrawList());
+        if (!bPIEActive)
+        {
+            ViewportOverlayWidget.RenderSplitterBar(ImGui::GetWindowDrawList());
+        }
 
         // 뷰포트별 독립 메뉴바 오버레이
         {
-            FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
             constexpr float MenuBarH = 34.0f;
             const bool bOnlyFocusedToolbar = Layout.IsLayoutTransitionActive();
 
@@ -2748,6 +2757,8 @@ void FEditorMainPanel::RenderViewportHostWindow()
                     ? FocusedViewportIndex
                     : (i < FocusedViewportIndex ? i : i + 1);
                 if (DrawIndex < 0 || DrawIndex >= FEditorViewportLayout::MaxViewports)
+                    continue;
+                if (bPIEActive && ActivePIEViewportIndex >= 0 && DrawIndex != ActivePIEViewportIndex)
                     continue;
                 if (bOnlyFocusedToolbar && DrawIndex != FocusedViewportIndex)
                     continue;

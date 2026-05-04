@@ -178,6 +178,15 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIndex)
 {
     const auto ViewportRenderStart = std::chrono::steady_clock::now();
+    if (Editor->GetEditorState() != EViewportPlayState::Editing)
+    {
+        const int32 ActivePIEViewportIndex = Editor->GetActivePIEViewportIndex();
+        if (ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
+        {
+            return;
+        }
+    }
+
     FEditorViewportClient* VC = Editor->GetViewportLayout().GetViewportClient(ViewportIndex);
 
     // 1. 이 뷰포트의 SceneView 빌드
@@ -233,12 +242,13 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
     ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
     ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
-    Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
 
-    // Editor controller가 활성화된 뷰포트에서 기즈모·선택 오버레이를 그립니다.
-    // PIE Eject 상태도 PIE World를 대상으로 편집 컨트롤을 사용할 수 있어야 합니다.
-    if (VC->AllowsEditorWorldControl())
+    // Editor controller가 활성화된 순수 편집 뷰포트에서만 grid/gizmo/selection overlay를 그립니다.
+    // PIE에서는 UI/cursor 상태 변화와 관계없이 editor line pass가 게임 화면에 섞이면 안 됩니다.
+    if (VC->GetPlayState() == EViewportPlayState::Editing && VC->AllowsEditorWorldControl())
     {
+        Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
+
         if (UGizmoComponent* Gizmo = Editor->GetGizmo())
         {
             if (SceneView.bOrthographic)
