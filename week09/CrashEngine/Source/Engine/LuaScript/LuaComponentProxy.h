@@ -90,6 +90,17 @@ public:
     bool SetCapsuleRadius(float Radius);
     bool SetCapsuleHalfHeight(float HalfHeight);
 
+    FString GetPatrolGroup() const;
+    bool SetPatrolGroup(const FString& PatrolGroup);
+    int32 GetPatrolOrder() const;
+    bool SetPatrolOrder(int32 PatrolOrder);
+    float GetPatrolMoveSpeed() const;
+    bool SetPatrolMoveSpeed(float MoveSpeed);
+    float GetPatrolReachDistance() const;
+    bool SetPatrolReachDistance(float ReachDistance);
+    bool IsPatrolLoop() const;
+    bool SetPatrolLoop(bool bLoop);
+
     bool SetScriptPath(const FString& ScriptPath);
     bool CallFunction(const FString& FunctionName, sol::variadic_args Args);
 

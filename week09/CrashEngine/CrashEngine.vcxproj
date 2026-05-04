@@ -459,6 +459,8 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\Component\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PatrolAgentComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PatrolPointComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PendulumMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PointLightComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -696,6 +698,8 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\MovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PatrolAgentComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PatrolPointComponent.h" />
     <ClInclude Include="Source\Engine\Component\PendulumMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\PointLightComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />

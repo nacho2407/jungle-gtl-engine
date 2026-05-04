@@ -27,6 +27,9 @@ local Initial_Light_Intensity = 0.0
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
 
+local EffectLocationOffset = Vector.new(0.0, 0.0, 3.0)
+local EffectScale = Vector.new(1.8, 1.8, 1.8)
+
 local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
 local DestroyEffectLifeTime = 1.2
 local DestroyEffectRow = 6
@@ -96,6 +99,9 @@ local function spawnEffect(location, materialPath, lifeTime, row, column)
         return
     end
 
+    effectActor.Location = location + EffectLocationOffset
+    effectActor.Scale = EffectScale
+
     local script = effectActor:AddComponent("LuaScriptComponent")
     if script == nil or not script:IsValid() then
         print("Failed to add Effect.lua")
@@ -103,8 +109,16 @@ local function spawnEffect(location, materialPath, lifeTime, row, column)
         return
     end
 
-    script:SetScriptPath("Effect.lua")
-    script:CallFunction("InitEffect", location, lifeTime, materialPath, row, column)
+    if not script:SetScriptPath("Effect.lua") then
+        print("Failed to set Effect.lua")
+        World.DestroyActor(effectActor)
+        return
+    end
+
+    if not script:CallFunction("InitEffect", effectActor.Location, lifeTime, materialPath, row, column) then
+        print("Failed to initialize effect")
+        World.DestroyActor(effectActor)
+    end
 end
 
 local function spawnDestroyEffectOnce()
@@ -114,6 +128,7 @@ local function spawnDestroyEffectOnce()
 
     bDestroyEffectSpawned = true
     spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
+    print("Effect!")
 end
 
 -- GameManager Actor의 LuaScriptComponent를 직접 호출하고,
@@ -201,16 +216,26 @@ function OnOverlapBegin(other)
     -- Overlap은 C++ CollisionManager가 감지해서 Lua로 넘겨주는 이벤트다.
     print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Document") then
+        if other:HasTag("Collected") then
+            return
+        end
+
+        other:AddTag("Collected")
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
         print("Has Document : ", DocumentCount);
-        spawnEffect(obj.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
+        spawnEffect(other.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
+        if other:HasTag("Collected") then
+            return
+        end
+
+        other:AddTag("Collected")
         HP = HP + 10
         syncPlayerState()
         print("Player HP : ", HP);
-        spawnEffect(obj.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
+        spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
         if not other:HasTag("DamageApplied") then

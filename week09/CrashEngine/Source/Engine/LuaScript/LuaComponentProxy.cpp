@@ -8,6 +8,8 @@
 #include "Component/TextRenderComponent.h"
 #include "Component/LightComponentBase.h"
 #include "Component/LuaScriptComponent.h"
+#include "Component/PatrolAgentComponent.h"
+#include "Component/PatrolPointComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -421,6 +423,110 @@ bool FLuaComponentProxy::SetCapsuleHalfHeight(float HalfHeight)
     }
 
     Capsule->SetCapsuleHalfHeight(HalfHeight);
+    return true;
+}
+
+FString FLuaComponentProxy::GetPatrolGroup() const
+{
+    if (UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent()))
+    {
+        return Agent->GetPatrolGroup();
+    }
+
+    if (UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent()))
+    {
+        return Point->GetPatrolGroup();
+    }
+
+    return "";
+}
+
+bool FLuaComponentProxy::SetPatrolGroup(const FString& PatrolGroup)
+{
+    if (UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent()))
+    {
+        Agent->SetPatrolGroup(PatrolGroup);
+        return true;
+    }
+
+    if (UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent()))
+    {
+        Point->SetPatrolGroup(PatrolGroup);
+        return true;
+    }
+
+    return false;
+}
+
+int32 FLuaComponentProxy::GetPatrolOrder() const
+{
+    UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent());
+    return Point ? Point->GetPatrolOrder() : 0;
+}
+
+bool FLuaComponentProxy::SetPatrolOrder(int32 PatrolOrder)
+{
+    UPatrolPointComponent* Point = Cast<UPatrolPointComponent>(ResolveComponent());
+    if (!Point)
+    {
+        return false;
+    }
+
+    Point->SetPatrolOrder(PatrolOrder);
+    return true;
+}
+
+float FLuaComponentProxy::GetPatrolMoveSpeed() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->GetMoveSpeed() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetPatrolMoveSpeed(float MoveSpeed)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetMoveSpeed(MoveSpeed);
+    return true;
+}
+
+float FLuaComponentProxy::GetPatrolReachDistance() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->GetReachDistance() : 0.0f;
+}
+
+bool FLuaComponentProxy::SetPatrolReachDistance(float ReachDistance)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetReachDistance(ReachDistance);
+    return true;
+}
+
+bool FLuaComponentProxy::IsPatrolLoop() const
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    return Agent ? Agent->IsLoop() : false;
+}
+
+bool FLuaComponentProxy::SetPatrolLoop(bool bLoop)
+{
+    UPatrolAgentComponent* Agent = Cast<UPatrolAgentComponent>(ResolveComponent());
+    if (!Agent)
+    {
+        return false;
+    }
+
+    Agent->SetLoop(bLoop);
     return true;
 }
 
