@@ -10,6 +10,7 @@
 #include "Editor/UI/EditorProjectSettingsWidget.h"
 #include "Editor/UI/EditorWorldSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
+#include "Editor/UI/Asset/FloatCurveEditorWidget.h"
 #include "Math/Vector.h"
 
 class AActor;
@@ -35,6 +36,8 @@ public:
 	void SetContentBrowserIconSize(float Size) { ContentBrowserWidget.SetIconSize(Size); }
 	float GetContentBrowserIconSize() const { return ContentBrowserWidget.GetIconSize(); }
 
+	void OpenAssetEditorForObject(UObject* Object);
+
 private:
 	void RenderMainMenuBar();
 	void RenderShortcutOverlay();
@@ -56,6 +59,7 @@ private:
 	EditorShadowMapDebugWidget ShadowMapDebugWidget;
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
+	FFloatCurveEditorWidget FloatCurveEditorWidget;
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;

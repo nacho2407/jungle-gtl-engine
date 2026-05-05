@@ -2,8 +2,12 @@
 
 #include "ContentBrowserElement.h"
 #include "Editor/Settings/EditorSettings.h"
-#include "WICTextureLoader.h"
+#include "Editor/Subsystem/AssetFactory.h"
+#include "FloatCurve/FloatCurveAsset.h"
+#include "FloatCurve/FloatCurveManager.h"
 #include "Resource/ResourceManager.h"
+#include "WICTextureLoader.h"
+#include "EditorEngine.h"
 
 #include <algorithm>
 
@@ -58,21 +62,23 @@ namespace
 		return FPaths::RootDir();
 	}
 
-	bool IsSubPath(const std::filesystem::path& parent, const std::filesystem::path& child)
+	bool IsSubPath(const std::filesystem::path& Parent, const std::filesystem::path& Child)
 	{
-		std::filesystem::path p = std::filesystem::weakly_canonical(parent);
-		std::filesystem::path c = std::filesystem::weakly_canonical(child);
+		std::filesystem::path P = std::filesystem::weakly_canonical(Parent);
+		std::filesystem::path C = std::filesystem::weakly_canonical(Child);
 
-		auto pIt = p.begin();
-		auto cIt = c.begin();
+		auto PIt = P.begin();
+		auto CIt = C.begin();
 
-		for (; pIt != p.end() && cIt != c.end(); ++pIt, ++cIt)
+		for (; PIt != P.end() && CIt != C.end(); ++PIt, ++CIt)
 		{
-			if (*pIt != *cIt)
+			if (*PIt != *CIt)
+			{
 				return false;
+			}
 		}
 
-		return pIt == p.end(); // parent 끝까지 다 맞았으면 포함됨
+		return PIt == P.end();
 	}
 }
 
@@ -88,6 +94,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	ICons[".Scene"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"World_64x.png"));
 	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
 	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
+	ICons[".curve"] = ICons["Default"];
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -106,20 +113,16 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		return;
 	}
 
-	//if (ImGui::Button("Refresh") || BrowserContext.bIsNeedRefresh)
-	//	Refresh();
+	(void)DeltaTime;
 
 	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
-	if(BrowserContext.SelectedElement)
+	if (BrowserContext.SelectedElement)
 		PathText += L"/" + BrowserContext.SelectedElement->GetFileName();
 
-	//ImGui::Text(FPaths::ToUtf8(PathText).c_str());
-
 	ImGui::SameLine();
-	int size = static_cast<int>(BrowserContext.ContentSize.x);
-	//ImGui::SliderInt("##slider", &size, 20, 100);
-	BrowserContext.ContentSize = ImVec2(static_cast<float>(size), static_cast<float>(size));
+	int Size = static_cast<int>(BrowserContext.ContentSize.x);
+	BrowserContext.ContentSize = ImVec2(static_cast<float>(Size), static_cast<float>(Size));
 
 	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
@@ -183,43 +186,47 @@ void FEditorContentBrowserWidget::RefreshContent()
 	TArray<FContentItem> CurrentContents = ReadDirectory(BrowserContext.CurrentPath);
 	for (const auto& Content : CurrentContents)
 	{
-		std::shared_ptr<ContentBrowserElement> element;
+		std::shared_ptr<ContentBrowserElement> Element;
 		FString Extension = FPaths::ToUtf8(Content.Path.extension());
 
 		if (Content.bIsDirectory)
 		{
-			element = std::make_shared<DirectoryElement>();
-			element.get()->SetIcon(ICons["Directory"].Get());
-
+			Element = std::make_shared<DirectoryElement>();
+			Element->SetIcon(ICons["Directory"].Get());
 		}
 		else if (Content.Path.extension() == ".Scene")
 		{
-			element = std::make_shared<SceneElement>();
-			element.get()->SetIcon(ICons[Extension].Get());
+			Element = std::make_shared<SceneElement>();
+			Element->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".obj")
 		{
-			element = std::make_shared<ObjectElement>();
-			element.get()->SetIcon(ICons[Extension].Get());
+			Element = std::make_shared<ObjectElement>();
+			Element->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".mat")
 		{
-			element = std::make_shared<MaterialElement>();
-			element.get()->SetIcon(ICons[Extension].Get());
+			Element = std::make_shared<MaterialElement>();
+			Element->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".curve")
+		{
+			Element = std::make_shared<FloatCurveElement>();
+			Element->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
 		{
-			element = std::make_shared<PNGElement>();
-			element.get()->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
+			Element = std::make_shared<PNGElement>();
+			Element->SetIcon(FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring())).Get());
 		}
 		else
 		{
-			element = std::make_shared<ContentBrowserElement>();
-			element.get()->SetIcon(ICons["Default"].Get());
+			Element = std::make_shared<ContentBrowserElement>();
+			Element->SetIcon(ICons["Default"].Get());
 		}
-		
-		element.get()->SetContent(Content);
-		CachedBrowserElements.push_back(std::move(element));
+
+		Element->SetContent(Content);
+		CachedBrowserElements.push_back(std::move(Element));
 	}
 }
 
@@ -260,40 +267,71 @@ void FEditorContentBrowserWidget::DrawDirNode(FDirNode InNode)
 
 void FEditorContentBrowserWidget::DrawContents()
 {
-	int elementCount = static_cast<int>(CachedBrowserElements.size());
+	int ElementCount = static_cast<int>(CachedBrowserElements.size());
 
-	const float contentWidth = ImGui::GetContentRegionAvail().x;
-	const float itemWidth = BrowserContext.ContentSize.x;
-	const float itemHeight = BrowserContext.ContentSize.y;
+	const float ContentWidth = ImGui::GetContentRegionAvail().x;
+	const float ItemWidth = BrowserContext.ContentSize.x;
+	const float ItemHeight = BrowserContext.ContentSize.y;
 
-	int columnCount = static_cast<int>(contentWidth / itemWidth);
-	if (columnCount < 1)
+	int ColumnCount = static_cast<int>(ContentWidth / ItemWidth);
+	if (ColumnCount < 1)
 	{
-		columnCount = 1;
+		ColumnCount = 1;
 	}
 
-	float gapSize = 0.0f;
-	if (columnCount > 1)
+	float GapSize = 0.0f;
+	if (ColumnCount > 1)
 	{
-		gapSize = (contentWidth - itemWidth * columnCount) / (columnCount);
+		GapSize = (ContentWidth - ItemWidth * ColumnCount) / (ColumnCount);
 	}
 
-	ImVec2 startPos = ImGui::GetCursorPos();
+	ImVec2 StartPos = ImGui::GetCursorPos();
 
-	for (int i = 0; i < elementCount; ++i)
+	for (int i = 0; i < ElementCount; ++i)
 	{
-		int column = i % columnCount;
-		int row = i / columnCount;
+		int Column = i % ColumnCount;
+		int Row = i / ColumnCount;
 
-		float x = startPos.x + column * (itemWidth + gapSize);
-		float y = startPos.y + row * (itemHeight + gapSize * 2.f);
+		float X = StartPos.x + Column * (ItemWidth + GapSize);
+		float Y = StartPos.y + Row * (ItemHeight + GapSize * 2.f);
 
-		ImGui::SetCursorPos(ImVec2(x, y));
+		ImGui::SetCursorPos(ImVec2(X, Y));
 		CachedBrowserElements[i]->Render(BrowserContext);
 	}
 
-	int rowCount = (elementCount + columnCount - 1) / columnCount;
-	ImGui::SetCursorPos(ImVec2(startPos.x, startPos.y + rowCount * itemHeight));
+	int RowCount = (ElementCount + ColumnCount - 1) / ColumnCount;
+	ImGui::SetCursorPos(ImVec2(StartPos.x, StartPos.y + RowCount * ItemHeight));
+
+	if (ImGui::BeginPopupContextWindow("##ContentBrowserBackgroundContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+	{
+		if (ImGui::BeginMenu("Create"))
+		{
+			if (ImGui::MenuItem("Float Curve"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateFloatCurve(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewFloatCurve", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UFloatCurveAsset* CurveAsset = FFloatCurveManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(CurveAsset);
+						}
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+		if (ImGui::MenuItem("Refresh"))
+		{
+			Refresh();
+		}
+
+		ImGui::EndPopup();
+	}
 }
 
 TArray<FContentItem> FEditorContentBrowserWidget::ReadDirectory(std::wstring Path)
@@ -351,7 +389,7 @@ FEditorContentBrowserWidget::FDirNode FEditorContentBrowserWidget::BuildDirector
 		Node.Children.push_back(BuildDirectoryTree(Entry.path()));
 	}
 
-	if(Node.Self.Name.empty())
+	if (Node.Self.Name.empty())
 		Node.Self.Name = FPaths::ToWide("Project");
 
 	return Node;

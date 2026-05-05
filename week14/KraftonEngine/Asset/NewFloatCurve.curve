@@ -1,0 +1,19 @@
+{
+        "DefaultValue" : 0.000000,
+        "Keys" : [{
+            "ArriveTangent" : 0.000000,
+            "InterpMode" : 1,
+            "LeaveTangent" : 0.000000,
+            "Time" : 0.000000,
+            "Value" : 0.000000
+          }, {
+            "ArriveTangent" : 0.000000,
+            "InterpMode" : 1,
+            "LeaveTangent" : 0.000000,
+            "Time" : 1.000000,
+            "Value" : 1.000000
+          }],
+        "PostExtrapMode" : 0,
+        "PreExtrapMode" : 0,
+        "Version" : 1
+      }
