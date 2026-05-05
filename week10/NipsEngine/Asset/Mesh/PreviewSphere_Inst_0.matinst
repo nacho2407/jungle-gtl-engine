@@ -3,7 +3,7 @@
         "OverridedParams" : [{
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Texture/Dice.JPG"
+            "Value" : "Asset/Mesh/Dice/Dice_Diffuse.png"
           }, {
             "Name" : "bHasDiffuseMap",
             "Type" : "Bool",
@@ -21,5 +21,5 @@
             "Type" : "Bool",
             "Value" : false
           }],
-        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+        "Parent" : "DefaultWhite"
       }

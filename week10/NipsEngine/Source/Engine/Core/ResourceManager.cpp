@@ -89,6 +89,103 @@ namespace
 		const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
 		return SourceStem + "_Mat_" + std::to_string(MaterialIndex);
 	}
+
+	FString MakeMaterialSlotAliasKey(const FString& SourcePath, const FString& SlotName)
+	{
+		return FPaths::Normalize(SourcePath) + "::" + SlotName;
+	}
+
+	FString TrimAscii(FString Value)
+	{
+		const size_t Start = Value.find_first_not_of(" \t\r\n");
+		if (Start == FString::npos)
+		{
+			return {};
+		}
+
+		const size_t End = Value.find_last_not_of(" \t\r\n");
+		return Value.substr(Start, End - Start + 1);
+	}
+
+	FString ResolveObjMaterialLibraryPath(const FString& ObjPath)
+	{
+		std::filesystem::path AbsoluteObjPath(FPaths::ToAbsolute(FPaths::ToWide(FPaths::Normalize(ObjPath))));
+		std::ifstream ObjFile(AbsoluteObjPath);
+		if (!ObjFile.is_open())
+		{
+			return {};
+		}
+
+		FString Line;
+		while (std::getline(ObjFile, Line))
+		{
+			Line = TrimAscii(Line);
+			if (Line.rfind("mtllib ", 0) != 0)
+			{
+				continue;
+			}
+
+			FString MtlReference = TrimAscii(Line.substr(7));
+			if (MtlReference.empty())
+			{
+				return {};
+			}
+
+			std::filesystem::path MtlPath(FPaths::ToWide(MtlReference));
+			if (MtlPath.is_relative())
+			{
+				MtlPath = AbsoluteObjPath.parent_path() / MtlPath;
+			}
+
+			std::error_code Ec;
+			MtlPath = MtlPath.lexically_normal();
+			if (!std::filesystem::exists(MtlPath, Ec) || Ec)
+			{
+				return {};
+			}
+
+			std::filesystem::path RelativePath = std::filesystem::relative(MtlPath, std::filesystem::path(FPaths::RootDir()), Ec);
+			if (Ec)
+			{
+				return FPaths::ToUtf8(MtlPath.generic_wstring());
+			}
+
+			return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
+		}
+
+		return {};
+	}
+
+	TArray<FString> CollectObjMaterialSlotNames(const FString& ObjPath)
+	{
+		TArray<FString> SlotNames;
+		std::unordered_set<FString> SeenSlotNames;
+
+		std::filesystem::path AbsoluteObjPath(FPaths::ToAbsolute(FPaths::ToWide(FPaths::Normalize(ObjPath))));
+		std::ifstream ObjFile(AbsoluteObjPath);
+		if (!ObjFile.is_open())
+		{
+			return SlotNames;
+		}
+
+		FString Line;
+		while (std::getline(ObjFile, Line))
+		{
+			Line = TrimAscii(Line);
+			if (Line.rfind("usemtl ", 0) != 0)
+			{
+				continue;
+			}
+
+			FString SlotName = TrimAscii(Line.substr(7));
+			if (!SlotName.empty() && SeenSlotNames.insert(SlotName).second)
+			{
+				SlotNames.push_back(SlotName);
+			}
+		}
+
+		return SlotNames;
+	}
 }
 
 static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath)
@@ -961,9 +1058,10 @@ TArray<FString> FResourceManager::GetMaterialInterfaceNames() const
 {
 	TArray<FString> Names;
 	Names.reserve(Materials.size() + MaterialInstances.size());
+	std::unordered_set<const UMaterial*> SeenMaterials;
 	for (const auto& [Name, Mat] : Materials)
 	{
-		if (Mat)
+		if (Mat && SeenMaterials.insert(Mat).second)
 		{
 			const std::filesystem::path FilePath(FPaths::ToWide(Mat->GetFilePath()));
 			const bool bFileBackedMaterial = FilePath.extension() == L".mat";
@@ -995,7 +1093,7 @@ UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 	}
 	for (const auto& [Name, Material] : Materials)
 	{
-		if (Material && FPaths::Normalize(Material->GetFilePath()) == NormalizedName)
+		if (Material && (Material->GetName() == MaterialName || FPaths::Normalize(Material->GetFilePath()) == NormalizedName))
 		{
 			return Material;
 		}
@@ -1052,6 +1150,26 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
         return false;
     }
 
+	std::filesystem::path RequestedPath(FPaths::ToWide(NormalizedMtlFilePath));
+	std::wstring RequestedExtension = RequestedPath.extension().wstring();
+	std::transform(RequestedExtension.begin(), RequestedExtension.end(), RequestedExtension.begin(), ::towlower);
+	if (RequestedExtension == L".obj")
+	{
+		const FString ResolvedMtlPath = ResolveObjMaterialLibraryPath(NormalizedMtlFilePath);
+		if (ResolvedMtlPath.empty())
+		{
+			return false;
+		}
+
+		const bool bLoadedMaterial = LoadMaterial(ResolvedMtlPath, ShaderName, Device);
+		if (bLoadedMaterial)
+		{
+			RegisterObjMaterialSlotAliases(NormalizedMtlFilePath, ResolvedMtlPath);
+		}
+
+		return bLoadedMaterial;
+	}
+
     UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
     if (!Shader)
     {
@@ -1099,9 +1217,8 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
             continue;
         }
 
-        const bool bParsedMatIsAlreadyCached = (GetMaterial(Name) == Mat);
-
         FString MaterialAssetPath = NormalizedMtlFilePath;
+		FString MaterialKey = Name;
 
         if (bCanPromoteMtlToMaterialAssets)
         {
@@ -1111,6 +1228,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
             MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
             Mat->Name = MaterialName;
+			MaterialKey = MaterialAssetPath;
         }
 
 		if (Mat->ImportedName.empty())
@@ -1120,21 +1238,31 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
         Mat->FilePath = MaterialAssetPath;
         Mat->SetShader(Shader);
 
-        auto It = Materials.find(Name);
-        if (It != Materials.end())
-        {
-            UE_LOG_WARNING("Material with name '%s' already exists. Keeping existing material.", Name.c_str());
+		auto It = Materials.find(MaterialKey);
+		if (It != Materials.end())
+		{
+			if (It->second != Mat)
+			{
+				UObjectManager::Get().DestroyObject(Mat);
+				Mat = It->second;
+			}
+		}
+		else
+		{
+			Materials[MaterialKey] = Mat;
+		}
 
-            if (It->second != Mat && !bParsedMatIsAlreadyCached)
-            {
-                UObjectManager::Get().DestroyObject(It->second);
-                It->second = Mat;
-            }
+		if (Materials.find(Mat->Name) == Materials.end())
+		{
+			Materials[Mat->Name] = Mat;
+		}
 
-            continue;
-        }
+		if (Materials.find(Name) == Materials.end())
+		{
+			Materials[Name] = Mat;
+		}
 
-        Materials[Name] = Mat;
+		MaterialSlotAliases[MakeMaterialSlotAliasKey(NormalizedMtlFilePath, Name)] = MaterialKey;
 
         FMaterial& MaterialData = Mat->MaterialData;
 
@@ -1172,6 +1300,65 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
     UE_LOG("Loaded MTL: %s", NormalizedMtlFilePath.c_str());
     return true;
+}
+
+void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)
+{
+	const FString NormalizedObjPath = FPaths::Normalize(ObjPath);
+	const FString NormalizedMtlPath = FPaths::Normalize(MtlPath);
+	const TArray<FString> SlotNames = CollectObjMaterialSlotNames(NormalizedObjPath);
+
+	for (const FString& SlotName : SlotNames)
+	{
+		const auto MtlAliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(NormalizedMtlPath, SlotName));
+		if (MtlAliasIt != MaterialSlotAliases.end())
+		{
+			MaterialSlotAliases[MakeMaterialSlotAliasKey(NormalizedObjPath, SlotName)] = MtlAliasIt->second;
+		}
+	}
+}
+
+UMaterial* FResourceManager::GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const
+{
+	if (!SourcePath.empty())
+	{
+		const auto AliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(SourcePath, SlotName));
+		if (AliasIt != MaterialSlotAliases.end())
+		{
+			if (UMaterial* Material = GetMaterial(AliasIt->second))
+			{
+				return Material;
+			}
+		}
+	}
+
+	return GetMaterial(SlotName);
+}
+
+void FResourceManager::ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const
+{
+	if (!StaticMesh)
+	{
+		return;
+	}
+
+	for (FStaticMeshMaterialSlot& Slot : StaticMesh->Slots)
+	{
+		if (!SourcePath.empty())
+		{
+			const auto AliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(SourcePath, Slot.SlotName));
+			if (AliasIt != MaterialSlotAliases.end())
+			{
+				Slot.SlotName = AliasIt->second;
+			}
+		}
+
+		Slot.Material = GetMaterialForStaticMeshSlot(SourcePath, Slot.SlotName);
+		if (Slot.Material == nullptr)
+		{
+			Slot.Material = GetMaterial("DefaultWhite");
+		}
+	}
 }
 
 UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
@@ -1537,7 +1724,13 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();
+		if (!Material->ImportedName.empty() && Materials.find(Material->ImportedName) == Materials.end())
+		{
+			Materials[Material->ImportedName] = Material;
+		}
 	}
+	Materials[NormalizedMatFilePath] = Material;
+	Materials[MatName] = Material;
 	Material->SetParam("AmbientColor", FMaterialParamValue(Material->MaterialData.AmbientColor));
 	Material->SetParam("DiffuseColor", FMaterialParamValue(Material->MaterialData.DiffuseColor));
 	Material->SetParam("SpecularColor", FMaterialParamValue(Material->MaterialData.SpecularColor));
@@ -1846,14 +2039,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			}
 		}
 
-		for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
-		{
-			Slot.Material = GetMaterial(Slot.SlotName);
-			if (Slot.Material == nullptr)
-			{
-				Slot.Material = GetMaterial("DefaultWhite");
-			}
-		}
+		ResolveStaticMeshMaterialSlots(SourcePath.empty() ? NormalizedPath : SourcePath, LoadedMeshData);
 
 		UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
 		LoadedMesh->SetMeshData(LoadedMeshData);
@@ -1927,6 +2113,8 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			return nullptr;
 		}
 
+		ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
+
 		//	4. OBJ 로드 성공 시 Binary 저장
 		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
 		if (bSaveBinaryOk)
@@ -1955,16 +2143,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			BinaryPath.c_str());
 	}
 
-	// Material 연결
-	for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)
-	{
-		Slot.Material = GetMaterial(Slot.SlotName);
-
-		if (Slot.Material == nullptr)
-		{
-			Slot.Material = GetMaterial("DefaultWhite");
-		}
-	}
+	ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
 
     UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
     LoadedMesh->SetMeshData(LoadedMeshData);

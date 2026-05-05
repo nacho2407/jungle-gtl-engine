@@ -5,5 +5,5 @@
             "Type" : "Texture",
             "Value" : "Asset/Cube/Cube.png"
           }],
-        "Parent" : "Asset/Cube/cube.obj"
+        "Parent" : "Asset/Material/Auto/cube_Mat_0.mat"
       }

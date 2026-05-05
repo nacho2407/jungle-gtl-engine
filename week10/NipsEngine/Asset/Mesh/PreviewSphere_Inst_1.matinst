@@ -3,7 +3,7 @@
         "OverridedParams" : [{
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Texture/ChatGPT Image 2026년 5월 4일 오전 04_11_50.png"
+            "Value" : "Asset/Mesh/Dice/Dice_Diffuse.png"
           }],
-        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+        "Parent" : "DefaultWhite"
       }
