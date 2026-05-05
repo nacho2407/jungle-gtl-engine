@@ -1062,6 +1062,12 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp" />
+    <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
+    <ClCompile Include="Source\Engine\Math\FloatCurve.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2672,6 +2678,12 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />
+    <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
+    <ClInclude Include="Source\Engine\Math\FloatCurve.h" />
+    <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

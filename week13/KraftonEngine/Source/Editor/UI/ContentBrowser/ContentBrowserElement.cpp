@@ -1,5 +1,10 @@
 ﻿#include "ContentBrowserElement.h"
+
+#include "Editor/EditorEngine.h"
+#include "FloatCurve/FloatCurveManager.h"
 #include "Platform/Paths.h"
+#include "Serialization/SceneSaveManager.h"
+#include "FloatCurve/FloatCurveAsset.h"
 
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
@@ -88,14 +93,26 @@ void DirectoryElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	Context.bIsNeedRefresh = true;
 }
 
-#include "Serialization/SceneSaveManager.h"
-#include "Editor/EditorEngine.h"
 void SceneElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	std::filesystem::path ScenePath = ContentItem.Path;
 	FString FilePath = FPaths::ToUtf8(ScenePath.wstring());
 	UEditorEngine* EditorEngine = Context.EditorEngine;
 	EditorEngine->LoadSceneFromPath(FilePath);
+}
+
+void FloatCurveElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (UFloatCurveAsset* CurveAsset = FFloatCurveManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(CurveAsset);
+	}
 }
 
 void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)

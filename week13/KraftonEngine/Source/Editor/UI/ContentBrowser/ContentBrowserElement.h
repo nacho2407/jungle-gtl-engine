@@ -51,6 +51,12 @@ public:
 	virtual const char* GetDragItemType() override { return "ObjectContentItem"; }
 };
 
+class FloatCurveElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+};
+
 class PNGElement final : public ContentBrowserElement
 {
 public:

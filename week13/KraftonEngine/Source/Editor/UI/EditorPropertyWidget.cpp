@@ -17,6 +17,7 @@
 #include "Component/HeightFogComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/ClassTypes.h"
+#include "Math/FloatCurve.h"
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
