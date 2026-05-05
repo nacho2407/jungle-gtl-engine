@@ -1691,6 +1691,9 @@
     <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Types\MinimalViewInfo.h">
+      <Filter>Source\Engine\Render\Types</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClInclude>

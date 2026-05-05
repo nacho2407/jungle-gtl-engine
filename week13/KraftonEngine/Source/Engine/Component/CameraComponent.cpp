@@ -2,6 +2,7 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
 
 IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
@@ -80,6 +81,19 @@ void UCameraComponent::OnResize(int32 Width, int32 Height)
 void UCameraComponent::SetCameraState(const FCameraState& NewState)
 {
 	CameraState = NewState;
+}
+
+void UCameraComponent::GetCameraView(float /*DeltaTime*/, FMinimalViewInfo& OutPOV) const
+{
+	UpdateWorldMatrix();
+	OutPOV.Location    = GetWorldLocation();
+	OutPOV.Rotation    = GetWorldMatrix().ToRotator();
+	OutPOV.FOV         = CameraState.FOV;
+	OutPOV.AspectRatio = CameraState.AspectRatio;
+	OutPOV.OrthoWidth  = CameraState.OrthoWidth;
+	OutPOV.NearClip    = CameraState.NearZ;
+	OutPOV.FarClip     = CameraState.FarZ;
+	OutPOV.bIsOrtho    = CameraState.bIsOrthogonal;
 }
 
 FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight) {

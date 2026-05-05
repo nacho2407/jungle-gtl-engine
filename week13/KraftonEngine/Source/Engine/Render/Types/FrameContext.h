@@ -13,6 +13,7 @@
 class UCameraComponent;
 class FViewport;
 class FGPUOcclusionCulling;
+struct FMinimalViewInfo;
 
 /*
 	FFrameContext - per-frame/per-viewport read-only state.
@@ -89,6 +90,8 @@ struct FFrameContext
 	}
 
 	// Batch setters - populate multiple fields at once
+	// FMinimalViewInfo 가 카메라 통화. 컴포넌트 오버로드는 통화로 변환 후 위임.
+	void SetCameraInfo(const FMinimalViewInfo& POV);
 	void SetCameraInfo(const UCameraComponent* Camera);
 	void SetViewportInfo(const FViewport* VP);
 

@@ -801,6 +801,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Render\Types\LODContext.h" />
     <ClInclude Include="Source\Engine\Render\Types\LightFrustumUtils.h" />
     <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h" />
+    <ClInclude Include="Source\Engine\Render\Types\MinimalViewInfo.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
