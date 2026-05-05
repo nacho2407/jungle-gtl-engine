@@ -49,6 +49,11 @@ if exist "%PROJECT_DIR%\imgui.ini" copy "%PROJECT_DIR%\imgui.ini" "%RELEASE_DIR%
 :: Shaders
 xcopy "%PROJECT_DIR%\Shaders" "%RELEASE_DIR%\Shaders\" /e /i /q >nul
 
+:: Local shader cache (generated .cso files)
+if exist "%PROJECT_DIR%\DerivedData\ShaderCache" (
+    xcopy "%PROJECT_DIR%\DerivedData\ShaderCache" "%RELEASE_DIR%\DerivedData\ShaderCache\" /e /i /q >nul
+)
+
 :: Asset (Scene 등)
 xcopy "%PROJECT_DIR%\Asset" "%RELEASE_DIR%\Asset\" /e /i /q >nul
 
