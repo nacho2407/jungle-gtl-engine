@@ -85,6 +85,7 @@ struct FFrameContext
 	// Camera
 	FCameraFadeState CameraFade;
 	FCameraVignetteState CameraVignette;
+	FCameraLetterboxState CameraLetterbox;
 
 	// Derived helpers
 	bool IsFixedOrtho() const

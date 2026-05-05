@@ -39,6 +39,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	
 	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants));
 	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants));
+	CameraLetterboxCB.Create(InDevice, sizeof(FCameraLetterboxConstants));
 }
 
 void FDrawCommandBuilder::Release()
@@ -57,6 +58,10 @@ void FDrawCommandBuilder::Release()
 	OutlineCB.Release();
 	SceneDepthCB.Release();
 	FXAACB.Release();
+	
+	CameraFadeCB.Release();
+	CameraVignetteCB.Release();
+	CameraLetterboxCB.Release();
 }
 
 // ============================================================
@@ -620,6 +625,26 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			Cmd.InitFullscreenTriangle(VignetteShader, ERenderPass::PostProcess, PPRS);
 			Cmd.Bindings.PerShaderCB[0] = &CameraVignetteCB;
 			Cmd.BuildSortKey(6);
+		}
+	}
+
+	// Camera Letterbox
+	if (Frame.CameraLetterbox.bEnabled && Frame.CameraLetterbox.Amount > 0.0f)
+	{
+		FShader* LetterboxShader = FShaderManager::Get().GetOrCreate(EShaderPath::CameraLetterbox);
+		if (LetterboxShader)
+		{
+			FCameraLetterboxConstants LetterboxData = {};
+			LetterboxData.LetterboxColor = Frame.CameraLetterbox.Color.ToVector4();
+			LetterboxData.LetterboxAmount = Frame.CameraLetterbox.Amount;
+			LetterboxData.LetterboxThickness = Frame.CameraLetterbox.Thickness;
+
+			CameraLetterboxCB.Update(Ctx, &LetterboxData, sizeof(FCameraLetterboxConstants));
+
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(LetterboxShader, ERenderPass::PostProcess, PPRS);
+			Cmd.Bindings.PerShaderCB[0] = &CameraLetterboxCB;
+			Cmd.BuildSortKey(7);
 		}
 	}
 }

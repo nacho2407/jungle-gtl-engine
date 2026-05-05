@@ -263,6 +263,15 @@ struct FCameraVignetteConstants
 	float _pad;              // 4B - 16B boundary
 };
 
+// Camera Letterbox CB (b3) - HLSL CameraLetterboxCB와 1:1 대응
+struct FCameraLetterboxConstants
+{
+	FVector4 LetterboxColor;  // 16B
+	float LetterboxAmount;    // 4B
+	float LetterboxThickness; // 4B
+	float _pad[2];            // 8B - 16B boundary
+};
+
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
 // ============================================================

@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Component/CineCameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Input/InputSystem.h"
 #include "Viewport/Viewport.h"
@@ -110,6 +111,22 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 		Frame.CameraVignette.Intensity = CamManager->GetVignetteIntensity();
 		Frame.CameraVignette.Radius = CamManager->GetVignetteRadius();
 		Frame.CameraVignette.Softness = CamManager->GetVignetteSoftness();
+	}
+
+	if (UCineCameraComponent* CineCamera = Cast<UCineCameraComponent>(CamManager->GetActiveCamera()))
+	{
+		const FCineLetterboxSettings& LetterboxSettings = CineCamera->GetLetterboxSettings();
+		Frame.CameraLetterbox.bEnabled = LetterboxSettings.bEnabled;
+		if (Frame.CameraLetterbox.bEnabled)
+		{
+			Frame.CameraLetterbox.Amount = LetterboxSettings.Amount;
+			Frame.CameraLetterbox.Thickness = LetterboxSettings.Thickness;
+			Frame.CameraLetterbox.Color = LetterboxSettings.Color;
+		}
+	}
+	else
+	{
+		Frame.CameraLetterbox.bEnabled = false;
 	}
 }
 

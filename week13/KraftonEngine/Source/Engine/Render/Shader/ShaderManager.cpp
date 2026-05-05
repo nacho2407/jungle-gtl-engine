@@ -48,6 +48,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::ShadowMapVis, StartupError);
 	GetOrCreate(EShaderPath::CameraFade, StartupError);
 	GetOrCreate(EShaderPath::CameraVignette, StartupError);
+	GetOrCreate(EShaderPath::CameraLetterbox, StartupError);
 
 	// UberLit 기본은 Phong + Cluster Culling으로 컴파일한다.
 	GetOrCreate(EShaderPath::UberLit, StartupError);

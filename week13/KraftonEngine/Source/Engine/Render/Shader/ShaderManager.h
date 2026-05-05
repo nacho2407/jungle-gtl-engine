@@ -88,6 +88,7 @@ namespace EShaderPath
 	inline constexpr const char* Blit = "Shaders/PostProcess/Blit.hlsl";
 	inline constexpr const char* CameraFade = "Shaders/PostProcess/CameraFade.hlsl";
 	inline constexpr const char* CameraVignette = "Shaders/PostProcess/CameraVignette.hlsl";
+	inline constexpr const char* CameraLetterbox = "Shaders/PostProcess/CameraLetterbox.hlsl";
 }
 
 namespace EUberLitDefines
