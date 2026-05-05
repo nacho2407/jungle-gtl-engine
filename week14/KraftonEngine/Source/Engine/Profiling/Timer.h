@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <chrono>
 
@@ -9,12 +9,15 @@ public:
 
 	void Initialize();
 	void Tick();
-	float GetDeltaTime() const { return DeltaTime; }
+	float GetDeltaTime() const { return DeltaTime * TimeDilation; }
+	float GetRawDeltaTime() const { return DeltaTime; }
 	double GetTotalTime() const { return TotalTime; }
+
 	float GetFPS() const { return DeltaTime > 0.0f ? 1.0f / DeltaTime : 0.0f; }
 	float GetDisplayFPS() const { return SmoothedFPS; }
 	float GetFrameTimeMs() const { return DeltaTime * 1000.0f; }
 
+	void SetTimeDilation(float Dilation) { TimeDilation = Dilation; }
 	void SetMaxFPS(float InMaxFPS);
 	float GetMaxFPS() const { return MaxFPS; }
 
@@ -27,5 +30,6 @@ private:
 	float MaxFPS = 0.0f;
 	float TargetFrameTime = 0.0f;
 
+	float TimeDilation = 1.0f;
 	float SmoothedFPS = 0.0f;
 };
