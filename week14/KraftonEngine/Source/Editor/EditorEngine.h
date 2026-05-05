@@ -39,6 +39,10 @@ public:
 	UGizmoComponent* GetGizmo() const { return SelectionManager.GetGizmo(); }
 	UCameraComponent* GetCamera() const;
 
+	// 활성 뷰포트의 카메라 POV 통화. 컴포넌트가 아닌 통화만 필요한 호출자가 이쪽으로 이주.
+	// 활성 뷰포트가 없으면 false 반환.
+	bool GetActiveViewportPOV(struct FMinimalViewInfo& OutPOV) const;
+
 	void ClearScene();
 	void ResetViewport();
 	void CloseScene();
