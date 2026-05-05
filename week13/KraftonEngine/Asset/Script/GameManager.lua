@@ -55,6 +55,22 @@ local scoreSubmitted = false
 -- 새 월드의 lua tick 에 끼어들지 않는다.
 local nextQuestRoutine = nil
 
+local function CameraFadeTransition(duration, middle)
+    duration = duration or 0.5
+
+    CameraManager.FadeOut(duration)
+
+    StartCoroutine(function()
+        Wait(duration)
+
+        if middle then
+            middle()
+        end
+
+        CameraManager.FadeIn(duration)
+    end)
+end
+
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
 
@@ -63,7 +79,7 @@ local function OnPhaseChanged(phase)
     end
 
     if phase == ECarGamePhase.CarWash then
-        UIManager.FadeOut(0.5, function()
+        CameraFadeTransition(0.5, function()
             if ObjRegistry.manObj ~= nil then
                 ObjRegistry.manObj.Location = Vector.new(150, -23, 4)
             end
@@ -74,12 +90,10 @@ local function OnPhaseChanged(phase)
             end
 
             CameraManager.PossessCamera(ObjRegistry.manCamera)
-
-            UIManager.FadeIn(0.5)
         end)
         print("Run Lua logic for CarWash")
     elseif phase == ECarGamePhase.CarGas then
-        UIManager.FadeOut(0.5, function()
+        CameraFadeTransition(0.5, function()
             if ObjRegistry.manObj ~= nil then
                 ObjRegistry.manObj.Location = Vector.new(-100, -234, 3)
             end
@@ -89,8 +103,6 @@ local function OnPhaseChanged(phase)
             end
 
             CameraManager.PossessCamera(ObjRegistry.manCamera)
-
-            UIManager.FadeIn(0.5)
         end)
         print("Run Lua logic for CarGas")
     elseif phase == ECarGamePhase.EscapePolice then
@@ -101,9 +113,8 @@ local function OnPhaseChanged(phase)
         print("Run Lua logic for Goal")
     elseif phase == ECarGamePhase.Result then
         if CameraManager.GetPossessedCameraOwner().UUID ~= ObjRegistry.car.UUID then
-            UIManager.FadeOut(0.5, function()
+            CameraFadeTransition(0.5, function()
                 CameraManager.PossessCamera(ObjRegistry.carCamera)
-                UIManager.FadeIn(0.5)
             end)
         end
     elseif phase == ECarGamePhase.Finished then

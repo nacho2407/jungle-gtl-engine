@@ -7,6 +7,7 @@
 #include "Render/Types/LODContext.h"
 #include "Collision/ConvexVolume.h"
 #include "GameFramework/WorldContext.h"
+#include "GameFramework/CameraTypes.h"
 
 #include <d3d11.h>
 
@@ -80,6 +81,9 @@ struct FFrameContext
 
 	// LOD
 	FLODUpdateContext LODContext;
+
+	// Camera
+	FCameraFadeState CameraFade;
 
 	// Derived helpers
 	bool IsFixedOrtho() const

@@ -36,6 +36,8 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants));
 	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants));
 	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
+	
+	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants));
 }
 
 void FDrawCommandBuilder::Release()
@@ -577,6 +579,25 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 				PassRenderStateTable->ToDrawCommandState(ERenderPass::FXAA, ViewMode));
 			Cmd.Bindings.PerShaderCB[0] = &FXAACB;
 			Cmd.BuildSortKey(0);
+		}
+	}
+
+	// Camera Fade
+	if (Frame.CameraFade.bEnabled && Frame.CameraFade.Amount > 0.0f)
+	{
+		FShader* FadeShader = FShaderManager::Get().GetOrCreate(EShaderPath::CameraFade);
+		if (FadeShader)
+		{
+			FCameraFadeConstants FadeData = {};
+			FadeData.FadeColor = Frame.CameraFade.Color.ToVector4();
+			FadeData.FadeAmount = Frame.CameraFade.Amount;
+
+			CameraFadeCB.Update(Ctx, &FadeData, sizeof(FCameraFadeConstants));
+
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(FadeShader, ERenderPass::PostProcess, PPRS);
+			Cmd.Bindings.PerShaderCB[0] = &CameraFadeCB;
+			Cmd.BuildSortKey(5);
 		}
 	}
 }
