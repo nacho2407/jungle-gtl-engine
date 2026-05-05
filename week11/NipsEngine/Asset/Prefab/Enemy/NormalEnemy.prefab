@@ -103,7 +103,7 @@
     "EditorOnly" : false,
     "Name" : "NormalEnemy",
     "RootComponent" : 5882,
-    "Tags" : [],
+    "Tags" : ["Enemy"],
     "UUID" : 5881,
     "Visible" : true
   },

@@ -34,6 +34,37 @@ namespace
 		return true;
 #endif
 	}
+
+	bool RuntimeFileExists(const FString& Path)
+	{
+		std::error_code Ec;
+		return std::filesystem::exists(std::filesystem::path(FPaths::ToWide(Path)), Ec) && !Ec;
+	}
+
+	FString MakeCookedStaticMeshPath(const FString& SourcePath)
+	{
+		std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
+		const std::filesystem::path AssetMeshRoot = std::filesystem::path(L"Asset") / L"Mesh";
+		std::filesystem::path SubPath = SourceFsPath.lexically_normal().lexically_relative(AssetMeshRoot);
+		if (SubPath.empty())
+		{
+			SubPath = SourceFsPath.filename();
+		}
+		else
+		{
+			for (const std::filesystem::path& Part : SubPath)
+			{
+				if (Part == L"..")
+				{
+					SubPath = SourceFsPath.filename();
+					break;
+				}
+			}
+		}
+
+		SubPath.replace_extension(L".bin");
+		return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
+	}
 }
 
 #pragma region __BINARY__
@@ -1721,6 +1752,21 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	fs::path RequestedFsPath(FPaths::ToWide(NormalizedPath));
 	std::wstring RequestedExt = RequestedFsPath.extension().wstring();
 	std::transform(RequestedExt.begin(), RequestedExt.end(), RequestedExt.begin(), ::towlower);
+	if (RequestedExt == L".obj" && !RuntimeFileExists(NormalizedPath))
+	{
+		const FString CookedPath = MakeCookedStaticMeshPath(NormalizedPath);
+		if (RuntimeFileExists(CookedPath))
+		{
+			UE_LOG("[StaticMeshLoad] Redirect missing OBJ to cooked mesh | Source=%s | Cooked=%s",
+				NormalizedPath.c_str(),
+				CookedPath.c_str());
+			if (UStaticMesh* CookedMesh = LoadStaticMesh(CookedPath))
+			{
+				StaticMeshes[NormalizedPath] = CookedMesh;
+				return CookedMesh;
+			}
+		}
+	}
 	if (RequestedExt == L".bin")
 	{
 		const auto BinaryStart = std::chrono::steady_clock::now();

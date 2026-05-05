@@ -42,7 +42,7 @@
                 </button>
             </div>
 
-            <div id="Title.Version" class="version-label">Latest Update v.20260504 by Team03</div>
+            <div id="Title.Version" class="version-label">Latest Update v1.0.0 by Team03</div>
 
             <div id="Title.ModalOverlay" class="modal-overlay"></div>
 
@@ -81,7 +81,7 @@
                     </div>
                     <div class="credit-row">
                         <div class="credit-role">Enemy</div>
-                        <div class="credit-name">김호준 (Ho-Joon KIM)</div>
+                        <div class="credit-name">김호준 (Ho-Jun KIM)</div>
                     </div>
                     <div class="credit-row">
                         <div class="credit-role">UI/Manager</div>

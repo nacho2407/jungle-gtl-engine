@@ -64,6 +64,37 @@ namespace
             || VK == VK_XBUTTON2;
     }
 
+    constexpr int RuntimeUILayoutWidth = 1920;
+    constexpr int RuntimeUILayoutHeight = 1080;
+
+    struct FScaledRuntimeUIViewport
+    {
+        float X = 0.0f;
+        float Y = 0.0f;
+        float Width = 1.0f;
+        float Height = 1.0f;
+        float Scale = 1.0f;
+    };
+
+    FScaledRuntimeUIViewport CalculateScaledRuntimeUIViewport(float ViewportX, float ViewportY, float ViewportWidth, float ViewportHeight, int LayoutWidth, int LayoutHeight)
+    {
+        const float SafeViewportWidth = std::max(ViewportWidth, 1.0f);
+        const float SafeViewportHeight = std::max(ViewportHeight, 1.0f);
+        const float SafeLayoutWidth = static_cast<float>(std::max(LayoutWidth, 1));
+        const float SafeLayoutHeight = static_cast<float>(std::max(LayoutHeight, 1));
+        const float Scale = std::min(SafeViewportWidth / SafeLayoutWidth, SafeViewportHeight / SafeLayoutHeight);
+        const float ScaledWidth = SafeLayoutWidth * Scale;
+        const float ScaledHeight = SafeLayoutHeight * Scale;
+
+        FScaledRuntimeUIViewport Result;
+        Result.X = ViewportX + (SafeViewportWidth - ScaledWidth) * 0.5f;
+        Result.Y = ViewportY + (SafeViewportHeight - ScaledHeight) * 0.5f;
+        Result.Width = ScaledWidth;
+        Result.Height = ScaledHeight;
+        Result.Scale = std::max(Scale, 0.0001f);
+        return Result;
+    }
+
     Rml::Input::KeyIdentifier MapVirtualKeyToRmlKey(int VK)
     {
         using namespace Rml::Input;
@@ -745,9 +776,7 @@ void UGameEngine::InitializeRmlUiRuntime()
         return;
     }
 
-    const int Width = Window ? std::max(static_cast<int>(Window->GetWidth()), 1) : 1280;
-    const int Height = Window ? std::max(static_cast<int>(Window->GetHeight()), 1) : 720;
-    RmlUiContext = Rml::CreateContext("GameClient", Rml::Vector2i(Width, Height), &RmlUiRenderInterface);
+    RmlUiContext = Rml::CreateContext("GameClient", Rml::Vector2i(RuntimeUILayoutWidth, RuntimeUILayoutHeight), &RmlUiRenderInterface);
     if (!RmlUiContext)
     {
         UE_LOG_ERROR("[RmlUi] Failed to create GameClient context.");
@@ -818,14 +847,19 @@ void UGameEngine::RenderRmlUiDocuments(const FRuntimeUIRenderContext& Context)
     const int LayoutWidth = std::max(static_cast<int>(Context.LayoutSize.X > 0.0f ? Context.LayoutSize.X : Context.ViewportSize.X), 1);
     const int LayoutHeight = std::max(static_cast<int>(Context.LayoutSize.Y > 0.0f ? Context.LayoutSize.Y : Context.ViewportSize.Y), 1);
     RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
+    const FScaledRuntimeUIViewport ScaledViewport = CalculateScaledRuntimeUIViewport(
+        Context.ViewportMin.X,
+        Context.ViewportMin.Y,
+        Context.ViewportSize.X,
+        Context.ViewportSize.Y,
+        LayoutWidth,
+        LayoutHeight);
 
     Renderer.UseBackBufferRenderTargets();
     RmlUiRenderInterface.BeginFrame(
-        Rml::Vector2f(Context.ViewportMin.X, Context.ViewportMin.Y),
-        Rml::Vector2f(Context.ViewportSize.X, Context.ViewportSize.Y),
-        Rml::Vector2f(
-            Context.ViewportSize.X / static_cast<float>(LayoutWidth),
-            Context.ViewportSize.Y / static_cast<float>(LayoutHeight)));
+        Rml::Vector2f(ScaledViewport.X, ScaledViewport.Y),
+        Rml::Vector2f(ScaledViewport.Width, ScaledViewport.Height),
+        Rml::Vector2f(ScaledViewport.Scale, ScaledViewport.Scale));
 
     RmlUiContext->Update();
     RmlUiContext->Render();
@@ -1072,7 +1106,16 @@ bool UGameEngine::PumpRmlUiInput(InputSystem& Input)
 
     const int Width = std::max(static_cast<int>(Window->GetWidth()), 1);
     const int Height = std::max(static_cast<int>(Window->GetHeight()), 1);
-    RmlUiContext->SetDimensions(Rml::Vector2i(Width, Height));
+    const int LayoutWidth = RuntimeUILayoutWidth;
+    const int LayoutHeight = RuntimeUILayoutHeight;
+    const FScaledRuntimeUIViewport ScaledViewport = CalculateScaledRuntimeUIViewport(
+        0.0f,
+        0.0f,
+        static_cast<float>(Width),
+        static_cast<float>(Height),
+        LayoutWidth,
+        LayoutHeight);
+    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
 
     POINT ClientMousePos = Input.GetMousePos();
     ::ScreenToClient(Window->GetHWND(), &ClientMousePos);
@@ -1080,13 +1123,17 @@ bool UGameEngine::PumpRmlUiInput(InputSystem& Input)
     const int Modifiers = GetRmlUiKeyModifierState(Input);
     bool bConsumed = false;
 
-    const bool bInsideClient =
-        ClientMousePos.x >= 0 && ClientMousePos.y >= 0
-        && ClientMousePos.x < Width && ClientMousePos.y < Height;
+    const bool bInsideRuntimeUI =
+        static_cast<float>(ClientMousePos.x) >= ScaledViewport.X &&
+        static_cast<float>(ClientMousePos.y) >= ScaledViewport.Y &&
+        static_cast<float>(ClientMousePos.x) < ScaledViewport.X + ScaledViewport.Width &&
+        static_cast<float>(ClientMousePos.y) < ScaledViewport.Y + ScaledViewport.Height;
 
-    if (bInsideClient)
+    if (bInsideRuntimeUI)
     {
-        const bool bMouseFree = RmlUiContext->ProcessMouseMove(ClientMousePos.x, ClientMousePos.y, Modifiers);
+        const int LayoutMouseX = std::max(0, std::min(LayoutWidth - 1, static_cast<int>((static_cast<float>(ClientMousePos.x) - ScaledViewport.X) / ScaledViewport.Scale)));
+        const int LayoutMouseY = std::max(0, std::min(LayoutHeight - 1, static_cast<int>((static_cast<float>(ClientMousePos.y) - ScaledViewport.Y) / ScaledViewport.Scale)));
+        const bool bMouseFree = RmlUiContext->ProcessMouseMove(LayoutMouseX, LayoutMouseY, Modifiers);
         bConsumed = (!bMouseFree && RmlUiContext->IsMouseInteracting()) || bConsumed;
     }
     else

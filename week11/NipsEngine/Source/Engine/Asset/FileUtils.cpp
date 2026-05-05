@@ -7,14 +7,14 @@
 
 bool FFileUtils::FileExists(const FString& FileName)
 {
-	return std::filesystem::exists(std::filesystem::path(FileName));
+	return std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FileName)));
 }
 
 bool FFileUtils::LoadFileToString(const FString& FileName, FString& OutText)
 {
 	OutText.clear();
 	
-	std::ifstream File(std::filesystem::path(FileName), std::ios::in);
+	std::ifstream File(std::filesystem::path(FPaths::ToWide(FileName)), std::ios::in);
 	if (!File.is_open())
 	{
 		return false;

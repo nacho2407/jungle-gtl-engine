@@ -14,7 +14,7 @@ ItemPickup.Properties = {
     },
     TimeSlowDuration = {
         Type = "Float",
-        Default = 10.0,
+        Default = 5.0,
         Category = "Item"
     },
     TimeSlowScale = {

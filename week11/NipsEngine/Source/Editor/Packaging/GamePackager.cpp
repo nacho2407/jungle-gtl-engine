@@ -558,6 +558,64 @@ namespace
         return true;
     }
 
+    bool AddKnownRuntimeDependencies(FPackageCookContext& Context, FString& OutMessage)
+    {
+        constexpr const char* Dependencies[] =
+        {
+            "Asset/Material/DecalMat.mat",
+            "Asset/Mesh/Dice/Dice.obj"
+        };
+
+        for (const char* Dependency : Dependencies)
+        {
+            if (!AddFileDependency(Context, Dependency, OutMessage))
+            {
+                OutMessage = "Failed to include runtime dependency: " + FString(Dependency) + " | " + OutMessage;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool AddPrefabDependencies(FPackageCookContext& Context, FString& OutMessage)
+    {
+        const std::filesystem::path PrefabRoot = Context.EngineRoot / L"Asset" / L"Prefab";
+        std::error_code Ec;
+        if (!std::filesystem::exists(PrefabRoot, Ec))
+        {
+            return true;
+        }
+
+        for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(PrefabRoot, Ec))
+        {
+            if (Ec)
+            {
+                OutMessage = "Failed to scan prefab dependencies";
+                return false;
+            }
+            if (!Entry.is_regular_file())
+            {
+                continue;
+            }
+
+            const FString Extension = ToLowerAscii(FPaths::ToUtf8(Entry.path().extension().generic_wstring()));
+            if (Extension != ".prefab")
+            {
+                continue;
+            }
+
+            const FString PrefabPath = FPaths::ToRelativeString(Entry.path().wstring());
+            if (!AddFileDependency(Context, PrefabPath, OutMessage))
+            {
+                OutMessage = "Failed to include prefab dependency: " + PrefabPath + " | " + OutMessage;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     bool WriteCookedScene(FPackageCookContext& Context, const FString& Scene, FString& OutMessage)
     {
         const std::filesystem::path SourceScene = ResolveStartupSceneForValidation(Scene);
@@ -647,6 +705,14 @@ namespace
             {
                 return false;
             }
+        }
+        if (!AddKnownRuntimeDependencies(Context, OutMessage))
+        {
+            return false;
+        }
+        if (!AddPrefabDependencies(Context, OutMessage))
+        {
+            return false;
         }
 
         if (!CopyDependencyFiles(Context, OutMessage))
@@ -1159,6 +1225,8 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     EmitBuildLog("Copied Asset/UIFont directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Script", OutputRoot / L"Asset" / L"Script", OutMessage)) return false;
     EmitBuildLog("Copied Asset/Script directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Prefab", OutputRoot / L"Asset" / L"Prefab", OutMessage)) return false;
+    EmitBuildLog("Copied Asset/Prefab directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"LuaScript", OutputRoot / L"LuaScript", OutMessage)) return false;
     EmitBuildLog("Copied LuaScript directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"Audio", OutputRoot / L"Asset" / L"Audio", OutMessage)) return false;

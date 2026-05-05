@@ -118,7 +118,16 @@ void FD3DDevice::OnResizeViewport(int Width, int Height)
 	ReleaseFrameBuffer();
 	ReleaseDepthStencilBuffer();
 
-	SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SwapChainFlags);
+	DeviceContext->Flush();
+
+	const HRESULT ResizeHr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, SwapChainFlags);
+	if (FAILED(ResizeHr))
+	{
+		UE_LOG_ERROR("[D3D] ResizeBuffers failed. Size=%dx%d Hr=0x%08X", Width, Height, static_cast<unsigned int>(ResizeHr));
+		CreateFrameBuffer();
+		CreateDepthStencilBuffer();
+		return;
+	}
 
 	ViewportInfo.Width = static_cast<float>(Width);
 	ViewportInfo.Height = static_cast<float>(Height);

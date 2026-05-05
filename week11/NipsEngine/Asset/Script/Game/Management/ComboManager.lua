@@ -153,8 +153,13 @@ function ComboManager:Tick(dt)
         return
     end
 
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
+    if realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
+
     if self.isAppearing then
-        self.appearElapsed = self.appearElapsed + (dt or 0.0)
+        self.appearElapsed = self.appearElapsed + realDt
         local t = self.appearElapsed / self.appearSeconds
         if t >= 1.0 then
             self.isAppearing = false
@@ -163,19 +168,19 @@ function ComboManager:Tick(dt)
             self.alpha = EaseOutCubic(t)
         end
     elseif self.comboCount > 0 then
-        self.remaining = self.remaining - (dt or 0.0)
+        self.remaining = self.remaining - realDt
         if self.remaining <= 0.0 then
             self:CloseCombo("Timeout")
         end
     elseif self.isFading then
-        self.alpha = self.alpha - ((dt or 0.0) / self.fadeSeconds)
+        self.alpha = self.alpha - (realDt / self.fadeSeconds)
         if self.alpha <= 0.0 then
             self:Reset()
         end
     end
 
     if self.shakeTime > 0.0 then
-        self.shakeTime = math.max(0.0, self.shakeTime - (dt or 0.0))
+        self.shakeTime = math.max(0.0, self.shakeTime - realDt)
     end
 
     self:UpdateUI()

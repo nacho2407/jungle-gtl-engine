@@ -89,7 +89,7 @@
         "LuaProperty_1_bHasMax" : false,
         "LuaProperty_1_bHasMin" : false,
         "LuaProperty_2_Category" : "Item",
-        "LuaProperty_2_FloatValue" : 10.000000,
+        "LuaProperty_2_FloatValue" : 5.000000,
         "LuaProperty_2_Max" : 0.000000,
         "LuaProperty_2_Min" : 0.000000,
         "LuaProperty_2_Name" : "TimeSlowDuration",

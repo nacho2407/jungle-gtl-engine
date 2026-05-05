@@ -282,8 +282,13 @@ function SpawnManager:Tick(dt)
         return
     end
 
-    self.totalElapsed = self.totalElapsed + dt
-    self.spawnElapsed = self.spawnElapsed + dt
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
+    if realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
+
+    self.totalElapsed = self.totalElapsed + realDt
+    self.spawnElapsed = self.spawnElapsed + realDt
 
     self:UpdateActiveSpawnPoints()
     self:UpdateSpawnInterval()
