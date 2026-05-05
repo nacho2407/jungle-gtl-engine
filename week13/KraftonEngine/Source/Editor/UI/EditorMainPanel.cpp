@@ -3,7 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
-#include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/Object.h"
@@ -388,20 +388,19 @@ void FEditorMainPanel::RenderEditorDebugPanel()
 				FVector GridForward(0.0f, 1.0f, 0.0f);
 				if (bDebugUseCameraOrigin)
 				{
-					if (FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport())
+					// D.3: 컴포넌트가 아닌 POV 통화로 read.
+					FMinimalViewInfo POV;
+					if (EditorEngine->GetActiveViewportPOV(POV))
 					{
-						if (UCameraComponent* ActiveCamera = ActiveViewport->GetCamera())
+						FVector CameraForward = POV.Rotation.GetForwardVector();
+						CameraForward.Z = 0.0f;
+						if (CameraForward.Length() > 0.0001f)
 						{
-							FVector CameraForward = ActiveCamera->GetForwardVector();
-							CameraForward.Z = 0.0f;
-							if (CameraForward.Length() > 0.0001f)
-							{
-								CameraForward.Normalize();
-								GridForward = CameraForward;
-								GridRight = FVector(-CameraForward.Y, CameraForward.X, 0.0f);
-							}
-							GridOrigin = ActiveCamera->GetWorldLocation() + ActiveCamera->GetForwardVector() * DebugCameraForwardDistance;
+							CameraForward.Normalize();
+							GridForward = CameraForward;
+							GridRight = FVector(-CameraForward.Y, CameraForward.X, 0.0f);
 						}
+						GridOrigin = POV.Location + POV.Rotation.GetForwardVector() * DebugCameraForwardDistance;
 					}
 				}
 
