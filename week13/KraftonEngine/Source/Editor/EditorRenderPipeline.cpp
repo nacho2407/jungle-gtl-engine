@@ -223,8 +223,10 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 		Frame.CursorViewportY = UINT32_MAX;
 	}
 
-	UCameraManager* CamManager = World->GetCameraManager();
-	Frame.CameraFade.bEnabled = CamManager->IsFadeEnabled();
+	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade 상태 read.
+	APlayerController* PC = World->GetFirstPlayerController();
+	APlayerCameraManager* CamManager = PC ? PC->GetPlayerCameraManager() : nullptr;
+	Frame.CameraFade.bEnabled = CamManager ? CamManager->IsFadeEnabled() : false;
 	if (Frame.CameraFade.bEnabled)
 	{
 		Frame.CameraFade.Color = CamManager->GetFadeColor();
