@@ -30,4 +30,12 @@ struct FViewportCameraTransform
 	float    NearClip     = 0.1f;
 	float    FarClip      = 1000.0f;
 	bool     bIsOrtho     = false;
+
+	// ─── Mutation ─────────────────────────────────────────────
+	// USceneComponent / UCameraComponent 의 같은 이름 메서드와 동등한 의미.
+	// Editor viewport 카메라는 root 가정이므로 World == Relative.
+	void TranslateWorld(const FVector& WorldDelta) { ViewLocation += WorldDelta; }
+	void TranslateLocal(const FVector& LocalDelta);  // SceneComponent::MoveLocal 등가
+	void Rotate(float DeltaYaw, float DeltaPitch);   // SceneComponent::Rotate 등가 (pitch clamp)
+	void LookAt(const FVector& Target);              // UCameraComponent::LookAt 등가
 };
