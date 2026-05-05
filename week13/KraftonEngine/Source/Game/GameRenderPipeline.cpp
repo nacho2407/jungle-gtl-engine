@@ -49,7 +49,7 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FScene* Scene = &World->GetScene();
 
 	PrepareViewport(VP, Camera, Ctx);
-	BuildFrame(VP, Camera, Scene);
+	BuildFrame(VP, Camera, Scene, World);
 
 	FCollectOutput Output;
 	CollectCommands(Scene, Renderer, Output);
@@ -70,7 +70,7 @@ void FGameRenderPipeline::PrepareViewport(FViewport* VP, UCameraComponent* Camer
 	VP->BeginRender(Ctx);
 }
 
-void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FScene* Scene)
+void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FScene* Scene, UWorld* World)
 {
 	Frame.ClearViewportResources();
 	Frame.SetCameraInfo(Camera);
@@ -88,6 +88,24 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FS
 	{
 		Frame.CursorViewportX = UINT32_MAX;
 		Frame.CursorViewportY = UINT32_MAX;
+	}
+
+	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade 상태 read.
+	APlayerController* PC = World->GetFirstPlayerController();
+	APlayerCameraManager* CamManager = PC ? PC->GetPlayerCameraManager() : nullptr;
+	Frame.CameraFade.bEnabled = CamManager ? CamManager->IsFadeEnabled() : false;
+	if (Frame.CameraFade.bEnabled)
+	{
+		Frame.CameraFade.Color = CamManager->GetFadeColor();
+		Frame.CameraFade.Amount = CamManager->GetFadeAmount();
+	}
+
+	Frame.CameraVignette.bEnabled = CamManager ? CamManager->IsVignetteEnabled() : false;
+	if (Frame.CameraVignette.bEnabled)
+	{
+		Frame.CameraVignette.Intensity = CamManager->GetVignetteIntensity();
+		Frame.CameraVignette.Radius = CamManager->GetVignetteRadius();
+		Frame.CameraVignette.Softness = CamManager->GetVignetteSoftness();
 	}
 }
 

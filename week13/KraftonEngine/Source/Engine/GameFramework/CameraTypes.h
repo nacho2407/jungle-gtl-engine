@@ -60,3 +60,12 @@ struct FCameraFadeState
 	FLinearColor Color = FLinearColor::Black();
 	bool bFadeAudio = false;
 };
+
+struct FCameraVignetteState
+{
+	bool bEnabled = false;
+	float Intensity = 0.0f;
+	float Radius = 0.75f;
+	float Softness = 0.35f;
+	FLinearColor Color = FLinearColor::Black();
+};

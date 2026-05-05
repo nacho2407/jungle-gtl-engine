@@ -14,7 +14,7 @@ public:
 
 private:
 	void PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx);
-	void BuildFrame(FViewport* VP, UCameraComponent* Camera, FScene* Scene);
+	void BuildFrame(FViewport* VP, UCameraComponent* Camera, FScene* Scene, UWorld* World);
 	void CollectCommands(FScene* Scene, FRenderer& Renderer, FCollectOutput& Output);
 		
 private:

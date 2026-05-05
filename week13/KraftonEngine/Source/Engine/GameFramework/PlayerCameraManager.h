@@ -83,6 +83,17 @@ public:
 	FLinearColor GetFadeColor() const { return FadeColor; }
 	bool IsFadeEnabled() const { return bEnableFading; }
 
+	// ─── Camera Vignette ──────────────────────────────────────────────
+	virtual void SetCameraVignette(float Intensity, float Radius, float Softness, FLinearColor Color);
+	virtual void ClearCameraVignette();
+
+	// 현재 vignette 상태 — RenderPass(B) 가 PostProcess 에 전달.
+	bool IsVignetteEnabled() const { return bEnableVignette; }
+	float GetVignetteIntensity() const { return VignetteIntensity; }
+	float GetVignetteRadius() const { return VignetteRadius; }
+	float GetVignetteSoftness() const { return VignetteSoftness; }
+	FLinearColor GetVignetteColor() const { return VignetteColor; }
+
 	// ─── Tick ─────────────────────────────────────────────────────
 	// World::Tick 에서 매 프레임 호출. Shake / Fade / ViewTarget blend 갱신.
 	virtual void UpdateCamera(float DeltaTime);
@@ -113,4 +124,11 @@ private:
 	float FadeDuration = 0.0f;
 	float FadeTimeRemaining = 0.0f;
 	FLinearColor FadeColor = FLinearColor::Black();
+
+	// Vignette 상태
+	bool bEnableVignette = false;
+	float VignetteIntensity = 0.0f;
+	float VignetteRadius = 0.75f;
+	float VignetteSoftness = 0.35f;
+	FLinearColor VignetteColor = FLinearColor::Black();
 };
