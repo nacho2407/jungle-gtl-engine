@@ -210,6 +210,15 @@ FVector UCameraComponent::GetUpVector() const
 	return FVector(0.0f, 0.0f, 1.0f);
 }
 
+void UCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& OutView) const
+{
+    const FTransform& T = GetWorldTransform();
+
+    OutView.Location = T.GetLocation();
+    OutView.Rotation = T.GetRotation().Rotator();
+    OutView.FOV = GetFOV();
+}
+
 void UCameraComponent::MoveForward(float Distance)
 {
 	if (std::abs(Distance) < 1e-6f)

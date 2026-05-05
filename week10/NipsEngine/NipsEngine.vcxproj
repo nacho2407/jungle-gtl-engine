@@ -309,6 +309,8 @@
   </Target>
   <ItemGroup>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
+    <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
@@ -627,6 +629,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />

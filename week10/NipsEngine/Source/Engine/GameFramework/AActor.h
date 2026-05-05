@@ -64,6 +64,19 @@ public:
 
 	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
 
+	// 순차 탐색 후 가장 처음으로 일치하는 Component 반환
+	template<typename T>
+	T* FindComponent()
+	{
+		for (UActorComponent* Component : OwnedComponents)
+		{
+            if (Component->IsA<T>())
+                return Cast<T>(Component);
+		}
+
+		return nullptr;
+	}
+
 	// Transform — Location
 	FVector GetActorLocation() const;
 	void SetActorLocation(const FVector& Location);

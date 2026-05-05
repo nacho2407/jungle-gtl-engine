@@ -16,6 +16,13 @@ struct FCameraState
 	bool bIsOrthogonal = false;
 };
 
+struct FMinimalViewInfo
+{
+    FVector Location;
+    FRotator Rotation;
+    float FOV = 90.f;
+};
+
 class UCameraComponent : public USceneComponent
 {
 public:
@@ -63,6 +70,9 @@ public:
 	FVector GetForwardVector() const;
 	FVector GetRightVector() const;
 	FVector GetUpVector() const;
+
+	// DeltaTime 기반 업데이트 가능성 열어둠
+    void GetCameraView(float DeltaTime, FMinimalViewInfo& OutView) const;
 
 private:
 	void SetViewRotationDegrees(float PitchDegrees, float YawDegrees);
