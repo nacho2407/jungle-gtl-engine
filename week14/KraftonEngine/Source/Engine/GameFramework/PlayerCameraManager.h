@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/CameraTypes.h"
+#include "Render/Types/MinimalViewInfo.h"
 
 class UCameraComponent;
 class UCameraShakeBase;
@@ -94,9 +95,16 @@ public:
 	float GetVignetteSoftness() const { return VignetteSoftness; }
 	FLinearColor GetVignetteColor() const { return VignetteColor; }
 
+	// ─── Camera Blend ──────────────────────────────────────────────
+	bool GetCameraView(FMinimalViewInfo& OutPOV) const;
+
 	// ─── Tick ─────────────────────────────────────────────────────
 	// World::Tick 에서 매 프레임 호출. Shake / Fade / ViewTarget blend 갱신.
 	virtual void UpdateCamera(float DeltaTime);
+
+private:
+	float ApplyBlendFunction(float Alpha, FViewTargetTransitionParams BlendParams) const;
+	FMinimalViewInfo LerpPOV(const FMinimalViewInfo& From, const FMinimalViewInfo& To, float Alpha) const;
 
 private:
 	TSet<UCameraComponent*> RegisteredCameras;

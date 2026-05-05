@@ -134,18 +134,33 @@ void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTrans
 	// TODO(B): NewViewTarget 의 UCameraComponent 를 찾아 ActiveCamera 로 전환.
 	//          BlendTime > 0 이면 PendingViewTarget 으로 보관, UpdateCamera 에서 보간.
 	//          BlendTime == 0 이면 즉시 전환.
-	if (TransitionParams.BlendTime <= 0.0f)
+	if (!NewViewTarget)
+	{
+		return;
+	}
+
+	if (!ViewTarget && ActiveCamera)
+	{
+		ViewTarget = ActiveCamera->GetOwner();
+	}
+
+	if (TransitionParams.BlendTime <= 0.0f || !ViewTarget)
 	{
 		ViewTarget = NewViewTarget;
 		PendingViewTarget = nullptr;
 		BlendTimeRemaining = 0.0f;
+
+		
+		if (UCameraComponent* Camera = NewViewTarget->GetComponentByClass<UCameraComponent>())
+		{
+			SetActiveCamera(Camera);
+		}
+		return;
 	}
-	else
-	{
-		PendingViewTarget = NewViewTarget;
-		BlendParams = TransitionParams;
-		BlendTimeRemaining = TransitionParams.BlendTime;
-	}
+
+	PendingViewTarget = NewViewTarget;
+	BlendParams = TransitionParams;
+	BlendTimeRemaining = TransitionParams.BlendTime;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -259,6 +274,54 @@ void APlayerCameraManager::ClearCameraVignette()
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Camera Blend
+// ─────────────────────────────────────────────────────────────────
+bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
+{
+	// TODO(B): ViewTarget 과 PendingViewTarget 의 BlendTimeRemaining 에 따라
+	//          OutPOV 를 보간해서 반환. BlendTimeRemaining <= 0 이면 ViewTarget POV 반환.
+	if (!ViewTarget && !ActiveCamera)
+	{
+		return false;
+	}
+
+	UCameraComponent* FromCamera = ViewTarget ? ViewTarget->GetComponentByClass<UCameraComponent>() : nullptr;
+	if (!FromCamera)
+	{
+		FromCamera = ActiveCamera;
+	}
+
+	if (!FromCamera)
+	{
+		return false;
+	}
+
+	if (!PendingViewTarget || BlendTimeRemaining <= 0.0f || BlendParams.BlendTime <= 0.0f)
+	{
+		FromCamera->GetCameraView(0.0f, OutPOV);
+		return true;
+	}
+
+	UCameraComponent* ToCamera = PendingViewTarget->GetComponentByClass<UCameraComponent>();
+	if (!ToCamera)
+	{
+		FromCamera->GetCameraView(0.0f, OutPOV);
+		return true;
+	}
+
+	FMinimalViewInfo FromPOV;
+	FMinimalViewInfo ToPOV;
+	FromCamera->GetCameraView(0.0f, FromPOV);
+	ToCamera->GetCameraView(0.0f, ToPOV);
+
+	float Alpha = 1.0f - (BlendTimeRemaining / BlendParams.BlendTime);
+	Alpha = ApplyBlendFunction(Alpha, BlendParams);
+
+	OutPOV = LerpPOV(FromPOV, ToPOV, Alpha);
+	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Tick — Shake / Fade / ViewTarget blend 갱신
 // TODO(A): World::Tick 에서 매 프레임 호출하도록 연결.
 // ─────────────────────────────────────────────────────────────────
@@ -295,10 +358,54 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	}
 
 	// View Target blend
-	// TODO(B): BlendTimeRemaining 으로 카메라 보간. 지금은 즉시 전환만.
-	if (PendingViewTarget && BlendTimeRemaining <= 0.0f)
+	if (PendingViewTarget && BlendTimeRemaining > 0.0f)
 	{
-		ViewTarget = PendingViewTarget;
-		PendingViewTarget = nullptr;
+		BlendTimeRemaining = std::max(0.0f, BlendTimeRemaining - DeltaTime);
+
+		if (BlendTimeRemaining <= 0.0f)
+		{
+			ViewTarget = PendingViewTarget;
+			PendingViewTarget = nullptr;
+
+			if (UCameraComponent* Camera = ViewTarget->GetComponentByClass<UCameraComponent>())
+			{
+				SetActiveCamera(Camera);
+			}
+		}
 	}
+}
+
+float APlayerCameraManager::ApplyBlendFunction(float Alpha, FViewTargetTransitionParams Params) const
+{
+	switch (Params.BlendFunction)
+	{
+	case EViewTargetBlendFunction::VTBlend_Linear:
+		return Alpha;
+	case EViewTargetBlendFunction::VTBlend_EaseIn:
+		return Alpha * Alpha;
+	case EViewTargetBlendFunction::VTBlend_EaseOut:
+		return 1.0f - (1.0f - Alpha) * (1.0f - Alpha);
+	case EViewTargetBlendFunction::VTBlend_EaseInOut:
+		return Alpha < 0.5f ? 2.0f * Alpha * Alpha : 1.0f - std::pow(-2.0f * Alpha + 2.0f, 2) / 2.0f;
+	case EViewTargetBlendFunction::VTBlend_PreBlended:
+		return Alpha; // TODO(B): PreBlended 는 별도 처리 필요할 수 있음.
+	default:
+		return Alpha;
+	}
+}
+
+FMinimalViewInfo APlayerCameraManager::LerpPOV(const FMinimalViewInfo& From, const FMinimalViewInfo& To, float Alpha) const
+{
+	FMinimalViewInfo Result;
+	Result.Location = From.Location + (To.Location - From.Location) * Alpha;
+	Result.Rotation.Pitch = From.Rotation.Pitch + (To.Rotation.Pitch - From.Rotation.Pitch) * Alpha;
+	Result.Rotation.Yaw = From.Rotation.Yaw + (To.Rotation.Yaw - From.Rotation.Yaw) * Alpha;
+	Result.Rotation.Roll = From.Rotation.Roll + (To.Rotation.Roll - From.Rotation.Roll) * Alpha;
+	Result.FOV = From.FOV + (To.FOV - From.FOV) * Alpha;
+	Result.AspectRatio = From.AspectRatio + (To.AspectRatio - From.AspectRatio) * Alpha;
+	Result.OrthoWidth = From.OrthoWidth + (To.OrthoWidth - From.OrthoWidth) * Alpha;
+	Result.NearClip = From.NearClip + (To.NearClip - From.NearClip) * Alpha;
+	Result.FarClip = From.FarClip + (To.FarClip - From.FarClip) * Alpha;
+	Result.bIsOrtho = To.bIsOrtho; // 보통 블렌드 중간에 갑자기 바뀌는 경우는 없으므로 To 기준으로.
+	return Result;
 }

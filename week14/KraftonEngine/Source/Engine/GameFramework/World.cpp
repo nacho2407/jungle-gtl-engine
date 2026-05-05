@@ -115,9 +115,8 @@ bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 	{
 		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
 		{
-			if (UCameraComponent* AC = CM->GetActiveCamera())
+			if (CM->GetCameraView(OutPOV))
 			{
-				AC->GetCameraView(0.0f, OutPOV);
 				return true;
 			}
 		}
