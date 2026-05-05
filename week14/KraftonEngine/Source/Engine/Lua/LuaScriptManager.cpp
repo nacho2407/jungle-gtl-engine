@@ -566,7 +566,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	CameraManager.set_function("FadeOut", [](float Duration)
 	{
 		if (!GEngine || !GEngine->GetWorld()) return;
-		if (UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager())
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
 		{
 			Manager->StartCameraFade(0.0f, 1.0f, Duration, FLinearColor::Black(), false, true);
 		}
@@ -574,7 +576,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	CameraManager.set_function("FadeIn", [](float Duration)
 	{
 		if (!GEngine || !GEngine->GetWorld()) return;
-		if (UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager())
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
 		{
 			Manager->StartCameraFade(1.0f, 0.0f, Duration, FLinearColor::Black(), false, true);
 		}
