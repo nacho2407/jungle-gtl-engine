@@ -1,6 +1,9 @@
 ﻿#include "Game/GameRenderPipeline.h"
 
 #include "Game/GameEngine.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerCameraManager.h"
+#include "Component/CameraComponent.h"
 #include "Input/InputSystem.h"
 #include "Viewport/Viewport.h"
 
@@ -23,7 +26,12 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 
 	UWorld* World = Game->GetWorld();
-	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	// 잔여 정리: PrepareViewport 의 OnResize 호출이 컴포넌트 의존 — PC->PlayerCameraManager
+	// 의 ActiveCamera 를 그대로 사용. 향후 PrepareViewport 시그니처가 NotifyResize 패턴으로
+	// 정리되면 이 경로도 사라진다.
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	APlayerCameraManager* CM = PC ? PC->GetPlayerCameraManager() : nullptr;
+	UCameraComponent* Camera = CM ? CM->GetActiveCamera() : nullptr;
 	FViewport* VP = Game->GetStandaloneViewport();
 	if (!World || !Camera || !VP)
 	{

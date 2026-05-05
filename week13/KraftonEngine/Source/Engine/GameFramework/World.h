@@ -10,6 +10,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/LODContext.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 #include "GameFramework/WorldSettings.h"
@@ -78,11 +79,18 @@ public:
 	void SetPaused(bool bInPaused) { bPaused = bInPaused; }
 	bool IsPaused() const { return bPaused; }
 
-	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅.
-	// E.2/3: SetActiveCamera 는 EditorActiveCamera 멤버에 보관. GetActiveCamera 는
-	// PIE/Game 일 때 PC->PlayerCameraManager 우선, fallback 으로 EditorActiveCamera 반환.
+	// Active POV — Editor viewport / PIE-Game 의 PC->PlayerCameraManager 통합.
+	// PIE/Game 우선 (PC->PlayerCameraManager->GetActiveCamera->GetCameraView), fallback
+	// 으로 Editor 가 등록한 EditorActivePOV. true 반환 시 OutPOV 유효.
+	bool GetActivePOV(FMinimalViewInfo& OutPOV) const;
+
+	// Editor viewport client 가 자기 POV 를 LOD/render 용으로 등록.
+	void SetEditorActivePOV(const FMinimalViewInfo& InPOV) { EditorActivePOV = InPOV; bHasEditorActivePOV = true; }
+	void ClearEditorActivePOV() { bHasEditorActivePOV = false; }
+
+	// 호환성 wrapper — UCameraComponent* 받던 기존 호출자 보존. 내부에서 POV 추출.
+	// 신규 코드는 SetEditorActivePOV 직접 사용.
 	void SetActiveCamera(UCameraComponent* InCamera);
-	UCameraComponent* GetActiveCamera() const;
 
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
@@ -98,11 +106,11 @@ private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
 
-	// E.2/3: CameraManager 는 PC 가 owner — 여기선 보유 안 함.
-	// EditorActiveCamera 는 Editor viewport 가 SetActiveCamera 로 설정한 LOD/render 용 카메라.
+	// E.2/3 + 잔여: CameraManager 는 PC 가 owner — World 는 보유 안 함.
+	// EditorActivePOV 는 Editor viewport 가 SetEditorActivePOV 로 등록한 LOD/render 용 POV.
 	// PIE/Game 에서도 PC 의 PlayerCameraManager 가 ActiveCamera 잡기 전엔 이 값이 fallback.
-	UCameraComponent* EditorActiveCamera = nullptr;
-	UCameraComponent* LastLODUpdateCamera = nullptr;
+	FMinimalViewInfo EditorActivePOV;
+	bool bHasEditorActivePOV = false;
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bPaused = false;
