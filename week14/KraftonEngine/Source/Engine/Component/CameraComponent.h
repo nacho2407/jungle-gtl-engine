@@ -7,6 +7,8 @@
 #include "Math/Vector.h"
 #include "Collision/ConvexVolume.h"
 
+struct FMinimalViewInfo;
+
 struct FCameraState
 {
 	float FOV = 3.14159265358979f / 3.0f;
@@ -32,6 +34,11 @@ public:
 	void LookAt(const FVector& Target);
 	void SetCameraState(const FCameraState& NewState);
 	const FCameraState& GetCameraState() const { return CameraState; }
+
+	// 카메라 POV 통화 산출 — UE: UCameraComponent::GetCameraView.
+	// CameraManager / RenderPipeline 이 이걸 받아 매트릭스/프러스텀을 빌드한다.
+	// DeltaTime 은 향후 카메라 lag / interpolation 에 쓰이도록 시그니처 보존.
+	void GetCameraView(float DeltaTime, FMinimalViewInfo& OutPOV) const;
 
 	void SetFOV(float InFOV) { CameraState.FOV = InFOV; }
 	void SetOrthoWidth(float InWidth) { CameraState.OrthoWidth = InWidth; }
