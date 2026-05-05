@@ -134,7 +134,7 @@ private:
 	bool EnterPIEEjectedMode();
 	void SyncGameViewportPIEControlState(bool bPossessedMode);
 	void LoadStartLevel();
-	UCameraComponent* FindSceneViewportCamera() const;
+	bool FindSceneViewportPOV(struct FMinimalViewInfo& OutPOV) const;
 	void RestoreViewportCamera(const FPerspectiveCameraData& CamData);
 
 	FSelectionManager SelectionManager;

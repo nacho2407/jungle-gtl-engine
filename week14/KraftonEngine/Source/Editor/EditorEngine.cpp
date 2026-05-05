@@ -580,26 +580,21 @@ void UEditorEngine::ClearScene()
 	ViewportLayout.DestroyAllCameras();
 }
 
-// TODO(D): 호출자(RestoreViewportCamera 등)가 컴포넌트 setter 를 직접 호출하는 구조라
-//          현재는 컴포넌트 자체를 반환. 호출자 측이 정리되면 POV 시그니처로 전환하거나
-//          제거 가능.
-UCameraComponent* UEditorEngine::FindSceneViewportCamera() const
+// 잔여 정리: SceneSaveManager 가 POV 받게 시그니처화 → 여기도 POV 직접 산출.
+bool UEditorEngine::FindSceneViewportPOV(FMinimalViewInfo& OutPOV) const
 {
 	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
 	{
-		if (!VC)
-		{
-			continue;
-		}
+		if (!VC) continue;
 
 		if (VC->GetRenderOptions().ViewportType == ELevelViewportType::Perspective
 			|| VC->GetRenderOptions().ViewportType == ELevelViewportType::FreeOrthographic)
 		{
-			return VC->GetCamera();
+			VC->GetCameraView(OutPOV);
+			return true;
 		}
 	}
-
-	return nullptr;
+	return false;
 }
 
 void UEditorEngine::RestoreViewportCamera(const FPerspectiveCameraData& CamData)
@@ -609,15 +604,22 @@ void UEditorEngine::RestoreViewportCamera(const FPerspectiveCameraData& CamData)
 		return;
 	}
 
-	if (UCameraComponent* Camera = FindSceneViewportCamera())
+	// 잔여 정리: ViewTransform 직접 writeback. 직렬화 컨벤션 FVector(Roll, Pitch, Yaw) → FRotator(Pitch, Yaw, Roll).
+	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())
 	{
-		Camera->SetWorldLocation(CamData.Location);
-		Camera->SetRelativeRotation(CamData.Rotation);
-		FCameraState CameraState = Camera->GetCameraState();
-		CameraState.FOV = CamData.FOV;
-		CameraState.NearZ = CamData.NearClip;
-		CameraState.FarZ = CamData.FarClip;
-		Camera->SetCameraState(CameraState);
+		if (!VC) continue;
+		const auto VPType = VC->GetRenderOptions().ViewportType;
+		if (VPType == ELevelViewportType::Perspective || VPType == ELevelViewportType::FreeOrthographic)
+		{
+			FViewportCameraTransform& VT = VC->GetViewTransform();
+			VT.ViewLocation = CamData.Location;
+			VT.ViewRotation = FRotator(CamData.Rotation.Y, CamData.Rotation.Z, CamData.Rotation.X);
+			VT.FOV          = CamData.FOV;
+			VT.NearClip     = CamData.NearClip;
+			VT.FarClip      = CamData.FarClip;
+			VC->NotifyViewTransformChanged();
+			break;
+		}
 	}
 }
 
@@ -635,7 +637,9 @@ bool UEditorEngine::SaveSceneAs(const FString& InSceneName)
 		return false;
 	}
 
-	FSceneSaveManager::SaveSceneAsJSON(InSceneName, *Context, FindSceneViewportCamera());
+	FMinimalViewInfo SavePOV;
+	const bool bHasPOV = FindSceneViewportPOV(SavePOV);
+	FSceneSaveManager::SaveSceneAsJSON(InSceneName, *Context, bHasPOV ? &SavePOV : nullptr);
 	CurrentLevelFilePath = BuildScenePathFromStem(InSceneName);
 	return true;
 }
