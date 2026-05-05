@@ -12,6 +12,7 @@
 #include "Core/Log.h"
 #include "Math/Rotator.h"
 #include "GameFramework/PlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
 
 IMPLEMENT_CLASS(ACarPawn, APawn)
 
@@ -151,7 +152,10 @@ void ACarPawn::TakeMeteorDamage(float Amount)
 
 bool ACarPawn::IsFirstPersonView() const
 {
-	APlayerCameraManager* CamMgr = GetWorld()->GetCameraManager();
+	// E.2/2: PC 경로 — PlayerCameraManager 는 PC 가 보유.
+	APlayerController* PC = GetController();
+	if (!PC) return false;
+	APlayerCameraManager* CamMgr = PC->GetPlayerCameraManager();
 	if (!CamMgr) return false;
 	return CamMgr->GetActiveCamera() == FirstPersonCamera;
 }
