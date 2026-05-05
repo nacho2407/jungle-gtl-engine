@@ -3,9 +3,18 @@
 
 #include "Object/ObjectFactory.h"
 #include "SceneComponent.h"
+#include "Runtime/Engine.h"
 #include "Serialization/Archive.h"
 
 IMPLEMENT_COMPONENT_CLASS(URotatingMovementComponent, UMovementComponent, EEditorComponentCategory::Movement)
+
+void URotatingMovementComponent::BeginPlay()
+{
+    UMovementComponent::BeginPlay();
+    GEngine->GetPlayerCameraManager().PlayCameraShake(2.f,2.f,2.f,2.f);
+    GEngine->GetPlayerCameraManager().PlayCameraLetterBox(0.0f, 0.2f, 2.f);
+    GEngine->GetPlayerCameraManager().PlayCameraFade(0.0f,0.5f,5.f);
+}
 
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {

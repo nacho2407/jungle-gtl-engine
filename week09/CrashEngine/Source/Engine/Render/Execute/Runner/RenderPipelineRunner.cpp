@@ -51,6 +51,8 @@ const wchar_t* GetRenderPassMarkerName(ERenderPassNodeType PassType)
         return L"HeightFogPass";
     case ERenderPassNodeType::FXAAPass:
         return L"FXAAPass";
+    case ERenderPassNodeType::CinematicPostProcessPass:
+        return L"CinematicPostProcessPass";
     case ERenderPassNodeType::PresentPass:
         return L"PresentPass";
     case ERenderPassNodeType::LightHitMapPass:

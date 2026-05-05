@@ -73,7 +73,7 @@ public:
 protected:
     void Render(float DeltaTime) override;
     void OnRenderSceneCleared() override;
-    void RenderViewport(FLevelEditorViewportClient* VC);
+    void RenderViewport(FLevelEditorViewportClient* VC, float DeltaTime);
 
 public:
     FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }

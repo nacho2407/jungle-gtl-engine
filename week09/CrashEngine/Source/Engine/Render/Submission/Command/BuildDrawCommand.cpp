@@ -268,6 +268,10 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
     {
         Shader = FShaderManager::Get().GetShader(EShaderType::FXAA);
     }
+    else if (Pass == ERenderPass::CinematicPostProcess)
+    {
+        Shader = FShaderManager::Get().GetShader(EShaderType::CinematicPostProcess);
+    }
     else if (Pass == ERenderPass::PostProcess)
     {
         switch (PostProcessVariant)
@@ -312,6 +316,10 @@ void DrawCommandBuild::BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipel
     {
         // FXAA prepares SceneColor on t0 before submission; keep the command in sync
         // so SubmitCommand does not overwrite it with nullptr on a forced bind.
+        Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
+    }
+    else if (Pass == ERenderPass::CinematicPostProcess && Context.SceneView)
+    {
         Cmd.DiffuseSRV = Targets ? Targets->SceneColorCopySRV : nullptr;
     }
 

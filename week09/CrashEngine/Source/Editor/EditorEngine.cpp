@@ -623,7 +623,7 @@ void UEditorEngine::Render(float DeltaTime)
     for (FLevelEditorViewportClient* ViewportClient : GetLevelViewportClients())
     {
         SCOPE_STAT_CAT("RenderViewport", "2_Render");
-        RenderViewport(ViewportClient);
+        RenderViewport(ViewportClient, DeltaTime);
     }
 
     Renderer.BeginFrame(SceneView);
@@ -647,7 +647,7 @@ void UEditorEngine::Render(float DeltaTime)
     }
 }
 
-void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
+void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTime)
 {
     UCameraComponent* Camera = VC->GetCamera();
     if (!Camera)
@@ -706,7 +706,10 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     FScene& Scene = World->GetScene();
     Scene.ClearFrameData();
 
-    SceneView.SetCameraInfo(Camera);
+    CameraManager.SetViewTarget(Camera);
+    CameraManager.UpdateCamera(DeltaTime);
+
+    SceneView.SetCameraInfo(CameraManager.GetCameraViewInfoCache());
     SceneView.SetRenderSettings(ViewMode, EffectiveShowFlags);
     SceneView.SetRenderOptions(Opts);
     SceneView.RenderPath = FEditorSettings::Get().RenderShadingPath;

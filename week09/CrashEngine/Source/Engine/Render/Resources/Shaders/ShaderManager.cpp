@@ -46,6 +46,8 @@ const char* GetShaderTypeName(EShaderType InType)
         return "NormalView";
     case EShaderType::FXAA:
         return "FXAA";
+    case EShaderType::CinematicPostProcess:
+        return "CinematicPostProcess";
     case EShaderType::LightHitMap:
         return "LightHitMap";
     case EShaderType::MAX:

@@ -109,6 +109,19 @@ struct FFXAACBData
     float _pad[2];          // 8B
 }; // Total: 16B
 
+struct FCinematicPostProcessCBData
+{
+    FVector4 FadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f); // 16B
+    float    FadeAmount = 0.0f;                             // 4B
+    float    LetterBoxAmount = 0.0f;                        // 4B
+    float    Gamma = 1.0f;                                  // 4B
+    float    VignetteIntensity = 0.0f;                      // 4B
+    float    VignetteRadius = 0.75f;                        // 4B
+    float    VignetteSoftness = 0.35f;                      // 4B
+    float    bEnableGammaCorrection = 0.0f;                 // 4B
+    float    bEnableVignette = 0.0f;                        // 4B
+}; // Total: 48B
+
 // FMomentBlurCBData는 shadow moment blur pass(b2)에 사용하는 상수 버퍼 데이터입니다.
 struct FMomentBlurCBData
 {

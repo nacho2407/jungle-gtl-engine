@@ -4,6 +4,7 @@
 #include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
+#include "CameraManage/PlayerCameraManager.h"
 #include "Render/Renderer.h"
 #include "Render/Execute/Context/Scene/SceneView.h"
 #include "Render/Execute/Context/Viewport/ViewportRenderTargets.h"
@@ -61,6 +62,8 @@ public:
     FRenderer& GetRenderer() { return Renderer; }
     const FRenderer& GetRenderer() const { return Renderer; }
     FRmlUiManager* GetRmlUiManager() const { return RmlUiManager.get(); }
+    PlayerCameraManager& GetPlayerCameraManager() { return CameraManager; }
+    const PlayerCameraManager& GetPlayerCameraManager() const { return CameraManager; }
 
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
@@ -88,6 +91,7 @@ protected:
 protected:
     FSceneView SceneView;
     FViewportRenderTargets RenderTargets;
+    PlayerCameraManager CameraManager;
 };
 
 extern UEngine* GEngine;

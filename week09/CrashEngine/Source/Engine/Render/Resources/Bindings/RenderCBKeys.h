@@ -10,4 +10,5 @@ constexpr uint32 Outline    = 3;
 constexpr uint32 SceneDepth = 4;
 constexpr uint32 FXAA       = 5;
 constexpr uint32 Light      = 6;
+constexpr uint32 CinematicPostProcess = 7;
 } // namespace ERenderCBKey

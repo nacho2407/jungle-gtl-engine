@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Core/CoreTypes.h"
+#include "CameraManage/CameraTypes.h"
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Render/Execute/Context/Scene/ViewTypes.h"
@@ -37,6 +38,7 @@ struct FSceneView
     ERenderShadingPath     RenderPath = ERenderShadingPath::Forward;
     FShowFlags             ShowFlags;
     FVector                WireframeColor = FVector(0.0f, 0.0f, 0.7f);
+    FCameraScreenEffectInfo ScreenEffects;
 
     FGPUOcclusionCulling* OcclusionCulling = nullptr;
     FConvexVolume         FrustumVolume;
@@ -48,6 +50,7 @@ struct FSceneView
     }
 
     void SetCameraInfo(const UCameraComponent* Camera);
+    void SetCameraInfo(const FCameraViewInfo& CameraViewInfo);
     void SetViewportInfo(const FViewport* VP);
 
     void SetViewportSize(float InWidth, float InHeight)

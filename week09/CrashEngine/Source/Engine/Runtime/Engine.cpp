@@ -153,7 +153,10 @@ void UEngine::Render(float DeltaTime)
         FShowFlags ShowFlags;
         EViewMode ViewMode = EViewMode::Lit_Phong;
 
-        SceneView.SetCameraInfo(Camera);
+        CameraManager.SetViewTarget(Camera);
+        CameraManager.UpdateCamera(DeltaTime);
+
+        SceneView.SetCameraInfo(CameraManager.GetCameraViewInfoCache());
         SceneView.SetRenderSettings(ViewMode, ShowFlags);
         if (Viewport && DeviceContext)
         {

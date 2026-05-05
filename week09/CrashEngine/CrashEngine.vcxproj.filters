@@ -303,6 +303,9 @@
     <FxCompile Include="Shaders\Passes\PostProcess\FXAAPass.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\PostProcess\CinematicPostProcessPass.hlsl">
+      <Filter>Shaders\Passes\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\HeightFogPass.hlsl">
       <Filter>Shaders\Passes\PostProcess</Filter>
     </FxCompile>
@@ -803,6 +806,9 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\CinematicPostProcessPass.cpp">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp">
@@ -1736,6 +1742,9 @@
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h">
+      <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\CinematicPostProcessPass.h">
       <Filter>Source\Engine\Render\Execute\Passes\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h">

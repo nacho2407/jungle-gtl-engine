@@ -114,6 +114,8 @@ ERenderPassNodeType MapPassToNodeType(ERenderPass Pass, const FRenderPipelineCon
         return ERenderPassNodeType::OverlayBillboardPass;
     case ERenderPass::FXAA:
         return ERenderPassNodeType::FXAAPass;
+    case ERenderPass::CinematicPostProcess:
+        return ERenderPassNodeType::CinematicPostProcessPass;
     case ERenderPass::GizmoOuter:
     case ERenderPass::GizmoInner:
         return ERenderPassNodeType::GizmoPass;
@@ -550,6 +552,11 @@ void FRenderer::BuildDrawCommands(FRenderPipelineContext& PipelineContext)
             {
                 Pass->BuildDrawCommands(PipelineContext);
             }
+        }
+
+        if (FRenderPass* Pass = PassRegistry.FindPass(ERenderPassNodeType::CinematicPostProcessPass))
+        {
+            Pass->BuildDrawCommands(PipelineContext);
         }
     }
 
