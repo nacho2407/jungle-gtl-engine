@@ -2,6 +2,8 @@
 
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
+#include "Math/Matrix.h"
+#include "Engine/Core/RayTypes.h"
 
 // ============================================================
 // FMinimalViewInfo — 카메라 POV "공통 통화"
@@ -34,4 +36,13 @@ struct FMinimalViewInfo
 	float    FarClip      = 1000.0f;
 
 	bool     bIsOrtho     = false;                    // true 면 OrthoWidth 사용, false 면 FOV 사용
+
+	// ─── POV → 매트릭스 / Ray 계산 (UE: FMinimalViewInfo 의 Calculate* 등가) ───
+	// 컴포넌트 없이 통화만 가지고 동일한 계산을 할 수 있게 D.1 에서 도입.
+	FMatrix CalculateViewMatrix() const;
+	FMatrix CalculateProjectionMatrix() const;
+	FMatrix CalculateViewProjectionMatrix() const;
+
+	// 화면 좌표(Pixel) → 월드 Ray. UCameraComponent::DeprojectScreenToWorld 와 동등.
+	FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight) const;
 };

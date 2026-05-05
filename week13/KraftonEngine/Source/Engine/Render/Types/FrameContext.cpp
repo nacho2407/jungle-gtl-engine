@@ -4,7 +4,7 @@
 #include "Viewport/Viewport.h"
 
 // FMinimalViewInfo (POV 통화) → FrameContext (렌더 통화) 변환.
-// 매트릭스/프러스텀 빌드는 여기 한 곳으로 모인다.
+// 매트릭스 빌드는 FMinimalViewInfo 메서드로 모이고, FrameContext 는 결과만 캐시.
 void FFrameContext::SetCameraInfo(const FMinimalViewInfo& POV)
 {
 	CameraPosition  = POV.Location;
@@ -12,18 +12,8 @@ void FFrameContext::SetCameraInfo(const FMinimalViewInfo& POV)
 	CameraRight     = POV.Rotation.GetRightVector();
 	CameraUp        = POV.Rotation.GetUpVector();
 
-	View = FMatrix::MakeViewMatrix(CameraRight, CameraUp, CameraForward, CameraPosition);
-
-	if (POV.bIsOrtho)
-	{
-		const float HalfW = POV.OrthoWidth * 0.5f;
-		const float HalfH = HalfW / POV.AspectRatio;
-		Proj = FMatrix::OrthoLH(HalfW * 2.0f, HalfH * 2.0f, POV.NearClip, POV.FarClip);
-	}
-	else
-	{
-		Proj = FMatrix::PerspectiveFovLH(POV.FOV, POV.AspectRatio, POV.NearClip, POV.FarClip);
-	}
+	View = POV.CalculateViewMatrix();
+	Proj = POV.CalculateProjectionMatrix();
 
 	bIsOrtho   = POV.bIsOrtho;
 	OrthoWidth = POV.OrthoWidth;
