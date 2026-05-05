@@ -352,7 +352,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 			
             {
                 ULightComponent* MutableLight = const_cast<ULightComponent*>(LightComp);
-                MutableLight->DebugShadowCubeIndex = CubeIndex;
+                MutableLight->DebugShadowCubeIndex = static_cast<float>(CubeIndex);
                 MutableLight->bHasDebugShadowCubeTile = true;
             }
 

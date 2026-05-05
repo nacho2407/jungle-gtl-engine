@@ -1,0 +1,21 @@
+{
+        "Name" : "Asset/Material/Auto/cube_Mat_0_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.490000, 0.140000]
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Cube/Cube.png"
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.560000, 0.990000]
+          }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Cube/Cube.png"
+          }],
+        "Parent" : "Asset/Material/Auto/cube_Mat_0.mat"
+      }

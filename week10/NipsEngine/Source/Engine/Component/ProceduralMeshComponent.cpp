@@ -16,7 +16,7 @@ void UProceduralMeshComponent::CreateFrom(UStaticMesh* StaticMesh)
 	if (StaticMesh)
 	{
         CreateSection(0, StaticMesh->GetMeshData()->Vertices, StaticMesh->GetMeshData()->Indices);
-		for (size_t i = 0; i < StaticMesh->GetMaterialSlots().size(); i++)
+		for (int32 i = 0; i < static_cast<int32>(StaticMesh->GetMaterialSlots().size()); i++)
 		{
             UMaterialInterface* Mat = StaticMesh->GetMaterialSlots()[i].Material;
             SetMaterial(i, Mat);
@@ -33,7 +33,7 @@ void UProceduralMeshComponent::CreateFrom(UProceduralMeshComponent* ProcMeshComp
 		if (!Sections.empty())
 		{
             CreateSection(0, Sections[0].Vertices, Sections[0].Indices);
-            for (size_t i = 0; i < ProcMeshComp->GetNumMaterials(); i++)
+            for (int32 i = 0; i < ProcMeshComp->GetNumMaterials(); i++)
             {
                 UMaterialInterface* Mat = ProcMeshComp->GetMaterial(i);
                 SetMaterial(i, Mat);
@@ -44,8 +44,14 @@ void UProceduralMeshComponent::CreateFrom(UProceduralMeshComponent* ProcMeshComp
 
 void UProceduralMeshComponent::CreateSection(int32 SectionIndex, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices)
 {
-    if (Sections.size() <= SectionIndex)
-        Sections.resize(SectionIndex + 1);
+	if (SectionIndex < 0)
+	{
+		return;
+	}
+
+	const size_t RequiredSectionCount = static_cast<size_t>(SectionIndex) + 1;
+    if (Sections.size() <= static_cast<size_t>(SectionIndex))
+        Sections.resize(RequiredSectionCount);
 
 	Sections[SectionIndex].Vertices = InVertices;
     Sections[SectionIndex].Indices = InIndices;
@@ -53,7 +59,7 @@ void UProceduralMeshComponent::CreateSection(int32 SectionIndex, const TArray<FN
 
 void UProceduralMeshComponent::ClearSection(int32 SectionIndex)
 {
-	if (Sections.size() > SectionIndex)
+	if (SectionIndex >= 0 && Sections.size() > static_cast<size_t>(SectionIndex))
     {
         Sections[SectionIndex].Indices.clear();
         Sections[SectionIndex].Vertices.clear();
@@ -155,7 +161,7 @@ void UProceduralMeshComponent::Serialize(FArchive& Ar)
         Ar << "Materials" << MaterialPaths;
 
         Materials.resize(MaterialPaths.size());
-        for (size_t i = 0; i < MaterialPaths.size(); ++i)
+        for (int32 i = 0; i < static_cast<int32>(MaterialPaths.size()); ++i)
         {
             if (!MaterialPaths[i].empty())
             {
@@ -397,7 +403,7 @@ void FMeshSlicer::SliceComponent(UProceduralMeshComponent* InComponent, const FP
 void FMeshSlicer::AddTriangle(FSliceMeshData& Mesh, const FNormalVertex& A, const FNormalVertex& B, const FNormalVertex& C)
 {
 	// Vertex 중복은 많은데, 우선 돌아가게 하기 위해서 단순한 방식으로 채택
-    int Base = Mesh.Vertices.size();
+    int Base = static_cast<int>(Mesh.Vertices.size());
 
 	Mesh.Vertices.push_back(A);
     Mesh.Vertices.push_back(B);
@@ -464,7 +470,7 @@ void FMeshSlicer::BuildCapMesh(
     FVector Center = FVector::ZeroVector;
     for (auto& V : Unique)
         Center += V.Position;
-    Center /= Unique.size();
+    Center /= static_cast<float>(Unique.size());
 
     // ---------------------------------
     // 3. basis
@@ -507,7 +513,7 @@ void FMeshSlicer::BuildCapMesh(
     // ---------------------------------
     // 7. triangulation (convex 가정)
     // ---------------------------------
-    int base = OutVertices.size();
+    int base = static_cast<int>(OutVertices.size());
 
 	for (auto& V : Unique)
 	{
@@ -515,7 +521,7 @@ void FMeshSlicer::BuildCapMesh(
         OutVertices.push_back(V);
 	}
 
-    for (int i = 1; i < Unique.size() - 1; i++)
+    for (int i = 1; i < static_cast<int>(Unique.size()) - 1; i++)
     {
         OutIndices.push_back(base + 0);
         OutIndices.push_back(base + i);

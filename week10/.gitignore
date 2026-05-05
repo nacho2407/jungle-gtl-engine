@@ -454,6 +454,7 @@ CMakeLists.txt
 
 # ignore Build Files
 NipsEngine/Build/
+NipsEngine/DerivedData/
 NipsEngine/Saves/**
 Builds/
 

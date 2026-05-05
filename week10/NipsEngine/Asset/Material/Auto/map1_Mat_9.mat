@@ -1,0 +1,74 @@
+{
+        "ImportedName" : "MI_Glow02",
+        "Name" : "map1_Mat_9",
+        "Params" : [{
+            "Name" : "AmbientColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 1.000000]
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.500000, 0.500000, 0.500000]
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.600000, 1.000000, 0.596078]
+          }, {
+            "Name" : "AmbientMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 250.000000
+          }, {
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.000000
+          }, {
+            "Name" : "SpecularMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "EmissiveMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "BumpMap",
+            "Type" : "Texture",
+            "Value" : ""
+          }, {
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasSpecularMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasAmbientMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasEmissiveMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "bHasBumpMap",
+            "Type" : "Bool",
+            "Value" : false
+          }],
+        "Shader" : "Shaders/UberLit.hlsl"
+      }

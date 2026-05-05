@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/Dice_Mat_0_Inst_2.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/Dice.PNG"
+          }],
+        "Parent" : "Asset/Material/Auto/Dice_Mat_0.mat"
+      }

@@ -65,6 +65,30 @@ namespace
 		SubPath.replace_extension(L".bin");
 		return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
 	}
+
+	FString SanitizeAssetToken(FString Token)
+	{
+		for (char& Ch : Token)
+		{
+			const bool bAlphaNum =
+				(Ch >= '0' && Ch <= '9') ||
+				(Ch >= 'A' && Ch <= 'Z') ||
+				(Ch >= 'a' && Ch <= 'z');
+
+			if (!bAlphaNum && Ch != '_' && Ch != '-')
+			{
+				Ch = '_';
+			}
+		}
+
+		return Token.empty() ? FString("Material") : Token;
+	}
+
+	FString MakeImportedMaterialAssetName(const std::filesystem::path& SourceMtlPath, int32 MaterialIndex)
+	{
+		const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
+		return SourceStem + "_Mat_" + std::to_string(MaterialIndex);
+	}
 }
 
 static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath)
@@ -892,26 +916,16 @@ bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString&
         ComputeShaders[CacheKey] = Shader;
     }
 
-    TComPtr<ID3DBlob> CSBlob;
-    TComPtr<ID3DBlob> ErrorBlob;
-
-    HRESULT hr = D3DCompileFromFile(FPaths::ToWide(NormalizedFilePath).c_str(), Defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
-                                    EntryPoint.c_str(), "cs_5_0", 0, 0, &CSBlob, &ErrorBlob);
-    if (FAILED(hr))
+    FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(NormalizedFilePath, EntryPoint, "cs_5_0", Defines, 0);
+    if (!CompileResult.bSuccess)
     {
-        if (ErrorBlob)
-        {
-            UE_LOG_ERROR("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), static_cast<const char*>(ErrorBlob->GetBufferPointer()));
-        }
-        else
-        {
-            UE_LOG_ERROR("Failed to compile compute shader: %s", NormalizedFilePath.c_str());
-        }
+        UE_LOG_ERROR("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), CompileResult.ErrorMessage.c_str());
         return false;
     }
-    ErrorBlob.Reset();
 
-    hr = CachedDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr,
+    TComPtr<ID3DBlob> CSBlob = CompileResult.Blob;
+
+    HRESULT hr = CachedDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr,
                                            &Shader->CS);
     if (FAILED(hr))
     {
@@ -1046,7 +1060,8 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
     }
 
     TMap<FString, UMaterial*> Parsed;
-    if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get()))
+	TArray<FString> MaterialOrder;
+    if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get(), &MaterialOrder))
     {
         UE_LOG_WARNING("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
         return false;
@@ -1062,32 +1077,23 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
         }
 
         Parsed["DefaultWhite"] = DefaultMat;
+		MaterialOrder.push_back("DefaultWhite");
     }
 
     const fs::path SourceMtlPath(FPaths::ToWide(NormalizedMtlFilePath));
     const bool bCanPromoteMtlToMaterialAssets = SourceMtlPath.extension() == L".mtl";
     const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
 
-    auto SanitizeAssetToken = [](FString Token)
+	for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialOrder.size()); ++MaterialIndex)
     {
-        for (char& Ch : Token)
-        {
-            const bool bAlphaNum =
-                (Ch >= '0' && Ch <= '9') ||
-                (Ch >= 'A' && Ch <= 'Z') ||
-                (Ch >= 'a' && Ch <= 'z');
+		const FString& Name = MaterialOrder[MaterialIndex];
+		auto ParsedIt = Parsed.find(Name);
+		if (ParsedIt == Parsed.end())
+		{
+			continue;
+		}
 
-            if (!bAlphaNum && Ch != '_' && Ch != '-')
-            {
-                Ch = '_';
-            }
-        }
-
-        return Token.empty() ? FString("Material") : Token;
-    };
-
-    for (auto& [Name, Mat] : Parsed)
-    {
+		UMaterial* Mat = ParsedIt->second;
         if (!Mat)
         {
             continue;
@@ -1099,15 +1105,18 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
         if (bCanPromoteMtlToMaterialAssets)
         {
-            const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
-            const FString MaterialName = SanitizeAssetToken(Name);
+			const FString MaterialName = MakeImportedMaterialAssetName(SourceMtlPath, MaterialIndex);
             const fs::path RelativeMatPath =
-                AutoMaterialDir / FPaths::ToWide(SourceStem + "_" + MaterialName + ".mat");
+                AutoMaterialDir / FPaths::ToWide(MaterialName + ".mat");
 
             MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
-            Mat->Name = SourceStem + "_" + MaterialName;
+            Mat->Name = MaterialName;
         }
 
+		if (Mat->ImportedName.empty())
+		{
+			Mat->ImportedName = Name;
+		}
         Mat->FilePath = MaterialAssetPath;
         Mat->SetShader(Shader);
 
@@ -1217,6 +1226,10 @@ bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMate
 	const FString NormalizedMatFilePath = FPaths::Normalize(MatFilePath);
 	JSON Root = JSON::Make(JSON::Class::Object);
 	Root["Name"] = Material->Name;
+	if (!Material->ImportedName.empty())
+	{
+		Root["ImportedName"] = Material->ImportedName;
+	}
 	Root["Shader"] = Material->Shader ? Material->Shader->FilePath : "";
 
 	JSON Params = JSON::Make(JSON::Class::Array);
@@ -1521,6 +1534,10 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 	FString MatName = Root["Name"].ToString();
 	FString ShaderPath = Root["Shader"].ToString();
 	UMaterial* Material = GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
+	if (Root.hasKey("ImportedName"))
+	{
+		Material->ImportedName = Root["ImportedName"].ToString();
+	}
 	Material->SetParam("AmbientColor", FMaterialParamValue(Material->MaterialData.AmbientColor));
 	Material->SetParam("DiffuseColor", FMaterialParamValue(Material->MaterialData.DiffuseColor));
 	Material->SetParam("SpecularColor", FMaterialParamValue(Material->MaterialData.SpecularColor));

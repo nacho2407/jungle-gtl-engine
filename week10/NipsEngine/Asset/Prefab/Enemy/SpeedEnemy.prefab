@@ -8,7 +8,7 @@
         "Enable Tick" : true,
         "GenerateOverlapEvents" : false,
         "Location" : [-3.662833, -6.205131, 1.180493],
-        "Materials" : ["Asset/Material/Auto/cube______________Inst_1.matinst"],
+        "Materials" : ["Asset/Material/Auto/cube_Mat_0_Inst_1.matinst"],
         "ObjectName" : "UProceduralMeshComponent_126",
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.500000, 1.500000, 2.700000],

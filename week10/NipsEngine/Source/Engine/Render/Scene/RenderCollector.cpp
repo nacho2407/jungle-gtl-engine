@@ -765,7 +765,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
             Cmd.MeshBuffer = MeshBuffer;
 
             Cmd.SectionIndexStart = 0;
-            Cmd.SectionIndexCount = Section.Indices.size();
+            Cmd.SectionIndexCount = static_cast<uint32>(Section.Indices.size());
             Cmd.Material = Material;
 
             Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();

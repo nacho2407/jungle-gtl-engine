@@ -15,5 +15,5 @@ public:
 	 * @param OutMaterials
 	 * @return 파일 열기 성공 여부
 	 */
-	static bool Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device);
+	static bool Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device, TArray<FString>* OutMaterialOrder = nullptr);
 };
