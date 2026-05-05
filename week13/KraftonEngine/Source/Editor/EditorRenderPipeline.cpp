@@ -126,10 +126,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 		{
 			if (APlayerCameraManager* CamManager = PC->GetPlayerCameraManager())
 			{
-				if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
-				{
-					ActiveCamera->GetCameraView(0.0f, POV);
-				}
+				CamManager->GetCameraView(POV);
 			}
 		}
 	}

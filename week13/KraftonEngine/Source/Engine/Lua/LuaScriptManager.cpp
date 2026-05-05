@@ -603,6 +603,16 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			Manager->ClearCameraVignette();
 		}
 	});
+	CameraManager.set_function("SetViewTargetWithBlend", [](AActor* Target, float BlendTime)
+	{
+		if (!GEngine || !GEngine->GetWorld() || !Target) return;
+
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		if (PC)
+		{
+			PC->SetViewTargetWithBlend(Target, BlendTime);
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)

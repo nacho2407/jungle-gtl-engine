@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace FMath
 {
@@ -12,6 +12,11 @@ namespace FMath
 		if (Val >= Hi) return Hi;
 		if (Val <= Lo) return Lo;
 		return Val;
+	}
+
+	inline float Lerp(float A, float B, float Alpha)
+	{
+		return A + Alpha * (B - A);
 	}
 }
 
