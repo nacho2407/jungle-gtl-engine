@@ -274,12 +274,12 @@ void APlayerCameraManager::ClearCameraVignette()
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Camera Blend
+// Camera Blend — ViewTarget A → Pending B 로 전환 중일 때 매 호출 시 보간된
+// raw POV 를 산출. shake 는 미포함. UpdateCamera 가 이걸 호출해 base POV 로
+// 받은 뒤 shake 를 누적해 CameraCachePOV 에 commit 한다.
 // ─────────────────────────────────────────────────────────────────
 bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	// TODO(B): ViewTarget 과 PendingViewTarget 의 BlendTimeRemaining 에 따라
-	//          OutPOV 를 보간해서 반환. BlendTimeRemaining <= 0 이면 ViewTarget POV 반환.
 	if (!ViewTarget && !ActiveCamera)
 	{
 		return false;
@@ -322,42 +322,13 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Tick — Shake / Fade / ViewTarget blend 갱신
-// TODO(A): World::Tick 에서 매 프레임 호출하도록 연결.
+// Tick — ViewTarget blend timer → base+blend POV (GetCameraView) →
+//        Shake 누적 → Fade timer → CameraCachePOV commit.
 // ─────────────────────────────────────────────────────────────────
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
-	// TODO(B): ActiveCamera 의 POV 를 가져와서 셰이크 결과를 누적 적용 → ActiveCamera 에 반영.
-	FCameraShakeUpdateResult ShakeResult;
-	for (UCameraShakeBase* Shake : ActiveShakes)
-	{
-		if (Shake && !Shake->IsFinished())
-		{
-			Shake->UpdateAndApplyCameraShake(DeltaTime, ShakeResult);
-		}
-	}
-
-	// 종료된 셰이크 정리
-	ActiveShakes.erase(
-		std::remove_if(ActiveShakes.begin(), ActiveShakes.end(),
-			[](UCameraShakeBase* S) { return !S || S->IsFinished(); }),
-		ActiveShakes.end());
-
-	// Fade 진행
-	if (bEnableFading && FadeDuration > 0.0f && FadeTimeRemaining > 0.0f)
-	{
-		FadeTimeRemaining = std::max(0.0f, FadeTimeRemaining - DeltaTime);
-		const float Alpha = 1.0f - (FadeTimeRemaining / FadeDuration);
-		FadeAmount = FadeAlphaFrom + (FadeAlphaTo - FadeAlphaFrom) * Alpha;
-
-		if (FadeTimeRemaining <= 0.0f && !bHoldFadeWhenFinished)
-		{
-			bEnableFading = false;
-			FadeAmount = 0.0f;
-		}
-	}
-
-	// View Target blend
+	// (1) ViewTarget blend timer 갱신 + 완료 시 ViewTarget 전환 + ActiveCamera 갱신.
+	//     base POV 산출 *전* 에 와야 새 BlendTimeRemaining 으로 보간된 POV 가 cache 에 들어간다.
 	if (PendingViewTarget && BlendTimeRemaining > 0.0f)
 	{
 		BlendTimeRemaining = std::max(0.0f, BlendTimeRemaining - DeltaTime);
@@ -373,6 +344,69 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 			}
 		}
 	}
+
+	// (2) base+blend POV — GetCameraView 가 ViewTarget/PendingViewTarget 보간된 raw POV 산출.
+	//     실패(둘 다 없음) 시 캐시 무효 표시 후 fade/shake timer 만 진행.
+	FMinimalViewInfo NewPOV;
+	const bool bHasBasePOV = GetCameraView(NewPOV);
+
+	// (3) Shake 누적 — 모든 active shake 의 결과를 합산해 NewPOV 에 가산.
+	//     PlaySpace(CameraLocal/World/UserDefined) 변환은 셰이크 서브클래스 구현에 위임.
+	//     현재 베이스는 OutResult 를 채우지 않으므로 add-zero (no-op) — 서브클래스 도입 시 자연 작동.
+	FCameraShakeUpdateResult ShakeResult;
+	for (UCameraShakeBase* Shake : ActiveShakes)
+	{
+		if (Shake && !Shake->IsFinished())
+		{
+			Shake->UpdateAndApplyCameraShake(DeltaTime, ShakeResult);
+		}
+	}
+	if (bHasBasePOV)
+	{
+		NewPOV.Location       += ShakeResult.Location;
+		NewPOV.Rotation.Pitch += ShakeResult.Rotation.Pitch;
+		NewPOV.Rotation.Yaw   += ShakeResult.Rotation.Yaw;
+		NewPOV.Rotation.Roll  += ShakeResult.Rotation.Roll;
+		NewPOV.FOV            += ShakeResult.FOV;
+	}
+
+	// (4) 종료된 셰이크 정리
+	ActiveShakes.erase(
+		std::remove_if(ActiveShakes.begin(), ActiveShakes.end(),
+			[](UCameraShakeBase* S) { return !S || S->IsFinished(); }),
+		ActiveShakes.end());
+
+	// (5) Fade 진행 — 시각적 합성은 PostProcess 측, 여기선 알파 시간 누적만.
+	if (bEnableFading && FadeDuration > 0.0f && FadeTimeRemaining > 0.0f)
+	{
+		FadeTimeRemaining = std::max(0.0f, FadeTimeRemaining - DeltaTime);
+		const float Alpha = 1.0f - (FadeTimeRemaining / FadeDuration);
+		FadeAmount = FadeAlphaFrom + (FadeAlphaTo - FadeAlphaFrom) * Alpha;
+
+		if (FadeTimeRemaining <= 0.0f && !bHoldFadeWhenFinished)
+		{
+			bEnableFading = false;
+			FadeAmount = 0.0f;
+		}
+	}
+
+	// (6) Cache commit — 외부는 GetCameraCachePOV 로 read (shake/blend 적용된 최종 POV).
+	if (bHasBasePOV)
+	{
+		CameraCachePOV    = NewPOV;
+		bCameraCacheValid = true;
+	}
+	else
+	{
+		bCameraCacheValid = false;
+	}
+}
+
+bool APlayerCameraManager::GetCameraCachePOV(FMinimalViewInfo& OutPOV) const
+{
+	if (!bCameraCacheValid) return false;
+	OutPOV = CameraCachePOV;
+	return true;
 }
 
 float APlayerCameraManager::ApplyBlendFunction(float Alpha, FViewTargetTransitionParams Params) const

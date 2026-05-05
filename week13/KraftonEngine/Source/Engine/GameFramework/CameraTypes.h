@@ -48,9 +48,9 @@ enum class ECameraShakePlaySpace : uint8
 // ============================================================
 struct FCameraShakeUpdateResult
 {
-	FVector Location = FVector(0.0f, 0.0f, 0.0f);
-	FRotator Rotation;          // additive Pitch/Yaw/Roll
-	float FOV = 0.0f;           // additive degrees
+	FVector Location = FVector(0.0f, 0.0f, 0.0f);   // additive world-space offset
+	FRotator Rotation;                              // additive Pitch/Yaw/Roll (degrees)
+	float FOV = 0.0f;                               // additive radians (FCameraState/FMinimalViewInfo 단위와 통일)
 };
 
 struct FCameraFadeState

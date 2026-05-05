@@ -109,13 +109,14 @@ APlayerController* UWorld::GetFirstPlayerController() const
 }
 
 // PC 의 PlayerCameraManager 우선, fallback 으로 IPOVProvider pull.
+// PIE/Game 경로는 매니저가 매 프레임 채우는 CameraCachePOV (shake/blend 적용된 최종값) 사용.
 bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 {
 	if (APlayerController* PC = GetFirstPlayerController())
 	{
 		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
 		{
-			if (CM->GetCameraView(OutPOV))
+			if (CM->GetCameraCachePOV(OutPOV))
 			{
 				return true;
 			}
