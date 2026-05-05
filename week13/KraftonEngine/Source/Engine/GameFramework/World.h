@@ -88,10 +88,6 @@ public:
 	void SetEditorActivePOV(const FMinimalViewInfo& InPOV) { EditorActivePOV = InPOV; bHasEditorActivePOV = true; }
 	void ClearEditorActivePOV() { bHasEditorActivePOV = false; }
 
-	// 호환성 wrapper — UCameraComponent* 받던 기존 호출자 보존. 내부에서 POV 추출.
-	// 신규 코드는 SetEditorActivePOV 직접 사용.
-	void SetActiveCamera(UCameraComponent* InCamera);
-
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }

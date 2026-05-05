@@ -302,16 +302,13 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		Pipeline->OnSceneCleared();
 	}
 
-	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera 로 설정 —
-	//    LOD 갱신 등에서 ActiveCamera 를 참조하므로 설정 필요.
-	// E.2/3: SetActiveCamera 는 EditorActiveCamera 슬롯에 들어가 PC 가 자기 카메라를 잡기
-	//        전까지 LOD fallback 으로 사용된다. Possess 는 PC->BeginPlay 가 처리.
+	// 5) 활성 뷰포트의 POV 를 PIE 월드의 EditorActivePOV 슬롯에 등록 —
+	//    PC 가 자기 카메라를 잡기 전까지 LOD fallback 으로 사용.
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
-		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
-		{
-			PIEWorld->SetActiveCamera(VCCamera);
-		}
+		FMinimalViewInfo POV;
+		ActiveVC->GetCameraView(POV);
+		PIEWorld->SetEditorActivePOV(POV);
 	}
 
 	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
@@ -404,12 +401,10 @@ void UEditorEngine::EndPlayMap()
 				ActiveVC->NotifyViewTransformChanged();
 			}
 
-			// World 의 EditorActiveCamera 슬롯에 mirror Camera 등록 (LOD 용).
-			// World::SetActiveCamera 가 POV 통화 받게 정리되면 GetCamera 의존도 끊을 수 있다.
-			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
-			{
-				EditorWorld->SetActiveCamera(VCCamera);
-			}
+			// 잔여 정리: ViewTransform 에서 POV 추출해 Editor world 의 EditorActivePOV 에 등록 (LOD 용).
+			FMinimalViewInfo RestoredPOV;
+			ActiveVC->GetCameraView(RestoredPOV);
+			EditorWorld->SetEditorActivePOV(RestoredPOV);
 		}
 	}
 

@@ -330,13 +330,12 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 	{
 		ActiveViewportClient->SetActive(true);
 		UWorld* World = Editor->GetWorld();
-		// TODO(E): World 의 ActiveCamera 가 컴포넌트가 아닌 POV 를 보유하도록 정리되면 통화로 전환.
-		if (World && ActiveViewportClient->GetCamera())
+		// 잔여 정리: POV 통화로 등록.
+		if (World && !Editor->IsPlayingInEditor())
 		{
-			if (!Editor->IsPlayingInEditor())
-			{
-				World->SetActiveCamera(ActiveViewportClient->GetCamera());
-			}
+			FMinimalViewInfo POV;
+			ActiveViewportClient->GetCameraView(POV);
+			World->SetEditorActivePOV(POV);
 		}
 	}
 }
@@ -360,9 +359,13 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 		// 기존 뷰포트 타입(Ortho 방향 등)을 새 카메라에 재적용
 		VC->SetViewportType(VC->GetRenderOptions().ViewportType);
 	}
-	// TODO(E): World 의 ActiveCamera 가 통화 보유하면 POV 로 전환.
+	// 잔여 정리: POV 통화로 등록.
 	if (ActiveViewportClient && InWorld)
-		InWorld->SetActiveCamera(ActiveViewportClient->GetCamera());
+	{
+		FMinimalViewInfo POV;
+		ActiveViewportClient->GetCameraView(POV);
+		InWorld->SetEditorActivePOV(POV);
+	}
 }
 
 void FLevelViewportLayout::DestroyAllCameras()
