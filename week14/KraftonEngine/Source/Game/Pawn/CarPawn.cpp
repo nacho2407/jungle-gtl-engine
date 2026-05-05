@@ -11,7 +11,7 @@
 #include "Core/CollisionTypes.h"
 #include "Core/Log.h"
 #include "Math/Rotator.h"
-#include "GameFramework/CameraManager.h"
+#include "GameFramework/PlayerCameraManager.h"
 
 IMPLEMENT_CLASS(ACarPawn, APawn)
 
@@ -151,7 +151,7 @@ void ACarPawn::TakeMeteorDamage(float Amount)
 
 bool ACarPawn::IsFirstPersonView() const
 {
-	UCameraManager* CamMgr = GetWorld()->GetCameraManager();
+	APlayerCameraManager* CamMgr = GetWorld()->GetCameraManager();
 	if (!CamMgr) return false;
 	return CamMgr->GetActiveCamera() == FirstPersonCamera;
 }

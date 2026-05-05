@@ -263,7 +263,10 @@ void UWorld::InitWorld()
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
 	PersistentLevel->SetWorld(this);
 
-	CameraManager = UObjectManager::Get().CreateObject<UCameraManager>(this);
+	// E.1: APlayerCameraManager 가 AActor 기반이지만 SpawnActor 가 아닌 CreateObject 로 만든다.
+	// 이유: World 가 멤버로 직접 소유하며 액터 리스트(PersistentLevel) / TickManager 에 등록하지 않음.
+	// E.3 에서 PC 소유로 이전될 때 SpawnActor 흐름으로 정상화 예정.
+	CameraManager = UObjectManager::Get().CreateObject<APlayerCameraManager>(this);
 
 	// 물리 시스템 초기화 — ProjectSettings 백엔드 선택
 	if (FProjectSettings::Get().Physics.Backend == EPhysicsBackend::PhysX)

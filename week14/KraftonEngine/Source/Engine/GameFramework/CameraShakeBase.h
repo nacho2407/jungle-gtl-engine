@@ -3,7 +3,7 @@
 #include "Object/Object.h"
 #include "GameFramework/CameraTypes.h"
 
-class UCameraManager;
+class APlayerCameraManager;
 
 // ============================================================
 // UCameraShakeBase — 카메라 셰이크의 베이스 클래스
@@ -28,7 +28,7 @@ public:
 
 	// 셰이크 시작 시 1회 호출. 패턴 상태 초기화.
 	virtual void StartShake(
-		UCameraManager* Camera,
+		APlayerCameraManager* Camera,
 		float InScale,
 		ECameraShakePlaySpace InPlaySpace,
 		FRotator InUserPlaySpaceRot);
@@ -45,7 +45,7 @@ public:
 	bool bSingleInstance = false;
 
 protected:
-	UCameraManager* OwnerCameraManager = nullptr;
+	APlayerCameraManager* OwnerCameraManager = nullptr;
 	float Scale = 1.0f;
 	ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal;
 	FRotator UserPlaySpaceRot;

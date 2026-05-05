@@ -1,6 +1,6 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
-#include "GameFramework/CameraManager.h"
+#include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
 #include "Serialization/Archive.h"
 
@@ -16,7 +16,7 @@ void APawn::PossessedBy(APlayerController* PC)
 	{
 		if (UCameraComponent* MyCamera = GetComponentByClass<UCameraComponent>())
 		{
-			if (UCameraManager* Mgr = World->GetCameraManager())
+			if (APlayerCameraManager* Mgr = World->GetCameraManager())
 			{
 				Mgr->SetActiveCamera(MyCamera);
 				Mgr->Possess(MyCamera);

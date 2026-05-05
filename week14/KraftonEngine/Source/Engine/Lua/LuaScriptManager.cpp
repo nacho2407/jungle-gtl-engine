@@ -15,7 +15,7 @@
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Pawn.h"
-#include "GameFramework/CameraManager.h"
+#include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/GameplayStatics.h"
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
@@ -497,7 +497,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			return false;
 		}
 
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		return Manager ? Manager->ToggleActiveCameraForActor(ActorName) : false;
 	});
 	CameraManager.set_function("ToggleOwnerCamera", [](AActor* Actor)
@@ -507,7 +507,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			return false;
 		}
 
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		return Manager ? Manager->ToggleActiveCameraForActor(Actor) : false;
 	});
 	CameraManager.set_function("PossessCamera", [](UCameraComponent* Camera)
@@ -517,7 +517,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			return false;
 		}
 
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		if (!Manager)
 		{
 			return false;
@@ -533,7 +533,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		{
 			return nullptr;
 		}
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		UCameraComponent* ActiveCamera = Manager ? Manager->GetActiveCamera() : nullptr;
 		return ActiveCamera ? ActiveCamera->GetOwner() : nullptr;
 	});
@@ -543,7 +543,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		{
 			return nullptr;
 		}
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		return Manager ? Manager->GetPossessedCamera() : nullptr;
 	});
 	CameraManager.set_function("GetPossessedCameraOwner", []() -> AActor*
@@ -552,7 +552,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		{
 			return nullptr;
 		}
-		UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
+		APlayerCameraManager* Manager = GEngine->GetWorld()->GetCameraManager();
 		UCameraComponent* PossessedCamera = Manager ? Manager->GetPossessedCamera() : nullptr;
 		return PossessedCamera ? PossessedCamera->GetOwner() : nullptr;
 	});
