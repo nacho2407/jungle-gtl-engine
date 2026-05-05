@@ -2,6 +2,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
 #include "GameFramework/PlayerCameraManager.h"
+#include "Component/ActorComponent.h"
 #include "Component/CameraComponent.h"
 
 IMPLEMENT_CLASS(APlayerController, AActor)
@@ -17,12 +18,17 @@ void APlayerController::BeginPlay()
 		PlayerCameraManager = World->SpawnActor<APlayerCameraManager>();
 		if (PlayerCameraManager)
 		{
+			// 한 액터가 여러 카메라 컴포넌트(예: CarPawn 의 First/Third Person)를 가질 수
+			// 있으므로 GetComponents 전체를 순회. GetComponentByClass 는 첫 번째만 반환하므로 부족.
 			for (AActor* Actor : World->GetActors())
 			{
 				if (!Actor) continue;
-				if (UCameraComponent* Cam = Actor->GetComponentByClass<UCameraComponent>())
+				for (UActorComponent* Comp : Actor->GetComponents())
 				{
-					PlayerCameraManager->RegisterCamera(Cam);
+					if (UCameraComponent* Cam = Cast<UCameraComponent>(Comp))
+					{
+						PlayerCameraManager->RegisterCamera(Cam);
+					}
 				}
 			}
 			PlayerCameraManager->AutoPossessDefaultCamera();
