@@ -1,7 +1,9 @@
 ﻿#include "CameraManager.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/CameraShakeBase.h"
 #include "Object/ObjectFactory.h"
+#include "Object/UClass.h"
 #include <algorithm>
 
 IMPLEMENT_CLASS(UCameraManager, UObject)
@@ -123,4 +125,163 @@ bool UCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
 	SetActiveCamera(NextCamera);
 	Possess(NextCamera);
 	return true;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// View Target
+// ─────────────────────────────────────────────────────────────────
+void UCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams)
+{
+	// TODO(B): NewViewTarget 의 UCameraComponent 를 찾아 ActiveCamera 로 전환.
+	//          BlendTime > 0 이면 PendingViewTarget 으로 보관, UpdateCamera 에서 보간.
+	//          BlendTime == 0 이면 즉시 전환.
+	if (TransitionParams.BlendTime <= 0.0f)
+	{
+		ViewTarget = NewViewTarget;
+		PendingViewTarget = nullptr;
+		BlendTimeRemaining = 0.0f;
+	}
+	else
+	{
+		PendingViewTarget = NewViewTarget;
+		BlendParams = TransitionParams;
+		BlendTimeRemaining = TransitionParams.BlendTime;
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Camera Shake
+// ─────────────────────────────────────────────────────────────────
+UCameraShakeBase* UCameraManager::StartCameraShake(
+	UClass* ShakeClass,
+	float Scale,
+	ECameraShakePlaySpace PlaySpace,
+	FRotator UserPlaySpaceRot)
+{
+	if (!ShakeClass) return nullptr;
+
+	// TODO(B): bSingleInstance 인 셰이크면 기존 인스턴스 검사 후 재시작/스킵.
+
+	UObject* Obj = FObjectFactory::Get().Create(ShakeClass->GetName(), this);
+	UCameraShakeBase* Shake = Cast<UCameraShakeBase>(Obj);
+	if (!Shake)
+	{
+		// 실패 시 메모리 누수 방지
+		if (Obj) UObjectManager::Get().DestroyObject(Obj);
+		return nullptr;
+	}
+
+	Shake->StartShake(this, Scale, PlaySpace, UserPlaySpaceRot);
+	ActiveShakes.push_back(Shake);
+	return Shake;
+}
+
+void UCameraManager::StopCameraShake(UCameraShakeBase* ShakeInstance, bool bImmediately)
+{
+	if (!ShakeInstance) return;
+	ShakeInstance->StopShake(bImmediately);
+	// 실제 제거는 UpdateCamera 에서 IsFinished() 체크 후.
+}
+
+void UCameraManager::StopAllCameraShakes(bool bImmediately)
+{
+	for (UCameraShakeBase* Shake : ActiveShakes)
+	{
+		if (Shake) Shake->StopShake(bImmediately);
+	}
+}
+
+void UCameraManager::StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImmediately)
+{
+	if (!ShakeClass) return;
+	for (UCameraShakeBase* Shake : ActiveShakes)
+	{
+		if (Shake && Shake->GetClass()->IsA(ShakeClass))
+		{
+			Shake->StopShake(bImmediately);
+		}
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Camera Fade
+// ─────────────────────────────────────────────────────────────────
+void UCameraManager::StartCameraFade(
+	float FromAlpha,
+	float ToAlpha,
+	float Duration,
+	FLinearColor Color,
+	bool bShouldFadeAudio,
+	bool bHoldWhenFinished)
+{
+	bEnableFading = true;
+	FadeAlphaFrom = FromAlpha;
+	FadeAlphaTo = ToAlpha;
+	FadeDuration = Duration;
+	FadeTimeRemaining = Duration;
+	FadeAmount = FromAlpha;
+	FadeColor = Color;
+	bFadeAudio = bShouldFadeAudio;
+	bHoldFadeWhenFinished = bHoldWhenFinished;
+}
+
+void UCameraManager::StopCameraFade()
+{
+	bEnableFading = false;
+	FadeAmount = 0.0f;
+	FadeTimeRemaining = 0.0f;
+}
+
+void UCameraManager::SetManualCameraFade(float InFadeAmount, FLinearColor Color, bool bInFadeAudio)
+{
+	bEnableFading = true;
+	FadeAmount = InFadeAmount;
+	FadeColor = Color;
+	bFadeAudio = bInFadeAudio;
+	FadeTimeRemaining = 0.0f;	// 수동 모드는 자동 갱신 안 함
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Tick — Shake / Fade / ViewTarget blend 갱신
+// TODO(A): World::Tick 에서 매 프레임 호출하도록 연결.
+// ─────────────────────────────────────────────────────────────────
+void UCameraManager::UpdateCamera(float DeltaTime)
+{
+	// TODO(B): ActiveCamera 의 POV 를 가져와서 셰이크 결과를 누적 적용 → ActiveCamera 에 반영.
+	FCameraShakeUpdateResult ShakeResult;
+	for (UCameraShakeBase* Shake : ActiveShakes)
+	{
+		if (Shake && !Shake->IsFinished())
+		{
+			Shake->UpdateAndApplyCameraShake(DeltaTime, ShakeResult);
+		}
+	}
+
+	// 종료된 셰이크 정리
+	ActiveShakes.erase(
+		std::remove_if(ActiveShakes.begin(), ActiveShakes.end(),
+			[](UCameraShakeBase* S) { return !S || S->IsFinished(); }),
+		ActiveShakes.end());
+
+	// Fade 진행
+	if (bEnableFading && FadeDuration > 0.0f && FadeTimeRemaining > 0.0f)
+	{
+		FadeTimeRemaining = std::max(0.0f, FadeTimeRemaining - DeltaTime);
+		const float Alpha = 1.0f - (FadeTimeRemaining / FadeDuration);
+		FadeAmount = FadeAlphaFrom + (FadeAlphaTo - FadeAlphaFrom) * Alpha;
+
+		if (FadeTimeRemaining <= 0.0f && !bHoldFadeWhenFinished)
+		{
+			bEnableFading = false;
+			FadeAmount = 0.0f;
+		}
+	}
+
+	// View Target blend
+	// TODO(B): BlendTimeRemaining 으로 카메라 보간. 지금은 즉시 전환만.
+	if (PendingViewTarget && BlendTimeRemaining <= 0.0f)
+	{
+		ViewTarget = PendingViewTarget;
+		PendingViewTarget = nullptr;
+	}
 }
