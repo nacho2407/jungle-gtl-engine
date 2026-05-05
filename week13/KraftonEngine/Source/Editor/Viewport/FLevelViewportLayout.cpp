@@ -23,6 +23,7 @@
 #include "ImGui/imgui.h"
 #include "WICTextureLoader.h"
 #include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Component/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
 
@@ -329,6 +330,7 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 	{
 		ActiveViewportClient->SetActive(true);
 		UWorld* World = Editor->GetWorld();
+		// TODO(E): World 의 ActiveCamera 가 컴포넌트가 아닌 POV 를 보유하도록 정리되면 통화로 전환.
 		if (World && ActiveViewportClient->GetCamera())
 		{
 			if (!Editor->IsPlayingInEditor())
@@ -349,16 +351,16 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 		// 카메라 재생성 후 현재 뷰포트 크기로 AspectRatio 동기화
 		if (FViewport* VP = VC->GetViewport())
 		{
-			UCameraComponent* Cam = VC->GetCamera();
-			if (Cam && VP->GetWidth() > 0 && VP->GetHeight() > 0)
+			if (VP->GetWidth() > 0 && VP->GetHeight() > 0)
 			{
-				Cam->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+				VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
 			}
 		}
 
 		// 기존 뷰포트 타입(Ortho 방향 등)을 새 카메라에 재적용
 		VC->SetViewportType(VC->GetRenderOptions().ViewportType);
 	}
+	// TODO(E): World 의 ActiveCamera 가 통화 보유하면 POV 로 전환.
 	if (ActiveViewportClient && InWorld)
 		InWorld->SetActiveCamera(ActiveViewportClient->GetCamera());
 }
@@ -1893,6 +1895,8 @@ bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FP
 	}
 
 	FLevelEditorViewportClient* ViewportClient = LevelViewportClients[SlotIndex];
+	// TODO(D): DeprojectScreenToWorld 가 컴포넌트 메서드라 컴포넌트가 SoT 인 동안엔
+	//          여기서 직접 접근. POV 기반 free 함수 헬퍼로 옮기면 정리 가능.
 	if (!ViewportClient || !ViewportClient->GetCamera())
 	{
 		return false;
@@ -2155,19 +2159,16 @@ void FLevelViewportLayout::SaveToSettings()
 		S.SplitterCount = 0;
 	}
 
-	// Perspective 카메라 (slot 0) 저장
+	// Perspective 카메라 (slot 0) 저장 — POV 통화로 추출.
 	if (!LevelViewportClients.empty())
 	{
-		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
-		if (Cam)
-		{
-			S.PerspCamLocation = Cam->GetWorldLocation();
-			S.PerspCamRotation = Cam->GetRelativeRotation();
-			const FCameraState& CS = Cam->GetCameraState();
-			S.PerspCamFOV = CS.FOV * (180.0f / 3.14159265358979f); // rad → deg
-			S.PerspCamNearClip = CS.NearZ;
-			S.PerspCamFarClip = CS.FarZ;
-		}
+		FMinimalViewInfo POV;
+		LevelViewportClients[0]->GetCameraView(POV);
+		S.PerspCamLocation = POV.Location;
+		S.PerspCamRotation = POV.Rotation;
+		S.PerspCamFOV      = POV.FOV * (180.0f / 3.14159265358979f); // rad → deg
+		S.PerspCamNearClip = POV.NearClip;
+		S.PerspCamFarClip  = POV.FarClip;
 	}
 }
 
@@ -2217,7 +2218,8 @@ void FLevelViewportLayout::LoadFromSettings()
 		}
 	}
 
-	// Perspective 카메라 (slot 0) 복원
+	// Perspective 카메라 (slot 0) 복원 — 컴포넌트 setter writeback.
+	// TODO(D): EditorViewportClient 가 ViewTransform 을 SoT 로 들면 컴포넌트 우회로 정리.
 	if (!LevelViewportClients.empty())
 	{
 		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
