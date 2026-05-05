@@ -131,19 +131,6 @@ bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 	return false;
 }
 
-void UWorld::SetActiveCamera(UCameraComponent* InCamera)
-{
-	// 호환성 wrapper — 컴포넌트에서 POV 추출 후 EditorActivePOV 슬롯에 저장.
-	if (InCamera)
-	{
-		InCamera->GetCameraView(0.0f, EditorActivePOV);
-		bHasEditorActivePOV = true;
-	}
-	else
-	{
-		bHasEditorActivePOV = false;
-	}
-}
 
 void UWorld::AddActor(AActor* Actor)
 {
