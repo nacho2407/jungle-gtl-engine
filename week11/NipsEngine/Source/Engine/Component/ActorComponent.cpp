@@ -137,6 +137,20 @@ void UActorComponent::SetTagsFromText(const FString& InTagsText)
     }
 }
 
+void UActorComponent::PostDuplicate(UObject* Original)
+{
+    UObject::PostDuplicate(Original);
+
+    UActorComponent* SourceComponent = Cast<UActorComponent>(Original);
+    if (!SourceComponent)
+    {
+        return;
+    }
+
+    Tags = SourceComponent->Tags;
+    TagsText = GetTagsText();
+}
+
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     TagsText = GetTagsText();

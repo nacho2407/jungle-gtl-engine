@@ -183,6 +183,10 @@ private:
 	void CycleTransformMode();
 	void CycleGizmoTransformMode();
 	void ApplyTransformModeToGizmo();
+	void SyncGizmoVisualState();
+	bool IsPassiveViewportFeedbackSuppressed(const FViewportInputContext& Context) const;
+	bool IsPassiveViewportFeedbackSuppressedByInputSystem() const;
+	void ClearPassiveGizmoHover() const;
 
 	void TickInteraction(float DeltaTime);    // box selection + gizmo screen-scaling
 

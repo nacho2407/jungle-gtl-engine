@@ -243,6 +243,49 @@ void FSceneSaveManager::Save(const FString& FilePath, FWorldContext& WorldContex
 	}
 }
 
+bool FSceneSaveManager::SaveToFilePath(const FString& FilePath, FWorldContext& WorldContext, const FEditorCameraState* CameraState)
+{
+	if (!WorldContext.World || FilePath.empty())
+	{
+		return false;
+	}
+
+	std::filesystem::path TargetPath(FPaths::ToWide(FilePath));
+	const bool bNameOnlySave = !TargetPath.has_parent_path() && TargetPath.root_path().empty();
+	if (TargetPath.extension().empty())
+	{
+		TargetPath += SceneExtension;
+	}
+	if (bNameOnlySave)
+	{
+		TargetPath = std::filesystem::path(GetSceneDirectory()) / TargetPath.filename();
+	}
+
+	const std::filesystem::path ParentPath = TargetPath.parent_path();
+	if (!ParentPath.empty())
+	{
+		std::error_code CreateDirEc;
+		std::filesystem::create_directories(ParentPath, CreateDirEc);
+		if (CreateDirEc)
+		{
+			return false;
+		}
+	}
+
+	const FString SceneName = FPaths::ToUtf8(TargetPath.stem().wstring());
+	json::JSON Root = BuildSceneSnapshotJson(SceneName, WorldContext, CameraState);
+
+	std::ofstream File(TargetPath, std::ios::out | std::ios::trunc);
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	File << Root.dump();
+	File.flush();
+	return true;
+}
+
 FString FSceneSaveManager::SaveToString(FWorldContext& WorldContext, const FEditorCameraState* CameraState)
 {
 	if (!WorldContext.World)

@@ -256,12 +256,32 @@ FVector UGizmoComponent::GetTargetScale() const
 
 bool UGizmoComponent::IsTargetActorAlive() const
 {
-	return TargetActor && TargetActorUUID != 0 && UObjectManager::Get().FindByUUID(TargetActorUUID) == TargetActor;
+	if (!TargetActor || TargetActorUUID == 0)
+	{
+		return false;
+	}
+
+	if (!UObjectManager::Get().ContainsObject(TargetActor))
+	{
+		return false;
+	}
+
+	return TargetActor->GetUUID() == TargetActorUUID;
 }
 
 bool UGizmoComponent::IsTargetComponentAlive() const
 {
-	return TargetComponent && TargetComponentUUID != 0 && UObjectManager::Get().FindByUUID(TargetComponentUUID) == TargetComponent;
+	if (!TargetComponent || TargetComponentUUID == 0)
+	{
+		return false;
+	}
+
+	if (!UObjectManager::Get().ContainsObject(TargetComponent))
+	{
+		return false;
+	}
+
+	return TargetComponent->GetUUID() == TargetComponentUUID;
 }
 
 bool UGizmoComponent::HasTarget() const
@@ -456,8 +476,10 @@ void UGizmoComponent::SetTargetScale(FVector NewScale)
 	TargetActor->SetActorScale(SafeScale);
 }
 
-bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+bool UGizmoComponent::HitTestMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
+	OutHitResult = {};
+
 	const FMeshData* MeshData = GetActiveMeshData();
 	if (!MeshData || MeshData->Indices.empty())
 	{
@@ -490,7 +512,6 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	OutHitResult.bHit = bHit;
 	if (!bHit)
 	{
-		UpdateHoveredAxis(-1);
 		return false;
 	}
 
@@ -500,9 +521,19 @@ bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 	OutHitResult.Location = WorldHitPoint;
 	OutHitResult.HitComponent = this;
 
-	UpdateHoveredAxis(OutHitResult.FaceIndex);
-
 	return OutHitResult.bHit;
+}
+
+bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	if (!HitTestMesh(Ray, OutHitResult))
+	{
+		UpdateHoveredAxis(-1);
+		return false;
+	}
+
+	UpdateHoveredAxis(OutHitResult.FaceIndex);
+	return true;
 }
 
 
@@ -523,6 +554,8 @@ FVector UGizmoComponent::GetVectorForAxis(int32 Axis)
 
 void UGizmoComponent::SetTarget(AActor* NewTarget)
 {
+	DragEnd();
+
 	if (!NewTarget || !NewTarget->GetRootComponent())
 	{
 		Deactivate();
@@ -541,6 +574,8 @@ void UGizmoComponent::SetTarget(AActor* NewTarget)
 
 void UGizmoComponent::SetTargetComponent(USceneComponent* NewTarget)
 {
+	DragEnd();
+
 	if (!NewTarget)
 	{
 		Deactivate();
@@ -692,6 +727,7 @@ void UGizmoComponent::DragEnd()
 	SetHolding(false);
 	SetPressedOnHandle(false);
 	SelectedAxis = -1;
+	PendingSnapDelta = 0.0f;
 }
 
 void UGizmoComponent::SetNextMode()
@@ -765,13 +801,13 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 
 void UGizmoComponent::Deactivate()
 {
+	DragEnd();
 	TargetActor = nullptr;
 	TargetComponent = nullptr;
 	TargetActorUUID = 0;
 	TargetComponentUUID = 0;
 	AllSelectedActors = nullptr;
 	SetVisibility(false);
-	SelectedAxis = -1;
 }
 
 EPrimitiveType UGizmoComponent::GetPrimitiveType() const

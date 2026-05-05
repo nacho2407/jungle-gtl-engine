@@ -46,6 +46,7 @@ public:
 
 	// CopyPropertiesFrom 은 UObject 에 정의됩니다.
 	// 컴포넌트-컴포넌트 간 소유 관계(Owner, Parent 등)는 Duplicate() 호출 측에서 별도 처리해야 합니다.
+	void PostDuplicate(UObject* Original) override;
 
 	void SetTransient(bool bInTransient) { bTransient = bInTransient; }
 	bool IsTransient() const { return bTransient; }

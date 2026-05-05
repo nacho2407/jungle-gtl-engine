@@ -35,6 +35,8 @@ public:
 
 	static void Save(const FString& FilePath, FWorldContext& WorldContext,
 					 const FEditorCameraState* CameraState = nullptr);
+	static bool SaveToFilePath(const FString& FilePath, FWorldContext& WorldContext,
+							   const FEditorCameraState* CameraState = nullptr);
 	static void Load(const FString& FilePath, FWorldContext& OutWorldContext,
 					 FEditorCameraState* OutCameraState = nullptr);
 	static FString SaveToString(FWorldContext& WorldContext,

@@ -16,6 +16,7 @@ void UBillboardComponent::PostDuplicate(UObject* Original)
 
     const UBillboardComponent* Orig = Cast<UBillboardComponent>(Original);
     bIsBillboard = Orig->bIsBillboard;
+    bInheritOwnerScale = Orig->bInheritOwnerScale;
     Texture = Orig->Texture; // 얕은 복사 (ResourceManager 소유)
     FrameIndex = Orig->FrameIndex;
     TimeAccumulator = Orig->TimeAccumulator;
@@ -29,6 +30,7 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 	Ar << "Height" << Height;
 	Ar << "PlayRate" << PlayRate;
 	Ar << "bLoop" << bLoop;
+    Ar << "bInheritOwnerScale" << bInheritOwnerScale;
 }
 
 bool UBillboardComponent::TryGetActiveCamera(const FViewportCamera*& OutCamera) const
@@ -102,6 +104,16 @@ UTexture* UBillboardComponent::GetTexture()
     return Texture;
 }
 
+FVector UBillboardComponent::GetBillboardWorldScale() const
+{
+    if (bInheritOwnerScale)
+    {
+        return GetWorldScale();
+    }
+
+    return FVector(1.0f, 1.0f, 1.0f);
+}
+
 void UBillboardComponent::UpdateWorldAABB() const
 
 {
@@ -112,7 +124,7 @@ void UBillboardComponent::UpdateWorldAABB() const
     if (TryGetActiveCamera(Camera) && Camera != nullptr)
     {
         CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-                                                     GetWorldScale(),
+                                                     GetBillboardWorldScale(),
                                                      Camera->GetEffectiveForward(),
                                                      Camera->GetEffectiveRight(),
                                                      Camera->GetEffectiveUp());
@@ -121,7 +133,7 @@ void UBillboardComponent::UpdateWorldAABB() const
     {
         // 카메라를 찾을 수 없는 로드 초기 시점 등에서는 기본 축을 사용합니다.
         CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-                                                     GetWorldScale(),
+                                                     GetBillboardWorldScale(),
                                                      FVector(1.0f, 0.0f, 0.0f),  // Forward
                                                      FVector(0.0f, 1.0f, 0.0f),  // Right
                                                      FVector(0.0f, 0.0f, 1.0f)); // Up
@@ -153,13 +165,18 @@ void UBillboardComponent::UpdateWorldAABB() const
 bool UBillboardComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 
 {
-    FMatrix BillboardWorldMatrix = GetWorldMatrix();
+    FMatrix BillboardWorldMatrix = MakeBillboardWorldMatrix(
+        GetWorldLocation(),
+        GetBillboardWorldScale(),
+        FVector(1.0f, 0.0f, 0.0f),
+        FVector(0.0f, 1.0f, 0.0f),
+        FVector(0.0f, 0.0f, 1.0f));
     const FViewportCamera* ActiveCamera = nullptr;
     if (TryGetActiveCamera(ActiveCamera))
     {
         BillboardWorldMatrix = MakeBillboardWorldMatrix(
             GetWorldLocation(),
-            GetWorldScale(),
+            GetBillboardWorldScale(),
             ActiveCamera->GetEffectiveForward(),
             ActiveCamera->GetEffectiveRight(),
             ActiveCamera->GetEffectiveUp());
@@ -211,6 +228,7 @@ void UBillboardComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
     OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
     OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
     OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
+    OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
 }
 
 void UBillboardComponent::TickComponent(float DeltaTime)

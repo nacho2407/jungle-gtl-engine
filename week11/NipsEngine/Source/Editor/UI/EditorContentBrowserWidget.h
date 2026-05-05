@@ -74,6 +74,7 @@ private:
 	bool CreateTextFile();
 	bool CreateLuaScriptFile();
 	bool CreateMaterialAsset();
+	bool CreateSceneAsset();
 	bool DeleteSelectedItem();
 	void RequestRenameSelectedItem();
 	bool CommitRename();

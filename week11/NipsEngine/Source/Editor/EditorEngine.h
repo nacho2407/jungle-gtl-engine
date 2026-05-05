@@ -111,6 +111,7 @@ public:
 	void ResetViewport();
 	void CloseScene();
 	void NewScene();
+	bool CreateDefaultSceneAsset(const FString& FilePath);
 	virtual void SetActiveWorld(const FName& Handle) override;
 	void ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld = nullptr);
 

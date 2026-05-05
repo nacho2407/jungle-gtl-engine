@@ -180,6 +180,23 @@ public:
 		return nullptr;
 	}
 
+	bool ContainsObject(const UObject* InObject)
+	{
+		if (!InObject)
+		{
+			return false;
+		}
+
+		for (const UObject* Obj : GUObjectArray)
+		{
+			if (Obj == InObject)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	UObject* FindByIndex(uint32 Index)
 	{
 		if (Index >= GUObjectArray.size()) return nullptr;

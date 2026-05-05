@@ -200,7 +200,12 @@ bool FSelectionManager::IsSelectedComponentAlive() const
 		return false;
 	}
 
-	return UObjectManager::Get().FindByUUID(SelectedComponentUUID) == SelectedComponent;
+	if (!UObjectManager::Get().ContainsObject(SelectedComponent))
+	{
+		return false;
+	}
+
+	return SelectedComponent->GetUUID() == SelectedComponentUUID;
 }
 
 void FSelectionManager::ValidateSelection()

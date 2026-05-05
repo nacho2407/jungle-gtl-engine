@@ -15,6 +15,7 @@ REGISTER_FACTORY(USubUVComponent)
 USubUVComponent::USubUVComponent()
 {
 	SetVisibility(true);
+	SetInheritOwnerScale(true);
 }
 
 // 재생 상태 등 GetEditableProperties 에 노출되지 않은 필드를 직접 복사합니다.
@@ -53,6 +54,7 @@ void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProp
 	OutProps.push_back({ "Height", EPropertyType::Float, &Height, 0.1f, 100.0f, 0.1f });
 	OutProps.push_back({ "Play Rate", EPropertyType::Float, &PlayRate, 1.0f, 120.0f, 1.0f });
 	OutProps.push_back({ "bLoop", EPropertyType::Bool, &bLoop });
+	OutProps.push_back({ "Inherit Owner Scale", EPropertyType::Bool, &bInheritOwnerScale });
 }
 
 void USubUVComponent::PostEditProperty(const char* PropertyName)
@@ -72,7 +74,7 @@ void USubUVComponent::UpdateWorldAABB() const
 	if (TryGetActiveCamera(Camera) && Camera != nullptr)
 	{
 		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-			GetWorldScale(),
+			GetBillboardWorldScale(),
 			Camera->GetEffectiveForward(),
 			Camera->GetEffectiveRight(),
 			Camera->GetEffectiveUp());
@@ -81,7 +83,7 @@ void USubUVComponent::UpdateWorldAABB() const
 	{
 		// 카메라를 찾을 수 없는 로드 초기 시점 등에서는 기본 축을 사용합니다.
 		CachedWorldMatrix = MakeBillboardWorldMatrix(GetWorldLocation(),
-			GetWorldScale(),
+			GetBillboardWorldScale(),
 			FVector(1.0f, 0.0f, 0.0f),  // Forward
 			FVector(0.0f, 1.0f, 0.0f),  // Right
 			FVector(0.0f, 0.0f, 1.0f)); // Up
@@ -111,13 +113,18 @@ void USubUVComponent::UpdateWorldAABB() const
 
 bool USubUVComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	FMatrix BillboardWorldMatrix = GetWorldMatrix();
+	FMatrix BillboardWorldMatrix = MakeBillboardWorldMatrix(
+		GetWorldLocation(),
+		GetBillboardWorldScale(),
+		FVector(1.0f, 0.0f, 0.0f),
+		FVector(0.0f, 1.0f, 0.0f),
+		FVector(0.0f, 0.0f, 1.0f));
 	const FViewportCamera* ActiveCamera = nullptr;
 	if (TryGetActiveCamera(ActiveCamera))
 	{
 		BillboardWorldMatrix = MakeBillboardWorldMatrix(
 			GetWorldLocation(),
-			GetWorldScale(),
+			GetBillboardWorldScale(),
 			ActiveCamera->GetEffectiveForward(),
 			ActiveCamera->GetEffectiveRight(),
 			ActiveCamera->GetEffectiveUp());

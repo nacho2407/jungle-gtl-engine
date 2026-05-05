@@ -70,6 +70,7 @@ public:
 
 	void UpdateWorldAABB() const override;
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	bool HitTestMesh(const FRay& Ray, FHitResult& OutHitResult);
 
 	FVector GetVectorForAxis(int32 Axis);
 	void RenderGizmo() {}

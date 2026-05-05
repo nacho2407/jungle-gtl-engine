@@ -11,6 +11,7 @@ class UBillboardComponent : public UPrimitiveComponent
 {
 protected:
 	bool bIsBillboard = true;
+	bool bInheritOwnerScale = false;
 	bool TryGetActiveCamera(const FViewportCamera*& OutCamera) const;
 	
 	virtual void PostDuplicate(UObject* Original) override;
@@ -23,6 +24,9 @@ public:
 	void TickComponent(float DeltaTime) override;
 
 	void SetBillboardEnabled(bool bEnable) { bIsBillboard = bEnable; }
+	void SetInheritOwnerScale(bool bInherit) { bInheritOwnerScale = bInherit; }
+	bool ShouldInheritOwnerScale() const { return bInheritOwnerScale; }
+	FVector GetBillboardWorldScale() const;
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_Billboard;
 
 	static FMatrix MakeBillboardWorldMatrix(

@@ -12,6 +12,90 @@
 DEFINE_CLASS(AActor, UObject)
 REGISTER_FACTORY(AActor)
 
+static FString TrimObjectNameText(const FString& Name)
+{
+    size_t Begin = 0;
+    while (Begin < Name.size() && std::isspace(static_cast<unsigned char>(Name[Begin])) != 0)
+    {
+        ++Begin;
+    }
+
+    size_t End = Name.size();
+    while (End > Begin && std::isspace(static_cast<unsigned char>(Name[End - 1])) != 0)
+    {
+        --End;
+    }
+
+    if (Begin >= End)
+    {
+        return "";
+    }
+    return Name.substr(Begin, End - Begin);
+}
+
+static bool ParseObjectNameNumber(const FString& Text, int32& OutNumber)
+{
+    if (Text.empty())
+    {
+        return false;
+    }
+
+    int32 Value = 0;
+    for (char Ch : Text)
+    {
+        if (!std::isdigit(static_cast<unsigned char>(Ch)))
+        {
+            return false;
+        }
+        Value = Value * 10 + (Ch - '0');
+    }
+
+    OutNumber = Value;
+    return true;
+}
+
+static bool SplitGeneratedObjectNameSuffix(const FString& Name, FString& OutBaseName, int32& OutNumber)
+{
+    const FString TrimmedName = TrimObjectNameText(Name);
+    if (TrimmedName.empty())
+    {
+        return false;
+    }
+
+    size_t NumberBegin = TrimmedName.size();
+    while (NumberBegin > 0 && std::isdigit(static_cast<unsigned char>(TrimmedName[NumberBegin - 1])) != 0)
+    {
+        --NumberBegin;
+    }
+
+    if (NumberBegin == TrimmedName.size() || NumberBegin == 0 || TrimmedName[NumberBegin - 1] != '_')
+    {
+        return false;
+    }
+
+    if (ParseObjectNameNumber(TrimmedName.substr(NumberBegin), OutNumber))
+    {
+        OutBaseName = TrimObjectNameText(TrimmedName.substr(0, NumberBegin - 1));
+        return !OutBaseName.empty();
+    }
+    return false;
+}
+
+static FString StripGeneratedObjectNameSuffixes(const FString& Name)
+{
+    FString BaseName = TrimObjectNameText(Name);
+    for (;;)
+    {
+        FString NextBaseName;
+        int32 IgnoredNumber = 0;
+        if (!SplitGeneratedObjectNameSuffix(BaseName, NextBaseName, IgnoredNumber))
+        {
+            return BaseName;
+        }
+        BaseName = NextBaseName;
+    }
+}
+
 AActor::~AActor()
 {
     if (OwningWorld != nullptr)
@@ -29,6 +113,65 @@ AActor::~AActor()
 
     OwnedComponents.clear();
     RootComponent = nullptr;
+}
+
+FString AActor::MakeUniqueComponentName(const UActorComponent* TargetComponent, const FString& RequestedName, bool bAlwaysAppendNumber) const
+{
+    FString BaseName = StripGeneratedObjectNameSuffixes(RequestedName);
+    if (BaseName.empty())
+    {
+        BaseName = TargetComponent && TargetComponent->GetTypeInfo() ? TargetComponent->GetTypeInfo()->name : "UActorComponent";
+    }
+
+    bool bRequestedNameTaken = false;
+    int32 HighestSuffix = 0;
+    const FString RequestedCleanName = TrimObjectNameText(RequestedName);
+    for (const UActorComponent* Component : OwnedComponents)
+    {
+        if (!Component || Component == TargetComponent)
+        {
+            continue;
+        }
+
+        const FString ExistingName = TrimObjectNameText(Component->GetFName().ToString());
+        if (ExistingName == RequestedCleanName)
+        {
+            bRequestedNameTaken = true;
+        }
+
+        FString ExistingBaseName;
+        int32 ExistingSuffix = 0;
+        if (SplitGeneratedObjectNameSuffix(ExistingName, ExistingBaseName, ExistingSuffix)
+            && StripGeneratedObjectNameSuffixes(ExistingBaseName) == BaseName)
+        {
+            HighestSuffix = std::max(HighestSuffix, ExistingSuffix);
+        }
+    }
+
+    if (!bAlwaysAppendNumber && !RequestedCleanName.empty() && !bRequestedNameTaken)
+    {
+        return RequestedCleanName;
+    }
+
+    int32 Suffix = std::max(HighestSuffix + 1, 1);
+    FString Candidate;
+    bool bTaken = false;
+    do
+    {
+        Candidate = BaseName + "_" + std::to_string(Suffix++);
+        bTaken = false;
+        for (const UActorComponent* Component : OwnedComponents)
+        {
+            if (Component && Component != TargetComponent && Component->GetFName() == FName(Candidate))
+            {
+                bTaken = true;
+                break;
+            }
+        }
+    }
+    while (bTaken);
+
+    return Candidate;
 }
 
 /* 액터의 계층 구조를 복원하기 위해 자식들을 재귀적으로 순회합니다. */
@@ -74,6 +217,8 @@ void AActor::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 
 void AActor::PostDuplicate(UObject* Original)
 {
+    UObject::PostDuplicate(Original);
+
     AActor* OrigActor = static_cast<AActor*>(Original);
 
     OwnedComponents.clear();
@@ -165,6 +310,7 @@ UActorComponent* AActor::AddComponentByClass(const FTypeInfo* Class)
     }
 
     Comp->SetOwner(this);
+    Comp->SetFName(FName(MakeUniqueComponentName(Comp, Class->name, true)));
     OwnedComponents.push_back(Comp);
     bPrimitiveCacheDirty = true;
     NotifyComponentRegistered(Comp);
@@ -180,6 +326,7 @@ void AActor::RegisterComponent(UActorComponent* Comp)
     if (it == OwnedComponents.end())
     {
         Comp->SetOwner(this);
+        Comp->SetFName(FName(MakeUniqueComponentName(Comp, Comp->GetFName().ToString(), false)));
         OwnedComponents.push_back(Comp);
         bPrimitiveCacheDirty = true;
         NotifyComponentRegistered(Comp);
