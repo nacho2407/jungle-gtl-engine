@@ -1,14 +1,13 @@
-﻿#include "CameraManager.h"
+﻿#include "PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
-#include "GameFramework/AActor.h"
 #include "GameFramework/CameraShakeBase.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include <algorithm>
 
-IMPLEMENT_CLASS(UCameraManager, UObject)
+IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
-void UCameraManager::RegisterCamera(UCameraComponent* Camera)
+void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {
 	if (Camera)
 	{
@@ -19,7 +18,7 @@ void UCameraManager::RegisterCamera(UCameraComponent* Camera)
 	}
 }
 
-void UCameraManager::UnregisterCamera(UCameraComponent* Camera)
+void APlayerCameraManager::UnregisterCamera(UCameraComponent* Camera)
 {
 	if (Camera)
 	{
@@ -38,7 +37,7 @@ void UCameraManager::UnregisterCamera(UCameraComponent* Camera)
 	}
 }
 
-void UCameraManager::AutoPossessDefaultCamera()
+void APlayerCameraManager::AutoPossessDefaultCamera()
 {
 	// 이미 누가 ActiveCamera를 설정했으면(예: APawn::PossessedBy에서 자기 카메라 지정)
 	// 첫 등록 카메라로 덮어쓰지 않는다. World::BeginPlay 흐름상 GameMode->StartMatch가
@@ -53,7 +52,7 @@ void UCameraManager::AutoPossessDefaultCamera()
 }
 
 // 현재는 Actor당 카메라 최대 2개만 가능
-bool UCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
+bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
 {
 	TArray<UCameraComponent*> ActorCameras;
 	for (UCameraComponent* Camera : RegisteredCameraOrder)
@@ -88,7 +87,7 @@ bool UCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
 	return true;
 }
 
-bool UCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
+bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
 {
 	if (!Actor)
 	{
@@ -130,7 +129,7 @@ bool UCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
 // ─────────────────────────────────────────────────────────────────
 // View Target
 // ─────────────────────────────────────────────────────────────────
-void UCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams)
+void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams)
 {
 	// TODO(B): NewViewTarget 의 UCameraComponent 를 찾아 ActiveCamera 로 전환.
 	//          BlendTime > 0 이면 PendingViewTarget 으로 보관, UpdateCamera 에서 보간.
@@ -152,7 +151,7 @@ void UCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTransitionP
 // ─────────────────────────────────────────────────────────────────
 // Camera Shake
 // ─────────────────────────────────────────────────────────────────
-UCameraShakeBase* UCameraManager::StartCameraShake(
+UCameraShakeBase* APlayerCameraManager::StartCameraShake(
 	UClass* ShakeClass,
 	float Scale,
 	ECameraShakePlaySpace PlaySpace,
@@ -176,14 +175,14 @@ UCameraShakeBase* UCameraManager::StartCameraShake(
 	return Shake;
 }
 
-void UCameraManager::StopCameraShake(UCameraShakeBase* ShakeInstance, bool bImmediately)
+void APlayerCameraManager::StopCameraShake(UCameraShakeBase* ShakeInstance, bool bImmediately)
 {
 	if (!ShakeInstance) return;
 	ShakeInstance->StopShake(bImmediately);
 	// 실제 제거는 UpdateCamera 에서 IsFinished() 체크 후.
 }
 
-void UCameraManager::StopAllCameraShakes(bool bImmediately)
+void APlayerCameraManager::StopAllCameraShakes(bool bImmediately)
 {
 	for (UCameraShakeBase* Shake : ActiveShakes)
 	{
@@ -191,7 +190,7 @@ void UCameraManager::StopAllCameraShakes(bool bImmediately)
 	}
 }
 
-void UCameraManager::StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImmediately)
+void APlayerCameraManager::StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImmediately)
 {
 	if (!ShakeClass) return;
 	for (UCameraShakeBase* Shake : ActiveShakes)
@@ -206,7 +205,7 @@ void UCameraManager::StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImm
 // ─────────────────────────────────────────────────────────────────
 // Camera Fade
 // ─────────────────────────────────────────────────────────────────
-void UCameraManager::StartCameraFade(
+void APlayerCameraManager::StartCameraFade(
 	float FromAlpha,
 	float ToAlpha,
 	float Duration,
@@ -225,14 +224,14 @@ void UCameraManager::StartCameraFade(
 	bHoldFadeWhenFinished = bHoldWhenFinished;
 }
 
-void UCameraManager::StopCameraFade()
+void APlayerCameraManager::StopCameraFade()
 {
 	bEnableFading = false;
 	FadeAmount = 0.0f;
 	FadeTimeRemaining = 0.0f;
 }
 
-void UCameraManager::SetManualCameraFade(float InFadeAmount, FLinearColor Color, bool bInFadeAudio)
+void APlayerCameraManager::SetManualCameraFade(float InFadeAmount, FLinearColor Color, bool bInFadeAudio)
 {
 	bEnableFading = true;
 	FadeAmount = InFadeAmount;
@@ -245,7 +244,7 @@ void UCameraManager::SetManualCameraFade(float InFadeAmount, FLinearColor Color,
 // Tick — Shake / Fade / ViewTarget blend 갱신
 // TODO(A): World::Tick 에서 매 프레임 호출하도록 연결.
 // ─────────────────────────────────────────────────────────────────
-void UCameraManager::UpdateCamera(float DeltaTime)
+void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
 	// TODO(B): ActiveCamera 의 POV 를 가져와서 셰이크 결과를 누적 적용 → ActiveCamera 에 반영.
 	FCameraShakeUpdateResult ShakeResult;

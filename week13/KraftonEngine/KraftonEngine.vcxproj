@@ -446,7 +446,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\BoxActor.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\CameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
@@ -457,6 +456,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Pawn.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PawnStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
@@ -693,7 +693,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\BoxActor.h" />
-    <ClInclude Include="Source\Engine\GameFramework\CameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\CameraShakeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\CameraTypes.h" />
     <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h" />
@@ -705,6 +704,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\Pawn.h" />
     <ClInclude Include="Source\Engine\GameFramework\PawnStaticMesh.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />

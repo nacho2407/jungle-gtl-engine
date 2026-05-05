@@ -4,7 +4,7 @@
 #include "Core/CollisionTypes.h"
 #include "Collision/WorldPrimitivePickingBVH.h"
 #include "GameFramework/AActor.h"
-#include "GameFramework/CameraManager.h"
+#include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/Level.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/WorldContext.h"
@@ -82,7 +82,7 @@ public:
 	void SetActiveCamera(UCameraComponent* InCamera) { if (CameraManager) CameraManager->SetActiveCamera(InCamera); }
 	UCameraComponent* GetActiveCamera() const { return CameraManager ? CameraManager->GetActiveCamera() : nullptr; }
 
-	UCameraManager* GetCameraManager() const { return CameraManager; }
+	APlayerCameraManager* GetCameraManager() const { return CameraManager; }
 
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
@@ -98,7 +98,7 @@ private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
 
-	UCameraManager* CameraManager = nullptr;
+	APlayerCameraManager* CameraManager = nullptr;
 	UCameraComponent* LastLODUpdateCamera = nullptr;
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;

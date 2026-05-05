@@ -4,7 +4,7 @@
 #include "GameFramework/CameraTypes.h"
 
 class APawn;
-class UCameraManager;
+class APlayerCameraManager;
 
 // ============================================================
 // APlayerController — 플레이어의 의도(Possess/입력)를 Pawn에 전달
@@ -29,7 +29,7 @@ public:
 	// ─── Camera Manager ──────────────────────────────────────────
 	// CameraManager 는 현재 World 가 소유하므로 World 로 위임.
 	// UE: APlayerController::PlayerCameraManager (멤버) — 우리는 accessor 로 노출.
-	UCameraManager* GetPlayerCameraManager() const;
+	APlayerCameraManager* GetPlayerCameraManager() const;
 
 	// ─── View Target ─────────────────────────────────────────────
 	// 새 view target 으로 전환 (블렌드 가능). UCameraComponent 가 붙어있는 액터 권장.

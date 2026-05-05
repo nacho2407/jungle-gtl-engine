@@ -119,7 +119,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	if (bShouldUseGameCamera)
 	{
-		if (UCameraManager* CamManager = World->GetCameraManager())
+		if (APlayerCameraManager* CamManager = World->GetCameraManager())
 		{
 			if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
 			{

@@ -4,7 +4,7 @@
 IMPLEMENT_CLASS(UCameraShakeBase, UObject)
 
 void UCameraShakeBase::StartShake(
-	UCameraManager* Camera,
+	APlayerCameraManager* Camera,
 	float InScale,
 	ECameraShakePlaySpace InPlaySpace,
 	FRotator InUserPlaySpaceRot)

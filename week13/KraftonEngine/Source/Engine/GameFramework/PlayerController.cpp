@@ -1,11 +1,11 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/World.h"
-#include "GameFramework/CameraManager.h"
+#include "GameFramework/PlayerCameraManager.h"
 
 IMPLEMENT_CLASS(APlayerController, AActor)
 
-UCameraManager* APlayerController::GetPlayerCameraManager() const
+APlayerCameraManager* APlayerController::GetPlayerCameraManager() const
 {
 	UWorld* World = GetWorld();
 	return World ? World->GetCameraManager() : nullptr;
@@ -18,7 +18,7 @@ void APlayerController::SetViewTargetWithBlend(
 	float BlendExp,
 	bool bLockOutgoing)
 {
-	UCameraManager* CM = GetPlayerCameraManager();
+	APlayerCameraManager* CM = GetPlayerCameraManager();
 	if (!CM) return;
 
 	FViewTargetTransitionParams Params;

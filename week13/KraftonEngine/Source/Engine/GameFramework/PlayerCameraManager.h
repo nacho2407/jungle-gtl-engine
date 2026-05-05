@@ -2,20 +2,21 @@
 
 #include "Core/CoreTypes.h"
 #include "Core/EngineTypes.h"
-#include "Object/Object.h"
+#include "GameFramework/AActor.h"
 #include "GameFramework/CameraTypes.h"
 
 class UCameraComponent;
 class UCameraShakeBase;
-class AActor;
 class UClass;
 
-class UCameraManager : public UObject
+// UE: APlayerCameraManager — PC 가 소유하는 카메라 매니저. AActor 기반.
+// E.1: UCameraManager 에서 변환. 호출자 시그니처/인터페이스 동일, 베이스만 AActor.
+class APlayerCameraManager : public AActor
 {
 public:
-	DECLARE_CLASS(UCameraManager, UObject)
-	UCameraManager() = default;
-	~UCameraManager() override = default;
+	DECLARE_CLASS(APlayerCameraManager, AActor)
+	APlayerCameraManager() = default;
+	~APlayerCameraManager() override = default;
 
 	// ─── Camera 등록 / Active / Possess ────────────────────────────
 	void RegisterCamera(UCameraComponent* Camera);
