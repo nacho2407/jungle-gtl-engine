@@ -274,7 +274,7 @@ local function calculateScore(finalHP, finalDocumentCount, elapsedTime)
     end
 
     local time_score = math.max(0, 10000 - math.floor((elapsedTime or 0) * 50))
-    local document_bonus = math.max(0, finalDocumentCount or 0) * 300
+    local document_bonus = math.max(0, finalDocumentCount or 0) * 3000
     local hp_bonus = math.max(0, math.floor((finalHP or 0) + 0.5)) * 5
 
     return math.max(0, math.floor(time_score + document_bonus + hp_bonus))
