@@ -467,6 +467,9 @@
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp">
       <Filter>Source\Editor\Viewport</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>

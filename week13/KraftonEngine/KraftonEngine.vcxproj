@@ -391,6 +391,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp" />
     <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp" />
