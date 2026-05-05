@@ -62,14 +62,7 @@ void FEditorViewportClient::ResetCamera()
 
 void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	// 현재는 컴포넌트가 SoT — 위임. 컴포넌트 제거(D.3) 후엔 else 경로만 남는다.
-	if (Camera)
-	{
-		Camera->GetCameraView(0.0f, OutPOV);
-		return;
-	}
-
-	// Fallback: 컴포넌트 미사용 모드. ViewTransform 에서 산출 (D.0 부터 완전한 데이터).
+	// D.3: ViewTransform 이 SoT. Camera 컴포넌트(존재하면)는 mirror.
 	OutPOV.Location    = ViewTransform.ViewLocation;
 	OutPOV.Rotation    = ViewTransform.ViewRotation;
 	OutPOV.FOV         = ViewTransform.FOV;
@@ -80,25 +73,9 @@ void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 	OutPOV.bIsOrtho    = ViewTransform.bIsOrtho;
 }
 
-// ─── D.0: Camera ↔ ViewTransform sync helpers ─────────────────
-// 현재는 컴포넌트가 SoT 라 mutation 후 ViewTransform 으로 미러링한다.
-// D.2 에서 SoT 가 뒤집히면 SyncCameraFromViewTransform 만 호출되도록 변경.
-void FEditorViewportClient::SyncViewTransformFromCamera()
-{
-	if (!Camera) return;
-	Camera->UpdateWorldMatrix();
-	ViewTransform.ViewLocation = Camera->GetWorldLocation();
-	ViewTransform.ViewRotation = Camera->GetWorldMatrix().ToRotator();
-
-	const FCameraState& State = Camera->GetCameraState();
-	ViewTransform.FOV          = State.FOV;
-	ViewTransform.AspectRatio  = State.AspectRatio;
-	ViewTransform.NearClip     = State.NearZ;
-	ViewTransform.FarClip      = State.FarZ;
-	ViewTransform.OrthoZoom    = State.OrthoWidth;
-	ViewTransform.bIsOrtho     = State.bIsOrthogonal;
-}
-
+// ─── D.2/D.3: ViewTransform → Camera mirror ─────────────────
+// ViewTransform 이 SoT. 외부 호출자(VC->GetCamera() 사용처)에 일관성 보장 위해
+// 컴포넌트가 살아있는 동안 mirror 유지. 컴포넌트 멤버가 사라지면 이 함수도 제거.
 void FEditorViewportClient::SyncCameraFromViewTransform()
 {
 	if (!Camera) return;
@@ -453,8 +430,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	InputSystem& Input = InputSystem::Get();
 	const bool bCtrlHeld = Input.GetKey(VK_CONTROL);
 
-	const FCameraState& CameraState = Camera->GetCameraState();
-	const bool bIsOrtho = CameraState.bIsOrthogonal;
+	// D.3: ViewTransform 이 SoT.
+	const bool bIsOrtho = ViewTransform.bIsOrtho;
 
 	const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
 	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
@@ -479,8 +456,13 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		if (!bCtrlHeld && Input.GetKey('E'))
 			WorldVerticalMove += CameraSpeed;
 
+		// D.3: ViewTransform 의 회전 기반 방향 벡터.
+		const FVector Forward = ViewTransform.ViewRotation.GetForwardVector();
+		const FVector Right   = ViewTransform.ViewRotation.GetRightVector();
+		const FVector Up      = ViewTransform.ViewRotation.GetUpVector();
+
 		// Instead of moving directly, update TargetLocation
-		FVector DeltaMove = (Camera->GetForwardVector() * LocalMove.X + Camera->GetRightVector() * LocalMove.Y) * DeltaTime;
+		FVector DeltaMove = (Forward * LocalMove.X + Right * LocalMove.Y) * DeltaTime;
 		DeltaMove.Z += WorldVerticalMove * DeltaTime;
 		TargetLocation += DeltaMove;
 
@@ -489,9 +471,9 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		{
 			float DeltaX = static_cast<float>(Input.MouseDeltaX());
 			float DeltaY = static_cast<float>(Input.MouseDeltaY());
-			
+
 			// Update TargetLocation for smooth panning
-			FVector PanDelta = (Camera->GetRightVector() * (-DeltaX * PanMouseScale * 0.15f)) + (Camera->GetUpVector() * (DeltaY * PanMouseScale * 0.15f));
+			FVector PanDelta = (Right * (-DeltaX * PanMouseScale * 0.15f)) + (Up * (DeltaY * PanMouseScale * 0.15f));
 			TargetLocation += PanDelta;
 		}
 
@@ -534,8 +516,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			float DeltaX = static_cast<float>(Input.MouseDeltaX());
 			float DeltaY = static_cast<float>(Input.MouseDeltaY());
 
-			// OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례)
-			float PanScale = CameraState.OrthoWidth * 0.002f * MoveSensitivity;
+			// OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례). D.3: ViewTransform 직접.
+			float PanScale = ViewTransform.OrthoZoom * 0.002f * MoveSensitivity;
 
 			// 카메라 로컬 Right/Up 방향으로 이동 (D.2: ViewTransform mutation)
 			ViewTransform.TranslateLocal(FVector(0, -DeltaX * PanScale, DeltaY * PanScale));
@@ -569,8 +551,9 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	//	return;
 	//}
 
-	Gizmo->ApplyScreenSpaceScaling(Camera->GetWorldLocation(),
-		Camera->IsOrthogonal(), Camera->GetOrthoWidth());
+	// D.3: ViewTransform 직접 read.
+	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation,
+		ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
 
 	// LineTrace 히트 판정용 AxisMask 갱신 (렌더링은 Proxy가 per-viewport로 직접 계산)
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
@@ -610,7 +593,10 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : WindowWidth;
 	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : WindowHeight;
 	
-	FRay Ray = Camera->DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
+	// D.3: POV 통화의 메서드 사용 — 컴포넌트 의존 없음.
+	FMinimalViewInfo POV;
+	GetCameraView(POV);
+	FRay Ray = POV.DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
 	FHitResult HitResult;
 
 	// 기즈모 hovering 효과를 주석처리해 일단 fps를 개선합니다
@@ -674,7 +660,10 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 						SelectionManager->ClearSelection();
 					}
 
-					FMatrix VP = Camera->GetViewProjectionMatrix();
+					// D.3: POV 통화의 메서드 사용.
+					FMinimalViewInfo MarqueePOV;
+					GetCameraView(MarqueePOV);
+					FMatrix VP = MarqueePOV.CalculateViewProjectionMatrix();
 					
 					for (AActor* Actor : World->GetActors())
 					{
