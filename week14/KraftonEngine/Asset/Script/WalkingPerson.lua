@@ -6,6 +6,19 @@ local isMoving = true
 local SPEED = 2.5
 local TURN_INTERVAL = 30.0
 
+local HIT_STOP_DURATION = 0.08
+local HIT_STOP_TIME_DILATION = 0.0
+
+local HIT_SQUASH_SCALE = Vector.new(1.25, 1.25, 0.65)
+local HIT_SQUASH_IN_DURATION = 0.04
+local HIT_SQUASH_RECOVER_DURATION = 0.16
+
+local KNOCKBACK_DISTANCE = 150.0
+local KNOCKBACK_DURATION = 0.18
+
+local SLOMO_DURATION = 0.35
+local SLOMO_TIME_DILATION = 0.35
+
 local function GetFlatForward()
     local forward = obj.Forward
     forward.Z = 0
@@ -15,6 +28,28 @@ local function GetFlatForward()
     end
 
     return forward:Normalized()
+end
+
+local function GetKnockbackDirection(OtherActor, Hit)
+    if OtherActor ~= nil then
+        local direction = obj.Location - OtherActor.Location
+        direction.Z = 0
+
+        if direction:Length() > 0.001 then
+            return direction:Normalized()
+        end
+    end
+
+    if Hit ~= nil and Hit.WorldNormal ~= nil then
+        local normal = Hit.WorldNormal
+        normal.Z = 0
+
+        if normal:Length() > 0.001 then
+            return normal:Normalized()
+        end
+    end
+
+    return GetFlatForward()
 end
 
 -- 기존(stale) 회전 coroutine 이 Wait(30) 도중에 reset 을 만나면, reset 후 0~30초 사이에
@@ -82,6 +117,14 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     end
 
     isMoving = false
+
+    local action = obj:GetActionComponent()
+    if action ~= nil then
+        action:HitStop(HIT_STOP_DURATION, HIT_STOP_TIME_DILATION)
+        action:HitSquash(HIT_SQUASH_SCALE, HIT_SQUASH_IN_DURATION, HIT_SQUASH_RECOVER_DURATION)
+        --action:Knockback(GetKnockbackDirection(OtherActor, Hit), KNOCKBACK_DISTANCE, KNOCKBACK_DURATION)
+        action:Slomo(SLOMO_DURATION, SLOMO_TIME_DILATION)
+    end
 
     if root ~= nil then
         root:SetLinearVelocity(Vector.Zero())
