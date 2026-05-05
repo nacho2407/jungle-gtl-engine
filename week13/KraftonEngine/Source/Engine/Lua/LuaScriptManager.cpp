@@ -88,9 +88,13 @@ void FLuaScriptManager::Initialize()
 	(*Lua)["package"]["path"] = FPaths::ToUtf8(FPaths::Combine(FPaths::ScriptDir(), L"?.lua").c_str());
 
 	// 한글 경로 호환을 위해 require 의 파일 검색을 wide-aware 로 교체.
-	// package.searchers[2] 는 기본 Lua loader (package.path 기반 fopen) — 이걸 ifstream(wide)
-	// + load_buffer 로 갈음한다. searchers[1] (preload), [3] (C loader), [4] (C root) 는 유지.
-	(*Lua)["package"]["searchers"][2] = [](sol::this_state ts, const std::string& ModName) -> sol::object
+	// Lua 5.2+ 는 package.searchers, Lua 5.1/LuaJIT 은 package.loaders 를 사용한다.
+	sol::table Package = (*Lua)["package"];
+	sol::object Searchers = Package["searchers"];
+	sol::table ModuleLoaders = Searchers.valid() && Searchers.get_type() == sol::type::table
+		? Searchers.as<sol::table>()
+		: Package["loaders"].get<sol::table>();
+	ModuleLoaders[2] = [](sol::this_state ts, const std::string& ModName) -> sol::object
 	{
 		sol::state_view L(ts);
 		const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ModName + ".lua"));
