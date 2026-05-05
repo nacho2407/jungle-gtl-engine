@@ -2,7 +2,7 @@
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
-#include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/World.h"
 
 FDefaultRenderPipeline::FDefaultRenderPipeline(UEngine* InEngine, FRenderer& InRenderer)
@@ -21,11 +21,12 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 
 	UWorld* World = Engine->GetWorld();
-	UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+	FMinimalViewInfo POV;
+	const bool bHasPOV = World && World->GetActivePOV(POV);
 	FScene* Scene = nullptr;
-	if (Camera)
+	if (bHasPOV)
 	{
-		Frame.SetCameraInfo(Camera);
+		Frame.SetCameraInfo(POV);
 
 		Frame.WorldType = World->GetWorldType();
 

@@ -30,10 +30,11 @@ void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick T
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 
-	const UCameraComponent* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
-	if (!ActiveCamera) return;
+	// 잔여 정리: POV currency 사용.
+	FMinimalViewInfo POV;
+	if (!GetOwner()->GetWorld()->GetActivePOV(POV)) return;
 
-	CachedWorldMatrix = ComputeBillboardMatrix(ActiveCamera->GetForwardVector());
+	CachedWorldMatrix = ComputeBillboardMatrix(POV.Rotation.GetForwardVector());
 	UpdateWorldAABB();
 }
 

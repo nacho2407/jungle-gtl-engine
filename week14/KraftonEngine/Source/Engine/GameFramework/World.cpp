@@ -108,9 +108,9 @@ APlayerController* UWorld::GetFirstPlayerController() const
 	return GameMode ? GameMode->GetPlayerController() : nullptr;
 }
 
-// E.2/3: ActiveCamera 추적 — PC 의 PlayerCameraManager 우선, fallback 으로 EditorActiveCamera.
-// PIE 첫 프레임처럼 PC 가 아직 카메라를 잡기 전엔 Editor 가 등록한 viewport 카메라가 사용됨.
-UCameraComponent* UWorld::GetActiveCamera() const
+// 잔여 정리: ActiveCamera → POV currency.
+// PC 의 PlayerCameraManager 우선, fallback 으로 EditorActivePOV.
+bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 {
 	if (APlayerController* PC = GetFirstPlayerController())
 	{
@@ -118,18 +118,31 @@ UCameraComponent* UWorld::GetActiveCamera() const
 		{
 			if (UCameraComponent* AC = CM->GetActiveCamera())
 			{
-				return AC;
+				AC->GetCameraView(0.0f, OutPOV);
+				return true;
 			}
 		}
 	}
-	return EditorActiveCamera;
+	if (bHasEditorActivePOV)
+	{
+		OutPOV = EditorActivePOV;
+		return true;
+	}
+	return false;
 }
 
 void UWorld::SetActiveCamera(UCameraComponent* InCamera)
 {
-	// Editor viewport 가 자기 카메라를 LOD/render 용으로 등록. PIE/Game 의
-	// PC->PlayerCameraManager 는 자체 SetActiveCamera 로 별도 관리.
-	EditorActiveCamera = InCamera;
+	// 호환성 wrapper — 컴포넌트에서 POV 추출 후 EditorActivePOV 슬롯에 저장.
+	if (InCamera)
+	{
+		InCamera->GetCameraView(0.0f, EditorActivePOV);
+		bHasEditorActivePOV = true;
+	}
+	else
+	{
+		bHasEditorActivePOV = false;
+	}
 }
 
 void UWorld::AddActor(AActor* Actor)
@@ -247,12 +260,13 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 
 FLODUpdateContext UWorld::PrepareLODContext()
 {
-	UCameraComponent* ActiveCamera = GetActiveCamera();
+	// 잔여 정리: POV currency 사용. 카메라 인스턴스 비교는 제거 — 위치/회전 변화로만 swap 감지.
+	// 거의 같은 위치로 카메라가 swap 되면 한 프레임 stale LOD 가능하지만 다음 프레임 회복.
+	FMinimalViewInfo POV;
+	if (!GetActivePOV(POV)) return {};
 
-	if (!ActiveCamera) return {};
-
-	const FVector CameraPos = ActiveCamera->GetWorldLocation();
-	const FVector CameraForward = ActiveCamera->GetForwardVector();
+	const FVector CameraPos = POV.Location;
+	const FVector CameraForward = POV.Rotation.GetForwardVector();
 
 	const uint32 LODUpdateFrame = VisibleProxyBuildFrame++;
 	const uint32 LODUpdateSlice = LODUpdateFrame & (LOD_UPDATE_SLICE_COUNT - 1);
@@ -260,14 +274,12 @@ FLODUpdateContext UWorld::PrepareLODContext()
 
 	const bool bForceFullLODRefresh =
 		!bShouldStaggerLOD
-		|| LastLODUpdateCamera != ActiveCamera
 		|| !bHasLastFullLODUpdateCameraPos
 		|| FVector::DistSquared(CameraPos, LastFullLODUpdateCameraPos) >= LOD_FULL_UPDATE_CAMERA_MOVE_SQ
 		|| CameraForward.Dot(LastFullLODUpdateCameraForward) < LOD_FULL_UPDATE_CAMERA_ROTATION_DOT;
 
 	if (bForceFullLODRefresh)
 	{
-		LastLODUpdateCamera = ActiveCamera;
 		LastFullLODUpdateCameraPos = CameraPos;
 		LastFullLODUpdateCameraForward = CameraForward;
 		bHasLastFullLODUpdateCameraPos = true;

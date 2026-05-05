@@ -96,11 +96,12 @@ void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 {
 	if (!GetOwner() || !GetOwner()->GetWorld()) return;
 
-	const UCameraComponent* ActiveCamera = GetOwner()->GetWorld()->GetActiveCamera();
-	if (!ActiveCamera) return;
+	// 잔여 정리: POV currency 사용.
+	FMinimalViewInfo POV;
+	if (!GetOwner()->GetWorld()->GetActivePOV(POV)) return;
 
 	FVector WorldLocation = GetWorldLocation();
-	FVector CameraForward = ActiveCamera->GetForwardVector().Normalized();
+	FVector CameraForward = POV.Rotation.GetForwardVector().Normalized();
 	FVector Forward = CameraForward * -1;
 	FVector WorldUp = FVector(0.0f, 0.0f, 1.0f);
 
