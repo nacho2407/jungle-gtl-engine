@@ -6,6 +6,7 @@
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Component/CameraComponent.h"
+#include "Component/CineCameraComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/PlayerController.h"
 #include "Profiling/Stats.h"
@@ -240,6 +241,23 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 		Frame.CameraVignette.Radius = CamManager->GetVignetteRadius();
 		Frame.CameraVignette.Softness = CamManager->GetVignetteSoftness();
 		Frame.CameraVignette.Color = CamManager->GetVignetteColor();
+	}
+
+	UCameraComponent* ActiveCamera = CamManager ? CamManager->GetActiveCamera() : nullptr;
+	if (UCineCameraComponent* CineCamera = Cast<UCineCameraComponent>(ActiveCamera))
+	{
+		const FCineLetterboxSettings& LetterboxSettings = CineCamera->GetLetterboxSettings();
+		Frame.CameraLetterbox.bEnabled = LetterboxSettings.bEnabled;
+		if (Frame.CameraLetterbox.bEnabled)
+		{
+			Frame.CameraLetterbox.Amount = LetterboxSettings.Amount;
+			Frame.CameraLetterbox.Thickness = LetterboxSettings.Thickness;
+			Frame.CameraLetterbox.Color = LetterboxSettings.Color;
+		}
+	}
+	else
+	{
+		Frame.CameraLetterbox.bEnabled = false;
 	}
 }
 

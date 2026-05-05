@@ -69,3 +69,11 @@ struct FCameraVignetteState
 	float Softness = 0.35f;
 	FLinearColor Color = FLinearColor::Black();
 };
+
+struct FCameraLetterboxState
+{
+	bool bEnabled = false;
+	float Amount = 1.0f;
+	float Thickness = 0.12f;
+	FLinearColor Color = FLinearColor::Black();
+};;
