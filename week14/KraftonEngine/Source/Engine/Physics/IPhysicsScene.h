@@ -21,7 +21,7 @@ enum class EPhysicsBackend : uint8
 // IPhysicsScene — 물리 시스템 어댑터 인터페이스
 //
 // World가 소유하며, PrimitiveComponent가 등록/해제.
-// Native(기존 CollisionSystem) 또는 PhysX로 교체 가능.
+// Native 또는 PhysX로 교체 가능.
 // ============================================================
 class IPhysicsScene
 {
