@@ -9,6 +9,7 @@
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "Editor/Viewport/ViewportCameraTransform.h"
 #include "GameFramework/World.h"
 #include "GameFramework/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
@@ -152,15 +153,6 @@ void UEditorEngine::Tick(float DeltaTime)
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 	SelectionManager.Tick();
-}
-
-UCameraComponent* UEditorEngine::GetCamera() const
-{
-	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
-	{
-		return ActiveVC->GetCamera();
-	}
-	return nullptr;
 }
 
 bool UEditorEngine::GetActiveViewportPOV(FMinimalViewInfo& OutPOV) const
@@ -396,26 +388,26 @@ void UEditorEngine::EndPlayMap()
 		// 활성 뷰포트의 카메라로 다시 바인딩해 줘야 frustum culling이 정상 동작한다.
 		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 		{
+			// D.3: ViewTransform 에 직접 writeback. NotifyViewTransformChanged 가 mirror Camera 갱신.
+			if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
+			{
+				const FMinimalViewInfo& SavedPOV = PlayInEditorSessionInfo->SavedViewportCamera.POV;
+				FViewportCameraTransform& VT = ActiveVC->GetViewTransform();
+				VT.ViewLocation = SavedPOV.Location;
+				VT.ViewRotation = SavedPOV.Rotation;
+				VT.FOV          = SavedPOV.FOV;
+				VT.AspectRatio  = SavedPOV.AspectRatio;
+				VT.NearClip     = SavedPOV.NearClip;
+				VT.FarClip      = SavedPOV.FarClip;
+				VT.OrthoZoom    = SavedPOV.OrthoWidth;
+				VT.bIsOrtho     = SavedPOV.bIsOrtho;
+				ActiveVC->NotifyViewTransformChanged();
+			}
+
+			// World 의 EditorActiveCamera 슬롯에 mirror Camera 등록 (LOD 용).
+			// World::SetActiveCamera 가 POV 통화 받게 정리되면 GetCamera 의존도 끊을 수 있다.
 			if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
 			{
-				if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
-				{
-					// POV 통화에서 컴포넌트로 writeback. Editor viewport 카메라는 root 로
-					// 두는 가정이라 World rotation == Relative rotation.
-					const FMinimalViewInfo& SavedPOV = PlayInEditorSessionInfo->SavedViewportCamera.POV;
-					VCCamera->SetWorldLocation(SavedPOV.Location);
-					VCCamera->SetRelativeRotation(SavedPOV.Rotation);
-
-					FCameraState State;
-					State.FOV           = SavedPOV.FOV;
-					State.AspectRatio   = SavedPOV.AspectRatio;
-					State.NearZ         = SavedPOV.NearClip;
-					State.FarZ          = SavedPOV.FarClip;
-					State.OrthoWidth    = SavedPOV.OrthoWidth;
-					State.bIsOrthogonal = SavedPOV.bIsOrtho;
-					VCCamera->SetCameraState(State);
-				}
-
 				EditorWorld->SetActiveCamera(VCCamera);
 			}
 		}

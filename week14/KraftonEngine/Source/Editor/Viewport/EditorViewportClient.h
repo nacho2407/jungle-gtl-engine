@@ -59,9 +59,12 @@ public:
 	// 향후 D 단계에서 컴포넌트 제거 시 자동으로 ViewTransform 경로만 사용된다.
 	void GetCameraView(FMinimalViewInfo& OutPOV) const;
 
-	// Editor 카메라 데이터 (컴포넌트 미사용 모드의 SoT 후보)
+	// Editor 카메라 데이터 SoT (D.2 부터). UI 위젯이 이 값을 직접 편집하고 NotifyViewTransformChanged 호출.
 	FViewportCameraTransform& GetViewTransform() { return ViewTransform; }
 	const FViewportCameraTransform& GetViewTransform() const { return ViewTransform; }
+
+	// 외부에서 ViewTransform 을 mutate 한 후 호출 — Camera 컴포넌트 mirror 즉시 갱신.
+	void NotifyViewTransformChanged() { SyncCameraFromViewTransform(); }
 
 	void Tick(float DeltaTime);
 

@@ -6,7 +6,7 @@
 #include "Render/Types/ShadowSettings.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/RenderConstants.h"
-#include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
 
@@ -917,15 +917,16 @@ void FEditorConsoleWidget::PrintCSMCascadeRanges()
 		return;
 	}
 
-	UCameraComponent* Camera = EditorEngine->GetCamera();
-	if (!Camera)
+	// D.3: 컴포넌트가 아닌 POV 통화로 read.
+	FMinimalViewInfo POV;
+	if (!EditorEngine->GetActiveViewportPOV(POV))
 	{
-		AddLog("[ERROR] Camera is null.\n");
+		AddLog("[ERROR] No active viewport.\n");
 		return;
 	}
 
-	const float CameraNearZ = Camera->GetNearPlane();
-	const float CameraFarZ = Camera->GetFarPlane();
+	const float CameraNearZ = POV.NearClip;
+	const float CameraFarZ = POV.FarClip;
 	const float ShadowDistance = Settings.GetEffectiveCSMDistance();
 	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
 	const float Lambda = Settings.GetEffectiveCSMCascadeLambda();
