@@ -7,7 +7,6 @@
 #include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/WindowsWindow.h"
 
-#include "Component/CameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/World.h"
@@ -35,28 +34,12 @@ void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 	Window = InWindow;
 }
 
-void FEditorViewportClient::CreateCamera()
-{
-	DestroyCamera();
-	Camera = UObjectManager::Get().CreateObject<UCameraComponent>();
-}
-
-void FEditorViewportClient::DestroyCamera()
-{
-	if (Camera)
-	{
-		UObjectManager::Get().DestroyObject(Camera);
-		Camera = nullptr;
-	}
-}
-
 void FEditorViewportClient::ResetCamera()
 {
 	if (!Settings) return;
-	// D.2: ViewTransform 이 SoT — 컴포넌트는 sync 로 mirror.
 	ViewTransform.ViewLocation = Settings->InitViewPos;
 	ViewTransform.LookAt(Settings->InitLookAt);
-	SyncCameraFromViewTransform();
+	PushPOVToWorld();
 	SyncCameraSmoothingTarget();
 }
 
@@ -73,23 +56,23 @@ void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 	OutPOV.bIsOrtho    = ViewTransform.bIsOrtho;
 }
 
-// ─── D.2/D.3: ViewTransform → Camera mirror ─────────────────
-// ViewTransform 이 SoT. 외부 호출자(VC->GetCamera() 사용처)에 일관성 보장 위해
-// 컴포넌트가 살아있는 동안 mirror 유지. 컴포넌트 멤버가 사라지면 이 함수도 제거.
-void FEditorViewportClient::SyncCameraFromViewTransform()
+// ─── 잔여 정리: Active viewport 의 POV 를 World 의 EditorActivePOV 슬롯에 푸시 ─────
+// LOD/render 가 World->GetActivePOV() 로 받아 사용. PIE/Game 시작 후엔 PC 의
+// PlayerCameraManager 가 우선이라 자동으로 게임 카메라로 전환된다.
+void FEditorViewportClient::PushPOVToWorld()
 {
-	if (!Camera) return;
-	Camera->SetWorldLocation(ViewTransform.ViewLocation);
-	Camera->SetRelativeRotation(ViewTransform.ViewRotation);
+	if (!bIsActive) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
 
-	FCameraState State;
-	State.FOV           = ViewTransform.FOV;
-	State.AspectRatio   = ViewTransform.AspectRatio;
-	State.NearZ         = ViewTransform.NearClip;
-	State.FarZ          = ViewTransform.FarClip;
-	State.OrthoWidth    = ViewTransform.OrthoZoom;
-	State.bIsOrthogonal = ViewTransform.bIsOrtho;
-	Camera->SetCameraState(State);
+	FMinimalViewInfo POV;
+	GetCameraView(POV);
+	World->SetEditorActivePOV(POV);
+}
+
+void FEditorViewportClient::NotifyViewTransformChanged()
+{
+	PushPOVToWorld();
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
@@ -99,7 +82,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::Perspective)
 	{
 		ViewTransform.bIsOrtho = false;
-		SyncCameraFromViewTransform();
+		PushPOVToWorld();
 		SyncCameraSmoothingTarget();
 		return;
 	}
@@ -108,7 +91,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::FreeOrthographic)
 	{
 		ViewTransform.bIsOrtho = true;
-		SyncCameraFromViewTransform();
+		PushPOVToWorld();
 		SyncCameraSmoothingTarget();
 		return;
 	}
@@ -153,7 +136,7 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	ViewTransform.ViewLocation = Position;
 	// FVector(Roll, Pitch, Yaw) → FRotator(Pitch, Yaw, Roll). FRotator.h:19 참고.
 	ViewTransform.ViewRotation = FRotator(Rotation.Y, Rotation.Z, Rotation.X);
-	SyncCameraFromViewTransform();
+	PushPOVToWorld();
 	SyncCameraSmoothingTarget();
 }
 
@@ -179,7 +162,7 @@ void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeigh
 	{
 		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	}
-	SyncCameraFromViewTransform();
+	PushPOVToWorld();
 }
 
 void FEditorViewportClient::Tick(float DeltaTime)
@@ -260,15 +243,13 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 
-	// D.2: 입력 mutation 종료 후 ViewTransform → Camera mirror.
-	// Camera 컴포넌트가 살아있는 동안 외부 호출자(Camera->Get*)에 일관성 보장.
-	SyncCameraFromViewTransform();
+	// 입력 mutation 종료 후 World 의 EditorActivePOV 슬롯 갱신 (LOD/render 용).
+	PushPOVToWorld();
 }
 
 void FEditorViewportClient::SyncCameraSmoothingTarget()
 {
-	// D.2: ViewTransform 이 SoT — 비교 대상도 ViewTransform.
-	// Camera 컴포넌트 nullptr 가드는 D.3 에서 제거 예정.
+	// ViewTransform 이 SoT — 비교 대상도 ViewTransform.
 	const FVector CurrentLocation = ViewTransform.ViewLocation;
 	const bool bCameraMovedExternally =
 		bLastAppliedCameraLocationInitialized &&
@@ -415,11 +396,6 @@ void FEditorViewportClient::ClearLightViewOverride()
 
 void FEditorViewportClient::TickInput(float DeltaTime)
 {
-	if (!Camera)
-	{
-		return;
-	}
-
 	if (IsViewingFromLight()) return;
 
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard == true)
@@ -538,7 +514,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 {
 	(void)DeltaTime;
 
-	if (!Camera || !Gizmo || !GetWorld())
+	if (!Gizmo || !GetWorld())
 	{
 		return;
 	}

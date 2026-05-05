@@ -2222,21 +2222,15 @@ void FLevelViewportLayout::LoadFromSettings()
 		}
 	}
 
-	// Perspective 카메라 (slot 0) 복원 — 컴포넌트 setter writeback.
-	// TODO(D): EditorViewportClient 가 ViewTransform 을 SoT 로 들면 컴포넌트 우회로 정리.
-	if (!LevelViewportClients.empty())
+	// Perspective 카메라 (slot 0) 복원 — 잔여 정리: ViewTransform 직접 writeback.
+	if (!LevelViewportClients.empty() && LevelViewportClients[0])
 	{
-		UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
-		if (Cam)
-		{
-			Cam->SetRelativeLocation(S.PerspCamLocation);
-			Cam->SetRelativeRotation(S.PerspCamRotation);
-
-			FCameraState CS = Cam->GetCameraState();
-			CS.FOV = S.PerspCamFOV * (3.14159265358979f / 180.0f); // deg → rad
-			CS.NearZ = S.PerspCamNearClip;
-			CS.FarZ = S.PerspCamFarClip;
-			Cam->SetCameraState(CS);
-		}
+		FViewportCameraTransform& VT = LevelViewportClients[0]->GetViewTransform();
+		VT.ViewLocation = S.PerspCamLocation;
+		VT.ViewRotation = S.PerspCamRotation;
+		VT.FOV          = S.PerspCamFOV * (3.14159265358979f / 180.0f); // deg → rad
+		VT.NearClip     = S.PerspCamNearClip;
+		VT.FarClip      = S.PerspCamFarClip;
+		LevelViewportClients[0]->NotifyViewTransformChanged();
 	}
 }

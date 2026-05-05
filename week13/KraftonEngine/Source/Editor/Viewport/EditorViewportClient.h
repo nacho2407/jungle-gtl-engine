@@ -13,7 +13,6 @@
 #include "imgui.h"
 
 class UWorld;
-class UCameraComponent;
 class UGizmoComponent;
 class ULightComponentBase;
 class FEditorSettings;
@@ -48,23 +47,21 @@ public:
 	// 렌더 파이프라인이 컴포넌트를 직접 안 만지도록 책임을 viewport client 로 이동.
 	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
 
-	// Camera lifecycle
-	void CreateCamera();
-	void DestroyCamera();
+	// Camera lifecycle (잔여 정리: ViewTransform 이 SoT, 컴포넌트 mirror 제거됨).
+	// CreateCamera/DestroyCamera 는 더 이상 필요 없으나 호출자 기존 흐름 보존 위해 no-op 유지.
+	void CreateCamera() {}
+	void DestroyCamera() {}
 	void ResetCamera();
-	UCameraComponent* GetCamera() const { return Camera; }
 
-	// 카메라 POV 통화 산출 — 호출자가 컴포넌트를 직접 의존하지 않게 하는 진입점.
-	// 현재는 Camera 컴포넌트가 살아있으면 컴포넌트로 위임, 없으면 ViewTransform 으로 산출.
-	// 향후 D 단계에서 컴포넌트 제거 시 자동으로 ViewTransform 경로만 사용된다.
+	// 카메라 POV 통화 산출 — 외부에 노출되는 카메라 데이터 API.
 	void GetCameraView(FMinimalViewInfo& OutPOV) const;
 
-	// Editor 카메라 데이터 SoT (D.2 부터). UI 위젯이 이 값을 직접 편집하고 NotifyViewTransformChanged 호출.
+	// Editor 카메라 데이터 SoT. UI 위젯이 이 값을 직접 편집하고 NotifyViewTransformChanged 호출.
 	FViewportCameraTransform& GetViewTransform() { return ViewTransform; }
 	const FViewportCameraTransform& GetViewTransform() const { return ViewTransform; }
 
-	// 외부에서 ViewTransform 을 mutate 한 후 호출 — Camera 컴포넌트 mirror 즉시 갱신.
-	void NotifyViewTransformChanged() { SyncCameraFromViewTransform(); }
+	// 외부에서 ViewTransform 을 mutate 한 후 호출 — Active viewport 면 World 의 EditorActivePOV 갱신.
+	void NotifyViewTransformChanged();
 
 	void Tick(float DeltaTime);
 
@@ -110,16 +107,15 @@ private:
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
 
-	// D.2/D.3: ViewTransform 이 SoT. mutation 후 Camera 컴포넌트로 mirror.
-	// Camera 멤버 자체가 사라지면 (E 단계 이후) 이 함수도 제거 가능.
-	void SyncCameraFromViewTransform();
+	// 잔여 정리: ViewTransform 만 SoT — Camera 컴포넌트 mirror 자체 제거됨.
+	// Active viewport 의 POV 를 World 의 EditorActivePOV 슬롯에 푸시 (LOD/render 용).
+	void PushPOVToWorld();
 
 private:
 	FViewport* Viewport = nullptr;
 	SWindow* LayoutWindow = nullptr;
 	FWindowsWindow* Window = nullptr;
 	FOverlayStatSystem* OverlayStatSystem = nullptr;
-	UCameraComponent* Camera = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	const FEditorSettings* Settings = nullptr;
 	FSelectionManager* SelectionManager = nullptr;
@@ -127,7 +123,7 @@ private:
 	ULightComponentBase* LightViewOverride = nullptr;
 	int32 PointLightFaceIndex = 0;
 
-	// Editor 카메라 데이터 (D 단계 이후 SoT 가 됨, 현재는 fallback 경로용)
+	// Editor 카메라 데이터 SoT
 	FViewportCameraTransform ViewTransform;
 
 	float WindowWidth = 1920.f;
