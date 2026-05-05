@@ -47,16 +47,51 @@ void UBoxComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
         return;
 }
 
+// BoxComponent.cpp
 void UBoxComponent::OnTransformDirty()
 {
     UShapeComponent::OnTransformDirty();
 
-    FMatrix CollisionWorldMat = FMatrix::MakeScaleMatrix(BoxExtent) * GetWorldMatrix();
-    BoxCollision.Bounds.UpdateAsOBB(CollisionWorldMat);
+    // 1. 순수 월드 스케일 구하기
+    FVector PureWorldScale = GetRelativeTransform().Scale;
+    USceneComponent* CurrentParent = GetParent();
+    while (CurrentParent != nullptr)
+    {
+        FVector ParentScale = CurrentParent->GetRelativeTransform().Scale;
+        PureWorldScale.X *= ParentScale.X;
+        PureWorldScale.Y *= ParentScale.Y;
+        PureWorldScale.Z *= ParentScale.Z;
+        CurrentParent = CurrentParent->GetParent();
+    }
 
+    // ------------------------------------------------------------------
+    // 2. 순수 월드 회전 행렬 구하기 (쿼터니언 곱셈 버리고 행렬로 직접 누적!)
+    // ------------------------------------------------------------------
+    FMatrix RotMat = GetRelativeTransform().Rotation.ToMatrix();
+    USceneComponent* CurrentRotParent = GetParent();
+
+    while (CurrentRotParent != nullptr)
+    {
+        FMatrix ParentRotMat = CurrentRotParent->GetRelativeTransform().Rotation.ToMatrix();
+
+        // SceneComponent.cpp의 UpdateWorldMatrix()와 완벽하게 동일한 곱셈 순서 (자식 * 부모)
+        RotMat = RotMat * ParentRotMat;
+
+        CurrentRotParent = CurrentRotParent->GetParent();
+    }
+
+    // 3. 조립 (S * R * T)
+    FVector PureWorldLocation = GetWorldLocation();
+    FVector FinalBoxScale = FVector(BoxExtent.X *abs( PureWorldScale.X), BoxExtent.Y *abs(  PureWorldScale.Y), BoxExtent.Z * abs( PureWorldScale.Z));
+
+    FMatrix ScaleMat = FMatrix::MakeScaleMatrix(FinalBoxScale);
+    FMatrix TransMat = FMatrix::MakeTranslationMatrix(PureWorldLocation);
+
+    FMatrix CollisionWorldMat = ScaleMat * RotMat * TransMat;
+
+    BoxCollision.Bounds.UpdateAsOBB(CollisionWorldMat);
     NotifyCollisionShapeChanged();
 }
-
 void UBoxComponent::UpdateWorldAABB() const
 {
     const FOBB& OBB = BoxCollision.Bounds;
