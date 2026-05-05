@@ -1,5 +1,5 @@
 #include "GameFramework/Pawn.h"
-#include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "Component/CameraComponent.h"
 #include "Serialization/Archive.h"
@@ -12,11 +12,12 @@ void APawn::PossessedBy(APlayerController* PC)
 
 	// 자기 첫 카메라 컴포넌트를 ActiveCamera로 — PIE 시작 시 시점이 Pawn 기준이 되도록.
 	// 카메라 컴포넌트가 없으면 no-op (CameraManager의 기존 흐름이 다른 카메라를 선택).
-	if (UWorld* World = GetWorld())
+	// E.2/2: PC->GetPlayerCameraManager() 경로 사용.
+	if (UCameraComponent* MyCamera = GetComponentByClass<UCameraComponent>())
 	{
-		if (UCameraComponent* MyCamera = GetComponentByClass<UCameraComponent>())
+		if (PC)
 		{
-			if (APlayerCameraManager* Mgr = World->GetCameraManager())
+			if (APlayerCameraManager* Mgr = PC->GetPlayerCameraManager())
 			{
 				Mgr->SetActiveCamera(MyCamera);
 				Mgr->Possess(MyCamera);

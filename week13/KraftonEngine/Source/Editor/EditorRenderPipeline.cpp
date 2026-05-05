@@ -7,6 +7,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
@@ -119,11 +120,15 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	if (bShouldUseGameCamera)
 	{
-		if (APlayerCameraManager* CamManager = World->GetCameraManager())
+		// E.2/2: PC 경로 — World 의 GetCameraManager 의존 제거.
+		if (APlayerController* PC = World->GetFirstPlayerController())
 		{
-			if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
+			if (APlayerCameraManager* CamManager = PC->GetPlayerCameraManager())
 			{
-				ActiveCamera->GetCameraView(0.0f, POV);
+				if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
+				{
+					ActiveCamera->GetCameraView(0.0f, POV);
+				}
 			}
 		}
 	}
