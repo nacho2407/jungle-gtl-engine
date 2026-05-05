@@ -1594,6 +1594,8 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::Checkbox("Shadow Frustum", &Opts.ShowFlags.bShowShadowFrustum);
 					ImGui::TableNextColumn();
 					ImGui::Checkbox("Collision", &Opts.ShowFlags.bCollision);
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Gamma Correction", &Opts.ShowFlags.bGammaCorrection);
 
 					ImGui::EndTable();
 				}

@@ -153,7 +153,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 				D3D11_USAGE_IMMUTABLE,
 				D3D11_BIND_SHADER_RESOURCE,
 				0, 0,
-				DirectX::DDS_LOADER_DEFAULT,
+				DirectX::DDS_LOADER_FORCE_SRGB,
 				nullptr,
 				&Resource.SRV
 			);
@@ -170,7 +170,7 @@ bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 				0, 0,
 				// 이 버전의 DirectXTK 에는 PREMULTIPLY_ALPHA 플래그가 없다.
 				// straight-alpha 보간으로 생기는 검은 헤일로는 PS 측 알파 컷오프(0.5) 로 회피.
-				DirectX::WIC_LOADER_FORCE_RGBA32,
+				static_cast<DirectX::WIC_LOADER_FLAGS>(DirectX::WIC_LOADER_FORCE_RGBA32 | DirectX::WIC_LOADER_FORCE_SRGB),
 				nullptr,
 				&Resource.SRV
 			);

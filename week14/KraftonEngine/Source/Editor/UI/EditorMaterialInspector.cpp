@@ -125,7 +125,15 @@ void FEditorMaterialInspector::RenderTextureSection()
 					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 				);
 				ID3D11Device* Device = GEngine ? GEngine->GetRenderer().GetFD3DDevice().GetDevice() : nullptr;
-				UTexture2D* NewTexture = UTexture2D::LoadFromFile(NewTexturePath, Device);
+				const bool bIsColorTexture =
+					SlotName == "DiffuseTexture" ||
+					SlotName == "EmissiveTexture" ||
+					SlotName == "Custom0Texture" ||
+					SlotName == "Custom1Texture";
+				UTexture2D* NewTexture = UTexture2D::LoadFromFile(
+					NewTexturePath,
+					Device,
+					bIsColorTexture ? ETextureColorSpace::SRGB : ETextureColorSpace::Linear);
 				if (NewTexture)
 				{
 					CachedMaterial->SetTextureParameter(SlotName, NewTexture);
