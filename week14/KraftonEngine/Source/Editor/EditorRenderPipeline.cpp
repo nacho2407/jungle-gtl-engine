@@ -217,6 +217,14 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 		Frame.CursorViewportX = UINT32_MAX;
 		Frame.CursorViewportY = UINT32_MAX;
 	}
+
+	UCameraManager* CamManager = World->GetCameraManager();
+	Frame.CameraFade.bEnabled = CamManager->IsFadeEnabled();
+	if (Frame.CameraFade.bEnabled)
+	{
+		Frame.CameraFade.Color = CamManager->GetFadeColor();
+		Frame.CameraFade.Amount = CamManager->GetFadeAmount();
+	}
 }
 
 // ============================================================

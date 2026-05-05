@@ -556,6 +556,22 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		UCameraComponent* PossessedCamera = Manager ? Manager->GetPossessedCamera() : nullptr;
 		return PossessedCamera ? PossessedCamera->GetOwner() : nullptr;
 	});
+	CameraManager.set_function("FadeOut", [](float Duration)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		if (UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager())
+		{
+			Manager->StartCameraFade(0.0f, 1.0f, Duration, FLinearColor::Black(), false, true);
+		}
+	});
+	CameraManager.set_function("FadeIn", [](float Duration)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		if (UCameraManager* Manager = GEngine->GetWorld()->GetCameraManager())
+		{
+			Manager->StartCameraFade(1.0f, 0.0f, Duration, FLinearColor::Black(), false, true);
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)

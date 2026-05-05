@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Core/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
@@ -50,4 +51,12 @@ struct FCameraShakeUpdateResult
 	FVector Location = FVector(0.0f, 0.0f, 0.0f);
 	FRotator Rotation;          // additive Pitch/Yaw/Roll
 	float FOV = 0.0f;           // additive degrees
+};
+
+struct FCameraFadeState
+{
+	bool bEnabled = false;
+	float Amount = 0.0f;
+	FLinearColor Color = FLinearColor::Black();
+	bool bFadeAudio = false;
 };

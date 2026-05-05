@@ -86,6 +86,7 @@ namespace EShaderPath
 	inline constexpr const char* VSMBlur = "Shaders/Lighting/VSMBlur.hlsl";
 	inline constexpr const char* ShadowMapVis = "Shaders/PostProcess/ShadowMapVis.hlsl";
 	inline constexpr const char* Blit = "Shaders/PostProcess/Blit.hlsl";
+	inline constexpr const char* CameraFade = "Shaders/PostProcess/CameraFade.hlsl";
 }
 
 namespace EUberLitDefines
