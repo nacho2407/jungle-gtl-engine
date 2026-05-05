@@ -13,7 +13,7 @@ class UWorld;
 class AActor;
 class UActorComponent;
 class USceneComponent;
-class UCameraComponent;
+struct FMinimalViewInfo;
 
 namespace json
 {
@@ -42,7 +42,7 @@ public:
 
 	static std::wstring GetSceneDirectory() { return FPaths::SceneDir(); }
 
-	static void SaveSceneAsJSON(const string& SceneName, FWorldContext& WorldContext, UCameraComponent* PerspectiveCam = nullptr);
+	static void SaveSceneAsJSON(const string& SceneName, FWorldContext& WorldContext, const struct FMinimalViewInfo* PerspectivePOV = nullptr);
 	// OverrideWorldType: 호출자가 World 의 WorldType 을 명시 — Game 빌드처럼 scene 파일에
 	// 기록된 EWorldType (보통 Editor) 을 무시하고 강제로 다른 타입으로 시작하고 싶을 때 사용.
 	// nullptr 이면 scene 파일의 값을 따른다 (없으면 Editor). UWorld 의 default WorldType
@@ -54,13 +54,13 @@ public:
 
 private:
 	// ---- Serialization ----
-	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx, UCameraComponent* PerspectiveCam);
+	static json::JSON SerializeWorld(UWorld* World, const FWorldContext& Ctx, const FMinimalViewInfo* PerspectivePOV);
 	static json::JSON SerializeActor(AActor* Actor);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp);
 	static json::JSON SerializeProperties(UObject* Obj);
 
 	// ---- Camera ----
-	static json::JSON SerializeCamera(UCameraComponent* Cam);
+	static json::JSON SerializeCamera(const FMinimalViewInfo* POV);
 	static void DeserializeCamera(json::JSON& CamJSON, FPerspectiveCameraData& OutCam);
 
 	// ---- Deserialization helpers ----
