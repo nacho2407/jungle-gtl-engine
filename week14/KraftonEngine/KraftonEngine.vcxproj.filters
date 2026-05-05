@@ -1901,6 +1901,9 @@
     <ClInclude Include="ThirdParty\lua\include\luaconf.h">
       <Filter>ThirdParty\lua\include</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\lua\include\luajit.h">
+      <Filter>ThirdParty\lua\include</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\lua\include\lualib.h">
       <Filter>ThirdParty\lua\include</Filter>
     </ClInclude>

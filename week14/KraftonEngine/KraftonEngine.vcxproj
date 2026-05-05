@@ -194,7 +194,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -213,7 +213,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -282,7 +282,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -328,12 +328,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"</Command>
+xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -353,12 +354,13 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
-xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"</Command>
+xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -869,6 +871,7 @@ xcopy /Y "$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\bin\*.d
     <ClInclude Include="ThirdParty\lua\include\lua.h" />
     <ClInclude Include="ThirdParty\lua\include\lua.hpp" />
     <ClInclude Include="ThirdParty\lua\include\luaconf.h" />
+    <ClInclude Include="ThirdParty\lua\include\luajit.h" />
     <ClInclude Include="ThirdParty\lua\include\lualib.h" />
     <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core.h" />
     <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger.h" />

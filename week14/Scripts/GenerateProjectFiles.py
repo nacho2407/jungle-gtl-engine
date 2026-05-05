@@ -107,12 +107,19 @@ FMOD_RELEASE_DLL = "fmod.dll"
 PHYSX_DEBUG_BIN   = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\debug\\bin"
 PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
 
+# Lua (LuaJIT, 5.1 ABI) — lua51.dll 은 .gitignore 의 **/[Bb]in/* 에 걸려 있어
+# 팀원이 직접 ThirdParty\\lua\\bin\\lua51.dll 위치에 배치해야 한다 (LuaJIT 배포본).
+LUA_LIB_DIR = "ThirdParty\\lua\\lib"
+LUA_BIN_DIR = "ThirdParty\\lua\\bin"
+LUA_LIB     = "lua51.lib"
+LUA_DLL     = "lua51.dll"
+
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
-    "$(ProjectDir)ThirdParty\\lua\\lib",
+    f"$(ProjectDir){LUA_LIB_DIR}",
 ]
 ADDITIONAL_DEPENDENCIES = [
-    "lua.lib",
+    LUA_LIB,
 ]
 
 # NuGet packages (id, version) — restored via packages.config
@@ -368,7 +375,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"'
+                f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"'
             )
 
     # ClCompile items
