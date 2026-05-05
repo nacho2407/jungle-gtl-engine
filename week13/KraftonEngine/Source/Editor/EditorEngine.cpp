@@ -8,6 +8,7 @@
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "Component/CameraComponent.h"
 #include "Component/GizmoComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/World.h"
 #include "GameFramework/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
@@ -162,6 +163,16 @@ UCameraComponent* UEditorEngine::GetCamera() const
 	return nullptr;
 }
 
+bool UEditorEngine::GetActiveViewportPOV(FMinimalViewInfo& OutPOV) const
+{
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		ActiveVC->GetCameraView(OutPOV);
+		return true;
+	}
+	return false;
+}
+
 void UEditorEngine::RenderUI(float DeltaTime)
 {
 	MainPanel.Render(DeltaTime);
@@ -284,13 +295,8 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	Info.PreviousActiveWorldHandle = GetActiveWorldHandle();
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
-		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
-		{
-			Info.SavedViewportCamera.Location = VCCamera->GetWorldLocation();
-			Info.SavedViewportCamera.Rotation = VCCamera->GetRelativeRotation();
-			Info.SavedViewportCamera.CameraState = VCCamera->GetCameraState();
-			Info.SavedViewportCamera.bValid = true;
-		}
+		ActiveVC->GetCameraView(Info.SavedViewportCamera.POV);
+		Info.SavedViewportCamera.bValid = true;
 	}
 	PlayInEditorSessionInfo = Info;
 
@@ -306,6 +312,8 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 
 	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
 	//    LOD 갱신 등에서 ActiveCamera를 참조하므로 설정 필요.
+	// TODO(E): CameraManager 가 컴포넌트가 아닌 POV 를 보유하도록 정리되면 여기도 통화로
+	//          전환. 현재는 World/CameraManager 가 UCameraComponent* 를 SoT 로 들고 있다.
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
 		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
@@ -393,10 +401,20 @@ void UEditorEngine::EndPlayMap()
 			{
 				if (PlayInEditorSessionInfo->SavedViewportCamera.bValid)
 				{
-					const FPIEViewportCameraSnapshot& SavedCamera = PlayInEditorSessionInfo->SavedViewportCamera;
-					VCCamera->SetWorldLocation(SavedCamera.Location);
-					VCCamera->SetRelativeRotation(SavedCamera.Rotation);
-					VCCamera->SetCameraState(SavedCamera.CameraState);
+					// POV 통화에서 컴포넌트로 writeback. Editor viewport 카메라는 root 로
+					// 두는 가정이라 World rotation == Relative rotation.
+					const FMinimalViewInfo& SavedPOV = PlayInEditorSessionInfo->SavedViewportCamera.POV;
+					VCCamera->SetWorldLocation(SavedPOV.Location);
+					VCCamera->SetRelativeRotation(SavedPOV.Rotation);
+
+					FCameraState State;
+					State.FOV           = SavedPOV.FOV;
+					State.AspectRatio   = SavedPOV.AspectRatio;
+					State.NearZ         = SavedPOV.NearClip;
+					State.FarZ          = SavedPOV.FarClip;
+					State.OrthoWidth    = SavedPOV.OrthoWidth;
+					State.bIsOrthogonal = SavedPOV.bIsOrtho;
+					VCCamera->SetCameraState(State);
 				}
 
 				EditorWorld->SetActiveCamera(VCCamera);
@@ -576,6 +594,9 @@ void UEditorEngine::ClearScene()
 	ViewportLayout.DestroyAllCameras();
 }
 
+// TODO(D): 호출자(RestoreViewportCamera 등)가 컴포넌트 setter 를 직접 호출하는 구조라
+//          현재는 컴포넌트 자체를 반환. 호출자 측이 정리되면 POV 시그니처로 전환하거나
+//          제거 가능.
 UCameraComponent* UEditorEngine::FindSceneViewportCamera() const
 {
 	for (FLevelEditorViewportClient* VC : ViewportLayout.GetLevelViewportClients())

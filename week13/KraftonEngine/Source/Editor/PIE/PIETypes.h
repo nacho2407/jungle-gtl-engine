@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Component/CameraComponent.h"
 #include "Core/EngineTypes.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
+#include "Render/Types/MinimalViewInfo.h"
 
 
 // PIE 세션 실행 위치. 현재는 InProcess만 사용.
@@ -30,11 +30,9 @@ struct FRequestPlaySessionParams
 
 struct FPIEViewportCameraSnapshot
 {
-	// 현재는 활성 에디터 뷰포트 카메라의 임시 백업.
+	// 활성 에디터 뷰포트 카메라의 POV 통화 백업. PIE 종료 시 viewport 카메라 복원에 사용.
 	// 추후 PIE 시작 위치를 별도 에디터 오브젝트로 지정해도 동일한 스냅샷 구조를 재사용할 수 있다.
-	FVector Location;
-	FRotator Rotation;
-	FCameraState CameraState;
+	FMinimalViewInfo POV;
 	bool bValid = false;
 };
 
