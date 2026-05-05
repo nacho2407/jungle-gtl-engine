@@ -1,9 +1,11 @@
-﻿#include "Game/GameRenderPipeline.h"
+#include "Game/GameRenderPipeline.h"
 
 #include "Game/GameEngine.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
+#include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Input/InputSystem.h"
 #include "Viewport/Viewport.h"
 
@@ -26,14 +28,9 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 
 	UWorld* World = Game->GetWorld();
-	// 잔여 정리: PrepareViewport 의 OnResize 호출이 컴포넌트 의존 — PC->PlayerCameraManager
-	// 의 ActiveCamera 를 그대로 사용. 향후 PrepareViewport 시그니처가 NotifyResize 패턴으로
-	// 정리되면 이 경로도 사라진다.
-	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
-	APlayerCameraManager* CM = PC ? PC->GetPlayerCameraManager() : nullptr;
-	UCameraComponent* Camera = CM ? CM->GetActiveCamera() : nullptr;
 	FViewport* VP = Game->GetStandaloneViewport();
-	if (!World || !Camera || !VP)
+	FMinimalViewInfo POV;
+	if (!World || !VP || !World->GetActivePOV(POV))
 	{
 		Renderer.BeginFrame();
 		Renderer.EndFrame();
@@ -48,8 +45,8 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	FScene* Scene = &World->GetScene();
 
-	PrepareViewport(VP, Camera, Ctx);
-	BuildFrame(VP, Camera, Scene, World);
+	PrepareViewport(VP, Ctx);
+	BuildFrame(VP, POV, Scene, World);
 
 	FCollectOutput Output;
 	CollectCommands(Scene, Renderer, Output);
@@ -61,19 +58,26 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Renderer.EndFrame();
 }
 
-void FGameRenderPipeline::PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx)
+void FGameRenderPipeline::PrepareViewport(FViewport* VP, ID3D11DeviceContext* Ctx)
 {
 	if (VP->ApplyPendingResize())
 	{
-		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+		// OnResize 는 액터 컴포넌트(Pawn 카메라) 본질이라 PC->PlayerCameraManager 경유.
+		UWorld* World = Game->GetWorld();
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		APlayerCameraManager* CM = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (UCameraComponent* AC = CM ? CM->GetActiveCamera() : nullptr)
+		{
+			AC->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+		}
 	}
 	VP->BeginRender(Ctx);
 }
 
-void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FScene* Scene, UWorld* World)
+void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV, FScene* Scene, UWorld* World)
 {
 	Frame.ClearViewportResources();
-	Frame.SetCameraInfo(Camera);
+	Frame.SetCameraInfo(POV);
 	Frame.SetViewportInfo(VP);
 
 	const POINT MousePos = InputSystem::Get().GetMouseClientPos();
@@ -90,8 +94,8 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, UCameraComponent* Camera, FS
 		Frame.CursorViewportY = UINT32_MAX;
 	}
 
-	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade 상태 read.
-	APlayerController* PC = World->GetFirstPlayerController();
+	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade / vignette 상태 read.
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 	APlayerCameraManager* CamManager = PC ? PC->GetPlayerCameraManager() : nullptr;
 	Frame.CameraFade.bEnabled = CamManager ? CamManager->IsFadeEnabled() : false;
 	if (Frame.CameraFade.bEnabled)
