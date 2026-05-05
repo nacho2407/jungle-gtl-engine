@@ -17,7 +17,17 @@
 // ============================================================
 struct FViewportCameraTransform
 {
+	// Transform
 	FVector  ViewLocation;
 	FRotator ViewRotation;
-	float    OrthoZoom = 10.0f;     // ortho 모드의 화면 폭 (UE 의 OrthoZoom 등가)
+
+	// Projection — UCameraComponent 의 FCameraState 와 동일 단위 사용
+	// (FOV 라디안, codebase 컨벤션). D.2 에서 SoT 전환 시 데이터 손실 방지 위해
+	// 컴포넌트가 들고 있는 모든 필드를 미러링.
+	float    OrthoZoom    = 10.0f;                    // ortho 화면 폭 (UE 의 OrthoZoom 등가)
+	float    FOV          = 3.14159265358979f / 3.0f; // perspective vertical FOV (radians)
+	float    AspectRatio  = 16.0f / 9.0f;
+	float    NearClip     = 0.1f;
+	float    FarClip      = 1000.0f;
+	bool     bIsOrtho     = false;
 };

@@ -60,19 +60,57 @@ void FEditorViewportClient::ResetCamera()
 
 void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	// 현재는 컴포넌트가 SoT — 위임. 컴포넌트 제거(D 단계) 후엔 else 경로만 남는다.
+	// 현재는 컴포넌트가 SoT — 위임. 컴포넌트 제거(D.3) 후엔 else 경로만 남는다.
 	if (Camera)
 	{
 		Camera->GetCameraView(0.0f, OutPOV);
 		return;
 	}
 
-	// Fallback: 컴포넌트 미사용 모드. ViewTransform 에서 직접 산출.
-	OutPOV.Location   = ViewTransform.ViewLocation;
-	OutPOV.Rotation   = ViewTransform.ViewRotation;
-	OutPOV.OrthoWidth = ViewTransform.OrthoZoom;
-	OutPOV.bIsOrtho   = (RenderOptions.ViewportType != ELevelViewportType::Perspective);
-	// FOV / AspectRatio / Near / Far 는 default 값 — D 단계에서 설정 경로 추가 예정.
+	// Fallback: 컴포넌트 미사용 모드. ViewTransform 에서 산출 (D.0 부터 완전한 데이터).
+	OutPOV.Location    = ViewTransform.ViewLocation;
+	OutPOV.Rotation    = ViewTransform.ViewRotation;
+	OutPOV.FOV         = ViewTransform.FOV;
+	OutPOV.AspectRatio = ViewTransform.AspectRatio;
+	OutPOV.OrthoWidth  = ViewTransform.OrthoZoom;
+	OutPOV.NearClip    = ViewTransform.NearClip;
+	OutPOV.FarClip     = ViewTransform.FarClip;
+	OutPOV.bIsOrtho    = ViewTransform.bIsOrtho;
+}
+
+// ─── D.0: Camera ↔ ViewTransform sync helpers ─────────────────
+// 현재는 컴포넌트가 SoT 라 mutation 후 ViewTransform 으로 미러링한다.
+// D.2 에서 SoT 가 뒤집히면 SyncCameraFromViewTransform 만 호출되도록 변경.
+void FEditorViewportClient::SyncViewTransformFromCamera()
+{
+	if (!Camera) return;
+	Camera->UpdateWorldMatrix();
+	ViewTransform.ViewLocation = Camera->GetWorldLocation();
+	ViewTransform.ViewRotation = Camera->GetWorldMatrix().ToRotator();
+
+	const FCameraState& State = Camera->GetCameraState();
+	ViewTransform.FOV          = State.FOV;
+	ViewTransform.AspectRatio  = State.AspectRatio;
+	ViewTransform.NearClip     = State.NearZ;
+	ViewTransform.FarClip      = State.FarZ;
+	ViewTransform.OrthoZoom    = State.OrthoWidth;
+	ViewTransform.bIsOrtho     = State.bIsOrthogonal;
+}
+
+void FEditorViewportClient::SyncCameraFromViewTransform()
+{
+	if (!Camera) return;
+	Camera->SetWorldLocation(ViewTransform.ViewLocation);
+	Camera->SetRelativeRotation(ViewTransform.ViewRotation);
+
+	FCameraState State;
+	State.FOV           = ViewTransform.FOV;
+	State.AspectRatio   = ViewTransform.AspectRatio;
+	State.NearZ         = ViewTransform.NearClip;
+	State.FarZ          = ViewTransform.FarClip;
+	State.OrthoWidth    = ViewTransform.OrthoZoom;
+	State.bIsOrthogonal = ViewTransform.bIsOrtho;
+	Camera->SetCameraState(State);
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
@@ -163,8 +201,12 @@ void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeigh
 	{
 		Camera->OnResize(NewWidth, NewHeight);
 	}
-	// Transform 모드(D 단계 이후): ViewTransform 에 AspectRatio 가 있다면 여기서 갱신.
-	// 현재 FViewportCameraTransform 은 Aspect 를 들지 않으므로 default 값 사용.
+
+	// D.0: 컴포넌트 미사용 모드에도 ViewTransform 직접 갱신해 fallback 정확성 보장.
+	if (NewHeight > 0)
+	{
+		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
+	}
 }
 
 void FEditorViewportClient::Tick(float DeltaTime)
@@ -244,6 +286,10 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickEditorShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
+
+	// D.0: 입력 mutation 종료 후 ViewTransform 미러링 — TickInput / TickInteraction 의
+	// 직접 컴포넌트 조작(MoveLocal, Rotate, SetOrthoWidth 등)을 같은 프레임 안에 흡수.
+	SyncViewTransformFromCamera();
 }
 
 void FEditorViewportClient::SyncCameraSmoothingTarget()
@@ -268,6 +314,10 @@ void FEditorViewportClient::SyncCameraSmoothingTarget()
 
 	LastAppliedCameraLocation = CurrentLocation;
 	bLastAppliedCameraLocationInitialized = true;
+
+	// D.0: Camera mutation 의 종결 마커 — ViewTransform 미러링도 함께.
+	// ResetCamera / SetViewportType / Tick 시작 등 mutation 완료 시점에 호출됨.
+	SyncViewTransformFromCamera();
 }
 
 void FEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
