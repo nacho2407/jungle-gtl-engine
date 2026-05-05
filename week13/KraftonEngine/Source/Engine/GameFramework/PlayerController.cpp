@@ -5,10 +5,14 @@
 
 IMPLEMENT_CLASS(APlayerController, AActor)
 
-APlayerCameraManager* APlayerController::GetPlayerCameraManager() const
+void APlayerController::BeginPlay()
 {
-	UWorld* World = GetWorld();
-	return World ? World->GetCameraManager() : nullptr;
+	Super::BeginPlay();
+	// E.2/1: World 의 CameraManager 를 reference 로 캐싱. E.3 에서 직접 SpawnActor 로 전환 예정.
+	if (UWorld* World = GetWorld())
+	{
+		PlayerCameraManager = World->GetCameraManager();
+	}
 }
 
 void APlayerController::SetViewTargetWithBlend(
