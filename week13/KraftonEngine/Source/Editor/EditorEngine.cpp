@@ -310,16 +310,15 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		Pipeline->OnSceneCleared();
 	}
 
-	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera로 설정 —
-	//    LOD 갱신 등에서 ActiveCamera를 참조하므로 설정 필요.
-	// TODO(E): CameraManager 가 컴포넌트가 아닌 POV 를 보유하도록 정리되면 여기도 통화로
-	//          전환. 현재는 World/CameraManager 가 UCameraComponent* 를 SoT 로 들고 있다.
+	// 5) 활성 뷰포트 카메라를 PIE 월드의 ActiveCamera 로 설정 —
+	//    LOD 갱신 등에서 ActiveCamera 를 참조하므로 설정 필요.
+	// E.2/3: SetActiveCamera 는 EditorActiveCamera 슬롯에 들어가 PC 가 자기 카메라를 잡기
+	//        전까지 LOD fallback 으로 사용된다. Possess 는 PC->BeginPlay 가 처리.
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
 		if (UCameraComponent* VCCamera = ActiveVC->GetCamera())
 		{
 			PIEWorld->SetActiveCamera(VCCamera);
-			PIEWorld->GetCameraManager()->Possess(VCCamera);
 		}
 	}
 

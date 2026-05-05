@@ -78,11 +78,11 @@ public:
 	void SetPaused(bool bInPaused) { bPaused = bInPaused; }
 	bool IsPaused() const { return bPaused; }
 
-	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
-	void SetActiveCamera(UCameraComponent* InCamera) { if (CameraManager) CameraManager->SetActiveCamera(InCamera); }
-	UCameraComponent* GetActiveCamera() const { return CameraManager ? CameraManager->GetActiveCamera() : nullptr; }
-
-	APlayerCameraManager* GetCameraManager() const { return CameraManager; }
+	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅.
+	// E.2/3: SetActiveCamera 는 EditorActiveCamera 멤버에 보관. GetActiveCamera 는
+	// PIE/Game 일 때 PC->PlayerCameraManager 우선, fallback 으로 EditorActiveCamera 반환.
+	void SetActiveCamera(UCameraComponent* InCamera);
+	UCameraComponent* GetActiveCamera() const;
 
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
@@ -98,7 +98,10 @@ private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
 
-	APlayerCameraManager* CameraManager = nullptr;
+	// E.2/3: CameraManager 는 PC 가 owner — 여기선 보유 안 함.
+	// EditorActiveCamera 는 Editor viewport 가 SetActiveCamera 로 설정한 LOD/render 용 카메라.
+	// PIE/Game 에서도 PC 의 PlayerCameraManager 가 ActiveCamera 잡기 전엔 이 값이 fallback.
+	UCameraComponent* EditorActiveCamera = nullptr;
 	UCameraComponent* LastLODUpdateCamera = nullptr;
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
