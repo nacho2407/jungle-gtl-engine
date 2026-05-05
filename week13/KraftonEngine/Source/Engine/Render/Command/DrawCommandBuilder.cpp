@@ -1,4 +1,4 @@
-﻿#include "DrawCommandBuilder.h"
+#include "DrawCommandBuilder.h"
 
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
@@ -645,6 +645,18 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			Cmd.InitFullscreenTriangle(LetterboxShader, ERenderPass::PostProcess, PPRS);
 			Cmd.Bindings.PerShaderCB[0] = &CameraLetterboxCB;
 			Cmd.BuildSortKey(7);
+		}
+	}
+
+	if (Frame.RenderOptions.ShowFlags.bGammaCorrection)
+	{
+		FShader* GammaShader = FShaderManager::Get().GetOrCreate(EShaderPath::GammaCorrection);
+		if (GammaShader)
+		{
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(GammaShader, ERenderPass::GammaCorrection,
+				PassRenderStateTable->ToDrawCommandState(ERenderPass::GammaCorrection, ViewMode));
+			Cmd.BuildSortKey(0);
 		}
 	}
 }

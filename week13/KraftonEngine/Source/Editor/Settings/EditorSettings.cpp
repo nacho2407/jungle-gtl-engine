@@ -29,6 +29,8 @@ namespace Key
 	constexpr const char* bDebugDraw = "bDebugDraw";
 	constexpr const char* bOctree = "bOctree";
 	constexpr const char* bFog = "bFog";
+	constexpr const char* bFXAA = "bFXAA";
+	constexpr const char* bGammaCorrection = "bGammaCorrection";
 	constexpr const char* bShowShadowFrustum = "bShowShadowFrustum";
 	constexpr const char* bCollision = "bCollision";
 	constexpr const char* GridSpacing = "GridSpacing";
@@ -128,6 +130,8 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 		SlotObj[Key::bDebugDraw] = Opts.ShowFlags.bDebugDraw;
 		SlotObj[Key::bOctree] = Opts.ShowFlags.bOctree;
 		SlotObj[Key::bFog] = Opts.ShowFlags.bFog;
+		SlotObj[Key::bFXAA] = Opts.ShowFlags.bFXAA;
+		SlotObj[Key::bGammaCorrection] = Opts.ShowFlags.bGammaCorrection;
 		SlotObj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
 		SlotObj[Key::bCollision] = Opts.ShowFlags.bCollision;
 		SlotObj[Key::GridSpacing] = Opts.GridSpacing;
@@ -289,6 +293,10 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 					Opts.ShowFlags.bOctree = S[Key::bOctree].ToBool();
 				if (S.hasKey(Key::bFog))
 					Opts.ShowFlags.bFog = S[Key::bFog].ToBool();
+				if (S.hasKey(Key::bFXAA))
+					Opts.ShowFlags.bFXAA = S[Key::bFXAA].ToBool();
+				if (S.hasKey(Key::bGammaCorrection))
+					Opts.ShowFlags.bGammaCorrection = S[Key::bGammaCorrection].ToBool();
 				if (S.hasKey(Key::bShowShadowFrustum))
 					Opts.ShowFlags.bShowShadowFrustum = S[Key::bShowShadowFrustum].ToBool();
 				if (S.hasKey(Key::bCollision))

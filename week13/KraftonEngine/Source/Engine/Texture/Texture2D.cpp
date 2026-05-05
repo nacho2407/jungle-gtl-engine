@@ -11,6 +11,11 @@ IMPLEMENT_CLASS(UTexture2D, UObject)
 
 std::map<FString, UTexture2D*> UTexture2D::TextureCache;
 
+FString UTexture2D::MakeCacheKey(const FString& FilePath, ETextureColorSpace ColorSpace)
+{
+	return FilePath + (ColorSpace == ETextureColorSpace::SRGB ? "#srgb" : "#linear");
+}
+
 UTexture2D::~UTexture2D()
 {
 	if (SRV)
@@ -26,7 +31,7 @@ UTexture2D::~UTexture2D()
 	}
 
 	// 캐시에서 제거
-	auto It = TextureCache.find(SourceFilePath);
+	auto It = TextureCache.find(MakeCacheKey(SourceFilePath, ColorSpace));
 	if (It != TextureCache.end() && It->second == this)
 	{
 		TextureCache.erase(It);
@@ -51,12 +56,13 @@ void UTexture2D::ReleaseAllGPU()
 	TextureCache.clear();
 }
 
-UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device)
+UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Device, ETextureColorSpace InColorSpace)
 {
 	if (FilePath.empty() || !Device) return nullptr;
 
 	// 캐시 히트
-	auto It = TextureCache.find(FilePath);
+	const FString CacheKey = MakeCacheKey(FilePath, InColorSpace);
+	auto It = TextureCache.find(CacheKey);
 	if (It != TextureCache.end())
 	{
 		return It->second;
@@ -64,21 +70,21 @@ UTexture2D* UTexture2D::LoadFromFile(const FString& FilePath, ID3D11Device* Devi
 
 	// 새 UTexture2D 생성
 	UTexture2D* Texture = UObjectManager::Get().CreateObject<UTexture2D>();
-	if (!Texture->LoadInternal(FilePath, Device))
+	if (!Texture->LoadInternal(FilePath, Device, InColorSpace))
 	{
 		UObjectManager::Get().DestroyObject(Texture);
 		return nullptr;
 	}
 
-	TextureCache[FilePath] = Texture;
+	TextureCache[CacheKey] = Texture;
 	return Texture;
 }
 
-UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath)
+UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath, ETextureColorSpace InColorSpace)
 {
 	if (FilePath.empty()) return nullptr;
 
-	auto It = TextureCache.find(FilePath);
+	auto It = TextureCache.find(MakeCacheKey(FilePath, InColorSpace));
 	if (It != TextureCache.end())
 	{
 		return It->second;
@@ -87,11 +93,15 @@ UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath)
 	return nullptr;
 }
 
-bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
+bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device, ETextureColorSpace InColorSpace)
 {
 	//std::filesystem::path TexPath(FilePath);
 	//std::wstring WidePath = TexPath.wstring();
 	std::wstring WidePath = FPaths::ToWide(FilePath);
+
+	const auto LoadFlags = (InColorSpace == ETextureColorSpace::SRGB)
+		? DirectX::WIC_LOADER_FORCE_SRGB
+		: DirectX::WIC_LOADER_IGNORE_SRGB;
 
 	ID3D11Resource* Resource = nullptr;
 	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
@@ -101,7 +111,7 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 		D3D11_BIND_SHADER_RESOURCE,           // bindFlags
 		0,                                    // cpuAccessFlags
 		0,                                    // miscFlags
-		DirectX::WIC_LOADER_IGNORE_SRGB,     // sRGB 메타데이터 무시 → UNORM 포맷 강제
+		LoadFlags,
 		&Resource, &SRV);
 
 	if (FAILED(hr))
@@ -133,5 +143,6 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device)
 	}
 
 	SourceFilePath = FilePath;
+	ColorSpace = InColorSpace;
 	return true;
 }

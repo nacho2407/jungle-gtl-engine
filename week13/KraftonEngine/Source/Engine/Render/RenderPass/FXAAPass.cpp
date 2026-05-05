@@ -33,3 +33,9 @@ bool FFXAAPass::BeginPass(const FPassContext& Ctx)
 	Cache.bForceAll = true;
 	return true;
 }
+
+void FFXAAPass::EndPass(const FPassContext& Ctx)
+{
+	ID3D11ShaderResourceView* NullSRV = nullptr;
+	Ctx.Device.GetDeviceContext()->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSRV);
+}

@@ -522,6 +522,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\LightCullingPass.cpp" />
@@ -786,6 +787,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\LightCullingPass.h" />
@@ -1325,6 +1327,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GammaCorrection.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
