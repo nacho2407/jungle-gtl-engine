@@ -156,6 +156,17 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 	}
 }
 
+void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
+{
+	// 컴포넌트 모드: 컴포넌트의 AspectRatio 갱신
+	if (Camera)
+	{
+		Camera->OnResize(NewWidth, NewHeight);
+	}
+	// Transform 모드(D 단계 이후): ViewTransform 에 AspectRatio 가 있다면 여기서 갱신.
+	// 현재 FViewportCameraTransform 은 Aspect 를 들지 않으므로 default 값 사용.
+}
+
 void FEditorViewportClient::Tick(float DeltaTime)
 {
 	if (!bIsActive) return;
