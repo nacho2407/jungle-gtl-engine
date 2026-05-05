@@ -38,14 +38,34 @@ struct FOBB
         Rotation = RotMat.ToRotator();
     }
 
-    void UpdateAsOBB(const FMatrix& Matrix)
+   void UpdateAsOBB(const FMatrix& Matrix)
     {
         Center = Matrix.GetLocation();
-        Rotation = Matrix.ToRotator();
 
-        FVector Scale = Matrix.GetScale();
-        Extent = Scale * 0.5f;
+        FVector AxisX(Matrix.M[0][0], Matrix.M[0][1], Matrix.M[0][2]);
+        FVector AxisY(Matrix.M[1][0], Matrix.M[1][1], Matrix.M[1][2]);
+        FVector AxisZ(Matrix.M[2][0], Matrix.M[2][1], Matrix.M[2][2]);
+
+        Extent = FVector(AxisX.Length(), AxisY.Length(), AxisZ.Length()) * 0.5f;
+
+        AxisX = AxisX.Normalized();
+        AxisY = AxisY.Normalized();
+        AxisZ = AxisZ.Normalized();
+
+        FMatrix RotMat = FMatrix::Identity;
+        RotMat.M[0][0] = AxisX.X;
+        RotMat.M[0][1] = AxisX.Y;
+        RotMat.M[0][2] = AxisX.Z;
+        RotMat.M[1][0] = AxisY.X;
+        RotMat.M[1][1] = AxisY.Y;
+        RotMat.M[1][2] = AxisY.Z;
+        RotMat.M[2][0] = AxisZ.X;
+        RotMat.M[2][1] = AxisZ.Y;
+        RotMat.M[2][2] = AxisZ.Z;
+
+        Rotation = RotMat.ToRotator();
     }
+
 
     // Decal receiver narrow phase에서 사용하는 OBB vs AABB SAT 판정입니다.
     bool IntersectOBBAABB(const FBoundingBox& AABB) const

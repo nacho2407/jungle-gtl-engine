@@ -3,7 +3,7 @@
 #include "Object/ObjectFactory.h"
 #include <GameFramework/World.h>
 #include "Serialization/Archive.h"
-
+#include <cmath>
 IMPLEMENT_COMPONENT_CLASS(USceneComponent, UActorComponent, EEditorComponentCategory::Basic)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
@@ -365,6 +365,32 @@ FVector USceneComponent::GetWorldLocation() const
 {
     const FMatrix& WorldMatrix = GetWorldMatrix();
     return FVector(WorldMatrix.M[3][0], WorldMatrix.M[3][1], WorldMatrix.M[3][2]);
+}
+
+FRotator USceneComponent::GetWorldRotation() const
+{
+    const FMatrix& WorldMatrix = GetWorldMatrix();
+
+    FVector AxisX(WorldMatrix.M[0][0], WorldMatrix.M[0][1], WorldMatrix.M[0][2]);
+    FVector AxisY(WorldMatrix.M[1][0], WorldMatrix.M[1][1], WorldMatrix.M[1][2]);
+    FVector AxisZ(WorldMatrix.M[2][0], WorldMatrix.M[2][1], WorldMatrix.M[2][2]);
+
+    float ScaleX = AxisX.Length();
+    float ScaleY = AxisY.Length();
+    float ScaleZ = AxisZ.Length();
+
+    AxisX = ScaleX > FMath::Epsilon ? AxisX / ScaleX : FVector(1, 0, 0);
+    AxisY = ScaleY > FMath::Epsilon ? AxisY / ScaleY : FVector(0, 1, 0);
+    AxisZ = ScaleZ > FMath::Epsilon ? AxisZ / ScaleZ : FVector(0, 0, 1);
+
+    float Pitch = std::atan2(-AxisX.Z, std::sqrt(AxisX.X * AxisX.X + AxisX.Y * AxisX.Y));
+    float Yaw = std::atan2(AxisX.Y, AxisX.X);
+    float Roll = std::atan2(AxisY.Z, AxisZ.Z);
+
+    return FRotator(
+        Pitch * FMath::RadToDeg,
+        Yaw * FMath::RadToDeg,
+        Roll * FMath::RadToDeg);
 }
 
 FVector USceneComponent::GetWorldScale() const

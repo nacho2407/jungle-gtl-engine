@@ -1,4 +1,4 @@
-#include "CapsuleComponent.h"
+﻿#include "CapsuleComponent.h"
 
 #include <algorithm>
 #include <cmath>
@@ -56,21 +56,43 @@ void UCapsuleComponent::OnComponentOverlap(UPrimitiveComponent* Other) const
         return;
 }
 
+// CapsuleComponent.cpp
 void UCapsuleComponent::OnTransformDirty()
 {
     UShapeComponent::OnTransformDirty();
 
-    const FMatrix& WorldMat = GetWorldMatrix();
-    CapsuleCollision.Center = WorldMat.GetLocation();
+    // 1. 순수 월드 스케일 구하기
+    FVector PureWorldScale = GetRelativeTransform().Scale;
+    USceneComponent* CurrentParent = GetParent();
+    while (CurrentParent != nullptr)
+    {
+        FVector ParentScale = CurrentParent->GetRelativeTransform().Scale;
+        PureWorldScale.X *= ParentScale.X;
+        PureWorldScale.Y *= ParentScale.Y;
+        PureWorldScale.Z *= ParentScale.Z;
+        CurrentParent = CurrentParent->GetParent();
+    }
 
-    FVector Scale = WorldMat.GetScale();
+    // 2. 순수 월드 회전 쿼터니언 구하기
+    FQuat WorldQuat =GetRelativeTransform().Rotation;
+    USceneComponent* CurrentRotParent = GetParent();
+    while (CurrentRotParent != nullptr)
+    {
+        FQuat ParentQuat = CurrentRotParent->GetRelativeTransform().Rotation;
+        WorldQuat = ParentQuat * WorldQuat;
+        CurrentRotParent = CurrentRotParent->GetParent();
+    }
+    WorldQuat.Normalize();
 
-    const float MaxScaleXY = std::max(Scale.X, Scale.Y);
+    // 3. 캡슐 데이터 업데이트
+    CapsuleCollision.Center = GetWorldLocation();
+
+    const float MaxScaleXY = std::max(std::abs(PureWorldScale.X), std::abs(PureWorldScale.Y));
     CapsuleCollision.Radius = CapsuleRadius * MaxScaleXY;
-    CapsuleCollision.HalfHeight = CapsuleHalfHeight * Scale.Z;
+    CapsuleCollision.HalfHeight = CapsuleHalfHeight * std::abs(PureWorldScale.Z);
 
-    FVector LocalUp(0.0f, 0.0f, 1.0f);
-    CapsuleCollision.UpVector = WorldMat.TransformVector(LocalUp).Normalized();
+    // [핵심] 행렬에서 값을 뽑을 필요 없이, 쿼터니언 자체에서 바로 Up 방향을 가져옵니다.
+    CapsuleCollision.UpVector = WorldQuat.GetUpVector().Normalized();
 
     NotifyCollisionShapeChanged();
 }
