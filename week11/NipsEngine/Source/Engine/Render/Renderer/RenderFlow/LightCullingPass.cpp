@@ -66,9 +66,9 @@ bool FLightCullingPass::DrawCommand(const FRenderPassContext* Context)
 	ID3D11Buffer* b0 = Resources->FrameBuffer.GetBuffer();
 	DeviceContext->CSSetConstantBuffers(0, 1, &b0);
 
-	uint32 groupsX = (ViewportSize.X + TileSize - 1) / TileSize;
-    uint32 groupsY = (ViewportSize.Y + TileSize - 1) / TileSize;
-	uint32 groupsZ = (CullMode == ELightCullMode::Tiled) ? 1 : NumSlice;
+	uint32 groupsX = static_cast<uint32>((ViewportSize.X + TileSize - 1) / TileSize);
+    uint32 groupsY = static_cast<uint32>((ViewportSize.Y + TileSize - 1) / TileSize);
+	uint32 groupsZ = (CullMode == ELightCullMode::Tiled) ? 1u : static_cast<uint32>(NumSlice);
 
 	CullingCS->Dispatch(Context->DeviceContext, groupsX, groupsY, groupsZ);
     CullingCS->Unbind(Context->DeviceContext);

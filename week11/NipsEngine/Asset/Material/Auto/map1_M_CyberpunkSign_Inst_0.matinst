@@ -1,9 +1,0 @@
-{
-        "Name" : "Asset/Material/Auto/map1_M_CyberpunkSign_Inst_0.matinst",
-        "OverridedParams" : [{
-            "Name" : "EmissiveColor",
-            "Type" : "Vector3",
-            "Value" : [1.000000, 1.000000, 1.000000]
-          }],
-        "Parent" : "Asset/Material/Auto/map1_M_CyberpunkSign.mat"
-      }

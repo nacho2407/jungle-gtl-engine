@@ -1,9 +1,0 @@
-{
-        "Name" : "Asset/Material/Auto/map_M_Asphalt01_Inst_0.matinst",
-        "OverridedParams" : [{
-            "Name" : "bHasBumpMap",
-            "Type" : "Bool",
-            "Value" : false
-          }],
-        "Parent" : "Asset/Material/Auto/map_M_Asphalt01.mat"
-      }

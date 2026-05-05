@@ -85,6 +85,8 @@ private:
 	FViewportRect GetPIEFixedAspectViewportRect(const FViewportRect& SourceRect) const;
 	void ApplyPIEFixedAspectViewportRect();
 	void RenderRuntimeUIForPIEViewport(const FViewportRect& ViewportRect, float DeltaTime);
+	void QueueRuntimeUIDrawCallback(ImDrawList* DrawList, const FRuntimeUIRenderContext& Context);
+	static void RenderRuntimeUIDrawCallback(const ImDrawList* ParentList, const ImDrawCmd* Cmd);
 	void RenderViewportMenuBarForIndex(int32 ViewportIndex);
 	void RenderViewportIconToolbarForIndex(int32 ViewportIndex);
 	bool SpawnStaticMeshFromContentPath(const FString& PayloadPath, int32 ViewportIndex, float LocalX, float LocalY);
@@ -145,6 +147,12 @@ private:
 		EEditorViewportLayoutMode LayoutMode = EEditorViewportLayoutMode::FourPanes2x2;
 		int32 SingleViewportIndex = 0;
 		int32 LastFocusedViewportIndex = 0;
+	};
+
+	struct FPendingRuntimeUIDraw
+	{
+		FEditorMainPanel* Owner = nullptr;
+		FRuntimeUIRenderContext Context;
 	};
 
 	void ApplyPIEViewportFullscreen();
@@ -216,6 +224,7 @@ private:
 	FViewportContextMenuState ViewportContextMenuState;
 	FEditorFooterLogSystem FooterLogSystem;
 	TArray<FRuntimeUIRenderContext> PendingPIERmlUiRenderContexts;
+	TArray<FPendingRuntimeUIDraw*> PendingRuntimeUIDrawCallbacks;
 	ID3D11ShaderResourceView* ViewportToolIcons[static_cast<int32>(EViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* ViewportLayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};
 	ID3D11ShaderResourceView* SaveIconSRV = nullptr;

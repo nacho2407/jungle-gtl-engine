@@ -41,7 +41,7 @@ void UMeshComponent::Serialize(FArchive& Ar)
 		Ar << "Materials" << MaterialPaths;
 
 		Materials.resize(MaterialPaths.size());
-		for (size_t i = 0; i < MaterialPaths.size(); ++i)
+		for (int32 i = 0; i < static_cast<int32>(MaterialPaths.size()); ++i)
 		{
 			if (!MaterialPaths[i].empty())
 			{

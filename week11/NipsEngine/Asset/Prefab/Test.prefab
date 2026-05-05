@@ -8,7 +8,7 @@
         "Enable Tick" : true,
         "GenerateOverlapEvents" : false,
         "Location" : [0.065228, -2.389780, 0.868417],
-        "Materials" : ["Asset/Material/Auto/VillageDemo_127_mat.mat"],
+        "Materials" : ["Asset/Material/Auto/VillageDemo_Mat_28.mat"],
         "ObjectName" : "UProceduralMeshComponent_1",
         "Rotation" : [0.000000, 0.000000, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],

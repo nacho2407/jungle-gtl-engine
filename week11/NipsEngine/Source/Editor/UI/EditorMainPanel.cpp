@@ -676,6 +676,11 @@ void FEditorMainPanel::ReleaseViewportToolIcons()
 
 void FEditorMainPanel::Render(float DeltaTime)
 {
+    for (FPendingRuntimeUIDraw* PendingDraw : PendingRuntimeUIDrawCallbacks)
+    {
+        delete PendingDraw;
+    }
+    PendingRuntimeUIDrawCallbacks.clear();
     PendingPIERmlUiRenderContexts.clear();
 
     ImGui_ImplDX11_NewFrame();
@@ -779,6 +784,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    for (FPendingRuntimeUIDraw* PendingDraw : PendingRuntimeUIDrawCallbacks)
+    {
+        delete PendingDraw;
+    }
+    PendingRuntimeUIDrawCallbacks.clear();
 }
 
 void FEditorMainPanel::HideEditorWindowsForPIE()
@@ -2905,13 +2916,46 @@ void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& Viewpo
     Context.LayoutSize = FRuntimeUIVector2(static_cast<float>(LayoutWidth), static_cast<float>(LayoutHeight));
     Context.DeltaTime = DeltaTime;
 
-    PendingPIERmlUiRenderContexts.push_back(Context);
+    QueueRuntimeUIDrawCallback(ImGui::GetWindowDrawList(), Context);
 
     if (EditorEngine->PumpPIERmlUiInput(ViewportRect, LayoutWidth, LayoutHeight))
     {
         InputSystem::Get().SetGuiMouseCapture(true);
         InputSystem::Get().SetGuiViewportMouseBlock(true);
     }
+}
+
+void FEditorMainPanel::QueueRuntimeUIDrawCallback(ImDrawList* DrawList, const FRuntimeUIRenderContext& Context)
+{
+    if (!DrawList || !EditorEngine)
+    {
+        return;
+    }
+
+    FPendingRuntimeUIDraw* PendingDraw = new FPendingRuntimeUIDraw();
+    PendingDraw->Owner = this;
+    PendingDraw->Context = Context;
+    PendingRuntimeUIDrawCallbacks.push_back(PendingDraw);
+
+    DrawList->AddCallback(&FEditorMainPanel::RenderRuntimeUIDrawCallback, PendingDraw);
+    DrawList->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+}
+
+void FEditorMainPanel::RenderRuntimeUIDrawCallback(const ImDrawList* ParentList, const ImDrawCmd* Cmd)
+{
+    (void)ParentList;
+    if (!Cmd || !Cmd->UserCallbackData)
+    {
+        return;
+    }
+
+    FPendingRuntimeUIDraw* PendingDraw = static_cast<FPendingRuntimeUIDraw*>(Cmd->UserCallbackData);
+    if (!PendingDraw || !PendingDraw->Owner || !PendingDraw->Owner->EditorEngine)
+    {
+        return;
+    }
+
+    PendingDraw->Owner->EditorEngine->RenderRuntimeUI(PendingDraw->Context);
 }
 
 void FEditorMainPanel::TickViewportContextMenu()

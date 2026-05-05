@@ -15,7 +15,7 @@
 #include "EditorRenderPass.h"
 #include "DepthLessRenderPass.h"
 #include "PostProcessOutlineRenderPass.h"
-#include "VSMConversionRenderPass.h";
+#include "VSMConversionRenderPass.h"
 #include "SandervistanRenderPass.h"
 #include "Core/Logging/GPUProfiler.h"
 

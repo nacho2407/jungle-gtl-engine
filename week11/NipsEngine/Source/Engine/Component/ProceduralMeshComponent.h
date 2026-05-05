@@ -39,7 +39,7 @@ public:
     const TArray<FMeshSection>& GetSections() const { return Sections; }
 
     /* For Material */
-    int32 GetNumMaterials() const override { return Materials.size(); }
+    int32 GetNumMaterials() const override { return static_cast<int32>(Materials.size()); }
     class UMaterialInterface* GetMaterial(int32 SlotIndex) const override;
     void SetMaterial(int32 SlotIndex, class UMaterialInterface* InMaterial) override;
 

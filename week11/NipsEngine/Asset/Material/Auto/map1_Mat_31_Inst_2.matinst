@@ -1,0 +1,41 @@
+{
+        "Name" : "Asset/Material/Auto/map1_Mat_31_Inst_2.matinst",
+        "OverridedParams" : [{
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [1.000000, 1.000000, 1.000000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.940000, 0.690000, 1.000000]
+          }, {
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.280000, 0.240000]
+          }, {
+            "Name" : "bHasBumpMap",
+            "Type" : "Bool",
+            "Value" : false
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 249.669998
+          }, {
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.900000
+          }, {
+            "Name" : "AmbientColor",
+            "Type" : "Vector3",
+            "Value" : [0.650000, 1.000000, 1.000000]
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [1.730000, 2.090000, 1.810000]
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/Decal/T_Graffiti07_MSK.PNG"
+          }],
+        "Parent" : "Asset/Material/Auto/map1_Mat_31.mat"
+      }

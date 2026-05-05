@@ -21,4 +21,5 @@ private:
 	FWindowsFileWatcher ShaderDirectoryWatcher;
 	FGameSplashScreen GameSplashScreen;
 	FTimer Timer;
+	bool bComInitialized = false;
 };

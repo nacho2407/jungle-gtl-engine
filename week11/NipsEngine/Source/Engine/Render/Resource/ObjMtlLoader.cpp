@@ -4,42 +4,130 @@
 #include "Core/ResourceManager.h"
 
 #include <filesystem>
+#include <sstream>
+#include <vector>
 
-bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device)
+static std::filesystem::path MakeAbsoluteEnginePath(const FString& FilePath)
 {
-	std::ifstream File(std::filesystem::path(FPaths::ToWide(FilePath)));
+	std::filesystem::path Path(FPaths::ToWide(FilePath));
+	if (Path.is_relative())
+	{
+		Path = std::filesystem::path(FPaths::RootDir()) / Path;
+	}
+
+	return Path.lexically_normal();
+}
+
+static FString ToEngineRelativePath(const std::filesystem::path& Path)
+{
+	std::error_code Ec;
+	std::filesystem::path RelativePath = std::filesystem::relative(Path, std::filesystem::path(FPaths::RootDir()), Ec);
+	if (Ec)
+	{
+		return FPaths::ToUtf8(Path.lexically_normal().generic_wstring());
+	}
+
+	return FPaths::ToUtf8(RelativePath.lexically_normal().generic_wstring());
+}
+
+static FString ResolveMtlTexturePath(const std::filesystem::path& MtlDir, const FString& RawTexturePath)
+{
+	const FString TrimmedTexturePath = StringUtils::Trim(RawTexturePath);
+	if (TrimmedTexturePath.empty())
+	{
+		return {};
+	}
+
+	std::filesystem::path TexturePath(FPaths::ToWide(TrimmedTexturePath));
+	if (TexturePath.is_relative())
+	{
+		TexturePath = MtlDir / TexturePath;
+	}
+
+	TexturePath = TexturePath.lexically_normal();
+	if (std::filesystem::exists(TexturePath) && std::filesystem::is_regular_file(TexturePath))
+	{
+		return ToEngineRelativePath(TexturePath);
+	}
+
+	std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(TrimmedTexturePath)).filename();
+	if (FileName.empty())
+	{
+		return {};
+	}
+
+	FString FoundPath;
+	if (FFileUtils::FindFileRecursively(
+		FPaths::ToUtf8(MtlDir.generic_wstring()),
+		FPaths::ToUtf8(FileName.generic_wstring()),
+		FoundPath))
+	{
+		std::filesystem::path FoundTexturePath = (MtlDir / std::filesystem::path(FPaths::ToWide(FoundPath))).lexically_normal();
+		return ToEngineRelativePath(FoundTexturePath);
+	}
+
+	return {};
+}
+
+static FString JoinTokens(const std::vector<FString>& Tokens, size_t StartIndex)
+{
+	FString Result;
+	for (size_t Index = StartIndex; Index < Tokens.size(); ++Index)
+	{
+		if (!Result.empty())
+		{
+			Result += " ";
+		}
+		Result += Tokens[Index];
+	}
+
+	return Result;
+}
+
+static FString ResolveMtlTextureExpression(const std::filesystem::path& MtlDir, const FString& RawExpression)
+{
+	const FString TrimmedExpression = StringUtils::Trim(RawExpression);
+	if (TrimmedExpression.empty())
+	{
+		return {};
+	}
+
+	FString TexturePath = ResolveMtlTexturePath(MtlDir, TrimmedExpression);
+	if (!TexturePath.empty())
+	{
+		return TexturePath;
+	}
+
+	std::istringstream TokenStream(TrimmedExpression);
+	std::vector<FString> Tokens;
+	FString Token;
+	while (TokenStream >> Token)
+	{
+		Tokens.push_back(Token);
+	}
+
+	for (size_t ReverseIndex = Tokens.size(); ReverseIndex > 0; --ReverseIndex)
+	{
+		TexturePath = ResolveMtlTexturePath(MtlDir, JoinTokens(Tokens, ReverseIndex - 1));
+		if (!TexturePath.empty())
+		{
+			return TexturePath;
+		}
+	}
+
+	return {};
+}
+
+bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& OutMaterialAssets, ID3D11Device* Device, TArray<FString>* OutMaterialOrder)
+{
+	const std::filesystem::path MtlPath = MakeAbsoluteEnginePath(FilePath);
+	std::ifstream File(MtlPath);
 	if (!File.is_open())
 	{
 		return false;
 	}
 
-	// 한글 경로 안전을 위해 wide string 기반으로 filesystem 연산 수행
-	std::filesystem::path MtlDir = std::filesystem::path(FPaths::ToWide(FilePath)).parent_path();
-
-	auto ResolveTexPath = [&](std::istringstream& InISS) -> FString
-		{
-			FString RelPath;
-
-			InISS >> RelPath;
-			if (RelPath.empty())
-			{
-				return {};
-			}
-
-			std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(RelPath)).filename();
-
-			FString outTexPath = "";
-			FFileUtils::FindFileRecursively(
-				FPaths::ToUtf8(MtlDir.generic_wstring()),
-				FPaths::ToUtf8(FileName.generic_wstring()),
-				outTexPath);
-
-			// 기존: std::filesystem::path TexPath = (MtlDir / outTexPath).lexically_normal();
-			// 변경: UTF-8 문자열(outTexPath)을 wide로 명시 변환 후 결합
-			std::filesystem::path TexPath = (MtlDir / std::filesystem::path(FPaths::ToWide(outTexPath))).lexically_normal();
-
-			return FPaths::ToUtf8(TexPath.generic_wstring());
-		};
+	std::filesystem::path MtlDir = MtlPath.parent_path();
 
 	UMaterial* Current = nullptr;
 	FString    Line;
@@ -68,6 +156,11 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 			OutMaterialAssets[MatName] = UObjectManager::Get().CreateObject<UMaterial>();
 			Current = OutMaterialAssets[MatName];
 			Current->Name = MatName;
+			Current->ImportedName = MatName;
+			if (OutMaterialOrder)
+			{
+				OutMaterialOrder->push_back(MatName);
+			}
 		}
 		// newmtl 이전 라인은 무시
 		else if (!Current)
@@ -119,47 +212,39 @@ bool FObjMtlLoader::Load(const FString& FilePath, TMap<FString, UMaterial*>& Out
 		// TextureMap - 파싱 시점에 절대 경로로 정규화
 		else if (Token == "map_Kd")
 		{
-			Current->MaterialData.DiffuseTexPath = ResolveTexPath(ISS);
-			Current->MaterialData.bHasDiffuseTexture = true;
+			FString TextureExpression;
+			std::getline(ISS, TextureExpression);
+			Current->MaterialData.DiffuseTexPath = ResolveMtlTextureExpression(MtlDir, TextureExpression);
+			Current->MaterialData.bHasDiffuseTexture = !Current->MaterialData.DiffuseTexPath.empty();
 		}
 		else if (Token == "map_Ka")
 		{
-			Current->MaterialData.AmbientTexPath = ResolveTexPath(ISS);
-			Current->MaterialData.bHasAmbientTexture = true;
+			FString TextureExpression;
+			std::getline(ISS, TextureExpression);
+			Current->MaterialData.AmbientTexPath = ResolveMtlTextureExpression(MtlDir, TextureExpression);
+			Current->MaterialData.bHasAmbientTexture = !Current->MaterialData.AmbientTexPath.empty();
 		}
 		else if (Token == "map_Ks")
 		{
-			Current->MaterialData.SpecularTexPath = ResolveTexPath(ISS);
-			Current->MaterialData.bHasSpecularTexture = true;
+			FString TextureExpression;
+			std::getline(ISS, TextureExpression);
+			Current->MaterialData.SpecularTexPath = ResolveMtlTextureExpression(MtlDir, TextureExpression);
+			Current->MaterialData.bHasSpecularTexture = !Current->MaterialData.SpecularTexPath.empty();
 		}
 		else if (Token == "map_Ke" || Token == "map_emissive" || Token == "map_Emissive")
 		{
-			Current->MaterialData.EmissiveTexPath = ResolveTexPath(ISS);
-			Current->MaterialData.bHasEmissiveTexture = true;
+			FString TextureExpression;
+			std::getline(ISS, TextureExpression);
+			Current->MaterialData.EmissiveTexPath = ResolveMtlTextureExpression(MtlDir, TextureExpression);
+			Current->MaterialData.bHasEmissiveTexture = !Current->MaterialData.EmissiveTexPath.empty();
 		}
 		// map_bump / map_Bump / bump — skip any -option value pairs before the filename
 		else if (Token == "map_bump" || Token == "map_Bump" || Token == "bump")
 		{
-			FString BumpToken;
-			while (ISS >> BumpToken)
-			{
-				if (!BumpToken.empty() && BumpToken[0] == '-')
-					ISS >> BumpToken; // discard option value
-				else
-					break;
-			}
-			if (!BumpToken.empty())
-			{
-				std::filesystem::path FileName = std::filesystem::path(FPaths::ToWide(BumpToken)).filename();
-				FString FoundPath;
-				FFileUtils::FindFileRecursively(
-					FPaths::ToUtf8(MtlDir.generic_wstring()),
-					FPaths::ToUtf8(FileName.generic_wstring()),
-					FoundPath);
-				std::filesystem::path TexPath = (MtlDir / std::filesystem::path(FPaths::ToWide(FoundPath))).lexically_normal();
-				Current->MaterialData.BumpTexPath = FPaths::ToUtf8(TexPath.generic_wstring());
-				Current->MaterialData.bHasBumpTexture = true;
-			}
+			FString TextureExpression;
+			std::getline(ISS, TextureExpression);
+			Current->MaterialData.BumpTexPath = ResolveMtlTextureExpression(MtlDir, TextureExpression);
+			Current->MaterialData.bHasBumpTexture = !Current->MaterialData.BumpTexPath.empty();
 		}
 	}
 

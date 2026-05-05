@@ -1,0 +1,17 @@
+{
+        "Name" : "Asset/Material/Auto/SkyDome_Mat_0_Inst_1.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [0.800000, 0.800000, 0.800000]
+          }, {
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.200000, 0.200000, 0.200000]
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 250.000000
+          }],
+        "Parent" : "Asset/Material/Auto/SkyDome_Mat_0.mat"
+      }

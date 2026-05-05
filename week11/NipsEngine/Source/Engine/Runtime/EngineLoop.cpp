@@ -10,6 +10,8 @@
 #include "Engine/Runtime/GameEngine.h"
 #endif
 
+#include <objbase.h>
+
 void FEngineLoop::CreateEngine()
 {
 #if IS_OBJ_VIEWER
@@ -26,6 +28,13 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 	(void)nShowCmd;
 	
 	UE_LOG("Hello, ZZup Engine!");
+
+	const HRESULT ComResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	bComInitialized = SUCCEEDED(ComResult);
+	if (FAILED(ComResult) && ComResult != RPC_E_CHANGED_MODE)
+	{
+		UE_LOG_WARNING("COM initialization failed. WIC texture loading may fail. HRESULT=0x%08X", static_cast<unsigned int>(ComResult));
+	}
 
 	if (!Application.Init(hInstance))
 	{
@@ -113,5 +122,11 @@ void FEngineLoop::Shutdown()
 #if WITH_EDITOR || IS_OBJ_VIEWER
 		ShaderDirectoryWatcher.Shutdown();
 #endif
+	}
+
+	if (bComInitialized)
+	{
+		CoUninitialize();
+		bComInitialized = false;
 	}
 }

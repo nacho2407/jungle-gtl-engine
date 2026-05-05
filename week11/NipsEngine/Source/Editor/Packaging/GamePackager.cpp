@@ -1299,6 +1299,8 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     if (!CookAndCopyPackageAssets(Settings, OutputRoot, IncludedScenes, OutMessage)) return false;
     if (!CopyDirectoryIfExists(EngineRoot / L"Shaders", OutputRoot / L"Shaders", OutMessage)) return false;
     EmitBuildLog("Copied Shaders directory");
+    if (!CopyDirectoryIfExists(EngineRoot / L"DerivedData" / L"ShaderCache", OutputRoot / L"DerivedData" / L"ShaderCache", OutMessage)) return false;
+    EmitBuildLog("Copied ShaderCache directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UI", OutputRoot / L"Asset" / L"UI", OutMessage)) return false;
     EmitBuildLog("Copied Asset/UI directory");
     if (!CopyDirectoryIfExists(EngineRoot / L"Asset" / L"UIImage", OutputRoot / L"Asset" / L"UIImage", OutMessage)) return false;

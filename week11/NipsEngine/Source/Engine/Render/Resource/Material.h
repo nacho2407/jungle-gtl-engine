@@ -112,6 +112,7 @@ public:
 
 	FString Name;
 	FString FilePath;
+	FString ImportedName;
 
 	FMaterial MaterialData;
 	TMap<FString, FMaterialParamValue> MaterialParams;

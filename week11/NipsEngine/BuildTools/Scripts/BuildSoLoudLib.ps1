@@ -18,7 +18,7 @@ $IncludeRoot = Join-Path $SoLoudRoot "include"
 $OutDir = Join-Path $SoLoudRoot "Lib\$Platform\$Configuration"
 $ObjDir = Join-Path $ProjectRoot "Intermediate\ThirdParty\SoLoud\$Platform\$Configuration"
 $LibPath = Join-Path $OutDir "SoLoud.lib"
-$StampPath = Join-Path $OutDir "SoLoud.stamp"
+$ManifestPath = Join-Path $OutDir "SoLoud.manifest"
 
 $SourceDirs = @(
     "src\core",
@@ -72,6 +72,66 @@ function Resolve-MsvcToolPath {
     return $null
 }
 
+function Get-RelativePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BasePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $BaseFullPath = [System.IO.Path]::GetFullPath($BasePath)
+    if (-not $BaseFullPath.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+        $BaseFullPath += [System.IO.Path]::DirectorySeparatorChar
+    }
+
+    $BaseUri = New-Object System.Uri($BaseFullPath)
+    $PathUri = New-Object System.Uri([System.IO.Path]::GetFullPath($Path))
+    return [System.Uri]::UnescapeDataString($BaseUri.MakeRelativeUri($PathUri).ToString()).Replace("/", "\")
+}
+
+function Get-UniqueFiles {
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$Files
+    )
+
+    $Seen = @{}
+    $Result = @()
+    foreach ($File in $Files) {
+        $FullName = [System.IO.Path]::GetFullPath($File.FullName)
+        if (-not $Seen.ContainsKey($FullName)) {
+            $Seen[$FullName] = $true
+            $Result += $File
+        }
+    }
+
+    return $Result
+}
+
+function New-InputManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$Files,
+
+        [Parameter(Mandatory = $true)]
+        [array]$BuildSettings
+    )
+
+    $Lines = @()
+    $Lines += "ManifestVersion=2"
+    $Lines += $BuildSettings
+
+    foreach ($File in ($Files | Sort-Object FullName)) {
+        $RelativePath = Get-RelativePath -BasePath $ProjectRoot -Path $File.FullName
+        $Hash = (Get-FileHash -Path $File.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $Lines += "Input=$RelativePath|$($File.Length)|$Hash"
+    }
+
+    return ($Lines -join "`n")
+}
+
 $SourceFiles = @()
 foreach ($SourceDir in $SourceDirs) {
     $FullSourceDir = Join-Path $SoLoudRoot $SourceDir
@@ -89,54 +149,6 @@ if (-not $ClPath -or -not $LibToolPath) {
 if ($SourceFiles.Count -eq 0) {
     throw "No SoLoud source files were found under $SourceRoot."
 }
-
-$CompilerVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ClPath).FileVersion
-$LibToolVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($LibToolPath).FileVersion
-$ToolStamp = @(
-    "ProjectDir=$ProjectRoot",
-    "Configuration=$Configuration",
-    "Platform=$Platform",
-    "ClPath=$ClPath",
-    "LibPath=$LibToolPath",
-    "CompilerVersion=$CompilerVersion",
-    "LibToolVersion=$LibToolVersion"
-) -join "`n"
-
-$InputFiles = @()
-$InputFiles += $SourceFiles
-$InputFiles += Get-ChildItem -Path $IncludeRoot -Include "*.h", "*.hpp" -Recurse -File
-$InputFiles += Get-ChildItem -Path $SourceRoot -Include "*.h", "*.hpp" -Recurse -File
-
-$NeedsBuild = -not (Test-Path $LibPath)
-if (-not $NeedsBuild) {
-    if (-not (Test-Path $StampPath)) {
-        $NeedsBuild = $true
-    }
-    else {
-        $ExistingStamp = (Get-Content -Path $StampPath -Raw).Trim()
-        if ($ExistingStamp -ne $ToolStamp.Trim()) {
-            $NeedsBuild = $true
-        }
-    }
-}
-
-if (-not $NeedsBuild) {
-    $LibTime = (Get-Item $LibPath).LastWriteTimeUtc
-    foreach ($InputFile in $InputFiles) {
-        if ($InputFile.LastWriteTimeUtc -gt $LibTime) {
-            $NeedsBuild = $true
-            break
-        }
-    }
-}
-
-if (-not $NeedsBuild) {
-    Write-Host "SoLoud.lib is up to date: $LibPath"
-    exit 0
-}
-
-New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-New-Item -ItemType Directory -Force -Path $ObjDir | Out-Null
 
 $RuntimeFlag = "/MD"
 if ($Configuration -eq "Debug") {
@@ -179,6 +191,68 @@ $CppArgs = @(
 $CArgs = @(
     "/TC"
 ) + $BaseArgs
+
+$ManifestBaseArgs = @(
+    "/nologo",
+    "/c",
+    "/W3",
+    "/utf-8",
+    "/bigobj",
+    $RuntimeFlag,
+    "/IThirdParty\SoLoud\include",
+    "/IThirdParty\SoLoud\src\core",
+    "/IThirdParty\SoLoud\src\audiosource\wav",
+    "/IThirdParty\SoLoud\src\backend\miniaudio",
+    "/IThirdParty\SoLoud"
+) + $Defines
+
+$ManifestCppArgs = @(
+    "/std:c++20",
+    "/permissive-",
+    "/EHa"
+) + $ManifestBaseArgs
+
+$ManifestCArgs = @(
+    "/TC"
+) + $ManifestBaseArgs
+
+$InputFiles = @()
+$InputFiles += $SourceFiles
+$InputFiles += Get-ChildItem -Path $IncludeRoot -Include "*.h", "*.hpp" -Recurse -File
+$InputFiles += Get-ChildItem -Path $SourceRoot -Include "*.h", "*.hpp" -Recurse -File
+$InputFiles = Get-UniqueFiles -Files $InputFiles
+
+$BuildSettings = @(
+    "Library=SoLoud",
+    "Configuration=$Configuration",
+    "Platform=$Platform",
+    "Runtime=$RuntimeFlag",
+    "SourceDirs=$($SourceDirs -join ';')",
+    "CppArgs=$($ManifestCppArgs -join ';')",
+    "CArgs=$($ManifestCArgs -join ';')"
+)
+$InputManifest = New-InputManifest -Files $InputFiles -BuildSettings $BuildSettings
+
+$NeedsBuild = -not (Test-Path $LibPath)
+if (-not $NeedsBuild) {
+    if (-not (Test-Path $ManifestPath)) {
+        $NeedsBuild = $true
+    }
+    else {
+        $ExistingManifest = (Get-Content -Path $ManifestPath -Raw).Trim()
+        if ($ExistingManifest -ne $InputManifest.Trim()) {
+            $NeedsBuild = $true
+        }
+    }
+}
+
+if (-not $NeedsBuild) {
+    Write-Host "SoLoud.lib is up to date: $LibPath"
+    exit 0
+}
+
+New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+New-Item -ItemType Directory -Force -Path $ObjDir | Out-Null
 
 $ObjectFiles = @()
 foreach ($SourceFile in $SourceFiles) {
@@ -236,5 +310,5 @@ if ($LASTEXITCODE -ne 0) {
     throw "Failed to create $LibPath."
 }
 
-Set-Content -Path $StampPath -Value $ToolStamp -Encoding ASCII
+Set-Content -Path $ManifestPath -Value $InputManifest -Encoding ASCII
 Write-Host "Built SoLoud.lib: $LibPath"
