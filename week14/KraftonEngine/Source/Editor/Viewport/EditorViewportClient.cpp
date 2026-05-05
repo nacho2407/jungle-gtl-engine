@@ -52,9 +52,11 @@ void FEditorViewportClient::DestroyCamera()
 
 void FEditorViewportClient::ResetCamera()
 {
-	if (!Camera || !Settings) return;
-	Camera->SetWorldLocation(Settings->InitViewPos);
-	Camera->LookAt(Settings->InitLookAt);
+	if (!Settings) return;
+	// D.2: ViewTransform 이 SoT — 컴포넌트는 sync 로 mirror.
+	ViewTransform.ViewLocation = Settings->InitViewPos;
+	ViewTransform.LookAt(Settings->InitLookAt);
+	SyncCameraFromViewTransform();
 	SyncCameraSmoothingTarget();
 }
 
@@ -115,13 +117,12 @@ void FEditorViewportClient::SyncCameraFromViewTransform()
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 {
-	if (!Camera) return;
-
 	RenderOptions.ViewportType = NewType;
 
 	if (NewType == ELevelViewportType::Perspective)
 	{
-		Camera->SetOrthographic(false);
+		ViewTransform.bIsOrtho = false;
+		SyncCameraFromViewTransform();
 		SyncCameraSmoothingTarget();
 		return;
 	}
@@ -129,13 +130,14 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	// FreeOrthographic: 현재 카메라 위치/회전 유지, 투영만 Ortho로 전환
 	if (NewType == ELevelViewportType::FreeOrthographic)
 	{
-		Camera->SetOrthographic(true);
+		ViewTransform.bIsOrtho = true;
+		SyncCameraFromViewTransform();
 		SyncCameraSmoothingTarget();
 		return;
 	}
 
 	// 고정 방향 Orthographic: 카메라를 프리셋 방향으로 설정
-	Camera->SetOrthographic(true);
+	ViewTransform.bIsOrtho = true;
 
 	constexpr float OrthoDistance = 50.0f;
 	FVector Position = FVector(0, 0, 0);
@@ -171,8 +173,10 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 		break;
 	}
 
-	Camera->SetRelativeLocation(Position);
-	Camera->SetRelativeRotation(Rotation);
+	ViewTransform.ViewLocation = Position;
+	// FVector(Roll, Pitch, Yaw) → FRotator(Pitch, Yaw, Roll). FRotator.h:19 참고.
+	ViewTransform.ViewRotation = FRotator(Rotation.Y, Rotation.Z, Rotation.X);
+	SyncCameraFromViewTransform();
 	SyncCameraSmoothingTarget();
 }
 
@@ -188,25 +192,17 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 		WindowHeight = InHeight;
 	}
 
-	if (Camera)
-	{
-		Camera->OnResize(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
-	}
+	NotifyViewportResized(static_cast<int32>(WindowWidth), static_cast<int32>(WindowHeight));
 }
 
 void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
 {
-	// 컴포넌트 모드: 컴포넌트의 AspectRatio 갱신
-	if (Camera)
-	{
-		Camera->OnResize(NewWidth, NewHeight);
-	}
-
-	// D.0: 컴포넌트 미사용 모드에도 ViewTransform 직접 갱신해 fallback 정확성 보장.
+	// D.2: ViewTransform 이 SoT — AspectRatio 직접 갱신 후 컴포넌트 미러.
 	if (NewHeight > 0)
 	{
 		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	}
+	SyncCameraFromViewTransform();
 }
 
 void FEditorViewportClient::Tick(float DeltaTime)
@@ -249,8 +245,8 @@ void FEditorViewportClient::Tick(float DeltaTime)
 
 	SyncCameraSmoothingTarget();
 
-	// Camera Focus Animation Update
-	if (bIsFocusAnimating && Camera)
+	// Camera Focus Animation Update — D.2: ViewTransform 에 작성.
+	if (bIsFocusAnimating)
 	{
 		FocusAnimTimer += DeltaTime;
 		float Alpha = FocusAnimTimer / FocusAnimDuration;
@@ -264,14 +260,14 @@ void FEditorViewportClient::Tick(float DeltaTime)
 		float SmoothAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
 
 		FVector NewLoc = FocusStartLoc * (1.0f - SmoothAlpha) + FocusEndLoc * SmoothAlpha;
-		
+
 		// Rotation Interpolation (Slerp-like for Rotators)
 		FQuat StartQuat = FocusStartRot.ToQuaternion();
 		FQuat EndQuat = FocusEndRot.ToQuaternion();
 		FQuat BlendedQuat = FQuat::Slerp(StartQuat, EndQuat, SmoothAlpha);
-		
-		Camera->SetWorldLocation(NewLoc);
-		Camera->SetRelativeRotation(FRotator::FromQuaternion(BlendedQuat));
+
+		ViewTransform.ViewLocation = NewLoc;
+		ViewTransform.ViewRotation = FRotator::FromQuaternion(BlendedQuat);
 
 		// Sync TargetLocation during animation to prevent jumping after focus ends
 		TargetLocation = NewLoc;
@@ -287,21 +283,16 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
 
-	// D.0: 입력 mutation 종료 후 ViewTransform 미러링 — TickInput / TickInteraction 의
-	// 직접 컴포넌트 조작(MoveLocal, Rotate, SetOrthoWidth 등)을 같은 프레임 안에 흡수.
-	SyncViewTransformFromCamera();
+	// D.2: 입력 mutation 종료 후 ViewTransform → Camera mirror.
+	// Camera 컴포넌트가 살아있는 동안 외부 호출자(Camera->Get*)에 일관성 보장.
+	SyncCameraFromViewTransform();
 }
 
 void FEditorViewportClient::SyncCameraSmoothingTarget()
 {
-	if (!Camera)
-	{
-		bTargetLocationInitialized = false;
-		bLastAppliedCameraLocationInitialized = false;
-		return;
-	}
-
-	const FVector CurrentLocation = Camera->GetWorldLocation();
+	// D.2: ViewTransform 이 SoT — 비교 대상도 ViewTransform.
+	// Camera 컴포넌트 nullptr 가드는 D.3 에서 제거 예정.
+	const FVector CurrentLocation = ViewTransform.ViewLocation;
 	const bool bCameraMovedExternally =
 		bLastAppliedCameraLocationInitialized &&
 		FVector::DistSquared(CurrentLocation, LastAppliedCameraLocation) > 0.0001f;
@@ -314,23 +305,16 @@ void FEditorViewportClient::SyncCameraSmoothingTarget()
 
 	LastAppliedCameraLocation = CurrentLocation;
 	bLastAppliedCameraLocationInitialized = true;
-
-	// D.0: Camera mutation 의 종결 마커 — ViewTransform 미러링도 함께.
-	// ResetCamera / SetViewportType / Tick 시작 등 mutation 완료 시점에 호출됨.
-	SyncViewTransformFromCamera();
+	// sync 는 Tick 끝 / lifecycle 메서드 끝에서 처리.
 }
 
 void FEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
 {
-	if (!Camera)
-	{
-		return;
-	}
-
-	const FVector CurrentLocation = Camera->GetWorldLocation();
+	// D.2: ViewTransform 이 SoT.
+	const FVector CurrentLocation = ViewTransform.ViewLocation;
 	const float LerpAlpha = Clamp(DeltaTime * SmoothLocationSpeed, 0.0f, 1.0f);
 	const FVector NewLocation = CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha;
-	Camera->SetWorldLocation(NewLocation);
+	ViewTransform.ViewLocation = NewLocation;
 
 	LastAppliedCameraLocation = NewLocation;
 	bLastAppliedCameraLocationInitialized = true;
@@ -372,27 +356,28 @@ void FEditorViewportClient::TickEditorShortcuts()
 	if (SelectionManager && InputSystem::Get().GetKeyDown('F'))
 	{
 		AActor* Selected = SelectionManager->GetPrimarySelection();
-		if (Selected && Camera)
+		if (Selected)
 		{
+			// D.2: ViewTransform 위에서 모든 계산. 임시 LookAt → 백업 복원 패턴은 동일.
 			FVector TargetLoc = Selected->GetActorLocation();
-			FVector CameraForward = Camera->GetForwardVector();
-			
+			FVector CameraForward = ViewTransform.ViewRotation.GetForwardVector();
+
 			// 1. 현재 상태 백업
-			FVector OriginalLoc = Camera->GetWorldLocation();
-			FRotator OriginalRot = Camera->GetRelativeRotation();
+			FVector OriginalLoc = ViewTransform.ViewLocation;
+			FRotator OriginalRot = ViewTransform.ViewRotation;
 
 			// 2. 목표 좌표 계산 (5m 거리)
 			float FocusDistance = 5.0f;
 			FVector NewCameraLoc = TargetLoc - CameraForward * FocusDistance;
-			
-			// 3. 임시로 이동하여 정확한 목표 회전값 추출
-			Camera->SetWorldLocation(NewCameraLoc);
-			Camera->LookAt(TargetLoc);
-			FRotator TargetRot = Camera->GetRelativeRotation();
 
-			// 4. 카메라 복구 및 애니메이션 설정
-			Camera->SetWorldLocation(OriginalLoc);
-			Camera->SetRelativeRotation(OriginalRot);
+			// 3. 임시로 이동하여 정확한 목표 회전값 추출
+			ViewTransform.ViewLocation = NewCameraLoc;
+			ViewTransform.LookAt(TargetLoc);
+			FRotator TargetRot = ViewTransform.ViewRotation;
+
+			// 4. ViewTransform 복구 및 애니메이션 설정 (Focus animation 이 ViewTransform 에 보간 적용)
+			ViewTransform.ViewLocation = OriginalLoc;
+			ViewTransform.ViewRotation = OriginalRot;
 
 			bIsFocusAnimating = true;
 			FocusAnimTimer = 0.0f;
@@ -538,7 +523,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		}
 
 		Rotation *= DeltaTime;
-		Camera->Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
+		// D.2: ViewTransform 에 누적, Camera 는 Tick 끝 sync 로 mirror.
+		ViewTransform.Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
 	}
 	else
 	{
@@ -551,8 +537,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 			// OrthoWidth 기준으로 감도 스케일 (줌 레벨에 비례)
 			float PanScale = CameraState.OrthoWidth * 0.002f * MoveSensitivity;
 
-			// 카메라 로컬 Right/Up 방향으로 이동
-			Camera->MoveLocal(FVector(0, -DeltaX * PanScale, DeltaY * PanScale));
+			// 카메라 로컬 Right/Up 방향으로 이동 (D.2: ViewTransform mutation)
+			ViewTransform.TranslateLocal(FVector(0, -DeltaX * PanScale, DeltaY * PanScale));
 		}
 	}
 
@@ -600,16 +586,17 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
 	{
-		if (Camera->IsOrthogonal())
+		if (ViewTransform.bIsOrtho)
 		{
-			float NewWidth = Camera->GetOrthoWidth() - ScrollNotches * ZoomSpeed * DeltaTime;
-			Camera->SetOrthoWidth(Clamp(NewWidth, 0.1f, 1000.0f));
+			// D.2: ViewTransform 직접 갱신.
+			float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
+			ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
 		}
 		else
 		{
 			//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
 			// Instead of moving directly, update TargetLocation for smooth zoom
-			TargetLocation += Camera->GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+			TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
 		}
 	}
 
