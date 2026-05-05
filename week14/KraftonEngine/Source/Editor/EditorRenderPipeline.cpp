@@ -10,6 +10,7 @@
 #include "Profiling/Stats.h"
 #include "Profiling/GPUProfiler.h"
 #include "Engine/Render/Types/ForwardLightData.h"
+#include "Engine/Render/Types/MinimalViewInfo.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Core/ProjectSettings.h"
 
@@ -93,10 +94,6 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer)
 {
-	UCameraComponent* Camera = VC->GetCamera();
-
-	if (!Camera) return;
-
 	FViewport* VP = VC->GetViewport();
 	if (!VP) return;
 
@@ -105,6 +102,11 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
+
+	// ── 카메라 POV 통화 결정 ──────────────────────────────────────
+	// 기본은 viewport 자체 카메라. PIE possessed 모드의 게임 뷰포트만 게임 ActiveCamera 사용.
+	FMinimalViewInfo POV;
+	VC->GetCameraView(POV);
 
 	bool bShouldUseGameCamera = false;
 	if (Editor && Editor->IsPIEPossessedMode())
@@ -117,12 +119,11 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	if (bShouldUseGameCamera)
 	{
-		UCameraManager* CamManager = World->GetCameraManager();
-		if (CamManager)
+		if (UCameraManager* CamManager = World->GetCameraManager())
 		{
 			if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
 			{
-				Camera = ActiveCamera;
+				ActiveCamera->GetCameraView(0.0f, POV);
 			}
 		}
 	}
@@ -132,8 +133,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	// GPU Occlusion — 이전 프레임 결과 읽기 (이 뷰포트 전용)
 	GPUOcclusion.ReadbackResults(Ctx);
 
-	PrepareViewport(VP, Camera, Ctx);
-	BuildFrame(VC, Camera, VP, World);
+	PrepareViewport(VC, VP, Ctx);
+	BuildFrame(VC, POV, VP, World);
 
 	FCollectOutput Output;
 	CollectCommands(VC, World, Renderer, Output);
@@ -161,24 +162,27 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 // ============================================================
 // PrepareViewport — 지연 리사이즈 적용 + RT 클리어
 // ============================================================
-void FEditorRenderPipeline::PrepareViewport(FViewport* VP, UCameraComponent* Camera, ID3D11DeviceContext* Ctx)
+void FEditorRenderPipeline::PrepareViewport(FLevelEditorViewportClient* VC, FViewport* VP, ID3D11DeviceContext* Ctx)
 {
 	if (VP->ApplyPendingResize())
 	{
-		Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+		// 컴포넌트 OnResize 는 viewport client 가 책임진다. 파이프라인은 컴포넌트를 모름.
+		VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
 	}
 	VP->BeginRender(Ctx);
 }
 
 // ============================================================
-// BuildFrame — FFrameContext 일괄 설정
+// BuildFrame — FFrameContext 일괄 설정 (POV 통화 입력)
 // ============================================================
-void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraComponent* Camera, FViewport* VP, UWorld* World)
+void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMinimalViewInfo& POV, FViewport* VP, UWorld* World)
 {
 	Frame.ClearViewportResources();
-	Frame.SetCameraInfo(Camera);
+	Frame.SetCameraInfo(POV);
 
 	// Light View Override — 라이트 시점으로 View/Proj 교체
+	// TODO: ULightComponentBase::GetLightViewProj 가 UCameraComponent* 를 받아 — POV 로
+	//       시그니처 정리 필요. 분량이 별도 작업이라 현재는 컴포넌트 직접 참조 유지.
 	if (VC->IsViewingFromLight())
 	{
 		ULightComponentBase* Light = VC->GetLightViewOverride();
@@ -186,7 +190,7 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, UCameraCo
 		{
 			VC->ClearLightViewOverride();
 		}
-		else
+		else if (UCameraComponent* Camera = VC->GetCamera())
 		{
 			FLightViewProjResult LVP;
 			if (Light->GetLightViewProj(LVP, Camera, VC->GetPointLightFaceIndex()))

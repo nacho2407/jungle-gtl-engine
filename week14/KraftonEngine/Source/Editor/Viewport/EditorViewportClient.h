@@ -44,6 +44,10 @@ public:
 	void SetViewportType(ELevelViewportType NewType);
 	void SetViewportSize(float InWidth, float InHeight);
 
+	// 뷰포트 리사이즈 통지 — 카메라 AspectRatio 갱신.
+	// 렌더 파이프라인이 컴포넌트를 직접 안 만지도록 책임을 viewport client 로 이동.
+	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
+
 	// Camera lifecycle
 	void CreateCamera();
 	void DestroyCamera();
