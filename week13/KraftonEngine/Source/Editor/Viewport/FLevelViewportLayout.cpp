@@ -330,12 +330,10 @@ void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClien
 	{
 		ActiveViewportClient->SetActive(true);
 		UWorld* World = Editor->GetWorld();
-		// 잔여 정리: POV 통화로 등록.
-		if (World && !Editor->IsPlayingInEditor())
+		// IPOVProvider 등록 — 매 프레임 World 가 pull. PIE 중에는 PC->PlayerCameraManager 가 우선이라 fallback 등록만.
+		if (World)
 		{
-			FMinimalViewInfo POV;
-			ActiveViewportClient->GetCameraView(POV);
-			World->SetEditorActivePOV(POV);
+			World->SetEditorPOVProvider(ActiveViewportClient);
 		}
 	}
 }
@@ -359,12 +357,9 @@ void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
 		// 기존 뷰포트 타입(Ortho 방향 등)을 새 카메라에 재적용
 		VC->SetViewportType(VC->GetRenderOptions().ViewportType);
 	}
-	// 잔여 정리: POV 통화로 등록.
 	if (ActiveViewportClient && InWorld)
 	{
-		FMinimalViewInfo POV;
-		ActiveViewportClient->GetCameraView(POV);
-		InWorld->SetEditorActivePOV(POV);
+		InWorld->SetEditorPOVProvider(ActiveViewportClient);
 	}
 }
 

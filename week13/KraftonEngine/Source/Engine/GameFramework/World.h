@@ -11,6 +11,7 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "Render/Types/POVProvider.h"
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 #include "GameFramework/WorldSettings.h"
@@ -80,13 +81,14 @@ public:
 	bool IsPaused() const { return bPaused; }
 
 	// Active POV — Editor viewport / PIE-Game 의 PC->PlayerCameraManager 통합.
-	// PIE/Game 우선 (PC->PlayerCameraManager->GetActiveCamera->GetCameraView), fallback
-	// 으로 Editor 가 등록한 EditorActivePOV. true 반환 시 OutPOV 유효.
+	// PIE/Game 우선 (PC->PlayerCameraManager->GetActiveCamera->GetCameraView),
+	// fallback 으로 Editor 가 등록한 IPOVProvider 에서 pull. true 반환 시 OutPOV 유효.
 	bool GetActivePOV(FMinimalViewInfo& OutPOV) const;
 
-	// Editor viewport client 가 자기 POV 를 LOD/render 용으로 등록.
-	void SetEditorActivePOV(const FMinimalViewInfo& InPOV) { EditorActivePOV = InPOV; bHasEditorActivePOV = true; }
-	void ClearEditorActivePOV() { bHasEditorActivePOV = false; }
+	// Editor viewport client 가 LOD/render 의 POV 공급자로 자기 자신을 등록.
+	// 등록 후엔 매 GetActivePOV 호출 시 provider->GetCameraView 가 호출된다 (pull 모델).
+	// Provider 의 lifetime 은 호출자(EditorEngine) 가 책임. unregister 는 nullptr 전달.
+	void SetEditorPOVProvider(IPOVProvider* InProvider) { EditorPOVProvider = InProvider; }
 
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
@@ -102,11 +104,9 @@ private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
 
-	// E.2/3 + 잔여: CameraManager 는 PC 가 owner — World 는 보유 안 함.
-	// EditorActivePOV 는 Editor viewport 가 SetEditorActivePOV 로 등록한 LOD/render 용 POV.
-	// PIE/Game 에서도 PC 의 PlayerCameraManager 가 ActiveCamera 잡기 전엔 이 값이 fallback.
-	FMinimalViewInfo EditorActivePOV;
-	bool bHasEditorActivePOV = false;
+	// CameraManager 는 PC 가 owner. Editor 모드에서는 active viewport 가 IPOVProvider 로
+	// 자기 POV 를 노출하면 World 가 pull. 직접 POV cache 는 보유하지 않는다.
+	IPOVProvider* EditorPOVProvider = nullptr;
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bPaused = false;

@@ -108,8 +108,7 @@ APlayerController* UWorld::GetFirstPlayerController() const
 	return GameMode ? GameMode->GetPlayerController() : nullptr;
 }
 
-// 잔여 정리: ActiveCamera → POV currency.
-// PC 의 PlayerCameraManager 우선, fallback 으로 EditorActivePOV.
+// PC 의 PlayerCameraManager 우선, fallback 으로 IPOVProvider pull.
 bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 {
 	if (APlayerController* PC = GetFirstPlayerController())
@@ -123,10 +122,9 @@ bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 			}
 		}
 	}
-	if (bHasEditorActivePOV)
+	if (EditorPOVProvider)
 	{
-		OutPOV = EditorActivePOV;
-		return true;
+		return EditorPOVProvider->GetCameraView(OutPOV);
 	}
 	return false;
 }

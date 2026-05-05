@@ -370,8 +370,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
@@ -389,6 +387,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -605,8 +605,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
@@ -624,6 +622,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\UI\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
@@ -817,6 +817,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Render\Types\LightFrustumUtils.h" />
     <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h" />
     <ClInclude Include="Source\Engine\Render\Types\MinimalViewInfo.h" />
+    <ClInclude Include="Source\Engine\Render\Types\POVProvider.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
     <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
@@ -1297,11 +1298,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\CameraFade.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\CameraVignette.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
