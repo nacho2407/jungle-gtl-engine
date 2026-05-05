@@ -917,6 +917,9 @@
     <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp">
       <Filter>Source\Engine\Render\Types</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Types\MinimalViewInfo.cpp">
+      <Filter>Source\Engine\Render\Types</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp">
       <Filter>Source\Engine\Resource</Filter>
     </ClCompile>

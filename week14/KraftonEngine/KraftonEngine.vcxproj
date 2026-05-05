@@ -541,6 +541,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.cpp" />
     <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp" />
     <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Types\MinimalViewInfo.cpp" />
     <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\ActorPlacementRegistry.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />

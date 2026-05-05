@@ -1895,9 +1895,7 @@ bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FP
 	}
 
 	FLevelEditorViewportClient* ViewportClient = LevelViewportClients[SlotIndex];
-	// TODO(D): DeprojectScreenToWorld 가 컴포넌트 메서드라 컴포넌트가 SoT 인 동안엔
-	//          여기서 직접 접근. POV 기반 free 함수 헬퍼로 옮기면 정리 가능.
-	if (!ViewportClient || !ViewportClient->GetCamera())
+	if (!ViewportClient)
 	{
 		return false;
 	}
@@ -1917,7 +1915,10 @@ bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FP
 	const float LocalX = Clamp(ClientPos.X - ViewRect.X, 0.0f, VPWidth - 1.0f);
 	const float LocalY = Clamp(ClientPos.Y - ViewRect.Y, 0.0f, VPHeight - 1.0f);
 	// 클릭한 화면 좌표를 월드 레이로 바꿔 카메라 전방의 기본 배치 위치를 계산한다.
-	const FRay Ray = ViewportClient->GetCamera()->DeprojectScreenToWorld(LocalX, LocalY, VPWidth, VPHeight);
+	// POV 통화에서 직접 산출 — 컴포넌트 의존 없음 (D.1).
+	FMinimalViewInfo POV;
+	ViewportClient->GetCameraView(POV);
+	const FRay Ray = POV.DeprojectScreenToWorld(LocalX, LocalY, VPWidth, VPHeight);
 	const FVector RayDirection = Ray.Direction.Normalized();
 
 	constexpr float SpawnDistanceFromCamera = 10.0f;
