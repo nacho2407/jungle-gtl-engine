@@ -42,36 +42,6 @@ void UCameraComponent::EndPlay()
 	}
 }
 
-FMatrix UCameraComponent::GetViewMatrix() const
-{
-	UpdateWorldMatrix();
-	return FMatrix::MakeViewMatrix(GetRightVector(), GetUpVector(), GetForwardVector(), GetWorldLocation());
-}
-
-FMatrix UCameraComponent::GetProjectionMatrix() const
-{
-	if (!CameraState.bIsOrthogonal) {
-		return FMatrix::PerspectiveFovLH(CameraState.FOV, CameraState.AspectRatio, CameraState.NearZ, CameraState.FarZ);
-	}
-	else {
-		float HalfW = CameraState.OrthoWidth * 0.5f;
-		float HalfH = HalfW / CameraState.AspectRatio;
-		return FMatrix::OrthoLH(HalfW * 2.0f, HalfH * 2.0f, CameraState.NearZ, CameraState.FarZ);
-	}
-}
-
-FMatrix UCameraComponent::GetViewProjectionMatrix() const
-{
-	return GetViewMatrix() * GetProjectionMatrix();
-}
-
-FConvexVolume UCameraComponent::GetConvexVolume() const
-{
-	FConvexVolume ConvexVolume;
-	ConvexVolume.UpdateFromMatrix(GetViewMatrix() * GetProjectionMatrix());
-	return ConvexVolume;
-}
-
 void UCameraComponent::LookAt(const FVector& Target)
 {
 	FVector Position = GetWorldLocation();
@@ -110,30 +80,6 @@ void UCameraComponent::GetCameraView(float /*DeltaTime*/, FMinimalViewInfo& OutP
 	OutPOV.NearClip    = CameraState.NearZ;
 	OutPOV.FarClip     = CameraState.FarZ;
 	OutPOV.bIsOrtho    = CameraState.bIsOrthogonal;
-}
-
-FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight) {
-	float NdcX = (2.0f * MouseX) / ScreenWidth - 1.0f;
-	float NdcY = 1.0f - (2.0f * MouseY) / ScreenHeight;
-
-	// Reversed-Z: near plane = 1, far plane = 0
-	FVector NdcNear(NdcX, NdcY, 1.0f);
-	FVector NdcFar(NdcX, NdcY, 0.0f);
-
-	FMatrix ViewProj = GetViewMatrix() * GetProjectionMatrix();
-	FMatrix InverseViewProjection = ViewProj.GetInverse();
-
-	FVector WorldNear = InverseViewProjection.TransformPositionWithW(NdcNear);
-	FVector WorldFar = InverseViewProjection.TransformPositionWithW(NdcFar);
-
-	FRay Ray;
-	Ray.Origin = WorldNear;
-
-	FVector Dir = WorldFar - WorldNear;
-	float Length = std::sqrt(Dir.X * Dir.X + Dir.Y * Dir.Y + Dir.Z * Dir.Z);
-	Ray.Direction = (Length > 1e-4f) ? Dir / Length : FVector(1, 0, 0);
-
-	return Ray;
 }
 
 void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)

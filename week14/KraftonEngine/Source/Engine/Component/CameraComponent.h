@@ -1,11 +1,8 @@
 ﻿#pragma once
-#include "Engine/Core/RayTypes.h"
 #include "Object/ObjectFactory.h"
 #include "Component/SceneComponent.h"
-#include "Math/Matrix.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
-#include "Collision/ConvexVolume.h"
 
 struct FMinimalViewInfo;
 
@@ -46,18 +43,11 @@ public:
 
 	void OnResize(int32 Width, int32 Height);
 
-	FMatrix GetViewMatrix() const;
-	FMatrix GetProjectionMatrix() const;
-	FMatrix GetViewProjectionMatrix() const;
-	FConvexVolume GetConvexVolume() const;
-
 	float GetFOV() const { return CameraState.FOV; }
 	float GetNearPlane() const { return CameraState.NearZ; }
 	float GetFarPlane() const { return CameraState.FarZ; }
 	float GetOrthoWidth() const { return CameraState.OrthoWidth; }
 	bool IsOrthogonal() const { return CameraState.bIsOrthogonal; }
-
-	FRay DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight);
 
 private:
 	FCameraState CameraState;
