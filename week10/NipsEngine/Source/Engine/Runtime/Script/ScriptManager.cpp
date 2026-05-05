@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "ThirdParty/sol/sol.hpp"
+#include "ThirdParty/luajit/src/lauxlib.h"
 #include "ThirdParty/luajit/src/luajit.h"
 
 #include <Windows.h>
@@ -132,6 +133,63 @@ namespace
         return true;
     }
 
+    int LuaWidePathRequireLoader(lua_State* L)
+    {
+        const char* ModuleNameRaw = luaL_checkstring(L, 1);
+        FString ModulePath = ModuleNameRaw ? ModuleNameRaw : "";
+        if (ModulePath.empty())
+        {
+            lua_pushliteral(L, "\n\tinvalid empty module name");
+            return 1;
+        }
+
+        std::replace(ModulePath.begin(), ModulePath.end(), '.', '/');
+        std::replace(ModulePath.begin(), ModulePath.end(), '\\', '/');
+
+        fs::path Requested = fs::path(FPaths::ToWide(ModulePath + ".lua"));
+        FString TriedPaths;
+
+        TArray<fs::path> SearchRoots;
+        SearchRoots.push_back(fs::path(FPaths::RootDir()).lexically_normal());
+        for (const fs::path& ScriptDir : GetLuaScriptSearchDirs())
+        {
+            SearchRoots.push_back(ScriptDir);
+        }
+
+        for (const fs::path& ScriptDir : SearchRoots)
+        {
+            const fs::path Candidate = (ScriptDir / Requested).lexically_normal();
+            TriedPaths += "\n\tno file '" + FPaths::ToUtf8(Candidate.generic_wstring()) + "'";
+
+            if (!fs::exists(Candidate) || !fs::is_regular_file(Candidate))
+            {
+                continue;
+            }
+
+            std::ifstream File(Candidate, std::ios::binary);
+            if (!File.is_open())
+            {
+                continue;
+            }
+
+            std::ostringstream Stream;
+            Stream << File.rdbuf();
+            const FString Source = Stream.str();
+            const FString ChunkName = "@" + FPaths::ToUtf8(Candidate.generic_wstring());
+
+            const int Status = luaL_loadbuffer(L, Source.data(), Source.size(), ChunkName.c_str());
+            if (Status != 0)
+            {
+                return lua_error(L);
+            }
+
+            return 1;
+        }
+
+        lua_pushlstring(L, TriedPaths.data(), TriedPaths.size());
+        return 1;
+    }
+
     void ClearLuaRequireCache(sol::state& Lua)
     {
         sol::protected_function_result Result = Lua.safe_script(R"(
@@ -243,6 +301,21 @@ void FScriptManager::ConfigureLuaPackagePath()
     if (CurrentPath.find(ExtraPath) == FString::npos)
     {
         Package["path"] = ExtraPath + CurrentPath;
+    }
+
+    GLuaState->set_function("__NipsWidePathRequireLoader", &LuaWidePathRequireLoader);
+    sol::protected_function_result LoaderResult = GLuaState->safe_script(R"(
+        local loaders = package.searchers or package.loaders
+        if loaders and not package.__nips_wide_path_loader_installed then
+            table.insert(loaders, 1, __NipsWidePathRequireLoader)
+            package.__nips_wide_path_loader_installed = true
+        end
+    )");
+
+    if (!LoaderResult.valid())
+    {
+        sol::error Err = LoaderResult;
+        UE_LOG_WARNING("[ScriptManager] Failed to install wide-path Lua loader: %s", Err.what());
     }
 }
 

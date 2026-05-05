@@ -38,7 +38,7 @@ void FCoroutineScheduler::StartCoroutine(sol::function Function)
     }
 }
 
-void FCoroutineScheduler::Tick(float DeltaTime)
+void FCoroutineScheduler::Tick(float DeltaTime, float UnscaledDeltaTime)
 {
     bUpdating = true;
     
@@ -50,6 +50,17 @@ void FCoroutineScheduler::Tick(float DeltaTime)
         if (Coroutine.WaitType == ECoroutineWaitType::Seconds)
         {
             Coroutine.RemainingSeconds -= DeltaTime;
+            if (Coroutine.RemainingSeconds > MathUtil::Epsilon)
+            {
+                continue;
+            }
+
+            Coroutine.WaitType = ECoroutineWaitType::None;
+        }
+
+        if (Coroutine.WaitType == ECoroutineWaitType::UnscaledSeconds)
+        {
+            Coroutine.RemainingSeconds -= UnscaledDeltaTime;
             if (Coroutine.RemainingSeconds > MathUtil::Epsilon)
             {
                 continue;
@@ -203,6 +214,15 @@ void FCoroutineScheduler::ProcessYieldResult(FCoroutine& Coroutine, lua_State* T
         lua_pop(ThreadState, 1);
         
         Coroutine.WaitType = ECoroutineWaitType::Seconds;
+        Coroutine.RemainingSeconds = seconds;
+    }
+    else if (Type == "unscaled_seconds")
+    {
+        lua_getfield(ThreadState, FirstResultIndex, "value");
+        const float seconds = static_cast<float>(lua_tonumber(ThreadState, -1));
+        lua_pop(ThreadState, 1);
+
+        Coroutine.WaitType = ECoroutineWaitType::UnscaledSeconds;
         Coroutine.RemainingSeconds = seconds;
     }
     else if (Type == "frames")

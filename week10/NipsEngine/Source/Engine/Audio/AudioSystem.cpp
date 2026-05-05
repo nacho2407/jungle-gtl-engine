@@ -12,6 +12,8 @@
 #include <cctype>
 #include <fstream>
 #include <filesystem>
+#include <limits>
+#include <vector>
 
 namespace
 {
@@ -56,6 +58,28 @@ namespace
             Model,
             static_cast<int>(SoLoud::AudioSource::NO_ATTENUATION),
             static_cast<int>(SoLoud::AudioSource::EXPONENTIAL_DISTANCE));
+    }
+
+    bool LoadBinaryFileWide(const FString& Path, std::vector<unsigned char>& OutBytes)
+    {
+        OutBytes.clear();
+
+        std::ifstream File(std::filesystem::path(FPaths::ToWide(Path)), std::ios::binary | std::ios::ate);
+        if (!File.is_open())
+        {
+            return false;
+        }
+
+        const std::streamoff Size = File.tellg();
+        if (Size <= 0 || Size > static_cast<std::streamoff>(std::numeric_limits<unsigned int>::max()))
+        {
+            return false;
+        }
+
+        OutBytes.resize(static_cast<size_t>(Size));
+        File.seekg(0, std::ios::beg);
+        File.read(reinterpret_cast<char*>(OutBytes.data()), Size);
+        return File.gcount() == Size;
     }
 }
 
@@ -128,8 +152,15 @@ struct FAudioSystem::FImpl
             return nullptr;
         }
 
+        std::vector<unsigned char> Bytes;
+        if (!LoadBinaryFileWide(NormalizedPath, Bytes))
+        {
+            UE_LOG_WARNING("[AudioSystem] Failed to read SFX: %s", NormalizedPath.c_str());
+            return nullptr;
+        }
+
         auto Clip = std::make_unique<SoLoud::Wav>();
-        const SoLoud::result Result = Clip->load(NormalizedPath.c_str());
+        const SoLoud::result Result = Clip->loadMem(Bytes.data(), static_cast<unsigned int>(Bytes.size()), true, false);
         if (Result != SoLoud::SO_NO_ERROR)
         {
             UE_LOG_WARNING("[AudioSystem] Failed to load SFX: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));
@@ -161,8 +192,15 @@ struct FAudioSystem::FImpl
             return nullptr;
         }
 
+        std::vector<unsigned char> Bytes;
+        if (!LoadBinaryFileWide(NormalizedPath, Bytes))
+        {
+            UE_LOG_WARNING("[AudioSystem] Failed to read stream: %s", NormalizedPath.c_str());
+            return nullptr;
+        }
+
         auto Stream = std::make_unique<SoLoud::WavStream>();
-        const SoLoud::result Result = Stream->load(NormalizedPath.c_str());
+        const SoLoud::result Result = Stream->loadMem(Bytes.data(), static_cast<unsigned int>(Bytes.size()), true, false);
         if (Result != SoLoud::SO_NO_ERROR)
         {
             UE_LOG_WARNING("[AudioSystem] Failed to load stream: %s (%s)", NormalizedPath.c_str(), Engine.getErrorString(Result));

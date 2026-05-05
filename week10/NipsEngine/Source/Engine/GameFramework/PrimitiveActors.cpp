@@ -33,151 +33,151 @@
 
 namespace
 {
-	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
-	constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
-	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
-    constexpr const char* AttackIdTagPrefix = "AttackId:";
+constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
+constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
+constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
+constexpr const char* AttackIdTagPrefix = "AttackId:";
 
-    FString ExtractAttackIdFromTags(const AActor* Actor)
+FString ExtractAttackIdFromTags(const AActor* Actor)
+{
+    if (!Actor)
     {
-        if (!Actor)
-        {
-            return "";
-        }
-
-        constexpr size_t PrefixLength = std::char_traits<char>::length(AttackIdTagPrefix);
-        for (const FString& Tag : Actor->GetTags())
-        {
-            if (Tag.rfind(AttackIdTagPrefix, 0) == 0)
-            {
-                return Tag.substr(PrefixLength);
-            }
-        }
-
         return "";
     }
 
-    sol::table GetGameJamTable(sol::state& Lua)
+    constexpr size_t PrefixLength = std::char_traits<char>::length(AttackIdTagPrefix);
+    for (const FString& Tag : Actor->GetTags())
     {
-        sol::object GameJamObject = Lua["GameJam"];
-        if (!GameJamObject.valid() || GameJamObject.get_type() != sol::type::table)
+        if (Tag.rfind(AttackIdTagPrefix, 0) == 0)
         {
-            return sol::table();
-        }
-
-        return GameJamObject.as<sol::table>();
-    }
-
-    void NotifyGameJamFunction(sol::state& Lua, const char* FunctionName, sol::object Argument)
-    {
-        sol::table GameJam = GetGameJamTable(Lua);
-        if (!GameJam.valid())
-        {
-            return;
-        }
-
-        sol::object FunctionObject = GameJam[FunctionName];
-        if (!FunctionObject.valid() || FunctionObject.get_type() != sol::type::function)
-        {
-            return;
-        }
-
-        sol::protected_function Function = FunctionObject.as<sol::protected_function>();
-        sol::protected_function_result Result = Function(Argument);
-        if (!Result.valid())
-        {
-            sol::error Error = Result;
-            UE_LOG_WARNING("[Destructible] GameJam callback failed: %s %s", FunctionName, Error.what());
+            return Tag.substr(PrefixLength);
         }
     }
 
-    void NotifyGameJamDestructibleCut(const FString& AttackId)
+    return "";
+}
+
+sol::table GetGameJamTable(sol::state& Lua)
+{
+    sol::object GameJamObject = Lua["GameJam"];
+    if (!GameJamObject.valid() || GameJamObject.get_type() != sol::type::table)
     {
-        sol::state* Lua = FScriptManager::Get().GetGlobalLuaState();
-        if (!Lua)
-        {
-            return;
-        }
+        return sol::table();
+    }
 
-        sol::table Payload = Lua->create_table();
-        Payload["score"] = 1;
-        if (!AttackId.empty())
-        {
-            Payload["attackId"] = AttackId;
-        }
+    return GameJamObject.as<sol::table>();
+}
 
-        NotifyGameJamFunction(*Lua, "NotifyEnemyKilled", Payload);
+void NotifyGameJamFunction(sol::state& Lua, const char* FunctionName, sol::object Argument)
+{
+    sol::table GameJam = GetGameJamTable(Lua);
+    if (!GameJam.valid())
+    {
+        return;
+    }
 
-        if (!AttackId.empty())
+    sol::object FunctionObject = GameJam[FunctionName];
+    if (!FunctionObject.valid() || FunctionObject.get_type() != sol::type::function)
+    {
+        return;
+    }
+
+    sol::protected_function Function = FunctionObject.as<sol::protected_function>();
+    sol::protected_function_result Result = Function(Argument);
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        UE_LOG_WARNING("[Destructible] GameJam callback failed: %s %s", FunctionName, Error.what());
+    }
+}
+
+void NotifyGameJamDestructibleCut(const FString& AttackId)
+{
+    sol::state* Lua = FScriptManager::Get().GetGlobalLuaState();
+    if (!Lua)
+    {
+        return;
+    }
+
+    sol::table Payload = Lua->create_table();
+    Payload["score"] = 1;
+    if (!AttackId.empty())
+    {
+        Payload["attackId"] = AttackId;
+    }
+
+    NotifyGameJamFunction(*Lua, "NotifyEnemyKilled", Payload);
+
+    if (!AttackId.empty())
+    {
+        sol::object AttackIdObject = sol::make_object(*Lua, AttackId);
+        NotifyGameJamFunction(*Lua, "NotifyPlayerAttackHit", AttackIdObject);
+    }
+}
+
+bool GetProceduralMeshLocalCenter(UProceduralMeshComponent* MeshComp, FVector& OutCenter)
+{
+    if (!MeshComp)
+    {
+        return false;
+    }
+
+    bool bHasVertex = false;
+    FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    for (const UProceduralMeshComponent::FMeshSection& Section : MeshComp->GetSections())
+    {
+        for (const FNormalVertex& Vertex : Section.Vertices)
         {
-            sol::object AttackIdObject = sol::make_object(*Lua, AttackId);
-            NotifyGameJamFunction(*Lua, "NotifyPlayerAttackHit", AttackIdObject);
+            bHasVertex = true;
+            Min.X = std::min(Min.X, Vertex.Position.X);
+            Min.Y = std::min(Min.Y, Vertex.Position.Y);
+            Min.Z = std::min(Min.Z, Vertex.Position.Z);
+            Max.X = std::max(Max.X, Vertex.Position.X);
+            Max.Y = std::max(Max.Y, Vertex.Position.Y);
+            Max.Z = std::max(Max.Z, Vertex.Position.Z);
         }
     }
 
-    bool GetProceduralMeshLocalCenter(UProceduralMeshComponent* MeshComp, FVector& OutCenter)
+    if (!bHasVertex)
     {
-        if (!MeshComp)
-        {
-            return false;
-        }
-
-        bool bHasVertex = false;
-        FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
-        FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-        for (const UProceduralMeshComponent::FMeshSection& Section : MeshComp->GetSections())
-        {
-            for (const FNormalVertex& Vertex : Section.Vertices)
-            {
-                bHasVertex = true;
-                Min.X = std::min(Min.X, Vertex.Position.X);
-                Min.Y = std::min(Min.Y, Vertex.Position.Y);
-                Min.Z = std::min(Min.Z, Vertex.Position.Z);
-                Max.X = std::max(Max.X, Vertex.Position.X);
-                Max.Y = std::max(Max.Y, Vertex.Position.Y);
-                Max.Z = std::max(Max.Z, Vertex.Position.Z);
-            }
-        }
-
-        if (!bHasVertex)
-        {
-            return false;
-        }
-
-        OutCenter = (Min + Max) * 0.5f;
-        return true;
+        return false;
     }
 
-    std::mt19937& GetMainSceneDestructibleRng()
-    {
-        static std::mt19937 Rng(std::random_device{}());
-        return Rng;
-    }
+    OutCenter = (Min + Max) * 0.5f;
+    return true;
+}
 
-    float RandomRange(float Min, float Max)
-    {
-        std::uniform_real_distribution<float> Distribution(Min, Max);
-        return Distribution(GetMainSceneDestructibleRng());
-    }
+std::mt19937& GetMainSceneDestructibleRng()
+{
+    static std::mt19937 Rng(std::random_device{}());
+    return Rng;
+}
 
-    FVector RandomUnitVector()
+float RandomRange(float Min, float Max)
+{
+    std::uniform_real_distribution<float> Distribution(Min, Max);
+    return Distribution(GetMainSceneDestructibleRng());
+}
+
+FVector RandomUnitVector()
+{
+    for (int32 Attempt = 0; Attempt < 8; ++Attempt)
     {
-        for (int32 Attempt = 0; Attempt < 8; ++Attempt)
+        const FVector Candidate(
+            RandomRange(-1.0f, 1.0f),
+            RandomRange(-1.0f, 1.0f),
+            RandomRange(-1.0f, 1.0f));
+
+        if (Candidate.SizeSquared() > 0.0001f)
         {
-            const FVector Candidate(
-                RandomRange(-1.0f, 1.0f),
-                RandomRange(-1.0f, 1.0f),
-                RandomRange(-1.0f, 1.0f));
-
-            if (Candidate.SizeSquared() > 0.0001f)
-            {
-                return Candidate.GetSafeNormal();
-            }
+            return Candidate.GetSafeNormal();
         }
-
-        return FVector::UpVector;
     }
+
+    return FVector::UpVector;
+}
 }
 
 DEFINE_CLASS(ACubeActor, AActor)
@@ -189,10 +189,10 @@ REGISTER_FACTORY(ASphereActor)
 DEFINE_CLASS(APlaneActor, AActor)
 REGISTER_FACTORY(APlaneActor)
 
-DEFINE_CLASS(AAttachTestActor, AActor) 
+DEFINE_CLASS(AAttachTestActor, AActor)
 REGISTER_FACTORY(AAttachTestActor)
 
-DEFINE_CLASS(ASceneActor, AActor) 
+DEFINE_CLASS(ASceneActor, AActor)
 REGISTER_FACTORY(ASceneActor)
 
 DEFINE_CLASS(ADefaultPlayerActor, AActor)
@@ -204,16 +204,16 @@ REGISTER_FACTORY(APlayerStart)
 DEFINE_CLASS(AFogActor, AActor)
 REGISTER_FACTORY(AFogActor)
 
-DEFINE_CLASS(AStaticMeshActor, AActor) 
+DEFINE_CLASS(AStaticMeshActor, AActor)
 REGISTER_FACTORY(AStaticMeshActor)
 
-DEFINE_CLASS(ASubUVActor, AActor) 
+DEFINE_CLASS(ASubUVActor, AActor)
 REGISTER_FACTORY(ASubUVActor)
 
-DEFINE_CLASS(ATextRenderActor, AActor) 
+DEFINE_CLASS(ATextRenderActor, AActor)
 REGISTER_FACTORY(ATextRenderActor)
 
-DEFINE_CLASS(ABillboardActor, AActor) 
+DEFINE_CLASS(ABillboardActor, AActor)
 REGISTER_FACTORY(ABillboardActor)
 
 DEFINE_CLASS(ADecalActor, AActor)
@@ -260,114 +260,114 @@ REGISTER_FACTORY(ABladeSlash)
 
 void ACubeActor::InitDefaultComponents()
 {
-	auto* Cube = AddComponent<UStaticMeshComponent>();
+    auto* Cube = AddComponent<UStaticMeshComponent>();
     Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
     SetRootComponent(Cube);
 
-	// Text
-	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	Text->SetFont(FName("Default"));
-	Text->AttachToComponent(Cube);
-	Text->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
-	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    // Text
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    Text->SetFont(FName("Default"));
+    Text->AttachToComponent(Cube);
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void ASphereActor::InitDefaultComponents()
 {
-	auto* Sphere = AddComponent<UStaticMeshComponent>();
-	//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
-	SetRootComponent(Sphere);
+    auto* Sphere = AddComponent<UStaticMeshComponent>();
+    //Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+    SetRootComponent(Sphere);
 
-	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	Text->SetFont(FName("Default"));
-	Text->AttachToComponent(Sphere);
-	Text->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
-	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    Text->SetFont(FName("Default"));
+    Text->AttachToComponent(Sphere);
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void APlaneActor::InitDefaultComponents()
 {
-	auto* Plane = AddComponent<UStaticMeshComponent>();
-	Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
-	SetRootComponent(Plane);
+    auto* Plane = AddComponent<UStaticMeshComponent>();
+    Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
+    SetRootComponent(Plane);
 
-	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	Text->SetFont(FName("Default"));
-	Text->SetText(std::format("UUID: {}", GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
-	Text->AttachToComponent(Plane);
-	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    Text->SetFont(FName("Default"));
+    Text->SetText(std::format("UUID: {}", GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->AttachToComponent(Plane);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 }
 
 void AAttachTestActor::InitDefaultComponents()
 {
-	// Root: Cube
-	auto* Cube = AddComponent<UStaticMeshComponent>();
-	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
-	SetRootComponent(Cube);
+    // Root: Cube
+    auto* Cube = AddComponent<UStaticMeshComponent>();
+    Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+    SetRootComponent(Cube);
 
-	// Grouping node for spheres
-	auto* Primitives = AddComponent<USceneComponent>();
-	Primitives->AttachToComponent(Cube);
+    // Grouping node for spheres
+    auto* Primitives = AddComponent<USceneComponent>();
+    Primitives->AttachToComponent(Cube);
 
-	// 4 Spheres in a square pattern
-	constexpr float Offset = 2.0f;
-	const FVector Positions[4] = {
-		{ -Offset, -Offset, 0.0f },
-		{  Offset, -Offset, 0.0f },
-		{  Offset,  Offset, 0.0f },
-		{ -Offset,  Offset, 0.0f },
-	};
-	for (int i = 0; i < 4; ++i)
-	{
-		auto* Sphere = AddComponent<UStaticMeshComponent>();
-		//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
-		Sphere->AttachToComponent(Primitives);
-		Sphere->SetRelativeLocation(Positions[i]);
-	}
+    // 4 Spheres in a square pattern
+    constexpr float Offset = 2.0f;
+    const FVector Positions[4] = {
+        { -Offset, -Offset, 0.0f },
+        { Offset, -Offset, 0.0f },
+        { Offset, Offset, 0.0f },
+        { -Offset, Offset, 0.0f },
+    };
+    for (int i = 0; i < 4; ++i)
+    {
+        auto* Sphere = AddComponent<UStaticMeshComponent>();
+        //Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+        Sphere->AttachToComponent(Primitives);
+        Sphere->SetRelativeLocation(Positions[i]);
+    }
 
-	// Text attached directly to Root
-	auto* Text = AddComponent<UTextRenderComponent>();
-	Text->AttachToComponent(Cube);
-	Text->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
-	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
+    // Text attached directly to Root
+    auto* Text = AddComponent<UTextRenderComponent>();
+    Text->AttachToComponent(Cube);
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
 }
 
 void ASceneActor::InitDefaultComponents()
 {
-	auto SceneRoot = AddComponent<USceneComponent>();
-	SetRootComponent(SceneRoot);
+    auto SceneRoot = AddComponent<USceneComponent>();
+    SetRootComponent(SceneRoot);
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->AttachToComponent(SceneRoot);
-	Billboard->SetEditorOnly(true);
-	Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(SceneRoot);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
 }
 
 void ADefaultPlayerActor::InitDefaultComponents()
 {
-	auto* SceneRoot = AddComponent<USceneComponent>();
-	SetRootComponent(SceneRoot);
+    auto* SceneRoot = AddComponent<USceneComponent>();
+    SetRootComponent(SceneRoot);
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->AttachToComponent(SceneRoot);
-	Billboard->SetEditorOnly(true);
-	Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(SceneRoot);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName("Asset/Texture/Pawn_64x.png");
 
-	auto* BodySection = AddComponent<USceneComponent>();
+    auto* BodySection = AddComponent<USceneComponent>();
     BodySection->AttachToComponent(SceneRoot);
     BodySection->SetRelativeScale(FVector(1, 1, 1));
     BodySection->SetRelativeRotation(FVector(0, 15.9, 13.1f));
     BodySection->SetRelativeLocation(FVector(0.2, 0.5, 1.3));
 
-	auto* KatanaComp = AddComponent<UStaticMeshComponent>();
+    auto* KatanaComp = AddComponent<UStaticMeshComponent>();
     KatanaComp->AttachToComponent(BodySection);
     KatanaComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_katana/katana.obj"));
     KatanaComp->SetRelativeScale(FVector(3, 3, 1));
@@ -375,7 +375,7 @@ void ADefaultPlayerActor::InitDefaultComponents()
     KatanaComp->SetRelativeLocation(FVector(0.52, -0.8, 0));
     KatanaComp->SetEnableCull(false);
 
-	auto* ArmComp = AddComponent<UStaticMeshComponent>();
+    auto* ArmComp = AddComponent<UStaticMeshComponent>();
     ArmComp->AttachToComponent(BodySection);
     ArmComp->SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/cyberpunk_arm/cyberpunk_arm_right.obj"));
     ArmComp->SetRelativeScale(FVector(1, 1, 1));
@@ -383,17 +383,17 @@ void ADefaultPlayerActor::InitDefaultComponents()
     ArmComp->SetRelativeLocation(FVector(0, 0, 0));
     ArmComp->SetEnableCull(false);
 
-	SpringArmComp = AddComponent<USpringArmComponent>();
-	SpringArmComp->AttachToComponent(SceneRoot);
-	SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
-	SpringArmComp->SetTargetArmLength(0.f);
-	SpringArmComp->SetSocketOffset(FVector::ZeroVector);
+    SpringArmComp = AddComponent<USpringArmComponent>();
+    SpringArmComp->AttachToComponent(SceneRoot);
+    SpringArmComp->SetRelativeLocation(FVector(0.0f, 0.0f, 1.6f));
+    SpringArmComp->SetTargetArmLength(0.f);
+    SpringArmComp->SetSocketOffset(FVector::ZeroVector);
 
-	CameraComp = AddComponent<UCameraComponent>();
-	CameraComp->AttachToComponent(SpringArmComp);
-	CameraComp->SetRelativeLocation(SpringArmComp->GetSocketLocalLocation());
-	CameraComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-	SpringArmComp->UpdateSocketChildren();
+    CameraComp = AddComponent<UCameraComponent>();
+    CameraComp->AttachToComponent(SpringArmComp);
+    CameraComp->SetRelativeLocation(SpringArmComp->GetSocketLocalLocation());
+    CameraComp->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+    SpringArmComp->UpdateSocketChildren();
 }
 
 void ADefaultPlayerActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -403,12 +403,21 @@ void ADefaultPlayerActor::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 
 void ADefaultPlayerActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
-    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
-	if (Enemy && Enemy->GetSliceCount() == 0)
-	{
+    // // 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
+    //    ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
+    // if (Enemy && Enemy->GetSliceCount() == 0)
+    // {
+    //        AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+    // }
+    if (!OtherActor)
+    {
+        return;
+    }
+
+    if (OtherActor->HasTag("Enemy") || OtherActor->HasTag("BoundingBox") || OtherActor->HasTag("Wall"))
+    {
         AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-	}
+    }
 }
 
 void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -416,38 +425,38 @@ void ADefaultPlayerActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent,
     // 적에 대해서만 Overlap 수행 (현재는 적이 Destructible 로만 구성됨)
     ADestructibleActor* Enemy = Cast<ADestructibleActor>(OtherActor);
     if (Enemy && Enemy->GetSliceCount() == 0)
-		AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+        AActor::OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void APlayerStart::InitDefaultComponents()
 {
-	auto* SceneRoot = AddComponent<USceneComponent>();
-	SetRootComponent(SceneRoot);
+    auto* SceneRoot = AddComponent<USceneComponent>();
+    SetRootComponent(SceneRoot);
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->AttachToComponent(SceneRoot);
-	Billboard->SetEditorOnly(true);
-	Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(SceneRoot);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName("Asset/Texture/PlayerStart_64x.PNG");
 }
 
 void AFogActor::InitDefaultComponents()
 {
-	UHeightFogComponent* Fog = AddComponent<UHeightFogComponent>();
-	Fog->SetFogDensity(0.02f);
-	Fog->SetHeightFalloff(0.2f);
-	Fog->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
-	Fog->SetFogHeight(0.0f);
-	Fog->SetFogStartDistance(0.0f);
-	Fog->SetFogCutoffDistance(10000.0f);
-	Fog->SetFogMaxOpacity(1.0f);
-	SetRootComponent(Fog);
-	FogComp = Fog;
+    UHeightFogComponent* Fog = AddComponent<UHeightFogComponent>();
+    Fog->SetFogDensity(0.02f);
+    Fog->SetHeightFalloff(0.2f);
+    Fog->SetFogInscatteringColor(FVector4(0.72f, 0.8f, 0.9f, 1.0f));
+    Fog->SetFogHeight(0.0f);
+    Fog->SetFogStartDistance(0.0f);
+    Fog->SetFogCutoffDistance(10000.0f);
+    Fog->SetFogMaxOpacity(1.0f);
+    SetRootComponent(Fog);
+    FogComp = Fog;
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->AttachToComponent(Fog);
-	Billboard->SetEditorOnly(true);
-	Billboard->SetTextureName("Asset/Texture/ExpoHeightFog_64x.png");
-	BillboardComp = Billboard;
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(Fog);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName("Asset/Texture/ExpoHeightFog_64x.png");
+    BillboardComp = Billboard;
 }
 
 void ASceneActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -471,37 +480,37 @@ void ASceneActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 void AStaticMeshActor::InitDefaultComponents()
 {
-	auto* StaticMesh = AddComponent<UStaticMeshComponent>();
-	SetRootComponent(StaticMesh);
+    auto* StaticMesh = AddComponent<UStaticMeshComponent>();
+    SetRootComponent(StaticMesh);
 
-	// Text attached directly to Root
-	auto* Text = AddComponent<UTextRenderComponent>();
-	Text->AttachToComponent(StaticMesh);
-	Text->SetFont(FName("Default"));
-	Text->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
+    // Text attached directly to Root
+    auto* Text = AddComponent<UTextRenderComponent>();
+    Text->AttachToComponent(StaticMesh);
+    Text->SetFont(FName("Default"));
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
 
-	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
-	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+    FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
 }
 
 void ASubUVActor::InitDefaultComponents()
 {
-	SetTickInEditor(true); // Editor Tick을 받도록 변경
+    SetTickInEditor(true); // Editor Tick을 받도록 변경
 
     auto* SubUV = AddComponent<USubUVComponent>();
     SetRootComponent(SubUV);
-	SubUV->SetParticle(FName("Explosion"));
-	SubUV->SetSpriteSize(2.0f, 2.0f);
-	SubUV->SetFrameRate(30.f);
-    
+    SubUV->SetParticle(FName("Explosion"));
+    SubUV->SetSpriteSize(2.0f, 2.0f);
+    SubUV->SetFrameRate(30.f);
+
     auto* Text = AddComponent<UTextRenderComponent>();
     Text->AttachToComponent(SubUV);
     Text->SetFont(FName("Default"));
     Text->SetText("UUID: " + std::to_string(GetUUID()));
-	Text->SetTransient(true);
-	Text->SetEditorOnly(true);
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
 
     FVector Extent = SubUV->GetWorldAABB().GetExtent();
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
@@ -509,35 +518,35 @@ void ASubUVActor::InitDefaultComponents()
 
 void ATextRenderActor::InitDefaultComponents()
 {
-	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
-	SetRootComponent(Text);
-	Text->SetFont(FName("Default"));
-	Text->SetText("TextRender");
-    
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    SetRootComponent(Text);
+    Text->SetFont(FName("Default"));
+    Text->SetText("TextRender");
+
     auto* TextUUID = AddComponent<UTextRenderComponent>();
     TextUUID->AttachToComponent(Text);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	TextUUID->SetTransient(true);
-	TextUUID->SetEditorOnly(true);
+    TextUUID->SetTransient(true);
+    TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void ABillboardActor::InitDefaultComponents()
-{	
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	SetRootComponent(Billboard);
-	Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
-	//Billboard->SetTextureName();
+{
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    SetRootComponent(Billboard);
+    Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+    //Billboard->SetTextureName();
 
     auto* TextUUID = AddComponent<UTextRenderComponent>();
     TextUUID->AttachToComponent(Billboard);
     TextUUID->SetFont(FName("Default"));
     TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	TextUUID->SetTransient(true);
-	TextUUID->SetEditorOnly(true);
+    TextUUID->SetTransient(true);
+    TextUUID->SetEditorOnly(true);
 
     FVector Extent = TextUUID->GetWorldAABB().GetExtent();
     TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
@@ -545,33 +554,33 @@ void ABillboardActor::InitDefaultComponents()
 
 void ADecalActor::InitDefaultComponents()
 {
-	UDecalComponent* Decal = AddComponent<UDecalComponent>();
-	SetRootComponent(Decal);
+    UDecalComponent* Decal = AddComponent<UDecalComponent>();
+    SetRootComponent(Decal);
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
-	Billboard->AttachToComponent(Decal);
-	Billboard->SetEditorOnly(true);
-	Billboard->SetTextureName(("Asset/Texture/DecalActor_64.png"));
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->AttachToComponent(Decal);
+    Billboard->SetEditorOnly(true);
+    Billboard->SetTextureName(("Asset/Texture/DecalActor_64.png"));
 
-	auto* TextUUID = AddComponent<UTextRenderComponent>();
-	TextUUID->AttachToComponent(Decal);
-	TextUUID->SetFont(FName("Default"));
-	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
-	TextUUID->SetTransient(true);
-	TextUUID->SetEditorOnly(true);
-	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
-	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(Decal);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+    TextUUID->SetTransient(true);
+    TextUUID->SetEditorOnly(true);
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
 }
 
 void AFireballActor::InitDefaultComponents()
 {
-	// Base for debugging and demonstration. Remove this later
+    // Base for debugging and demonstration. Remove this later
     auto* Sphere = AddComponent<UStaticMeshComponent>();
     Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(FireballMeshPath));
-	Sphere->SetEnableCull(false);
+    Sphere->SetEnableCull(false);
     SetRootComponent(Sphere);
 
-	// Nametag
+    // Nametag
     UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
     Text->SetFont(FName("Default"));
     Text->AttachToComponent(Sphere);
@@ -580,40 +589,41 @@ void AFireballActor::InitDefaultComponents()
     Text->SetEditorOnly(true);
     Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
 
-	// Flare
+    // Flare
     UFireballComponent* Fireball = AddComponent<UFireballComponent>();
-	Fireball->AttachToComponent(Sphere);
+    Fireball->AttachToComponent(Sphere);
 }
 
-void ADecalSpotLightActor::InitDefaultComponents() {
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+void ADecalSpotLightActor::InitDefaultComponents()
+{
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
-	Billboard->SetEditorOnly(true);
-	SetRootComponent(Billboard);
+    Billboard->SetEditorOnly(true);
+    SetRootComponent(Billboard);
 
-	UDecalComponent* Decal = AddComponent<UDecalComponent>();
-	Decal->AttachToComponent(Billboard);
-	Decal->SetRelativeLocation(FVector(10, 0, 0));
-	DecalComp = Decal;
+    UDecalComponent* Decal = AddComponent<UDecalComponent>();
+    Decal->AttachToComponent(Billboard);
+    Decal->SetRelativeLocation(FVector(10, 0, 0));
+    DecalComp = Decal;
 
-	UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
-	if (DecalMat == nullptr)
-	{
-		UMaterial* DecalOriginMat = FResourceManager::Get().GetMaterial("DecalMat");
-		DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
-	}
-	Decal->SetMaterial(DecalMat);
-	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+    UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
+    if (DecalMat == nullptr)
+    {
+        UMaterial* DecalOriginMat = FResourceManager::Get().GetMaterial("DecalMat");
+        DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
+    }
+    Decal->SetMaterial(DecalMat);
+    DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
 }
 
 void ADecalSpotLightActor::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+    AActor::Tick(DeltaTime);
 
-	if (DecalComp)
-	{
-		DecalComp->SetSize(FVector(Range, Range, Range));
-	}
+    if (DecalComp)
+    {
+        DecalComp->SetSize(FVector(Range, Range, Range));
+    }
 }
 
 ULightComponent* ALightActor::GetLight() const
@@ -632,103 +642,104 @@ void ALightActor::SetLight(ULightComponent* InLight)
 void AAmbientLightActor::InitDefaultComponents()
 {
     UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
-	Ambient->Intensity = 0.2f;
-	SetRootComponent(Ambient);
+    Ambient->Intensity = 0.2f;
+    SetRootComponent(Ambient);
 
     UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName("Asset/Texture/SkyLight_64x.png");
     Billboard->AttachToComponent(Ambient);
-	Billboard->SetEditorOnly(true);
+    Billboard->SetEditorOnly(true);
 
     SetLight(Ambient);
-	SetBillboard(Billboard);
+    SetBillboard(Billboard);
 }
 
 void AAmbientLightActor::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+    AActor::Tick(DeltaTime);
 
-	if (BillboardComp)
-	{
-		BillboardComp->SetColor(GetLight()->LightColor);
-	}
+    if (BillboardComp)
+    {
+        BillboardComp->SetColor(GetLight()->LightColor);
+    }
 }
 
 void ADirectionalLightActor::InitDefaultComponents()
 {
-	SetTickInEditor(true);
+    SetTickInEditor(true);
 
-	UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
-	SetRootComponent(Directional);
+    UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
+    SetRootComponent(Directional);
 
     UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset\\Texture\\DirectionalLight_64x.png"));
-	Billboard->AttachToComponent(Directional);
-	Billboard->SetEditorOnly(true);
+    Billboard->AttachToComponent(Directional);
+    Billboard->SetEditorOnly(true);
 
     SetLight(Directional);
-	SetBillboard(Billboard);
+    SetBillboard(Billboard);
 }
 
 void ADirectionalLightActor::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+    AActor::Tick(DeltaTime);
 
-	if (BillboardComp)
-	{
-		BillboardComp->SetColor(GetLight()->LightColor);
-	}
+    if (BillboardComp)
+    {
+        BillboardComp->SetColor(GetLight()->LightColor);
+    }
 }
 
 void APointLightActor::InitDefaultComponents()
 {
-	SetTickInEditor(true);
+    SetTickInEditor(true);
 
-	UPointLightComponent* Point = AddComponent<UPointLightComponent>();
-	SetRootComponent(Point);
+    UPointLightComponent* Point = AddComponent<UPointLightComponent>();
+    SetRootComponent(Point);
 
     UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset\\Texture\\PointLight_64x.png"));
-	Billboard->AttachToComponent(Point);
-	Billboard->SetEditorOnly(true);
+    Billboard->AttachToComponent(Point);
+    Billboard->SetEditorOnly(true);
 
     SetLight(Point);
-	SetBillboard(Billboard);
+    SetBillboard(Billboard);
 }
 
 void APointLightActor::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+    AActor::Tick(DeltaTime);
 
-	if (BillboardComp)
-	{
-		BillboardComp->SetColor(GetLight()->LightColor);
-	}
+    if (BillboardComp)
+    {
+        BillboardComp->SetColor(GetLight()->LightColor);
+    }
 }
 
-void ASpotlightActor::InitDefaultComponents() {
-	SetTickInEditor(true);
+void ASpotlightActor::InitDefaultComponents()
+{
+    SetTickInEditor(true);
 
-	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
-	SetRootComponent(Spot);
+    USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
+    SetRootComponent(Spot);
 
     UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
-	Billboard->AttachToComponent(Spot);
-	Billboard->SetEditorOnly(true);
+    Billboard->AttachToComponent(Spot);
+    Billboard->SetEditorOnly(true);
 
-	SetLight(Spot);
-	SetBillboard(Billboard);
+    SetLight(Spot);
+    SetBillboard(Billboard);
 }
 
-void ASpotlightActor::Tick(float DeltaTime) 
+void ASpotlightActor::Tick(float DeltaTime)
 {
-	AActor::Tick(DeltaTime);
+    AActor::Tick(DeltaTime);
 
-	if (BillboardComp)
-	{
-		BillboardComp->SetColor(GetLight()->LightColor);
-	}
+    if (BillboardComp)
+    {
+        BillboardComp->SetColor(GetLight()->LightColor);
+    }
 }
 
 void ABullet::InitDefaultComponents()
@@ -738,7 +749,7 @@ void ABullet::InitDefaultComponents()
     Sphere->SetRelativeScale(FVector(0.5, 0.5, 0.5));
     SetRootComponent(Sphere);
 
-	auto* BoxComp = AddComponent<UBoxComponent>();
+    auto* BoxComp = AddComponent<UBoxComponent>();
     BoxComp->AttachToComponent(GetRootComponent());
     BoxComp->SetGenerateOverlapEvents(true);
 
@@ -756,7 +767,7 @@ void ABullet::Tick(float DeltaTime)
 void ABullet::SetProjectileVelocity(FVector NewVelocity)
 {
     if (ProjectileComp)
-	    ProjectileComp->SetVelocity(NewVelocity);
+        ProjectileComp->SetVelocity(NewVelocity);
 }
 
 void ADestructibleActor::InitDestructibleActor(UStaticMesh* InStaticMesh)
@@ -785,7 +796,7 @@ void ADestructibleActor::InitDestructibleActor(UProceduralMeshComponent* InProcM
 
     BoxComponent = AddComponent<UBoxComponent>();
     BoxComponent->AttachToComponent(GetRootComponent());
-	// 잘린 애들을 무한히 자를 수 없게 제한
+    // 잘린 애들을 무한히 자를 수 없게 제한
     BoxComponent->SetGenerateOverlapEvents(true);
 
     ProjMoveComp = AddComponent<UProjectileMovementComponent>();
@@ -836,8 +847,8 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
     // 메쉬 로컬 공간으로 변환
     FTransform MeshTransform = ProcMeshComp->GetWorldTransform();
 
-	FQuat MeshRotation = MeshTransform.GetRotation();
-    FMatrix RotationMatrix = MeshRotation.ToMatrix();    
+    FQuat MeshRotation = MeshTransform.GetRotation();
+    FMatrix RotationMatrix = MeshRotation.ToMatrix();
 
     // 노멀은 회전만으로 역변환 (회전행렬은 직교행렬이라 전치 = 역행렬)
     FVector N_Local = RotationMatrix.GetTransposed().TransformVector(N_World).GetSafeNormal();
@@ -886,8 +897,8 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         Actor1->ProjMoveComp->SetVelocity(N_World * 5);
         Actor2->ProjMoveComp->SetVelocity(-N_World * 5);
 
-		uint32 NewSliceCount = GetSliceCount() + 1;
-		Actor1->SetSliceCount(NewSliceCount);
+        uint32 NewSliceCount = GetSliceCount() + 1;
+        Actor1->SetSliceCount(NewSliceCount);
         Actor2->SetSliceCount(NewSliceCount);
 
         NotifyGameJamDestructibleCut(ExtractAttackIdFromTags(OtherActor));
@@ -895,8 +906,8 @@ void ADestructibleActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
         OtherActor->MarkPendingKill();
         this->MarkPendingKill();
     }
-	
-	UObjectManager::Get().DestroyObject(TempMesh1);
+
+    UObjectManager::Get().DestroyObject(TempMesh1);
     UObjectManager::Get().DestroyObject(TempMesh2);
 }
 
@@ -906,17 +917,18 @@ void ADestructibleActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, 
 
 void ADestructibleActor::PostDuplicate(UObject* Original)
 {
-	// 해당 함수에서 모든 걸 복사하기 때문에 추가로 복사를 고려할 필요 없음
+    // 해당 함수에서 모든 걸 복사하기 때문에 추가로 복사를 고려할 필요 없음
     AActor::PostDuplicate(Original);
 
-	// 복사된 것중 필요한 Comp 만 연결하는 과정
+    // 복사된 것중 필요한 Comp 만 연결하는 과정
     ProcMeshComp = nullptr;
     BoxComponent = nullptr;
     ProjMoveComp = nullptr;
 
     for (UActorComponent* Comp : GetComponents())
     {
-        if (!Comp) continue;
+        if (!Comp)
+            continue;
         if (ProcMeshComp == nullptr && Comp->IsA<UProceduralMeshComponent>())
         {
             ProcMeshComp = static_cast<UProceduralMeshComponent*>(Comp);
@@ -925,12 +937,13 @@ void ADestructibleActor::PostDuplicate(UObject* Original)
         {
             BoxComponent = static_cast<UBoxComponent*>(Comp);
         }
-		else if (ProjMoveComp == nullptr && Comp->IsA<UProjectileMovementComponent>())
-		{
+        else if (ProjMoveComp == nullptr && Comp->IsA<UProjectileMovementComponent>())
+        {
             ProjMoveComp = static_cast<UProjectileMovementComponent*>(Comp);
-		}
+        }
 
-        if (ProcMeshComp && BoxComponent && ProjMoveComp) break;
+        if (ProcMeshComp && BoxComponent && ProjMoveComp)
+            break;
     }
 }
 
@@ -1067,12 +1080,12 @@ void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDesc
 {
     UActorComponent::GetEditableProperties(OutProps);
 
-    OutProps.push_back({"Auto Start", EPropertyType::Bool, &bAutoStart});
-    OutProps.push_back({"Slice Duration", EPropertyType::Float, &SliceDuration, 0.05f, 10.0f, 0.05f});
-    OutProps.push_back({"Slice Speed", EPropertyType::Float, &SliceSpeed, 0.0f, 10.0f, 0.05f});
-    OutProps.push_back({"Patrol Amplitude", EPropertyType::Float, &PatrolAmplitude, 0.0f, 10.0f, 0.01f});
-    OutProps.push_back({"Patrol Speed", EPropertyType::Float, &PatrolSpeed, 0.0f, 20.0f, 0.05f});
-    OutProps.push_back({"Slice Count", EPropertyType::Int, &SliceCount, 1.0f, 12.0f, 1.0f});
+    OutProps.push_back({ "Auto Start", EPropertyType::Bool, &bAutoStart });
+    OutProps.push_back({ "Slice Duration", EPropertyType::Float, &SliceDuration, 0.05f, 10.0f, 0.05f });
+    OutProps.push_back({ "Slice Speed", EPropertyType::Float, &SliceSpeed, 0.0f, 10.0f, 0.05f });
+    OutProps.push_back({ "Patrol Amplitude", EPropertyType::Float, &PatrolAmplitude, 0.0f, 10.0f, 0.01f });
+    OutProps.push_back({ "Patrol Speed", EPropertyType::Float, &PatrolSpeed, 0.0f, 20.0f, 0.05f });
+    OutProps.push_back({ "Slice Count", EPropertyType::Int, &SliceCount, 1.0f, 12.0f, 1.0f });
 }
 
 float UMainSceneDestructibleComponent::GetRealDeltaTime(float DeltaTime) const
@@ -1353,7 +1366,7 @@ void ABladeSlash::InitDefaultComponents()
     Root->SetGenerateOverlapEvents(true);
     SetRootComponent(Root);
 
-	// Slash 경로 시각화 용도
+    // Slash 경로 시각화 용도
     //auto* Cube = AddComponent<UStaticMeshComponent>();
     //Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
     //Cube->AttachToComponent(Root);
@@ -1373,7 +1386,7 @@ void ABoundsBoxActor::InitDefaultComponents()
     SetRootComponent(BoxComponent);
     SetTagsFromText("BoundingBox");
 
-	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
     Billboard->AttachToComponent(BoxComponent);
     Billboard->SetEditorOnly(true);
     Billboard->SetTextureName("Asset/Texture/EmptyActor.png");
@@ -1390,11 +1403,11 @@ void ABoundsBoxActor::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActo
 
 void ABoundsBoxActor::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//Enemy거나 Player일때만 Overlap Event
+    //Enemy거나 Player일때만 Overlap Event
     if (!OtherActor->IsA<ADestructibleActor>() && !OtherActor->IsA<ADefaultPlayerActor>())
         return;
 
-	AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+    AActor::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void ABoundsBoxActor::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -1413,10 +1426,11 @@ void ABoundsBoxActor::PostDuplicate(UObject* Original)
     {
         if (!Comp)
             continue;
-		if (BoxComponent == nullptr && Comp->IsA<UBoxComponent>())
+        if (BoxComponent == nullptr && Comp->IsA<UBoxComponent>())
         {
             BoxComponent = static_cast<UBoxComponent*>(Comp);
         }
-        if (BoxComponent) break;
+        if (BoxComponent)
+            break;
     }
 }

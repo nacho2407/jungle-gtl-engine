@@ -111,7 +111,7 @@
     "EditorOnly" : false,
     "Name" : "ADEnemy",
     "RootComponent" : 5872,
-    "Tags" : [],
+    "Tags" : ["Enemy"],
     "UUID" : 5871,
     "Visible" : true
   },

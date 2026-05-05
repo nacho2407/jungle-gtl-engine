@@ -6,6 +6,7 @@ enum class ECoroutineWaitType
 {
     None,
     Seconds,
+    UnscaledSeconds,
     Frames,
 };
 

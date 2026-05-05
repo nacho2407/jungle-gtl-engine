@@ -153,7 +153,7 @@ function SoundManager:PlayPlayerDash()
 end
 
 function SoundManager:PlayPlayerHit()
-    self:PlaySFX(self.SFX.PlayerHit)
+    self:PlaySFX(self.SFX.PlayerHit, 1.0)
 end
 
 function SoundManager:PlayPlayerRecover()

@@ -778,7 +778,7 @@ function UIManager:SetCombo(snapshot)
     self:SetCachedText("HUD.ComboCount", tostring(count) .. " COMBO")
     self:SetCachedAlpha("HUD.ComboWrap", snapshot.alpha or 1.0)
     self:SetCachedStyle("HUD.ComboWrap", "right", tostring(44 + (snapshot.shakeOffset or 0.0)) .. "px")
-    self:SetCachedStyle("HUD.ComboWrap", "top", tostring(94 + (snapshot.offsetY or 0.0)) .. "px")
+    self:SetCachedStyle("HUD.ComboWrap", "top", tostring(179 + (snapshot.offsetY or 0.0)) .. "px")
 end
 
 function UIManager:SetResult(snapshot)

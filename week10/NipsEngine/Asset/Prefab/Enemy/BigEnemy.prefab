@@ -103,7 +103,7 @@
     "EditorOnly" : false,
     "Name" : "BigEnemy",
     "RootComponent" : 5877,
-    "Tags" : [],
+    "Tags" : ["Enemy"],
     "UUID" : 5876,
     "Visible" : true
   },

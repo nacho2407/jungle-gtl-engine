@@ -32,8 +32,8 @@ body
     position: absolute;
     left: 34px;
     top: 18px;
-    width: 382px;
-    height: 62px;
+    width: 555px;
+    height: 93px;
 }
 
 .hp-icon
@@ -41,27 +41,27 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 62px;
-    height: 62px;
+    width: 93px;
+    height: 93px;
 }
 
 .hp-bar-wrap
 {
     position: absolute;
-    left: 70px;
-    top: 10px;
-    width: 300px;
-    height: 42px;
+    left: 105px;
+    top: 15px;
+    width: 450px;
+    height: 63px;
     decorator: image("Asset/UIImage/HPLine.PNG" fill);
 }
 
 .health-bar
 {
     position: absolute;
-    left: 14px;
-    top: 11px;
-    width: 272px;
-    height: 20px;
+    left: 6px;
+    top: 7px;
+    width: 438px;
+    height: 48px;
     background-color: rgba(24, 26, 29, 210);
     border-width: 0px;
 }
@@ -76,22 +76,22 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 300px;
-    height: 42px;
-    line-height: 42px;
+    width: 450px;
+    height: 63px;
+    line-height: 63px;
     text-align: center;
     color: rgb(255, 244, 226);
-    font-size: 18px;
+    font-size: 27px;
 }
 
 .timer-wrap
 {
     position: absolute;
     left: 50%;
-    margin-left: -100px;
-    top: 31px;
-    width: 200px;
-    height: 36px;
+    margin-left: -150px;
+    top: 38px;
+    width: 300px;
+    height: 54px;
 }
 
 .timer-bg
@@ -99,8 +99,8 @@ body
     position: absolute center;
     left: 0px;
     top: 0px;
-    width: 200px;
-    height: 36px;
+    width: 300px;
+    height: 54px;
 }
 
 .timer-text
@@ -108,12 +108,12 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 200px;
-    height: 36px;
-    line-height: 36px;
+    width: 300px;
+    height: 54px;
+    line-height: 54px;
     text-align: center;
     color: rgb(255, 145, 48);
-    font-size: 22px;
+    font-size: 33px;
     font-weight: bold;
 }
 
@@ -121,9 +121,9 @@ body
 {
     position: absolute;
     right: 44px;
-    top: 35px;
-    width: 200px;
-    height: 34px;
+    top: 31px;
+    width: 400px;
+    height: 68px;
 }
 
 .score-bg
@@ -131,35 +131,35 @@ body
     position: absolute;
     left: 0px;
     top: 0px;
-    width: 200px;
-    height: 34px;
+    width: 400px;
+    height: 68px;
 }
 
 .score-text
 {
     position: absolute;
-    left: 10px;
+    left: 20px;
     top: 0px;
-    width: 180px;
-    height: 34px;
-    line-height: 34px;
+    width: 360px;
+    height: 68px;
+    line-height: 68px;
     text-align: center;
     color: rgb(255, 248, 232);
-    font-size: 18px;
+    font-size: 36px;
     font-weight: bold;
 }
 
 .bonus-text
 {
     position: absolute;
-    left: 10px;
-    top: 38px;
-    width: 180px;
-    height: 26px;
-    line-height: 26px;
+    left: 20px;
+    top: 76px;
+    width: 360px;
+    height: 34px;
+    line-height: 34px;
     text-align: center;
     color: rgb(255, 237, 120);
-    font-size: 16px;
+    font-size: 24px;
     font-weight: bold;
 }
 
@@ -167,20 +167,20 @@ body
 {
     position: absolute;
     right: 44px;
-    top: 94px;
-    width: 340px;
-    height: 58px;
+    top: 179px;
+    width: 510px;
+    height: 87px;
     text-align: right;
 }
 
 .combo-count
 {
-    width: 340px;
-    height: 58px;
-    line-height: 58px;
+    width: 510px;
+    height: 87px;
+    line-height: 87px;
     color: rgb(255, 255, 255);
     font-family: "Glitch Goblin";
-    font-size: 42px;
+    font-size: 63px;
     font-weight: normal;
 }
 

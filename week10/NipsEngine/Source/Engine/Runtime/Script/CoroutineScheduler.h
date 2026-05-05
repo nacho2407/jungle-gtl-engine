@@ -6,7 +6,7 @@ class FCoroutineScheduler
 {
 public:
     void StartCoroutine(sol::function Function);
-    void Tick(float DeltaTime);
+    void Tick(float DeltaTime, float UnscaledDeltaTime);
     void StopAll();
     
 private:

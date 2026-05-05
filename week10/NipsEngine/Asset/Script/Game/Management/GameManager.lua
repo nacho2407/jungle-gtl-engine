@@ -348,12 +348,12 @@ function GameManager:Tick(dt)
         return
     end
 
-    if self.timeSlowActive then
-        local realDt = Engine.API.World.GetUnscaledDeltaTime()
-        if realDt <= 0.0 then
-            realDt = dt or 0.0
-        end
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
+    if realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
 
+    if self.timeSlowActive then
         self.timeSlowRemaining = math.max(0.0, self.timeSlowRemaining - realDt)
         if self.timeSlowRemaining <= 0.0 then
             self:StopTimeSlow(true)
@@ -361,10 +361,10 @@ function GameManager:Tick(dt)
     end
 
     if self.invulnerableRemaining > 0.0 then
-        self.invulnerableRemaining = math.max(0.0, self.invulnerableRemaining - (dt or 0.0))
+        self.invulnerableRemaining = math.max(0.0, self.invulnerableRemaining - realDt)
     end
 
-    self.survivalTime = self.survivalTime + (dt or 0.0)
+    self.survivalTime = self.survivalTime + realDt
     self:RecalculateScore()
 
     local limit = self.context.root.SessionLimitSeconds or 5.0

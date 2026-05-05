@@ -41,6 +41,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.SetViewportSize(FVector2(static_cast<float>(FrameWidth), static_cast<float>(FrameHeight)));
 		Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
 		Bus.SetFXAAEnabled(true);
+		Bus.bSandevistanEnabled = World->IsSandervistanActivated();
+		Bus.SandevistanIntensity = Bus.bSandevistanEnabled ? 1.0f : 0.0f;
 
 		const FFrustum& ViewFrustum = Camera->GetFrustum();
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
@@ -70,6 +72,8 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			Bus.SetViewportSize(FVector2(static_cast<float>(FrameWidth), static_cast<float>(FrameHeight)));
 			Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
 			Bus.SetFXAAEnabled(true);
+			Bus.bSandevistanEnabled = World->IsSandervistanActivated();
+			Bus.SandevistanIntensity = Bus.bSandevistanEnabled ? 1.0f : 0.0f;
 			Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, nullptr);
 
 			if (!bLoggedRuntimeFallback)
@@ -92,6 +96,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	UIContext.RenderMode = ERuntimeUIRenderMode::GameClient;
 	UIContext.ViewportMin = FRuntimeUIVector2(0.0f, 0.0f);
 	UIContext.ViewportSize = FRuntimeUIVector2(static_cast<float>(FrameWidth), static_cast<float>(FrameHeight));
+	UIContext.LayoutSize = FRuntimeUIVector2(1920.0f, 1080.0f);
 	UIContext.DeltaTime = DeltaTime;
 	Engine->RenderRuntimeUI(UIContext);
 	Renderer.EndFrame();

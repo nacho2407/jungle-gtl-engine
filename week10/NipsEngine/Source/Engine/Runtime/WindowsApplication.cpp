@@ -174,13 +174,18 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	RegisterClassW(&WndClass);
 
+	const DWORD WindowStyle = WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+	RECT WindowRect = { 0, 0, 1920, 1080 };
+	AdjustWindowRectEx(&WindowRect, WindowStyle, FALSE, 0);
+
 	HWND HWindow = CreateWindowExW(
 		0,
 		WindowClass,
 		Title,
-		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+		WindowStyle,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		1920, 1080,
+		WindowRect.right - WindowRect.left,
+		WindowRect.bottom - WindowRect.top,
 		nullptr, nullptr, HInstance, this);
 
 	if (!HWindow)

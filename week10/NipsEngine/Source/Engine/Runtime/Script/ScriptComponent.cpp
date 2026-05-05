@@ -1,6 +1,7 @@
 ﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/Paths.h"
 #include "Core/CollisionTypes.h"
@@ -29,6 +30,15 @@ namespace
             sol::state_view Lua(State);
             sol::table Table = Lua.create_table();
             Table["type"] = "seconds";
+            Table["value"] = Seconds;
+            return Table;
+        };
+
+        Env["WaitForUnscaledSeconds"] = [](sol::this_state State, float Seconds)
+        {
+            sol::state_view Lua(State);
+            sol::table Table = Lua.create_table();
+            Table["type"] = "unscaled_seconds";
             Table["value"] = Seconds;
             return Table;
         };
@@ -537,7 +547,17 @@ void UScriptComponent::TickComponent(float DeltaTime)
     }
 
     CallScriptFunction("Tick", DeltaTime);
-    CoroutineScheduler.Tick(DeltaTime);
+
+    float UnscaledDeltaTime = DeltaTime;
+    if (AActor* OwnerActor = GetOwner())
+    {
+        if (UWorld* World = OwnerActor->GetFocusedWorld())
+        {
+            UnscaledDeltaTime = World->GetUnscaledDeltaTime();
+        }
+    }
+
+    CoroutineScheduler.Tick(DeltaTime, UnscaledDeltaTime);
 }
 
 void UScriptComponent::EndPlay()

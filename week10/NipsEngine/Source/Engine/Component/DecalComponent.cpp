@@ -16,12 +16,25 @@ UDecalComponent::UDecalComponent()
 	Materials.resize(1);
 
 	UMaterial* Mat = FResourceManager::Get().GetMaterial("DecalMat");
+	if (Mat == nullptr)
+	{
+		FResourceManager::Get().LoadMaterial("Asset/Material/DecalMat.mat", "Shaders/ShaderDecal.hlsl");
+		Mat = FResourceManager::Get().GetMaterial("DecalMat");
+	}
+	if (Mat == nullptr)
+	{
+		Mat = FResourceManager::Get().GetMaterial("DefaultWhite");
+		UE_LOG_WARNING("[DecalComponent] DecalMat is missing. Falling back to DefaultWhite.");
+	}
 	SetMaterial(Mat);
 
-	Mat->DepthStencilType = EDepthStencilType::Default;
-	Mat->BlendType = EBlendType::AlphaBlend;
-	Mat->RasterizerType = ERasterizerType::SolidBackCull;
-	Mat->SamplerType = ESamplerType::EST_Linear;
+	if (Mat)
+	{
+		Mat->DepthStencilType = EDepthStencilType::Default;
+		Mat->BlendType = EBlendType::AlphaBlend;
+		Mat->RasterizerType = ERasterizerType::SolidBackCull;
+		Mat->SamplerType = ESamplerType::EST_Linear;
+	}
 
     bEnableCull = false;
 }

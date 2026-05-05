@@ -36,6 +36,17 @@ function Vector:Dot(other) end
 ---@return Vector
 function Vector:Cross(other) end
 
+---@class HitResult
+---@field Distance number
+---@field Location Vector
+---@field Normal Vector
+---@field FaceIndex integer
+---@field bHit boolean
+local HitResult = {}
+function HitResult:Reset() end
+---@return boolean
+function HitResult:IsValid() end
+
 ---@class Object
 local Object = {}
 ---@return integer
@@ -1017,6 +1028,10 @@ function LogError(message) end
 ---@param seconds number
 ---@return table
 function WaitForSeconds(seconds) end
+
+---@param seconds number
+---@return table
+function WaitForUnscaledSeconds(seconds) end
 
 ---@param frames integer
 ---@return table

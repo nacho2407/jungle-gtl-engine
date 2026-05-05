@@ -103,7 +103,7 @@
     "EditorOnly" : false,
     "Name" : "SpeedEnemy",
     "RootComponent" : 5887,
-    "Tags" : [],
+    "Tags" : ["Enemy"],
     "UUID" : 5886,
     "Visible" : true
   },

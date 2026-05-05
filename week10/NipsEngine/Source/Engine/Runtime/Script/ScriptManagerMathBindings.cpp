@@ -1,6 +1,7 @@
 #include "Runtime/Script/ScriptManager.h"
 
 #include "Core/Logging/Log.h"
+#include "Core/CollisionTypes.h"
 #include "Geometry/Transform.h"
 #include "Math/Vector.h"
 #include "Object/Object.h"
@@ -65,6 +66,15 @@ void FScriptManager::BindMathTypes()
         sol::state_view Lua(State);
         sol::table Table = Lua.create_table();
         Table["type"] = "seconds";
+        Table["value"] = Seconds;
+        return Table;
+    });
+
+    GLuaState->set_function("WaitForUnscaledSeconds", [](sol::this_state State, float Seconds)
+    {
+        sol::state_view Lua(State);
+        sol::table Table = Lua.create_table();
+        Table["type"] = "unscaled_seconds";
         Table["value"] = Seconds;
         return Table;
     });
@@ -234,6 +244,16 @@ void FScriptManager::BindMathTypes()
                      Self.SetRotation(InRotation);
                  });
     LUA_PROPERTY(Scale, &FTransform::GetScale3D, &FTransform::SetScale3D);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR(GLuaState, FHitResult, "HitResult")
+    LUA_FIELD(Distance, Distance);
+    LUA_FIELD(Location, Location);
+    LUA_FIELD(Normal, Normal);
+    LUA_FIELD(FaceIndex, FaceIndex);
+    LUA_FIELD(bHit, bHit);
+    LUA_METHOD(Reset, Reset);
+    LUA_METHOD(IsValid, IsValid);
     LUA_END_TYPE();
 }
 

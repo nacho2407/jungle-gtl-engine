@@ -32,6 +32,22 @@ local function Clamp(value, minValue, maxValue)
     return value
 end
 
+local function PlayerWaitForSeconds(seconds)
+    if WaitForUnscaledSeconds then
+        return WaitForUnscaledSeconds(tonumber(seconds) or 0.0)
+    end
+
+    local scale = 1.0
+    if Engine and Engine.API and Engine.API.World and Engine.API.World.GetTimeScale then
+        scale = Engine.API.World.GetTimeScale()
+    end
+    if scale <= 0.0001 then
+        scale = 0.0001
+    end
+
+    return WaitForSeconds((tonumber(seconds) or 0.0) * scale)
+end
+
 function Script:Attack(mode, degree, yaw)
     self.bDoingAttack = true
 
@@ -71,7 +87,7 @@ function Script:Attack(mode, degree, yaw)
             0,
             swingStart + (swingEnd - swingStart) * ease
         )
-        coroutine.yield(WaitForSeconds(0.025))
+        coroutine.yield(PlayerWaitForSeconds(0.025))
     end
 
     for i = 1, 5 do
@@ -82,7 +98,7 @@ function Script:Attack(mode, degree, yaw)
             0,
             swingEnd * (1 - ease)
         )
-        coroutine.yield(WaitForSeconds(0.02))
+        coroutine.yield(PlayerWaitForSeconds(0.02))
     end
 
     self.BodySection.Rotation = Vector(0, 0, 0)
@@ -111,10 +127,10 @@ function Script:SlamAttack()
         local t    = i / 7
         local ease = t * t
         self.BodySection.Rotation = Vector(-90 * ease, 0, 0)
-        coroutine.yield(WaitForSeconds(0.028))
+        coroutine.yield(PlayerWaitForSeconds(0.028))
     end
 
-    coroutine.yield(WaitForSeconds(0.07))
+    coroutine.yield(PlayerWaitForSeconds(0.07))
 
     -- 2단계: 앞으로 내리찍기 (-90 → +90)
     for i = 1, 6 do
@@ -122,7 +138,7 @@ function Script:SlamAttack()
         local inv  = 1 - t
         local ease = 1 - inv * inv * inv
         self.BodySection.Rotation = Vector(-90, 0, 90 * ease)
-        coroutine.yield(WaitForSeconds(0.013))
+        coroutine.yield(PlayerWaitForSeconds(0.013))
     end
 
     -- 3단계: 충격 — slash 스폰 + 카메라 쉐이크
@@ -149,21 +165,21 @@ function Script:SlamAttack()
     self.slamShakeDuration  = 0.35
     self.slamShakeIntensity = 100.0
 
-    coroutine.yield(WaitForSeconds(0.07))
+    coroutine.yield(PlayerWaitForSeconds(0.07))
 
     -- 4단계: 복귀
     for i = 1, 6 do
         local t    = i / 6
         local ease = t * t
         self.BodySection.Rotation = Vector(-90, 0, 90 * (1 - ease))
-        coroutine.yield(WaitForSeconds(0.025))
+        coroutine.yield(PlayerWaitForSeconds(0.025))
     end
 
     for i = 1, 6 do
         local t    = i / 6
         local ease = t * t
         self.BodySection.Rotation = Vector(-90 * (1 - ease), 0, 0)
-        coroutine.yield(WaitForSeconds(0.025))
+        coroutine.yield(PlayerWaitForSeconds(0.025))
     end
 
     self.BodySection.Rotation = Vector(0, 0, 0)
@@ -173,7 +189,7 @@ function Script:SlamAttack()
     -- slamPitchOffset이 target에 도달하면 자동으로 멈춤
     -- 완전히 복귀될 때까지 대기 후 슬램 종료
     while math.abs(self.slamPitchOffset - self.slamPitchTarget) > 0.5 do
-        coroutine.yield(WaitForSeconds(0.016))
+        coroutine.yield(PlayerWaitForSeconds(0.016))
     end
     self.slamPitchOffset = 0
     self.slamPitchTarget = 0
@@ -201,13 +217,185 @@ function Script:StopDash()
     self.dashDir = Vector(0, 0, 0)
 end
 
+function Script:HasActorTag(actor, tag)
+    return actor ~= nil and actor.HasTag ~= nil and actor:HasTag(tag)
+end
+
+function Script:IsBlockingActor(actor)
+    return self:HasActorTag(actor, "BoundingBox") or self:HasActorTag(actor, "Wall")
+end
+
+function Script:GetActorKey(actor)
+    if actor == nil then
+        return nil
+    end
+    if actor.UUID ~= nil then
+        return tostring(actor.UUID)
+    end
+    if actor.GetUUID ~= nil then
+        return tostring(actor:GetUUID())
+    end
+    return tostring(actor)
+end
+
+function Script:AddActiveBlocker(actor, overlapComponent)
+    local key = self:GetActorKey(actor)
+    if key == nil then
+        return
+    end
+
+    self.ActiveBlockers = self.ActiveBlockers or {}
+    self.ActiveBlockers[key] = actor
+    if overlapComponent ~= nil and overlapComponent.is_overlapping_actor ~= nil then
+        self.BlockingOverlapComponent = overlapComponent
+    end
+end
+
+function Script:RemoveActiveBlocker(actor)
+    local key = self:GetActorKey(actor)
+    if key ~= nil and self.ActiveBlockers ~= nil then
+        self.ActiveBlockers[key] = nil
+    end
+end
+
+function Script:HasActiveBlockers()
+    self.ActiveBlockers = self.ActiveBlockers or {}
+    for _, _ in pairs(self.ActiveBlockers) do
+        return true
+    end
+    return false
+end
+
+function Script:IsStillOverlappingBlocker(actor)
+    if actor == nil then
+        return false
+    end
+    if Engine.API.World.IsValidActor ~= nil and not Engine.API.World.IsValidActor(actor) then
+        return false
+    end
+
+    local overlapComponent = self.BlockingOverlapComponent
+    if overlapComponent ~= nil and overlapComponent.is_overlapping_actor ~= nil then
+        return overlapComponent:is_overlapping_actor(actor)
+    end
+
+    return true
+end
+
+function Script:UpdateBlockingState()
+    self.ActiveBlockers = self.ActiveBlockers or {}
+    local anyBlocking = false
+    local firstBlocker = nil
+
+    for key, actor in pairs(self.ActiveBlockers) do
+        if self:IsStillOverlappingBlocker(actor) then
+            anyBlocking = true
+            if firstBlocker == nil then
+                firstBlocker = actor
+            end
+        else
+            self.ActiveBlockers[key] = nil
+        end
+    end
+
+    if anyBlocking then
+        self.bBlockedByWall = true
+        self.BlockGraceTime = 0.0
+        if self.BlockNormal == nil or self.BlockNormal:Size() <= 0.001 then
+            self.BlockNormal = self:GetAwayFromActorDirection(firstBlocker)
+        end
+        if self.LastSafeLocation ~= nil then
+            self.owner.Location = self.LastSafeLocation
+            self.PrevLocation = self.LastSafeLocation
+        end
+        return
+    end
+
+    self.bBlockedByWall = false
+    self.BlockNormal = nil
+    self.BlockingOverlapComponent = nil
+    self.LastSafeLocation = self.owner.Location
+end
+
+function Script:GetAwayFromActorDirection(actor)
+    if actor == nil then
+        return Vector(0, 0, 0)
+    end
+
+    local dir = self.owner.Location - actor.Location
+    dir.z = 0
+    if dir:Size() <= 0.001 then
+        return -self.owner:GetActorForwardVector()
+    end
+    return dir:Normalized()
+end
+
+function Script:ClipMoveAgainstBlock(move)
+    if not self.bBlockedByWall or self.BlockNormal == nil or move:Size() <= 0.001 then
+        return move
+    end
+
+    local dot = move.X * self.BlockNormal.X + move.Y * self.BlockNormal.Y
+    if dot < 0 then
+        move = move - self.BlockNormal * dot
+    end
+
+    if move:Size() <= 0.001 then
+        return Vector(0, 0, 0)
+    end
+    return move
+end
+
+function Script:ResolveBlockingOverlap(actor, sweepResult, overlapComponent)
+    if not self:IsBlockingActor(actor) then
+        return false
+    end
+
+    Log("Blocked by wall")
+    self:AddActiveBlocker(actor, overlapComponent)
+    self:StopDash()
+
+    local currentLocation = self.owner.Location
+    local safeLocation = self.LastSafeLocation or self.PrevLocation or currentLocation
+    local correction = safeLocation - currentLocation
+    correction.z = 0
+
+    if sweepResult and sweepResult.Normal and sweepResult.Normal:Size() > 0.001 then
+        local normal = -sweepResult.Normal
+        normal.z = 0
+        if normal:Size() > 0.001 then
+            self.BlockNormal = normal:Normalized()
+        elseif correction:Size() > 0.001 then
+            self.BlockNormal = correction:Normalized()
+        elseif self.LastMoveAttempt and self.LastMoveAttempt:Size() > 0.001 then
+            self.BlockNormal = -self.LastMoveAttempt:Normalized()
+        else
+            self.BlockNormal = self:GetAwayFromActorDirection(actor)
+        end
+    elseif correction:Size() > 0.001 then
+        self.BlockNormal = correction:Normalized()
+    elseif self.LastMoveAttempt and self.LastMoveAttempt:Size() > 0.001 then
+        self.BlockNormal = -self.LastMoveAttempt:Normalized()
+    else
+        self.BlockNormal = self:GetAwayFromActorDirection(actor)
+    end
+
+    self.BlockGraceTime = 0.2
+    self.bBlockedByWall = true
+    self.owner.Location = safeLocation
+    self.PrevLocation = safeLocation
+    self.LastSafeLocation = safeLocation
+
+    return true
+end
+
 function Script:DestroyActorAfter(actor, time)
-    coroutine.yield(time)
+    coroutine.yield(PlayerWaitForSeconds(time))
     Engine.API.World.DestroyActor(actor)
 end
 
 function Script:FinishAttackAfter(attackId, time)
-    coroutine.yield(time)
+    coroutine.yield(PlayerWaitForSeconds(time))
     if _G.GameJam and _G.GameJam.NotifyPlayerAttackFinished then
         _G.GameJam.NotifyPlayerAttackFinished(attackId)
     end
@@ -251,7 +439,7 @@ function Script:HitReact(fromActor)
             -- 넉백
             self.owner.Location = self.owner.Location + dir * (1 - p) * 1.5
 
-            coroutine.yield(WaitForSeconds(dt))
+            coroutine.yield(PlayerWaitForSeconds(dt))
         end
 
         self.bHitReact = false
@@ -357,7 +545,12 @@ function Script.new(component, properties)
     self.hitInvincibleTime = 0
     --이전 위치
     self.LastSafeLocation = self.owner.Location
+    self.LastMoveAttempt = Vector(0, 0, 0)
     self.bBlockedByWall = false
+    self.BlockNormal = nil
+    self.BlockGraceTime = 0.0
+    self.ActiveBlockers = {}
+    self.BlockingOverlapComponent = nil
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -378,7 +571,7 @@ function Script:BeginPlay()
 
     StartCoroutine(function()
         Log("Coroutine Start")
-        coroutine.yield(WaitForSeconds(1.0))
+        coroutine.yield(PlayerWaitForSeconds(1.0))
         Log("1 seconds later")
     end)
 end
@@ -391,7 +584,7 @@ function Script:Tick(dt)
         dt = dt / WorldTimeScale
     end
     
-    self.LastSafeLocation = self.owner.Location
+    self:UpdateBlockingState()
     self.time = self.time + dt
 
     if self.hitInvincibleTime > 0 then
@@ -444,7 +637,6 @@ function Script:Tick(dt)
 
     -- Dash 스텝 처리
     if self.bDoingDash then
-        -- 이미 벽에 막힌 상태면 dash 취소
         if self.bBlockedByWall then
             self:StopDash()
             self.owner.Location = self.LastSafeLocation
@@ -452,6 +644,7 @@ function Script:Tick(dt)
             return
         end
 
+        -- 이미 벽에 막힌 상태면 dash 취소
         self.dashCooldown = self.dashCooldown - dt
 
         if self.dashCooldown <= 0 then
@@ -459,6 +652,7 @@ function Script:Tick(dt)
             self.LastSafeLocation = self.owner.Location
 
             local NextLocation = self.owner.Location + self.dashDir * 1.5
+            self.LastMoveAttempt = self.dashDir
             self.owner.Location = NextLocation
 
             self.dashStepsLeft = self.dashStepsLeft - 1
@@ -470,10 +664,6 @@ function Script:Tick(dt)
             end
         end
 
-        return
-    end
-
-    if self.bBlockedByWall then
         return
     end
 
@@ -491,11 +681,16 @@ function Script:Tick(dt)
     if Engine.API.Input.IsKeyDown("D") then
         move = move + self.owner:GetActorRightVector()
     end
+    move = self:ClipMoveAgainstBlock(move)
 
     local CurLoc = self.owner.Location
 
     if move:Size() > 0.001 then
-        CurLoc = CurLoc + move:Normalized() * 6.0 * dt
+        local moveDirection = move:Normalized()
+        self.LastMoveAttempt = moveDirection
+        CurLoc = CurLoc + moveDirection * 8.0 * dt
+    else
+        self.LastMoveAttempt = Vector(0, 0, 0)
     end
 
     if not self.PrevLocation then
@@ -514,6 +709,9 @@ function Script:Tick(dt)
 
     self.owner.Location = CurLoc
     self.PrevLocation = CurLoc
+    if not self.bBlockedByWall then
+        self.LastSafeLocation = CurLoc
+    end
 
     local rotation = self.owner.Rotation
     rotation.z = rotation.z + Engine.API.Input.GetMouseDelta().X * 0.1
@@ -638,7 +836,11 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
         return
     end
 
-    local isDamageSource = (OtherActor.HasTag ~= nil and OtherActor:HasTag("Enemy"))
+    if self:ResolveBlockingOverlap(OtherActor, SweepResult, OverlappedComponent) then
+        return
+    end
+
+    local isDamageSource = self:HasActorTag(OtherActor, "Enemy")
         or (OtherActor.IsA ~= nil and OtherActor:IsA("ADestructibleActor"))
 
     if isDamageSource then
@@ -649,20 +851,6 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
         end
     end
 
-    if OtherActor:HasTag("BoundingBox") then
-        Log("Blocked by wall")
-
-        self.bBlockedByWall = true
-
-        -- dash 중 벽에 닿으면 dash 강제 종료
-        self:StopDash()
-
-        -- 마지막 안전 위치로 되돌림
-        self.owner.Location = self.LastSafeLocation
-        self.PrevLocation = self.LastSafeLocation
-
-        return
-    end
 end
 
 function Script:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
@@ -671,9 +859,18 @@ function Script:OnEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBo
         Log("OtherActor: " .. tostring(OtherActor.Name))
     end
 
-    if OtherActor:HasTag("Wall") or OtherActor:HasTag("BoundingBox") then
+    if self:IsBlockingActor(OtherActor) then
         Log("Unblocked from wall")
-        self.bBlockedByWall = false
+        self:RemoveActiveBlocker(OtherActor)
+        self.BlockGraceTime = 0.0
+        if not self:HasActiveBlockers() then
+            self.bBlockedByWall = false
+            self.BlockNormal = nil
+            self.BlockingOverlapComponent = nil
+            self.LastSafeLocation = self.owner.Location
+        else
+            self.bBlockedByWall = true
+        end
     end
 end
 
