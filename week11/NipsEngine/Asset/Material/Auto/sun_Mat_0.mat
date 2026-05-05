@@ -1,4 +1,5 @@
 {
+        "ImportedName" : "Material.001",
         "Name" : "sun_Mat_0",
         "Params" : [{
             "Name" : "AmbientColor",

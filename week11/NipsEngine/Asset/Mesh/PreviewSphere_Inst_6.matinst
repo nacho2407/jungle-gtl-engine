@@ -3,7 +3,7 @@
         "OverridedParams" : [{
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Map/T_Aircon_N.png"
+            "Value" : "Asset/Mesh/Map/T_Aircon_N.png"
           }],
-        "Parent" : "Asset/Mesh/PreviewSphere.obj"
+        "Parent" : "DefaultWhite"
       }

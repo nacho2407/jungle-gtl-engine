@@ -155,6 +155,9 @@ private:
 	void PreloadStaticMeshes();
 	
 	FTextureAssetMeta LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const;
+	void RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath);
+	UMaterial* GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const;
+	void ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const;
 
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
@@ -180,6 +183,7 @@ private:
 	TMap<FString, UTexture*> Textures;
 	TMap<FString, UMaterial*> Materials;
 	TMap<FString, UMaterialInstance*> MaterialInstances;
+	TMap<FString, FString> MaterialSlotAliases;
 	TMap<ESamplerType, TComPtr<ID3D11SamplerState>> SamplerStates;
 	TMap<EDepthStencilType, TComPtr<ID3D11DepthStencilState>> DepthStencilStates;
 	TMap<EBlendType, TComPtr<ID3D11BlendState>> BlendStates;

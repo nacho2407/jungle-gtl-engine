@@ -3,7 +3,7 @@
         "OverridedParams" : [{
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Texture/Dice.PNG"
+            "Value" : "Asset/Mesh/Dice/Dice_Diffuse.png"
           }],
         "Parent" : "Asset/Material/Auto/Dice_Mat_0.mat"
       }
