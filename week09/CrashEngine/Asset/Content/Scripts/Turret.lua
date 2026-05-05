@@ -1,10 +1,7 @@
 -- Turret.lua는 터렛 Actor 하나에 붙는 전용 스크립트다.
 -- 감지 범위 체크, 플레이어 바라보기, 발사, 체력/파괴를 담당한다.
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
 BulletSystem.BindWorld(World, "Turret")
-print("[BindWorld] Turret", obj ~= nil and obj.UUID or "nil")
-DebugLog.Write("Turret.BindWorld", "Turret=" .. DebugLog.Actor(obj))
 
 -- 터렛 튜닝 값.
 local DetectRange = 40.0
@@ -56,13 +53,11 @@ end
 local function spawnEffect(location, materialPath, lifeTime, row, column)
     local effectActor = World.SpawnActor("SubUVActor")
     if effectActor == nil or not effectActor:IsValid() then
-        print("Failed to spawn SubUVActor effect")
         return
     end
 
     local script = effectActor:AddComponent("LuaScriptComponent")
     if script == nil or not script:IsValid() then
-        print("Failed to add Effect.lua")
         World.DestroyActor(effectActor)
         return
     end
@@ -134,7 +129,6 @@ local function fireAtPlayer(player)
     local targetLocation = player.Location + PlayerAimOffset
     local lookDirection = targetLocation - obj.Location
     if lookDirection:LengthSquared() <= 0.0001 then
-        DebugLog.Write("Turret.Fire.Skip", "Reason=ZeroLookDirection", "Turret=" .. DebugLog.Actor(obj), "Player=" .. DebugLog.Actor(player))
         return
     end
 
@@ -145,34 +139,12 @@ local function fireAtPlayer(player)
     local shotDirection = targetLocation - spawnLocation
 
     if shotDirection:LengthSquared() <= 0.0001 then
-        DebugLog.Write("Turret.Fire.Skip", "Reason=ZeroShotDirection", "Turret=" .. DebugLog.Actor(obj), "Player=" .. DebugLog.Actor(player), "SpawnLocation=" .. DebugLog.Vector(spawnLocation))
         return
     end
 
     local direction = shotDirection:Normalized()
-    print("[Turret] Fire EnemyBullet", "Turret:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
-    DebugLog.Write(
-        "Turret.Fire.Request",
-        "Turret=" .. DebugLog.Actor(obj),
-        "Player=" .. DebugLog.Actor(player),
-        "TurretLocation=" .. DebugLog.Vector(obj.Location),
-        "PlayerLocation=" .. DebugLog.Vector(player.Location),
-        "TargetLocation=" .. DebugLog.Vector(targetLocation),
-        "Forward=" .. DebugLog.Vector(turretForward),
-        "Up=" .. DebugLog.Vector(turretUp),
-        "SpawnLocation=" .. DebugLog.Vector(spawnLocation),
-        "Direction=" .. DebugLog.Vector(direction),
-        "ShotTimerBefore=" .. tostring(ShotTimer)
-    )
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
-    DebugLog.Write(
-        "Turret.Fire.Result",
-        "Turret=" .. DebugLog.Actor(obj),
-        "Bullet=" .. DebugLog.Actor(bullet),
-        "SoundWillPlay=true",
-        "CooldownWillStart=true"
-    )
     playTurretSound("EnemyShoot")
     ShotTimer = ShotCooldown
 end
@@ -188,8 +160,6 @@ function BeginPlay()
 end
 
 function EndPlay()
-    print("[Turret] EndPlay", obj ~= nil and obj.UUID or "nil")
-    DebugLog.Write("Turret.EndPlay", "Turret=" .. DebugLog.Actor(obj), "HP=" .. tostring(HP), "ShotTimer=" .. tostring(ShotTimer))
     ShotTimer = 0.0
 end
 
@@ -199,7 +169,6 @@ function OnOverlapBegin(other)
     end
 
     if other:HasTag("Bullet") then
-        print("[Turret] Overlap bullet", "Turret:", obj.UUID, "Bullet:", other.UUID, "PlayerBullet:", other:HasTag("PlayerBullet"), "EnemyBullet:", other:HasTag("EnemyBullet"))
     end
 
     if not other:HasTag("PlayerBullet") then
@@ -218,13 +187,9 @@ end
 function OnTakeDamage(damage, instigator)
     -- BulletSystem.ApplyDamage -> Actor.TakeDamage -> 이 함수 순서로 호출된다.
     HP = HP - damage
-    print("Turret HP : ", HP)
-    DebugLog.Write("Turret.TakeDamage", "Turret=" .. DebugLog.Actor(obj), "Damage=" .. tostring(damage), "Instigator=" .. DebugLog.Actor(instigator), "HP=" .. tostring(HP))
     spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
 
     if HP <= 0 then
-        print("Turret Destroyed")
-        DebugLog.Write("Turret.Destroyed", "Turret=" .. DebugLog.Actor(obj), "Location=" .. DebugLog.Vector(obj.Location))
         playTurretSound("EnemyDie")
         local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
         spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)

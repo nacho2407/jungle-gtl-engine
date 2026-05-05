@@ -62,7 +62,6 @@ local function updateVelocity()
 end
 
 function OnOverlapBegin(other)
-    print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Dummy") then
         obj:ApplyDamage(10.0, obj);
     else
@@ -71,11 +70,9 @@ function OnOverlapBegin(other)
 end
 
 function OnOverlapEnd(other)
-    print("Lua OnOverlapEnd", other.UUID);
 end
 
 function OnTakeDamage(damage, instigator)
-    print("Lua OnTakeDamage", damage, instigator.UUID);
 end
 
 function BeginPlay()

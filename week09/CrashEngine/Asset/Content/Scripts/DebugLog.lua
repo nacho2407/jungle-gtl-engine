@@ -41,17 +41,16 @@ function DebugLog.Actor(value)
     return string.format("UUID=%s Valid=%s", safeToString(value.UUID), safeToString(valid))
 end
 
-function DebugLog.Write(category, ...)
+DebugLog.Write = function(category, ...)
     return
 end
 
-function DebugLog.SessionStart(label)
+DebugLog.SessionStart = function(label)
     if DebugLog.Started then
         return
     end
 
     DebugLog.Started = true
-    DebugLog.Write("Session", "==========", "Start", safeToString(label), "==========")
 end
 
 _G.DebugLog = DebugLog

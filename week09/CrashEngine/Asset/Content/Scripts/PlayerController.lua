@@ -3,10 +3,7 @@
 local PlayerMovement = dofile("Asset/Content/Scripts/PlayerMovement.lua")
 local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
 BulletSystem.BindWorld(World, "Player")
-print("[BindWorld] Player", obj ~= nil and obj.UUID or "nil")
-DebugLog.Write("Player.BindWorld", "Player=" .. DebugLog.Actor(obj))
 
 -- local 변수는 이 파일 안에서만 쓰이는 상태다.
 local moveSpeed = 20.0
@@ -120,7 +117,6 @@ local function takeDamage(damage)
     end
 
     syncPlayerState()
-    print("Player HP : ", HP);
 end
 
 local function clamp01(value)
@@ -171,7 +167,6 @@ end
 local function spawnEffect(location, materialPath, lifeTime, row, column)
     local effectActor = World.SpawnActor("SubUVActor")
     if effectActor == nil or not effectActor:IsValid() then
-        print("Failed to spawn SubUVActor effect")
         return
     end
 
@@ -180,19 +175,16 @@ local function spawnEffect(location, materialPath, lifeTime, row, column)
 
     local script = effectActor:AddComponent("LuaScriptComponent")
     if script == nil or not script:IsValid() then
-        print("Failed to add Effect.lua")
         World.DestroyActor(effectActor)
         return
     end
 
     if not script:SetScriptPath("Effect.lua") then
-        print("Failed to set Effect.lua")
         World.DestroyActor(effectActor)
         return
     end
 
     if not script:CallFunction("InitEffect", effectActor.Location, lifeTime, materialPath, row, column) then
-        print("Failed to initialize effect")
         World.DestroyActor(effectActor)
     end
 end
@@ -204,7 +196,6 @@ local function spawnDestroyEffectOnce()
 
     bDestroyEffectSpawned = true
     spawnEffect(obj.Location, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
-    print("Effect!")
 end
 
 -- GameManager Actor의 LuaScriptComponent를 직접 호출하고,
@@ -230,7 +221,6 @@ local function callGameOver()
     if _G.GameManager ~= nil and _G.GameManager.GameOver ~= nil then
         _G.GameManager.GameOver(HP, DocumentCount)
     else
-        print("GameManager is not ready")
     end
 end
 
@@ -256,41 +246,13 @@ end
 -- 좌클릭 발사. 쿨타임 중이면 아무 것도 하지 않는다.
 local function firePlayerBullet()
     if PlayerShotTimer > 0.0 then
-        DebugLog.Write(
-            "Player.Fire.Skip",
-            "Reason=Cooldown",
-            "ShotTimer=" .. tostring(PlayerShotTimer),
-            "Zooming=" .. tostring(isZooming()),
-            "Player=" .. DebugLog.Actor(obj)
-        )
         return
     end
 
     local aimDirection = getAimDirection()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
-    print("Player Fire Direction : ", aimDirection)
-    print("Player Fire Location : ", spawnLocation)
-    DebugLog.Write(
-        "Player.Fire.Request",
-        "Player=" .. DebugLog.Actor(obj),
-        "PlayerLocation=" .. DebugLog.Vector(obj.Location),
-        "AimDirection=" .. DebugLog.Vector(aimDirection),
-        "SpawnLocation=" .. DebugLog.Vector(spawnLocation),
-        "Zooming=" .. tostring(isZooming()),
-        "CameraStateExists=" .. tostring(_G.CameraState ~= nil),
-        "CameraAimOrigin=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimOrigin or nil),
-        "CameraAimPoint=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimPoint or nil),
-        "CameraAimDirection=" .. DebugLog.Vector(_G.CameraState ~= nil and _G.CameraState.AimDirection or nil),
-        "ShotTimerBefore=" .. tostring(PlayerShotTimer)
-    )
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
-    DebugLog.Write(
-        "Player.Fire.Result",
-        "Bullet=" .. DebugLog.Actor(bullet),
-        "SoundWillPlay=true",
-        "CooldownWillStart=true"
-    )
     playPlayerSound("Shoot")
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -389,12 +351,10 @@ local movementKeys = {
 }
 
 function OnOverlapEnd(other)
-    print("Lua OnOverlapEnd", other.UUID);
 end
 
 function OnOverlapBegin(other)
     -- Overlap은 C++ CollisionManager가 감지해서 Lua로 넘겨주는 이벤트다.
-    print("Lua OnOverlapBegin", other.UUID);
     if other:HasTag("Document") then
         if other:HasTag("Collected") then
             return
@@ -404,7 +364,6 @@ function OnOverlapBegin(other)
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
         playPlayerSound("Document")
-        print("Has Document : ", DocumentCount);
         spawnEffect(other.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
@@ -420,11 +379,9 @@ function OnOverlapBegin(other)
         BatteryLightFlashTime = BatteryLightFlashDuration
         syncPlayerState()
         playPlayerSound("Charge")
-        print("Player HP : ", HP);
         spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
-        print("[Player] Hit by EnemyBullet", "Player:", obj.UUID, "Bullet:", other.UUID, "Location:", other.Location)
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
             obj:ApplyDamage(10, other)
@@ -433,7 +390,6 @@ function OnOverlapBegin(other)
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         if DocumentCount>0 then
-            print("Game Finish!");
             callGameOver()
         end
     end
@@ -543,14 +499,6 @@ function Tick(dt)
 end
 
 function EndPlay()
-    print("[Player] EndPlay", obj ~= nil and obj.UUID or "nil")
-    DebugLog.Write(
-        "Player.EndPlay",
-        "Player=" .. DebugLog.Actor(obj),
-        "HP=" .. tostring(HP),
-        "DocumentCount=" .. tostring(DocumentCount),
-        "ShotTimer=" .. tostring(PlayerShotTimer)
-    )
 
     -- PIE 종료 시 남아있는 총알/전역 aim 상태를 정리한다.
     BulletSystem.Clear(false)

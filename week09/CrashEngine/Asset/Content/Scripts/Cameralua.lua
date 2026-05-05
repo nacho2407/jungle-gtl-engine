@@ -254,7 +254,6 @@ function EndPlay()
 end
 
 function OnOverlap(OtherActor)
-    OtherActor:PrintLocation();
 end
 
 function Tick(dt)

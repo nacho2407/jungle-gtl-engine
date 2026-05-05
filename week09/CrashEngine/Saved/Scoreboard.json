@@ -503,5 +503,19 @@
       "score" : 0.000000,
       "timer" : 50.295146,
       "timestamp" : "2026-05-05 05:21:12"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 50.139070,
+      "timestamp" : "2026-05-05 05:42:32"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERD",
+      "score" : 0.000000,
+      "timer" : 70.000545,
+      "timestamp" : "2026-05-05 05:43:44"
     }]
 }

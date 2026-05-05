@@ -1,8 +1,5 @@
 local BulletSystem = dofile("Asset/Content/Scripts/BulletSystem.lua")
-local DebugLog = dofile("Asset/Content/Scripts/DebugLog.lua")
 BulletSystem.BindWorld(World, "Monster")
-print("[BindWorld] Monster", obj ~= nil and obj.UUID or "nil")
-DebugLog.Write("Monster.BindWorld", "Monster=" .. DebugLog.Actor(obj))
 
 local PatrolAgent = nil
 local PatrolTargets = {}
@@ -30,13 +27,11 @@ local DestroyEffectColumn = 6
 local function spawnEffect(location, materialPath, lifeTime, row, column)
     local effectActor = World.SpawnActor("SubUVActor")
     if effectActor == nil or not effectActor:IsValid() then
-        print("Failed to spawn SubUVActor effect")
         return
     end
 
     local script = effectActor:AddComponent("LuaScriptComponent")
     if script == nil or not script:IsValid() then
-        print("Failed to add Effect.lua")
         World.DestroyActor(effectActor)
         return
     end
@@ -99,14 +94,12 @@ end
 
 local function fireAtPlayer(player)
     if ShotTimer > 0.0 then
-        DebugLog.Write("Monster.Fire.Skip", "Reason=Cooldown", "Monster=" .. DebugLog.Actor(obj), "ShotTimer=" .. tostring(ShotTimer))
         return
     end
 
     local targetLocation = player.Location + PlayerAimOffset
     local toPlayer = targetLocation - obj.Location
     if toPlayer:LengthSquared() <= 0.0001 then
-        DebugLog.Write("Monster.Fire.Skip", "Reason=ZeroDirection", "Monster=" .. DebugLog.Actor(obj), "Player=" .. DebugLog.Actor(player))
         return
     end
 
@@ -114,26 +107,8 @@ local function fireAtPlayer(player)
     lookAtDirection(direction)
 
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, BulletSpawnHeight) + direction * BulletSpawnForwardOffset
-    print("[Monster] Fire EnemyBullet", "Monster:", obj.UUID, "Spawn:", spawnLocation, "Direction:", direction)
-    DebugLog.Write(
-        "Monster.Fire.Request",
-        "Monster=" .. DebugLog.Actor(obj),
-        "Player=" .. DebugLog.Actor(player),
-        "MonsterLocation=" .. DebugLog.Vector(obj.Location),
-        "PlayerLocation=" .. DebugLog.Vector(player.Location),
-        "TargetLocation=" .. DebugLog.Vector(targetLocation),
-        "SpawnLocation=" .. DebugLog.Vector(spawnLocation),
-        "Direction=" .. DebugLog.Vector(direction),
-        "ShotTimerBefore=" .. tostring(ShotTimer)
-    )
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
-    DebugLog.Write(
-        "Monster.Fire.Result",
-        "Monster=" .. DebugLog.Actor(obj),
-        "Bullet=" .. DebugLog.Actor(bullet),
-        "CooldownWillStart=true"
-    )
     ShotTimer = ShotCooldown
 end
 
@@ -161,7 +136,6 @@ local function collectPatrolTargets()
     end
 
     if World.FindActorsByTag == nil then
-        print("World.FindActorsByTag is not registered")
         return
     end
 
@@ -237,7 +211,6 @@ function BeginPlay()
     obj:AddTag("Monster")
     PatrolAgent = obj:GetComponent("PatrolAgentComponent", 0)
     if not PatrolAgent:IsValid() then
-        print("MonsterPatrol requires PatrolAgentComponent")
         return
     end
 
@@ -249,7 +222,6 @@ function BeginPlay()
     collectPatrolTargets()
 
     if #PatrolTargets == 0 then
-        print("MonsterPatrol found no PatrolTarget for group : ", PatrolAgent:GetPatrolGroup())
     end
 end
 
@@ -259,7 +231,6 @@ function OnOverlapBegin(other)
     end
 
     if other:HasTag("Bullet") then
-        print("[Monster] Overlap bullet", "Monster:", obj.UUID, "Bullet:", other.UUID, "PlayerBullet:", other:HasTag("PlayerBullet"), "EnemyBullet:", other:HasTag("EnemyBullet"))
     end
 
     if not other:HasTag("PlayerBullet") then
@@ -277,13 +248,9 @@ end
 
 function OnTakeDamage(damage, instigator)
     HP = HP - damage
-    print("Monster HP : ", HP)
-    DebugLog.Write("Monster.TakeDamage", "Monster=" .. DebugLog.Actor(obj), "Damage=" .. tostring(damage), "Instigator=" .. DebugLog.Actor(instigator), "HP=" .. tostring(HP))
     spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
 
     if HP <= 0 then
-        print("Monster Destroyed")
-        DebugLog.Write("Monster.Destroyed", "Monster=" .. DebugLog.Actor(obj), "Location=" .. DebugLog.Vector(obj.Location))
         local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
         spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)
@@ -317,8 +284,6 @@ function Tick(dt)
 end
 
 function EndPlay()
-    print("[Monster] EndPlay", obj ~= nil and obj.UUID or "nil")
-    DebugLog.Write("Monster.EndPlay", "Monster=" .. DebugLog.Actor(obj), "HP=" .. tostring(HP), "ShotTimer=" .. tostring(ShotTimer))
     PatrolAgent = nil
     PatrolTargets = {}
     CurrentTargetIndex = 1
