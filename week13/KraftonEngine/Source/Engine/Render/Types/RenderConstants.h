@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Render/Types/RenderTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Device/D3DDevice.h"
@@ -242,6 +242,12 @@ struct FFXAAConstants
 	float EdgeThreshold;
 	float EdgeThresholdMin;
 	float _pad[2];
+};
+
+struct FGammaCorrectionConstants
+{
+	float Gamma;
+	float _pad[3];
 };
 
 

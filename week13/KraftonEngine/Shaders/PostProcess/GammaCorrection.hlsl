@@ -2,6 +2,12 @@
 #include "Common/SystemResources.hlsli"
 #include "Common/SystemSamplers.hlsli"
 
+cbuffer GammaCorrectionCB : register(b2)
+{
+    float Gamma;
+    float3 _GammaPad;
+};
+
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
     return FullscreenTriangleVS(vertexID);
@@ -11,7 +17,8 @@ float3 LinearToSRGB(float3 color)
 {
     color = max(color, 0.0f);
     float3 low = color * 12.92f;
-    float3 high = 1.055f * pow(color, 1.0f / 2.4f) - 0.055f;
+    float safeGamma = max(Gamma, 0.01f);
+    float3 high = 1.055f * pow(color, 1.0f / safeGamma) - 0.055f;
     return lerp(low, high, step(0.0031308f, color));
 }
 
