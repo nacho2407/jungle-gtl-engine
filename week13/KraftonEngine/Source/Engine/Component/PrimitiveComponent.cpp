@@ -39,7 +39,6 @@ HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-	// CollisionSystem에서 안전하게 해제 (dangling pointer 방지)
 	if (Owner)
 	{
 		if (UWorld* World = Owner->GetWorld())

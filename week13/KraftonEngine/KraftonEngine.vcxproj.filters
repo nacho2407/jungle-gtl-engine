@@ -473,9 +473,6 @@
     <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\ConvexVolume.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -1155,9 +1152,6 @@
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\CollisionMath.h">
-      <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Collision\CollisionSystem.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\ConvexVolume.h">
