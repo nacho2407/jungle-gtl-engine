@@ -11,5 +11,5 @@ public:
 	void ContributeSelectedVisuals(FScene& Scene) const;
 	virtual void PushToScene() override;
 	virtual void DestroyFromScene() override;
-	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const override;
+	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* POV = nullptr, int32 FaceIndex = 0) const override;
 };

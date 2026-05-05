@@ -1,7 +1,7 @@
 ﻿#include "DirectionalLightComponent.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/LightFrustumUtils.h"
-#include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Engine/Serialization/Archive.h"
@@ -62,15 +62,15 @@ void UDirectionalLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 	AddDirectionalLightArrow(Scene, WorldPos, GetForwardVector());
 }
 
-bool UDirectionalLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+bool UDirectionalLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* POV, int32 /*FaceIndex*/) const
 {
-	if (!Camera) return false;
+	if (!POV) return false;
 
 	FGlobalDirectionalLightParams Params;
 	Params.Direction = GetForwardVector();
 
 	auto VP = FLightFrustumUtils::BuildDirectionalLightViewProj(
-		Params, Camera->GetViewMatrix(), Camera->GetProjectionMatrix());
+		Params, POV->CalculateViewMatrix(), POV->CalculateProjectionMatrix());
 	OutResult.View = VP.View;
 	OutResult.Proj = VP.Proj;
 	OutResult.bIsOrtho = true;

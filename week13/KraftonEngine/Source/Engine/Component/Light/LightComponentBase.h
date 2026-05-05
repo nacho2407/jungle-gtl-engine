@@ -18,7 +18,7 @@ struct FLightViewProjResult
 	bool bIsOrtho = false;
 };
 
-class UCameraComponent;
+struct FMinimalViewInfo;
 
 class ULightComponentBase : public USceneComponent
 {
@@ -47,7 +47,9 @@ public:
 	void SetLightColor(const FVector4& V) { LightColor = V; PushToScene(); }
 
 	virtual ELightComponentType GetLightType() const { return ELightComponentType::Unknown; }
-	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera = nullptr, int32 FaceIndex = 0) const { return false; }
+	// CSM/포인트 큐브맵 등 그림자 시점 매트릭스 빌드. Directional 은 viewer POV 의 frustum
+	// 을 cascade 분할에 사용하므로 통화가 필요. Point/Spot 은 통화를 받지만 무시.
+	virtual bool GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* POV = nullptr, int32 FaceIndex = 0) const { return false; }
 	class UBillboardComponent* EnsureEditorBillboard();
 
 protected:

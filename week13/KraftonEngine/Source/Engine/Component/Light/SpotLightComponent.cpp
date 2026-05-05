@@ -94,7 +94,7 @@ void USpotLightComponent::Serialize(FArchive& Ar)
 	Ar << OuterConeAngle;
 }
 
-bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+bool USpotLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* /*POV*/, int32 /*FaceIndex*/) const
 {
 	FSpotLightParams Params;
 	Params.Position = GetWorldLocation();
