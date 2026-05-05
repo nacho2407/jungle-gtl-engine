@@ -3,6 +3,7 @@
 #include "Viewport/ViewportClient.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ViewTypes.h"
+#include "Editor/Viewport/ViewportCameraTransform.h"
 
 #include "UI/SWindow.h"
 #include <string>
@@ -20,6 +21,7 @@ class FWindowsWindow;
 class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
+struct FMinimalViewInfo;
 
 class FEditorViewportClient : public FViewportClient
 {
@@ -47,6 +49,15 @@ public:
 	void DestroyCamera();
 	void ResetCamera();
 	UCameraComponent* GetCamera() const { return Camera; }
+
+	// 카메라 POV 통화 산출 — 호출자가 컴포넌트를 직접 의존하지 않게 하는 진입점.
+	// 현재는 Camera 컴포넌트가 살아있으면 컴포넌트로 위임, 없으면 ViewTransform 으로 산출.
+	// 향후 D 단계에서 컴포넌트 제거 시 자동으로 ViewTransform 경로만 사용된다.
+	void GetCameraView(FMinimalViewInfo& OutPOV) const;
+
+	// Editor 카메라 데이터 (컴포넌트 미사용 모드의 SoT 후보)
+	FViewportCameraTransform& GetViewTransform() { return ViewTransform; }
+	const FViewportCameraTransform& GetViewTransform() const { return ViewTransform; }
 
 	void Tick(float DeltaTime);
 
@@ -104,6 +115,9 @@ private:
 	FViewportRenderOptions RenderOptions;
 	ULightComponentBase* LightViewOverride = nullptr;
 	int32 PointLightFaceIndex = 0;
+
+	// Editor 카메라 데이터 (D 단계 이후 SoT 가 됨, 현재는 fallback 경로용)
+	FViewportCameraTransform ViewTransform;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;

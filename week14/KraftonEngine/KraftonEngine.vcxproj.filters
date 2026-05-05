@@ -1151,6 +1151,9 @@
     <ClInclude Include="Source\Editor\Viewport\LevelEditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h">
+      <Filter>Source\Editor\Viewport</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioManager.h">
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>

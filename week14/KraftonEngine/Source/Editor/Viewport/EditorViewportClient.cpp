@@ -8,6 +8,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 
 #include "Component/CameraComponent.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
 #include "GameFramework/World.h"
 #include "Engine/Runtime/Engine.h"
@@ -55,6 +56,23 @@ void FEditorViewportClient::ResetCamera()
 	Camera->SetWorldLocation(Settings->InitViewPos);
 	Camera->LookAt(Settings->InitLookAt);
 	SyncCameraSmoothingTarget();
+}
+
+void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
+{
+	// 현재는 컴포넌트가 SoT — 위임. 컴포넌트 제거(D 단계) 후엔 else 경로만 남는다.
+	if (Camera)
+	{
+		Camera->GetCameraView(0.0f, OutPOV);
+		return;
+	}
+
+	// Fallback: 컴포넌트 미사용 모드. ViewTransform 에서 직접 산출.
+	OutPOV.Location   = ViewTransform.ViewLocation;
+	OutPOV.Rotation   = ViewTransform.ViewRotation;
+	OutPOV.OrthoWidth = ViewTransform.OrthoZoom;
+	OutPOV.bIsOrtho   = (RenderOptions.ViewportType != ELevelViewportType::Perspective);
+	// FOV / AspectRatio / Near / Far 는 default 값 — D 단계에서 설정 경로 추가 예정.
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
