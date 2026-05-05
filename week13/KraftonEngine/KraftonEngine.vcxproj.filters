@@ -524,6 +524,9 @@
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ActionComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -1244,6 +1247,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ActionComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
