@@ -583,6 +583,26 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			Manager->StartCameraFade(1.0f, 0.0f, Duration, FLinearColor::Black(), false, true);
 		}
 	});
+	CameraManager.set_function("SetVignette", [](float Intensity, float Radius, float Softness)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->SetCameraVignette(Intensity, Radius, Softness, FLinearColor::Black());
+		}
+	});
+	CameraManager.set_function("ClearVignette", []()
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->ClearCameraVignette();
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)

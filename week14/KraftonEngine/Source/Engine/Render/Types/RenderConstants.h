@@ -253,6 +253,16 @@ struct FCameraFadeConstants
 	float _pad[3];       // 12B - 16B boundary
 };
 
+// Camera Vignette CB (b3) - HLSL CameraVignetteCB와 1:1 대응
+struct FCameraVignetteConstants
+{
+	FVector4 VignetteColor;  // 16B
+	float VignetteIntensity; // 4B
+	float VignetteRadius;    // 4B
+	float VignetteSoftness;  // 4B
+	float _pad;              // 4B - 16B boundary
+};
+
 // ============================================================
 // 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
 // ============================================================

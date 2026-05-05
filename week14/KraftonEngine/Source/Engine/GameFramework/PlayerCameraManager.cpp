@@ -241,6 +241,24 @@ void APlayerCameraManager::SetManualCameraFade(float InFadeAmount, FLinearColor 
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Camera Vignette
+// ─────────────────────────────────────────────────────────────────
+void APlayerCameraManager::SetCameraVignette(float Intensity, float Radius, float Softness, FLinearColor Color)
+{
+	bEnableVignette = true;
+	VignetteIntensity = Intensity;
+	VignetteRadius = Radius;
+	VignetteSoftness = Softness;
+	VignetteColor = Color;
+}
+
+void APlayerCameraManager::ClearCameraVignette()
+{
+	bEnableVignette = false;
+	VignetteIntensity = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Tick — Shake / Fade / ViewTarget blend 갱신
 // TODO(A): World::Tick 에서 매 프레임 호출하도록 연결.
 // ─────────────────────────────────────────────────────────────────

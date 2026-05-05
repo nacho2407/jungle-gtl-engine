@@ -232,6 +232,15 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 		Frame.CameraFade.Color = CamManager->GetFadeColor();
 		Frame.CameraFade.Amount = CamManager->GetFadeAmount();
 	}
+
+	Frame.CameraVignette.bEnabled = CamManager ? CamManager->IsVignetteEnabled() : false;
+	if (Frame.CameraVignette.bEnabled)
+	{
+		Frame.CameraVignette.Intensity = CamManager->GetVignetteIntensity();
+		Frame.CameraVignette.Radius = CamManager->GetVignetteRadius();
+		Frame.CameraVignette.Softness = CamManager->GetVignetteSoftness();
+		Frame.CameraVignette.Color = CamManager->GetVignetteColor();
+	}
 }
 
 // ============================================================

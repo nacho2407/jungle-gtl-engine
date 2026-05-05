@@ -38,6 +38,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
 	
 	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants));
+	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants));
 }
 
 void FDrawCommandBuilder::Release()
@@ -598,6 +599,27 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			Cmd.InitFullscreenTriangle(FadeShader, ERenderPass::PostProcess, PPRS);
 			Cmd.Bindings.PerShaderCB[0] = &CameraFadeCB;
 			Cmd.BuildSortKey(5);
+		}
+	}
+
+	// Camera Vignette
+	if (Frame.CameraVignette.bEnabled && Frame.CameraVignette.Intensity > 0.0f)
+	{
+		FShader* VignetteShader = FShaderManager::Get().GetOrCreate(EShaderPath::CameraVignette);
+		if (VignetteShader)
+		{
+			FCameraVignetteConstants VignetteData = {};
+			VignetteData.VignetteColor = Frame.CameraVignette.Color.ToVector4();
+			VignetteData.VignetteIntensity = Frame.CameraVignette.Intensity;
+			VignetteData.VignetteRadius = Frame.CameraVignette.Radius;
+			VignetteData.VignetteSoftness = Frame.CameraVignette.Softness;
+
+			CameraVignetteCB.Update(Ctx, &VignetteData, sizeof(FCameraVignetteConstants));
+
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(VignetteShader, ERenderPass::PostProcess, PPRS);
+			Cmd.Bindings.PerShaderCB[0] = &CameraVignetteCB;
+			Cmd.BuildSortKey(6);
 		}
 	}
 }
