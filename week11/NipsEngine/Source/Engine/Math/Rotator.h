@@ -29,6 +29,8 @@ struct FRotator
 	// 엔진 오일러 각도 {Roll, Pitch, Yaw}로부터 로테이터를 생성합니다.
 	static FRotator MakeFromEuler(const FVector& InEulerDegrees) noexcept;
 
+	static FRotator Lerp(const FRotator& A, const FRotator& B, float T) noexcept;
+
 	bool operator==(const FRotator& Other) const noexcept;
 	bool operator!=(const FRotator& Other) const noexcept;
 	FRotator operator-() const noexcept;

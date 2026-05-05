@@ -41,6 +41,19 @@ FRotator FRotator::MakeFromEuler(const FVector& InEulerDegrees) noexcept
 	return FRotator(InEulerDegrees.Y, InEulerDegrees.Z, InEulerDegrees.X);
 }
 
+FRotator FRotator::Lerp(const FRotator& A, const FRotator& B, float T) noexcept
+{
+    float DeltaPitch = NormalizeAxis(B.Pitch - A.Pitch);
+    float DeltaYaw = NormalizeAxis(B.Yaw - A.Yaw);
+    float DeltaRoll = NormalizeAxis(B.Roll - A.Roll);
+
+    return FRotator(
+               A.Pitch + DeltaPitch * T,
+               A.Yaw + DeltaYaw * T,
+               A.Roll + DeltaRoll * T)
+        .GetNormalized();
+}
+
 bool FRotator::operator==(const FRotator& Other) const noexcept
 {
 	return Pitch == Other.Pitch && Yaw == Other.Yaw && Roll == Other.Roll;
