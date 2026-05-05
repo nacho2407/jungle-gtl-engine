@@ -39,13 +39,12 @@ void FEditorViewportClient::ResetCamera()
 	if (!Settings) return;
 	ViewTransform.ViewLocation = Settings->InitViewPos;
 	ViewTransform.LookAt(Settings->InitLookAt);
-	PushPOVToWorld();
 	SyncCameraSmoothingTarget();
 }
 
-void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
+// IPOVProvider — World 가 LOD/render 의 POV 가 필요할 때 pull. ViewTransform 이 SoT.
+bool FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	// D.3: ViewTransform 이 SoT. Camera 컴포넌트(존재하면)는 mirror.
 	OutPOV.Location    = ViewTransform.ViewLocation;
 	OutPOV.Rotation    = ViewTransform.ViewRotation;
 	OutPOV.FOV         = ViewTransform.FOV;
@@ -54,25 +53,7 @@ void FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 	OutPOV.NearClip    = ViewTransform.NearClip;
 	OutPOV.FarClip     = ViewTransform.FarClip;
 	OutPOV.bIsOrtho    = ViewTransform.bIsOrtho;
-}
-
-// ─── 잔여 정리: Active viewport 의 POV 를 World 의 EditorActivePOV 슬롯에 푸시 ─────
-// LOD/render 가 World->GetActivePOV() 로 받아 사용. PIE/Game 시작 후엔 PC 의
-// PlayerCameraManager 가 우선이라 자동으로 게임 카메라로 전환된다.
-void FEditorViewportClient::PushPOVToWorld()
-{
-	if (!bIsActive) return;
-	UWorld* World = GetWorld();
-	if (!World) return;
-
-	FMinimalViewInfo POV;
-	GetCameraView(POV);
-	World->SetEditorActivePOV(POV);
-}
-
-void FEditorViewportClient::NotifyViewTransformChanged()
-{
-	PushPOVToWorld();
+	return true;
 }
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
@@ -82,7 +63,6 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::Perspective)
 	{
 		ViewTransform.bIsOrtho = false;
-		PushPOVToWorld();
 		SyncCameraSmoothingTarget();
 		return;
 	}
@@ -91,7 +71,6 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	if (NewType == ELevelViewportType::FreeOrthographic)
 	{
 		ViewTransform.bIsOrtho = true;
-		PushPOVToWorld();
 		SyncCameraSmoothingTarget();
 		return;
 	}
@@ -136,7 +115,6 @@ void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 	ViewTransform.ViewLocation = Position;
 	// FVector(Roll, Pitch, Yaw) → FRotator(Pitch, Yaw, Roll). FRotator.h:19 참고.
 	ViewTransform.ViewRotation = FRotator(Rotation.Y, Rotation.Z, Rotation.X);
-	PushPOVToWorld();
 	SyncCameraSmoothingTarget();
 }
 
@@ -162,7 +140,6 @@ void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeigh
 	{
 		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	}
-	PushPOVToWorld();
 }
 
 void FEditorViewportClient::Tick(float DeltaTime)
@@ -242,9 +219,6 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	TickEditorShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
-
-	// 입력 mutation 종료 후 World 의 EditorActivePOV 슬롯 갱신 (LOD/render 용).
-	PushPOVToWorld();
 }
 
 void FEditorViewportClient::SyncCameraSmoothingTarget()

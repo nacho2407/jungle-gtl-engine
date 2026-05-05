@@ -3,6 +3,7 @@
 #include "Viewport/ViewportClient.h"
 #include "Render/Types/RenderTypes.h"
 #include "Render/Types/ViewTypes.h"
+#include "Render/Types/POVProvider.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 
 #include "UI/SWindow.h"
@@ -22,7 +23,7 @@ class FViewport;
 class FOverlayStatSystem;
 struct FMinimalViewInfo;
 
-class FEditorViewportClient : public FViewportClient
+class FEditorViewportClient : public FViewportClient, public IPOVProvider
 {
 public:
 	void Initialize(FWindowsWindow* InWindow);
@@ -53,15 +54,16 @@ public:
 	void DestroyCamera() {}
 	void ResetCamera();
 
-	// 카메라 POV 통화 산출 — 외부에 노출되는 카메라 데이터 API.
-	void GetCameraView(FMinimalViewInfo& OutPOV) const;
+	// IPOVProvider — World 가 LOD/render 용 POV 를 pull 할 때 호출.
+	bool GetCameraView(FMinimalViewInfo& OutPOV) const override;
 
-	// Editor 카메라 데이터 SoT. UI 위젯이 이 값을 직접 편집하고 NotifyViewTransformChanged 호출.
+	// Editor 카메라 데이터 SoT. UI 위젯이 이 값을 직접 편집한 뒤 NotifyViewTransformChanged 호출.
 	FViewportCameraTransform& GetViewTransform() { return ViewTransform; }
 	const FViewportCameraTransform& GetViewTransform() const { return ViewTransform; }
 
-	// 외부에서 ViewTransform 을 mutate 한 후 호출 — Active viewport 면 World 의 EditorActivePOV 갱신.
-	void NotifyViewTransformChanged();
+	// Pull 모델에선 World 가 매 GetActivePOV 호출 시 provider 에서 직접 가져와 별 동기화 불필요.
+	// 단, UI 위젯에서 즉각 반영하려는 의도 명시 위해 이름은 보존 (현재 no-op).
+	void NotifyViewTransformChanged() {}
 
 	void Tick(float DeltaTime);
 
@@ -107,9 +109,6 @@ private:
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
 
-	// 잔여 정리: ViewTransform 만 SoT — Camera 컴포넌트 mirror 자체 제거됨.
-	// Active viewport 의 POV 를 World 의 EditorActivePOV 슬롯에 푸시 (LOD/render 용).
-	void PushPOVToWorld();
 
 private:
 	FViewport* Viewport = nullptr;

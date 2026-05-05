@@ -302,13 +302,11 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 		Pipeline->OnSceneCleared();
 	}
 
-	// 5) 활성 뷰포트의 POV 를 PIE 월드의 EditorActivePOV 슬롯에 등록 —
-	//    PC 가 자기 카메라를 잡기 전까지 LOD fallback 으로 사용.
+	// 5) 활성 뷰포트를 PIE 월드의 IPOVProvider 로 등록 —
+	//    PC 가 자기 카메라를 잡기 전까지 LOD fallback 으로 pull.
 	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
 	{
-		FMinimalViewInfo POV;
-		ActiveVC->GetCameraView(POV);
-		PIEWorld->SetEditorActivePOV(POV);
+		PIEWorld->SetEditorPOVProvider(ActiveVC);
 	}
 
 	// 6) Selection을 PIE 월드 기준으로 재바인딩 — 에디터 액터를 가리킨 채로 두면
@@ -401,10 +399,8 @@ void UEditorEngine::EndPlayMap()
 				ActiveVC->NotifyViewTransformChanged();
 			}
 
-			// 잔여 정리: ViewTransform 에서 POV 추출해 Editor world 의 EditorActivePOV 에 등록 (LOD 용).
-			FMinimalViewInfo RestoredPOV;
-			ActiveVC->GetCameraView(RestoredPOV);
-			EditorWorld->SetEditorActivePOV(RestoredPOV);
+			// Editor world 에 active viewport 를 IPOVProvider 로 등록 (LOD pull 진입점).
+			EditorWorld->SetEditorPOVProvider(ActiveVC);
 		}
 	}
 
