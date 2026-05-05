@@ -12,6 +12,7 @@ public:
 	float GetDeltaTime() const { return DeltaTime * TimeDilation; }
 	float GetRawDeltaTime() const { return DeltaTime; }
 	double GetTotalTime() const { return TotalTime; }
+	float GetTimeDilation() const { return TimeDilation; }
 
 	float GetFPS() const { return DeltaTime > 0.0f ? 1.0f / DeltaTime : 0.0f; }
 	float GetDisplayFPS() const { return SmoothedFPS; }
