@@ -1626,6 +1626,9 @@ void FLevelViewportLayout::RenderPaneToolbar(int32 SlotIndex)
 					ImGui::Text("FXAA");
 					ImGui::SliderFloat("EdgeThreshold", &Opts.EdgeThreshold, 0.06f, 0.333f, "%.3f");
 					ImGui::SliderFloat("EdgeThresholdMin", &Opts.EdgeThresholdMin, 0.0312f, 0.0833f, "%.4f");
+
+					ImGui::Text("Gamma");
+					ImGui::SliderFloat("Gamma", &Opts.Gamma, 1.0f, 3.0f, "%.2f");
 				}
 
 				ImGui::Separator();
