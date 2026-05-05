@@ -107,10 +107,8 @@ private:
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
 
-	// D.0 — Camera 컴포넌트 ↔ ViewTransform 양방향 sync.
-	// 현재는 컴포넌트가 SoT 라 SyncViewTransformFromCamera 만 호출되며, ViewTransform 은
-	// 외부 Read 용 mirror. D.2 에서 SoT 가 ViewTransform 으로 뒤집히면 반대 방향만 호출.
-	void SyncViewTransformFromCamera();
+	// D.2/D.3: ViewTransform 이 SoT. mutation 후 Camera 컴포넌트로 mirror.
+	// Camera 멤버 자체가 사라지면 (E 단계 이후) 이 함수도 제거 가능.
 	void SyncCameraFromViewTransform();
 
 private:
