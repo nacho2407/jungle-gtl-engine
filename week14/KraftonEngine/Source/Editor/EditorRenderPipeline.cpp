@@ -122,11 +122,13 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	if (bShouldUseGameCamera)
 	{
 		// E.2/2: PC 경로 — World 의 GetCameraManager 의존 제거.
+		// shake/blend 가 적용된 최종 POV 가 필요하므로 GetCameraCachePOV 사용
+		// (UpdateCamera 가 매 프레임 채워 둠).
 		if (APlayerController* PC = World->GetFirstPlayerController())
 		{
 			if (APlayerCameraManager* CamManager = PC->GetPlayerCameraManager())
 			{
-				CamManager->GetCameraView(POV);
+				CamManager->GetCameraCachePOV(POV);
 			}
 		}
 	}

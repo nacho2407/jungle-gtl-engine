@@ -99,8 +99,15 @@ public:
 	bool GetCameraView(FMinimalViewInfo& OutPOV) const;
 
 	// ─── Tick ─────────────────────────────────────────────────────
-	// World::Tick 에서 매 프레임 호출. Shake / Fade / ViewTarget blend 갱신.
+	// World::Tick 에서 매 프레임 호출. ActiveCamera base POV 산출 → Shake 누적 →
+	// CameraCachePOV 에 저장. Fade / ViewTarget blend 도 같이 갱신.
 	virtual void UpdateCamera(float DeltaTime);
+
+	// ─── POV Cache ────────────────────────────────────────────────
+	// UE: APlayerCameraManager::GetCameraCachePOV. UpdateCamera 가 매 프레임 채운
+	// 최종(shake 적용된) POV 를 반환. World::GetActivePOV / 외부 호출자가 이걸 사용.
+	// false 반환 시 ActiveCamera 가 없거나 아직 한 번도 갱신되지 않은 상태.
+	bool GetCameraCachePOV(FMinimalViewInfo& OutPOV) const;
 
 private:
 	float ApplyBlendFunction(float Alpha, FViewTargetTransitionParams BlendParams) const;
@@ -139,4 +146,9 @@ private:
 	float VignetteRadius = 0.75f;
 	float VignetteSoftness = 0.35f;
 	FLinearColor VignetteColor = FLinearColor::Black();
+
+	// POV cache — UpdateCamera 가 채우고, 외부는 GetCameraCachePOV 로 read.
+	// ActiveCamera 가 한 번도 없었으면 bCameraCacheValid=false → caller 가 fallback 처리.
+	FMinimalViewInfo CameraCachePOV;
+	bool bCameraCacheValid = false;
 };
