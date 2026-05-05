@@ -23,6 +23,8 @@ public:
 
     virtual void InitDefaultComponents() {}
 
+	FString MakeUniqueComponentName(const UActorComponent* TargetComponent, const FString& RequestedName, bool bAlwaysAppendNumber) const;
+
 	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
 	template<typename T>
 	T* AddComponent() {
@@ -34,6 +36,7 @@ public:
 		bPrimitiveCacheDirty = true;
 
 		Comp->SetOwner(this);
+		Comp->SetFName(FName(MakeUniqueComponentName(Comp, T::s_TypeInfo.name, true)));
 		OwnedComponents.push_back(Comp);
 		bPrimitiveCacheDirty = true;
 		NotifyComponentRegistered(Comp);

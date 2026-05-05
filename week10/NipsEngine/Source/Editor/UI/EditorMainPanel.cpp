@@ -768,9 +768,6 @@ void FEditorMainPanel::Render(float DeltaTime)
     RenderConsoleDrawer(DeltaTime);
     RenderFooterOverlay(DeltaTime);
 
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
     for (const FRuntimeUIRenderContext& Context : PendingPIERmlUiRenderContexts)
     {
         if (EditorEngine)
@@ -779,6 +776,9 @@ void FEditorMainPanel::Render(float DeltaTime)
         }
     }
     PendingPIERmlUiRenderContexts.clear();
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 void FEditorMainPanel::HideEditorWindowsForPIE()

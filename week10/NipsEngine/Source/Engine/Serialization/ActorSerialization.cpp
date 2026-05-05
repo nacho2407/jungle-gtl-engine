@@ -72,6 +72,83 @@ namespace
 		return FString(First, Last);
 	}
 
+	bool ParseNameNumber(const FString& Text, int32& OutNumber)
+	{
+		if (Text.empty())
+		{
+			return false;
+		}
+
+		int32 Value = 0;
+		for (char Ch : Text)
+		{
+			if (!std::isdigit(static_cast<unsigned char>(Ch)))
+			{
+				return false;
+			}
+			Value = Value * 10 + (Ch - '0');
+		}
+
+		OutNumber = Value;
+		return true;
+	}
+
+	bool SplitGeneratedNameSuffix(const FString& Name, FString& OutBaseName, int32& OutNumber)
+	{
+		const FString TrimmedName = TrimName(Name);
+		if (TrimmedName.empty())
+		{
+			return false;
+		}
+
+		if (TrimmedName.back() == ')')
+		{
+			const size_t OpenParen = TrimmedName.rfind(" (");
+			if (OpenParen != FString::npos && OpenParen + 2 < TrimmedName.size() - 1)
+			{
+				const FString NumberText = TrimmedName.substr(OpenParen + 2, TrimmedName.size() - OpenParen - 3);
+				if (ParseNameNumber(NumberText, OutNumber))
+				{
+					OutBaseName = TrimName(TrimmedName.substr(0, OpenParen));
+					return !OutBaseName.empty();
+				}
+			}
+		}
+
+		size_t NumberBegin = TrimmedName.size();
+		while (NumberBegin > 0 && std::isdigit(static_cast<unsigned char>(TrimmedName[NumberBegin - 1])) != 0)
+		{
+			--NumberBegin;
+		}
+
+		if (NumberBegin == TrimmedName.size() || NumberBegin == 0 || TrimmedName[NumberBegin - 1] != '_')
+		{
+			return false;
+		}
+
+		if (ParseNameNumber(TrimmedName.substr(NumberBegin), OutNumber))
+		{
+			OutBaseName = TrimName(TrimmedName.substr(0, NumberBegin - 1));
+			return !OutBaseName.empty();
+		}
+		return false;
+	}
+
+	FString StripGeneratedNameSuffixes(const FString& Name)
+	{
+		FString BaseName = TrimName(Name);
+		for (;;)
+		{
+			FString NextBaseName;
+			int32 IgnoredNumber = 0;
+			if (!SplitGeneratedNameSuffix(BaseName, NextBaseName, IgnoredNumber))
+			{
+				return BaseName;
+			}
+			BaseName = NextBaseName;
+		}
+	}
+
 	bool IsActorNameTaken(UWorld* World, AActor* TargetActor, const FString& CandidateName)
 	{
 		if (!World || CandidateName.empty())
@@ -91,22 +168,43 @@ namespace
 
 	FString MakeUniqueActorName(UWorld* World, AActor* TargetActor, const FString& RequestedName)
 	{
-		FString BaseName = TrimName(RequestedName);
+		const FString RequestedCleanName = TrimName(RequestedName);
+		FString BaseName = StripGeneratedNameSuffixes(RequestedName);
 		if (BaseName.empty())
 		{
 			BaseName = TargetActor && TargetActor->GetTypeInfo() ? TargetActor->GetTypeInfo()->name : "Actor";
 		}
 
-		if (!IsActorNameTaken(World, TargetActor, BaseName))
+		if (!RequestedCleanName.empty() && !IsActorNameTaken(World, TargetActor, RequestedCleanName))
 		{
-			return BaseName;
+			return RequestedCleanName;
 		}
 
-		int32 Suffix = 1;
+		int32 HighestSuffix = 0;
+		if (World)
+		{
+			for (AActor* Actor : World->GetActors())
+			{
+				if (!Actor || Actor == TargetActor)
+				{
+					continue;
+				}
+
+				FString ExistingBaseName;
+				int32 ExistingSuffix = 0;
+				if (SplitGeneratedNameSuffix(Actor->GetFName().ToString(), ExistingBaseName, ExistingSuffix)
+					&& StripGeneratedNameSuffixes(ExistingBaseName) == BaseName)
+				{
+					HighestSuffix = std::max(HighestSuffix, ExistingSuffix);
+				}
+			}
+		}
+
+		int32 Suffix = std::max(HighestSuffix + 1, 1);
 		FString Candidate;
 		do
 		{
-			Candidate = BaseName + "(" + std::to_string(Suffix++) + ")";
+			Candidate = BaseName + "_" + std::to_string(Suffix++);
 		}
 		while (IsActorNameTaken(World, TargetActor, Candidate));
 

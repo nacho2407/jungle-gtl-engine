@@ -38,7 +38,7 @@ namespace
 	bool RuntimeFileExists(const FString& Path)
 	{
 		std::error_code Ec;
-		return std::filesystem::exists(std::filesystem::path(FPaths::ToWide(Path)), Ec) && !Ec;
+		return std::filesystem::exists(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(Path))), Ec) && !Ec;
 	}
 
 	FString MakeCookedStaticMeshPath(const FString& SourcePath)
@@ -65,6 +65,34 @@ namespace
 		SubPath.replace_extension(L".bin");
 		return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
 	}
+}
+
+static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath)
+{
+	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
+	SourceFsPath.replace_extension(L".bin");
+	return FPaths::ToUtf8(SourceFsPath.generic_wstring());
+}
+
+static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath)
+{
+	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
+	std::filesystem::path BinaryFileName = SourceFsPath.stem();
+	BinaryFileName += L".bin";
+	return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Mesh" / L"Bin" / BinaryFileName).generic_wstring());
+}
+
+static UStaticMesh* LoadStaticMeshBinaryFallback(FResourceManager* ResourceManager, const FString& RequestedPath, const FString& BinaryPath)
+{
+	if (!ResourceManager || BinaryPath.empty() || !RuntimeFileExists(BinaryPath))
+	{
+		return nullptr;
+	}
+
+	UE_LOG("[StaticMeshLoad] Redirect missing OBJ to binary mesh | Source=%s | Binary=%s",
+		RequestedPath.c_str(),
+		BinaryPath.c_str());
+	return ResourceManager->LoadStaticMesh(BinaryPath);
 }
 
 #pragma region __BINARY__
@@ -1755,16 +1783,24 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	if (RequestedExt == L".obj" && !RuntimeFileExists(NormalizedPath))
 	{
 		const FString CookedPath = MakeCookedStaticMeshPath(NormalizedPath);
-		if (RuntimeFileExists(CookedPath))
+		if (UStaticMesh* CookedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CookedPath))
 		{
-			UE_LOG("[StaticMeshLoad] Redirect missing OBJ to cooked mesh | Source=%s | Cooked=%s",
-				NormalizedPath.c_str(),
-				CookedPath.c_str());
-			if (UStaticMesh* CookedMesh = LoadStaticMesh(CookedPath))
-			{
-				StaticMeshes[NormalizedPath] = CookedMesh;
-				return CookedMesh;
-			}
+			StaticMeshes[NormalizedPath] = CookedMesh;
+			return CookedMesh;
+		}
+
+		const FString SiblingBinaryPath = MakeSiblingStaticMeshBinaryPath(NormalizedPath);
+		if (UStaticMesh* SiblingMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, SiblingBinaryPath))
+		{
+			StaticMeshes[NormalizedPath] = SiblingMesh;
+			return SiblingMesh;
+		}
+
+		const FString CacheBinaryPath = MakeStaticMeshCacheBinaryPath(NormalizedPath);
+		if (UStaticMesh* CachedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CacheBinaryPath))
+		{
+			StaticMeshes[NormalizedPath] = CachedMesh;
+			return CachedMesh;
 		}
 	}
 	if (RequestedExt == L".bin")
@@ -1787,7 +1823,10 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 				StaticMeshes[NormalizedPath] = FoundSourceMesh;
 				return FoundSourceMesh;
 			}
-			LoadMaterial(SourcePath, "Shaders/UberLit.hlsl");
+			if (RuntimeFileExists(SourcePath))
+			{
+				LoadMaterial(SourcePath, "Shaders/UberLit.hlsl");
+			}
 		}
 
 		for (FStaticMeshMaterialSlot& Slot : LoadedMeshData->Slots)

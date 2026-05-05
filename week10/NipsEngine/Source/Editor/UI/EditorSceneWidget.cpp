@@ -35,6 +35,83 @@ namespace
 		return FString(First, Last);
 	}
 
+	bool ParseActorNameNumber(const FString& Text, int32& OutNumber)
+	{
+		if (Text.empty())
+		{
+			return false;
+		}
+
+		int32 Value = 0;
+		for (char Ch : Text)
+		{
+			if (!std::isdigit(static_cast<unsigned char>(Ch)))
+			{
+				return false;
+			}
+			Value = Value * 10 + (Ch - '0');
+		}
+
+		OutNumber = Value;
+		return true;
+	}
+
+	bool SplitGeneratedActorNameSuffix(const FString& Name, FString& OutBaseName, int32& OutNumber)
+	{
+		const FString TrimmedName = TrimActorName(Name);
+		if (TrimmedName.empty())
+		{
+			return false;
+		}
+
+		if (TrimmedName.back() == ')')
+		{
+			const size_t OpenParen = TrimmedName.rfind(" (");
+			if (OpenParen != FString::npos && OpenParen + 2 < TrimmedName.size() - 1)
+			{
+				const FString NumberText = TrimmedName.substr(OpenParen + 2, TrimmedName.size() - OpenParen - 3);
+				if (ParseActorNameNumber(NumberText, OutNumber))
+				{
+					OutBaseName = TrimActorName(TrimmedName.substr(0, OpenParen));
+					return !OutBaseName.empty();
+				}
+			}
+		}
+
+		size_t NumberBegin = TrimmedName.size();
+		while (NumberBegin > 0 && std::isdigit(static_cast<unsigned char>(TrimmedName[NumberBegin - 1])) != 0)
+		{
+			--NumberBegin;
+		}
+
+		if (NumberBegin == TrimmedName.size() || NumberBegin == 0 || TrimmedName[NumberBegin - 1] != '_')
+		{
+			return false;
+		}
+
+		if (ParseActorNameNumber(TrimmedName.substr(NumberBegin), OutNumber))
+		{
+			OutBaseName = TrimActorName(TrimmedName.substr(0, NumberBegin - 1));
+			return !OutBaseName.empty();
+		}
+		return false;
+	}
+
+	FString StripGeneratedActorNameSuffixes(const FString& Name)
+	{
+		FString BaseName = TrimActorName(Name);
+		for (;;)
+		{
+			FString NextBaseName;
+			int32 IgnoredNumber = 0;
+			if (!SplitGeneratedActorNameSuffix(BaseName, NextBaseName, IgnoredNumber))
+			{
+				return BaseName;
+			}
+			BaseName = NextBaseName;
+		}
+	}
+
 	FString ToLowerCopy(FString Value)
 	{
 		std::transform(Value.begin(), Value.end(), Value.begin(), [](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
@@ -73,7 +150,7 @@ void FEditorSceneWidget::NewScene()
 	EditorEngine->ClearUndoHistory();
 	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), "Untitled", _TRUNCATE);
 	CurrentSceneFilePath.clear();
-	bSceneDirty = true;
+	bSceneDirty = false;
 	EditorEngine->GetMainPanel().PushFooterLog("New level created");
 	NewSceneNotificationTimer = common::constants::ImGui::NotificationTimer;
 }
@@ -123,37 +200,28 @@ bool FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), FinalSceneName.c_str(), _TRUNCATE);
 
 	FWorldContext* Ctx = EditorEngine->GetWorldContextFromHandle(EditorEngine->GetActiveWorldHandle());
-	if (Ctx)
+	if (!Ctx)
 	{
-		FEditorCameraState CamState;
-		if (const FViewportCamera* Cam = EditorEngine->GetCamera())
-		{
-			CamState.Location = Cam->GetLocation();
-			CamState.Rotation = FRotator(Cam->GetRotation());
-			CamState.FOV = Cam->GetFOV() * (180.f / 3.14159265358979f);
-			CamState.NearClip = Cam->GetNearPlane();
-			CamState.FarClip = Cam->GetFarPlane();
-			CamState.bValid = true;
-		}
+		return false;
+	}
 
-		//FSceneSaveManager::SaveSceneAsJSON(FinalSceneName, *Ctx, &CamState);
-		FSceneSaveManager::Save(FinalSceneName, *Ctx, &CamState);
+	FEditorCameraState CamState;
+	if (const FViewportCamera* Cam = EditorEngine->GetCamera())
+	{
+		CamState.Location = Cam->GetLocation();
+		CamState.Rotation = FRotator(Cam->GetRotation());
+		CamState.FOV = Cam->GetFOV() * (180.f / 3.14159265358979f);
+		CamState.NearClip = Cam->GetNearPlane();
+		CamState.FarClip = Cam->GetFarPlane();
+		CamState.bValid = true;
+	}
 
-		const std::filesystem::path SavedPath = std::filesystem::path(FSceneSaveManager::GetSceneDirectory())
-			/ (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension);
-
-		if (!bNameOnlySave && SavedPath != TargetPath)
-		{
-			const std::filesystem::path ParentPath = TargetPath.parent_path();
-			if (!ParentPath.empty())
-			{
-				std::error_code CreateDirEc;
-				std::filesystem::create_directories(ParentPath, CreateDirEc);
-			}
-
-			std::error_code CopyEc;
-			std::filesystem::copy_file(SavedPath, TargetPath, std::filesystem::copy_options::overwrite_existing, CopyEc);
-		}
+	const std::filesystem::path SavePath = bNameOnlySave
+		? (std::filesystem::path(FSceneSaveManager::GetSceneDirectory()) / (FPaths::ToWide(FinalSceneName) + FSceneSaveManager::SceneExtension))
+		: TargetPath;
+	if (!FSceneSaveManager::SaveToFilePath(FPaths::ToUtf8(SavePath.wstring()), *Ctx, &CamState))
+	{
+		return false;
 	}
 
 	const std::filesystem::path StoredPath = bNameOnlySave
@@ -421,22 +489,40 @@ void FEditorSceneWidget::Render(float DeltaTime)
 
     auto MakeUniqueActorName = [&](AActor* TargetActor, const FString& RequestedName)
     {
-        FString BaseName = TrimActorName(RequestedName);
+        const FString RequestedCleanName = TrimActorName(RequestedName);
+        FString BaseName = StripGeneratedActorNameSuffixes(RequestedName);
         if (BaseName.empty())
         {
             BaseName = TargetActor ? TargetActor->GetTypeInfo()->name : "Actor";
         }
 
-        if (!IsActorNameTaken(TargetActor, BaseName))
+        if (!RequestedCleanName.empty() && !IsActorNameTaken(TargetActor, RequestedCleanName))
         {
-            return BaseName;
+            return RequestedCleanName;
         }
 
-        int32 Suffix = 1;
+        int32 HighestSuffix = 0;
+        for (AActor* Actor : Actors)
+        {
+            if (!Actor || Actor == TargetActor)
+            {
+                continue;
+            }
+
+            FString ExistingBaseName;
+            int32 ExistingSuffix = 0;
+            if (SplitGeneratedActorNameSuffix(Actor->GetFName().ToString(), ExistingBaseName, ExistingSuffix)
+                && StripGeneratedActorNameSuffixes(ExistingBaseName) == BaseName)
+            {
+                HighestSuffix = std::max(HighestSuffix, ExistingSuffix);
+            }
+        }
+
+        int32 Suffix = std::max(HighestSuffix + 1, 1);
         FString Candidate;
         do
         {
-            Candidate = BaseName + " (" + std::to_string(Suffix++) + ")";
+            Candidate = BaseName + "_" + std::to_string(Suffix++);
         }
         while (IsActorNameTaken(TargetActor, Candidate));
         return Candidate;

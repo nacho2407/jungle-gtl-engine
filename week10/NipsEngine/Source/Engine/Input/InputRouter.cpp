@@ -650,7 +650,16 @@ void FInputRouter::FinalizeAndDispatchInput(
         InOutContext.bHovered ||
         InOutContext.bCaptured ||
         InOutContext.bRelativeMouseMode;
-    const bool bBlockKeyboardForViewport = InOutContext.bImGuiCapturedKeyboard || !InOutContext.bFocused;
+    const bool bViewportKeyboardTarget =
+        InOutContext.bFocused ||
+        InOutContext.bHovered ||
+        InOutContext.bCaptured ||
+        InOutContext.bRelativeMouseMode;
+    const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+    const bool bGuiExclusiveKeyboard =
+        GuiState.bUsingTextInput ||
+        GuiState.bBlockViewportMouse;
+    const bool bBlockKeyboardForViewport = bGuiExclusiveKeyboard || !bViewportKeyboardTarget;
     const bool bBlockMouseForViewport =
         bHardBlockMouse ||
         !InOutContext.bFocused ||

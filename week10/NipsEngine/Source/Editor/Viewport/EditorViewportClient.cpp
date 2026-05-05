@@ -21,6 +21,7 @@
 #include "Math/Vector4.h"
 #include "Slate/SWidget.h"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <unordered_set>
 
@@ -52,6 +53,167 @@ bool IsRuntimeGameInputCaptured()
 		&& GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
 		&& GEngine->IsRuntimeCursorLocked();
 }
+}
+
+static FString TrimEditorActorName(const FString& Name)
+{
+	size_t Begin = 0;
+	while (Begin < Name.size() && std::isspace(static_cast<unsigned char>(Name[Begin])) != 0)
+	{
+		++Begin;
+	}
+
+	size_t End = Name.size();
+	while (End > Begin && std::isspace(static_cast<unsigned char>(Name[End - 1])) != 0)
+	{
+		--End;
+	}
+
+	if (Begin >= End)
+	{
+		return "";
+	}
+	return Name.substr(Begin, End - Begin);
+}
+
+static bool ParseEditorNameNumber(const FString& Text, int32& OutNumber)
+{
+	if (Text.empty())
+	{
+		return false;
+	}
+
+	int32 Value = 0;
+	for (char Ch : Text)
+	{
+		if (!std::isdigit(static_cast<unsigned char>(Ch)))
+		{
+			return false;
+		}
+		Value = Value * 10 + (Ch - '0');
+	}
+
+	OutNumber = Value;
+	return true;
+}
+
+static bool SplitEditorGeneratedNameSuffix(const FString& Name, FString& OutBaseName, int32& OutNumber)
+{
+	const FString TrimmedName = TrimEditorActorName(Name);
+	if (TrimmedName.empty())
+	{
+		return false;
+	}
+
+	if (TrimmedName.back() == ')')
+	{
+		const size_t OpenParen = TrimmedName.rfind(" (");
+		if (OpenParen != FString::npos && OpenParen + 2 < TrimmedName.size() - 1)
+		{
+			const FString NumberText = TrimmedName.substr(OpenParen + 2, TrimmedName.size() - OpenParen - 3);
+			if (ParseEditorNameNumber(NumberText, OutNumber))
+			{
+				OutBaseName = TrimEditorActorName(TrimmedName.substr(0, OpenParen));
+				return !OutBaseName.empty();
+			}
+		}
+	}
+
+	size_t NumberBegin = TrimmedName.size();
+	while (NumberBegin > 0 && std::isdigit(static_cast<unsigned char>(TrimmedName[NumberBegin - 1])) != 0)
+	{
+		--NumberBegin;
+	}
+
+	if (NumberBegin == TrimmedName.size() || NumberBegin == 0 || TrimmedName[NumberBegin - 1] != '_')
+	{
+		return false;
+	}
+
+	if (ParseEditorNameNumber(TrimmedName.substr(NumberBegin), OutNumber))
+	{
+		OutBaseName = TrimEditorActorName(TrimmedName.substr(0, NumberBegin - 1));
+		return !OutBaseName.empty();
+	}
+	return false;
+}
+
+static FString StripEditorGeneratedNameSuffixes(const FString& Name)
+{
+	FString BaseName = TrimEditorActorName(Name);
+	for (;;)
+	{
+		FString NextBaseName;
+		int32 IgnoredNumber = 0;
+		if (!SplitEditorGeneratedNameSuffix(BaseName, NextBaseName, IgnoredNumber))
+		{
+			return BaseName;
+		}
+		BaseName = NextBaseName;
+	}
+}
+
+static bool IsEditorActorNameTaken(UWorld* World, AActor* TargetActor, const FString& CandidateName)
+{
+	if (!World || CandidateName.empty())
+	{
+		return false;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor || Actor == TargetActor)
+		{
+			continue;
+		}
+		if (Actor->GetFName() == FName(CandidateName))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static FString MakeUniqueEditorDuplicateActorName(UWorld* World, AActor* TargetActor, const FString& RequestedName)
+{
+	FString BaseName = StripEditorGeneratedNameSuffixes(RequestedName);
+	if (BaseName.empty())
+	{
+		BaseName = TargetActor && TargetActor->GetTypeInfo() ? TargetActor->GetTypeInfo()->name : "Actor";
+	}
+
+	int32 HighestSuffix = 0;
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor || Actor == TargetActor)
+		{
+			continue;
+		}
+
+		const FString ExistingName = TrimEditorActorName(Actor->GetFName().ToString());
+		if (ExistingName == BaseName)
+		{
+			continue;
+		}
+
+		FString ExistingBaseName;
+		int32 ExistingSuffix = 0;
+		if (SplitEditorGeneratedNameSuffix(ExistingName, ExistingBaseName, ExistingSuffix)
+			&& StripEditorGeneratedNameSuffixes(ExistingBaseName) == BaseName)
+		{
+			HighestSuffix = std::max(HighestSuffix, ExistingSuffix);
+		}
+	}
+
+	int32 Suffix = std::max(HighestSuffix + 1, 1);
+	FString Candidate;
+	do
+	{
+		Candidate = BaseName + "_" + std::to_string(Suffix++);
+	}
+	while (IsEditorActorNameTaken(World, TargetActor, Candidate));
+
+	return Candidate;
 }
 
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow, UEditorEngine* InEditor)
@@ -190,6 +352,8 @@ void FEditorViewportClient::Tick(float DeltaTime)
 		PIEStartOutlineFlashRemaining = std::max(0.0f, PIEStartOutlineFlashRemaining - DeltaTime);
 	}
 
+	SyncGizmoVisualState();
+
 	if (bRoutedInputProcessedThisFrame)
 	{
 		TickInteraction(DeltaTime);
@@ -238,6 +402,15 @@ void FEditorViewportClient::RequestToggleCoordinateSpace()
 void FEditorViewportClient::RequestSelectAtViewportLocalPoint(float LocalX, float LocalY, bool bToggle, bool bAdditive)
 {
 	if (!World || !SelectionManager || !bHasCamera || !Viewport)
+	{
+		return;
+	}
+
+	const InputSystem& IS = InputSystem::Get();
+	if (IS.GetKey(VK_LBUTTON)
+		|| IS.GetKey(VK_RBUTTON)
+		|| IS.GetLeftDragging()
+		|| IS.GetRightDragging())
 	{
 		return;
 	}
@@ -355,7 +528,7 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 			const float LocalMouseY = static_cast<float>(Context.MouseLocalPos.y);
 			const FRay MouseRay = Camera.DeprojectScreenToWorld(LocalMouseX, LocalMouseY, static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 			FHitResult GizmoHit{};
-			bGizmoBlocksLeftRelativeDrag = Gizmo->RaycastMesh(MouseRay, GizmoHit);
+			bGizmoBlocksLeftRelativeDrag = Gizmo->HitTestMesh(MouseRay, GizmoHit);
 		}
 	}
 
@@ -1333,10 +1506,19 @@ void FEditorViewportClient::TickMouseInput(float VX, float VY)
 		return;
 	}
 
+	const bool bSuppressPassiveFeedback = IsPassiveViewportFeedbackSuppressedByInputSystem();
+	if (bSuppressPassiveFeedback)
+	{
+		ClearPassiveGizmoHover();
+	}
+
 	if (IS.MouseMoved())
 	{
 		InputRouter.RouteMouseInput(EMouseInputType::E_MouseMoved, DX, DY);
-		InputRouter.RouteMouseInput(EMouseInputType::E_MouseMovedAbsolute, LocalX, LocalY);
+		if (!bSuppressPassiveFeedback)
+		{
+			InputRouter.RouteMouseInput(EMouseInputType::E_MouseMovedAbsolute, LocalX, LocalY);
+		}
 	}
 
 	if (IS.GetKeyDown(VK_RBUTTON))
@@ -1380,10 +1562,19 @@ void FEditorViewportClient::TickMouseInput(const FViewportInputContext& Context)
 		return;
 	}
 
+	const bool bSuppressPassiveFeedback = IsPassiveViewportFeedbackSuppressed(Context);
+	if (bSuppressPassiveFeedback)
+	{
+		ClearPassiveGizmoHover();
+	}
+
 	if (DX != 0.0f || DY != 0.0f)
 	{
 		InputRouter.RouteMouseInput(EMouseInputType::E_MouseMoved, DX, DY);
-		InputRouter.RouteMouseInput(EMouseInputType::E_MouseMovedAbsolute, LocalX, LocalY);
+		if (!bSuppressPassiveFeedback)
+		{
+			InputRouter.RouteMouseInput(EMouseInputType::E_MouseMovedAbsolute, LocalX, LocalY);
+		}
 	}
 
 	if (Context.WasPressed(VK_RBUTTON))
@@ -1439,6 +1630,62 @@ bool FEditorViewportClient::IsPointerInViewportInputDeadZone(float LocalY) const
 bool FEditorViewportClient::IsPointerInViewportInputDeadZone(const FViewportInputContext& Context) const
 {
 	return IsPointerInViewportInputDeadZone(static_cast<float>(Context.MouseLocalPos.y));
+}
+
+bool FEditorViewportClient::IsPassiveViewportFeedbackSuppressed(const FViewportInputContext& Context) const
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
+	{
+		return false;
+	}
+
+	if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
+	{
+		return false;
+	}
+
+	const bool bLeftCapture =
+		Context.Frame.IsDown(VK_LBUTTON) ||
+		Context.Frame.bLeftDragging ||
+		Context.WasPointerDragStarted(EPointerButton::Left) ||
+		Context.WasPointerDragEnded(EPointerButton::Left);
+	const bool bRightCapture =
+		Context.Frame.IsDown(VK_RBUTTON) ||
+		Context.Frame.bRightDragging ||
+		Context.WasPointerDragStarted(EPointerButton::Right) ||
+		Context.WasPointerDragEnded(EPointerButton::Right) ||
+		Context.bRelativeMouseMode;
+	const bool bMouseCaptureActive = Context.bCaptured || Context.bRelativeMouseMode || bBoxSelecting;
+
+	return bMouseCaptureActive && (bLeftCapture || bRightCapture || bBoxSelecting);
+}
+
+bool FEditorViewportClient::IsPassiveViewportFeedbackSuppressedByInputSystem() const
+{
+	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
+	{
+		return false;
+	}
+
+	if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
+	{
+		return false;
+	}
+
+	const InputSystem& IS = InputSystem::Get();
+	return bBoxSelecting ||
+		IS.GetKey(VK_LBUTTON) ||
+		IS.GetKey(VK_RBUTTON) ||
+		IS.GetLeftDragging() ||
+		IS.GetRightDragging();
+}
+
+void FEditorViewportClient::ClearPassiveGizmoHover() const
+{
+	if (Gizmo && !Gizmo->IsHolding() && !Gizmo->IsPressedOnHandle())
+	{
+		Gizmo->UpdateHoveredAxis(-1);
+	}
 }
 
 void FEditorViewportClient::SetTransformMode(ETransformMode InMode)
@@ -1518,6 +1765,40 @@ void FEditorViewportClient::ApplyTransformModeToGizmo()
 	}
 }
 
+void FEditorViewportClient::SyncGizmoVisualState()
+{
+	if (!bHasCamera || !Gizmo)
+	{
+		return;
+	}
+
+	if (World && World->GetWorldType() == EWorldType::PIE)
+	{
+		return;
+	}
+
+	if (State && !State->bHovered && !bRoutedInputProcessedThisFrame)
+	{
+		return;
+	}
+
+	ApplyTransformModeToGizmo();
+
+	if (TransformMode == ETransformMode::Select || !Gizmo->IsVisible())
+	{
+		return;
+	}
+
+	if (Camera.IsOrthographic())
+	{
+		Gizmo->ApplyScreenSpaceScalingOrtho(Camera.GetOrthoHeight());
+	}
+	else
+	{
+		Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
+	}
+}
+
 // ── Interaction (gizmo scaling + box selection) ───────────────────────────────
 
 void FEditorViewportClient::TickInteraction(float DeltaTime)
@@ -1529,20 +1810,6 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 
 	if (World && World->GetWorldType() == EWorldType::PIE)
 		return;
-
-	if (Gizmo)
-	{
-		ApplyTransformModeToGizmo();
-
-		// Gizmo screen-space scaling must happen every frame while a transform mode is active.
-		if (TransformMode != ETransformMode::Select && Gizmo->IsVisible())
-		{
-			if (Camera.IsOrthographic())
-				Gizmo->ApplyScreenSpaceScalingOrtho(Camera.GetOrthoHeight());
-			else
-				Gizmo->ApplyScreenSpaceScaling(Camera.GetLocation());
-		}
-	}
 
 	if (!World || !SelectionManager)
 		return;
@@ -1773,6 +2040,10 @@ void FEditorViewportClient::DuplicateSelection()
 		if (!DuplicatedActor)
 			continue;
 
+		DuplicatedActor->SetFName(FName(MakeUniqueEditorDuplicateActorName(
+			World,
+			DuplicatedActor,
+			SourceActor->GetFName().ToString())));
 		DuplicatedActor->SetWorld(World);
 		if (ULevel* Level = World->GetPersistentLevel())
 		{

@@ -10,6 +10,7 @@
 #include <Windows.h>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -269,6 +270,77 @@ namespace
         return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
     }
 
+    FString MakeStaticMeshCacheBinaryPath(const FString& SourceRelativePath)
+    {
+        const std::filesystem::path SourcePath(FPaths::ToWide(FPaths::Normalize(SourceRelativePath)));
+        std::filesystem::path BinaryFileName = SourcePath.stem();
+        BinaryFileName += L".bin";
+        return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Mesh" / L"Bin" / BinaryFileName).generic_wstring());
+    }
+
+    uint64 GetPackageFileWriteTimeTicks(const std::filesystem::path& Path)
+    {
+        std::error_code Ec;
+        const std::filesystem::file_time_type WriteTime = std::filesystem::last_write_time(Path, Ec);
+        if (Ec)
+        {
+            return 0;
+        }
+
+        const auto Duration = WriteTime.time_since_epoch();
+        return static_cast<uint64>(std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
+    }
+
+    void AddManifest(FPackageCookContext& Context, const FString& Line);
+
+    bool TryCopyCachedStaticMeshBinary(
+        FPackageCookContext& Context,
+        const FString& NormalizedSource,
+        const std::filesystem::path& SourceAbs,
+        const FString& CookedRelativePath,
+        const std::filesystem::path& CookedAbs,
+        FString& OutMessage)
+    {
+        const FString CacheRelativePath = MakeStaticMeshCacheBinaryPath(NormalizedSource);
+        const std::filesystem::path CacheAbs = ResolveProjectFilePath(CacheRelativePath);
+        std::error_code Ec;
+        if (!std::filesystem::exists(CacheAbs, Ec) || !std::filesystem::is_regular_file(CacheAbs, Ec))
+        {
+            return false;
+        }
+
+        FBinarySerializer Serializer;
+        FStaticMeshBinaryHeader Header;
+        if (!Serializer.ReadStaticMeshHeader(FPaths::ToUtf8(CacheAbs.wstring()), Header))
+        {
+            return false;
+        }
+
+        const uint64 SourceWriteTime = GetPackageFileWriteTimeTicks(SourceAbs);
+        if (SourceWriteTime == 0 || Header.SourceFileWriteTime != SourceWriteTime)
+        {
+            return false;
+        }
+
+        std::filesystem::create_directories(CookedAbs.parent_path(), Ec);
+        if (Ec)
+        {
+            OutMessage = "Failed to create cooked mesh directory: " + CookedRelativePath;
+            return false;
+        }
+
+        std::filesystem::copy_file(CacheAbs, CookedAbs, std::filesystem::copy_options::overwrite_existing, Ec);
+        if (Ec)
+        {
+            OutMessage = "Failed to copy cached mesh: " + CacheRelativePath;
+            return false;
+        }
+
+        Context.CookedMeshPathBySource[NormalizedSource] = CookedRelativePath;
+        AddManifest(Context, "Copied cached mesh: " + NormalizedSource + " -> " + CookedRelativePath);
+        return true;
+    }
+
     void AddManifest(FPackageCookContext& Context, const FString& Line)
     {
         Context.ManifestLines.push_back(Line);
@@ -391,6 +463,16 @@ namespace
 
         const FString CookedRelativePath = MakeCookedMeshRelativePath(NormalizedSource);
         const std::filesystem::path CookedAbs = (Context.OutputRoot / std::filesystem::path(FPaths::ToWide(CookedRelativePath))).lexically_normal();
+        if (TryCopyCachedStaticMeshBinary(Context, NormalizedSource, SourceAbs, CookedRelativePath, CookedAbs, OutMessage))
+        {
+            OutCookedPath = CookedRelativePath;
+            return true;
+        }
+        if (!OutMessage.empty())
+        {
+            return false;
+        }
+
         std::error_code Ec;
         std::filesystem::create_directories(CookedAbs.parent_path(), Ec);
         if (Ec)

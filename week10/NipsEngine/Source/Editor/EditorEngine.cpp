@@ -2137,6 +2137,27 @@ void UEditorEngine::NewScene()
     ResetViewport();
 }
 
+bool UEditorEngine::CreateDefaultSceneAsset(const FString& FilePath)
+{
+    if (FilePath.empty())
+    {
+        return false;
+    }
+
+    static int32 DefaultSceneAssetCounter = 0;
+    ++DefaultSceneAssetCounter;
+    const FString HandleName = "__DefaultSceneAsset_" + std::to_string(DefaultSceneAssetCounter);
+    const FName Handle(HandleName.c_str());
+
+    FWorldContext& Ctx = CreateWorldContext(EWorldType::Editor, Handle, "Default Scene Asset");
+    ApplySpatialIndexMaintenanceSettings(Ctx.World);
+    SpawnDefaultSceneActors(Ctx.World);
+
+    const bool bSaved = FSceneSaveManager::SaveToFilePath(FilePath, Ctx, nullptr);
+    UnregisterWorld(Handle);
+    return bSaved;
+}
+
 void UEditorEngine::ApplySpatialIndexMaintenanceSettings(UWorld* TargetWorld)
 {
     // Init 초반에는 ViewportLayout이 아직 연결되지 않았을 수 있으므로

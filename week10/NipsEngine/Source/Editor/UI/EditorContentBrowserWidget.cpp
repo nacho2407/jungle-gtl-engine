@@ -786,6 +786,11 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 			CreateMaterialAsset();
 			ImGui::CloseCurrentPopup();
 		}
+		if (ImGui::MenuItem("Scene"))
+		{
+			CreateSceneAsset();
+			ImGui::CloseCurrentPopup();
+		}
 		ImGui::EndMenu();
 	}
 	ImGui::EndDisabled();
@@ -907,6 +912,24 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 	}
 
 	if (!FResourceManager::Get().SerializeMaterial(RelativePath, Material))
+	{
+		return false;
+	}
+
+	SelectedPath = NewPath;
+	RefreshContent();
+	return true;
+}
+
+bool FEditorContentBrowserWidget::CreateSceneAsset()
+{
+	if (!EditorEngine)
+	{
+		return false;
+	}
+
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Scene.Scene");
+	if (!EditorEngine->CreateDefaultSceneAsset(FPaths::ToUtf8(NewPath.wstring())))
 	{
 		return false;
 	}

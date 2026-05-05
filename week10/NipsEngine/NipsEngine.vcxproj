@@ -291,34 +291,26 @@
       <AdditionalDependencies>gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RmlUiCore.lib;SoLoud.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <ThirdPartyBinaryConfiguration>Release</ThirdPartyBinaryConfiguration>
+    <ThirdPartyBinaryConfiguration Condition="'$(Configuration)'=='Debug'">Debug</ThirdPartyBinaryConfiguration>
+  </PropertyGroup>
+  <Target Name="BuildRmlUiStaticLibrary" BeforeTargets="ClCompile">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildRmlUiLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
+  </Target>
+  <Target Name="BuildSoLoudStaticLibrary" BeforeTargets="ClCompile">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
+  </Target>
   <ItemGroup>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_audiosource.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_bus.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_3d.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_basicops.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_faderops.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_filterops.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_getters.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_setters.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voicegroup.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voiceops.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fader.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft_lut.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_file.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_filter.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_misc.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_queue.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_thread.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\dr_impl.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\stb_vorbis.c" />
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wav.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wavstream.cpp" />
-    <ClCompile Include="ThirdParty\SoLoud\src\backend\miniaudio\soloud_miniaudio.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaApplicationAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaAudioAPI.cpp" />
@@ -344,15 +336,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
     <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
-    <ClCompile Include="ThirdParty\RmlUi\Source\Core\*.cpp">
-      <ObjectFileName>$(IntDir)RmlUiCore_%(Filename).obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Elements\*.cpp">
-      <ObjectFileName>$(IntDir)RmlUiCoreElements_%(Filename).obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\*.cpp">
-      <ObjectFileName>$(IntDir)RmlUiCoreLayout_%(Filename).obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
