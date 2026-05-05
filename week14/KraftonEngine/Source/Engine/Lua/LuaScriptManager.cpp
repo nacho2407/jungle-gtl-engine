@@ -1,7 +1,9 @@
 ﻿#include "LuaScriptManager.h"
 
 #include "Core/Log.h"
+#include "Core/Notification.h"
 #include "Audio/AudioManager.h"
+#include "Component/LuaScriptComponent.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -22,6 +24,7 @@
 #include "Runtime/WindowsWindow.h"
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -29,10 +32,124 @@
 
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
+std::mutex FLuaScriptManager::ComponentMutex;
+TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
+FSubscriptionID FLuaScriptManager::WatchSub = 0;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 {
 	OnEscapePressedCallback = std::move(Callback);
+}
+
+void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
+{
+	if (!Component) return;
+
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
+	if (It == RegisteredComponents.end())
+	{
+		RegisteredComponents.push_back(Component);
+	}
+}
+
+void FLuaScriptManager::InvalidateChangedModules(const TSet<FString>& ChangedFiles)
+{
+	if (!Lua) return;
+
+	sol::table Loaded = (*Lua)["package"]["loaded"];
+	if (!Loaded.valid()) return;
+
+	for (const FString& File : ChangedFiles)
+	{
+		FString ModuleName = GetModuleNameFromPath(File);
+		if (ModuleName.empty()) continue;
+
+		Loaded[ModuleName] = sol::nil;
+		UE_LOG("[LuaHotReload] Invalidated module: %s", ModuleName.c_str());
+	}
+}
+
+FString FLuaScriptManager::GetModuleNameFromPath(const FString& ScriptPath)
+{
+	if (ScriptPath.empty())
+	{
+		return {};
+	}
+
+	FString Normalized = ScriptPath;
+	for (char& Ch : Normalized)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+
+	constexpr const char* LuaExt = ".lua";
+	if (Normalized.size() <= 4 || Normalized.substr(Normalized.size() - 4) != LuaExt)
+	{
+		return {};
+	}
+
+	Normalized.erase(Normalized.size() - 4);
+	for (char& Ch : Normalized)
+	{
+		if (Ch == '/')
+		{
+			Ch = '.';
+		}
+	}
+
+	return Normalized;
+}
+
+void FLuaScriptManager::UnregisterComponent(ULuaScriptComponent* Component)
+{
+	if (!Component) return;
+
+	std::lock_guard<std::mutex> Lock(ComponentMutex);
+	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
+	if (It != RegisteredComponents.end())
+	{
+		RegisteredComponents.erase(It);
+	}
+}
+
+void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
+{
+	TSet<ULuaScriptComponent*> Targets;
+
+	InvalidateChangedModules(ChangedFiles);
+
+	{
+		std::lock_guard<std::mutex> Lock(ComponentMutex);
+		for (ULuaScriptComponent* Component : RegisteredComponents)
+		{
+			if (!Component) continue;
+
+			const FString& ScriptFile = Component->GetScriptFile();
+			if (ScriptFile.empty()) continue;
+
+			for (const FString& File : ChangedFiles)
+			{
+				if (File == ScriptFile)
+				{
+					Targets.insert(Component);
+					break;
+				}
+			}
+		}
+	}
+
+	for (ULuaScriptComponent* Component : Targets)
+	{
+		if (!Component) continue;
+
+		UE_LOG("[LuaHotReload] Reloading: %s", Component->GetScriptFile().c_str());
+		FNotificationManager::Get().AddNotification("Lua Reloaded: " + Component->GetScriptFile(), ENotificationType::Success, 3.0f);
+		Component->ReloadScript();
+	}
 }
 
 void FLuaScriptManager::FireOnEscapePressed()
@@ -121,10 +238,28 @@ void FLuaScriptManager::Initialize()
 	};
 
 	RegisterBindings(*Lua);
+
+	FWatchID WatchID = FDirectoryWatcher::Get().Watch(FPaths::ScriptDir(), "");
+	if (WatchID != 0)
+	{
+		WatchSub = FDirectoryWatcher::Get().Subscribe(WatchID,
+			[](const TSet<FString>& Files) { FLuaScriptManager::OnScriptsChanged(Files); });
+	}
 }
 
 void FLuaScriptManager::Shutdown()
 {
+	if (WatchSub != 0)
+	{
+		FDirectoryWatcher::Get().Unsubscribe(WatchSub);
+		WatchSub = 0;
+	}
+
+	{
+		std::lock_guard<std::mutex> Lock(ComponentMutex);
+		RegisteredComponents.clear();
+	}
+
 	// 등록된 Lua 콜백 (sol::protected_function 들) 을 lua_State 가 살아있는 동안 먼저 release.
 	// static 멤버라 프로그램 종료 시점까지 살아있는데, 그때 destructor 가 luaL_unref 를
 	// 호출하면서 이미 reset 된 lua_State 를 만지면 크래시. 빈 함수로 덮어써 deref 를 지금

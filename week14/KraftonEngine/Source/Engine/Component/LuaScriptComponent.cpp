@@ -59,12 +59,31 @@ void ULuaScriptComponent::InitializeLua()
 	LuaOnHit = Env["OnHit"];
 }
 
+void ULuaScriptComponent::ReloadScript()
+{
+	ClearCollisionBindings();
+	InitializeLua();
+
+	if (LuaBeginPlay)
+	{
+		sol::protected_function_result Result = LuaBeginPlay();
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua BeginPlay error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+
+	BindOwnerCollisionEvents();
+}
+
 void ULuaScriptComponent::BeginPlay()
 {
 	EnsureDefaultScriptFile();
 	UActorComponent::BeginPlay();
 
 	InitializeLua();
+	FLuaScriptManager::RegisterComponent(this);
 
 	if (LuaBeginPlay)
 	{
@@ -82,6 +101,7 @@ void ULuaScriptComponent::BeginPlay()
 void ULuaScriptComponent::EndPlay()
 {
 	UActorComponent::EndPlay();
+	FLuaScriptManager::UnregisterComponent(this);
 	ClearCollisionBindings();
 	if (LuaEndPlay)
 	{

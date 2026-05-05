@@ -17,6 +17,7 @@ public:
 	~ULuaScriptComponent();
 
 	void InitializeLua();
+	void ReloadScript();
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay() override;

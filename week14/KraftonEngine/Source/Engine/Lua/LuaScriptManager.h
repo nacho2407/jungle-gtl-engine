@@ -1,8 +1,12 @@
 ﻿#pragma once
 
 #include "Core/CoreTypes.h"
+#include "Engine/Platform/DirectoryWatcher.h"
 #include "Input/InputSystem.h"
 #include <sol/sol.hpp>
+#include <mutex>
+
+class ULuaScriptComponent;
 
 class FLuaScriptManager
 {
@@ -32,6 +36,9 @@ public:
 	// Wait(30) 만료 후 재개되며 freed AActor* 를 deref → 크래시.
 	static void FireWorldReset();
 
+	static void RegisterComponent(ULuaScriptComponent* Component);
+	static void UnregisterComponent(ULuaScriptComponent* Component);
+
 private:
 	static void RegisterLuaHelpers(sol::state& Lua);
 	static void RegisterCoreBindings(sol::state& Lua);
@@ -39,7 +46,14 @@ private:
 	static void RegisterActorBindings(sol::state& Lua);
 	static void RegisterUIBindings(sol::state& Lua);
 
+	static void OnScriptsChanged(const TSet<FString>& ChangedFiles);
+	static void InvalidateChangedModules(const TSet<FString>& ChangedFiles);
+	static FString GetModuleNameFromPath(const FString& ScriptPath);
+
 private:
 	static std::unique_ptr<sol::state> Lua;
 	static sol::protected_function OnEscapePressedCallback;
+	static std::mutex ComponentMutex;
+	static TArray<ULuaScriptComponent*> RegisteredComponents;
+	static FSubscriptionID WatchSub;
 };
