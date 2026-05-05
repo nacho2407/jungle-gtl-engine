@@ -9,6 +9,7 @@
 #include "Core/ProjectSettings.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerController.h"
 #include "Object/UClass.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
@@ -105,6 +106,30 @@ AGameStateBase* UWorld::GetGameState() const
 APlayerController* UWorld::GetFirstPlayerController() const
 {
 	return GameMode ? GameMode->GetPlayerController() : nullptr;
+}
+
+// E.2/3: ActiveCamera 추적 — PC 의 PlayerCameraManager 우선, fallback 으로 EditorActiveCamera.
+// PIE 첫 프레임처럼 PC 가 아직 카메라를 잡기 전엔 Editor 가 등록한 viewport 카메라가 사용됨.
+UCameraComponent* UWorld::GetActiveCamera() const
+{
+	if (APlayerController* PC = GetFirstPlayerController())
+	{
+		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+		{
+			if (UCameraComponent* AC = CM->GetActiveCamera())
+			{
+				return AC;
+			}
+		}
+	}
+	return EditorActiveCamera;
+}
+
+void UWorld::SetActiveCamera(UCameraComponent* InCamera)
+{
+	// Editor viewport 가 자기 카메라를 LOD/render 용으로 등록. PIE/Game 의
+	// PC->PlayerCameraManager 는 자체 SetActiveCamera 로 별도 관리.
+	EditorActiveCamera = InCamera;
 }
 
 void UWorld::AddActor(AActor* Actor)
@@ -263,10 +288,7 @@ void UWorld::InitWorld()
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
 	PersistentLevel->SetWorld(this);
 
-	// E.1: APlayerCameraManager 가 AActor 기반이지만 SpawnActor 가 아닌 CreateObject 로 만든다.
-	// 이유: World 가 멤버로 직접 소유하며 액터 리스트(PersistentLevel) / TickManager 에 등록하지 않음.
-	// E.3 에서 PC 소유로 이전될 때 SpawnActor 흐름으로 정상화 예정.
-	CameraManager = UObjectManager::Get().CreateObject<APlayerCameraManager>(this);
+	// E.2/3: CameraManager spawn 은 PC 의 BeginPlay 가 담당. World 는 보유하지 않음.
 
 	// 물리 시스템 초기화 — ProjectSettings 백엔드 선택
 	if (FProjectSettings::Get().Physics.Backend == EPhysicsBackend::PhysX)
@@ -300,11 +322,7 @@ void UWorld::BeginPlay()
 		GameMode->StartMatch();
 	}
 
-	// BeginPlay에서 CameraComponent의 register 이후 Possess 시도
-	if (CameraManager)
-	{
-		CameraManager->AutoPossessDefaultCamera();
-	}
+	// E.2/3: AutoPossessDefaultCamera 는 PC 의 BeginPlay 가 처리.
 }
 
 void UWorld::Tick(float DeltaTime, ELevelTick TickType)
@@ -321,9 +339,13 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 	// (UE 의 PlayerCameraManager 도 일시정지와 무관하게 tick).
 	// TODO: GlobalTimeDilation 도입 시 raw(unpaused) dt 를 별도로 받아 셰이크가
 	//       Slomo 영향을 받지 않게 할 것.
-	if (CameraManager)
+	// E.2/3: PC 의 PlayerCameraManager 를 Tick.
+	if (APlayerController* PC = GetFirstPlayerController())
 	{
-		CameraManager->UpdateCamera(DeltaTime);
+		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+		{
+			CM->UpdateCamera(DeltaTime);
+		}
 	}
 
 	// bPaused 동안 PhysicsScene + TickManager skip — GameMode 타이머, Lua Tick, 차량

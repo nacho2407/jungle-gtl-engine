@@ -2,6 +2,8 @@
 #include "Object/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerCameraManager.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
 
@@ -11,9 +13,17 @@ void UCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// E.2/3: PC 가 BeginPlay 시점엔 아직 spawn 전 → PlayerCameraManager nullptr.
+	// PC 의 BeginPlay 에서 World 의 모든 카메라 컴포넌트를 catch up 등록하므로 안전.
 	if (UWorld* World = GetOwner()->GetWorld())
 	{
-		World->GetCameraManager()->RegisterCamera(this);
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+			{
+				CM->RegisterCamera(this);
+			}
+		}
 	}
 }
 
@@ -22,7 +32,13 @@ void UCameraComponent::EndPlay()
 	Super::EndPlay();
 	if (UWorld* World = GetOwner()->GetWorld())
 	{
-		World->GetCameraManager()->UnregisterCamera(this);
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+			{
+				CM->UnregisterCamera(this);
+			}
+		}
 	}
 }
 
