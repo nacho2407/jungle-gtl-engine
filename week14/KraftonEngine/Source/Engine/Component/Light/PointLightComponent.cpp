@@ -78,8 +78,8 @@ void UPointLightComponent::Serialize(FArchive& Ar)
 	Ar << LightFalloffExponent;
 }
 
-// TODO: Camera Parameter의 존재 이유?
-bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const UCameraComponent* Camera, int32 FaceIndex) const
+// POV 매개변수는 base 시그니처 일관성 위해 받지만 큐브맵 face 별 매트릭스에는 사용 안 함.
+bool UPointLightComponent::GetLightViewProj(FLightViewProjResult& OutResult, const FMinimalViewInfo* /*POV*/, int32 FaceIndex) const
 {
 	FPointLightParams Params;
 	Params.Position = GetWorldLocation();

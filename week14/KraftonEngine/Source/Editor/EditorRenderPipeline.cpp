@@ -180,9 +180,8 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 	Frame.ClearViewportResources();
 	Frame.SetCameraInfo(POV);
 
-	// Light View Override — 라이트 시점으로 View/Proj 교체
-	// TODO: ULightComponentBase::GetLightViewProj 가 UCameraComponent* 를 받아 — POV 로
-	//       시그니처 정리 필요. 분량이 별도 작업이라 현재는 컴포넌트 직접 참조 유지.
+	// Light View Override — 라이트 시점으로 View/Proj 교체.
+	// Directional CSM 은 viewer POV 의 frustum 으로 cascade 분할 → 위에서 추출한 POV 를 그대로 위임.
 	if (VC->IsViewingFromLight())
 	{
 		ULightComponentBase* Light = VC->GetLightViewOverride();
@@ -190,10 +189,10 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 		{
 			VC->ClearLightViewOverride();
 		}
-		else if (UCameraComponent* Camera = VC->GetCamera())
+		else
 		{
 			FLightViewProjResult LVP;
-			if (Light->GetLightViewProj(LVP, Camera, VC->GetPointLightFaceIndex()))
+			if (Light->GetLightViewProj(LVP, &POV, VC->GetPointLightFaceIndex()))
 			{
 				Frame.View = LVP.View;
 				Frame.Proj = LVP.Proj;
