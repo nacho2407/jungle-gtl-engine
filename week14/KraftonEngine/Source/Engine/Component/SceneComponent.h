@@ -36,6 +36,7 @@ public:
 	virtual void SetRelativeRotation(const FQuat& NewRotation);
 	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
 	virtual void SetRelativeScale(const FVector& NewScale);
+	void SetRelativeTransform(const FTransform& NewTransform);
 	void SetAbsoluteScale(bool bInAbsoluteScale) { bAbsoluteScale = bInAbsoluteScale; MarkTransformDirty(); }
 	bool IsAbsoluteScale() const { return bAbsoluteScale; }
 

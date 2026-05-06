@@ -303,6 +303,13 @@ void USceneComponent::SetRelativeScale(const FVector& NewScale)
 	NotifyOctreeTransformChanged(this);
 }
 
+void USceneComponent::SetRelativeTransform(const FTransform& NewTransform)
+{
+	RelativeTransform = NewTransform;
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
 
 void USceneComponent::MarkTransformDirty()
 {

@@ -575,6 +575,9 @@
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\SpringArmComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -1297,6 +1300,9 @@
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\SphereComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\SpringArmComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h">

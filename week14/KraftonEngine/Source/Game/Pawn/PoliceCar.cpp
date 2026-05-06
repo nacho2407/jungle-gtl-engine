@@ -15,16 +15,10 @@ IMPLEMENT_CLASS(APoliceCar, ACarPawn)
 
 void APoliceCar::InitDefaultPoliceComponents()
 {
-	// 부모 셋업을 그대로 사용 — 단, LuaCameraScriptFile 은 빈 문자열로 넘겨도
-	// 부모가 ULuaScriptComponent 를 추가하긴 하므로(EnsureDefaultScriptFile 경로),
-	// 추가 후 RemoveComponent 로 해당 컴포넌트를 제거한다.
-	Super::InitDefaultComponents("Data/Map/PoliceCar/PoliceCar.obj", "PoliceCarAI.lua", "");
-
-	// 카메라 Lua 제거 — F2 토글 등 player 카메라 입력과 충돌 방지
-	if (ULuaScriptComponent* CamLua = GetLuaCameraScript())
-	{
-		RemoveComponent(CamLua);
-	}
+	// AI 차량 — chassis (Box / Mesh / Wheels(콜리전) / Movement / DriverLua) 만 셋업.
+	// Player 전용 (Camera / SpringArm / Gas / CameraManager.lua / GasController.lua /
+	// Handle / Tire visuals / CarDirt / DirtyCar.lua) 은 호출하지 않는다.
+	Super::InitChassisComponents("Data/Map/PoliceCar/PoliceCar.obj", "PoliceCarAI.lua");
 
 	// AI 차량은 player가 자동 Possess하지 않도록
 	SetAutoPossessPlayer(false);
