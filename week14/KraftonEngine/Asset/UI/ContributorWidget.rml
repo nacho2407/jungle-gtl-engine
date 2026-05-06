@@ -4,8 +4,8 @@
 </head>
 <body>
 	<div id="contributor-panel">
-		<div id="contributor-title">contributor</div>
-
+		<div id="contributor-title">CONTRIBUTOR</div>
+		<div id="contributor-team">TEAM5</div>
 		<div id="contributor-name-list">
 			심우진<br/>
 			성원희<br/>

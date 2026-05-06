@@ -144,7 +144,7 @@ local function ApplyIntroLayout()
         return
     end
 
-    local viewport = Engine.GetViewportSize()
+    local viewport = Engine.GetViewportSize(ㅉ)
     if viewport == nil then
         return
     end
@@ -174,7 +174,8 @@ local function ApplyIntroLayout()
     local startTop = subtitleTop + Clamp(height * 0.045, 36, 54)
     local buttonGap = Clamp(height * 0.022, 10, 24)
     local scoreboardTop = startTop + 58 + buttonGap
-    local exitTop = scoreboardTop + 58 + buttonGap
+    local contributorTop = scoreboardTop + 58 + buttonGap
+    local exitTop = contributorTop + 58 + buttonGap
     local footerTop = exitTop + 58 + Clamp(height * 0.018, 8, 20)
 
     local maxFooterTop = height * 0.9
@@ -183,6 +184,7 @@ local function ApplyIntroLayout()
         subtitleTop = subtitleTop - overflow
         startTop = startTop - overflow
         scoreboardTop = scoreboardTop - overflow
+        contributorTop = contributorTop - overflow
         exitTop = exitTop - overflow
         footerTop = maxFooterTop
     end
@@ -200,6 +202,7 @@ local function ApplyIntroLayout()
     SetDpProperty(widget, "intro-subtitle", "top", subtitleTop)
     SetDpProperty(widget, "start-button", "top", startTop)
     SetDpProperty(widget, "scoreboard-button", "top", scoreboardTop)
+    SetDpProperty(widget, "contributor-button", "top", contributorTop)
     SetDpProperty(widget, "exit-button", "top", exitTop)
     SetDpProperty(widget, "intro-footer", "top", footerTop)
 end
@@ -524,6 +527,10 @@ function UIManager.Init()
         AudioManager.Play("Click", 1.0)
         UIManager.Show("scoreboard")
         UpdateScoreboardWidget()
+    end)
+    introWidget:bind_click("contributor-button", function()
+        AudioManager.Play("Click", 1.0)
+        UIManager.Show("contributor")
     end)
     introWidget:bind_click("exit-button", function()
         AudioManager.Play("Click", 1.0)
@@ -953,6 +960,10 @@ end
 
 function UIManager.Tick(dt)
     ApplyIntroLayout()
+
+    if Input.GetKeyDown(Key.F1) then
+        UIManager.Show("contributor")
+    end
 
     if fade.active then
         fade.elapsed = fade.elapsed + dt

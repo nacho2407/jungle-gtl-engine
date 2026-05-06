@@ -149,12 +149,14 @@ body {
 
 #start-button,
 #scoreboard-button,
+#contributor-button,
 #exit-button {
 	transition: background-color border-color color 0.16s sine-out;
 }
 
 #start-button:hover,
 #scoreboard-button:hover,
+#contributor-button:hover,
 #exit-button:hover {
 	border-color: #ffe58a;
 	background-color: #f0c85a;
@@ -179,10 +181,28 @@ body {
 	text-align: center;
 }
 
-#exit-button {
+#contributor-button {
 	position: absolute;
 	left: 50%;
 	top: 83%;
+	width: 300dp;
+	height: 58dp;
+	margin-left: -150dp;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	background-color: #252a34;
+	color: #ffffff;
+	font-family: Maplestory;
+	font-weight: bold;
+	font-size: 24dp;
+	line-height: 52dp;
+	text-align: center;
+}
+
+#exit-button {
+	position: absolute;
+	left: 50%;
+	top: 92%;
 	width: 300dp;
 	height: 58dp;
 	margin-left: -150dp;
