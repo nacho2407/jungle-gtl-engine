@@ -34,6 +34,12 @@ void APlayerCameraManager::UnregisterCamera(UCameraComponent* Camera)
 		{
 			PossessedCamera = nullptr;
 		}
+		if (PendingActiveCamera == Camera)
+		{
+			PendingActiveCamera = nullptr;
+			ActiveCameraBlendTimeRemaining = 0.0f;
+			ActiveCameraBlendDuration = 0.0f;
+		}
 	}
 }
 
@@ -52,7 +58,7 @@ void APlayerCameraManager::AutoPossessDefaultCamera()
 }
 
 // 현재는 Actor당 카메라 최대 2개만 가능
-bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
+bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName, float BlendTime)
 {
 	TArray<UCameraComponent*> ActorCameras;
 	for (UCameraComponent* Camera : RegisteredCameraOrder)
@@ -71,7 +77,7 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
 
 	if (ActorCameras.size() == 1)
 	{
-		SetActiveCamera(ActorCameras.front());
+		SetActiveCameraWithBlend(ActorCameras.front(), BlendTime);
 		Possess(ActorCameras.front());
 		return true;
 	}
@@ -82,12 +88,12 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName)
 		NextCamera = ActorCameras[1];
 	}
 
-	SetActiveCamera(NextCamera);
+	SetActiveCameraWithBlend(NextCamera, BlendTime);
 	Possess(NextCamera);
 	return true;
 }
 
-bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
+bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor, float BlendTime)
 {
 	if (!Actor)
 	{
@@ -110,7 +116,7 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
 
 	if (ActorCameras.size() == 1)
 	{
-		SetActiveCamera(ActorCameras.front());
+		SetActiveCameraWithBlend(ActorCameras.front(), BlendTime);
 		Possess(ActorCameras.front());
 		return true;
 	}
@@ -121,9 +127,31 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor)
 		NextCamera = ActorCameras[1];
 	}
 
-	SetActiveCamera(NextCamera);
+	SetActiveCameraWithBlend(NextCamera, BlendTime);
 	Possess(NextCamera);
 	return true;
+}
+
+void APlayerCameraManager::SetActiveCameraWithBlend(UCameraComponent* NewCamera, float BlendTime, EViewTargetBlendFunction BlendFunction)
+{
+	if (!NewCamera) return;
+
+	// 즉시 전환: BlendTime 미지정 또는 기존 ActiveCamera 가 없어 lerp 의 source 가 없는 경우.
+	if (BlendTime <= 0.0f || !ActiveCamera || ActiveCamera == NewCamera)
+	{
+		ActiveCamera = NewCamera;
+		PendingActiveCamera = nullptr;
+		ActiveCameraBlendTimeRemaining = 0.0f;
+		ActiveCameraBlendDuration = 0.0f;
+		return;
+	}
+
+	// 보간 전환: ActiveCamera 는 그대로 둬서 GetCameraView 의 source 로 사용. UpdateCamera 가
+	// timer 를 줄이다 0 도달 시 ActiveCamera = PendingActiveCamera swap.
+	PendingActiveCamera = NewCamera;
+	ActiveCameraBlendDuration = BlendTime;
+	ActiveCameraBlendTimeRemaining = BlendTime;
+	ActiveCameraBlendFunction = BlendFunction;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -285,6 +313,27 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 		return false;
 	}
 
+	// (우선) ActiveCamera 단위 blend 가 진행 중이면 현재 ActiveCamera ↔ PendingActiveCamera 보간.
+	// 같은 액터 내 컴포넌트 간 전환에 사용. ViewTarget blend 와 동시 진행 시 ActiveCamera 가 더
+	// 최근 의도이므로 우선.
+	if (PendingActiveCamera && ActiveCamera
+		&& ActiveCameraBlendTimeRemaining > 0.0f && ActiveCameraBlendDuration > 0.0f)
+	{
+		FMinimalViewInfo FromPOV;
+		FMinimalViewInfo ToPOV;
+		ActiveCamera->GetCameraView(0.0f, FromPOV);
+		PendingActiveCamera->GetCameraView(0.0f, ToPOV);
+
+		float Alpha = 1.0f - (ActiveCameraBlendTimeRemaining / ActiveCameraBlendDuration);
+		FViewTargetTransitionParams P;
+		P.BlendFunction = ActiveCameraBlendFunction;
+		P.BlendTime = ActiveCameraBlendDuration;
+		Alpha = ApplyBlendFunction(Alpha, P);
+
+		OutPOV = LerpPOV(FromPOV, ToPOV, Alpha);
+		return true;
+	}
+
 	UCameraComponent* FromCamera = ViewTarget ? ViewTarget->GetComponentByClass<UCameraComponent>() : nullptr;
 	if (!FromCamera)
 	{
@@ -342,6 +391,19 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 			{
 				SetActiveCamera(Camera);
 			}
+		}
+	}
+
+	// (1b) ActiveCamera 컴포넌트 단위 blend timer 갱신 + 완료 시 swap.
+	//      GetCameraView 가 보간된 POV 를 반환할 수 있도록 timer 를 *base POV 산출 전* 에 줄인다.
+	if (PendingActiveCamera && ActiveCameraBlendTimeRemaining > 0.0f)
+	{
+		ActiveCameraBlendTimeRemaining = std::max(0.0f, ActiveCameraBlendTimeRemaining - DeltaTime);
+		if (ActiveCameraBlendTimeRemaining <= 0.0f)
+		{
+			ActiveCamera = PendingActiveCamera;
+			PendingActiveCamera = nullptr;
+			ActiveCameraBlendDuration = 0.0f;
 		}
 	}
 
