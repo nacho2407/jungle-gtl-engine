@@ -1,0 +1,13 @@
+{
+  "Type" : "GammaCorrection",
+  "Version" : 1,
+  "GammaCorrection" : {
+    "Duration" : 0.250000,
+    "FromGamma" : 2.200000,
+    "ToGamma" : 1.000000,
+    "GammaCurve" : [
+      { "Time" : 0.000000, "Value" : 0.000000 },
+      { "Time" : 1.000000, "Value" : 1.000000 }
+    ]
+  }
+}

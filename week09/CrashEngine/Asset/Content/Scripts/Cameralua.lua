@@ -136,6 +136,7 @@ local function beginZoom(useMouseAim)
     AimPitch = 0.0
     setupZoomBaseForward(useMouseAim)
     World.PlayCameraEffectAsset("Asset/Content/CameraEffects/ZoomVignetteOn.ceffect")
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/GammaOn.ceffect")
 end
 
 local function endZoom()
@@ -149,6 +150,7 @@ local function endZoom()
     AimPitch = 0.0
     ZoomBaseForward = nil
     World.PlayCameraEffectAsset("Asset/Content/CameraEffects/ZoomVignetteOff.ceffect")
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/GammaOff.ceffect")
 end
 
 local function refreshZoomState(useMouseAim)

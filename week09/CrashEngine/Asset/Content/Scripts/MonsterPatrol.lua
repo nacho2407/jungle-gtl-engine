@@ -23,6 +23,30 @@ local DestroyEffectMaterial = "Asset/Content/Materials/subUV_sample.json"
 local DestroyEffectLifeTime = 1.2
 local DestroyEffectRow = 6
 local DestroyEffectColumn = 6
+local SoundManager = nil
+local SoundsLoaded = false
+
+local function loadMonsterSounds()
+    SoundManager = GetSoundManager()
+    if SoundManager == nil or not SoundManager:IsInitialized() then
+        SoundsLoaded = false
+        return false
+    end
+
+    local shootLoaded = SoundManager:LoadSound("NimoShootSFX", "Asset/Content/Sounds/SoundCollection/NimoShootSFX.mp3", false)
+    local killedLoaded = SoundManager:LoadSound("NimoKilledSFX", "Asset/Content/Sounds/SoundCollection/NimoKilledSFX.mp3", false)
+    local hitLoaded = SoundManager:LoadSound("HitEnemySFX", "Asset/Content/Sounds/SoundCollection/HitEnemySFX.mp3", false)
+    SoundsLoaded = shootLoaded and killedLoaded and hitLoaded
+    return SoundsLoaded
+end
+
+local function playMonsterSound(sound_id)
+    if not SoundsLoaded and not loadMonsterSounds() then
+        return
+    end
+
+    SoundManager:PlaySFX(sound_id)
+end
 
 local function spawnEffect(location, materialPath, lifeTime, row, column)
     local effectActor = World.SpawnActor("SubUVActor")
@@ -109,6 +133,10 @@ local function fireAtPlayer(player)
     local spawnLocation = obj.Location + Vector.new(0.0, 0.0, BulletSpawnHeight) + direction * BulletSpawnForwardOffset
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
+    if bullet ~= nil and bullet:IsValid() then
+        bullet:AddTag("PatrolBullet")
+        playMonsterSound("NimoShootSFX")
+    end
     ShotTimer = ShotCooldown
 end
 
@@ -219,6 +247,7 @@ function BeginPlay()
     CurrentTargetIndex = 1
     bPatrolFinished = false
     ShotTimer = 0.0
+    loadMonsterSounds()
     collectPatrolTargets()
 
     if #PatrolTargets == 0 then
@@ -242,6 +271,7 @@ function OnOverlapBegin(other)
     end
 
     other:AddTag("DamageApplied")
+    playMonsterSound("HitEnemySFX")
     obj:ApplyDamage(1, other)
     World.DestroyActor(other)
 end
@@ -251,6 +281,7 @@ function OnTakeDamage(damage, instigator)
     spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
 
     if HP <= 0 then
+        playMonsterSound("NimoKilledSFX")
         local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
         spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)

@@ -11,6 +11,11 @@ local pressedKeys = {}
 local movementState = nil
 local PlayerShotCooldown = 1
 local PlayerShotTimer = 0.0
+local DroneTiltDuration = 0.4
+local DroneTiltAngle = 30.0
+local DroneTiltTimer = 0.0
+local DroneTiltPitch = 0.0
+local DroneTiltRoll = 0.0
 local GamepadControllerId = 0
 local GamepadRightTriggerPressThreshold = 0.5
 local GamepadRightTriggerReleaseThreshold = 0.25
@@ -21,7 +26,7 @@ local bGameOverRequested = false
 local HP = 100.0
 local bDestroyEffectSpawned = false
 local MaxHP = 100.0
-local HP_reduction  = 1;
+local HP_reduction  = 0.5;
 
 -- Scene에 붙어있는 Component를 캐싱해두면 Tick마다 다시 찾지 않아도 된다.
 local LightComponet = nil
@@ -37,12 +42,17 @@ local CurrentLightB = 1.0
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
 local SoundManager = nil
+local bPlayerDeadSoundPlayed = false
+local bDestinationSoundPlayed = false
 
 local function loadPlayerSounds()
     SoundManager = GetSoundManager()
-    SoundManager:LoadSound("Shoot", "Asset/Content/Sounds/Shoot.mp3", false)
-    SoundManager:LoadSound("Charge", "Asset/Content/Sounds/Charge.mp3", false)
-    SoundManager:LoadSound("Document", "Asset/Content/Sounds/Document.mp3", false)
+    SoundManager:LoadSound("PlayerShootSFX", "Asset/Content/Sounds/SoundCollection/PlayerShootSFX.mp3", false)
+    SoundManager:LoadSound("GetDocumentSFX", "Asset/Content/Sounds/SoundCollection/GetDocumentSFX.mp3", false)
+    SoundManager:LoadSound("HealSFX", "Asset/Content/Sounds/SoundCollection/HealSFX.mp3", false)
+    SoundManager:LoadSound("HitPlayerSFX", "Asset/Content/Sounds/SoundCollection/HitPlayerSFX.mp3", false)
+    SoundManager:LoadSound("GetDestination", "Asset/Content/Sounds/SoundCollection/GetDestination.mp3", false)
+    SoundManager:LoadSound("PlayerDead", "Asset/Content/Sounds/SoundCollection/PlayerDead.mp3", false)
 end
 
 local function playPlayerSound(sound_id)
@@ -74,6 +84,21 @@ local DamagedEffectRow = 1
 local DamagedEffectColumn = 1
 
 local BatteryHealAmount = 25.0
+local TurretBulletDamage = 13
+local PatrolBulletDamage = 6
+local DefaultEnemyBulletDamage = 10
+
+local function getEnemyBulletDamage(bullet)
+    if bullet:HasTag("TurretBullet") then
+        return TurretBulletDamage
+    end
+
+    if bullet:HasTag("PatrolBullet") then
+        return PatrolBulletDamage
+    end
+
+    return DefaultEnemyBulletDamage
+end
 
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
@@ -133,6 +158,46 @@ end
 
 local function lerp(a, b, t)
     return a + (b - a) * t
+end
+
+local function triggerDroneTilt()
+    if not pressedKeys.W and not pressedKeys.S and not pressedKeys.A and not pressedKeys.D
+        and not pressedKeys.Up and not pressedKeys.Down and not pressedKeys.Left and not pressedKeys.Right then
+        return
+    end
+
+    DroneTiltPitch = DroneTiltAngle
+    DroneTiltRoll = 0.0
+    DroneTiltTimer = DroneTiltDuration
+end
+
+local function updateDroneTilt(dt)
+    if DroneTiltTimer <= 0.0 then
+        DroneTiltTimer = 0.0
+        return
+    end
+
+    DroneTiltTimer = DroneTiltTimer - dt
+    if DroneTiltTimer < 0.0 then
+        DroneTiltTimer = 0.0
+    end
+end
+
+local function makeDroneVisualRotation()
+    local rotation = PlayerMovement.MakeYawRotation(movementState)
+
+    if DroneTiltTimer <= 0.0 then
+        return rotation
+    end
+
+    local elapsed = DroneTiltDuration - DroneTiltTimer
+    local alpha = math.sin(math.pi * elapsed / DroneTiltDuration)
+
+    return Vector.new(
+        rotation.X + DroneTiltPitch * alpha,
+        rotation.Y + DroneTiltRoll * alpha,
+        rotation.Z
+    )
 end
 
 local function updatePlayerLight(dt)
@@ -253,7 +318,9 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
-    playPlayerSound("Shoot")
+    if bullet ~= nil and bullet:IsValid() then
+        playPlayerSound("PlayerShootSFX")
+    end
     -- World.RequestSlomo(0.1, 2)
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -364,7 +431,7 @@ function OnOverlapBegin(other)
         other:AddTag("Collected")
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
-        playPlayerSound("Document")
+        playPlayerSound("GetDocumentSFX")
         spawnEffect(other.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
@@ -379,18 +446,23 @@ function OnOverlapBegin(other)
         end
         BatteryLightFlashTime = BatteryLightFlashDuration
         syncPlayerState()
-        playPlayerSound("Charge")
+        playPlayerSound("HealSFX")
         spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
-            obj:ApplyDamage(10, other)
+            playPlayerSound("HitPlayerSFX")
+            obj:ApplyDamage(getEnemyBulletDamage(other), other)
         end
 
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         if DocumentCount>0 then
+            if not bDestinationSoundPlayed then
+                bDestinationSoundPlayed = true
+                playPlayerSound("GetDestination")
+            end
             callGameOver()
         end
     end
@@ -400,6 +472,11 @@ function BeginPlay()
     -- BeginPlay는 Actor가 월드에서 플레이를 시작할 때 한 번 호출된다.
     pressedKeys = {}
     bGameOverRequested = false
+    bPlayerDeadSoundPlayed = false
+    bDestinationSoundPlayed = false
+    DroneTiltTimer = 0.0
+    DroneTiltPitch = 0.0
+    DroneTiltRoll = 0.0
     bGamepadRightTriggerHeld = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
@@ -431,7 +508,7 @@ function BeginPlay()
 
     MeshComponent = obj:GetComponent("StaticMeshComponent", 0)
     if MeshComponent:IsValid() then
-        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
     end
 end
 
@@ -451,6 +528,10 @@ function Tick(dt)
     end
 
     if HP <= 0.0 then
+        if not bPlayerDeadSoundPlayed then
+            bPlayerDeadSoundPlayed = true
+            playPlayerSound("PlayerDead")
+        end
         spawnDestroyEffectOnce()
         HP = 0.0
         syncPlayerState()
@@ -461,6 +542,7 @@ function Tick(dt)
 
     syncPlayerState()
     updatePlayerLight(dt)
+    updateDroneTilt(dt)
 
     if isZooming() then
         -- 줌 중에는 이동을 막고, 플레이어 mesh를 숨긴 뒤 좌클릭/오른쪽 트리거 발사만 허용한다.
@@ -488,7 +570,7 @@ function Tick(dt)
     if MeshComponent ~= nil and MeshComponent:IsValid() then
         MeshComponent:SetVisible(true)
         MeshComponent:SetVisibleInGame(true)
-        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
     end
 
     if moveDelta:LengthSquared() > 0.0 then
@@ -533,6 +615,7 @@ function OnKeyPressed(key)
     end
 
     pressedKeys[key] = true
+    triggerDroneTilt()
 end
 
 function OnKeyReleased(key)

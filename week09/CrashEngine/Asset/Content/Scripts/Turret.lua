@@ -36,9 +36,10 @@ local function loadTurretSounds()
         return false
     end
 
-    local enemyShootLoaded = SoundManager:LoadSound("EnemyShoot", "Asset/Content/Sounds/EnemyShoot.mp3", false)
-    local enemyDieLoaded = SoundManager:LoadSound("EnemyDie", "Asset/Content/Sounds/EnemyDie.mp3", false)
-    SoundsLoaded = enemyShootLoaded and enemyDieLoaded
+    local shootLoaded = SoundManager:LoadSound("TurretShootSFX", "Asset/Content/Sounds/SoundCollection/TurretShootSFX.mp3", false)
+    local killedLoaded = SoundManager:LoadSound("TurretKilledSFX", "Asset/Content/Sounds/SoundCollection/TurretKilledSFX.mp3", false)
+    local hitLoaded = SoundManager:LoadSound("HitEnemySFX", "Asset/Content/Sounds/SoundCollection/HitEnemySFX.mp3", false)
+    SoundsLoaded = shootLoaded and killedLoaded and hitLoaded
     return SoundsLoaded
 end
 
@@ -145,7 +146,10 @@ local function fireAtPlayer(player)
     local direction = shotDirection:Normalized()
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
-    playTurretSound("EnemyShoot")
+    if bullet ~= nil and bullet:IsValid() then
+        bullet:AddTag("TurretBullet")
+        playTurretSound("TurretShootSFX")
+    end
     ShotTimer = ShotCooldown
 end
 
@@ -180,6 +184,7 @@ function OnOverlapBegin(other)
     end
 
     other:AddTag("DamageApplied")
+    playTurretSound("HitEnemySFX")
     obj:ApplyDamage(1, other)
     World.DestroyActor(other)
 end
@@ -190,7 +195,7 @@ function OnTakeDamage(damage, instigator)
     spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
 
     if HP <= 0 then
-        playTurretSound("EnemyDie")
+        playTurretSound("TurretKilledSFX")
         local effectLocation = obj.Location + Vector.new(0.0, 0.0, 5.0)
         spawnEffect(effectLocation, DestroyEffectMaterial, DestroyEffectLifeTime, DestroyEffectRow, DestroyEffectColumn)
         World.DestroyActor(obj)

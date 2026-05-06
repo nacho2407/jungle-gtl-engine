@@ -1,0 +1,14 @@
+{
+  "Type" : "Fade",
+  "Version" : 1,
+  "Fade" : {
+    "Duration" : 3.000000,
+    "FromAmount" : 3.000000,
+    "ToAmount" : 0.000000,
+    "Color" : [0.000000, 0.000000, 0.000000, 1.000000],
+    "AmountCurve" : [
+      { "Time" : 0.000000, "Value" : 0.000000 },
+      { "Time" : 1.000000, "Value" : 1.000000 }
+    ]
+  }
+}
