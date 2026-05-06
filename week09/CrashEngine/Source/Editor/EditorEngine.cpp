@@ -740,7 +740,10 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTi
         }
         else
         {
-            SceneView.SetCameraInfo(BuildCameraViewFromComponent(Camera));
+            FCameraViewInfo CameraViewInfo = BuildCameraViewFromComponent(Camera);
+            CameraViewInfo.ScreenEffects =
+                PlayerCameraManager ? PlayerCameraManager->GetCameraViewInfoCache().ScreenEffects : FCameraScreenEffectInfo{};
+            SceneView.SetCameraInfo(CameraViewInfo);
         }
     }
     else
