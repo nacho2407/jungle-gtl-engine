@@ -35,6 +35,17 @@ end
 --LifeCycle
 function Script:BeginPlay()
     Log("[BeginPlay] " .. tostring(self.owner.UUID))
+
+    StartCoroutine(function ()
+        coroutine.yield(WaitForSeconds(3))
+
+        local pc = Engine.API.GetPlayerController()
+        
+        local targetActor = Engine.API.World.FindActorByTag("Camera")
+
+        pc:SetViewTargetWithBlend(targetActor, 0.5, CameraBlendType.SmoothStep)
+
+    end)
 end
 
 function Script:Tick(dt)

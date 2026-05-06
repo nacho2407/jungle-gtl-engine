@@ -8,6 +8,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 $SourceRoot = Join-Path $Root "NipsEngine/Source"
 $EngineRoot = Join-Path $SourceRoot "Engine"
 $EditorEngineHeader = Join-Path $SourceRoot "Editor/EditorEngine.h"
+$ProjectFile = Join-Path $Root "NipsEngine/NipsEngine.vcxproj"
 
 if (!(Test-Path $SourceRoot)) {
     Write-Error "Source root not found: $SourceRoot"
@@ -76,6 +77,53 @@ if (Test-Path $EditorEngineHeader) {
 }
 else {
     Add-Violation "EditorEngine.h not found: $EditorEngineHeader"
+}
+
+Write-Host ""
+Write-Host "-- GameClient Editor source exclusions --"
+if (Test-Path $ProjectFile) {
+    [xml]$ProjectXml = Get-Content -Path $ProjectFile
+    $NamespaceManager = New-Object System.Xml.XmlNamespaceManager($ProjectXml.NameTable)
+    $NamespaceManager.AddNamespace("msb", "http://schemas.microsoft.com/developer/msbuild/2003")
+
+    $EditorCompileItems = $ProjectXml.SelectNodes("//msb:ClCompile[starts-with(@Include, 'Source\Editor\')]", $NamespaceManager)
+    $MissingEditorExclusions = New-Object System.Collections.Generic.List[string]
+    foreach ($Item in $EditorCompileItems) {
+        $Include = $Item.Include
+        $ExcludedNodes = $Item.SelectNodes("msb:ExcludedFromBuild", $NamespaceManager)
+        $HasGameClientDebug = $false
+        $HasGameClientRelease = $false
+        foreach ($Excluded in $ExcludedNodes) {
+            $Condition = $Excluded.Condition
+            $Value = ($Excluded.InnerText -as [string]).Trim()
+            if ($Value -ne "true") {
+                continue
+            }
+            if ($Condition -like "*GameClientDebug|x64*") {
+                $HasGameClientDebug = $true
+            }
+            if ($Condition -like "*GameClientRelease|x64*") {
+                $HasGameClientRelease = $true
+            }
+        }
+
+        if (!$HasGameClientDebug -or !$HasGameClientRelease) {
+            $MissingEditorExclusions.Add($Include) | Out-Null
+        }
+    }
+
+    if ($MissingEditorExclusions.Count -eq 0) {
+        Write-Host "OK"
+    }
+    else {
+        foreach ($Include in $MissingEditorExclusions) {
+            Write-Host $Include
+            Add-Violation "Editor source is not excluded from GameClient: $Include"
+        }
+    }
+}
+else {
+    Add-Violation "Project file not found: $ProjectFile"
 }
 
 Write-Host ""

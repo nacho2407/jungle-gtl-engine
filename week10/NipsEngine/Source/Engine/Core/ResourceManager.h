@@ -1,15 +1,19 @@
 ﻿#pragma once
 
 #include "Asset/BinarySerializer.h"
-#include "Asset/CurveAssetLoader.h"
 #include "Asset/CurveFloatAsset.h"
-#include "Asset/FontAtlasLoader.h"
 #include "Asset/ObjLoader.h"
-#include "Asset/ParticleAtlasLoader.h"
 #include "Asset/StaticMesh.h"
+#include "Core/AtlasResourceCache.h"
+#include "Core/CurveResourceCache.h"
 #include "Core/CoreTypes.h"
+#include "Core/MaterialResourceCache.h"
+#include "Core/RenderStateResourceCache.h"
 #include "Core/Singleton.h"
 #include "Core/ResourceTypes.h"
+#include "Core/ShaderResourceCache.h"
+#include "Core/StaticMeshResourceCache.h"
+#include "Core/TextureResourceCache.h"
 #include "Object/FName.h"
 #include "Render/Resource/ComputeShader.h"
 #include "Render/Resource/Shader.h"
@@ -86,12 +90,7 @@ public:
 	void InitializeDefaultResources(ID3D11Device* Device);
 	ID3D11ShaderResourceView* GetDefaultWhiteSRV() const
 	{
-		auto it = Textures.find("DefaultWhite");
-		if (it != Textures.end())
-		{
-			return it->second->GetSRV();
-		}
-		return nullptr;
+		return TextureCache.GetDefaultWhiteSRV();
 	}
 
 	bool LoadGPUResources(ID3D11Device* Device);
@@ -157,7 +156,6 @@ public:
 
 private:
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
-	FString MakeStaticMeshBinaryPath(const FString& SourcePath) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
 	
@@ -172,32 +170,17 @@ private:
 	TComPtr<ID3D11Device> CachedDevice;
 
 	FObjLoader ObjLoader;
-	FCurveAssetLoader CurveLoader;
-	FFontAtlasLoader FontLoader;
-	FParticleAtlasLoader ParticleLoader;
-	
 	FBinarySerializer BinarySerializer;
-
-	TMap<FString, FFontResource>     FontResources;
-	TMap<FString, FParticleResource> ParticleResources;
-	
-	TMap<FString, FStaticMeshResource> StaticMeshRegistry;
 
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
 
-	TMap<FString, UStaticMesh*> StaticMeshes;
-	TMap<FString, UCurveFloatAsset*> Curves;
-	TMap<FString, UShader*> Shaders;
-	TMap<FString, FComputeShader*> ComputeShaders;
-	TMap<FString, UTexture*> Textures;
-	TMap<FString, uint64> TextureWriteTimeTicks;
-	TMap<FString, UMaterial*> Materials;
-	TMap<FString, UMaterialInstance*> MaterialInstances;
-	TMap<FString, FString> MaterialSlotAliases;
-	TMap<ESamplerType, TComPtr<ID3D11SamplerState>> SamplerStates;
-	TMap<EDepthStencilType, TComPtr<ID3D11DepthStencilState>> DepthStencilStates;
-	TMap<EBlendType, TComPtr<ID3D11BlendState>> BlendStates;
-	TMap<ERasterizerType, TComPtr<ID3D11RasterizerState>> RasterizerStates;
+	FCurveResourceCache CurveCache;
+	FShaderResourceCache ShaderCache;
+	FTextureResourceCache TextureCache;
+	FMaterialResourceCache MaterialCache;
+	FRenderStateResourceCache RenderStateCache;
+	FStaticMeshResourceCache StaticMeshCache;
+	FAtlasResourceCache AtlasCache;
 
 	/* Paths */
 	TArray<FString> ObjFilePaths;

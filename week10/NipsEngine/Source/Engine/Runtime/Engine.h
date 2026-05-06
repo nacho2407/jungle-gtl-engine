@@ -46,6 +46,7 @@ public:
 	virtual void Tick(float DeltaTime);
 
 	virtual void OnWindowResized(uint32 Width, uint32 Height);
+	virtual bool CanCloseApplication() { return true; }
 	virtual bool RequestQuitGame();
 	bool RequestOpenScene(const FString& ScenePath);
 	bool RequestReloadScene();
