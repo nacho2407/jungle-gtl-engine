@@ -2,17 +2,67 @@
 #include "ScriptManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Asset/CurveFloatAsset.h"
 #include "Component/PrimitiveComponent.h"
 #include "Core/Paths.h"
 #include "Core/CollisionTypes.h"
+#include "Core/ResourceManager.h"
 #include <algorithm>
 #include <filesystem>
+
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
 
 DEFINE_CLASS(UScriptComponent, UActorComponent)
 REGISTER_FACTORY(UScriptComponent)
 
 namespace
 {
+    sol::object GetLuaField(const sol::table& Table, const char* UpperName, const char* LowerName)
+    {
+        sol::object Value = Table[UpperName];
+        if (Value.valid() && Value != sol::nil)
+        {
+            return Value;
+        }
+        return Table[LowerName];
+    }
+
+    float GetLuaFloatField(const sol::table& Table, const char* UpperName, const char* LowerName, float DefaultValue)
+    {
+        sol::object Value = GetLuaField(Table, UpperName, LowerName);
+        return Value.valid() && Value.get_type() == sol::type::number
+            ? Value.as<float>()
+            : DefaultValue;
+    }
+
+    bool GetLuaBoolField(const sol::table& Table, const char* UpperName, const char* LowerName, bool DefaultValue)
+    {
+        sol::object Value = GetLuaField(Table, UpperName, LowerName);
+        return Value.valid() && Value.get_type() == sol::type::boolean
+            ? Value.as<bool>()
+            : DefaultValue;
+    }
+
+    FString GetLuaStringField(const sol::table& Table, const char* UpperName, const char* LowerName, const FString& DefaultValue)
+    {
+        sol::object Value = GetLuaField(Table, UpperName, LowerName);
+        return Value.valid() && Value.get_type() == sol::type::string
+            ? Value.as<FString>()
+            : DefaultValue;
+    }
+
+    ECurveTimeMappingMode GetLuaTimeMappingMode(const sol::table& Table)
+    {
+        const FString Mode = GetLuaStringField(Table, "TimeMappingMode", "timeMappingMode", "NormalizedTime");
+        if (Mode == "CurveTime" || Mode == "Curve Time" || Mode == "curveTime")
+        {
+            return ECurveTimeMappingMode::CurveTime;
+        }
+        return ECurveTimeMappingMode::NormalizedTime;
+    }
+
     void BindCoroutineHelpers(sol::environment& Env, UScriptComponent* ScriptComponent)
     {
         if (!Env.valid() || !ScriptComponent)
@@ -24,6 +74,14 @@ namespace
         {
             ScriptComponent->StartCoroutine(Function);
         };
+
+        sol::state_view Lua(Env.lua_state());
+        sol::table Timeline = Lua.create_table();
+        Timeline["New"] = [ScriptComponent]() -> FLuaTimeline*
+        {
+            return ScriptComponent->CreateTimeline();
+        };
+        Env["Timeline"] = Timeline;
 
         Env["WaitForSeconds"] = [](sol::this_state State, float Seconds)
         {
@@ -195,6 +253,106 @@ namespace
         return true;
     }
     }
+
+void FLuaTimeline::Play()
+{
+    Player.Play();
+}
+
+void FLuaTimeline::Pause()
+{
+    Player.Pause();
+}
+
+void FLuaTimeline::Stop()
+{
+    Player.Stop();
+}
+
+void FLuaTimeline::Tick(float DeltaTime)
+{
+    Player.Tick(DeltaTime);
+}
+
+void FLuaTimeline::SetPlayRate(float InPlayRate)
+{
+    Player.SetPlayRate(InPlayRate);
+}
+
+void FLuaTimeline::SetLoop(bool bInLoop)
+{
+    Player.SetLoop(bInLoop);
+}
+
+float FLuaTimeline::GetCurrentTime() const
+{
+    return Player.GetCurrentTime();
+}
+
+void FLuaTimeline::SetCurrentTime(float InCurrentTime)
+{
+    Player.SetCurrentTime(InCurrentTime);
+}
+
+void FLuaTimeline::AddFloatTrack(
+    const FString& TrackName,
+    const sol::table& PlaybackDesc,
+    sol::function OnUpdate)
+{
+    if (!OnUpdate.valid())
+    {
+        return;
+    }
+
+    const FCurvePlaybackDesc Playback = MakePlaybackDesc(PlaybackDesc);
+    Player.AddFloatTrack(
+        TrackName,
+        Playback,
+        [OnUpdate](float Value) mutable
+        {
+            sol::protected_function Callback = OnUpdate;
+            sol::protected_function_result Result = Callback(Value);
+            if (!Result.valid())
+            {
+                sol::error Error = Result;
+                UE_LOG_ERROR("[LuaTimeline] callback failed: %s", Error.what());
+            }
+        });
+}
+
+void FLuaTimeline::ClearTracks()
+{
+    Player.ClearTracks();
+}
+
+FCurvePlaybackDesc FLuaTimeline::MakePlaybackDesc(const sol::table& PlaybackDesc) const
+{
+    FCurvePlaybackDesc Desc;
+    Desc.StartTime = GetLuaFloatField(PlaybackDesc, "StartTime", "startTime", 0.0f);
+    Desc.Duration = GetLuaFloatField(PlaybackDesc, "Duration", "duration", 1.0f);
+    Desc.PlayRate = GetLuaFloatField(PlaybackDesc, "PlayRate", "playRate", 1.0f);
+    Desc.bLoop = GetLuaBoolField(PlaybackDesc, "Loop", "loop", false);
+    Desc.TimeMappingMode = GetLuaTimeMappingMode(PlaybackDesc);
+
+    sol::object CurveObj = GetLuaField(PlaybackDesc, "Curve", "curve");
+    if (CurveObj.valid() && CurveObj != sol::nil && CurveObj.is<UCurveFloatAsset*>())
+    {
+        Desc.Curve = CurveObj.as<UCurveFloatAsset*>();
+    }
+
+    Desc.CurveAssetPath = GetLuaStringField(PlaybackDesc, "CurveAssetPath", "curveAssetPath", "");
+    if (Desc.CurveAssetPath.empty())
+    {
+        Desc.CurveAssetPath = GetLuaStringField(PlaybackDesc, "Path", "path", "");
+    }
+
+    if (!Desc.Curve && !Desc.CurveAssetPath.empty())
+    {
+        Desc.Curve = FResourceManager::Get().LoadCurve(Desc.CurveAssetPath);
+    }
+
+    return Desc;
+}
 
 void UScriptComponent::PostDuplicate(UObject* Original)
 {
@@ -513,8 +671,24 @@ void UScriptComponent::StartCoroutine(sol::function Function)
     CoroutineScheduler.StartCoroutine(Function);
 }
 
+FLuaTimeline* UScriptComponent::CreateTimeline()
+{
+    FLuaTimeline* Timeline = new FLuaTimeline();
+    LuaTimelines.push_back(Timeline);
+    return Timeline;
+}
+
+void UScriptComponent::ClearLuaTimelines()
+{
+    for (FLuaTimeline* Timeline : LuaTimelines)
+    {
+        delete Timeline;
+    }
+    LuaTimelines.clear();
+}
+
 void UScriptComponent::OnUnregister()
-{ 
+{
 	// 부모 훅 호출
     UActorComponent::OnUnregister();
 
@@ -547,6 +721,14 @@ void UScriptComponent::TickComponent(float DeltaTime)
     }
 
     CallScriptFunction("Tick", DeltaTime);
+
+    for (FLuaTimeline* Timeline : LuaTimelines)
+    {
+        if (Timeline)
+        {
+            Timeline->Tick(DeltaTime);
+        }
+    }
 
     float UnscaledDeltaTime = DeltaTime;
     if (AActor* OwnerActor = GetOwner())
@@ -791,6 +973,7 @@ void UScriptComponent::ClearLoadedState()
 {
     bScriptLoaded = false;
     CoroutineScheduler.StopAll();
+    ClearLuaTimelines();
 
     ScriptEnv = sol::environment{};
     ScriptClass = sol::table{};

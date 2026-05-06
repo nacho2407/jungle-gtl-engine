@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/Guid.h"
 #include "Object/Object.h"
 #include "Core/PropertyTypes.h"
 
@@ -27,6 +28,10 @@ public:
 
 	void SetOwner(AActor* Actor) { Owner = Actor; }
 	AActor* GetOwner() const { return Owner; }
+
+	const FGuid& GetPersistentGuid() const { return PersistentGuid; }
+	void EnsurePersistentGuid();
+	void RegeneratePersistentGuid();
 
 	void AddTag(const FString& Tag);
 	void RemoveTag(const FString& Tag);
@@ -64,6 +69,7 @@ protected:
 	AActor* Owner = nullptr;
 	TArray<FString> Tags;
 	FString TagsText;
+	FGuid PersistentGuid;
 
 private:
 	bool bIsActive = true;

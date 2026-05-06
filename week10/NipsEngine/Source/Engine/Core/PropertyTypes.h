@@ -28,6 +28,38 @@ enum class EPropertyType : uint8_t
     CubeSRV, // Shadow Cube Map Face SRV
 };
 
+enum class EPropertyUsageFlags : uint8_t
+{
+    None = 0,
+    Editable = 1 << 0,
+    Animatable = 1 << 1,
+};
+
+constexpr EPropertyUsageFlags operator|(EPropertyUsageFlags Lhs, EPropertyUsageFlags Rhs)
+{
+    return static_cast<EPropertyUsageFlags>(
+        static_cast<uint8_t>(Lhs) | static_cast<uint8_t>(Rhs));
+}
+
+constexpr bool HasPropertyUsage(EPropertyUsageFlags Value, EPropertyUsageFlags Flag)
+{
+    return (static_cast<uint8_t>(Value) & static_cast<uint8_t>(Flag)) != 0;
+}
+
+enum class EPropertyChangeType : uint8_t
+{
+    ValueSet,
+    Interactive,
+    Preview,
+    Runtime,
+};
+
+struct FPropertyChangedEvent
+{
+    const char* PropertyName = nullptr;
+    EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet;
+};
+
 // SRV 정보
 struct FSRVDisplayInfo
 {
@@ -39,7 +71,7 @@ struct FSRVDisplayInfo
     float UV1Y = 1.f;
 };
 
-// 컴포넌트가 노출하는 편집 가능한 프로퍼티 디스크립터
+// UObject가 노출하는 공통 프로퍼티 디스크립터
 struct FPropertyDescriptor
 {
     const char*   Name;
@@ -57,6 +89,8 @@ struct FPropertyDescriptor
 
     // 타입별 추가 메타데이터 일단 SRV 정보를 저장하기 위해서 사용
     void* ExtraData = nullptr;
+
+    EPropertyUsageFlags UsageFlags = EPropertyUsageFlags::Editable;
 };
 
 /** 각 프로퍼티의 Size 값을 반환합니다. 0을 반환하는 경우 특수 케이스입니다.
