@@ -11,6 +11,11 @@ local pressedKeys = {}
 local movementState = nil
 local PlayerShotCooldown = 1
 local PlayerShotTimer = 0.0
+local DroneTiltDuration = 0.4
+local DroneTiltAngle = 30.0
+local DroneTiltTimer = 0.0
+local DroneTiltPitch = 0.0
+local DroneTiltRoll = 0.0
 local GamepadControllerId = 0
 local GamepadRightTriggerPressThreshold = 0.5
 local GamepadRightTriggerReleaseThreshold = 0.25
@@ -79,6 +84,21 @@ local DamagedEffectRow = 1
 local DamagedEffectColumn = 1
 
 local BatteryHealAmount = 25.0
+local TurretBulletDamage = 13
+local PatrolBulletDamage = 6
+local DefaultEnemyBulletDamage = 10
+
+local function getEnemyBulletDamage(bullet)
+    if bullet:HasTag("TurretBullet") then
+        return TurretBulletDamage
+    end
+
+    if bullet:HasTag("PatrolBullet") then
+        return PatrolBulletDamage
+    end
+
+    return DefaultEnemyBulletDamage
+end
 
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
@@ -138,6 +158,46 @@ end
 
 local function lerp(a, b, t)
     return a + (b - a) * t
+end
+
+local function triggerDroneTilt()
+    if not pressedKeys.W and not pressedKeys.S and not pressedKeys.A and not pressedKeys.D
+        and not pressedKeys.Up and not pressedKeys.Down and not pressedKeys.Left and not pressedKeys.Right then
+        return
+    end
+
+    DroneTiltPitch = DroneTiltAngle
+    DroneTiltRoll = 0.0
+    DroneTiltTimer = DroneTiltDuration
+end
+
+local function updateDroneTilt(dt)
+    if DroneTiltTimer <= 0.0 then
+        DroneTiltTimer = 0.0
+        return
+    end
+
+    DroneTiltTimer = DroneTiltTimer - dt
+    if DroneTiltTimer < 0.0 then
+        DroneTiltTimer = 0.0
+    end
+end
+
+local function makeDroneVisualRotation()
+    local rotation = PlayerMovement.MakeYawRotation(movementState)
+
+    if DroneTiltTimer <= 0.0 then
+        return rotation
+    end
+
+    local elapsed = DroneTiltDuration - DroneTiltTimer
+    local alpha = math.sin(math.pi * elapsed / DroneTiltDuration)
+
+    return Vector.new(
+        rotation.X + DroneTiltPitch * alpha,
+        rotation.Y + DroneTiltRoll * alpha,
+        rotation.Z
+    )
 end
 
 local function updatePlayerLight(dt)
@@ -393,7 +453,7 @@ function OnOverlapBegin(other)
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
             playPlayerSound("HitPlayerSFX")
-            obj:ApplyDamage(10, other)
+            obj:ApplyDamage(getEnemyBulletDamage(other), other)
         end
 
         World.DestroyActor(other)
@@ -414,6 +474,9 @@ function BeginPlay()
     bGameOverRequested = false
     bPlayerDeadSoundPlayed = false
     bDestinationSoundPlayed = false
+    DroneTiltTimer = 0.0
+    DroneTiltPitch = 0.0
+    DroneTiltRoll = 0.0
     bGamepadRightTriggerHeld = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
@@ -445,7 +508,7 @@ function BeginPlay()
 
     MeshComponent = obj:GetComponent("StaticMeshComponent", 0)
     if MeshComponent:IsValid() then
-        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
     end
 end
 
@@ -479,6 +542,7 @@ function Tick(dt)
 
     syncPlayerState()
     updatePlayerLight(dt)
+    updateDroneTilt(dt)
 
     if isZooming() then
         -- 줌 중에는 이동을 막고, 플레이어 mesh를 숨긴 뒤 좌클릭/오른쪽 트리거 발사만 허용한다.
@@ -506,7 +570,7 @@ function Tick(dt)
     if MeshComponent ~= nil and MeshComponent:IsValid() then
         MeshComponent:SetVisible(true)
         MeshComponent:SetVisibleInGame(true)
-        MeshComponent:SetRelativeRotation(PlayerMovement.MakeYawRotation(movementState))
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
     end
 
     if moveDelta:LengthSquared() > 0.0 then
@@ -551,6 +615,7 @@ function OnKeyPressed(key)
     end
 
     pressedKeys[key] = true
+    triggerDroneTilt()
 end
 
 function OnKeyReleased(key)
