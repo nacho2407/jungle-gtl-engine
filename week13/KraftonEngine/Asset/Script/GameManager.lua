@@ -54,6 +54,7 @@ local scoreSubmitted = false
 -- OnPhaseChanged 추적용 — EscapePolice/DodgeMeteor 시작/종료 시 카메라 자동 전환에 사용.
 local prevPhase = ECarGamePhase.None
 local THIRD_PERSON_PHASE_BLEND = 0.6
+local policeCinematicOverlayWasVisible = false
 
 local function IsThirdPersonPhase(phase)
     return phase == ECarGamePhase.EscapePolice or phase == ECarGamePhase.DodgeMeteor
@@ -158,11 +159,97 @@ local function ShowMissionFeedback(phase)
     end
 end
 
+local function EaseOutCubic(t)
+    local inv = 1.0 - t
+    return 1.0 - inv * inv * inv
+end
+
+local function EaseInOutSine(t)
+    return 0.5 - 0.5 * math.cos(t * 3.14159265)
+end
+
+local function PlayPoliceFlyBy(policeCar, index)
+    if policeCar == nil or not policeCar:IsValid() then
+        return
+    end
+
+    local duration = 1.15
+    local elapsed = 0.0
+    local sideSign = (index % 2 == 0) and -1.0 or 1.0
+    local peakSpeed = 90.0 + index * 12.0
+    local sideKick = 18.0 + index * 4.0
+
+    while elapsed < duration do
+        local dt = WaitFrame()
+        elapsed = elapsed + dt
+
+        local t = elapsed / duration
+        if t > 1.0 then t = 1.0 end
+
+        local speed = peakSpeed * EaseOutCubic(t)
+        local lateral = sideSign * sideKick * math.sin(t * 3.14159265)
+        local yawSpin = sideSign * (1.8 - EaseInOutSine(t) * 1.4)
+
+        ObjRegistry.SetPoliceControl(policeCar, {
+            aiEnabled = false,
+            linearVelocity = policeCar.Forward * speed + policeCar.Right * lateral,
+            angularVelocity = Vector.new(0, 0, yawSpin)
+        })
+    end
+
+    ObjRegistry.SetPoliceControl(policeCar, {
+        aiEnabled = false,
+        linearVelocity = policeCar.Forward * peakSpeed,
+        angularVelocity = Vector.new(0, 0, 0)
+    })
+end
+
+local function BeginPoliceCinematic()
+    policeCinematicOverlayWasVisible = UIManager.IsVisible("gameOverlay")
+    UIManager.Hide("gameOverlay")
+    UIManager.Hide("gasWidget")
+    UIManager.Hide("meteorHp")
+
+    ObjRegistry.SetPlayerCinematicLocked(true)
+
+    if ObjRegistry.car ~= nil and ObjRegistry.car:IsValid() then
+        local movement = ObjRegistry.car:GetCarMovement()
+        if movement ~= nil then
+            movement:StopImmediately()
+            movement:SetThrottleInput(0)
+            movement:SetSteeringInput(0)
+        end
+
+        ObjRegistry.car:SetVisible(false)
+    end
+end
+
+local function EndPoliceCinematic()
+    ObjRegistry.SetPlayerCinematicLocked(false)
+
+    if ObjRegistry.car ~= nil and ObjRegistry.car:IsValid() then
+        local movement = ObjRegistry.car:GetCarMovement()
+        if movement ~= nil then
+            movement:StopImmediately()
+            movement:SetThrottleInput(0)
+            movement:SetSteeringInput(0)
+        end
+
+        ObjRegistry.car:SetVisible(true)
+    end
+
+    if policeCinematicOverlayWasVisible then
+        UIManager.Show("gameOverlay")
+    end
+    policeCinematicOverlayWasVisible = false
+end
+
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
 
     -- EscapePolice / DodgeMeteor 시작 시 자동으로 3인칭 전환. 해당 페이즈가 끝나
     -- 다른 페이즈로 넘어가면 1인칭 복귀. 이전 페이즈 추적은 prevPhase.
+    local wasEscapePolice = prevPhase == ECarGamePhase.EscapePolice
     local enterThirdPerson = IsThirdPersonPhase(phase) and not IsThirdPersonPhase(prevPhase)
     local exitThirdPerson  = IsThirdPersonPhase(prevPhase) and not IsThirdPersonPhase(phase)
     if enterThirdPerson then
@@ -176,6 +263,12 @@ local function OnPhaseChanged(phase)
 
     -- EscapePolice / DodgeMeteor 페이즈 BGM 토글 — 그 외 phase 면 기본 BGM 복원.
     HandlePhaseBGM(phase)
+
+
+    if wasEscapePolice and phase ~= ECarGamePhase.EscapePolice then
+        ObjRegistry.ClearAllPoliceControls()
+        EndPoliceCinematic()
+    end
 
     prevPhase = phase
 
@@ -214,6 +307,45 @@ local function OnPhaseChanged(phase)
         end)
         print("Run Lua logic for CarGas")
     elseif phase == ECarGamePhase.EscapePolice then
+        StartCoroutine(function()
+            BeginPoliceCinematic()
+
+            ObjRegistry.SetAllPoliceControls(function(policeCar, index)
+                return {
+                    aiEnabled = false,
+                    linearVelocity = Vector.new(0, 0, 0),
+                    angularVelocity = Vector.new(0, 0, 0),
+                    stop = true
+                }
+            end)
+
+            CameraFadeTransition(0.5, function()
+                if ObjRegistry.policeCineCameraObj ~= nil then
+                    CameraManager.ToggleOwnerCamera(ObjRegistry.policeCineCameraObj)
+                end
+            end)
+
+            Wait(2.0)
+
+            for i, policeCar in ipairs(ObjRegistry.policeCars) do
+                StartCoroutine(function()
+                    Wait(0.5 + (i - 1) * 0.3)
+                    AudioManager.Play("Whoosh", 1.0)
+                    CameraManager.StartCameraShakeAsset("Asset/Test.shake", 10.0)
+                    PlayPoliceFlyBy(policeCar, i)
+
+                end)
+            end
+
+            Wait(3.0)
+
+            ObjRegistry.ClearAllPoliceControls()
+            EndPoliceCinematic()
+
+            CameraFadeTransition(0.5, function()
+                CameraManager.PossessCamera(ObjRegistry.carCamera)
+            end)
+        end)
         print("Run Lua logic for EscapePolice")
     elseif phase == ECarGamePhase.DodgeMeteor then
         print("Run Lua logic for DodgeMeteor")
@@ -438,6 +570,7 @@ function BeginPlay()
     nextQuestRoutine = nil
 
     UIManager.Init()
+
     gameState = GetGameState()
     if gameState ~= nil then
         gameState:SetMatchTimerRunning(false)
@@ -497,7 +630,11 @@ function EndPlay()
         StopCoroutine(nextQuestRoutine)
         nextQuestRoutine = nil
     end
+    ObjRegistry.ClearAllPoliceControls()
+    EndPoliceCinematic()
     UIManager.Shutdown()
+
+    StopAllCoroutines()
 end
 
 function OnOverlap(OtherActor)

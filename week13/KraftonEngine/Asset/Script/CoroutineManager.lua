@@ -9,6 +9,14 @@ function StopCoroutine(handle)
     return Coroutine:Stop(handle)
 end
 
+function StopAllCoroutines()
+    for i = #Coroutine.coroutines, 1, -1 do
+        local routine = Coroutine.coroutines[i]
+        routine.dead = true
+        table.remove(Coroutine.coroutines, i)
+    end
+end
+
 function Wait(seconds)
     Coroutine:Wait(seconds)
 end
