@@ -164,6 +164,8 @@ function Script:SlamAttack()
         end)
     end
 
+    self.ActiveShake = self.component:StartCameraShakePattern(self.ShakePattern, 0.7, 0.0)
+    
     self.bSlamShake         = true
     self.slamShakeTime      = 0.35
     self.slamShakeDuration  = 0.35
@@ -570,10 +572,17 @@ end
 
 function Script:BeginPlay()
     Log("[BeginPlay] " .. tostring(self.owner.UUID))
-    self.ShakePattern = self.Component:CreateSinusoidalCameraShakePattern()
+    self.ShakePattern = self.component:CreateSinusoidalCameraShakePattern()
+        
+    self.ShakePattern.Duration = 0.35
+    self.ShakePattern.BlendInTime = 0.02
+    self.ShakePattern.BlendOutTime = 0.18
+
+    self.ShakePattern.LocationAmplitude = Vector(0.0, 0.3, 0.5)
+    self.ShakePattern.LocationFrequency = Vector(0.0, 5.0, 5.0)
 
     self:ResetHealth(self.MaxHealth)
-    self:InstallHealthBridge()
+    self:InstallHealthBridge()    
 
     StartCoroutine(function()
         Log("Coroutine Start")
@@ -605,35 +614,35 @@ function Script:Tick(dt)
     -- -------------------------------------------------------
     -- Slam 카메라 쉐이크: 슬램 중/후 관계없이 항상 소비
     -- -------------------------------------------------------
-    if self.bSlamShake then
-        self.slamShakeTime = self.slamShakeTime - dt
-        if self.slamShakeTime <= 0 then
-            self.bSlamShake = false
-        else
-            local progress  = self.slamShakeTime / self.slamShakeDuration
-            local intensity = self.slamShakeIntensity * progress
-            local shakeZ = math.sin(self.time * 85) * intensity * 0.002
-            local shakeX = math.cos(self.time * 65) * intensity * 0.001
-            Engine.API.World.AddViewTargetCameraLocation(Vector(shakeX, 0, shakeZ))
-        end
-    end
+    -- if self.bSlamShake then
+    --     self.slamShakeTime = self.slamShakeTime - dt
+    --     if self.slamShakeTime <= 0 then
+    --         self.bSlamShake = false
+    --     else
+    --         local progress  = self.slamShakeTime / self.slamShakeDuration
+    --         local intensity = self.slamShakeIntensity * progress
+    --         local shakeZ = math.sin(self.time * 85) * intensity * 0.002
+    --         local shakeX = math.cos(self.time * 65) * intensity * 0.001
+    --         Engine.API.World.AddViewTargetCameraLocation(Vector(shakeX, 0, shakeZ))
+    --     end
+    -- end
 
-    -- -------------------------------------------------------
-    -- 슬램 카메라 pitch 오프셋 보간 (Tick에서 매 프레임 처리)
-    -- -------------------------------------------------------
-    if self.slamPitchOffset ~= self.slamPitchTarget then
-        local diff = self.slamPitchTarget - self.slamPitchOffset
-        local step = self.slamPitchSpeed * dt
-        if math.abs(diff) <= step then
-            local delta = diff - 0  -- 남은 만큼만
-            self.slamPitchOffset = self.slamPitchTarget
-            Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
-        else
-            local delta = (diff > 0 and step or -step)
-            self.slamPitchOffset = self.slamPitchOffset + delta
-            Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
-        end
-    end
+    -- -- -------------------------------------------------------
+    -- -- 슬램 카메라 pitch 오프셋 보간 (Tick에서 매 프레임 처리)
+    -- -- -------------------------------------------------------
+    -- if self.slamPitchOffset ~= self.slamPitchTarget then
+    --     local diff = self.slamPitchTarget - self.slamPitchOffset
+    --     local step = self.slamPitchSpeed * dt
+    --     if math.abs(diff) <= step then
+    --         local delta = diff - 0  -- 남은 만큼만
+    --         self.slamPitchOffset = self.slamPitchTarget
+    --         Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
+    --     else
+    --         local delta = (diff > 0 and step or -step)
+    --         self.slamPitchOffset = self.slamPitchOffset + delta
+    --         Engine.API.World.GetViewTargetCamera():add_pitch_input(delta)
+    --     end
+    --end
 
     -- -------------------------------------------------------
     -- Q 슬램 중이면 다른 입력 전부 차단
@@ -687,34 +696,6 @@ function Script:Tick(dt)
     end
     if Engine.API.Input.IsKeyDown("D") then
         move = move + self.owner:GetActorRightVector()
-    end
-
-    if Engine.API.Input.IsKeyDown("M") then
-
-    local Pattern = self.ShakePattern
-    if Pattern == nil then
-        Pattern = self.Component:CreateSinusoidalCameraShakePattern()
-        self.ShakePattern = Pattern
-    end
-
-    Pattern.Duration = 0.25
-    Pattern.BlendInTime = 0.0
-    Pattern.BlendOutTime = 0.18
-
-    Pattern.LocationAmplitude = Vector(4.0, 2.0, 3.0)
-    Pattern.LocationFrequency = Vector(28.0, 31.0, 25.0)
-
-    -- 회전 흔들림
-    Pattern.RotationAmplitudeDeg = Vector(0.3, 0.5, 0.2)
-    Pattern.RotationFrequency = Vector(7.0, 6.0, 8.0)
-    Pattern.RotationPhase = Vector(0.5, 1.7, 2.9)
-
-    -- -- FOV 흔들림
-    -- Pattern.FOVAmplitude = 0.2
-    -- Pattern.FOVFrequency = 1.0
-    -- Pattern.FOVPhase = 0.0
-
-    self.Component:StartCameraShakePattern(Pattern, 1.0, 0.0)
     end
 
     move = self:ClipMoveAgainstBlock(move)
@@ -835,10 +816,11 @@ function Script:Tick(dt)
     -- -------------------------------------------------------
     -- Q: 내려찍기 슬램 (슬램/일반어택 중 아닐 때만)
     -- -------------------------------------------------------
-    if not self.bDoingAttack and player and Engine.API.Input.IsKeyPressed("R") then
+    if not self.bDoingAttack and player and Engine.API.Input.IsKeyPressed("RMB") then
         StartCoroutine(function()
             self:SlamAttack()
         end)
+        
     end
 end
 
