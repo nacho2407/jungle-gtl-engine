@@ -997,13 +997,13 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 
 	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Undo) && Editor)
 	{
-		Editor->Undo();
+		Editor->GetUndoSystem().Undo();
 		return;
 	}
 
 	if (!bInPIE && EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::Redo) && Editor)
 	{
-		Editor->Redo();
+		Editor->GetUndoSystem().Redo();
 		return;
 	}
 
@@ -1196,7 +1196,7 @@ bool FEditorViewportClient::HandleGizmoInput(const FViewportInputContext& Contex
 	{
 		if (!bGizmoDragUndoCaptured && Editor)
 		{
-			Editor->CaptureUndoSnapshot("Transform Actors");
+			Editor->GetUndoSystem().CaptureSnapshot("Transform Actors");
 			bGizmoDragUndoCaptured = true;
 		}
 		const float LocalX = static_cast<float>(Context.MouseLocalPos.x);
@@ -1957,7 +1957,7 @@ void FEditorViewportClient::DuplicateSelection()
 
 	if (Editor)
 	{
-		Editor->CaptureUndoSnapshot("Duplicate Actors");
+		Editor->GetUndoSystem().CaptureSnapshot("Duplicate Actors");
 	}
 
 	TArray<AActor*> NewSelection;

@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorControlWidget.h"
+#include "Editor/UI/EditorControlWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Camera/ViewportCamera.h"
@@ -142,7 +142,7 @@ bool FEditorControlWidget::SpawnPrimitive(int32 PrimitiveType, const FVector& Sp
 		}
 	}
 
-	EditorEngine->CaptureUndoSnapshot("Place Actor");
+	EditorEngine->GetUndoSystem().CaptureSnapshot("Place Actor");
 	for (int32 i = 0; i < Count; i++)
 	{
 		switch (PrimitiveType)

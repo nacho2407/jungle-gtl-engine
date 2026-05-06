@@ -1,8 +1,113 @@
 #include "Editor/Undo/EditorUndoSystem.h"
 
+#include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorMainPanel.h"
+
 #include <utility>
 
-bool FEditorUndoSystem::CaptureSnapshot(FString Snapshot, const char* Reason, bool& bOutClearedRedo)
+bool FEditorUndoSystem::CaptureSnapshot(const char* Reason)
+{
+	if (Owner == nullptr || IsRestoring() || Owner->GetEditorState() != EViewportPlayState::Editing)
+	{
+		return false;
+	}
+
+	FString Snapshot = Owner->CaptureSceneSnapshot();
+	if (Snapshot.empty())
+	{
+		return false;
+	}
+
+	bool bClearedRedo = false;
+	const bool bCaptured = PushSnapshot(std::move(Snapshot), Reason, bClearedRedo);
+	if (bClearedRedo)
+	{
+		Owner->GetMainPanel().PushFooterLog("Redo history cleared");
+	}
+	return bCaptured;
+}
+
+bool FEditorUndoSystem::Undo()
+{
+	if (Owner == nullptr || IsRestoring() || Owner->GetEditorState() != EViewportPlayState::Editing)
+	{
+		return false;
+	}
+
+	FString Current = Owner->CaptureSceneSnapshot();
+	FUndoSnapshotEntry Previous;
+	if (!PopUndoSnapshot(std::move(Current), Previous))
+	{
+		return false;
+	}
+
+	const bool bRestored = Owner->RestoreSceneSnapshot(Previous.Snapshot);
+	if (bRestored)
+	{
+		Owner->GetMainPanel().PushFooterLog("Undo: " + Previous.Label);
+	}
+	return bRestored;
+}
+
+bool FEditorUndoSystem::Redo()
+{
+	if (Owner == nullptr || IsRestoring() || Owner->GetEditorState() != EViewportPlayState::Editing)
+	{
+		return false;
+	}
+
+	FString Current = Owner->CaptureSceneSnapshot();
+	FUndoSnapshotEntry Next;
+	if (!PopRedoSnapshot(std::move(Current), Next))
+	{
+		return false;
+	}
+
+	const bool bRestored = Owner->RestoreSceneSnapshot(Next.Snapshot);
+	if (bRestored)
+	{
+		Owner->GetMainPanel().PushFooterLog("Redo: " + Next.Label);
+	}
+	return bRestored;
+}
+
+bool FEditorUndoSystem::RestoreHistoryIndex(int32 Index)
+{
+	if (Owner == nullptr || IsRestoring() || Owner->GetEditorState() != EViewportPlayState::Editing)
+	{
+		return false;
+	}
+
+	FString Current = Owner->CaptureSceneSnapshot();
+	FUndoSnapshotEntry Target;
+	if (!RestoreHistorySnapshotIndex(Index, std::move(Current), Target))
+	{
+		return false;
+	}
+
+	const bool bRestored = Owner->RestoreSceneSnapshot(Target.Snapshot);
+	if (bRestored)
+	{
+		Owner->GetMainPanel().PushFooterLog("History restored: " + Target.Label);
+	}
+	return bRestored;
+}
+
+void FEditorUndoSystem::ClearHistory()
+{
+	if (Owner == nullptr)
+	{
+		ClearStorage();
+		return;
+	}
+
+	if (ClearStorage())
+	{
+		Owner->GetMainPanel().PushFooterLog("Undo history cleared");
+	}
+}
+
+bool FEditorUndoSystem::PushSnapshot(FString Snapshot, const char* Reason, bool& bOutClearedRedo)
 {
 	bOutClearedRedo = false;
 	if (Snapshot.empty())
@@ -28,7 +133,7 @@ bool FEditorUndoSystem::CaptureSnapshot(FString Snapshot, const char* Reason, bo
 	return true;
 }
 
-bool FEditorUndoSystem::PopUndo(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
+bool FEditorUndoSystem::PopUndoSnapshot(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
 {
 	if (UndoHistory.empty())
 	{
@@ -48,7 +153,7 @@ bool FEditorUndoSystem::PopUndo(FString CurrentSnapshot, FUndoSnapshotEntry& Out
 	return true;
 }
 
-bool FEditorUndoSystem::PopRedo(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
+bool FEditorUndoSystem::PopRedoSnapshot(FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
 {
 	if (RedoHistory.empty())
 	{
@@ -68,7 +173,7 @@ bool FEditorUndoSystem::PopRedo(FString CurrentSnapshot, FUndoSnapshotEntry& Out
 	return true;
 }
 
-bool FEditorUndoSystem::RestoreHistoryIndex(int32 Index, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
+bool FEditorUndoSystem::RestoreHistorySnapshotIndex(int32 Index, FString CurrentSnapshot, FUndoSnapshotEntry& OutEntry)
 {
 	if (Index < 0 || Index >= static_cast<int32>(UndoHistory.size()))
 	{
@@ -96,7 +201,7 @@ bool FEditorUndoSystem::RestoreHistoryIndex(int32 Index, FString CurrentSnapshot
 	return true;
 }
 
-bool FEditorUndoSystem::Clear()
+bool FEditorUndoSystem::ClearStorage()
 {
 	const bool bHadHistory = !UndoHistory.empty() || !RedoHistory.empty();
 	UndoHistory.clear();

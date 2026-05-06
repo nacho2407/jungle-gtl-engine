@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorPropertyWidget.h"
+#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -746,7 +746,7 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 			{
 				if (EditorEngine)
 				{
-					EditorEngine->CaptureUndoSnapshot("Add Component");
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Add Component");
 				}
 				if (UActorComponent* NewComp = Entry.CreateAndInitFunc(PrimaryActor))
 				{
@@ -942,7 +942,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
             {
 				if (EditorEngine)
 				{
-					EditorEngine->CaptureUndoSnapshot("Attach Component");
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Attach Component");
 				}
                 DraggedComp->AttachToComponent(Comp);
             }
@@ -955,7 +955,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
             {
 				if (EditorEngine)
 				{
-					EditorEngine->CaptureUndoSnapshot("Set Updated Component");
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Set Updated Component");
 				}
                 DraggedMoveComp->SetUpdatedComponent(Comp);
             }
@@ -1026,7 +1026,7 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	UActorComponent* ComponentToDelete = SelectedComponent;
 	if (EditorEngine)
 	{
-		EditorEngine->CaptureUndoSnapshot("Delete Component");
+		EditorEngine->GetUndoSystem().CaptureSnapshot("Delete Component");
 	}
 	SelectedComponent = nullptr;
 	bActorSelected = true;
@@ -1076,7 +1076,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			const bool bEdited = ImGui::DragFloat3(Label, Arr, 0.1f);
 			if (ImGui::IsItemActivated() && EditorEngine)
 			{
-				EditorEngine->CaptureUndoSnapshot("Transform Actors");
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Transform Actors");
 			}
 			if (bEdited)
 			{
@@ -1100,7 +1100,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 	const bool bVisibleEdited = ImGui::Checkbox("Visible", &bVisible);
 	if (ImGui::IsItemActivated() && EditorEngine)
 	{
-		EditorEngine->CaptureUndoSnapshot("Edit Actor");
+		EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Actor");
 	}
 	if (bVisibleEdited)
 	{
@@ -1133,7 +1133,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				{
 					if (EditorEngine)
 					{
-						EditorEngine->CaptureUndoSnapshot("Edit Billboard");
+						EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Billboard");
 					}
 					for (AActor* Actor : SelectedActors)
 					{
@@ -1159,7 +1159,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		const bool bRangeEdited = ImGui::DragFloat("Range", &Range, 0.1f, 0.0f, 1000.0f);
 		if (ImGui::IsItemActivated() && EditorEngine)
 		{
-			EditorEngine->CaptureUndoSnapshot("Edit Light");
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
 		}
 		if (bRangeEdited)
 		{
@@ -1175,7 +1175,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		const bool bAngleEdited = ImGui::DragFloat("Angle", &Angle, 0.1f, 0.0f, 180.0f);
 		if (ImGui::IsItemActivated() && EditorEngine)
 		{
-			EditorEngine->CaptureUndoSnapshot("Edit Light");
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Light");
 		}
 		if (bAngleEdited)
 		{
@@ -1229,7 +1229,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 					{
 						if (!bChanged && EditorEngine)
 						{
-							EditorEngine->CaptureUndoSnapshot("Remove Actor Tag");
+							EditorEngine->GetUndoSystem().CaptureSnapshot("Remove Actor Tag");
 						}
 						Actor->RemoveTag(Tag);
 						bChanged = true;
@@ -1265,7 +1265,7 @@ void FEditorPropertyWidget::RenderActorTags(AActor* PrimaryActor, const TArray<A
 			{
 				if (!bChanged && EditorEngine)
 				{
-					EditorEngine->CaptureUndoSnapshot("Add Actor Tag");
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Add Actor Tag");
 				}
 				Actor->AddTag(NewTag);
 				bChanged = true;
@@ -1314,7 +1314,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 				{
 					if (EditorEngine)
 					{
-						EditorEngine->CaptureUndoSnapshot("Remove Component Tag");
+						EditorEngine->GetUndoSystem().CaptureSnapshot("Remove Component Tag");
 					}
 					Component->RemoveTag(Tag);
 					if (EditorEngine)
@@ -1345,7 +1345,7 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 		{
 			if (EditorEngine)
 			{
-				EditorEngine->CaptureUndoSnapshot("Add Component Tag");
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Add Component Tag");
 			}
 			Component->AddTag(NewTag);
 			NewComponentTagBuffer[0] = '\0';
@@ -1548,7 +1548,7 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 			{
 				if (EditorEngine)
 				{
-					EditorEngine->CaptureUndoSnapshot("Edit Component Reference");
+					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Component Reference");
 				}
 				*ValuePtr = SceneComp;
 				SelectedComponent->PostEditProperty(Prop.Name);
@@ -1888,7 +1888,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 				{
 					if (EditorEngine)
 					{
-						EditorEngine->CaptureUndoSnapshot("Edit Material Slot");
+						EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Material Slot");
 						bPropertyEditUndoCaptured = true;
 					}
 					(*Slots)[SlotIndex] = nullptr;
@@ -1917,7 +1917,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 					{
 						if (EditorEngine)
 						{
-							EditorEngine->CaptureUndoSnapshot("Edit Material Slot");
+							EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Material Slot");
 							bPropertyEditUndoCaptured = true;
 						}
 						(*Slots)[SlotIndex] = Candidate;
@@ -2006,7 +2006,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		{
 			if (EditorEngine)
 			{
-				EditorEngine->CaptureUndoSnapshot("Edit Property");
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 				bPropertyEditUndoCaptured = true;
 			}
 			Arr->erase(Arr->begin() + ToRemove);
@@ -2019,7 +2019,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 		{
 			if (EditorEngine)
 			{
-				EditorEngine->CaptureUndoSnapshot("Edit Property");
+				EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 				bPropertyEditUndoCaptured = true;
 			}
 			Arr->push_back(Arr->empty() ? FVector(0.f, 0.f, 0.f) : Arr->back());
@@ -2073,7 +2073,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 
 	if (ImGui::IsItemActivated() && !bPropertyEditUndoCaptured && EditorEngine)
 	{
-		EditorEngine->CaptureUndoSnapshot("Edit Property");
+		EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 		bPropertyEditUndoCaptured = true;
 	}
 
@@ -2081,7 +2081,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 	{
 		if (!bPropertyEditUndoCaptured && EditorEngine)
 		{
-			EditorEngine->CaptureUndoSnapshot("Edit Property");
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
 		SelectedComponent->PostEditProperty(Prop.Name);
@@ -2267,7 +2267,7 @@ void FEditorPropertyWidget::RenderEditableName(const char* Label, T* TargetObjec
 	{
 		if (EditorEngine)
 		{
-			EditorEngine->CaptureUndoSnapshot("Rename");
+			EditorEngine->GetUndoSystem().CaptureSnapshot("Rename");
 		}
 		TargetObject->SetFName(FName(NameBuf));
 		if (EditorEngine)

@@ -46,11 +46,6 @@ public:
 	void ClearScene();
 	int32 DeleteActors(const TArray<AActor*>& Actors);
 
-	bool CaptureUndoSnapshot(const char* Reason = nullptr);
-	bool Undo();
-	bool Redo();
-	bool RestoreUndoHistoryIndex(int32 Index);
-	void ClearUndoHistory();
 	FEditorUndoSystem& GetUndoSystem() { return UndoSystem; }
 	const FEditorUndoSystem& GetUndoSystem() const { return UndoSystem; }
 	void ResetViewport();
@@ -120,6 +115,8 @@ public:
 	FName GetEditorWorldHandle() const;
 
 private:
+	friend class FEditorUndoSystem;
+
 	void ProcessQueuedPlaySessionRequests();
 	void StartPlaySessionNow();
 	void StopPlaySessionNow();
