@@ -1050,6 +1050,41 @@ const FViewportCamera* UEditorEngine::GetCamera() const
     return ViewportLayout.GetIndexedViewportClientCamera(0);
 }
 
+UGizmoComponent* UEditorEngine::GetGizmo() const
+{
+    return SelectionManager.GetGizmo();
+}
+
+UWorld* UEditorEngine::GetFocusedWorld() const
+{
+    const FEditorViewportClient* FocusedClient =
+        ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
+    return FocusedClient ? FocusedClient->GetFocusedWorld() : nullptr;
+}
+
+EViewportPlayState UEditorEngine::GetEditorState() const
+{
+    const int32 StateViewportIndex =
+        PIESession.ResolveActiveViewportIndex(ViewportLayout.GetLastFocusedViewportIndex());
+    const FEditorViewportClient* FocusedClient =
+        ViewportLayout.GetViewportClient(StateViewportIndex);
+
+    return FocusedClient ? FocusedClient->GetPlayState() : EViewportPlayState::Editing;
+}
+
+void UEditorEngine::SetEditorState(EViewportPlayState InState)
+{
+    const int32 StateViewportIndex =
+        PIESession.ResolveActiveViewportIndex(ViewportLayout.GetLastFocusedViewportIndex());
+    FEditorViewportClient* FocusedClient = ViewportLayout.GetViewportClient(StateViewportIndex);
+    if (!FocusedClient)
+    {
+        return;
+    }
+
+    FocusedClient->SetPlayState(InState);
+}
+
 FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 {
     return static_cast<FEditorRenderPipeline*>(GetRenderPipeline());
