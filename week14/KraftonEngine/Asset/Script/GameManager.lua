@@ -91,6 +91,44 @@ local function CameraFadeTransition(duration, middle)
     end)
 end
 
+-- 페이즈별 전용 BGM — EscapePolice / DodgeMeteor 진입 시 BGM swap, 이탈 시 기본 BGM 복원.
+-- AudioManager.PlayBGM 은 호출 시 자동으로 기존 BGM stop 후 새로 재생하므로 단순 swap.
+local PHASE_BGM = {
+    [ECarGamePhase.EscapePolice] = "Phase_EscapePolice",
+    [ECarGamePhase.DodgeMeteor]  = "Phase_Meteor",
+}
+local DEFAULT_BGM_KEY    = "CityBgm"
+local DEFAULT_BGM_VOLUME = 0.1
+local PHASE_BGM_VOLUME   = 0.35
+
+local function HandlePhaseBGM(phase)
+    local prevKey = PHASE_BGM[prevPhase]
+    local nextKey = PHASE_BGM[phase]
+    if nextKey == prevKey then
+        return  -- 같은 BGM 유지 (예: Result -> Finished 둘 다 nil)
+    end
+    if nextKey ~= nil then
+        AudioManager.PlayBGM(nextKey, PHASE_BGM_VOLUME)
+    else
+        AudioManager.PlayBGM(DEFAULT_BGM_KEY, DEFAULT_BGM_VOLUME)
+    end
+end
+
+-- DodgeMeteor 페이즈 동안만 흐르는 단일 ambient loop. 메테오 인스턴스마다 따로 두면
+-- 동시 N개 채널이 겹쳐 듣기 거슬려서 페이즈 단위 1개로 통합.
+local METEOR_FALL_LOOP_NAME = "MeteorFallAmbient"
+local METEOR_FALL_VOLUME    = 0.45
+
+local function HandleMeteorAmbientLoop(phase)
+    local was = (prevPhase == ECarGamePhase.DodgeMeteor)
+    local now = (phase == ECarGamePhase.DodgeMeteor)
+    if now and not was then
+        AudioManager.PlayLoop("MeteorFall", METEOR_FALL_LOOP_NAME, METEOR_FALL_VOLUME, 1.0)
+    elseif was and not now then
+        AudioManager.StopLoop(METEOR_FALL_LOOP_NAME)
+    end
+end
+
 local function ShowMissionFeedback(phase)
     -- 게임플레이 페이즈 진입 시 mission card.
     if phase == ECarGamePhase.CarWash
@@ -132,6 +170,13 @@ local function OnPhaseChanged(phase)
     elseif exitThirdPerson then
         SwitchPlayerCamera(false)
     end
+
+    -- DodgeMeteor 진입/이탈 시 ambient loop 토글 (prevPhase 갱신 전에 결정).
+    HandleMeteorAmbientLoop(phase)
+
+    -- EscapePolice / DodgeMeteor 페이즈 BGM 토글 — 그 외 phase 면 기본 BGM 복원.
+    HandlePhaseBGM(phase)
+
     prevPhase = phase
 
     -- Mission card / Result 피드백 — 페이즈별 차별 표시.
@@ -458,12 +503,37 @@ end
 function OnOverlap(OtherActor)
 end
 
+-- 디버그 치트 — F5~F8: 현재 phase 가 매핑된 phase 와 일치할 때만 SuccessPhase 호출.
+-- 페이즈 진행 중에 즉시 클리어해 다음 흐름 확인 / QA 용. 빌드 분리는 안 했으니 출시 전 정리.
+local CHEAT_KEY_TO_PHASE = {
+    [Key.F5] = ECarGamePhase.CarWash,
+    [Key.F6] = ECarGamePhase.CarGas,
+    [Key.F7] = ECarGamePhase.EscapePolice,
+    [Key.F8] = ECarGamePhase.DodgeMeteor,
+}
+
+local function HandleCheatHotkeys()
+    if gameState == nil then return end
+    local current = gameState:GetPhase()
+    for cheatKey, expectedPhase in pairs(CHEAT_KEY_TO_PHASE) do
+        if Input.GetKeyDown(cheatKey) and current == expectedPhase then
+            local gm = GetGameMode()
+            if gm ~= nil then
+                gm:SuccessPhase()
+            end
+            return  -- 한 프레임에 하나만 발동
+        end
+    end
+end
+
 function Tick(dt)
     UIManager.Tick(dt)
     UIManager.UpdateHUD()
 
     -- ESC 토글은 UIManager.OnEscapePressed 가 담당 — World pause 도중에도 동작해야 해서
     -- C++ UGameEngine::Tick 에서 직접 fire 하는 Engine.SetOnEscape 콜백 경로로 옮김.
+
+    HandleCheatHotkeys()
 
     if state ~= QuestState.Active then
         return

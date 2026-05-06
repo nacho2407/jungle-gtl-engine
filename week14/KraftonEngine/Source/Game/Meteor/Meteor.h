@@ -58,6 +58,10 @@ private:
 	// 수 있어 bAlreadyExploded 가드와 함께 동작.
 	void PlayLandingFeedback();
 
+	// 플레이어와의 거리 기반 falloff (0..1) — landing feedback 의 shake/volume 산출에 사용.
+	// 플레이어 못 찾으면 0 반환 (silent).
+	float ComputePlayerFalloff() const;
+
 	void ResolveCachedComponents();
 
 	USphereComponent* CollisionSphere = nullptr;
