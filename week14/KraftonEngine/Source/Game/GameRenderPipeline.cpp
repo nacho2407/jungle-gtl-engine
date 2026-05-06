@@ -9,6 +9,27 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "Input/InputSystem.h"
 #include "Viewport/Viewport.h"
+#include "Math/MathUtils.h"
+
+namespace
+{
+	void ApplyLetterboxAspect(FMinimalViewInfo& POV, const FCameraLetterboxState& Letterbox, float ViewportWidth, float ViewportHeight)
+	{
+		if (!Letterbox.bEnabled || Letterbox.Amount <= 0.0f || ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+		{
+			return;
+		}
+
+		const float Thickness = FMath::Clamp(Letterbox.Thickness * Letterbox.Amount, 0.0f, 0.49f);
+		const float VisibleHeightScale = 1.0f - Thickness * 2.0f;
+		if (VisibleHeightScale <= FMath::Epsilon)
+		{
+			return;
+		}
+
+		POV.AspectRatio = (ViewportWidth / ViewportHeight) / VisibleHeightScale;
+	}
+}
 
 FGameRenderPipeline::FGameRenderPipeline(UGameEngine* InGame, FRenderer& InRenderer)
 	: Game(InGame)
@@ -78,26 +99,11 @@ void FGameRenderPipeline::PrepareViewport(FViewport* VP, ID3D11DeviceContext* Ct
 void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV, FScene* Scene, UWorld* World)
 {
 	Frame.ClearViewportResources();
-	Frame.SetCameraInfo(POV);
 	Frame.SetViewportInfo(VP);
 
-	const POINT MousePos = InputSystem::Get().GetMouseClientPos();
-	if (MousePos.x >= 0 && MousePos.y >= 0
-		&& MousePos.x < static_cast<LONG>(Frame.ViewportWidth)
-		&& MousePos.y < static_cast<LONG>(Frame.ViewportHeight))
-	{
-		Frame.CursorViewportX = static_cast<uint32>(MousePos.x);
-		Frame.CursorViewportY = static_cast<uint32>(MousePos.y);
-	}
-	else
-	{
-		Frame.CursorViewportX = UINT32_MAX;
-		Frame.CursorViewportY = UINT32_MAX;
-	}
-
-	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade / vignette 상태 read.
 	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 	APlayerCameraManager* CamManager = PC ? PC->GetPlayerCameraManager() : nullptr;
+
 	Frame.CameraFade.bEnabled = CamManager ? CamManager->IsFadeEnabled() : false;
 	if (Frame.CameraFade.bEnabled)
 	{
@@ -113,7 +119,8 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 		Frame.CameraVignette.Softness = CamManager->GetVignetteSoftness();
 	}
 
-	if (UCineCameraComponent* CineCamera = Cast<UCineCameraComponent>(CamManager->GetActiveCamera()))
+	UCameraComponent* ActiveCamera = CamManager ? CamManager->GetActiveCamera() : nullptr;
+	if (UCineCameraComponent* CineCamera = Cast<UCineCameraComponent>(ActiveCamera))
 	{
 		const FCineLetterboxSettings& LetterboxSettings = CineCamera->GetLetterboxSettings();
 		Frame.CameraLetterbox.bEnabled = LetterboxSettings.bEnabled;
@@ -127,6 +134,24 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 	else
 	{
 		Frame.CameraLetterbox.bEnabled = false;
+	}
+
+	FMinimalViewInfo RenderPOV = POV;
+	ApplyLetterboxAspect(RenderPOV, Frame.CameraLetterbox, Frame.ViewportWidth, Frame.ViewportHeight);
+	Frame.SetCameraInfo(RenderPOV);
+
+	const POINT MousePos = InputSystem::Get().GetMouseClientPos();
+	if (MousePos.x >= 0 && MousePos.y >= 0
+		&& MousePos.x < static_cast<LONG>(Frame.ViewportWidth)
+		&& MousePos.y < static_cast<LONG>(Frame.ViewportHeight))
+	{
+		Frame.CursorViewportX = static_cast<uint32>(MousePos.x);
+		Frame.CursorViewportY = static_cast<uint32>(MousePos.y);
+	}
+	else
+	{
+		Frame.CursorViewportX = UINT32_MAX;
+		Frame.CursorViewportY = UINT32_MAX;
 	}
 }
 
