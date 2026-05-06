@@ -6,9 +6,9 @@ local Timer = 0.0
 -- Candidate가 실제 아이템/터렛으로 바뀔 때 종류별 최대 생성 수.
 -- Scene에 Candidate가 더 많아도 여기 숫자까지만 랜덤으로 선택된다.
 local SpawnMaxCounts = {
-    Battery = 2,
+    Battery = 4,
     Document = 4,
-    Turret = 10
+    Turret = 12
 }
 
 -- Key는 Scene에서 찾을 Candidate Tag, Value는 바꿔치기할 실제 Actor 설정이다.

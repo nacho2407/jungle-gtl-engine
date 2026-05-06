@@ -3,7 +3,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_962",
-      "PrimitiveKey" : "25554",
+      "PrimitiveKey" : "12",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -53,7 +53,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_441",
-      "PrimitiveKey" : "25557",
+      "PrimitiveKey" : "20",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -97,7 +97,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_782",
-      "PrimitiveKey" : "25560",
+      "PrimitiveKey" : "23",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -153,7 +153,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_420",
-      "PrimitiveKey" : "25563",
+      "PrimitiveKey" : "32",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -214,7 +214,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_450",
-      "PrimitiveKey" : "25566",
+      "PrimitiveKey" : "35",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -258,7 +258,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_13",
-      "PrimitiveKey" : "25569",
+      "PrimitiveKey" : "38",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -319,7 +319,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2047",
-      "PrimitiveKey" : "25572",
+      "PrimitiveKey" : "41",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -375,7 +375,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_610",
-      "PrimitiveKey" : "25575",
+      "PrimitiveKey" : "50",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -436,7 +436,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_611",
-      "PrimitiveKey" : "25578",
+      "PrimitiveKey" : "57",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -497,7 +497,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_612",
-      "PrimitiveKey" : "25581",
+      "PrimitiveKey" : "60",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -558,7 +558,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_613",
-      "PrimitiveKey" : "25584",
+      "PrimitiveKey" : "63",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -619,7 +619,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_614",
-      "PrimitiveKey" : "25587",
+      "PrimitiveKey" : "66",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -680,7 +680,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_278",
-      "PrimitiveKey" : "25590",
+      "PrimitiveKey" : "69",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -736,7 +736,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2048",
-      "PrimitiveKey" : "25593",
+      "PrimitiveKey" : "72",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -792,7 +792,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2049",
-      "PrimitiveKey" : "25596",
+      "PrimitiveKey" : "75",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -848,7 +848,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_16",
-      "PrimitiveKey" : "25599",
+      "PrimitiveKey" : "78",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -909,7 +909,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_774",
-      "PrimitiveKey" : "25602",
+      "PrimitiveKey" : "81",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -965,7 +965,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2050",
-      "PrimitiveKey" : "25605",
+      "PrimitiveKey" : "84",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1021,7 +1021,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2051",
-      "PrimitiveKey" : "25608",
+      "PrimitiveKey" : "87",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1077,7 +1077,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2052",
-      "PrimitiveKey" : "25611",
+      "PrimitiveKey" : "90",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1133,7 +1133,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_442",
-      "PrimitiveKey" : "25614",
+      "PrimitiveKey" : "93",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1177,7 +1177,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2053",
-      "PrimitiveKey" : "25617",
+      "PrimitiveKey" : "96",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1233,7 +1233,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_769",
-      "PrimitiveKey" : "25620",
+      "PrimitiveKey" : "99",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1289,7 +1289,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_421",
-      "PrimitiveKey" : "25623",
+      "PrimitiveKey" : "102",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1350,7 +1350,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2054",
-      "PrimitiveKey" : "25626",
+      "PrimitiveKey" : "105",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1406,7 +1406,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2055",
-      "PrimitiveKey" : "25629",
+      "PrimitiveKey" : "108",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1462,7 +1462,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_748",
-      "PrimitiveKey" : "25632",
+      "PrimitiveKey" : "111",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1506,7 +1506,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_749",
-      "PrimitiveKey" : "25635",
+      "PrimitiveKey" : "114",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1550,7 +1550,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_775",
-      "PrimitiveKey" : "25638",
+      "PrimitiveKey" : "117",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1606,7 +1606,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_431",
-      "PrimitiveKey" : "25641",
+      "PrimitiveKey" : "120",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1650,7 +1650,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_750",
-      "PrimitiveKey" : "25644",
+      "PrimitiveKey" : "123",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1694,7 +1694,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_17",
-      "PrimitiveKey" : "25647",
+      "PrimitiveKey" : "126",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1755,7 +1755,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_430",
-      "PrimitiveKey" : "25650",
+      "PrimitiveKey" : "129",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1799,7 +1799,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_751",
-      "PrimitiveKey" : "25653",
+      "PrimitiveKey" : "132",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1843,7 +1843,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_785",
-      "PrimitiveKey" : "25656",
+      "PrimitiveKey" : "135",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1899,7 +1899,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_454",
-      "PrimitiveKey" : "25659",
+      "PrimitiveKey" : "138",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -1943,7 +1943,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_326",
-      "PrimitiveKey" : "25662",
+      "PrimitiveKey" : "141",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2004,7 +2004,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_14",
-      "PrimitiveKey" : "25665",
+      "PrimitiveKey" : "144",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2065,7 +2065,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1",
-      "PrimitiveKey" : "25668",
+      "PrimitiveKey" : "147",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2109,7 +2109,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_275",
-      "PrimitiveKey" : "25671",
+      "PrimitiveKey" : "150",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2165,7 +2165,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_458",
-      "PrimitiveKey" : "25674",
+      "PrimitiveKey" : "153",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2226,7 +2226,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_414",
-      "PrimitiveKey" : "25677",
+      "PrimitiveKey" : "156",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2287,7 +2287,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_324",
-      "PrimitiveKey" : "25680",
+      "PrimitiveKey" : "159",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2348,7 +2348,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_415",
-      "PrimitiveKey" : "25683",
+      "PrimitiveKey" : "162",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2409,7 +2409,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_963",
-      "PrimitiveKey" : "25686",
+      "PrimitiveKey" : "165",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2459,7 +2459,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_452",
-      "PrimitiveKey" : "25689",
+      "PrimitiveKey" : "168",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2503,7 +2503,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_459",
-      "PrimitiveKey" : "25692",
+      "PrimitiveKey" : "171",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2547,7 +2547,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_2",
-      "PrimitiveKey" : "25695",
+      "PrimitiveKey" : "174",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2608,7 +2608,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_0",
-      "PrimitiveKey" : "25698",
+      "PrimitiveKey" : "177",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2652,7 +2652,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_449",
-      "PrimitiveKey" : "25701",
+      "PrimitiveKey" : "180",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2696,7 +2696,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_416",
-      "PrimitiveKey" : "25704",
+      "PrimitiveKey" : "183",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2757,7 +2757,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_451",
-      "PrimitiveKey" : "25707",
+      "PrimitiveKey" : "186",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2801,7 +2801,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_417",
-      "PrimitiveKey" : "25710",
+      "PrimitiveKey" : "189",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2862,7 +2862,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_329",
-      "PrimitiveKey" : "25713",
+      "PrimitiveKey" : "192",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2923,7 +2923,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_418",
-      "PrimitiveKey" : "25716",
+      "PrimitiveKey" : "195",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -2984,7 +2984,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_206",
-      "PrimitiveKey" : "25719",
+      "PrimitiveKey" : "198",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3028,7 +3028,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_438",
-      "PrimitiveKey" : "25722",
+      "PrimitiveKey" : "201",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3072,7 +3072,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_412",
-      "PrimitiveKey" : "25725",
+      "PrimitiveKey" : "204",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3133,7 +3133,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_424",
-      "PrimitiveKey" : "25728",
+      "PrimitiveKey" : "207",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3194,7 +3194,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_207",
-      "PrimitiveKey" : "25731",
+      "PrimitiveKey" : "210",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3238,7 +3238,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_208",
-      "PrimitiveKey" : "25734",
+      "PrimitiveKey" : "213",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3282,7 +3282,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_786",
-      "PrimitiveKey" : "25737",
+      "PrimitiveKey" : "216",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3338,7 +3338,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_81",
-      "PrimitiveKey" : "25740",
+      "PrimitiveKey" : "219",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3399,7 +3399,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_209",
-      "PrimitiveKey" : "25743",
+      "PrimitiveKey" : "222",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3443,7 +3443,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_471",
-      "PrimitiveKey" : "25746",
+      "PrimitiveKey" : "225",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3487,7 +3487,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_84",
-      "PrimitiveKey" : "25749",
+      "PrimitiveKey" : "228",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3548,7 +3548,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_443",
-      "PrimitiveKey" : "25752",
+      "PrimitiveKey" : "231",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3592,7 +3592,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_427",
-      "PrimitiveKey" : "25755",
+      "PrimitiveKey" : "234",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3653,7 +3653,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_964",
-      "PrimitiveKey" : "25758",
+      "PrimitiveKey" : "237",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3703,7 +3703,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_280",
-      "PrimitiveKey" : "25761",
+      "PrimitiveKey" : "240",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3759,7 +3759,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_225",
-      "PrimitiveKey" : "25764",
+      "PrimitiveKey" : "243",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3803,7 +3803,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1073",
-      "PrimitiveKey" : "25767",
+      "PrimitiveKey" : "246",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3859,7 +3859,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_776",
-      "PrimitiveKey" : "25770",
+      "PrimitiveKey" : "249",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3927,7 +3927,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_1318",
-      "PrimitiveKey" : "25773",
+      "PrimitiveKey" : "252",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -3971,7 +3971,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_787",
-      "PrimitiveKey" : "25776",
+      "PrimitiveKey" : "255",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4027,7 +4027,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_428",
-      "PrimitiveKey" : "25779",
+      "PrimitiveKey" : "258",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4071,7 +4071,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_429",
-      "PrimitiveKey" : "25782",
+      "PrimitiveKey" : "261",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4115,7 +4115,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_453",
-      "PrimitiveKey" : "25785",
+      "PrimitiveKey" : "264",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4159,7 +4159,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_83",
-      "PrimitiveKey" : "25788",
+      "PrimitiveKey" : "267",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4220,7 +4220,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_444",
-      "PrimitiveKey" : "25791",
+      "PrimitiveKey" : "270",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4264,7 +4264,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_6",
-      "PrimitiveKey" : "25794",
+      "PrimitiveKey" : "273",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4325,7 +4325,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_965",
-      "PrimitiveKey" : "25797",
+      "PrimitiveKey" : "276",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4382,7 +4382,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_550",
-      "PrimitiveKey" : "25800",
+      "PrimitiveKey" : "279",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4433,7 +4433,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_551",
-      "PrimitiveKey" : "25803",
+      "PrimitiveKey" : "282",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4492,7 +4492,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_552",
-      "PrimitiveKey" : "25806",
+      "PrimitiveKey" : "285",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4553,7 +4553,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_777",
-      "PrimitiveKey" : "25809",
+      "PrimitiveKey" : "291",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4609,7 +4609,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_788",
-      "PrimitiveKey" : "25812",
+      "PrimitiveKey" : "294",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4672,7 +4672,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_749",
-      "PrimitiveKey" : "25815",
+      "PrimitiveKey" : "297",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4731,7 +4731,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_750",
-      "PrimitiveKey" : "25818",
+      "PrimitiveKey" : "300",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4799,7 +4799,7 @@
           }
         }],
       "ObjectName" : "AStaticMeshActor_751",
-      "PrimitiveKey" : "25821",
+      "PrimitiveKey" : "303",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4843,7 +4843,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_585",
-      "PrimitiveKey" : "25824",
+      "PrimitiveKey" : "306",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4904,7 +4904,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_472",
-      "PrimitiveKey" : "25827",
+      "PrimitiveKey" : "309",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -4948,7 +4948,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_292",
-      "PrimitiveKey" : "25830",
+      "PrimitiveKey" : "312",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5009,7 +5009,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_327",
-      "PrimitiveKey" : "25833",
+      "PrimitiveKey" : "315",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5070,7 +5070,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_90",
-      "PrimitiveKey" : "25836",
+      "PrimitiveKey" : "318",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5131,7 +5131,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_419",
-      "PrimitiveKey" : "25839",
+      "PrimitiveKey" : "321",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5192,7 +5192,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_323",
-      "PrimitiveKey" : "25842",
+      "PrimitiveKey" : "324",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5253,7 +5253,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_445",
-      "PrimitiveKey" : "25845",
+      "PrimitiveKey" : "327",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5297,7 +5297,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_462",
-      "PrimitiveKey" : "25848",
+      "PrimitiveKey" : "330",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5341,7 +5341,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_85",
-      "PrimitiveKey" : "25851",
+      "PrimitiveKey" : "333",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5402,7 +5402,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_446",
-      "PrimitiveKey" : "25854",
+      "PrimitiveKey" : "336",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5446,7 +5446,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_82",
-      "PrimitiveKey" : "25857",
+      "PrimitiveKey" : "339",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5507,7 +5507,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_331",
-      "PrimitiveKey" : "25860",
+      "PrimitiveKey" : "342",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5568,7 +5568,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_766",
-      "PrimitiveKey" : "25863",
+      "PrimitiveKey" : "345",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5624,7 +5624,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_966",
-      "PrimitiveKey" : "25866",
+      "PrimitiveKey" : "348",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5674,7 +5674,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_227",
-      "PrimitiveKey" : "25869",
+      "PrimitiveKey" : "351",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5718,7 +5718,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_767",
-      "PrimitiveKey" : "25872",
+      "PrimitiveKey" : "354",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5774,7 +5774,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_768",
-      "PrimitiveKey" : "25875",
+      "PrimitiveKey" : "357",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5830,7 +5830,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_778",
-      "PrimitiveKey" : "25878",
+      "PrimitiveKey" : "360",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5886,7 +5886,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_277",
-      "PrimitiveKey" : "25881",
+      "PrimitiveKey" : "363",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5942,7 +5942,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_779",
-      "PrimitiveKey" : "25884",
+      "PrimitiveKey" : "366",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -5998,7 +5998,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_226",
-      "PrimitiveKey" : "25887",
+      "PrimitiveKey" : "369",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6042,7 +6042,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_771",
-      "PrimitiveKey" : "25890",
+      "PrimitiveKey" : "372",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6098,7 +6098,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_789",
-      "PrimitiveKey" : "25893",
+      "PrimitiveKey" : "375",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6154,7 +6154,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_780",
-      "PrimitiveKey" : "25896",
+      "PrimitiveKey" : "378",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6210,7 +6210,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_781",
-      "PrimitiveKey" : "25899",
+      "PrimitiveKey" : "381",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6266,7 +6266,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_426",
-      "PrimitiveKey" : "25902",
+      "PrimitiveKey" : "384",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6327,7 +6327,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_765",
-      "PrimitiveKey" : "25905",
+      "PrimitiveKey" : "387",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6383,7 +6383,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_766",
-      "PrimitiveKey" : "25908",
+      "PrimitiveKey" : "390",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6439,7 +6439,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_767",
-      "PrimitiveKey" : "25911",
+      "PrimitiveKey" : "393",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6489,7 +6489,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_460",
-      "PrimitiveKey" : "25914",
+      "PrimitiveKey" : "396",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6533,7 +6533,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_790",
-      "PrimitiveKey" : "25917",
+      "PrimitiveKey" : "399",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6589,7 +6589,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_463",
-      "PrimitiveKey" : "25920",
+      "PrimitiveKey" : "402",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6633,7 +6633,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_411",
-      "PrimitiveKey" : "25923",
+      "PrimitiveKey" : "405",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6694,7 +6694,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_465",
-      "PrimitiveKey" : "25926",
+      "PrimitiveKey" : "408",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6738,7 +6738,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_473",
-      "PrimitiveKey" : "25929",
+      "PrimitiveKey" : "411",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6782,7 +6782,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_455",
-      "PrimitiveKey" : "25932",
+      "PrimitiveKey" : "414",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6826,7 +6826,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_581",
-      "PrimitiveKey" : "25935",
+      "PrimitiveKey" : "417",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6887,7 +6887,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_582",
-      "PrimitiveKey" : "25938",
+      "PrimitiveKey" : "420",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -6948,7 +6948,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_583",
-      "PrimitiveKey" : "25941",
+      "PrimitiveKey" : "423",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7009,7 +7009,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_422",
-      "PrimitiveKey" : "25944",
+      "PrimitiveKey" : "426",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7070,7 +7070,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_437",
-      "PrimitiveKey" : "25947",
+      "PrimitiveKey" : "429",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7114,7 +7114,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_584",
-      "PrimitiveKey" : "25950",
+      "PrimitiveKey" : "432",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7175,7 +7175,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_447",
-      "PrimitiveKey" : "25953",
+      "PrimitiveKey" : "435",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7219,7 +7219,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_7",
-      "PrimitiveKey" : "25956",
+      "PrimitiveKey" : "438",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7280,7 +7280,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_466",
-      "PrimitiveKey" : "25959",
+      "PrimitiveKey" : "441",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7324,7 +7324,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_15",
-      "PrimitiveKey" : "25962",
+      "PrimitiveKey" : "444",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7385,7 +7385,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_278",
-      "PrimitiveKey" : "25965",
+      "PrimitiveKey" : "447",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7441,7 +7441,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_467",
-      "PrimitiveKey" : "25968",
+      "PrimitiveKey" : "450",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7485,7 +7485,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_210",
-      "PrimitiveKey" : "25971",
+      "PrimitiveKey" : "453",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7529,7 +7529,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_468",
-      "PrimitiveKey" : "25974",
+      "PrimitiveKey" : "456",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7573,7 +7573,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_8",
-      "PrimitiveKey" : "25977",
+      "PrimitiveKey" : "459",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7634,7 +7634,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_469",
-      "PrimitiveKey" : "25980",
+      "PrimitiveKey" : "462",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7678,7 +7678,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_423",
-      "PrimitiveKey" : "25983",
+      "PrimitiveKey" : "465",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7739,7 +7739,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_439",
-      "PrimitiveKey" : "25986",
+      "PrimitiveKey" : "468",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7783,7 +7783,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_279",
-      "PrimitiveKey" : "25989",
+      "PrimitiveKey" : "471",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7839,7 +7839,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_770",
-      "PrimitiveKey" : "25992",
+      "PrimitiveKey" : "474",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7895,7 +7895,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_474",
-      "PrimitiveKey" : "25995",
+      "PrimitiveKey" : "477",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -7939,7 +7939,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_410",
-      "PrimitiveKey" : "25998",
+      "PrimitiveKey" : "480",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8000,7 +8000,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_89",
-      "PrimitiveKey" : "26001",
+      "PrimitiveKey" : "483",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8061,7 +8061,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_78",
-      "PrimitiveKey" : "26004",
+      "PrimitiveKey" : "486",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8122,7 +8122,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_432",
-      "PrimitiveKey" : "26007",
+      "PrimitiveKey" : "489",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8166,7 +8166,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_212",
-      "PrimitiveKey" : "26010",
+      "PrimitiveKey" : "492",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8210,7 +8210,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_461",
-      "PrimitiveKey" : "26013",
+      "PrimitiveKey" : "495",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8254,7 +8254,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_448",
-      "PrimitiveKey" : "26016",
+      "PrimitiveKey" : "498",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8298,7 +8298,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_188",
-      "PrimitiveKey" : "26019",
+      "PrimitiveKey" : "501",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8359,7 +8359,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_464",
-      "PrimitiveKey" : "26022",
+      "PrimitiveKey" : "504",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8403,7 +8403,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_86",
-      "PrimitiveKey" : "26025",
+      "PrimitiveKey" : "507",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8464,7 +8464,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_79",
-      "PrimitiveKey" : "26028",
+      "PrimitiveKey" : "510",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8525,7 +8525,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_772",
-      "PrimitiveKey" : "26031",
+      "PrimitiveKey" : "513",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8581,7 +8581,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_330",
-      "PrimitiveKey" : "26034",
+      "PrimitiveKey" : "516",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8642,7 +8642,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_620",
-      "PrimitiveKey" : "26037",
+      "PrimitiveKey" : "519",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8686,7 +8686,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_91",
-      "PrimitiveKey" : "26040",
+      "PrimitiveKey" : "522",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8747,7 +8747,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_810",
-      "PrimitiveKey" : "26043",
+      "PrimitiveKey" : "525",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8808,7 +8808,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_811",
-      "PrimitiveKey" : "26046",
+      "PrimitiveKey" : "528",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8869,7 +8869,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_812",
-      "PrimitiveKey" : "26049",
+      "PrimitiveKey" : "531",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8930,7 +8930,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_813",
-      "PrimitiveKey" : "26052",
+      "PrimitiveKey" : "534",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -8991,7 +8991,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_814",
-      "PrimitiveKey" : "26055",
+      "PrimitiveKey" : "537",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9052,7 +9052,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_815",
-      "PrimitiveKey" : "26058",
+      "PrimitiveKey" : "540",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9113,7 +9113,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_816",
-      "PrimitiveKey" : "26061",
+      "PrimitiveKey" : "543",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9174,7 +9174,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_817",
-      "PrimitiveKey" : "26064",
+      "PrimitiveKey" : "546",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9235,7 +9235,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_818",
-      "PrimitiveKey" : "26067",
+      "PrimitiveKey" : "549",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9296,7 +9296,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_819",
-      "PrimitiveKey" : "26070",
+      "PrimitiveKey" : "552",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9357,7 +9357,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_820",
-      "PrimitiveKey" : "26073",
+      "PrimitiveKey" : "555",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9418,7 +9418,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_821",
-      "PrimitiveKey" : "26076",
+      "PrimitiveKey" : "558",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9479,7 +9479,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_822",
-      "PrimitiveKey" : "26079",
+      "PrimitiveKey" : "561",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9540,7 +9540,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_823",
-      "PrimitiveKey" : "26082",
+      "PrimitiveKey" : "564",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9601,7 +9601,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_824",
-      "PrimitiveKey" : "26085",
+      "PrimitiveKey" : "567",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9662,7 +9662,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1274",
-      "PrimitiveKey" : "26088",
+      "PrimitiveKey" : "570",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9777,7 +9777,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1275",
-      "PrimitiveKey" : "26091",
+      "PrimitiveKey" : "595",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9847,7 +9847,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1276",
-      "PrimitiveKey" : "26094",
+      "PrimitiveKey" : "603",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9908,7 +9908,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1277",
-      "PrimitiveKey" : "26097",
+      "PrimitiveKey" : "606",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -9969,7 +9969,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1278",
-      "PrimitiveKey" : "26100",
+      "PrimitiveKey" : "609",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10030,7 +10030,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1279",
-      "PrimitiveKey" : "26103",
+      "PrimitiveKey" : "612",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10091,7 +10091,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1280",
-      "PrimitiveKey" : "26106",
+      "PrimitiveKey" : "615",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10152,7 +10152,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1281",
-      "PrimitiveKey" : "26109",
+      "PrimitiveKey" : "618",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10213,7 +10213,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1282",
-      "PrimitiveKey" : "26112",
+      "PrimitiveKey" : "621",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10274,7 +10274,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1984",
-      "PrimitiveKey" : "26115",
+      "PrimitiveKey" : "624",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10344,7 +10344,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1985",
-      "PrimitiveKey" : "26118",
+      "PrimitiveKey" : "627",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10459,7 +10459,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1986",
-      "PrimitiveKey" : "26121",
+      "PrimitiveKey" : "630",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10529,7 +10529,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1987",
-      "PrimitiveKey" : "26124",
+      "PrimitiveKey" : "633",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10644,7 +10644,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1988",
-      "PrimitiveKey" : "26127",
+      "PrimitiveKey" : "636",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10705,7 +10705,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1989",
-      "PrimitiveKey" : "26130",
+      "PrimitiveKey" : "639",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10766,7 +10766,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_1990",
-      "PrimitiveKey" : "26133",
+      "PrimitiveKey" : "642",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10827,7 +10827,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_621",
-      "PrimitiveKey" : "26139",
+      "PrimitiveKey" : "645",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10871,7 +10871,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_87",
-      "PrimitiveKey" : "26142",
+      "PrimitiveKey" : "648",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10932,7 +10932,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_433",
-      "PrimitiveKey" : "26145",
+      "PrimitiveKey" : "651",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -10976,7 +10976,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_435",
-      "PrimitiveKey" : "26148",
+      "PrimitiveKey" : "654",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11020,7 +11020,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_325",
-      "PrimitiveKey" : "26151",
+      "PrimitiveKey" : "657",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11081,7 +11081,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_213",
-      "PrimitiveKey" : "26154",
+      "PrimitiveKey" : "660",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11139,7 +11139,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_434",
-      "PrimitiveKey" : "26158",
+      "PrimitiveKey" : "664",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11183,7 +11183,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_228",
-      "PrimitiveKey" : "26161",
+      "PrimitiveKey" : "667",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11227,7 +11227,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_773",
-      "PrimitiveKey" : "26164",
+      "PrimitiveKey" : "670",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11283,7 +11283,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_783",
-      "PrimitiveKey" : "26167",
+      "PrimitiveKey" : "673",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11339,7 +11339,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_88",
-      "PrimitiveKey" : "26170",
+      "PrimitiveKey" : "676",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11400,7 +11400,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_440",
-      "PrimitiveKey" : "26173",
+      "PrimitiveKey" : "679",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11444,7 +11444,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_666",
-      "PrimitiveKey" : "26176",
+      "PrimitiveKey" : "682",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11502,7 +11502,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_92",
-      "PrimitiveKey" : "26180",
+      "PrimitiveKey" : "686",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11563,7 +11563,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_456",
-      "PrimitiveKey" : "26183",
+      "PrimitiveKey" : "689",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11607,7 +11607,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_470",
-      "PrimitiveKey" : "26186",
+      "PrimitiveKey" : "692",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11651,7 +11651,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_457",
-      "PrimitiveKey" : "26189",
+      "PrimitiveKey" : "695",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11695,7 +11695,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_394",
-      "PrimitiveKey" : "26192",
+      "PrimitiveKey" : "698",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11756,7 +11756,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_396",
-      "PrimitiveKey" : "26195",
+      "PrimitiveKey" : "701",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11817,7 +11817,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_262",
-      "PrimitiveKey" : "26198",
+      "PrimitiveKey" : "704",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11878,7 +11878,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_80",
-      "PrimitiveKey" : "26201",
+      "PrimitiveKey" : "707",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -11939,7 +11939,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_93",
-      "PrimitiveKey" : "26204",
+      "PrimitiveKey" : "710",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12000,7 +12000,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_425",
-      "PrimitiveKey" : "26207",
+      "PrimitiveKey" : "713",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12061,7 +12061,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_784",
-      "PrimitiveKey" : "26210",
+      "PrimitiveKey" : "716",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12117,7 +12117,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_436",
-      "PrimitiveKey" : "26213",
+      "PrimitiveKey" : "719",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12161,7 +12161,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_328",
-      "PrimitiveKey" : "26216",
+      "PrimitiveKey" : "722",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12222,7 +12222,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_607",
-      "PrimitiveKey" : "26219",
+      "PrimitiveKey" : "725",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12337,7 +12337,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_211",
-      "PrimitiveKey" : "26222",
+      "PrimitiveKey" : "728",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12381,7 +12381,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_12",
-      "PrimitiveKey" : "26225",
+      "PrimitiveKey" : "731",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12442,7 +12442,7 @@
       "ClassName" : "AStaticMeshActor",
       "NonSceneComponents" : [],
       "ObjectName" : "AStaticMeshActor_608",
-      "PrimitiveKey" : "26228",
+      "PrimitiveKey" : "734",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12524,7 +12524,7 @@
           }
         }],
       "ObjectName" : "APointLightActor_0",
-      "PrimitiveKey" : "26346",
+      "PrimitiveKey" : "890",
       "RootComponent" : {
         "Children" : [{
             "Children" : [],
@@ -12538,7 +12538,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 26346",
+              "Text" : "UUID : 890",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -12625,12 +12625,12 @@
             "Properties" : {
               "FOV" : 1.047198,
               "Far Z" : 1000.000000,
-              "Location" : [18.948418, 15.158737, 37.896835],
+              "Location" : [18.948420, 105.158737, 27.896839],
               "Main Camera" : false,
               "Near Z" : 0.100000,
               "Ortho Width" : 10.000000,
               "Orthographic" : false,
-              "Rotation" : [57.368057, -141.340164, -0.000015],
+              "Rotation" : [57.368057, -141.340179, -0.000031],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Show Debug View Direction" : true,
               "bTickEnable" : true
@@ -12646,9 +12646,9 @@
               "Max Pitch" : 80.000000,
               "Min Pitch" : -80.000000,
               "Mouse Orbit Sensitivity" : 0.300000,
-              "Offset Direction" : [25.000000, 20.000000, 50.000000],
+              "Offset Direction" : [0.421076, 0.336861, 0.842152],
               "Require Right Mouse" : true,
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Socket Offset" : [0.000000, 0.000000, 0.000000],
               "Target Actor" : "None",
@@ -12698,7 +12698,7 @@
               "Location" : [0.000000, 0.000000, 1.300000],
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 26354",
+              "Text" : "UUID : 902",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -12728,6 +12728,156 @@
       },
       "Tags" : [],
       "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_225",
+      "PrimitiveKey" : "908",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Cast Shadow" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 908",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.002.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.001.json"
+          },
+          "Element 2" : {
+            "Path" : "C:/Users/Jungle/workspace/jungle-gtl-week09/CrashEngine/None"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-41.862328, 65.904869, 5.000000],
+          "Rotation" : [90.000000, -0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 10.000000],
+          "Static Mesh" : "Asset/Content/Models/Battery/battery.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["BatteryCandidate"],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_226",
+      "PrimitiveKey" : "911",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Cast Shadow" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 911",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.002.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.001.json"
+          },
+          "Element 2" : {
+            "Path" : "C:/Users/Jungle/workspace/jungle-gtl-week09/CrashEngine/None"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [32.267467, 90.389000, 5.000000],
+          "Rotation" : [90.000000, -0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 10.000000],
+          "Static Mesh" : "Asset/Content/Models/Battery/battery.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["BatteryCandidate"],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_227",
+      "PrimitiveKey" : "914",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Cast Shadow" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 914",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.002.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Battery/Material.001.json"
+          },
+          "Element 2" : {
+            "Path" : "C:/Users/Jungle/workspace/jungle-gtl-week09/CrashEngine/None"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [-120.525902, -92.068420, 5.000000],
+          "Rotation" : [90.000000, -0.000000, 0.000000],
+          "Scale" : [10.000000, 10.000000, 10.000000],
+          "Static Mesh" : "Asset/Content/Models/Battery/battery.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : ["BatteryCandidate"],
+      "bVisible" : true
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Default",
@@ -12736,1584 +12886,1605 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [54.567322, -50.098167, 64.733170],
+    "Location" : [44.332188, 24.032398, 126.133881],
     "NearClip" : 0.100000,
-    "Rotation" : [-0.000003, 52.100033, -158.322144]
+    "Rotation" : [-0.000004, 64.699936, -105.401924]
   },
   "Primitives" : {
-    "25554" : {
-      "Location" : [-140.000000, 50.000000, 5.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
-      "Rotation" : [0.000000, 90.000000, -0.000000],
-      "Scale" : [10.000001, 10.000000, 10.000001],
-      "Type" : "StaticMeshComp"
-    },
-    "25557" : {
-      "Location" : [80.000000, 60.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.500000, 1.500000, 21.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25560" : {
-      "Location" : [100.000000, -90.000000, 0.500000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
-      "Rotation" : [0.000000, -0.000000, 135.000000],
-      "Scale" : [0.250000, 0.250000, 0.250000],
-      "Type" : "StaticMeshComp"
-    },
-    "25563" : {
-      "Location" : [60.000000, -10.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.000000, 60.000000, 20.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25566" : {
-      "Location" : [-150.000000, 60.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.500000, 1.500000, 21.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25569" : {
-      "Location" : [125.000000, 60.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [50.000000, 1.000000, 20.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25572" : {
-      "Location" : [-140.000000, -90.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25575" : {
-      "Location" : [-26.299776, -64.240295, 2.291188],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
-      "Rotation" : [0.000000, -0.000000, 91.927757],
-      "Scale" : [0.200000, 0.200000, 0.200000],
-      "Type" : "StaticMeshComp"
-    },
-    "25578" : {
-      "Location" : [-26.299776, -74.271385, 2.291188],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
-      "Rotation" : [0.000000, -0.000000, 91.927879],
-      "Scale" : [0.200000, 0.200000, 0.200000],
-      "Type" : "StaticMeshComp"
-    },
-    "25581" : {
-      "Location" : [-26.299776, -64.240295, 8.190624],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
-      "Rotation" : [0.000000, -0.000000, 91.927879],
-      "Scale" : [0.200000, 0.200000, 0.200000],
-      "Type" : "StaticMeshComp"
-    },
-    "25584" : {
-      "Location" : [-26.299776, -74.002708, 8.190624],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
-      "Rotation" : [0.000000, -0.000000, 91.927879],
-      "Scale" : [0.200000, 0.200000, 0.200000],
-      "Type" : "StaticMeshComp"
-    },
-    "25587" : {
-      "Location" : [-26.299776, -68.763626, 14.032093],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
-      "Rotation" : [0.000000, -0.000000, 91.927879],
-      "Scale" : [0.200000, 0.200000, 0.200000],
-      "Type" : "StaticMeshComp"
-    },
-    "25590" : {
-      "Location" : [-100.000000, -70.000000, 0.500000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
-      "Rotation" : [0.000000, -0.000000, -45.000004],
-      "Scale" : [0.250000, 0.250000, 0.250000],
-      "Type" : "StaticMeshComp"
-    },
-    "25593" : {
-      "Location" : [-140.000000, -20.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25596" : {
-      "Location" : [-140.000000, 90.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25599" : {
-      "Location" : [-77.500000, -100.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [145.000000, 1.000000, 20.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25602" : {
-      "Location" : [140.000000, 70.000000, 0.500000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
-      "Rotation" : [0.000000, -0.000000, 135.000000],
-      "Scale" : [0.250000, 0.250000, 0.250000],
-      "Type" : "StaticMeshComp"
-    },
-    "25605" : {
-      "Location" : [-20.000000, 90.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25608" : {
-      "Location" : [70.000000, 90.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25611" : {
-      "Location" : [140.000000, 90.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25614" : {
-      "Location" : [10.000000, 60.000000, 10.000000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
-      "Rotation" : [0.000000, -0.000000, 0.000000],
-      "Scale" : [1.500000, 1.500000, 21.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25617" : {
-      "Location" : [140.000000, 50.000000, 4.193120],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
-      "Rotation" : [0.000000, 90.000000, -89.999977],
-      "Scale" : [2.000000, 2.000000, 2.000000],
-      "Type" : "StaticMeshComp"
-    },
-    "25620" : {
-      "Location" : [-90.000000, 90.000000, 0.500000],
-      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
-      "Rotation" : [0.000000, -0.000000, -135.000000],
-      "Scale" : [0.250000, 0.250000, 0.250000],
-      "Type" : "StaticMeshComp"
-    },
-    "25623" : {
+    "102" : {
       "Location" : [40.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25626" : {
+    "105" : {
       "Location" : [140.000000, -90.000000, 4.193120],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
       "Rotation" : [0.000000, 90.000000, -89.999985],
       "Scale" : [2.000000, 2.000000, 2.000000],
       "Type" : "StaticMeshComp"
     },
-    "25629" : {
+    "108" : {
       "Location" : [80.000000, -90.000000, 4.193120],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
       "Rotation" : [0.000000, 90.000000, -89.999977],
       "Scale" : [2.000000, 2.000000, 2.000000],
       "Type" : "StaticMeshComp"
     },
-    "25632" : {
+    "111" : {
       "Location" : [-5.000000, -120.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25635" : {
+    "114" : {
       "Location" : [5.000000, -120.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25638" : {
+    "117" : {
       "Location" : [90.000000, 90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25641" : {
+    "12" : {
+      "Location" : [-140.000000, 50.000000, 5.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
+      "Rotation" : [0.000000, 90.000000, -0.000000],
+      "Scale" : [10.000001, 10.000000, 10.000001],
+      "Type" : "StaticMeshComp"
+    },
+    "120" : {
       "Location" : [70.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25644" : {
+    "123" : {
       "Location" : [5.000000, -140.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25647" : {
+    "126" : {
       "Location" : [70.000000, -80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25650" : {
+    "129" : {
       "Location" : [150.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25653" : {
+    "132" : {
       "Location" : [-5.000000, -140.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25656" : {
+    "135" : {
       "Location" : [80.000000, 30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25659" : {
+    "138" : {
       "Location" : [-150.000000, -30.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25662" : {
+    "141" : {
       "Location" : [130.000000, -20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [40.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25665" : {
+    "144" : {
       "Location" : [-110.000000, 47.500000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 25.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25668" : {
+    "147" : {
       "Location" : [0.000000, 0.000000, -0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [300.000000, 200.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25671" : {
+    "150" : {
       "Location" : [-80.000000, -90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25674" : {
+    "153" : {
       "Location" : [-75.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25677" : {
+    "156" : {
       "Location" : [-80.000000, 80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25680" : {
+    "159" : {
       "Location" : [110.000000, 50.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25683" : {
+    "162" : {
       "Location" : [-110.000000, 15.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25686" : {
+    "165" : {
       "Location" : [17.500000, -10.000000, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
       "Rotation" : [0.000000, 90.000000, -0.000000],
       "Scale" : [10.000001, 10.000000, 10.000001],
       "Type" : "StaticMeshComp"
     },
-    "25689" : {
+    "168" : {
       "Location" : [-110.000000, 15.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25692" : {
+    "171" : {
       "Location" : [-70.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25695" : {
+    "174" : {
       "Location" : [-150.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 200.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25698" : {
+    "177" : {
       "Location" : [0.000000, 0.000000, -0.600000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [500.000000, 500.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25701" : {
+    "180" : {
       "Location" : [-150.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25704" : {
+    "183" : {
       "Location" : [-110.000000, -75.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 50.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25707" : {
+    "186" : {
       "Location" : [-150.000000, 15.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25710" : {
+    "189" : {
       "Location" : [-110.000000, -22.500000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 35.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25713" : {
+    "192" : {
       "Location" : [-35.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [50.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25716" : {
+    "195" : {
       "Location" : [-130.000000, 15.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [40.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25719" : {
+    "198" : {
       "Location" : [0.000000, 67.500000, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25722" : {
+    "20" : {
+      "Location" : [80.000000, 60.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.500000, 1.500000, 21.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "201" : {
       "Location" : [150.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25725" : {
+    "204" : {
       "Location" : [-10.000000, 80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25728" : {
+    "207" : {
       "Location" : [-15.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25731" : {
+    "210" : {
       "Location" : [0.000000, 72.500000, 2.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25734" : {
+    "213" : {
       "Location" : [0.000000, 77.500000, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25737" : {
+    "216" : {
       "Location" : [30.000000, 30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25740" : {
+    "219" : {
       "Location" : [-30.000000, -70.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25743" : {
+    "222" : {
       "Location" : [0.000000, 82.500000, 7.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25746" : {
+    "225" : {
       "Location" : [10.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25749" : {
+    "228" : {
       "Location" : [75.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25752" : {
+    "23" : {
+      "Location" : [100.000000, -90.000000, 0.500000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
+      "Rotation" : [0.000000, -0.000000, 135.000000],
+      "Scale" : [0.250000, 0.250000, 0.250000],
+      "Type" : "StaticMeshComp"
+    },
+    "231" : {
       "Location" : [10.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25755" : {
+    "234" : {
       "Location" : [-60.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25758" : {
+    "237" : {
       "Location" : [70.000000, -30.000000, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
       "Rotation" : [0.000000, 90.000000, -0.000000],
       "Scale" : [10.000001, 10.000000, 10.000001],
       "Type" : "StaticMeshComp"
     },
-    "25761" : {
+    "240" : {
       "Location" : [-140.000000, 25.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25764" : {
+    "243" : {
       "Location" : [60.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25767" : {
+    "246" : {
       "Location" : [-100.000000, -90.000000, 4.193120],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
       "Rotation" : [0.000000, 90.000000, -89.999992],
       "Scale" : [2.000000, 2.000000, 2.000000],
       "Type" : "StaticMeshComp"
     },
-    "25770" : {
+    "249" : {
       "Location" : [140.000000, 30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25773" : {
+    "252" : {
       "Location" : [0.000000, 230.050247, 0.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25776" : {
+    "255" : {
       "Location" : [30.000000, -30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25779" : {
+    "258" : {
       "Location" : [70.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25782" : {
+    "261" : {
       "Location" : [110.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25785" : {
+    "264" : {
       "Location" : [-110.000000, -30.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25788" : {
+    "267" : {
       "Location" : [60.000000, 35.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 10.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25791" : {
+    "270" : {
       "Location" : [-10.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25794" : {
+    "273" : {
       "Location" : [150.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 200.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25797" : {
+    "276" : {
       "Location" : [102.500000, -70.000000, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
       "Rotation" : [0.000000, 90.000000, -0.000000],
       "Scale" : [10.000001, 10.000000, 10.000001],
       "Type" : "StaticMeshComp"
     },
-    "25800" : {
+    "279" : {
       "Location" : [100.000000, -50.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25803" : {
+    "282" : {
       "Location" : [100.000000, 50.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25806" : {
+    "285" : {
       "Location" : [100.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/NewDrone/NewDrone.obj",
       "Rotation" : [0.000000, -0.000000, -89.999992],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25809" : {
+    "291" : {
       "Location" : [120.000000, 50.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25812" : {
+    "294" : {
       "Location" : [-20.000000, 30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25815" : {
+    "297" : {
       "Location" : [-100.000000, -50.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25818" : {
+    "300" : {
       "Location" : [-100.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/NewDrone/NewDrone.obj",
       "Rotation" : [0.000000, -0.000000, -89.999992],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25821" : {
+    "303" : {
       "Location" : [-100.000000, 50.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "StaticMeshComp"
     },
-    "25824" : {
+    "306" : {
       "Location" : [0.000000, -140.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 89.999992],
       "Scale" : [1.000000, 9.999999, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25827" : {
+    "309" : {
       "Location" : [40.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25830" : {
+    "312" : {
       "Location" : [110.000000, -20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25833" : {
+    "315" : {
       "Location" : [60.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [60.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25836" : {
+    "318" : {
       "Location" : [-90.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 80.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25839" : {
+    "32" : {
+      "Location" : [60.000000, -10.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 60.000000, 20.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "321" : {
       "Location" : [-130.000000, -30.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [40.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25842" : {
+    "324" : {
       "Location" : [110.000000, 20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25845" : {
+    "327" : {
       "Location" : [-10.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25848" : {
+    "330" : {
       "Location" : [-10.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25851" : {
+    "333" : {
       "Location" : [75.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25854" : {
+    "336" : {
       "Location" : [-80.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25857" : {
+    "339" : {
       "Location" : [90.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 80.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25860" : {
+    "342" : {
       "Location" : [-125.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [50.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25863" : {
+    "345" : {
       "Location" : [-120.000000, 50.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25866" : {
+    "348" : {
       "Location" : [140.000000, -10.000000, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
       "Rotation" : [0.000000, 90.000000, -0.000000],
       "Scale" : [10.000001, 10.000000, 10.000001],
       "Type" : "StaticMeshComp"
     },
-    "25869" : {
+    "35" : {
+      "Location" : [-150.000000, 60.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.500000, 1.500000, 21.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "351" : {
       "Location" : [90.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25872" : {
+    "354" : {
       "Location" : [-140.000000, 5.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25875" : {
+    "357" : {
       "Location" : [-140.000000, 70.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25878" : {
+    "360" : {
       "Location" : [140.000000, 10.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25881" : {
+    "363" : {
       "Location" : [-120.000000, -90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25884" : {
+    "366" : {
       "Location" : [120.000000, -10.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25887" : {
+    "369" : {
       "Location" : [90.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25890" : {
+    "372" : {
       "Location" : [-20.000000, 70.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25893" : {
+    "375" : {
       "Location" : [-60.000000, 10.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25896" : {
+    "378" : {
       "Location" : [140.000000, -30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25899" : {
+    "38" : {
+      "Location" : [125.000000, 60.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [50.000000, 1.000000, 20.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "381" : {
       "Location" : [120.000000, -90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25902" : {
+    "384" : {
       "Location" : [-50.000000, 20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25905" : {
+    "387" : {
       "Location" : [17.500000, 30.000000, 4.193120],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
       "Rotation" : [0.000000, 90.000000, -89.999969],
       "Scale" : [2.000000, 2.000000, 2.000000],
       "Type" : "StaticMeshComp"
     },
-    "25908" : {
+    "390" : {
       "Location" : [-60.000000, -30.000000, 4.193120],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
       "Rotation" : [0.000000, 90.000000, -89.999969],
       "Scale" : [2.000000, 2.000000, 2.000000],
       "Type" : "StaticMeshComp"
     },
-    "25911" : {
+    "393" : {
       "Location" : [-80.000000, 28.770981, 5.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
       "Rotation" : [0.000000, 90.000000, -0.000000],
       "Scale" : [9.999999, 10.000000, 9.999999],
       "Type" : "StaticMeshComp"
     },
-    "25914" : {
+    "396" : {
       "Location" : [-70.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25917" : {
+    "399" : {
       "Location" : [-80.000000, -30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25920" : {
+    "402" : {
       "Location" : [-10.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25923" : {
+    "405" : {
       "Location" : [10.000000, 80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25926" : {
+    "408" : {
       "Location" : [-90.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25929" : {
+    "41" : {
+      "Location" : [-140.000000, -90.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "411" : {
       "Location" : [40.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25932" : {
+    "414" : {
       "Location" : [-150.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25935" : {
+    "417" : {
       "Location" : [-5.000000, -110.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25938" : {
+    "420" : {
       "Location" : [5.000000, -110.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25941" : {
+    "423" : {
       "Location" : [5.000000, -130.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25944" : {
+    "426" : {
       "Location" : [40.000000, -30.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25947" : {
+    "429" : {
       "Location" : [110.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25950" : {
+    "432" : {
       "Location" : [-5.000000, -130.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25953" : {
+    "435" : {
       "Location" : [-80.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25956" : {
+    "438" : {
       "Location" : [77.500000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [145.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25959" : {
+    "441" : {
       "Location" : [-90.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25962" : {
+    "444" : {
       "Location" : [110.000000, -75.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 50.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25965" : {
+    "447" : {
       "Location" : [-140.000000, -40.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25968" : {
+    "450" : {
       "Location" : [-90.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25971" : {
+    "453" : {
       "Location" : [0.000000, 87.500000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "25974" : {
+    "456" : {
       "Location" : [-50.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25977" : {
+    "459" : {
       "Location" : [0.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [300.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25980" : {
+    "462" : {
       "Location" : [10.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25983" : {
+    "465" : {
       "Location" : [25.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "25986" : {
+    "468" : {
       "Location" : [150.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25989" : {
+    "471" : {
       "Location" : [-120.000000, -20.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25992" : {
+    "474" : {
       "Location" : [-70.000000, 90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "25995" : {
+    "477" : {
       "Location" : [40.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "25998" : {
+    "480" : {
       "Location" : [80.000000, 80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26001" : {
+    "483" : {
       "Location" : [10.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 80.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26004" : {
+    "486" : {
       "Location" : [-100.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26007" : {
+    "489" : {
       "Location" : [110.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26010" : {
+    "492" : {
       "Location" : [0.000000, 97.500000, 15.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26013" : {
+    "495" : {
       "Location" : [-30.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26016" : {
+    "498" : {
       "Location" : [-110.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26019" : {
+    "50" : {
+      "Location" : [-26.299776, -64.240295, 2.291188],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
+      "Rotation" : [0.000000, -0.000000, 91.927757],
+      "Scale" : [0.200000, 0.200000, 0.200000],
+      "Type" : "StaticMeshComp"
+    },
+    "501" : {
       "Location" : [-27.669466, -16.029222, 5.024052],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26022" : {
+    "504" : {
       "Location" : [-50.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26025" : {
+    "507" : {
       "Location" : [40.000000, 30.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 20.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26028" : {
+    "510" : {
       "Location" : [-70.000000, -80.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 40.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26031" : {
+    "513" : {
       "Location" : [70.000000, 70.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "26034" : {
+    "516" : {
       "Location" : [-80.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26037" : {
+    "519" : {
       "Location" : [-5.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26040" : {
+    "522" : {
       "Location" : [-10.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.000000, 80.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26043" : {
+    "525" : {
       "Location" : [25.429981, -64.240295, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26046" : {
+    "528" : {
       "Location" : [20.557392, -64.240295, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26049" : {
+    "531" : {
       "Location" : [15.246948, -64.240295, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26052" : {
+    "534" : {
       "Location" : [9.779978, -64.240295, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26055" : {
+    "537" : {
       "Location" : [31.002144, -64.240295, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26058" : {
+    "540" : {
       "Location" : [31.002144, -74.065430, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26061" : {
+    "543" : {
       "Location" : [25.429981, -74.065430, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26064" : {
+    "546" : {
       "Location" : [20.557392, -74.065430, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26067" : {
+    "549" : {
       "Location" : [15.246948, -74.065430, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26070" : {
+    "552" : {
       "Location" : [9.779978, -74.065430, 2.712067],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26073" : {
+    "555" : {
       "Location" : [31.002144, -69.391914, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26076" : {
+    "558" : {
       "Location" : [25.429981, -69.391914, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26079" : {
+    "561" : {
       "Location" : [20.557392, -69.391914, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26082" : {
+    "564" : {
       "Location" : [15.246948, -69.391914, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26085" : {
+    "567" : {
       "Location" : [9.779978, -69.391914, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.927879],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26088" : {
+    "57" : {
+      "Location" : [-26.299776, -74.271385, 2.291188],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
+      "Rotation" : [0.000000, -0.000000, 91.927879],
+      "Scale" : [0.200000, 0.200000, 0.200000],
+      "Type" : "StaticMeshComp"
+    },
+    "570" : {
       "Location" : [45.548763, 92.982620, -1.129116],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Desk/Desk.obj",
       "Rotation" : [0.000000, -0.000000, -89.999985],
       "Scale" : [2.500000, 2.500000, 2.500000],
       "Type" : "StaticMeshComp"
     },
-    "26091" : {
+    "595" : {
       "Location" : [45.548763, 88.969910, -0.217895],
       "ObjStaticMeshAsset" : "Asset/Content/Models/OfficeChair/OfficeChair.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26094" : {
+    "60" : {
+      "Location" : [-26.299776, -64.240295, 8.190624],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
+      "Rotation" : [0.000000, -0.000000, 91.927879],
+      "Scale" : [0.200000, 0.200000, 0.200000],
+      "Type" : "StaticMeshComp"
+    },
+    "603" : {
       "Location" : [36.757744, 66.761299, 7.934419],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 176.371384],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26097" : {
+    "606" : {
       "Location" : [36.757744, 66.761299, 13.346147],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 176.371323],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26100" : {
+    "609" : {
       "Location" : [117.872528, 78.546516, 2.821969],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 91.414787],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26103" : {
+    "612" : {
       "Location" : [117.872528, 69.886871, 5.414811],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [38.424519, -0.000000, 91.414673],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26106" : {
+    "615" : {
       "Location" : [133.848892, -57.157341, 2.233588],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26109" : {
+    "618" : {
       "Location" : [123.723877, -57.157341, 2.233588],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26112" : {
+    "621" : {
       "Location" : [123.723877, -62.229691, 2.233588],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26115" : {
+    "624" : {
       "Location" : [-46.747723, 88.969910, -0.217895],
       "ObjStaticMeshAsset" : "Asset/Content/Models/OfficeChair/OfficeChair.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26118" : {
+    "627" : {
       "Location" : [-46.747723, 92.982620, -1.129116],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Desk/Desk.obj",
       "Rotation" : [0.000000, -0.000000, -89.999985],
       "Scale" : [2.500000, 2.500000, 2.500000],
       "Type" : "StaticMeshComp"
     },
-    "26121" : {
+    "63" : {
+      "Location" : [-26.299776, -74.002708, 8.190624],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
+      "Rotation" : [0.000000, -0.000000, 91.927879],
+      "Scale" : [0.200000, 0.200000, 0.200000],
+      "Type" : "StaticMeshComp"
+    },
+    "630" : {
       "Location" : [-120.779556, 88.969910, -0.217895],
       "ObjStaticMeshAsset" : "Asset/Content/Models/OfficeChair/OfficeChair.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26124" : {
+    "633" : {
       "Location" : [-120.779556, 92.982620, -1.129116],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Desk/Desk.obj",
       "Rotation" : [0.000000, -0.000000, -89.999985],
       "Scale" : [2.500000, 2.500000, 2.500000],
       "Type" : "StaticMeshComp"
     },
-    "26127" : {
+    "636" : {
       "Location" : [-131.860428, -60.797779, 5.024052],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26130" : {
+    "639" : {
       "Location" : [-121.684273, -60.797779, 5.024052],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26133" : {
+    "642" : {
       "Location" : [-124.484856, -56.177261, 5.748604],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [-34.839321, -0.000000, 87.861191],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26139" : {
+    "645" : {
       "Location" : [5.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26142" : {
+    "648" : {
       "Location" : [25.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26145" : {
+    "651" : {
       "Location" : [110.000000, -20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26148" : {
+    "654" : {
       "Location" : [150.000000, 20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26151" : {
+    "657" : {
       "Location" : [130.000000, 20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [40.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26154" : {
+    "66" : {
+      "Location" : [-26.299776, -68.763626, 14.032093],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
+      "Rotation" : [0.000000, -0.000000, 91.927879],
+      "Scale" : [0.200000, 0.200000, 0.200000],
+      "Type" : "StaticMeshComp"
+    },
+    "660" : {
       "Location" : [0.000000, 62.500000, 10.000000],
       "ObjStaticMeshAsset" : "None",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26158" : {
+    "664" : {
       "Location" : [150.000000, -20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26161" : {
+    "667" : {
       "Location" : [60.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26164" : {
+    "670" : {
       "Location" : [20.000000, 90.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "26167" : {
+    "673" : {
       "Location" : [80.000000, -70.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, -45.000004],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "26170" : {
+    "676" : {
       "Location" : [25.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [30.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26173" : {
+    "679" : {
       "Location" : [80.000000, 100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26176" : {
+    "682" : {
       "Location" : [0.000000, -118.412224, 10.000000],
       "ObjStaticMeshAsset" : "None",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 11.626823, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26180" : {
+    "686" : {
       "Location" : [-60.000000, -40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [60.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26183" : {
+    "689" : {
       "Location" : [-110.000000, -100.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26186" : {
+    "69" : {
+      "Location" : [-100.000000, -70.000000, 0.500000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
+      "Rotation" : [0.000000, -0.000000, -45.000004],
+      "Scale" : [0.250000, 0.250000, 0.250000],
+      "Type" : "StaticMeshComp"
+    },
+    "692" : {
       "Location" : [10.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26189" : {
+    "695" : {
       "Location" : [-110.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26192" : {
+    "698" : {
       "Location" : [-27.669466, -16.029222, 10.026222],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26195" : {
+    "701" : {
       "Location" : [-37.739037, -16.029222, 5.024052],
       "ObjStaticMeshAsset" : "Asset/Content/Models/LootBox/LootBox.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.200000, 0.200000, 0.200000],
       "Type" : "StaticMeshComp"
     },
-    "26198" : {
+    "704" : {
       "Location" : [80.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26201" : {
+    "707" : {
       "Location" : [-40.000000, -60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26204" : {
+    "710" : {
       "Location" : [-50.000000, 40.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [80.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26207" : {
+    "713" : {
       "Location" : [-85.000000, 0.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26210" : {
+    "716" : {
       "Location" : [80.000000, -30.000000, 0.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
       "Rotation" : [0.000000, -0.000000, 135.000000],
       "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     },
-    "26213" : {
+    "719" : {
       "Location" : [110.000000, 20.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [1.500000, 1.500000, 21.000000],
       "Type" : "StaticMeshComp"
     },
-    "26216" : {
+    "72" : {
+      "Location" : [-140.000000, -20.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "722" : {
       "Location" : [15.000000, 60.000000, 10.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26219" : {
+    "725" : {
       "Location" : [-39.276653, 32.309486, -1.129116],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Desk/Desk.obj",
       "Rotation" : [0.000000, -0.000000, -89.999992],
       "Scale" : [2.500000, 2.500000, 2.500000],
       "Type" : "StaticMeshComp"
     },
-    "26222" : {
+    "728" : {
       "Location" : [0.000000, 92.500000, 12.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [20.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26225" : {
+    "731" : {
       "Location" : [105.000000, -60.000000, 8.000000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [10.000000, 1.000000, 20.000000],
       "Type" : "StaticMeshComp"
     },
-    "26228" : {
+    "734" : {
       "Location" : [-39.276653, 28.296774, -0.217895],
       "ObjStaticMeshAsset" : "Asset/Content/Models/OfficeChair/OfficeChair.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [5.000000, 5.000000, 5.000000],
       "Type" : "StaticMeshComp"
     },
-    "26346" : {
+    "75" : {
+      "Location" : [-140.000000, 90.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "78" : {
+      "Location" : [-77.500000, -100.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [145.000000, 1.000000, 20.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "81" : {
+      "Location" : [140.000000, 70.000000, 0.500000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
+      "Rotation" : [0.000000, -0.000000, 135.000000],
+      "Scale" : [0.250000, 0.250000, 0.250000],
+      "Type" : "StaticMeshComp"
+    },
+    "84" : {
+      "Location" : [-20.000000, 90.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "87" : {
+      "Location" : [70.000000, 90.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "890" : {
       "Location" : [-0.600000, -89.500000, 8.500000],
       "ObjStaticMeshAsset" : "Asset/Content/Models/Drone/Drone.obj",
       "Rotation" : [0.000000, -0.000000, 0.000000],
       "Scale" : [0.100000, 0.100000, 0.100000],
+      "Type" : "StaticMeshComp"
+    },
+    "90" : {
+      "Location" : [140.000000, 90.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "908" : {
+      "Location" : [-41.862328, 65.904869, 5.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
+      "Rotation" : [0.000000, 90.000000, -0.000000],
+      "Scale" : [10.000001, 10.000000, 10.000001],
+      "Type" : "StaticMeshComp"
+    },
+    "911" : {
+      "Location" : [32.267467, 90.389000, 5.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
+      "Rotation" : [0.000000, 90.000000, -0.000000],
+      "Scale" : [10.000001, 10.000000, 10.000001],
+      "Type" : "StaticMeshComp"
+    },
+    "914" : {
+      "Location" : [-120.525902, -92.068420, 5.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Battery/battery.obj",
+      "Rotation" : [0.000000, 90.000000, -0.000000],
+      "Scale" : [10.000001, 10.000000, 10.000001],
+      "Type" : "StaticMeshComp"
+    },
+    "93" : {
+      "Location" : [10.000000, 60.000000, 10.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/_Basic/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.500000, 1.500000, 21.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "96" : {
+      "Location" : [140.000000, 50.000000, 4.193120],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Document/Document.obj",
+      "Rotation" : [0.000000, 90.000000, -89.999977],
+      "Scale" : [2.000000, 2.000000, 2.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "99" : {
+      "Location" : [-90.000000, 90.000000, 0.500000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Turret/Turret.obj",
+      "Rotation" : [0.000000, -0.000000, -135.000000],
+      "Scale" : [0.250000, 0.250000, 0.250000],
       "Type" : "StaticMeshComp"
     }
   },

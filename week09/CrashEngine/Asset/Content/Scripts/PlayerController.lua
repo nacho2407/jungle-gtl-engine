@@ -21,7 +21,7 @@ local bGameOverRequested = false
 local HP = 100.0
 local bDestroyEffectSpawned = false
 local MaxHP = 100.0
-local HP_reduction  = 1;
+local HP_reduction  = 0.5;
 
 -- Scene에 붙어있는 Component를 캐싱해두면 Tick마다 다시 찾지 않아도 된다.
 local LightComponet = nil
