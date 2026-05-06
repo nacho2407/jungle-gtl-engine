@@ -96,13 +96,9 @@ void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
         ViewTarget.FOV = CamView.FOV;
     }
     else
-    {
-        assert(false && "아직 미구현 상태");
-		// GetActorRotation 의 Pitch, Yaw, Roll 순서를 봐서 넣어줘야 함
-        /*
+    {        
         ViewTarget.Location = ViewTarget.Target->GetActorLocation();
-        ViewTarget.Rotation = ViewTarget.Target->GetActorRotation();
-		*/
+        ViewTarget.Rotation = FRotator::MakeFromEuler(ViewTarget.Target->GetActorRotation());		
     }
 }
 
