@@ -1,5 +1,6 @@
 ﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
+#include "Camera/CameraModifier_CameraShake.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Camera/ShakePattern/SequenceCameraShakePattern.h"
 #include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
@@ -305,16 +306,22 @@ namespace
 
             CopyCameraShakePatternBase(Src, Dst);
             Dst->Sequence = Src->Sequence;
+            Dst->Curve = Src->Curve;
             Dst->PlayRate = Src->PlayRate;
             Dst->Scale = Src->Scale;
             Dst->RandomSegmentDuration = Src->RandomSegmentDuration;
             Dst->bRandomSegment = Src->bRandomSegment;
+            Dst->bLoop = Src->bLoop;
             Dst->CurveAssetPath = Src->CurveAssetPath;
+            Dst->LocationAmplitude = Src->LocationAmplitude;
+            Dst->RotationAmplitudeDeg = Src->RotationAmplitudeDeg;
+            Dst->FOVAmplitude = Src->FOVAmplitude;
             return Dst;
         }
 
         return Cast<UCameraShakePattern>(Source->Duplicate());
     }
+}
 
 void FLuaTimeline::Play()
 {
@@ -791,6 +798,37 @@ UCameraShakeBase* UScriptComponent::StartCameraShakePattern(
     }
 
     return CameraManager->StartCameraShake(RuntimePattern, Scale, DurationOverride);
+}
+
+void UScriptComponent::StopCameraShake(UCameraShakeBase* Shake, bool bImmediately)
+{
+    if (!Shake)
+    {
+        return;
+    }
+
+    APlayerCameraManager* CameraManager = Shake->GetCameraManager();
+    if (!CameraManager)
+    {
+        APlayerController* PC = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+        CameraManager = PC ? PC->GetPlayerCameraManager() : nullptr;
+    }
+
+    if (!CameraManager)
+    {
+        Shake->StopShake(bImmediately);
+        return;
+    }
+
+    UCameraModifier_CameraShake* Modifier =
+        CameraManager->FindCameraModifier<UCameraModifier_CameraShake>();
+    if (Modifier)
+    {
+        Modifier->StopCameraShake(Shake, bImmediately);
+        return;
+    }
+
+    Shake->StopShake(bImmediately);
 }
 
 void UScriptComponent::OnUnregister()

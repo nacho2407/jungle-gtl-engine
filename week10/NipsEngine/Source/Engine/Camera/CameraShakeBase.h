@@ -78,12 +78,7 @@ public:
 
 	bool IsFinished() const { return state.IsFinished(); }
 
-    void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const
-    {
-        OutCameraInfo.Duration = Duration;
-        OutCameraInfo.BlendInTime = BlendInTime;
-        OutCameraInfo.BlendOutTime = BlendOutTime;
-    }
+    virtual void GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const;
 	
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 

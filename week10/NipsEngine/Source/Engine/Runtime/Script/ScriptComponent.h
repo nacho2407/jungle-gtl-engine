@@ -95,6 +95,7 @@ public:
         UCameraShakePattern* Pattern,
         float Scale,
         float DurationOverride);
+    void StopCameraShake(UCameraShakeBase* Shake, bool bImmediately);
     void StartCoroutine(sol::function Function);
     FLuaTimeline* CreateTimeline();
     void ClearLuaTimelines();

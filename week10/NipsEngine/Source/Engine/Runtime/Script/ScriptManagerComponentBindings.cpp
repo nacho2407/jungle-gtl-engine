@@ -322,7 +322,14 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(CreateSequenceCameraShakePattern, CreateSequenceCameraShakePattern);
     LUA_METHOD(CreateSinusoidalCameraShakePattern, CreateSinusoidalCameraShakePattern);
     LUA_METHOD(StartCameraShakePattern, StartCameraShakePattern);
+    LUA_METHOD(StopCameraShake, StopCameraShake);
     LUA_RW_PROPERTY(ScriptName, GetScriptName, SetScriptName);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UCameraShakeBase, "CameraShakeBase", UObject)
+    LUA_METHOD(StopShake, StopShake);
+    LUA_METHOD(IsFinished, IsFinished);
+    LUA_METHOD(GetRootShakePattern, GetRootShakePattern);
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UCameraShakePattern, "CameraShakePattern", UObject)
@@ -336,7 +343,11 @@ void FScriptManager::BindComponentTypes()
     LUA_FIELD(Scale, Scale);
     LUA_FIELD(RandomSegmentDuration, RandomSegmentDuration);
     LUA_FIELD(bRandomSegment, bRandomSegment);
+    LUA_FIELD(bLoop, bLoop);
     LUA_FIELD(CurveAssetPath, CurveAssetPath);
+    LUA_FIELD(LocationAmplitude, LocationAmplitude);
+    LUA_FIELD(RotationAmplitudeDeg, RotationAmplitudeDeg);
+    LUA_FIELD(FOVAmplitude, FOVAmplitude);
     LUA_END_TYPE();
 
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USinusoidalCameraShakePattern, "SinusoidalCameraShakePattern", UCameraShakePattern, UObject)
