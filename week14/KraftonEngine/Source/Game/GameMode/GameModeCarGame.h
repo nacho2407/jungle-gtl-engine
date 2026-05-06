@@ -88,8 +88,18 @@ private:
 	void SpawnPoliceCars(APawn* PlayerPawn);
 	void DespawnPoliceCars();
 
+public:
+	// 외부 (lua / 다른 GameMode 흐름) 가 경찰차 정리를 요청하는 진입점.
+	// World->DestroyActor 직접 호출은 같은 프레임 TickManager 의 stale TickFunction 이
+	// dangling Target 을 deref 해 SEH 가 나는 경로라, 항상 다음 frame 으로 미뤄 처리한다.
+	void RequestDespawnPoliceCars() { bPendingDespawnPoliceCars = true; }
+
+private:
 	TArray<APoliceCar*> SpawnedPolice;
 	ECarGamePhase PendingDelayedPhase = ECarGamePhase::None;
 	APawn* PendingDelayedTriggerPawn = nullptr;
 	float PendingDelayedPhaseTime = 0.0f;
+
+	// EndPhase / lua 측에서 set, GameMode::Tick 시작에서 검사 후 처리.
+	bool bPendingDespawnPoliceCars = false;
 };
