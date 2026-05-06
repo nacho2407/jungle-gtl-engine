@@ -11,7 +11,7 @@ setmetatable(ADEnemy, {
 ADEnemy.Properties = {
     Speed = {
         Type = "Float",
-        Default = 2.0,
+        Default = 3.0,
         Category = "Movement"
     },
 
@@ -23,22 +23,44 @@ ADEnemy.Properties = {
 
     ProjectileInterval = {
         Type = "Float",
-        Default = 2.0,
+        Default = 1.0,
         Category = "Stats"
     },
-    
+
     ShootRange = {
         Type = "Float",
-        Default = 8.0,
+        Default = 12.0,
         Category = "Stats"
+    },
+
+    MoveStopRange = {
+        Type = "Float",
+        Default = 7.0,
+        Category = "Stats"
+    },
+
+    RetreatRange = {
+        Type = "Float",
+        Default = 4.0,
+        Category = "Stats"
+    },
+
+    ProjectileCount = {
+        Type = "Int",
+        Default = 3,
+        Category = "Attack"
+    },
+
+    ProjectileSpread = {
+        Type = "Float",
+        Default = 1.0,
+        Category = "Attack"
     }
 }
 
 function ADEnemy.new(component, properties)
     local self = EnemyBase.new(component, properties)
     setmetatable(self, ADEnemy)
-
-    self.ShootTimer = 0.0
 
     properties = properties or {}
 
@@ -50,9 +72,11 @@ function ADEnemy.new(component, properties)
         end
     end
 
+    -- 프로퍼티 복사 후 초기화해야 함
+    self.ShootTimer = tonumber(self.ProjectileInterval) or 1.0
+
     return self
 end
-
 function ADEnemy:BeginPlay()
     EnemyBase.BeginPlay(self)
 
@@ -68,22 +92,32 @@ function ADEnemy:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Othe
 end
 
 function ADEnemy:SpawnProjectile()
+    Log("[ADEnemy] SpawnProjectile called")
+
     local prefabPath = "Asset/Prefab/Projectile"
-    local spawnLocation = self.owner.Location + Vector.Up()
 
-    local projectile = ProjectilePool:Spawn(spawnLocation, self.target, prefabPath)
+    local count = math.max(1, math.floor(self.ProjectileCount or 1))
+    local spread = tonumber(self.ProjectileSpread) or 0.0
 
-    if projectile == nil then
-        Log("[ADEnemy] SpawnProjectile 완전 실패")
-        return
+    local centerIndex = (count + 1) * 0.5
+
+    for i = 1, count do
+        local offsetIndex = i - centerIndex
+
+        local spawnOffset = Vector.Right() * (offsetIndex * spread)
+        local spawnLocation = self.owner.Location + Vector.Up() + spawnOffset
+
+        local projectile = ProjectilePool:Spawn(spawnLocation, self.target, prefabPath)
+
+        if projectile == nil then
+            LogWarning("[ADEnemy] SpawnProjectile 실패 index=" .. tostring(i))
+        else
+            Log("[ADEnemy] Projectile spawned index=" .. tostring(i))
+        end
     end
 end
 
 function ADEnemy:Tick(dt)
-    if not self.bCanMove or self.bMovementLocked then
-        return
-    end
-
     if self.target == nil then
         return
     end
@@ -93,18 +127,34 @@ function ADEnemy:Tick(dt)
 
     local distance = delta:Size()
 
-    if distance > self.ShootRange then
-        -- 범위 밖이면 이동
-        local direction = delta:Normalized()
-        local step = math.min(distance, dt * self.Speed)
-        self.owner.Location = self.owner.Location + direction * step
-    else
-        -- 범위 안이면 타이머 누적 후 발사
-        self.ShootTimer = self.ShootTimer + dt
-        if self.ShootTimer >= self.ProjectileInterval then
-            self:SpawnProjectile()
-            self.ShootTimer = 0.0
+    if distance <= 0.001 then
+        return
+    end
+
+    local direction = delta:Normalized()
+
+    local moveStopRange = tonumber(self.MoveStopRange) or 7.0
+    local retreatRange = tonumber(self.RetreatRange) or 4.0
+    local speed = tonumber(self.Speed) or 3.0
+    local interval = tonumber(self.ProjectileInterval) or 1.0
+
+    -- 이동 로직만 bCanMove / bMovementLocked 영향을 받음
+    if self.bCanMove and not self.bMovementLocked then
+        if distance < retreatRange then
+            self.owner.Location = self.owner.Location - direction * speed * dt
+
+        elseif distance > moveStopRange then
+            local step = math.min(distance - moveStopRange, speed * dt)
+            self.owner.Location = self.owner.Location + direction * step
         end
+    end
+
+    -- 발사 로직: 거리/이동상태와 독립
+    self.ShootTimer = (tonumber(self.ShootTimer) or 0.0) + dt
+
+    if self.ShootTimer >= interval then
+        self:SpawnProjectile()
+        self.ShootTimer = 0.0
     end
 end
 
