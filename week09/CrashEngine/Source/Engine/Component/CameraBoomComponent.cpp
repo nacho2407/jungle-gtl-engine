@@ -140,7 +140,6 @@ void UCameraBoomComponent::PostEditProperty(const char* PropertyName)
 
     if (std::strcmp(PropertyName, "Offset Direction") == 0)
     {
-        OffsetDirection = NormalizeOrDefault(OffsetDirection, FVector(-1.0f, 0.0f, 0.35f));
         bHasLastAppliedCameraLocation = false;
     }
 
