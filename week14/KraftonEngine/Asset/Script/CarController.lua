@@ -207,6 +207,17 @@ function Tick(dt)
     local phase = gs:GetPhase()
     UpdatePoliceSiren(phase)
 
+    if ObjRegistry.IsPlayerCinematicLocked() then
+        movement:StopImmediately()
+        movement:SetThrottleInput(0)
+        movement:SetSteeringInput(0)
+        UpdateHandleRotation(0, dt)
+        UpdateWheelSteeringRotation(0, dt)
+        AudioManager.SetLoopPitch(ENGINE_LOOP_NAME, ENGINE_IDLE_PITCH)
+        prevSpeed = 0.0
+        return
+    end
+
     if phase == ECarGamePhase.CarWash or phase == ECarGamePhase.CarGas then
         movement:StopImmediately()
         movement:SetThrottleInput(0)

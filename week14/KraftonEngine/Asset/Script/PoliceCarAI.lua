@@ -80,6 +80,48 @@ local function tickReverse(mv, dt)
     end
 end
 
+local function applyExternalControl(mv, control)
+    if control == nil then
+        return false
+    end
+
+    if control.keepUpright ~= false then
+        local rotation = obj.Rotation
+        obj.Rotation = Vector.new(0, 0, rotation.Z)
+    end
+
+    if control.stop then
+        mv:SetThrottleInput(0)
+        mv:SetSteeringInput(0)
+        mv:StopImmediately()
+        return control.aiEnabled ~= true
+    end
+
+    if control.throttle ~= nil then
+        mv:SetThrottleInput(control.throttle)
+    else
+        mv:SetThrottleInput(0)
+    end
+
+    if control.steering ~= nil then
+        mv:SetSteeringInput(control.steering)
+    else
+        mv:SetSteeringInput(0)
+    end
+
+    local root = obj:GetRootPrimitiveComponent()
+    if root ~= nil then
+        if control.linearVelocity ~= nil then
+            root:SetLinearVelocity(control.linearVelocity)
+        end
+        if control.angularVelocity ~= nil then
+            root:SetAngularVelocity(control.angularVelocity)
+        end
+    end
+
+    return control.aiEnabled ~= true
+end
+
 function BeginPlay()
     police = obj:AsPoliceCar()
     ObjRegistry.RegisterPoliceCar(police)
@@ -109,11 +151,15 @@ function Tick(dt)
         if police == nil then return end
     end
 
-    local target = police:GetTarget()
-    if target == nil or not target:IsValid() then return end
-
     local mv = obj:GetCarMovement()
     if mv == nil then return end
+
+    if applyExternalControl(mv, ObjRegistry.GetPoliceControl(police)) then
+        return
+    end
+
+    local target = police:GetTarget()
+    if target == nil or not target:IsValid() then return end
 
     if state == "chase" then
         tickChase(mv, target, dt)

@@ -51,6 +51,7 @@ public:
 	static constexpr float DodgeMeteorDuration = 30.0f;
 	static constexpr float GoalDuration        = 60.0f;  // 사실상 즉시 Success 라 timer 미사용
 	static constexpr float ResultDisplayDuration = 1.5f; // 결과 표시 페이즈 길이
+	static constexpr float EscapePoliceTriggerDelay = 0.35f;
 
 	// --- 페이즈 성공 임계치 ---
 	static constexpr float CarGasSuccessRatio = 0.8f;     // 80% 이상 채워져야 Success
@@ -88,4 +89,7 @@ private:
 	void DespawnPoliceCars();
 
 	TArray<APoliceCar*> SpawnedPolice;
+	ECarGamePhase PendingDelayedPhase = ECarGamePhase::None;
+	APawn* PendingDelayedTriggerPawn = nullptr;
+	float PendingDelayedPhaseTime = 0.0f;
 };

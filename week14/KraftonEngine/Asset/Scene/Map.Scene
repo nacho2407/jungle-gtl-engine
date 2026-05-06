@@ -3737,8 +3737,8 @@
       "Name" : "PoliceSpawn1",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [3.817901, 100.979530, 2.875780],
-        "Rotation" : [-0.000000, 160.647003, 0.000000],
+        "Location" : [5.756139, 116.651215, 2.250000],
+        "Rotation" : [-0.000000, -89.999977, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "SpawnPoliceCar",
         "Visible" : true
@@ -3809,13 +3809,13 @@
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
           "Generate Overlap Events" : false,
-          "Location" : [3.817901, 100.979530, 2.875780],
+          "Location" : [5.756139, 116.651215, 2.250000],
           "Mass (kg)" : 1.000000,
           "Material" : {
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, 160.647003, 0.000000],
+          "Rotation" : [0.000000, -89.999977, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -3829,8 +3829,8 @@
       "Name" : "PoliceSpawn2",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [-17.377266, 115.464188, 2.975780],
-        "Rotation" : [-0.000000, 175.778030, 0.000000],
+        "Location" : [-0.914598, 121.077477, 2.250000],
+        "Rotation" : [-0.000000, -89.999977, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "SpawnPoliceCar",
         "Visible" : true
@@ -3901,13 +3901,13 @@
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
           "Generate Overlap Events" : false,
-          "Location" : [-17.377266, 115.464188, 2.975780],
+          "Location" : [-0.914598, 121.077477, 2.250000],
           "Mass (kg)" : 1.000000,
           "Material" : {
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, 175.778015, 0.000000],
+          "Rotation" : [0.000000, -89.999977, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -3921,8 +3921,8 @@
       "Name" : "PoliceSpawn3",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [-35.529869, 95.709526, 3.075779],
-        "Rotation" : [0.000000, -163.353561, 0.000000],
+        "Location" : [-6.327831, 117.156494, 2.250000],
+        "Rotation" : [-0.000000, -89.999977, 0.000000],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "SpawnPoliceCar",
         "Visible" : true
@@ -3993,13 +3993,13 @@
           "FadeOutDelay" : 0.000000,
           "FadeOutDuration" : 0.000000,
           "Generate Overlap Events" : false,
-          "Location" : [-35.529869, 95.709526, 3.075779],
+          "Location" : [-6.327831, 117.156494, 2.250000],
           "Mass (kg)" : 1.000000,
           "Material" : {
             "Path" : "Asset/Materials/Editor/DefaultDecal.mat"
           },
           "Object Type" : 0,
-          "Rotation" : [0.000000, -163.353561, 0.000000],
+          "Rotation" : [0.000000, -89.999985, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -5675,6 +5675,74 @@
           "bTickEnable" : true
         }
       }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "CineCamera",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Properties" : {
+            "ScriptFile" : "CineCamera.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }],
+      "Properties" : {
+        "Location" : [-2.883239, 104.924057, 3.721026],
+        "Rotation" : [-0.000000, 84.632080, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UCineCameraComponent",
+            "Properties" : {
+              "Enable Letterbox" : true,
+              "FOV" : 1.047198,
+              "Far Z" : 1000.000000,
+              "Letterbox Amount" : 1.000000,
+              "Letterbox Color" : [0.000000, 0.000000, 0.000000, 1.000000],
+              "Letterbox Thickness" : 0.120000,
+              "Location" : [0.000000, 0.000000, 0.000000],
+              "Near Z" : 0.100000,
+              "Ortho Width" : 10.000000,
+              "Orthographic" : false,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "bEditorOnly" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : false,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Element 0" : {
+            "Path" : "Asset/Materials/Auto/BasicShapeMaterial.mat"
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-2.883239, 104.924057, 3.721026],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, 84.632080, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Simulate Physics" : false,
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Two Sided Shadow" : false,
+          "Visible" : false,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Loaded Scene",
@@ -5683,9 +5751,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [183.250519, 81.680687, 97.964752],
+    "Location" : [-23.289030, 83.621269, 6.146761],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 32.865063, -149.691071]
+    "Rotation" : [0.000000, 18.764370, -34.787380]
   },
   "Version" : 2,
   "WorldSettings" : {

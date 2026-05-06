@@ -246,4 +246,5 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("ScoreUp", "score_up.mp3");
 	LoadAudio("MeteorBoom", "meteor_boom.mp3");
 	LoadAudio("MeteorFall", "meteor_fall.mp3");
+	LoadAudio("Whoosh", "whoosh.mp3");
 }

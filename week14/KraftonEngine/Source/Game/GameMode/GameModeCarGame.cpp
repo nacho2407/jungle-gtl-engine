@@ -173,6 +173,30 @@ void AGameModeCarGame::Tick(float DeltaTime)
 		return;
 	}
 
+	if (PendingDelayedPhase != ECarGamePhase::None)
+	{
+		if (Phase != ECarGamePhase::None)
+		{
+			PendingDelayedPhase = ECarGamePhase::None;
+			PendingDelayedTriggerPawn = nullptr;
+			PendingDelayedPhaseTime = 0.0f;
+		}
+		else
+		{
+			PendingDelayedPhaseTime -= DeltaTime;
+			if (PendingDelayedPhaseTime <= 0.0f)
+			{
+				const ECarGamePhase Target = PendingDelayedPhase;
+				APawn* TriggerPawn = PendingDelayedTriggerPawn;
+				PendingDelayedPhase = ECarGamePhase::None;
+				PendingDelayedTriggerPawn = nullptr;
+				PendingDelayedPhaseTime = 0.0f;
+				BeginPhase(Target, TriggerPawn);
+				return;
+			}
+		}
+	}
+
 	if (Phase != ECarGamePhase::None && GS->GetRemainingPhaseTime() > 0.0f)
 	{
 		// DodgeMeteor: HP 0 워치독 — JudgePhaseResult 는 timer 만료 시에만 호출되므로
@@ -226,11 +250,21 @@ void AGameModeCarGame::OnPossessedPawnEnteredTrigger(ATriggerVolumeBase* Trigger
 	}
 
 	if (GS->GetPhase() != ECarGamePhase::None) return;
+	if (PendingDelayedPhase != ECarGamePhase::None) return;
 
 	if (Target == ECarGamePhase::CarWash
 		&& CountUnwashedDirtComponentsInWorld(GetWorld()) <= 0)
 	{
 		UE_LOG("[CarGame] Ignore CarWash trigger — no unwashed dirt components remain.");
+		return;
+	}
+
+	if (Target == ECarGamePhase::EscapePolice)
+	{
+		PendingDelayedPhase = Target;
+		PendingDelayedTriggerPawn = Pawn;
+		PendingDelayedPhaseTime = EscapePoliceTriggerDelay;
+		UE_LOG("[CarGame] EscapePolice trigger delayed %.2fs", EscapePoliceTriggerDelay);
 		return;
 	}
 
