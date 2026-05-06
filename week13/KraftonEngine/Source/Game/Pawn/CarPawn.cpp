@@ -134,6 +134,7 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 
 	// 5a) 핸들 메시
 	UStaticMeshComponent* Handle = AddComponent<UStaticMeshComponent>();
+	HandleMesh = Handle;
 	Handle->AttachToComponent(Mesh);
 	if (GEngine)
 	{
@@ -199,10 +200,11 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 
 void ACarPawn::BeginPlay()
 {
-	Super::BeginPlay();
 	// Scene-load 경로에서는 PostDuplicate 가 안 도므로 여기서 캐시 포인터 결정.
-	// PostDuplicate 경로에선 이미 잡혀 있으니 다시 잡아도 동일 결과 (idempotent).
+	// LuaScriptComponent::BeginPlay 가 CarController.lua 의 BeginPlay 를 실행하므로,
+	// Super::BeginPlay 보다 먼저 잡아야 Lua 의 GetHandleMesh/Get*TireMesh 가 유효하다.
 	ResolveCachedComponents();
+	Super::BeginPlay();
 }
 
 void ACarPawn::PostDuplicate()
