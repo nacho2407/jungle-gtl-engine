@@ -99,14 +99,14 @@ public:
 	void ToggleViewportSplit();
 
 	// Viewport Get Set
-    FEditorViewportClient* GetViewportClient(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
-    const FEditorViewportClient* GetViewportClient(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetClient(); }
+    FEditorViewportClient* GetViewportClient(int32 Index) { return SceneViewports[Index].GetClient(); }
+    const FEditorViewportClient* GetViewportClient(int32 Index) const { return SceneViewports[Index].GetClient(); }
 
-	FSceneViewport& GetSceneViewport(int32 Index) { return ViewportWidgets[Index].GetSceneViewport(); }
-	const FSceneViewport& GetSceneViewport(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport(); }
+	FSceneViewport& GetSceneViewport(int32 Index) { return SceneViewports[Index]; }
+	const FSceneViewport& GetSceneViewport(int32 Index) const { return SceneViewports[Index]; }
 
-	FEditorViewportState& GetViewportState(int32 Index) { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
-    const FEditorViewportState& GetViewportState(int32 Index) const { return ViewportWidgets[Index].GetSceneViewport().GetState(); }
+	FEditorViewportState& GetViewportState(int32 Index) { return SceneViewports[Index].GetState(); }
+    const FEditorViewportState& GetViewportState(int32 Index) const { return SceneViewports[Index].GetState(); }
 
 	// Window 크기 기준으로 4개 뷰포트 영역을 계산 및 초기화 합니다.
 	void InitViewportRect(uint32 Width, uint32 Height);
@@ -165,6 +165,7 @@ private:
 
 	// Viewport 구조 재편 중 다형성 임시 제거
 	SViewport ViewportWidgets[MaxViewports] = {};
+	FSceneViewport SceneViewports[MaxViewports] = {};
     FEditorViewportClient ViewportClients[MaxViewports] = {};
 
 	// 캐싱 목적 Window 소유(소유권은 WindowsApplication)

@@ -1,5 +1,7 @@
 ﻿#include "SViewport.h"
 
+#include "Slate/SlateUtils.h"
+
 bool SViewport::OnMouseMove(int32 X, int32 Y)
 {
 	return false;

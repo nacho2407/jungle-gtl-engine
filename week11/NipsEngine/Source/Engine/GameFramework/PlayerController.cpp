@@ -597,6 +597,22 @@ void APlayerController::ApplyCameraShakeEffect(float DeltaTime)
 	}
 }
 
+void APlayerController::SetViewTargetWithBlend(AActor* InActor, float BlendTime, ECameraBlendType BlendType)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetViewTargetWithBlend(InActor, BlendTime, BlendType);
+	}
+}
+
+void APlayerController::SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetDefaultViewTargetBlend(BlendTime, BlendType);
+	}
+}
+
 void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 {
 	ClearInvalidViewTarget();

@@ -7,21 +7,6 @@
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
-#if WITH_EDITOR
-#include "Editor/Settings/EditorSettings.h"
-#endif
-
-namespace
-{
-    EShadowFilter GetShadowFilterMode()
-    {
-#if WITH_EDITOR
-        return FEditorSettings::Get().ShadowFilterMode;
-#else
-        return EShadowFilter::PCF;
-#endif
-    }
-}
 
 bool FOpaqueRenderPass::Initialize()
 {
@@ -171,7 +156,7 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
            break;
        }
        // VSM 모드 + 그림자 활성일 때만 OR
-       if (bShadowApplied and GetShadowFilterMode() == EShadowFilter::VSM)
+       if (bShadowApplied and Context->RenderBus->GetShadowFilterMode() == EShadowFilter::VSM)
        {
            PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
        }

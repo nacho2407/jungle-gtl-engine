@@ -87,7 +87,7 @@ FMatrix UBillboardComponent::MakeBillboardWorldMatrix(
 void UBillboardComponent::SetTextureName(FString InName)
 {
     TextureName = FPaths::Normalize(InName);
-    Texture = FResourceManager::Get().GetTexture(TextureName.ToString());
+    Texture = FResourceManager::Get().LoadTexture(TextureName.ToString());
 }
 
 FString UBillboardComponent::GetTextureName()
@@ -99,7 +99,7 @@ UTexture* UBillboardComponent::GetTexture()
 {
     if (Texture == nullptr)
     {
-        Texture = FResourceManager::Get().GetTexture(TextureName.ToString());
+        Texture = FResourceManager::Get().LoadTexture(TextureName.ToString());
     }
     return Texture;
 }

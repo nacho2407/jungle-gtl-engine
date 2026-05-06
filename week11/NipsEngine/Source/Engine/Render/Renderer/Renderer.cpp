@@ -14,7 +14,6 @@
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Editor/Viewport/FSceneViewport.h"
 #include "GameFramework/AActor.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
@@ -237,7 +236,7 @@ void FRenderer::Release()
     ReleaseRenderResource(GameFrameResource);
 	for (int32 i = 0; i < 4; ++i)
 	{
-		ReleaseViewportResource(nullptr, i);
+		ReleaseViewportResource(i);
 	}
 
 	RenderPipeline.Release();
@@ -664,7 +663,7 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
     UseBackBufferRenderTargets();
 }
 
-FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
+FViewportRenderResource& FRenderer::AcquireViewportResource(uint32 Width, uint32 Height, int32 Index)
 {
     assert(Index < 4 && "Index Out of Bound");
 
@@ -672,7 +671,7 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, 
 
     if (Device.GetDevice() == nullptr || Width == 0 || Height == 0)
     {
-        ReleaseViewportResource(VP, Index);
+        ReleaseViewportResource(Index);
         return Res;
     }
 
@@ -691,28 +690,24 @@ FViewportRenderResource& FRenderer::AcquireViewportResource(FSceneViewport* VP, 
     }
 
     // 재생성
-    ReleaseViewportResource(VP, Index);
-    InitializeViewportResource(VP, Width, Height, Index);
+    ReleaseViewportResource(Index);
+    InitializeViewportResource(Width, Height, Index);
 
     return Res;
 }
 
-void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uint32 Height, int32 Index)
+void FRenderer::InitializeViewportResource(uint32 Width, uint32 Height, int32 Index)
 {
     FViewportRenderResource& Res = ViewportResources[Index];
 	InitializeRenderResource(Res, Width, Height);
     InitializeEditorIdPickResource(Res, Width, Height);
 }
 
-void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
+void FRenderer::ReleaseViewportResource(int32 Index)
 {
     assert(Index < 4 && "Index Out of Bound");
 
     FViewportRenderResource& Res = ViewportResources[Index];
-    if (VP && VP->GetRenderTargetSet() == &Res.RenderTargetSet)
-    {
-        VP->SetRenderTargetSet(nullptr);
-    }
 	ReleaseRenderResource(Res);
 }
 
