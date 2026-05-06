@@ -5,6 +5,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Packaging/GamePackager.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Settings/ProjectSettings.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Component/GizmoComponent.h"
 #include "Engine/Component/StaticMeshComponent.h"
@@ -43,6 +44,7 @@ namespace
 constexpr const char* PackagingPopupName = "Packaging Settings";
 constexpr int32 DefaultPIEUILayoutWidth = 1920;
 constexpr int32 DefaultPIEUILayoutHeight = 1080;
+constexpr float MaxCameraSpeedMultiplier = 20.0f;
 
 FString MakeFooterSceneDisplayPath(const FString& FilePath)
 {
@@ -183,7 +185,7 @@ float GetCameraBaseSpeed()
 
 float GetCameraSpeedMultiplier(FEditorViewportClient* Client)
 {
-    return Client ? Client->GetMoveSpeed() / GetCameraBaseSpeed() : 1.0f;
+    return Client ? MathUtil::Clamp(Client->GetMoveSpeed() / GetCameraBaseSpeed(), 0.01f, MaxCameraSpeedMultiplier) : 1.0f;
 }
 
 void SetCameraSpeedMultiplier(FEditorViewportClient* Client, float Multiplier)
@@ -192,7 +194,42 @@ void SetCameraSpeedMultiplier(FEditorViewportClient* Client, float Multiplier)
     {
         return;
     }
-    Client->SetMoveSpeed(MathUtil::Clamp(GetCameraBaseSpeed() * Multiplier, 0.1f, 5000.0f));
+    Client->SetMoveSpeed(MathUtil::Clamp(GetCameraBaseSpeed() * Multiplier, 0.1f, GetCameraBaseSpeed() * MaxCameraSpeedMultiplier));
+}
+
+FString SanitizePackageNameForPath(const FString& Name)
+{
+    FString Result = Name;
+    for (char& Ch : Result)
+    {
+        const bool bInvalid =
+            Ch == '<' || Ch == '>' || Ch == ':' || Ch == '"' ||
+            Ch == '/' || Ch == '\\' || Ch == '|' || Ch == '?' || Ch == '*';
+        if (bInvalid || static_cast<unsigned char>(Ch) < 32)
+        {
+            Ch = '_';
+        }
+    }
+
+    const size_t Start = Result.find_first_not_of(" .\t\r\n");
+    if (Start == FString::npos)
+    {
+        return "NipsGame";
+    }
+
+    const size_t End = Result.find_last_not_of(" .\t\r\n");
+    Result = Result.substr(Start, End - Start + 1);
+    return Result.empty() ? FString("NipsGame") : Result;
+}
+
+FString MakeDefaultPackageOutputDirectory(const FString& GameName)
+{
+    return FPaths::Normalize("Builds/Windows/" + SanitizePackageNameForPath(GameName));
+}
+
+bool IsDefaultPackageOutputDirectory(const FString& OutputDirectory, const FString& GameName)
+{
+    return FPaths::Normalize(OutputDirectory) == MakeDefaultPackageOutputDirectory(GameName);
 }
 
 const wchar_t* GetViewportToolIconFileName(FEditorMainPanel::EViewportToolIcon Icon)
@@ -519,6 +556,14 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
     Window = InWindow;
     EditorEngine = InEditorEngine;
+
+    const FString ProjectSettingsPath = FProjectSettings::GetDefaultSettingsPath();
+    const bool bHadProjectSettings = std::filesystem::exists(std::filesystem::path(FPaths::ToWide(ProjectSettingsPath)));
+    FProjectSettings::Get().LoadFromFile(ProjectSettingsPath);
+    if (!bHadProjectSettings)
+    {
+        FProjectSettings::Get().SaveToFile(ProjectSettingsPath);
+    }
 
     // 1차: malgun.ttf — 한글 + 기본 라틴 (주 폰트)
     ImFontGlyphRangesBuilder KoreanBuilder;
@@ -1751,7 +1796,7 @@ void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
         if (FEditorViewportClient* FocusedClient = Layout.GetViewportClient(Layout.GetLastFocusedViewportIndex()))
         {
             float SpeedMultiplier = GetCameraSpeedMultiplier(FocusedClient);
-            if (ImGui::DragFloat("Focused Speed Multiplier", &SpeedMultiplier, 0.05f, 0.01f, 500.0f, "%.2fx"))
+            if (ImGui::DragFloat("Focused Speed Multiplier", &SpeedMultiplier, 0.05f, 0.01f, MaxCameraSpeedMultiplier, "%.2fx"))
             {
                 SetCameraSpeedMultiplier(FocusedClient, SpeedMultiplier);
             }
@@ -2067,6 +2112,41 @@ bool FEditorMainPanel::RequestNewScene()
     return true;
 }
 
+void FEditorMainPanel::RestoreLastSceneFromProjectSettings()
+{
+    if (!EditorEngine)
+    {
+        return;
+    }
+
+    FProjectSettings& ProjectSettings = FProjectSettings::Get();
+    if (ProjectSettings.HasSavedLastScenePath())
+    {
+        const FString StoredScenePath = ProjectSettings.LastScenePath;
+        const std::filesystem::path ScenePath(FPaths::ToAbsolute(FPaths::ToWide(StoredScenePath)));
+
+        std::error_code Ec;
+        const bool bSceneExists = std::filesystem::exists(ScenePath, Ec) && !Ec;
+        Ec.clear();
+        const bool bSceneFile = bSceneExists && std::filesystem::is_regular_file(ScenePath, Ec) && !Ec;
+        if (bSceneFile)
+        {
+            if (SceneWidget.LoadSceneFromFilePath(FPaths::ToUtf8(ScenePath.wstring()), false))
+            {
+                return;
+            }
+
+            UE_LOG_WARNING("[ProjectSettings] Failed to load last scene: %s", StoredScenePath.c_str());
+        }
+        else
+        {
+            UE_LOG_WARNING("[ProjectSettings] Last scene path is invalid, opening New Scene: %s", StoredScenePath.c_str());
+        }
+    }
+
+    SceneWidget.NewScene();
+}
+
 bool FEditorMainPanel::RequestLoadSceneWithDialog()
 {
     if (!SceneWidget.PromptSaveIfDirty())
@@ -2113,19 +2193,31 @@ void FEditorMainPanel::RequestBuildGame()
         return;
     }
 
-    PendingBuildSettings.GameName = "NipsGame";
-    PendingBuildSettings.StartupScene = SceneWidget.HasCurrentSceneFilePath()
-        ? SceneWidget.GetCurrentSceneFilePath()
-        : "Asset/Scene/Default.scene";
-    PendingBuildSettings.OutputDirectory = "Builds/Windows/" + PendingBuildSettings.GameName;
-    PendingBuildSettings.PlayerControllerClass = "APlayerController";
-    PendingBuildSettings.Configuration = EGameBuildConfiguration::Development;
-    PendingBuildSettings.IconPath.clear();
-    PendingBuildSettings.SplashImagePath.clear();
-    PendingBuildSettings.SplashMinSeconds = 3.0f;
-    PendingBuildSettings.bCleanOutput = true;
-    PendingBuildSettings.bRunAfterBuild = false;
-    PendingBuildSettings.IncludedScenes.clear();
+    FProjectSettings& ProjectSettings = FProjectSettings::Get();
+    ProjectSettings.LoadFromFile(FProjectSettings::GetDefaultSettingsPath());
+    PendingBuildSettings = ProjectSettings.BuildSettings;
+    if (PendingBuildSettings.GameName.empty())
+    {
+        PendingBuildSettings.GameName = "NipsGame";
+    }
+    if (PendingBuildSettings.PlayerControllerClass.empty())
+    {
+        PendingBuildSettings.PlayerControllerClass = "APlayerController";
+    }
+    if (PendingBuildSettings.OutputDirectory.empty())
+    {
+        PendingBuildSettings.OutputDirectory = MakeDefaultPackageOutputDirectory(PendingBuildSettings.GameName);
+    }
+    if (SceneWidget.HasCurrentSceneFilePath())
+    {
+        PendingBuildSettings.StartupScene = SceneWidget.GetCurrentSceneFilePath();
+        ProjectSettings.SetLastScenePath(PendingBuildSettings.StartupScene);
+        ProjectSettings.SaveToFile(FProjectSettings::GetDefaultSettingsPath());
+    }
+    else if (PendingBuildSettings.StartupScene.empty() && ProjectSettings.HasSavedLastScenePath())
+    {
+        PendingBuildSettings.StartupScene = ProjectSettings.LastScenePath;
+    }
     AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, PendingBuildSettings.StartupScene);
 
     strncpy_s(BuildGameNameBuffer, PendingBuildSettings.GameName.c_str(), _TRUNCATE);
@@ -2181,7 +2273,18 @@ void FEditorMainPanel::RenderBuildGameModal()
         ImGui::TextUnformatted("Game Name");
         ImGui::TableSetColumnIndex(1);
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputText("##PackageGameName", BuildGameNameBuffer, IM_ARRAYSIZE(BuildGameNameBuffer));
+        const FString PreviousGameName = PendingBuildSettings.GameName;
+        const FString PreviousOutputDirectory = FPaths::Normalize(BuildOutputDirectoryBuffer);
+        if (ImGui::InputText("##PackageGameName", BuildGameNameBuffer, IM_ARRAYSIZE(BuildGameNameBuffer)))
+        {
+            const FString EditedGameName = BuildGameNameBuffer;
+            PendingBuildSettings.GameName = EditedGameName.empty() ? FString("NipsGame") : EditedGameName;
+            if (IsDefaultPackageOutputDirectory(PreviousOutputDirectory, PreviousGameName))
+            {
+                const FString NewOutputDirectory = MakeDefaultPackageOutputDirectory(PendingBuildSettings.GameName);
+                strncpy_s(BuildOutputDirectoryBuffer, NewOutputDirectory.c_str(), _TRUNCATE);
+            }
+        }
 
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -2336,7 +2439,7 @@ void FEditorMainPanel::RenderBuildGameModal()
     ImGui::SameLine();
     ImGui::Checkbox("Run After Packaging", &PendingBuildSettings.bRunAfterBuild);
 
-    const FString GameName = FPaths::Normalize(BuildGameNameBuffer);
+    const FString GameName = BuildGameNameBuffer;
     const FString StartupScene = FPaths::Normalize(BuildStartupSceneBuffer);
     const FString PlayerControllerClass = FPaths::Normalize(BuildPlayerControllerClassBuffer);
     const FString OutputDirectory = FPaths::Normalize(BuildOutputDirectoryBuffer);
@@ -2366,7 +2469,8 @@ void FEditorMainPanel::RenderBuildGameModal()
         PendingBuildSettings.Configuration == EGameBuildConfiguration::Development
             ? "Development -> GameClientDebug|x64"
             : "Shipping -> GameClientRelease|x64");
-    ImGui::Text("Output Exe: %s", "NipsGame.exe");
+    const FString OutputExeName = SanitizePackageNameForPath(GameName) + ".exe";
+    ImGui::Text("Output Exe: %s", OutputExeName.c_str());
     ImGui::Text("Scenes to Copy: %d", static_cast<int32>(PendingBuildSettings.IncludedScenes.size()));
     ImGui::Text("Icon: %s", IconPath.empty() ? "(none)" : IconPath.c_str());
     ImGui::Text("Splash: %s", SplashImagePath.empty() ? "(none)" : SplashImagePath.c_str());
@@ -2425,6 +2529,13 @@ void FEditorMainPanel::RenderBuildGameModal()
         PendingBuildSettings.SplashImagePath = SplashImagePath;
         PendingBuildSettings.SplashMinSeconds = MathUtil::Clamp(PendingBuildSettings.SplashMinSeconds, 3.0f, 10.0f);
         AddUniquePackagingScene(PendingBuildSettings.IncludedScenes, StartupScene);
+        FProjectSettings& ProjectSettings = FProjectSettings::Get();
+        ProjectSettings.BuildSettings = PendingBuildSettings;
+        if (bValidScene)
+        {
+            ProjectSettings.SetLastScenePath(StartupScene);
+        }
+        ProjectSettings.SaveToFile(FProjectSettings::GetDefaultSettingsPath());
         PushFooterLog("Packaging game...");
         bBuildGameInProgress = true;
         BuildGameFuture = std::async(std::launch::async, [Settings = PendingBuildSettings]()
@@ -3578,7 +3689,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
             if (Layout.GetLayoutMode() == EEditorViewportLayoutMode::OnePane)
             {
                 float SpeedMultiplier = GetCameraSpeedMultiplier(Client);
-                if (ImGui::SliderFloat("Camera Speed", &SpeedMultiplier, 0.01f, 500.0f, "%.2fx"))
+                if (ImGui::SliderFloat("Camera Speed", &SpeedMultiplier, 0.01f, MaxCameraSpeedMultiplier, "%.2fx"))
                 {
                     SetCameraSpeedMultiplier(Client, SpeedMultiplier);
                 }
@@ -3720,7 +3831,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
         if (ImGui::BeginPopup(CameraPopupID))
         {
             float SpeedMultiplier = GetCameraSpeedMultiplier(Client);
-            if (ImGui::SliderFloat("Speed", &SpeedMultiplier, 0.01f, 500.0f, "%.2fx"))
+            if (ImGui::SliderFloat("Speed", &SpeedMultiplier, 0.01f, MaxCameraSpeedMultiplier, "%.2fx"))
             {
                 SetCameraSpeedMultiplier(Client, SpeedMultiplier);
             }

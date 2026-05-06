@@ -322,6 +322,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     // Editor용 렌더 파이프라인 세팅
     SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 
+    MainPanel.RestoreLastSceneFromProjectSettings();
+
 	FScriptManager::Get().initializeLuaState();
 }
 

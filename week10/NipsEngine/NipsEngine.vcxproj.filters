@@ -350,6 +350,9 @@
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
       <Filter>Source\Editor\Settings</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Settings\ProjectSettings.cpp">
+      <Filter>Source\Editor\Settings</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -937,6 +940,9 @@
       <Filter>Source\Editor\Selection</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
+      <Filter>Source\Editor\Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Settings\ProjectSettings.h">
       <Filter>Source\Editor\Settings</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h">

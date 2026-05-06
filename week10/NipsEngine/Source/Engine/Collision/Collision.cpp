@@ -137,7 +137,7 @@ FCollisionResult FCollision::IntersectOBB(const FOBB& A, const FOBB& B)
         for (int j = 0; j < 3; j++)
         {
             R[i][j] = AAxis[i].DotProduct(BAxis[j]);
-            AbsR[i][j] = MathUtil::Abs(R[i][j]) + KINDA_SMALL_NUMBER;
+            AbsR[i][j] = MathUtil::Abs(R[i][j]) + static_cast<float>(KINDA_SMALL_NUMBER);
         }
 
     float MinPen = FLT_MAX; // 추가
