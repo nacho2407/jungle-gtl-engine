@@ -52,6 +52,8 @@ public:
 	//transition
     void SetViewTargetWithBlend(AActor* NewActor, const FCameraTransitionParams& Params);
     void SetCameraTransitionToTarget(AActor* NewActor, float Duration, const FString& BlendType);
+    void SetCameraTransitionToView(const FVector& Location, const FVector& Target, float FovDegrees, float Duration, const FString& BlendType);
+    void SetCameraViewImmediate(const FVector& Location, const FVector& Target, float FovDegrees);
 
 private:
     void CommitFade(const FCameraFadeParams& Params);
@@ -73,4 +75,6 @@ private:
 
 	FCameraViewInfo OldCameraViewInfoCache;
     FCameraTransitionState TransitionState;
+    bool bHasCameraViewOverride = false;
+    FCameraViewInfo CameraViewOverride;
 };

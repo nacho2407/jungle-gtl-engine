@@ -5,8 +5,6 @@ local CameraConfig = dofile("Asset/Content/Scripts/CameraConfig.lua")
 
 -- 줌 보간과 조준 회전 상태.
 local IsZooming = false
-local ZoomAlpha = 0.0
-local ZoomSpeed = 25.0
 local AimYaw = 0.0
 local AimPitch = 0.0
 local ZoomBaseForward = nil
@@ -24,6 +22,10 @@ local ZoomVignetteIntensity = 0.45
 local ZoomVignetteFadeTime = 0.12
 local ZoomVignetteRadius = 0.72
 local ZoomVignetteSoftness = 0.35
+local CameraTransitionDuration = 0.08
+local CameraTransitionBlendType = "Cubic"
+local LastCameraZooming = nil
+local CameraTransitionRemaining = 0.0
 
 local function playZoomVignette(fromIntensity, toIntensity)
     if World.PlayCameraVignette ~= nil then
@@ -238,12 +240,13 @@ function BeginPlay()
     -- Camera Actor가 시작될 때 Player를 찾아 캐싱한다.
     Player = World.FindPlayer();
     IsZooming = false
-    ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
     ZoomBaseForward = nil
     MouseZoomHeld = false
     GamepadZoomHeld = false
+    LastCameraZooming = nil
+    CameraTransitionRemaining = 0.0
     syncCameraState()
     createAim()
     setMouseCursorVisible(true)
@@ -252,12 +255,13 @@ end
 function EndPlay()
     -- World가 끝날 때 전역 카메라 상태와 조준선 참조를 정리한다.
     IsZooming = false
-    ZoomAlpha = 0.0
     AimYaw = 0.0
     AimPitch = 0.0
     ZoomBaseForward = nil
     MouseZoomHeld = false
     GamepadZoomHeld = false
+    LastCameraZooming = nil
+    CameraTransitionRemaining = 0.0
     syncCameraState()
 
     AimActor = nil
@@ -277,10 +281,6 @@ function Tick(dt)
     end
 
     updateGamepadZoomInput()
-
-    local TargetZoomAlpha = IsZooming and 1.0 or 0.0
-    -- ZoomAlpha는 0=쿼터뷰, 1=줌뷰이며 dt 기반으로 부드럽게 따라간다.
-    ZoomAlpha = ZoomAlpha + (TargetZoomAlpha - ZoomAlpha) * math.min(dt * ZoomSpeed, 1.0)
 
     local PlayerPos = Player.Location
     local Forward = getPlayerForward()
@@ -332,13 +332,23 @@ function Tick(dt)
         LookAtLocation = ZoomLookAtLocation
     end
 
-    -- 최종 카메라는 Normal/Zoom 위치를 ZoomAlpha로 보간한 값이다.
-    CameraLocation = NormalCameraLocation + (ZoomCameraLocation - NormalCameraLocation) * ZoomAlpha
-    LookAtLocation = NormalLookAtLocation + (ZoomLookAtLocation - NormalLookAtLocation) * ZoomAlpha
-    local Fov = 60.0 + (60.0 - 60.0) * ZoomAlpha
+    local Fov = 60.0
 
     syncCameraState(ZoomCameraLocation, ZoomLookAtLocation)
-    --World.SetCameraView(CameraLocation,LookAtLocation,Fov)
+    local CameraModeChanged = LastCameraZooming == nil or LastCameraZooming ~= IsZooming
+    if CameraModeChanged then
+        LastCameraZooming = IsZooming
+        CameraTransitionRemaining = CameraTransitionDuration
+    end
+
+    if CameraTransitionRemaining > 0.0 and World.SetCameraViewWithBlend ~= nil then
+        World.SetCameraViewWithBlend(CameraLocation, LookAtLocation, Fov, CameraTransitionDuration, CameraTransitionBlendType)
+        CameraTransitionRemaining = math.max(CameraTransitionRemaining - dt, 0.0)
+    elseif World.SetCameraViewImmediate ~= nil then
+        World.SetCameraViewImmediate(CameraLocation, LookAtLocation, Fov)
+    elseif World.SetCameraViewWithBlend ~= nil then
+        World.SetCameraViewWithBlend(CameraLocation, LookAtLocation, Fov, 0.0, CameraTransitionBlendType)
+    end
 end
 
 function OnMouseButtonPressed(button)

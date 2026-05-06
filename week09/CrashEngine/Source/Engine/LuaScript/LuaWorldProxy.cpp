@@ -72,6 +72,53 @@ APlayerCameraManager* GetPlayerCameraManager(UWorld* World)
     return PlayerController->GetCameraManager();
 }
 
+bool GetLuaCameraViewInfo(UWorld* World, FCameraViewInfo& OutCameraViewInfo)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(World))
+    {
+        OutCameraViewInfo = CameraManager->GetCameraViewInfoCache();
+        return true;
+    }
+
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    if (!Camera)
+    {
+        return false;
+    }
+
+    OutCameraViewInfo.Location = Camera->GetWorldLocation();
+    OutCameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
+    OutCameraViewInfo.CameraState = Camera->GetCameraState();
+    OutCameraViewInfo.ScreenEffects = FCameraScreenEffectInfo{};
+    return true;
+}
+
+FMatrix MakeLuaCameraViewMatrix(const FCameraViewInfo& CameraViewInfo)
+{
+    const FVector F = CameraViewInfo.Rotation.GetForwardVector();
+    const FVector R = CameraViewInfo.Rotation.GetRightVector();
+    const FVector U = CameraViewInfo.Rotation.GetUpVector();
+    const FVector E = CameraViewInfo.Location;
+
+    return FMatrix(
+        R.X, U.X, F.X, 0,
+        R.Y, U.Y, F.Y, 0,
+        R.Z, U.Z, F.Z, 0,
+        -E.Dot(R), -E.Dot(U), -E.Dot(F), 1);
+}
+
+FMatrix MakeLuaCameraProjectionMatrix(const FCameraState& CameraState)
+{
+    if (!CameraState.bIsOrthogonal)
+    {
+        return FMatrix::MakePerspective(CameraState.FOV, CameraState.AspectRatio, CameraState.NearZ, CameraState.FarZ);
+    }
+
+    const float Width = CameraState.OrthoWidth;
+    const float Height = Width / CameraState.AspectRatio;
+    return FMatrix::MakeOrthographic(Width, Height, CameraState.NearZ, CameraState.FarZ);
+}
+
 } // namespace
 
 void FLuaWorldProxy::SetWorld(UWorld* InWorld)
@@ -220,11 +267,42 @@ bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target
     return true;
 }
 
+bool FLuaWorldProxy::SetCameraViewWithBlend(const FVector& Location, const FVector& Target, float FovDegrees, float Duration, const FString& BlendType)
+{
+    UWorld* World = ResolveWorld();
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+
+    if (!CameraManager)
+    {
+        return false;
+    }
+
+    CameraManager->SetCameraTransitionToView(Location, Target, FovDegrees, Duration, BlendType);
+    return true;
+}
+
+bool FLuaWorldProxy::SetCameraViewImmediate(const FVector& Location, const FVector& Target, float FovDegrees)
+{
+    UWorld* World = ResolveWorld();
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+
+    if (!CameraManager)
+    {
+        return false;
+    }
+
+    CameraManager->SetCameraViewImmediate(Location, Target, FovDegrees);
+    return true;
+}
+
 bool FLuaWorldProxy::SetCameraTransitionToTarget(const FLuaGameObjectProxy& ActorProxy, float Duration, const FString& BlendType)
 {
     UWorld* World = ResolveWorld();
     AActor* Actor = ActorProxy.GetActor();
-    APlayerCameraManager* CameraManager = World->GetFirstPlayerController()->GetCameraManager();
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
 
     if (!World || !Actor || Actor->GetWorld() != World || !CameraManager)
     {
@@ -253,40 +331,53 @@ bool FLuaWorldProxy::MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, c
 FVector FLuaWorldProxy::GetActiveCameraForward() const
 {
     UWorld* World = ResolveWorld();
-    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
-    return Camera ? Camera->GetForwardVector() : FVector(1.0f, 0.0f, 0.0f);
+    FCameraViewInfo CameraViewInfo;
+    return GetLuaCameraViewInfo(World, CameraViewInfo) ? CameraViewInfo.Rotation.GetForwardVector() : FVector(1.0f, 0.0f, 0.0f);
 }
 
 FVector FLuaWorldProxy::GetActiveCameraRight() const
 {
     UWorld* World = ResolveWorld();
-    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
-    return Camera ? Camera->GetRightVector() : FVector(0.0f, 1.0f, 0.0f);
+    FCameraViewInfo CameraViewInfo;
+    return GetLuaCameraViewInfo(World, CameraViewInfo) ? CameraViewInfo.Rotation.GetRightVector() : FVector(0.0f, 1.0f, 0.0f);
 }
 
 FVector FLuaWorldProxy::GetActiveCameraUp() const
 {
     UWorld* World = ResolveWorld();
-    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
-    return Camera ? Camera->GetUpVector() : FVector(0.0f, 0.0f, 1.0f);
+    FCameraViewInfo CameraViewInfo;
+    return GetLuaCameraViewInfo(World, CameraViewInfo) ? CameraViewInfo.Rotation.GetUpVector() : FVector(0.0f, 0.0f, 1.0f);
 }
 
 FVector FLuaWorldProxy::GetMouseWorldPointOnPlane(float PlaneZ) const
 {
     UWorld* World = ResolveWorld();
-    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    FCameraViewInfo CameraViewInfo;
     FWindowsWindow* Window = GEngine ? GEngine->GetWindow() : nullptr;
-    if (!Camera || !Window || Window->GetWidth() <= 0.0f || Window->GetHeight() <= 0.0f)
+    if (!GetLuaCameraViewInfo(World, CameraViewInfo) || !Window || Window->GetWidth() <= 0.0f || Window->GetHeight() <= 0.0f)
     {
         return FVector::ZeroVector;
     }
 
     POINT MouseClientPos = Window->ScreenToClientPoint(InputSystem::Get().GetSnapshot().MouseScreenPos);
-    FRay MouseRay = Camera->DeprojectScreenToWorld(
-        static_cast<float>(MouseClientPos.x),
-        static_cast<float>(MouseClientPos.y),
-        Window->GetWidth(),
-        Window->GetHeight());
+    const float NdcX = (2.0f * static_cast<float>(MouseClientPos.x)) / Window->GetWidth() - 1.0f;
+    const float NdcY = 1.0f - (2.0f * static_cast<float>(MouseClientPos.y)) / Window->GetHeight();
+
+    const FVector NdcNear(NdcX, NdcY, 1.0f);
+    const FVector NdcFar(NdcX, NdcY, 0.0f);
+
+    const FMatrix ViewProjection = MakeLuaCameraViewMatrix(CameraViewInfo) * MakeLuaCameraProjectionMatrix(CameraViewInfo.CameraState);
+    const FMatrix InverseViewProjection = ViewProjection.GetInverse();
+
+    const FVector WorldNear = InverseViewProjection.TransformPositionWithW(NdcNear);
+    const FVector WorldFar = InverseViewProjection.TransformPositionWithW(NdcFar);
+
+    FRay MouseRay;
+    MouseRay.Origin = WorldNear;
+
+    FVector RayDirection = WorldFar - WorldNear;
+    const float RayLength = std::sqrt(RayDirection.X * RayDirection.X + RayDirection.Y * RayDirection.Y + RayDirection.Z * RayDirection.Z);
+    MouseRay.Direction = RayLength > 0.0001f ? RayDirection / RayLength : FVector(1.0f, 0.0f, 0.0f);
 
     if (std::abs(MouseRay.Direction.Z) < 0.0001f)
     {

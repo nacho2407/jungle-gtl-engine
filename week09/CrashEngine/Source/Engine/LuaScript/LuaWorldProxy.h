@@ -24,6 +24,8 @@ public:
     FLuaGameObjectProxy FindActorByTag(const FString& Tag);
     TArray<FLuaGameObjectProxy> FindActorsByTag(const FString& Tag);
     bool SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees);
+    bool SetCameraViewWithBlend(const FVector& Location, const FVector& Target, float FovDegrees, float Duration, const FString& BlendType);
+    bool SetCameraViewImmediate(const FVector& Location, const FVector& Target, float FovDegrees);
     bool SetCameraTransitionToTarget(const FLuaGameObjectProxy& ActorProxy, float Duration, const FString& BlendType);
     bool MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, const FVector& Delta, const FString& BlockingTag);
     FVector GetActiveCameraForward() const;

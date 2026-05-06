@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
@@ -55,6 +56,40 @@ ECameraTransitionBlendType ParseCameraTransitionBlendType(const FString& BlendTy
 
     return ECameraTransitionBlendType::Cubic;
 }
+
+FRotator MakeLookAtRotation(const FVector& Location, const FVector& Target)
+{
+    FVector Direction = Target - Location;
+    if (Direction.LengthSquared() <= 0.0001f)
+    {
+        return FRotator{};
+    }
+
+    Direction = Direction.Normalized();
+
+    constexpr float Rad2Deg = 180.0f / 3.14159265358979f;
+
+    FRotator Rotation = {};
+    Rotation.Pitch = -asinf(Direction.Z) * Rad2Deg;
+    Rotation.Roll = 0.0f;
+
+    if (fabsf(Direction.Z) < 0.999f)
+    {
+        Rotation.Yaw = atan2f(Direction.Y, Direction.X) * Rad2Deg;
+    }
+
+    return Rotation;
+}
+
+FCameraViewInfo MakeCameraViewInfo(const FCameraViewInfo& CurrentViewInfo, const FVector& Location, const FVector& Target, float FovDegrees, const FCameraScreenEffectInfo& ScreenEffects)
+{
+    FCameraViewInfo NewCameraViewInfo = CurrentViewInfo;
+    NewCameraViewInfo.Location = Location;
+    NewCameraViewInfo.Rotation = MakeLookAtRotation(Location, Target);
+    NewCameraViewInfo.CameraState.FOV = FovDegrees * DEG_TO_RAD;
+    NewCameraViewInfo.ScreenEffects = ScreenEffects;
+    return NewCameraViewInfo;
+}
 } // namespace
 
 APlayerCameraManager::APlayerCameraManager()
@@ -67,9 +102,11 @@ void APlayerCameraManager::SetViewTarget(AActor* NewActor)
     if (!NewActor)
     {
         ViewTarget = FViewTarget{};
+        bHasCameraViewOverride = false;
         return;
     }
 
+    bHasCameraViewOverride = false;
     ViewTarget.TargetActor = NewActor;
     ViewTarget.POVCamera = nullptr;
 
@@ -102,6 +139,11 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
         CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
         CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
         CameraViewInfoCache.CameraState = FCameraState{};
+    }
+    if (bHasCameraViewOverride && !TransitionState.bActive)
+    {
+        CameraViewInfoCache = CameraViewOverride;
+        CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
     }
 
     std::sort(ModifierList.begin(), ModifierList.end(), [](const UCameraModifier* Lhs, const UCameraModifier* Rhs)
@@ -345,25 +387,21 @@ void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewActor, const FCamer
     }
 
     FCameraViewInfo NewCameraViewInfo = {};
-    NewCameraViewInfo.Location = NewActor->GetActorLocation();
-    NewCameraViewInfo.Rotation = NewActor->GetActorRotation();
 
     OldCameraViewInfoCache = CameraViewInfoCache;
     SetViewTarget(NewActor);
-    if (ViewTarget.POVCamera != nullptr) // fallback용
+    bHasCameraViewOverride = false;
+    if (ViewTarget.POVCamera != nullptr)
     {
+        NewCameraViewInfo.Location = ViewTarget.POVCamera->GetWorldLocation();
+        NewCameraViewInfo.Rotation = ViewTarget.POVCamera->GetWorldMatrix().ToRotator();
         NewCameraViewInfo.CameraState = ViewTarget.POVCamera->GetCameraState();
     }
-    for (auto comp : NewActor->GetComponents())
+    else
     {
-        if (comp->IsA<UCameraComponent>())
-        {
-            if (UCameraComponent* Camera = Cast<UCameraComponent>(comp))
-            {
-                NewCameraViewInfo.CameraState = Camera->GetCameraState();
-                break;
-            }
-        }
+        NewCameraViewInfo.Location = NewActor->GetActorLocation();
+        NewCameraViewInfo.Rotation = NewActor->GetActorRotation();
+        NewCameraViewInfo.CameraState = FCameraState{};
     }
     NewCameraViewInfo.ScreenEffects = BaseScreenEffects;
 
@@ -382,6 +420,43 @@ void APlayerCameraManager::SetCameraTransitionToTarget(AActor* NewActor, float D
     Params.BlendType = ParseCameraTransitionBlendType(BlendType);
 
     SetViewTargetWithBlend(NewActor, Params);
+}
+
+void APlayerCameraManager::SetCameraTransitionToView(const FVector& Location, const FVector& Target, float FovDegrees, float Duration, const FString& BlendType)
+{
+    FCameraViewInfo NewCameraViewInfo = MakeCameraViewInfo(CameraViewInfoCache, Location, Target, FovDegrees, BaseScreenEffects);
+    CameraViewOverride = NewCameraViewInfo;
+    bHasCameraViewOverride = true;
+
+    if (TransitionState.bActive)
+    {
+        TransitionState.ToView = NewCameraViewInfo;
+        return;
+    }
+
+    if (Duration <= 0.0f)
+    {
+        CameraViewInfoCache = NewCameraViewInfo;
+        TransitionState.bActive = false;
+        return;
+    }
+
+    OldCameraViewInfoCache = CameraViewInfoCache;
+
+    TransitionState.bActive = true;
+    TransitionState.FromView = CameraViewInfoCache;
+    TransitionState.ToView = NewCameraViewInfo;
+    TransitionState.Duration = Duration;
+    TransitionState.ElapsedTime = 0.0f;
+    TransitionState.BlendType = ParseCameraTransitionBlendType(BlendType);
+}
+
+void APlayerCameraManager::SetCameraViewImmediate(const FVector& Location, const FVector& Target, float FovDegrees)
+{
+    CameraViewOverride = MakeCameraViewInfo(CameraViewInfoCache, Location, Target, FovDegrees, BaseScreenEffects);
+    CameraViewInfoCache = CameraViewOverride;
+    bHasCameraViewOverride = true;
+    TransitionState.bActive = false;
 }
 
 void APlayerCameraManager::UpdateTransition(float DeltaTime)
