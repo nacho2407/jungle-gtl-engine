@@ -129,6 +129,14 @@ namespace
 		return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
 	}
 
+	bool IsSerializedMaterialAssetPath(const FString& Path)
+	{
+		std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
+		std::wstring Extension = FsPath.extension().wstring();
+		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+		return Extension == L".mat" || Extension == L".matinst";
+	}
+
 	FString ResolveObjMaterialLibraryPath(const FString& ObjPath)
 	{
 		std::filesystem::path AbsoluteObjPath(FPaths::ToAbsolute(FPaths::ToWide(FPaths::Normalize(ObjPath))));
@@ -356,9 +364,6 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		return;
 	}
 
-	TArray<FString> MaterialFiles;
-	TArray<FString> MaterialInstanceFiles;
-
 	for (const auto& Entry : fs::recursive_directory_iterator(RootPath))
 	{
 		if (!Entry.is_regular_file())
@@ -394,18 +399,15 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		}
 		else if (Extension == L".mtl")
 		{
-			// TODO: 현재는 임의로 static mesh shader로 로드하도록 설정
 			MaterialFilePaths.push_back(RelativePath);
-			LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 		}
 		else if (Extension == L".mat")
 		{
 			MaterialFilePaths.push_back(RelativePath);
-			MaterialFiles.push_back(RelativePath);
 		}
 		else if (Extension == L".matinst")
 		{
-			MaterialInstanceFiles.push_back(RelativePath);
+			MaterialFilePaths.push_back(RelativePath);
 		}
 		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
 		{
@@ -424,7 +426,6 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			else if (Meta.Type == EAssetMetaType::Texture)
 			{
 				TextureFilePaths.push_back(RelativePath);
-				LoadTexture(RelativePath, CachedDevice.Get());
 			}
 			//else
 			//{
@@ -432,18 +433,6 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			//}
 		}
 	}
-
-	for (const FString& MaterialPath : MaterialFiles)
-	{
-		DeserializeMaterial(MaterialPath);
-	}
-
-	for (const FString& MaterialInstancePath : MaterialInstanceFiles)
-	{
-		DeserializeMaterial(MaterialInstancePath);
-	}
-
-	//	TODO : Material, Texture Load
 
 	PreloadStaticMeshes();
 
@@ -518,16 +507,14 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 			else if (Extension == L".mtl")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-				LoadMaterial(RelativePath, "Shaders/UberLit.hlsl", CachedDevice.Get());
 			}
 			else if (Extension == L".mat")
 			{
 				MaterialFilePaths.push_back(RelativePath);
-				DeserializeMaterial(RelativePath);
 			}
 			else if (Extension == L".matinst")
 			{
-				DeserializeMaterial(RelativePath);
+				MaterialFilePaths.push_back(RelativePath);
 			}
 			else if (
 				Extension == L".png" ||
@@ -550,7 +537,6 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 				else if (Meta.Type == EAssetMetaType::Texture)
 				{
 					TextureFilePaths.push_back(RelativePath);
-					LoadTexture(RelativePath, CachedDevice.Get());
 				}
 				//else
 				//{
@@ -1089,7 +1075,8 @@ TArray<FString> FResourceManager::GetMaterialNames() const
 TArray<FString> FResourceManager::GetMaterialInterfaceNames() const
 {
 	TArray<FString> Names;
-	Names.reserve(Materials.size() + MaterialInstances.size());
+	Names.reserve(Materials.size() + MaterialInstances.size() + MaterialFilePaths.size());
+	std::unordered_set<FString> SeenNames;
 	std::unordered_set<const UMaterial*> SeenMaterials;
 	for (const auto& [Name, Mat] : Materials)
 	{
@@ -1097,14 +1084,30 @@ TArray<FString> FResourceManager::GetMaterialInterfaceNames() const
 		{
 			const std::filesystem::path FilePath(FPaths::ToWide(Mat->GetFilePath()));
 			const bool bFileBackedMaterial = FilePath.extension() == L".mat";
-			Names.push_back(bFileBackedMaterial ? FPaths::Normalize(Mat->GetFilePath()) : Name);
+			const FString DisplayName = bFileBackedMaterial ? FPaths::Normalize(Mat->GetFilePath()) : Name;
+			if (SeenNames.insert(DisplayName).second)
+			{
+				Names.push_back(DisplayName);
+			}
 		}
 	}
 	for (const auto& [Path, MatInst] : MaterialInstances)
 	{
 		if (MatInst)
 		{
-			Names.push_back(FPaths::Normalize(MatInst->GetFilePath().empty() ? Path : MatInst->GetFilePath()));
+			const FString DisplayName = FPaths::Normalize(MatInst->GetFilePath().empty() ? Path : MatInst->GetFilePath());
+			if (SeenNames.insert(DisplayName).second)
+			{
+				Names.push_back(DisplayName);
+			}
+		}
+	}
+	for (const FString& Path : MaterialFilePaths)
+	{
+		const FString NormalizedPath = FPaths::Normalize(Path);
+		if (IsSerializedMaterialAssetPath(NormalizedPath) && SeenNames.insert(NormalizedPath).second)
+		{
+			Names.push_back(NormalizedPath);
 		}
 	}
 	return Names;
@@ -1421,7 +1424,7 @@ UMaterialInstance* FResourceManager::GetMaterialInstance(const FString& Path) co
 	return (It != MaterialInstances.end()) ? It->second : nullptr;
 }
 
-UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name) const
+UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name)
 {
 	UMaterial* Mat = GetMaterial(Name);
 	if (Mat)
@@ -1436,7 +1439,28 @@ UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name) 
 	{
 		return MatInst;
     }
-    return GetMaterialInstance(FPaths::Normalize(Name));
+	if (UMaterialInstance* MatInst = GetMaterialInstance(FPaths::Normalize(Name)))
+	{
+		return MatInst;
+	}
+
+	const FString NormalizedName = FPaths::Normalize(Name);
+	if (IsSerializedMaterialAssetPath(NormalizedName) && RuntimeFileExists(NormalizedName))
+	{
+		if (DeserializeMaterial(NormalizedName))
+		{
+			if (UMaterial* LoadedMat = GetMaterial(NormalizedName))
+			{
+				return LoadedMat;
+			}
+			if (UMaterialInstance* LoadedMatInst = GetMaterialInstance(NormalizedName))
+			{
+				return LoadedMatInst;
+			}
+		}
+	}
+
+    return nullptr;
 }
 
 bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMaterial* Material)
@@ -1665,6 +1689,17 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 		if (!ParentMat)
 		{
 			ParentMat = GetMaterial(FPaths::Normalize(ParentIdentifier));
+		}
+
+		const FString NormalizedParentIdentifier = FPaths::Normalize(ParentIdentifier);
+		if (!ParentMat && IsSerializedMaterialAssetPath(NormalizedParentIdentifier) && RuntimeFileExists(NormalizedParentIdentifier))
+		{
+			DeserializeMaterial(NormalizedParentIdentifier);
+			ParentMat = GetMaterial(NormalizedParentIdentifier);
+			if (!ParentMat)
+			{
+				ParentMat = GetMaterial(ParentIdentifier);
+			}
 		}
 
 		if (!ParentMat)
