@@ -4,6 +4,8 @@
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 
+class UCameraShakeAsset;
+
 // ============================================================
 // UWaveOscillatorCameraShake — sin 기반 데이터 셰이크.
 //
@@ -33,6 +35,8 @@ public:
 	void UpdateAndApplyCameraShake(float DeltaTime, FCameraShakeUpdateResult& OutResult) override;
 
 	void StopShake(bool bImmediately = true) override;
+
+	void ApplyAsset(const UCameraShakeAsset* ShakeAsset);
 
 	// ─── 튜닝 파라미터 ─────────────────────────────────────────────
 	// Duration / Blend

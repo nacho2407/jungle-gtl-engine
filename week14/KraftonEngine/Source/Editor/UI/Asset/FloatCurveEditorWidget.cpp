@@ -251,6 +251,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 		if (ImGui::IsMouseReleased(0) && SelectedKeyIndex != -1)
 		{
 			Curve.SortKeys();
+			Curve.AutoSetTangents();
 			bDraggingSelectedKey = false;
 		}
 		else if (ImGui::IsMouseReleased(0))
@@ -304,6 +305,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 				NewKey.Value = NewValue;
 				Curve.Keys.push_back(NewKey);
 				Curve.SortKeys();
+				Curve.AutoSetTangents();
 				bChanged = true;
 			}
 			ImGui::EndPopup();
@@ -345,11 +347,56 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			ViewMaxValue = (std::max)(ViewMaxValue, ViewMinValue + TimeEpsilon);
 		}
 
+
 		ImGui::Separator();
 		if (SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 		{
 			FCurveKey& Key = Curve.Keys[SelectedKeyIndex];
+
 			ImGui::Text("Selected Key: %d", SelectedKeyIndex);
+
+			const char* InterpModeLabels[] = { "Constant", "Linear", "Cubic" };
+			int32 CurrentInterpMode = static_cast<int32>(Key.InterpMode);
+			if (ImGui::Combo("Interpolation Mode", &CurrentInterpMode, InterpModeLabels, IM_ARRAYSIZE(InterpModeLabels)))
+			{
+				Key.InterpMode = static_cast<ECurveInterpMode>(CurrentInterpMode);
+
+				if (Key.InterpMode == ECurveInterpMode::Cubic)
+				{
+					Key.TangentMode = ECurveTangentMode::Auto;
+					Curve.AutoSetTangents();
+				}
+
+				bChanged = true;
+			}
+
+			const char* TangentModeLabels[] = { "Auto", "User", "Break" };
+			int32 CurrentTangentMode = static_cast<int32>(Key.TangentMode);
+			if (ImGui::Combo("Tangent Mode", &CurrentTangentMode, TangentModeLabels, IM_ARRAYSIZE(TangentModeLabels)))
+			{
+				Key.TangentMode = static_cast<ECurveTangentMode>(CurrentTangentMode);
+
+				if (Key.TangentMode == ECurveTangentMode::Auto)
+				{
+					Curve.AutoSetTangents();
+				}
+
+				bChanged = true;
+			}
+
+			if (Key.TangentMode != ECurveTangentMode::Auto)
+			{
+				if (ImGui::DragFloat("Arrive Tangent", &Key.ArriveTangent, 0.01f))
+				{
+					bChanged = true;
+				}
+
+				if (ImGui::DragFloat("Leave Tangent", &Key.LeaveTangent, 0.01f))
+				{
+					bChanged = true;
+				}
+			}
+
 			if (ImGui::DragFloat("Time", &Key.Time, 0.01f))
 			{
 				if (SelectedKeyIndex > 0)
@@ -361,6 +408,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 					Key.Time = (std::min)(Key.Time, Curve.Keys[SelectedKeyIndex + 1].Time - TimeEpsilon);
 				}
 				Curve.SortKeys();
+				Curve.AutoSetTangents();
 				bChanged = true;
 			}
 			if (ImGui::DragFloat("Value", &Key.Value, 0.01f))

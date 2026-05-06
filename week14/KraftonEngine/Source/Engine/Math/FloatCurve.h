@@ -16,6 +16,13 @@ enum class ECurveExtrapMode : uint8
 	Loop,
 };
 
+enum class ECurveTangentMode : uint8
+{
+	Auto,
+	User,
+	Break,
+};
+
 struct FCurveKey
 {
 	float Time;
@@ -25,6 +32,7 @@ struct FCurveKey
 	float LeaveTangent = 0.0f;
 
 	ECurveInterpMode InterpMode = ECurveInterpMode::Linear;
+	ECurveTangentMode TangentMode = ECurveTangentMode::Auto;
 };
 
 struct FFloatCurve
@@ -41,6 +49,7 @@ struct FFloatCurve
 
 	void AddKey(float Time, float Value, ECurveInterpMode InterpMode = ECurveInterpMode::Linear);
 	void SortKeys();
+	void AutoSetTangents();
 
 	float Evaluate(float Time) const;
 

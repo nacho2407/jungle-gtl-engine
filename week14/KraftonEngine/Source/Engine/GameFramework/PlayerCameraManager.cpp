@@ -1,6 +1,10 @@
 ﻿#include "PlayerCameraManager.h"
+#include "CameraShake/CameraShakeAsset.h"
+#include "CameraShake/CameraShakeManager.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/CameraShakeBase.h"
+#include "GameFramework/SequenceCameraShake.h"
+#include "GameFramework/WaveOscillatorCameraShake.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include <algorithm>
@@ -216,6 +220,52 @@ UCameraShakeBase* APlayerCameraManager::StartCameraShake(
 	Shake->StartShake(this, Scale, PlaySpace, UserPlaySpaceRot);
 	ActiveShakes.push_back(Shake);
 	return Shake;
+}
+
+UCameraShakeBase* APlayerCameraManager::StartCameraShakeAsset(
+	UCameraShakeAsset* ShakeAsset,
+	float Scale,
+	ECameraShakePlaySpace PlaySpace,
+	FRotator UserPlaySpaceRot)
+{
+	if (!ShakeAsset)
+	{
+		return nullptr;
+	}
+
+	switch (ShakeAsset->ShakeType)
+	{
+	case ECameraShakeType::Sequence:
+	{
+		USequenceCameraShake* Shake = StartCameraShake<USequenceCameraShake>(Scale, PlaySpace, UserPlaySpaceRot);
+		if (Shake)
+		{
+			Shake->ApplyAsset(ShakeAsset);
+		}
+		return Shake;
+	}
+	case ECameraShakeType::WaveOscillator:
+	{
+		UWaveOscillatorCameraShake* Shake = StartCameraShake<UWaveOscillatorCameraShake>(Scale, PlaySpace, UserPlaySpaceRot);
+		if (Shake)
+		{
+			Shake->ApplyAsset(ShakeAsset);
+		}
+		return Shake;
+	}
+	default:
+		return nullptr;
+	}
+}
+
+UCameraShakeBase* APlayerCameraManager::StartCameraShakeAsset(
+	const FString& ShakeAssetPath,
+	float Scale,
+	ECameraShakePlaySpace PlaySpace,
+	FRotator UserPlaySpaceRot)
+{
+	UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(ShakeAssetPath);
+	return StartCameraShakeAsset(ShakeAsset, Scale, PlaySpace, UserPlaySpaceRot);
 }
 
 void APlayerCameraManager::StopCameraShake(UCameraShakeBase* ShakeInstance, bool bImmediately)

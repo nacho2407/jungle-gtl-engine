@@ -638,6 +638,16 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			Manager->StartCameraShake<USequenceCameraShake>(Scale.value_or(1.0f));
 		}
 	});
+	CameraManager.set_function("StartCameraShakeAsset", [](const FString& AssetPath, sol::optional<float> Scale)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->StartCameraShakeAsset(AssetPath, Scale.value_or(1.0f));
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)

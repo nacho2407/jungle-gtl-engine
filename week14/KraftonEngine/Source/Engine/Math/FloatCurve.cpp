@@ -32,6 +32,38 @@ void FFloatCurve::SortKeys()
 	});
 }
 
+void FFloatCurve::AutoSetTangents()
+{
+	for (int32 i = 0; i < (int32)Keys.size(); ++i)
+	{
+		if (Keys[i].TangentMode == ECurveTangentMode::Auto)
+		{
+			const bool bHasPrev = i > 0;
+			const bool bHasNext = i + 1 < static_cast<int32>(Keys.size());
+
+			float Slope = 0.0f;
+			if (bHasPrev && bHasNext)
+			{
+				const float Dt = Keys[i + 1].Time - Keys[i - 1].Time;
+				Slope = fabsf(Dt) < 1e-6f ? 0.0f : (Keys[i + 1].Value - Keys[i - 1].Value) / Dt;
+			}
+			else if (bHasNext)
+			{
+				const float Dt = Keys[i + 1].Time - Keys[i].Time;
+				Slope = fabsf(Dt) < 1e-6f ? 0.0f : (Keys[i + 1].Value - Keys[i].Value) / Dt;
+			}
+			else if (bHasPrev)
+			{
+				const float Dt = Keys[i].Time - Keys[i - 1].Time;
+				Slope = fabsf(Dt) < 1e-6f ? 0.0f : (Keys[i].Value - Keys[i - 1].Value) / Dt;
+			}
+
+			Keys[i].ArriveTangent = Slope;
+			Keys[i].LeaveTangent = Slope;
+		}
+	}
+}
+
 float FFloatCurve::Evaluate(float Time) const
 {
 	if (Keys.empty())

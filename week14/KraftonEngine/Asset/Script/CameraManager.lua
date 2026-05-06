@@ -17,6 +17,10 @@ function Tick(dt)
         CameraManager.ToggleOwnerCamera(obj, 0.6)
     end
 
+    if Input.GetKeyDown(Key.F1) then
+        CameraManager.StartCameraShakeAsset("Asset/Test.shake", 1.0)
+    end
+
     if car == nil then
         return
     end

@@ -2,6 +2,7 @@
 #include "CameraShakeBase.h"
 
 class UFloatCurveAsset;
+class UCameraShakeAsset;
 
 class USequenceCameraShake : public UCameraShakeBase
 {
@@ -20,6 +21,8 @@ public:
 	void UpdateAndApplyCameraShake(float DeltaTime, FCameraShakeUpdateResult& OutResult) override;
 
 	void StopShake(bool bImmediately = true) override;
+
+	void ApplyAsset(const UCameraShakeAsset* ShakeAsset);
 
 	float Duration = 0.5f;
 	float BlendInTime = 0.05f;

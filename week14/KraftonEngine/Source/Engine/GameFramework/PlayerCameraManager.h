@@ -7,6 +7,7 @@
 #include "Render/Types/MinimalViewInfo.h"
 
 class UCameraComponent;
+class UCameraShakeAsset;
 class UCameraShakeBase;
 class UClass;
 
@@ -56,6 +57,18 @@ public:
 	// UE: APlayerCameraManager::StartCameraShake
 	virtual UCameraShakeBase* StartCameraShake(
 		UClass* ShakeClass,
+		float Scale = 1.0f,
+		ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal,
+		FRotator UserPlaySpaceRot = FRotator());
+
+	virtual UCameraShakeBase* StartCameraShakeAsset(
+		UCameraShakeAsset* ShakeAsset,
+		float Scale = 1.0f,
+		ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal,
+		FRotator UserPlaySpaceRot = FRotator());
+
+	virtual UCameraShakeBase* StartCameraShakeAsset(
+		const FString& ShakeAssetPath,
 		float Scale = 1.0f,
 		ECameraShakePlaySpace PlaySpace = ECameraShakePlaySpace::CameraLocal,
 		FRotator UserPlaySpaceRot = FRotator());

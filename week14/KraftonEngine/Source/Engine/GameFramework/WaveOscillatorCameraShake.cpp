@@ -1,4 +1,5 @@
 #include "GameFramework/WaveOscillatorCameraShake.h"
+#include "CameraShake/CameraShakeAsset.h"
 #include "Object/ObjectFactory.h"
 #include <cmath>
 #include <cstdlib>
@@ -30,6 +31,28 @@ void UWaveOscillatorCameraShake::StartShake(
 	LocPhase  = FVector(RandPhase(), RandPhase(), RandPhase());
 	RotPhase  = FRotator(RandPhase(), RandPhase(), RandPhase());
 	FOVPhase  = RandPhase();
+}
+
+void UWaveOscillatorCameraShake::ApplyAsset(const UCameraShakeAsset* ShakeAsset)
+{
+	if (!ShakeAsset)
+	{
+		return;
+	}
+
+	Duration = ShakeAsset->Duration;
+	BlendInTime = ShakeAsset->BlendInTime;
+	BlendOutTime = ShakeAsset->BlendOutTime;
+	bSingleInstance = ShakeAsset->bSingleInstance;
+
+	LocAmplitude = ShakeAsset->WaveOscillator.LocationAmplitude;
+	LocFrequency = ShakeAsset->WaveOscillator.LocationFrequency;
+
+	RotAmplitude = ShakeAsset->WaveOscillator.RotationAmplitude;
+	RotFrequency = ShakeAsset->WaveOscillator.RotationFrequency;
+
+	FOVAmplitude = ShakeAsset->WaveOscillator.FOVAmplitude;
+	FOVFrequency = ShakeAsset->WaveOscillator.FOVFrequency;
 }
 
 void UWaveOscillatorCameraShake::UpdateAndApplyCameraShake(float DeltaTime, FCameraShakeUpdateResult& OutResult)
