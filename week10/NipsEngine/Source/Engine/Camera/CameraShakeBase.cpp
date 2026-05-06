@@ -4,6 +4,9 @@ DEFINE_CLASS(UPerlinCameraShakePattern, UCameraShakePattern)
 DEFINE_CLASS(UCameraShakePattern, UObject)
 DEFINE_CLASS(UCameraShakeBase, UObject)
 
+REGISTER_FACTORY(UPerlinCameraShakePattern)
+REGISTER_FACTORY(UCameraShakePattern)
+
 void FCameraShakeState::Start(const UCameraShakePattern* Pattern, const FCameraShakeStartParams& Params)
 {
     ElapsedTime = 0.0f;

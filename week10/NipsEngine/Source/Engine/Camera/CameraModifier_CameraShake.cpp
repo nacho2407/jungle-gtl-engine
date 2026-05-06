@@ -12,7 +12,26 @@ UCameraModifier_CameraShake::~UCameraModifier_CameraShake()
     StopAllCameraShakes(true);
 }
 
-UCameraShakeBase* UCameraModifier_CameraShake::StartCameraShakeWithPattern(
+
+UCameraShakeBase* UCameraModifier_CameraShake::AddCameraShakeWithPatternTypeName(const FString& PatternClassName, float Scale, float DurationOverride)
+{
+    UObject* Object = FObjectFactory::Get().Create(PatternClassName);
+
+    UCameraShakePattern* Pattern = Cast<UCameraShakePattern>(Object);
+    if (!Pattern)
+    {
+        if (Object)
+        {
+            UObjectManager::Get().DestroyObject(Object);
+        }
+
+        return nullptr;
+    }
+
+    return AddCameraShakeWithPattern(Pattern, Scale, DurationOverride);
+}
+
+UCameraShakeBase* UCameraModifier_CameraShake::AddCameraShakeWithPattern(
     UCameraShakePattern* Pattern,
     float Scale,
     float DurationOverride)

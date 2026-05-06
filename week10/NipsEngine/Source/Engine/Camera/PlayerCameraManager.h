@@ -108,7 +108,24 @@ public:
             return nullptr;
         }
 
-        return Modifier->StartCameraShake<PatternType>(Scale, DurationOverride);
+        return Modifier->AddCameraShake<PatternType>(Scale, DurationOverride);
+    }
+
+    UCameraShakeBase* StartCameraShake(
+        const FString& PatternTypeName,
+        float Scale = 1.0f,
+        float DurationOverride = 0.0f)
+    {
+        UCameraModifier_CameraShake* Modifier = GetOrCreateCameraShakeModifier();
+        if (!Modifier)
+        {
+            return nullptr;
+        }
+
+        return Modifier->AddCameraShakeByPatternTypeName(
+            PatternTypeName,
+            Scale,
+            DurationOverride);
     }
 
     template <typename ModifierType>
