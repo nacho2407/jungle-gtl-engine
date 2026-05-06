@@ -795,7 +795,19 @@ function UIManager.IsFading()
     return fade.active
 end
 
-function UIManager.ShowCriticalWarning(title, description, duration, onComplete)
+-- styleClass 가 nil 이면 RCSS 기본값 그대로 (옛 호출 호환). nil 이 아니면 title/
+-- description 텍스트를 <span class='...'> 으로 감싸 RCSS 의 .mission / .success /
+-- .failure 클래스에 정의된 색상을 적용.
+-- 주의: SetInnerRML 사용이라 title/description 에 RML 메타문자 (< > &)가 들어오는
+-- 경우는 이스케이프되어 있어야 한다. 본 게임의 텍스트는 한글/영문 평문이라 안전.
+local function WrapStyleClass(text, styleClass)
+    if styleClass == nil or text == nil or text == "" then
+        return text or ""
+    end
+    return "<span class='" .. styleClass .. "'>" .. text .. "</span>"
+end
+
+function UIManager.ShowCriticalWarning(title, description, duration, onComplete, styleClass)
     local widget = widgets["criticalWarning"]
     if widget == nil then
         if onComplete ~= nil then
@@ -807,8 +819,8 @@ function UIManager.ShowCriticalWarning(title, description, duration, onComplete)
     StopCriticalWarningRoutine()
     UIManager.Show("criticalWarning")
 
-    widget:set_text("critical-warning-title", title or "WARNING")
-    widget:set_text("critical-warning-description", description or "")
+    widget:set_text("critical-warning-title", WrapStyleClass(title or "WARNING", styleClass))
+    widget:set_text("critical-warning-description", WrapStyleClass(description or "", styleClass))
 
     criticalWarningRoutine = StartCoroutine(function()
         Wait(duration)
@@ -819,6 +831,45 @@ function UIManager.ShowCriticalWarning(title, description, duration, onComplete)
             onComplete()
         end
     end)
+end
+
+-- ─── Mission feedback (start / result) ─────────────────────────────────
+-- CriticalWarning 위젯을 재사용 — title/subtitle 텍스트와 RCSS 클래스를 페이즈별로 다르게.
+-- 색상은 RCSS 의 .mission / .success / .failure 클래스에 정의 (set_property 우회).
+local MISSION_INFOS = {
+    [ECarGamePhase.CarWash]      = { title = "MISSION 1 - CAR WASH",      subtitle = "더러워진 차를 깨끗이 닦으세요"   },
+    [ECarGamePhase.CarGas]       = { title = "MISSION 2 - GAS FILL",      subtitle = "주유기를 사용해 연료를 채우세요" },
+    [ECarGamePhase.EscapePolice] = { title = "MISSION 3 - ESCAPE POLICE", subtitle = "경찰을 따돌리고 시간을 버티세요" },
+    [ECarGamePhase.DodgeMeteor]  = { title = "MISSION 4 - DODGE METEOR",  subtitle = "운석을 피해 살아남으세요"        },
+    [ECarGamePhase.Goal]         = { title = "FINAL  -  REACH THE GOAL", subtitle = "목표 지점에 도달하세요"          },
+}
+local MISSION_RESULT_DURATION = 1.6
+
+function UIManager.ShowMissionStart(phase, onComplete)
+    local info = MISSION_INFOS[phase]
+    if info == nil then
+        if onComplete ~= nil then onComplete() end
+        return
+    end
+    UIManager.ShowCriticalWarning(info.title, info.subtitle, 1.8, onComplete, "mission")
+end
+
+function UIManager.ShowMissionResult(phase, result, onComplete)
+    local phaseName = (MISSION_INFOS[phase] and MISSION_INFOS[phase].title) or "MISSION"
+    local title, subtitle, styleClass
+    if result == EPhaseResult.Success then
+        title      = "MISSION CLEAR!"
+        subtitle   = phaseName
+        styleClass = "success"
+    elseif result == EPhaseResult.Failed then
+        title      = "MISSION FAILED"
+        subtitle   = phaseName
+        styleClass = "failure"
+    else
+        if onComplete ~= nil then onComplete() end
+        return
+    end
+    UIManager.ShowCriticalWarning(title, subtitle, MISSION_RESULT_DURATION, onComplete, styleClass)
 end
 
 -- 게임 종료 화면 표시 — outcome 에 따라 타이틀 텍스트 swap.
