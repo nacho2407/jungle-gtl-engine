@@ -5,11 +5,13 @@
 
 class UCameraComponent;
 class UCameraModifier;
+class APlayerController;
 
 class APlayerCameraManager : public AActor
 {
 public:
-    virtual void Tick(float DeltaTime) override;
+    void BeginPlay() override;
+    void Tick(float DeltaTime) override;
 
     // ===== Core API =====
     void SetViewTarget(AActor* NewTarget);
@@ -25,6 +27,9 @@ public:
 
 	const FColor& GetFadeColor() const { return Fade.Color; }
     float GetFadeAlpha() const { return Fade.CurrentAlpha; }
+
+	void InitializeFor(APlayerController* PC);
+    virtual APlayerController* GetOwningPlayerController() const { return PCOwner; }
 
 private:
     struct FViewTarget
@@ -78,4 +83,7 @@ private:
 
     void UpdateTransition(float DeltaTime, FMinimalViewInfo& InOutView);
     void UpdateFade(float DeltaTime);
+
+private:
+	APlayerController* PCOwner = nullptr;
 };
