@@ -1,0 +1,11 @@
+{
+        "ArriveTangents" : [0.000000, 0.000000],
+        "AssetPath" : "Asset/Curve/PlayerDead.curve.json",
+        "InterpModes" : [2, 2],
+        "LeaveTangents" : [0.000000, 0.000000],
+        "ObjectName" : "UCurveFloatAsset_1",
+        "TangentModes" : [0, 1],
+        "Times" : [0.000000, 1.000000],
+        "Type" : "UCurveFloatAsset",
+        "Values" : [0.000000, 90.000000]
+      }
