@@ -2,8 +2,6 @@ local ui_document = nil
 
 local selected_index = 1
 local current_screen = "menu"
-local main_background_texture = "Textures/background.jpg"
-local sub_background_texture = "Textures/Credit.jpg"
 local gamepad_controller_id = 0
 local gamepad_stick_threshold = 0.55
 local gamepad_stick_repeat_delay = 0.22
@@ -312,13 +310,11 @@ end
 
 local function setMainMenuVisible(visible)
     if visible then
-        ui_document:SetTexture("background", main_background_texture)
         ui_document:SetProperty("menu", "display", "block")
         ui_document:SetProperty("credit_view", "display", "none")
         ui_document:SetProperty("scoreboard_view", "display", "none")
         current_screen = "menu"
     else
-        ui_document:SetTexture("background", sub_background_texture)
         ui_document:SetProperty("menu", "display", "none")
         ui_document:SetProperty("credit_view", "display", "block")
         ui_document:SetProperty("scoreboard_view", "display", "none")
@@ -327,7 +323,6 @@ local function setMainMenuVisible(visible)
 end
 
 local function setScoreboardVisible()
-    ui_document:SetTexture("background", sub_background_texture)
     ui_document:SetProperty("menu", "display", "none")
     ui_document:SetProperty("credit_view", "display", "none")
     ui_document:SetProperty("scoreboard_view", "display", "block")
@@ -439,8 +434,8 @@ function BeginPlay()
 
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
+    ui_document:SetProperty("background", "display", "none")
     playBackgroundBGM()
-    ui_document:SetTexture("background", main_background_texture)
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")
     ui_document:SetProperty("credit_button", "background-color", "rgb(0, 0, 0)")

@@ -15,13 +15,14 @@
             "ClassName" : "UUUIDTextRenderComponent",
             "Properties" : {
               "Billboard" : true,
+              "Cast Shadow" : true,
               "Font" : "Default",
               "Font Size" : 1.000000,
               "Is Editor Helper" : true,
               "Location" : [0.000000, 0.000000, 1.300000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
-              "Text" : "UUID : 10",
+              "Text" : "UUID : 42",
               "Visible" : true,
               "Visible In Editor" : true,
               "Visible In Game" : false,
@@ -31,8 +32,106 @@
         "ClassName" : "USceneComponent",
         "Properties" : {
           "Location" : [0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "bTickEnable" : true
+        }
+      },
+      "Tags" : [],
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "ObjectName" : "AStaticMeshActor_3",
+      "PrimitiveKey" : "55",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UUUIDTextRenderComponent",
+            "Properties" : {
+              "Billboard" : true,
+              "Cast Shadow" : true,
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Is Editor Helper" : true,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 55",
+              "Visible" : true,
+              "Visible In Editor" : true,
+              "Visible In Game" : false,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Element 0" : {
+            "Path" : "Asset/Content/Materials/Desk/Paper.json"
+          },
+          "Element 1" : {
+            "Path" : "Asset/Content/Materials/Desk/Pen.json"
+          },
+          "Element 10" : {
+            "Path" : "Asset/Content/Materials/Desk/B_Tranaparency.json"
+          },
+          "Element 11" : {
+            "Path" : "Asset/Content/Materials/Desk/Books.json"
+          },
+          "Element 12" : {
+            "Path" : "Asset/Content/Materials/Desk/Cell_phone.json"
+          },
+          "Element 13" : {
+            "Path" : "Asset/Content/Materials/Desk/Cell_screen.json"
+          },
+          "Element 14" : {
+            "Path" : "Asset/Content/Materials/Desk/Desk.json"
+          },
+          "Element 15" : {
+            "Path" : "Asset/Content/Materials/Desk/Notebook.json"
+          },
+          "Element 16" : {
+            "Path" : "Asset/Content/Materials/Desk/PC_Mouse.json"
+          },
+          "Element 17" : {
+            "Path" : "Asset/Content/Materials/Desk/Mousepad.json"
+          },
+          "Element 18" : {
+            "Path" : "Asset/Content/Materials/Desk/PC_Speakers.json"
+          },
+          "Element 2" : {
+            "Path" : "Asset/Content/Materials/Desk/PC_Monitor.json"
+          },
+          "Element 3" : {
+            "Path" : "Asset/Content/Materials/Desk/PC_Screen.json"
+          },
+          "Element 4" : {
+            "Path" : "Asset/Content/Materials/Desk/Cup.json"
+          },
+          "Element 5" : {
+            "Path" : "Asset/Content/Materials/Desk/Eraser.json"
+          },
+          "Element 6" : {
+            "Path" : "Asset/Content/Materials/WIre.json"
+          },
+          "Element 7" : {
+            "Path" : "Asset/Content/Materials/Desk/PC_Keyboard.json"
+          },
+          "Element 8" : {
+            "Path" : "Asset/Content/Materials/Keyboard_light.json"
+          },
+          "Element 9" : {
+            "Path" : "Asset/Content/Materials/Desk/Boxes.json"
+          },
+          "Is Editor Helper" : false,
+          "Location" : [0.000000, 0.000000, 0.000000],
           "Rotation" : [-0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Asset/Content/Models/Desk/Desk.obj",
+          "Visible" : true,
+          "Visible In Editor" : true,
+          "Visible In Game" : true,
           "bTickEnable" : true
         }
       },
@@ -46,9 +145,18 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-6.732597, -0.662640, 7.162580],
+    "Location" : [-10.872049, -3.335903, 5.341458],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000001, 52.059414, 20.354969]
+    "Rotation" : [0.000000, 11.739544, 19.094969]
+  },
+  "Primitives" : {
+    "55" : {
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Asset/Content/Models/Desk/Desk.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
   },
   "Version" : 2,
   "WorldType" : "Editor"
