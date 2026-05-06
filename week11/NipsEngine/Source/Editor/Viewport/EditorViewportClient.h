@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Common/RenderTypes.h"
 #include "Engine/Geometry/Ray.h"
@@ -7,6 +7,7 @@
 #include "Engine/Input/Controller/EditorController/EditorInputRouter.h"
 #include "Spatial/WorldSpatialIndex.h"
 #include "Editor/EditorUtils.h"
+#include "Editor/PIE/PIESession.h"
 #include "Editor/Input/EditorViewportTools.h"
 #include "Camera/ViewportCamera.h"
 
@@ -49,7 +50,7 @@ struct FEditorViewportState;
 * branching all live here.
 */
 
-class FEditorViewportClient : public FViewportClient
+class FEditorViewportClient : public FViewportClient, public IPIESessionShellCommandHandler
 {
 	friend class FEditorViewportCommandTool;
 	friend class FEditorViewportGizmoTool;
@@ -75,9 +76,9 @@ public:
 	EViewportPlayState GetPlayState() const { return PlayState; }
 	void SetPlayState(EViewportPlayState InState) { PlayState = InState; }
 	bool IsPIEActive() const { return PlayState != EViewportPlayState::Editing; }
-	bool IsPIEPossessed() const { return IsPIEActive() && InputRouter.GetActiveController() == EActiveEditorController::PIEController; }
-	bool IsPIEEditorControlMode() const { return IsPIEActive() && InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController; }
-	bool AllowsEditorWorldControl() const { return InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController; }
+	bool IsPIEPossessed() const;
+	bool IsPIEEditorControlMode() const;
+	bool AllowsEditorWorldControl() const;
 
 	// PIE 시작 전 카메라 상태 저장 / 정지 시 복원
 	void SaveCameraSnapshot();
@@ -125,7 +126,6 @@ public:
 	bool ProcessInput(FViewportInputContext& Context) override;
 	bool WantsRelativeMouseMode(const FViewportInputContext& Context, POINT& OutRestoreScreenPos) const override;
 	bool WantsAbsoluteMouseClip(const FViewportInputContext& Context, RECT& OutClipScreenRect) const override;
-	void SetLegacyInputSuppressedThisFrame(bool bSuppress) { bLegacyInputSuppressedThisFrame = bSuppress; }
 
 	// Get / Set
 	EEditorViewportType  GetViewportType() const          { return ViewportType; }
@@ -151,23 +151,17 @@ public:
 	bool IsPointerInViewportInputDeadZone(float LocalY) const;
 
 	void LockCursorToViewport();
-	void SetEndPIECallback(std::function<void()> Callback) { InputRouter.GetPIEController().SetEndPIECallback(std::move(Callback)); }
-	void ClearEndPIECallback()                             { InputRouter.GetPIEController().ClearEndPIECallback(); }
-	void SetPIEPlayerController(APlayerController* InController) { InputRouter.GetPIEController().SetPlayerController(InController); }
-	void ClearPIEPlayerController() { InputRouter.GetPIEController().ClearPlayerController(); }
+	APlayerController* GetPIEPlayerController() const;
+	void SetPIEPlayerController(APlayerController* InController);
+	void ClearPIEPlayerController();
 
 private:
 	// ── Tick sub-steps ───────────────────────────────────────────────────────
-	void TickInput(float DeltaTime);          // top-level input tick (renamed from TickRouter)
 	void TickInput(const FViewportInputContext& Context);
 	void TickCursorCapture();                 // hide/lock cursor on editor-world drag begin/end
-	void TickKeyboardInput();                 // poll watched keys -> route to active controller
 	void TickKeyboardInput(const FViewportInputContext& Context);
-	void TickEditorShortcuts();               // editor-only hotkeys (gizmo toggle, delete, select all)
 	void TickEditorShortcuts(const FViewportInputContext& Context);
-	void TickPIEShortCuts();				  // PIE-only hotkeys
 	void TickPIEShortCuts(const FViewportInputContext& Context);
-	void TickMouseInput(float VX, float VY);  // poll mouse state -> route to active controller
 	void TickMouseInput(const FViewportInputContext& Context);
 	void InitializeInputTools();
 	bool TickInputContexts(const FViewportInputContext& Context);
@@ -185,7 +179,6 @@ private:
 	void ApplyTransformModeToGizmo();
 	void SyncGizmoVisualState();
 	bool IsPassiveViewportFeedbackSuppressed(const FViewportInputContext& Context) const;
-	bool IsPassiveViewportFeedbackSuppressedByInputSystem() const;
 	void ClearPassiveGizmoHover() const;
 
 	void TickInteraction(float DeltaTime);    // box selection + gizmo screen-scaling
@@ -200,15 +193,20 @@ private:
 	void DeleteSelectedActors();
 	void SelectAllActors();
 	void DuplicateSelection();
-	void TogglePIEPossessEject();
-	void ReleasePIEMouseFocus();
+	void RequestEndPIE() override;
+	void TogglePIEPossessEject() override;
+	void ReleasePIEMouseFocus() override;
+	bool ExecutePIEShellCommand(EPIESessionShellCommand Command);
 	void ReacquirePIEMouseFocus();
 	bool TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context);
+	bool IsPIEMouseFocusReleased() const;
+	void MarkPIEMouseFocusReleased();
+	void ClearPIEMouseFocusReleased();
 	void EnterPIEEditorControlMode();
 	void EnterPIEPossessedMode();
 
 private:
-	// Window / Viewport — Window is inherited from FViewportClient
+	// Window / Viewport - Window is inherited from FViewportClient
 	UEditorEngine*		   Editor			= nullptr;
 	FSceneViewport*		   Viewport			= nullptr;
 
@@ -234,9 +232,7 @@ private:
 	POINT BoxSelectEnd   = { 0, 0 };
 
 	bool  bControlLocked = false;
-	bool  bPIEMouseFocusReleased = false;
 	bool  bRoutedInputProcessedThisFrame = false;
-	bool  bLegacyInputSuppressedThisFrame = false;
 	bool  bGizmoDragUndoCaptured = false;
 	ETransformMode TransformMode = ETransformMode::Translate;
 	float ViewportInputDeadZoneTop = 0.0f;

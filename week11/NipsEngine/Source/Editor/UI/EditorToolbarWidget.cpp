@@ -301,8 +301,8 @@ void FEditorToolbarWidget::RenderEditMenu()
 		return;
 	}
 
-	const bool bCanUndo = EditorEngine && !EditorEngine->GetUndoHistory().empty();
-	const bool bCanRedo = EditorEngine && !EditorEngine->GetRedoHistory().empty();
+	const bool bCanUndo = EditorEngine && !EditorEngine->GetUndoSystem().GetUndoHistory().empty();
+	const bool bCanRedo = EditorEngine && !EditorEngine->GetUndoSystem().GetRedoHistory().empty();
 	if (ImGui::MenuItem("Undo", "Ctrl+Z", false, bCanUndo) && EditorEngine)
 	{
 		EditorEngine->Undo();

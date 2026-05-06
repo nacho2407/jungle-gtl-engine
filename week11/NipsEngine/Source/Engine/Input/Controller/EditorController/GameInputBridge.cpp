@@ -1,11 +1,11 @@
-﻿#include "GameController.h"
+#include "GameInputBridge.h"
 #include "Camera/ViewportCamera.h"
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/PlayerController.h"
 
 #include <windows.h>
 
-void FGameController::Tick(float InDeltaTime) {
+void FGameInputBridge::Tick(float InDeltaTime) {
 	DeltaTime = InDeltaTime;
     if (PlayerController)
     {
@@ -29,7 +29,7 @@ void FGameController::Tick(float InDeltaTime) {
     Camera->SetLocation(CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha);
 }
 
-void FGameController::OnMouseMove(float DeltaX, float DeltaY)
+void FGameInputBridge::OnMouseMove(float DeltaX, float DeltaY)
 {
     if (PlayerController)
     {
@@ -59,7 +59,7 @@ void FGameController::OnMouseMove(float DeltaX, float DeltaY)
     }
 }
 
-void FGameController::OnMouseMoveAbsolute(float X, float Y)
+void FGameInputBridge::OnMouseMoveAbsolute(float X, float Y)
 {
     if (PlayerController)
     {
@@ -67,7 +67,7 @@ void FGameController::OnMouseMoveAbsolute(float X, float Y)
     }
 }
 
-void FGameController::OnLeftMouseClick(float X, float Y)
+void FGameInputBridge::OnLeftMouseClick(float X, float Y)
 {
     if (PlayerController)
     {
@@ -76,7 +76,7 @@ void FGameController::OnLeftMouseClick(float X, float Y)
     }
 }
 
-void FGameController::OnLeftMouseDragEnd(float X, float Y)
+void FGameInputBridge::OnLeftMouseDragEnd(float X, float Y)
 {
     if (PlayerController)
     {
@@ -85,7 +85,7 @@ void FGameController::OnLeftMouseDragEnd(float X, float Y)
     }
 }
 
-void FGameController::OnLeftMouseButtonUp(float X, float Y)
+void FGameInputBridge::OnLeftMouseButtonUp(float X, float Y)
 {
     if (PlayerController)
     {
@@ -93,7 +93,7 @@ void FGameController::OnLeftMouseButtonUp(float X, float Y)
     }
 }
 
-void FGameController::OnRightMouseClick(float DeltaX, float DeltaY)
+void FGameInputBridge::OnRightMouseClick(float DeltaX, float DeltaY)
 {
     if (PlayerController)
     {
@@ -101,7 +101,7 @@ void FGameController::OnRightMouseClick(float DeltaX, float DeltaY)
     }
 }
 
-void FGameController::OnLeftMouseDrag(float X, float Y)
+void FGameInputBridge::OnLeftMouseDrag(float X, float Y)
 {
     if (PlayerController)
     {
@@ -109,7 +109,7 @@ void FGameController::OnLeftMouseDrag(float X, float Y)
     }
 }
 
-void FGameController::OnRightMouseDrag(float DeltaX, float DeltaY)
+void FGameInputBridge::OnRightMouseDrag(float DeltaX, float DeltaY)
 {
     if (PlayerController)
     {
@@ -118,7 +118,7 @@ void FGameController::OnRightMouseDrag(float DeltaX, float DeltaY)
     }
 }
 
-void FGameController::OnMiddleMouseDrag(float DeltaX, float DeltaY)
+void FGameInputBridge::OnMiddleMouseDrag(float DeltaX, float DeltaY)
 {
     if (PlayerController)
     {
@@ -127,22 +127,15 @@ void FGameController::OnMiddleMouseDrag(float DeltaX, float DeltaY)
     }
 }
 
-void FGameController::OnKeyPressed(int VK)
+void FGameInputBridge::OnKeyPressed(int VK)
 {
-    switch (VK)
+    if (PlayerController)
     {
-    case VK_ESCAPE:
-        if (OnRequestEndPIE)
-            OnRequestEndPIE();
-        break;
-    default:
-        if (PlayerController)
-            PlayerController->HandleKeyPressed(VK);
-        break;
+        PlayerController->HandleKeyPressed(VK);
     }
 }
 
-void FGameController::OnKeyDown(int VK)
+void FGameInputBridge::OnKeyDown(int VK)
 {
     if (PlayerController)
     {
@@ -241,7 +234,7 @@ void FGameController::OnKeyDown(int VK)
 }
 
 
-void FGameController::OnKeyReleased(int VK)
+void FGameInputBridge::OnKeyReleased(int VK)
 {
     if (PlayerController)
     {
@@ -249,7 +242,7 @@ void FGameController::OnKeyReleased(int VK)
     }
 }
 
-void FGameController::OnWheelScrolled(float Notch)
+void FGameInputBridge::OnWheelScrolled(float Notch)
 {
     if (PlayerController)
     {
@@ -257,7 +250,7 @@ void FGameController::OnWheelScrolled(float Notch)
     }
 }
 
-void FGameController::SetCamera(FViewportCamera* InCamera)
+void FGameInputBridge::SetCamera(FViewportCamera* InCamera)
 {
     if (!InCamera)
         return;
@@ -273,9 +266,9 @@ void FGameController::SetCamera(FViewportCamera* InCamera)
     Yaw   = MathUtil::RadiansToDegrees(std::atan2(Forward.Y, Forward.X));
 }
 
-void FGameController::SetCamera(FViewportCamera& InCamera) { SetCamera(&InCamera); }
+void FGameInputBridge::SetCamera(FViewportCamera& InCamera) { SetCamera(&InCamera); }
 
-void FGameController::UpdateCameraRotation()
+void FGameInputBridge::UpdateCameraRotation()
 {
     if (!Camera)
         return;
@@ -300,7 +293,7 @@ void FGameController::UpdateCameraRotation()
     Camera->SetRotation(NewRotation);
 }
 
-void FGameController::ResetTargetLocation()
+void FGameInputBridge::ResetTargetLocation()
 {
     if (Camera)
         TargetLocation = Camera->GetLocation();

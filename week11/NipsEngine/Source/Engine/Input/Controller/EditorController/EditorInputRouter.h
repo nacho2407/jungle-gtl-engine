@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Input/Controller/EditorController/EditorWorldController.h"
-#include "Engine/Input/Controller/EditorController/GameController.h"
+#include "Engine/Input/Controller/EditorController/GameInputBridge.h"
 
 enum class EActiveEditorController
 {
     EditorWorldController,
-    PIEController,
+    GameInputBridge,
     NilController,
 };
 
@@ -46,11 +46,13 @@ class FEditorInputRouter
     void                    SetViewportDim(float X, float Y, float Width, float Height);
 
     FEditorWorldController& GetEditorWorldController() { return EditorWorldController; }
-    FGameController&         GetPIEController() { return PIEController; }
+    const FEditorWorldController& GetEditorWorldController() const { return EditorWorldController; }
+    FGameInputBridge&         GetGameInputBridge() { return GameInputBridge; }
+    const FGameInputBridge&   GetGameInputBridge() const { return GameInputBridge; }
 
   private:
     EActiveEditorController ActiveEditorControllerState = EActiveEditorController::EditorWorldController;
     IBaseEditorController*  ActiveController = nullptr;
     FEditorWorldController  EditorWorldController;
-    FGameController          PIEController;
+    FGameInputBridge          GameInputBridge;
 };

@@ -6,7 +6,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Renderer/IRenderPipeline.h"
-#include "UI/RuntimeUITypes.h"
+#include "UI/RmlUi/RmlUiSystem.h"
 
 #include <memory>
 
@@ -14,12 +14,21 @@ class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
 class APlayerController;
+struct FGuiInputState;
 
 enum class ERuntimeInputMode : uint8
 {
 	GameOnly,
 	UIOnly,
 	GameAndUI
+};
+
+struct FRuntimeInputPermissions
+{
+	bool bAllowRuntimeUIInput = true;
+	bool bAllowPlayerInput = true;
+	bool bAllowLuaKeyboardInput = true;
+	bool bAllowLuaMouseInput = true;
 };
 
 class UEngine : public UObject
@@ -69,43 +78,19 @@ public:
 	FRenderer& GetRenderer() { return Renderer; }
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
 	virtual APlayerController* GetPrimaryPlayerController() const;
-	virtual bool LoadRmlUIDocument(const FString& ScreenId, const FString& Path) { return false; }
-	virtual bool UnloadRmlUIDocument(const FString& ScreenId) { return false; }
-	virtual bool ReloadRmlUIDocument(const FString& ScreenId) { return false; }
-	virtual bool ShowRmlUIScreen(const FString& ScreenId) { return false; }
-	virtual bool HideRmlUIScreen(const FString& ScreenId) { return false; }
-	virtual bool HasRmlUIElement(const FString& ElementId) { return false; }
-	virtual FString GetRmlUIElementText(const FString& ElementId) { return ""; }
-	virtual bool SetRmlUIElementText(const FString& ElementId, const FString& Text) { return false; }
-	virtual FString GetRmlUIElementValue(const FString& ElementId) { return ""; }
-	virtual bool SetRmlUIElementValue(const FString& ElementId, const FString& Value) { return false; }
-	virtual bool SetRmlUIElementVisible(const FString& ElementId, bool bVisible) { return false; }
-	virtual bool SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled) { return false; }
-	virtual bool SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled) { return false; }
-	virtual bool HasRmlUIElementClass(const FString& ElementId, const FString& ClassName) { return false; }
-	virtual FString GetRmlUIElementClassNames(const FString& ElementId) { return ""; }
-	virtual bool SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames) { return false; }
-	virtual bool HasRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return false; }
-	virtual FString GetRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return ""; }
-	virtual bool SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
-	virtual bool RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name) { return false; }
-	virtual FString GetRmlUIElementStyle(const FString& ElementId, const FString& Name) { return ""; }
-	virtual bool SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value) { return false; }
-	virtual bool RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name) { return false; }
-	virtual bool FocusRmlUIElement(const FString& ElementId, bool bFocusVisible) { return false; }
-	virtual bool IsRmlUIElementFocused(const FString& ElementId) { return false; }
-	virtual bool BlurRmlUIElement(const FString& ElementId) { return false; }
-	virtual bool ClickRmlUIElement(const FString& ElementId) { return false; }
-	virtual TArray<FString> PollRmlUIActionEvents() { return {}; }
+	FRmlUiSystem& GetRmlUiSystem() { return RmlUiSystem; }
+	const FRmlUiSystem& GetRmlUiSystem() const { return RmlUiSystem; }
 	FAudioSystem& GetAudioSystem() { return AudioSystem; }
 	const FAudioSystem& GetAudioSystem() const { return AudioSystem; }
 	void SetRuntimeInputMode(ERuntimeInputMode InMode);
 	ERuntimeInputMode GetRuntimeInputMode() const { return RuntimeInputMode; }
+	FRuntimeInputPermissions BuildRuntimeInputPermissions(
+		const FGuiInputState& GuiState,
+		bool bRuntimeUIConsumedInput = false) const;
 	void SetRuntimeCursorVisible(bool bVisible);
 	bool IsRuntimeCursorVisible() const { return bRuntimeCursorVisible; }
 	void SetRuntimeCursorLocked(bool bLocked);
 	bool IsRuntimeCursorLocked() const { return bRuntimeCursorLocked; }
-	virtual void RenderRuntimeUI(const FRuntimeUIRenderContext& Context) {}
 
 protected:
 	void Render(float DeltaTime);
@@ -127,6 +112,7 @@ protected:
 
 	FRenderer Renderer;
 	FAudioSystem AudioSystem;
+	FRmlUiSystem RmlUiSystem;
 	ERuntimeInputMode RuntimeInputMode = ERuntimeInputMode::GameOnly;
 	bool bRuntimeCursorVisible = false;
 	bool bRuntimeCursorLocked = true;

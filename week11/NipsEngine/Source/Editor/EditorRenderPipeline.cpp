@@ -180,7 +180,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     const auto ViewportRenderStart = std::chrono::steady_clock::now();
     if (Editor->GetEditorState() != EViewportPlayState::Editing)
     {
-        const int32 ActivePIEViewportIndex = Editor->GetActivePIEViewportIndex();
+        const int32 ActivePIEViewportIndex = Editor->GetPIESession().GetActiveViewportIndex();
         if (ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
         {
             return;
@@ -248,15 +248,15 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
         Bus.SandevistanIntensity = 0.0f;
 	}
 	
-    const FFrustum& ViewFrustum = SceneView.CameraFrustum;
-    Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
+	const FFrustum& ViewFrustum = SceneView.CameraFrustum;
+	const bool bDrawEditorViewportHelpers = VC->AllowsEditorWorldControl();
+	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum, bDrawEditorViewportHelpers);
     ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
     ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
     ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
 
-    // Editor controller가 활성화된 순수 편집 뷰포트에서만 grid/gizmo/selection overlay를 그립니다.
-    // PIE에서는 UI/cursor 상태 변화와 관계없이 editor line pass가 게임 화면에 섞이면 안 됩니다.
-    if (VC->GetPlayState() == EViewportPlayState::Editing && VC->AllowsEditorWorldControl())
+	// 순수 편집 뷰포트와 PIE Eject는 모두 Editor viewport setting을 따릅니다.
+	if (bDrawEditorViewportHelpers)
     {
         Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
 
@@ -269,7 +269,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
         }
 
         Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
-        Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus);
+        Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
     }
 
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)

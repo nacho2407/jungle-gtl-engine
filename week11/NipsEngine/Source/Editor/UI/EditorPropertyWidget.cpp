@@ -101,6 +101,18 @@ namespace
 		ImGui::TextUnformatted(Label);
 	}
 
+	static bool IsLiveActor(AActor* Actor)
+	{
+		return Actor
+			&& UObjectManager::Get().ContainsObject(Actor)
+			&& !Actor->IsPendingKill();
+	}
+
+	static bool IsLiveComponent(UActorComponent* Component)
+	{
+		return Component && UObjectManager::Get().ContainsObject(Component);
+	}
+
 	// 컴포넌트 포인터를 ImGui PushID 용 문자열로 변환
 	static void MakeXButtonId(char* OutBuf, size_t BufSize, const void* Ptr)
 	{
@@ -419,9 +431,15 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::Begin("Details");
 
 	AActor* CurrentSelection = SelectionManager->GetPrimarySelection();
+	if (!IsLiveActor(CurrentSelection))
+	{
+		SelectionManager->ClearSelection();
+		CurrentSelection = nullptr;
+	}
+
 	if (bDetailsLocked && LockedDetailsActor)
 	{
-		UWorld* LockedWorld = LockedDetailsActor->GetFocusedWorld();
+		UWorld* LockedWorld = IsLiveActor(LockedDetailsActor) ? LockedDetailsActor->GetFocusedWorld() : nullptr;
 		bool bLockedActorAlive = false;
 		if (LockedWorld)
 		{
@@ -441,7 +459,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	AActor* PrimaryActor = (bDetailsLocked && LockedDetailsActor) ? LockedDetailsActor : CurrentSelection;
 	RenderDetailsLockBar(CurrentSelection, PrimaryActor);
 
-	if (!PrimaryActor)
+	if (!IsLiveActor(PrimaryActor))
 	{
 		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;
@@ -614,7 +632,7 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 	{
 		SelectionManager->ValidateSelection();
 		UActorComponent* ManagerComponent = SelectionManager->GetSelectedComponent();
-		if (ManagerComponent && ManagerComponent->GetOwner() == PrimaryActor)
+		if (IsLiveComponent(ManagerComponent) && ManagerComponent->GetOwner() == PrimaryActor)
 		{
 			SelectedComponent = ManagerComponent;
 			bActorSelected = false;
@@ -779,6 +797,12 @@ void FEditorPropertyWidget::RenderDetailsContextMenu(AActor* PrimaryActor, const
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
+    if (!IsLiveActor(Actor))
+    {
+        ImGui::TextDisabled("Selected actor is no longer available.");
+        return;
+    }
+
     DrawDetailsSectionLabel("Components");
     DrawDetailsSeparator();
 
@@ -816,7 +840,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
         for (UActorComponent* Comp : Actor->GetComponents())
         {
             // SceneComponent는 위의 트리 렌더링에서 처리되었으므로 패스
-            if (!Comp || Comp->IsA<USceneComponent>())
+            if (!IsLiveComponent(Comp) || Comp->IsA<USceneComponent>())
                 continue;
 
             ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -871,7 +895,7 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneComponent* Comp)
 {
-    if (!Comp) return;
+    if (!IsLiveActor(Actor) || !IsLiveComponent(Comp)) return;
 
     FString Name = Comp->GetFName().ToString();
     if (Name.empty()) Name = Comp->GetTypeInfo()->name;
@@ -953,7 +977,10 @@ void FEditorPropertyWidget::RenderSceneComponentNode(AActor* Actor, USceneCompon
     {
         for (USceneComponent* Child : Children)
         {
-            RenderSceneComponentNode(Actor, Child);
+            if (IsLiveComponent(Child))
+            {
+                RenderSceneComponentNode(Actor, Child);
+            }
         }
 
         ImGui::TreePop();
