@@ -62,7 +62,6 @@ public:
     FRenderer& GetRenderer() { return Renderer; }
     const FRenderer& GetRenderer() const { return Renderer; }
     FRmlUiManager* GetRmlUiManager() const { return RmlUiManager.get(); }
-    APlayerCameraManager* GetPlayerCameraManager() const;
 
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }

@@ -22,7 +22,7 @@ void APlayerController::BeginPlay()
     TryAutoPossessPlayer();
 
     UWorld* World = GetWorld();
-    CameraManager->SetViewTarget(PossessedActor && World ? World->GetActiveCamera() : nullptr);
+    CameraManager->SetViewTarget(PossessedActor);
 }
 
 void APlayerController::Tick(float DeltaTime)
@@ -58,7 +58,7 @@ bool APlayerController::Possess(AActor* Actor)
     if (CameraManager)
     {
         UWorld* World = GetWorld();
-        CameraManager->SetViewTarget(World ? World->GetActiveCamera() : nullptr);
+        CameraManager->SetViewTarget(PossessedActor);
     }
     return true;
 }

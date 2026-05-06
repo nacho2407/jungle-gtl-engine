@@ -212,7 +212,7 @@ void UCameraBoomComponent::ResolveTargetActor()
 
     if (TargetActorName.empty() || TargetActorName == "None")
     {
-        TargetActor = nullptr;
+        TargetActor = GetOwner();
         return;
     }
 

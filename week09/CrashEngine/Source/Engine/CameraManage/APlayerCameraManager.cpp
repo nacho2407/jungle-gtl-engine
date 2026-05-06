@@ -20,12 +20,6 @@ APlayerCameraManager::APlayerCameraManager()
     SetActorTickEnabled(false);
 }
 
-void APlayerCameraManager::SetViewTarget(UCameraComponent* NewCamera)
-{
-    ViewTarget.POVCamera = NewCamera;
-    ViewTarget.TargetActor = NewCamera ? NewCamera->GetOwner() : nullptr;
-}
-
 void APlayerCameraManager::SetViewTarget(AActor* NewActor)
 {
     if (!NewActor)
@@ -35,6 +29,7 @@ void APlayerCameraManager::SetViewTarget(AActor* NewActor)
     }
 
     ViewTarget.TargetActor = NewActor;
+    ViewTarget.POVCamera = nullptr;
 
     for (UActorComponent* Comp : NewActor->GetComponents())
     {
@@ -53,16 +48,17 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
         return;
     }
 
-    CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
-    CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
-    //CameraViewInfoCache.CameraState = Camera->GetCameraState();
     CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
     if (ViewTarget.POVCamera)
     {
+        CameraViewInfoCache.Location = ViewTarget.POVCamera->GetWorldLocation();
+        CameraViewInfoCache.Rotation = ViewTarget.POVCamera->GetWorldMatrix().ToRotator();
         CameraViewInfoCache.CameraState = ViewTarget.POVCamera->GetCameraState();
     }
     else
     {
+        CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
+        CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
         CameraViewInfoCache.CameraState = FCameraState{};
     }
 

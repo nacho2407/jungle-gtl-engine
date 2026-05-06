@@ -21,8 +21,7 @@ public:
     DECLARE_CLASS(APlayerCameraManager, AActor)
 
     APlayerCameraManager();
-
-    void SetViewTarget(UCameraComponent* NewCamera);
+    
     void SetViewTarget(AActor* NewActor);	//transition용
     void UpdateCamera(float DeltaTime);
 
