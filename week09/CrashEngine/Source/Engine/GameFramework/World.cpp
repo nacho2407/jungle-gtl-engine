@@ -406,20 +406,25 @@ void UWorld::BeginPlay()
 
 void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 {
+    GameTimeManager.Tick(DeltaTime);
+    WorldTimeContext.Deltatime = GameTimeManager.GetDeltatime();
+    WorldTimeContext.UnScaledDeltatime = GameTimeManager.GetUnScaledDeltatime();
+
+    const float GameDeltaTime = WorldTimeContext.Deltatime;
+
     {
         SCOPE_STAT_CAT("FlushPrimitive", "1_WorldTick");
         Partition.FlushPrimitive();
     }
 
-
     Scene.GetDebugPrimitiveQueue().ClearOneFramePrimitives();
-    Scene.GetDebugPrimitiveQueue().Tick(DeltaTime);
+    Scene.GetDebugPrimitiveQueue().Tick(GameDeltaTime);
 
-    TickManager.Tick(this, DeltaTime, TickType);
+    TickManager.Tick(this, GameDeltaTime, TickType);
     ProcessPendingDamage();
     ProcessPendingActorDestroys();
 
-	CollisionManager->TickCollision(DeltaTime, &Scene);
+	CollisionManager->TickCollision(GameDeltaTime, &Scene);
 }
 
 void UWorld::EndPlay()
