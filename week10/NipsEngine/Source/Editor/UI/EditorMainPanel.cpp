@@ -615,7 +615,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
     RuntimeUIPreviewWidget.SetRmlRenderQueue(
         [this](const FRuntimeUIRenderContext& Context)
         {
-            PendingPIERmlUiRenderContexts.push_back(Context);
+            QueueRuntimeUIDrawCallback(ImGui::GetWindowDrawList(), Context);
         });
     ToolbarWidget.SetViewportOverlayWidget(&ViewportOverlayWidget);
     ToolbarWidget.SetSceneWidget(&SceneWidget);
@@ -728,8 +728,6 @@ void FEditorMainPanel::Render(float DeltaTime)
         delete PendingDraw;
     }
     PendingRuntimeUIDrawCallbacks.clear();
-    PendingPIERmlUiRenderContexts.clear();
-
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -819,15 +817,6 @@ void FEditorMainPanel::Render(float DeltaTime)
     }
     RenderConsoleDrawer(DeltaTime);
     RenderFooterOverlay(DeltaTime);
-
-    for (const FRuntimeUIRenderContext& Context : PendingPIERmlUiRenderContexts)
-    {
-        if (EditorEngine)
-        {
-            EditorEngine->RenderRuntimeUI(Context);
-        }
-    }
-    PendingPIERmlUiRenderContexts.clear();
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -1296,8 +1285,9 @@ void FEditorMainPanel::RenderEditorToolbar()
         if (bCanStop)
         {
             FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-            const int32 PIEViewportIndex = (EditorEngine->GetActivePIEViewportIndex() >= 0)
-                ? EditorEngine->GetActivePIEViewportIndex()
+            const int32 ActivePIEViewportIndex = EditorEngine->GetPIESession().GetActiveViewportIndex();
+            const int32 PIEViewportIndex = (ActivePIEViewportIndex >= 0)
+                ? ActivePIEViewportIndex
                 : Layout.GetLastFocusedViewportIndex();
             FEditorViewportClient* PIEClient = Layout.GetViewportClient(PIEViewportIndex);
 
@@ -1683,9 +1673,10 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
         return;
     }
 
-    const TArray<FUndoSnapshotEntry>& UndoEntries = EditorEngine->GetUndoHistory();
-    const TArray<FUndoSnapshotEntry>& RedoEntries = EditorEngine->GetRedoHistory();
-    const FUndoHistoryStats HistoryStats = EditorEngine->GetUndoHistoryStats();
+    const FEditorUndoSystem& UndoSystem = EditorEngine->GetUndoSystem();
+    const TArray<FUndoSnapshotEntry>& UndoEntries = UndoSystem.GetUndoHistory();
+    const TArray<FUndoSnapshotEntry>& RedoEntries = UndoSystem.GetRedoHistory();
+    const FUndoHistoryStats HistoryStats = UndoSystem.GetStats();
 
     const bool bCanUndo = !UndoEntries.empty();
     const bool bCanRedo = !RedoEntries.empty();
@@ -2799,7 +2790,7 @@ void FEditorMainPanel::RenderViewportHostWindow()
         FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
         const int32 FocusedViewportIndex = Layout.GetLastFocusedViewportIndex();
         const bool bPIEActive = EditorEngine->GetEditorState() != EViewportPlayState::Editing;
-        const int32 ActivePIEViewportIndex = EditorEngine->GetActivePIEViewportIndex();
+        const int32 ActivePIEViewportIndex = EditorEngine->GetPIESession().GetActiveViewportIndex();
         auto DrawSceneViewport = [&](int32 ViewportIndex)
         {
             if (bPIEActive && ActivePIEViewportIndex >= 0 && ViewportIndex != ActivePIEViewportIndex)
@@ -2994,8 +2985,9 @@ void FEditorMainPanel::ApplyPIEFixedAspectViewportRect()
     }
 
     FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
-    const int32 PIEViewportIndex = (EditorEngine->GetActivePIEViewportIndex() >= 0)
-        ? EditorEngine->GetActivePIEViewportIndex()
+    const int32 ActivePIEViewportIndex = EditorEngine->GetPIESession().GetActiveViewportIndex();
+    const int32 PIEViewportIndex = (ActivePIEViewportIndex >= 0)
+        ? ActivePIEViewportIndex
         : Layout.GetLastFocusedViewportIndex();
     if (PIEViewportIndex < 0 || PIEViewportIndex >= FEditorViewportLayout::MaxViewports)
     {
@@ -3028,19 +3020,33 @@ void FEditorMainPanel::RenderRuntimeUIForPIEViewport(const FViewportRect& Viewpo
         return;
     }
 
-    const int32 LayoutWidth = bPIEUseFixedUILayout ? std::max(PIEUILayoutWidth, 1) : ViewportRect.Width;
-    const int32 LayoutHeight = bPIEUseFixedUILayout ? std::max(PIEUILayoutHeight, 1) : ViewportRect.Height;
+    FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+    const int32 ActivePIEViewportIndex = EditorEngine->GetPIESession().GetActiveViewportIndex();
+    const int32 PIEViewportIndex = (ActivePIEViewportIndex >= 0)
+        ? ActivePIEViewportIndex
+        : Layout.GetLastFocusedViewportIndex();
+    FEditorViewportClient* Client = Layout.GetViewportClient(PIEViewportIndex);
+    if (!Client || !Client->IsPIEPossessed())
+    {
+        return;
+    }
+
+    const FViewportRect RuntimeUIRect = bPIEUseFixedUILayout
+        ? GetPIEFixedAspectViewportRect(ViewportRect)
+        : ViewportRect;
+    const int32 LayoutWidth = bPIEUseFixedUILayout ? std::max(PIEUILayoutWidth, 1) : RuntimeUIRect.Width;
+    const int32 LayoutHeight = bPIEUseFixedUILayout ? std::max(PIEUILayoutHeight, 1) : RuntimeUIRect.Height;
 
     FRuntimeUIRenderContext Context;
     Context.RenderMode = ERuntimeUIRenderMode::PIE;
-    Context.ViewportMin = FRuntimeUIVector2(static_cast<float>(ViewportRect.X), static_cast<float>(ViewportRect.Y));
-    Context.ViewportSize = FRuntimeUIVector2(static_cast<float>(ViewportRect.Width), static_cast<float>(ViewportRect.Height));
+    Context.ViewportMin = FRuntimeUIVector2(static_cast<float>(RuntimeUIRect.X), static_cast<float>(RuntimeUIRect.Y));
+    Context.ViewportSize = FRuntimeUIVector2(static_cast<float>(RuntimeUIRect.Width), static_cast<float>(RuntimeUIRect.Height));
     Context.LayoutSize = FRuntimeUIVector2(static_cast<float>(LayoutWidth), static_cast<float>(LayoutHeight));
     Context.DeltaTime = DeltaTime;
 
     QueueRuntimeUIDrawCallback(ImGui::GetWindowDrawList(), Context);
 
-    if (EditorEngine->PumpPIERmlUiInput(ViewportRect, LayoutWidth, LayoutHeight))
+    if (EditorEngine->GetRmlUiSystem().PumpViewportInput(InputSystem::Get(), EditorEngine->GetWindow(), EditorEngine->BuildRuntimeInputPermissions(InputSystem::Get().GetGuiInputState()).bAllowRuntimeUIInput, RuntimeUIRect, LayoutWidth, LayoutHeight))
     {
         InputSystem::Get().SetGuiMouseCapture(true);
         InputSystem::Get().SetGuiViewportMouseBlock(true);
@@ -3077,7 +3083,7 @@ void FEditorMainPanel::RenderRuntimeUIDrawCallback(const ImDrawList* ParentList,
         return;
     }
 
-    PendingDraw->Owner->EditorEngine->RenderRuntimeUI(PendingDraw->Context);
+    PendingDraw->Owner->EditorEngine->GetRmlUiSystem().Render(PendingDraw->Context, PendingDraw->Owner->EditorEngine->GetRenderer());
 }
 
 void FEditorMainPanel::TickViewportContextMenu()

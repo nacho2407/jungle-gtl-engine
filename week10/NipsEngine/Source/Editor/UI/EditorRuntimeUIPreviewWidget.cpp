@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorRuntimeUIPreviewWidget.h"
+﻿#include "Editor/UI/EditorRuntimeUIPreviewWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Core/Paths.h"
@@ -288,14 +288,14 @@ void FEditorRuntimeUIPreviewWidget::DrawPreviewSurface(float DeltaTime)
 			static_cast<int32>(Start.y),
 			static_cast<int32>(PreviewSize.x),
 			static_cast<int32>(PreviewSize.y));
-		if (EditorEngine->PumpPIERmlUiInput(PreviewRect, TargetWidth, TargetHeight, true))
+		if (EditorEngine->GetRmlUiSystem().PumpViewportInput(InputSystem::Get(), EditorEngine->GetWindow(), EditorEngine->BuildRuntimeInputPermissions(InputSystem::Get().GetGuiInputState()).bAllowRuntimeUIInput, PreviewRect, TargetWidth, TargetHeight, true))
 		{
 			InputSystem::Get().SetGuiMouseCapture(true);
 			InputSystem::Get().SetGuiViewportMouseBlock(true);
 		}
 	}
 
-	const TArray<FString> NewEvents = EditorEngine->PollRmlUIPreviewActionEvents();
+	const TArray<FString> NewEvents = EditorEngine->GetRmlUiSystem().PollPreviewActionEvents();
 	for (const FString& Event : NewEvents)
 	{
 		if (!Event.empty())
@@ -387,10 +387,10 @@ bool FEditorRuntimeUIPreviewWidget::LoadPreviewDocument()
 		return false;
 	}
 	strncpy_s(PreviewDocumentPathBuffer, Path.c_str(), _TRUNCATE);
-	bPreviewDocumentLoaded = EditorEngine->LoadRmlUIDocument(ScreenId, Path);
+	bPreviewDocumentLoaded = EditorEngine->GetRmlUiSystem().LoadDocument(ScreenId, Path);
 	if (bPreviewDocumentLoaded)
 	{
-		EditorEngine->ShowRmlUIScreen(ScreenId);
+		EditorEngine->GetRmlUiSystem().ShowScreen(ScreenId);
 	}
 	return bPreviewDocumentLoaded;
 }
@@ -473,7 +473,7 @@ void FEditorRuntimeUIPreviewWidget::RefreshPreviewDocument()
 		return;
 	}
 
-	EditorEngine->UnloadRmlUIDocument(PreviewScreenIdBuffer);
+	EditorEngine->GetRmlUiSystem().UnloadDocument(PreviewScreenIdBuffer);
 	bPreviewDocumentLoaded = false;
 	PreviewActionEvents.clear();
 	LoadPreviewDocument();

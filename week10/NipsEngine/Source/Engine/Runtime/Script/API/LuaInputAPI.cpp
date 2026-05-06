@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <vector>
 
 namespace
 {
@@ -128,53 +129,128 @@ namespace
             || KeyCode == VK_XBUTTON2;
     }
 
-    bool CanExposeInputKeyToLua(int32 KeyCode)
+    class FLuaInputView
     {
-        if (!IsValidInputKeyCode(KeyCode))
+    public:
+        bool IsKeyDown(int32 KeyCode) const
         {
-            return false;
+            return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKey(KeyCode);
         }
 
-        if (GEngine)
+        bool IsKeyPressed(int32 KeyCode) const
         {
-            const ERuntimeInputMode InputMode = GEngine->GetRuntimeInputMode();
-            if (InputMode == ERuntimeInputMode::UIOnly)
+            return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+        }
+
+        bool IsKeyReleased(int32 KeyCode) const
+        {
+            return CanReadGameplayKey(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+        }
+
+        bool IsMouseButtonDown(int32 KeyCode) const
+        {
+            return CanReadGameplayKey(KeyCode)
+                && IsMouseButtonCode(KeyCode)
+                && InputSystem::Get().GetKey(KeyCode);
+        }
+
+        bool IsMouseButtonPressed(int32 KeyCode) const
+        {
+            return CanReadGameplayKey(KeyCode)
+                && IsMouseButtonCode(KeyCode)
+                && InputSystem::Get().GetKeyDown(KeyCode);
+        }
+
+        bool IsMouseButtonReleased(int32 KeyCode) const
+        {
+            return CanReadGameplayKey(KeyCode)
+                && IsMouseButtonCode(KeyCode)
+                && InputSystem::Get().GetKeyUp(KeyCode);
+        }
+
+        FVector GetMouseDelta() const
+        {
+            if (!CanReadGameplayMouseAxis())
+            {
+                return FVector::ZeroVector;
+            }
+            return FVector(
+                static_cast<float>(InputSystem::Get().MouseDeltaX()),
+                static_cast<float>(InputSystem::Get().MouseDeltaY()),
+                0.0f);
+        }
+
+        int32 GetScrollDelta() const
+        {
+            return CanReadGameplayMouseAxis() ? InputSystem::Get().GetScrollDelta() : 0;
+        }
+
+        float GetScrollNotches() const
+        {
+            return CanReadGameplayMouseAxis() ? InputSystem::Get().GetScrollNotches() : 0.0f;
+        }
+
+        bool IsAnyMouseButtonDown() const
+        {
+            return CanReadGameplayMouseAxis() && InputSystem::Get().IsAnyMouseButtonDown();
+        }
+
+        std::vector<uint32_t> ConsumeTextInput() const
+        {
+            if (!CanReadGameplayTextInput())
+            {
+                return {};
+            }
+            return InputSystem::Get().ConsumeScriptTextInput();
+        }
+
+    private:
+        bool CanReadGameplayKey(int32 KeyCode) const
+        {
+            if (!IsValidInputKeyCode(KeyCode))
             {
                 return false;
             }
-            if (InputMode == ERuntimeInputMode::GameOnly)
+
+            const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+            if (GEngine)
             {
-                return GEngine->IsRuntimeCursorLocked();
+                const FRuntimeInputPermissions Permissions = GEngine->BuildRuntimeInputPermissions(GuiState);
+                return IsMouseButtonCode(KeyCode)
+                    ? Permissions.bAllowLuaMouseInput
+                    : Permissions.bAllowLuaKeyboardInput;
             }
+
+            if (IsMouseButtonCode(KeyCode))
+            {
+                return !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
+            }
+
+            return !(GuiState.bUsingKeyboard || GuiState.bUsingTextInput);
         }
 
-        const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
-        if (IsMouseButtonCode(KeyCode))
+        bool CanReadGameplayMouseAxis() const
         {
+            const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+            if (GEngine)
+            {
+                return GEngine->BuildRuntimeInputPermissions(GuiState).bAllowLuaMouseInput;
+            }
+
             return !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
         }
 
-        return !(GuiState.bUsingKeyboard || GuiState.bUsingTextInput);
-    }
-
-    bool CanExposeMouseAxisToLua()
-    {
-        if (GEngine)
+        bool CanReadGameplayTextInput() const
         {
-            const ERuntimeInputMode InputMode = GEngine->GetRuntimeInputMode();
-            if (InputMode == ERuntimeInputMode::UIOnly)
+            const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
+            if (GEngine)
             {
-                return false;
+                return GEngine->BuildRuntimeInputPermissions(GuiState).bAllowLuaKeyboardInput;
             }
-            if (InputMode == ERuntimeInputMode::GameOnly)
-            {
-                return GEngine->IsRuntimeCursorLocked();
-            }
-        }
 
-        const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
-        return !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
-    }
+            return !(GuiState.bUsingKeyboard || GuiState.bUsingTextInput);
+        }
+    };
 
     bool IsUIInputKeyDown(int32 KeyCode)
     {
@@ -252,33 +328,33 @@ namespace FLuaEngineAPI
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKey(KeyCode);
+                return FLuaInputView().IsKeyDown(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKey(KeyCode);
+                return FLuaInputView().IsKeyDown(KeyCode);
             });
 
         Input["IsKeyPressed"] = sol::overload(
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+                return FLuaInputView().IsKeyPressed(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+                return FLuaInputView().IsKeyPressed(KeyCode);
             });
 
         Input["IsKeyReleased"] = sol::overload(
             [](const FString& KeyName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(KeyName);
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+                return FLuaInputView().IsKeyReleased(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+                return FLuaInputView().IsKeyReleased(KeyCode);
             });
 
         Input["IsUIKeyDown"] = sol::overload(
@@ -314,7 +390,7 @@ namespace FLuaEngineAPI
         Input["ConsumeTextInput"] = []() -> FString
         {
             FString Result;
-            for (uint32_t Codepoint : InputSystem::Get().ConsumeScriptTextInput())
+            for (uint32_t Codepoint : FLuaInputView().ConsumeTextInput())
             {
                 AppendUtf8(Result, Codepoint);
             }
@@ -325,33 +401,33 @@ namespace FLuaEngineAPI
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKey(KeyCode);
+                return FLuaInputView().IsMouseButtonDown(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKey(KeyCode);
+                return FLuaInputView().IsMouseButtonDown(KeyCode);
             });
 
         Input["IsMousePressed"] = sol::overload(
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+                return FLuaInputView().IsMouseButtonPressed(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKeyDown(KeyCode);
+                return FLuaInputView().IsMouseButtonPressed(KeyCode);
             });
 
         Input["IsMouseReleased"] = sol::overload(
             [](const FString& ButtonName) -> bool
             {
                 const int32 KeyCode = ResolveInputKeyCode(ButtonName);
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+                return FLuaInputView().IsMouseButtonReleased(KeyCode);
             },
             [](int32 KeyCode) -> bool
             {
-                return CanExposeInputKeyToLua(KeyCode) && IsMouseButtonCode(KeyCode) && InputSystem::Get().GetKeyUp(KeyCode);
+                return FLuaInputView().IsMouseButtonReleased(KeyCode);
             });
 
         Input["GetMousePosition"] = []() -> FVector
@@ -362,41 +438,22 @@ namespace FLuaEngineAPI
 
         Input["GetMouseDelta"] = []() -> FVector
         {
-            if (!CanExposeMouseAxisToLua())
-            {
-                return FVector::ZeroVector;
-            }
-            return FVector(
-                static_cast<float>(InputSystem::Get().MouseDeltaX()),
-                static_cast<float>(InputSystem::Get().MouseDeltaY()),
-                0.0f);
+            return FLuaInputView().GetMouseDelta();
         };
 
         Input["GetScrollDelta"] = []() -> int32
         {
-            if (!CanExposeMouseAxisToLua())
-            {
-                return 0;
-            }
-            return InputSystem::Get().GetScrollDelta();
+            return FLuaInputView().GetScrollDelta();
         };
 
         Input["GetScrollNotches"] = []() -> float
         {
-            if (!CanExposeMouseAxisToLua())
-            {
-                return 0.0f;
-            }
-            return InputSystem::Get().GetScrollNotches();
+            return FLuaInputView().GetScrollNotches();
         };
 
         Input["IsAnyMouseButtonDown"] = []() -> bool
         {
-            if (!CanExposeMouseAxisToLua())
-            {
-                return false;
-            }
-            return InputSystem::Get().IsAnyMouseButtonDown();
+            return FLuaInputView().IsAnyMouseButtonDown();
         };
 
         Input["SetInputMode"] = [](const FString& Mode)

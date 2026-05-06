@@ -1,12 +1,10 @@
-﻿#pragma once
+#pragma once
 #include "BaseEditorController.h"
-#include <functional>
 
 class FViewportCamera;
 class APlayerController;
 
-//  기존에 PIE Controller였음 이름이
-class FGameController : public IBaseEditorController
+class FGameInputBridge : public IBaseEditorController
 {
   public:
     void Tick(float InDeltaTime) override;
@@ -32,9 +30,6 @@ class FGameController : public IBaseEditorController
     void ClearPlayerController() { PlayerController = nullptr; }
     APlayerController* GetPlayerController() const { return PlayerController; }
 
-    void SetEndPIECallback(std::function<void()> Callback) { OnRequestEndPIE = std::move(Callback); }
-    void ClearEndPIECallback() { OnRequestEndPIE = nullptr; }
-
 	FVector GetTargetLocation() const { return TargetLocation; }
 	void SetTargetLocation(FVector InTargetLoc) { TargetLocation = InTargetLoc; }
 
@@ -43,7 +38,6 @@ class FGameController : public IBaseEditorController
   private:
     FViewportCamera*      Camera = nullptr;
     APlayerController*    PlayerController = nullptr;
-    std::function<void()> OnRequestEndPIE;
 
     float                 Yaw = 0.f;
     float                 Pitch = 0.f;

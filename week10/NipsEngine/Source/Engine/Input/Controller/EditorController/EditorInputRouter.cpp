@@ -1,4 +1,4 @@
-﻿#include "EditorInputRouter.h"
+#include "EditorInputRouter.h"
 
 void FEditorInputRouter::SetActiveController(EActiveEditorController Controller)
 {
@@ -8,8 +8,8 @@ void FEditorInputRouter::SetActiveController(EActiveEditorController Controller)
     case (EActiveEditorController::EditorWorldController):
         ActiveController = &EditorWorldController;
         break;
-    case (EActiveEditorController::PIEController):
-        ActiveController = &PIEController;
+    case (EActiveEditorController::GameInputBridge):
+        ActiveController = &GameInputBridge;
         break;
     case (EActiveEditorController::NilController):
         ActiveController = nullptr;
@@ -26,7 +26,7 @@ void FEditorInputRouter::Tick(float DeltaTime)
 void FEditorInputRouter::SetViewportDim(float X, float Y, float Width, float Height)
 {
     EditorWorldController.SetViewportDim(X, Y, Width, Height);
-    PIEController.SetViewportDim(X, Y, Width, Height);
+    GameInputBridge.SetViewportDim(X, Y, Width, Height);
 }
 
 void FEditorInputRouter::RouteKeyboardInput(EKeyInputType Type, int VK)

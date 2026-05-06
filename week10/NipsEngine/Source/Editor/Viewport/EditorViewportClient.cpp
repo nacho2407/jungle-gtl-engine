@@ -1,4 +1,4 @@
-﻿#include "Editor/Viewport/EditorViewportClient.h"
+#include "Editor/Viewport/EditorViewportClient.h"
 
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -239,35 +239,110 @@ void FEditorViewportClient::StartPIE(UWorld* InWorld)
 {
 	World = InWorld;
 	InputRouter.GetEditorWorldController().SetWorld(InWorld);
-	InputRouter.GetPIEController().SetCamera(&Camera); // re-sync Yaw/Pitch
-    InputRouter.GetPIEController().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
-	InputRouter.SetActiveController(EActiveEditorController::PIEController);
+	InputRouter.GetGameInputBridge().SetCamera(&Camera); // re-sync Yaw/Pitch
+    InputRouter.GetGameInputBridge().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
+	InputRouter.SetActiveController(EActiveEditorController::GameInputBridge);
+	if (Editor)
+	{
+		Editor->GetPIESession().SetControlMode(EPIESessionControlMode::Possessed);
+	}
 	bControlLocked = false;
-	bPIEMouseFocusReleased = false;
+	ClearPIEMouseFocusReleased();
 	TriggerPIEStartOutlineFlash();
 }
 
 void FEditorViewportClient::EndPIE(UWorld* InWorld)
 {
 	World = InWorld;
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge)
 	{
-		InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetPIEController().GetTargetLocation());
+		InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetGameInputBridge().GetTargetLocation());
 	}
 	InputRouter.GetEditorWorldController().SetWorld(InWorld);
 	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
 	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
-	ClearEndPIECallback();
 	ClearPIEPlayerController();
 	InputSystem::Get().LockMouse(false);
 	bControlLocked = false;
-	bPIEMouseFocusReleased = false;
+	ClearPIEMouseFocusReleased();
+	if (Editor)
+	{
+		Editor->GetPIESession().ClearControlMode();
+	}
+}
+
+bool FEditorViewportClient::IsPIEPossessed() const
+{
+	if (!IsPIEActive())
+	{
+		return false;
+	}
+
+	if (Editor)
+	{
+		return Editor->GetPIESession().GetControlMode() == EPIESessionControlMode::Possessed;
+	}
+
+	return InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge;
+}
+
+bool FEditorViewportClient::IsPIEEditorControlMode() const
+{
+	if (!IsPIEActive())
+	{
+		return false;
+	}
+
+	if (Editor)
+	{
+		return Editor->GetPIESession().GetControlMode() == EPIESessionControlMode::EditorControl;
+	}
+
+	return InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
+}
+
+bool FEditorViewportClient::AllowsEditorWorldControl() const
+{
+	if (!IsPIEActive())
+	{
+		return InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
+	}
+
+	if (Editor)
+	{
+		return Editor->GetPIESession().GetControlMode() == EPIESessionControlMode::EditorControl;
+	}
+
+	return InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
+}
+
+APlayerController* FEditorViewportClient::GetPIEPlayerController() const
+{
+	return Editor ? Editor->GetPIESession().GetPlayerController() : InputRouter.GetGameInputBridge().GetPlayerController();
+}
+
+void FEditorViewportClient::SetPIEPlayerController(APlayerController* InController)
+{
+	if (Editor)
+	{
+		Editor->GetPIESession().SetPlayerController(InController);
+	}
+	InputRouter.GetGameInputBridge().SetPlayerController(InController);
+}
+
+void FEditorViewportClient::ClearPIEPlayerController()
+{
+	if (Editor)
+	{
+		Editor->GetPIESession().ClearPlayerController();
+	}
+	InputRouter.GetGameInputBridge().ClearPlayerController();
 }
 
 void FEditorViewportClient::SetSelectionManager(FSelectionManager* InSelectionManager)
 {
-	SelectionManager = InSelectionManager;
-	InputRouter.GetEditorWorldController().SetSelectionManager(InSelectionManager);
+    SelectionManager = InSelectionManager;
+    InputRouter.GetEditorWorldController().SetSelectionManager(InSelectionManager);
 }
 
 void FEditorViewportClient::CreateCamera()
@@ -276,9 +351,9 @@ void FEditorViewportClient::CreateCamera()
 	Camera = FViewportCamera();
 	Camera.OnResize(static_cast<uint32>(WindowWidth), static_cast<uint32>(WindowHeight));
 	InputRouter.GetEditorWorldController().SetCamera(&Camera);
-	InputRouter.GetPIEController().SetCamera(&Camera);
+	InputRouter.GetGameInputBridge().SetCamera(&Camera);
 	InputRouter.GetEditorWorldController().ResetTargetFromCamera();
-	InputRouter.GetPIEController().ResetTargetLocation();
+	InputRouter.GetGameInputBridge().ResetTargetLocation();
 }
 
 void FEditorViewportClient::DestroyCamera()
@@ -363,22 +438,15 @@ void FEditorViewportClient::Tick(float DeltaTime)
 	{
 		TickInteraction(DeltaTime);
 		bRoutedInputProcessedThisFrame = false;
-		bLegacyInputSuppressedThisFrame = false;
 		return;
 	}
 
 	if (State && !State->bHovered)
 	{
-		bLegacyInputSuppressedThisFrame = false;
 		return;
 	}
 
-	if (!bLegacyInputSuppressedThisFrame)
-	{
-		TickInput(DeltaTime);
-	}
 	TickInteraction(DeltaTime);
-	bLegacyInputSuppressedThisFrame = false;
 }
 
 void FEditorViewportClient::TriggerPIEStartOutlineFlash(float DurationSeconds)
@@ -579,11 +647,11 @@ bool FEditorViewportClient::WantsRelativeMouseMode(const FViewportInputContext& 
 		return false;
 	}
 
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge)
 	{
 		return IsPIEActive()
 			&& IsRuntimeGameInputCaptured()
-			&& !bPIEMouseFocusReleased
+			&& !IsPIEMouseFocusReleased()
 			&& (Context.bFocused || Context.bCaptured || Context.bHovered || Context.bRelativeMouseMode);
 	}
 
@@ -792,23 +860,6 @@ void FEditorViewportClient::ApplyCameraMode()
 
 // ── Input tick sub-steps ──────────────────────────────────────────────────────
 
-void FEditorViewportClient::TickInput(float DeltaTime)
-{
-	if (!bHasCamera)
-		return;
-
-	const float VX = State ? static_cast<float>(Viewport->GetRect().X) : 0.f;
-    const float VY = State ? static_cast<float>(Viewport->GetRect().Y) : 0.f;
-
-	TickCursorCapture();
-	InputRouter.SetViewportDim(VX, VY, WindowWidth, WindowHeight);
-	InputRouter.Tick(DeltaTime);
-	TickKeyboardInput();
-	TickEditorShortcuts();
-	TickPIEShortCuts();
-	TickMouseInput(VX, VY);
-}
-
 void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 {
 	if (!bHasCamera)
@@ -830,8 +881,7 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 void FEditorViewportClient::TickCursorCapture()
 {
 	// Cursor ownership is now centralized in FInputRouter/FCursorControl.
-	// Keep the legacy path from hiding the cursor a second time; only clean up
-	// stale locks after buttons are released.
+	// This viewport only releases stale editor-world locks after buttons are released.
 	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
 	{
 		return;
@@ -845,47 +895,16 @@ void FEditorViewportClient::TickCursorCapture()
     }
 }
 
-void FEditorViewportClient::TickKeyboardInput()
-{
-	static constexpr int WatchKeys[] = {
-		'W', 'A', 'S', 'D', 'Q', 'E',
-		VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN,
-		VK_SPACE, VK_ESCAPE,
-	};
-
-	if (bControlLocked) return;
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
-	{
-		return;
-	}
-	const InputSystem& IS = InputSystem::Get();
-	const bool bEditorWorld = InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController;
-	const bool bKeyboardNavigationChord =
-		IS.GetKey(VK_RBUTTON)
-		|| (IS.GetKey(VK_LBUTTON) && !IS.GetKey(VK_CONTROL) && !IS.GetKey(VK_MENU))
-		|| IS.GetKey(VK_MBUTTON);
-	for (int VK : WatchKeys)
-	{
-		if (bEditorWorld && IsEditorCameraKeyboardKey(VK) && !bKeyboardNavigationChord)
-		{
-			continue;
-		}
-		if (IS.GetKeyDown(VK)) InputRouter.RouteKeyboardInput(EKeyInputType::KeyPressed,  VK);
-		if (IS.GetKey(VK))     InputRouter.RouteKeyboardInput(EKeyInputType::KeyDown,     VK);
-		if (IS.GetKeyUp(VK))   InputRouter.RouteKeyboardInput(EKeyInputType::KeyReleased, VK);
-	}
-}
-
 void FEditorViewportClient::TickKeyboardInput(const FViewportInputContext& Context)
 {
 	static constexpr int WatchKeys[] = {
 		'W', 'A', 'S', 'D', 'Q', 'E',
 		VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN,
-		VK_SPACE, VK_ESCAPE,
+		VK_SPACE,
 	};
 
 	if (bControlLocked) return;
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge && !IsRuntimeGameInputCaptured())
 	{
 		return;
 	}
@@ -908,56 +927,6 @@ void FEditorViewportClient::TickKeyboardInput(const FViewportInputContext& Conte
 	}
 }
 
-void FEditorViewportClient::TickEditorShortcuts()
-{
-	// These shortcuts only apply in the editor world, not during PIE.
-	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
-		return;
-
-	const bool bInPIE = IsPIEActive();
-	const InputSystem& IS        = InputSystem::Get();
-	const bool         bCtrlDown = IS.GetKey(VK_CONTROL);
-	const bool         bAltDown  = IS.GetKey(VK_MENU);
-	const bool         bShiftDown = IS.GetKey(VK_SHIFT);
-	const bool         bMouseNavigationActive =
-		IS.GetRightDragging()
-		|| IS.GetMiddleDragging()
-		|| (IS.GetKey(VK_LBUTTON) && !bCtrlDown);
-
-	if (!bMouseNavigationActive)
-	{
-		if (IS.GetKeyUp(VK_TAB))
-			CycleTransformMode();
-		if (IS.GetKeyUp(VK_SPACE))
-			CycleGizmoTransformMode();
-		if (IS.GetKeyUp('1') || IS.GetKeyUp('Q'))
-			SetTransformMode(ETransformMode::Select);
-		if (IS.GetKeyUp('2') || IS.GetKeyUp('W'))
-			SetTransformMode(ETransformMode::Translate);
-		if (IS.GetKeyUp('3') || IS.GetKeyUp('E'))
-			SetTransformMode(ETransformMode::Rotate);
-		if (IS.GetKeyUp('4') || IS.GetKeyUp('R'))
-			SetTransformMode(ETransformMode::Scale);
-	}
-
-	if (IS.GetKeyUp('X') && Gizmo)
-		Gizmo->SetWorldSpace(!Gizmo->IsWorldSpace());
-
-	if (IS.GetKeyUp(VK_DELETE))
-		DeleteSelectedActors();
-
-	if (IS.GetKeyDown('A') && bCtrlDown && !bAltDown)
-		SelectAllActors();
-
-	if (!bInPIE && IS.GetKeyDown('Z') && bCtrlDown && !bAltDown && Editor)
-	{
-		if (bShiftDown)
-			Editor->Redo();
-		else
-			Editor->Undo();
-	}
-}
-
 void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Context)
 {
 	using EEditorViewportAction = EditorViewportInputMapping::EEditorViewportAction;
@@ -972,19 +941,19 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 		|| EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::NavPanAltMiddleDown);
 
 	// These shortcuts only apply in the editor world, not during PIE.
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge)
 	{
-		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::EndPIE) && Editor)
+		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::EndPIE))
 		{
-			Editor->StopPlaySession();
+			ExecutePIEShellCommand(EPIESessionShellCommand::EndPlay);
 		}
 		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::TogglePIEPossessEject))
 		{
-			TogglePIEPossessEject();
+			ExecutePIEShellCommand(EPIESessionShellCommand::TogglePossessEject);
 		}
 		if (EditorViewportInputMapping::IsTriggered(Context, EEditorViewportAction::ReleasePIEMouseFocus))
 		{
-			ReleasePIEMouseFocus();
+			ExecutePIEShellCommand(EPIESessionShellCommand::ReleaseMouseFocus);
 		}
 		return;
 	}
@@ -1074,41 +1043,21 @@ void FEditorViewportClient::TickEditorShortcuts(const FViewportInputContext& Con
 	}
 }
 
-void FEditorViewportClient::TickPIEShortCuts()
-{
-	if (!IsPIEActive()) return;
-
-	InputSystem& IS = InputSystem::Get();
-
-	if (IS.GetKeyDown(VK_ESCAPE) && Editor)
-	{
-		Editor->StopPlaySession();
-	}
-	if (IS.GetKeyDown(VK_F8))
-	{
-		TogglePIEPossessEject();
-	}
-	if (IS.GetKeyDown(VK_F1) && IS.GetKey(VK_SHIFT))
-	{
-		ReleasePIEMouseFocus();
-	}
-}
-
 void FEditorViewportClient::TickPIEShortCuts(const FViewportInputContext& Context)
 {
 	if (!IsPIEActive()) return;
 
-	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::EndPIE) && Editor)
+	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::EndPIE))
 	{
-		Editor->StopPlaySession();
+		ExecutePIEShellCommand(EPIESessionShellCommand::EndPlay);
 	}
 	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::TogglePIEPossessEject))
 	{
-		TogglePIEPossessEject();
+		ExecutePIEShellCommand(EPIESessionShellCommand::TogglePossessEject);
 	}
 	if (EditorViewportInputMapping::IsTriggered(Context, EditorViewportInputMapping::EEditorViewportAction::ReleasePIEMouseFocus))
 	{
-		ReleasePIEMouseFocus();
+		ExecutePIEShellCommand(EPIESessionShellCommand::ReleaseMouseFocus);
 	}
 }
 
@@ -1561,73 +1510,14 @@ bool FEditorViewportClient::HandleAltNavigationInput(const FViewportInputContext
 	return true;
 }
 
-void FEditorViewportClient::TickMouseInput(float VX, float VY)
-{
-	if (bControlLocked) return;
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && bPIEMouseFocusReleased)
-	{
-		return;
-	}
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
-	{
-		return;
-	}
-	const InputSystem& IS = InputSystem::Get();
-
-	POINT MP = IS.GetMousePos();
-	if (Window) MP = Window->ScreenToClientPoint(MP);
-	const float LocalX = static_cast<float>(MP.x) - VX;
-	const float LocalY = static_cast<float>(MP.y) - VY;
-	const float DX     = static_cast<float>(IS.MouseDeltaX());
-	const float DY     = static_cast<float>(IS.MouseDeltaY());
-
-	if (IsPointerInViewportInputDeadZone(LocalY))
-	{
-		return;
-	}
-
-	const bool bSuppressPassiveFeedback = IsPassiveViewportFeedbackSuppressedByInputSystem();
-	if (bSuppressPassiveFeedback)
-	{
-		ClearPassiveGizmoHover();
-	}
-
-	if (IS.MouseMoved())
-	{
-		InputRouter.RouteMouseInput(EMouseInputType::E_MouseMoved, DX, DY);
-		if (!bSuppressPassiveFeedback)
-		{
-			InputRouter.RouteMouseInput(EMouseInputType::E_MouseMovedAbsolute, LocalX, LocalY);
-		}
-	}
-
-	if (IS.GetKeyDown(VK_RBUTTON))
-		InputRouter.RouteMouseInput(EMouseInputType::E_RightMouseClicked, DX, DY);
-	if (IS.GetRightDragging())
-		InputRouter.RouteMouseInput(EMouseInputType::E_RightMouseDragged, DX, DY);
-	if (IS.GetMiddleDragging())
-		InputRouter.RouteMouseInput(EMouseInputType::E_MiddleMouseDragged, DX, DY);
-	if (!MathUtil::IsNearlyZero(IS.GetScrollNotches()))
-		InputRouter.RouteMouseInput(EMouseInputType::E_MouseWheelScrolled, IS.GetScrollNotches(), 0.f);
-
-	if (IS.GetKeyDown(VK_LBUTTON))
-		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseClicked, LocalX, LocalY);
-	if (IS.GetLeftDragging())
-		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragged, LocalX, LocalY);
-	if (IS.GetLeftDragEnd())
-		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseDragEnded, LocalX, LocalY);
-	if (IS.GetKeyUp(VK_LBUTTON) && !IS.GetLeftDragEnd())
-		InputRouter.RouteMouseInput(EMouseInputType::E_LeftMouseButtonUp, LocalX, LocalY);
-}
-
 void FEditorViewportClient::TickMouseInput(const FViewportInputContext& Context)
 {
 	if (bControlLocked) return;
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && bPIEMouseFocusReleased)
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge && IsPIEMouseFocusReleased())
 	{
 		return;
 	}
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController && !IsRuntimeGameInputCaptured())
+	if (InputRouter.GetActiveController() == EActiveEditorController::GameInputBridge && !IsRuntimeGameInputCaptured())
 	{
 		return;
 	}
@@ -1714,50 +1604,10 @@ bool FEditorViewportClient::IsPointerInViewportInputDeadZone(const FViewportInpu
 
 bool FEditorViewportClient::IsPassiveViewportFeedbackSuppressed(const FViewportInputContext& Context) const
 {
-	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
-	{
-		return false;
-	}
-
-	if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
-	{
-		return false;
-	}
-
-	const bool bLeftCapture =
-		Context.Frame.IsDown(VK_LBUTTON) ||
-		Context.Frame.bLeftDragging ||
-		Context.WasPointerDragStarted(EPointerButton::Left) ||
-		Context.WasPointerDragEnded(EPointerButton::Left);
-	const bool bRightCapture =
-		Context.Frame.IsDown(VK_RBUTTON) ||
-		Context.Frame.bRightDragging ||
-		Context.WasPointerDragStarted(EPointerButton::Right) ||
-		Context.WasPointerDragEnded(EPointerButton::Right) ||
-		Context.bRelativeMouseMode;
-	const bool bMouseCaptureActive = Context.bCaptured || Context.bRelativeMouseMode || bBoxSelecting;
-
-	return bMouseCaptureActive && (bLeftCapture || bRightCapture || bBoxSelecting);
-}
-
-bool FEditorViewportClient::IsPassiveViewportFeedbackSuppressedByInputSystem() const
-{
-	if (InputRouter.GetActiveController() != EActiveEditorController::EditorWorldController)
-	{
-		return false;
-	}
-
-	if (Gizmo && (Gizmo->IsHolding() || Gizmo->IsPressedOnHandle()))
-	{
-		return false;
-	}
-
-	const InputSystem& IS = InputSystem::Get();
 	return bBoxSelecting ||
-		IS.GetKey(VK_LBUTTON) ||
-		IS.GetKey(VK_RBUTTON) ||
-		IS.GetLeftDragging() ||
-		IS.GetRightDragging();
+		!Context.SideEffects.bAllowPicking ||
+		!Context.SideEffects.bAllowGizmoHover ||
+		!Context.SideEffects.bAllowSelectionFeedback;
 }
 
 void FEditorViewportClient::ClearPassiveGizmoHover() const
@@ -2145,12 +1995,20 @@ void FEditorViewportClient::DuplicateSelection()
 	World->RebuildSpatialIndex();
 }
 
+void FEditorViewportClient::RequestEndPIE()
+{
+	if (Editor)
+	{
+		Editor->StopPlaySession();
+	}
+}
+
 void FEditorViewportClient::TogglePIEPossessEject()
 {
 	if (!IsPIEActive())
 		return;
 
-	if (InputRouter.GetActiveController() == EActiveEditorController::PIEController)
+	if (IsPIEPossessed())
 	{
 		EnterPIEEditorControlMode();
 	}
@@ -2165,11 +2023,37 @@ void FEditorViewportClient::ReleasePIEMouseFocus()
 	if (!IsPIEPossessed())
 		return;
 
-	bPIEMouseFocusReleased = true;
+	MarkPIEMouseFocusReleased();
 	bControlLocked = false;
 	InputSystem& IS = InputSystem::Get();
 	IS.SetCursorVisibility(true);
 	IS.LockMouse(false);
+}
+
+bool FEditorViewportClient::ExecutePIEShellCommand(EPIESessionShellCommand Command)
+{
+	return Editor && Editor->GetPIESession().ExecuteShellCommand(Command, *this);
+}
+
+bool FEditorViewportClient::IsPIEMouseFocusReleased() const
+{
+	return Editor && Editor->GetPIESession().IsMouseFocusReleased();
+}
+
+void FEditorViewportClient::MarkPIEMouseFocusReleased()
+{
+	if (Editor)
+	{
+		Editor->GetPIESession().MarkMouseFocusReleased();
+	}
+}
+
+void FEditorViewportClient::ClearPIEMouseFocusReleased()
+{
+	if (Editor)
+	{
+		Editor->GetPIESession().ClearMouseFocusReleased();
+	}
 }
 
 void FEditorViewportClient::ReacquirePIEMouseFocus()
@@ -2183,7 +2067,7 @@ void FEditorViewportClient::ReacquirePIEMouseFocus()
 bool FEditorViewportClient::TryReacquirePIEMouseFocusOnViewportClick(const FViewportInputContext& Context)
 {
 	if (!IsPIEPossessed()
-		|| !bPIEMouseFocusReleased
+		|| !IsPIEMouseFocusReleased()
 		|| !Context.WasPressed(VK_LBUTTON)
 		|| Context.bImGuiCapturedMouse
 		|| IsPointerInViewportInputDeadZone(Context))
@@ -2204,7 +2088,7 @@ void FEditorViewportClient::EnterPIEEditorControlMode()
 
 	InputRouter.GetEditorWorldController().SetWorld(World);
 	InputRouter.GetEditorWorldController().SetCamera(&Camera);
-	InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetPIEController().GetTargetLocation());
+	InputRouter.GetEditorWorldController().SetTargetLocation(InputRouter.GetGameInputBridge().GetTargetLocation());
 	InputRouter.GetEditorWorldController().SetTargetRotation(Camera.GetRotation());
 	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
 	if (World)
@@ -2213,7 +2097,11 @@ void FEditorViewportClient::EnterPIEEditorControlMode()
 	}
 
 	bControlLocked = false;
-	bPIEMouseFocusReleased = false;
+	ClearPIEMouseFocusReleased();
+	if (Editor)
+	{
+		Editor->GetPIESession().SetControlMode(EPIESessionControlMode::EditorControl);
+	}
 	InputSystem& IS = InputSystem::Get();
 	IS.SetCursorVisibility(true);
 	IS.LockMouse(false);
@@ -2226,21 +2114,25 @@ void FEditorViewportClient::EnterPIEPossessedMode()
 		return;
 	}
 
-	InputRouter.GetPIEController().SetCamera(&Camera);
-	InputRouter.GetPIEController().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
-	InputRouter.SetActiveController(EActiveEditorController::PIEController);
+	InputRouter.GetGameInputBridge().SetCamera(&Camera);
+	InputRouter.GetGameInputBridge().SetTargetLocation(InputRouter.GetEditorWorldController().GetTargetLocation());
+	InputRouter.SetActiveController(EActiveEditorController::GameInputBridge);
+	if (Editor)
+	{
+		Editor->GetPIESession().SetControlMode(EPIESessionControlMode::Possessed);
+	}
 	if (GEngine)
 	{
 		GEngine->SetRuntimeInputMode(ERuntimeInputMode::GameOnly);
 	}
 	if (World)
 	{
-		APlayerController* PlayerController = InputRouter.GetPIEController().GetPlayerController();
+		APlayerController* PlayerController = GetPIEPlayerController();
 		World->SetActiveCamera(PlayerController ? PlayerController->GetRuntimeCamera() : &Camera);
 	}
 
 	bControlLocked = false;
-	bPIEMouseFocusReleased = false;
+	ClearPIEMouseFocusReleased();
 	InputSystem& IS = InputSystem::Get();
 	IS.SetCursorVisibility(false);
 	LockCursorToViewport();

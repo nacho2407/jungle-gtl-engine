@@ -178,7 +178,7 @@ namespace
 }
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
-                                    const FFrustum* ViewFrustum)
+                                    const FFrustum* ViewFrustum, bool bIncludeEditorOnlyPrimitives)
 {
 	ResetCullingStats();
 	ResetDecalStats();
@@ -188,7 +188,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 
 	if (ViewFrustum != nullptr)
 	{
-		CollectWorldWithFrustum(World, *ViewFrustum, ShowFlags, ViewMode, RenderBus);
+		CollectWorldWithFrustum(World, *ViewFrustum, ShowFlags, ViewMode, RenderBus, bIncludeEditorOnlyPrimitives);
 		return;
 	}
 
@@ -206,7 +206,7 @@ void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, 
 			}
 		}
 
-		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
+		CollectFromActor(Actor, ShowFlags, ViewMode, RenderBus, World->GetWorldType(), bIncludeEditorOnlyPrimitives);
 	}
 
 }
@@ -227,7 +227,7 @@ void FRenderCollector::ResetLightStats()
 }
 
 void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
-                                               EViewMode ViewMode, FRenderBus& RenderBus)
+                                               EViewMode ViewMode, FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives)
 {
 	VisiblePrimitiveScratch.clear();
 	World->GetSpatialIndex().FrustumQueryPrimitives(ViewFrustum, VisiblePrimitiveScratch, FrustumQueryScratch);
@@ -240,7 +240,7 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 		}
 
 		++LastCullingStats.BVHPassedPrimitiveCount;
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType(), bIncludeEditorOnlyPrimitives);
 	}
 
 	std::unordered_set<UPrimitiveComponent*> CollectedCameraDependentPrimitives;
@@ -291,17 +291,18 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 			}
 
 			++LastCullingStats.FallbackPassedPrimitiveCount;
-			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType());
+			CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, World->GetWorldType(), bIncludeEditorOnlyPrimitives);
 		}
 	}
 }
 
-void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags,
+                                        EViewMode ViewMode, FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives)
 {
 	bool bHasSelectionMask = false;
 	for (AActor* Actor : SelectedActors)
 	{
-		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus);
+		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus, bIncludeEditorOnlyPrimitives);
 	}
 
 	if (bHasSelectionMask)
@@ -382,13 +383,14 @@ void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& Sh
 	}
 }
 
-void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
+void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
+                                        EWorldType WorldType, bool bIncludeEditorOnlyPrimitives)
 {
 	if (!Actor->IsVisible()) return;
 
 	for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 	{
-		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType);
+		CollectFromComponent(Primitive, ShowFlags, ViewMode, RenderBus, WorldType, bIncludeEditorOnlyPrimitives);
 	}
 
 	if (Actor->IsA<ADecalSpotLightActor>())
@@ -398,7 +400,8 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 	}
 }
 
-bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus)
+bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode,
+                                                FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives)
 {
 	if (!Actor->IsVisible()) return false;
 
@@ -424,7 +427,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
 	{
 		if (!primitiveComponent->IsVisible()) continue;
-		if (primitiveComponent->IsEditorOnly())
+		if (!bIncludeEditorOnlyPrimitives && primitiveComponent->IsEditorOnly())
 		{
 			UWorld* World = Actor->GetFocusedWorld();
 			if (World && World->GetWorldType() != EWorldType::Editor)
@@ -559,10 +562,11 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 	return bHasSelectionMask;
 }
 
-void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, EWorldType WorldType)
+void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
+                                            FRenderBus& RenderBus, EWorldType WorldType, bool bIncludeEditorOnlyPrimitives)
 {
 	if (!Primitive->IsVisible()) return;
-	if (Primitive->IsEditorOnly() && WorldType != EWorldType::Editor) return;
+	if (!bIncludeEditorOnlyPrimitives && Primitive->IsEditorOnly() && WorldType != EWorldType::Editor) return;
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
