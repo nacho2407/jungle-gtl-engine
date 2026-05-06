@@ -16,8 +16,10 @@ struct FRenderResources
 	FConstantBuffer ShadowBuffer;                   // b4
     FConstantBuffer LightPassConstantBuffer;        // b7
     FConstantBuffer FogPassConstantBuffer;          // b9
-    FConstantBuffer FXAAConstantBuffer;             // b10
+	FConstantBuffer FXAAConstantBuffer;             // b10
 	FConstantBuffer VSMConstantBuffer;				// b11
+    FConstantBuffer EditorPickingConstantBuffer;     // b12
+    FConstantBuffer SelectionMaskConstantBuffer;     // b12
     FConstantBuffer SandevistanCB;
 	
 	FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)

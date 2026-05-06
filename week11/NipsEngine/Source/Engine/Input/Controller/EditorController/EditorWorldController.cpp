@@ -118,39 +118,46 @@ void FEditorWorldController::SelectActorAt(float X, float Y)
     if (!World || !SelectionManager)
         return;
 
-    FRay       Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
-    FHitResult HitResult{};
     AActor* BestActor = nullptr;
-    float   ClosestDist = FLT_MAX;
-
-	FWorldSpatialIndex::FPrimitiveRayQueryScratch RayQueryScratch;
-	TArray<UPrimitiveComponent*> CandidatePrimitives;
-    TArray<float>                CandidateTs;
-    World->GetSpatialIndex().RayQueryPrimitives(Ray, CandidatePrimitives, CandidateTs, RayQueryScratch);
-
-	InputSystem& IS = InputSystem::Get();
-
-	for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(CandidatePrimitives.size()); ++CandidateIndex)
+    if (SelectionPickResolver)
     {
-        if (CandidateTs[CandidateIndex] > ClosestDist)
-        {
-            break;
-        }
+        SelectionPickResolver(X, Y, BestActor);
+    }
+    else
+    {
+        FRay       Ray = Camera->DeprojectScreenToWorld(X, Y, ViewportWidth, ViewportHeight);
+        FHitResult HitResult{};
+        float   ClosestDist = FLT_MAX;
 
-        UPrimitiveComponent* PrimitiveComp = CandidatePrimitives[CandidateIndex];
-        AActor*              Actor = (PrimitiveComp != nullptr) ? PrimitiveComp->GetOwner() : nullptr;
-        if (Actor == nullptr || Actor->GetRootComponent() == nullptr)
-        {
-            continue;
-        }
+        FWorldSpatialIndex::FPrimitiveRayQueryScratch RayQueryScratch;
+        TArray<UPrimitiveComponent*> CandidatePrimitives;
+        TArray<float>                CandidateTs;
+        World->GetSpatialIndex().RayQueryPrimitives(Ray, CandidatePrimitives, CandidateTs, RayQueryScratch);
 
-        HitResult = {};
-        if (PrimitiveComp->Raycast(Ray, HitResult) && HitResult.Distance < ClosestDist)
+        for (int32 CandidateIndex = 0; CandidateIndex < static_cast<int32>(CandidatePrimitives.size()); ++CandidateIndex)
         {
-            ClosestDist = HitResult.Distance;
-            BestActor = Actor;
+            if (CandidateTs[CandidateIndex] > ClosestDist)
+            {
+                break;
+            }
+
+            UPrimitiveComponent* PrimitiveComp = CandidatePrimitives[CandidateIndex];
+            AActor*              Actor = (PrimitiveComp != nullptr) ? PrimitiveComp->GetOwner() : nullptr;
+            if (Actor == nullptr || Actor->GetRootComponent() == nullptr)
+            {
+                continue;
+            }
+
+            HitResult = {};
+            if (PrimitiveComp->Raycast(Ray, HitResult) && HitResult.Distance < ClosestDist)
+            {
+                ClosestDist = HitResult.Distance;
+                BestActor = Actor;
+            }
         }
     }
+
+	InputSystem& IS = InputSystem::Get();
 
     bool bCtrl = IS.GetKey(VK_CONTROL);
     bool bShift = IS.GetKey(VK_SHIFT);

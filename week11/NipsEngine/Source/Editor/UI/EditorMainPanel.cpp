@@ -126,6 +126,8 @@ const char* GetViewModeName(EViewMode Mode)
 		return "Depth";
 	case EViewMode::Normal:
 		return "Normal";
+    case EViewMode::IdBuffer:
+        return "ID Buffer";
 	default:
         return "Lit";
     }
@@ -1786,6 +1788,15 @@ void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
         ImGui::DragFloat("Camera Zoom Speed", &Settings.CameraZoomSpeed, 1.0f, 10.0f, 5000.0f, "%.0f");
         ImGui::DragFloat("Dolly Speed Scale", &Settings.CameraDollySpeedScale, 0.01f, 0.05f, 5.0f, "%.2fx");
         ImGui::DragFloat("Pan Speed Scale", &Settings.CameraPanSpeedScale, 0.05f, 0.05f, 10.0f, "%.2fx");
+        const char* PickingModeItems[] = { "ID Buffer", "Ray-Triangle" };
+        int32 PickingModeIndex = static_cast<int32>(Settings.PickingMode);
+        if (ImGui::Combo("Picking Mode", &PickingModeIndex, PickingModeItems, IM_ARRAYSIZE(PickingModeItems)))
+        {
+            if (PickingModeIndex >= 0 && PickingModeIndex < static_cast<int32>(EEditorPickingMode::Count))
+            {
+                Settings.PickingMode = static_cast<EEditorPickingMode>(PickingModeIndex);
+            }
+        }
         ImGui::Checkbox("Camera Smoothing", &Settings.bEnableCameraSmoothing);
         ImGui::BeginDisabled(!Settings.bEnableCameraSmoothing);
         ImGui::DragFloat("Move Smooth Speed", &Settings.CameraMoveSmoothSpeed, 0.05f, 0.1f, 40.0f, "%.2f");
@@ -3350,10 +3361,11 @@ void FEditorMainPanel::RenderViewportContextMenu()
             EViewMode::Wireframe,
             EViewMode::Depth,
             EViewMode::Normal,
+            EViewMode::IdBuffer,
         };
         static constexpr const char* Labels[] = {
             "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit",
-            "Heatmap", "Wireframe", "Depth", "Normal"
+            "Heatmap", "Wireframe", "Depth", "Normal", "ID Buffer"
         };
         for (int32 i = 0; i < static_cast<int32>(EViewMode::Count); ++i)
         {
@@ -3707,6 +3719,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
                     EViewMode::Wireframe,
                     EViewMode::Depth,
                     EViewMode::Normal,
+                    EViewMode::IdBuffer,
                 };
                 for (EViewMode Mode : Modes)
                 {
@@ -3855,6 +3868,7 @@ void FEditorMainPanel::RenderViewportIconToolbarForIndex(int32 ViewportIndex)
             EViewMode::Wireframe,
             EViewMode::Depth,
             EViewMode::Normal,
+            EViewMode::IdBuffer,
         };
         for (EViewMode Mode : Modes)
         {
@@ -4100,8 +4114,9 @@ void FEditorMainPanel::RenderViewportMenuBarForIndex(int32 Index)
             EViewMode::Wireframe,
             EViewMode::Depth,
 			EViewMode::Normal,
+            EViewMode::IdBuffer,
         };
-        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Heatmap", "Wireframe", "Depth", "Normal" };
+        static constexpr const char* Labels[] = { "Lit (Gouraud)", "Lit (Lambert)", "Lit (Blinn-Phong)", "Unlit", "Heatmap", "Wireframe", "Depth", "Normal", "ID Buffer" };
 
         for (int32 j = 0; j < static_cast<int32>(EViewMode::Count); ++j)
         {

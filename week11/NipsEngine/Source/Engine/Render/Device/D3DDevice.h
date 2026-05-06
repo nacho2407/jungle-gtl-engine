@@ -30,6 +30,12 @@ struct FRenderTargetSet
     ID3D11ShaderResourceView*     SceneFXAASRV = nullptr;
 	ID3D11RenderTargetView* SelectionMaskRTV = nullptr;
 	ID3D11ShaderResourceView* SelectionMaskSRV = nullptr;
+	ID3D11Texture2D* EditorIdPickTexture = nullptr;
+	ID3D11RenderTargetView* EditorIdPickRTV = nullptr;
+	ID3D11ShaderResourceView* EditorIdPickSRV = nullptr;
+	ID3D11Texture2D* EditorIdPickReadbackTexture = nullptr;
+	ID3D11RenderTargetView* EditorIdPickDebugRTV = nullptr;
+	ID3D11ShaderResourceView* EditorIdPickDebugSRV = nullptr;
     ID3D11DepthStencilView*   DepthStencilView = nullptr;
     ID3D11ShaderResourceView* SceneDepthSRV = nullptr;
 

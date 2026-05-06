@@ -77,8 +77,22 @@ namespace
 			SubUVComp->GetWorldLocation(),
 			FVector(
 				WorldScale.X > 0.01f ? WorldScale.X : 0.01f,
-				SubUVComp->GetWidth() * WorldScale.Y,
-				SubUVComp->GetHeight() * WorldScale.Z),
+				SubUVComp->GetWidth() * WorldScale.Y * 0.5f,
+				SubUVComp->GetHeight() * WorldScale.Z * 0.5f),
+			RenderBus.GetCameraForward(),
+			RenderBus.GetCameraRight(),
+			RenderBus.GetCameraUp());
+	}
+
+	FMatrix MakeViewBillboardMaskMatrix(const UBillboardComponent* Billboard, const FRenderBus& RenderBus)
+	{
+		const FVector WorldScale = Billboard->GetBillboardWorldScale();
+		return UBillboardComponent::MakeBillboardWorldMatrix(
+			Billboard->GetWorldLocation(),
+			FVector(
+				WorldScale.X > 0.01f ? WorldScale.X : 0.01f,
+				Billboard->GetWidth() * WorldScale.Y * 0.5f,
+				Billboard->GetHeight() * WorldScale.Z * 0.5f),
 			RenderBus.GetCameraForward(),
 			RenderBus.GetCameraRight(),
 			RenderBus.GetCameraUp());
@@ -435,6 +449,7 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 
 		FRenderCommand BaseCmd{};
 		BaseCmd.MeshBuffer = MeshBuffer;
+		BaseCmd.SourcePrimitive = primitiveComponent;
 		BaseCmd.PerObjectConstants = FPerObjectConstants(primitiveComponent->GetWorldMatrix());
 		BaseCmd.SectionIndexStart = 0;
 		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
@@ -460,22 +475,71 @@ bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags&
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
 		{
+			USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(primitiveComponent);
+			const FParticleResource* Particle = SubUVComp->GetParticle();
+			if (!Particle || !Particle->IsLoaded()) continue;
+
 			BaseCmd.PerObjectConstants.Model = MakeViewSubUVSelectionMatrix(
-				static_cast<USubUVComponent*>(primitiveComponent),
+				SubUVComp,
 				RenderBus);
+			BaseCmd.Constants.SubUV.Particle = Particle;
+			BaseCmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
+			BaseCmd.Constants.SubUV.Width = SubUVComp->GetWidth();
+			BaseCmd.Constants.SubUV.Height = SubUVComp->GetHeight();
 		}
 
 		else if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Billboard)
 		{
-			BaseCmd.PerObjectConstants.Model = MakeViewBillboardMatrix(primitiveComponent, RenderBus);
+			UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(primitiveComponent);
+			BaseCmd.PerObjectConstants.Model = MakeViewBillboardMaskMatrix(BillboardComp, RenderBus);
+			BaseCmd.Constants.Billboard.Texture = BillboardComp->GetTexture();
+			BaseCmd.Constants.Billboard.Width = BillboardComp->GetWidth();
+			BaseCmd.Constants.Billboard.Height = BillboardComp->GetHeight();
+			BaseCmd.Constants.Billboard.Color = BillboardComp->GetColor();
 		}
 
 		if (!primitiveComponent->SupportsOutline()) continue;
 
 		// Selection Mask
-		FRenderCommand MaskCmd = BaseCmd;
-		MaskCmd.Type = ERenderCommandType::SelectionMask;
-		RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
+		{
+			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
+			const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+			const FStaticMesh* MeshData = StaticMesh ? StaticMesh->GetMeshData() : nullptr;
+			const TArray<FStaticMeshSection>& Sections = MeshData ? MeshData->Sections : TArray<FStaticMeshSection>();
+
+			if (!Sections.empty())
+			{
+				for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+				{
+					const FStaticMeshSection& Section = Sections[SectionIdx];
+					if (Section.IndexCount == 0)
+					{
+						continue;
+					}
+
+					FRenderCommand MaskCmd = BaseCmd;
+					MaskCmd.Type = ERenderCommandType::SelectionMask;
+					MaskCmd.SectionIndexStart = Section.StartIndex;
+					MaskCmd.SectionIndexCount = Section.IndexCount;
+					MaskCmd.Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
+					RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+				}
+			}
+			else
+			{
+				FRenderCommand MaskCmd = BaseCmd;
+				MaskCmd.Type = ERenderCommandType::SelectionMask;
+				MaskCmd.Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(0));
+				RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+			}
+		}
+		else
+		{
+			FRenderCommand MaskCmd = BaseCmd;
+			MaskCmd.Type = ERenderCommandType::SelectionMask;
+			RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
+		}
 		bHasSelectionMask = true;
 
 		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
@@ -547,6 +611,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 			FRenderCommand Cmd = {};
 			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+			Cmd.SourcePrimitive = Primitive;
 			Cmd.Type = ERenderCommandType::StaticMesh;
 			Cmd.MeshBuffer = MeshBuffer;
 
@@ -580,6 +645,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Font;
+		Cmd.SourcePrimitive = Primitive;
 		Cmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix(), TextComp->GetColor()};
 		Cmd.Constants.Font.Text = &Text;
 		Cmd.Constants.Font.Font = Font;
@@ -599,7 +665,11 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		Cmd.PerObjectConstants = FPerObjectConstants{
 			MakeViewBillboardMatrix(Primitive, RenderBus),
 			FColor::White().ToVector4() };
+		Cmd.SourcePrimitive = Primitive;
 		Cmd.Type = ERenderCommandType::SubUV;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
 		Cmd.Constants.SubUV.Particle = Particle;
 		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
 		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
@@ -616,6 +686,10 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Billboard;
+		Cmd.SourcePrimitive = Primitive;
+		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
+		Cmd.SectionIndexStart = 0;
+		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
 		Cmd.PerObjectConstants = FPerObjectConstants{
 			MakeViewBillboardMatrix(Primitive, RenderBus),
 			FColor::White().ToVector4() };
@@ -761,6 +835,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
             FRenderCommand Cmd = {};
             Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+            Cmd.SourcePrimitive = Primitive;
             Cmd.Type = ERenderCommandType::StaticMesh;
             Cmd.MeshBuffer = MeshBuffer;
 

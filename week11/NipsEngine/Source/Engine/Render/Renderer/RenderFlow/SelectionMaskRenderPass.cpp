@@ -1,7 +1,119 @@
 ﻿#include "SelectionMaskRenderPass.h"
 #include "Core/ResourceManager.h"
+#include "Component/PrimitiveComponent.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/Texture.h"
+
+static ID3D11ShaderResourceView* GetTextureSRVFromParam(const FMaterialParamValue& Param)
+{
+    if (Param.Type != EMaterialParamType::Texture || !std::holds_alternative<UTexture*>(Param.Value))
+    {
+        return nullptr;
+    }
+
+    UTexture* Texture = std::get<UTexture*>(Param.Value);
+    return Texture ? Texture->GetSRV() : nullptr;
+}
+
+static ID3D11ShaderResourceView* GetDiffuseSRV(UMaterialInterface* Material)
+{
+    if (!Material || !Material->HasDiffuseMap())
+    {
+        return nullptr;
+    }
+
+    FMaterialParamValue Param;
+    if (!Material->GetParam("DiffuseMap", Param))
+    {
+        return nullptr;
+    }
+
+    return GetTextureSRVFromParam(Param);
+}
+
+static uint32 GetSelectionMaskShaderKey(const FRenderCommand& Cmd)
+{
+    UPrimitiveComponent* Primitive = Cmd.SourcePrimitive;
+    if (!Primitive)
+    {
+        return 0;
+    }
+
+    const EPrimitiveType PrimitiveType = Primitive->GetPrimitiveType();
+    if (PrimitiveType == EPrimitiveType::EPT_StaticMesh)
+    {
+        return 1;
+    }
+
+    if (PrimitiveType == EPrimitiveType::EPT_Billboard || PrimitiveType == EPrimitiveType::EPT_SubUV)
+    {
+        return 2;
+    }
+
+    return 0;
+}
+
+static void BuildSelectionMaskConstants(
+    const FRenderCommand& Cmd,
+    FSelectionMaskConstants& OutConstants,
+    ID3D11ShaderResourceView*& OutTextureSRV)
+{
+    OutConstants = {};
+    OutConstants.AlphaCutoff = 0.01f;
+    OutConstants.UVScale = FVector2(1.0f, 1.0f);
+    OutTextureSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+
+    UPrimitiveComponent* Primitive = Cmd.SourcePrimitive;
+    if (!Primitive)
+    {
+        return;
+    }
+
+    const EPrimitiveType PrimitiveType = Primitive->GetPrimitiveType();
+    if (PrimitiveType == EPrimitiveType::EPT_StaticMesh)
+    {
+        ID3D11ShaderResourceView* DiffuseSRV = GetDiffuseSRV(Cmd.Material);
+        if (DiffuseSRV)
+        {
+            OutTextureSRV = DiffuseSRV;
+            OutConstants.bUseAlphaTest = 1u;
+        }
+    }
+    else if (PrimitiveType == EPrimitiveType::EPT_Billboard)
+    {
+        UTexture* Texture = Cmd.Constants.Billboard.Texture;
+        if (Texture && Texture->GetSRV())
+        {
+            OutTextureSRV = Texture->GetSRV();
+            OutConstants.bUseAlphaTest = 1u;
+        }
+    }
+    else if (PrimitiveType == EPrimitiveType::EPT_SubUV)
+    {
+        const FParticleResource* Particle = Cmd.Constants.SubUV.Particle;
+        if (Particle && Particle->Texture && Particle->Texture->GetSRV())
+        {
+            OutTextureSRV = Particle->Texture->GetSRV();
+            OutConstants.bUseAlphaTest = 1u;
+        }
+
+        if (Particle && Particle->Columns > 0 && Particle->Rows > 0)
+        {
+            const uint32 Columns = Particle->Columns;
+            const uint32 Rows = Particle->Rows;
+            const uint32 FrameIndex = Cmd.Constants.SubUV.FrameIndex;
+            const uint32 Col = FrameIndex % Columns;
+            const uint32 Row = FrameIndex / Columns;
+            OutConstants.UVOffset = FVector2(
+                static_cast<float>(Col) / static_cast<float>(Columns),
+                static_cast<float>(Row) / static_cast<float>(Rows));
+            OutConstants.UVScale = FVector2(
+                1.0f / static_cast<float>(Columns),
+                1.0f / static_cast<float>(Rows));
+        }
+    }
+}
 
 bool FSelectionMaskRenderPass::Initialize()
 {
@@ -27,11 +139,8 @@ bool FSelectionMaskRenderPass::Begin(const FRenderPassContext* Context)
     Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
     Context->DeviceContext->RSSetState(RasterizerState);
 
-    UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
-    if (SelectionMaskShader != nullptr)
-    {
-        SelectionMaskShader->Bind(Context->DeviceContext);
-    }
+    ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+    Context->DeviceContext->PSSetSamplers(0, 1, &Sampler);
 
     OutSRV = PrevPassSRV;
     OutRTV = PrevPassRTV;
@@ -46,12 +155,33 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
         return true;
     }
 
+    UShader* SelectionMaskShader = FResourceManager::Get().GetShader("Shaders/SelectionMask.hlsl");
+    if (!SelectionMaskShader)
+    {
+        return true;
+    }
+
     for (const FRenderCommand& Cmd : Commands)
     {
+        const uint32 ShaderKey = GetSelectionMaskShaderKey(Cmd);
+        SelectionMaskShader->Bind(Context->DeviceContext, ShaderKey);
+
         Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
         ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
         Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
         Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+
+        FSelectionMaskConstants MaskConstants;
+        ID3D11ShaderResourceView* TextureSRV = nullptr;
+        BuildSelectionMaskConstants(Cmd, MaskConstants, TextureSRV);
+        Context->RenderResources->SelectionMaskConstantBuffer.Update(
+            Context->DeviceContext,
+            &MaskConstants,
+            sizeof(FSelectionMaskConstants));
+        ID3D11Buffer* cb12 = Context->RenderResources->SelectionMaskConstantBuffer.GetBuffer();
+        Context->DeviceContext->VSSetConstantBuffers(12, 1, &cb12);
+        Context->DeviceContext->PSSetConstantBuffers(12, 1, &cb12);
+        Context->DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
 
         if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
         {
@@ -91,5 +221,7 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FSelectionMaskRenderPass::End(const FRenderPassContext* Context)
 {
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context->DeviceContext->PSSetShaderResources(0, 1, &NullSRV);
     return true;
 }

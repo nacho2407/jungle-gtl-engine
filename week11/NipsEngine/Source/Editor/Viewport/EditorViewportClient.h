@@ -192,6 +192,9 @@ private:
 
 	// ── Selection helpers ────────────────────────────────────────────────────
 	void HandleBoxSelection();
+	bool ResolveActorForSelection(float LocalX, float LocalY, AActor*& OutActor);
+	bool PickActorByIdAtViewportLocalPoint(float LocalX, float LocalY, AActor*& OutActor);
+	bool PickActorByRayAtViewportLocalPoint(float LocalX, float LocalY, AActor*& OutActor);
 	bool TryProjectWorldToViewport(const FVector& WorldPos, float& OutViewportX, float& OutViewportY, float& OutDepth) const;
 	void FocusPrimarySelection();
 	void DeleteSelectedActors();
