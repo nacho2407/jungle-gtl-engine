@@ -26,6 +26,10 @@ local menu_items = {
     {
         label_id = "scoreboard_label",
         text = "Scoreboard"
+    },
+    {
+        label_id = "how_to_play_label",
+        text = "How To Play"
     }
 }
 
@@ -349,12 +353,14 @@ local function setMainMenuVisible(visible)
         ui_document:SetProperty("menu", "display", "block")
         ui_document:SetProperty("credit_view", "display", "none")
         ui_document:SetProperty("scoreboard_view", "display", "none")
+        ui_document:SetProperty("how_to_play_view", "display", "none")
         current_screen = "menu"
     else
         ui_document:SetProperty("title", "display", "none")
         ui_document:SetProperty("menu", "display", "none")
         ui_document:SetProperty("credit_view", "display", "block")
         ui_document:SetProperty("scoreboard_view", "display", "none")
+        ui_document:SetProperty("how_to_play_view", "display", "none")
         current_screen = "credit"
     end
 end
@@ -364,8 +370,18 @@ local function setScoreboardVisible()
     ui_document:SetProperty("menu", "display", "none")
     ui_document:SetProperty("credit_view", "display", "none")
     ui_document:SetProperty("scoreboard_view", "display", "block")
+    ui_document:SetProperty("how_to_play_view", "display", "none")
     current_screen = "scoreboard"
     refreshScoreboard()
+end
+
+local function setHowToPlayVisible()
+    ui_document:SetProperty("title", "display", "none")
+    ui_document:SetProperty("menu", "display", "none")
+    ui_document:SetProperty("credit_view", "display", "none")
+    ui_document:SetProperty("scoreboard_view", "display", "none")
+    ui_document:SetProperty("how_to_play_view", "display", "block")
+    current_screen = "how_to_play"
 end
 
 local function refreshMenuHighlight()
@@ -389,6 +405,7 @@ local function applyMainMenuLayout()
     ui_document:SetProperty("game_start_button", "top", "0px")
     ui_document:SetProperty("credit_button", "top", tostring(menu_layout.button_spacing) .. "px")
     ui_document:SetProperty("scoreboard_button", "top", tostring(menu_layout.button_spacing * 2) .. "px")
+    ui_document:SetProperty("how_to_play_button", "top", tostring(menu_layout.button_spacing * 3) .. "px")
 end
 
 local function returnToMainMenu()
@@ -492,7 +509,7 @@ local function activateSelected()
         return
     end
 
-    if current_screen == "credit" or current_screen == "scoreboard" then
+    if current_screen == "credit" or current_screen == "scoreboard" or current_screen == "how_to_play" then
         returnToMainMenu()
         return
     end
@@ -504,12 +521,14 @@ local function activateSelected()
         setMainMenuVisible(false)
     elseif selected_index == 3 then
         setScoreboardVisible()
+    elseif selected_index == 4 then
+        setHowToPlayVisible()
     end
 end
 
 
 local function handleBack()
-    if current_screen == "credit" or current_screen == "scoreboard" then
+    if current_screen == "credit" or current_screen == "scoreboard" or current_screen == "how_to_play" then
         returnToMainMenu()
     end
 end
@@ -567,11 +586,13 @@ function BeginPlay()
     ui_document:SetZOrder(0)
     ui_document:SetProperty("background", "display", "none")
     ui_document:SetTexture("title", "Textures/Title.png")
+    ui_document:SetTexture("how_to_play_image", "Textures/HowToPlay.png")
     playBackgroundBGM()
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")
     ui_document:SetProperty("credit_button", "background-color", "rgb(0, 0, 0)")
     ui_document:SetProperty("scoreboard_button", "background-color", "rgb(0, 0, 0)")
+    ui_document:SetProperty("how_to_play_button", "background-color", "rgb(0, 0, 0)")
 
     ui_document:SetProperty("game_start_button", "border-width", "2px")
     ui_document:SetProperty("game_start_button", "border-color", "rgb(0, 220, 220)")
@@ -579,6 +600,8 @@ function BeginPlay()
     ui_document:SetProperty("credit_button", "border-color", "rgb(0, 220, 220)")
     ui_document:SetProperty("scoreboard_button", "border-width", "2px")
     ui_document:SetProperty("scoreboard_button", "border-color", "rgb(0, 220, 220)")
+    ui_document:SetProperty("how_to_play_button", "border-width", "2px")
+    ui_document:SetProperty("how_to_play_button", "border-color", "rgb(0, 220, 220)")
 
     ui_document:SetProperty("credit_view", "margin-left", "100px")
 
@@ -620,7 +643,7 @@ function Tick(dt)
 end
 
 function OnKeyPressed(key)
-    if current_screen == "credit" or current_screen == "scoreboard" then
+    if current_screen == "credit" or current_screen == "scoreboard" or current_screen == "how_to_play" then
         if key == "Escape" or key == "Esc" or key == "Enter" then
             returnToMainMenu()
         end
