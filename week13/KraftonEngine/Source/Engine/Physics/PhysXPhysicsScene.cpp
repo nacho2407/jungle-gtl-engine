@@ -93,6 +93,7 @@ public:
 		UPrimitiveComponent* Other     = nullptr;
 		FVector              NormalImpulse{0,0,0};
 		FHitResult           Hit;
+		bool                 bBegin = true;       // false = end
 	};
 
 	struct FQueuedTrigger
@@ -113,11 +114,29 @@ public:
 		for (PxU32 i = 0; i < Count; ++i)
 		{
 			const PxContactPair& CP = Pairs[i];
-			if (!(CP.events & PxPairFlag::eNOTIFY_TOUCH_FOUND)) continue;
+			const bool bBegin = CP.events.isSet(PxPairFlag::eNOTIFY_TOUCH_FOUND);
+			const bool bEnd = CP.events.isSet(PxPairFlag::eNOTIFY_TOUCH_LOST);
+			if (!bBegin && !bEnd) continue;
 
 			auto* CompA = CP.shapes[0] ? static_cast<UPrimitiveComponent*>(CP.shapes[0]->userData) : nullptr;
 			auto* CompB = CP.shapes[1] ? static_cast<UPrimitiveComponent*>(CP.shapes[1]->userData) : nullptr;
 			if (!CompA || !CompB) continue;
+
+			if (bEnd)
+			{
+				FQueuedHit A;
+				A.Self = CompA;
+				A.Other = CompB;
+				A.bBegin = false;
+				PendingHits.push_back(A);
+
+				FQueuedHit B;
+				B.Self = CompB;
+				B.Other = CompA;
+				B.bBegin = false;
+				PendingHits.push_back(B);
+				continue;
+			}
 
 			// Contact point — 큐 dispatch 시점에 PxContactPair 가 이미 무효이므로 여기서 모두 추출.
 			PxContactPairPoint ContactPoints[1];
@@ -209,7 +228,14 @@ public:
 		{
 			if (!IsAliveObject(E.Self) || !IsAliveObject(E.Other)) continue;
 			AActor* OtherActor = E.Other->GetOwner();
-			E.Self->NotifyComponentHit(E.Self, OtherActor, E.Other, E.NormalImpulse, E.Hit);
+			if (E.bBegin)
+			{
+				E.Self->NotifyComponentHit(E.Self, OtherActor, E.Other, E.NormalImpulse, E.Hit);
+			}
+			else
+			{
+				E.Self->NotifyComponentEndHit(E.Self, OtherActor, E.Other);
+			}
 		}
 
 		for (FQueuedTrigger& E : TriggersToDispatch)
@@ -343,6 +369,7 @@ static PxFilterFlags KraftonFilterShader(
 	{
 		pairFlags = PxPairFlag::eCONTACT_DEFAULT
 			| PxPairFlag::eNOTIFY_TOUCH_FOUND
+			| PxPairFlag::eNOTIFY_TOUCH_LOST
 			| PxPairFlag::eNOTIFY_CONTACT_POINTS;
 		return PxFilterFlag::eDEFAULT;
 	}
