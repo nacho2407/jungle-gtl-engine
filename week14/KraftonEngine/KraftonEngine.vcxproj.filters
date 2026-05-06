@@ -1957,6 +1957,9 @@
     <ClInclude Include="ThirdParty\ImGui\imgui.h">
       <Filter>ThirdParty\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\ImGui\imgui_curve.hpp">
+      <Filter>ThirdParty\ImGui</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h">
       <Filter>ThirdParty\ImGui</Filter>
     </ClInclude>

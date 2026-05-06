@@ -5,11 +5,33 @@
 #include "GameFramework/CameraShakeBase.h"
 #include "GameFramework/SequenceCameraShake.h"
 #include "GameFramework/WaveOscillatorCameraShake.h"
+#include "Math/Quat.h"
 #include "Object/ObjectFactory.h"
 #include "Object/UClass.h"
 #include <algorithm>
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
+
+namespace
+{
+	FVector ConvertShakeLocationToWorld(
+		const FVector& Location,
+		const FRotator& CameraRotation,
+		ECameraShakePlaySpace PlaySpace,
+		const FRotator& UserPlaySpaceRot)
+	{
+		switch (PlaySpace)
+		{
+		case ECameraShakePlaySpace::CameraLocal:
+			return CameraRotation.ToQuaternion().RotateVector(Location);
+		case ECameraShakePlaySpace::UserDefined:
+			return UserPlaySpaceRot.ToQuaternion().RotateVector(Location);
+		case ECameraShakePlaySpace::World:
+		default:
+			return Location;
+		}
+	}
+}
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {
@@ -462,15 +484,22 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	FMinimalViewInfo NewPOV;
 	const bool bHasBasePOV = GetCameraView(NewPOV);
 
-	// (3) Shake 누적 — 모든 active shake 의 결과를 합산해 NewPOV 에 가산.
-	//     PlaySpace(CameraLocal/World/UserDefined) 변환은 셰이크 서브클래스 구현에 위임.
-	//     현재 베이스는 OutResult 를 채우지 않으므로 add-zero (no-op) — 서브클래스 도입 시 자연 작동.
+	// (3) Shake 누적 — 각 active shake 의 location 을 PlaySpace 기준으로 world offset 으로 변환 후 합산.
 	FCameraShakeUpdateResult ShakeResult;
 	for (UCameraShakeBase* Shake : ActiveShakes)
 	{
 		if (Shake && !Shake->IsFinished())
 		{
-			Shake->UpdateAndApplyCameraShake(DeltaTime, ShakeResult);
+			FCameraShakeUpdateResult PerShakeResult;
+			Shake->UpdateAndApplyCameraShake(DeltaTime, PerShakeResult);
+
+			ShakeResult.Location += ConvertShakeLocationToWorld(
+				PerShakeResult.Location,
+				NewPOV.Rotation,
+				Shake->GetPlaySpace(),
+				Shake->GetUserPlaySpaceRot());
+			ShakeResult.Rotation += PerShakeResult.Rotation;
+			ShakeResult.FOV += PerShakeResult.FOV;
 		}
 	}
 	if (bHasBasePOV)

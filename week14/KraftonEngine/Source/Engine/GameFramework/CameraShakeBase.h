@@ -40,6 +40,8 @@ public:
 	virtual void StopShake(bool bImmediately = true);
 
 	bool IsFinished() const { return bFinished; }
+	ECameraShakePlaySpace GetPlaySpace() const { return PlaySpace; }
+	const FRotator& GetUserPlaySpaceRot() const { return UserPlaySpaceRot; }
 
 	// 동일 클래스의 인스턴스가 동시에 1개만 살아있게 할지 (UE 의 bSingleInstance)
 	bool bSingleInstance = false;

@@ -5,13 +5,17 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include <imgui.h>
 
 namespace
 {
-	constexpr float CurveCanvasSize = 320.0f;
-	constexpr float KeyRadius = 6.0f;
+	constexpr float CurveCanvasSize = 420.0f;
+	constexpr float KeyHitRadius = 7.0f;
 	constexpr float TimeEpsilon = 0.001f;
 
 	static ImVec2 CurveToScreen(
@@ -26,12 +30,11 @@ namespace
 	{
 		const float Width = Max.x - Min.x;
 		const float Height = Max.y - Min.y;
-		const float SafeTimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
-		const float SafeValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
 
-		const float X = (Time - ViewMinTime) / SafeTimeSpan;
-		const float Y = (Value - ViewMinValue) / SafeValueSpan;
-
+		const float X = (Time - ViewMinTime) / TimeSpan;
+		const float Y = (Value - ViewMinValue) / ValueSpan;
 		return ImVec2(Min.x + X * Width, Max.y - Y * Height);
 	}
 
@@ -48,17 +51,16 @@ namespace
 	{
 		const float Width = Max.x - Min.x;
 		const float Height = Max.y - Min.y;
-		const float SafeTimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
-		const float SafeValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
 
 		const float NormalizedX = (Width > 0.0f) ? ((Position.x - Min.x) / Width) : 0.0f;
 		const float NormalizedY = (Height > 0.0f) ? ((Max.y - Position.y) / Height) : 0.0f;
-
-		OutTime = ViewMinTime + NormalizedX * SafeTimeSpan;
-		OutValue = ViewMinValue + NormalizedY * SafeValueSpan;
+		OutTime = ViewMinTime + NormalizedX * TimeSpan;
+		OutValue = ViewMinValue + NormalizedY * ValueSpan;
 	}
 
-	static bool IsFiniteCurvePoint(const ImVec2& Point)
+	static bool IsFinitePoint(const ImVec2& Point)
 	{
 		return std::isfinite(Point.x) && std::isfinite(Point.y);
 	}
@@ -81,6 +83,52 @@ void FFloatCurveEditorWidget::Open(UObject* Object)
 	ClearDirty();
 	SelectedKeyIndex = -1;
 	bDraggingSelectedKey = false;
+	bPanningView = false;
+	bSuppressNextCanvasContextMenu = false;
+	FitViewToCurve();
+}
+
+void FFloatCurveEditorWidget::FitViewToCurve()
+{
+	if (!EditedObject || !EditedObject->IsA<UFloatCurveAsset>())
+	{
+		return;
+	}
+
+	UFloatCurveAsset* CurveAsset = static_cast<UFloatCurveAsset*>(EditedObject);
+	const FFloatCurve& Curve = CurveAsset->GetCurve();
+	if (Curve.Keys.empty())
+	{
+		ViewMinTime = 0.0f;
+		ViewMaxTime = 1.0f;
+		ViewMinValue = -1.0f;
+		ViewMaxValue = 1.0f;
+		return;
+	}
+
+	ViewMinTime = Curve.Keys.front().Time;
+	ViewMaxTime = Curve.Keys.front().Time;
+	ViewMinValue = Curve.Keys.front().Value;
+	ViewMaxValue = Curve.Keys.front().Value;
+	for (const FCurveKey& Key : Curve.Keys)
+	{
+		ViewMinTime = (std::min)(ViewMinTime, Key.Time);
+		ViewMaxTime = (std::max)(ViewMaxTime, Key.Time);
+		ViewMinValue = (std::min)(ViewMinValue, Key.Value);
+		ViewMaxValue = (std::max)(ViewMaxValue, Key.Value);
+	}
+
+	if (ViewMaxTime <= ViewMinTime + TimeEpsilon)
+	{
+		ViewMinTime -= 0.5f;
+		ViewMaxTime += 0.5f;
+	}
+
+	if (ViewMaxValue <= ViewMinValue + TimeEpsilon)
+	{
+		ViewMinValue -= 0.5f;
+		ViewMaxValue += 0.5f;
+	}
 }
 
 void FFloatCurveEditorWidget::Render(float DeltaTime)
@@ -142,22 +190,35 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 		ImGui::InvisibleButton("##FloatCurveCanvas", CanvasSize);
 		const bool bCanvasHovered = ImGui::IsItemHovered();
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImGuiIO& IO = ImGui::GetIO();
 
-		DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(24, 24, 28, 255), 4.0f);
-		DrawList->AddRect(CanvasMin, CanvasMax, IM_COL32(90, 90, 100, 255), 4.0f);
+		DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(22, 22, 25, 255), 4.0f);
+		DrawList->AddRect(CanvasMin, CanvasMax, IM_COL32(86, 86, 96, 255), 4.0f);
 
-		for (int GridIndex = 1; GridIndex < 4; ++GridIndex)
+		for (int GridIndex = 1; GridIndex < 10; ++GridIndex)
 		{
-			const float T = static_cast<float>(GridIndex) / 4.0f;
+			const float T = static_cast<float>(GridIndex) / 10.0f;
+			const ImU32 GridColor = (GridIndex == 5) ? IM_COL32(76, 76, 86, 255) : IM_COL32(48, 48, 56, 255);
 			const float GridX = CanvasMin.x + T * CanvasSize.x;
 			const float GridY = CanvasMin.y + T * CanvasSize.y;
-			DrawList->AddLine(ImVec2(GridX, CanvasMin.y), ImVec2(GridX, CanvasMax.y), IM_COL32(60, 60, 68, 255));
-			DrawList->AddLine(ImVec2(CanvasMin.x, GridY), ImVec2(CanvasMax.x, GridY), IM_COL32(60, 60, 68, 255));
+			DrawList->AddLine(ImVec2(GridX, CanvasMin.y), ImVec2(GridX, CanvasMax.y), GridColor);
+			DrawList->AddLine(ImVec2(CanvasMin.x, GridY), ImVec2(CanvasMax.x, GridY), GridColor);
+		}
+
+		if (ViewMinTime <= 0.0f && ViewMaxTime >= 0.0f)
+		{
+			const ImVec2 A = CurveToScreen(0.0f, ViewMinValue, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax);
+			DrawList->AddLine(ImVec2(A.x, CanvasMin.y), ImVec2(A.x, CanvasMax.y), IM_COL32(95, 95, 110, 255), 2.0f);
+		}
+		if (ViewMinValue <= 0.0f && ViewMaxValue >= 0.0f)
+		{
+			const ImVec2 A = CurveToScreen(ViewMinTime, 0.0f, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax);
+			DrawList->AddLine(ImVec2(CanvasMin.x, A.y), ImVec2(CanvasMax.x, A.y), IM_COL32(95, 95, 110, 255), 2.0f);
 		}
 
 		if (!Curve.IsEmpty())
 		{
-			const int SampleCount = 64;
+			const int32 SampleCount = 128;
 			ImVec2 PreviousPoint = CurveToScreen(
 				ViewMinTime,
 				Curve.Evaluate(ViewMinTime),
@@ -168,7 +229,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 				CanvasMin,
 				CanvasMax);
 
-			for (int SampleIndex = 1; SampleIndex < SampleCount; ++SampleIndex)
+			for (int32 SampleIndex = 1; SampleIndex < SampleCount; ++SampleIndex)
 			{
 				const float Alpha = static_cast<float>(SampleIndex) / static_cast<float>(SampleCount - 1);
 				const float SampleTime = ViewMinTime + (ViewMaxTime - ViewMinTime) * Alpha;
@@ -182,7 +243,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 					CanvasMin,
 					CanvasMax);
 
-				if (IsFiniteCurvePoint(PreviousPoint) && IsFiniteCurvePoint(CurrentPoint))
+				if (IsFinitePoint(PreviousPoint) && IsFinitePoint(CurrentPoint))
 				{
 					DrawList->AddLine(PreviousPoint, CurrentPoint, IM_COL32(80, 220, 120, 255), 2.0f);
 				}
@@ -190,9 +251,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			}
 		}
 
-		int HoveredKeyIndex = -1;
-		const ImVec2 MousePos = ImGui::GetIO().MousePos;
-
+		int32 HoveredKeyIndex = -1;
 		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Keys.size()); ++KeyIndex)
 		{
 			const FCurveKey& Key = Curve.Keys[KeyIndex];
@@ -206,35 +265,68 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 				CanvasMin,
 				CanvasMax);
 
-			const float DX = MousePos.x - KeyPos.x;
-			const float DY = MousePos.y - KeyPos.y;
-			if ((DX * DX + DY * DY) <= (KeyRadius * KeyRadius))
+			const float DX = IO.MousePos.x - KeyPos.x;
+			const float DY = IO.MousePos.y - KeyPos.y;
+			if ((DX * DX + DY * DY) <= KeyHitRadius * KeyHitRadius)
 			{
 				HoveredKeyIndex = KeyIndex;
 			}
 
 			const ImU32 KeyColor =
-				(SelectedKeyIndex == KeyIndex) ? IM_COL32(255, 255, 80, 255) :
-				(HoveredKeyIndex == KeyIndex) ? IM_COL32(255, 210, 80, 255) :
-				IM_COL32(255, 180, 60, 255);
+				(SelectedKeyIndex == KeyIndex) ? IM_COL32(255, 245, 110, 255) :
+				(HoveredKeyIndex == KeyIndex) ? IM_COL32(255, 205, 90, 255) :
+				IM_COL32(255, 165, 60, 255);
 			DrawList->AddCircleFilled(KeyPos, 5.0f, KeyColor);
+			DrawList->AddCircle(KeyPos, 5.0f, IM_COL32(20, 20, 22, 220), 12, 1.0f);
 		}
 
-		if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(0))
+		if (bCanvasHovered && IO.MouseWheel != 0.0f)
+		{
+			float MouseTime = 0.0f;
+			float MouseValue = 0.0f;
+			ScreenToCurve(IO.MousePos, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax, MouseTime, MouseValue);
+
+			const float Zoom = (IO.MouseWheel > 0.0f) ? 0.85f : 1.1764706f;
+			const bool bZoomTime = !IO.KeyCtrl;
+			const bool bZoomValue = !IO.KeyShift;
+
+			if (bZoomTime)
+			{
+				ViewMinTime = MouseTime + (ViewMinTime - MouseTime) * Zoom;
+				ViewMaxTime = MouseTime + (ViewMaxTime - MouseTime) * Zoom;
+				if (ViewMaxTime <= ViewMinTime + TimeEpsilon)
+				{
+					ViewMaxTime = ViewMinTime + TimeEpsilon;
+				}
+			}
+			if (bZoomValue)
+			{
+				ViewMinValue = MouseValue + (ViewMinValue - MouseValue) * Zoom;
+				ViewMaxValue = MouseValue + (ViewMaxValue - MouseValue) * Zoom;
+				if (ViewMaxValue <= ViewMinValue + TimeEpsilon)
+				{
+					ViewMaxValue = ViewMinValue + TimeEpsilon;
+				}
+			}
+		}
+
+		if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			SelectedKeyIndex = HoveredKeyIndex;
 			bDraggingSelectedKey = true;
 		}
+		else if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			SelectedKeyIndex = -1;
+		}
 
-		if (bDraggingSelectedKey && SelectedKeyIndex != -1 && ImGui::IsMouseDragging(0))
+		if (bDraggingSelectedKey && SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
 		{
 			FCurveKey& Key = Curve.Keys[SelectedKeyIndex];
-			const ImVec2 MouseDelta = ImGui::GetIO().MouseDelta;
-			const float TimeDelta = (MouseDelta.x / CanvasSize.x) * (ViewMaxTime - ViewMinTime);
-			const float ValueDelta = -(MouseDelta.y / CanvasSize.y) * (ViewMaxValue - ViewMinValue);
-
-			Key.Time += TimeDelta;
-			Key.Value += ValueDelta;
+			const float TimeSpan = ViewMaxTime - ViewMinTime;
+			const float ValueSpan = ViewMaxValue - ViewMinValue;
+			Key.Time += (IO.MouseDelta.x / CanvasSize.x) * TimeSpan;
+			Key.Value -= (IO.MouseDelta.y / CanvasSize.y) * ValueSpan;
 
 			if (SelectedKeyIndex > 0)
 			{
@@ -244,69 +336,113 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			{
 				Key.Time = (std::min)(Key.Time, Curve.Keys[SelectedKeyIndex + 1].Time - TimeEpsilon);
 			}
-
 			bChanged = true;
 		}
 
-		if (ImGui::IsMouseReleased(0) && SelectedKeyIndex != -1)
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
-			Curve.SortKeys();
-			Curve.AutoSetTangents();
-			bDraggingSelectedKey = false;
-		}
-		else if (ImGui::IsMouseReleased(0))
-		{
+			if (bDraggingSelectedKey)
+			{
+				Curve.SortKeys();
+				Curve.AutoSetTangents();
+			}
 			bDraggingSelectedKey = false;
 		}
 
-		if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(1))
+		if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+		{
+			bPanningView = true;
+			bSuppressNextCanvasContextMenu = false;
+		}
+		if (bPanningView && ImGui::IsMouseDragging(ImGuiMouseButton_Right, 3.0f))
+		{
+			const float TimeSpan = ViewMaxTime - ViewMinTime;
+			const float ValueSpan = ViewMaxValue - ViewMinValue;
+			const float TimeDelta = (IO.MouseDelta.x / CanvasSize.x) * TimeSpan;
+			const float ValueDelta = (IO.MouseDelta.y / CanvasSize.y) * ValueSpan;
+			ViewMinTime -= TimeDelta;
+			ViewMaxTime -= TimeDelta;
+			ViewMinValue += ValueDelta;
+			ViewMaxValue += ValueDelta;
+			bSuppressNextCanvasContextMenu = true;
+		}
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		{
+			bPanningView = false;
+		}
+
+		if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 		{
 			SelectedKeyIndex = HoveredKeyIndex;
-			ImGui::OpenPopup("CurveKeyContextMenu");
+			ImGui::OpenPopup("FloatCurveKeyContext");
 		}
-		else if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseClicked(1))
+		else if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bSuppressNextCanvasContextMenu)
 		{
-			ImGui::OpenPopup("CurveCanvasContextMenu");
+			ScreenToCurve(IO.MousePos, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax, PendingContextTime, PendingContextValue);
+			ImGui::OpenPopup("FloatCurveCanvasContext");
 		}
 
-		if (ImGui::BeginPopup("CurveKeyContextMenu"))
+		if (ImGui::BeginPopup("FloatCurveKeyContext"))
 		{
 			if (SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 			{
+				bool bKeyDeleted = false;
 				if (ImGui::MenuItem("Delete Key"))
 				{
 					Curve.Keys.erase(Curve.Keys.begin() + SelectedKeyIndex);
 					SelectedKeyIndex = -1;
 					bChanged = true;
+					bKeyDeleted = true;
+				}
+				if (!bKeyDeleted)
+				{
+					ImGui::Separator();
+					if (ImGui::MenuItem("Constant", nullptr, Curve.Keys[SelectedKeyIndex].InterpMode == ECurveInterpMode::Constant))
+					{
+						Curve.Keys[SelectedKeyIndex].InterpMode = ECurveInterpMode::Constant;
+						bChanged = true;
+					}
+					if (ImGui::MenuItem("Linear", nullptr, Curve.Keys[SelectedKeyIndex].InterpMode == ECurveInterpMode::Linear))
+					{
+						Curve.Keys[SelectedKeyIndex].InterpMode = ECurveInterpMode::Linear;
+						bChanged = true;
+					}
+					if (ImGui::MenuItem("Cubic", nullptr, Curve.Keys[SelectedKeyIndex].InterpMode == ECurveInterpMode::Cubic))
+					{
+						Curve.Keys[SelectedKeyIndex].InterpMode = ECurveInterpMode::Cubic;
+						Curve.Keys[SelectedKeyIndex].TangentMode = ECurveTangentMode::Auto;
+						Curve.AutoSetTangents();
+						bChanged = true;
+					}
 				}
 			}
 			ImGui::EndPopup();
 		}
 
-		if (ImGui::BeginPopup("CurveCanvasContextMenu"))
+		if (ImGui::BeginPopup("FloatCurveCanvasContext"))
 		{
 			if (ImGui::MenuItem("Add Key"))
 			{
-				float NewTime = 0.0f;
-				float NewValue = 0.0f;
-				ScreenToCurve(
-					MousePos,
-					ViewMinTime,
-					ViewMaxTime,
-					ViewMinValue,
-					ViewMaxValue,
-					CanvasMin,
-					CanvasMax,
-					NewTime,
-					NewValue);
-
 				FCurveKey NewKey{};
-				NewKey.Time = NewTime;
-				NewKey.Value = NewValue;
+				NewKey.Time = PendingContextTime;
+				NewKey.Value = PendingContextValue;
+				NewKey.InterpMode = ECurveInterpMode::Linear;
 				Curve.Keys.push_back(NewKey);
 				Curve.SortKeys();
 				Curve.AutoSetTangents();
+				for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Keys.size()); ++KeyIndex)
+				{
+					if (std::fabs(Curve.Keys[KeyIndex].Time - NewKey.Time) <= TimeEpsilon)
+					{
+						SelectedKeyIndex = KeyIndex;
+						break;
+					}
+				}
 				bChanged = true;
+			}
+			if (ImGui::MenuItem("Fit To Keys"))
+			{
+				FitViewToCurve();
 			}
 			ImGui::EndPopup();
 		}
@@ -314,8 +450,10 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 		if (HoveredKeyIndex != -1)
 		{
 			const FCurveKey& HoveredKey = Curve.Keys[HoveredKeyIndex];
-			ImGui::SetTooltip("Time: %.3f\nValue: %.3f", HoveredKey.Time, HoveredKey.Value);
+			ImGui::SetTooltip("Time %.3f\nValue %.3f", HoveredKey.Time, HoveredKey.Value);
 		}
+
+		ImGui::TextDisabled("RMB drag: pan  |  Wheel: zoom  |  Shift/Ctrl+Wheel: zoom one axis");
 	}
 	ImGui::EndChild();
 
@@ -329,24 +467,41 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 		}
 
 		ImGui::Separator();
-		ImGui::TextUnformatted("View");
-		if (ImGui::DragFloat("Min Time", &ViewMinTime, 0.01f))
+		ImGui::TextUnformatted("Edit Range");
+		if (ImGui::Button("Fit To Keys"))
+		{
+			FitViewToCurve();
+		}
+		if (ImGui::DragFloat("Min Time (sec)", &ViewMinTime, 0.01f))
 		{
 			ViewMaxTime = (std::max)(ViewMaxTime, ViewMinTime + TimeEpsilon);
 		}
-		if (ImGui::DragFloat("Max Time", &ViewMaxTime, 0.01f))
+		if (ImGui::DragFloat("Max Time (sec)", &ViewMaxTime, 0.01f))
 		{
 			ViewMaxTime = (std::max)(ViewMaxTime, ViewMinTime + TimeEpsilon);
 		}
-		if (ImGui::DragFloat("Min Value", &ViewMinValue, 0.01f))
+		if (ImGui::DragFloat("Min Value (actual)", &ViewMinValue, 0.01f))
 		{
 			ViewMaxValue = (std::max)(ViewMaxValue, ViewMinValue + TimeEpsilon);
 		}
-		if (ImGui::DragFloat("Max Value", &ViewMaxValue, 0.01f))
+		if (ImGui::DragFloat("Max Value (actual)", &ViewMaxValue, 0.01f))
 		{
 			ViewMaxValue = (std::max)(ViewMaxValue, ViewMinValue + TimeEpsilon);
 		}
 
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("Keys");
+		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Keys.size()); ++KeyIndex)
+		{
+			const FCurveKey& Key = Curve.Keys[KeyIndex];
+			char Label[128];
+			std::snprintf(Label, sizeof(Label), "%02d  T %.3f  V %.3f", KeyIndex, Key.Time, Key.Value);
+			if (ImGui::Selectable(Label, SelectedKeyIndex == KeyIndex))
+			{
+				SelectedKeyIndex = KeyIndex;
+			}
+		}
 
 		ImGui::Separator();
 		if (SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
