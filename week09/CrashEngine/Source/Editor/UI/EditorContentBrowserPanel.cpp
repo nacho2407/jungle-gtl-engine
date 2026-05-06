@@ -893,8 +893,6 @@ void FEditorContentBrowserPanel::ResetCameraEffectForType(const FString& Type)
         EditingCameraEffect.Duration = 0.25f;
         EditingCameraEffect.FromValue = 0.0f;
         EditingCameraEffect.ToValue = 0.12f;
-        EditingCameraEffect.AppearRatio = 0.5f;
-        EditingCameraEffect.DisappearRatio = 0.5f;
     }
     else if (Type == "GammaCorrection")
     {
@@ -995,8 +993,6 @@ bool FEditorContentBrowserPanel::LoadCameraEffect(const std::filesystem::path& P
     {
         ReadFloat("FromAmount", EditingCameraEffect.FromValue);
         ReadFloat("ToAmount", EditingCameraEffect.ToValue);
-        ReadFloat("AppearRatio", EditingCameraEffect.AppearRatio);
-        ReadFloat("DisappearRatio", EditingCameraEffect.DisappearRatio);
         ReadCurve("AmountCurve", EditingCameraEffect.PrimaryCurve);
     }
     else if (Type == "GammaCorrection")
@@ -1100,8 +1096,6 @@ bool FEditorContentBrowserPanel::SaveCameraEffect()
         File << "    \"Duration\" : "; WriteJsonFloat(File, EditingCameraEffect.Duration); File << ",\n";
         File << "    \"FromAmount\" : "; WriteJsonFloat(File, EditingCameraEffect.FromValue); File << ",\n";
         File << "    \"ToAmount\" : "; WriteJsonFloat(File, EditingCameraEffect.ToValue); File << ",\n";
-        File << "    \"AppearRatio\" : "; WriteJsonFloat(File, EditingCameraEffect.AppearRatio); File << ",\n";
-        File << "    \"DisappearRatio\" : "; WriteJsonFloat(File, EditingCameraEffect.DisappearRatio); File << ",\n";
         WriteCurve("AmountCurve", EditingCameraEffect.PrimaryCurve, "    ", false);
         File << "  }\n";
     }
@@ -1256,11 +1250,6 @@ void FEditorContentBrowserPanel::DrawCameraEffectParameters()
             EditingCameraEffect.Color = FVector4(Color[0], Color[1], Color[2], Color[3]);
             bCameraEffectDirty = true;
         }
-    }
-    else if (EditingCameraEffect.Type == "LetterBox")
-    {
-        bCameraEffectDirty |= ImGui::DragFloat("Appear Ratio", &EditingCameraEffect.AppearRatio, 0.01f, 0.0f, 1.0f);
-        bCameraEffectDirty |= ImGui::DragFloat("Disappear Ratio", &EditingCameraEffect.DisappearRatio, 0.01f, 0.0f, 1.0f);
     }
     else if (EditingCameraEffect.Type == "Vignette")
     {

@@ -409,11 +409,11 @@ void FLuaWorldProxy::PlayCameraFade(float FromAmount, float ToAmount, float Dura
     }
 }
 
-void FLuaWorldProxy::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+void FLuaWorldProxy::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration)
 {
     if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
     {
-        CameraManager->PlayCameraLetterBox(FromAmount, ToAmount, Duration, AppearRatio, DisappearRatio);
+        CameraManager->PlayCameraLetterBox(FromAmount, ToAmount, Duration);
     }
 }
 

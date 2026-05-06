@@ -293,8 +293,8 @@ bool ULuaScriptComponent::LoadScript()
         {WorldProxy.PlayCameraShake(Duration, LocationAmplitude, RotationAmplitude, Frequency); });
     WorldTable.set_function("PlayCameraFade", [this](float FromAmount, float ToAmount, float Duration, float R, float G, float B, float A)
         { WorldProxy.PlayCameraFade(FromAmount, ToAmount, Duration, R, G, B, A); });
-    WorldTable.set_function("PlayCameraLetterBox", [this](float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
-        { WorldProxy.PlayCameraLetterBox(FromAmount, ToAmount, Duration, AppearRatio, DisappearRatio); });
+    WorldTable.set_function("PlayCameraLetterBox", [this](float FromAmount, float ToAmount, float Duration)
+        { WorldProxy.PlayCameraLetterBox(FromAmount, ToAmount, Duration); });
     WorldTable.set_function("PlayCameraGammaCorrection", [this](float FromGamma, float ToGamma, float Duration)
         { WorldProxy.PlayCameraGammaCorrection(FromGamma, ToGamma, Duration); });
     WorldTable.set_function("PlayCameraVignette", [this](float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)

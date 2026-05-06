@@ -109,8 +109,6 @@ private:
         FVector4 Color = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
         float Radius = 0.75f;
         float Softness = 0.35f;
-        float AppearRatio = 0.5f;
-        float DisappearRatio = 0.5f;
         FEditableCurve PrimaryCurve;
         FEditableCurve SecondaryCurve;
     };

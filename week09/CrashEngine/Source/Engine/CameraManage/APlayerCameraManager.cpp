@@ -246,14 +246,12 @@ void APlayerCameraManager::PlayCameraFade(const FCameraFadeParams& Params)
     AddCameraModifier(Modifier);
 }
 
-void APlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+void APlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration)
 {
     FCameraLetterBoxParams Params;
     Params.FromAmount = FromAmount;
     Params.ToAmount = ToAmount;
     Params.Duration = Duration;
-    Params.AppearRatio = AppearRatio;
-    Params.DisappearRatio = DisappearRatio;
     PlayCameraLetterBox(Params);
 }
 
@@ -361,8 +359,8 @@ void APlayerCameraManager::CommitFade(const FCameraFadeParams& Params)
 
 void APlayerCameraManager::CommitLetterBox(const FCameraLetterBoxParams& Params)
 {
-    BaseScreenEffects.bEnableLetterBox = Params.FromAmount > 0.0f;
-    BaseScreenEffects.LetterBoxAmount = Clamp(Params.FromAmount, 0.0f, 0.5f);
+    BaseScreenEffects.bEnableLetterBox = Params.ToAmount > 0.0f;
+    BaseScreenEffects.LetterBoxAmount = Clamp(Params.ToAmount, 0.0f, 0.5f);
 }
 
 void APlayerCameraManager::CommitGammaCorrection(const FCameraGammaCorrectionParams& Params)

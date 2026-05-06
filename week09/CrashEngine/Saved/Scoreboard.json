@@ -8,11 +8,25 @@
       "timestamp" : "2026-05-06 17:56:38"
     }, {
       "documentCount" : 2,
+      "hp" : 5.000000,
+      "name" : "PLAYER",
+      "score" : 11008.000000,
+      "timer" : 100.350668,
+      "timestamp" : "2026-05-06 22:50:51"
+    }, {
+      "documentCount" : 2,
       "hp" : 13.000000,
       "name" : "PLAYER",
       "score" : 10712.000000,
       "timer" : 107.073995,
       "timestamp" : "2026-05-06 15:10:26"
+    }, {
+      "documentCount" : 1,
+      "hp" : 11.000000,
+      "name" : "PLAYER",
+      "score" : 10111.000000,
+      "timer" : 58.899800,
+      "timestamp" : "2026-05-06 22:48:07"
     }, {
       "documentCount" : 2,
       "hp" : 15.000000,
@@ -552,5 +566,12 @@
       "score" : 0.000000,
       "timer" : 48.404379,
       "timestamp" : "2026-05-06 20:45:58"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 33.522292,
+      "timestamp" : "2026-05-06 22:28:04"
     }]
 }
