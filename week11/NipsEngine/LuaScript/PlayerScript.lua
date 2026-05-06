@@ -566,6 +566,8 @@ end
 
 function Script:BeginPlay()
     Log("[BeginPlay] " .. tostring(self.owner.UUID))
+    self.ShakePattern = self.Component:CreateSinusoidalCameraShakePattern()
+
     self:ResetHealth(self.MaxHealth)
     self:InstallHealthBridge()
 
@@ -681,6 +683,35 @@ function Script:Tick(dt)
     if Engine.API.Input.IsKeyDown("D") then
         move = move + self.owner:GetActorRightVector()
     end
+
+    if Engine.API.Input.IsKeyDown("M") then
+
+    local Pattern = self.ShakePattern
+    if Pattern == nil then
+        Pattern = self.Component:CreateSinusoidalCameraShakePattern()
+        self.ShakePattern = Pattern
+    end
+
+    Pattern.Duration = 0.25
+    Pattern.BlendInTime = 0.0
+    Pattern.BlendOutTime = 0.18
+
+    Pattern.LocationAmplitude = Vector(4.0, 2.0, 3.0)
+    Pattern.LocationFrequency = Vector(28.0, 31.0, 25.0)
+
+    -- 회전 흔들림
+    Pattern.RotationAmplitudeDeg = Vector(0.3, 0.5, 0.2)
+    Pattern.RotationFrequency = Vector(7.0, 6.0, 8.0)
+    Pattern.RotationPhase = Vector(0.5, 1.7, 2.9)
+
+    -- -- FOV 흔들림
+    -- Pattern.FOVAmplitude = 0.2
+    -- Pattern.FOVFrequency = 1.0
+    -- Pattern.FOVPhase = 0.0
+
+    self.Component:StartCameraShakePattern(Pattern, 1.0, 0.0)
+    end
+
     move = self:ClipMoveAgainstBlock(move)
 
     local CurLoc = self.owner.Location

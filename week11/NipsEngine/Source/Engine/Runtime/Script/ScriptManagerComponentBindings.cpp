@@ -1,6 +1,9 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Asset/StaticMesh.h"
+#include "Camera/CameraShakeBase.h"
+#include "Camera/ShakePattern/SequenceCameraShakePattern.h"
+#include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
 #include "Component/ActorComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/BoxComponent.h"
@@ -206,7 +209,36 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(LoadScript, LoadScript);
     LUA_METHOD(HotReloadScript, HotReloadScript);
     LUA_METHOD(ClearScript, ClearScript);
+    LUA_METHOD(CreateSequenceCameraShakePattern, CreateSequenceCameraShakePattern);
+    LUA_METHOD(CreateSinusoidalCameraShakePattern, CreateSinusoidalCameraShakePattern);
+    LUA_METHOD(StartCameraShakePattern, StartCameraShakePattern);
     LUA_RW_PROPERTY(ScriptName, GetScriptName, SetScriptName);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UCameraShakePattern, "CameraShakePattern", UObject)
+    LUA_FIELD(Duration, Duration);
+    LUA_FIELD(BlendInTime, BlendInTime);
+    LUA_FIELD(BlendOutTime, BlendOutTime);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USequenceCameraShakePattern, "SequenceCameraShakePattern", UCameraShakePattern, UObject)
+    LUA_FIELD(PlayRate, PlayRate);
+    LUA_FIELD(Scale, Scale);
+    LUA_FIELD(RandomSegmentDuration, RandomSegmentDuration);
+    LUA_FIELD(bRandomSegment, bRandomSegment);
+    LUA_FIELD(CurveAssetPath, CurveAssetPath);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, USinusoidalCameraShakePattern, "SinusoidalCameraShakePattern", UCameraShakePattern, UObject)
+    LUA_FIELD(LocationAmplitude, LocationAmplitude);
+    LUA_FIELD(LocationFrequency, LocationFrequency);
+    LUA_FIELD(LocationPhase, LocationPhase);
+    LUA_FIELD(RotationAmplitudeDeg, RotationAmplitudeDeg);
+    LUA_FIELD(RotationFrequency, RotationFrequency);
+    LUA_FIELD(RotationPhase, RotationPhase);
+    LUA_FIELD(FOVAmplitude, FOVAmplitude);
+    LUA_FIELD(FOVFrequency, FOVFrequency);
+    LUA_FIELD(FOVPhase, FOVPhase);
     LUA_END_TYPE();
 }
 

@@ -1,10 +1,8 @@
 ﻿#include "Camera/CameraShakeBase.h"
 
-DEFINE_CLASS(UPerlinCameraShakePattern, UCameraShakePattern)
 DEFINE_CLASS(UCameraShakePattern, UObject)
 DEFINE_CLASS(UCameraShakeBase, UObject)
 
-REGISTER_FACTORY(UPerlinCameraShakePattern)
 REGISTER_FACTORY(UCameraShakePattern)
 
 void FCameraShakeState::Start(const UCameraShakePattern* Pattern, const FCameraShakeStartParams& Params)
@@ -129,7 +127,9 @@ void UCameraShakePattern::StartShakePattern(const FCameraShakeStartParams& Param
     OnStartShakePattern(Params);
 }
 
-void UCameraShakePattern::UpdateShakePattern(const FCameraShakeUpdateParams& Params, FCameraShakeUpdateResult& OutResult)
+void UCameraShakePattern::UpdateShakePattern(
+    const FCameraShakeUpdateParams& Params,
+    FCameraShakeUpdateResult& OutResult)
 {
     state.Update(Params.DeltaTime);
 
@@ -148,6 +148,7 @@ void UCameraShakePattern::UpdateShakePattern(const FCameraShakeUpdateParams& Par
     OutResult.RotationOffset += RawResult.RotationOffset * Weight;
     OutResult.FOVOffset += RawResult.FOVOffset * Weight;
 }
+
 void UCameraShakePattern::StopShakePattern()
 {
     StopShakePattern(false);
@@ -159,31 +160,16 @@ void UCameraShakePattern::StopShakePattern(const bool bImmediately)
     OnStopShakePattern(bImmediately);
 }
 
-//---------UPerlinCameraShakePattern---------
-
-void UPerlinCameraShakePattern::OnUpdateShakePattern(
-    const FCameraShakeUpdateParams& Params,
-    FCameraShakeUpdateResult& OutResult)
+void UCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
-    const float T = state.ElapsedTime;
+    UObject::GetEditableProperties(OutProps);
 
-    const float A = sinf(T * Frequency);
-    const float B = sinf(T * Frequency * 1.7f);
-    const float C = sinf(T * Frequency * 2.3f);
-
-    // 위치 흔들림
-    OutResult.LocationOffset.X = A * LocationAmplitude;
-    OutResult.LocationOffset.Y = B * LocationAmplitude * 0.5f;
-    OutResult.LocationOffset.Z = C * LocationAmplitude * 0.25f;
-
-    // 회전 흔들림
-    OutResult.RotationOffset.Pitch = A * RotationAmplitude;
-    OutResult.RotationOffset.Yaw = B * RotationAmplitude;
-    OutResult.RotationOffset.Roll = C * RotationAmplitude * 0.5f;
-
-    // FOV 흔들림
-    OutResult.FOVOffset = A * FOVAmplitude;
+    OutProps.push_back({ "Duration", EPropertyType::Float, &Duration });
+    OutProps.push_back({ "BlendInTime", EPropertyType::Float, &BlendInTime });
+    OutProps.push_back({ "BlendOutTime", EPropertyType::Float, &BlendOutTime });
 }
+
+//---------UPerlinCameraShakePattern---------
 
 UCameraShakeBase::UCameraShakeBase()
     : PlayerCameraManager(nullptr)
@@ -248,9 +234,21 @@ void UCameraShakeBase::StopShake(bool bImmediately)
 	bIsActive = !RootShakePattern->IsFinished();
 }
 
-void UCameraShakeBase::ApplyResult(const FCameraShakeUpdateResult& InResult, FMinimalViewInfo& InOutPOV)
+
+void UCameraShakeBase::ApplyResult(
+    const FCameraShakeUpdateResult& InResult,
+    FMinimalViewInfo& InOutPOV)
 {
-    InOutPOV.Location += InResult.LocationOffset;
-    InOutPOV.Rotation += InResult.RotationOffset.Quaternion();
+    const FVector WorldOffset =
+        InOutPOV.Rotation.RotateVector(InResult.LocationOffset);
+
+    InOutPOV.Location += WorldOffset;
+
+    const FQuat DeltaRot =
+        InResult.RotationOffset.Quaternion();
+
+    InOutPOV.Rotation =
+        (InOutPOV.Rotation * DeltaRot).GetNormalized();
+
     InOutPOV.FOV += InResult.FOVOffset;
 }

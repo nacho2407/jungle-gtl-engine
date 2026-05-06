@@ -84,6 +84,8 @@ public:
         OutCameraInfo.BlendInTime = BlendInTime;
         OutCameraInfo.BlendOutTime = BlendOutTime;
     }
+	
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
 
     /** Gets the shake pattern's parent shake */
     template <typename InstanceType>

@@ -6,6 +6,10 @@
 #include <filesystem>
 
 class UPrimitiveComponent;
+class UCameraShakeBase;
+class UCameraShakePattern;
+class USequenceCameraShakePattern;
+class USinusoidalCameraShakePattern;
 struct FHitResult;
 struct FLuaScriptLoadResult;
 
@@ -58,7 +62,13 @@ public:
     bool HotReloadScript();
     void ClearScript();
     void ReleaseLuaStateReferences();
-    void StartCoroutine(sol::function Function);
+	void StartCoroutine(sol::function Function);
+    USequenceCameraShakePattern* CreateSequenceCameraShakePattern();
+    USinusoidalCameraShakePattern* CreateSinusoidalCameraShakePattern();
+    UCameraShakeBase* StartCameraShakePattern(
+        UCameraShakePattern* Pattern,
+        float Scale,
+        float DurationOverride);
 
 	virtual void OnUnregister() override;
 
@@ -102,10 +112,12 @@ public:
 
 private:
     TArray<FLuaScriptProperty> LuaProperties;
+    TArray<UCameraShakePattern*> CreatedCameraShakePatterns;
     bool bLuaPropertiesScanned = false;
 
 private:
     void ClearLoadedState();
+    void DestroyCreatedCameraShakePatterns();
     FString ScriptName;
     FString RegisteredScriptName;
 

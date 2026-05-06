@@ -31,8 +31,10 @@ template <typename PatternType>
         float Scale = 1.0f,
         float DurationOverride = 0.0f)
     {
-        return AddCameraShakeByPatternTypeName(PatternTypeName, Scale, DurationOverride);
+        return AddCameraShakeWithPatternTypeName(PatternTypeName, Scale, DurationOverride);
     }
+
+    UCameraShakeBase* AddCameraShakeWithPattern(UCameraShakePattern* Pattern, float Scale, float DurationOverride);
 
     void StopCameraShake(UCameraShakeBase* Shake, bool bImmediately = false);
     void StopAllCameraShakes(bool bImmediately = false);
@@ -49,7 +51,6 @@ private:
 
     void RemoveCameraShakeAt(int Index);
     UCameraShakeBase* AddCameraShakeWithPatternTypeName(const FString& PatternClassName, float Scale, float DurationOverride);
-    UCameraShakeBase* AddCameraShakeWithPattern(UCameraShakePattern* Pattern, float Scale, float DurationOverride);
 
 
     TArray<FActiveCameraShake> ActiveShakes;

@@ -128,6 +128,24 @@ public:
             DurationOverride);
     }
 
+    UCameraShakeBase* StartCameraShake(
+        UCameraShakePattern* Pattern,
+        float Scale = 1.0f,
+        float DurationOverride = 0.0f)
+    {
+        UCameraModifier_CameraShake* Modifier = GetOrCreateCameraShakeModifier();
+        if (!Modifier)
+        {
+            UObjectManager::Get().DestroyObject(Pattern);
+            return nullptr;
+        }
+
+        return Modifier->AddCameraShakeWithPattern(
+            Pattern,
+            Scale,
+            DurationOverride);
+    }
+
     template <typename ModifierType>
     ModifierType* FindCameraModifier()
     {
