@@ -21,12 +21,10 @@
         #menu
         {
             position: absolute;
-            left: 50%;
-            bottom: 300px;
+            right: 60px;
+            bottom: 70px;
             width: 300px;
             height: 160px;
-            margin-left: -150px;
-            margin-top: -80px;
         }
 
         .menu-button
