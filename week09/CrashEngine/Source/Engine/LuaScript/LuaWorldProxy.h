@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
@@ -29,6 +29,10 @@ public:
     FVector GetActiveCameraRight() const;
     FVector GetActiveCameraUp() const;
     FVector GetMouseWorldPointOnPlane(float PlaneZ) const;
+    bool RequestHitStop(float Duration) const;
+    bool RequestSlomo(float InTimeScale, float Duration) const;
+    float GetUnscaledDeltatime() const;
+    float GetTimeScale() const;
 
 private:
     uint32 WorldUUID = 0;
