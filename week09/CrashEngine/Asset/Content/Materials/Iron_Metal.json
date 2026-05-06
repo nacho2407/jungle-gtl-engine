@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "SpecularPower" : 250.000000,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/Iron_Metal.json",
+  "RasterizerState" : "SolidBackCull"
+}
