@@ -142,6 +142,7 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Multipass/SandervistanPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/Multipass/PostProcess.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
 	FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
