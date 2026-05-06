@@ -29,6 +29,7 @@ public:
 
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void Serialize(FArchive& Ar) override;
+    void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
     void LookAt(const FVector& Target);
     void SetCameraState(const FCameraState& NewState);
@@ -57,6 +58,9 @@ public:
     bool SetMainCamera(bool InBool) { bMainCamera = InBool; return bMainCamera; }
 
 private:
+    void DrawDebugViewDirection() const;
+
     FCameraState CameraState;
     bool bMainCamera = false;
+    bool bShowDebugViewDirection = true;
 };
