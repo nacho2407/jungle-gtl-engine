@@ -4,6 +4,7 @@
 #include "SimpleJSON/json.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <filesystem>
 #include <chrono>
@@ -105,6 +106,27 @@ namespace
 
 		const size_t End = Value.find_last_not_of(" \t\r\n");
 		return Value.substr(Start, End - Start + 1);
+	}
+
+	bool EndsWith(const FString& Value, const FString& Suffix)
+	{
+		return Value.size() >= Suffix.size() &&
+			Value.compare(Value.size() - Suffix.size(), Suffix.size(), Suffix) == 0;
+	}
+
+	bool IsCurveAssetPath(const std::filesystem::path& Path)
+	{
+		FString FileName = FPaths::ToUtf8(Path.filename().wstring());
+		std::transform(
+			FileName.begin(),
+			FileName.end(),
+			FileName.begin(),
+			[](unsigned char Ch)
+			{
+				return static_cast<char>(std::tolower(Ch));
+			});
+
+		return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
 	}
 
 	FString ResolveObjMaterialLibraryPath(const FString& ObjPath)
@@ -317,6 +339,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	TextureFilePaths.clear();
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
+	CurveFilePaths.clear();
 	StaticMeshRegistry.clear();
 
 	InitializeDefaultResources(CachedDevice.Get());
@@ -354,7 +377,11 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		
 		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
-		if (Extension == L".obj")
+		if (IsCurveAssetPath(FilePath))
+		{
+			CurveFilePaths.push_back(RelativePath);
+		}
+		else if (Extension == L".obj")
 		{
 			ObjFilePaths.push_back(RelativePath);
 
@@ -439,6 +466,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	TextureFilePaths.clear();
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
+	CurveFilePaths.clear();
 	StaticMeshRegistry.clear();
 	FontResources.clear();
 	ParticleResources.clear();
@@ -472,7 +500,11 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 
 		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
-			if (Extension == L".obj")
+			if (IsCurveAssetPath(FilePath))
+			{
+				CurveFilePaths.push_back(RelativePath);
+			}
+			else if (Extension == L".obj")
 			{
 				ObjFilePaths.push_back(RelativePath);
 
@@ -2182,6 +2214,64 @@ UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
 {
 	return ObjFilePaths;
+}
+
+UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (NormalizedPath.empty())
+	{
+		return nullptr;
+	}
+
+	auto It = Curves.find(NormalizedPath);
+	if (It != Curves.end())
+	{
+		return It->second;
+	}
+
+	UCurveFloatAsset* Curve = CurveLoader.Load(NormalizedPath);
+	if (!Curve)
+	{
+		return nullptr;
+	}
+
+	Curves[NormalizedPath] = Curve;
+	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
+	{
+		CurveFilePaths.push_back(NormalizedPath);
+	}
+
+	return Curve;
+}
+
+UCurveFloatAsset* FResourceManager::FindCurve(const FString& Path) const
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	auto It = Curves.find(NormalizedPath);
+	return It != Curves.end() ? It->second : nullptr;
+}
+
+bool FResourceManager::SaveCurve(const FString& Path, const UCurveFloatAsset* Curve)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (!CurveLoader.Save(NormalizedPath, Curve))
+	{
+		return false;
+	}
+
+	Curves[NormalizedPath] = const_cast<UCurveFloatAsset*>(Curve);
+	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
+	{
+		CurveFilePaths.push_back(NormalizedPath);
+	}
+
+	return true;
+}
+
+TArray<FString> FResourceManager::GetCurvePaths() const
+{
+	return CurveFilePaths;
 }
 
 const TArray<FString>& FResourceManager::GetTextureFilePath() const

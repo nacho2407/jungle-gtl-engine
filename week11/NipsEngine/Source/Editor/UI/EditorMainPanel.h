@@ -44,6 +44,7 @@ public:
 	// Cross-widget commands
 	void OpenMaterialAsset(UMaterialInterface* Material);
 	void OpenMaterialSlot(UPrimitiveComponent* PrimitiveComp, int32 SlotIndex);
+	void OpenCurveAsset(const FString& CurvePath);
 	void PushFooterLog(const FString& Message);
 	void RequestPIEViewportInputFocus();
 	bool SpawnPrefabAtOrigin(const FString& PayloadPath);

@@ -1,6 +1,8 @@
 #include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
 #include "Asset/AssetQueryService.h"
+#include "Asset/CurveFloatAsset.h"
+#include "Core/ResourceManager.h"
 
 namespace
 {
@@ -53,6 +55,16 @@ namespace FLuaEngineAPI
         Asset["GetMaterialPaths"] = [](sol::this_state State)
         {
             return StringsToLuaTable(State, FAssetQueryService::GetMaterialPaths());
+        };
+
+        Asset["GetCurvePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetCurvePaths());
+        };
+
+        Asset["LoadCurve"] = [](const FString& Path) -> UCurveFloatAsset*
+        {
+            return FResourceManager::Get().LoadCurve(Path);
         };
 
         Asset["GetScenePaths"] = [](sol::this_state State)

@@ -137,6 +137,19 @@ void UActorComponent::SetTagsFromText(const FString& InTagsText)
     }
 }
 
+void UActorComponent::EnsurePersistentGuid()
+{
+    if (!PersistentGuid.IsValid())
+    {
+        PersistentGuid = FGuid::NewGuid();
+    }
+}
+
+void UActorComponent::RegeneratePersistentGuid()
+{
+    PersistentGuid = FGuid::NewGuid();
+}
+
 void UActorComponent::PostDuplicate(UObject* Original)
 {
     UObject::PostDuplicate(Original);
@@ -149,6 +162,7 @@ void UActorComponent::PostDuplicate(UObject* Original)
 
     Tags = SourceComponent->Tags;
     TagsText = GetTagsText();
+    RegeneratePersistentGuid();
 }
 
 void UActorComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -173,6 +187,14 @@ void UActorComponent::PostEditProperty(const char* PropertyName)
 void UActorComponent::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
+    EnsurePersistentGuid();
+    FString PersistentGuidText = PersistentGuid.ToString();
+    Ar << "PersistentGuid" << PersistentGuidText;
+    if (Ar.IsLoading())
+    {
+        PersistentGuid = FGuid::FromString(PersistentGuidText);
+        EnsurePersistentGuid();
+    }
 	Ar << "Enable Tick" << bCanEverTick;
 	Ar << "Editor Only" << bIsEditorOnly;
 	Ar << "Tags" << Tags;
