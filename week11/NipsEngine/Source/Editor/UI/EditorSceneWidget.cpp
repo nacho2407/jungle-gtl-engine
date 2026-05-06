@@ -1,6 +1,7 @@
 ﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Settings/ProjectSettings.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 #include "Editor/Viewport/ViewportLayout.h"
 #include "Engine/Core/Common.h"
@@ -151,6 +152,8 @@ void FEditorSceneWidget::NewScene()
 	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), "Untitled", _TRUNCATE);
 	CurrentSceneFilePath.clear();
 	bSceneDirty = false;
+	FProjectSettings::Get().SetLastScenePath("");
+	FProjectSettings::Get().SaveToFile(FProjectSettings::GetDefaultSettingsPath());
 	EditorEngine->GetMainPanel().PushFooterLog("New level created");
 	NewSceneNotificationTimer = common::constants::ImGui::NotificationTimer;
 }
@@ -418,6 +421,8 @@ void FEditorSceneWidget::SetCurrentScenePath(const FString& FilePath)
 	CurrentSceneFilePath = FPaths::Normalize(FilePath);
 	const FString FinalSceneName = FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(CurrentSceneFilePath)).stem().wstring());
 	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), FinalSceneName.c_str(), _TRUNCATE);
+	FProjectSettings::Get().SetLastScenePath(CurrentSceneFilePath);
+	FProjectSettings::Get().SaveToFile(FProjectSettings::GetDefaultSettingsPath());
 }
 
 void FEditorSceneWidget::Render(float DeltaTime)

@@ -11,7 +11,7 @@ enum class EGameBuildConfiguration : uint8
 struct FGameBuildSettings
 {
     FString GameName = "NipsGame";
-    FString StartupScene = "Asset/Scene/Default.scene";
+    FString StartupScene = "Asset/Scene/Main.Scene";
     TArray<FString> IncludedScenes;
     FString PlayerControllerClass = "APlayerController";
     FString OutputDirectory = "Builds/Windows/NipsGame";

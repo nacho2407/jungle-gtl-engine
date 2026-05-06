@@ -54,6 +54,7 @@ public:
 	void RequestPIEViewportInputFocus();
 	bool SpawnPrefabAtOrigin(const FString& PayloadPath);
 	bool CanCloseEditor();
+	void RestoreLastSceneFromProjectSettings();
 
 	void ResetWidgetSelections()
 	{

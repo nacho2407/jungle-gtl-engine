@@ -43,6 +43,41 @@ namespace
             : "GameClientDebug";
     }
 
+    FString SanitizePackageName(const FString& Name)
+    {
+        FString Result = Name;
+        for (char& Ch : Result)
+        {
+            const bool bInvalid =
+                Ch == '<' || Ch == '>' || Ch == ':' || Ch == '"' ||
+                Ch == '/' || Ch == '\\' || Ch == '|' || Ch == '?' || Ch == '*';
+            if (bInvalid || static_cast<unsigned char>(Ch) < 32)
+            {
+                Ch = '_';
+            }
+        }
+
+        const size_t Start = Result.find_first_not_of(" .\t\r\n");
+        if (Start == FString::npos)
+        {
+            return "NipsGame";
+        }
+
+        const size_t End = Result.find_last_not_of(" .\t\r\n");
+        Result = Result.substr(Start, End - Start + 1);
+        return Result.empty() ? FString("NipsGame") : Result;
+    }
+
+    std::filesystem::path MakePackagedExeFileName(const FGameBuildSettings& Settings)
+    {
+        return std::filesystem::path(FPaths::ToWide(SanitizePackageName(Settings.GameName) + ".exe"));
+    }
+
+    std::filesystem::path MakePackagedPdbFileName(const FGameBuildSettings& Settings)
+    {
+        return std::filesystem::path(FPaths::ToWide(SanitizePackageName(Settings.GameName) + ".pdb"));
+    }
+
     std::filesystem::path FindSolutionRoot()
     {
         std::vector<std::filesystem::path> SearchRoots;
@@ -1251,27 +1286,30 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
         return false;
     }
 
-    std::filesystem::copy_file(BuiltExe, OutputRoot / L"NipsGame.exe",
+    const std::filesystem::path PackageExeName = MakePackagedExeFileName(Settings);
+    const std::filesystem::path PackagePdbName = MakePackagedPdbFileName(Settings);
+
+    std::filesystem::copy_file(BuiltExe, OutputRoot / PackageExeName,
                                std::filesystem::copy_options::overwrite_existing, Ec);
     if (Ec)
     {
-        OutMessage = "Failed to copy NipsGame.exe";
+        OutMessage = "Failed to copy packaged exe";
         EmitBuildLog(OutMessage);
         return false;
     }
-    EmitBuildLog("Copied NipsGame.exe");
+    EmitBuildLog("Copied " + FPaths::ToUtf8(PackageExeName.wstring()));
 
     if (std::filesystem::exists(BuiltPdb, Ec))
     {
-        std::filesystem::copy_file(BuiltPdb, OutputRoot / L"NipsGame.pdb",
+        std::filesystem::copy_file(BuiltPdb, OutputRoot / PackagePdbName,
                                    std::filesystem::copy_options::overwrite_existing, Ec);
         if (Ec)
         {
-            OutMessage = "Failed to copy NipsGame.pdb";
+            OutMessage = "Failed to copy packaged pdb";
             EmitBuildLog(OutMessage);
             return false;
         }
-        EmitBuildLog("Copied NipsGame.pdb");
+        EmitBuildLog("Copied " + FPaths::ToUtf8(PackagePdbName.wstring()));
     }
 
     const std::filesystem::path LuaJitRuntimeDll = EngineRoot / L"ThirdParty" / L"luajit" / L"src" / L"lua51.dll";
@@ -1373,6 +1411,7 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
 
     GameIni << "[Game]\n";
     GameIni << "GameName=" << Settings.GameName << "\n";
+    GameIni << "ExecutableName=" << FPaths::ToUtf8(PackageExeName.wstring()) << "\n";
     GameIni << "StartupScene=" << NormalizeSceneForPackage(Settings.StartupScene) << "\n";
     GameIni << "PlayerControllerClass=" << Settings.PlayerControllerClass << "\n";
     GameIni << "\n[Scenes]\n";
@@ -1390,7 +1429,7 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
 
     if (Settings.bRunAfterBuild)
     {
-        const std::filesystem::path PackageExe = OutputRoot / L"NipsGame.exe";
+        const std::filesystem::path PackageExe = OutputRoot / PackageExeName;
         STARTUPINFOW StartupInfo = {};
         StartupInfo.cb = sizeof(StartupInfo);
         PROCESS_INFORMATION ProcessInfo = {};
@@ -1398,7 +1437,7 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
         if (!CreateProcessW(nullptr, CommandLine.data(), nullptr, nullptr, FALSE, 0, nullptr,
                             OutputRoot.wstring().c_str(), &StartupInfo, &ProcessInfo))
         {
-            OutMessage = "Package created, but failed to run NipsGame.exe";
+            OutMessage = "Package created, but failed to run " + FPaths::ToUtf8(PackageExeName.wstring());
             return false;
         }
         CloseHandle(ProcessInfo.hThread);
