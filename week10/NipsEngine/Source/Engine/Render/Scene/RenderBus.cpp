@@ -11,6 +11,13 @@ void FRenderBus::Clear()
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
 	ShadowLightRequests.clear();
+    VignetteIntensity = 0.0f;
+    VignetteRadius = 0.75f;
+    VignetteSmoothness = 0.35f;
+    CameraFadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+    CameraFadeAlpha = 0.0f;
+    LetterboxTargetAspect = 0.0f;
+    LetterboxAmount = 0.0f;
 }
 
 void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)

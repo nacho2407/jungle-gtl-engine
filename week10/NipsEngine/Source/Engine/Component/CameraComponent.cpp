@@ -1,4 +1,5 @@
 ﻿#include "Component/CameraComponent.h"
+#include <algorithm>
 #include <cmath>
 
 DEFINE_CLASS(UCameraComponent, USceneComponent)
@@ -76,6 +77,19 @@ void UCameraComponent::SetCameraState(const FCameraState& NewState)
 	CameraState = NewState;
 }
 
+void UCameraComponent::SetVignette(float Intensity, float Radius, float Smoothness)
+{
+	PostProcessSettings.VignetteIntensity = MathUtil::Clamp(Intensity, 0.0f, 1.0f);
+	PostProcessSettings.VignetteRadius = MathUtil::Clamp(Radius, 0.0f, 2.0f);
+	PostProcessSettings.VignetteSmoothness = std::max(Smoothness, 0.001f);
+	PostProcessSettings.bVignetteEnabled = PostProcessSettings.VignetteIntensity > 0.001f;
+}
+
+void UCameraComponent::ClearVignette()
+{
+	PostProcessSettings = FCameraPostProcessSettings{};
+}
+
 FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight)
 {
 	float NdcX = (2.0f * MouseX) / ScreenWidth - 1.0f;
@@ -110,6 +124,10 @@ void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
 	OutProps.push_back({ "Far Z", EPropertyType::Float, &CameraState.FarZ, 1.0f, 100000.0f, 10.0f });
 	OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
 	OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f, nullptr, 0, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Vignette Enabled", EPropertyType::Bool, &PostProcessSettings.bVignetteEnabled });
+	OutProps.push_back({ "Vignette Intensity", EPropertyType::Float, &PostProcessSettings.VignetteIntensity, 0.0f, 1.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Vignette Radius", EPropertyType::Float, &PostProcessSettings.VignetteRadius, 0.0f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Vignette Smoothness", EPropertyType::Float, &PostProcessSettings.VignetteSmoothness, 0.001f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
 }
 
 void UCameraComponent::Serialize(FArchive& Ar)
@@ -118,6 +136,10 @@ void UCameraComponent::Serialize(FArchive& Ar)
 	Ar << "FOV" << CameraState.FOV;
 	Ar << "NearClip" << CameraState.NearZ;
 	Ar << "FarClip" << CameraState.FarZ;
+	Ar << "VignetteEnabled" << PostProcessSettings.bVignetteEnabled;
+	Ar << "VignetteIntensity" << PostProcessSettings.VignetteIntensity;
+	Ar << "VignetteRadius" << PostProcessSettings.VignetteRadius;
+	Ar << "VignetteSmoothness" << PostProcessSettings.VignetteSmoothness;
 }
 
 void UCameraComponent::SetViewRotationDegrees(float PitchDegrees, float YawDegrees)
@@ -224,6 +246,7 @@ void UCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& OutView)
     OutView.FarZ = CameraState.FarZ;
     OutView.NearZ = CameraState.NearZ;
     OutView.OrthoWidth = CameraState.OrthoWidth;
+    OutView.PostProcessSettings = PostProcessSettings;
 }
 
 void UCameraComponent::MoveForward(float Distance)

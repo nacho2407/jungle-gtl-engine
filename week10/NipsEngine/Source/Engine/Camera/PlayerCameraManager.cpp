@@ -121,23 +121,77 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
     UpdateTransition(DeltaTime, OutResult);
     ApplyModifiers(DeltaTime, OutResult);
     UpdateFade(DeltaTime);
+    UpdateLetterbox(DeltaTime);
 	CachedView = OutResult;
 }
 
 void APlayerCameraManager::StartFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color)
 {
-    Fade.FromAlpha = FromAlpha;
-    Fade.ToAlpha = ToAlpha;
-    Fade.Duration = Duration;
+    Fade.FromAlpha = std::clamp(FromAlpha, 0.0f, 1.0f);
+    Fade.ToAlpha = std::clamp(ToAlpha, 0.0f, 1.0f);
+    Fade.Duration = std::max(0.0f, Duration);
     Fade.Elapsed = 0.f;
     Fade.Color = Color;
-    Fade.CurrentAlpha = FromAlpha;
+    Fade.CurrentAlpha = Fade.FromAlpha;
     Fade.bActive = true;
 }
 
 void APlayerCameraManager::StopFade()
 {
     Fade.bActive = false;
+    Fade.CurrentAlpha = 0.0f;
+}
+
+void APlayerCameraManager::StartLetterbox(float TargetAspect, float Duration)
+{
+    Letterbox.TargetAspect = std::max(TargetAspect, 0.001f);
+    Letterbox.bEnabled = true;
+    Letterbox.FromAmount = std::clamp(Letterbox.CurrentAmount, 0.0f, 1.0f);
+    Letterbox.ToAmount = 1.0f;
+    Letterbox.Duration = std::max(Duration, 0.0f);
+    Letterbox.Elapsed = 0.0f;
+
+    if (Letterbox.Duration <= 0.0f)
+    {
+        Letterbox.CurrentAmount = 1.0f;
+        Letterbox.bActive = false;
+        return;
+    }
+
+    Letterbox.bActive = true;
+}
+
+void APlayerCameraManager::StopLetterbox(float Duration)
+{
+    Letterbox.FromAmount = std::clamp(Letterbox.CurrentAmount, 0.0f, 1.0f);
+    Letterbox.ToAmount = 0.0f;
+    Letterbox.Duration = std::max(Duration, 0.0f);
+    Letterbox.Elapsed = 0.0f;
+
+    if (Letterbox.Duration <= 0.0f)
+    {
+        Letterbox = FCameraLetterbox{};
+        return;
+    }
+
+    Letterbox.bActive = true;
+}
+
+void APlayerCameraManager::SetLetterbox(float TargetAspect)
+{
+    Letterbox.TargetAspect = std::max(TargetAspect, 0.001f);
+    Letterbox.bEnabled = true;
+    Letterbox.FromAmount = 1.0f;
+    Letterbox.ToAmount = 1.0f;
+    Letterbox.Duration = 0.0f;
+    Letterbox.Elapsed = 0.0f;
+    Letterbox.CurrentAmount = 1.0f;
+    Letterbox.bActive = false;
+}
+
+void APlayerCameraManager::ClearLetterbox()
+{
+    Letterbox = FCameraLetterbox{};
 }
 
 void APlayerCameraManager::AddModifier(UCameraModifier* Modifier)
@@ -273,5 +327,30 @@ void APlayerCameraManager::UpdateFade(float DeltaTime)
     if (Fade.Elapsed >= Fade.Duration)
     {
         Fade.bActive = false;
+    }
+}
+
+void APlayerCameraManager::UpdateLetterbox(float DeltaTime)
+{
+    if (!Letterbox.bActive)
+        return;
+
+    Letterbox.Elapsed += DeltaTime;
+
+    float T = (Letterbox.Duration > 0.f) ? (Letterbox.Elapsed / Letterbox.Duration) : 1.f;
+    T = std::clamp(T, 0.f, 1.f);
+    T = T * T * (3.f - 2.f * T);
+
+    Letterbox.CurrentAmount = std::lerp(Letterbox.FromAmount, Letterbox.ToAmount, T);
+
+    if (Letterbox.Elapsed >= Letterbox.Duration)
+    {
+        Letterbox.CurrentAmount = Letterbox.ToAmount;
+        Letterbox.bActive = false;
+
+        if (Letterbox.CurrentAmount <= 0.001f)
+        {
+            Letterbox = FCameraLetterbox{};
+        }
     }
 }

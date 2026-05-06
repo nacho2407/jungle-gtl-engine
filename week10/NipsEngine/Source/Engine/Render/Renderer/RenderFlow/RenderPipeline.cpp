@@ -36,6 +36,7 @@ namespace
             "RenderPass.Light",
             "RenderPass.Fog",
             "RenderPass.Sandervistan",
+            "RenderPass.PostProcess",
             "RenderPass.FXAA",
             "RenderPass.Font",
             "RenderPass.SubUV",

@@ -52,6 +52,29 @@ public:
 	const FVector2& GetViewportOrigin() const { return ViewportOrigin; }
     float GetNearPlane() const { return NearPlane; }
     float GetFarPlane() const { return FarPlane; }
+    void SetVignette(float Intensity, float Radius, float Smoothness)
+    {
+        VignetteIntensity = Intensity;
+        VignetteRadius = Radius;
+        VignetteSmoothness = Smoothness;
+    }
+    float GetVignetteIntensity() const { return VignetteIntensity; }
+    float GetVignetteRadius() const { return VignetteRadius; }
+    float GetVignetteSmoothness() const { return VignetteSmoothness; }
+    void SetCameraFade(const FVector4& InColor, float InAlpha)
+    {
+        CameraFadeColor = InColor;
+        CameraFadeAlpha = InAlpha;
+    }
+    const FVector4& GetCameraFadeColor() const { return CameraFadeColor; }
+    float GetCameraFadeAlpha() const { return CameraFadeAlpha; }
+    void SetLetterbox(float InTargetAspect, float InAmount)
+    {
+        LetterboxTargetAspect = InTargetAspect;
+        LetterboxAmount = InAmount;
+    }
+    float GetLetterboxTargetAspect() const { return LetterboxTargetAspect; }
+    float GetLetterboxAmount() const { return LetterboxAmount; }
 
     bool bSandevistanEnabled = false;
     float SandevistanIntensity = 0.0f;
@@ -80,6 +103,13 @@ private:
 	float	 FarPlane = 1000.0f;
 	FVector2 ViewportSize;
 	FVector2 ViewportOrigin = FVector2(0.0f, 0.0f);
+    float VignetteIntensity = 0.0f;
+    float VignetteRadius = 0.75f;
+    float VignetteSmoothness = 0.35f;
+    FVector4 CameraFadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+    float CameraFadeAlpha = 0.0f;
+    float LetterboxTargetAspect = 0.0f;
+    float LetterboxAmount = 0.0f;
 
 	//Editor Settings
 	EViewMode		ViewMode		= EViewMode::Lit_BlinnPhong;

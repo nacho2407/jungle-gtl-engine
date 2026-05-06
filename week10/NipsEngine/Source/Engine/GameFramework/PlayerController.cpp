@@ -613,6 +613,70 @@ void APlayerController::SetDefaultViewTargetBlend(float BlendTime, ECameraBlendT
 	}
 }
 
+void APlayerController::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StartFade(FromAlpha, ToAlpha, Duration, Color);
+	}
+}
+
+void APlayerController::StopCameraFade()
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StopFade();
+	}
+}
+
+void APlayerController::SetCameraVignette(float Intensity, float Radius, float Smoothness)
+{
+	if (UCameraComponent* Camera = GetViewTargetCamera())
+	{
+		Camera->SetVignette(Intensity, Radius, Smoothness);
+	}
+}
+
+void APlayerController::ClearCameraVignette()
+{
+	if (UCameraComponent* Camera = GetViewTargetCamera())
+	{
+		Camera->ClearVignette();
+	}
+}
+
+void APlayerController::StartCameraLetterbox(float TargetAspect, float Duration)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StartLetterbox(TargetAspect, Duration);
+	}
+}
+
+void APlayerController::StopCameraLetterbox(float Duration)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StopLetterbox(Duration);
+	}
+}
+
+void APlayerController::SetCameraLetterbox(float TargetAspect)
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->SetLetterbox(TargetAspect);
+	}
+}
+
+void APlayerController::ClearCameraLetterbox()
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->ClearLetterbox();
+	}
+}
+
 void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 {
 	ClearInvalidViewTarget();

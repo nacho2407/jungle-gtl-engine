@@ -338,7 +338,16 @@ struct FSandevistanConstants
 struct FPostProcessConstants
 {
     float InvResolution[2];
+    float VignetteIntensity;
+    float VignetteRadius;
+    float VignetteSmoothness;
+    uint32 GammaCorrectionEnabled;
     float Pad[2];
+};
+
+struct FScreenOverlayConstants
+{
+    float Color[4];
 };
 
 struct FLightData

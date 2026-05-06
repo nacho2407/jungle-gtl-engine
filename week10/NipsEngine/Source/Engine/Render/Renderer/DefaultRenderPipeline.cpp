@@ -2,9 +2,40 @@
 
 #include "Renderer.h"
 #include "Engine/Runtime/Engine.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Camera/ViewportCamera.h"
 #include "Core/Logging/Log.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
+
+namespace
+{
+	void ApplyCameraViewEffectsToBus(APlayerCameraManager* CameraManager, FRenderBus& Bus)
+	{
+		if (!CameraManager)
+		{
+			return;
+		}
+
+		const FMinimalViewInfo& ViewInfo = CameraManager->GetCameraView();
+		const FCameraPostProcessSettings& PostProcess = ViewInfo.PostProcessSettings;
+		if (PostProcess.bVignetteEnabled)
+		{
+			Bus.SetVignette(
+				PostProcess.VignetteIntensity,
+				PostProcess.VignetteRadius,
+				PostProcess.VignetteSmoothness);
+		}
+		if (CameraManager->HasLetterbox())
+		{
+			Bus.SetLetterbox(CameraManager->GetLetterboxTargetAspect(), CameraManager->GetLetterboxAmount());
+		}
+		if (CameraManager->HasVisibleFade())
+		{
+			Bus.SetCameraFade(CameraManager->GetFadeColor().ToVector4(), CameraManager->GetFadeAlpha());
+		}
+	}
+}
 
 FDefaultRenderPipeline::FDefaultRenderPipeline(UEngine* InEngine, FRenderer& InRenderer)
 	: Engine(InEngine)
@@ -43,6 +74,11 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.SetFXAAEnabled(true);
 		Bus.bSandevistanEnabled = World->IsSandervistanActivated();
 		Bus.SandevistanIntensity = Bus.bSandevistanEnabled ? 1.0f : 0.0f;
+		ApplyCameraViewEffectsToBus(
+			Engine->GetPrimaryPlayerController()
+				? Engine->GetPrimaryPlayerController()->GetPlayerCameraManager()
+				: nullptr,
+			Bus);
 
 		const FFrustum& ViewFrustum = Camera->GetFrustum();
 		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
@@ -74,6 +110,11 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			Bus.SetFXAAEnabled(true);
 			Bus.bSandevistanEnabled = World->IsSandervistanActivated();
 			Bus.SandevistanIntensity = Bus.bSandevistanEnabled ? 1.0f : 0.0f;
+			ApplyCameraViewEffectsToBus(
+				Engine->GetPrimaryPlayerController()
+					? Engine->GetPrimaryPlayerController()->GetPlayerCameraManager()
+					: nullptr,
+				Bus);
 			Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, nullptr);
 
 			if (!bLoggedRuntimeFallback)
@@ -99,5 +140,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	UIContext.LayoutSize = FRuntimeUIVector2(1920.0f, 1080.0f);
 	UIContext.DeltaTime = DeltaTime;
 	Engine->GetRmlUiSystem().Render(UIContext, Renderer);
+	Renderer.RenderScreenOverlays(Bus, true);
 	Renderer.EndFrame();
 }
