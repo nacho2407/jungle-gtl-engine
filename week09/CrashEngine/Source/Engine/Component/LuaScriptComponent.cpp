@@ -303,6 +303,8 @@ bool ULuaScriptComponent::LoadScript()
         { return WorldProxy.RequestHitStop(Duration); });
     WorldTable.set_function("RequestSlomo", [this](float InTimeScale, float Duration)
         { return WorldProxy.RequestSlomo(InTimeScale, Duration); });
+    WorldTable.set_function("GetUnscaledDeltatime", [this]()
+        { return WorldProxy.GetUnscaledDeltatime(); });
 
     Env["World"] = WorldTable;
 

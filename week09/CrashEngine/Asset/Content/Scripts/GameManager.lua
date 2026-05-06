@@ -323,5 +323,5 @@ end
 
 function Tick(dt)
     -- dt는 이전 프레임부터 현재 프레임까지 걸린 시간이다.
-    Timer = Timer + dt
+    Timer = Timer + World.GetUnscaledDeltatime()
 end

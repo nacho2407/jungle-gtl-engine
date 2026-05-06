@@ -2,6 +2,10 @@
 
 void FGameTimeManager::Tick(float InUnScaledDeltatime)
 {
+	UnScaledDeltatime = InUnScaledDeltatime;
+	Deltatime = InUnScaledDeltatime;
+	TimeScale = 1.0f;
+
 	if (HitStopRemainingTime > 0)
 	{
 		HitStopRemainingTime = HitStopRemainingTime - InUnScaledDeltatime >= 0 ? HitStopRemainingTime - InUnScaledDeltatime : 0;
@@ -11,7 +15,7 @@ void FGameTimeManager::Tick(float InUnScaledDeltatime)
 	if (SlomoRemainingTime > 0)
 	{
 		SlomoRemainingTime = SlomoRemainingTime - InUnScaledDeltatime >= 0 ? SlomoRemainingTime - InUnScaledDeltatime : 0;
-		TimeScale = InUnScaledDeltatime * SlomoTimeScale;
+		TimeScale = SlomoTimeScale;
 	}
 
 	Deltatime = InUnScaledDeltatime * TimeScale;

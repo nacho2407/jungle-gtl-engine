@@ -291,8 +291,6 @@ bool FLuaWorldProxy::RequestSlomo(float InTimeScale, float Duration) const
 float FLuaWorldProxy::GetUnscaledDeltatime() const
 {
     UWorld* World = ResolveWorld();
-    World->GetUnScaledDeltatime();
-
-    return true;
+    return World->GetUnScaledDeltatime();
 }
 
