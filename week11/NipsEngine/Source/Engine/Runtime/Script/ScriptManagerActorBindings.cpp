@@ -30,6 +30,7 @@
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Script/ScriptComponent.h"
@@ -285,6 +286,17 @@ namespace
 
 void FScriptManager::BindActorTypes()
 {
+    GLuaState->new_enum<ECameraBlendType>(
+        "CameraBlendType",
+        {
+            { "Linear", ECameraBlendType::Linear },
+            { "EaseIn", ECameraBlendType::EaseIn },
+            { "EaseOut", ECameraBlendType::EaseOut },
+            { "EaseInOut", ECameraBlendType::EaseInOut },
+            { "SmoothStep", ECameraBlendType::SmoothStep }
+        }
+    );
+
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, AActor, "Actor", UObject)
     LUA_PROPERTY(Name, [](AActor& Actor) -> FString
                  { return Actor.GetName(); });
@@ -353,6 +365,10 @@ void FScriptManager::BindActorTypes()
     LUA_METHOD(LerpCameraFOVDegrees, LerpCameraFOVDegrees);
     LUA_METHOD(ResetCameraFOV, ResetCameraFOV);
     LUA_METHOD(StopCameraEffects, StopCameraEffects);
+    LUA_SET(SetViewTargetWithBlend, [](APlayerController& Self, AActor* InActor, float BlendTime, sol::optional<ECameraBlendType> BlendType)
+            { Self.SetViewTargetWithBlend(InActor, BlendTime, BlendType.value_or(ECameraBlendType::SmoothStep)); });
+    LUA_SET(SetDefaultViewTargetBlend, [](APlayerController& Self, float BlendTime, sol::optional<ECameraBlendType> BlendType)
+            { Self.SetDefaultViewTargetBlend(BlendTime, BlendType.value_or(ECameraBlendType::SmoothStep)); });
     LUA_METHOD(GetPossessedActor, GetPossessedActor);
     LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
     LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);
