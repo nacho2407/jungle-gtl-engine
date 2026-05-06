@@ -145,6 +145,10 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
     if OtherActor:IsA("ABladeSlash") then
         self.bWasCutByBlade = true
         self.lastAttackId = ExtractAttackId(OtherActor)
+        
+        if _G.GameJam and _G.GameJam.ActivateHitStop then
+            _G.GameJam.ActivateHitStop(0.1, 0.2)
+        end
         return
     end
     
