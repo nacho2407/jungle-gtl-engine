@@ -1,5 +1,15 @@
 ---@meta
 
+---@alias CameraBlendType integer
+
+---@class CameraBlendTypeEnum
+---@field Linear CameraBlendType
+---@field EaseIn CameraBlendType
+---@field EaseOut CameraBlendType
+---@field EaseInOut CameraBlendType
+---@field SmoothStep CameraBlendType
+CameraBlendType = {}
+
 ---@class FName
 local FName = {}
 
@@ -649,9 +659,12 @@ local PlayerController = {}
 function PlayerController:Possess(actor) end
 function PlayerController:UnPossess() end
 ---@param actor AActor
-function PlayerController:SetViewTarget(actor) end
----@param camera CameraComponent
-function PlayerController:SetViewTargetCamera(camera) end
+---@param blend_time number
+---@param blend_type? CameraBlendType
+function PlayerController:SetViewTargetWithBlend(actor, blend_time, blend_type) end
+---@param blend_time number
+---@param blend_type? CameraBlendType
+function PlayerController:SetDefaultViewTargetBlend(blend_time, blend_type) end
 ---@param visible boolean
 function PlayerController:SetCursorVisible(visible) end
 ---@return boolean
