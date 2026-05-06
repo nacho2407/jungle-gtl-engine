@@ -331,7 +331,15 @@ void UMaterial::Serialize(FArchive& Ar)
 			if (!TexturePath.empty())
 			{
 				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-				UTexture2D* Loaded = UTexture2D::LoadFromFile(TexturePath, Device);
+				const bool bIsColorTexture =
+					SlotName == "DiffuseTexture" ||
+					SlotName == "EmissiveTexture" ||
+					SlotName == "Custom0Texture" ||
+					SlotName == "Custom1Texture";
+				UTexture2D* Loaded = UTexture2D::LoadFromFile(
+					TexturePath,
+					Device,
+					bIsColorTexture ? ETextureColorSpace::SRGB : ETextureColorSpace::Linear);
 				if (Loaded)
 				{
 					TextureParameters[SlotName] = Loaded;

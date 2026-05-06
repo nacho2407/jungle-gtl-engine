@@ -1,4 +1,4 @@
-﻿#include "DrawCommandBuilder.h"
+#include "DrawCommandBuilder.h"
 
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
@@ -36,6 +36,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants));
 	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants));
 	FXAACB.Create(InDevice, sizeof(FFXAAConstants));
+	GammaCorrectionCB.Create(InDevice, sizeof(FGammaCorrectionConstants));
 	
 	CameraFadeCB.Create(InDevice, sizeof(FCameraFadeConstants));
 	CameraVignetteCB.Create(InDevice, sizeof(FCameraVignetteConstants));
@@ -58,6 +59,7 @@ void FDrawCommandBuilder::Release()
 	OutlineCB.Release();
 	SceneDepthCB.Release();
 	FXAACB.Release();
+	GammaCorrectionCB.Release();
 	
 	CameraFadeCB.Release();
 	CameraVignetteCB.Release();
@@ -645,6 +647,23 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			Cmd.InitFullscreenTriangle(LetterboxShader, ERenderPass::PostProcess, PPRS);
 			Cmd.Bindings.PerShaderCB[0] = &CameraLetterboxCB;
 			Cmd.BuildSortKey(7);
+		}
+	}
+
+	if (Frame.RenderOptions.ShowFlags.bGammaCorrection)
+	{
+		FShader* GammaShader = FShaderManager::Get().GetOrCreate(EShaderPath::GammaCorrection);
+		if (GammaShader)
+		{
+			FGammaCorrectionConstants GammaData = {};
+			GammaData.Gamma = Frame.RenderOptions.Gamma;
+			GammaCorrectionCB.Update(Ctx, &GammaData, sizeof(FGammaCorrectionConstants));
+
+			FDrawCommand& Cmd = DrawCommandList.AddCommand();
+			Cmd.InitFullscreenTriangle(GammaShader, ERenderPass::GammaCorrection,
+				PassRenderStateTable->ToDrawCommandState(ERenderPass::GammaCorrection, ViewMode));
+			Cmd.Bindings.PerShaderCB[0] = &GammaCorrectionCB;
+			Cmd.BuildSortKey(0);
 		}
 	}
 }

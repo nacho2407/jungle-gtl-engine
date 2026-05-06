@@ -34,6 +34,7 @@ struct FShowFlags
 	bool bOctree = false;
 	bool bFog = true;
 	bool bFXAA = false;
+	bool bGammaCorrection = true;
 	bool bViewLightCulling = false;
 	bool bVisualize25DCulling = false;
 	bool bShowShadowFrustum = false;
@@ -75,6 +76,9 @@ struct FViewportRenderOptions
 	// FXAA 전용 설정
 	float EdgeThreshold = 0.125f;
 	float EdgeThresholdMin = 0.0625f;
+
+	// Gamma Correction 전용 설정
+	float Gamma = 2.4f;
 
 	// Light Culling 뷰모드 전용 설정
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;

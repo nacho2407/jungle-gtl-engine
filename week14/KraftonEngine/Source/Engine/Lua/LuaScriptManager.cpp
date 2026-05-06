@@ -3,6 +3,7 @@
 #include "Core/Log.h"
 #include "Core/Notification.h"
 #include "Audio/AudioManager.h"
+#include "Component/ActionComponent.h"
 #include "Component/LuaScriptComponent.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/CameraComponent.h"
@@ -729,6 +730,17 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 
 void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 {
+	Lua.new_usertype<UActionComponent>("ActionComponent",
+		"HitStop", &UActionComponent::HitStop,
+		"HitSquash", &UActionComponent::HitSquash,
+		"Knockback", &UActionComponent::Knockback,
+		"Slomo", &UActionComponent::Slomo,
+		"StopHitStop", &UActionComponent::StopHitStop,
+		"StopHitSquash", &UActionComponent::StopHitSquash,
+		"StopKnockback", &UActionComponent::StopKnockback,
+		"StopSlomo", &UActionComponent::StopSlomo,
+		"StopAllActions", &UActionComponent::StopAllActions);
+
 	Lua.new_usertype<UFloatingPawnMovementComponent>("FloatingPawnMovementComponent",
 		"SetMoveInput", &UFloatingPawnMovementComponent::SetMoveInput,
 		"SetLookInput", &UFloatingPawnMovementComponent::SetLookInput);
@@ -913,6 +925,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"GetCamera", [](AActor& Actor)
 	{
 		return Actor.GetComponentByClass<UCameraComponent>();
+	},
+
+		"GetActionComponent", [](AActor& Actor)
+	{
+		return Actor.GetComponentByClass<UActionComponent>();
 	},
 
 		"GetRootPrimitiveComponent", [](AActor& Actor) -> UPrimitiveComponent*
