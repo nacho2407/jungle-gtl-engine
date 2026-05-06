@@ -17,6 +17,34 @@
 			</div>
 		</div>
 
+		<div id="hud-speedometer">
+			<div id="speedometer-face">
+				<div class="speedometer-ring"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-0"></div>
+				<div class="speedometer-tick speedometer-tick-25"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-50"></div>
+				<div class="speedometer-tick speedometer-tick-75"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-100"></div>
+				<div class="speedometer-tick speedometer-tick-125"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-150"></div>
+				<div class="speedometer-tick speedometer-tick-175"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-200"></div>
+				<div class="speedometer-tick speedometer-tick-225"></div>
+				<div class="speedometer-tick speedometer-tick-major speedometer-tick-250"></div>
+				<div class="speedometer-inner-shadow"></div>
+				<div id="speedometer-number-0" class="speedometer-number speedometer-number-0">0</div>
+				<div id="speedometer-number-20" class="speedometer-number speedometer-number-50">20</div>
+				<div id="speedometer-number-40" class="speedometer-number speedometer-number-100">40</div>
+				<div id="speedometer-number-60" class="speedometer-number speedometer-number-150">60</div>
+				<div id="speedometer-number-80" class="speedometer-number speedometer-number-200">80</div>
+				<div id="speedometer-number-100" class="speedometer-number speedometer-number-250">100</div>
+				<div id="speedometer-needle"></div>
+				<div id="speedometer-pivot"></div>
+				<div id="speedometer-value">000</div>
+				<div id="speedometer-unit">km/h</div>
+			</div>
+		</div>
+
 		<div id="hud-hp-panel">
 			<div class="hud-small-label">HP</div>
 			<div class="hud-hp-row">

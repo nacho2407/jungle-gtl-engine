@@ -2,6 +2,11 @@ local UIManager = {}
 local ObjRegistry = require("ObjRegistry")
 local widgets = {}
 
+local SPEEDOMETER_DEFAULT_MAX_SPEED = 100.0
+local SPEEDOMETER_MIN_ANGLE = 135.0
+local SPEEDOMETER_MAX_ANGLE = 315.0
+local speedometerCachedMaxSpeed = nil
+
 local onStartGame = nil
 local fade = {
     active = false,
@@ -79,6 +84,50 @@ local function SetHudScoreText(score)
     end
 
     widget:set_text("score-value", FormatScore(score))
+end
+
+local function FormatSpeedometerLabel(speed)
+    return tostring(math.floor(speed + 0.5))
+end
+
+local function UpdateSpeedometerLabels(widget, maxSpeed)
+    if speedometerCachedMaxSpeed ~= nil and math.abs(speedometerCachedMaxSpeed - maxSpeed) < 0.01 then
+        return
+    end
+
+    speedometerCachedMaxSpeed = maxSpeed
+    widget:set_text("speedometer-number-0", "0")
+    widget:set_text("speedometer-number-20", FormatSpeedometerLabel(maxSpeed * 0.2))
+    widget:set_text("speedometer-number-40", FormatSpeedometerLabel(maxSpeed * 0.4))
+    widget:set_text("speedometer-number-60", FormatSpeedometerLabel(maxSpeed * 0.6))
+    widget:set_text("speedometer-number-80", FormatSpeedometerLabel(maxSpeed * 0.8))
+    widget:set_text("speedometer-number-100", FormatSpeedometerLabel(maxSpeed))
+end
+
+local function UpdateSpeedometerWidget(widget)
+    local rawSpeed = 0.0
+    local maxSpeed = SPEEDOMETER_DEFAULT_MAX_SPEED
+    local car = ObjRegistry.car
+    if car ~= nil then
+        local movement = car:GetCarMovement()
+        if movement ~= nil then
+            rawSpeed = math.abs(movement:GetForwardSpeed())
+            maxSpeed = math.abs(movement:GetMaxSpeed())
+        end
+    end
+
+    if maxSpeed <= 0.01 then
+        maxSpeed = SPEEDOMETER_DEFAULT_MAX_SPEED
+    end
+
+    UpdateSpeedometerLabels(widget, maxSpeed)
+
+    local speed = Clamp(rawSpeed, 0.0, maxSpeed)
+    local speedRatio = speed / maxSpeed
+    local angle = SPEEDOMETER_MIN_ANGLE + (SPEEDOMETER_MAX_ANGLE - SPEEDOMETER_MIN_ANGLE) * speedRatio
+
+    widget:set_text("speedometer-value", string.format("%03d", math.floor(speed + 0.5)))
+    widget:set_property("speedometer-needle", "transform", string.format("rotate(%.1fdeg)", angle))
 end
 
 local function SetDpProperty(widget, elementId, propertyName, value)
@@ -952,6 +1001,7 @@ function UIManager.UpdateHUD()
             SetHudScoreText(scoreCounter.display)
         end
     end
+    UpdateSpeedometerWidget(widget)
 
     -- HP — RML 에 hp-slot-0/1/2 슬롯이 있고 색만 채워진(빨강)/빈(회색) 으로 토글.
     PollScoreEvents(gs)

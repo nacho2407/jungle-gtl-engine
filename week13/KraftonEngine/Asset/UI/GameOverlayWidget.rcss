@@ -50,6 +50,167 @@ body {
 }
 
 /* 우하단 — HP. Gas widget 은 이 패널 왼쪽에 GasWidget.rcss 가 별도 배치. */
+#hud-speedometer {
+	position: absolute;
+	left: 4%;
+	top: 264dp;
+	width: 260dp;
+	height: 210dp;
+	border-width: 2dp;
+	border-color: #3f4657;
+	background-color: #0b0d12e8;
+}
+
+#speedometer-face {
+	position: absolute;
+	left: 8dp;
+	top: 8dp;
+	width: 244dp;
+	height: 194dp;
+	background-color: #11151cee;
+}
+
+.speedometer-ring {
+	position: absolute;
+	left: 27dp;
+	top: 2dp;
+	width: 178dp;
+	height: 178dp;
+	border-width: 6dp;
+	border-color: #d9b09a;
+	border-radius: 95dp;
+	background-color: #0b0d12d8;
+}
+
+.speedometer-inner-shadow {
+	position: absolute;
+	left: 43dp;
+	top: 18dp;
+	width: 126dp;
+	height: 126dp;
+	border-width: 16dp;
+	border-color: #1a1c24cc;
+	border-radius: 79dp;
+	background-color: #0c0e14e8;
+}
+
+.speedometer-tick {
+	position: absolute;
+	left: 122dp;
+	top: 96dp;
+	width: 88dp;
+	height: 2dp;
+	background-color: #d7d9df;
+	transform-origin: 0dp 1dp;
+	opacity: 0.55;
+}
+
+.speedometer-tick-major {
+	width: 96dp;
+	height: 3dp;
+	background-color: #ffffff;
+	opacity: 0.9;
+}
+
+.speedometer-tick-0 { transform: rotate(135deg); }
+.speedometer-tick-25 { transform: rotate(153deg); }
+.speedometer-tick-50 { transform: rotate(171deg); }
+.speedometer-tick-75 { transform: rotate(189deg); }
+.speedometer-tick-100 { transform: rotate(207deg); }
+.speedometer-tick-125 { transform: rotate(225deg); }
+.speedometer-tick-150 { transform: rotate(243deg); }
+.speedometer-tick-175 { transform: rotate(261deg); }
+.speedometer-tick-200 { transform: rotate(279deg); }
+.speedometer-tick-225 { transform: rotate(297deg); }
+.speedometer-tick-250 { transform: rotate(315deg); }
+
+.speedometer-number {
+	position: absolute;
+	width: 42dp;
+	height: 22dp;
+	color: #d6d9e2;
+	font-size: 15dp;
+	line-height: 22dp;
+	text-align: center;
+}
+
+.speedometer-number-0 {
+	left: 45dp;
+	top: 140dp;
+}
+
+.speedometer-number-50 {
+	left: 24dp;
+	top: 99dp;
+}
+
+.speedometer-number-100 {
+	left: 34dp;
+	top: 50dp;
+}
+
+.speedometer-number-150 {
+	left: 67dp;
+	top: 13dp;
+}
+
+.speedometer-number-200 {
+	left: 118dp;
+	top: 13dp;
+}
+
+.speedometer-number-250 {
+	left: 156dp;
+	top: 50dp;
+}
+
+#speedometer-needle {
+	position: absolute;
+	left: 122dp;
+	top: 95dp;
+	width: 96dp;
+	height: 4dp;
+	background-color: #e5852c;
+	transform-origin: 2dp 2dp;
+	transform: rotate(135deg);
+}
+
+#speedometer-pivot {
+	position: absolute;
+	left: 108dp;
+	top: 83dp;
+	width: 22dp;
+	height: 22dp;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	border-radius: 14dp;
+	background-color: #3a3f4dee;
+}
+
+#speedometer-value {
+	position: absolute;
+	left: 92dp;
+	top: 113dp;
+	width: 60dp;
+	height: 24dp;
+	color: #ffffff;
+	font-size: 18dp;
+	line-height: 24dp;
+	text-align: center;
+}
+
+#speedometer-unit {
+	position: absolute;
+	left: 92dp;
+	top: 136dp;
+	width: 60dp;
+	height: 18dp;
+	color: #b7bdca;
+	font-size: 11dp;
+	line-height: 18dp;
+	text-align: center;
+}
+
 #hud-hp-panel {
 	position: absolute;
 	right: 40dp;
