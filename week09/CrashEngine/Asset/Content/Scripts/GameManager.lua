@@ -261,22 +261,35 @@ local function getDocumentCount()
     return _G.PlayerState.DocumentCount or 0
 end
 
+local function getBatteryCount()
+    if _G.PlayerState == nil then
+        return 0
+    end
+
+    return _G.PlayerState.BatteryCount or 0
+end
+
+local function getEnemyKillCount()
+    if _G.PlayerState == nil then
+        return 0
+    end
+
+    return _G.PlayerState.EnemyKillCount or 0
+end
+
 local function getTimer()
     return Timer
 end
 
 
 -- PlayerController 또는 다른 시스템에서 호출할 수 있는 게임 종료 진입점.
-local function calculateScore(finalHP, finalDocumentCount, elapsedTime)
-    if (finalHP or 0) <= 0 then
-        return 0
-    end
+local function calculateScore(enemyKillCount, documentCount, elapsedTime, batteryCount)
+    local enemy_score = math.max(0, enemyKillCount or 0) * 1000
+    local document_score = math.max(0, documentCount or 0) * 3000
+    local time_penalty = math.floor((elapsedTime or 0) * 10)
+    local battery_score = math.max(0, batteryCount or 0) * 300
 
-    local time_score = math.max(0, 10000 - math.floor((elapsedTime or 0) * 50))
-    local document_bonus = math.max(0, finalDocumentCount or 0) * 3000
-    local hp_bonus = math.max(0, math.floor((finalHP or 0) + 0.5)) * 5
-
-    return math.max(0, math.floor(time_score + document_bonus + hp_bonus))
+    return math.max(0, math.floor(enemy_score + document_score - time_penalty + battery_score))
 end
 
 function GameOver(finalHP, finalDocumentCount)
@@ -287,7 +300,7 @@ function GameOver(finalHP, finalDocumentCount)
     isGameOver = true
     finalHP = finalHP or getPlayerHP()
     finalDocumentCount = finalDocumentCount or getDocumentCount()
-    local score = calculateScore(finalHP, finalDocumentCount, Timer)
+    local score = calculateScore(getEnemyKillCount(), finalDocumentCount, Timer, getBatteryCount())
 
     Prefs.SetNumber("LastScore", score)
     Prefs.SetNumber("LastHP", finalHP)
@@ -305,6 +318,8 @@ function BeginPlay()
         GameOver = GameOver,
         GetPlayerHP = getPlayerHP,
         GetDocumentCount = getDocumentCount,
+        GetBatteryCount = getBatteryCount,
+        GetEnemyKillCount = getEnemyKillCount,
         GetTimer = getTimer
     }
 

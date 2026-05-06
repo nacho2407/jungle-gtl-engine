@@ -40,6 +40,7 @@ local CurrentLightG = 1.0
 local CurrentLightB = 1.0
 
 local DocumentCount = 0
+local BatteryCount = 0
 local GameManagerLuaComponent = nil
 local SoundManager = nil
 local bPlayerDeadSoundPlayed = false
@@ -106,6 +107,8 @@ local function ensurePlayerState()
     _G.PlayerState.HP = HP
     _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
+    _G.PlayerState.BatteryCount = BatteryCount
+    _G.PlayerState.EnemyKillCount = _G.PlayerState.EnemyKillCount or 0
     return _G.PlayerState
 end
 
@@ -119,6 +122,8 @@ local function syncPlayerState()
     _G.PlayerState.HP = HP
     _G.PlayerState.MaxHP = MaxHP
     _G.PlayerState.DocumentCount = DocumentCount
+    _G.PlayerState.BatteryCount = BatteryCount
+    _G.PlayerState.EnemyKillCount = _G.PlayerState.EnemyKillCount or 0
 end
 
 -- CameraLua가 조준 방향을 만들 때 사용할 플레이어의 현재 시각적 forward/up 방향.
@@ -459,6 +464,7 @@ function OnOverlapBegin(other)
         end
 
         other:AddTag("Collected")
+        BatteryCount = BatteryCount + 1
         HP = HP + BatteryHealAmount
         if HP > MaxHP then
             HP = MaxHP
@@ -493,6 +499,8 @@ function BeginPlay()
     bGameOverRequested = false
     bPlayerDeadSoundPlayed = false
     bDestinationSoundPlayed = false
+    DocumentCount = 0
+    BatteryCount = 0
     DroneTiltPitch = 0.0
     DroneTiltRoll = 0.0
     DroneBaseRotation = Vector.new(0.0, 0.0, CameraConfig.GetMeshYawOffset())
@@ -509,6 +517,7 @@ function BeginPlay()
         turnInterpSpeed = 14.0,
     })
     ensurePlayerState()
+    _G.PlayerState.EnemyKillCount = 0
     syncPlayerAimState()
     loadPlayerSounds()
 
@@ -615,6 +624,8 @@ function EndPlay()
     if _G.PlayerState ~= nil then
         _G.PlayerState.HP = HP
         _G.PlayerState.DocumentCount = DocumentCount
+        _G.PlayerState.BatteryCount = BatteryCount
+        _G.PlayerState.EnemyKillCount = _G.PlayerState.EnemyKillCount or 0
     end
 
     if _G.PlayerAimState ~= nil then
