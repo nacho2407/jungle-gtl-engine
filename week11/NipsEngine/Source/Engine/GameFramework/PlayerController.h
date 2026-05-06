@@ -6,6 +6,7 @@
 class UCameraComponent;
 class ADefaultPlayerActor;
 class APlayerCameraManager;
+enum class ECameraBlendType;
 
 class APlayerController : public AActor
 {
@@ -37,6 +38,8 @@ public:
 	void LerpCameraFOVDegrees(float TargetFOVDegrees, float Duration);
 	void ResetCameraFOV(float Duration);
 	void StopCameraEffects();
+	void SetViewTargetWithBlend(AActor* InActor, float BlendTime, ECameraBlendType BlendType);
+	void SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType);
 
 	virtual void HandleKeyPressed(int VK);
 	virtual void HandleKeyDown(int VK);

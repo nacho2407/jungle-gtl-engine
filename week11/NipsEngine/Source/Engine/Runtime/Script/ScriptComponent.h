@@ -135,6 +135,7 @@ private:
 
 private:
     void ClearLoadedState();
+    bool ApplyLuaPropertyToInstance(const char* PropertyName);
     FString ScriptName;
     FString RegisteredScriptName;
 

@@ -18,13 +18,14 @@ bool UTexture::LoadFromFile(const FString& InFilePath, ID3D11Device* InDevice)
 	std::wstring FullPath = FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(InFilePath));
 
 	HRESULT hr;
+	ID3D11ShaderResourceView* NewSRV = nullptr;
 	if (FullPath.size() >= 4 && FullPath.substr(FullPath.size() - 4) == L".dds")
 	{
-		hr = DirectX::CreateDDSTextureFromFile(InDevice, FullPath.c_str(), nullptr, &TextureData.SRV);
+		hr = DirectX::CreateDDSTextureFromFile(InDevice, FullPath.c_str(), nullptr, &NewSRV);
 	}
 	else
 	{
-		hr = DirectX::CreateWICTextureFromFile(InDevice, FullPath.c_str(), nullptr, &TextureData.SRV);
+		hr = DirectX::CreateWICTextureFromFile(InDevice, FullPath.c_str(), nullptr, &NewSRV);
 	}
 
 	if (FAILED(hr))
@@ -33,5 +34,7 @@ bool UTexture::LoadFromFile(const FString& InFilePath, ID3D11Device* InDevice)
 		return false;
 	}
 
+	TextureData.Release();
+	TextureData.SRV = NewSRV;
 	return true;
 }
