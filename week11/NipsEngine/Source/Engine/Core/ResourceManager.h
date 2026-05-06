@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "Asset/BinarySerializer.h"
+#include "Asset/CurveAssetLoader.h"
+#include "Asset/CurveFloatAsset.h"
 #include "Asset/FontAtlasLoader.h"
 #include "Asset/ObjLoader.h"
 #include "Asset/ParticleAtlasLoader.h"
@@ -122,7 +124,7 @@ public:
 
 	UMaterialInstance* CreateMaterialInstance(const FString& Path, UMaterial* Parent);
 	UMaterialInstance* GetMaterialInstance(const FString& Path) const;
-	UMaterialInterface* GetMaterialInterface(const FString& Path) const;
+	UMaterialInterface* GetMaterialInterface(const FString& Path);
 
 	FFontResource* FindFont(const FName& FontName);
 	const FFontResource* FindFont(const FName& FontName) const;
@@ -137,6 +139,11 @@ public:
 	UStaticMesh* LoadStaticMesh(const FString& Path);
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
+
+	UCurveFloatAsset* LoadCurve(const FString& Path);
+	UCurveFloatAsset* FindCurve(const FString& Path) const;
+	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);
+	TArray<FString> GetCurvePaths() const;
 
 	ID3D11SamplerState* GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device = nullptr);
 	ID3D11DepthStencilState* GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device = nullptr);
@@ -165,6 +172,7 @@ private:
 	TComPtr<ID3D11Device> CachedDevice;
 
 	FObjLoader ObjLoader;
+	FCurveAssetLoader CurveLoader;
 	FFontAtlasLoader FontLoader;
 	FParticleAtlasLoader ParticleLoader;
 	
@@ -178,6 +186,7 @@ private:
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;
 
 	TMap<FString, UStaticMesh*> StaticMeshes;
+	TMap<FString, UCurveFloatAsset*> Curves;
 	TMap<FString, UShader*> Shaders;
 	TMap<FString, FComputeShader*> ComputeShaders;
 	TMap<FString, UTexture*> Textures;
@@ -195,4 +204,5 @@ private:
 	TArray<FString> ParticleFilePaths;
 	TArray<FString> FontFilePaths;
 	TArray<FString> TextureFilePaths;
+	TArray<FString> CurveFilePaths;
 };

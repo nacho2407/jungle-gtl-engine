@@ -3,6 +3,7 @@
 #include "Core/Paths.h"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <initializer_list>
 
@@ -89,6 +90,27 @@ namespace
         return false;
     }
 
+    bool EndsWith(const FString& Value, const FString& Suffix)
+    {
+        return Value.size() >= Suffix.size() &&
+            Value.compare(Value.size() - Suffix.size(), Suffix.size(), Suffix) == 0;
+    }
+
+    bool IsCurveAssetFile(const std::filesystem::path& Path)
+    {
+        FString FileName = FPaths::ToUtf8(Path.filename().wstring());
+        std::transform(
+            FileName.begin(),
+            FileName.end(),
+            FileName.begin(),
+            [](unsigned char Ch)
+            {
+                return static_cast<char>(std::tolower(Ch));
+            });
+
+        return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
+    }
+
     TArray<FString> ListAssetFiles(const std::filesystem::path& SubDirectory, std::initializer_list<const char*> Extensions)
     {
         TArray<FString> Result;
@@ -113,6 +135,32 @@ namespace
 
             const FString Extension = LowerExtension(Entry.path());
             if (ExtensionMatches(Extension, Extensions))
+            {
+                Result.push_back(ToAssetRelativePath(Entry.path()));
+            }
+        }
+
+        return Result;
+    }
+
+    TArray<FString> ListCurveAssetFiles()
+    {
+        TArray<FString> Result;
+
+        const std::filesystem::path Root = (std::filesystem::path(FPaths::RootDir()) / L"Asset").lexically_normal();
+        if (!std::filesystem::exists(Root))
+        {
+            return Result;
+        }
+
+        std::error_code Ec;
+        for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(Root, Ec))
+        {
+            if (Ec)
+            {
+                break;
+            }
+            if (Entry.is_regular_file() && IsCurveAssetFile(Entry.path()))
             {
                 Result.push_back(ToAssetRelativePath(Entry.path()));
             }
@@ -154,6 +202,11 @@ TArray<FString> FAssetQueryService::GetStaticMeshPaths()
 TArray<FString> FAssetQueryService::GetMaterialPaths()
 {
     return ListAssetFiles(L"Material", { ".mat", ".matinst" });
+}
+
+TArray<FString> FAssetQueryService::GetCurvePaths()
+{
+    return ListCurveAssetFiles();
 }
 
 TArray<FString> FAssetQueryService::GetScenePaths()

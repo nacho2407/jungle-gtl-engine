@@ -423,7 +423,7 @@ namespace FActorSerialization
 
 			FJsonReader ComponentReader(CompData);
 			Component->Serialize(ComponentReader);
-			Component->PostEditProperty("Rotation");
+			Component->PostEditChangeProperty({ "Rotation", EPropertyChangeType::ValueSet });
 			if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
 			{
 				SceneComponent->MarkTransformDirty();

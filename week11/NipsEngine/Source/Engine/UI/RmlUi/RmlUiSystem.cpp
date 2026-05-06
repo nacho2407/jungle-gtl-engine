@@ -71,6 +71,23 @@ namespace
             || VK == VK_XBUTTON2;
     }
 
+    void SetDocumentVisibleIfNeeded(Rml::ElementDocument* Document, bool bVisible)
+    {
+        if (!Document || Document->IsVisible() == bVisible)
+        {
+            return;
+        }
+
+        if (bVisible)
+        {
+            Document->Show();
+        }
+        else
+        {
+            Document->Hide();
+        }
+    }
+
     Rml::Input::KeyIdentifier MapVirtualKeyToRmlKey(int VK)
     {
         using namespace Rml::Input;
@@ -1039,10 +1056,10 @@ int FRmlUiSystem::GetKeyModifierState(const InputSystem& Input) const
 
 TArray<std::pair<Rml::ElementDocument*, bool>> FRmlUiSystem::ApplyDocumentVisibilityFilter(bool bPreviewDocumentOnly)
 {
-    TArray<std::pair<Rml::ElementDocument*, bool>> VisibilitySnapshot;
+    TArray<std::pair<Rml::ElementDocument*, bool>> ChangedVisibilitySnapshot;
     if (!Context)
     {
-        return VisibilitySnapshot;
+        return ChangedVisibilitySnapshot;
     }
 
     for (const auto& Pair : DocumentsByScreenId)
@@ -1054,21 +1071,17 @@ TArray<std::pair<Rml::ElementDocument*, bool>> FRmlUiSystem::ApplyDocumentVisibi
         }
 
         const bool bWasVisible = Document->IsVisible();
-        VisibilitySnapshot.push_back(std::make_pair(Document, bWasVisible));
-
         const bool bIsPreviewDocument = Pair.first == RuntimeUIPreviewScreenId;
         const bool bShouldRender = bPreviewDocumentOnly ? bIsPreviewDocument : (!bIsPreviewDocument && bWasVisible);
-        if (bShouldRender)
+
+        if (bWasVisible != bShouldRender)
         {
-            Document->Show();
-        }
-        else
-        {
-            Document->Hide();
+            ChangedVisibilitySnapshot.push_back(std::make_pair(Document, bWasVisible));
+            SetDocumentVisibleIfNeeded(Document, bShouldRender);
         }
     }
 
-    return VisibilitySnapshot;
+    return ChangedVisibilitySnapshot;
 }
 
 void FRmlUiSystem::RestoreDocumentVisibility(const TArray<std::pair<Rml::ElementDocument*, bool>>& VisibilitySnapshot)
@@ -1081,13 +1094,6 @@ void FRmlUiSystem::RestoreDocumentVisibility(const TArray<std::pair<Rml::Element
             continue;
         }
 
-        if (Pair.second)
-        {
-            Document->Show();
-        }
-        else
-        {
-            Document->Hide();
-        }
+        SetDocumentVisibleIfNeeded(Document, Pair.second);
     }
 }

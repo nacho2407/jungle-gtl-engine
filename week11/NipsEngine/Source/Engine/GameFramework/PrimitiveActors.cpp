@@ -609,11 +609,21 @@ void ADecalSpotLightActor::InitDefaultComponents()
     UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
     if (DecalMat == nullptr)
     {
-        UMaterial* DecalOriginMat = FResourceManager::Get().GetMaterial("DecalMat");
-        DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
+        UMaterial* DecalOriginMat = Cast<UMaterial>(FResourceManager::Get().GetMaterialInterface("Asset/Material/DecalMat.mat"));
+        if (DecalOriginMat)
+        {
+            DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
+        }
+    }
+    if (DecalMat == nullptr)
+    {
+        DecalMat = FResourceManager::Get().GetMaterialInterface("DefaultWhite");
     }
     Decal->SetMaterial(DecalMat);
-    DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+    if (DecalMat)
+    {
+        DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+    }
 }
 
 void ADecalSpotLightActor::Tick(float DeltaTime)

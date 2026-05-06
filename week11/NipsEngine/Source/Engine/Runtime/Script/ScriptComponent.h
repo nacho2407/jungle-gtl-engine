@@ -1,11 +1,17 @@
 ﻿#pragma once
+#include "Animation/TimelinePlayer.h"
 #include "Component/ActorComponent.h"
 #include "Core/Logging/Log.h"
 #include "Runtime/Script/CoroutineScheduler.h"
 #include "ThirdParty/sol/sol.hpp"
 #include <filesystem>
 
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 class UPrimitiveComponent;
+class UCurveFloatAsset;
 struct FHitResult;
 struct FLuaScriptLoadResult;
 
@@ -38,6 +44,27 @@ struct FLuaScriptProperty
     float Max = 0.0f;
 };
 
+class FLuaTimeline
+{
+public:
+    void Play();
+    void Pause();
+    void Stop();
+    void Tick(float DeltaTime);
+    void SetPlayRate(float InPlayRate);
+    void SetLoop(bool bInLoop);
+    float GetCurrentTime() const;
+    void SetCurrentTime(float InCurrentTime);
+    void AddFloatTrack(const FString& TrackName, const sol::table& PlaybackDesc, sol::function OnUpdate);
+    void ClearTracks();
+
+private:
+    FCurvePlaybackDesc MakePlaybackDesc(const sol::table& PlaybackDesc) const;
+
+private:
+    FTimelinePlayer Player;
+};
+
 class UScriptComponent : public UActorComponent
 {
 public:
@@ -59,6 +86,8 @@ public:
     void ClearScript();
     void ReleaseLuaStateReferences();
     void StartCoroutine(sol::function Function);
+    FLuaTimeline* CreateTimeline();
+    void ClearLuaTimelines();
 
 	virtual void OnUnregister() override;
 
@@ -114,6 +143,7 @@ private:
     sol::table ScriptClass;
     sol::table ScriptInstance;
     FCoroutineScheduler CoroutineScheduler;
+    TArray<FLuaTimeline*> LuaTimelines;
 
     bool bScriptRegistered = false;
     bool bScriptLoaded = false;

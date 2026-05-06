@@ -19,6 +19,7 @@
 #include "Containers/Set.h"
 #include "Containers/StaticArray.h"
 #include "Containers/String.h"
+#include "Core/Guid.h"
 #include "Core/Logging/Log.h"
 
 //=============================================================================

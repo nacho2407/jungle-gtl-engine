@@ -1,6 +1,7 @@
 ﻿
 #pragma once
 #include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/EditorActorSequenceDetails.h"
 #include "Object/Object.h"
 
 class FSelectionManager;
@@ -8,6 +9,7 @@ class UActorComponent;
 class AActor;
 class UMaterialInterface;
 class UStaticMesh;
+struct FPropertyDescriptor;
 
 class FEditorPropertyWidget : public FEditorWidget
 {
@@ -66,6 +68,7 @@ private:
 	AActor* LastSelectedActor = nullptr;
 	AActor* LockedDetailsActor = nullptr;
 	UStaticMesh* MaterialSlotPreviewMesh = nullptr;
+	FEditorActorSequenceDetails ActorSequenceDetails;
 	TArray<FString> CachedMaterialSlotNames;
 	TArray<UMaterialInterface*> CachedMaterialSlotMaterials;
 	bool bDetailsLocked = false;
@@ -74,6 +77,7 @@ private:
 	bool bPropertyEditUndoCaptured = false;
 	bool bFocusActorNameNextFrame = false;
 	bool bFocusComponentNameNextFrame = false;
+	float LastDeltaTime = 0.0f;
 	char NewActorTagBuffer[128] = "";
 	char NewComponentTagBuffer[128] = "";
 };
