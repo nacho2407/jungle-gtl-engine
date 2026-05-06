@@ -20,8 +20,12 @@ local lastCrashSoundTime = -999.0
 local bSirenLoopPlaying = false
 
 local handleComp = nil
-local wheelComp0 = nil
-local wheelComp1 = nil
+local frontLeftWheel = nil
+local frontRightWheel = nil
+-- BeginPlay 에서 Tire 의 RelativeRotation 을 캐시 (예: (0, 0, -90) — Mesh Yaw 90 상쇄).
+-- steering 은 이 base 위에 ±MAX 만큼 가산해 적용하므로, 시각상 base 회전이 유지된다.
+local frontLeftWheelBaseRot = nil
+local frontRightWheelBaseRot = nil
 local HANDLE_MAX_ROTATION_X = 35.0
 local HANDLE_ROTATION_SPEED = 14.0
 local WHEEL_MAX_ROTATION_Z = 28.0
@@ -36,20 +40,21 @@ function BeginPlay()
     ObjRegistry.RegisterCar(car)
     movement = car:GetCarMovement()
 
-    -- 자동 생성 FName ("UStaticMeshComponent_41" 등) 은 월드 초기화 순서에 따라 카운터가
-    -- 달라져 PIE 와 Game 빌드에서 매칭이 깨질 수 있다. 메시 에셋 경로는 씬 파일에 명시
-    -- 저장돼 빌드 무관하게 같으므로, 그쪽으로 식별한다.
-    handleComp = car:FindFirstMeshComponentByPath("Data/Truck/TruckHandle.obj")
-    -- 타이어 4 개 중 RelativeLocation.X > 0 인 두 개가 앞바퀴 — 조향에 따라 회전시킬 대상.
-    local tires = car:FindMeshComponentsByPath("Data/Truck/TruckTire.obj")
-    local frontWheels = {}
-    for i = 1, #tires do
-        if tires[i].RelativeLocation.X > 0 then
-            table.insert(frontWheels, tires[i])
-        end
+    -- 명시적 C++ getter — 좌표 휴리스틱 / FName 의존 없이 차량 좌표계 기준 4 코너로
+    -- 분류된 시각 메시를 받는다. ACarPawn::ResolveCachedComponents 가 path + Box-local
+    -- 좌표 부호로 분류하므로 PIE / scene-load 모두 동일 결과.
+    handleComp = car:GetHandleMesh()
+    frontLeftWheel  = car:GetFrontLeftTireMesh()
+    frontRightWheel = car:GetFrontRightTireMesh()
+
+    -- base rotation 캐시 — 시각 Tire 는 Mesh 의 Yaw 90 을 상쇄하기 위해 (0, 0, -90) 같은
+    -- non-zero 회전을 가질 수 있다. steering 보간은 base 위에 가산해야 시각 회전이 깨지지 않는다.
+    if frontLeftWheel ~= nil then
+        frontLeftWheelBaseRot = frontLeftWheel.Rotation
     end
-    wheelComp0 = frontWheels[1]
-    wheelComp1 = frontWheels[2]
+    if frontRightWheel ~= nil then
+        frontRightWheelBaseRot = frontRightWheel.Rotation
+    end
 
     -- 시작 위치 액터를 1회 lookup. 매 frame 재검색하지 않도록 캐시 — World.FindFirstActorByTag
     -- 가 actors 선형 스캔이라 비싸진 않지만, 주기적 호출은 피한다.
@@ -87,22 +92,37 @@ local function UpdateHandleRotation(steering, dt)
     handleComp.Rotation = Vector.new(nextX, currentRotation.Y, currentRotation.Z)
 end
 
-local function UpdateWheelSteeringRotation(steering, dt)
-    dt = dt or 0
+local function EnsureWheelCache()
+    -- hot-reload 후 BeginPlay 가 다시 호출되지 않은 경우에도 새 분류가 적용되도록
+    -- 매 Tick 첫 패스에서 lazy 캐싱. 이미 잡힌 핸들/캐시는 그대로 유지 (idempotent).
+    if car == nil then return end
+    if frontLeftWheel == nil then frontLeftWheel = car:GetFrontLeftTireMesh() end
+    if frontRightWheel == nil then frontRightWheel = car:GetFrontRightTireMesh() end
+    if frontLeftWheel ~= nil and frontLeftWheelBaseRot == nil then
+        frontLeftWheelBaseRot = frontLeftWheel.Rotation
+    end
+    if frontRightWheel ~= nil and frontRightWheelBaseRot == nil then
+        frontRightWheelBaseRot = frontRightWheel.Rotation
+    end
+end
 
-    local targetZ = steering * WHEEL_MAX_ROTATION_Z
+local function UpdateWheelSteeringRotation(steering, dt)
+    EnsureWheelCache()
+    dt = dt or 0
     local alpha = math.min(dt * WHEEL_ROTATION_SPEED, 1.0)
 
-    if wheelComp0 ~= nil then
-        local currentRotation = wheelComp0.Rotation
-        local nextZ = currentRotation.Z + (targetZ - currentRotation.Z) * alpha
-        wheelComp0.Rotation = Vector.new(currentRotation.X, currentRotation.Y, nextZ)
+    if frontLeftWheel ~= nil and frontLeftWheelBaseRot ~= nil then
+        local current = frontLeftWheel.Rotation
+        local target = frontLeftWheelBaseRot.Z + steering * WHEEL_MAX_ROTATION_Z
+        local nextZ = current.Z + (target - current.Z) * alpha
+        frontLeftWheel.Rotation = Vector.new(current.X, current.Y, nextZ)
     end
 
-    if wheelComp1 ~= nil then
-        local currentRotation = wheelComp1.Rotation
-        local nextZ = currentRotation.Z + (targetZ - currentRotation.Z) * alpha
-        wheelComp1.Rotation = Vector.new(currentRotation.X, currentRotation.Y, nextZ)
+    if frontRightWheel ~= nil and frontRightWheelBaseRot ~= nil then
+        local current = frontRightWheel.Rotation
+        local target = frontRightWheelBaseRot.Z + steering * WHEEL_MAX_ROTATION_Z
+        local nextZ = current.Z + (target - current.Z) * alpha
+        frontRightWheel.Rotation = Vector.new(current.X, current.Y, nextZ)
     end
 end
 

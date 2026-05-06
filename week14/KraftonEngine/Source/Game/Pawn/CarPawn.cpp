@@ -190,12 +190,6 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 		Dirt->SetRelativeTransform(DirtTransform);
 	}
 
-	//UDirtComponent* Dirt = AddComponent<UDirtComponent>();
-	//Dirt->AttachToComponent(CarDirt);
-	//Dirt->SetRelativeLocation(FVector(1.665901f, -0.023956f, -0.602671f));
-	//Dirt->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-	//Dirt->SetRelativeScale(FVector(2.0f, 1.0f, 1.0f));
-
 	// 6) DirtyCar.lua — 진흙/세차 게임플레이 스크립트.
 	ULuaScriptComponent* DirtyCarLua = AddComponent<ULuaScriptComponent>();
 	DirtyCarLua->SetScriptFile("DirtyCar.lua");
@@ -242,22 +236,22 @@ void ACarPawn::ResolveCachedComponents()
 	// SpringArm 마이그레이션 — 기존 직렬화된 씬은 ThirdPersonCamera 가 CollisionBox
 	// 직접 자식. SpringArm 이 없으면 끼워 넣어 lag 효과를 자동 적용. PostDuplicate /
 	// BeginPlay 양쪽에서 호출되므로 PIE / scene-load 모두 호환. idempotent.
-	if (ThirdPersonCamera && CollisionBox
-		&& !Cast<USpringArmComponent>(ThirdPersonCamera->GetParent()))
-	{
-		USpringArmComponent* SpringArm = AddComponent<USpringArmComponent>();
-		SpringArm->AttachToComponent(CollisionBox);
-		SpringArm->TargetArmLength = 4.5f;
-		SpringArm->SocketOffset = FVector(0.0f, 0.0f, 2.5f);
-		SpringArm->bEnableCameraLag = true;
-		SpringArm->bEnableCameraRotationLag = true;
-		SpringArm->CameraLagSpeed = 6.0f;
-		SpringArm->CameraRotationLagSpeed = 8.0f;
+	//if (ThirdPersonCamera && CollisionBox
+	//	&& !Cast<USpringArmComponent>(ThirdPersonCamera->GetParent()))
+	//{
+	//	USpringArmComponent* SpringArm = AddComponent<USpringArmComponent>();
+	//	SpringArm->AttachToComponent(CollisionBox);
+	//	SpringArm->TargetArmLength = 4.5f;
+	//	SpringArm->SocketOffset = FVector(0.0f, 0.0f, 2.5f);
+	//	SpringArm->bEnableCameraLag = true;
+	//	SpringArm->bEnableCameraRotationLag = true;
+	//	SpringArm->CameraLagSpeed = 6.0f;
+	//	SpringArm->CameraRotationLagSpeed = 8.0f;
 
-		ThirdPersonCamera->AttachToComponent(SpringArm);
-		ThirdPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-		ThirdPersonCamera->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-	}
+	//	ThirdPersonCamera->AttachToComponent(SpringArm);
+	//	ThirdPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+	//	ThirdPersonCamera->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
+	//}
 
 	// Wheels — 컴포넌트 순회 순서대로 캐싱 (InitDefaultComponents 추가 순서 또는 직렬화 순서가 보존된다고 가정)
 	for (auto& W : Wheels) W = nullptr;
@@ -267,6 +261,49 @@ void ACarPawn::ResolveCachedComponents()
 		if (USphereComponent* S = Cast<USphereComponent>(C))
 		{
 			if (Idx < 4) Wheels[Idx++] = S;
+		}
+	}
+
+	// 시각 메시 캐시 — Handle / Tire 4 개. Path 매칭으로 잡고, Tire 는 Box-local 좌표
+	// 부호로 4 코너 분류 (FrontLeft / FrontRight / RearLeft / RearRight).
+	// PoliceCar 처럼 자체 통합 메시만 있는 경우는 path 매칭 실패해 자연스레 skip.
+	HandleMesh         = nullptr;
+	FrontLeftTireMesh  = nullptr;
+	FrontRightTireMesh = nullptr;
+	RearLeftTireMesh   = nullptr;
+	RearRightTireMesh  = nullptr;
+
+	TArray<UStaticMeshComponent*> TireMeshes;
+	for (UActorComponent* C : GetComponents())
+	{
+		UStaticMeshComponent* SM = Cast<UStaticMeshComponent>(C);
+		if (!SM) continue;
+		const FString& Path = SM->GetStaticMeshPath();
+		if (Path == "Data/Truck/TruckHandle.obj")
+		{
+			HandleMesh = SM;
+		}
+		else if (Path == "Data/Truck/TruckTire.obj")
+		{
+			TireMeshes.push_back(SM);
+		}
+	}
+
+	if (CollisionBox && TireMeshes.size() == 4)
+	{
+		// Tire 의 World 좌표를 Box.WorldInverse 로 통과시켜 차량 좌표계 (X=forward, Y=좌)
+		// 부호로 4 코너 분류. 본 엔진 컨벤션: +X 가 차량 forward, +Y 가 좌측.
+		const FMatrix BoxInv = CollisionBox->GetWorldMatrix().GetInverse();
+		for (UStaticMeshComponent* T : TireMeshes)
+		{
+			const FVector World = T->GetWorldLocation();
+			const FVector BoxLoc = World * BoxInv;
+			const bool bFront = BoxLoc.X > 0.0f;
+			const bool bLeft  = BoxLoc.Y > 0.0f;
+			if      ( bFront &&  bLeft) FrontLeftTireMesh  = T;
+			else if ( bFront && !bLeft) FrontRightTireMesh = T;
+			else if (!bFront &&  bLeft) RearLeftTireMesh   = T;
+			else                        RearRightTireMesh  = T;
 		}
 	}
 }

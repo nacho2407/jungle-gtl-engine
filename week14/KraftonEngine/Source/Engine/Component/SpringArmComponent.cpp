@@ -1,5 +1,6 @@
 #include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
+#include "Serialization/Archive.h"
 #include <algorithm>
 #include <cmath>
 
@@ -88,6 +89,22 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	SetRelativeLocation(RelLoc);
 	SetRelativeRotation(RelRot);
+}
+
+void USpringArmComponent::Serialize(FArchive& Ar)
+{
+	USceneComponent::Serialize(Ar);
+
+	// 튜닝 파라미터만 직렬화. LaggedAttachLoc / LaggedAttachRot / bHasPreviousState 는
+	// 매 BeginPlay 시 첫 Tick 에서 부모 World 로 다시 초기화되는 런타임 상태라 제외.
+	Ar << TargetArmLength;
+	Ar << SocketOffset;
+	Ar << TargetOffset;
+	Ar << bEnableCameraLag;
+	Ar << bEnableCameraRotationLag;
+	Ar << CameraLagSpeed;
+	Ar << CameraRotationLagSpeed;
+	Ar << CameraLagMaxDistance;
 }
 
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
