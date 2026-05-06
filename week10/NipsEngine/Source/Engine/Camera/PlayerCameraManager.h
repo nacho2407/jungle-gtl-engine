@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "GameFramework/AActor.h"
 #include "Component/CameraComponent.h"
+#include "Camera/CameraModifier_CameraShake.h"
 
 
 class UCameraComponent;
@@ -10,6 +11,8 @@ class APlayerController;
 class APlayerCameraManager : public AActor
 {
 public:
+    ~APlayerCameraManager() override;
+
     void BeginPlay() override;
     void Tick(float DeltaTime) override;
 
@@ -24,6 +27,8 @@ public:
     // ===== Modifier =====
     void AddModifier(UCameraModifier* Modifier);
     void RemoveModifier(UCameraModifier* Modifier);
+
+    void StopAllCameraShakes(bool bImmediately = false);
 
 	const FColor& GetFadeColor() const { return Fade.Color; }
     float GetFadeAlpha() const { return Fade.CurrentAlpha; }
@@ -83,6 +88,7 @@ private:
     void UpdateViewTarget(float DeltaTime);
     void ComputeCamera(float DeltaTime, FMinimalViewInfo& OutView);
     void ApplyModifiers(float DeltaTime, FMinimalViewInfo& InOutView);
+    UCameraModifier_CameraShake* GetOrCreateCameraShakeModifier();
 
     void UpdateTransition(float DeltaTime, FMinimalViewInfo& InOutView);
     void UpdateFade(float DeltaTime);
@@ -90,4 +96,32 @@ private:
 private:
 	APlayerController* PCOwner = nullptr;
     FMinimalViewInfo CachedView;
+    UCameraModifier_CameraShake* CacheCameraShakeMod = nullptr;
+
+public:
+    template <typename PatternType>
+    UCameraShakeBase* StartCameraShake(float Scale = 1.0f, float DurationOverride = 0.0f)
+    {
+        UCameraModifier_CameraShake* Modifier = GetOrCreateCameraShakeModifier();
+        if (!Modifier)
+        {
+            return nullptr;
+        }
+
+        return Modifier->StartCameraShake<PatternType>(Scale, DurationOverride);
+    }
+
+    template <typename ModifierType>
+    ModifierType* FindCameraModifier()
+    {
+        for (UCameraModifier* Modifier : ModifierList)
+        {
+            if (ModifierType* Casted = Cast<ModifierType>(Modifier))
+            {
+                return Casted;
+            }
+        }
+
+        return nullptr;
+    }
 };
