@@ -11,11 +11,11 @@ local pressedKeys = {}
 local movementState = nil
 local PlayerShotCooldown = 1
 local PlayerShotTimer = 0.0
-local DroneTiltDuration = 0.4
-local DroneTiltAngle = 30.0
-local DroneTiltTimer = 0.0
+local DroneTiltAngle = 24.0
+local DroneTiltInterpSpeed = 10.0
 local DroneTiltPitch = 0.0
 local DroneTiltRoll = 0.0
+local DroneBaseRotation = Vector.new(0.0, 0.0, 0.0)
 local GamepadControllerId = 0
 local GamepadRightTriggerPressThreshold = 0.5
 local GamepadRightTriggerReleaseThreshold = 0.25
@@ -160,42 +160,61 @@ local function lerp(a, b, t)
     return a + (b - a) * t
 end
 
-local function triggerDroneTilt()
-    if not pressedKeys.W and not pressedKeys.S and not pressedKeys.A and not pressedKeys.D
-        and not pressedKeys.Up and not pressedKeys.Down and not pressedKeys.Left and not pressedKeys.Right then
-        return
+local function clamp(value, minValue, maxValue)
+    if value < minValue then
+        return minValue
     end
 
-    DroneTiltPitch = DroneTiltAngle
-    DroneTiltRoll = 0.0
-    DroneTiltTimer = DroneTiltDuration
+    if value > maxValue then
+        return maxValue
+    end
+
+    return value
 end
 
-local function updateDroneTilt(dt)
-    if DroneTiltTimer <= 0.0 then
-        DroneTiltTimer = 0.0
-        return
-    end
-
-    DroneTiltTimer = DroneTiltTimer - dt
-    if DroneTiltTimer < 0.0 then
-        DroneTiltTimer = 0.0
-    end
+local function interpAlpha(speed, dt)
+    return clamp01(1.0 - math.exp(-speed * dt))
 end
 
-local function makeDroneVisualRotation()
-    local rotation = PlayerMovement.MakeYawRotation(movementState)
+local function dotPlanar(a, b)
+    return a.X * b.X + a.Y * b.Y
+end
 
-    if DroneTiltTimer <= 0.0 then
-        return rotation
+local function getYawForward(yawDegrees)
+    local yawRadians = math.rad(yawDegrees)
+    return Vector.new(math.cos(yawRadians), math.sin(yawRadians), 0.0)
+end
+
+local function getSettableRelativeRotation(component)
+    local rotation = component:GetRelativeRotation()
+    return Vector.new(rotation.Z, rotation.X, rotation.Y)
+end
+
+local function makeDroneVisualRotation(dt)
+    local rotation = DroneBaseRotation
+    local targetPitch = 0.0
+    local targetRoll = 0.0
+
+    if movementState ~= nil and movementState.velocity ~= nil and movementState.moveSpeed > 0.0 then
+        local velocity = Vector.new(movementState.velocity.X, movementState.velocity.Y, 0.0)
+        if velocity:LengthSquared() > 0.0001 then
+            local forward = getYawForward(rotation.Z)
+            local right = Vector.new(-forward.Y, forward.X, 0.0)
+            local forwardRatio = clamp(dotPlanar(velocity, forward) / movementState.moveSpeed, -1.0, 1.0)
+            local rightRatio = clamp(dotPlanar(velocity, right) / movementState.moveSpeed, -1.0, 1.0)
+
+            targetPitch = forwardRatio * DroneTiltAngle
+            targetRoll = -rightRatio * DroneTiltAngle
+        end
     end
 
-    local elapsed = DroneTiltDuration - DroneTiltTimer
-    local alpha = math.sin(math.pi * elapsed / DroneTiltDuration)
+    local tiltAlpha = interpAlpha(DroneTiltInterpSpeed, dt or 0.0)
+    DroneTiltPitch = lerp(DroneTiltPitch, targetPitch, tiltAlpha)
+    DroneTiltRoll = lerp(DroneTiltRoll, targetRoll, tiltAlpha)
 
     return Vector.new(
-        rotation.X + DroneTiltPitch * alpha,
-        rotation.Y + DroneTiltRoll * alpha,
+        rotation.X + DroneTiltRoll,
+        rotation.Y + DroneTiltPitch,
         rotation.Z
     )
 end
@@ -474,9 +493,9 @@ function BeginPlay()
     bGameOverRequested = false
     bPlayerDeadSoundPlayed = false
     bDestinationSoundPlayed = false
-    DroneTiltTimer = 0.0
     DroneTiltPitch = 0.0
     DroneTiltRoll = 0.0
+    DroneBaseRotation = Vector.new(0.0, 0.0, CameraConfig.GetMeshYawOffset())
     bGamepadRightTriggerHeld = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
@@ -485,6 +504,8 @@ function BeginPlay()
         meshYawOffset = CameraConfig.GetMeshYawOffset(),
         moveSpeed = moveSpeed,
         velocityInterpSpeed = 12.0,
+        accelInterpSpeed = 14.0,
+        dragInterpSpeed = 6.0,
         turnInterpSpeed = 14.0,
     })
     ensurePlayerState()
@@ -508,7 +529,9 @@ function BeginPlay()
 
     MeshComponent = obj:GetComponent("StaticMeshComponent", 0)
     if MeshComponent:IsValid() then
-        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
+        DroneBaseRotation = getSettableRelativeRotation(MeshComponent)
+        DroneBaseRotation.Z = DroneBaseRotation.Z + CameraConfig.GetMeshYawOffset()
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation(0.0))
     end
 end
 
@@ -542,12 +565,13 @@ function Tick(dt)
 
     syncPlayerState()
     updatePlayerLight(dt)
-    updateDroneTilt(dt)
 
     if isZooming() then
         -- 줌 중에는 이동을 막고, 플레이어 mesh를 숨긴 뒤 좌클릭/오른쪽 트리거 발사만 허용한다.
         obj.Velocity = Vector.new(0.0, 0.0, 0.0)
         movementState.velocity = Vector.new(0.0, 0.0, 0.0)
+        DroneTiltPitch = 0.0
+        DroneTiltRoll = 0.0
         syncPlayerAimState()
 
         if MeshComponent ~= nil and MeshComponent:IsValid() then
@@ -570,7 +594,7 @@ function Tick(dt)
     if MeshComponent ~= nil and MeshComponent:IsValid() then
         MeshComponent:SetVisible(true)
         MeshComponent:SetVisibleInGame(true)
-        MeshComponent:SetRelativeRotation(makeDroneVisualRotation())
+        MeshComponent:SetRelativeRotation(makeDroneVisualRotation(dt))
     end
 
     if moveDelta:LengthSquared() > 0.0 then
@@ -615,7 +639,6 @@ function OnKeyPressed(key)
     end
 
     pressedKeys[key] = true
-    triggerDroneTilt()
 end
 
 function OnKeyReleased(key)

@@ -54,12 +54,14 @@ function PlayerMovement.CreateState(options)
     return {
         moveForward = forward, -- W / S 카메라 기준 앞/뒤
         moveRight = right, -- A / D 카메라 기준 왼/오
-        visualForward = forward, -- Mesh가 현재 바라보는 방향
+        visualForward = forward, -- CameraLua가 줌/조준 기준으로 쓰는 방향
         velocity = Vector.new(0.0, 0.0, 0.0), -- 현재 속도
-        visualYaw = yaw, -- Mesh의 현재 yaw
+        visualYaw = yaw, -- 조준 기준 yaw
         meshYawOffset = options.meshYawOffset or 0.0, --Mesh의 Yaw방향이 다르면 Offset 보정값
         moveSpeed = options.moveSpeed or 10.0, -- 최대 이동속도
-        velocityInterpSpeed = options.velocityInterpSpeed or 12.0, -- 가감속 정도
+        velocityInterpSpeed = options.velocityInterpSpeed or 12.0, -- 기존 옵션 호환용 기본 가감속 정도
+        accelInterpSpeed = options.accelInterpSpeed or options.velocityInterpSpeed or 12.0, -- 입력 중 가속 정도
+        dragInterpSpeed = options.dragInterpSpeed or 6.0, -- 입력을 뗐을 때 감속 정도
         turnInterpSpeed = options.turnInterpSpeed or 14.0, -- 회전 속도
     }
 end
@@ -115,7 +117,12 @@ end
 function PlayerMovement.Update(state, pressedKeys, dt, analogMove)
     local desiredMove = PlayerMovement.GetDesiredMoveVector(pressedKeys, state.moveForward, state.moveRight, analogMove)
     local desiredVelocity = desiredMove * state.moveSpeed
-    local moveAlpha = interpAlpha(state.velocityInterpSpeed, dt)
+    local interpSpeed = state.accelInterpSpeed
+    if desiredMove:LengthSquared() <= 0.0001 then
+        interpSpeed = state.dragInterpSpeed
+    end
+
+    local moveAlpha = interpAlpha(interpSpeed, dt)
 
     state.velocity = state.velocity + (desiredVelocity - state.velocity) * moveAlpha
 
