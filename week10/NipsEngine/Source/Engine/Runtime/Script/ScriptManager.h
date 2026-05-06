@@ -32,6 +32,7 @@ public:
     void BindComponentTypes();
     void BindActorTypes();
     void BindStaticMeshTypes();
+    void BindAnimationTypes();
     void BindBillboardTypes();
     void BindCameraTypes();
     void BindPrimitiveTypes();

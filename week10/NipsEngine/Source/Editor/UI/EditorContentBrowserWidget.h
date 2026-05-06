@@ -74,6 +74,7 @@ private:
 	bool CreateTextFile();
 	bool CreateLuaScriptFile();
 	bool CreateMaterialAsset();
+	bool CreateCurveAsset();
 	bool CreateSceneAsset();
 	bool DeleteSelectedItem();
 	void RequestRenameSelectedItem();
@@ -97,6 +98,7 @@ private:
 	bool IsProjectRootPath(const std::filesystem::path& Path) const;
 	bool IsPreviewableImage(const FString& Extension) const;
 	bool IsMaterialAsset(const FString& Extension) const;
+	bool IsCurveAsset(const std::filesystem::path& Path) const;
 	bool IsPrefabAsset(const FString& Extension) const;
 	std::filesystem::path ResolveLuaScriptCreateDirectory() const;
 	FString MakeRelativeProjectPath(const std::filesystem::path& Path) const;

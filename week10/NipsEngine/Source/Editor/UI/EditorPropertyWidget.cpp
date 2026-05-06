@@ -15,6 +15,7 @@
 #include "Component/Movement/ProjectileMovementComponent.h"
 #include "Component/Movement/InterpToMovementComponent.h"
 #include "Component/Movement/PursuitMovementComponent.h"
+#include "Component/ActorSequenceComponent.h"
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Core/PropertyTypes.h"
 #include "Core/Paths.h"
@@ -406,12 +407,21 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 			return Comp;
 		} 
 	},
+	{
+		"ActorSequence Component",
+		[](AActor* Actor) -> UActorComponent*
+		{
+			UActorSequenceComponent* Comp = Actor->AddComponent<UActorSequenceComponent>();
+			return Comp;
+		}
+	},
 };
 
 void FEditorPropertyWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
 	SelectionManager = &EditorEngine->GetSelectionManager();
+	ActorSequenceDetails.Initialize(EditorEngine, &bPropertyEditUndoCaptured);
 }
 
 void FEditorPropertyWidget::ResetSelection()
@@ -425,7 +435,7 @@ void FEditorPropertyWidget::ResetSelection()
 
 void FEditorPropertyWidget::Render(float DeltaTime)
 {
-	(void)DeltaTime;
+	LastDeltaTime = DeltaTime;
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 	ImGui::Begin("Details");
@@ -1430,6 +1440,11 @@ void FEditorPropertyWidget::RenderComponentProperties()
 		RenderInterpControlPoints(InterpComp);
 	}
 
+	if (UActorSequenceComponent* SequenceComp = Cast<UActorSequenceComponent>(SelectedComponent))
+	{
+		ActorSequenceDetails.Render(SequenceComp, LastDeltaTime);
+	}
+
 	if (ULightComponent* LightComp = Cast<ULightComponent>(SelectedComponent))
 	{
 		if (ImGui::Button("Override camera with light's perspective"))
@@ -1551,7 +1566,7 @@ void FEditorPropertyWidget::RenderSceneComponentRefWidget(FPropertyDescriptor& P
 					EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Component Reference");
 				}
 				*ValuePtr = SceneComp;
-				SelectedComponent->PostEditProperty(Prop.Name);
+				SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
 			}
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
@@ -2084,7 +2099,7 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 			EditorEngine->GetUndoSystem().CaptureSnapshot("Edit Property");
 			bPropertyEditUndoCaptured = true;
 		}
-		SelectedComponent->PostEditProperty(Prop.Name);
+		SelectedComponent->PostEditChangeProperty({ Prop.Name, EPropertyChangeType::ValueSet });
 		if (EditorEngine)
 		{
 			EditorEngine->GetMainPanel().GetSceneWidget().MarkSceneDirty();
