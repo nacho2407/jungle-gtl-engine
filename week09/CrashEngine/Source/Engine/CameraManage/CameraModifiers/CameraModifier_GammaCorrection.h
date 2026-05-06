@@ -17,4 +17,5 @@ private:
     float ElapsedTime = 0.0f;
     float FromGamma = 1.0f;
     float ToGamma = 1.0f;
+    FCameraFloatCurve GammaCurve;
 };

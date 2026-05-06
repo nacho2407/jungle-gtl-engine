@@ -35,21 +35,8 @@ float UCameraModifier_LetterBox::GetCurrentAmount() const
         return FromAmount;
     }
 
-    if (ElapsedTime <= AppearTime)
-    {
-        const float Alpha = AppearTime > 0.0f ? Clamp(ElapsedTime / AppearTime, 0.0f, 1.0f) : 1.0f;
-        return Lerp(FromAmount, ToAmount, Alpha);
-    }
-
-    const float HoldEndTime = AppearTime + HoldTime;
-    if (ElapsedTime <= HoldEndTime)
-    {
-        return ToAmount;
-    }
-
-    const float DisappearElapsedTime = ElapsedTime - HoldEndTime;
-    const float Alpha = DisappearTime > 0.0f ? Clamp(DisappearElapsedTime / DisappearTime, 0.0f, 1.0f) : 1.0f;
-    return Lerp(ToAmount, FromAmount, Alpha);
+    const float NormalizedTime = Clamp(ElapsedTime / Duration, 0.0f, 1.0f);
+    return Lerp(FromAmount, ToAmount, AmountCurve.Evaluate(NormalizedTime));
 }
 
 void UCameraModifier_LetterBox::Start(const FCameraLetterBoxParams& Params)
@@ -69,6 +56,19 @@ void UCameraModifier_LetterBox::Start(const FCameraLetterBoxParams& Params)
     if (HoldTime < 0.0f)
     {
         HoldTime = 0.0f;
+    }
+
+    AmountCurve = Params.AmountCurve;
+    if (AmountCurve.Keys.empty())
+    {
+        const float HoldStart = AppearRatio;
+        const float HoldEnd = Clamp(1.0f - DisappearRatio, HoldStart, 1.0f);
+        AmountCurve.Keys = {
+            {0.0f, 0.0f},
+            {HoldStart, 1.0f},
+            {HoldEnd, 1.0f},
+            {1.0f, 0.0f}
+        };
     }
 
     bFinished = false;

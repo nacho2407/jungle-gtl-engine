@@ -30,7 +30,7 @@ void APlayerController::Tick(float DeltaTime)
     {
         UnPossess();
     }
-
+    
     if (!PossessedActor)
     {
         TryAutoPossessPlayer();
@@ -41,8 +41,6 @@ void APlayerController::Tick(float DeltaTime)
         return;
     }
 
-    UWorld* World = GetWorld();
-    CameraManager->SetViewTarget(PossessedActor && World ? World->GetActiveCamera() : nullptr);
     CameraManager->UpdateCamera(DeltaTime);
 }
 
@@ -54,12 +52,21 @@ bool APlayerController::Possess(AActor* Actor)
     }
 
     PossessedActor = Actor;
+    if (CameraManager)
+    {
+        UWorld* World = GetWorld();
+        CameraManager->SetViewTarget(World ? World->GetActiveCamera() : nullptr);
+    }
     return true;
 }
 
 void APlayerController::UnPossess()
 {
     PossessedActor = nullptr;
+    if (CameraManager)
+    {
+        CameraManager->SetViewTarget(nullptr);
+    }
 }
 
 bool APlayerController::TryAutoPossessPlayer()

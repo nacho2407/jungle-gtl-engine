@@ -18,4 +18,6 @@ private:
     float RotationAmplitude = 0.0f;
     float Frequency = 25.0f;
     float PhaseOffset = 0.0f;
+    FCameraFloatCurve LocationCurve;
+    FCameraFloatCurve RotationCurve;
 };

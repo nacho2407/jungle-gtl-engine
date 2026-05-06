@@ -18,6 +18,11 @@ void UCameraModifier_Vignette::Start(const FCameraVignetteParams& Params)
     ToIntensity = Clamp(Params.ToIntensity, 0.0f, 1.0f);
     Radius = Clamp(Params.Radius, 0.0f, 2.0f);
     Softness = Clamp(Params.Softness, 0.001f, 2.0f);
+    IntensityCurve = Params.IntensityCurve;
+    if (IntensityCurve.Keys.empty())
+    {
+        IntensityCurve.Keys = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    }
     bFinished = false;
 }
 
@@ -32,7 +37,7 @@ bool UCameraModifier_Vignette::ModifyCamera(float DeltaTime, FCameraViewInfo& In
     const float Alpha = Duration > 0.0f ? Clamp(ElapsedTime / Duration, 0.0f, 1.0f) : 1.0f;
 
     InOutView.ScreenEffects.bEnableVignette = true;
-    InOutView.ScreenEffects.VignetteIntensity = Lerp(FromIntensity, ToIntensity, Alpha);
+    InOutView.ScreenEffects.VignetteIntensity = Lerp(FromIntensity, ToIntensity, IntensityCurve.Evaluate(Alpha));
     InOutView.ScreenEffects.VignetteRadius = Radius;
     InOutView.ScreenEffects.VignetteSoftness = Softness;
 

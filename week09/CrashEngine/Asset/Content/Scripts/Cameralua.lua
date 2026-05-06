@@ -20,6 +20,16 @@ local GamepadAimYawSpeed = 120.0
 local GamepadAimPitchSpeed = 90.0
 local MinAimPitch = -45.0
 local MaxAimPitch = 45.0
+local ZoomVignetteIntensity = 0.45
+local ZoomVignetteFadeTime = 0.12
+local ZoomVignetteRadius = 0.72
+local ZoomVignetteSoftness = 0.35
+
+local function playZoomVignette(fromIntensity, toIntensity)
+    if World.PlayCameraVignette ~= nil then
+        World.PlayCameraVignette(fromIntensity, toIntensity, ZoomVignetteFadeTime, ZoomVignetteRadius, ZoomVignetteSoftness)
+    end
+end
 
 -- 조준선은 Aim.png를 머티리얼로 쓰는 BillboardComponent Actor로 만든다.
 local AimActor = nil
@@ -128,6 +138,7 @@ local function beginZoom(useMouseAim)
     AimYaw = 0.0
     AimPitch = 0.0
     setupZoomBaseForward(useMouseAim)
+    playZoomVignette(0.0, ZoomVignetteIntensity)
 end
 
 local function endZoom()
@@ -140,6 +151,7 @@ local function endZoom()
     AimYaw = 0.0
     AimPitch = 0.0
     ZoomBaseForward = nil
+    playZoomVignette(ZoomVignetteIntensity, 0.0)
 end
 
 local function refreshZoomState(useMouseAim)
@@ -251,6 +263,7 @@ function EndPlay()
     AimActor = nil
     AimBillboard = nil
     setMouseCursorVisible(true)
+    playZoomVignette(0.0, 0.0)
 end
 
 function OnOverlap(OtherActor)

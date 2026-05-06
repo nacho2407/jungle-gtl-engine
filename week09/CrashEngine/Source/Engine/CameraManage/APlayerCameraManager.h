@@ -28,8 +28,6 @@ public:
     const FCameraViewInfo& GetCameraViewInfoCache() const { return CameraViewInfoCache; }
     const FCameraScreenEffectInfo& GetScreenEffects() const { return BaseScreenEffects; }
 
-    void AddCameraModifier(UCameraModifier* Modifier);
-    void RemoveFinishedModifiers();
 
     void ResetScreenEffects();
     
@@ -47,12 +45,17 @@ public:
     
     void PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius = 0.75f, float Softness = 0.35f);
     void PlayCameraVignette(const FCameraVignetteParams& Params);
+    void PlayCameraEffect(const FCameraEffectAsset& Asset);
+    bool PlayCameraEffectAsset(const FString& AssetPath);
 
 private:
     void CommitFade(const FCameraFadeParams& Params);
     void CommitLetterBox(const FCameraLetterBoxParams& Params);
     void CommitGammaCorrection(const FCameraGammaCorrectionParams& Params);
     void CommitVignette(const FCameraVignetteParams& Params);
+    void AddCameraModifier(UCameraModifier* Modifier);
+    void RemoveFinishedModifiers();
+private:
 
     FViewTarget ViewTarget;
     FCameraViewInfo CameraViewInfoCache;

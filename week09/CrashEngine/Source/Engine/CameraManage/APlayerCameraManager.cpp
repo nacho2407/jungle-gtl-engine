@@ -6,6 +6,7 @@
 #include "CameraManage/CameraModifiers/CameraModifier_LetterBox.h"
 #include "CameraManage/CameraModifiers/CameraModifier_Vignette.h"
 #include "CameraManage/CameraModifiers/UCamModifyer_CameraShake.h"
+#include "CameraManage/CameraEffectAssetManager.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/Object.h"
@@ -206,6 +207,42 @@ void APlayerCameraManager::PlayCameraVignette(const FCameraVignetteParams& Param
     Modifier->Start(Params);
     CommitVignette(Params);
     AddCameraModifier(Modifier);
+}
+
+void APlayerCameraManager::PlayCameraEffect(const FCameraEffectAsset& Asset)
+{
+    switch (Asset.Type)
+    {
+    case ECameraEffectType::Shake:
+        PlayCameraShake(Asset.Shake);
+        break;
+    case ECameraEffectType::Fade:
+        PlayCameraFade(Asset.Fade);
+        break;
+    case ECameraEffectType::LetterBox:
+        PlayCameraLetterBox(Asset.LetterBox);
+        break;
+    case ECameraEffectType::GammaCorrection:
+        PlayCameraGammaCorrection(Asset.GammaCorrection);
+        break;
+    case ECameraEffectType::Vignette:
+        PlayCameraVignette(Asset.Vignette);
+        break;
+    default:
+        break;
+    }
+}
+
+bool APlayerCameraManager::PlayCameraEffectAsset(const FString& AssetPath)
+{
+    FCameraEffectAsset Asset;
+    if (!FCameraEffectAssetManager::GetOrLoad(AssetPath, Asset))
+    {
+        return false;
+    }
+
+    PlayCameraEffect(Asset);
+    return true;
 }
 
 void APlayerCameraManager::CommitFade(const FCameraFadeParams& Params)

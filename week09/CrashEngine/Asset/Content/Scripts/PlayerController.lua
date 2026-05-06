@@ -518,6 +518,7 @@ end
 function OnTakeDamage(damage, instigator)
     -- AActor::TakeDamage가 LuaScriptComponent를 통해 이 함수로 전달된다.
     takeDamage(damage)
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/CameraShakeExample.ceffect")
     spawnEffect(obj.Location, DamagedEffectMaterial, DamagedEffectLifeTime, DamagedEffectRow, DamagedEffectColumn)
     if HP <= 0.0 then
         spawnDestroyEffectOnce()
