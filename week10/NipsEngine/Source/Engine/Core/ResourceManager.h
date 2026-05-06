@@ -13,6 +13,7 @@
 #include "Core/ResourceTypes.h"
 #include "Core/ShaderResourceCache.h"
 #include "Core/StaticMeshResourceCache.h"
+#include "Core/TextureAssetMetaService.h"
 #include "Core/TextureResourceCache.h"
 #include "Object/FName.h"
 #include "Render/Resource/ComputeShader.h"
@@ -23,63 +24,17 @@
 #include <d3d11.h>
 
 
-// Asset에 붙는 Meta 정보
-#pragma region __ASSET_META__
-
-constexpr const char* TextureMetaKey_Type = "Type";
-constexpr const char* TextureMetaKey_Columns = "Columns";
-constexpr const char* TextureMetaKey_Rows = "Rows";
-
-enum class EAssetMetaType
-{
-	None,
-	Font,
-	Particle,
-	Texture
-};
-
-struct FTextureAssetMeta
-{
-	EAssetMetaType Type = EAssetMetaType::None;
-	int32 Columns = 1;
-	int32 Rows = 1;
-};
-
-inline const char* ToString(EAssetMetaType Type)
-{
-	switch (Type)
-	{
-	case EAssetMetaType::Font: return "Font";
-	case EAssetMetaType::Particle: return "Particle";
-	case EAssetMetaType::Texture: return "Texture";
-	default: return "None";
-	}
-}
-
-inline EAssetMetaType ToAssetMetaType(const FString& Value)
-{
-	if (Value == "Font")
-	{
-		return EAssetMetaType::Font;
-	}
-	if (Value == "Particle")
-	{
-		return EAssetMetaType::Particle;
-	}
-	if (Value == "Texture") 
-	{
-		return EAssetMetaType::Texture;
-	}
-	return EAssetMetaType::None;
-}
-
-#pragma endregion
-
+class FMaterialLoadService;
+class FMaterialSerializationService;
+class FStaticMeshLoadService;
 
 // 리소스를 관리하는 싱글턴.
 class FResourceManager : public TSingleton<FResourceManager>
 {
 	friend class TSingleton<FResourceManager>;
+	friend class FMaterialLoadService;
+	friend class FMaterialSerializationService;
+	friend class FStaticMeshLoadService;
 
 public:
 	void SetCachedDevice(ID3D11Device* Device) { CachedDevice = Device; }
@@ -155,9 +110,15 @@ public:
 	void DeleteAllCacheFiles();
 
 private:
+	void ClearDiscoveredResourceLists(bool bClearAtlasCache);
+	void RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath);
+	void InitializeDefaultWhiteTexture(ID3D11Device* Device);
+	void InitializeDefaultMaterial(ID3D11Device* Device);
+	void InitializeOutlineMaterial();
 	uint64 GetFileWriteTimeTicks(const FString& Path) const;
 	bool IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const;
 	void PreloadStaticMeshes();
+	UStaticMesh* CreateStaticMeshFromLoadedData(FStaticMesh* LoadedMeshData, const FString& LogPath, bool bLogLodTiming, bool bLogLodSkipped) const;
 	
 	FTextureAssetMeta LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const;
 	void RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath);

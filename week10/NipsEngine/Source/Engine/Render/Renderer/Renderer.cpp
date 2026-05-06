@@ -749,6 +749,7 @@ void FRenderer::RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTarget
     FadeColor.W *= std::clamp(InRenderBus.GetCameraFadeAlpha(), 0.0f, 1.0f);
     DrawRect(0, 0, TargetWidth, TargetHeight, FadeColor);
 
+    //  Viewport의 사이즈 자체를 조절함
     Device.SetSubViewport(0, 0, TargetWidth, TargetHeight);
 }
 

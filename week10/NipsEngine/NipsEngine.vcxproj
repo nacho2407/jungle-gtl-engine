@@ -526,7 +526,27 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\EditorBoxSelectionService.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\EditorViewportNavigationController.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\EditorViewportPIEController.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\EditorPickingService.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\EditorTransformInteraction.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -594,13 +614,18 @@
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Guid.cpp" />
     <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp" />
+    <ClCompile Include="Source\Engine\Core\MaterialLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\MaterialResourceCache.cpp" />
+    <ClCompile Include="Source\Engine\Core\MaterialSerializationService.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
     <ClCompile Include="Source\Engine\Core\PlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp" />
+    <ClCompile Include="Source\Engine\Core\ResourceMemoryReporter.cpp" />
     <ClCompile Include="Source\Engine\Core\RenderStateResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\ShaderResourceCache.cpp" />
+    <ClCompile Include="Source\Engine\Core\StaticMeshLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\StaticMeshResourceCache.cpp" />
+    <ClCompile Include="Source\Engine\Core\TextureAssetMetaService.cpp" />
     <ClCompile Include="Source\Engine\Core\TextureResourceCache.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
@@ -689,6 +714,10 @@
     <ClCompile Include="Source\Engine\Render\Resource\ShadowAtlasManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Texture.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\DecalCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\EditorOverlayCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\LightRenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\PrimitiveDrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -813,7 +842,12 @@
     <ClInclude Include="Source\Editor\UI\EditorViewportOverlayWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorBoxSelectionService.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportNavigationController.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportPIEController.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorPickingService.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorTransformInteraction.h" />
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
@@ -882,15 +916,20 @@
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
     <ClInclude Include="Source\Engine\Core\Guid.h" />
     <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h" />
+    <ClInclude Include="Source\Engine\Core\MaterialLoadService.h" />
     <ClInclude Include="Source\Engine\Core\MaterialResourceCache.h" />
+    <ClInclude Include="Source\Engine\Core\MaterialSerializationService.h" />
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />
     <ClInclude Include="Source\Engine\Core\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Core\ResourceMemoryReporter.h" />
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Core\RenderStateResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\ShaderResourceCache.h" />
+    <ClInclude Include="Source\Engine\Core\StaticMeshLoadService.h" />
     <ClInclude Include="Source\Engine\Core\StaticMeshResourceCache.h" />
+    <ClInclude Include="Source\Engine\Core\TextureAssetMetaService.h" />
     <ClInclude Include="Source\Engine\Core\TextureResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\Random\EngineRandom.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
@@ -998,6 +1037,10 @@
     <ClInclude Include="Source\Engine\Render\Resource\Texture.h" />
     <ClInclude Include="Source\Engine\Render\Resource\VertexTypes.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\DecalCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\EditorOverlayCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\LightRenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\PrimitiveDrawCommandBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
