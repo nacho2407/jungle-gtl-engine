@@ -221,6 +221,7 @@ local function BeginPoliceCinematic()
         end
 
         ObjRegistry.car:SetVisible(false)
+        ObjRegistry.car:SetCollisionEnabled(false)
     end
 end
 
@@ -236,6 +237,7 @@ local function EndPoliceCinematic()
         end
 
         ObjRegistry.car:SetVisible(true)
+        ObjRegistry.car:SetCollisionEnabled(true)
     end
 
     if policeCinematicOverlayWasVisible then
