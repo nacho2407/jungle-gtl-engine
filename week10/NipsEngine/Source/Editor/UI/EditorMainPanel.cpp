@@ -1,4 +1,4 @@
-﻿
+
 
 #include "Editor/UI/EditorMainPanel.h"
 
@@ -1683,7 +1683,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanUndo);
     if (ImGui::Button("Undo", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->Undo();
+        EditorEngine->GetUndoSystem().Undo();
     }
     ImGui::EndDisabled();
 
@@ -1691,7 +1691,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanRedo);
     if (ImGui::Button("Redo", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->Redo();
+        EditorEngine->GetUndoSystem().Redo();
     }
     ImGui::EndDisabled();
 
@@ -1699,7 +1699,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
     ImGui::BeginDisabled(!bCanUndo && !bCanRedo);
     if (ImGui::Button("Clear", ImVec2(86.0f, 0.0f)))
     {
-        EditorEngine->ClearUndoHistory();
+        EditorEngine->GetUndoSystem().ClearHistory();
     }
     ImGui::EndDisabled();
 
@@ -1731,7 +1731,7 @@ void FEditorMainPanel::RenderUndoHistoryPanel(float DeltaTime)
             const FString Label = UndoEntries[Index].Label.empty() ? FString("Scene Edit") : UndoEntries[Index].Label;
             if (ImGui::Selectable(Label.c_str()))
             {
-                EditorEngine->RestoreUndoHistoryIndex(Index);
+                EditorEngine->GetUndoSystem().RestoreHistoryIndex(Index);
             }
             ImGui::PopID();
         }
@@ -2593,7 +2593,7 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(const FString& PayloadPath
         return false;
     }
 
-    EditorEngine->CaptureUndoSnapshot("Place Static Mesh");
+    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Static Mesh");
     AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
     if (!Actor)
     {
@@ -2642,7 +2642,7 @@ bool FEditorMainPanel::SpawnPrefabFromContentPath(const FString& PayloadPath, in
         return false;
     }
 
-    EditorEngine->CaptureUndoSnapshot("Place Prefab");
+    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
     AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
     if (!Actor)
     {
@@ -2680,7 +2680,7 @@ bool FEditorMainPanel::SpawnPrefabAtOrigin(const FString& PayloadPath)
         return false;
     }
 
-    EditorEngine->CaptureUndoSnapshot("Place Prefab");
+    EditorEngine->GetUndoSystem().CaptureSnapshot("Place Prefab");
     AActor* Actor = FPrefabManager::SpawnActorFromPrefab(World, PayloadPath);
     if (!Actor)
     {

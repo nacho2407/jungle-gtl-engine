@@ -154,6 +154,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     UE_LOG("[EditorEngine] Editor boot started.");
 
     UEngine::Init(InWindow);
+    UndoSystem.SetOwner(this);
     GetRmlUiSystem().Initialize(GetRenderer(), "EditorPIE", 1, 1);
     InputSystem::Get().SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
     EditorInputRouter.SetOwnerWindow(Window ? Window->GetHWND() : nullptr);
@@ -192,6 +193,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 void UEditorEngine::Shutdown()
 {
+    UndoSystem.SetOwner(nullptr);
+
     // 스플리터 비율을 Settings 에 기록 후 저장
     if (SSplitterV* SV = ViewportLayout.GetRootSplitterV())
         FEditorSettings::Get().SplitterVRatio = SV->GetSplitRatio();
@@ -524,7 +527,7 @@ int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
         return 0;
     }
 
-    CaptureUndoSnapshot("Delete Actors");
+    UndoSystem.CaptureSnapshot("Delete Actors");
 
     int32 DeletedCount = 0;
     SelectionManager.BeginBatchUpdate();
@@ -554,28 +557,6 @@ FString UEditorEngine::CaptureSceneSnapshot() const
     }
 
     return FSceneSaveManager::SaveToString(*Ctx, nullptr);
-}
-
-bool UEditorEngine::CaptureUndoSnapshot(const char* Reason)
-{
-    if (UndoSystem.IsRestoring() || GetEditorState() != EViewportPlayState::Editing)
-    {
-        return false;
-    }
-
-    FString Snapshot = CaptureSceneSnapshot();
-    if (Snapshot.empty())
-    {
-        return false;
-    }
-
-    bool bClearedRedo = false;
-    const bool bCaptured = UndoSystem.CaptureSnapshot(std::move(Snapshot), Reason, bClearedRedo);
-    if (bClearedRedo)
-    {
-        MainPanel.PushFooterLog("Redo history cleared");
-    }
-    return bCaptured;
 }
 
 bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
@@ -640,80 +621,6 @@ bool UEditorEngine::RestoreSceneSnapshot(const FString& Snapshot)
     MainPanel.GetSceneWidget().MarkSceneDirty();
     UndoSystem.EndRestore();
     return true;
-}
-
-bool UEditorEngine::Undo()
-{
-    if (UndoSystem.IsRestoring() || GetEditorState() != EViewportPlayState::Editing)
-    {
-        return false;
-    }
-
-    FString Current = CaptureSceneSnapshot();
-    FUndoSnapshotEntry Previous;
-    if (!UndoSystem.PopUndo(std::move(Current), Previous))
-    {
-        return false;
-    }
-
-    const bool bRestored = RestoreSceneSnapshot(Previous.Snapshot);
-    if (bRestored)
-    {
-        MainPanel.PushFooterLog("Undo: " + Previous.Label);
-    }
-    return bRestored;
-}
-
-bool UEditorEngine::Redo()
-{
-    if (UndoSystem.IsRestoring() || GetEditorState() != EViewportPlayState::Editing)
-    {
-        return false;
-    }
-
-    FString Current = CaptureSceneSnapshot();
-    FUndoSnapshotEntry Next;
-    if (!UndoSystem.PopRedo(std::move(Current), Next))
-    {
-        return false;
-    }
-
-    const bool bRestored = RestoreSceneSnapshot(Next.Snapshot);
-    if (bRestored)
-    {
-        MainPanel.PushFooterLog("Redo: " + Next.Label);
-    }
-    return bRestored;
-}
-
-bool UEditorEngine::RestoreUndoHistoryIndex(int32 Index)
-{
-    if (UndoSystem.IsRestoring() || GetEditorState() != EViewportPlayState::Editing)
-    {
-        return false;
-    }
-
-    FString Current = CaptureSceneSnapshot();
-    FUndoSnapshotEntry Target;
-    if (!UndoSystem.RestoreHistoryIndex(Index, std::move(Current), Target))
-    {
-        return false;
-    }
-
-    const bool bRestored = RestoreSceneSnapshot(Target.Snapshot);
-    if (bRestored)
-    {
-        MainPanel.PushFooterLog("History restored: " + Target.Label);
-    }
-    return bRestored;
-}
-
-void UEditorEngine::ClearUndoHistory()
-{
-    if (UndoSystem.Clear())
-    {
-        MainPanel.PushFooterLog("Undo history cleared");
-    }
 }
 
 void UEditorEngine::RenderUI(float DeltaTime)
