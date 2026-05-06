@@ -16,6 +16,8 @@ namespace
 {
 	constexpr float CurveCanvasSize = 420.0f;
 	constexpr float KeyHitRadius = 7.0f;
+	constexpr float TangentHandleLength = 48.0f;
+	constexpr float TangentHandleHitRadius = 6.0f;
 	constexpr float TimeEpsilon = 0.001f;
 
 	static ImVec2 CurveToScreen(
@@ -64,6 +66,58 @@ namespace
 	{
 		return std::isfinite(Point.x) && std::isfinite(Point.y);
 	}
+
+	static bool IsPointNear(const ImVec2& A, const ImVec2& B, float Radius)
+	{
+		const float DX = A.x - B.x;
+		const float DY = A.y - B.y;
+		return (DX * DX + DY * DY) <= Radius * Radius;
+	}
+
+	static ImVec2 GetTangentHandlePosition(
+		const FCurveKey& Key,
+		bool bArrive,
+		float ViewMinTime,
+		float ViewMaxTime,
+		float ViewMinValue,
+		float ViewMaxValue,
+		const ImVec2& Min,
+		const ImVec2& Max)
+	{
+		const float Tangent = bArrive ? Key.ArriveTangent : Key.LeaveTangent;
+		const float Direction = bArrive ? -1.0f : 1.0f;
+		const float Width = Max.x - Min.x;
+		const float Height = Max.y - Min.y;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+
+		ImVec2 DirectionVector(
+			Direction * Width / TimeSpan,
+			-Direction * Tangent * Height / ValueSpan);
+		const float Length = std::sqrt(DirectionVector.x * DirectionVector.x + DirectionVector.y * DirectionVector.y);
+		if (Length <= 1e-6f)
+		{
+			DirectionVector = ImVec2(Direction, 0.0f);
+		}
+		else
+		{
+			DirectionVector.x /= Length;
+			DirectionVector.y /= Length;
+		}
+
+		const ImVec2 KeyPos = CurveToScreen(
+			Key.Time,
+			Key.Value,
+			ViewMinTime,
+			ViewMaxTime,
+			ViewMinValue,
+			ViewMaxValue,
+			Min,
+			Max);
+		return ImVec2(
+			KeyPos.x + DirectionVector.x * TangentHandleLength,
+			KeyPos.y + DirectionVector.y * TangentHandleLength);
+	}
 }
 
 bool FFloatCurveEditorWidget::CanEdit(UObject* Object) const
@@ -83,6 +137,7 @@ void FFloatCurveEditorWidget::Open(UObject* Object)
 	ClearDirty();
 	SelectedKeyIndex = -1;
 	bDraggingSelectedKey = false;
+	DraggingTangentHandle = ETangentHandle::None;
 	bPanningView = false;
 	bSuppressNextCanvasContextMenu = false;
 	FitViewToCurve();
@@ -251,6 +306,77 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			}
 		}
 
+		ETangentHandle HoveredTangentHandle = ETangentHandle::None;
+		const bool bHasSelectedKey = SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size());
+		const bool bCanShowArriveHandle =
+			bHasSelectedKey &&
+			SelectedKeyIndex > 0 &&
+			Curve.Keys[SelectedKeyIndex - 1].InterpMode == ECurveInterpMode::Cubic;
+		const bool bCanShowLeaveHandle =
+			bHasSelectedKey &&
+			SelectedKeyIndex + 1 < static_cast<int32>(Curve.Keys.size()) &&
+			Curve.Keys[SelectedKeyIndex].InterpMode == ECurveInterpMode::Cubic;
+
+		if (bHasSelectedKey && (bCanShowArriveHandle || bCanShowLeaveHandle))
+		{
+			const FCurveKey& Key = Curve.Keys[SelectedKeyIndex];
+			const ImVec2 KeyPos = CurveToScreen(
+				Key.Time,
+				Key.Value,
+				ViewMinTime,
+				ViewMaxTime,
+				ViewMinValue,
+				ViewMaxValue,
+				CanvasMin,
+				CanvasMax);
+
+			if (bCanShowArriveHandle)
+			{
+				const ImVec2 HandlePos = GetTangentHandlePosition(
+					Key,
+					true,
+					ViewMinTime,
+					ViewMaxTime,
+					ViewMinValue,
+					ViewMaxValue,
+					CanvasMin,
+					CanvasMax);
+				if (IsFinitePoint(HandlePos))
+				{
+					if (IsPointNear(IO.MousePos, HandlePos, TangentHandleHitRadius))
+					{
+						HoveredTangentHandle = ETangentHandle::Arrive;
+					}
+					DrawList->AddLine(KeyPos, HandlePos, IM_COL32(95, 150, 255, 180), 1.5f);
+					DrawList->AddCircleFilled(HandlePos, 4.5f, IM_COL32(95, 150, 255, 255));
+					DrawList->AddCircle(HandlePos, 4.5f, IM_COL32(15, 20, 30, 220), 12, 1.0f);
+				}
+			}
+
+			if (bCanShowLeaveHandle)
+			{
+				const ImVec2 HandlePos = GetTangentHandlePosition(
+					Key,
+					false,
+					ViewMinTime,
+					ViewMaxTime,
+					ViewMinValue,
+					ViewMaxValue,
+					CanvasMin,
+					CanvasMax);
+				if (IsFinitePoint(HandlePos))
+				{
+					if (IsPointNear(IO.MousePos, HandlePos, TangentHandleHitRadius))
+					{
+						HoveredTangentHandle = ETangentHandle::Leave;
+					}
+					DrawList->AddLine(KeyPos, HandlePos, IM_COL32(95, 150, 255, 180), 1.5f);
+					DrawList->AddCircleFilled(HandlePos, 4.5f, IM_COL32(95, 150, 255, 255));
+					DrawList->AddCircle(HandlePos, 4.5f, IM_COL32(15, 20, 30, 220), 12, 1.0f);
+				}
+			}
+		}
+
 		int32 HoveredKeyIndex = -1;
 		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Keys.size()); ++KeyIndex)
 		{
@@ -310,14 +436,76 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			}
 		}
 
-		if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		if (HoveredTangentHandle != ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			DraggingTangentHandle = HoveredTangentHandle;
+			bDraggingSelectedKey = false;
+		}
+		else if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			SelectedKeyIndex = HoveredKeyIndex;
 			bDraggingSelectedKey = true;
 		}
-		else if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		else if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			SelectedKeyIndex = -1;
+		}
+
+		if (DraggingTangentHandle != ETangentHandle::None && bHasSelectedKey && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+		{
+			FCurveKey& Key = Curve.Keys[SelectedKeyIndex];
+			float MouseTime = 0.0f;
+			float MouseValue = 0.0f;
+			ScreenToCurve(IO.MousePos, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax, MouseTime, MouseValue);
+
+			float NewTangent = 0.0f;
+			if (DraggingTangentHandle == ETangentHandle::Arrive)
+			{
+				const float DeltaTime = Key.Time - MouseTime;
+				if (std::fabs(DeltaTime) > TimeEpsilon)
+				{
+					NewTangent = (Key.Value - MouseValue) / DeltaTime;
+				}
+				else
+				{
+					NewTangent = Key.ArriveTangent;
+				}
+			}
+			else
+			{
+				const float DeltaTime = MouseTime - Key.Time;
+				if (std::fabs(DeltaTime) > TimeEpsilon)
+				{
+					NewTangent = (MouseValue - Key.Value) / DeltaTime;
+				}
+				else
+				{
+					NewTangent = Key.LeaveTangent;
+				}
+			}
+
+			if (Key.TangentMode == ECurveTangentMode::Auto)
+			{
+				Key.TangentMode = ECurveTangentMode::User;
+			}
+
+			if (Key.TangentMode == ECurveTangentMode::Break)
+			{
+				if (DraggingTangentHandle == ETangentHandle::Arrive)
+				{
+					Key.ArriveTangent = NewTangent;
+				}
+				else
+				{
+					Key.LeaveTangent = NewTangent;
+				}
+			}
+			else
+			{
+				Key.ArriveTangent = NewTangent;
+				Key.LeaveTangent = NewTangent;
+			}
+			bChanged = true;
 		}
 
 		if (bDraggingSelectedKey && SelectedKeyIndex >= 0 && SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
@@ -347,9 +535,10 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 				Curve.AutoSetTangents();
 			}
 			bDraggingSelectedKey = false;
+			DraggingTangentHandle = ETangentHandle::None;
 		}
 
-		if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+		if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 		{
 			bPanningView = true;
 			bSuppressNextCanvasContextMenu = false;
@@ -376,7 +565,7 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			SelectedKeyIndex = HoveredKeyIndex;
 			ImGui::OpenPopup("FloatCurveKeyContext");
 		}
-		else if (bCanvasHovered && HoveredKeyIndex == -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bSuppressNextCanvasContextMenu)
+		else if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !bSuppressNextCanvasContextMenu)
 		{
 			ScreenToCurve(IO.MousePos, ViewMinTime, ViewMaxTime, ViewMinValue, ViewMaxValue, CanvasMin, CanvasMax, PendingContextTime, PendingContextValue);
 			ImGui::OpenPopup("FloatCurveCanvasContext");
@@ -447,7 +636,13 @@ void FFloatCurveEditorWidget::Render(float DeltaTime)
 			ImGui::EndPopup();
 		}
 
-		if (HoveredKeyIndex != -1)
+		if (HoveredTangentHandle != ETangentHandle::None && bHasSelectedKey)
+		{
+			const FCurveKey& Key = Curve.Keys[SelectedKeyIndex];
+			const float Tangent = (HoveredTangentHandle == ETangentHandle::Arrive) ? Key.ArriveTangent : Key.LeaveTangent;
+			ImGui::SetTooltip("%s Tangent %.3f", (HoveredTangentHandle == ETangentHandle::Arrive) ? "Arrive" : "Leave", Tangent);
+		}
+		else if (HoveredKeyIndex != -1)
 		{
 			const FCurveKey& HoveredKey = Curve.Keys[HoveredKeyIndex];
 			ImGui::SetTooltip("Time %.3f\nValue %.3f", HoveredKey.Time, HoveredKey.Value);

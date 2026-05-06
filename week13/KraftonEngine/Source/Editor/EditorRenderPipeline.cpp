@@ -15,6 +15,27 @@
 #include "Engine/Render/Types/MinimalViewInfo.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Core/ProjectSettings.h"
+#include "Math/MathUtils.h"
+
+namespace
+{
+	void ApplyLetterboxAspect(FMinimalViewInfo& POV, const FCameraLetterboxState& Letterbox, float ViewportWidth, float ViewportHeight)
+	{
+		if (!Letterbox.bEnabled || Letterbox.Amount <= 0.0f || ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+		{
+			return;
+		}
+
+		const float Thickness = FMath::Clamp(Letterbox.Thickness * Letterbox.Amount, 0.0f, 0.49f);
+		const float VisibleHeightScale = 1.0f - Thickness * 2.0f;
+		if (VisibleHeightScale <= FMath::Epsilon)
+		{
+			return;
+		}
+
+		POV.AspectRatio = (ViewportWidth / ViewportHeight) / VisibleHeightScale;
+	}
+}
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
 	: Editor(InEditor)
@@ -183,47 +204,9 @@ void FEditorRenderPipeline::PrepareViewport(FLevelEditorViewportClient* VC, FVie
 void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMinimalViewInfo& POV, FViewport* VP, UWorld* World)
 {
 	Frame.ClearViewportResources();
-	Frame.SetCameraInfo(POV);
-
-	// Light View Override — 라이트 시점으로 View/Proj 교체.
-	// Directional CSM 은 viewer POV 의 frustum 으로 cascade 분할 → 위에서 추출한 POV 를 그대로 위임.
-	if (VC->IsViewingFromLight())
-	{
-		ULightComponentBase* Light = VC->GetLightViewOverride();
-		if (!Light || !Light->GetOwner())
-		{
-			VC->ClearLightViewOverride();
-		}
-		else
-		{
-			FLightViewProjResult LVP;
-			if (Light->GetLightViewProj(LVP, &POV, VC->GetPointLightFaceIndex()))
-			{
-				Frame.View = LVP.View;
-				Frame.Proj = LVP.Proj;
-				Frame.bIsOrtho = LVP.bIsOrtho;
-				Frame.CameraPosition = Light->GetWorldLocation();
-				Frame.CameraForward = Light->GetForwardVector();
-				Frame.FrustumVolume.UpdateFromMatrix(Frame.View * Frame.Proj);
-			}
-		}
-	}
-
-	Frame.bIsLightView = VC->IsViewingFromLight();
-	Frame.WorldType = World->GetWorldType();
-	Frame.SetRenderOptions(VC->GetRenderOptions());
 	Frame.SetViewportInfo(VP);
-	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
-	Frame.LODContext = World->PrepareLODContext();
 
-	// Cursor position relative to viewport (for 2.5D culling visualization)
-	if (!VC->GetCursorViewportPosition(Frame.CursorViewportX, Frame.CursorViewportY))
-	{
-		Frame.CursorViewportX = UINT32_MAX;
-		Frame.CursorViewportY = UINT32_MAX;
-	}
-
-	// PC 가 PlayerCameraManager owner — 그쪽으로부터 fade 상태 read.
+	// PC 가 PlayerCameraManager owner — 그쪽으로부터 camera post state read.
 	APlayerController* PC = World->GetFirstPlayerController();
 	APlayerCameraManager* CamManager = PC ? PC->GetPlayerCameraManager() : nullptr;
 	Frame.CameraFade.bEnabled = CamManager ? CamManager->IsFadeEnabled() : false;
@@ -258,6 +241,48 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 	{
 		Frame.CameraLetterbox.bEnabled = false;
 	}
+
+	FMinimalViewInfo RenderPOV = POV;
+	ApplyLetterboxAspect(RenderPOV, Frame.CameraLetterbox, Frame.ViewportWidth, Frame.ViewportHeight);
+	Frame.SetCameraInfo(RenderPOV);
+
+	// Light View Override — 라이트 시점으로 View/Proj 교체.
+	// Directional CSM 은 viewer POV 의 frustum 으로 cascade 분할 → 위에서 추출한 POV 를 그대로 위임.
+	if (VC->IsViewingFromLight())
+	{
+		ULightComponentBase* Light = VC->GetLightViewOverride();
+		if (!Light || !Light->GetOwner())
+		{
+			VC->ClearLightViewOverride();
+		}
+		else
+		{
+			FLightViewProjResult LVP;
+			if (Light->GetLightViewProj(LVP, &RenderPOV, VC->GetPointLightFaceIndex()))
+			{
+				Frame.View = LVP.View;
+				Frame.Proj = LVP.Proj;
+				Frame.bIsOrtho = LVP.bIsOrtho;
+				Frame.CameraPosition = Light->GetWorldLocation();
+				Frame.CameraForward = Light->GetForwardVector();
+				Frame.FrustumVolume.UpdateFromMatrix(Frame.View * Frame.Proj);
+			}
+		}
+	}
+
+	Frame.bIsLightView = VC->IsViewingFromLight();
+	Frame.WorldType = World->GetWorldType();
+	Frame.SetRenderOptions(VC->GetRenderOptions());
+	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
+	Frame.LODContext = World->PrepareLODContext();
+
+	// Cursor position relative to viewport (for 2.5D culling visualization)
+	if (!VC->GetCursorViewportPosition(Frame.CursorViewportX, Frame.CursorViewportY))
+	{
+		Frame.CursorViewportX = UINT32_MAX;
+		Frame.CursorViewportY = UINT32_MAX;
+	}
+
 }
 
 // ============================================================
