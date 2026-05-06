@@ -253,8 +253,8 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
-    playPlayerSound("Shoot")
-    -- World.RequestSlomo(0.1, 2)
+    -- playPlayerSound("Shoot")
+    World.RequestSlomo(0.1, 2)
     PlayerShotTimer = PlayerShotCooldown
 end
 
