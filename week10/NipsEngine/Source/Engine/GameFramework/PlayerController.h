@@ -52,6 +52,7 @@ public:
 
 	FViewportCamera* GetRuntimeCamera() { return &RuntimeCamera; }
 	const FViewportCamera* GetRuntimeCamera() const { return &RuntimeCamera; }
+    APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
 	AActor* GetPossessedActor() const { return PossessedActor; }
     AActor* GetViewTargetActor() const;
     UCameraComponent* GetViewTargetCamera() const;

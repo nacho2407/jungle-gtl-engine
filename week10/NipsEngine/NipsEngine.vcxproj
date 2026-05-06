@@ -308,6 +308,8 @@
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
+    <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
@@ -337,10 +339,10 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp">
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
-      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
-      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp" />
-      <ClCompile Include="Source\Editor\EditorEngine.cpp">
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp" />
+    <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -644,6 +646,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
+    <ClInclude Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.h" />
     <ClInclude Include="Source\Engine\Camera\CameraShakeBase.h" />
     <ClInclude Include="Source\Engine\Camera\CameraModifier_CameraShake.h" />
     <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
@@ -656,10 +660,10 @@
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\API\LuaEngineAPIBindings.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
-      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
-      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
-      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiSystem.h" />
-      <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiSystem.h" />
+    <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\EditorUtils.h" />

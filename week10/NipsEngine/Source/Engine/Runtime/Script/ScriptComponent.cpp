@@ -1,5 +1,11 @@
 ﻿#include "ScriptComponent.h"
 #include "ScriptManager.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Camera/ShakePattern/SequenceCameraShakePattern.h"
+#include "Camera/ShakePattern/SinusoidalCameraShakePattern.h"
+#include "Camera/CameraShakeBase.h"
+#include "Engine/Runtime/Engine.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/PrimitiveComponent.h"
@@ -193,6 +199,63 @@ namespace
         OutDesc.ExtraData = nullptr;
 
         return true;
+    }
+
+    void CopyCameraShakePatternBase(
+        const UCameraShakePattern* Source,
+        UCameraShakePattern* Target)
+    {
+        if (!Source || !Target)
+        {
+            return;
+        }
+
+        Target->Duration = Source->Duration;
+        Target->BlendInTime = Source->BlendInTime;
+        Target->BlendOutTime = Source->BlendOutTime;
+    }
+
+    UCameraShakePattern* CreateRuntimeCameraShakePattern(UCameraShakePattern* Source)
+    {
+        if (!Source)
+        {
+            return nullptr;
+        }
+
+        if (USinusoidalCameraShakePattern* Src = Cast<USinusoidalCameraShakePattern>(Source))
+        {
+            USinusoidalCameraShakePattern* Dst =
+                UObjectManager::Get().CreateObject<USinusoidalCameraShakePattern>();
+
+            CopyCameraShakePatternBase(Src, Dst);
+            Dst->LocationAmplitude = Src->LocationAmplitude;
+            Dst->LocationFrequency = Src->LocationFrequency;
+            Dst->LocationPhase = Src->LocationPhase;
+            Dst->RotationAmplitudeDeg = Src->RotationAmplitudeDeg;
+            Dst->RotationFrequency = Src->RotationFrequency;
+            Dst->RotationPhase = Src->RotationPhase;
+            Dst->FOVAmplitude = Src->FOVAmplitude;
+            Dst->FOVFrequency = Src->FOVFrequency;
+            Dst->FOVPhase = Src->FOVPhase;
+            return Dst;
+        }
+
+        if (USequenceCameraShakePattern* Src = Cast<USequenceCameraShakePattern>(Source))
+        {
+            USequenceCameraShakePattern* Dst =
+                UObjectManager::Get().CreateObject<USequenceCameraShakePattern>();
+
+            CopyCameraShakePatternBase(Src, Dst);
+            Dst->Sequence = Src->Sequence;
+            Dst->PlayRate = Src->PlayRate;
+            Dst->Scale = Src->Scale;
+            Dst->RandomSegmentDuration = Src->RandomSegmentDuration;
+            Dst->bRandomSegment = Src->bRandomSegment;
+            Dst->CurveAssetPath = Src->CurveAssetPath;
+            return Dst;
+        }
+
+        return Cast<UCameraShakePattern>(Source->Duplicate());
     }
     }
 
@@ -513,6 +576,50 @@ void UScriptComponent::StartCoroutine(sol::function Function)
     CoroutineScheduler.StartCoroutine(Function);
 }
 
+USequenceCameraShakePattern* UScriptComponent::CreateSequenceCameraShakePattern()
+{
+    USequenceCameraShakePattern* Pattern =
+        UObjectManager::Get().CreateObject<USequenceCameraShakePattern>();
+    CreatedCameraShakePatterns.push_back(Pattern);
+    return Pattern;
+}
+
+USinusoidalCameraShakePattern* UScriptComponent::CreateSinusoidalCameraShakePattern()
+{
+    USinusoidalCameraShakePattern* Pattern =
+        UObjectManager::Get().CreateObject<USinusoidalCameraShakePattern>();
+    CreatedCameraShakePatterns.push_back(Pattern);
+    return Pattern;
+}
+
+UCameraShakeBase* UScriptComponent::StartCameraShakePattern(
+    UCameraShakePattern* Pattern,
+    float Scale,
+    float DurationOverride)
+{
+    if (!Pattern)
+    {
+        return nullptr;
+    }
+
+    UCameraShakePattern* RuntimePattern =
+        CreateRuntimeCameraShakePattern(Pattern);
+    if (!RuntimePattern)
+    {
+        return nullptr;
+    }
+
+    APlayerController* PC = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PC ? PC->GetPlayerCameraManager() : nullptr;
+    if (!CameraManager)
+    {
+        UObjectManager::Get().DestroyObject(RuntimePattern);
+        return nullptr;
+    }
+
+    return CameraManager->StartCameraShake(RuntimePattern, Scale, DurationOverride);
+}
+
 void UScriptComponent::OnUnregister()
 { 
 	// 부모 훅 호출
@@ -791,10 +898,21 @@ void UScriptComponent::ClearLoadedState()
 {
     bScriptLoaded = false;
     CoroutineScheduler.StopAll();
+    DestroyCreatedCameraShakePatterns();
 
     ScriptEnv = sol::environment{};
     ScriptClass = sol::table{};
     ScriptInstance = sol::table{};
+}
+
+void UScriptComponent::DestroyCreatedCameraShakePatterns()
+{
+    for (UCameraShakePattern* Pattern : CreatedCameraShakePatterns)
+    {
+        UObjectManager::Get().DestroyObject(Pattern);
+    }
+
+    CreatedCameraShakePatterns.clear();
 }
 
 void UScriptComponent::OnHit(
