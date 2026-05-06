@@ -1,4 +1,4 @@
-#include "LuaScriptComponent.h"
+﻿#include "LuaScriptComponent.h"
 
 #include <cstring>
 #include <fstream>
@@ -299,6 +299,14 @@ bool ULuaScriptComponent::LoadScript()
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
     WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)
         { return ActorProxy ? WorldProxy.MoveActorWithBlock(*ActorProxy, Delta, BlockingTag) : false; });
+    WorldTable.set_function("RequestHitStop", [this](float Duration)
+        { return WorldProxy.RequestHitStop(Duration); });
+    WorldTable.set_function("RequestSlomo", [this](float InTimeScale, float Duration)
+        { return WorldProxy.RequestSlomo(InTimeScale, Duration); });
+    WorldTable.set_function("GetUnscaledDeltatime", [this]()
+        { return WorldProxy.GetUnscaledDeltatime(); });
+    WorldTable.set_function("GetTimeScale", [this]()
+        { return WorldProxy.GetTimeScale(); });
 
     Env["World"] = WorldTable;
 

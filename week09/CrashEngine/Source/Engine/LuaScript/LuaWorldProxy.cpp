@@ -1,4 +1,4 @@
-#include "LuaWorldProxy.h"
+﻿#include "LuaWorldProxy.h"
 
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
@@ -270,4 +270,32 @@ FVector FLuaWorldProxy::GetMouseWorldPointOnPlane(float PlaneZ) const
     }
 
     return MouseRay.Origin + MouseRay.Direction * T;
+}
+
+bool FLuaWorldProxy::RequestHitStop(float Duration) const
+{
+    UWorld* World = ResolveWorld();
+    World->RequestHitStop(Duration);
+
+    return true;
+}
+
+bool FLuaWorldProxy::RequestSlomo(float InTimeScale, float Duration) const
+{
+    UWorld* World = ResolveWorld();
+    World->RequestSlomo(InTimeScale, Duration);
+
+    return true;
+}
+
+float FLuaWorldProxy::GetUnscaledDeltatime() const
+{
+    UWorld* World = ResolveWorld();
+    return World->GetUnScaledDeltatime();
+}
+
+float FLuaWorldProxy::GetTimeScale() const
+{
+    UWorld* World = ResolveWorld();
+    return World->GetTimeScale();
 }
