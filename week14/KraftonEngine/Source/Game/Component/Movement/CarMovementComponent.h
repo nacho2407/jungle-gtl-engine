@@ -24,6 +24,7 @@ public:
 
 	void StopImmediately();
 	float GetForwardSpeed() const;
+	float GetMaxSpeed() const { return MaxSpeed; }
 
 private:
 	bool ApplyWheelSuspension(float DeltaTime);

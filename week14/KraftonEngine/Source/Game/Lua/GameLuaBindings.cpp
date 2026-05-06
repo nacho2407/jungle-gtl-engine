@@ -31,7 +31,8 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"SetThrottleInput", &UCarMovementComponent::SetThrottleInput,
 		"SetSteeringInput", &UCarMovementComponent::SetSteeringInput,
 		"StopImmediately",  &UCarMovementComponent::StopImmediately,
-		"GetForwardSpeed",  &UCarMovementComponent::GetForwardSpeed);
+		"GetForwardSpeed",  &UCarMovementComponent::GetForwardSpeed,
+		"GetMaxSpeed",      &UCarMovementComponent::GetMaxSpeed);
 
 	Lua.new_usertype<UCarGasComponent>("CarGasComponent",
 		"SetGas",      &UCarGasComponent::SetGas,
