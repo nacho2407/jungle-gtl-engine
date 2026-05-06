@@ -115,6 +115,9 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"GetMeteorHealth",      &ACarPawn::GetMeteorHealth,
 		"GetMaxMeteorHealth",   &ACarPawn::GetMaxMeteorHealth,
 		"IsFirstPersonView",    &ACarPawn::IsFirstPersonView,
+		// 카메라 컴포넌트 명시적 getter — 페이즈 자동 전환 등에서 사용.
+		"GetFirstPersonCamera", &ACarPawn::GetFirstPersonCamera,
+		"GetThirdPersonCamera", &ACarPawn::GetThirdPersonCamera,
 		// 시각 메시 명시적 getter — lua 가 좌표 휴리스틱(X 부호 등) 으로 분류하지 않도록.
 		"GetHandleMesh",         &ACarPawn::GetHandleMesh,
 		"GetFrontLeftTireMesh",  &ACarPawn::GetFrontLeftTireMesh,

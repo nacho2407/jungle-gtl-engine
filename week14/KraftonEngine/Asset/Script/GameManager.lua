@@ -51,6 +51,26 @@ local quests = {
 local state = QuestState.NotStarted
 local currentQuestIndex = 0
 local scoreSubmitted = false
+-- OnPhaseChanged 추적용 — EscapePolice/DodgeMeteor 시작/종료 시 카메라 자동 전환에 사용.
+local prevPhase = ECarGamePhase.None
+local THIRD_PERSON_PHASE_BLEND = 0.6
+
+local function IsThirdPersonPhase(phase)
+    return phase == ECarGamePhase.EscapePolice or phase == ECarGamePhase.DodgeMeteor
+end
+
+local function SwitchPlayerCamera(toThirdPerson)
+    if ObjRegistry.car == nil then return end
+    local cam = nil
+    if toThirdPerson then
+        cam = ObjRegistry.car:GetThirdPersonCamera()
+    else
+        cam = ObjRegistry.car:GetFirstPersonCamera()
+    end
+    if cam ~= nil then
+        CameraManager.SetActiveCameraWithBlend(cam, THIRD_PERSON_PHASE_BLEND)
+    end
+end
 -- 다음 퀘스트 진행 coroutine 핸들 — 씬 전환 / EndPlay 시 정리해야 stale 상태로
 -- 새 월드의 lua tick 에 끼어들지 않는다.
 local nextQuestRoutine = nil
@@ -73,6 +93,17 @@ end
 
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
+
+    -- EscapePolice / DodgeMeteor 시작 시 자동으로 3인칭 전환. 해당 페이즈가 끝나
+    -- 다른 페이즈로 넘어가면 1인칭 복귀. 이전 페이즈 추적은 prevPhase.
+    local enterThirdPerson = IsThirdPersonPhase(phase) and not IsThirdPersonPhase(prevPhase)
+    local exitThirdPerson  = IsThirdPersonPhase(prevPhase) and not IsThirdPersonPhase(phase)
+    if enterThirdPerson then
+        SwitchPlayerCamera(true)
+    elseif exitThirdPerson then
+        SwitchPlayerCamera(false)
+    end
+    prevPhase = phase
 
     if phase == ECarGamePhase.None then
         return

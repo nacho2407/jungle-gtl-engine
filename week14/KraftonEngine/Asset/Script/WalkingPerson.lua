@@ -149,6 +149,13 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     hasPlayedHitAction = true
     isMoving = false
 
+    -- 첫 hit 시 점수 +100 (같은 보행자가 이미 hit 됐으면 hasPlayedHitAction 가드로 추가 가산 X).
+    -- Bonus 카테고리 — Finished 때 GameState.GetScore() 가 누적값 반환해 Scoreboard 에 반영됨.
+    local gs = GetGameState()
+    if gs ~= nil then
+        gs:AddScore(100, EScoreCategory.Bonus, "HitPerson", ECarGamePhase.EscapePolice)
+    end
+
     local action = obj:GetActionComponent()
     if action ~= nil and ShouldPlayHitAction(OtherActor, OtherComp, NormalImpulse) then
         action:HitStop(HIT_STOP_DURATION, HIT_STOP_TIME_DILATION)

@@ -833,21 +833,37 @@ function UIManager.ShowGameOver(outcome, finalScore, onScoreComplete)
 
     local gs = GetGameState()
     local eventTotal = 0
+    -- 같은 Reason 의 점수 이벤트 (예: "HitPerson" +100 가 여러 번) 는 정산 화면에서
+    -- 한 줄로 합쳐 표시한다. reasonGroups 가 누적, reasonOrder 가 첫 등장 순서를 유지.
+    local reasonGroups = {}
+    local reasonOrder = {}
     if gs ~= nil then
         local count = gs:GetScoreEventCount()
         for i = 0, count - 1 do
             local event = gs:GetScoreEvent(i)
             if event ~= nil then
                 eventTotal = eventTotal + event.Amount
-                table.insert(scoreEvents, {
-                    amount = event.Amount,
-                    reason = event.Reason
-                })
+                local key = event.Reason or ""
+                if reasonGroups[key] == nil then
+                    reasonGroups[key] = { amount = 0, count = 0 }
+                    table.insert(reasonOrder, key)
+                end
+                reasonGroups[key].amount = reasonGroups[key].amount + event.Amount
+                reasonGroups[key].count  = reasonGroups[key].count + 1
             end
         end
         if finalScore == nil then
             targetFinalScore = gs:GetScore()
         end
+    end
+
+    for _, reason in ipairs(reasonOrder) do
+        local group = reasonGroups[reason]
+        local label = reason
+        if group.count > 1 then
+            label = string.format("%s x %d", reason, group.count)
+        end
+        table.insert(scoreEvents, { amount = group.amount, reason = label })
     end
 
     local remainingScore = targetFinalScore - eventTotal
