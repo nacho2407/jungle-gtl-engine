@@ -2,7 +2,7 @@
   "Type" : "Fade",
   "Version" : 1,
   "Fade" : {
-    "Duration" : 3.000000,
+    "Duration" : 1.200000,
     "FromAmount" : 0.000000,
     "ToAmount" : 3.000000,
     "Color" : [0.000000, 0.000000, 0.000000, 1.000000],

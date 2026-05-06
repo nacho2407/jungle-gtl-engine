@@ -6,22 +6,24 @@ local hp = 10
 local document_count = 0
 local timer = 0.0
 local text_width = 560
+local game_over_font_size = 28
 local gamepad_controller_id = 0
 local bSubmitted = false
+local bNameInputStarted = false
 
 local function setText(element_id, text, red, green, blue, font_size)
     ui_document:SetTextStyle(element_id, text, red, green, blue, font_size, true, text_width)
 end
 
 local function refreshName()
-    setText("game_over_name", player_name .. "_", 255, 220, 64, 35)
+    setText("game_over_name", player_name .. "_", 255, 220, 64, game_over_font_size)
 end
 
 local function refreshScore()
     local minutes = math.floor(timer / 60)
     local seconds = math.floor(timer % 60)
     local score_text = string.format("Score %d   HP %d   Doc %d   Timer %02d:%02d", score, hp, document_count, minutes, seconds)
-    setText("game_over_score", score_text, 255, 255, 255, 35)
+    setText("game_over_score", score_text, 255, 255, 255, game_over_font_size)
 end
 
 local function submitName()
@@ -36,14 +38,21 @@ local function submitName()
     end
 
     Scoreboard.AddScore(final_name, score, hp, document_count, timer)
-    LoadScene("StartScene.Scene")
+    LoadScene("GameStart.Scene")
 end
 
 local function returnToStartScene()
-    LoadScene("StartScene.Scene")
+    LoadScene("GameStart.Scene")
 end
 
 local function deleteLastCharacter()
+    if not bNameInputStarted then
+        player_name = ""
+        bNameInputStarted = true
+        refreshName()
+        return
+    end
+
     if #player_name > 0 then
         player_name = string.sub(player_name, 1, #player_name - 1)
         refreshName()
@@ -52,6 +61,8 @@ end
 
 function BeginPlay()
     bSubmitted = false
+    bNameInputStarted = false
+    player_name = "PLAYER"
     ui_document = UI.Load("UI/GameOver.rml", "game_over")
     if ui_document == nil or not ui_document:IsValid() then
         return
@@ -67,9 +78,8 @@ function BeginPlay()
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(100)
     GetSoundManager():StopBGM()
-    ui_document:SetTexture("background", "Textures/GameOver.jpg")
 
-    setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, 35)
+    setText("game_over_prompt", "ENTER YOUR NAME", 0, 220, 220, game_over_font_size)
     refreshScore()
     refreshName()
 
@@ -110,6 +120,11 @@ function OnKeyPressed(key)
 
     if #key ~= 1 or #player_name >= max_name_length then
         return
+    end
+
+    if not bNameInputStarted then
+        player_name = ""
+        bNameInputStarted = true
     end
 
     player_name = player_name .. key

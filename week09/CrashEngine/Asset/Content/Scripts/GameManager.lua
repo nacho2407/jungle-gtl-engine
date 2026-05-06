@@ -261,13 +261,6 @@ local function getTimer()
     return Timer
 end
 
-local function playBackgroundBGM()
-    local sound_mgr = GetSoundManager()
-    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/backgroundbgm.mp3", true)
-    sound_mgr:LoadSound("BackgroundSFX2", "Asset/Content/Sounds/SoundCollection/BackgroundSFX2.mp3", true)
-    sound_mgr:PlayBGM("backgroundbgm")
-    sound_mgr:PlaySFX("BackgroundSFX2")
-end
 
 -- PlayerController 또는 다른 시스템에서 호출할 수 있는 게임 종료 진입점.
 local function calculateScore(finalHP, finalDocumentCount, elapsedTime)
@@ -309,7 +302,7 @@ function BeginPlay()
     }
 
     World.PlayCameraEffectAsset("Asset/Content/CameraEffects/FadeIn.ceffect")
-    playBackgroundBGM()
+    local sound_mgr = GetSoundManager()
     replaceCandidates()
 end
 
