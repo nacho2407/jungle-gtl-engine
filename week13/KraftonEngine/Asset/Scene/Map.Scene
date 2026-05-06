@@ -2109,7 +2109,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [15.730211, -28.665539, 16.296112],
-        "Rotation" : [-0.000000, 173.335449, 0.000000],
+        "Rotation" : [-0.000000, 173.335434, 0.000000],
         "Scale" : [15.808549, 8.294950, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -2150,7 +2150,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [1.069643, -165.651703, 16.396112],
-        "Rotation" : [-0.000000, 169.389801, 0.000000],
+        "Rotation" : [-0.000000, 169.389786, 0.000000],
         "Scale" : [15.594642, 8.493910, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -2175,7 +2175,7 @@
           "Location" : [1.069643, -165.651703, 16.396112],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, 169.389832, 0.000000],
+          "Rotation" : [0.000000, 169.389801, 0.000000],
           "Scale" : [15.594642, 8.493910, 20.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -4214,12 +4214,6 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
-        }, {
-          "ClassName" : "UActionComponent",
-          "Properties" : {
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
         }],
       "Properties" : {
         "Location" : [-28.394482, 11.636257, 2.946837],
@@ -4296,12 +4290,6 @@
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "WalkingPerson.lua",
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }, {
-          "ClassName" : "UActionComponent",
-          "Properties" : {
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -4384,12 +4372,6 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
-        }, {
-          "ClassName" : "UActionComponent",
-          "Properties" : {
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
         }],
       "Properties" : {
         "Location" : [-23.014721, -119.216591, 2.998577],
@@ -4469,12 +4451,6 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
-        }, {
-          "ClassName" : "UActionComponent",
-          "Properties" : {
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
         }],
       "Properties" : {
         "Location" : [80.726562, -135.343979, 3.036079],
@@ -4551,12 +4527,6 @@
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "WalkingPerson.lua",
-            "bEditorOnly" : false,
-            "bTickEnable" : true
-          }
-        }, {
-          "ClassName" : "UActionComponent",
-          "Properties" : {
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -5293,7 +5263,7 @@
                             "Path" : "Asset/Materials/Editor/SpotLight.mat"
                           },
                           "Object Type" : 0,
-                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Rotation" : [0.000000, 0.000000, 0.000000],
                           "Scale" : [1.000000, 1.000000, 1.000000],
                           "Simulate Physics" : false,
                           "Two Sided Shadow" : false,
@@ -5359,7 +5329,7 @@
                             "Path" : "Asset/Materials/Editor/SpotLight.mat"
                           },
                           "Object Type" : 0,
-                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Rotation" : [0.000000, 0.000000, 0.000000],
                           "Scale" : [1.000000, 1.000000, 1.000000],
                           "Simulate Physics" : false,
                           "Two Sided Shadow" : false,
@@ -5425,7 +5395,7 @@
                             "Path" : "Asset/Materials/Editor/SpotLight.mat"
                           },
                           "Object Type" : 0,
-                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Rotation" : [0.000000, 0.000000, 0.000000],
                           "Scale" : [1.000000, 1.000000, 1.000000],
                           "Simulate Physics" : false,
                           "Two Sided Shadow" : false,
@@ -5491,7 +5461,7 @@
                             "Path" : "Asset/Materials/Editor/SpotLight.mat"
                           },
                           "Object Type" : 0,
-                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Rotation" : [0.000000, 0.000000, 0.000000],
                           "Scale" : [1.000000, 1.000000, 1.000000],
                           "Simulate Physics" : false,
                           "Two Sided Shadow" : false,
@@ -5630,12 +5600,14 @@
               }],
             "ClassName" : "USpringArmComponent",
             "Properties" : {
-              "Camera Lag Max Distance" : 0.000000,
-              "Camera Lag Speed" : 6.000000,
-              "Camera Rotation Lag Speed" : 8.000000,
+              "Camera Lag Max Distance" : 4.000000,
+              "Camera Lag Speed" : 5.000000,
+              "Camera Rotation Lag Speed" : 7.000000,
+              "Do Collision Test" : true,
               "Enable Camera Lag" : true,
               "Enable Rotation Lag" : true,
               "Location" : [0.000000, 0.000000, 0.000000],
+              "Probe Size" : 0.120000,
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Socket Offset" : [0.000000, 0.000000, 2.500000],
