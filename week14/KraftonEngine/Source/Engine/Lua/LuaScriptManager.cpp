@@ -247,11 +247,11 @@ void FLuaScriptManager::Initialize()
 	// 이로써 lua 함수 호출 실패 시 protected_function_result 의 err.what() 에 lua 콜스택
 	// (어느 파일, 어느 라인, 어느 함수) 이 포함되어 디버깅이 가능해진다. 미설정 시
 	// sol2 는 단순 에러 메시지만 던져 lua 측 stack 정보가 사라진다.
-	sol::function Traceback = (*Lua)["debug"]["traceback"];
-	if (Traceback.valid())
-	{
-		sol::protected_function::set_default_handler(Traceback);
-	}
+	//sol::function Traceback = (*Lua)["debug"]["traceback"];
+	//if (Traceback.valid())
+	//{
+	//	sol::protected_function::set_default_handler(Traceback);
+	//}
 
 	FWatchID WatchID = FDirectoryWatcher::Get().Watch(FPaths::ScriptDir(), "");
 	if (WatchID != 0)
