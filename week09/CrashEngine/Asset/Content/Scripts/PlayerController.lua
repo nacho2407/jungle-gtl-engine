@@ -79,6 +79,21 @@ local DamagedEffectRow = 1
 local DamagedEffectColumn = 1
 
 local BatteryHealAmount = 25.0
+local TurretBulletDamage = 13
+local PatrolBulletDamage = 6
+local DefaultEnemyBulletDamage = 10
+
+local function getEnemyBulletDamage(bullet)
+    if bullet:HasTag("TurretBullet") then
+        return TurretBulletDamage
+    end
+
+    if bullet:HasTag("PatrolBullet") then
+        return PatrolBulletDamage
+    end
+
+    return DefaultEnemyBulletDamage
+end
 
 -- PlayerState는 GameManager 같은 다른 Lua 파일이 읽을 수 있게 _G에 공유한다.
 local function ensurePlayerState()
@@ -393,7 +408,7 @@ function OnOverlapBegin(other)
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
             playPlayerSound("HitPlayerSFX")
-            obj:ApplyDamage(10, other)
+            obj:ApplyDamage(getEnemyBulletDamage(other), other)
         end
 
         World.DestroyActor(other)

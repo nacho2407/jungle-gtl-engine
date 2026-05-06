@@ -147,6 +147,7 @@ local function fireAtPlayer(player)
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, direction, "EnemyBullet", obj)
     if bullet ~= nil and bullet:IsValid() then
+        bullet:AddTag("TurretBullet")
         playTurretSound("TurretShootSFX")
     end
     ShotTimer = ShotCooldown
