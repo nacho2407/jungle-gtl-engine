@@ -616,6 +616,18 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			PC->SetViewTargetWithBlend(Target, BlendTime);
 		}
 	});
+	// ActiveCamera 컴포넌트 단위 blend — 같은 액터 내 1인칭/3인칭 같은 별개 카메라
+	// 컴포넌트 사이 부드럽게 전환. BlendTime 미지정 시 0 (즉시 swap).
+	CameraManager.set_function("SetActiveCameraWithBlend", [](UCameraComponent* NewCamera, sol::optional<float> BlendTime)
+	{
+		if (!GEngine || !GEngine->GetWorld() || !NewCamera) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->SetActiveCameraWithBlend(NewCamera, BlendTime.value_or(0.0f));
+		}
+	});
 	// Sample wave-oscillator shake — Lua console / 스크립트에서 즉시 흔들기 테스트용.
 	// 호출 예: CameraManager.StartWaveShake(1.0)
 	CameraManager.set_function("StartWaveShake", [](sol::optional<float> Scale)
