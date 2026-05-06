@@ -33,7 +33,8 @@ local credit_items = {
     {
         line_id = "credit_line_1",
         label_id = "credit_text_1",
-        text = "Team 8"
+        text = "Team 8",
+        is_team_name = true
     },
     {
         line_id = "credit_line_2",
@@ -85,9 +86,12 @@ local light_component_types = {
 }
 
 local credit_text_style = {
-    red = 255,
-    green = 220,
-    blue = 64,
+    team_red = 255,
+    team_green = 220,
+    team_blue = 64,
+    member_red = 255,
+    member_green = 255,
+    member_blue = 255,
     font_size = 32,
     bold = true,
     center_width = 300
@@ -235,12 +239,22 @@ local function setMenuText(item, highlighted)
 end
 
 local function setCreditText(item)
+    local red = credit_text_style.member_red
+    local green = credit_text_style.member_green
+    local blue = credit_text_style.member_blue
+
+    if item.is_team_name then
+        red = credit_text_style.team_red
+        green = credit_text_style.team_green
+        blue = credit_text_style.team_blue
+    end
+
     ui_document:SetTextStyle(
         item.label_id,
         item.text,
-        credit_text_style.red,
-        credit_text_style.green,
-        credit_text_style.blue,
+        red,
+        green,
+        blue,
         credit_text_style.font_size,
         credit_text_style.bold,
         credit_text_style.center_width
@@ -548,6 +562,7 @@ function BeginPlay()
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
     ui_document:SetProperty("background", "display", "none")
+    ui_document:SetTexture("title", "Textures/Title.png")
     playBackgroundBGM()
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")
@@ -560,6 +575,8 @@ function BeginPlay()
     ui_document:SetProperty("credit_button", "border-color", "rgb(0, 220, 220)")
     ui_document:SetProperty("scoreboard_button", "border-width", "2px")
     ui_document:SetProperty("scoreboard_button", "border-color", "rgb(0, 220, 220)")
+
+    ui_document:SetProperty("credit_view", "margin-left", "100px")
 
     for index, item in ipairs(credit_items) do
         ui_document:SetProperty(item.line_id, "background-color", "transparent")

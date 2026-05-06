@@ -18,6 +18,15 @@
             height: 100%;
         }
 
+        #title
+        {
+            position: absolute;
+            right: 100px;
+            top: 50px;
+            width: 600px;
+            height: 325px;
+        }
+
         #menu
         {
             position: absolute;
@@ -162,6 +171,7 @@
 </head>
 <body>
     <img id="background" src="" />
+    <img id="title" src="" />
     <div id="menu">
         <div id="game_start_button" class="menu-button">
             <div id="game_start_label" class="button-label"></div>

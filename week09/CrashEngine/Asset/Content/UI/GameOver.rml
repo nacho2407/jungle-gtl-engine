@@ -9,19 +9,10 @@
             background-color: transparent;
         }
 
-        #background
-        {
-            position: absolute;
-            left: 0px;
-            top: 0px;
-            width: 100%;
-            height: 100%;
-        }
-
         .game-over-line
         {
             position: absolute;
-            right: 100px;
+            right: 40px;
             width: 560px;
             height: 60px;
         }
@@ -50,7 +41,6 @@
     </style>
 </head>
 <body>
-    <img id="background" src="" />
     <div id="game_over_title" class="game-over-label"></div>
     <div id="game_over_score_line" class="game-over-line">
         <div id="game_over_score" class="game-over-label"></div>
