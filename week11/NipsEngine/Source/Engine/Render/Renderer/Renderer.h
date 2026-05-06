@@ -48,6 +48,10 @@ struct FViewportRenderResource
     TComPtr<ID3D11RenderTargetView> SandervistanRTV;
     TComPtr<ID3D11ShaderResourceView> SandervistanSRV;
 
+    TComPtr<ID3D11Texture2D> PostProcessTex;
+    TComPtr<ID3D11RenderTargetView> PostProcessRTV;
+    TComPtr<ID3D11ShaderResourceView> PostProcessSRV;
+
     TComPtr<ID3D11Texture2D> WorldPosTex;
     TComPtr<ID3D11RenderTargetView> WorldPosRTV;
     TComPtr<ID3D11ShaderResourceView> WorldPosSRV;
@@ -97,6 +101,9 @@ struct FViewportRenderResource
 
 		RenderTargetSet.SceneSandervistanRTV = SandervistanRTV.Get();
         RenderTargetSet.SceneSandervistanSRV = SandervistanSRV.Get();
+
+		RenderTargetSet.ScenePostProcessRTV = PostProcessRTV.Get();
+        RenderTargetSet.ScenePostProcessSRV = PostProcessSRV.Get();
 
         RenderTargetSet.SceneWorldPosRTV = WorldPosRTV.Get();
         RenderTargetSet.SceneWorldPosSRV = WorldPosSRV.Get();

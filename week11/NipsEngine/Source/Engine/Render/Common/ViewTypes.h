@@ -36,4 +36,5 @@ struct FShowFlags
     bool bDecals = true;
     bool bFog = true;
     bool bShadow = true;
+    bool bGammaCorrection = false;
 };

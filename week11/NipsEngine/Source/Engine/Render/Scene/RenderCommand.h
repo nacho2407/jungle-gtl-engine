@@ -335,6 +335,12 @@ struct FSandevistanConstants
     float InvResolution[2];
 };
 
+struct FPostProcessConstants
+{
+    float InvResolution[2];
+    float Pad[2];
+};
+
 struct FLightData
 {
     FVector WorldPos;
