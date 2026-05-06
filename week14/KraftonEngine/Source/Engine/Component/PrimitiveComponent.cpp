@@ -646,3 +646,11 @@ void UPrimitiveComponent::NotifyComponentHit(
 {
 	OnComponentHit.Broadcast(HitComponent, OtherActor, OtherComp, NormalImpulse, HitResult);
 }
+
+void UPrimitiveComponent::NotifyComponentEndHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp)
+{
+	OnComponentEndHit.Broadcast(HitComponent, OtherActor, OtherComp);
+}

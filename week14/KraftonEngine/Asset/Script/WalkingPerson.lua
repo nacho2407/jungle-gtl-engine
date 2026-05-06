@@ -2,6 +2,7 @@ local ObjRegistry = require("ObjRegistry")
 
 local root = nil
 local isMoving = true
+local hasPlayedHitAction = false
 
 local SPEED = 2.5
 local TURN_INTERVAL = 30.0
@@ -84,6 +85,8 @@ local function StartTurnCoroutine()
 end
 
 function BeginPlay()
+    hasPlayedHitAction = false
+
     root = obj:GetRootPrimitiveComponent()
     if root == nil then
         root = obj:GetPrimitiveComponent()
@@ -116,6 +119,11 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
         return
     end
 
+    if hasPlayedHitAction then
+        return
+    end
+
+    hasPlayedHitAction = true
     isMoving = false
 
     local action = obj:GetActionComponent()
@@ -130,6 +138,14 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
         root:SetLinearVelocity(Vector.Zero())
         root:SetAngularVelocity(Vector.Zero())
     end
+end
+
+function OnEndHit(OtherActor, HitComponent, OtherComp)
+    if ObjRegistry.car == nil or OtherActor == nil or OtherActor.UUID ~= ObjRegistry.car.UUID then
+        return
+    end
+
+    hasPlayedHitAction = false
 end
 
 function Tick(dt)

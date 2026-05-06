@@ -46,6 +46,14 @@ DECLARE_MULTICAST_DELEGATE_FiveParams(
 	const FHitResult& /*HitResult*/
 );
 
+// OnComponentEndHit(HitComponent, OtherActor, OtherComp)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(
+	FComponentEndHitSignature,
+	UPrimitiveComponent* /*HitComponent*/,
+	AActor* /*OtherActor*/,
+	UPrimitiveComponent* /*OtherComp*/
+);
+
 class UPrimitiveComponent : public USceneComponent
 {
 public:
@@ -183,10 +191,16 @@ public:
 		FVector NormalImpulse,
 		const FHitResult& HitResult);
 
+	virtual void NotifyComponentEndHit(
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp);
+
 	// 멀티캐스트 델리게이트 — 외부 바인딩용
 	FComponentBeginOverlapSignature OnComponentBeginOverlap;
 	FComponentEndOverlapSignature OnComponentEndOverlap;
 	FComponentHitSignature OnComponentHit;
+	FComponentEndHitSignature OnComponentEndHit;
 
 protected:
 	void OnTransformDirty() override;

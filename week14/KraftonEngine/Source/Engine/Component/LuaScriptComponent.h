@@ -59,6 +59,10 @@ private:
 		UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse,
 		const FHitResult& HitResult);
+	void HandleEndHit(
+		UPrimitiveComponent* HitComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp);
 
 	FString ScriptFile;
 	
@@ -69,9 +73,11 @@ private:
 	sol::protected_function LuaOnOverlap;
 	sol::protected_function LuaOnEndOverlap;
 	sol::protected_function LuaOnHit;
+	sol::protected_function LuaOnEndHit;
 	TArray<UPrimitiveComponent*> BoundOverlapComponents;
 	TArray<UPrimitiveComponent*> BoundHitComponents;
 	TArray<FDelegateHandle> BeginOverlapHandles;
 	TArray<FDelegateHandle> EndOverlapHandles;
 	TArray<FDelegateHandle> HitHandles;
+	TArray<FDelegateHandle> EndHitHandles;
 };

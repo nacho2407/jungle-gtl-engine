@@ -26,6 +26,7 @@ void ULuaScriptComponent::InitializeLua()
 	LuaOnOverlap = sol::nil;
 	LuaOnEndOverlap = sol::nil;
 	LuaOnHit = sol::nil;
+	LuaOnEndHit = sol::nil;
 
 	sol::state& Lua = FLuaScriptManager::GetState();
 
@@ -57,6 +58,7 @@ void ULuaScriptComponent::InitializeLua()
 	LuaOnOverlap = Env["OnOverlap"];
 	LuaOnEndOverlap = Env["OnEndOverlap"];
 	LuaOnHit = Env["OnHit"];
+	LuaOnEndHit = Env["OnEndHit"];
 }
 
 void ULuaScriptComponent::ReloadScript()
@@ -118,7 +120,7 @@ void ULuaScriptComponent::BindOwnerCollisionEvents()
 {
 	ClearCollisionBindings();
 
-	if (!LuaOnOverlap && !LuaOnEndOverlap && !LuaOnHit)
+	if (!LuaOnOverlap && !LuaOnEndOverlap && !LuaOnHit && !LuaOnEndHit)
 	{
 		return;
 	}
@@ -143,10 +145,15 @@ void ULuaScriptComponent::BindOwnerCollisionEvents()
 			EndOverlapHandles.push_back(PrimitiveComponent->OnComponentEndOverlap.AddRaw(this, &ULuaScriptComponent::HandleEndOverlap));
 		}
 
-		if (LuaOnHit)
+		if (LuaOnHit || LuaOnEndHit)
 		{
 			BoundHitComponents.push_back(PrimitiveComponent);
-			HitHandles.push_back(PrimitiveComponent->OnComponentHit.AddRaw(this, &ULuaScriptComponent::HandleHit));
+			HitHandles.push_back(LuaOnHit
+				? PrimitiveComponent->OnComponentHit.AddRaw(this, &ULuaScriptComponent::HandleHit)
+				: FDelegateHandle());
+			EndHitHandles.push_back(LuaOnEndHit
+				? PrimitiveComponent->OnComponentEndHit.AddRaw(this, &ULuaScriptComponent::HandleEndHit)
+				: FDelegateHandle());
 		}
 	}
 }
@@ -188,10 +195,16 @@ void ULuaScriptComponent::ClearCollisionBindings()
 		{
 			PrimitiveComponent->OnComponentHit.Remove(HitHandles[Index]);
 		}
+
+		if (Index < static_cast<int32>(EndHitHandles.size()) && EndHitHandles[Index].IsValid())
+		{
+			PrimitiveComponent->OnComponentEndHit.Remove(EndHitHandles[Index]);
+		}
 	}
 
 	BoundHitComponents.clear();
 	HitHandles.clear();
+	EndHitHandles.clear();
 }
 
 void ULuaScriptComponent::HandleBeginOverlap(
@@ -244,6 +257,22 @@ void ULuaScriptComponent::HandleHit(
 		{
 			sol::error Err = Result;
 			UE_LOG("Lua OnHit error in %s: %s", ScriptFile.c_str(), Err.what());
+		}
+	}
+}
+
+void ULuaScriptComponent::HandleEndHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp)
+{
+	if (LuaOnEndHit)
+	{
+		sol::protected_function_result Result = LuaOnEndHit(OtherActor, HitComponent, OtherComp);
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua OnEndHit error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
 }

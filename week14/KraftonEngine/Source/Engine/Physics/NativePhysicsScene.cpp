@@ -276,6 +276,16 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 		}
 	}
 
+	// End Hit
+	for (const FOverlapPair& Pair : PreviousBlockPairs)
+	{
+		if (CurrentBlockPairs.find(Pair) == CurrentBlockPairs.end())
+		{
+			Pair.A->NotifyComponentEndHit(Pair.A, Pair.B->GetOwner(), Pair.B);
+			Pair.B->NotifyComponentEndHit(Pair.B, Pair.A->GetOwner(), Pair.A);
+		}
+	}
+
 	PreviousOverlaps = CurrentOverlaps;
 	PreviousBlockPairs = CurrentBlockPairs;
 }

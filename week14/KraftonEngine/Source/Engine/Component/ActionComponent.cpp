@@ -147,11 +147,15 @@ void UActionComponent::HitSquash(const FVector& SquashedScale, float SquashInDur
 		return;
 	}
 
+	const FVector OriginalScale = HitSquashAction.bActive
+		? HitSquashAction.StartScale
+		: TargetComponent->GetRelativeScale();
+
 	HitSquashAction.bActive = true;
 	HitSquashAction.SquashInDuration = SquashInDuration > 0.0f ? SquashInDuration : 0.0f;
 	HitSquashAction.RecoverDuration = RecoverDuration > 0.0f ? RecoverDuration : 0.0f;
 	HitSquashAction.ElapsedTime = 0.0f;
-	HitSquashAction.StartScale = TargetComponent->GetRelativeScale();
+	HitSquashAction.StartScale = OriginalScale;
 	HitSquashAction.SquashedScale = SquashedScale;
 
 	if (HitSquashAction.SquashInDuration <= 0.0f)
