@@ -7,21 +7,34 @@ class UStaticMeshComponent;
 class USphereComponent;
 class ULuaScriptComponent;
 class UCameraComponent;
+class USpringArmComponent;
 class UCarMovementComponent;
 class UCarGasComponent;
+class UCarDirtComponent;
 
 // ============================================================
 // ACarPawn — 자동차 게임의 플레이어 차량 Pawn
 //
-// 컴포넌트 트리:
-//   RootComponent: UBoxComponent (차체 충돌)
-//     ├─ UStaticMeshComponent (시각 메시)
-//     ├─ USphereComponent x4 (바퀴 — 4코너)
+// 컴포넌트 트리 (placement 시 InitDefaultComponents 가 빌드):
+//   RootComponent: UBoxComponent (차체 충돌)            [chassis]
+//     ├─ UStaticMeshComponent (TruckBody.obj)           [chassis]
+//     │    ├─ UStaticMeshComponent (TruckHandle.obj)    [player]
+//     │    ├─ UStaticMeshComponent (TruckTire.obj × 4)  [player]
+//     │    └─ UCarDirtComponent → UDirtComponent        [player]
+//     ├─ USphereComponent × 4 (콜리전 wheels)            [chassis]
+//     ├─ UCameraComponent (FirstPerson)                  [player]
+//     └─ USpringArmComponent → UCameraComponent (TPS)    [player]
 //
 // NonScene:
-//   ULuaScriptComponent (CarController.lua 등 게임플레이 스크립트)
+//   ULuaScriptComponent (CarController / PoliceCarAI 등) [chassis]
+//   UCarMovementComponent                                 [chassis]
+//   UCarGasComponent                                      [player]
+//   ULuaScriptComponent (CameraManager / GasController /  [player]
+//     DirtyCar)
 //
-// AGameModeCarGame이 자동 Possess할 첫 APawn 후보 (bAutoPossessPlayer = true).
+// 책임 분리: PoliceCar 처럼 AI 차량은 InitChassisComponents 만 호출해서
+// Player 전용(Camera/SpringArm/Gas/visual extras) 을 갖지 않는다.
+// AGameModeCarGame 이 자동 Possess 할 첫 APawn 후보 (bAutoPossessPlayer = true).
 // ============================================================
 class ACarPawn : public APawn
 {
@@ -31,13 +44,26 @@ public:
 	ACarPawn() = default;
 	~ACarPawn() override = default;
 
-	// 코드 spawn 시 호출 — 직렬화 / Duplicate 경로에선 BeginPlay/PostDuplicate 가 캐시 포인터를 다시 잡는다.
+	// Player 차량 셋업 — InitChassisComponents + InitPlayerControlledComponents.
+	// 직렬화 / Duplicate 경로엔 InitDefault 를 거치지 않고 BeginPlay/PostDuplicate 의
+	// ResolveCachedComponents 가 캐시 포인터를 다시 잡는다.
 	void InitDefaultComponents(const FString& StaticMeshFileName = "Data/Truck/TruckBody.obj",
 	                           const FString& LuaScriptFile = "CarController.lua",
 							   const FString& LuaCameraScriptFile = "CameraManager.lua",
 							   const FString& LuaGasScriptFile = "GasController.lua");
 	void BeginPlay() override;
 	void PostDuplicate() override;
+
+protected:
+	// 모든 차량 공통 — Box / Mesh / Wheels(콜리전) / Movement / DriverLua.
+	// PoliceCar 등 AI 차량도 이 함수를 호출해 chassis 만 갖춘다.
+	virtual void InitChassisComponents(const FString& StaticMeshFileName,
+	                                   const FString& LuaScriptFile);
+
+	// Player 차량 전용 — Cameras / SpringArm / Gas / Visual extras (handle/tires/dirt) /
+	// 게임플레이 Lua (CameraManager / GasController / DirtyCar). PoliceCar 는 호출 안 함.
+	virtual void InitPlayerControlledComponents(const FString& LuaCameraScriptFile,
+	                                             const FString& LuaGasScriptFile);
 
 private:
 	// PostDuplicate / BeginPlay 양쪽에서 호출되는 캐시 포인터 재바인딩.
