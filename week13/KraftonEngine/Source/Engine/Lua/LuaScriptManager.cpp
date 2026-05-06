@@ -17,6 +17,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
+#include "GameFramework/WaveOscillatorCameraShake.h"
 #include "GameFramework/GameplayStatics.h"
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
@@ -611,6 +612,18 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		if (PC)
 		{
 			PC->SetViewTargetWithBlend(Target, BlendTime);
+		}
+	});
+	// Sample wave-oscillator shake — Lua console / 스크립트에서 즉시 흔들기 테스트용.
+	// 호출 예: CameraManager.StartWaveShake(1.0)
+	CameraManager.set_function("StartWaveShake", [](sol::optional<float> Scale)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->StartCameraShake<UWaveOscillatorCameraShake>(Scale.value_or(1.0f));
 		}
 	});
 
