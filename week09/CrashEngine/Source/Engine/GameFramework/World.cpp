@@ -406,6 +406,7 @@ void UWorld::BeginPlay()
 {
     bHasBegunPlay = true;
 
+    //Only Works On At GameRelease Or PIE 
     EnsurePlayerController();
 
     if (PersistentLevel)

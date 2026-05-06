@@ -1,8 +1,6 @@
 #include "GameFramework/PlayerController.h"
 
 #include "CameraManage/APlayerCameraManager.h"
-#include "Component/ActorComponent.h"
-#include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
 
 IMPLEMENT_CLASS(APlayerController, AActor)
@@ -43,8 +41,8 @@ void APlayerController::Tick(float DeltaTime)
         return;
     }
 
-    UCameraComponent* Camera = ResolveViewTargetCamera();
-    CameraManager->SetViewTarget(Camera);
+    UWorld* World = GetWorld();
+    CameraManager->SetViewTarget(PossessedActor && World ? World->GetActiveCamera() : nullptr);
     CameraManager->UpdateCamera(DeltaTime);
 }
 
@@ -81,46 +79,4 @@ bool APlayerController::TryAutoPossessPlayer()
     }
 
     return false;
-}
-
-UCameraComponent* APlayerController::ResolveViewTargetCamera() const
-{
-    UCameraComponent* FirstCamera = nullptr;
-    if (PossessedActor)
-    {
-        for (UActorComponent* Component : PossessedActor->GetComponents())
-        {
-            UCameraComponent* Camera = Cast<UCameraComponent>(Component);
-            if (!Camera)
-            {
-                continue;
-            }
-
-            if (Camera->IsMainCamera())
-            {
-                if (UWorld* World = GetWorld())
-                {
-                    World->SetActiveCamera(Camera);
-                }
-                return Camera;
-            }
-
-            if (!FirstCamera)
-            {
-                FirstCamera = Camera;
-            }
-        }
-    }
-
-    if (FirstCamera)
-    {
-        if (UWorld* World = GetWorld())
-        {
-            World->SetActiveCamera(FirstCamera);
-        }
-        return FirstCamera;
-    }
-
-    UWorld* World = GetWorld();
-    return World ? World->GetActiveCamera() : nullptr;
 }

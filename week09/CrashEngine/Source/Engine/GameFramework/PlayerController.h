@@ -3,7 +3,6 @@
 #include "GameFramework/AActor.h"
 
 class APlayerCameraManager;
-class UCameraComponent;
 
 class APlayerController : public AActor
 {
@@ -23,8 +22,6 @@ public:
     APlayerCameraManager* GetCameraManager() const { return CameraManager; }
 
 private:
-    UCameraComponent* ResolveViewTargetCamera() const;
-
     AActor* PossessedActor = nullptr;
     APlayerCameraManager* CameraManager = nullptr;
 };

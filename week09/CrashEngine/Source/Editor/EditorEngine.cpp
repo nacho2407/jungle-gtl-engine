@@ -726,7 +726,7 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTi
     {
         APlayerController* PlayerController = World->GetFirstPlayerController();
         APlayerCameraManager* PlayerCameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
-        if (PlayerCameraManager)
+        if (PlayerController && PlayerController->GetPossessedActor() && PlayerCameraManager)
         {
             SceneView.SetCameraInfo(PlayerCameraManager->GetCameraViewInfoCache());
         }

@@ -161,7 +161,9 @@ void UEngine::Render(float DeltaTime)
         FShowFlags ShowFlags;
         EViewMode ViewMode = EViewMode::Lit_Phong;
 
-        if (APlayerCameraManager* CameraManager = GetPlayerCameraManager())
+        APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+        APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+        if (PlayerController && PlayerController->GetPossessedActor() && CameraManager)
         {
             SceneView.SetCameraInfo(CameraManager->GetCameraViewInfoCache());
         }
