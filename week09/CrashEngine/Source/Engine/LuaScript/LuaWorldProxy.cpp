@@ -224,7 +224,7 @@ bool FLuaWorldProxy::SetCameraTransitionToTarget(const FLuaGameObjectProxy& Acto
 {
     UWorld* World = ResolveWorld();
     AActor* Actor = ActorProxy.GetActor();
-    APlayerCameraManager* CameraManager = GEngine ? GEngine->GetPlayerCameraManager() : nullptr;
+    APlayerCameraManager* CameraManager = World->GetFirstPlayerController()->GetCameraManager();
 
     if (!World || !Actor || Actor->GetWorld() != World || !CameraManager)
     {
