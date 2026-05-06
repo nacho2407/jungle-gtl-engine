@@ -11,6 +11,7 @@
 #include "Render/Scene/RenderCommand.h"
 
 #include "Render/Common/ViewTypes.h"
+#include "Render/Resource/ShaderHelper.h"
 
 class UDirectionalLightComponent;
 
@@ -36,6 +37,8 @@ public:
 	FShowFlags GetShowFlags() const { return ShowFlags; }
 	ELightCullMode GetLightCullMode() const { return LightCullMode; }
 	void SetLightCullMode(ELightCullMode InMode) { LightCullMode = InMode; }
+	EShadowFilter GetShadowFilterMode() const { return ShadowFilterMode; }
+	void SetShadowFilterMode(EShadowFilter InMode) { ShadowFilterMode = InMode; }
 	const FVector& GetWireframeColor() const { return WireframeColor; }
 	void SetWireframeColor(const FVector& InColor) { WireframeColor = InColor; }
 	bool GetFXAAEnabled() const { return bFXAAEnabled; }
@@ -81,6 +84,7 @@ private:
 	//Editor Settings
 	EViewMode		ViewMode		= EViewMode::Lit_BlinnPhong;
 	ELightCullMode	LightCullMode	= ELightCullMode::Clustered;
+	EShadowFilter	ShadowFilterMode = EShadowFilter::PCF;
 	FShowFlags		ShowFlags;
 	FVector			WireframeColor	= FVector(1.0f, 1.0f, 1.0f);
 	bool			bFXAAEnabled	= true;

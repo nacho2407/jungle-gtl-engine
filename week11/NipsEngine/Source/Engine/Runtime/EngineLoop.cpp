@@ -1,26 +1,12 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
 
-#if WITH_EDITOR
-#include "Editor/EditorEngine.h"
-#endif
-#if IS_OBJ_VIEWER
-#include "Misc/ObjViewer/ObjViewerEngine.h"
-#endif
-#if !WITH_EDITOR && !IS_OBJ_VIEWER
-#include "Engine/Runtime/GameEngine.h"
-#endif
+#include "Launch/LaunchModeFactory.h"
 
 #include <objbase.h>
 
 void FEngineLoop::CreateEngine()
 {
-#if IS_OBJ_VIEWER
-	GEngine = UObjectManager::Get().CreateObject<UObjViewerEngine>();
-#elif WITH_EDITOR
-	GEngine = UObjectManager::Get().CreateObject<UEditorEngine>();
-#else
-	GEngine = UObjectManager::Get().CreateObject<UGameEngine>();
-#endif
+	GEngine = CreateLaunchEngine();
 }
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
@@ -68,13 +54,7 @@ bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
 	GEngine->SetTimer(&Timer);
 	Application.SetOnCloseRequestedCallback([]()
 		{
-#if WITH_EDITOR
-			if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
-			{
-				return EditorEngine->GetMainPanel().CanCloseEditor();
-			}
-#endif
-			return true;
+			return GEngine ? GEngine->CanCloseApplication() : true;
 		});
 	GEngine->BeginPlay();
 

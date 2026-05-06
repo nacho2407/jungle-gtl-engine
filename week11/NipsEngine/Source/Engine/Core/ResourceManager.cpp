@@ -1,15 +1,15 @@
 ﻿#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
+#include "Core/AssetPathPolicy.h"
+#include "Core/ImportedMaterialPolicy.h"
 #include "SimpleJSON/json.hpp"
 
 #include <algorithm>
-#include <cctype>
 #include <fstream>
 #include <filesystem>
 #include <chrono>
 #include <cwctype>
-#include <unordered_set>
 #include "Asset/FileUtils.h"
 
 #include "DDSTextureLoader.h"
@@ -23,7 +23,6 @@
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
 #include "Render/Resource/ObjMtlLoader.h"
-#include "Render/Resource/ShaderCompiler.h"
 
 namespace
 {
@@ -36,206 +35,11 @@ namespace
 #endif
 	}
 
-	bool RuntimeFileExists(const FString& Path)
-	{
-		std::error_code Ec;
-		return std::filesystem::exists(std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(Path))), Ec) && !Ec;
-	}
-
-	FString MakeCookedStaticMeshPath(const FString& SourcePath)
-	{
-		std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
-		const std::filesystem::path AssetMeshRoot = std::filesystem::path(L"Asset") / L"Mesh";
-		std::filesystem::path SubPath = SourceFsPath.lexically_normal().lexically_relative(AssetMeshRoot);
-		if (SubPath.empty())
-		{
-			SubPath = SourceFsPath.filename();
-		}
-		else
-		{
-			for (const std::filesystem::path& Part : SubPath)
-			{
-				if (Part == L"..")
-				{
-					SubPath = SourceFsPath.filename();
-					break;
-				}
-			}
-		}
-
-		SubPath.replace_extension(L".bin");
-		return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Cooked" / L"Mesh" / SubPath).generic_wstring());
-	}
-
-	FString SanitizeAssetToken(FString Token)
-	{
-		for (char& Ch : Token)
-		{
-			const bool bAlphaNum =
-				(Ch >= '0' && Ch <= '9') ||
-				(Ch >= 'A' && Ch <= 'Z') ||
-				(Ch >= 'a' && Ch <= 'z');
-
-			if (!bAlphaNum && Ch != '_' && Ch != '-')
-			{
-				Ch = '_';
-			}
-		}
-
-		return Token.empty() ? FString("Material") : Token;
-	}
-
-	FString MakeImportedMaterialAssetName(const std::filesystem::path& SourceMtlPath, int32 MaterialIndex)
-	{
-		const FString SourceStem = SanitizeAssetToken(FPaths::ToUtf8(SourceMtlPath.stem().wstring()));
-		return SourceStem + "_Mat_" + std::to_string(MaterialIndex);
-	}
-
-	FString MakeMaterialSlotAliasKey(const FString& SourcePath, const FString& SlotName)
-	{
-		return FPaths::Normalize(SourcePath) + "::" + SlotName;
-	}
-
-	FString TrimAscii(FString Value)
-	{
-		const size_t Start = Value.find_first_not_of(" \t\r\n");
-		if (Start == FString::npos)
-		{
-			return {};
-		}
-
-		const size_t End = Value.find_last_not_of(" \t\r\n");
-		return Value.substr(Start, End - Start + 1);
-	}
-
-	bool EndsWith(const FString& Value, const FString& Suffix)
-	{
-		return Value.size() >= Suffix.size() &&
-			Value.compare(Value.size() - Suffix.size(), Suffix.size(), Suffix) == 0;
-	}
-
-	bool IsCurveAssetPath(const std::filesystem::path& Path)
-	{
-		FString FileName = FPaths::ToUtf8(Path.filename().wstring());
-		std::transform(
-			FileName.begin(),
-			FileName.end(),
-			FileName.begin(),
-			[](unsigned char Ch)
-			{
-				return static_cast<char>(std::tolower(Ch));
-			});
-
-		return EndsWith(FileName, ".curve") || EndsWith(FileName, ".curve.json");
-	}
-
-	bool IsSerializedMaterialAssetPath(const FString& Path)
-	{
-		std::filesystem::path FsPath(FPaths::ToWide(FPaths::Normalize(Path)));
-		std::wstring Extension = FsPath.extension().wstring();
-		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
-		return Extension == L".mat" || Extension == L".matinst";
-	}
-
-	FString ResolveObjMaterialLibraryPath(const FString& ObjPath)
-	{
-		std::filesystem::path AbsoluteObjPath(FPaths::ToAbsolute(FPaths::ToWide(FPaths::Normalize(ObjPath))));
-		std::ifstream ObjFile(AbsoluteObjPath);
-		if (!ObjFile.is_open())
-		{
-			return {};
-		}
-
-		FString Line;
-		while (std::getline(ObjFile, Line))
-		{
-			Line = TrimAscii(Line);
-			if (Line.rfind("mtllib ", 0) != 0)
-			{
-				continue;
-			}
-
-			FString MtlReference = TrimAscii(Line.substr(7));
-			if (MtlReference.empty())
-			{
-				return {};
-			}
-
-			std::filesystem::path MtlPath(FPaths::ToWide(MtlReference));
-			if (MtlPath.is_relative())
-			{
-				MtlPath = AbsoluteObjPath.parent_path() / MtlPath;
-			}
-
-			std::error_code Ec;
-			MtlPath = MtlPath.lexically_normal();
-			if (!std::filesystem::exists(MtlPath, Ec) || Ec)
-			{
-				return {};
-			}
-
-			std::filesystem::path RelativePath = std::filesystem::relative(MtlPath, std::filesystem::path(FPaths::RootDir()), Ec);
-			if (Ec)
-			{
-				return FPaths::ToUtf8(MtlPath.generic_wstring());
-			}
-
-			return FPaths::Normalize(FPaths::ToUtf8(RelativePath.generic_wstring()));
-		}
-
-		return {};
-	}
-
-	TArray<FString> CollectObjMaterialSlotNames(const FString& ObjPath)
-	{
-		TArray<FString> SlotNames;
-		std::unordered_set<FString> SeenSlotNames;
-
-		std::filesystem::path AbsoluteObjPath(FPaths::ToAbsolute(FPaths::ToWide(FPaths::Normalize(ObjPath))));
-		std::ifstream ObjFile(AbsoluteObjPath);
-		if (!ObjFile.is_open())
-		{
-			return SlotNames;
-		}
-
-		FString Line;
-		while (std::getline(ObjFile, Line))
-		{
-			Line = TrimAscii(Line);
-			if (Line.rfind("usemtl ", 0) != 0)
-			{
-				continue;
-			}
-
-			FString SlotName = TrimAscii(Line.substr(7));
-			if (!SlotName.empty() && SeenSlotNames.insert(SlotName).second)
-			{
-				SlotNames.push_back(SlotName);
-			}
-		}
-
-		return SlotNames;
-	}
-}
-
-static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath)
-{
-	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
-	SourceFsPath.replace_extension(L".bin");
-	return FPaths::ToUtf8(SourceFsPath.generic_wstring());
-}
-
-static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath)
-{
-	std::filesystem::path SourceFsPath(FPaths::ToWide(FPaths::Normalize(SourcePath)));
-	std::filesystem::path BinaryFileName = SourceFsPath.stem();
-	BinaryFileName += L".bin";
-	return FPaths::ToUtf8((std::filesystem::path(L"Asset") / L"Mesh" / L"Bin" / BinaryFileName).generic_wstring());
 }
 
 static UStaticMesh* LoadStaticMeshBinaryFallback(FResourceManager* ResourceManager, const FString& RequestedPath, const FString& BinaryPath)
 {
-	if (!ResourceManager || BinaryPath.empty() || !RuntimeFileExists(BinaryPath))
+	if (!ResourceManager || BinaryPath.empty() || !FAssetPathPolicy::FileExists(BinaryPath))
 	{
 		return nullptr;
 	}
@@ -266,27 +70,6 @@ uint64 FResourceManager::GetFileWriteTimeTicks(const FString& Path) const
 		std::chrono::duration_cast<std::chrono::seconds>(Duration).count());
 }
 
-FString FResourceManager::MakeStaticMeshBinaryPath(const FString& SourcePath) const
-{
-	const FString NormalizedSourcePath = FPaths::Normalize(SourcePath);
-	fs::path SourceFsPath(FPaths::ToWide(NormalizedSourcePath));
-
-	//	Root/Asset/Mesh/Bin
-	fs::path BinDir = fs::path(FPaths::RootDir()) / "Asset" / "Mesh" / "Bin";
-
-	if (!fs::exists(BinDir))
-	{
-		fs::create_directories(BinDir);
-	}
-
-	//	파일명만 따와서 .bin 으로 저장
-	fs::path BinaryFileName = SourceFsPath.stem();
-	BinaryFileName += ".bin";
-
-	fs::path BinaryPath = BinDir / BinaryFileName;
-	return FPaths::ToString(BinaryPath.wstring());
-}
-
 bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const FString& BinaryPath) const
 {
 	FStaticMeshBinaryHeader Header;
@@ -307,7 +90,7 @@ bool FResourceManager::IsStaticMeshBinaryValid(const FString& SourcePath, const 
 
 void FResourceManager::PreloadStaticMeshes()
 {
-	for (const auto& [Key, Resource] : StaticMeshRegistry)
+	for (const auto& [Key, Resource] : StaticMeshCache.GetRegistry())
 	{
 		if (!Resource.bPreload)
 		{
@@ -348,7 +131,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
-	StaticMeshRegistry.clear();
+	StaticMeshCache.ClearRegistry();
 
 	InitializeDefaultResources(CachedDevice.Get());
 
@@ -382,7 +165,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 		
 		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
-		if (IsCurveAssetPath(FilePath))
+		if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
 		{
 			CurveFilePaths.push_back(RelativePath);
 		}
@@ -395,7 +178,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			Resource.Path = RelativePath;
 			Resource.bPreload = false;
 			Resource.bNormalizeToUnitCube = false;
-			StaticMeshRegistry[Resource.Name] = Resource;
+			StaticMeshCache.RegisterResource(Resource);
 		}
 		else if (Extension == L".mtl")
 		{
@@ -456,9 +239,8 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 	MaterialFilePaths.clear();
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
-	StaticMeshRegistry.clear();
-	FontResources.clear();
-	ParticleResources.clear();
+	StaticMeshCache.ClearRegistry();
+	AtlasCache.Clear();
 
 	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
 	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
@@ -489,7 +271,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 
 		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
 
-			if (IsCurveAssetPath(FilePath))
+			if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
 			{
 				CurveFilePaths.push_back(RelativePath);
 			}
@@ -502,7 +284,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 				Resource.Path = RelativePath;
 				Resource.bPreload = false;
 				Resource.bNormalizeToUnitCube = false;
-				StaticMeshRegistry[Resource.Name] = Resource;
+				StaticMeshCache.RegisterResource(Resource);
 			}
 			else if (Extension == L".mtl")
 			{
@@ -719,40 +501,7 @@ FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesyste
 
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
 {
-	if (!Device)
-	{
-		return false;
-	}
-
-	for (auto& [Key, Resource] : FontResources)
-	{
-		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
-		{
-			continue;
-		}
-
-		if (!FontLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
-		{
-			UE_LOG_WARNING("Failed to load Font atlas: %s", Resource.Path.c_str());
-			return false;
-		}
-	}
-
-	for (auto& [Key, Resource] : ParticleResources)
-	{
-		if (Resource.Texture != nullptr && Resource.Texture->GetSRV() != nullptr)
-		{
-			continue;
-		}
-
-		if (!ParticleLoader.Load(Resource.Name, Resource.Path, Resource.Columns, Resource.Rows, Device, Resource))
-		{
-			UE_LOG_WARNING("Failed to load Particle atlas: %s", Resource.Path.c_str());
-			return false;
-		}
-	}
-
-	return true;
+	return AtlasCache.LoadGPUResources(Device);
 }
 
 void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
@@ -772,13 +521,13 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
 	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
 
-	if (!Textures.count("DefaultWhite"))  {
+	if (!TextureCache.Contains("DefaultWhite"))  {
 		Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
 		if (DefaultWhiteTexture)
 		{
 			UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
 			Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
-			Textures["DefaultWhite"] = DefaultTexture;
+			TextureCache.Register("DefaultWhite", DefaultTexture);
 		}
 	}
 
@@ -834,74 +583,19 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 
 void FResourceManager::ReleaseGPUResources()
 {
-    std::unordered_set<UObject*> DestroyedObjects;
-    auto DestroyUniqueObject = [&DestroyedObjects](UObject* Object)
-    {
-        if (Object && DestroyedObjects.insert(Object).second)
-        {
-            UObjectManager::Get().DestroyObject(Object);
-        }
-    };
+	TextureCache.Release();
 
-	for (auto& [Key, Texture] : Textures)
-	{
-		DestroyUniqueObject(Texture);
-	}
-	Textures.clear();
-	TextureWriteTimeTicks.clear();
+	MaterialCache.Release();
 
-	for (auto& [Key, Material] : Materials)
-	{
-		DestroyUniqueObject(Material);
-	}
-	Materials.clear();
+	ShaderCache.Release();
 
-	for (auto& [Key, MaterialInst] : MaterialInstances)
-	{
-		DestroyUniqueObject(MaterialInst);
-	}
-	MaterialInstances.clear();
+	AtlasCache.Release();
 
-	for (auto& [Key, Shader] : Shaders)
-	{
-		DestroyUniqueObject(Shader);
-	}
-	Shaders.clear();
+	StaticMeshCache.Release();
 
-	for (auto& [Key, Shader] : ComputeShaders)
-    {
-        if (Shader)
-        {
-            Shader->Release();
-            delete Shader;
-        }
-    }
-    ComputeShaders.clear();
+	CurveCache.Release();
 
-	for (auto& [Key, Font] : FontResources)
-	{
-		DestroyUniqueObject(Font.Texture);
-	}
-	FontResources.clear();
-
-	for (auto& [Key, Particle] : ParticleResources)
-	{
-		DestroyUniqueObject(Particle.Texture);
-	}
-	ParticleResources.clear();
-
-	for (auto& [Path, StaticMeshAsset] : StaticMeshes)
-	{
-		DestroyUniqueObject(StaticMeshAsset);
-	}
-	StaticMeshes.clear();
-	StaticMeshRegistry.clear();
-
-	// D3D state object caches
-	SamplerStates.clear();
-	DepthStencilStates.clear();
-	BlendStates.clear();
-	RasterizerStates.clear();
+	RenderStateCache.Release();
 
 	DefaultWhiteTexture.Reset();
 	CachedDevice.Reset();
@@ -910,231 +604,48 @@ void FResourceManager::ReleaseGPUResources()
 bool FResourceManager::LoadShader(const FString& FilePath, const FString& VSEntryPoint, const FString& PSEntryPoint,
 								  const D3D_SHADER_MACRO* Defines, uint32 PermutationKey)
 {
-	const FString NormalizedFilePath = FPaths::Normalize(FilePath);
-	UShader* Shader = nullptr;
-	auto It = Shaders.find(NormalizedFilePath);
-
-	if (It != Shaders.end())
-	{
-		Shader = It->second;
-	}
-	else
-	{
-		Shader = UObjectManager::Get().CreateObject<UShader>();
-		Shader->FilePath = NormalizedFilePath;
-		Shaders[NormalizedFilePath] = Shader;
-	}
-
-	FShader Permutation;
-
-	TComPtr<ID3DBlob> VSBlob;
-	TComPtr<ID3DBlob> PSBlob;
-
-	TMap<FString, uint32> LocalTextureBindSlots;
-	TMap<FString, FShaderVariableInfo> LocalVariableInfoMap;
-	uint32 OutCBufferSize;
-
-	FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(NormalizedFilePath, VSEntryPoint, "vs_5_0", Defines, PermutationKey);
-	if (CompileResult.bSuccess)
-	{
-		VSBlob = CompileResult.Blob;
-		Shader->ReflectShader(VSBlob.Get(), CachedDevice.Get(), Permutation, LocalTextureBindSlots, LocalVariableInfoMap, OutCBufferSize);
-	}
-	else
-	{
-		return false;
-	}
-
-	CompileResult = FShaderCompiler::CompileFromFile(FilePath, PSEntryPoint, "ps_5_0", Defines, PermutationKey);
-	if (CompileResult.bSuccess)
-	{
-		PSBlob = CompileResult.Blob;
-		Shader->ReflectShader(PSBlob.Get(), CachedDevice.Get(), Permutation, LocalTextureBindSlots, LocalVariableInfoMap, OutCBufferSize);
-	}
-	else
-	{
-		return false;
-	}
-
-	HRESULT hr = CachedDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr,
-		&Permutation.VS);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create vertex shader: %s", NormalizedFilePath.c_str());
-		return false;
-	}
-
-	hr = CachedDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr,
-		&Permutation.PS);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create pixel shader: %s", NormalizedFilePath.c_str());
-		return false;
-	}
-
-	FShaderPermutationDesc Desc;
-	Desc.VSEntryPoint = VSEntryPoint;
-	Desc.PSEntryPoint = PSEntryPoint;
-	Desc.PermutationKey = PermutationKey;
-	for (const D3D_SHADER_MACRO* Define = Defines; Define && Define->Name; ++Define)
-	{
-		Desc.Defines.push_back({ Define->Name, Define->Definition });
-	}
-
-	Shader->SetPermutationDesc(PermutationKey, Desc);
-	Shader->AddPermutation(PermutationKey, Permutation);
-
-	return true;
+	return ShaderCache.LoadShader(FilePath, VSEntryPoint, PSEntryPoint, Defines, PermutationKey, CachedDevice.Get());
 }
 
 bool FResourceManager::EnsureShaderPermutation(const FString& FilePath, uint32 PermutationKey)
 {
-	UShader* Shader = GetShader(FilePath);
-	if (!Shader)
-	{
-		return false;
-	}
-
-	return Shader->EnsurePermutation(CachedDevice.Get(), PermutationKey);
+	return ShaderCache.EnsureShaderPermutation(FilePath, PermutationKey, CachedDevice.Get());
 }
 
 void FResourceManager::ReloadShader(const FString& FilePath)
 {
-	UShader* Shader = GetShader(FilePath);
-	if (Shader)
-	{
-		Shader->Reload(CachedDevice.Get());
-	}
+	ShaderCache.ReloadShader(FilePath, CachedDevice.Get());
 }
 
 UShader* FResourceManager::GetShader(const FString& FilePath) const
 {
-	const FString NormalizedFilePath = FPaths::Normalize(FilePath);
-	auto It = Shaders.find(NormalizedFilePath);
-	return (It != Shaders.end()) ? It->second : nullptr;
+	return ShaderCache.GetShader(FilePath);
 }
 
 bool FResourceManager::LoadComputeShader(const FString& FilePath, const FString& EntryPoint,
                                          const D3D_SHADER_MACRO* Defines, const FString& Key)
 {
-    const FString NormalizedFilePath = FPaths::Normalize(FilePath);
-    const FString CacheKey = Key.empty() ? NormalizedFilePath : Key;
-
-    FComputeShader* Shader = nullptr;
-    auto It = ComputeShaders.find(CacheKey);
-    if (It != ComputeShaders.end())
-    {
-        return true;
-    }
-    else
-    {
-        Shader = new FComputeShader();
-        ComputeShaders[CacheKey] = Shader;
-    }
-
-    FShaderCompileResult CompileResult = FShaderCompiler::CompileFromFile(NormalizedFilePath, EntryPoint, "cs_5_0", Defines, 0);
-    if (!CompileResult.bSuccess)
-    {
-        UE_LOG_ERROR("Compute Shader Compile Error (%s): %s", NormalizedFilePath.c_str(), CompileResult.ErrorMessage.c_str());
-        return false;
-    }
-
-    TComPtr<ID3DBlob> CSBlob = CompileResult.Blob;
-
-    HRESULT hr = CachedDevice->CreateComputeShader(CSBlob->GetBufferPointer(), CSBlob->GetBufferSize(), nullptr,
-                                           &Shader->CS);
-    if (FAILED(hr))
-    {
-        UE_LOG_ERROR("Failed to create compute shader: %s", NormalizedFilePath.c_str());
-        return false;
-    }
-
-    return true;
+	return ShaderCache.LoadComputeShader(FilePath, EntryPoint, Defines, Key, CachedDevice.Get());
 }
 
 FComputeShader* FResourceManager::GetComputeShader(const FString& Key) const
 {
-    auto It = ComputeShaders.find(Key);
-    if (It != ComputeShaders.end()) return It->second;
-    // Fallback: try normalized path for backward compatibility
-    const FString NormalizedFilePath = FPaths::Normalize(Key);
-    It = ComputeShaders.find(NormalizedFilePath);
-    return (It != ComputeShaders.end()) ? It->second : nullptr;
+	return ShaderCache.GetComputeShader(Key);
 }
 
 TArray<FString> FResourceManager::GetMaterialNames() const
 {
-	TArray<FString> Names;
-	Names.reserve(Materials.size());
-	for (const auto& [Name, Mat] : Materials)
-	{
-		Names.push_back(Name);
-	}
-	return Names;
+	return MaterialCache.GetMaterialNames();
 }
 
 TArray<FString> FResourceManager::GetMaterialInterfaceNames() const
 {
-	TArray<FString> Names;
-	Names.reserve(Materials.size() + MaterialInstances.size() + MaterialFilePaths.size());
-	std::unordered_set<FString> SeenNames;
-	std::unordered_set<const UMaterial*> SeenMaterials;
-	for (const auto& [Name, Mat] : Materials)
-	{
-		if (Mat && SeenMaterials.insert(Mat).second)
-		{
-			const std::filesystem::path FilePath(FPaths::ToWide(Mat->GetFilePath()));
-			const bool bFileBackedMaterial = FilePath.extension() == L".mat";
-			const FString DisplayName = bFileBackedMaterial ? FPaths::Normalize(Mat->GetFilePath()) : Name;
-			if (SeenNames.insert(DisplayName).second)
-			{
-				Names.push_back(DisplayName);
-			}
-		}
-	}
-	for (const auto& [Path, MatInst] : MaterialInstances)
-	{
-		if (MatInst)
-		{
-			const FString DisplayName = FPaths::Normalize(MatInst->GetFilePath().empty() ? Path : MatInst->GetFilePath());
-			if (SeenNames.insert(DisplayName).second)
-			{
-				Names.push_back(DisplayName);
-			}
-		}
-	}
-	for (const FString& Path : MaterialFilePaths)
-	{
-		const FString NormalizedPath = FPaths::Normalize(Path);
-		if (IsSerializedMaterialAssetPath(NormalizedPath) && SeenNames.insert(NormalizedPath).second)
-		{
-			Names.push_back(NormalizedPath);
-		}
-	}
-	return Names;
+	return MaterialCache.GetMaterialInterfaceNames(MaterialFilePaths);
 }
 
 UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 {
-	const FString NormalizedName = FPaths::Normalize(MaterialName);
-	auto It = Materials.find(MaterialName);
-	if (It != Materials.end())
-	{
-		return It->second;
-	}
-	It = Materials.find(NormalizedName);
-	if (It != Materials.end())
-	{
-		return It->second;
-	}
-	for (const auto& [Name, Material] : Materials)
-	{
-		if (Material && (Material->GetName() == MaterialName || FPaths::Normalize(Material->GetFilePath()) == NormalizedName))
-		{
-			return Material;
-		}
-	}
-	return nullptr;
+	return MaterialCache.GetMaterial(MaterialName);
 }
 
 // 매개변수 없이 가장 간단한 Material을 생성
@@ -1153,7 +664,7 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FStr
 	UShader* Shader = GetShader(ShaderName);
 	Material->SetShader(Shader);
 
-	Materials[Path] = Material;
+	MaterialCache.RegisterMaterial(Path, Material);
 
 	return Material;
 }
@@ -1173,7 +684,7 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 	UShader* Shader = GetShader(ShaderName);
 	Material->SetShader(Shader);
 
-	Materials[Name] = Material;
+	MaterialCache.RegisterMaterial(Name, Material);
 
 	return Material;
 }
@@ -1191,7 +702,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 	std::transform(RequestedExtension.begin(), RequestedExtension.end(), RequestedExtension.begin(), ::towlower);
 	if (RequestedExtension == L".obj")
 	{
-		const FString ResolvedMtlPath = ResolveObjMaterialLibraryPath(NormalizedMtlFilePath);
+		const FString ResolvedMtlPath = FImportedMaterialPolicy::ResolveObjMaterialLibraryPath(NormalizedMtlFilePath);
 		if (ResolvedMtlPath.empty())
 		{
 			return false;
@@ -1258,7 +769,7 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
 
         if (bCanPromoteMtlToMaterialAssets)
         {
-			const FString MaterialName = MakeImportedMaterialAssetName(SourceMtlPath, MaterialIndex);
+			const FString MaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedMtlFilePath, MaterialIndex);
             const fs::path RelativeMatPath =
                 AutoMaterialDir / FPaths::ToWide(MaterialName + ".mat");
 
@@ -1274,31 +785,31 @@ bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& S
         Mat->FilePath = MaterialAssetPath;
         Mat->SetShader(Shader);
 
-		auto It = Materials.find(MaterialKey);
-		if (It != Materials.end())
+		UMaterial* ExistingMaterial = MaterialCache.FindMaterialByKey(MaterialKey);
+		if (ExistingMaterial)
 		{
-			if (It->second != Mat)
+			if (ExistingMaterial != Mat)
 			{
 				UObjectManager::Get().DestroyObject(Mat);
-				Mat = It->second;
+				Mat = ExistingMaterial;
 			}
 		}
 		else
 		{
-			Materials[MaterialKey] = Mat;
+			MaterialCache.RegisterMaterial(MaterialKey, Mat);
 		}
 
-		if (Materials.find(Mat->Name) == Materials.end())
+		if (!MaterialCache.ContainsMaterialKey(Mat->Name))
 		{
-			Materials[Mat->Name] = Mat;
+			MaterialCache.RegisterMaterial(Mat->Name, Mat);
 		}
 
-		if (Materials.find(Name) == Materials.end())
+		if (!MaterialCache.ContainsMaterialKey(Name))
 		{
-			Materials[Name] = Mat;
+			MaterialCache.RegisterMaterial(Name, Mat);
 		}
 
-		MaterialSlotAliases[MakeMaterialSlotAliasKey(NormalizedMtlFilePath, Name)] = MaterialKey;
+		MaterialCache.SetMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedMtlFilePath, Name), MaterialKey);
 
         FMaterial& MaterialData = Mat->MaterialData;
 
@@ -1342,14 +853,14 @@ void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, co
 {
 	const FString NormalizedObjPath = FPaths::Normalize(ObjPath);
 	const FString NormalizedMtlPath = FPaths::Normalize(MtlPath);
-	const TArray<FString> SlotNames = CollectObjMaterialSlotNames(NormalizedObjPath);
+	const TArray<FString> SlotNames = FImportedMaterialPolicy::CollectObjMaterialSlotNames(NormalizedObjPath);
 
 	for (const FString& SlotName : SlotNames)
 	{
-		const auto MtlAliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(NormalizedMtlPath, SlotName));
-		if (MtlAliasIt != MaterialSlotAliases.end())
+		const FString* MtlAlias = MaterialCache.FindMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedMtlPath, SlotName));
+		if (MtlAlias)
 		{
-			MaterialSlotAliases[MakeMaterialSlotAliasKey(NormalizedObjPath, SlotName)] = MtlAliasIt->second;
+			MaterialCache.SetMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedObjPath, SlotName), *MtlAlias);
 		}
 	}
 }
@@ -1358,10 +869,10 @@ UMaterial* FResourceManager::GetMaterialForStaticMeshSlot(const FString& SourceP
 {
 	if (!SourcePath.empty())
 	{
-		const auto AliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(SourcePath, SlotName));
-		if (AliasIt != MaterialSlotAliases.end())
+		const FString* Alias = MaterialCache.FindMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(SourcePath, SlotName));
+		if (Alias)
 		{
-			if (UMaterial* Material = GetMaterial(AliasIt->second))
+			if (UMaterial* Material = GetMaterial(*Alias))
 			{
 				return Material;
 			}
@@ -1382,10 +893,10 @@ void FResourceManager::ResolveStaticMeshMaterialSlots(const FString& SourcePath,
 	{
 		if (!SourcePath.empty())
 		{
-			const auto AliasIt = MaterialSlotAliases.find(MakeMaterialSlotAliasKey(SourcePath, Slot.SlotName));
-			if (AliasIt != MaterialSlotAliases.end())
+			const FString* Alias = MaterialCache.FindMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(SourcePath, Slot.SlotName));
+			if (Alias)
 			{
-				Slot.SlotName = AliasIt->second;
+				Slot.SlotName = *Alias;
 			}
 		}
 
@@ -1399,30 +910,12 @@ void FResourceManager::ResolveStaticMeshMaterialSlots(const FString& SourcePath,
 
 UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
 {
-    FString NormalizedPath = FPaths::Normalize(Path);
-
-	// 기존 경로를 쓰는 인스턴스가 있으면 부모만 설정해주고 반환
-	if (UMaterialInstance* Existing = GetMaterialInstance(NormalizedPath))
-	{
-		if (Existing->Parent == nullptr)
-		{
-			Existing->Parent = Parent;
-		}
-		return Existing;
-	}
-
-	UMaterialInstance* Instance = UObjectManager::Get().CreateObject<UMaterialInstance>();
-	Instance->Parent = Parent;
-	Instance->Name = NormalizedPath;
-	Instance->FilePath = NormalizedPath;
-	MaterialInstances[NormalizedPath] = Instance;
-	return Instance;
+	return MaterialCache.CreateMaterialInstance(Path, Parent);
 }
 
 UMaterialInstance* FResourceManager::GetMaterialInstance(const FString& Path) const
 {
-    auto It = MaterialInstances.find(FPaths::Normalize(Path));
-	return (It != MaterialInstances.end()) ? It->second : nullptr;
+	return MaterialCache.GetMaterialInstance(Path);
 }
 
 UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name)
@@ -1446,7 +939,7 @@ UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name)
 	}
 
 	const FString NormalizedName = FPaths::Normalize(Name);
-	if (IsSerializedMaterialAssetPath(NormalizedName) && RuntimeFileExists(NormalizedName))
+	if (FAssetPathPolicy::IsSerializedMaterialAssetPath(NormalizedName) && FAssetPathPolicy::FileExists(NormalizedName))
 	{
 		if (DeserializeMaterial(NormalizedName))
 		{
@@ -1693,7 +1186,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 		}
 
 		const FString NormalizedParentIdentifier = FPaths::Normalize(ParentIdentifier);
-		if (!ParentMat && IsSerializedMaterialAssetPath(NormalizedParentIdentifier) && RuntimeFileExists(NormalizedParentIdentifier))
+		if (!ParentMat && FAssetPathPolicy::IsSerializedMaterialAssetPath(NormalizedParentIdentifier) && FAssetPathPolicy::FileExists(NormalizedParentIdentifier))
 		{
 			DeserializeMaterial(NormalizedParentIdentifier);
 			ParentMat = GetMaterial(NormalizedParentIdentifier);
@@ -1782,7 +1275,7 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 			}
 		}
 
-		MaterialInstances[InstancePath] = MatInstance;
+		MaterialCache.RegisterMaterialInstance(InstancePath, MatInstance);
 		return true;
 	}
 
@@ -1792,13 +1285,13 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 	if (Root.hasKey("ImportedName"))
 	{
 		Material->ImportedName = Root["ImportedName"].ToString();
-		if (!Material->ImportedName.empty() && Materials.find(Material->ImportedName) == Materials.end())
+		if (!Material->ImportedName.empty() && !MaterialCache.ContainsMaterialKey(Material->ImportedName))
 		{
-			Materials[Material->ImportedName] = Material;
+			MaterialCache.RegisterMaterial(Material->ImportedName, Material);
 		}
 	}
-	Materials[NormalizedMatFilePath] = Material;
-	Materials[MatName] = Material;
+	MaterialCache.RegisterMaterial(NormalizedMatFilePath, Material);
+	MaterialCache.RegisterMaterial(MatName, Material);
 	Material->SetParam("AmbientColor", FMaterialParamValue(Material->MaterialData.AmbientColor));
 	Material->SetParam("DiffuseColor", FMaterialParamValue(Material->MaterialData.DiffuseColor));
 	Material->SetParam("SpecularColor", FMaterialParamValue(Material->MaterialData.SpecularColor));
@@ -1925,16 +1418,14 @@ bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 		}
 	}
 
-	Materials[MatName] = Material;
+	MaterialCache.RegisterMaterial(MatName, Material);
 
 	return true;
 }
 
 UTexture* FResourceManager::GetTexture(const FString& Path) const
 {
-    const FString NormalizedPath = FPaths::Normalize(Path);
-    auto It = Textures.find(NormalizedPath);
-    return (It != Textures.end()) ? It->second : nullptr;
+	return TextureCache.Get(Path);
 }
 
 UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Device)
@@ -1944,112 +1435,39 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
         Device = CachedDevice.Get();
     }
 
-    const FString NormalizedPath = FPaths::Normalize(Path);
-    if (NormalizedPath.empty())
-    {
-        return nullptr;
-    }
-
-	const uint64 CurrentWriteTimeTicks = GetFileWriteTimeTicks(NormalizedPath);
-    if (UTexture* Cached = GetTexture(NormalizedPath))
-    {
-		const auto WriteTimeIt = TextureWriteTimeTicks.find(NormalizedPath);
-		const uint64 CachedWriteTimeTicks =
-			(WriteTimeIt != TextureWriteTimeTicks.end()) ? WriteTimeIt->second : 0;
-		if (CurrentWriteTimeTicks == 0 || CachedWriteTimeTicks == CurrentWriteTimeTicks)
-		{
-			return Cached;
-		}
-
-		if (!Cached->LoadFromFile(NormalizedPath, Device))
-		{
-			return Cached;
-		}
-
-		TextureWriteTimeTicks[NormalizedPath] = CurrentWriteTimeTicks;
-		return Cached;
-    }
-
-    UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
-    if (!Texture->LoadFromFile(NormalizedPath, Device))
-    {
-        UObjectManager::Get().DestroyObject(Texture);
-        return nullptr;
-    }
-
-    Textures[NormalizedPath] = Texture;
-	TextureWriteTimeTicks[NormalizedPath] = CurrentWriteTimeTicks;
-    return Texture;
+	return TextureCache.Load(Path, Device);
 }
 
 // --- Font ---
 FFontResource* FResourceManager::FindFont(const FName& FontName)
 {
-	if (FontResources.empty())
-	{
-		return nullptr;
-	}
-	
-	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
+	return AtlasCache.FindFont(FontName);
 }
 
 const FFontResource* FResourceManager::FindFont(const FName& FontName) const
 {
-	if (FontResources.empty())
-	{
-		return nullptr;
-	}
-	
-	//	Default인 경우 첫 Font Resource로 Fallback (반드시 하나 이상의 Font는 Upload
-	auto It = FontResources.find(FontName.ToString());
-	return (It != FontResources.end()) ? &It->second : &FontResources.begin()->second;
+	return AtlasCache.FindFont(FontName);
 }
 
 void FResourceManager::RegisterFont(const FName& FontName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
-	FFontResource Resource;
-	Resource.Name = FontName;
-	Resource.Path = FPaths::Normalize(InPath);
-	Resource.Columns = Columns;
-	Resource.Rows = Rows;
-	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
-	FontResources[FontName.ToString()] = Resource;
+	AtlasCache.RegisterFont(FontName, InPath, Columns, Rows);
 }
 
 // --- Particle ---
 FParticleResource* FResourceManager::FindParticle(const FName& ParticleName)
 {
-	//	마찬가지로 하나 이상의 Particle을 무조건 가지고 있어야 함.
-	if (ParticleResources.empty())
-	{
-		return nullptr;
-	}
-	
-	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
+	return AtlasCache.FindParticle(ParticleName);
 }
 
 const FParticleResource* FResourceManager::FindParticle(const FName& ParticleName) const
 {
-	if (ParticleResources.empty())
-	{
-		return nullptr;
-	}
-	
-	auto It = ParticleResources.find(ParticleName.ToString());
-	return (It != ParticleResources.end()) ? &It->second : &ParticleResources.begin()->second;
+	return AtlasCache.FindParticle(ParticleName);
 }
 
 void FResourceManager::RegisterParticle(const FName& ParticleName, const FString& InPath, uint32 Columns, uint32 Rows)
 {
-	FParticleResource Resource;
-	Resource.Name = ParticleName;
-	Resource.Path = FPaths::Normalize(InPath);
-	Resource.Columns = Columns;
-	Resource.Rows = Rows;
-	Resource.Texture = UObjectManager::Get().CreateObject<UTexture>();
-	ParticleResources[ParticleName.ToString()] = Resource;
+	AtlasCache.RegisterParticle(ParticleName, InPath, Columns, Rows);
 }
 
 TArray<FString> FResourceManager::GetFontNames() const
@@ -2074,26 +1492,26 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 	fs::path RequestedFsPath(FPaths::ToWide(NormalizedPath));
 	std::wstring RequestedExt = RequestedFsPath.extension().wstring();
 	std::transform(RequestedExt.begin(), RequestedExt.end(), RequestedExt.begin(), ::towlower);
-	if (RequestedExt == L".obj" && !RuntimeFileExists(NormalizedPath))
+	if (RequestedExt == L".obj" && !FAssetPathPolicy::FileExists(NormalizedPath))
 	{
-		const FString CookedPath = MakeCookedStaticMeshPath(NormalizedPath);
+		const FString CookedPath = FAssetPathPolicy::MakeCookedStaticMeshBinaryPath(NormalizedPath);
 		if (UStaticMesh* CookedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CookedPath))
 		{
-			StaticMeshes[NormalizedPath] = CookedMesh;
+			StaticMeshCache.RegisterLoaded(NormalizedPath, CookedMesh);
 			return CookedMesh;
 		}
 
-		const FString SiblingBinaryPath = MakeSiblingStaticMeshBinaryPath(NormalizedPath);
+		const FString SiblingBinaryPath = FAssetPathPolicy::MakeSiblingStaticMeshBinaryPath(NormalizedPath);
 		if (UStaticMesh* SiblingMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, SiblingBinaryPath))
 		{
-			StaticMeshes[NormalizedPath] = SiblingMesh;
+			StaticMeshCache.RegisterLoaded(NormalizedPath, SiblingMesh);
 			return SiblingMesh;
 		}
 
-		const FString CacheBinaryPath = MakeStaticMeshCacheBinaryPath(NormalizedPath);
+		const FString CacheBinaryPath = FAssetPathPolicy::MakeStaticMeshCacheBinaryPath(NormalizedPath);
 		if (UStaticMesh* CachedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CacheBinaryPath))
 		{
-			StaticMeshes[NormalizedPath] = CachedMesh;
+			StaticMeshCache.RegisterLoaded(NormalizedPath, CachedMesh);
 			return CachedMesh;
 		}
 	}
@@ -2114,10 +1532,10 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			if (UStaticMesh* FoundSourceMesh = FindStaticMesh(SourcePath))
 			{
 				delete LoadedMeshData;
-				StaticMeshes[NormalizedPath] = FoundSourceMesh;
+				StaticMeshCache.RegisterLoaded(NormalizedPath, FoundSourceMesh);
 				return FoundSourceMesh;
 			}
-			if (RuntimeFileExists(SourcePath))
+			if (FAssetPathPolicy::FileExists(SourcePath))
 			{
 				LoadMaterial(SourcePath, "Shaders/UberLit.hlsl");
 			}
@@ -2132,10 +1550,10 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
 		}
 
-		StaticMeshes[NormalizedPath] = LoadedMesh;
+		StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
 		if (!SourcePath.empty())
 		{
-			StaticMeshes[SourcePath] = LoadedMesh;
+			StaticMeshCache.RegisterLoaded(SourcePath, LoadedMesh);
 		}
 
 		const auto BinaryEnd = std::chrono::steady_clock::now();
@@ -2149,18 +1567,9 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 
  	LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
 
-	FStaticMeshLoadOptions LoadOptions = {};
+	FStaticMeshLoadOptions LoadOptions = StaticMeshCache.GetLoadOptions(NormalizedPath);
 
-	for (const auto& [Key, Resource] : StaticMeshRegistry)
-	{
-		if (Resource.Path == NormalizedPath)
-		{
-			LoadOptions.bNormalizeToUnitCube = Resource.bNormalizeToUnitCube;
-			break;
-		}
-	}
-
-	const FString BinaryPath = MakeStaticMeshBinaryPath(NormalizedPath);
+	const FString BinaryPath = FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(NormalizedPath);
 
 	FStaticMesh* LoadedMeshData = nullptr;
 	double BinaryLoadSec = 0.0;
@@ -2246,7 +1655,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
         UE_LOG_WARNING("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", NormalizedPath.c_str());
     }
 
-    StaticMeshes.insert({NormalizedPath, LoadedMesh});
+	StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
     
     return LoadedMesh;
 }
@@ -2254,13 +1663,7 @@ UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
-	auto It = StaticMeshes.find(NormalizedPath);
-	if (It == StaticMeshes.end())
-	{
-		return nullptr;
-	}
-
-	return It->second;
+	return StaticMeshCache.Find(NormalizedPath);
 }
 
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
@@ -2271,24 +1674,12 @@ TArray<FString> FResourceManager::GetStaticMeshPaths() const
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
-	if (NormalizedPath.empty())
-	{
-		return nullptr;
-	}
-
-	auto It = Curves.find(NormalizedPath);
-	if (It != Curves.end())
-	{
-		return It->second;
-	}
-
-	UCurveFloatAsset* Curve = CurveLoader.Load(NormalizedPath);
+	UCurveFloatAsset* Curve = CurveCache.Load(NormalizedPath);
 	if (!Curve)
 	{
 		return nullptr;
 	}
 
-	Curves[NormalizedPath] = Curve;
 	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
 	{
 		CurveFilePaths.push_back(NormalizedPath);
@@ -2299,20 +1690,17 @@ UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
 
 UCurveFloatAsset* FResourceManager::FindCurve(const FString& Path) const
 {
-	const FString NormalizedPath = FPaths::Normalize(Path);
-	auto It = Curves.find(NormalizedPath);
-	return It != Curves.end() ? It->second : nullptr;
+	return CurveCache.Find(Path);
 }
 
 bool FResourceManager::SaveCurve(const FString& Path, const UCurveFloatAsset* Curve)
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
-	if (!CurveLoader.Save(NormalizedPath, Curve))
+	if (!CurveCache.Save(NormalizedPath, Curve))
 	{
 		return false;
 	}
 
-	Curves[NormalizedPath] = const_cast<UCurveFloatAsset*>(Curve);
 	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
 	{
 		CurveFilePaths.push_back(NormalizedPath);
@@ -2336,59 +1724,9 @@ ID3D11SamplerState* FResourceManager::GetOrCreateSamplerState(ESamplerType Type,
 	if (Device == nullptr)
 	{
 		Device = CachedDevice.Get();
-
 	}
 
-	auto It = SamplerStates.find(Type);
-	if (It != SamplerStates.end())
-	{
-		return It->second.Get();
-	}
-
-	D3D11_SAMPLER_DESC Desc = {};
-	Desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	Desc.MinLOD = 0;
-	Desc.MaxLOD = D3D11_FLOAT32_MAX;
-	switch (Type)
-	{
-	case ESamplerType::EST_Point:
-		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		break;
-	case ESamplerType::EST_Linear:
-		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	case ESamplerType::EST_Anisotropic:
-		Desc.Filter = D3D11_FILTER_ANISOTROPIC;
-		Desc.MaxAnisotropy = 16;
-		break;
-	case ESamplerType::EST_Shadow:
-		Desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		Desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-		Desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-		Desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-		Desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-		Desc.BorderColor[0] = 1.0f;
-		Desc.BorderColor[1] = 1.0f;
-		Desc.BorderColor[2] = 1.0f;
-		Desc.BorderColor[3] = 1.0f;
-		break;
-	default:
-		Desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		break;
-	}
-
-	TComPtr<ID3D11SamplerState> SamplerState;
-	HRESULT hr = CachedDevice->CreateSamplerState(&Desc, &SamplerState);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create sampler state");
-		return nullptr;
-	}
-
-	SamplerStates[Type] = SamplerState;
-	return SamplerState.Get();
+	return RenderStateCache.GetOrCreateSamplerState(Type, Device);
 }
 
 ID3D11DepthStencilState* FResourceManager::GetOrCreateDepthStencilState(EDepthStencilType Type, ID3D11Device* Device)
@@ -2397,78 +1735,7 @@ ID3D11DepthStencilState* FResourceManager::GetOrCreateDepthStencilState(EDepthSt
 	{
 		Device = CachedDevice.Get();
 	}
-	auto It = DepthStencilStates.find(Type);
-	if (It != DepthStencilStates.end())
-	{
-		return It->second.Get();
-	}
-
-	D3D11_DEPTH_STENCIL_DESC Desc = {};
-	switch (Type)
-	{
-	case EDepthStencilType::Default:
-		Desc.DepthEnable = TRUE;
-		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		Desc.DepthFunc = D3D11_COMPARISON_LESS;
-		Desc.StencilEnable = FALSE;
-		break;
-	case EDepthStencilType::DepthReadOnly:
-		Desc.DepthEnable = TRUE;
-		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		Desc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-		Desc.StencilEnable = FALSE;
-		break;
-	case EDepthStencilType::StencilWrite:
-		Desc.DepthEnable = TRUE;
-		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-		Desc.StencilEnable = TRUE;
-		Desc.StencilWriteMask = 0xFF;
-		Desc.StencilWriteMask = 0xFF;
-		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.BackFace = Desc.FrontFace;
-		break;
-	case EDepthStencilType::GizmoInside:
-		Desc.DepthEnable = TRUE;
-		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-		Desc.StencilEnable = TRUE;
-		Desc.StencilReadMask = 0xFF;
-		Desc.StencilWriteMask = 0x00;
-		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.BackFace = Desc.FrontFace;
-		break;
-	case EDepthStencilType::GizmoOutside:
-		Desc.DepthEnable = TRUE;
-		Desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		Desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-		Desc.StencilEnable = TRUE;
-		Desc.StencilReadMask = 0xFF;
-		Desc.StencilWriteMask = 0x00;
-		Desc.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
-		Desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		Desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
-		Desc.BackFace = Desc.FrontFace;
-		break;
-	}
-
-	TComPtr<ID3D11DepthStencilState> DepthStencilState;
-	HRESULT hr = CachedDevice->CreateDepthStencilState(&Desc, &DepthStencilState);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create depth stencil state");
-		return nullptr;
-	}
-
-	DepthStencilStates[Type] = DepthStencilState;
-	return DepthStencilState.Get();
+	return RenderStateCache.GetOrCreateDepthStencilState(Type, Device);
 }
 
 ID3D11BlendState* FResourceManager::GetOrCreateBlendState(EBlendType Type, ID3D11Device* Device)
@@ -2477,45 +1744,7 @@ ID3D11BlendState* FResourceManager::GetOrCreateBlendState(EBlendType Type, ID3D1
 	{
 		Device = CachedDevice.Get();
 	}
-	auto It = BlendStates.find(Type);
-	if (It != BlendStates.end())
-	{
-		return It->second.Get();
-	}
-
-	D3D11_BLEND_DESC Desc = {};
-	switch (Type)
-	{
-	case EBlendType::Opaque:
-		Desc.RenderTarget[0].BlendEnable = FALSE;
-		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		break;
-	case EBlendType::AlphaBlend:
-		Desc.RenderTarget[0].BlendEnable = TRUE;
-		Desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-		Desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		Desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-		Desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		Desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-		Desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		Desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		break;
-	case EBlendType::NoColor:
-		Desc.RenderTarget[0].BlendEnable = FALSE;
-		Desc.RenderTarget[0].RenderTargetWriteMask = 0;
-		break;
-	}
-
-	TComPtr<ID3D11BlendState> BlendState;
-	HRESULT hr = CachedDevice->CreateBlendState(&Desc, &BlendState);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create blend state");
-		return nullptr;
-	}
-
-	BlendStates[Type] = BlendState;
-	return BlendState.Get();
+	return RenderStateCache.GetOrCreateBlendState(Type, Device);
 }
 
 ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerType Type, ID3D11Device* Device)
@@ -2524,60 +1753,11 @@ ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerT
 	{
 		Device = CachedDevice.Get();
 	}
-	auto It = RasterizerStates.find(Type);
-	if (It != RasterizerStates.end())
-	{
-		return It->second.Get();
-	}
-
-	D3D11_RASTERIZER_DESC Desc = {};
-	switch (Type)
-	{
-	case ERasterizerType::SolidBackCull:
-		Desc.FillMode = D3D11_FILL_SOLID;
-		Desc.CullMode = D3D11_CULL_BACK;
-		break;
-	case ERasterizerType::SolidFrontCull:
-		Desc.FillMode = D3D11_FILL_SOLID;
-		Desc.CullMode = D3D11_CULL_FRONT;
-		break;
-	case ERasterizerType::SolidNoCull:
-		Desc.FillMode = D3D11_FILL_SOLID;
-		Desc.CullMode = D3D11_CULL_NONE;
-		break;
-	case ERasterizerType::WireFrame:
-		Desc.FillMode = D3D11_FILL_WIREFRAME;
-		Desc.CullMode = D3D11_CULL_BACK;
-		break;
-	}
-
-	TComPtr<ID3D11RasterizerState> RasterizerState;
-	HRESULT hr = CachedDevice->CreateRasterizerState(&Desc, &RasterizerState);
-	if (FAILED(hr))
-	{
-		UE_LOG_ERROR("Failed to create rasterizer state");
-		return nullptr;
-	}
-	RasterizerStates[Type] = RasterizerState;
-	return RasterizerState.Get();
+	return RenderStateCache.GetOrCreateRasterizerState(Type, Device);
 }
 
 // TODO: 변경된 구조에 맞춰서 수정하기
 size_t FResourceManager::GetMaterialMemorySize() const
 {
-	size_t TotalSize = 0;
-
-	TotalSize += Materials.size() * sizeof(UMaterial);
-
-	for (const auto& Pair : Materials)
-	{
-		const FMaterial& Mat = Pair.second->MaterialData;
-		TotalSize += Mat.Name.capacity();
-		TotalSize += Mat.DiffuseTexPath.capacity();
-		TotalSize += Mat.AmbientTexPath.capacity();
-		TotalSize += Mat.SpecularTexPath.capacity();
-		TotalSize += Mat.BumpTexPath.capacity();
-	}
-
-	return TotalSize;
+	return MaterialCache.GetMaterialMemorySize();
 }

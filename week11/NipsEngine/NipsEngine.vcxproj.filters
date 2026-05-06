@@ -13,6 +13,9 @@
     <Filter Include="Source\Game">
       <UniqueIdentifier>{41726a56-b1ce-4c90-aef5-1d55cf8fbb13}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Launch">
+      <UniqueIdentifier>{2ee05952-c7c9-4ec7-b401-6110a7ac5e47}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{01c06a87-3b33-f1be-c238-04f144aa4c78}</UniqueIdentifier>
     </Filter>
@@ -93,9 +96,6 @@
     </Filter>
     <Filter Include="Source\Engine\Input\Controller">
       <UniqueIdentifier>{06afad98-66f8-abab-e678-aa97a77e0066}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Input\Controller\EditorController">
-      <UniqueIdentifier>{91ce1396-52b5-8f7a-ca50-e7701f87b985}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Math">
       <UniqueIdentifier>{1f95424e-78f3-3176-c345-9ebb635ae099}</UniqueIdentifier>
@@ -471,13 +471,28 @@
     <ClCompile Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.cpp">
       <Filter>Source\Engine\Component\PostProcess\Light</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\AtlasResourceCache.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\CurveResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Guid.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\MaterialResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Paths.cpp">
@@ -487,6 +502,18 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\RenderStateResourceCache.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\ShaderResourceCache.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\StaticMeshResourceCache.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\TextureResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Logging\GPUProfiler.cpp">
@@ -540,14 +567,14 @@
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.cpp">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClCompile Include="Source\Editor\Input\BaseEditorController.cpp">
+      <Filter>Source\Editor\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.cpp">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClCompile Include="Source\Editor\Input\EditorInputRouter.cpp">
+      <Filter>Source\Editor\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.cpp">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClCompile Include="Source\Editor\Input\EditorWorldController.cpp">
+      <Filter>Source\Editor\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Color.cpp">
       <Filter>Source\Engine\Math</Filter>
@@ -726,6 +753,9 @@
     <ClCompile Include="Source\Engine\Runtime\Launch.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Launch\LaunchModeFactory.cpp">
+      <Filter>Source\Launch</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\ViewportClient.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
@@ -869,8 +899,9 @@
     <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameController.cpp" />
+    <ClCompile Include="Source\Editor\Input\GameInputBridge.cpp">
+      <Filter>Source\Editor\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
@@ -1153,7 +1184,16 @@
     <ClInclude Include="Source\Engine\Core\CoreTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\AtlasResourceCache.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\AssetPathPolicy.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\CrashDump.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\CurveResourceCache.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Debug.h">
@@ -1163,6 +1203,12 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Guid.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\MaterialResourceCache.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Paths.h">
@@ -1175,6 +1221,18 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceManager.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\RenderStateResourceCache.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\ShaderResourceCache.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\StaticMeshResourceCache.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\TextureResourceCache.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\ResourceTypes.h">
@@ -1285,14 +1343,14 @@
     <ClInclude Include="Source\Engine\Input\InputTypes.h">
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClInclude Include="Source\Editor\Input\BaseEditorController.h">
+      <Filter>Source\Editor\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClInclude Include="Source\Editor\Input\EditorInputRouter.h">
+      <Filter>Source\Editor\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h">
-      <Filter>Source\Engine\Input\Controller\EditorController</Filter>
+    <ClInclude Include="Source\Editor\Input\EditorWorldController.h">
+      <Filter>Source\Editor\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\Color.h">
       <Filter>Source\Engine\Math</Filter>
@@ -1510,6 +1568,9 @@
     <ClInclude Include="Source\Engine\Runtime\Launch.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Launch\LaunchModeFactory.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\SceneView.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
@@ -1681,8 +1742,9 @@
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
     <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
+    <ClInclude Include="Source\Editor\Input\GameInputBridge.h">
+      <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
     <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />

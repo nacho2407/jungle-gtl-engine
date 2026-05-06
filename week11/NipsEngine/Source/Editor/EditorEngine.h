@@ -31,6 +31,7 @@ public:
 	void Shutdown() override;
 	void Tick(float DeltaTime) override;
 	void OnWindowResized(uint32 Width, uint32 Height) override;
+	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
 	UGizmoComponent* GetGizmo() const;

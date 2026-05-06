@@ -210,7 +210,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     
 	// Width, Height 변경 여부에 따라 Resource 버퍼 재생성
 	// 만약 최소화 등의 상황으로 (H, W) == (0, 0) 일 경우 Render 안함
-	FViewportRenderResource& ViewportResource = Editor->GetRenderer().AcquireViewportResource(&SceneViewport, Rect.Width, Rect.Height, ViewportIndex);
+	FViewportRenderResource& ViewportResource = Editor->GetRenderer().AcquireViewportResource(Rect.Width, Rect.Height, ViewportIndex);
     SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
     // Viewport 별 버퍼 클리어 및 Renderer 버퍼 세팅
@@ -232,6 +232,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetViewProjection(SceneView.ViewMatrix, SceneView.ProjectionMatrix, Camera->GetNearPlane(), Camera->GetFarPlane());
     Bus.SetRenderSettings(ViewMode, ShowFlags);
     Bus.SetLightCullMode(SceneView.LightCullMode);
+    Bus.SetShadowFilterMode(Settings.ShadowFilterMode);
 	Bus.SetViewportSize(FVector2(static_cast<float>(Rect.Width), static_cast<float>(Rect.Height)));
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
