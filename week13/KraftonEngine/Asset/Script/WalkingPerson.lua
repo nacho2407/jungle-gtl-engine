@@ -174,7 +174,7 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     local action = obj:GetActionComponent()
     if action ~= nil and ShouldPlayHitAction(OtherActor, OtherComp, NormalImpulse) then
         action:HitStop(HIT_STOP_DURATION, HIT_STOP_TIME_DILATION)
-        --action:HitSquash(HIT_SQUASH_SCALE, HIT_SQUASH_IN_DURATION, HIT_SQUASH_RECOVER_DURATION)
+        action:HitSquash(HIT_SQUASH_SCALE, HIT_SQUASH_IN_DURATION, HIT_SQUASH_RECOVER_DURATION)
         --action:Knockback(GetKnockbackDirection(OtherActor, Hit), KNOCKBACK_DISTANCE, KNOCKBACK_DURATION)
         action:Slomo(SLOMO_DURATION, SLOMO_TIME_DILATION)
     end
