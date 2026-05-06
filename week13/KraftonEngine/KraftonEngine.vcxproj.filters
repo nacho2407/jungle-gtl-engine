@@ -58,6 +58,9 @@
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{60f7fb11-d80b-bf66-98c3-689d6f8326ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\CameraShake">
+      <UniqueIdentifier>{6402e8a9-52cd-5e58-13d2-0638ee5aff09}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{0a1ac0a6-fa86-45a3-c38e-91b60c7ce3cf}</UniqueIdentifier>
     </Filter>
@@ -363,6 +366,9 @@
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GammaCorrection.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\HeightFog.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
@@ -473,6 +479,9 @@
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClCompile>
@@ -497,6 +506,12 @@
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp">
+      <Filter>Source\Engine\CameraShake</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp">
+      <Filter>Source\Engine\CameraShake</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\CollisionMath.cpp">
       <Filter>Source\Engine\Collision</Filter>
     </ClCompile>
@@ -520,6 +535,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ActionComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -653,7 +671,13 @@
     <ClCompile Include="Source\Engine\GameFramework\BoxActor.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\CameraModifier.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\CameraShakeBase.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\CameraShakeCameraModifier.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp">
@@ -687,6 +711,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp">
@@ -873,6 +900,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp">
@@ -1104,8 +1134,6 @@
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp" />
-    <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1183,6 +1211,9 @@
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h">
       <Filter>Source\Editor\UI\Asset</Filter>
     </ClInclude>
@@ -1216,6 +1247,12 @@
     <ClInclude Include="Source\Engine\Audio\AudioManager.h">
       <Filter>Source\Engine\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h">
+      <Filter>Source\Engine\CameraShake</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h">
+      <Filter>Source\Engine\CameraShake</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\CollisionMath.h">
       <Filter>Source\Engine\Collision</Filter>
     </ClInclude>
@@ -1242,6 +1279,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ActionComponent.h">
+      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
@@ -1399,7 +1439,13 @@
     <ClInclude Include="Source\Engine\GameFramework\BoxActor.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\CameraModifier.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\CameraShakeBase.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\CameraShakeCameraModifier.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\CameraTypes.h">
@@ -1436,6 +1482,9 @@
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\SphereActor.h">
@@ -1661,6 +1710,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h">
@@ -2749,8 +2801,6 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h" />
-    <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
