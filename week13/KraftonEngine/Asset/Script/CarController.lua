@@ -186,6 +186,8 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     local volume = 0.35 + 0.65 * crashRatio
     AudioManager.Play("Crash", volume)
     lastCrashSoundTime = elapsedTime
+
+    CameraManager.StartCameraShakeAsset("Asset/Test.shake", 1.0)
 end
 
 function Tick(dt)

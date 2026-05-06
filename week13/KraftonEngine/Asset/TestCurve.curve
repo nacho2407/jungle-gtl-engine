@@ -1,41 +1,29 @@
 {
         "DefaultValue" : 0.000000,
         "Keys" : [{
-            "ArriveTangent" : 5.516321,
-            "InterpMode" : 2,
-            "LeaveTangent" : 5.516321,
+            "ArriveTangent" : 2.759422,
+            "InterpMode" : 1,
+            "LeaveTangent" : 2.759422,
             "Time" : 0.000000,
             "Value" : 0.000000
           }, {
-            "ArriveTangent" : -1.036359,
-            "InterpMode" : 2,
-            "LeaveTangent" : -1.036359,
-            "Time" : 0.141625,
-            "Value" : 0.781249
+            "ArriveTangent" : 0.172931,
+            "InterpMode" : 1,
+            "LeaveTangent" : 0.172931,
+            "Time" : 0.316664,
+            "Value" : 0.873811
           }, {
-            "ArriveTangent" : 0.106898,
-            "InterpMode" : 2,
-            "LeaveTangent" : 0.106898,
-            "Time" : 0.343750,
-            "Value" : -0.356249
+            "ArriveTangent" : 0.184667,
+            "InterpMode" : 1,
+            "LeaveTangent" : 0.184667,
+            "Time" : 0.633333,
+            "Value" : 0.109523
           }, {
-            "ArriveTangent" : 0.217391,
-            "InterpMode" : 2,
-            "LeaveTangent" : 0.217391,
-            "Time" : 0.609375,
-            "Value" : 0.831250
-          }, {
-            "ArriveTangent" : -0.000002,
-            "InterpMode" : 2,
-            "LeaveTangent" : -0.000002,
-            "Time" : 0.775000,
-            "Value" : -0.262499
-          }, {
-            "ArriveTangent" : 4.861079,
-            "InterpMode" : 2,
-            "LeaveTangent" : 4.861079,
-            "Time" : 1.000001,
-            "Value" : 0.831250
+            "ArriveTangent" : 2.428572,
+            "InterpMode" : 1,
+            "LeaveTangent" : 2.428572,
+            "Time" : 1.000000,
+            "Value" : 1.000000
           }],
         "PostExtrapMode" : 0,
         "PreExtrapMode" : 0,

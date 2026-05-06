@@ -1,25 +1,25 @@
 {
         "BlendInTime" : 0.050000,
         "BlendOutTime" : 0.100000,
-        "Duration" : 0.500000,
+        "Duration" : 0.300000,
         "Sequence" : {
-          "FOVCurve" : "Asset/TestCurve.curve",
-          "LocXCurve" : "Asset/TestCurve.curve",
+          "FOVCurve" : "",
+          "LocXCurve" : "",
           "LocYCurve" : "Asset/TestCurve.curve",
           "LocZCurve" : "Asset/TestCurve.curve",
-          "PitchCurve" : "Asset/TestCurve.curve",
-          "RollCurve" : "Asset/TestCurve.curve",
-          "YawCurve" : "Asset/TestCurve.curve"
+          "PitchCurve" : "",
+          "RollCurve" : "",
+          "YawCurve" : ""
         },
         "ShakeType" : "WaveOscillator",
         "Version" : 1,
         "WaveOscillator" : {
-          "FOVAmplitude" : 0.020000,
-          "FOVFrequency" : 8.000000,
-          "LocationAmplitude" : [0.000000, 0.100000, 0.100000],
-          "LocationFrequency" : [12.000000, 14.000000, 10.000000],
-          "RotationAmplitude" : [0.500000, 0.800000, 0.800000],
-          "RotationFrequency" : [11.000000, 13.000000, 9.000000]
+          "FOVAmplitude" : 0.000000,
+          "FOVFrequency" : 0.000000,
+          "LocationAmplitude" : [0.000000, 0.030000, 0.030000],
+          "LocationFrequency" : [0.000000, 30.000000, 30.000000],
+          "RotationAmplitude" : [0.000000, 0.000000, 0.000000],
+          "RotationFrequency" : [0.000000, 0.000000, 9.000000]
         },
         "bSingleInstance" : false
       }

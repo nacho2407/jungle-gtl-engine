@@ -1,17 +1,23 @@
 {
         "DefaultValue" : 0.000000,
         "Keys" : [{
-            "ArriveTangent" : 0.000000,
+            "ArriveTangent" : 0.000039,
             "InterpMode" : 1,
-            "LeaveTangent" : 0.000000,
+            "LeaveTangent" : 0.000039,
             "Time" : 0.000000,
-            "Value" : 0.000000
+            "Value" : -0.364000
           }, {
-            "ArriveTangent" : 0.000000,
+            "ArriveTangent" : 0.000017,
             "InterpMode" : 1,
-            "LeaveTangent" : 0.000000,
+            "LeaveTangent" : 0.000017,
+            "Time" : 0.868750,
+            "Value" : -0.363966
+          }, {
+            "ArriveTangent" : -0.000129,
+            "InterpMode" : 1,
+            "LeaveTangent" : -0.000129,
             "Time" : 1.000000,
-            "Value" : 1.000000
+            "Value" : -0.363983
           }],
         "PostExtrapMode" : 0,
         "PreExtrapMode" : 0,
