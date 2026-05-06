@@ -76,12 +76,31 @@ end
 -- 새 월드의 lua tick 에 끼어들지 않는다.
 local nextQuestRoutine = nil
 
+-- 모듈에서 spawn 한 fire-and-forget coroutine 들의 handle 모음. 명시 변수로 잡지 않은
+-- 짧은 sequencer / sound delay / animation 같은 코루틴이 EndPlay (씬 종료) 또는 명시
+-- 정리 시점에 한꺼번에 stop 될 수 있도록 list 로 추적. dead handle 도 포함되지만
+-- StopCoroutine 이 idempotent 라 안전.
+local pendingRoutines = {}
+
+local function StartTrackedCoroutine(func)
+    local handle = StartCoroutine(func)
+    table.insert(pendingRoutines, handle)
+    return handle
+end
+
+local function StopAllPendingRoutines()
+    for _, handle in ipairs(pendingRoutines) do
+        StopCoroutine(handle)
+    end
+    pendingRoutines = {}
+end
+
 local function CameraFadeTransition(duration, middle)
     duration = duration or 0.5
 
     CameraManager.FadeOut(duration)
 
-    StartCoroutine(function()
+    StartTrackedCoroutine(function()
         Wait(duration)
 
         if middle then
@@ -108,11 +127,19 @@ local function HandlePhaseBGM(phase)
     if nextKey == prevKey then
         return  -- 같은 BGM 유지 (예: Result -> Finished 둘 다 nil)
     end
-    if nextKey ~= nil then
-        AudioManager.PlayBGM(nextKey, PHASE_BGM_VOLUME)
-    else
-        AudioManager.PlayBGM(DEFAULT_BGM_KEY, DEFAULT_BGM_VOLUME)
-    end
+
+    -- OnPhaseChanged 는 TickManager 콜스택 안에서 발동되는 callback 이라, 여기서
+    -- 직접 PlayBGM 을 부르면 fmod 의 channel state 변경이 같은 Tick 의 다른 audio
+    -- 호출과 경합하면서 crash 가 난다 (EscapePolice 정상 종료 reproducer 확인됨).
+    -- 한 frame 미뤄 callback 이 반환 → Tick 이 끝난 후의 안전한 시점에 swap.
+    StartTrackedCoroutine(function()
+        Wait(0)
+        if nextKey ~= nil then
+            AudioManager.PlayBGM(nextKey, PHASE_BGM_VOLUME)
+        else
+            AudioManager.PlayBGM(DEFAULT_BGM_KEY, DEFAULT_BGM_VOLUME)
+        end
+    end)
 end
 
 -- DodgeMeteor 페이즈 동안만 흐르는 단일 ambient loop. 메테오 인스턴스마다 따로 두면
@@ -151,7 +178,7 @@ local function ShowMissionFeedback(phase)
         if lastResult == EPhaseResult.Success then
         elseif lastResult == EPhaseResult.Failed then
             CameraManager.SetVignette(0.7, 0.6, 0.4)
-            StartCoroutine(function()
+            StartTrackedCoroutine(function()
                 Wait(1.0)
                 CameraManager.ClearVignette()
             end)
@@ -264,8 +291,8 @@ local function OnPhaseChanged(phase)
     HandleMeteorAmbientLoop(phase)
 
     -- EscapePolice / DodgeMeteor 페이즈 BGM 토글 — 그 외 phase 면 기본 BGM 복원.
+    -- HandlePhaseBGM 내부에서 coroutine 으로 한 frame 미뤄 PlayBGM 호출 (fmod race 회피).
     HandlePhaseBGM(phase)
-
 
     if wasEscapePolice and phase ~= ECarGamePhase.EscapePolice then
         ObjRegistry.ClearAllPoliceControls()
@@ -309,7 +336,7 @@ local function OnPhaseChanged(phase)
         end)
         print("Run Lua logic for CarGas")
     elseif phase == ECarGamePhase.EscapePolice then
-        StartCoroutine(function()
+        StartTrackedCoroutine(function()
             BeginPoliceCinematic()
 
             ObjRegistry.SetAllPoliceControls(function(policeCar, index)
@@ -330,7 +357,7 @@ local function OnPhaseChanged(phase)
             Wait(2.0)
 
             for i, policeCar in ipairs(ObjRegistry.policeCars) do
-                StartCoroutine(function()
+                StartTrackedCoroutine(function()
                     Wait(0.5 + (i - 1) * 0.3)
                     AudioManager.Play("Whoosh", 1.0)
                     CameraManager.StartCameraShakeAsset("Asset/Test.shake", 10.0)
@@ -632,6 +659,11 @@ function EndPlay()
         StopCoroutine(nextQuestRoutine)
         nextQuestRoutine = nil
     end
+    -- GameManager 가 spawn 한 fire-and-forget coroutine 정리. StopAllCoroutines 가 어차피
+    -- 일괄 stop 하지만 명시 정리로 의도 명확화 + 다른 lua 모듈의 long-running coroutine
+    -- (e.g. WalkingPerson 회전) 과 정리 책임을 분리.
+    StopAllPendingRoutines()
+
     ObjRegistry.ClearAllPoliceControls()
     EndPoliceCinematic()
     UIManager.Shutdown()
