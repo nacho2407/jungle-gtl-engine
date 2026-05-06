@@ -2,6 +2,10 @@
 -- Player/Turret처럼 매 프레임 직접 움직이는 Actor가 아니라, 월드 규칙을 관리하는 스크립트다.
 local isGameOver = false
 local Timer = 0.0
+local game_over_transition_elapsed = 0.0
+local game_over_transition_duration = 3.0
+local game_over_scene_requested = false
+local game_over_slomo_scale = 0.3
 
 -- Candidate가 실제 아이템/터렛으로 바뀔 때 종류별 최대 생성 수.
 -- Scene에 Candidate가 더 많아도 여기 숫자까지만 랜덤으로 선택된다.
@@ -289,7 +293,10 @@ function GameOver(finalHP, finalDocumentCount)
     Prefs.SetNumber("LastHP", finalHP)
     Prefs.SetNumber("LastDocumentCount", finalDocumentCount)
     Prefs.SetNumber("LastTimer", Timer)
-    LoadScene("GameOver.Scene")
+
+    game_over_transition_elapsed = 0.0
+    game_over_scene_requested = false
+    World.RequestSlomo(game_over_slomo_scale, game_over_transition_duration)
 end
 
 function BeginPlay()
@@ -325,5 +332,19 @@ end
 
 function Tick(dt)
     -- dt는 이전 프레임부터 현재 프레임까지 걸린 시간이다.
-    Timer = Timer + World.GetUnscaledDeltatime()
+    local unscaled_dt = World.GetUnscaledDeltatime()
+
+    if isGameOver then
+        if not game_over_scene_requested then
+            game_over_transition_elapsed = game_over_transition_elapsed + unscaled_dt
+            if game_over_transition_elapsed >= game_over_transition_duration then
+                game_over_scene_requested = true
+                LoadScene("GameOver.Scene")
+            end
+        end
+
+        return
+    end
+
+    Timer = Timer + unscaled_dt
 end
