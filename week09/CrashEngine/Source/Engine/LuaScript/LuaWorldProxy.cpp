@@ -72,6 +72,21 @@ APlayerCameraManager* GetPlayerCameraManager(UWorld* World)
     return PlayerController->GetCameraManager();
 }
 
+UCameraComponent* GetLuaControlledCamera(UWorld* World)
+{
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+    if (CameraManager)
+    {
+        if (UCameraComponent* POVCamera = CameraManager->GetViewTarget().POVCamera)
+        {
+            return POVCamera;
+        }
+    }
+
+    return World ? World->GetActiveCamera() : nullptr;
+}
+
 bool GetLuaCameraViewInfo(UWorld* World, FCameraViewInfo& OutCameraViewInfo)
 {
     APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
@@ -261,7 +276,7 @@ TArray<FLuaGameObjectProxy> FLuaWorldProxy::FindActorsByTag(const FString& Tag)
 bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target, float FovDegrees)
 {
     UWorld* World = ResolveWorld();
-    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    UCameraComponent* Camera = GetLuaControlledCamera(World);
     if (!Camera) return false;
     Camera->SetWorldLocation(Location);
     Camera->LookAt(Target);
@@ -329,6 +344,13 @@ bool FLuaWorldProxy::MoveActorWithBlock(const FLuaGameObjectProxy& ActorProxy, c
 }
 
 
+
+FVector FLuaWorldProxy::GetActiveCameraLocation() const
+{
+    UWorld* World = ResolveWorld();
+    UCameraComponent* Camera = GetLuaControlledCamera(World);
+    return Camera ? Camera->GetWorldLocation() : FVector::ZeroVector;
+}
 
 FVector FLuaWorldProxy::GetActiveCameraForward() const
 {

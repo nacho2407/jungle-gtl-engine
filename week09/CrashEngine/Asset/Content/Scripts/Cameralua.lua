@@ -25,7 +25,13 @@ local ZoomVignetteSoftness = 0.35
 local CameraTransitionDuration = 0.13
 local CameraTransitionBlendType = "Cubic"
 local LastCameraZooming = nil
-local CameraTransitionRemaining = 0.0
+local CameraTransitionElapsed = 0.0
+local TransitionFromCameraLocation = nil
+local TransitionFromLookAtLocation = nil
+local TransitionToCameraLocation = nil
+local TransitionToLookAtLocation = nil
+local LastAppliedCameraLocation = nil
+local LastAppliedLookAtLocation = nil
 
 
 -- 조준선은 Aim.png를 머티리얼로 쓰는 BillboardComponent Actor로 만든다.
@@ -89,6 +95,102 @@ local function getMouseAimForward(playerPos, cameraLocation, fallbackForward)
     end
 
     return fallbackForward
+end
+
+local function clamp01(value)
+    if value < 0.0 then
+        return 0.0
+    elseif value > 1.0 then
+        return 1.0
+    end
+
+    return value
+end
+
+local function evaluateCameraBlend(alpha)
+    local t = clamp01(alpha)
+
+    if CameraTransitionBlendType == "Linear" then
+        return t
+    elseif CameraTransitionBlendType == "EaseIn" then
+        return t * t
+    elseif CameraTransitionBlendType == "EaseOut" then
+        return 1.0 - (1.0 - t) * (1.0 - t)
+    end
+
+    return t * t * (3.0 - 2.0 * t)
+end
+
+local function lerpVector(from, to, alpha)
+    if from == nil then
+        return to
+    elseif to == nil then
+        return from
+    end
+
+    return from + (to - from) * alpha
+end
+
+local function resetCameraTransition()
+    LastCameraZooming = nil
+    CameraTransitionElapsed = 0.0
+    TransitionFromCameraLocation = nil
+    TransitionFromLookAtLocation = nil
+    TransitionToCameraLocation = nil
+    TransitionToLookAtLocation = nil
+    LastAppliedCameraLocation = nil
+    LastAppliedLookAtLocation = nil
+end
+
+local function hasPlayerCameraBoom()
+    if Player == nil or not Player:IsValid() or Player.GetComponent == nil then
+        return false
+    end
+
+    local cameraBoom = Player:GetComponent("UCameraBoomComponent")
+    return cameraBoom ~= nil and cameraBoom:IsValid()
+end
+
+local function getNormalCameraLocation(playerPos)
+    if hasPlayerCameraBoom() and World.GetActiveCameraLocation ~= nil then
+        return World.GetActiveCameraLocation()
+    end
+
+    return playerPos + CameraConfig.NormalOffset
+end
+
+local function applyCameraView(cameraLocation, lookAtLocation, fov, dt, releaseWhenStable)
+    local cameraModeChanged = LastCameraZooming == nil or LastCameraZooming ~= IsZooming
+    if cameraModeChanged then
+        LastCameraZooming = IsZooming
+        CameraTransitionElapsed = 0.0
+        TransitionFromCameraLocation = LastAppliedCameraLocation or cameraLocation
+        TransitionFromLookAtLocation = LastAppliedLookAtLocation or lookAtLocation
+        TransitionToCameraLocation = cameraLocation
+        TransitionToLookAtLocation = lookAtLocation
+    end
+
+    local transitionActive = CameraTransitionDuration > 0.0 and CameraTransitionElapsed < CameraTransitionDuration
+    if transitionActive then
+        TransitionToCameraLocation = cameraLocation
+        TransitionToLookAtLocation = lookAtLocation
+        CameraTransitionElapsed = math.min(CameraTransitionElapsed + dt, CameraTransitionDuration)
+
+        local alpha = evaluateCameraBlend(CameraTransitionElapsed / CameraTransitionDuration)
+        cameraLocation = lerpVector(TransitionFromCameraLocation, TransitionToCameraLocation, alpha)
+        lookAtLocation = lerpVector(TransitionFromLookAtLocation, TransitionToLookAtLocation, alpha)
+    end
+
+    LastAppliedCameraLocation = cameraLocation
+    LastAppliedLookAtLocation = lookAtLocation
+
+    if releaseWhenStable and not transitionActive then
+        return
+    end
+
+    if World.SetCameraView ~= nil then
+        World.SetCameraView(cameraLocation, lookAtLocation, fov)
+    end
 end
 
 local function setMouseCursorVisible(visible)
@@ -242,8 +344,7 @@ function BeginPlay()
     ZoomBaseForward = nil
     MouseZoomHeld = false
     GamepadZoomHeld = false
-    LastCameraZooming = nil
-    CameraTransitionRemaining = 0.0
+    resetCameraTransition()
     syncCameraState()
     createAim()
     setMouseCursorVisible(true)
@@ -257,8 +358,7 @@ function EndPlay()
     ZoomBaseForward = nil
     MouseZoomHeld = false
     GamepadZoomHeld = false
-    LastCameraZooming = nil
-    CameraTransitionRemaining = 0.0
+    resetCameraTransition()
     syncCameraState()
 
     AimActor = nil
@@ -306,7 +406,8 @@ function Tick(dt)
         Forward = Forward:Normalized()
     end
 
-    local NormalCameraLocation = PlayerPos + CameraConfig.NormalOffset
+    local bUseBoomNormalCamera = IsZooming == false and hasPlayerCameraBoom()
+    local NormalCameraLocation = getNormalCameraLocation(PlayerPos)
     local NormalLookAtLocation = PlayerPos
 
     -- 줌뷰는 Player 위쪽 가까운 위치에서 AimDistance만큼 앞을 바라본다.
@@ -331,20 +432,7 @@ function Tick(dt)
     local Fov = 60.0
 
     syncCameraState(ZoomCameraLocation, ZoomLookAtLocation)
-    local CameraModeChanged = LastCameraZooming == nil or LastCameraZooming ~= IsZooming
-    if CameraModeChanged then
-        LastCameraZooming = IsZooming
-        CameraTransitionRemaining = CameraTransitionDuration
-    end
-
-    if CameraTransitionRemaining > 0.0 and World.SetCameraViewWithBlend ~= nil then
-        World.SetCameraViewWithBlend(CameraLocation, LookAtLocation, Fov, CameraTransitionDuration, CameraTransitionBlendType)
-        CameraTransitionRemaining = math.max(CameraTransitionRemaining - dt, 0.0)
-    elseif World.SetCameraViewImmediate ~= nil then
-        World.SetCameraViewImmediate(CameraLocation, LookAtLocation, Fov)
-    elseif World.SetCameraViewWithBlend ~= nil then
-        World.SetCameraViewWithBlend(CameraLocation, LookAtLocation, Fov, 0.0, CameraTransitionBlendType)
-    end
+    applyCameraView(CameraLocation, LookAtLocation, Fov, dt, bUseBoomNormalCamera)
 end
 
 function OnMouseButtonPressed(button)
