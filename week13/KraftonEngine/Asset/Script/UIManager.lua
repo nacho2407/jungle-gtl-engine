@@ -341,7 +341,7 @@ local function StartGameOverScoreRoutine(events, finalScore, onComplete)
         end
 
         local display = 0
-        local duration = 1.0
+        local duration = 0.75
         SetGameOverScoreText(display)
         widget:set_text("final-score-detail", "")
 
@@ -350,6 +350,8 @@ local function StartGameOverScoreRoutine(events, finalScore, onComplete)
                 gameOverScoreRoutine = nil
                 return
             end
+
+            AudioManager.Play("ScoreUp", 1.0)
 
             local event = events[i]
             local startScore = display
