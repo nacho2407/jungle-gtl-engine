@@ -1,6 +1,7 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
 #include "Component/ActorComponent.h"
+#include "Component/ActorSequenceComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/BoxComponent.h"
 #include "Component/CameraComponent.h"
@@ -33,6 +34,7 @@
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PrimitiveActors.h"
 #include "Runtime/Script/ScriptComponent.h"
 #include "Runtime/Script/ScriptUtils.h"
 #include "ThirdParty/sol/sol.hpp"
@@ -52,6 +54,7 @@ namespace
         if (MatchLuaTypeName(TypeName, "UShapeComponent", "ShapeComponent")) return &UShapeComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UMeshComponent", "MeshComponent")) return &UMeshComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UStaticMeshComponent", "StaticMeshComponent")) return &UStaticMeshComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UActorSequenceComponent", "ActorSequenceComponent")) return &UActorSequenceComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UProceduralMeshComponent", "ProceduralMeshComponent")) return &UProceduralMeshComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UBillboardComponent", "BillboardComponent")) return &UBillboardComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "USubUVComponent", "SubUVComponent")) return &USubUVComponent::s_TypeInfo;
@@ -77,6 +80,7 @@ namespace
         if (MatchLuaTypeName(TypeName, "UBoxComponent", "BoxComponent")) return &UBoxComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "USphereComponent", "SphereComponent")) return &USphereComponent::s_TypeInfo;
         if (MatchLuaTypeName(TypeName, "UCapsuleComponent", "CapsuleComponent")) return &UCapsuleComponent::s_TypeInfo;
+        if (MatchLuaTypeName(TypeName, "UMainSceneDestructibleComponent", "MainSceneDestructibleComponent")) return &UMainSceneDestructibleComponent::s_TypeInfo;
         return nullptr;
     }
 

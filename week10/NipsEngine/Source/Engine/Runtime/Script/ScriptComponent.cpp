@@ -492,6 +492,11 @@ void UScriptComponent::Serialize(FArchive& Ar)
 
     Ar << "ScriptName" << ScriptName;
 
+    if (Ar.IsSaving() && !ScriptName.empty() && !bLuaPropertiesScanned)
+    {
+        ReloadLuaProperties();
+    }
+
     int32 LuaPropertyCount = static_cast<int32>(LuaProperties.size());
     Ar << "LuaPropertyCount" << LuaPropertyCount;
 
@@ -1133,7 +1138,15 @@ void UScriptComponent::ReloadLuaProperties()
         LuaProperties.end(),
         [](const FLuaScriptProperty& A, const FLuaScriptProperty& B)
         {
-            return A.TypeName > B.TypeName;
+            if (A.Category != B.Category)
+            {
+                return A.Category < B.Category;
+            }
+            if (A.TypeName != B.TypeName)
+            {
+                return A.TypeName < B.TypeName;
+            }
+            return A.Name < B.Name;
         });
 }
 

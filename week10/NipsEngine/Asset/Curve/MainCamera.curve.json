@@ -1,0 +1,11 @@
+{
+        "ArriveTangents" : [0.000000, 34.167500, 6.006006],
+        "AssetPath" : "Asset/Curve/MainCamera.curve.json",
+        "InterpModes" : [2, 2, 2],
+        "LeaveTangents" : [10.410465, 41.241161, 0.000000],
+        "ObjectName" : "UCurveFloatAsset_0",
+        "TangentModes" : [1, 1, 1],
+        "Times" : [0.000000, 0.750000, 1.000000],
+        "Type" : "UCurveFloatAsset",
+        "Values" : [-0.000000, 46.500000, 50.000000]
+      }

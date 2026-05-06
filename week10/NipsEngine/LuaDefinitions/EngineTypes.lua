@@ -199,6 +199,9 @@ function ActorComponent:GetOwner() end
 ---@return AActor
 function ActorComponent:GetActor() end
 
+---@return ActorSequenceComponent|nil
+function ActorComponent:AsActorSequenceComponent() end
+
 ---@return boolean
 function ActorComponent:IsActive() end
 
@@ -365,6 +368,42 @@ function SoundComponent:Get3DAttenuationModel() end
 
 ---@return number
 function SoundComponent:Get3DRolloffFactor() end
+
+---@class ActorSequenceComponent: ActorComponent
+local ActorSequenceComponent = {}
+
+function ActorSequenceComponent:Play() end
+function ActorSequenceComponent:Pause() end
+function ActorSequenceComponent:Stop() end
+---@return ActorSequence|nil
+function ActorSequenceComponent:GetSequence() end
+---@return ActorSequencePlayer|nil
+function ActorSequenceComponent:GetSequencePlayer() end
+---@param desc table
+---@return boolean
+function ActorSequenceComponent:AddFloatTrack(desc) end
+
+---@class ActorSequence: Object
+---@field Duration number
+---@field Loop boolean
+local ActorSequence = {}
+
+---@class ActorSequencePlayer: Object
+local ActorSequencePlayer = {}
+
+function ActorSequencePlayer:Play() end
+function ActorSequencePlayer:Pause() end
+function ActorSequencePlayer:Stop() end
+---@param time number
+function ActorSequencePlayer:SetCurrentTime(time) end
+---@return number
+function ActorSequencePlayer:GetCurrentTime() end
+---@return boolean
+function ActorSequencePlayer:IsPlaying() end
+
+---@class MainSceneDestructibleComponent: ActorComponent
+---@field PresentationTrigger number
+local MainSceneDestructibleComponent = {}
 
 ---@class StaticMesh: Object
 local StaticMesh = {}
