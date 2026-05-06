@@ -492,7 +492,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["F2"] = VK_F2;
 
 	sol::table CameraManager = Lua.create_named_table("CameraManager");
-	CameraManager.set_function("ToggleActorCamera", [](const FString& ActorName)
+	CameraManager.set_function("ToggleActorCamera", [](const FString& ActorName, sol::optional<float> BlendTime)
 	{
 		if (!GEngine || !GEngine->GetWorld())
 		{
@@ -501,9 +501,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
-		return Manager ? Manager->ToggleActiveCameraForActor(ActorName) : false;
+		return Manager ? Manager->ToggleActiveCameraForActor(ActorName, BlendTime.value_or(0.0f)) : false;
 	});
-	CameraManager.set_function("ToggleOwnerCamera", [](AActor* Actor)
+	CameraManager.set_function("ToggleOwnerCamera", [](AActor* Actor, sol::optional<float> BlendTime)
 	{
 		if (!GEngine || !GEngine->GetWorld())
 		{
@@ -512,7 +512,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
-		return Manager ? Manager->ToggleActiveCameraForActor(Actor) : false;
+		return Manager ? Manager->ToggleActiveCameraForActor(Actor, BlendTime.value_or(0.0f)) : false;
 	});
 	CameraManager.set_function("PossessCamera", [](UCameraComponent* Camera)
 	{

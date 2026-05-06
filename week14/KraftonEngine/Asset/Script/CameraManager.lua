@@ -14,7 +14,7 @@ end
 
 function Tick(dt)
     if Input.GetKeyDown(Key.F2) then
-        CameraManager.ToggleOwnerCamera(obj)
+        CameraManager.ToggleOwnerCamera(obj, 0.6)
     end
 
     if car == nil then

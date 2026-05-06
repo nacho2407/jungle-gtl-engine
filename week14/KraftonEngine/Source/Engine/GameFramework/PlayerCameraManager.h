@@ -24,11 +24,22 @@ public:
 	void UnregisterCamera(UCameraComponent* Camera);
 
 	void AutoPossessDefaultCamera();
-	bool ToggleActiveCameraForActor(const FString& ActorName);
-	bool ToggleActiveCameraForActor(const AActor* Actor);
+	// BlendTime > 0 이면 새 ActiveCamera 로 부드럽게 보간 전환 (PossessedCamera 는 즉시 swap).
+	bool ToggleActiveCameraForActor(const FString& ActorName, float BlendTime = 0.0f);
+	bool ToggleActiveCameraForActor(const AActor* Actor, float BlendTime = 0.0f);
 
 	UCameraComponent* GetActiveCamera() const { return ActiveCamera; }
 	void SetActiveCamera(UCameraComponent* NewCamera) { ActiveCamera = NewCamera; }
+
+	// ActiveCamera 단위 blend — 같은 액터의 다른 카메라 컴포넌트 사이 부드럽게 전환.
+	// (UE 의 SetViewTargetWithBlend 가 Actor 단위인 것과 별개로, 본 엔진은 Pawn 안에 여러
+	//  카메라 컴포넌트를 두는 구조라 컴포넌트 단위 blend 가 필요.)
+	// BlendTime <= 0 이면 즉시 swap, > 0 이면 ActiveCamera 는 그대로 두고 PendingActiveCamera
+	// 로 보관해 GetCameraView/UpdateCamera 가 보간.
+	void SetActiveCameraWithBlend(
+		UCameraComponent* NewCamera,
+		float BlendTime,
+		EViewTargetBlendFunction BlendFunction = EViewTargetBlendFunction::VTBlend_Linear);
 
 	UCameraComponent* GetPossessedCamera() const { return PossessedCamera; }
 	void Possess(UCameraComponent* NewCamera) { PossessedCamera = NewCamera; }
@@ -125,6 +136,13 @@ private:
 	AActor* PendingViewTarget = nullptr;
 	FViewTargetTransitionParams BlendParams;
 	float BlendTimeRemaining = 0.0f;
+
+	// ActiveCamera 컴포넌트 단위 blend (ViewTarget blend 와 별개 — 같은 액터의
+	// 다른 카메라로 보간 전환할 때 사용). PendingActiveCamera != nullptr 이면 진행 중.
+	UCameraComponent* PendingActiveCamera = nullptr;
+	float ActiveCameraBlendTimeRemaining = 0.0f;
+	float ActiveCameraBlendDuration = 0.0f;
+	EViewTargetBlendFunction ActiveCameraBlendFunction = EViewTargetBlendFunction::VTBlend_Linear;
 
 	// Active shakes — 매니저가 소유. UpdateCamera 에서 IsFinished() 시 제거.
 	TArray<UCameraShakeBase*> ActiveShakes;
