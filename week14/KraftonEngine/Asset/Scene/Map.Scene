@@ -2109,7 +2109,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [15.730211, -28.665539, 16.296112],
-        "Rotation" : [-0.000000, 173.335464, 0.000000],
+        "Rotation" : [-0.000000, 173.335449, 0.000000],
         "Scale" : [15.808549, 8.294950, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -2134,7 +2134,7 @@
           "Location" : [15.730211, -28.665539, 16.296112],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, 173.335480, 0.000000],
+          "Rotation" : [0.000000, 173.335449, 0.000000],
           "Scale" : [15.808549, 8.294950, 20.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2150,7 +2150,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [1.069643, -165.651703, 16.396112],
-        "Rotation" : [-0.000000, 169.389816, 0.000000],
+        "Rotation" : [-0.000000, 169.389801, 0.000000],
         "Scale" : [15.594642, 8.493910, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -2642,7 +2642,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [55.159370, -116.689476, 17.596117],
-        "Rotation" : [0.000000, -9.494661, 0.000000],
+        "Rotation" : [0.000000, -9.494660, 0.000000],
         "Scale" : [13.266826, 6.819809, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -4214,6 +4214,12 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "UActionComponent",
+          "Properties" : {
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "Properties" : {
         "Location" : [-28.394482, 11.636257, 2.946837],
@@ -4290,6 +4296,12 @@
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UActionComponent",
+          "Properties" : {
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -4372,6 +4384,12 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "UActionComponent",
+          "Properties" : {
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "Properties" : {
         "Location" : [-23.014721, -119.216591, 2.998577],
@@ -4451,6 +4469,12 @@
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
+        }, {
+          "ClassName" : "UActionComponent",
+          "Properties" : {
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
         }],
       "Properties" : {
         "Location" : [80.726562, -135.343979, 3.036079],
@@ -4527,6 +4551,12 @@
           "ClassName" : "ULuaScriptComponent",
           "Properties" : {
             "ScriptFile" : "WalkingPerson.lua",
+            "bEditorOnly" : false,
+            "bTickEnable" : true
+          }
+        }, {
+          "ClassName" : "UActionComponent",
+          "Properties" : {
             "bEditorOnly" : false,
             "bTickEnable" : true
           }
@@ -4980,7 +5010,7 @@
                   "Location" : [0.950000, -1.400000, 0.100000],
                   "Mass (kg)" : 1.000000,
                   "Object Type" : 2,
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
                   "Simulate Physics" : false,
@@ -5009,7 +5039,7 @@
                   "Location" : [0.950000, 1.250000, 0.100000],
                   "Mass (kg)" : 1.000000,
                   "Object Type" : 2,
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
                   "Simulate Physics" : false,
@@ -5038,7 +5068,7 @@
                   "Location" : [-0.850000, -1.400000, 0.100000],
                   "Mass (kg)" : 1.000000,
                   "Object Type" : 2,
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
                   "Simulate Physics" : false,
@@ -5067,7 +5097,7 @@
                   "Location" : [-0.850000, 1.250000, 0.100000],
                   "Mass (kg)" : 1.000000,
                   "Object Type" : 2,
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
                   "Simulate Physics" : false,
@@ -5241,7 +5271,39 @@
                 }
               }, {
                 "Children" : [{
-                    "Children" : [],
+                    "Children" : [{
+                        "Children" : [],
+                        "ClassName" : "UBillboardComponent",
+                        "Properties" : {
+                          "Cast Shadow" : true,
+                          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                          "Collision Enabled" : 0,
+                          "Collision Responses" : {
+                            "Pawn" : 2,
+                            "Projectile" : 2,
+                            "Trigger" : 2,
+                            "WorldDynamic" : 2,
+                            "WorldStatic" : 2
+                          },
+                          "Generate Overlap Events" : false,
+                          "Height" : 1.000000,
+                          "Location" : [0.000000, 0.000000, 0.000000],
+                          "Mass (kg)" : 1.000000,
+                          "Material" : {
+                            "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                          },
+                          "Object Type" : 0,
+                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Scale" : [1.000000, 1.000000, 1.000000],
+                          "Simulate Physics" : false,
+                          "Two Sided Shadow" : false,
+                          "Visible" : true,
+                          "Width" : 1.000000,
+                          "bEditorOnly" : true,
+                          "bTickEnable" : true
+                        },
+                        "bHiddenInComponentTree" : true
+                      }],
                     "ClassName" : "UDirtComponent",
                     "Properties" : {
                       "Cast Shadow" : true,
@@ -5275,7 +5337,39 @@
                       "bTickEnable" : true
                     }
                   }, {
-                    "Children" : [],
+                    "Children" : [{
+                        "Children" : [],
+                        "ClassName" : "UBillboardComponent",
+                        "Properties" : {
+                          "Cast Shadow" : true,
+                          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                          "Collision Enabled" : 0,
+                          "Collision Responses" : {
+                            "Pawn" : 2,
+                            "Projectile" : 2,
+                            "Trigger" : 2,
+                            "WorldDynamic" : 2,
+                            "WorldStatic" : 2
+                          },
+                          "Generate Overlap Events" : false,
+                          "Height" : 1.000000,
+                          "Location" : [0.000000, 0.000000, 0.000000],
+                          "Mass (kg)" : 1.000000,
+                          "Material" : {
+                            "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                          },
+                          "Object Type" : 0,
+                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Scale" : [1.000000, 1.000000, 1.000000],
+                          "Simulate Physics" : false,
+                          "Two Sided Shadow" : false,
+                          "Visible" : true,
+                          "Width" : 1.000000,
+                          "bEditorOnly" : true,
+                          "bTickEnable" : true
+                        },
+                        "bHiddenInComponentTree" : true
+                      }],
                     "ClassName" : "UDirtComponent",
                     "Properties" : {
                       "Cast Shadow" : true,
@@ -5309,7 +5403,39 @@
                       "bTickEnable" : true
                     }
                   }, {
-                    "Children" : [],
+                    "Children" : [{
+                        "Children" : [],
+                        "ClassName" : "UBillboardComponent",
+                        "Properties" : {
+                          "Cast Shadow" : true,
+                          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                          "Collision Enabled" : 0,
+                          "Collision Responses" : {
+                            "Pawn" : 2,
+                            "Projectile" : 2,
+                            "Trigger" : 2,
+                            "WorldDynamic" : 2,
+                            "WorldStatic" : 2
+                          },
+                          "Generate Overlap Events" : false,
+                          "Height" : 1.000000,
+                          "Location" : [0.000000, 0.000000, 0.000000],
+                          "Mass (kg)" : 1.000000,
+                          "Material" : {
+                            "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                          },
+                          "Object Type" : 0,
+                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Scale" : [1.000000, 1.000000, 1.000000],
+                          "Simulate Physics" : false,
+                          "Two Sided Shadow" : false,
+                          "Visible" : true,
+                          "Width" : 1.000000,
+                          "bEditorOnly" : true,
+                          "bTickEnable" : true
+                        },
+                        "bHiddenInComponentTree" : true
+                      }],
                     "ClassName" : "UDirtComponent",
                     "Properties" : {
                       "Cast Shadow" : true,
@@ -5343,7 +5469,39 @@
                       "bTickEnable" : true
                     }
                   }, {
-                    "Children" : [],
+                    "Children" : [{
+                        "Children" : [],
+                        "ClassName" : "UBillboardComponent",
+                        "Properties" : {
+                          "Cast Shadow" : true,
+                          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+                          "Collision Enabled" : 0,
+                          "Collision Responses" : {
+                            "Pawn" : 2,
+                            "Projectile" : 2,
+                            "Trigger" : 2,
+                            "WorldDynamic" : 2,
+                            "WorldStatic" : 2
+                          },
+                          "Generate Overlap Events" : false,
+                          "Height" : 1.000000,
+                          "Location" : [0.000000, 0.000000, 0.000000],
+                          "Mass (kg)" : 1.000000,
+                          "Material" : {
+                            "Path" : "Asset/Materials/Editor/SpotLight.mat"
+                          },
+                          "Object Type" : 0,
+                          "Rotation" : [-0.000000, 0.000000, 0.000000],
+                          "Scale" : [1.000000, 1.000000, 1.000000],
+                          "Simulate Physics" : false,
+                          "Two Sided Shadow" : false,
+                          "Visible" : true,
+                          "Width" : 1.000000,
+                          "bEditorOnly" : true,
+                          "bTickEnable" : true
+                        },
+                        "bHiddenInComponentTree" : true
+                      }],
                     "ClassName" : "UDirtComponent",
                     "Properties" : {
                       "Cast Shadow" : true,
@@ -5464,7 +5622,7 @@
                   "Near Z" : 0.100000,
                   "Ortho Width" : 10.000000,
                   "Orthographic" : false,
-                  "Rotation" : [-0.000000, 0.000000, 0.000000],
+                  "Rotation" : [0.000000, 0.000000, 0.000000],
                   "Scale" : [1.000000, 1.000000, 1.000000],
                   "bEditorOnly" : false,
                   "bTickEnable" : true
@@ -5478,7 +5636,7 @@
               "Enable Camera Lag" : true,
               "Enable Rotation Lag" : true,
               "Location" : [0.000000, 0.000000, 0.000000],
-              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Socket Offset" : [0.000000, 0.000000, 2.500000],
               "Target Arm Length" : 4.500000,
@@ -5505,7 +5663,7 @@
           "Location" : [-78.007401, 104.656204, 2.840074],
           "Mass (kg)" : 1500.000000,
           "Object Type" : 2,
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : true,
