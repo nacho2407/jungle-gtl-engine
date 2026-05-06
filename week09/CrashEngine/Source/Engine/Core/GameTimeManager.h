@@ -10,6 +10,7 @@ public:
 
 	float GetDeltatime() const { return Deltatime; }
 	float GetUnScaledDeltatime() const { return UnScaledDeltatime; }
+	float GetTimeScale() const { return TimeScale; }
 
 private:
 	float Deltatime = 0.0f;

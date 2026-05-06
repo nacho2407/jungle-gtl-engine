@@ -294,3 +294,8 @@ float FLuaWorldProxy::GetUnscaledDeltatime() const
     return World->GetUnScaledDeltatime();
 }
 
+float FLuaWorldProxy::GetTimeScale() const
+{
+    UWorld* World = ResolveWorld();
+    return World->GetTimeScale();
+}

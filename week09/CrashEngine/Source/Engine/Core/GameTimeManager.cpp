@@ -23,11 +23,15 @@ void FGameTimeManager::Tick(float InUnScaledDeltatime)
 
 void FGameTimeManager::RequestHitStop(float Duration)
 {
-	HitStopRemainingTime = Duration >= 0 ? Duration : 0;
+	if (Duration <= 0) return;
+	HitStopRemainingTime = Duration;
 }
 
 void FGameTimeManager::RequestSlomo(float InTimeScale, float Duration)
 {
-	SlomoRemainingTime = Duration >= 0 ? Duration : 0;
-	SlomoTimeScale = InTimeScale >= 0 ? InTimeScale : 0;
+	if (InTimeScale <= 0) return;
+	if (Duration <= 0) return;
+
+	SlomoTimeScale = InTimeScale;
+	SlomoRemainingTime = Duration;
 }

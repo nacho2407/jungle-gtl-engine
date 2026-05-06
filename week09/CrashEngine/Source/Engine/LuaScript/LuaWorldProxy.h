@@ -32,6 +32,7 @@ public:
     bool RequestHitStop(float Duration) const;
     bool RequestSlomo(float InTimeScale, float Duration) const;
     float GetUnscaledDeltatime() const;
+    float GetTimeScale() const;
 
 private:
     uint32 WorldUUID = 0;

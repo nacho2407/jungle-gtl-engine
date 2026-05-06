@@ -92,6 +92,7 @@ public:
     void RequestHitStop(float Duration) { GameTimeManager.RequestHitStop(Duration); }
     void RequestSlomo(float InTimeScale, float Duration) { GameTimeManager.RequestSlomo(InTimeScale, Duration); }
     float GetUnScaledDeltatime() { return GameTimeManager.GetUnScaledDeltatime(); }
+    float GetTimeScale() { return GameTimeManager.GetTimeScale(); }
 
 private:
     struct FPendingDamage
