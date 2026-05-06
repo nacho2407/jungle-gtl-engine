@@ -3,6 +3,8 @@ local UIManager = require("UIManager")
 
 local GAS_CONSUMPTION_PER_SPEED = 0.02
 local MIN_CONSUME_SPEED = 0.1
+local MIN_VIGNETTE = 0.6
+local MAX_VIGNETTE = 1.2
 
 local car = nil
 local movement = nil
@@ -37,6 +39,16 @@ local function TriggerFuelOutGameOver()
                 gm:GameOver()
             end
         end)
+end
+
+local function UpdateGasVignette()
+    if gas == nil then
+        return
+    end
+
+    local gasRatio = math.max(0.0, math.min(1.0, gas:GetGasRatio()))
+    local vignette = MIN_VIGNETTE + (MAX_VIGNETTE - MIN_VIGNETTE) * gasRatio
+    CameraManager.SetVignette(1.0, vignette, 0.5)
 end
 
 local function CacheCarComponents()
@@ -84,16 +96,20 @@ function Tick(dt)
     end
 
     if not gas:HasGas() then
+        UpdateGasVignette()
         TriggerFuelOutGameOver()
         return
     end
 
     local speed = math.abs(movement:GetForwardSpeed())
     if speed < MIN_CONSUME_SPEED then
+        UpdateGasVignette()
         return
     end
 
     local consumed = gas:ConsumeGas(speed * GAS_CONSUMPTION_PER_SPEED * dt)
+    UpdateGasVignette()
+
     if not consumed then
         TriggerFuelOutGameOver()
     end
