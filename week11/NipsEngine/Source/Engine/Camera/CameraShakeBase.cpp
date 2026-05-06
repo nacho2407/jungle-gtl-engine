@@ -160,6 +160,13 @@ void UCameraShakePattern::StopShakePattern(const bool bImmediately)
     OnStopShakePattern(bImmediately);
 }
 
+void UCameraShakePattern::GetCameraShakeInfo(FCameraShakeInfo& OutCameraInfo) const
+{
+    OutCameraInfo.Duration = Duration;
+    OutCameraInfo.BlendInTime = BlendInTime;
+    OutCameraInfo.BlendOutTime = BlendOutTime;
+}
+
 void UCameraShakePattern::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     UObject::GetEditableProperties(OutProps);
