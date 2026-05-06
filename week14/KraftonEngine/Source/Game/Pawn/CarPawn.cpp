@@ -104,8 +104,10 @@ void ACarPawn::InitPlayerControlledComponents(const FString& LuaCameraScriptFile
 	SpringArm->SocketOffset = FVector(0.0f, 0.0f, 2.5f);  // ArmEnd 에서 Z+ 으로 위로
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->bEnableCameraRotationLag = true;
-	SpringArm->CameraLagSpeed = 6.0f;
-	SpringArm->CameraRotationLagSpeed = 8.0f;
+	SpringArm->CameraLagSpeed = 5.0f;
+	SpringArm->CameraRotationLagSpeed = 7.0f;
+	SpringArm->CameraLagMaxDistance = 4.0f;
+	SpringArm->bDoCollisionTest = true;
 
 	ThirdPersonCamera = AddComponent<UCameraComponent>();
 	ThirdPersonCamera->AttachToComponent(SpringArm);
@@ -232,26 +234,6 @@ void ACarPawn::ResolveCachedComponents()
 			}
 		}
 	}
-
-	// SpringArm 마이그레이션 — 기존 직렬화된 씬은 ThirdPersonCamera 가 CollisionBox
-	// 직접 자식. SpringArm 이 없으면 끼워 넣어 lag 효과를 자동 적용. PostDuplicate /
-	// BeginPlay 양쪽에서 호출되므로 PIE / scene-load 모두 호환. idempotent.
-	//if (ThirdPersonCamera && CollisionBox
-	//	&& !Cast<USpringArmComponent>(ThirdPersonCamera->GetParent()))
-	//{
-	//	USpringArmComponent* SpringArm = AddComponent<USpringArmComponent>();
-	//	SpringArm->AttachToComponent(CollisionBox);
-	//	SpringArm->TargetArmLength = 4.5f;
-	//	SpringArm->SocketOffset = FVector(0.0f, 0.0f, 2.5f);
-	//	SpringArm->bEnableCameraLag = true;
-	//	SpringArm->bEnableCameraRotationLag = true;
-	//	SpringArm->CameraLagSpeed = 6.0f;
-	//	SpringArm->CameraRotationLagSpeed = 8.0f;
-
-	//	ThirdPersonCamera->AttachToComponent(SpringArm);
-	//	ThirdPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
-	//	ThirdPersonCamera->SetRelativeRotation(FVector(0.0f, 0.0f, 0.0f));
-	//}
 
 	// Wheels — 컴포넌트 순회 순서대로 캐싱 (InitDefaultComponents 추가 순서 또는 직렬화 순서가 보존된다고 가정)
 	for (auto& W : Wheels) W = nullptr;

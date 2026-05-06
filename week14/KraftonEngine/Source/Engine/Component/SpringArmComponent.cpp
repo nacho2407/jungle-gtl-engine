@@ -1,6 +1,9 @@
 #include "Component/SpringArmComponent.h"
 #include "Object/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Core/CollisionTypes.h"
 #include <algorithm>
 #include <cmath>
 
@@ -79,7 +82,32 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	//     LaggedAttach 에서 Local -X 방향으로 TargetArmLength 만큼 + SocketOffset.
 	const FVector ArmDirWorld = LaggedAttachRot.RotateVector(FVector(-TargetArmLength, 0.0f, 0.0f));
 	const FVector SocketWorld = LaggedAttachRot.RotateVector(SocketOffset);
-	const FVector ArmEndWorld = LaggedAttachLoc + ArmDirWorld + SocketWorld;
+	FVector ArmEndWorld = LaggedAttachLoc + ArmDirWorld + SocketWorld;
+
+	// (4b) Collision test — bDoCollisionTest 가 켜져 있으면 LaggedAttach → ArmEnd 방향으로
+	//      raycast. Hit 이 있으면 해당 거리에서 ProbeSize 만큼 안쪽에서 정지해 카메라가
+	//      벽 너머로 빠지지 않게 한다. 자기 Owner 액터는 ignore. (UE 의 sphere sweep 은 본
+	//      엔진 미지원이라 단일 ray + ProbeSize 안전 거리로 근사.)
+	if (bDoCollisionTest)
+	{
+		AActor* Owner = GetOwner();
+		UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+		if (World)
+		{
+			const FVector Diff = ArmEndWorld - LaggedAttachLoc;
+			const float Distance = Diff.Length();
+			if (Distance > 1e-4f)
+			{
+				const FVector Dir = Diff / Distance;
+				FHitResult Hit;
+				if (World->PhysicsRaycast(LaggedAttachLoc, Dir, Distance, Hit, ProbeChannel, Owner))
+				{
+					const float SafeDist = std::max(Hit.Distance - ProbeSize, 0.0f);
+					ArmEndWorld = LaggedAttachLoc + Dir * SafeDist;
+				}
+			}
+		}
+	}
 
 	// (5) World transform 을 *Relative* 로 환산해서 RelativeTransform 에 set —
 	//     SceneComponent 기본 합성 (Parent × Relative) 이 우리 의도한 World 를 자식에게 전달.
@@ -105,6 +133,15 @@ void USpringArmComponent::Serialize(FArchive& Ar)
 	Ar << CameraLagSpeed;
 	Ar << CameraRotationLagSpeed;
 	Ar << CameraLagMaxDistance;
+	Ar << bDoCollisionTest;
+	Ar << ProbeSize;
+	// ProbeChannel 은 enum class — Archive operator 가 enum 도 받지만, 안전하게 underlying 으로 직렬화.
+	uint8 ProbeChannelByte = static_cast<uint8>(ProbeChannel);
+	Ar << ProbeChannelByte;
+	if (Ar.IsLoading())
+	{
+		ProbeChannel = static_cast<ECollisionChannel>(ProbeChannelByte);
+	}
 }
 
 void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -118,4 +155,6 @@ void USpringArmComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Out
 	OutProps.push_back({ "Camera Lag Speed",         EPropertyType::Float, "SpringArm", &CameraLagSpeed,            0.0f, 1000.0f,   0.1f });
 	OutProps.push_back({ "Camera Rotation Lag Speed",EPropertyType::Float, "SpringArm", &CameraRotationLagSpeed,    0.0f, 1000.0f,   0.1f });
 	OutProps.push_back({ "Camera Lag Max Distance",  EPropertyType::Float, "SpringArm", &CameraLagMaxDistance,      0.0f, 100000.0f, 1.0f });
+	OutProps.push_back({ "Do Collision Test",        EPropertyType::Bool,  "SpringArm", &bDoCollisionTest                                });
+	OutProps.push_back({ "Probe Size",               EPropertyType::Float, "SpringArm", &ProbeSize,                 0.0f, 100.0f,    0.01f });
 }
