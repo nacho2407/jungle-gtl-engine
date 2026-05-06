@@ -2,226 +2,197 @@
 
 Updated: 2026-05-06
 
-이 문서는 NipsEngine을 장기적으로 더 읽기 쉽고, 의존성이 낮고, 학습량이 적고, 책임이 명확한 구조로 만들기 위한 최종 리팩토링 방안이다.
+This document is the working roadmap for the NipsEngine structure refactor.
 
-목표는 단순히 파일을 쪼개는 것이 아니다. Codex나 새 팀원이 코드를 봤을 때 다음 평가가 나오도록 만드는 것이다.
+The goal is not to split files for its own sake. The goal is that a new maintainer can read the code and quickly understand:
 
-- Engine, Editor, PIE, GameClient의 책임 경계가 납득된다.
-- 큰 기능의 진입점과 소유자가 명확하다.
-- 기능 추가 시 어느 모듈을 수정해야 하는지 예측 가능하다.
-- Runtime 코드가 Editor 정책에 끌려가지 않는다.
-- PIE는 Editor 안에서 실행되는 Runtime 시뮬레이션이라는 정체성이 분명하다.
-- 각 클래스가 한 가지 이유로 변경된다.
-- 읽는 사람이 전체 엔진을 외우지 않아도 국소적으로 이해하고 수정할 수 있다.
+- what owns each responsibility
+- which APIs are stable and public
+- which code is Editor-only
+- which code must run in GameClient
+- how PIE differs from both Editor and GameClient
+- where to add a feature without causing hidden side effects
+
+All batches must preserve current behavior unless a behavior change is explicitly approved.
+
+## Non-Negotiable Rules
+
+1. Preserve existing behavior.
+2. Do not make broad rewrites without a small batch boundary.
+3. Do not leave duplicate legacy APIs after moving responsibility.
+4. Keep external APIs intentional and narrow.
+5. Keep function signatures readable.
+6. Keep class responsibilities understandable from the class name.
+7. Prefer named functions/classes over policy hidden in local lambdas.
+8. Do not increase Engine -> Editor dependency.
+9. Verify Editor and GameClient builds after structural changes that touch Engine or Runtime paths.
+10. Document the touched responsibility before moving code.
 
 ## Evaluation Criteria
 
-리팩토링의 성공 기준은 다음 다섯 가지다.
+### Readability
 
-1. 가독성
-   - 한 파일이 여러 화면을 넘겨도 역할이 한 가지면 허용할 수 있다.
-   - 하지만 UI, 입력, 렌더, 저장, 패키징, Runtime UI 같은 서로 다른 정책이 한 파일에 섞이면 분리 대상이다.
-   - 함수명과 클래스명만 보고 책임을 짐작할 수 있어야 한다.
+Good:
 
-2. 의존성
-   - `Engine`은 `Editor`를 직접 include하지 않는다.
-   - `GameClient`는 `Editor` 타입을 몰라야 한다.
-   - `PIE`는 Editor 소유의 세션이지만 Runtime 규칙을 최대한 공유한다.
-   - `Lua`, `RML`, `ImGui`는 입력을 직접 훔쳐보는 구조가 아니라 정책 계층을 통과해야 한다.
+- public methods are grouped by responsibility
+- method names describe policy
+- large UI surfaces are split by user-facing panel
+- helper functions have names when they encode real policy
+- function signatures wrap cleanly when long
 
-3. 학습량
-   - 주요 기능은 2-3개의 파일을 보면 큰 흐름이 잡혀야 한다.
-   - "이 클래스도 하고 저 클래스도 한다"가 아니라 "이 클래스는 조정자, 저 클래스는 실행자"가 되어야 한다.
-   - 로컬 lambda와 익명 helper는 단기 구현에는 편하지만, 정책이 되는 순간 이름 있는 함수/클래스로 승격한다.
+Bad:
 
-4. 구조
-   - 시스템은 계층적으로 읽혀야 한다.
-   - 상위 계층은 정책을 정하고, 하위 계층은 실행만 한다.
-   - 렌더링, 입력, 에셋, UI, 저장은 각자 독립적인 흐름도를 가져야 한다.
+- a class owns UI drawing, scene mutation, packaging, runtime UI, and input policy at the same time
+- a public method exists only because an old caller used it before a subsystem was extracted
+- anonymous namespace helpers become a second hidden class
 
-5. 납득성
-   - UE와 유사한 개념을 도입할 때는 왜 필요한지 설명 가능해야 한다.
-   - 이름은 역할을 과장하지 않아야 한다.
-   - 레거시 facade는 이행 기간에만 허용하고, 최종 구조에서는 제거한다.
+### Dependency
 
-## Current Diagnosis
+Final desired direction:
 
-우리 엔진은 기능 범위가 넓다.
+- `Engine` does not include `Editor`
+- `GameClient` does not compile or include `Editor`
+- `Editor` can depend on `Engine`
+- `PIE` is owned by `Editor`, but shares Runtime behavior where possible
+- `Lua` and `RML` do not bypass the input policy layer
+- `Renderer` runtime core does not directly depend on editor viewport types
 
-- Editor
-- PIE
-- GameClient
-- ObjViewer
-- Runtime RML UI
-- Lua scripting
-- GameMode / PlayerController
-- StaticMesh OBJ -> BIN -> Runtime loading
-- Packaging
-- ID Picking
-- Outline
-- Undo/Redo
+### Learning Cost
 
-이 자체는 강점이다. 다만 현재 구조는 여러 기능이 빠르게 추가되면서 일부 클래스가 과밀해졌다.
+Target:
 
-대표 위험 지점:
+- A feature should be understandable by reading 2-3 local files.
+- Cross-domain flows should have a named bridge or session object.
+- A new maintainer should not need to know every panel and every viewport mode to change one feature.
 
-- `Editor/UI/EditorMainPanel.cpp`
-  - editor layout, viewport drawing, PIE viewport, RML preview, packaging, scene close flow가 섞여 있다.
-- `Engine/Core/ResourceManager.cpp`
-  - texture, shader, material, static mesh, OBJ/MTL import, binary cache, editor LOD policy가 섞여 있다.
-- `Editor/Viewport/EditorViewportClient.cpp`
-  - camera navigation, picking, gizmo, selection, PIE possess/eject, cursor focus가 섞여 있다.
-- `Engine/Render/Scene/RenderCollector.cpp`
-  - world traversal, culling fallback, primitive draw command build, light collect, editor selection mask가 섞여 있다.
-- `Engine/Runtime/EngineLoop.cpp`
-  - launch mode selection과 editor/game/objviewer 생성 분기가 한 곳에 있다. 이 자체는 허용 가능하지만 include 경계는 더 깔끔해야 한다.
+### Structural Fit
 
-Week08 엔진에서 배울 점:
+The final structure should feel UE-like where it helps:
 
-- Render Proxy, FrameContext, DrawCommandBuilder 구조는 학습량이 적고 역할이 선명하다.
-- 큰 렌더링 흐름이 "Scene Proxy -> Collector -> DrawCommand -> Renderer"로 읽힌다.
-- 파일 크기가 대체로 작고, 특정 기능의 소유자가 예측 가능하다.
+- `Engine` is Runtime core.
+- `Editor` is a tool layer over Runtime.
+- `PIE` is an Editor-owned Runtime session.
+- `GameClient` is standalone Runtime.
+- `GameMode` owns gameplay boot policy.
+- `PlayerController` owns gameplay input interpretation.
+- `PlayerCameraManager` owns runtime camera output.
+- `EditorViewportClient` owns editor viewport coordination, not all interactions.
 
-우리 엔진이 유지해야 할 점:
+## Current High-Risk Areas
 
-- GameClient configuration이 실제로 존재한다.
-- PIE와 Editor input 정책이 최근 분리 방향으로 가고 있다.
-- Lua/RML/Packaging처럼 실제 게임 프로젝트에 가까운 복잡도를 이미 포함한다.
-- Editor, PIE, Runtime을 분리하려는 요구가 명확하다.
+### EditorMainPanel
 
-결론:
+Current state:
 
-- 현재 구조 점수는 Week08 쪽이 더 깔끔하다.
-- 최종 구조 잠재력은 우리 엔진이 더 높다.
-- 따라서 Week08의 "작고 납득되는 구조"를 흡수하되, 우리 엔진의 Runtime/PIE/GameClient 구분을 기준으로 재설계한다.
+- The old monolithic `EditorMainPanel.cpp` has been removed.
+- PIE presentation, packaging, scene commands, placement, viewport toolbar, debug UI, undo history UI, console/footer commands, input capture policy, dock layout, viewport host composition, icon loading, bootstrap, style setup, widget setup, and the main editor toolbar have been split into focused files.
+- `FEditorMainPanel` still owns the shell-level widget instances and grouped UI state, but those state types now live in `EditorMainPanelState.h` while the extracted panel files are being stabilized.
 
-## Target Domain Boundaries
+Final target:
 
-최종적으로 코드는 다음 도메인 경계를 지켜야 한다.
+- `FEditorMainPanel` becomes an Editor shell coordinator.
+- It initializes ImGui, owns the main dock host, and calls smaller panels in order.
+- It does not own detailed packaging state, viewport toolbar icons, RML draw callback queues, scene dirty policy, or undo history drawing.
 
-```mermaid
-flowchart TD
-    OS["OS / Window Messages"]
-    Engine["Engine Runtime Core"]
-    Editor["Editor"]
-    PIE["PIE Session"]
-    Game["GameClient"]
-    Lua["Lua Runtime"]
-    RML["Runtime UI / RML"]
-    ImGui["Editor UI / ImGui"]
+Planned split:
 
-    OS --> Engine
-    Engine --> Game
-    Engine --> Lua
-    Engine --> RML
-    Editor --> Engine
-    Editor --> ImGui
-    Editor --> PIE
-    PIE --> Engine
-    PIE --> Lua
-    PIE --> RML
+- `Editor/UI/MainPanel/EditorMainPanel`
+- `Editor/UI/MainPanel/EditorDockLayout`
+- `Editor/UI/MainPanel/EditorWindowState`
+- `Editor/UI/Packaging/EditorPackagingPanel`
+- `Editor/UI/ViewportPanel/EditorViewportPanel`
+- `Editor/UI/ViewportPanel/EditorViewportToolbar`
+- `Editor/UI/ViewportPanel/EditorViewportContextMenu`
+- `Editor/UI/ViewportPanel/EditorViewportIconSet`
+- `Editor/UI/RuntimeUIPreview/RuntimeUIPreviewRenderBridge`
+- `Editor/UI/Debug/EditorDebugPanel`
+- `Editor/UI/Undo/EditorUndoHistoryPanel`
+- `Editor/UI/Footer/EditorFooterOverlay`
 
-    Game -. must not depend on .-> Editor
-    Engine -. must not include .-> Editor
+### EditorEngine
+
+Current problem:
+
+- `UEditorEngine` is still a coordinator for many systems.
+- Some public APIs are real Editor commands.
+- Some APIs are legacy wrappers left after extracting a system.
+
+Final target:
+
+- `UEditorEngine` owns top-level Editor subsystems.
+- It exposes only deliberate cross-system entry points.
+- Extracted systems expose their own API through getters, not duplicated wrappers.
+
+Current API rule:
+
+- Undo/Redo operations belong to `FEditorUndoSystem`.
+- PIE state belongs to `FPIESession`.
+- Runtime UI belongs to `FRmlUiSystem`.
+- Scene document operations should move to an Editor scene document/controller.
+
+### EditorViewportClient
+
+Current problem:
+
+- It coordinates editor camera, selection, picking, gizmo manipulation, transform shortcuts, PIE possess/eject, cursor focus, and game input bridge state.
+
+Final target:
+
+- `FEditorViewportClient` remains a viewport coordinator.
+- Interaction policies move into smaller services:
+  - `EditorPickingService`
+  - `EditorTransformInteraction`
+  - `EditorViewportNavigationController`
+  - `PIEViewportControlBridge`
+
+### ResourceManager
+
+Current problem:
+
+- One manager owns texture, shader, material, static mesh, OBJ/MTL import, BIN cache, CSO policy, default resources, and editor-related load options.
+
+Final target:
+
+- Keep `FResourceManager` as a facade only during transition.
+- Split actual responsibilities:
+  - `AssetPathPolicy`
+  - `TextureResourceCache`
+  - `ShaderResourceCache`
+  - `MaterialResourceCache`
+  - `StaticMeshResourceCache`
+  - `ImportedMaterialService`
+  - `CookedAssetCopyPolicy`
+
+### Render Pipeline
+
+Current problem:
+
+- `RenderCollector` does world traversal, culling, light collection, primitive command creation, selection mask, and editor-only collection.
+- Runtime renderer still knows too much about editor-only concepts.
+
+Final target:
+
+- Move toward:
+  - `PrimitiveSceneProxy`
+  - `SceneRenderState`
+  - `FrameContext`
+  - `RenderCollector`
+  - `DrawCommandBuilder`
+  - `Renderer`
+
+Desired flow:
+
+```text
+Component -> PrimitiveSceneProxy -> SceneRenderState -> RenderCollector
+          -> DrawCommandBuilder -> DrawCommandList -> Renderer -> Passes
 ```
 
-### Engine
+Editor-only rendering:
 
-Engine은 재사용 가능한 Runtime core다.
+- ID Picking, SelectionMask, Outline, Grid, Gizmo, DebugLine should start from the Editor pipeline or an Editor render extension.
+- GameClient should not need editor viewport types.
 
-허용 책임:
-
-- UObject / Actor / Component
-- World / Level
-- GameMode / PlayerController
-- Input sampling primitives
-- Renderer runtime core
-- Asset loading and resource caches
-- Lua runtime binding
-- RML runtime UI system
-- Runtime serialization
-- Platform/window abstraction
-
-금지 책임:
-
-- ImGui editor UI
-- Editor selection policy
-- Editor viewport layout
-- Editor settings direct read
-- Editor-only picking UI behavior
-- Packaging UI
-
-### Editor
-
-Editor는 도구 계층이다.
-
-허용 책임:
-
-- ImGui panels
-- editor viewport layout
-- editor selection and details
-- editor-only input policy
-- undo/redo
-- content browser
-- scene document state
-- packaging orchestration
-- PIE session ownership
-
-금지 책임:
-
-- Runtime renderer 내부 구현 변경
-- GameClient-only boot behavior
-- Runtime asset cache policy 직접 소유
-
-### PIE
-
-PIE는 Editor 안에서 Runtime world를 실행하는 세션이다.
-
-허용 책임:
-
-- active PIE world handle
-- active viewport index
-- possessed/editor-control state
-- player controller pointer
-- mouse focus release state
-- shell commands: Esc, F8, Shift+F1
-- runtime UI viewport mapping for PIE
-
-금지 책임:
-
-- editor panel drawing
-- gameplay input interpretation
-- RML document implementation
-
-PIE의 핵심 정책:
-
-- Possessed: Game input + Runtime UI input이 우선한다.
-- Eject / EditorControl: Editor viewport setting을 따른다. Grid, Axis, Billboard, Gizmo, Selection은 강제로 숨기지 않는다.
-- Runtime UI는 Eject 시 render/input capture를 하지 않는다.
-
-### GameClient
-
-GameClient는 standalone Runtime이다.
-
-허용 책임:
-
-- GameEngine boot
-- GameMode selection
-- PlayerController routing
-- Runtime RML UI
-- Lua gameplay script
-- packaged asset loading
-
-금지 책임:
-
-- Editor include
-- ImGui UI
-- Editor settings
-- Editor selection/picking tools
-
-## Target Top-Level Layout
-
-최종 구조의 방향은 다음과 같다.
+## Final Target Domain Layout
 
 ```text
 NipsEngine/Source
@@ -241,6 +212,10 @@ NipsEngine/Source
       AActor.h
       GameModeBase.h
       PlayerController.h
+    Camera/
+      PlayerCameraManager.h
+      CameraModifier.h
+      ViewportCamera.h
     Component/
     Input/
       InputSystem.h
@@ -250,579 +225,450 @@ NipsEngine/Source
       Device/
       Resource/
       Scene/
-        SceneRenderState.h
-        PrimitiveSceneProxy.h
       Pipeline/
-        FrameContext.h
-        RenderCollector.h
-        DrawCommandBuilder.h
-        Renderer.h
       Pass/
     Asset/
-      AssetPathPolicy.h
-      TextureResourceCache.h
-      ShaderResourceCache.h
-      MaterialResourceCache.h
-      StaticMeshResourceCache.h
-      ImportedMaterialService.h
-      ResourceManager.h
     UI/
       RmlUi/
+    Serialization/
     Runtime/Script/
 
   Editor/
     EditorEngine.h
     Input/
-      EditorInputRouter.h
-      EditorWorldController.h
-      GameInputBridge.h
-      EditorViewportNavigationController.h
-      EditorTransformInteraction.h
-      EditorPickingService.h
     PIE/
-      PIESession.h
-      PIEViewportRuntimeUIBridge.h
     Viewport/
-      EditorViewportClient.h
-      ViewportLayout.h
-      SceneViewport.h
     Selection/
     Undo/
     Scene/
-      EditorSceneDocument.h
-      EditorSceneDocumentSerializer.h
     UI/
-      MainPanel/
-      ViewportPanel/
-      RuntimeUIPreview/
-      ContentBrowser/
-      Details/
-      Packaging/
     Packaging/
 
   Game/
-    Project-specific C++ gameplay, if needed
+    Project-specific C++ gameplay when needed
 
   Misc/
     ObjViewer/
 ```
 
-주의:
-
-- 위 구조는 최종 방향이다. 한 번에 이동하지 않는다.
-- 기존 파일을 무리하게 rename하면 충돌과 빌드 실패가 커진다.
-- 각 batch는 기능 보존, 빌드 검증, GameClient 검증을 포함한다.
-
-## Target Input Architecture
-
-입력은 가장 먼저 정책이 명확해야 하는 영역이다.
-
-최종 흐름:
-
-```mermaid
-flowchart TD
-    OS["OS message"]
-    InputSystem["InputSystem: raw sample only"]
-    Capture["UI Capture State: ImGui / RML"]
-    Policy["InputPolicyRouter"]
-    EditorCtrl["EditorWorldController"]
-    GameBridge["GameInputBridge"]
-    Player["PlayerController"]
-    Lua["Lua Input API"]
-
-    OS --> InputSystem
-    InputSystem --> Capture
-    Capture --> Policy
-    Policy --> EditorCtrl
-    Policy --> GameBridge
-    GameBridge --> Player
-    Player --> Lua
-```
-
-역할:
-
-- `InputSystem`
-  - 키/마우스 raw state만 샘플링한다.
-  - viewport ownership, picking 허용 여부, cursor lock 정책을 결정하지 않는다.
-
-- `InputPolicyRouter`
-  - ImGui/RML capture, viewport hover/focus/capture, relative mouse, absolute clip을 해석한다.
-  - 한 프레임의 side-effect permission을 생성한다.
-  - picking, gizmo hover, selection feedback 허용 여부를 명시한다.
-
-- `EditorWorldController`
-  - editor navigation, selection, transform shortcut, gizmo operation을 담당한다.
-  - PIE shell key도 Editor 책임으로 처리한다.
-
-- `GameInputBridge`
-  - game input으로 넘길 수 있는 상태만 PlayerController에 전달한다.
-  - PIE possessed와 GameClient에서 같은 의미를 가져야 한다.
-
-- `PlayerController`
-  - gameplay input을 해석한다.
-  - Lua를 사용하는 프로젝트에서는 C++ controller가 얇아도 된다.
-
-정책:
-
-- LMB/RMB가 capture 중이면 passive picking, gizmo hover tint, selection hover feedback은 막는다.
-- RML이 focused text input을 갖고 있으면 gameplay keyboard input은 막는다.
-- PIE Eject에서는 Game input을 보내지 않고 Editor input을 보낸다.
-- GameClient에는 Editor input layer가 존재하지 않는다.
-
-## Target Rendering Architecture
-
-렌더 구조는 Week08의 장점을 가장 많이 흡수할 대상이다.
-
-현재 우리 구조:
-
-```mermaid
-flowchart TD
-    World["UWorld / Actors / Components"]
-    Collector["RenderCollector"]
-    Bus["RenderBus"]
-    Renderer["Renderer"]
-    Passes["Render Passes"]
-
-    World --> Collector
-    Collector --> Bus
-    Bus --> Renderer
-    Renderer --> Passes
-```
-
-문제:
-
-- `RenderCollector`가 World traversal, culling, command build, editor selection mask를 동시에 처리한다.
-- Renderer와 editor-only ID picking / selection / outline의 경계가 흐리다.
-- Component 상태를 매 프레임 직접 해석하는 영역이 많다.
-
-목표 구조:
-
-```mermaid
-flowchart TD
-    Component["PrimitiveComponent"]
-    Proxy["PrimitiveSceneProxy"]
-    SceneState["SceneRenderState"]
-    Frame["FrameContext"]
-    Collector["RenderCollector"]
-    Builder["DrawCommandBuilder"]
-    Commands["DrawCommandList"]
-    Renderer["Renderer"]
-    Pass["Render Pass"]
-
-    Component --> Proxy
-    Proxy --> SceneState
-    SceneState --> Collector
-    Frame --> Collector
-    Collector --> Builder
-    Builder --> Commands
-    Commands --> Renderer
-    Renderer --> Pass
-```
-
-역할:
-
-- `PrimitiveSceneProxy`
-  - 렌더러가 읽는 component snapshot이다.
-  - transform/material/visibility/render bounds를 갖는다.
-  - Component가 변경될 때 dirty flag로 갱신된다.
+## Domain Boundaries
 
-- `SceneRenderState`
-  - World와 1:1로 대응하는 render-side scene이다.
-  - proxy list, selected proxy, never-cull proxy, editor debug data를 가진다.
-
-- `FrameContext`
-  - camera, viewport rect, show flags, view mode, render target, light culling option 등을 한 프레임 단위로 제공한다.
-  - `RenderBus`에 흩어진 per-frame state를 정리하는 방향이다.
-
-- `RenderCollector`
-  - scene/proxy를 필터링한다.
-  - culling, visibility, pass eligibility만 판단한다.
-  - material command 세부 구성은 하지 않는다.
-
-- `DrawCommandBuilder`
-  - proxy와 frame context를 draw command로 변환한다.
-  - material/render state/shader selection을 여기로 모은다.
-
-- `Renderer`
-  - GPU resource binding과 pass execution에 집중한다.
-
-Editor-only pass 정책:
-
-- ID Picking, SelectionMask, Outline, Grid, Gizmo, DebugLine은 Editor pipeline 또는 Editor render extension에서 요청한다.
-- GameClient renderer는 editor-only pass를 알 필요가 없도록 최종적으로 분리한다.
-- 단, 이행 기간에는 기존 pass를 유지하되 entry point를 editor pipeline으로 한정한다.
+### Engine
 
-## Target Asset Architecture
-
-현재 `ResourceManager`는 너무 많은 책임을 갖는다.
-
-목표:
-
-```mermaid
-flowchart TD
-    Facade["FResourceManager facade"]
-    Texture["TextureResourceCache"]
-    Shader["ShaderResourceCache"]
-    Material["MaterialResourceCache"]
-    StaticMesh["StaticMeshResourceCache"]
-    ImportMat["ImportedMaterialService"]
-    Path["AssetPathPolicy"]
-    Package["PackagingCookService"]
-
-    Facade --> Texture
-    Facade --> Shader
-    Facade --> Material
-    Facade --> StaticMesh
-    Facade --> ImportMat
-    Texture --> Path
-    Material --> Path
-    StaticMesh --> Path
-    Package --> Path
-```
-
-역할:
-
-- `AssetPathPolicy`
-  - asset root, relative path normalization, UE-like naming policy를 담당한다.
-  - `____` 같은 임시 sanitize 결과가 외부 파일명으로 새지 않게 한다.
-
-- `TextureResourceCache`
-  - texture load/cache/default fallback.
-
-- `ShaderResourceCache`
-  - shader source, CSO cache, compile/reload.
-
-- `MaterialResourceCache`
-  - `.mat` load/cache/save.
-
-- `StaticMeshResourceCache`
-  - OBJ -> BIN -> Runtime load policy.
-  - BIN이 있으면 OBJ가 없어도 Runtime에서 동작해야 한다.
-
-- `ImportedMaterialService`
-  - OBJ/MTL import 결과를 engine material policy로 변환한다.
-  - material naming과 texture reference rewrite를 책임진다.
-
-- `FResourceManager`
-  - 이행 중 facade로만 남긴다.
-  - 최종적으로는 너무 많은 public API를 줄인다.
-
-OBJ/BIN 정책:
-
-- Editor import/build 단계:
-  - OBJ/MTL/Texture를 읽고 `.bin`, `.mat`을 생성한다.
-  - source asset이 바뀐 경우에만 rebuild한다.
-
-- Runtime/GameClient:
-  - `.bin`, `.mat`, texture만 필요하다.
-  - OBJ/MTL source가 없어도 정상 동작해야 한다.
-
-## Target Editor UI Architecture
-
-현재 `EditorMainPanel`은 너무 많은 UI surface를 가진다.
-
-현재 진단:
-
-- `EditorMainPanel.cpp`는 4000줄 이상이며 Editor UI에서 가장 비대한 파일이다.
-- `EditorMainPanel.h`도 이미 200줄 이상이고, widget 멤버뿐 아니라 packaging buffer, PIE fullscreen/layout snapshot, runtime UI callback queue, viewport icon SRV, footer/debug state를 직접 소유한다.
-- 큰 함수들이 한 파일 안에 몰려 있다.
-  - `RenderViewportIconToolbarForIndex`
-  - `RenderBuildGameModal`
-  - `RenderEditorToolbar`
-  - `RenderViewportHostWindow`
-  - `RenderFooterOverlay`
-  - `RenderViewportContextMenu`
-  - `RenderEditorDebugPanel`
-  - `RenderUndoHistoryPanel`
-- 파일 상단 anonymous namespace에도 packaging path, viewport label/icon, camera speed, drop path resolve, placement location, file dialog helper가 섞여 있다.
-
-핵심 문제:
-
-- MainPanel이 main dock host가 아니라 editor UI application object처럼 행동한다.
-- draw code, state transition, async packaging, scene save/load, PIE layout, RML viewport mapping, content browser drop, icon resource lifetime이 한 클래스에 있다.
-- 따라서 작은 UI 변경도 PIE, packaging, RML, scene dirty, viewport input에 side effect를 낼 수 있다.
-
-최종 책임:
-
-- `FEditorMainPanel`은 "Editor shell coordinator"로 축소한다.
-- ImGui context 초기화, dockspace, top-level panel 호출 순서, close request orchestration만 가진다.
-- 개별 surface의 세부 draw/state는 각 panel/service가 가진다.
-
-목표:
-
-```text
-Editor/UI
-  MainPanel/
-    EditorMainPanel.h/.cpp
-    EditorDockLayout.h/.cpp
-    EditorWindowState.h/.cpp
-  ViewportPanel/
-    EditorViewportPanel.h/.cpp
-    EditorViewportOverlayWidget.h/.cpp
-    EditorToolbarWidget.h/.cpp
-    EditorViewportToolbar.h/.cpp
-    EditorViewportContextMenu.h/.cpp
-    EditorViewportIconSet.h/.cpp
-  RuntimeUIPreview/
-    EditorRuntimeUIPreviewWidget.h/.cpp
-    RuntimeUIPreviewRenderBridge.h/.cpp
-  Details/
-    EditorPropertyWidget.h/.cpp
-    PropertyRowBuilder.h/.cpp
-    ComponentDetailsPresenter.h/.cpp
-  ContentBrowser/
-    EditorContentBrowserWidget.h/.cpp
-    AssetContextMenu.h/.cpp
-  Packaging/
-    EditorPackagingPanel.h/.cpp
-    EditorPackagingSettingsPresenter.h/.cpp
-```
-
-정책:
-
-- UI draw code와 mutation code를 분리한다.
-- Undo snapshot은 UI 내부에서 직접 흩뿌리지 않고 `EditorUndoSystem`을 통해 수행한다.
-- Details는 "현재 선택된 object"만 신뢰하고, Actor fallback은 명시적인 fallback일 때만 한다.
-- Runtime UI Preview는 `FRmlUiSystem`을 직접 만지기보다 preview bridge를 통해 draw/input mapping을 맞춘다.
-
-분리 순서:
-
-1. Packaging 분리
-   - `RequestBuildGame`, `TickBuildGameTask`, `RenderBuildGameModal`, packaging buffers, `OpenPackagingAssetFileDialog`, package path helpers를 `EditorPackagingPanel`로 이동한다.
-   - `FEditorMainPanel`은 `PackagingPanel.Open()`과 `PackagingPanel.Render()`만 호출한다.
-
-2. Viewport chrome 분리
-   - `RenderViewportIconToolbarForIndex`, `RenderViewportMenuBarForIndex`, `DrawViewportIconButton`, `DrawViewportTextButton`, viewport icon SRV lifetime을 `EditorViewportToolbar`와 `EditorViewportIconSet`으로 이동한다.
-   - Viewport toolbar는 `FEditorViewportClient`와 `FEditorSettings`만 받아서 그린다.
-
-3. Viewport host 분리
-   - `RenderViewportHostWindow`, PIE fixed aspect rect, `ApplyPIEFixedAspectViewportRect`, content browser drop 처리를 `EditorViewportPanel`로 이동한다.
-   - MainPanel은 viewport panel의 render 결과와 focus request만 받는다.
-
-4. Runtime UI bridge 분리
-   - `RenderRuntimeUIForPIEViewport`, `QueueRuntimeUIDrawCallback`, `RenderRuntimeUIDrawCallback`을 `PIEViewportRuntimeUIBridge` 또는 `RuntimeUIPreviewRenderBridge`로 이동한다.
-   - PIE possessed/eject 정책은 `FPIESession`과 bridge에서 결정한다.
-
-5. Footer / debug / undo panels 분리
-   - footer overlay는 `EditorFooterLogSystem` + `EditorFooterOverlay`로 이동한다.
-   - debug panel은 별도 `EditorDebugPanel`로 이동한다.
-   - undo history panel은 `EditorUndoHistoryPanel`로 이동한다.
-
-6. Scene document flow 분리
-   - `RequestNewScene`, `RequestLoadSceneWithDialog`, `RequestSaveScene`, `RequestSaveSceneAsWithDialog`, `CanCloseEditor`, `RestoreLastSceneFromProjectSettings`를 `EditorSceneDocument` / `EditorSceneDocumentController`로 이동한다.
-   - MainPanel은 close request 시 document controller에 위임한다.
-
-완료 조건:
-
-- `EditorMainPanel.cpp`가 1000줄 이하로 내려간다.
-- `EditorMainPanel.h`에는 top-level widget 멤버와 panel coordinator만 남는다.
-- Packaging, Viewport toolbar, Runtime UI bridge, Scene document는 MainPanel 없이 단위 이해가 가능하다.
-- PIE/GameClient/RML 변경 없이 UI shell만 분리되어야 한다.
-
-## Target Scene / Dirty / Project Settings Architecture
-
-목표:
-
-```text
-Editor/Scene
-  EditorSceneDocument.h/.cpp
-  EditorSceneDirtyTracker.h/.cpp
-  EditorSceneDocumentSerializer.h/.cpp
-
-Editor/Settings
-  ProjectSettings.h/.cpp
-  EditorSettings.h/.cpp
-```
-
-역할:
+Allowed:
+
+- UObject, Actor, Component
+- World, Level, GameMode, PlayerController
+- runtime input sampling primitives
+- renderer runtime core
+- runtime assets and resource caches
+- Lua binding
+- RML runtime UI system
+- runtime serialization
+- platform/window abstraction
+
+Forbidden:
+
+- ImGui panels
+- editor selection policy
+- editor viewport layout
+- editor settings direct dependency
+- editor-only picking tools
+- packaging UI
+
+### Editor
+
+Allowed:
+
+- ImGui panels
+- editor viewport layout
+- editor-only selection/details
+- undo/redo system
+- content browser
+- scene document state
+- packaging orchestration
+- PIE session ownership
+
+Forbidden:
+
+- GameClient boot policy
+- runtime asset cache ownership
+- renderer runtime internals that should be mode-independent
+
+### PIE
+
+PIE is an Editor-owned Runtime session.
+
+Allowed:
+
+- active PIE world handle
+- active viewport index
+- possessed/editor-control mode
+- player controller pointer
+- mouse focus release state
+- shell commands: Esc, F8, Shift+F1
+- runtime UI viewport mapping for PIE
+
+Policy:
+
+- Possessed: Game input and Runtime UI input are active.
+- Eject / EditorControl: Editor viewport settings are respected.
+- Eject does not render/capture Runtime RML UI.
+
+### GameClient
+
+GameClient is standalone Runtime.
+
+Allowed:
+
+- GameEngine boot
+- GameMode selection
+- PlayerController routing
+- Runtime RML UI
+- Lua gameplay script
+- packaged asset loading
+
+Forbidden:
+
+- Editor include
+- ImGui UI
+- editor settings
+- editor selection and picking tools
+
+## External API Policy
+
+An external API is allowed only when the owner class truly owns the behavior.
+
+Rules:
+
+- If a subsystem owns a behavior, callers use that subsystem.
+- Do not keep wrapper methods on `UEditorEngine` after extracting the subsystem.
+- Public getters are acceptable when they expose a subsystem owner.
+- Public mutable subsystem access should be reviewed. If external code should not mutate it, expose a command method or const view instead.
+- Methods that exist only for one panel should move toward the panel/controller that owns that workflow.
+
+Examples:
+
+- Good: `EditorEngine->GetUndoSystem().Undo()`
+- Bad: `EditorEngine->Undo()`
+- Good: `EditorEngine->GetPIESession().GetControlMode()`
+- Bad: `EditorEngine->GetPIEControlMode()`
+- Good: `GEngine->GetRmlUiSystem().Render(Context, Renderer)`
+- Bad: RML document state spread directly across EditorEngine and GameEngine
+
+## Batch Plan
+
+## Current Progress
+
+Overall progress: 100% for the current EditorMainPanel and EditorEngine API cleanup batch scope.
+
+Deferred after this batch scope:
+
+- Renderer and Engine dependency cleanup remains intentionally deferred.
+- The remaining 8 Engine -> Editor include violations are known transition items and should be handled in a later renderer/engine-facing refactor batch.
+
+Completed:
+
+- Batch 1: Guard Rails and API Baseline
+- Batch 2: EditorEngine API Surface, first safe pass
+- Batch 3: EditorMainPanel First Split, PIE presentation pass
+- Batch 4: EditorMainPanel Packaging Split
+- Batch 5: EditorMainPanel Scene Command Split
+- Batch 6: EditorMainPanel Placement and Viewport Context Menu Split
+- Batch 7: EditorMainPanel Viewport Toolbar and Menu Split
+- Batch 8: EditorMainPanel Debug and Undo History Split
+- Batch 9: EditorMainPanel Console Drawer and Content Command Split
+- Batch 10: EditorMainPanel Input Capture Policy Split
+- Batch 11: EditorMainPanel Main Toolbar Split
+- Batch 12: EditorMainPanel Layout and Material Command Split
+- Batch 13: EditorMainPanel Viewport Icon Resource Split
+- Batch 14: EditorMainPanel Viewport Host Split
+- Batch 15: EditorMainPanel Footer Overlay Split
+- Batch 16: EditorMainPanel Header State Grouping
+- Batch 17: EditorMainPanel PIE Viewport State Grouping
+- Batch 18: EditorMainPanel Panel Visibility State Grouping
+- Batch 19: EditorMainPanel Runtime UI Draw Callback State Grouping
+- Batch 20: EditorMainPanel Runtime UI Bridge File Split
+- Batch 21: EditorMainPanel Style and Font Setup Split
+- Batch 22: EditorMainPanel Font Merge Setup Completion
+- Batch 23: EditorMainPanel Create Flow Naming
+- Batch 24: EditorMainPanel Render Flow Naming
+- Batch 25: EditorMainPanel Frame File Split
+- Batch 26: EditorMainPanel Widget Setup File Split
+- Batch 27: EditorMainPanel Bootstrap File Split
+- Batch 28: EditorMainPanel Release Bootstrap Move
+- Batch 29: EditorMainPanel Shell Removal and Header Inline Cleanup
+- Batch 30: EditorMainPanel Header API Cleanup
+- Batch 31: EditorMainPanel State Type Extraction
+- Batch 32: EditorMainPanel Viewport Icon State Extraction
+- Batch 33: EditorMainPanel Widget Set Grouping
+- Batch 34: EditorMainPanel Viewport Toolbar Helper Extraction
+- Batch 35: EditorMainPanel Viewport Menu Bar Split
+- Batch 36: EditorMainPanel Viewport Context Menu Split
+- Batch 37: EditorMainPanel Packaging Helper Extraction
+- Batch 38: EditorMainPanel Viewport Button Drawing Split
+
+Verified:
+
+- `Scripts/CheckArchitecture.ps1`
+- `Debug|x64` Editor build
+- Batch 11 `Debug|x64` Editor build
+- Batch 12 `Debug|x64` Editor build
+- Batch 13 `Debug|x64` Editor build
+- Batch 14 `Debug|x64` Editor build
+- Batch 15 `Debug|x64` Editor build
+- Batch 15 `GameClientDebug|x64` build
+- Batch 16 `Debug|x64` Editor build
+- Batch 17 `Debug|x64` Editor build
+- Batch 18 `Debug|x64` Editor build
+- Batch 19 `Debug|x64` Editor build
+- Batch 20 `Debug|x64` Editor build
+- Batch 20 `GameClientDebug|x64` build
+- Batch 21 `Debug|x64` Editor build
+- Batch 21 `GameClientDebug|x64` build
+- Batch 22 `Debug|x64` Editor build
+- Batch 22 `GameClientDebug|x64` build
+- Batch 23 `Debug|x64` Editor build
+- Batch 23 `GameClientDebug|x64` build
+- Batch 24 `Debug|x64` Editor build
+- Batch 24 `GameClientDebug|x64` build
+- Batch 25 `Debug|x64` Editor build
+- Batch 25 `GameClientDebug|x64` build
+- Batch 26 `Debug|x64` Editor build
+- Batch 26 `GameClientDebug|x64` build
+- Batch 27 `Debug|x64` Editor build
+- Batch 27 `GameClientDebug|x64` build
+- Batch 28 `Debug|x64` Editor build
+- Batch 28 `GameClientDebug|x64` build
+- Batch 29 `Debug|x64` Editor build
+- Batch 29 `GameClientDebug|x64` build
+- Batch 30 `Debug|x64` Editor build
+- Batch 30 `GameClientDebug|x64` build
+- Batch 31 `Debug|x64` Editor build
+- Batch 31 `GameClientDebug|x64` build
+- Batch 32 `Debug|x64` Editor build
+- Batch 32 `GameClientDebug|x64` build
+- Batch 33 `Debug|x64` Editor build
+- Batch 33 `GameClientDebug|x64` build
+- Batch 34 `Debug|x64` Editor build
+- Batch 35 `Debug|x64` Editor build
+- Batch 35 `GameClientDebug|x64` build
+- Batch 36 `Debug|x64` Editor build
+- Batch 36 `GameClientDebug|x64` build
+- Batch 37 `Debug|x64` Editor build
+- Batch 37 `GameClientDebug|x64` build
+- Batch 38 `Debug|x64` Editor build
+- Batch 38 `GameClientDebug|x64` build
+- Final `Release|x64` Editor build
+- Final `GameClientRelease|x64` build
+
+Current architecture check baseline:
+
+- Engine -> Editor include violations: 8 known transition violations
+- Legacy `UEditorEngine` undo wrappers: 0
+
+Notes:
+
+- Batch 2 did not change behavior.
+- Batch 2 only moved small inline `UEditorEngine` implementation details from the header into `EditorEngine.cpp` and cleaned public signature layout.
+- `FPIESession`, `FEditorUndoSystem`, and `FRmlUiSystem` remain exposed through owning system getters instead of duplicated legacy wrappers.
+- Batch 3 did not change behavior.
+- Batch 3 moved PIE viewport fullscreen, fixed-layout Runtime UI overlay, and RML draw callback implementation from `EditorMainPanel.cpp` to `EditorMainPanelPIE.cpp`.
+- Batch 4 did not change behavior.
+- Batch 4 moved packaging modal, packaging build-task polling, and packaging-only helper functions from `EditorMainPanel.cpp` to `EditorMainPanelPackaging.cpp`.
+- Batch 5 did not change behavior.
+- Batch 5 moved scene command entry points from `EditorMainPanel.cpp` to `EditorMainPanelScene.cpp`: close prompt, new scene, load scene, save scene, save-as, and last-scene restore.
+- Batch 6 did not change behavior.
+- Batch 6 moved Content Browser viewport drops, prefab/static mesh placement, placement-location calculation, and viewport right-click context menu handling from `EditorMainPanel.cpp` to `EditorMainPanelPlacement.cpp`.
+- Batch 7 did not change behavior.
+- Batch 7 moved viewport icon toolbar rendering, viewport menu bar rendering, and shared viewport button drawing from `EditorMainPanel.cpp` to `EditorMainPanelViewportToolbar.cpp`.
+- Batch 7 kept the Debug panel camera-speed helpers in `EditorMainPanel.cpp` to avoid broad API movement in this pass.
+- Batch 8 did not change behavior.
+- Batch 8 moved Editor Debug and Undo History windows from `EditorMainPanel.cpp` to `EditorMainPanelDebug.cpp`.
+- Batch 8 moved UndoSystem-facing debug UI out of the main panel body without changing the UndoSystem API.
+- Batch 9 did not change behavior.
+- Batch 9 moved console drawer rendering and Content Browser open/close/toggle commands from `EditorMainPanel.cpp` to `EditorMainPanelFooter.cpp`.
+- Batch 9 deliberately left the footer status bar renderer in `EditorMainPanel.cpp` for a later pass because it contains existing non-ASCII UI labels that must be preserved exactly.
+- Batch 10 did not change behavior.
+- Batch 10 moved `FEditorMainPanel::Update`, the ImGui-to-engine input capture policy, viewport mouse focus allowance, PIE forced input focus countdown, focus-selection shortcut, and IME context synchronization to `EditorMainPanelInput.cpp`.
+- Batch 11 did not change behavior.
+- Batch 11 moved the top editor toolbar, PIE toolbar view-mode menu, fixed-layout toggle, and toolbar-only view-mode labels from `EditorMainPanel.cpp` to `EditorMainPanelToolbar.cpp`.
+- Batch 11 brought `EditorMainPanel.cpp` below the 1000-line milestone.
+- Batch 12 did not change behavior.
+- Batch 12 moved dock host rendering to `EditorMainPanelLayout.cpp`, Material Editor open commands to `EditorMainPanelMaterial.cpp`, and PIE viewport focus request handling to `EditorMainPanelPIE.cpp`.
+- Batch 13 did not change behavior.
+- Batch 13 moved viewport toolbar icon and viewport layout icon loading/release to `EditorMainPanelViewportIcons.cpp`, keeping WIC/D3D icon resource handling out of the main panel body.
+- Batch 14 did not change behavior.
+- Batch 14 moved viewport host window rendering, scene color presentation, PIE runtime UI overlay placement, viewport focus outline drawing, splitter overlay placement, and viewport toolbar child placement to `EditorMainPanelViewportHost.cpp`.
+- Batch 15 did not change behavior.
+- Batch 15 moved footer status bar rendering, footer scene-path formatting, Hot Reload footer command, and PIE footer event logging to `EditorMainPanelFooter.cpp`.
+- Batch 15 reduced `EditorMainPanel.cpp` to the shell loop: `Create`, `Release`, and `Render`.
+- Batch 15 also cleaned stale `EditorMainPanel.cpp` includes after the responsibility split.
+- Batch 16 did not change behavior.
+- Batch 16 grouped the busiest `EditorMainPanel.h` private state into named structs: build-game modal state, console drawer state, viewport icon resources, debug grid state, and footer event state.
+- Batch 16 keeps the state local to `FEditorMainPanel` for now, avoiding a wider ownership change before the extracted panels become standalone classes.
+- Batch 17 did not change behavior.
+- Batch 17 grouped PIE viewport presentation state into `FPIEViewportPresentationState`: fullscreen panel hiding, fixed-layout runtime UI size, forced PIE input focus frames, and saved PIE panel/layout snapshots.
+- Batch 17 deliberately kept the state inside `FEditorMainPanel` because toolbar callbacks and PIE rendering still depend on the same owner during this transition.
+- Batch 18 did not change behavior.
+- Batch 18 grouped editor panel visibility flags into `FEditorPanelVisibilityState`, preserving the existing Toolbar bool-pointer API by pointing it at the grouped state fields.
+- Batch 18 keeps PIE panel restore snapshots separate from live panel visibility so PIE restore behavior remains explicit.
+- Batch 19 did not change behavior.
+- Batch 19 grouped pending Runtime UI ImGui draw callbacks into `FRuntimeUIDrawCallbackState` and named their cleanup path as `ClearRuntimeUIDrawCallbacks()`.
+- Batch 19 keeps Runtime UI Preview and PIE using the same callback queue, preserving their current draw ordering while making ownership clearer.
+- Batch 20 did not change behavior.
+- Batch 20 moved Runtime UI draw callback queue implementation from `EditorMainPanelPIE.cpp` to `EditorMainPanelRuntimeUI.cpp`.
+- Batch 20 keeps PIE viewport Runtime UI and Runtime UI Preview on the same bridge, but PIE-specific presentation code is no longer mixed with the callback queue implementation.
+- Batch 21 did not change behavior.
+- Batch 21 moved ImGui style setup and primary editor font range setup into `EditorMainPanelStyle.cpp`, reducing `FEditorMainPanel::Create()` to a clearer initialization flow.
+- Batch 22 did not change behavior.
+- Batch 22 moved icon font merge and fallback font merge into `LoadEditorFonts()`, so `FEditorMainPanel::Create()` no longer owns font merge policy.
+- Batch 22 also removed the stale encoded font comments from `Create()` after the policy moved into the named font setup function.
+- Batch 23 did not change behavior.
+- Batch 23 split `FEditorMainPanel::Create()` into named setup steps: ImGui context, project settings, ImGui backend, widget initialization, and widget callback binding.
+- Batch 23 keeps the existing widget callback API intact while making the construction order easier to audit.
+- Batch 24 did not change behavior.
+- Batch 24 split `FEditorMainPanel::Render()` into named frame phases: ImGui frame begin/end, Content Browser shortcut sync, toolbar/dock, viewport, editor panels, console animation, and late overlays.
+- Batch 24 preserves the previous render order while making the Editor shell's per-frame responsibility easier to audit before moving panels into standalone classes.
+- Batch 25 did not change behavior.
+- Batch 25 moved the named frame rendering phases from `EditorMainPanel.cpp` to `EditorMainPanelFrame.cpp`.
+- Batch 25 keeps `EditorMainPanel.cpp` focused on creation, backend initialization, widget initialization, callback binding, and release.
+- Batch 26 did not change behavior.
+- Batch 26 moved editor widget initialization and widget callback binding from `EditorMainPanel.cpp` to `EditorMainPanelWidgetSetup.cpp`.
+- Batch 26 keeps `Create()` as the visible construction flow while placing widget wiring in a focused Editor-only file.
+- Batch 27 did not change behavior.
+- Batch 27 moved ImGui context setup, project settings bootstrap, and ImGui backend initialization from `EditorMainPanel.cpp` to `EditorMainPanelBootstrap.cpp`.
+- Batch 27 keeps `EditorMainPanel.cpp` as the shell entry point for `Create()` and `Release()` while reducing its direct includes.
+- Batch 28 did not change behavior.
+- Batch 28 moved `Release()` into `EditorMainPanelBootstrap.cpp`, pairing backend teardown with backend initialization.
+- Batch 28 leaves `EditorMainPanel.cpp` as the visible `Create()` construction flow with only the main panel header included.
+- Batch 29 did not change behavior.
+- Batch 29 moved `Create()` into `EditorMainPanelBootstrap.cpp` and removed the now-empty `EditorMainPanel.cpp` from the project.
+- Batch 29 also moved small inline public methods out of `EditorMainPanel.h`: PIE fullscreen query now lives with PIE code, and widget-selection reset now lives with widget setup code.
+- Batch 30 did not change behavior.
+- Batch 30 moved public widget accessor implementations out of `EditorMainPanel.h` and into `EditorMainPanelWidgetSetup.cpp`.
+- Batch 30 grouped `EditorMainPanel` public and private declarations by responsibility, keeping the header focused on API shape rather than small implementation details.
+- Batch 31 did not change behavior.
+- Batch 31 moved `EditorMainPanel` private state structs into `EditorMainPanelState.h` and gave them `FEditorMainPanel...` names so the main header reads as shell API plus owned state.
+- Batch 31 kept viewport icon resources inside `FEditorMainPanel` because they depend on the panel-owned `EViewportToolIcon` enum and should move together with the future viewport toolbar class.
+- Batch 32 did not change behavior.
+- Batch 32 moved the viewport toolbar icon enum and icon resource state into `EditorMainPanelState.h`, removing another UI-only implementation detail from `EditorMainPanel.h`.
+- Batch 32 renamed the icon enum to `EEditorMainPanelViewportToolIcon` so the type remains explicit after leaving the class body.
+- Batch 33 did not change behavior.
+- Batch 33 grouped the by-value editor widget instances into `FEditorMainPanelWidgetSet`, reducing the visible member list in `EditorMainPanel.h` while keeping the existing widget ownership under `FEditorMainPanel`.
+- Batch 33 updated internal `EditorMainPanel*.cpp` call sites to access widgets through `Widgets`, preserving external getter APIs for existing callers.
+- Batch 34 did not change behavior.
+- Batch 34 moved viewport toolbar label and camera-speed helper policy into `FEditorMainPanelViewportToolbarHelpers`, replacing an anonymous helper namespace with a named helper class.
+- Batch 35 did not change behavior.
+- Batch 35 moved `RenderViewportMenuBarForIndex()` into `EditorMainPanelViewportMenuBar.cpp`, reducing `EditorMainPanelViewportToolbar.cpp` from 1052 lines to 749 lines and making menu-bar responsibility easier to find.
+- Batch 36 did not change behavior.
+- Batch 36 moved placement viewport location policy into `FEditorMainPanelPlacementHelpers` so static mesh/prefab placement and viewport context menu share the same named helper.
+- Batch 36 moved `TickViewportContextMenu()` and `RenderViewportContextMenu()` into `EditorMainPanelViewportContextMenu.cpp`, reducing `EditorMainPanelPlacement.cpp` from 731 lines to 287 lines.
+- Batch 37 did not change behavior.
+- Batch 37 moved packaging path, scene-list, file-dialog, and extension helper policy into `FEditorMainPanelPackagingHelpers`, replacing the anonymous helper namespace with a named Editor-only helper.
+- Batch 37 reduced `EditorMainPanelPackaging.cpp` from 561 lines to 458 lines while keeping packaging UI behavior and GameClient exclusions unchanged.
+- Batch 38 did not change behavior.
+- Batch 38 moved shared viewport text/icon button drawing into `EditorMainPanelViewportButtons.cpp`, reducing `EditorMainPanelViewportToolbar.cpp` from 749 lines to 643 lines.
+- Batch 38 keeps the existing `FEditorMainPanel` button API intact so viewport menu, toolbar, and layout controls continue to share the same drawing behavior.
+
+### Batch 1: Guard Rails and API Baseline
+
+Purpose:
+
+- Create repeatable checks before moving code.
+- Make current API/dependency violations visible.
+
+Scope:
+
+- Rewrite this roadmap in readable form.
+- Add architecture dependency check script.
+- Track current known violations without fixing all of them at once.
+- Verify Editor Debug build.
+
+Expected touched files:
+
+- `ENGINE_STRUCTURE_REFACTOR_ROADMAP.md`
+- `Scripts/CheckArchitecture.ps1`
+
+Risk:
+
+- Low. No runtime behavior should change.
+
+### Batch 2: EditorEngine API Surface
+
+Purpose:
+
+- Remove legacy public wrappers after subsystem extraction.
+- Keep only intentional EditorEngine entry points.
+
+Candidate cleanup:
+
+- Undo/Redo wrappers: already moved to `FEditorUndoSystem`.
+- PIE wrappers: keep direct use of `FPIESession`.
+- RML wrappers: keep `FRmlUiSystem` on Engine.
+- Scene document commands: move later to `EditorSceneDocumentController`.
+
+Risk:
+
+- Low to medium. Mostly call-site changes.
+
+### Batch 3: MainPanel First Split
+
+Purpose:
+
+- Reduce `EditorMainPanel` risk without changing UX.
+
+Order:
+
+1. Extract packaging panel.
+2. Extract footer/debug/undo panels.
+3. Extract viewport icon set and viewport toolbar.
+4. Extract runtime UI preview bridge.
+
+Risk:
+
+- Medium. UI draw order and modal state must be preserved.
+
+### Batch 4: Scene Document and Dirty State
+
+Purpose:
+
+- Make save/load/new/close behavior understandable.
+
+Targets:
 
 - `EditorSceneDocument`
-  - current scene path
-  - display name
-  - dirty state
-  - last saved revision/hash
-
 - `EditorSceneDirtyTracker`
-  - scene content mutation만 dirty로 본다.
-  - viewport camera move, transient selection, preview UI state는 dirty가 아니다.
+- `EditorSceneDocumentController`
 
-- `EditorSceneDocumentSerializer`
-  - engine world snapshot + editor metadata를 저장한다.
-  - runtime load는 editor metadata를 무시할 수 있어야 한다.
+Risk:
 
-- `ProjectSettings`
-  - last opened scene
-  - packaging settings
-  - build output name
-  - missing path fallback policy
+- Medium. Dirty prompts and last-scene restore must be checked carefully.
 
-정책:
+### Batch 5: Input and Viewport Interaction
 
-- Project.ini의 last scene path가 없거나 다른 컴퓨터에서 깨졌으면 New Scene으로 fallback한다.
-- 저장 여부 질문은 dirty tracker가 true일 때만 뜬다.
-- Ctrl+N과 Content Browser의 빈 Scene 생성은 같은 factory를 사용한다.
+Purpose:
 
-## Target RML Runtime UI Architecture
+- Clarify ownership of selection, picking, gizmo, camera navigation, and PIE shell input.
 
-`FRmlUiSystem`은 Engine에 남기는 것이 맞다.
+Targets:
 
-목표:
-
-```mermaid
-flowchart TD
-    Engine["UEngine"]
-    RmlSystem["FRmlUiSystem"]
-    Game["UGameEngine"]
-    PIEBridge["PIEViewportRuntimeUIBridge"]
-    Preview["RuntimeUIPreviewRenderBridge"]
-    Lua["Lua UI API"]
-
-    Engine --> RmlSystem
-    Game --> RmlSystem
-    PIEBridge --> RmlSystem
-    Preview --> RmlSystem
-    Lua --> RmlSystem
-```
-
-정책:
-
-- Engine은 `FRmlUiSystem`과 getter만 가진다.
-- GameClient는 full-screen runtime UI context를 사용한다.
-- PIE possessed는 PIE viewport rect와 virtual layout mapping을 사용한다.
-- PIE Eject는 RML render/input capture를 하지 않는다.
-- Runtime UI Preview는 ImGui draw list 위에 올바른 rect로 렌더링한다.
-- Lua UI API는 `GEngine->GetRmlUiSystem()`만 통해 접근한다.
-
-## Target Game Framework Architecture
-
-GameMode 도입 방향은 유지한다.
-
-```mermaid
-flowchart TD
-    World["UWorld"]
-    GameMode["AGameModeBase"]
-    PC["APlayerController"]
-    Lua["Lua Script"]
-
-    World --> GameMode
-    GameMode --> PC
-    PC --> Lua
-```
-
-정책:
-
-- `AGameModeBase`는 PlayerController class/instance policy를 가진다.
-- GameClient boot와 PIE boot가 같은 GameMode 기반 생성 정책을 공유한다.
-- Lua 중심 프로젝트라면 C++ PlayerController는 얇은 bridge가 된다.
-- 사용하지 않는 sample controller는 제거한다.
-
-## Dependency Rules
-
-최종적으로 다음 규칙을 CI 또는 스크립트로 검사하는 것이 좋다.
-
-1. `Source/Engine/**`에서 `#include "Editor/` 금지
-2. `GameClient*` config에서 `Source/Editor/**` compile 금지
-3. `Source/Editor/**`는 `Source/Engine/**` include 가능
-4. `Source/Engine/Runtime/Script/**`는 Editor include 금지
-5. `Source/Engine/UI/RmlUi/**`는 ImGui include 금지
-6. `Source/Engine/Render/**`는 Editor settings 직접 include 금지
-7. Editor-only render behavior는 Editor pipeline 또는 Editor render extension에서 시작해야 함
-
-## Refactor Phases
-
-각 phase는 독립 배치로 진행한다. 한 phase 안에서도 작은 batch로 쪼갠다.
-
-### Phase 0: Guard Rails
-
-목표:
-
-- 구조 리팩토링 중 side effect를 줄이기 위한 기준선을 만든다.
-
-작업:
-
-- dependency scan script 추가
-- `Engine -> Editor include` 목록 문서화
-- Debug Editor build, GameClientDebug build를 기본 검증으로 고정
-- 주요 모드 수동 체크리스트 작성
-
-완료 조건:
-
-- 현재 위반 목록을 알고 있다.
-- 새 위반이 생기면 바로 발견 가능하다.
-
-### Phase 1: EditorEngine / EditorMainPanel Diet
-
-목표:
-
-- Editor top-level class의 책임을 줄인다.
-
-작업:
-
-- RML 관련 코드는 `FRmlUiSystem` + bridge로 유지
-- Undo/Redo는 `EditorUndoSystem`으로 고정
-- `EditorMainPanel`에서 Packaging panel 분리
-- Runtime UI Preview bridge 분리
-- scene close/save prompt flow를 `EditorSceneDocument`로 이동
-
-완료 조건:
-
-- `EditorEngine`은 coordinator 역할만 한다.
-- `EditorMainPanel`은 main dock/layout 책임만 가진다.
-
-### Phase 2: Input Finalization
-
-목표:
-
-- Input ownership이 한눈에 읽히게 한다.
-
-작업:
-
-- `InputPolicyRouter`를 authoritative policy owner로 고정
-- `EditorViewportClient`에서 picking, gizmo, camera navigation을 분리
 - `EditorPickingService`
 - `EditorTransformInteraction`
 - `EditorViewportNavigationController`
-- PIE shell command는 `FPIESession`과 Editor controller 경유로 정리
-- Lua input은 PlayerController/GameInputBridge 이후로만 의미를 갖게 정리
+- `PIEViewportControlBridge`
 
-완료 조건:
+Risk:
 
-- Space/QWER/1234 transform mode
-- LMB/RMB capture
-- PIE Esc/F8/Shift+F1
-- RML text input capture
-- GameClient input
+- High. This can affect transform shortcuts, camera movement, PIE input, and cursor capture.
 
-위 항목이 서로 깨지지 않는다.
+### Batch 6: Resource and Asset Pipeline
 
-### Phase 3: Render Proxy Architecture
+Purpose:
 
-목표:
+- Split ResourceManager while preserving OBJ -> BIN -> Runtime behavior.
 
-- Week08의 장점인 Proxy/Frame/Builder 구조를 우리 엔진에 맞게 흡수한다.
-
-작업:
-
-- `PrimitiveSceneProxy` 도입
-- `SceneRenderState` 도입
-- Component dirty -> proxy update 경로 추가
-- `FrameContext` 도입
-- `RenderCollector`는 filtering/culling 위주로 축소
-- `DrawCommandBuilder` 도입
-- Editor-only commands를 Editor pipeline entry로 이동
-
-완료 조건:
-
-- Renderer가 Component를 직접 해석하는 일이 줄어든다.
-- Editor ID Picking/Outline/Grid/Gizmo가 GameClient 렌더 경로에서 분리된다.
-
-### Phase 4: Asset and Resource Split
-
-목표:
-
-- ResourceManager를 책임별 cache/service로 분리한다.
-
-작업:
+Targets:
 
 - `AssetPathPolicy`
 - `TextureResourceCache`
@@ -830,112 +676,67 @@ flowchart TD
 - `MaterialResourceCache`
 - `StaticMeshResourceCache`
 - `ImportedMaterialService`
-- OBJ/MTL/BIN 정책 정리
-- CSO cache 정책 정리
-- Packaging cook/copy policy 정리
 
-완료 조건:
+Risk:
 
-- OBJ가 없어도 BIN + MAT + Texture로 Runtime/GameClient가 동작한다.
-- material naming이 UE-like policy를 따른다.
-- ResourceManager는 facade 이상으로 비대해지지 않는다.
+- High. This affects asset loading, packaging, material references, CSO cache, and GameClient.
 
-### Phase 5: Scene Document and Serialization Split
+### Batch 7: Render Proxy Architecture
 
-목표:
+Purpose:
 
-- Runtime serialization과 Editor document persistence를 분리한다.
+- Move toward a cleaner render architecture.
 
-작업:
+Targets:
 
-- `WorldSnapshotSerializer`
-- `EditorSceneDocumentSerializer`
-- `EditorSceneDirtyTracker`
-- Project.ini last scene fallback
-- New Scene factory 통합
+- `PrimitiveSceneProxy`
+- `SceneRenderState`
+- `FrameContext`
+- `DrawCommandBuilder`
 
-완료 조건:
+Risk:
 
-- 빈 scene을 만들고 저장/닫기/다시 열기 정책이 납득된다.
-- 수정하지 않은 scene에서 저장 질문이 뜨지 않는다.
-- 다른 컴퓨터에서 last scene path가 깨져도 New Scene으로 안정 fallback한다.
+- Very high. This should happen after UI/Input/Asset boundaries are calmer.
 
-### Phase 6: Build and ThirdParty Polish
+## Manual Verification Matrix
 
-목표:
+After relevant batches, check:
 
-- 빌드 시간이 짧고 설정이 예측 가능해야 한다.
+- Editor launches
+- last scene loads or falls back to New Scene
+- selecting Actor shows Actor details
+- selecting Component shows Component details
+- duplicate Actor does not share tags/components incorrectly
+- transform gizmo shortcuts work: Space, QWER, 1234
+- gizmo hover and picking stop during LMB/RMB capture
+- PIE possessed input works
+- PIE Eject shows editor helpers according to viewport settings
+- PIE Esc/F8/Shift+F1 work
+- Runtime RML UI renders and clicks at correct positions
+- Runtime UI Preview renders
+- GameClient launches packaged scene
+- OBJ-free BIN runtime load works
 
-작업:
+## Current Known Dependency Violations
 
-- RmlUi/SoLoud static lib stamp/hash policy 유지
-- Release Editor/GameClient lib copy 검증
-- CSO cache packaging 포함
-- cooked mesh/bin copy policy 정리
-- third-party build scripts 문서화
+These are not all fixed in Batch 1. They are visible so later batches can remove them deliberately.
 
-완료 조건:
+- `Engine/Runtime/EngineLoop.cpp` includes `Editor/EditorEngine.h`
+- `Engine/Slate/SViewport.h` includes `Editor/Viewport/FSceneViewport.h`
+- `Engine/Render/Renderer/Renderer.cpp` includes `Editor/Viewport/FSceneViewport.h`
+- `Engine/Input/Controller/EditorController/*` includes Editor selection/settings
+- some Engine render passes include `Editor/Settings/EditorSettings.h`
+- `Engine/Component/Movement/PursuitMovementComponent.cpp` includes `Editor/EditorEngine.h`
 
-- third-party source가 있어도 일반 빌드에서 매번 lib rebuild가 돌지 않는다.
-- Release Editor와 GameClient에서 필요한 runtime 산출물이 누락되지 않는다.
+## Completion Definition
 
-## Refactor Batch Rules
+This refactor is considered structurally complete when:
 
-각 batch는 다음 규칙을 따른다.
-
-- 기능 보존을 최우선으로 한다.
-- 한 batch에서 public API 변경과 대규모 파일 이동을 동시에 하지 않는다.
-- rename은 마지막에 한다.
-- facade를 만들 경우 제거 계획도 같은 문서에 적는다.
-- `Engine`, `Editor`, `PIE`, `GameClient` 영향 범위를 매번 명시한다.
-- 애매한 정책은 구현 전에 동의를 구한다.
-- namespace와 local lambda 증가는 지양한다.
-- 레거시 경로는 오래 남기지 않는다.
-
-검증 기본값:
-
-- Editor Debug build
-- GameClientDebug build
-- whitespace check
-- 수동 체크:
-  - Editor viewport selection
-  - Details component selection
-  - transform gizmo shortcuts
-  - PIE possess/eject
-  - RML UI render/input
-  - Runtime UI Preview
-  - GameClient launch
-
-## Priority Recommendation
-
-최우선 순위는 다음이다.
-
-1. Input finalization
-   - 현재 버그 히스토리상 가장 많은 side effect가 입력 ownership에서 발생했다.
-
-2. EditorMainPanel / EditorViewportClient diet
-   - 큰 파일을 줄이면 이후 버그 수정 비용이 크게 줄어든다.
-
-3. Render Proxy architecture
-   - ID Picking, Outline, Billboard alpha, Editor-only visibility 정책이 장기적으로 안정된다.
-
-4. ResourceManager split
-   - OBJ/BIN/Material/Texture/CSO/Packaging 정책이 한 파일에서 충돌하지 않게 된다.
-
-5. Scene document split
-   - dirty 판단, last scene, empty scene 생성 정책이 납득 가능해진다.
-
-## Final Target Impression
-
-최종적으로 코드를 처음 보는 사람이 다음처럼 이해할 수 있어야 한다.
-
-- Engine은 Runtime core다.
-- Editor는 Engine 위에 얹힌 tool layer다.
-- PIE는 Editor가 소유하는 Runtime session이다.
-- GameClient는 Editor 없이 Engine만으로 돈다.
-- Input은 하나의 policy router가 소유권을 정한다.
-- Rendering은 Component snapshot인 Proxy를 통해 이루어진다.
-- ResourceManager는 cache/service facade일 뿐 모든 asset 정책을 혼자 갖지 않는다.
-- UI panel은 draw만 하고, mutation은 system/service가 담당한다.
-
-이 상태가 되면 "기능은 많은데 어디서 뭘 하는지 모르겠다"가 아니라, "기능이 많지만 각 기능의 집이 있다"는 평가를 받을 수 있다.
+- `Engine -> Editor include` count is zero except explicitly approved launch glue.
+- `GameClient` builds without compiling Editor source.
+- `EditorMainPanel.cpp` is below 1000 lines.
+- `EditorViewportClient` no longer owns all interaction details directly.
+- `ResourceManager` is a facade over focused caches/services.
+- render collection and draw command building are separate responsibilities.
+- public APIs map to real owners.
+- Editor, PIE, and GameClient behavior remain intact.
