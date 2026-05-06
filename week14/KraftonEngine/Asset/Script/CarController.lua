@@ -189,7 +189,10 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     AudioManager.Play("Crash", volume)
     lastCrashSoundTime = elapsedTime
 
-    CameraManager.StartCameraShakeAsset("Asset/Test.shake", 1.0)
+    -- 충돌 속도가 클수록 더 강하게 흔들림 (0.5 ~ 1.5 scale). crashRatio 는 위에서
+    -- CRASH_MIN_SPEED..CRASH_MAX_SPEED 구간을 0..1 로 매핑한 값이라 음향과 일관됨.
+    local shakeScale = 0.5 + 1.0 * crashRatio
+    CameraManager.StartCameraShakeAsset("Asset/Test.shake", shakeScale)
 end
 
 function Tick(dt)

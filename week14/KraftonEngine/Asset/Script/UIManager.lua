@@ -244,6 +244,17 @@ local function UpdateScoreboardWidget()
     end
 end
 
+-- 게임 측 reason 식별자 → 플레이어가 보는 텍스트 매핑. 미등록 reason 은 원문을 그대로 노출.
+local SCORE_REASON_LABELS = {
+    HitPerson    = "보행자 적중",
+    CarWashClear = "세차 완료",
+    CarGasClear  = "주유 완료",
+    EscapeClear  = "경찰 회피",
+    MeteorClear  = "운석 회피",
+    GoalClear    = "도착",
+    Final        = "종합 보너스",
+}
+
 local function FormatScoreFeedback(amount, reason)
     local prefix = "+"
     if amount < 0 then
@@ -254,7 +265,8 @@ local function FormatScoreFeedback(amount, reason)
         return prefix .. tostring(amount)
     end
 
-    return prefix .. tostring(amount) .. " " .. reason
+    local label = SCORE_REASON_LABELS[reason] or reason
+    return prefix .. tostring(amount) .. " " .. label
 end
 
 local function ApplyScoreFeedbackSlot(index)
@@ -859,9 +871,10 @@ function UIManager.ShowGameOver(outcome, finalScore, onScoreComplete)
 
     for _, reason in ipairs(reasonOrder) do
         local group = reasonGroups[reason]
-        local label = reason
+        local displayName = SCORE_REASON_LABELS[reason] or reason
+        local label = displayName
         if group.count > 1 then
-            label = string.format("%s x %d", reason, group.count)
+            label = string.format("%s x %d", displayName, group.count)
         end
         table.insert(scoreEvents, { amount = group.amount, reason = label })
     end

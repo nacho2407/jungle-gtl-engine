@@ -93,6 +93,20 @@ UCameraShakeBase* UCameraModifier_CameraShake::StartShake(
 {
 	if (!ShakeClass) return nullptr;
 
+	// bSingleInstance 처리 — UE 동작 미러: 같은 ShakeClass 의 인스턴스가 이미 활성이고
+	// 그 인스턴스가 bSingleInstance=true 면 새로 생성하지 않고 그 인스턴스를 재시작.
+	// (CDO 미지원 환경이라 "기존 인스턴스의 플래그" 로 판정 — 첫 인스턴스 이후 효과 적용.)
+	for (UCameraShakeBase* Existing : ActiveShakes)
+	{
+		if (Existing && !Existing->IsFinished()
+			&& Existing->bSingleInstance
+			&& Existing->GetClass()->IsA(ShakeClass))
+		{
+			Existing->StartShake(CameraOwner, Scale, PlaySpace, UserPlaySpaceRot);
+			return Existing;
+		}
+	}
+
 	UObject* Obj = FObjectFactory::Get().Create(ShakeClass->GetName(), this);
 	UCameraShakeBase* Shake = Cast<UCameraShakeBase>(Obj);
 	if (!Shake)
