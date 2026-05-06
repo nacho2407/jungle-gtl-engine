@@ -18,4 +18,5 @@ private:
     FVector4 FadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
     float FromAmount = 0.0f;
     float ToAmount = 0.0f;
+    FCameraFloatCurve AmountCurve;
 };

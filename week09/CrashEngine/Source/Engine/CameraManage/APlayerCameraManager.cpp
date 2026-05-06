@@ -6,6 +6,7 @@
 #include "CameraManage/CameraModifiers/CameraModifier_LetterBox.h"
 #include "CameraManage/CameraModifiers/CameraModifier_Vignette.h"
 #include "CameraManage/CameraModifiers/UCamModifyer_CameraShake.h"
+#include "CameraManage/CameraEffectAssetManager.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Object/Object.h"
@@ -61,12 +62,6 @@ APlayerCameraManager::APlayerCameraManager()
     SetActorTickEnabled(false);
 }
 
-void APlayerCameraManager::SetViewTarget(UCameraComponent* NewCamera)
-{
-    ViewTarget.POVCamera = NewCamera;
-    ViewTarget.TargetActor = NewCamera ? NewCamera->GetOwner() : nullptr;
-}
-
 void APlayerCameraManager::SetViewTarget(AActor* NewActor)
 {
     if (!NewActor)
@@ -76,6 +71,7 @@ void APlayerCameraManager::SetViewTarget(AActor* NewActor)
     }
 
     ViewTarget.TargetActor = NewActor;
+    ViewTarget.POVCamera = nullptr;
 
     for (UActorComponent* Comp : NewActor->GetComponents())
     {
@@ -94,16 +90,17 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
         return;
     }
 
-    CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
-    CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
-    //CameraViewInfoCache.CameraState = Camera->GetCameraState();
     CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
     if (ViewTarget.POVCamera)
     {
+        CameraViewInfoCache.Location = ViewTarget.POVCamera->GetWorldLocation();
+        CameraViewInfoCache.Rotation = ViewTarget.POVCamera->GetWorldMatrix().ToRotator();
         CameraViewInfoCache.CameraState = ViewTarget.POVCamera->GetCameraState();
     }
     else
     {
+        CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
+        CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
         CameraViewInfoCache.CameraState = FCameraState{};
     }
 
@@ -275,6 +272,42 @@ void APlayerCameraManager::PlayCameraVignette(const FCameraVignetteParams& Param
     Modifier->Start(Params);
     CommitVignette(Params);
     AddCameraModifier(Modifier);
+}
+
+void APlayerCameraManager::PlayCameraEffect(const FCameraEffectAsset& Asset)
+{
+    switch (Asset.Type)
+    {
+    case ECameraEffectType::Shake:
+        PlayCameraShake(Asset.Shake);
+        break;
+    case ECameraEffectType::Fade:
+        PlayCameraFade(Asset.Fade);
+        break;
+    case ECameraEffectType::LetterBox:
+        PlayCameraLetterBox(Asset.LetterBox);
+        break;
+    case ECameraEffectType::GammaCorrection:
+        PlayCameraGammaCorrection(Asset.GammaCorrection);
+        break;
+    case ECameraEffectType::Vignette:
+        PlayCameraVignette(Asset.Vignette);
+        break;
+    default:
+        break;
+    }
+}
+
+bool APlayerCameraManager::PlayCameraEffectAsset(const FString& AssetPath)
+{
+    FCameraEffectAsset Asset;
+    if (!FCameraEffectAssetManager::GetOrLoad(AssetPath, Asset))
+    {
+        return false;
+    }
+
+    PlayCameraEffect(Asset);
+    return true;
 }
 
 void APlayerCameraManager::CommitFade(const FCameraFadeParams& Params)

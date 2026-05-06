@@ -16,6 +16,11 @@ void UCameraModifier_GammaCorrection::Start(const FCameraGammaCorrectionParams& 
     ElapsedTime = 0.0f;
     FromGamma = Clamp(Params.FromGamma, 0.01f, 8.0f);
     ToGamma = Clamp(Params.ToGamma, 0.01f, 8.0f);
+    GammaCurve = Params.GammaCurve;
+    if (GammaCurve.Keys.empty())
+    {
+        GammaCurve.Keys = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    }
     bFinished = false;
 }
 
@@ -30,7 +35,7 @@ bool UCameraModifier_GammaCorrection::ModifyCamera(float DeltaTime, FCameraViewI
     const float Alpha = Duration > 0.0f ? Clamp(ElapsedTime / Duration, 0.0f, 1.0f) : 1.0f;
 
     InOutView.ScreenEffects.bEnableGammaCorrection = true;
-    InOutView.ScreenEffects.Gamma = Lerp(FromGamma, ToGamma, Alpha);
+    InOutView.ScreenEffects.Gamma = Lerp(FromGamma, ToGamma, GammaCurve.Evaluate(Alpha));
 
     if (Alpha >= 1.0f)
     {

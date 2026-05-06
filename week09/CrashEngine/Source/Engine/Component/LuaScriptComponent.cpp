@@ -289,6 +289,18 @@ bool ULuaScriptComponent::LoadScript()
                             { return WorldProxy.GetActiveCameraUp(); });
     WorldTable.set_function("GetMouseWorldPointOnPlane", [this](float PlaneZ)
                             { return WorldProxy.GetMouseWorldPointOnPlane(PlaneZ); });
+    WorldTable.set_function("PlayCameraShake",[this](float Duration, float LocationAmplitude, float RotationAmplitude,float Frequency)
+        {WorldProxy.PlayCameraShake(Duration, LocationAmplitude, RotationAmplitude, Frequency); });
+    WorldTable.set_function("PlayCameraFade", [this](float FromAmount, float ToAmount, float Duration, float R, float G, float B, float A)
+        { WorldProxy.PlayCameraFade(FromAmount, ToAmount, Duration, R, G, B, A); });
+    WorldTable.set_function("PlayCameraLetterBox", [this](float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+        { WorldProxy.PlayCameraLetterBox(FromAmount, ToAmount, Duration, AppearRatio, DisappearRatio); });
+    WorldTable.set_function("PlayCameraGammaCorrection", [this](float FromGamma, float ToGamma, float Duration)
+        { WorldProxy.PlayCameraGammaCorrection(FromGamma, ToGamma, Duration); });
+    WorldTable.set_function("PlayCameraVignette", [this](float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)
+        { WorldProxy.PlayCameraVignette(FromIntensity, ToIntensity, Duration, Radius, Softness); });
+    WorldTable.set_function("PlayCameraEffectAsset", [this](const FString& AssetPath)
+        { return WorldProxy.PlayCameraEffectAsset(AssetPath); });
     WorldTable.set_function("FindPlayer",[this]()
         { return WorldProxy.FindPlayer(); });
     WorldTable.set_function("FindActorByTag", [this](const FString& Tag)

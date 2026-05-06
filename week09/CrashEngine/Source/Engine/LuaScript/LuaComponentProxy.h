@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "GameFramework/AActor.h"
@@ -93,6 +93,13 @@ public:
     bool SetCapsuleSize(float Radius, float HalfHeight);
     bool SetCapsuleRadius(float Radius);
     bool SetCapsuleHalfHeight(float HalfHeight);
+
+    /*
+     * HitReaction
+     */
+
+    bool ApplyKnockback(FVector HitFromPosition, float KnockbackPower);
+    bool ApplySquash(FVector SquashScaleRatio, float Duration);
 
     FString GetPatrolGroup() const;
     bool SetPatrolGroup(const FString& PatrolGroup);

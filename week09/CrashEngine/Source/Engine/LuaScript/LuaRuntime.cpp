@@ -335,6 +335,9 @@ void FLuaRuntime::BindEngineTypes()
 		"SetCapsuleRadius", &FLuaComponentProxy::SetCapsuleRadius,
 		"SetCapsuleHalfHeight", &FLuaComponentProxy::SetCapsuleHalfHeight,
 
+        "ApplyKnockback", & FLuaComponentProxy::ApplyKnockback,
+        "ApplySquash", &FLuaComponentProxy::ApplySquash,
+
         "GetPatrolGroup", &FLuaComponentProxy::GetPatrolGroup,
         "SetPatrolGroup", &FLuaComponentProxy::SetPatrolGroup,
         "GetPatrolOrder", &FLuaComponentProxy::GetPatrolOrder,
@@ -348,5 +351,7 @@ void FLuaRuntime::BindEngineTypes()
 
         "SetScriptPath", &FLuaComponentProxy::SetScriptPath,
         "CallFunction", &FLuaComponentProxy::CallFunction
+
+
 	);
 }

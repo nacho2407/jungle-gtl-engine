@@ -3,6 +3,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Editor/UI/EditorPanel.h"
+#include "Math/Vector.h"
 
 #include <filesystem>
 #include <map>
@@ -21,6 +22,7 @@ enum class EContentBrowserAssetType : int32
     Model,
     Texture,
     Prefab,
+    CameraEffect,
 };
 
 struct FContentBrowserDragPayload
@@ -61,6 +63,8 @@ private:
     void RenderItemContextMenu(const FContentItem& Item);
     void RenderCreateFolderPopup();
     void RenderCreatePrefabPopup();
+    void RenderCreateCameraEffectPopup();
+    void RenderCameraEffectEditor();
 
     bool IsInsideContentRoot(const std::filesystem::path& Path) const;
     FString MakeDisplayPath(const std::filesystem::path& Path) const;
@@ -73,6 +77,47 @@ private:
 
     bool CreateFolder(const FString& FolderName);
     bool CreateEmptyPrefab(const FString& FileName);
+    bool CreateCameraEffect(const FString& FileName);
+    bool OpenCameraEffectEditor(const FContentItem& Item);
+    bool LoadCameraEffect(const std::filesystem::path& Path);
+    bool SaveCameraEffect();
+
+    struct FCurvePoint
+    {
+        float Time = 0.0f;
+        float Value = 0.0f;
+        float ArriveTangent = 0.0f;
+        float LeaveTangent = 0.0f;
+        bool bUseTangents = false;
+    };
+
+    struct FEditableCurve
+    {
+        TArray<FCurvePoint> Points;
+        int32 SelectedIndex = -1;
+    };
+
+    struct FEditableCameraEffect
+    {
+        FString Type = "Vignette";
+        float Duration = 0.25f;
+        float FromValue = 0.0f;
+        float ToValue = 1.0f;
+        float LocationAmplitude = 5.0f;
+        float RotationAmplitude = 1.0f;
+        float Frequency = 30.0f;
+        FVector4 Color = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+        float Radius = 0.75f;
+        float Softness = 0.35f;
+        float AppearRatio = 0.5f;
+        float DisappearRatio = 0.5f;
+        FEditableCurve PrimaryCurve;
+        FEditableCurve SecondaryCurve;
+    };
+
+    bool DrawCurveEditor(const char* Label, FEditableCurve& Curve, const ImVec2& Size);
+    void DrawCameraEffectParameters();
+    void ResetCameraEffectForType(const FString& Type);
 
 private:
     std::filesystem::path ContentRoot;
@@ -87,4 +132,11 @@ private:
     bool bNeedsRefresh = true;
     char NewFolderName[128] = "NewFolder";
     char NewPrefabName[128] = "NewPrefab";
+    char NewCameraEffectName[128] = "NewCameraEffect";
+    bool bCameraEffectEditorOpen = false;
+    bool bCameraEffectDirty = false;
+    FString ActiveCameraEffectCurve;
+    std::filesystem::path EditingCameraEffectPath;
+    FString EditingCameraEffectRelativePath;
+    FEditableCameraEffect EditingCameraEffect;
 };

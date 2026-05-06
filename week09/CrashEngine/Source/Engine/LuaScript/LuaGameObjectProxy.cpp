@@ -43,6 +43,8 @@ FString NormalizeLuaComponentClassName(const FString& TypeName)
         return "UPatrolAgentComponent";
     if (TypeName == "PatrolPointComponent")
         return "UPatrolPointComponent";
+    if (TypeName == "HitReactionComponent")
+        return "UHitReactionComponent";
 
     return TypeName;
 }
@@ -63,7 +65,8 @@ bool IsLuaAddableComponentClassName(const FString& ClassName)
 		|| ClassName == "ULuaScriptComponent"
         || ClassName == "USubUVComponent"
 		|| ClassName == "UPatrolAgentComponent"
-		|| ClassName == "UPatrolPointComponent";
+		|| ClassName == "UPatrolPointComponent"
+        || ClassName == "UHitReactionComponent";
 }
 
 UClass* FindClassByName(const FString& ClassName)

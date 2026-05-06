@@ -1,0 +1,23 @@
+{
+  "Type" : "Shake",
+  "Version" : 1,
+  "Shake" : {
+    "Duration" : 1.000000,
+    "LocationAmplitude" : 2.000000,
+    "RotationAmplitude" : 2.000000,
+    "Frequency" : 10.000000,
+    "LocationCurve" : [
+      { "Time" : 0.011019, "Value" : 0.021053 },
+      { "Time" : 0.380165, "Value" : 0.894737 },
+      { "Time" : 0.619835, "Value" : 0.489474 },
+      { "Time" : 0.991736, "Value" : 0.973684 }
+    ],
+    "RotationCurve" : [
+      { "Time" : 0.000000, "Value" : 0.047368 },
+      { "Time" : 0.283747, "Value" : 0.663158 },
+      { "Time" : 0.550964, "Value" : 0.915789 },
+      { "Time" : 0.765840, "Value" : 0.415789 },
+      { "Time" : 0.977961, "Value" : 0.736842 }
+    ]
+  }
+}

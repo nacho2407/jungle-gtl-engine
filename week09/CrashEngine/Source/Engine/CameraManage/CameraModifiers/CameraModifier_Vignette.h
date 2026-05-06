@@ -19,4 +19,5 @@ private:
     float ToIntensity = 0.0f;
     float Radius = 0.75f;
     float Softness = 0.35f;
+    FCameraFloatCurve IntensityCurve;
 };

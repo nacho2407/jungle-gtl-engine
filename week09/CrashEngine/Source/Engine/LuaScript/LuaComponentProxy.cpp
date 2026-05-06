@@ -1,7 +1,8 @@
-#include "LuaComponentProxy.h"
+﻿#include "LuaComponentProxy.h"
 
 #include "Component/ActorComponent.h"
 #include "Component/BillboardComponent.h"
+#include "Component/HitReactionComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/PointLightComponent.h"
@@ -487,6 +488,30 @@ bool FLuaComponentProxy::SetCapsuleHalfHeight(float HalfHeight)
     }
 
     Capsule->SetCapsuleHalfHeight(HalfHeight);
+    return true;
+}
+
+bool FLuaComponentProxy::ApplyKnockback(FVector HitFromPosition, float KnockbackPower)
+{
+    UHitReactionComponent* HitReaction = Cast<UHitReactionComponent>(ResolveComponent());
+    if (!HitReaction)
+    {
+        return false;
+    }
+
+    HitReaction->ApplyKnockback(HitFromPosition, KnockbackPower);
+    return true;
+}
+
+bool FLuaComponentProxy::ApplySquash(FVector SquashScaleRatio, float Duration)
+{
+    UHitReactionComponent* HitReaction = Cast<UHitReactionComponent>(ResolveComponent());
+    if (!HitReaction)
+    {
+        return false;
+    }
+
+    HitReaction->ApplySquash(SquashScaleRatio, Duration);
     return true;
 }
 
