@@ -295,8 +295,16 @@ local function OnPhaseChanged(phase)
     HandlePhaseBGM(phase)
 
     if wasEscapePolice and phase ~= ECarGamePhase.EscapePolice then
-        ObjRegistry.ClearAllPoliceControls()
-        EndPoliceCinematic()
+        -- EndPoliceCinematic 은 PhysX 액터 transform/visible/collision 을 만지므로
+        -- OnPhaseChanged callback (TickManager → 액터 lua tick 콜스택) 안에서 직접
+        -- 호출하면 같은 Tick 의 다음 ExecuteTick 와 race 한다. (45s phase timer 만료
+        -- 시 crash reproducer 확인됨.) 한 frame 미뤄 Tick 이 종료된 다음 안전한
+        -- coroutine resume 콜스택에서 호출.
+        StartTrackedCoroutine(function()
+            Wait(0)
+            ObjRegistry.ClearAllPoliceControls()
+            EndPoliceCinematic()
+        end)
     end
 
     prevPhase = phase
