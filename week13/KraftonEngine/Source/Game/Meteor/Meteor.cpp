@@ -163,13 +163,12 @@ void AMeteor::HandleHit(UPrimitiveComponent* /*HitComp*/, AActor* OtherActor,
 	ElapsedTime = Lifetime;
 }
 
-void AMeteor::PlayLandingFeedback()
+float AMeteor::ComputePlayerFalloff() const
 {
 	UWorld* World = GetWorld();
-	if (!World) return;
+	if (!World) return 0.0f;
 
-	// 플레이어 차량 위치 — World 의 액터 중 첫 ACarPawn 을 사용 (lua 의 ObjRegistry.car
-	// 패턴과 동일). 매 임팩트마다 순회하지만 빈도 낮아 cost 무시 가능.
+	// 플레이어 차량 위치 — World 의 액터 중 첫 ACarPawn (lua 의 ObjRegistry.car 패턴).
 	AActor* PlayerCar = nullptr;
 	for (AActor* Actor : World->GetActors())
 	{
@@ -179,29 +178,34 @@ void AMeteor::PlayLandingFeedback()
 			break;
 		}
 	}
-	if (!PlayerCar) return;
+	if (!PlayerCar) return 0.0f;
 
-	// 거리 0 → Falloff 1.0 (최대 강도), MaxAudibleDistance 이상 → 0 (무음/무흔들림).
+	// 거리 0 → 1.0 (최대), MaxAudibleDistance 이상 → 0 (무음).
 	const FVector Diff = PlayerCar->GetActorLocation() - GetActorLocation();
 	const float Distance = Diff.Length();
-	const float Falloff = std::max(0.0f, std::min(1.0f - Distance / MaxAudibleDistance, 1.0f));
-	if (Falloff <= 0.0f)
-	{
-		return;
-	}
+	return std::max(0.0f, std::min(1.0f - Distance / MaxAudibleDistance, 1.0f));
+}
+
+void AMeteor::PlayLandingFeedback()
+{
+	const float Falloff = ComputePlayerFalloff();
+	if (Falloff <= 0.0f) return;
 
 	const float ShakeScale = MinShakeScale + (MaxShakeScale - MinShakeScale) * Falloff;
 	const float Volume     = MaxImpactVolume * Falloff;
 
-	if (APlayerController* PC = World->GetFirstPlayerController())
+	if (UWorld* World = GetWorld())
 	{
-		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+		if (APlayerController* PC = World->GetFirstPlayerController())
 		{
-			CM->StartCameraShakeAsset(FString("Asset/Test.shake"), ShakeScale);
+			if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+			{
+				CM->StartCameraShakeAsset(FString("Asset/Test.shake"), ShakeScale);
+			}
 		}
 	}
 
-	// 사운드 키 "MeteorImpact" — AudioManager.LoadAudio 로 사전 등록되어 있어야 한다.
+	// 사운드 키 "MeteorBoom" — AudioManager.LoadAudio 로 사전 등록되어 있어야 한다.
 	// 미등록 키는 silent (PlayAudio 가 무시).
 	FAudioManager::Get().PlayAudio(FString("MeteorBoom"), Volume);
 }

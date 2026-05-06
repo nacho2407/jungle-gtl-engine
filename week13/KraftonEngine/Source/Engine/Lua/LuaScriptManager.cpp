@@ -492,6 +492,12 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["Escape"] = VK_ESCAPE;
 	Key["F1"] = VK_F1;
 	Key["F2"] = VK_F2;
+	Key["F3"] = VK_F3;
+	Key["F4"] = VK_F4;
+	Key["F5"] = VK_F5;
+	Key["F6"] = VK_F6;
+	Key["F7"] = VK_F7;
+	Key["F8"] = VK_F8;
 
 	sol::table CameraManager = Lua.create_named_table("CameraManager");
 	CameraManager.set_function("ToggleActorCamera", [](const FString& ActorName, sol::optional<float> BlendTime)

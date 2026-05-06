@@ -233,6 +233,8 @@ void FAudioManager::SetMasterVolume(float Volume)
 void FAudioManager::LoadDefaultAudios()
 {
 	LoadAudio("CityBgm", "city_bgm.mp3", true);
+	LoadAudio("Phase_EscapePolice", "phase_escapepolice.wav", true);
+	LoadAudio("Phase_Meteor", "phase_meteor.mp3", true);
 	LoadAudio("Click", "pop.mp3");
 	LoadAudio("CarEngineLoop", "car_engine_loop.mp3", true);
 	LoadAudio("Notify", "notify.mp3");
