@@ -1,11 +1,20 @@
 ﻿#include "SequenceCameraShake.h"
 
+#include "CameraShake/CameraShakeAsset.h"
 #include "Object/ObjectFactory.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 
 IMPLEMENT_CLASS(USequenceCameraShake, UCameraShakeBase)
+
+namespace
+{
+	UFloatCurveAsset* LoadCurveOrNull(const FString& Path)
+	{
+		return Path.empty() ? nullptr : FFloatCurveManager::Get().Load(Path);
+	}
+}
 
 void USequenceCameraShake::StartShake(
 	APlayerCameraManager* Camera,
@@ -16,16 +25,29 @@ void USequenceCameraShake::StartShake(
 	Super::StartShake(Camera, InScale, InPlaySpace, InUserPlaySpaceRot);
 
 	ElapsedTime = 0.0f;
+}
 
-	LocXCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
-	LocYCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
-	LocZCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
+void USequenceCameraShake::ApplyAsset(const UCameraShakeAsset* ShakeAsset)
+{
+	if (!ShakeAsset)
+	{
+		return;
+	}
 
-	PitchCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
-	YawCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
-	RollCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
+	Duration = ShakeAsset->Duration;
+	BlendInTime = ShakeAsset->BlendInTime;
+	BlendOutTime = ShakeAsset->BlendOutTime;
+	bSingleInstance = ShakeAsset->bSingleInstance;
 
-	FOVCurve = FFloatCurveManager::Get().Load("TestCurve.curve");
+	LocXCurve = LoadCurveOrNull(ShakeAsset->Sequence.LocXCurvePath);
+	LocYCurve = LoadCurveOrNull(ShakeAsset->Sequence.LocYCurvePath);
+	LocZCurve = LoadCurveOrNull(ShakeAsset->Sequence.LocZCurvePath);
+
+	PitchCurve = LoadCurveOrNull(ShakeAsset->Sequence.PitchCurvePath);
+	YawCurve = LoadCurveOrNull(ShakeAsset->Sequence.YawCurvePath);
+	RollCurve = LoadCurveOrNull(ShakeAsset->Sequence.RollCurvePath);
+
+	FOVCurve = LoadCurveOrNull(ShakeAsset->Sequence.FOVCurvePath);
 }
 
 void USequenceCameraShake::UpdateAndApplyCameraShake(float DeltaTime, FCameraShakeUpdateResult& OutResult)

@@ -162,6 +162,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	RenderFooterOverlay(DeltaTime);
 
 	FloatCurveEditorWidget.Render(DeltaTime);
+	CameraShakeEditorWidget.Render(DeltaTime);
 
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
@@ -828,5 +829,10 @@ void FEditorMainPanel::OpenAssetEditorForObject(UObject* Object)
 	if (FloatCurveEditorWidget.CanEdit(Object))
 	{
 		FloatCurveEditorWidget.Open(Object);
+	}
+	
+	if (CameraShakeEditorWidget.CanEdit(Object))
+	{
+		CameraShakeEditorWidget.Open(Object);
 	}
 }

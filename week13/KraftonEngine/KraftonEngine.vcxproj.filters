@@ -363,9 +363,6 @@
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\GammaCorrection.hlsl">
-      <Filter>Shaders\PostProcess</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\HeightFog.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
@@ -523,9 +520,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Collision\WorldPrimitivePickingBVH.cpp">
       <Filter>Source\Engine\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\ActionComponent.cpp">
-      <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
@@ -881,9 +875,6 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp">
-      <Filter>Source\Engine\Render\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
@@ -1114,6 +1105,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1250,9 +1242,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Collision\WorldPrimitivePickingBVH.h">
       <Filter>Source\Engine\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\ActionComponent.h">
-      <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
@@ -1672,9 +1661,6 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
-      <Filter>Source\Engine\Render\RenderPass</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h">
@@ -2761,6 +2747,7 @@
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h" />
+    <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

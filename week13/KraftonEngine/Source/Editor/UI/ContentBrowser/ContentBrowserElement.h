@@ -54,6 +54,13 @@ public:
 class FloatCurveElement final : public ContentBrowserElement
 {
 public:
+	virtual const char* GetDragItemType() override { return "FloatCurveContentItem"; }
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+};
+
+class CameraShakeElement final : public ContentBrowserElement
+{
+public:
 	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 

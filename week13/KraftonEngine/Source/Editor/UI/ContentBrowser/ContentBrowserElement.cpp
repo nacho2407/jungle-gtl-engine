@@ -1,10 +1,12 @@
 ﻿#include "ContentBrowserElement.h"
 
 #include "Editor/EditorEngine.h"
+#include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "CameraShake/CameraShakeAsset.h"
+#include "CameraShake/CameraShakeManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
-#include "FloatCurve/FloatCurveAsset.h"
 
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
@@ -112,6 +114,19 @@ void FloatCurveElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UFloatCurveAsset* CurveAsset = FFloatCurveManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(CurveAsset);
+	}
+}
+
+void CameraShakeElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
 	}
 }
 

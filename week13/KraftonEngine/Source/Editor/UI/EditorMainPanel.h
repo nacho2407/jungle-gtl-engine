@@ -11,6 +11,7 @@
 #include "Editor/UI/EditorWorldSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/FloatCurveEditorWidget.h"
+#include "Editor/UI/Asset/CameraShakeEditorWidget.h"
 #include "Math/Vector.h"
 
 class AActor;
@@ -60,6 +61,7 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FFloatCurveEditorWidget FloatCurveEditorWidget;
+	FCameraShakeEditorWidget CameraShakeEditorWidget;
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;

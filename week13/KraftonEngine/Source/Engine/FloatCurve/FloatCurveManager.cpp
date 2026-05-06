@@ -4,18 +4,20 @@
 
 UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 {
-	auto it = LoadedCurves.find(Path);
+	FString NormalizedPath = FPaths::MakeProjectRelative(Path);
+
+	auto it = LoadedCurves.find(NormalizedPath);
 	if (it != LoadedCurves.end())
 	{
 		return it->second;
 	}
 
 	UFloatCurveAsset* NewAsset = UObjectManager::Get().CreateObject<UFloatCurveAsset>();
-	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), FPaths::ToWide(Path)));
+	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(NormalizedPath)));
 	if (NewAsset->LoadFromFile(FullPath))
 	{
-		NewAsset->SetSourcePath(Path);
-		LoadedCurves.emplace(Path, NewAsset);
+		NewAsset->SetSourcePath(NormalizedPath);
+		LoadedCurves.emplace(NormalizedPath, NewAsset);
 		return NewAsset;
 	}
 	else
@@ -27,7 +29,9 @@ UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 
 UFloatCurveAsset* FFloatCurveManager::Find(const FString& Path) const
 {
-	auto it = LoadedCurves.find(Path);
+	FString NormalizedPath = FPaths::MakeProjectRelative(Path);
+
+	auto it = LoadedCurves.find(NormalizedPath);
 	return it != LoadedCurves.end() ? it->second : nullptr;
 }
 
@@ -38,7 +42,7 @@ void FFloatCurveManager::Save(UFloatCurveAsset* Asset)
 		return;
 	}
 	const FString& Path = Asset->GetSourcePath();
-	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), FPaths::ToWide(Path)));
+	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(Path)));
 
 	if (Path.empty())
 	{

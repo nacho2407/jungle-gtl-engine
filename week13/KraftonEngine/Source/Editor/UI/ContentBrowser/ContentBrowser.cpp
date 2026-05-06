@@ -95,6 +95,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	ICons[".obj"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"icon_MatEd_Mesh_40x.png"));
 	ICons[".mat"] = FResourceManager::Get().FindLoadedTexture(FPaths::ToUtf8(IconDir + L"Sphere_64x.png"));
 	ICons[".curve"] = ICons["Default"];
+	ICons[".shake"] = ICons["Default"];
 
 	ContentBrowserContext Context;
 	Context.ContentSize = ImVec2(50, 50);
@@ -212,6 +213,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 		else if (Content.Path.extension() == ".curve")
 		{
 			Element = std::make_shared<FloatCurveElement>();
+			Element->SetIcon(ICons[Extension].Get());
+		}
+		else if (Content.Path.extension() == ".shake")
+		{
+			Element = std::make_shared<CameraShakeElement>();
 			Element->SetIcon(ICons[Extension].Get());
 		}
 		else if (Content.Path.extension() == ".png" || Content.Path.extension() == ".PNG")
