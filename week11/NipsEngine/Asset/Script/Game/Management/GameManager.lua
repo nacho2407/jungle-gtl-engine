@@ -261,6 +261,20 @@ function GameManager:DamagePlayer(amount, source)
         snapshot = self:GetSnapshot()
     })
     if self.playerHealth <= 0.0 then
+        --DeathAnimation
+            local player = Engine.API.World.FindActorByTag("Player")
+        local seq = nil
+
+        if player ~= nil and player:GetActorSequenceComponent() ~= nil then
+            seq = player:GetActorSequenceComponent()
+        end
+
+        if seq ~= nil then
+            seq:Play()
+        else
+            LogWarning("[GameManager] Player death sequence component not found")
+        end
+
         self:FinishRun("Dead")
     end
 
