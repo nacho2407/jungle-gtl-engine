@@ -11,6 +11,7 @@ local is_starting_game = false
 local game_start_elapsed = 0.0
 local game_start_lights = {}
 local game_start_next_light_index = 1
+local game_start_fade_played = false
 local game_start_scene_requested = false
 
 local menu_items = {
@@ -75,7 +76,10 @@ local menu_layout = {
 }
 
 local start_light_tag = "StartSceneLight"
-local start_light_shutdown_duration = 2.0
+local start_light_delay = 1.0
+local start_light_shutdown_duration = 1.0
+local start_fade_delay_after_lights = 1.0
+local start_scene_load_delay_after_fade = 1.0
 local light_component_types = {
     "PointLightComponent"
 }
@@ -192,7 +196,7 @@ local scoreboard_items = {
 
 local function playBackgroundBGM()
     local sound_mgr = GetSoundManager()
-    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/backgroundbgm.mp3", true)
+    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/SoundCollection/BackgroundSFX2.mp3", true)
     sound_mgr:PlayBGM("backgroundbgm")
 end
 
@@ -412,21 +416,13 @@ local function collectStartSceneLights()
     return lights
 end
 
-local function shuffleList(items)
-    for index = #items, 2, -1 do
-        local swap_index = math.random(index)
-        items[index], items[swap_index] = items[swap_index], items[index]
-    end
-end
-
 local function beginGameStartSequence()
     is_starting_game = true
     game_start_elapsed = 0.0
     game_start_lights = collectStartSceneLights()
     game_start_next_light_index = 1
+    game_start_fade_played = false
     game_start_scene_requested = false
-
-    shuffleList(game_start_lights)
 
     ui_document:SetProperty("menu", "display", "none")
     World.PlayCameraEffectAsset("Asset/Content/CameraEffects/StartSceneLBStart.ceffect")
@@ -441,7 +437,11 @@ local function updateGameStartSequence(dt)
 
     local light_count = #game_start_lights
     while game_start_next_light_index <= light_count do
-        local turn_off_time = start_light_shutdown_duration * game_start_next_light_index / (light_count + 1)
+        local turn_off_time = start_light_delay
+        if light_count > 1 then
+            turn_off_time = turn_off_time + start_light_shutdown_duration * (game_start_next_light_index - 1) / (light_count - 1)
+        end
+
         if game_start_elapsed < turn_off_time then
             break
         end
@@ -454,7 +454,16 @@ local function updateGameStartSequence(dt)
         game_start_next_light_index = game_start_next_light_index + 1
     end
 
-    if game_start_elapsed >= start_light_shutdown_duration then
+    local lights_done_time = start_light_delay + start_light_shutdown_duration
+    local fade_time = lights_done_time + start_fade_delay_after_lights
+    local load_scene_time = fade_time + start_scene_load_delay_after_fade
+
+    if not game_start_fade_played and game_start_elapsed >= fade_time then
+        game_start_fade_played = true
+        World.PlayCameraEffectAsset("Asset/Content/CameraEffects/FadeOut.ceffect")
+    end
+
+    if game_start_elapsed >= load_scene_time then
         game_start_scene_requested = true
         LoadScene("DroneLevel.Scene")
     end
