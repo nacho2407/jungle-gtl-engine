@@ -199,6 +199,7 @@ void FRenderer::CreateResources()
     Resources.EditorPickingConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorPickingConstants));
     Resources.SelectionMaskConstantBuffer.Create(Device.GetDevice(), sizeof(FSelectionMaskConstants));
     Resources.SandevistanCB.Create(Device.GetDevice(), sizeof(FSandevistanConstants));
+    Resources.PostProcessCB.Create(Device.GetDevice(), sizeof(FPostProcessConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 	Resources.DecalStructuredBuffer.Create(Device.GetDevice(), sizeof(FDecalInfo), 256);
@@ -256,6 +257,7 @@ void FRenderer::Release()
 
     Resources.FogPassConstantBuffer.Release();
     Resources.SandevistanCB.Release();
+    Resources.PostProcessCB.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.EditorPickingConstantBuffer.Release();
     Resources.SelectionMaskConstantBuffer.Release();
@@ -361,14 +363,15 @@ FRenderTargetSet FRenderer::BeginGameFrame(uint32 Width, uint32 Height)
 
     if (!bLoggedGameFrameTargets)
     {
-        UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d, Sandervistan=%d",
+        UE_LOG("[GameRender] Game frame targets ready. Size=%ux%u Color=%d Light=%d Fog=%d FXAA=%d DepthSRV=%d, Sandervistan=%d, PostProcess=%d",
                Width, Height,
                Targets.SceneColorRTV != nullptr,
                Targets.SceneLightRTV != nullptr,
                Targets.SceneFogRTV != nullptr,
                Targets.SceneFXAARTV != nullptr,
                Targets.SceneDepthSRV != nullptr,
-			   Targets.SceneSandervistanSRV != nullptr);
+			   Targets.SceneSandervistanSRV != nullptr,
+			   Targets.ScenePostProcessSRV != nullptr);
         bLoggedGameFrameTargets = true;
     }
 
@@ -778,6 +781,11 @@ void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Wi
     Res.SandervistanTex = RT.Texture;
     Res.SandervistanRTV = RT.RTV;
     Res.SandervistanSRV = RT.SRV;
+	
+	RT = FRenderTargetFactory::CreateScenePostProcess(Device.GetDevice(), Width, Height);
+    Res.PostProcessTex = RT.Texture;
+    Res.PostProcessRTV = RT.RTV;
+    Res.PostProcessSRV = RT.SRV;
 
     RT = FRenderTargetFactory::CreateSceneWorldPos(Device.GetDevice(), Width, Height);
     Res.WorldPosTex = RT.Texture;
@@ -861,6 +869,14 @@ void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
     Res.FXAARTV.Reset();
     Res.FXAASRV.Reset();
     Res.FXAATex.Reset();
+
+    Res.SandervistanRTV.Reset();
+    Res.SandervistanSRV.Reset();
+    Res.SandervistanTex.Reset();
+
+    Res.PostProcessRTV.Reset();
+    Res.PostProcessSRV.Reset();
+    Res.PostProcessTex.Reset();
 
     Res.RenderTargetSet = FRenderTargetSet();
     Res.Width = 0;
