@@ -338,7 +338,7 @@ function Tick(dt)
     local Fov = 60.0 + (60.0 - 60.0) * ZoomAlpha
 
     syncCameraState(ZoomCameraLocation, ZoomLookAtLocation)
-    World.SetCameraView(CameraLocation,LookAtLocation,Fov)
+    --World.SetCameraView(CameraLocation,LookAtLocation,Fov)
 end
 
 function OnMouseButtonPressed(button)
