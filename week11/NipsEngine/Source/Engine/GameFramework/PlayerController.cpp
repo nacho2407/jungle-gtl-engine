@@ -8,6 +8,7 @@
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
+#include "Camera/PlayerCameraManager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -34,6 +35,8 @@ void APlayerController::BeginPlay()
 {
 	AActor::BeginPlay();
 
+	SpawnPlayerCameraManager();
+
 	if (!PossessedActor)
 	{
 		if (AActor* PlacedPlayer = FindPlacedPlayerActor())
@@ -48,7 +51,6 @@ void APlayerController::BeginPlay()
 
 			ApplyPlayerStartTransform(PlacedPlayer, SpawnLocation, SpawnRotation);
 			Possess(PlacedPlayer);
-			SetViewTarget(PlacedPlayer);
 			UE_LOG("[PlayerController] Possessed placed player actor: %s",
 				PlacedPlayer->GetFName().ToString().c_str());
 		}
@@ -62,9 +64,8 @@ void APlayerController::BeginPlay()
 	{
 		World->SetActiveCamera(&RuntimeCamera);
 	}
-	UE_LOG("[PlayerController] BeginPlay. Possessed=%s Camera=%s",
-		PossessedActor ? PossessedActor->GetFName().ToString().c_str() : "None",
-		ViewTargetCamera ? ViewTargetCamera->GetName().c_str() : "None");
+	UE_LOG("[PlayerController] BeginPlay. Possessed=%s",
+		PossessedActor ? PossessedActor->GetFName().ToString().c_str() : "None");
 }
 
 void APlayerController::Tick(float DeltaTime)
@@ -117,7 +118,6 @@ AActor* APlayerController::SpawnDefaultPawn()
 	ApplyInitialPawnTransform(Pawn, SpawnLocation, SpawnRotation);
 
 	Possess(Pawn);
-	SetViewTarget(Pawn);
 	UE_LOG("[PlayerController] Spawned default pawn at (%.2f, %.2f, %.2f).",
 		SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 	return Pawn;
@@ -161,10 +161,6 @@ void APlayerController::ApplyPlayerStartTransform(AActor* Pawn, const FVector& S
 void APlayerController::Possess(AActor* InActor)
 {
 	PossessedActor = InActor;
-	if (PossessedActor)
-	{
-		SetViewTarget(PossessedActor);
-	}
 	OnPossess(PossessedActor);
 }
 
@@ -173,18 +169,6 @@ void APlayerController::UnPossess()
 	AActor* OldActor = PossessedActor;
 	PossessedActor = nullptr;
 	OnUnPossess(OldActor);
-}
-
-void APlayerController::SetViewTarget(AActor* InActor)
-{
-	ViewTargetActor = InActor;
-	SetViewTargetCamera(FindCameraComponent(InActor));
-}
-
-void APlayerController::SetViewTargetCamera(UCameraComponent* InCamera)
-{
-	ViewTargetCamera = InCamera;
-	UpdateRuntimeCameraFromViewTarget();
 }
 
 void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
@@ -200,13 +184,6 @@ void APlayerController::NotifyObservedActorDestroyed(AActor* DestroyedActor)
 		AActor* OldActor = PossessedActor;
 		PossessedActor = nullptr;
 		OnUnPossess(OldActor);
-		bCleared = true;
-	}
-
-	if (ViewTargetActor == DestroyedActor)
-	{
-		ViewTargetActor = nullptr;
-		ViewTargetCamera = nullptr;
 		bCleared = true;
 	}
 
@@ -333,7 +310,9 @@ void APlayerController::ResetCameraFOV(float Duration)
 	CameraFOV.Elapsed = 0.0f;
 	CameraFOV.Duration = std::max(0.0f, Duration);
 	CameraFOV.StartFOV = RuntimeCamera.GetFOV();
-	CameraFOV.TargetFOV = ViewTargetCamera ? ViewTargetCamera->GetFOV() : RuntimeCamera.GetFOV();
+
+	UCameraComponent* Camera = GetViewTargetCamera();
+    CameraFOV.TargetFOV = Camera ? Camera->GetFOV() : RuntimeCamera.GetFOV();
 }
 
 void APlayerController::StopCameraEffects()
@@ -412,6 +391,21 @@ void APlayerController::HandleMouseDragEnd(int VK, float X, float Y)
 void APlayerController::HandleMouseWheel(float Notch)
 {
 	(void)Notch;
+}
+
+AActor* APlayerController::GetViewTargetActor() const
+{
+    return PlayerCameraManager ? PlayerCameraManager->GetViewTargetActor() : nullptr;
+}
+
+UCameraComponent* APlayerController::GetViewTargetCamera() const
+{
+    return PlayerCameraManager ? PlayerCameraManager->GetViewTargetCamera() : nullptr;
+}
+
+void APlayerController::SpawnPlayerCameraManager()
+{
+	PlayerCameraManager = GetFocusedWorld()->SpawnActor<APlayerCameraManager>();
 }
 
 UCameraComponent* APlayerController::FindCameraComponent(AActor* Actor) const
@@ -512,17 +506,6 @@ void APlayerController::ClearInvalidViewTarget()
 	{
 		PossessedActor = nullptr;
 	}
-
-	if (ViewTargetActor && !IsActorInCurrentWorld(ViewTargetActor))
-	{
-		ViewTargetActor = nullptr;
-		ViewTargetCamera = nullptr;
-	}
-
-	if (!ViewTargetActor)
-	{
-		ViewTargetCamera = nullptr;
-	}
 }
 
 void APlayerController::UpdatePossessedActorMovement(float DeltaTime)
@@ -569,6 +552,9 @@ void APlayerController::UpdateCameraFOVEffect(float DeltaTime, float BaseFOV)
 
 void APlayerController::ApplyCameraShakeEffect(float DeltaTime)
 {
+	// PC 에서 직접적으로 Camera 조작하는 거 방지 (해당 코드는 Legacy 임)
+    assert(false && "PlayerCameraManager 쪽으로 로직 옮기는 중입니다.");
+
 	if (!CameraShake.bActive)
 	{
 		return;
@@ -614,29 +600,28 @@ void APlayerController::ApplyCameraShakeEffect(float DeltaTime)
 void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 {
 	ClearInvalidViewTarget();
-	if (!ViewTargetCamera)
-	{
-		return;
-	}
 
-	RuntimeCamera.SetProjectionType(ViewTargetCamera->IsOrthogonal()
+	FMinimalViewInfo ViewInfo = PlayerCameraManager->GetCameraView();
+
+	RuntimeCamera.SetProjectionType(ViewInfo.bIsOrthogonal
 		? EViewportProjectionType::Orthographic
 		: EViewportProjectionType::Perspective);
-	RuntimeCamera.SetLocation(ViewTargetCamera->GetWorldLocation());
-	RuntimeCamera.SetRotation(MakeViewQuatFromCamera(ViewTargetCamera));
-	UpdateCameraFOVEffect(DeltaTime, ViewTargetCamera->GetFOV());
-	RuntimeCamera.SetNearPlane(ViewTargetCamera->GetNearPlane());
-	RuntimeCamera.SetFarPlane(ViewTargetCamera->GetFarPlane());
-	RuntimeCamera.SetOrthoHeight(ViewTargetCamera->GetOrthoWidth());
-	ApplyCameraShakeEffect(DeltaTime);
+	RuntimeCamera.SetLocation(ViewInfo.Location);
+    RuntimeCamera.SetRotation(ViewInfo.Rotation);
+    UpdateCameraFOVEffect(DeltaTime, ViewInfo.FOV);
+    RuntimeCamera.SetNearPlane(ViewInfo.NearZ);
+	RuntimeCamera.SetFarPlane(ViewInfo.FarZ);
+    RuntimeCamera.SetOrthoHeight(ViewInfo.OrthoWidth);
+	
+	// ApplyCameraShakeEffect(DeltaTime);
 }
 
 void APlayerController::OnPossess(AActor* InActor)
 {
-	(void)InActor;
+	PlayerCameraManager->SetViewTarget(InActor);
 }
 
 void APlayerController::OnUnPossess(AActor* OldActor)
 {
-	(void)OldActor;
+    PlayerCameraManager->SetViewTarget(this);
 }

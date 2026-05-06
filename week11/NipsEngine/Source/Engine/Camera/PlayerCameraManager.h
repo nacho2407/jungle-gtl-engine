@@ -5,15 +5,17 @@
 
 class UCameraComponent;
 class UCameraModifier;
+class APlayerController;
 
 class APlayerCameraManager : public AActor
 {
 public:
-    virtual void Tick(float DeltaTime) override;
+    void BeginPlay() override;
+    void Tick(float DeltaTime) override;
 
     // ===== Core API =====
     void SetViewTarget(AActor* NewTarget);
-    void GetCameraView(float DeltaTime, FMinimalViewInfo& OutView);
+    const FMinimalViewInfo& GetCameraView() const;
 
     // ===== Fade =====
     void StartFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color);
@@ -26,15 +28,20 @@ public:
 	const FColor& GetFadeColor() const { return Fade.Color; }
     float GetFadeAlpha() const { return Fade.CurrentAlpha; }
 
+	void InitializeFor(APlayerController* PC);
+    virtual APlayerController* GetOwningPlayerController() const { return PCOwner; }
+
+	AActor* GetViewTargetActor() const { return ViewTarget.Target; }
+    UCameraComponent* GetViewTargetCamera() const { return ViewTarget.CameraComp; }
+
 private:
     struct FViewTarget
     {
         AActor* Target = nullptr;
         UCameraComponent* CameraComp = nullptr;
-
-        FVector Location;
-        FRotator Rotation;
-        float FOV = 90.f;
+		
+		// 카메라 시점 상태 스냅샷
+        FMinimalViewInfo POV;
     };
 
     FViewTarget ViewTarget;
@@ -72,10 +79,15 @@ private:
     TArray<UCameraModifier*> ModifierList;
 
 private:
+    void UpdateCamera(float DeltaTime);
     void UpdateViewTarget(float DeltaTime);
     void ComputeCamera(float DeltaTime, FMinimalViewInfo& OutView);
     void ApplyModifiers(float DeltaTime, FMinimalViewInfo& InOutView);
 
     void UpdateTransition(float DeltaTime, FMinimalViewInfo& InOutView);
     void UpdateFade(float DeltaTime);
+
+private:
+	APlayerController* PCOwner = nullptr;
+    FMinimalViewInfo CachedView;
 };
