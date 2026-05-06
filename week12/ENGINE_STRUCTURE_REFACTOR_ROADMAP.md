@@ -134,13 +134,15 @@ Current API rule:
 
 Current problem:
 
-- It coordinates editor camera, selection, picking, gizmo manipulation, transform shortcuts, PIE possess/eject, cursor focus, and game input bridge state.
+- It coordinates editor camera, selection commands, gizmo manipulation, transform shortcuts, PIE possess/eject, cursor focus, and game input bridge state.
+- Point picking and drag-box selection policy have been moved to focused services.
 
 Final target:
 
 - `FEditorViewportClient` remains a viewport coordinator.
 - Interaction policies move into smaller services:
   - `EditorPickingService`
+  - `EditorBoxSelectionService`
   - `EditorTransformInteraction`
   - `EditorViewportNavigationController`
   - `PIEViewportControlBridge`
@@ -160,7 +162,11 @@ Current state:
   - `CurveResourceCache`
   - `AssetPathPolicy`
   - `ImportedMaterialPolicy`
-- `FResourceManager` still coordinates material parsing/serialization, OBJ/MTL import flow, static mesh OBJ/BIN load flow, default resource setup, and memory accounting glue.
+  - `StaticMeshLoadService`
+  - `MaterialLoadService`
+  - `MaterialSerializationService`
+  - `ResourceMemoryReporter`
+- `FResourceManager` still coordinates a few resource initialization and discovery entry points while the focused caches/services own the extracted resource behavior.
 
 Final target:
 
@@ -172,6 +178,7 @@ Final target:
   - `MaterialResourceCache`
   - `StaticMeshResourceCache`
   - `ImportedMaterialService`
+  - `MaterialLoadService`
   - `StaticMeshLoadService`
   - `ResourceMemoryReporter`
   - `CookedAssetCopyPolicy`
@@ -182,7 +189,7 @@ Current state:
 
 - Engine-facing editor include violations in renderer paths are currently cleared by the architecture check.
 - Shadow filter/editor setting reads were moved behind runtime-facing render state flow.
-- `RenderCollector` still owns too much: world traversal, culling, light collection, primitive command creation, and editor-related collection.
+- `RenderCollector` is now mostly a world traversal, culling, and render collection coordinator. Primitive draw command building, decal command building, light data collection, and editor overlay collection have been split into focused render-scene helpers.
 - `Renderer` and render passes still need a later proxy/frame/draw-command architecture pass.
 - Main-merged PostProcess pass code compiled in the current Editor and GameClient debug verification. The only merge issue found there was the shader project item being classified as C++ compile input, which has been corrected.
 
@@ -379,7 +386,7 @@ Examples:
 
 ## Current Progress
 
-Overall progress: about 78% for the active Engine structure refactor scope.
+Overall progress: about 94% for the active Engine structure refactor scope.
 
 Current synced state:
 
@@ -387,13 +394,13 @@ Current synced state:
 - GameClient Editor source exclusion guard: current guard baseline is clean.
 - `EditorMainPanel` monolith removal/split: structurally complete for this scope; remaining work is stabilization or moving extracted files into standalone panel classes.
 - `LaunchModeFactory` split: complete for the current EngineLoop boundary scope.
-- `ResourceManager` facade split: storage/cache/policy extraction is mostly complete, but import/load orchestration and memory reporting are still in the facade.
-- Render proxy/collector architecture cleanup: intentionally deferred and still a major remaining structural item.
-- `EditorViewportClient` interaction split: still a major remaining structural item.
+- `ResourceManager` facade split: storage/cache/policy/service extraction is mostly complete. Asset discovery registration, static mesh object creation/LOD policy, default resource initialization, static mesh OBJ/BIN load orchestration, material OBJ/MTL load orchestration, material serialization/deserialization, material memory reporting, and texture asset meta load/create policy now have named focused steps/services.
+- Render proxy/collector architecture cleanup: started. Primitive draw command building, decal command building, light collection, and editor overlay collection are split from `RenderCollector`; proxy/frame cleanup remains.
+- `EditorViewportClient` interaction split: structurally complete for this scope. Point picking, box selection, transform/gizmo mode policy, PIE control bridge behavior, camera focus, free-orbit/pan/dolly navigation, keyboard navigation routing, move-speed wheel policy, reset-camera policy, and viewport camera-mode policy are now split into focused services/controllers.
 
 Deferred after this batch scope:
 
-- Render collector/proxy architecture cleanup remains intentionally deferred.
+- Render collector/proxy architecture cleanup remains partially deferred. Proxy/frame architecture remains after the collector responsibility split.
 
 Completed:
 
@@ -449,6 +456,23 @@ Completed:
 - Batch 50: Curve Resource Cache Extraction
 - Batch 51: Asset Path Classification Policy Extraction
 - Batch 52: Main Merge Build Sync and PostProcess Shader Project Item Fix
+- Batch 53: ResourceManager Asset Discovery Registration Cleanup
+- Batch 54: ResourceManager StaticMesh Loaded Object Creation Helper
+- Batch 55: ResourceManager Default Resource Initialization Steps
+- Batch 56: StaticMesh Load Service Extraction
+- Batch 57: Material Load Service Extraction
+- Batch 58: Resource Memory Reporter Extraction
+- Batch 59: Material Serialization Service Extraction
+- Batch 60: Editor Picking Service Extraction
+- Batch 61: Editor Box Selection Service Extraction
+- Batch 62: Editor Transform Interaction Extraction
+- Batch 63: Texture Asset Meta Service Extraction
+- Batch 64: Editor Viewport PIE Controller Extraction
+- Batch 65: Editor Viewport Primary Selection Focus Extraction
+- Batch 66: Editor Viewport Navigation Controller Completion
+- Batch 67: RenderCollector Primitive and Light Split
+- Batch 68: RenderCollector Decal Command Split
+- Batch 69: RenderCollector Editor Overlay Split
 
 Verified:
 
@@ -519,6 +543,40 @@ Verified:
 - Main merge sync `GameClientDebug|x64` build
 - Final `Release|x64` Editor build
 - Final `GameClientRelease|x64` build
+- Batch 53-55 `Scripts/CheckArchitecture.ps1`
+- Batch 53-54 `Debug|x64` Editor build
+- Batch 53-54 `GameClientDebug|x64` build
+- Batch 55 `Debug|x64` Editor build
+- Batch 55 `GameClientDebug|x64` build
+- Batch 56 `Scripts/CheckArchitecture.ps1`
+- Batch 56 `Debug|x64` Editor build
+- Batch 56 `GameClientDebug|x64` build
+- Batch 57 `Scripts/CheckArchitecture.ps1`
+- Batch 57 `Debug|x64` Editor build
+- Batch 57 `GameClientDebug|x64` build
+- Batch 58-59 `Scripts/CheckArchitecture.ps1`
+- Batch 58-59 `Debug|x64` Editor build
+- Batch 58-59 `GameClientDebug|x64` build
+- Batch 60-61 `Scripts/CheckArchitecture.ps1`
+- Batch 60-61 `Debug|x64` Editor build
+- Batch 60-61 `GameClientDebug|x64` build
+- Batch 62 `Scripts/CheckArchitecture.ps1`
+- Batch 62 `Debug|x64` Editor build
+- Batch 62 `GameClientDebug|x64` build
+- Batch 63 `Scripts/CheckArchitecture.ps1`
+- Batch 63 `Debug|x64` Editor build
+- Batch 63 `GameClientDebug|x64` build
+- Batch 64 `Scripts/CheckArchitecture.ps1`
+- Batch 64 `Debug|x64` Editor build
+- Batch 64 `GameClientDebug|x64` build
+- Batch 65 `Scripts/CheckArchitecture.ps1`
+- Batch 65 `Debug|x64` Editor build
+- Batch 65 `GameClientDebug|x64` build
+- Batch 66 `Scripts/CheckArchitecture.ps1`
+- Batch 66 `Debug|x64` Editor build
+- Batch 66 `GameClientDebug|x64` build
+- Batch 67 `Scripts/CheckArchitecture.ps1`
+- Batch 68-69 `Scripts/CheckArchitecture.ps1`
 
 Current architecture check baseline:
 
@@ -655,6 +713,40 @@ Notes:
 - Batch 52 synced the roadmap against the current main-merged project state.
 - Batch 52 verified the current architecture guard baseline, `Debug|x64` Editor build, and `GameClientDebug|x64` build after main merge.
 - Batch 52 fixed the main-merged `Shaders\Multipass\PostProcess.hlsl` project item classification so GameClient no longer attempts to compile the HLSL file as C++.
+- Batch 53 did not intentionally change asset discovery behavior.
+- Batch 53 moved duplicated asset extension classification and registration from `LoadFromAssetDirectory()` and `RefreshFromAssetDirectory()` into `RegisterDiscoveredAssetFile()`, with list reset policy named as `ClearDiscoveredResourceLists()`.
+- Batch 54 did not intentionally change static mesh load behavior.
+- Batch 54 moved loaded static mesh UObject creation and LOD generation policy into `CreateStaticMeshFromLoadedData()`, preserving the existing log differences between binary-drop and normal OBJ/BIN load paths.
+- Batch 55 did not intentionally change default resource behavior.
+- Batch 55 split default resource initialization into named steps for default white texture, default material parameters, and outline material setup.
+- Batch 56 did not intentionally change static mesh load behavior.
+- Batch 56 moved OBJ/BIN static mesh load orchestration from `FResourceManager` into `FStaticMeshLoadService`, keeping `FResourceManager::LoadStaticMesh()` as the facade entry point.
+- Batch 57 did not intentionally change material load behavior.
+- Batch 57 moved OBJ/MTL material load orchestration from `FResourceManager` into `FMaterialLoadService`, keeping `FResourceManager::LoadMaterial()` as the facade entry point.
+- Batch 58 did not intentionally change memory reporting behavior.
+- Batch 58 moved material memory reporting through `FResourceMemoryReporter`, keeping `FResourceManager::GetMaterialMemorySize()` as the facade entry point.
+- Batch 59 did not intentionally change material serialization behavior.
+- Batch 59 moved `.mat`/`.matinst` JSON serialization and deserialization from `FResourceManager` into `FMaterialSerializationService`, keeping the existing public `SerializeMaterial()`, `SerializeMaterialInstance()`, and `DeserializeMaterial()` entry points.
+- Batch 60 did not intentionally change editor picking behavior.
+- Batch 60 moved viewport-local actor point picking from `FEditorViewportClient` into `FEditorPickingService`, preserving ID-buffer-first picking with raycast fallback.
+- Batch 61 did not intentionally change editor box selection behavior.
+- Batch 61 moved drag-box actor collection and projection policy from `FEditorViewportClient` into `FEditorBoxSelectionService`, keeping the viewport client as the state holder and caller.
+- Batch 62 did not intentionally change transform or gizmo behavior.
+- Batch 62 moved transform mode cycling, transform-mode-to-gizmo mapping, and per-frame gizmo visual sync into `FEditorTransformInteraction`, keeping `FEditorViewportClient` as the owner of the current mode and gizmo pointer.
+- Batch 63 did not intentionally change texture asset meta behavior.
+- Batch 63 moved texture `.meta` JSON load/create policy and asset meta type definitions into `FTextureAssetMetaService`, keeping `FResourceManager::LoadOrCreateTextureMeta()` as the facade entry point.
+- Batch 64 did not intentionally change PIE viewport control behavior.
+- Batch 64 moved PIE start/end, possession/eject mode switching, PIE player-controller routing, shell command dispatch, and mouse-focus release bookkeeping into `FEditorViewportPIEController`, keeping `FEditorViewportClient` as the viewport state owner and shell command handler.
+- Batch 65 did not intentionally change focus-selection navigation behavior.
+- Batch 65 moved primary-selection camera focus positioning into `FEditorViewportNavigationController`, keeping `FEditorViewportClient` responsible for input command routing and editor-world controller target sync.
+- Batch 66 did not intentionally change editor viewport navigation behavior.
+- Batch 66 moved free-orbit/pan/dolly, plain-left navigation, keyboard navigation routing, move-speed wheel adjustment, reset-camera policy, and viewport camera-mode positioning into `FEditorViewportNavigationController`, leaving `FEditorViewportClient` as the viewport state owner and coordinator.
+- Batch 67 did not intentionally change render behavior.
+- Batch 67 moved runtime primitive draw command generation into `FPrimitiveDrawCommandBuilder` and light/shadow request extraction into `FLightRenderCollector`, reducing `RenderCollector.cpp` from roughly 1120 lines to roughly 670 lines while keeping culling, decal collection, and editor overlay collection in place for the next Render cleanup step.
+- Batch 68 did not intentionally change decal render behavior.
+- Batch 68 moved decal OBB queries, target static-mesh command generation, and decal collection stats into `FDecalCommandBuilder`.
+- Batch 69 did not intentionally change editor overlay render behavior.
+- Batch 69 moved selection mask/outline, gizmo, grid, selected-light debug drawing, and selected-primitive bounding-volume drawing into `FEditorOverlayCollector`, reducing `RenderCollector.cpp` to roughly 250 lines.
 
 ### Batch 1: Guard Rails and API Baseline
 
