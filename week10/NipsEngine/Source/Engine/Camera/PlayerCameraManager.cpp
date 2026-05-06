@@ -55,8 +55,11 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
            ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");
 }
 
-const FMinimalViewInfo& APlayerCameraManager::GetCameraView() const
+const FMinimalViewInfo& APlayerCameraManager::GetCameraView()
 {
+	// Tick 마다 UpdateCamera 하는 것만으론 불안정한 갱신이 발생했음
+	// Actor 간 Tick 순서 등이 의심되나, 우선은 임시 해결을 위해 값을 가져가기 전 갱신을 택함
+    UpdateCamera(0);
     return CachedView;
 }
 

@@ -18,7 +18,7 @@ public:
 
     // ===== Core API =====
     void SetViewTarget(AActor* NewTarget);
-    const FMinimalViewInfo& GetCameraView() const;
+    const FMinimalViewInfo& GetCameraView();
 
     // ===== Fade =====
     void StartFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color);
