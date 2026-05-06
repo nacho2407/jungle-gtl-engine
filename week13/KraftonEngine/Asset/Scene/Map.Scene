@@ -4940,7 +4940,7 @@
             "ReverseMaxSpeed" : -80.000000,
             "RollingDrag" : 800.000000,
             "SteeringPower" : 15000.000000,
-            "Suspension Damping" : 3500.000000,
+            "Suspension Damping" : 20000.000000,
             "Suspension Rest Length" : 0.600000,
             "Suspension Spring Strength" : 12000.000000,
             "Updated Component" : "",
