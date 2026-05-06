@@ -124,7 +124,7 @@ public:
 
 	UMaterialInstance* CreateMaterialInstance(const FString& Path, UMaterial* Parent);
 	UMaterialInstance* GetMaterialInstance(const FString& Path) const;
-	UMaterialInterface* GetMaterialInterface(const FString& Path) const;
+	UMaterialInterface* GetMaterialInterface(const FString& Path);
 
 	FFontResource* FindFont(const FName& FontName);
 	const FFontResource* FindFont(const FName& FontName) const;
