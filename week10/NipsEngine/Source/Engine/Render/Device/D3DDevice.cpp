@@ -102,6 +102,7 @@ void FD3DDevice::BeginViewportFrame(FRenderTargetSet& InRenderTargetSet)
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneLightRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneSandervistanRTV, ClearColor);
+        DeviceContext->ClearRenderTargetView(InRenderTargetSet.ScenePostProcessRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneWorldPosRTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ClearColor);
         DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);

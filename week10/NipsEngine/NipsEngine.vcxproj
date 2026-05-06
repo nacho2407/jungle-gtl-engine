@@ -310,12 +310,16 @@
   <ItemGroup>
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
+    <ClCompile Include="Shaders\Multipass\PostProcess.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaApplicationAPI.cpp" />
@@ -752,6 +756,7 @@
     <ClInclude Include="Source\Engine\Camera\CameraModifier_CameraShake.h" />
     <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
     <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
