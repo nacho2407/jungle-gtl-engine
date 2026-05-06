@@ -7,8 +7,7 @@ local hasPlayedHitAction = false
 local SPEED = 2.5
 local TURN_INTERVAL = 30.0
 
-local MIN_ACTION_CAR_SPEED = 70.0
-local MIN_ACTION_IMPULSE = 0.15
+local MIN_ACTION_CAR_SPEED = 50.0
 
 local HIT_STOP_DURATION = 0.08
 local HIT_STOP_TIME_DILATION = 0.0
@@ -74,19 +73,10 @@ local function GetCarCollisionSpeed(CarActor, CarComp)
     return 0.0
 end
 
-local function GetHitImpulseMagnitude(NormalImpulse)
-    if NormalImpulse ~= nil then
-        return NormalImpulse:Length()
-    end
-
-    return 0.0
-end
-
 local function ShouldPlayHitAction(CarActor, CarComp, NormalImpulse)
     local carSpeed = GetCarCollisionSpeed(CarActor, CarComp)
-    local impulse = GetHitImpulseMagnitude(NormalImpulse)
 
-    return carSpeed >= MIN_ACTION_CAR_SPEED or impulse >= MIN_ACTION_IMPULSE
+    return carSpeed >= MIN_ACTION_CAR_SPEED 
 end
 
 local turnGen = 0

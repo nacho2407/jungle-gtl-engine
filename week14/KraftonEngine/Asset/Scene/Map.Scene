@@ -3320,9 +3320,9 @@
       "Name" : "CarWashTrigger",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [160.816833, -18.016075, 1.599991],
+        "Location" : [152.305038, -18.453739, 1.599991],
         "Rotation" : [0.000000, -5.563547, 0.000000],
-        "Scale" : [25.000000, 25.000000, 20.000000],
+        "Scale" : [13.952846, 23.313951, 20.000000],
         "Tags" : "",
         "TriggerTag" : "CarWash",
         "Visible" : true
@@ -3344,11 +3344,11 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : true,
-          "Location" : [160.816833, -18.016075, 1.599991],
+          "Location" : [152.305038, -18.453739, 1.599991],
           "Mass (kg)" : 1.000000,
           "Object Type" : 4,
           "Rotation" : [0.000000, -5.563553, 0.000000],
-          "Scale" : [25.000000, 25.000000, 20.000000],
+          "Scale" : [13.952846, 23.313951, 20.000000],
           "Shape Color" : [1.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
           "Two Sided Shadow" : false,
@@ -5653,9 +5653,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [-77.644951, 110.987961, 3.940233],
+    "Location" : [166.223953, 73.362305, 90.401299],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 16.065079, -94.490677]
+    "Rotation" : [0.000000, 33.915062, -100.491013]
   },
   "Version" : 2,
   "WorldSettings" : {
