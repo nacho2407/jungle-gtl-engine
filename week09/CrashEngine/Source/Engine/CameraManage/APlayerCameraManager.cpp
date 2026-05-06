@@ -8,6 +8,7 @@
 #include "CameraManage/CameraModifiers/UCamModifyer_CameraShake.h"
 #include "CameraManage/CameraEffectAssetManager.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Math/MathUtils.h"
 #include "Object/Object.h"
 
@@ -123,11 +124,20 @@ void APlayerCameraManager::SetViewTarget(AActor* NewActor)
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
     CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
-    if (ViewTarget.POVCamera)
+    UCameraComponent* POVCamera = ViewTarget.POVCamera;
+    if (!POVCamera && ViewTarget.TargetActor)
     {
-        CameraViewInfoCache.Location = ViewTarget.POVCamera->GetWorldLocation();
-        CameraViewInfoCache.Rotation = ViewTarget.POVCamera->GetWorldMatrix().ToRotator();
-        CameraViewInfoCache.CameraState = ViewTarget.POVCamera->GetCameraState();
+        if (UWorld* World = GetWorld())
+        {
+            POVCamera = World->GetActiveCamera();
+        }
+    }
+
+    if (POVCamera)
+    {
+        CameraViewInfoCache.Location = POVCamera->GetWorldLocation();
+        CameraViewInfoCache.Rotation = POVCamera->GetWorldMatrix().ToRotator();
+        CameraViewInfoCache.CameraState = POVCamera->GetCameraState();
     }
     else if (ViewTarget.TargetActor)
     {

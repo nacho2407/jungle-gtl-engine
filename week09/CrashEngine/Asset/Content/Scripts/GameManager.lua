@@ -307,6 +307,12 @@ function BeginPlay()
 end
 
 function EndPlay()
+    local sound_mgr = GetSoundManager()
+    if sound_mgr ~= nil and sound_mgr:IsInitialized() then
+        sound_mgr:StopBGM()
+        sound_mgr:StopAllSFX()
+    end
+
     -- PIE 종료/월드 종료 시 전역 참조가 오래 살아남지 않도록 정리한다.
     if _G.GameManager ~= nil and _G.GameManager.GameOver == GameOver then
         _G.GameManager = nil

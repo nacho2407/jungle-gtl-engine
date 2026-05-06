@@ -309,6 +309,8 @@ bool ULuaScriptComponent::LoadScript()
         { return sol::as_table(WorldProxy.FindActorsByTag(Tag)); });
     WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
         { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
+    WorldTable.set_function("GetActiveCameraLocation", [this]()
+        { return WorldProxy.GetActiveCameraLocation(); });
     WorldTable.set_function("SetCameraViewWithBlend", [this](const FVector& CamLoc, const FVector& TargetLoc, float Fov, float Duration, const FString& BlendType)
         { return WorldProxy.SetCameraViewWithBlend(CamLoc, TargetLoc, Fov, Duration, BlendType); });
     WorldTable.set_function("SetCameraViewImmediate", [this](const FVector& CamLoc, const FVector& TargetLoc, float Fov)

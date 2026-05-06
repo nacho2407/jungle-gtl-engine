@@ -6,9 +6,11 @@
     "FromIntensity" : 0.000000,
     "ToIntensity" : 3.320000,
     "Radius" : 0.500000,
-    "Softness" : 0.350000,
+    "Softness" : 0.571000,
     "IntensityCurve" : [
       { "Time" : 0.000000, "Value" : 0.000000 },
+      { "Time" : 0.369205, "Value" : 0.252632 },
+      { "Time" : 0.564570, "Value" : 0.794737 },
       { "Time" : 1.000000, "Value" : 1.000000 }
     ]
   }
