@@ -7,6 +7,8 @@
 #include "Render/Types/MinimalViewInfo.h"
 
 class UCameraComponent;
+class UCameraModifier;
+class UCameraModifier_CameraShake;
 class UCameraShakeAsset;
 class UCameraShakeBase;
 class UClass;
@@ -88,6 +90,21 @@ public:
 	virtual void StopAllCameraShakes(bool bImmediately = true);
 	virtual void StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImmediately = true);
 
+	// ─── Camera Modifier ─────────────────────────────────────────
+	// UE: APlayerCameraManager::AddNewCameraModifier — 우선순위 정렬 삽입.
+	// shake/aim assist/hit reaction 등 카메라 효과 단위 추상화. 추가 후엔 UpdateCamera
+	// 마다 ApplyCameraModifiers 가 priority 순서로 ModifyCamera 호출.
+	UCameraModifier* AddNewCameraModifier(UClass* ModifierClass);
+
+	template<typename T>
+	T* AddNewCameraModifier()
+	{
+		return static_cast<T*>(AddNewCameraModifier(T::StaticClass()));
+	}
+
+	void RemoveCameraModifier(UCameraModifier* Modifier);
+	UCameraModifier* FindCameraModifier(UClass* ModifierClass) const;
+
 	// ─── Camera Fade ──────────────────────────────────────────────
 	// UE: APlayerCameraManager::StartCameraFade
 	virtual void StartCameraFade(
@@ -137,6 +154,13 @@ private:
 	float ApplyBlendFunction(float Alpha, FViewTargetTransitionParams BlendParams) const;
 	FMinimalViewInfo LerpPOV(const FMinimalViewInfo& From, const FMinimalViewInfo& To, float Alpha) const;
 
+	// 기본 modifier (CameraShake) 가 없으면 만들어 ModifierList 에 등록. lazy init.
+	void EnsureDefaultModifiers();
+
+	// ModifierList 를 priority 순으로 순회하며 ModifyCamera 호출 — UpdateCamera 가 base+blend
+	// POV 산출 후 1회 호출.
+	void ApplyCameraModifiers(float DeltaTime, FMinimalViewInfo& InOutPOV);
+
 private:
 	TSet<UCameraComponent*> RegisteredCameras;
 	TArray<UCameraComponent*> RegisteredCameraOrder;
@@ -157,8 +181,9 @@ private:
 	float ActiveCameraBlendDuration = 0.0f;
 	EViewTargetBlendFunction ActiveCameraBlendFunction = EViewTargetBlendFunction::VTBlend_Linear;
 
-	// Active shakes — 매니저가 소유. UpdateCamera 에서 IsFinished() 시 제거.
-	TArray<UCameraShakeBase*> ActiveShakes;
+	// Camera modifier list — priority 오름차순 정렬. 기본 ShakeModifier 1개를 lazy 추가.
+	TArray<UCameraModifier*> ModifierList;
+	UCameraModifier_CameraShake* ShakeModifier = nullptr;  // 빠른 접근용 캐시
 
 	// Fade 상태
 	bool bEnableFading = false;

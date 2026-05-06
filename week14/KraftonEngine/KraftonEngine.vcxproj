@@ -370,7 +370,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorDragSource.cpp" />
@@ -389,6 +388,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\UI\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\NotificationToast.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
@@ -452,7 +452,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\BoxActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\CameraShakeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\CameraShakeCameraModifier.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\CapsuleActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
@@ -614,7 +616,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorDragSource.h" />
@@ -633,6 +634,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\UI\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\NotificationToast.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
@@ -708,7 +710,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\BoxActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\CameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\CameraShakeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\CameraShakeCameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\CameraTypes.h" />
     <ClInclude Include="Source\Engine\GameFramework\CapsuleActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\DecalActor.h" />
@@ -1338,6 +1342,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GammaCorrection.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>

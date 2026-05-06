@@ -3,6 +3,8 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/CameraShakeBase.h"
+#include "GameFramework/CameraModifier.h"
+#include "GameFramework/CameraShakeCameraModifier.h"
 #include "GameFramework/SequenceCameraShake.h"
 #include "GameFramework/WaveOscillatorCameraShake.h"
 #include "Math/Quat.h"
@@ -11,27 +13,6 @@
 #include <algorithm>
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
-
-namespace
-{
-	FVector ConvertShakeLocationToWorld(
-		const FVector& Location,
-		const FRotator& CameraRotation,
-		ECameraShakePlaySpace PlaySpace,
-		const FRotator& UserPlaySpaceRot)
-	{
-		switch (PlaySpace)
-		{
-		case ECameraShakePlaySpace::CameraLocal:
-			return CameraRotation.ToQuaternion().RotateVector(Location);
-		case ECameraShakePlaySpace::UserDefined:
-			return UserPlaySpaceRot.ToQuaternion().RotateVector(Location);
-		case ECameraShakePlaySpace::World:
-		default:
-			return Location;
-		}
-	}
-}
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {
@@ -226,22 +207,8 @@ UCameraShakeBase* APlayerCameraManager::StartCameraShake(
 	ECameraShakePlaySpace PlaySpace,
 	FRotator UserPlaySpaceRot)
 {
-	if (!ShakeClass) return nullptr;
-
-	// TODO(B): bSingleInstance 인 셰이크면 기존 인스턴스 검사 후 재시작/스킵.
-
-	UObject* Obj = FObjectFactory::Get().Create(ShakeClass->GetName(), this);
-	UCameraShakeBase* Shake = Cast<UCameraShakeBase>(Obj);
-	if (!Shake)
-	{
-		// 실패 시 메모리 누수 방지
-		if (Obj) UObjectManager::Get().DestroyObject(Obj);
-		return nullptr;
-	}
-
-	Shake->StartShake(this, Scale, PlaySpace, UserPlaySpaceRot);
-	ActiveShakes.push_back(Shake);
-	return Shake;
+	EnsureDefaultModifiers();
+	return ShakeModifier ? ShakeModifier->StartShake(ShakeClass, Scale, PlaySpace, UserPlaySpaceRot) : nullptr;
 }
 
 UCameraShakeBase* APlayerCameraManager::StartCameraShakeAsset(
@@ -292,27 +259,84 @@ UCameraShakeBase* APlayerCameraManager::StartCameraShakeAsset(
 
 void APlayerCameraManager::StopCameraShake(UCameraShakeBase* ShakeInstance, bool bImmediately)
 {
-	if (!ShakeInstance) return;
-	ShakeInstance->StopShake(bImmediately);
-	// 실제 제거는 UpdateCamera 에서 IsFinished() 체크 후.
+	if (ShakeModifier) ShakeModifier->StopShake(ShakeInstance, bImmediately);
 }
 
 void APlayerCameraManager::StopAllCameraShakes(bool bImmediately)
 {
-	for (UCameraShakeBase* Shake : ActiveShakes)
-	{
-		if (Shake) Shake->StopShake(bImmediately);
-	}
+	if (ShakeModifier) ShakeModifier->StopAllShakes(bImmediately);
 }
 
 void APlayerCameraManager::StopAllInstancesOfCameraShake(UClass* ShakeClass, bool bImmediately)
 {
-	if (!ShakeClass) return;
-	for (UCameraShakeBase* Shake : ActiveShakes)
+	if (ShakeModifier) ShakeModifier->StopAllInstancesOfShake(ShakeClass, bImmediately);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Camera Modifier
+// ─────────────────────────────────────────────────────────────────
+UCameraModifier* APlayerCameraManager::AddNewCameraModifier(UClass* ModifierClass)
+{
+	if (!ModifierClass) return nullptr;
+
+	UObject* Obj = FObjectFactory::Get().Create(ModifierClass->GetName(), this);
+	UCameraModifier* Modifier = Cast<UCameraModifier>(Obj);
+	if (!Modifier)
 	{
-		if (Shake && Shake->GetClass()->IsA(ShakeClass))
+		if (Obj) UObjectManager::Get().DestroyObject(Obj);
+		return nullptr;
+	}
+
+	Modifier->AddedToCamera(this);
+
+	// Priority 오름차순 sorted insert. 같은 priority 면 뒤에 — 추가 순서 유지.
+	auto It = std::lower_bound(
+		ModifierList.begin(), ModifierList.end(), Modifier,
+		[](UCameraModifier* A, UCameraModifier* B) { return A->Priority < B->Priority; });
+	ModifierList.insert(It, Modifier);
+	return Modifier;
+}
+
+void APlayerCameraManager::RemoveCameraModifier(UCameraModifier* Modifier)
+{
+	if (!Modifier) return;
+	ModifierList.erase(
+		std::remove(ModifierList.begin(), ModifierList.end(), Modifier),
+		ModifierList.end());
+	if (Modifier == ShakeModifier)
+	{
+		ShakeModifier = nullptr;
+	}
+	UObjectManager::Get().DestroyObject(Modifier);
+}
+
+UCameraModifier* APlayerCameraManager::FindCameraModifier(UClass* ModifierClass) const
+{
+	if (!ModifierClass) return nullptr;
+	for (UCameraModifier* Mod : ModifierList)
+	{
+		if (Mod && Mod->GetClass()->IsA(ModifierClass))
 		{
-			Shake->StopShake(bImmediately);
+			return Mod;
+		}
+	}
+	return nullptr;
+}
+
+void APlayerCameraManager::EnsureDefaultModifiers()
+{
+	if (ShakeModifier) return;
+	ShakeModifier = AddNewCameraModifier<UCameraModifier_CameraShake>();
+}
+
+void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime, FMinimalViewInfo& InOutPOV)
+{
+	for (UCameraModifier* Mod : ModifierList)
+	{
+		if (!Mod || Mod->IsDisabled()) continue;
+		if (Mod->ModifyCamera(DeltaTime, InOutPOV))
+		{
+			break;  // exclusive
 		}
 	}
 }
@@ -484,40 +508,15 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	FMinimalViewInfo NewPOV;
 	const bool bHasBasePOV = GetCameraView(NewPOV);
 
-	// (3) Shake 누적 — 각 active shake 의 location 을 PlaySpace 기준으로 world offset 으로 변환 후 합산.
-	FCameraShakeUpdateResult ShakeResult;
-	for (UCameraShakeBase* Shake : ActiveShakes)
-	{
-		if (Shake && !Shake->IsFinished())
-		{
-			FCameraShakeUpdateResult PerShakeResult;
-			Shake->UpdateAndApplyCameraShake(DeltaTime, PerShakeResult);
-
-			ShakeResult.Location += ConvertShakeLocationToWorld(
-				PerShakeResult.Location,
-				NewPOV.Rotation,
-				Shake->GetPlaySpace(),
-				Shake->GetUserPlaySpaceRot());
-			ShakeResult.Rotation += PerShakeResult.Rotation;
-			ShakeResult.FOV += PerShakeResult.FOV;
-		}
-	}
+	// (3) Modifier list 적용 — 기본 ShakeModifier + 추후 게임이 추가할 효과들.
+	//     Priority 오름차순으로 ModifyCamera 호출 → POV in-place 변형. shake 의 PlaySpace
+	//     변환 / IsFinished 정리도 ShakeModifier 가 자체 처리.
 	if (bHasBasePOV)
 	{
-		NewPOV.Location       += ShakeResult.Location;
-		NewPOV.Rotation.Pitch += ShakeResult.Rotation.Pitch;
-		NewPOV.Rotation.Yaw   += ShakeResult.Rotation.Yaw;
-		NewPOV.Rotation.Roll  += ShakeResult.Rotation.Roll;
-		NewPOV.FOV            += ShakeResult.FOV;
+		ApplyCameraModifiers(DeltaTime, NewPOV);
 	}
 
-	// (4) 종료된 셰이크 정리
-	ActiveShakes.erase(
-		std::remove_if(ActiveShakes.begin(), ActiveShakes.end(),
-			[](UCameraShakeBase* S) { return !S || S->IsFinished(); }),
-		ActiveShakes.end());
-
-	// (5) Fade 진행 — 시각적 합성은 PostProcess 측, 여기선 알파 시간 누적만.
+	// (4) Fade 진행 — 시각적 합성은 PostProcess 측, 여기선 알파 시간 누적만.
 	if (bEnableFading && FadeDuration > 0.0f && FadeTimeRemaining > 0.0f)
 	{
 		FadeTimeRemaining = std::max(0.0f, FadeTimeRemaining - DeltaTime);
