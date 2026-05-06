@@ -29,8 +29,8 @@ SpawnManager.Properties = {
 local SpawnConfig = {
     -- 스폰 간격
     StartSpawnInterval = 1.5,     -- 시작 시 1.5초마다 스폰
-    MinSpawnInterval = 0.25,      -- 5분 후 최소 0.25초마다 스폰
-    IntervalRampTime = 300.0,     -- 5분 = 300초
+    MinSpawnInterval = 0.25,      -- 2분 30초 후 최소 0.25초마다 스폰
+    IntervalRampTime = 100.0,     -- 2분 30초 = 150초
 
     -- 한 번 스폰 타이밍마다 몇 마리 생성할지
     SpawnCountPerTick = 1,
@@ -151,13 +151,18 @@ function SpawnManager:UpdateActiveSpawnPoints()
     end
 end
 
+
 function SpawnManager:UpdateSpawnInterval()
     local t = Clamp01(self.totalElapsed / SpawnConfig.IntervalRampTime)
+
+    -- 시간이 지날수록 점점 더 빠르게 감소
+    -- t = 0.0 근처에서는 완만하고, t = 1.0 근처에서 더 급격해짐
+    local curvedT = t * t
 
     self.SpawnInterval = Lerp(
         SpawnConfig.StartSpawnInterval,
         SpawnConfig.MinSpawnInterval,
-        t
+        curvedT
     )
 end
 
