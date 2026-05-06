@@ -3,16 +3,19 @@ body {
 	margin: 0px;
 	width: 100%;
 	height: 100%;
+	background-color: transparent;
 }
 
 #contributor-panel {
 	position: absolute;
-	left: 25%;
-	top: 25%;
-	width: 50%;
-	height: 50%;
-	background-color: white;
-	color: black;
+	left: 33%;
+	top: 22%;
+	width: 34%;
+	height: 56%;
+	background-color: #1d222b;
+	border-width: 3dp;
+	border-color: #f0c85a;
+	color: #ffffff;
 	font-family: Maplestory;
 	font-weight: bold;
 	text-align: center;
@@ -20,43 +23,61 @@ body {
 
 #contributor-title {
 	position: absolute;
-	left: 0px;
+	left: 0%;
 	top: 10%;
 	width: 100%;
-	height: 48px;
-	font-size: 32px;
-	line-height: 48px;
+	height: 48dp;
+	color: #f0c85a;
+	font-size: 32dp;
+	line-height: 48dp;
 	text-align: center;
 }
 
+#contributor-team {
+	position: absolute;
+	left: 0%;
+	top: 30%;
+	width: 100%;
+	height: 30dp;
+	color: #8f98aa;
+	font-size: 29dp;
+	line-height: 48dp;
+	text-align: center;
+}
+
+
 #contributor-name-list {
 	position: absolute;
-	left: 0px;
-	top: 35%;        
-	width: 100%;
+	left: 12%;
+	top: 39%;
+	width: 76%;
+	color: #ffffff;
 	text-align: center;
-	font-size: 24px;
-	line-height: 40px; 
+	font-size: 24dp;
+	line-height: 42dp;
 }
 
 #contributor-close-button {
 	position: absolute;
 	left: 50%;
-	top: 80%;
-	width: 160px;
-	height: 44px;
-	margin-left: -80px;
-	background-color: #303030;
-	color: white;
+	top: 78%;
+	width: 160dp;
+	height: 44dp;
+	margin-left: -80dp;
+	background-color: #303642;
+	border-width: 2dp;
+	border-color: #f0c85a;
+	color: #ffffff;
 	font-family: Maplestory;
 	font-weight: bold;
-	font-size: 20px;
-	line-height: 44px;
+	font-size: 20dp;
+	line-height: 40dp;
 	text-align: center;
-	transition: background-color color 0.16s sine-out;
+	transition: background-color border-color color 0.16s sine-out;
 }
 
 #contributor-close-button:hover {
 	background-color: #f0c85a;
-	color: #202020;
+	border-color: #ffe58a;
+	color: #15171c;
 }
