@@ -308,6 +308,7 @@ function BeginPlay()
         GetTimer = getTimer
     }
 
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/FadeIn.ceffect")
     playBackgroundBGM()
     replaceCandidates()
 end
