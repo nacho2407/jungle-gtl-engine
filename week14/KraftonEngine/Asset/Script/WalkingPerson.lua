@@ -4,6 +4,14 @@ local root = nil
 local isMoving = true
 local hasPlayedHitAction = false
 
+-- PhysX 가 같은 충돌에 대해 multiple contact / micro-separation 후 재충돌을 짧은
+-- 간격으로 발행하는 경우, OnHit 안의 효과들 (Slomo / Squash / Knockback / 점수)이
+-- 중복 trigger 되는 것을 막기 위한 시간 cooldown. cooldown 이 지나면 같은 보행자도
+-- 다시 hit 으로 인정되어 효과 + 점수가 재발동.
+local HIT_COOLDOWN = 0.5
+local elapsedTime = 0.0
+local lastHitTime = -999.0
+
 local SPEED = 2.5
 local TURN_INTERVAL = 30.0
 
@@ -142,6 +150,13 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
         return
     end
 
+    -- PhysX 연속 hit 이벤트 합치기 — cooldown 안의 추가 trigger 는 *논리적으로 같은 hit*
+    -- 으로 보고 무시. 효과별 가드를 흩뿌리지 않고 진입점 1곳에서 단일 정책 적용.
+    if elapsedTime - lastHitTime < HIT_COOLDOWN then
+        return
+    end
+    lastHitTime = elapsedTime
+
     if hasPlayedHitAction then
         return
     end
@@ -179,6 +194,9 @@ function OnEndHit(OtherActor, HitComponent, OtherComp)
 end
 
 function Tick(dt)
+    -- isMoving 가드 위에서 누적 — hit 후 정지 상태에서도 cooldown 이 흐르도록.
+    elapsedTime = elapsedTime + (dt or 0)
+
     if root == nil or not isMoving then
         return
     end
