@@ -283,7 +283,11 @@ end
 
 
 -- PlayerController 또는 다른 시스템에서 호출할 수 있는 게임 종료 진입점.
-local function calculateScore(enemyKillCount, documentCount, elapsedTime, batteryCount)
+local function calculateScore(finalHP, enemyKillCount, documentCount, elapsedTime, batteryCount)
+    if (finalHP or 0) <= 0 then
+        return 0
+    end
+
     local enemy_score = math.max(0, enemyKillCount or 0) * 1000
     local document_score = math.max(0, documentCount or 0) * 3000
     local time_penalty = math.floor((elapsedTime or 0) * 10)
@@ -300,7 +304,7 @@ function GameOver(finalHP, finalDocumentCount)
     isGameOver = true
     finalHP = finalHP or getPlayerHP()
     finalDocumentCount = finalDocumentCount or getDocumentCount()
-    local score = calculateScore(getEnemyKillCount(), finalDocumentCount, Timer, getBatteryCount())
+    local score = calculateScore(finalHP, getEnemyKillCount(), finalDocumentCount, Timer, getBatteryCount())
 
     Prefs.SetNumber("LastScore", score)
     Prefs.SetNumber("LastHP", finalHP)
