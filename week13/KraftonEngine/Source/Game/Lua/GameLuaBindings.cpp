@@ -188,8 +188,12 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	ScoreboardTable.set_function("GetEntry", &FGameScoreboard::GetEntry);
 
 	Lua.new_usertype<AGameModeCarGame>("GameModeCarGame",
-		"SuccessPhase", &AGameModeCarGame::SuccessPhase,
-		"GameOver",     &AGameModeCarGame::GameOver);
+		"SuccessPhase",             &AGameModeCarGame::SuccessPhase,
+		"GameOver",                  &AGameModeCarGame::GameOver,
+		// lua 에서 World.DestroyActor(police) 직접 호출은 같은 frame TickManager 의
+		// stale TickFunction 이 다음 ExecuteTick 에서 dangling Target 을 deref 해 SEH.
+		// 항상 이 진입점을 거치게 해서 다음 frame 으로 미뤄 안전하게 정리.
+		"RequestDespawnPoliceCars",  &AGameModeCarGame::RequestDespawnPoliceCars);
 
 	Lua.new_usertype<AGameStateCarGame>("GameStateCarGame",
 		"GetPhase",              &AGameStateCarGame::GetPhase,

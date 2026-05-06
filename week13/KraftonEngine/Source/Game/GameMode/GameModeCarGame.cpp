@@ -109,6 +109,15 @@ void AGameModeCarGame::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 한 프레임 미뤘던 경찰차 정리 — TickManager 가 이번 frame 의 GatherTickFunctions
+	// 를 만들기 전에 destroy 하므로 stale TickFunction 의 ExecuteTick 가 dangling
+	// Target 을 deref 하는 사고를 막는다.
+	if (bPendingDespawnPoliceCars)
+	{
+		bPendingDespawnPoliceCars = false;
+		DespawnPoliceCars();
+	}
+
 	auto* GS = Cast<AGameStateCarGame>(GetGameState());
 	if (!GS) return;
 	if (GS->GetPhase() == ECarGamePhase::Finished) return;
@@ -128,7 +137,7 @@ void AGameModeCarGame::Tick(float DeltaTime)
 			{
 				EPhaseResult R = JudgePhaseResult(Cur);
 				if (R == EPhaseResult::Success) GS->MarkPhaseCleared(Cur);
-				if (Cur == ECarGamePhase::EscapePolice) DespawnPoliceCars();
+				if (Cur == ECarGamePhase::EscapePolice) bPendingDespawnPoliceCars = true;
 				GS->SetLastEndedPhase(Cur);
 				GS->SetLastPhaseResult(R);
 			}
@@ -373,7 +382,10 @@ void AGameModeCarGame::EndPhase(EPhaseResult Result)
 
 	if (Cur == ECarGamePhase::EscapePolice)
 	{
-		DespawnPoliceCars();
+		// 즉시 DestroyActor 호출은 같은 frame TickManager 의 stale TickFunction 이 다음
+		// ExecuteTick 에서 dangling Target 을 deref 해 SEH 가 난다 (45s timer 만료 시 재현).
+		// 다음 frame 의 GameMode::Tick 시작에서 일괄 destroy.
+		bPendingDespawnPoliceCars = true;
 	}
 
 	if (Result == EPhaseResult::Success)
