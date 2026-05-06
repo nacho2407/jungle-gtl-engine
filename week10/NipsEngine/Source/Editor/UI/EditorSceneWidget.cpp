@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorSceneWidget.h"
+#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/ProjectSettings.h"
@@ -148,7 +148,7 @@ void FEditorSceneWidget::NewScene()
 
 	EditorEngine->GetMainPanel().ResetWidgetSelections();
 	EditorEngine->NewScene();
-	EditorEngine->ClearUndoHistory();
+	EditorEngine->GetUndoSystem().ClearHistory();
 	strncpy_s(SceneName, IM_ARRAYSIZE(SceneName), "Untitled", _TRUNCATE);
 	CurrentSceneFilePath.clear();
 	bSceneDirty = false;
@@ -232,7 +232,7 @@ bool FEditorSceneWidget::SaveSceneToFilePath(const FString& FilePath)
 		: TargetPath;
 	SetCurrentScenePath(FPaths::ToUtf8(StoredPath.wstring()));
 	bSceneDirty = false;
-	EditorEngine->ClearUndoHistory();
+	EditorEngine->GetUndoSystem().ClearHistory();
 	EditorEngine->GetMainPanel().PushFooterLog("Level saved");
 	SceneSaveNotificationTimer = common::constants::ImGui::NotificationTimer;
 	return true;
@@ -283,7 +283,7 @@ bool FEditorSceneWidget::LoadSceneFromFilePath(const FString& FilePath, bool bPr
 
 	SetCurrentScenePath(FilePath);
 	bSceneDirty = false;
-	EditorEngine->ClearUndoHistory();
+	EditorEngine->GetUndoSystem().ClearHistory();
 	EditorEngine->GetMainPanel().PushFooterLog("Level loaded");
 	SceneLoadNotificationTimer = common::constants::ImGui::NotificationTimer;
 	return LoadCtx.World != nullptr;
@@ -858,7 +858,7 @@ void FEditorSceneWidget::Render(float DeltaTime)
         if ((bCommitByEnter || bApplyClicked) && PendingRenameActor)
         {
             const FString UniqueName = MakeUniqueActorName(PendingRenameActor, RenameActorName);
-            EditorEngine->CaptureUndoSnapshot("Rename Actor");
+            EditorEngine->GetUndoSystem().CaptureSnapshot("Rename Actor");
             PendingRenameActor->SetFName(FName(UniqueName));
             MarkSceneDirty();
             EditorEngine->GetMainPanel().PushFooterLog("Actor renamed");

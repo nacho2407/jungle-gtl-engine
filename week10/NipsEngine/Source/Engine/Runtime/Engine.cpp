@@ -43,6 +43,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 void UEngine::Shutdown()
 {
+	RmlUiSystem.Shutdown();
 	AudioSystem.Shutdown();
 	RenderPipeline.reset();
 	FResourceManager::Get().ReleaseGPUResources();
@@ -390,6 +391,38 @@ void UEngine::SetRuntimeInputMode(ERuntimeInputMode InMode)
 		Input.LockMouse(false);
 		Input.SetCursorVisibility(true);
 	}
+}
+
+FRuntimeInputPermissions UEngine::BuildRuntimeInputPermissions(
+	const FGuiInputState& GuiState,
+	bool bRuntimeUIConsumedInput) const
+{
+	FRuntimeInputPermissions Permissions;
+	const bool bGameOnlyLocked =
+		RuntimeInputMode == ERuntimeInputMode::GameOnly && bRuntimeCursorLocked;
+
+	Permissions.bAllowRuntimeUIInput = !bGameOnlyLocked;
+	Permissions.bAllowPlayerInput =
+		RuntimeInputMode != ERuntimeInputMode::UIOnly && !bRuntimeUIConsumedInput;
+
+	if (RuntimeInputMode == ERuntimeInputMode::UIOnly)
+	{
+		Permissions.bAllowPlayerInput = false;
+		Permissions.bAllowLuaKeyboardInput = false;
+		Permissions.bAllowLuaMouseInput = false;
+		return Permissions;
+	}
+
+	if (RuntimeInputMode == ERuntimeInputMode::GameOnly)
+	{
+		Permissions.bAllowLuaKeyboardInput = bRuntimeCursorLocked;
+		Permissions.bAllowLuaMouseInput = bRuntimeCursorLocked;
+		return Permissions;
+	}
+
+	Permissions.bAllowLuaKeyboardInput = !(GuiState.bUsingKeyboard || GuiState.bUsingTextInput);
+	Permissions.bAllowLuaMouseInput = !(GuiState.bUsingMouse || GuiState.bBlockViewportMouse);
+	return Permissions;
 }
 
 void UEngine::SetRuntimeCursorVisible(bool bVisible)

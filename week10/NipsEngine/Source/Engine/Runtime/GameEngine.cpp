@@ -1,35 +1,17 @@
-#include "Engine/Runtime/GameEngine.h"
+﻿#include "Engine/Runtime/GameEngine.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Runtime/WindowsWindow.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Serialization/SceneSaveManager.h"
 
-#ifdef GetFirstChild
-#undef GetFirstChild
-#endif
-#ifdef GetNextSibling
-#undef GetNextSibling
-#endif
-#include "RmlUi/Core.h"
-#include "RmlUi/Core/Context.h"
-#include "RmlUi/Core/Element.h"
-#include "RmlUi/Core/ElementDocument.h"
-#include "RmlUi/Core/Elements/ElementFormControl.h"
-#include "RmlUi/Core/Event.h"
-#include "RmlUi/Core/EventListener.h"
-#include "RmlUi/Core/Factory.h"
-#include "RmlUi/Core/Input.h"
-#include "RmlUi/Core/Types.h"
-
 #include <algorithm>
 #include <cctype>
-#include <chrono>
-#include <d3d11.h>
 #include <filesystem>
 #include <fstream>
 #include <windows.h>
@@ -55,6 +37,9 @@ namespace
         return Line.empty() || Line[0] == ';' || Line[0] == '#' || Line[0] == '[';
     }
 
+    constexpr int RuntimeUILayoutWidth = 1920;
+    constexpr int RuntimeUILayoutHeight = 1080;
+
     bool IsMouseButtonVK(int VK)
     {
         return VK == VK_LBUTTON
@@ -62,151 +47,6 @@ namespace
             || VK == VK_MBUTTON
             || VK == VK_XBUTTON1
             || VK == VK_XBUTTON2;
-    }
-
-    constexpr int RuntimeUILayoutWidth = 1920;
-    constexpr int RuntimeUILayoutHeight = 1080;
-
-    struct FScaledRuntimeUIViewport
-    {
-        float X = 0.0f;
-        float Y = 0.0f;
-        float Width = 1.0f;
-        float Height = 1.0f;
-        float Scale = 1.0f;
-    };
-
-    FScaledRuntimeUIViewport CalculateScaledRuntimeUIViewport(float ViewportX, float ViewportY, float ViewportWidth, float ViewportHeight, int LayoutWidth, int LayoutHeight)
-    {
-        const float SafeViewportWidth = std::max(ViewportWidth, 1.0f);
-        const float SafeViewportHeight = std::max(ViewportHeight, 1.0f);
-        const float SafeLayoutWidth = static_cast<float>(std::max(LayoutWidth, 1));
-        const float SafeLayoutHeight = static_cast<float>(std::max(LayoutHeight, 1));
-        const float Scale = std::min(SafeViewportWidth / SafeLayoutWidth, SafeViewportHeight / SafeLayoutHeight);
-        const float ScaledWidth = SafeLayoutWidth * Scale;
-        const float ScaledHeight = SafeLayoutHeight * Scale;
-
-        FScaledRuntimeUIViewport Result;
-        Result.X = ViewportX + (SafeViewportWidth - ScaledWidth) * 0.5f;
-        Result.Y = ViewportY + (SafeViewportHeight - ScaledHeight) * 0.5f;
-        Result.Width = ScaledWidth;
-        Result.Height = ScaledHeight;
-        Result.Scale = std::max(Scale, 0.0001f);
-        return Result;
-    }
-
-    Rml::Input::KeyIdentifier MapVirtualKeyToRmlKey(int VK)
-    {
-        using namespace Rml::Input;
-
-        if (VK >= '0' && VK <= '9')
-        {
-            return static_cast<KeyIdentifier>(KI_0 + (VK - '0'));
-        }
-        if (VK >= 'A' && VK <= 'Z')
-        {
-            return static_cast<KeyIdentifier>(KI_A + (VK - 'A'));
-        }
-        if (VK >= VK_F1 && VK <= VK_F24)
-        {
-            return static_cast<KeyIdentifier>(KI_F1 + (VK - VK_F1));
-        }
-        if (VK >= VK_NUMPAD0 && VK <= VK_NUMPAD9)
-        {
-            return static_cast<KeyIdentifier>(KI_NUMPAD0 + (VK - VK_NUMPAD0));
-        }
-
-        switch (VK)
-        {
-        case VK_SPACE: return KI_SPACE;
-        case VK_BACK: return KI_BACK;
-        case VK_TAB: return KI_TAB;
-        case VK_RETURN: return KI_RETURN;
-        case VK_ESCAPE: return KI_ESCAPE;
-        case VK_PRIOR: return KI_PRIOR;
-        case VK_NEXT: return KI_NEXT;
-        case VK_END: return KI_END;
-        case VK_HOME: return KI_HOME;
-        case VK_LEFT: return KI_LEFT;
-        case VK_UP: return KI_UP;
-        case VK_RIGHT: return KI_RIGHT;
-        case VK_DOWN: return KI_DOWN;
-        case VK_INSERT: return KI_INSERT;
-        case VK_DELETE: return KI_DELETE;
-        case VK_SHIFT: return KI_LSHIFT;
-        case VK_LSHIFT: return KI_LSHIFT;
-        case VK_RSHIFT: return KI_RSHIFT;
-        case VK_CONTROL: return KI_LCONTROL;
-        case VK_LCONTROL: return KI_LCONTROL;
-        case VK_RCONTROL: return KI_RCONTROL;
-        case VK_MENU: return KI_LMENU;
-        case VK_LMENU: return KI_LMENU;
-        case VK_RMENU: return KI_RMENU;
-        case VK_OEM_1: return KI_OEM_1;
-        case VK_OEM_PLUS: return KI_OEM_PLUS;
-        case VK_OEM_COMMA: return KI_OEM_COMMA;
-        case VK_OEM_MINUS: return KI_OEM_MINUS;
-        case VK_OEM_PERIOD: return KI_OEM_PERIOD;
-        case VK_OEM_2: return KI_OEM_2;
-        case VK_OEM_3: return KI_OEM_3;
-        case VK_OEM_4: return KI_OEM_4;
-        case VK_OEM_5: return KI_OEM_5;
-        case VK_OEM_6: return KI_OEM_6;
-        case VK_OEM_7: return KI_OEM_7;
-        case VK_MULTIPLY: return KI_MULTIPLY;
-        case VK_ADD: return KI_ADD;
-        case VK_SEPARATOR: return KI_SEPARATOR;
-        case VK_SUBTRACT: return KI_SUBTRACT;
-        case VK_DECIMAL: return KI_DECIMAL;
-        case VK_DIVIDE: return KI_DIVIDE;
-        case VK_PAUSE: return KI_PAUSE;
-        case VK_CAPITAL: return KI_CAPITAL;
-        case VK_NUMLOCK: return KI_NUMLOCK;
-        case VK_SCROLL: return KI_SCROLL;
-        default: return KI_UNKNOWN;
-        }
-    }
-
-    bool IsElementOrAncestorFormControl(Rml::Element* Element)
-    {
-        for (Rml::Element* Current = Element; Current != nullptr; Current = Current->GetParentNode())
-        {
-            if (rmlui_dynamic_cast<Rml::ElementFormControl*>(Current) != nullptr)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool IsElementOrDescendantFocused(Rml::Element* Element, Rml::Element* FocusedElement)
-    {
-        if (!Element || !FocusedElement)
-        {
-            return false;
-        }
-
-        for (Rml::Element* Current = FocusedElement; Current != nullptr; Current = Current->GetParentNode())
-        {
-            if (Current == Element)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void CaptureTextInputForFocusedRmlElement(Rml::Element* Element)
-    {
-        if (!IsElementOrAncestorFormControl(Element))
-        {
-            return;
-        }
-
-        InputSystem& Input = InputSystem::Get();
-        Input.SetGuiKeyboardCapture(true);
-        Input.SetGuiTextInputCapture(true);
-        Input.SetGuiViewportMouseBlock(true);
     }
 }
 
@@ -218,14 +58,14 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 
     UEngine::Init(InWindow);
     FScriptManager::Get().initializeLuaState();
-    InitializeRmlUiRuntime();
+    GetRmlUiSystem().Initialize(GetRenderer(), "GameClient", RuntimeUILayoutWidth, RuntimeUILayoutHeight);
     LoadGameSettings();
     LoadStartupWorld();
 }
 
 void UGameEngine::Shutdown()
 {
-    // Lua VM을 내리기 전에 Game World EndPlay를 먼저 호출해야 ScriptComponent::EndPlay가 안전하게 실행됩니다.
+    // Lua VM???대━湲??꾩뿉 Game World EndPlay瑜?癒쇱? ?몄텧?댁빞 ScriptComponent::EndPlay媛 ?덉쟾?섍쾶 ?ㅽ뻾?⑸땲??
     for (FWorldContext& Context : WorldList)
     {
         if (Context.World)
@@ -234,7 +74,7 @@ void UGameEngine::Shutdown()
         }
     }
 
-    // Lua Audio API로 재생한 전역 사운드는 특정 SoundComponent 소유가 아니므로 별도로 정리합니다.
+    // Lua Audio API濡??ъ깮???꾩뿭 ?ъ슫?쒕뒗 ?뱀젙 SoundComponent ?뚯쑀媛 ?꾨땲誘濡?蹂꾨룄濡??뺣━?⑸땲??
     GetAudioSystem().StopAll();
 
     for (FWorldContext& Context : WorldList)
@@ -246,10 +86,10 @@ void UGameEngine::Shutdown()
     }
     WorldList.clear();
     ActiveWorldHandle = FName::None;
+    GameMode = nullptr;
     PlayerController = nullptr;
 
     FScriptManager::Get().ShutdownLuaState();
-    ShutdownRmlUiRuntime();
 
     UEngine::Shutdown();
 }
@@ -273,7 +113,9 @@ void UGameEngine::Tick(float DeltaTime)
     Input.SetGuiViewportMouseBlock(false);
 
     const bool bRuntimeUIConsumedInput = PumpRuntimeUIInput(Input);
-    if (GetRuntimeInputMode() != ERuntimeInputMode::UIOnly && !bRuntimeUIConsumedInput)
+    const FRuntimeInputPermissions InputPermissions =
+        BuildRuntimeInputPermissions(Input.GetGuiInputState(), bRuntimeUIConsumedInput);
+    if (InputPermissions.bAllowPlayerInput)
     {
         PumpPlayerInput(Input);
     }
@@ -297,420 +139,6 @@ void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
 
     InputSystem::Get().SetUseRawMouse(false);
 }
-
-void UGameEngine::RenderRuntimeUI(const FRuntimeUIRenderContext& Context)
-{
-    RenderRmlUiDocuments(Context);
-}
-
-bool UGameEngine::LoadRmlUIDocument(const FString& ScreenId, const FString& Path)
-{
-    const auto StartTime = std::chrono::steady_clock::now();
-    if (!bRmlUiRuntimeInitialized || !RmlUiContext || ScreenId.empty() || Path.empty())
-    {
-        return false;
-    }
-
-    UnloadRmlUIDocument(ScreenId);
-    Rml::Factory::ClearStyleSheetCache();
-    Rml::Factory::ClearTemplateCache();
-
-    Rml::ElementDocument* Document = RmlUiContext->LoadDocument(Path);
-    if (!Document)
-    {
-        UE_LOG_ERROR("[RmlUi] Failed to load document. Screen=%s Path=%s", ScreenId.c_str(), Path.c_str());
-        return false;
-    }
-
-    AttachRmlUIDocumentListeners(Document);
-    Document->Show();
-    RmlUiDocumentsByScreenId[ScreenId] = Document;
-    RmlUiDocumentPathByScreenId[ScreenId] = Path;
-    const double ElapsedSec = std::chrono::duration<double>(std::chrono::steady_clock::now() - StartTime).count();
-    UE_LOG("[RmlUiPerf] Loaded document. Screen=%s Path=%s Time=%.4fs", ScreenId.c_str(), Path.c_str(), ElapsedSec);
-    return true;
-}
-
-bool UGameEngine::UnloadRmlUIDocument(const FString& ScreenId)
-{
-    Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId);
-    if (!Document || !RmlUiContext)
-    {
-        return false;
-    }
-
-    RmlUiContext->UnloadDocument(Document);
-    RmlUiContext->Update();
-    RmlUiDocumentsByScreenId.erase(ScreenId);
-    RmlUiDocumentPathByScreenId.erase(ScreenId);
-    return true;
-}
-
-bool UGameEngine::ReloadRmlUIDocument(const FString& ScreenId)
-{
-    auto It = RmlUiDocumentPathByScreenId.find(ScreenId);
-    if (It == RmlUiDocumentPathByScreenId.end())
-    {
-        return false;
-    }
-
-    const FString Path = It->second;
-    UnloadRmlUIDocument(ScreenId);
-    return LoadRmlUIDocument(ScreenId, Path);
-}
-
-bool UGameEngine::ShowRmlUIScreen(const FString& ScreenId)
-{
-    Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId);
-    if (!Document)
-    {
-        return false;
-    }
-
-    Document->Show();
-    return true;
-}
-
-bool UGameEngine::HideRmlUIScreen(const FString& ScreenId)
-{
-    Rml::ElementDocument* Document = FindRmlUIDocument(ScreenId);
-    if (!Document)
-    {
-        return false;
-    }
-
-    Document->Hide();
-    return true;
-}
-
-bool UGameEngine::HasRmlUIElement(const FString& ElementId)
-{
-    return FindRmlUIElement(ElementId) != nullptr;
-}
-
-FString UGameEngine::GetRmlUIElementText(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->GetInnerRML() : "";
-}
-
-bool UGameEngine::SetRmlUIElementText(const FString& ElementId, const FString& Text)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    if (Element->GetInnerRML() == Text)
-    {
-        return true;
-    }
-    Element->SetInnerRML(Text);
-    return true;
-}
-
-FString UGameEngine::GetRmlUIElementValue(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
-    {
-        return Control->GetValue();
-    }
-    return GetRmlUIElementAttribute(ElementId, "value");
-}
-
-bool UGameEngine::SetRmlUIElementValue(const FString& ElementId, const FString& Value)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (Rml::ElementFormControl* Control = Element ? rmlui_dynamic_cast<Rml::ElementFormControl*>(Element) : nullptr)
-    {
-        if (Control->GetValue() == Value)
-        {
-            return true;
-        }
-        Control->SetValue(Value);
-        return true;
-    }
-    return SetRmlUIElementAttribute(ElementId, "value", Value);
-}
-
-bool UGameEngine::SetRmlUIElementVisible(const FString& ElementId, bool bVisible)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    const Rml::Property* Display = Element->GetProperty("display");
-    const bool bCurrentlyHidden = Display && Display->ToString() == "none";
-    if (bVisible)
-    {
-        if (!bCurrentlyHidden)
-        {
-            return true;
-        }
-        Element->RemoveProperty("display");
-    }
-    else
-    {
-        if (bCurrentlyHidden)
-        {
-            return true;
-        }
-        Element->SetProperty("display", "none");
-    }
-    return true;
-}
-
-bool UGameEngine::SetRmlUIElementEnabled(const FString& ElementId, bool bEnabled)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    const bool bCurrentlyDisabled = Element->HasAttribute("disabled") || Element->IsClassSet("disabled");
-    if (bCurrentlyDisabled == !bEnabled)
-    {
-        return true;
-    }
-    if (bEnabled)
-    {
-        Element->RemoveAttribute("disabled");
-    }
-    else
-    {
-        Element->SetAttribute("disabled", "disabled");
-    }
-    Element->SetClass("disabled", !bEnabled);
-    return true;
-}
-
-bool UGameEngine::SetRmlUIElementClass(const FString& ElementId, const FString& ClassName, bool bEnabled)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    if (Element->IsClassSet(ClassName) == bEnabled)
-    {
-        return true;
-    }
-    Element->SetClass(ClassName, bEnabled);
-    return true;
-}
-
-bool UGameEngine::HasRmlUIElementClass(const FString& ElementId, const FString& ClassName)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->IsClassSet(ClassName) : false;
-}
-
-FString UGameEngine::GetRmlUIElementClassNames(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->GetClassNames() : "";
-}
-
-bool UGameEngine::SetRmlUIElementClassNames(const FString& ElementId, const FString& ClassNames)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    if (Element->GetClassNames() == ClassNames)
-    {
-        return true;
-    }
-    Element->SetClassNames(ClassNames);
-    return true;
-}
-
-bool UGameEngine::HasRmlUIElementAttribute(const FString& ElementId, const FString& Name)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->HasAttribute(Name) : false;
-}
-
-FString UGameEngine::GetRmlUIElementAttribute(const FString& ElementId, const FString& Name)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element ? Element->GetAttribute<Rml::String>(Name, "") : "";
-}
-
-bool UGameEngine::SetRmlUIElementAttribute(const FString& ElementId, const FString& Name, const FString& Value)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    if (Element->GetAttribute<Rml::String>(Name, "") == Value)
-    {
-        return true;
-    }
-    Element->SetAttribute(Name, Value);
-    return true;
-}
-
-bool UGameEngine::RemoveRmlUIElementAttribute(const FString& ElementId, const FString& Name)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    Element->RemoveAttribute(Name);
-    return true;
-}
-
-FString UGameEngine::GetRmlUIElementStyle(const FString& ElementId, const FString& Name)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return "";
-    }
-
-    const Rml::Property* Property = Element->GetProperty(Name);
-    return Property ? Property->ToString() : "";
-}
-
-bool UGameEngine::SetRmlUIElementStyle(const FString& ElementId, const FString& Name, const FString& Value)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    const Rml::Property* Property = Element->GetProperty(Name);
-    if (Property && Property->ToString() == Value)
-    {
-        return true;
-    }
-    return Element->SetProperty(Name, Value);
-}
-
-bool UGameEngine::RemoveRmlUIElementStyle(const FString& ElementId, const FString& Name)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    Element->RemoveProperty(Name);
-    return true;
-}
-
-bool UGameEngine::FocusRmlUIElement(const FString& ElementId, bool bFocusVisible)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    const bool bFocused = Element->Focus(bFocusVisible);
-    if (bFocused)
-    {
-        CaptureTextInputForFocusedRmlElement(Element);
-    }
-    return bFocused;
-}
-
-bool UGameEngine::IsRmlUIElementFocused(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    return Element && RmlUiContext && IsElementOrDescendantFocused(Element, RmlUiContext->GetFocusElement());
-}
-
-bool UGameEngine::BlurRmlUIElement(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    Element->Blur();
-    return true;
-}
-
-bool UGameEngine::ClickRmlUIElement(const FString& ElementId)
-{
-    Rml::Element* Element = FindRmlUIElement(ElementId);
-    if (!Element)
-    {
-        return false;
-    }
-
-    Element->Click();
-    return true;
-}
-
-TArray<FString> UGameEngine::PollRmlUIActionEvents()
-{
-    TArray<FString> Events = RmlUiPendingActionEvents;
-    RmlUiPendingActionEvents.clear();
-    return Events;
-}
-
-void UGameEngine::EnqueueRmlUIActionEvent(const FString& EventName)
-{
-    if (!EventName.empty())
-    {
-        RmlUiPendingActionEvents.push_back(EventName);
-    }
-}
-
-class FRmlUiActionEventListener final : public Rml::EventListener
-{
-public:
-    explicit FRmlUiActionEventListener(UGameEngine* InOwner)
-        : Owner(InOwner)
-    {
-    }
-
-    void ProcessEvent(Rml::Event& Event) override
-    {
-        if (!Owner)
-        {
-            return;
-        }
-
-        Rml::Element* Element = Event.GetTargetElement();
-        while (Element)
-        {
-            Rml::String Action = Element->GetAttribute<Rml::String>("data-action", "");
-            if (Action.empty())
-            {
-                Action = Element->GetAttribute<Rml::String>("action", "");
-            }
-
-            if (!Action.empty())
-            {
-                Owner->EnqueueRmlUIActionEvent(Action);
-                return;
-            }
-
-            Element = Element->GetParentNode();
-        }
-    }
-
-private:
-    UGameEngine* Owner = nullptr;
-};
 
 void UGameEngine::LoadGameSettings()
 {
@@ -755,155 +183,6 @@ void UGameEngine::LoadGameSettings()
     }
 }
 
-void UGameEngine::InitializeRmlUiRuntime()
-{
-    if (bRmlUiRuntimeInitialized)
-    {
-        return;
-    }
-
-    if (!RmlUiRenderInterface.Initialize(
-        Renderer.GetFD3DDevice().GetDevice(),
-        Renderer.GetFD3DDevice().GetDeviceContext()))
-    {
-        UE_LOG_ERROR("[RmlUi] Failed to initialize runtime render interface.");
-        return;
-    }
-
-    if (!RmlUiRuntimeModule.Initialize())
-    {
-        RmlUiRenderInterface.Shutdown();
-        return;
-    }
-
-    RmlUiContext = Rml::CreateContext("GameClient", Rml::Vector2i(RuntimeUILayoutWidth, RuntimeUILayoutHeight), &RmlUiRenderInterface);
-    if (!RmlUiContext)
-    {
-        UE_LOG_ERROR("[RmlUi] Failed to create GameClient context.");
-        RmlUiRuntimeModule.Shutdown();
-        RmlUiRenderInterface.Shutdown();
-        return;
-    }
-
-    delete RmlUiActionListener;
-    RmlUiActionListener = new FRmlUiActionEventListener(this);
-    bRmlUiRuntimeInitialized = true;
-}
-
-void UGameEngine::ShutdownRmlUiRuntime()
-{
-    if (!bRmlUiRuntimeInitialized)
-    {
-        return;
-    }
-
-    if (RmlUiContext)
-    {
-        RmlUiContext->UnloadAllDocuments();
-        RmlUiContext->Update();
-        Rml::RemoveContext("GameClient");
-        RmlUiContext = nullptr;
-    }
-
-    delete RmlUiActionListener;
-    RmlUiActionListener = nullptr;
-    RmlUiPendingActionEvents.clear();
-    RmlUiDocumentsByScreenId.clear();
-    RmlUiDocumentPathByScreenId.clear();
-    RmlUiRuntimeModule.Shutdown();
-    RmlUiRenderInterface.Shutdown();
-    bRmlUiRuntimeInitialized = false;
-}
-
-void UGameEngine::UnloadAllRmlUIDocuments()
-{
-    if (!RmlUiContext)
-    {
-        return;
-    }
-
-    TArray<FString> ScreenIds;
-    for (const auto& Pair : RmlUiDocumentsByScreenId)
-    {
-        ScreenIds.push_back(Pair.first);
-    }
-
-    for (const FString& ScreenId : ScreenIds)
-    {
-        UnloadRmlUIDocument(ScreenId);
-    }
-
-    RmlUiDocumentPathByScreenId.clear();
-    RmlUiPendingActionEvents.clear();
-}
-
-void UGameEngine::RenderRmlUiDocuments(const FRuntimeUIRenderContext& Context)
-{
-    if (!bRmlUiRuntimeInitialized || !RmlUiContext || RmlUiDocumentsByScreenId.empty())
-    {
-        return;
-    }
-
-    const int LayoutWidth = std::max(static_cast<int>(Context.LayoutSize.X > 0.0f ? Context.LayoutSize.X : Context.ViewportSize.X), 1);
-    const int LayoutHeight = std::max(static_cast<int>(Context.LayoutSize.Y > 0.0f ? Context.LayoutSize.Y : Context.ViewportSize.Y), 1);
-    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
-    const FScaledRuntimeUIViewport ScaledViewport = CalculateScaledRuntimeUIViewport(
-        Context.ViewportMin.X,
-        Context.ViewportMin.Y,
-        Context.ViewportSize.X,
-        Context.ViewportSize.Y,
-        LayoutWidth,
-        LayoutHeight);
-
-    Renderer.UseBackBufferRenderTargets();
-    RmlUiRenderInterface.BeginFrame(
-        Rml::Vector2f(ScaledViewport.X, ScaledViewport.Y),
-        Rml::Vector2f(ScaledViewport.Width, ScaledViewport.Height),
-        Rml::Vector2f(ScaledViewport.Scale, ScaledViewport.Scale));
-
-    RmlUiContext->Update();
-    RmlUiContext->Render();
-}
-
-Rml::ElementDocument* UGameEngine::FindRmlUIDocument(const FString& ScreenId) const
-{
-    auto It = RmlUiDocumentsByScreenId.find(ScreenId);
-    return It != RmlUiDocumentsByScreenId.end() ? It->second : nullptr;
-}
-
-Rml::Element* UGameEngine::FindRmlUIElement(const FString& ElementId) const
-{
-    if (ElementId.empty())
-    {
-        return nullptr;
-    }
-
-    for (const auto& Pair : RmlUiDocumentsByScreenId)
-    {
-        if (Pair.second)
-        {
-            if (Rml::Element* Element = Pair.second->GetElementById(ElementId))
-            {
-                return Element;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
-void UGameEngine::AttachRmlUIDocumentListeners(Rml::ElementDocument* Document)
-{
-    if (!Document || !RmlUiActionListener)
-    {
-        return;
-    }
-
-    Document->AddEventListener("click", RmlUiActionListener);
-    Document->AddEventListener("change", RmlUiActionListener);
-    Document->AddEventListener("submit", RmlUiActionListener);
-}
-
 void UGameEngine::LoadStartupWorld()
 {
     const FString ScenePath = ResolveStartupScenePath();
@@ -939,8 +218,9 @@ void UGameEngine::LoadStartupWorld()
 
 void UGameEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
 {
+    GameMode = nullptr;
     PlayerController = nullptr;
-    UnloadAllRmlUIDocuments();
+    GetRmlUiSystem().UnloadAllDocuments();
     GetAudioSystem().StopAll();
     if (OldWorld)
     {
@@ -950,10 +230,36 @@ void UGameEngine::OnSceneWorldWillUnload(UWorld* OldWorld)
 
 void UGameEngine::OnSceneWorldLoaded(UWorld* NewWorld)
 {
+    GameMode = nullptr;
     PlayerController = nullptr;
     EnsurePlayerController();
     InputSystem::Get().SetUseRawMouse(false);
     MaintainGameInputCapture(InputSystem::Get());
+}
+
+AGameModeBase* UGameEngine::EnsureGameMode()
+{
+    if (GameMode)
+    {
+        return GameMode;
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    GameMode = World->SpawnActor<AGameModeBase>();
+    if (!GameMode)
+    {
+        UE_LOG_ERROR("[GameEngine] Failed to spawn GameMode.");
+        return nullptr;
+    }
+
+    GameMode->SetFName(FName("GameMode"));
+    GameMode->SetPlayerControllerClass(StartupSettings.PlayerControllerClass);
+    return GameMode;
 }
 
 void UGameEngine::EnsurePlayerController()
@@ -969,20 +275,27 @@ void UGameEngine::EnsurePlayerController()
         return;
     }
 
-    PlayerController = Cast<APlayerController>(World->SpawnActorByTypeName(StartupSettings.PlayerControllerClass));
+    AGameModeBase* RuntimeGameMode = EnsureGameMode();
+    if (!RuntimeGameMode)
+    {
+        return;
+    }
+
+    RuntimeGameMode->SetPlayerControllerClass(StartupSettings.PlayerControllerClass);
+    PlayerController = RuntimeGameMode->EnsurePlayerController(
+        nullptr,
+        Window ? static_cast<uint32>(Window->GetWidth()) : 1920u,
+        Window ? static_cast<uint32>(Window->GetHeight()) : 1080u,
+        nullptr);
     if (!PlayerController)
     {
         UE_LOG_ERROR("[GameEngine] Failed to spawn PlayerController class: %s", StartupSettings.PlayerControllerClass.c_str());
         return;
     }
 
-    PlayerController->SetFName(FName(StartupSettings.PlayerControllerClass));
     UE_LOG("[GameEngine] Spawned PlayerController class: %s", StartupSettings.PlayerControllerClass.c_str());
     if (FViewportCamera* RuntimeCamera = PlayerController->GetRuntimeCamera())
     {
-        RuntimeCamera->OnResize(
-            Window ? static_cast<uint32>(Window->GetWidth()) : 1920u,
-            Window ? static_cast<uint32>(Window->GetHeight()) : 1080u);
         World->SetActiveCamera(RuntimeCamera);
         UE_LOG("[GameEngine] Runtime camera attached to game world.");
     }
@@ -1048,174 +361,19 @@ void UGameEngine::MaintainGameInputCapture(InputSystem& Input)
 
 bool UGameEngine::PumpRuntimeUIInput(InputSystem& Input)
 {
-    const bool bConsumed = PumpRmlUiInput(Input);
+    const bool bAllowRuntimeUIInput =
+        BuildRuntimeInputPermissions(Input.GetGuiInputState()).bAllowRuntimeUIInput;
+    const bool bConsumed = GetRmlUiSystem().PumpGameInput(
+        Input,
+        Window,
+        bAllowRuntimeUIInput,
+        RuntimeUILayoutWidth,
+        RuntimeUILayoutHeight);
 
     if (bConsumed)
     {
         Input.SetGuiMouseCapture(true);
         Input.SetGuiViewportMouseBlock(true);
-    }
-
-    return bConsumed;
-}
-
-int UGameEngine::GetRmlUiKeyModifierState(const InputSystem& Input) const
-{
-    int Modifiers = 0;
-    if (Input.GetKey(VK_CONTROL) || Input.GetKey(VK_LCONTROL) || Input.GetKey(VK_RCONTROL))
-    {
-        Modifiers |= Rml::Input::KM_CTRL;
-    }
-    if (Input.GetKey(VK_SHIFT) || Input.GetKey(VK_LSHIFT) || Input.GetKey(VK_RSHIFT))
-    {
-        Modifiers |= Rml::Input::KM_SHIFT;
-    }
-    if (Input.GetKey(VK_MENU) || Input.GetKey(VK_LMENU) || Input.GetKey(VK_RMENU))
-    {
-        Modifiers |= Rml::Input::KM_ALT;
-    }
-    if ((::GetKeyState(VK_CAPITAL) & 0x0001) != 0)
-    {
-        Modifiers |= Rml::Input::KM_CAPSLOCK;
-    }
-    if ((::GetKeyState(VK_NUMLOCK) & 0x0001) != 0)
-    {
-        Modifiers |= Rml::Input::KM_NUMLOCK;
-    }
-    if ((::GetKeyState(VK_SCROLL) & 0x0001) != 0)
-    {
-        Modifiers |= Rml::Input::KM_SCROLLLOCK;
-    }
-    return Modifiers;
-}
-
-bool UGameEngine::PumpRmlUiInput(InputSystem& Input)
-{
-    if (!bRmlUiRuntimeInitialized || !RmlUiContext || !Window || !Window->GetHWND())
-    {
-        return false;
-    }
-
-    // GameOnly에서 커서가 숨겨진 상태는 플레이어 컨트롤 전용이다.
-    // RmlUi HUD는 렌더만 하고, 입력은 UI 모드에서만 받도록 분리한다.
-    if (GetRuntimeInputMode() == ERuntimeInputMode::GameOnly && IsRuntimeCursorLocked())
-    {
-        Input.ConsumeTextInput();
-        return false;
-    }
-
-    const int Width = std::max(static_cast<int>(Window->GetWidth()), 1);
-    const int Height = std::max(static_cast<int>(Window->GetHeight()), 1);
-    const int LayoutWidth = RuntimeUILayoutWidth;
-    const int LayoutHeight = RuntimeUILayoutHeight;
-    const FScaledRuntimeUIViewport ScaledViewport = CalculateScaledRuntimeUIViewport(
-        0.0f,
-        0.0f,
-        static_cast<float>(Width),
-        static_cast<float>(Height),
-        LayoutWidth,
-        LayoutHeight);
-    RmlUiContext->SetDimensions(Rml::Vector2i(LayoutWidth, LayoutHeight));
-
-    POINT ClientMousePos = Input.GetMousePos();
-    ::ScreenToClient(Window->GetHWND(), &ClientMousePos);
-
-    const int Modifiers = GetRmlUiKeyModifierState(Input);
-    bool bConsumed = false;
-
-    const bool bInsideRuntimeUI =
-        static_cast<float>(ClientMousePos.x) >= ScaledViewport.X &&
-        static_cast<float>(ClientMousePos.y) >= ScaledViewport.Y &&
-        static_cast<float>(ClientMousePos.x) < ScaledViewport.X + ScaledViewport.Width &&
-        static_cast<float>(ClientMousePos.y) < ScaledViewport.Y + ScaledViewport.Height;
-
-    if (bInsideRuntimeUI)
-    {
-        const int LayoutMouseX = std::max(0, std::min(LayoutWidth - 1, static_cast<int>((static_cast<float>(ClientMousePos.x) - ScaledViewport.X) / ScaledViewport.Scale)));
-        const int LayoutMouseY = std::max(0, std::min(LayoutHeight - 1, static_cast<int>((static_cast<float>(ClientMousePos.y) - ScaledViewport.Y) / ScaledViewport.Scale)));
-        const bool bMouseFree = RmlUiContext->ProcessMouseMove(LayoutMouseX, LayoutMouseY, Modifiers);
-        bConsumed = (!bMouseFree && RmlUiContext->IsMouseInteracting()) || bConsumed;
-    }
-    else
-    {
-        const bool bMouseFree = RmlUiContext->ProcessMouseLeave();
-        bConsumed = (!bMouseFree) || bConsumed;
-    }
-
-    auto PumpMouseButton = [&](int VK, int ButtonIndex)
-    {
-        if (Input.GetKeyDown(VK))
-        {
-            const bool bMouseFree = RmlUiContext->ProcessMouseButtonDown(ButtonIndex, Modifiers);
-            bConsumed = (!bMouseFree) || bConsumed;
-        }
-        if (Input.GetKeyUp(VK))
-        {
-            const bool bMouseFree = RmlUiContext->ProcessMouseButtonUp(ButtonIndex, Modifiers);
-            bConsumed = (!bMouseFree) || bConsumed;
-        }
-    };
-
-    PumpMouseButton(VK_LBUTTON, 0);
-    PumpMouseButton(VK_RBUTTON, 1);
-    PumpMouseButton(VK_MBUTTON, 2);
-
-    if (Input.GetScrollDelta() != 0)
-    {
-        const float WheelDelta = -Input.GetScrollNotches();
-        const bool bEventNotConsumed = RmlUiContext->ProcessMouseWheel(Rml::Vector2f(0.0f, WheelDelta), Modifiers);
-        bConsumed = (!bEventNotConsumed) || bConsumed;
-    }
-
-    bool bKeyboardConsumed = false;
-    for (int VK = 0; VK < 256; ++VK)
-    {
-        if (IsMouseButtonVK(VK))
-        {
-            continue;
-        }
-
-        const Rml::Input::KeyIdentifier Key = MapVirtualKeyToRmlKey(VK);
-        if (Key == Rml::Input::KI_UNKNOWN)
-        {
-            continue;
-        }
-
-        if (Input.GetKeyDown(VK))
-        {
-            const bool bEventNotConsumed = RmlUiContext->ProcessKeyDown(Key, Modifiers);
-            bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
-        }
-        if (Input.GetKeyUp(VK))
-        {
-            const bool bEventNotConsumed = RmlUiContext->ProcessKeyUp(Key, Modifiers);
-            bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
-        }
-    }
-
-    for (uint32_t Codepoint : Input.ConsumeTextInput())
-    {
-        const bool bEventNotConsumed = RmlUiContext->ProcessTextInput(static_cast<Rml::Character>(Codepoint));
-        bKeyboardConsumed = (!bEventNotConsumed) || bKeyboardConsumed;
-    }
-
-    bConsumed = bKeyboardConsumed || bConsumed;
-
-    const bool bTextInputFocused = IsElementOrAncestorFormControl(RmlUiContext->GetFocusElement());
-
-    if (bConsumed)
-    {
-        Input.SetGuiMouseCapture(true);
-        Input.SetGuiViewportMouseBlock(true);
-        if (bKeyboardConsumed)
-        {
-            Input.SetGuiKeyboardCapture(true);
-        }
-    }
-    if (bTextInputFocused)
-    {
-        Input.SetGuiKeyboardCapture(true);
-        Input.SetGuiTextInputCapture(true);
     }
 
     return bConsumed;

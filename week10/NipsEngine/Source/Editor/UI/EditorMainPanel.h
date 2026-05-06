@@ -224,7 +224,6 @@ private:
 	FPIEViewportLayoutSnapshot SavedPIEViewportLayout;
 	FViewportContextMenuState ViewportContextMenuState;
 	FEditorFooterLogSystem FooterLogSystem;
-	TArray<FRuntimeUIRenderContext> PendingPIERmlUiRenderContexts;
 	TArray<FPendingRuntimeUIDraw*> PendingRuntimeUIDrawCallbacks;
 	ID3D11ShaderResourceView* ViewportToolIcons[static_cast<int32>(EViewportToolIcon::Count)] = {};
 	ID3D11ShaderResourceView* ViewportLayoutIcons[static_cast<int32>(EEditorViewportLayoutMode::Max)] = {};

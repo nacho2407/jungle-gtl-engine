@@ -155,7 +155,23 @@ void AppendDragEvents(const FInputSystemSnapshot& Snapshot, const POINT& MouseSc
     }
 }
 
-void ApplyViewportBlockMask(bool bBlockKeyboardForViewport, bool bBlockMouseForViewport, FViewportInputContext& InOutContext)
+bool IsPIEShellCommandKey(int32 VK)
+{
+    return VK == VK_ESCAPE || VK == VK_F8 || VK == VK_F1;
+}
+
+bool IsModifierKey(int32 VK)
+{
+    return VK == VK_CONTROL || VK == VK_LCONTROL || VK == VK_RCONTROL
+        || VK == VK_MENU || VK == VK_LMENU || VK == VK_RMENU
+        || VK == VK_SHIFT || VK == VK_LSHIFT || VK == VK_RSHIFT;
+}
+
+void ApplyViewportBlockMask(
+    bool bBlockKeyboardForViewport,
+    bool bBlockMouseForViewport,
+    bool bPreservePIEShellCommands,
+    FViewportInputContext& InOutContext)
 {
     if (!(bBlockKeyboardForViewport || bBlockMouseForViewport))
     {
@@ -180,11 +196,22 @@ void ApplyViewportBlockMask(bool bBlockKeyboardForViewport, bool bBlockMouseForV
         InOutContext.MouseLocalDelta = { 0, 0 };
     }
 
+    if (bBlockKeyboardForViewport && bPreservePIEShellCommands)
+    {
+        for (int32 VK = 0; VK < 256; ++VK)
+        {
+            if (!IsMouseButtonKey(VK) && !IsPIEShellCommandKey(VK) && !IsModifierKey(VK))
+            {
+                InOutContext.Frame.KeyDown[VK] = false;
+            }
+        }
+    }
+
     InOutContext.Events.erase(
         std::remove_if(
             InOutContext.Events.begin(),
             InOutContext.Events.end(),
-            [bBlockKeyboardForViewport, bBlockMouseForViewport](const FInputEvent& Event)
+            [bBlockKeyboardForViewport, bBlockMouseForViewport, bPreservePIEShellCommands](const FInputEvent& Event)
             {
                 if (bBlockMouseForViewport)
                 {
@@ -204,7 +231,8 @@ void ApplyViewportBlockMask(bool bBlockKeyboardForViewport, bool bBlockMouseForV
 
                 if (bBlockKeyboardForViewport
                     && (Event.Type == EInputEventType::KeyPressed || Event.Type == EInputEventType::KeyReleased)
-                    && !IsMouseButtonKey(Event.Key))
+                    && !IsMouseButtonKey(Event.Key)
+                    && !(bPreservePIEShellCommands && IsPIEShellCommandKey(Event.Key)))
                 {
                     return true;
                 }
@@ -250,6 +278,55 @@ FPointerButtonsState ComputePointerButtonsState(const FInputSystemSnapshot& Snap
         || Snapshot.bMiddleDragging
         || Snapshot.bRightDragging;
     return State;
+}
+
+bool HasPointerEvent(const FViewportInputContext& Context, EPointerButton Button)
+{
+    for (const FInputEvent& Event : Context.Events)
+    {
+        if (Event.PointerButton == Button)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+FInputSideEffectPermissions BuildSideEffectPermissions(const FViewportInputContext& Context)
+{
+    FInputSideEffectPermissions Permissions{};
+
+    const bool bLeftCapture =
+        Context.Frame.IsDown(VK_LBUTTON) ||
+        Context.Frame.bLeftDragging ||
+        HasPointerEvent(Context, EPointerButton::Left);
+    const bool bRightCapture =
+        Context.Frame.IsDown(VK_RBUTTON) ||
+        Context.Frame.bRightDragging ||
+        HasPointerEvent(Context, EPointerButton::Right) ||
+        Context.bRelativeMouseMode;
+    const bool bPointerCapture = Context.bCaptured || Context.bRelativeMouseMode;
+    const bool bPassiveViewportBlocked =
+        Context.bImGuiCapturedMouse ||
+        (bPointerCapture && (bLeftCapture || bRightCapture));
+
+    if (bPassiveViewportBlocked)
+    {
+        Permissions.bAllowPicking = false;
+        Permissions.bAllowGizmoHover = false;
+        Permissions.bAllowSelectionFeedback = false;
+    }
+    if (Context.bImGuiCapturedKeyboard)
+    {
+        Permissions.bAllowEditorShortcuts = false;
+        Permissions.bAllowGameActions = false;
+    }
+    if (Context.bImGuiCapturedMouse)
+    {
+        Permissions.bAllowGameLook = false;
+    }
+
+    return Permissions;
 }
 }
 
@@ -423,13 +500,15 @@ void FInputRouter::PopulateDispatchContext(
     OutContext = {};
     OutBinding = {};
     const bool bBlockKeyboardForViewport = bImGuiCaptureKeyboard;
+    const bool bPreservePIEShellCommands = TargetEntry && TargetEntry->Domain == EInteractionDomain::PIE;
 
     FInputFrame Frame = BuildFrameFromSnapshot(InputSnapshot, ++InputFrameCounter, OwnerWindow);
     if (bBlockKeyboardForViewport)
     {
         for (int32 VK = 0; VK < 256; ++VK)
         {
-            if (!IsMouseButtonKey(VK))
+            if (!IsMouseButtonKey(VK)
+                && !(bPreservePIEShellCommands && (IsPIEShellCommandKey(VK) || IsModifierKey(VK))))
             {
                 Frame.KeyDown[VK] = false;
             }
@@ -655,16 +734,18 @@ void FInputRouter::FinalizeAndDispatchInput(
         InOutContext.bHovered ||
         InOutContext.bCaptured ||
         InOutContext.bRelativeMouseMode;
+    const bool bPreservePIEShellCommands = TargetEntry && TargetEntry->Domain == EInteractionDomain::PIE;
     const FGuiInputState& GuiState = InputSystem::Get().GetGuiInputState();
     const bool bGuiExclusiveKeyboard =
         GuiState.bUsingTextInput ||
-        GuiState.bBlockViewportMouse;
+        (GuiState.bBlockViewportMouse && !bPreservePIEShellCommands);
     const bool bBlockKeyboardForViewport = bGuiExclusiveKeyboard || !bViewportKeyboardTarget;
     const bool bBlockMouseForViewport =
         bHardBlockMouse ||
         !InOutContext.bFocused ||
         (bImGuiCaptureMouse && !bViewportPointerTarget);
-    ApplyViewportBlockMask(bBlockKeyboardForViewport, bBlockMouseForViewport, InOutContext);
+    ApplyViewportBlockMask(bBlockKeyboardForViewport, bBlockMouseForViewport, bPreservePIEShellCommands, InOutContext);
+    InOutContext.SideEffects = BuildSideEffectPermissions(InOutContext);
 
     InOutContext.bConsumed = TargetEntry->Client->ProcessInput(InOutContext);
     if (InOutContext.bRelativeMouseMode)
@@ -846,4 +927,84 @@ void FInputRouter::DeactivateAbsoluteMouseClip()
     AbsoluteMouseClipViewport = nullptr;
     AbsoluteMouseClipRect = { 0, 0, 0, 0 };
     ::ClipCursor(nullptr);
+}
+
+bool FInputPolicyRouter::Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding)
+{
+    ResetLastDispatch();
+
+    const bool bRouted = Router.Tick(DeltaTime, OutContext, OutBinding);
+    if (bRouted)
+    {
+        MirrorCurrentRouterDispatch(OutContext);
+    }
+    return bRouted;
+}
+
+EInputDomain FInputPolicyRouter::ConvertInteractionDomain(EInteractionDomain Domain)
+{
+    switch (Domain)
+    {
+    case EInteractionDomain::Editor:
+        return EInputDomain::EditorViewport;
+    case EInteractionDomain::PIE:
+        return EInputDomain::PIEViewport;
+    case EInteractionDomain::EditorOnPIE:
+        return EInputDomain::EditorViewport;
+    default:
+        return EInputDomain::None;
+    }
+}
+
+void FInputPolicyRouter::ResetLastDispatch()
+{
+    LastDispatch = {};
+    LastDispatch.SideEffects.bAllowPicking = false;
+    LastDispatch.SideEffects.bAllowGizmoHover = false;
+    LastDispatch.SideEffects.bAllowSelectionFeedback = false;
+    LastDispatch.SideEffects.bAllowEditorShortcuts = false;
+    LastDispatch.SideEffects.bAllowGameActions = false;
+    LastDispatch.SideEffects.bAllowGameLook = false;
+    LastDispatch.SideEffects.bAllowGameMove = false;
+    LastDispatch.SideEffects.bAllowTextInput = false;
+}
+
+void FInputPolicyRouter::MirrorCurrentRouterDispatch(const FViewportInputContext& Context)
+{
+    LastDispatch.FrameNumber = Context.Frame.FrameNumber;
+    LastDispatch.OwnerDomain = ConvertInteractionDomain(Context.Domain);
+    LastDispatch.SideEffects = Context.SideEffects;
+
+    FInputDomainFrame* TargetFrame = nullptr;
+    switch (LastDispatch.OwnerDomain)
+    {
+    case EInputDomain::EditorViewport:
+        TargetFrame = &LastDispatch.EditorViewport;
+        break;
+    case EInputDomain::PIEViewport:
+        TargetFrame = &LastDispatch.PIEViewport;
+        break;
+    case EInputDomain::RuntimeUI:
+        TargetFrame = &LastDispatch.RuntimeUI;
+        break;
+    case EInputDomain::Game:
+        TargetFrame = &LastDispatch.Game;
+        break;
+    case EInputDomain::Lua:
+        TargetFrame = &LastDispatch.Lua;
+        break;
+    case EInputDomain::EditorUI:
+        TargetFrame = &LastDispatch.EditorUI;
+        break;
+    default:
+        break;
+    }
+
+    if (TargetFrame)
+    {
+        TargetFrame->Frame = Context.Frame;
+        TargetFrame->Events = Context.Events;
+        TargetFrame->bActive = true;
+        TargetFrame->bBlocked = Context.bImGuiCapturedMouse || Context.bImGuiCapturedKeyboard;
+    }
 }

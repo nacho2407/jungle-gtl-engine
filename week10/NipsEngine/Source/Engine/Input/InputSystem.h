@@ -137,7 +137,7 @@ class InputSystem : public TSingleton<InputSystem>
     void SetOwnerWindow(HWND InHWnd) { OwnerHWnd = InHWnd; }
     void SetFocusLossPolicy(EInputFocusLossPolicy InPolicy) { FocusLossPolicy = InPolicy; }
 
-    // GUI state
+    // UI capture declarations consumed by the input policy setup.
     FGuiInputState&       GetGuiInputState() { return GuiState; }
     const FGuiInputState& GetGuiInputState() const { return GuiState; }
     void SetGuiMouseCapture(bool bCapture) { GuiState.bUsingMouse = bCapture; }
@@ -196,7 +196,7 @@ class InputSystem : public TSingleton<InputSystem>
     HWND OwnerHWnd = nullptr;
     EInputFocusLossPolicy FocusLossPolicy = EInputFocusLossPolicy::ResetAllInputs;
 
-    // GUI InputState
+    // UI capture state
     FGuiInputState GuiState{};
 
     static constexpr int DRAG_THRESHOLD = 5;

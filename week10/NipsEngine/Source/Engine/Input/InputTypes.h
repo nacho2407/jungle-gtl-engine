@@ -16,6 +16,37 @@ enum class EInteractionDomain : uint8
     EditorOnPIE
 };
 
+enum class EInputDomain : uint8
+{
+    None,
+    EditorUI,
+    EditorViewport,
+    PIEViewport,
+    RuntimeUI,
+    Game,
+    Lua
+};
+
+enum class EInputCaptureKind : uint8
+{
+    None,
+    Hover,
+    Focus,
+    Pointer,
+    Text,
+    Modal
+};
+
+struct FInputCaptureRequest
+{
+    EInputDomain      Domain = EInputDomain::None;
+    EInputCaptureKind Kind = EInputCaptureKind::None;
+    FViewport*        Viewport = nullptr;
+    FViewportClient*  Client = nullptr;
+    int32             Priority = 0;
+    bool              bBlocksLowerDomains = false;
+};
+
 enum class EMouseInputMode : uint8
 {
     Absolute,
@@ -121,11 +152,24 @@ struct FInteractionBinding
     EInteractionDomain  Domain = EInteractionDomain::Editor;
 };
 
+struct FInputSideEffectPermissions
+{
+    bool bAllowPicking = true;
+    bool bAllowGizmoHover = true;
+    bool bAllowSelectionFeedback = true;
+    bool bAllowEditorShortcuts = true;
+    bool bAllowGameActions = true;
+    bool bAllowGameLook = true;
+    bool bAllowGameMove = true;
+    bool bAllowTextInput = true;
+};
+
 struct FViewportInputContext
 {
     FInputFrame        Frame;
     TArray<FInputEvent> Events;
     float              DeltaSeconds = 0.0f;
+    FInputSideEffectPermissions SideEffects;
 
     FViewport*         TargetViewport = nullptr;
     FViewportClient*   TargetClient = nullptr;
@@ -255,4 +299,27 @@ struct FViewportInputContext
         }
         return false;
     }
+};
+
+struct FInputDomainFrame
+{
+    EInputDomain       Domain = EInputDomain::None;
+    FInputFrame        Frame;
+    TArray<FInputEvent> Events;
+    bool               bActive = false;
+    bool               bBlocked = false;
+};
+
+struct FInputFrameDispatch
+{
+    uint64                      FrameNumber = 0;
+    EInputDomain                OwnerDomain = EInputDomain::None;
+    FInputSideEffectPermissions SideEffects;
+
+    FInputDomainFrame EditorUI{ EInputDomain::EditorUI };
+    FInputDomainFrame EditorViewport{ EInputDomain::EditorViewport };
+    FInputDomainFrame PIEViewport{ EInputDomain::PIEViewport };
+    FInputDomainFrame RuntimeUI{ EInputDomain::RuntimeUI };
+    FInputDomainFrame Game{ EInputDomain::Game };
+    FInputDomainFrame Lua{ EInputDomain::Lua };
 };

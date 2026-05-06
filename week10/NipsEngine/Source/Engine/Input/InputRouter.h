@@ -100,3 +100,44 @@ private:
     FViewport* AbsoluteMouseClipViewport = nullptr;
     RECT   AbsoluteMouseClipRect = { 0, 0, 0, 0 };
 };
+
+class FInputPolicyRouter
+{
+public:
+    using FRectProvider = FInputRouter::FRectProvider;
+    using FWorldResolver = FInputRouter::FWorldResolver;
+
+    void SetOwnerWindow(HWND InOwnerWindow) { Router.SetOwnerWindow(InOwnerWindow); }
+    void SetImGuiCaptureState(bool bCaptureMouse, bool bCaptureKeyboard) { Router.SetImGuiCaptureState(bCaptureMouse, bCaptureKeyboard); }
+    void SetForceViewportMouseBlock(bool bEnable, bool bAllowViewportFocusPress = false)
+    {
+        Router.SetForceViewportMouseBlock(bEnable, bAllowViewportFocusPress);
+    }
+    void ClearViewportFocus() { Router.ClearViewportFocus(); }
+    void ForceViewportFocus(FViewport* InViewport) { Router.ForceViewportFocus(InViewport); }
+
+    void ClearTargets() { Router.ClearTargets(); }
+    void RegisterTarget(
+        FViewport* InViewport,
+        FViewportClient* InClient,
+        EInteractionDomain InDomain,
+        FRectProvider InRectProvider,
+        FWorldResolver InWorldResolver)
+    {
+        Router.RegisterTarget(InViewport, InClient, InDomain, InRectProvider, InWorldResolver);
+    }
+
+    bool Tick(float DeltaTime, FViewportInputContext& OutContext, FInteractionBinding& OutBinding);
+
+    const FInputFrameDispatch& GetLastDispatch() const { return LastDispatch; }
+    const FInputSideEffectPermissions& GetSideEffectPermissions() const { return LastDispatch.SideEffects; }
+
+private:
+    static EInputDomain ConvertInteractionDomain(EInteractionDomain Domain);
+    void ResetLastDispatch();
+    void MirrorCurrentRouterDispatch(const FViewportInputContext& Context);
+
+private:
+    FInputRouter Router;
+    FInputFrameDispatch LastDispatch;
+};
