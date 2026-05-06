@@ -16,7 +16,10 @@ function GameManager.new(context)
         invulnerableRemaining = 0.0,
         timeSlowActive = false,
         timeSlowRemaining = 0.0,
-        timeSlowScale = 0.5,
+        timeSlowScale = 1.0,
+        hitStopActive = false,
+        hitStopRemaining = 0.0,
+        hitStopScale = 1.0,
         finishReason = "None",
         isClear = false
     }, GameManager)
@@ -99,7 +102,7 @@ function GameManager:StartRun()
     self.invulnerableRemaining = 0.0
     self.timeSlowActive = false
     self.timeSlowRemaining = 0.0
-    self.timeSlowScale = 0.5
+    self.timeSlowScale = 1.0
     self.finishReason = "None"
     self.isClear = false
 
@@ -307,7 +310,7 @@ function GameManager:ActivateTimeSlow(duration, scale, source)
         return false
     end
 
-    self.timeSlowScale = math.max(0.05, math.min(1.0, tonumber(scale) or 0.5))
+    self.timeSlowScale = math.max(0.05, math.min(1.0, tonumber(scale) or 1.0))
     self.timeSlowRemaining = math.max(0.0, tonumber(duration) or 10.0)
     if self.timeSlowRemaining <= 0.0 then
         return false
@@ -330,12 +333,38 @@ function GameManager:ActivateTimeSlow(duration, scale, source)
     return true
 end
 
+function GameManager:ActivateHitStop(duration, scale)
+    local d = math.max(0.0, tonumber(duration) or 0.05)
+    local s = math.max(0.0, math.min(1.0, tonumber(scale) or 0.0))
+    if d <= 0.0 then
+        return false
+    end
+
+    self.hitStopActive = true
+    self.hitStopRemaining = d
+    self.hitStopScale = s
+    Engine.API.World.SetTimeScale(
+        (self.timeSlowActive and self.timeSlowScale or 1.0) * s
+    )
+    return true
+end
+
+function GameManager:GetHitStopScale()
+    return self.hitStopScale
+end
+
+function GameManager:GetSlowMotionScale()
+    return self.timeSlowScale
+end
+
 function GameManager:StopTimeSlow(emitEvent)
     if self.timeSlowActive then
         self.timeSlowActive = false
         self.timeSlowRemaining = 0.0
         Engine.API.World.DeactivateSandervistan()
-        Engine.API.World.SetTimeScale(1.0)
+        Engine.API.World.SetTimeScale(
+            self.hitStopActive and self.hitStopScale or 1.0
+        )
 
         if emitEvent then
             self.context.eventBus:Emit("TimeSlow.Ended", self:GetSnapshot())
@@ -344,6 +373,22 @@ function GameManager:StopTimeSlow(emitEvent)
 end
 
 function GameManager:Tick(dt)
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
+    if realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
+
+    if self.hitStopActive then
+        self.hitStopRemaining = math.max(0.0, self.hitStopRemaining - realDt)
+        if self.hitStopRemaining <= 0.0 then
+            self.hitStopActive = false
+            self.hitStopScale = 1.0
+            Engine.API.World.SetTimeScale(
+                self.timeSlowActive and self.timeSlowScale or 1.0
+            )
+        end
+    end
+
     if not self.isRunning or self.isPaused then
         return
     end
@@ -393,6 +438,9 @@ function GameManager:GetSnapshot()
         timeSlowActive = self.timeSlowActive,
         timeSlowRemaining = self.timeSlowRemaining,
         timeSlowScale = self.timeSlowScale,
+        hitStopActive = false,
+        hitStopRemaining = 0.0,
+        hitStopScale = 1.0,
         finishReason = self.finishReason,
         isClear = self.isClear
     }
