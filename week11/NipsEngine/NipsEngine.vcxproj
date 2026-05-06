@@ -333,6 +333,7 @@
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerAnimationBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerComponentBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerEngineBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp" />
@@ -387,6 +388,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorCurveEditorWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -486,6 +491,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorActorSequenceDetails.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -528,6 +537,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
+    <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
+    <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
@@ -535,9 +546,13 @@
     <ClCompile Include="Source\Engine\Asset\StaticMesh.cpp" />
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp" />
+    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp" />
+    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\ActorSequenceComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\CameraComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\DecalComponent.cpp" />
@@ -571,6 +586,7 @@
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\Guid.cpp" />
     <ClCompile Include="Source\Engine\Core\Paths.cpp" />
     <ClCompile Include="Source\Engine\Core\PlatformTime.cpp" />
     <ClCompile Include="Source\Engine\Core\ResourceManager.cpp" />
@@ -764,6 +780,7 @@
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorContentBrowserWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorFooterLogSystem.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanelState.h" />
@@ -773,6 +790,7 @@
     <ClInclude Include="Source\Editor\UI\EditorMainPanelWidgetSet.h" />
     <ClInclude Include="Source\Editor\UI\EditorMaterialWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
+    <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h" />
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorRuntimeUIPreviewWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorSceneWidget.h" />
@@ -788,6 +806,8 @@
     <ClInclude Include="Source\Engine\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
+    <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h" />
     <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h" />
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h" />
@@ -797,9 +817,13 @@
     <ClInclude Include="Source\Engine\Asset\StaticMesh.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshSimplifier.h" />
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h" />
+    <ClInclude Include="Source\Engine\Animation\ActorSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h" />
     <ClInclude Include="Source\Engine\Collision\Collision.h" />
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\ActorSequenceComponent.h" />
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\CameraComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
@@ -839,6 +863,7 @@
     <ClInclude Include="Source\Engine\Core\Debug.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Guid.h" />
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
     <ClInclude Include="Source\Engine\Core\PropertyTypes.h" />

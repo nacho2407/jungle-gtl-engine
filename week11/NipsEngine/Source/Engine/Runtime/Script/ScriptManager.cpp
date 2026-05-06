@@ -326,6 +326,7 @@ void FScriptManager::BindLuaState()
     BindComponentTypes();
     BindActorTypes();
     BindStaticMeshTypes();
+    BindAnimationTypes();
     BindBillboardTypes();
     BindCameraTypes();
     BindPrimitiveTypes();

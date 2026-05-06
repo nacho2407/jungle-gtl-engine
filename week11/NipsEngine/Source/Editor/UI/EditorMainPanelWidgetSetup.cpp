@@ -29,6 +29,7 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
     Widgets.ConsoleWidget.Initialize(InEditorEngine);
     Widgets.ContentBrowserWidget.Initialize(InEditorEngine);
     Widgets.ControlWidget.Initialize(InEditorEngine);
+    Widgets.CurveEditorWidget.Initialize(InEditorEngine);
     Widgets.MaterialWidget.Initialize(InEditorEngine);
     Widgets.PropertyWidget.Initialize(InEditorEngine);
     Widgets.SceneWidget.Initialize(InEditorEngine);
@@ -37,6 +38,11 @@ void FEditorMainPanel::InitializeEditorWidgets(UEditorEngine* InEditorEngine)
     Widgets.PlayStreamWidget.Initialize(InEditorEngine);
     Widgets.ToolbarWidget.Initialize(InEditorEngine);
     Widgets.RuntimeUIPreviewWidget.Initialize(InEditorEngine);
+}
+
+void FEditorMainPanel::OpenCurveAsset(const FString& CurvePath)
+{
+    Widgets.CurveEditorWidget.OpenCurveAsset(CurvePath);
 }
 
 void FEditorMainPanel::BindEditorWidgetCallbacks()

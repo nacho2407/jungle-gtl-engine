@@ -33,17 +33,22 @@ local function Clamp(value, minValue, maxValue)
 end
 
 local function PlayerWaitForSeconds(seconds)
-    if WaitForUnscaledSeconds then
-        return WaitForUnscaledSeconds(tonumber(seconds) or 0.0)
-    end
+    -- if WaitForUnscaledSeconds then
+    --     return WaitForUnscaledSeconds(tonumber(seconds) or 0.0)
+    -- end
 
     local scale = 1.0
+
     if Engine and Engine.API and Engine.API.World and Engine.API.World.GetTimeScale then
         scale = Engine.API.World.GetTimeScale()
     end
+
     if scale <= 0.0001 then
         scale = 0.0001
     end
+
+    -- Apply HitStop Scale / Don't Apply SlowMotion Scale
+    scale = scale / _G.GameJam.GetSlowMotionScale()
 
     return WaitForSeconds((tonumber(seconds) or 0.0) * scale)
 end
@@ -582,8 +587,9 @@ function Script:Tick(dt)
     if not self.bCanTick then return end
 
     local WorldTimeScale = Engine.API.World.GetTimeScale()
+    local HitStopScale = _G.GameJam.GetHitStopScale()
     if WorldTimeScale ~= 0 then
-        dt = dt / WorldTimeScale
+        dt = (dt / WorldTimeScale) * HitStopScale
     end
     
     self:UpdateBlockingState()
@@ -766,19 +772,6 @@ function Script:Tick(dt)
     end
 
     if not self.bDoingAttack and player and Engine.API.Input.IsMousePressed("LMB") then
-        local slash = Engine.API.World.SpawnActor("ABladeSlash")
-        if slash == nil then
-            return
-        end
-
-        self.attackSequence = self.attackSequence + 1
-        local attackId = tostring(self.owner.UUID) .. "_" .. tostring(self.attackSequence)
-        slash:AddTag("PlayerAttack")
-        slash:AddTag("AttackId:" .. attackId)
-        if _G.GameJam and _G.GameJam.NotifyPlayerAttackStarted then
-            _G.GameJam.NotifyPlayerAttackStarted(attackId)
-        end
-
         local yaw = rotation.z
         local yaw_rad = math.rad(yaw)
 
@@ -790,6 +783,19 @@ function Script:Tick(dt)
             degree = 45
         else
             degree = 135
+        end
+
+        local slash = Engine.API.World.SpawnActor("ABladeSlash")
+        if slash == nil then
+            return
+        end
+
+        self.attackSequence = self.attackSequence + 1
+        local attackId = tostring(self.owner.UUID) .. "_" .. tostring(self.attackSequence)
+        slash:AddTag("PlayerAttack")
+        slash:AddTag("AttackId:" .. attackId)
+        if _G.GameJam and _G.GameJam.NotifyPlayerAttackStarted then
+            _G.GameJam.NotifyPlayerAttackStarted(attackId)
         end
 
         local pitch_x = degree * math.sin(yaw_rad)
@@ -814,16 +820,17 @@ function Script:Tick(dt)
         slash.Scale = Vector(scale_x, 2, scale_z)
 
         StartCoroutine(function()
-            self:Attack(mode, degree, yaw)
-        end)
-
-        StartCoroutine(function()
             self:DestroyActorAfter(slash, 0.1)
         end)
-
+        
         StartCoroutine(function()
             self:FinishAttackAfter(attackId, 0.14)
         end)
+
+        StartCoroutine(function()
+            self:Attack(mode, degree, yaw)
+        end)
+
     end
 
     -- -------------------------------------------------------

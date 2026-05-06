@@ -98,11 +98,12 @@ public:
 	// 프로퍼티 시스템 — 모든 UObject 파생 클래스가 공유합니다.
 	// GetEditableProperties : 에디터에 노출할 프로퍼티 목록 반환.
 	//                         하위 클래스에서 override 하여 속성 추가.
-	// PostEditProperty      : 프로퍼티 값 변경 후 리소스 재로딩 등 처리.
+	// PostEditChangeProperty: 프로퍼티 값 변경 후 리소스 재로딩 등 처리.
 	// CopyPropertiesFrom    : GetEditableProperties 에 노출된 프로퍼티를
 	//                         이름 기반으로 매칭하여 Src → this 방향으로 복사.
 	// -----------------------------------------------------------------------
 	virtual void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) {}
+	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event) { PostEditProperty(Event.PropertyName); }
 	virtual void PostEditProperty(const char* PropertyName) {}
 	void CopyPropertiesFrom(UObject* Src);
 
