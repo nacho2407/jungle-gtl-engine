@@ -142,6 +142,7 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FXAAPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/PostProcess.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/ScreenOverlay.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/ShaderFont.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/ShaderLine.hlsl", "mainVS", "mainPS");
 	FResourceManager::Get().LoadShader("Shaders/DepthPrepass.hlsl", "DepthPrepassVS", "DepthPrepassPS");
@@ -199,6 +200,7 @@ void FRenderer::CreateResources()
     Resources.SelectionMaskConstantBuffer.Create(Device.GetDevice(), sizeof(FSelectionMaskConstants));
     Resources.SandevistanCB.Create(Device.GetDevice(), sizeof(FSandevistanConstants));
     Resources.PostProcessCB.Create(Device.GetDevice(), sizeof(FPostProcessConstants));
+    Resources.ScreenOverlayCB.Create(Device.GetDevice(), sizeof(FScreenOverlayConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
 	Resources.DecalStructuredBuffer.Create(Device.GetDevice(), sizeof(FDecalInfo), 256);
@@ -257,6 +259,7 @@ void FRenderer::Release()
     Resources.FogPassConstantBuffer.Release();
     Resources.SandevistanCB.Release();
     Resources.PostProcessCB.Release();
+    Resources.ScreenOverlayCB.Release();
     Resources.FXAAConstantBuffer.Release();
     Resources.EditorPickingConstantBuffer.Release();
     Resources.SelectionMaskConstantBuffer.Release();
@@ -441,6 +444,7 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	RenderPipeline.Render(RenderPassContext.get());
 	
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
+    SceneFinalRTV = RenderPipeline.GetOutRTV();
 }
 
 void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors)
@@ -661,6 +665,91 @@ void FRenderer::CompositeCurrentSceneToBackBuffer()
     ID3D11ShaderResourceView* NullSRV = nullptr;
     Context->PSSetShaderResources(0, 1, &NullSRV);
     UseBackBufferRenderTargets();
+}
+
+void FRenderer::RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTargetBackBuffer)
+{
+    const float Width = bTargetBackBuffer ? Device.GetViewportWidth() : CurrentRenderTargets.Width;
+    const float Height = bTargetBackBuffer ? Device.GetViewportHeight() : CurrentRenderTargets.Height;
+    if (Width <= 0.0f || Height <= 0.0f)
+    {
+        return;
+    }
+
+    ID3D11RenderTargetView* TargetRTV = bTargetBackBuffer
+        ? Device.GetFrameBufferRTV()
+        : SceneFinalRTV.Get();
+    ID3D11DeviceContext* Context = Device.GetDeviceContext();
+    UShader* OverlayShader = FResourceManager::Get().GetShader("Shaders/ScreenOverlay.hlsl");
+    if (!TargetRTV || !Context || !OverlayShader)
+    {
+        return;
+    }
+
+    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+    ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
+    Context->OMSetRenderTargets(1, &TargetRTV, nullptr);
+    Context->OMSetDepthStencilState(nullptr, 0);
+    Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+    Context->RSSetState(RasterizerState);
+
+    OverlayShader->Bind(Context);
+    Context->IASetInputLayout(nullptr);
+    Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    auto DrawRect = [&](int32 X, int32 Y, int32 RectWidth, int32 RectHeight, const FVector4& Color)
+    {
+        if (RectWidth <= 0 || RectHeight <= 0 || Color.W <= 0.001f)
+        {
+            return;
+        }
+
+        FScreenOverlayConstants Constants = {};
+        Constants.Color[0] = Color.X;
+        Constants.Color[1] = Color.Y;
+        Constants.Color[2] = Color.Z;
+        Constants.Color[3] = Color.W;
+        Resources.ScreenOverlayCB.Update(Context, &Constants, sizeof(Constants));
+        ID3D11Buffer* OverlayCB = Resources.ScreenOverlayCB.GetBuffer();
+        Context->PSSetConstantBuffers(13, 1, &OverlayCB);
+
+        Device.SetSubViewport(X, Y, RectWidth, RectHeight);
+        Context->Draw(3, 0);
+    };
+
+    const int32 TargetWidth = static_cast<int32>(Width);
+    const int32 TargetHeight = static_cast<int32>(Height);
+    const float LetterboxAspect = InRenderBus.GetLetterboxTargetAspect();
+    const float LetterboxAmount = std::clamp(InRenderBus.GetLetterboxAmount(), 0.0f, 1.0f);
+    if (LetterboxAspect > 0.001f && LetterboxAmount > 0.001f)
+    {
+        const float CurrentAspect = Width / Height;
+        const FVector4 Black(0.0f, 0.0f, 0.0f, 1.0f);
+        if (CurrentAspect > LetterboxAspect)
+        {
+            const int32 ContentWidth = std::max(static_cast<int32>(Height * LetterboxAspect), 1);
+            const int32 FullBarWidth = std::max((TargetWidth - ContentWidth) / 2, 0);
+            const int32 BarWidth = static_cast<int32>(FullBarWidth * LetterboxAmount);
+            DrawRect(0, 0, BarWidth, TargetHeight, Black);
+            DrawRect(TargetWidth - BarWidth, 0, BarWidth, TargetHeight, Black);
+        }
+        else
+        {
+            const int32 ContentHeight = std::max(static_cast<int32>(Width / LetterboxAspect), 1);
+            const int32 FullBarHeight = std::max((TargetHeight - ContentHeight) / 2, 0);
+            const int32 BarHeight = static_cast<int32>(FullBarHeight * LetterboxAmount);
+            DrawRect(0, 0, TargetWidth, BarHeight, Black);
+            DrawRect(0, TargetHeight - BarHeight, TargetWidth, BarHeight, Black);
+        }
+    }
+
+    FVector4 FadeColor = InRenderBus.GetCameraFadeColor();
+    FadeColor.W *= std::clamp(InRenderBus.GetCameraFadeAlpha(), 0.0f, 1.0f);
+    DrawRect(0, 0, TargetWidth, TargetHeight, FadeColor);
+
+    Device.SetSubViewport(0, 0, TargetWidth, TargetHeight);
 }
 
 FViewportRenderResource& FRenderer::AcquireViewportResource(uint32 Width, uint32 Height, int32 Index)

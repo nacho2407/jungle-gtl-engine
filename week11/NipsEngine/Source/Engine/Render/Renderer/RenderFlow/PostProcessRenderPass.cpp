@@ -13,7 +13,10 @@ bool FPostProcessRenderPass::Release()
 
 bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 {
-	if (!Context->RenderBus->GetShowFlags().bGammaCorrection)
+    const bool bGammaCorrection = Context->RenderBus->GetShowFlags().bGammaCorrection;
+    const bool bVignetteEnabled = Context->RenderBus->GetVignetteIntensity() > 0.001f;
+
+	if (!bGammaCorrection && !bVignetteEnabled)
 	{
         OutSRV = PrevPassSRV;
         OutRTV = PrevPassRTV;
@@ -33,6 +36,10 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 	FPostProcessConstants cb = {};
     cb.InvResolution[0] = 1.0f / Context->RenderTargets->Width;
     cb.InvResolution[1] = 1.0f / Context->RenderTargets->Height;
+    cb.VignetteIntensity = Context->RenderBus->GetVignetteIntensity();
+    cb.VignetteRadius = Context->RenderBus->GetVignetteRadius();
+    cb.VignetteSmoothness = Context->RenderBus->GetVignetteSmoothness();
+    cb.GammaCorrectionEnabled = bGammaCorrection ? 1u : 0u;
 
 	Context->RenderResources->PostProcessCB.Update(
 							Context->DeviceContext,
@@ -57,7 +64,8 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FPostProcessRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
-    if (!Context->RenderBus->GetShowFlags().bGammaCorrection)
+    if (!Context->RenderBus->GetShowFlags().bGammaCorrection &&
+        Context->RenderBus->GetVignetteIntensity() <= 0.001f)
         return true;
     Context->DeviceContext->Draw(3, 0);
     return true;
@@ -65,7 +73,8 @@ bool FPostProcessRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FPostProcessRenderPass::End(const FRenderPassContext* Context)
 {
-    if (!Context->RenderBus->GetShowFlags().bGammaCorrection)
+    if (!Context->RenderBus->GetShowFlags().bGammaCorrection &&
+        Context->RenderBus->GetVignetteIntensity() <= 0.001f)
         return true;
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr };
     Context->DeviceContext->PSSetShaderResources(0, 1, nullSRVs);

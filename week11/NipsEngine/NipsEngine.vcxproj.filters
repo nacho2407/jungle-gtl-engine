@@ -1761,6 +1761,14 @@
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\Multipass\PostProcess.hlsl">
+      <Filter>Shaders\Multipass</Filter>
+    </None>
+    <None Include="Shaders\ScreenOverlay.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp">
       <Filter>Source\Engine\UI\RmlUi</Filter>
     </ClCompile>

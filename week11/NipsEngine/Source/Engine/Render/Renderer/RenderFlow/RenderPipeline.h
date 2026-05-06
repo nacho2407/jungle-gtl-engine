@@ -31,6 +31,7 @@ public:
     void Release();
 
 	ID3D11ShaderResourceView* GetOutSRV() const { return OutSRV; }
+    ID3D11RenderTargetView* GetOutRTV() const { return OutRTV; }
 
 private:
 	std::shared_ptr<FDepthPrePass> DepthPrePass;

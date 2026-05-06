@@ -1,8 +1,10 @@
 ﻿#include "EditorRenderPipeline.h"
 
 #include "Editor/EditorEngine.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Camera/ViewportCamera.h"
 #include "Render/Renderer/Renderer.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/World.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
@@ -18,6 +20,38 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+
+namespace
+{
+    void ApplyPIECameraViewEffectsToBus(APlayerController* PlayerController, FRenderBus& Bus)
+    {
+        APlayerCameraManager* CameraManager = PlayerController
+            ? PlayerController->GetPlayerCameraManager()
+            : nullptr;
+        if (!CameraManager)
+        {
+            return;
+        }
+
+        const FMinimalViewInfo& ViewInfo = CameraManager->GetCameraView();
+        const FCameraPostProcessSettings& PostProcess = ViewInfo.PostProcessSettings;
+        if (PostProcess.bVignetteEnabled)
+        {
+            Bus.SetVignette(
+                PostProcess.VignetteIntensity,
+                PostProcess.VignetteRadius,
+                PostProcess.VignetteSmoothness);
+        }
+        if (CameraManager->HasLetterbox())
+        {
+            Bus.SetLetterbox(CameraManager->GetLetterboxTargetAspect(), CameraManager->GetLetterboxAmount());
+        }
+        if (CameraManager->HasVisibleFade())
+        {
+            Bus.SetCameraFade(CameraManager->GetFadeColor().ToVector4(), CameraManager->GetFadeAlpha());
+        }
+    }
+}
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
@@ -237,6 +271,10 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Bus.SetViewportOrigin(FVector2(0.0f, 0.0f));
     Bus.SetFXAAEnabled(Settings.bEnableFXAA && !SceneView.bOrthographic);
     Bus.SetCascadeVis(VC->GetViewportState()->bShowCascadeVis);
+    if (Editor->GetEditorState() != EViewportPlayState::Editing)
+    {
+        ApplyPIECameraViewEffectsToBus(VC->GetPIEPlayerController(), Bus);
+    }
 
 	if (World->IsSandervistanActivated())
 	{
@@ -276,6 +314,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
     Renderer.PrepareBatchers(Bus);
     Renderer.Render(Bus);
+    Renderer.RenderScreenOverlays(Bus, false);
 
     TArray<AActor*> IdPickActors;
     Renderer.RenderEditorIdPickBuffer(Bus, ViewportResource, IdPickActors);

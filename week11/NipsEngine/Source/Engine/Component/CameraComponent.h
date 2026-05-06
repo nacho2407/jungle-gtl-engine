@@ -15,7 +15,14 @@ struct FCameraState
 	float FarZ = 1000.0f;
 	float OrthoWidth = 10.0f;
 	bool bIsOrthogonal = false;
+};
 
+struct FCameraPostProcessSettings
+{
+	bool bVignetteEnabled = false;
+	float VignetteIntensity = 0.0f;
+	float VignetteRadius = 0.75f;
+	float VignetteSmoothness = 0.35f;
 };
 
 // PlayerCameraManager 의 연산 결과를 담는 구조체
@@ -28,6 +35,7 @@ struct FMinimalViewInfo
     float FarZ = 1000.0f;
     float OrthoWidth = 10.0f;
     bool bIsOrthogonal = false;
+    FCameraPostProcessSettings PostProcessSettings;
 
     FVector Location = FVector::ZeroVector;
     FQuat Rotation = FQuat::Identity;
@@ -51,6 +59,9 @@ public:
 	void SetFOV(float InFOV) { CameraState.FOV = InFOV; }
 	void SetOrthoWidth(float InWidth) { CameraState.OrthoWidth = InWidth; }
 	void SetOrthographic(bool bOrtho) { CameraState.bIsOrthogonal = bOrtho; }
+	void SetVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f);
+	void ClearVignette();
+	const FCameraPostProcessSettings& GetPostProcessSettings() const { return PostProcessSettings; }
 
 	void OnResize(int32 Width, int32 Height);
 
@@ -89,4 +100,5 @@ private:
 
 private:
 	FCameraState CameraState;
+	FCameraPostProcessSettings PostProcessSettings;
 };

@@ -40,6 +40,14 @@ public:
 	void StopCameraEffects();
 	void SetViewTargetWithBlend(AActor* InActor, float BlendTime, ECameraBlendType BlendType);
 	void SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType);
+	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color = FColor::Black());
+	void StopCameraFade();
+	void SetCameraVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f);
+	void ClearCameraVignette();
+	void StartCameraLetterbox(float TargetAspect = 16.0f / 9.0f, float Duration = 0.0f);
+	void StopCameraLetterbox(float Duration = 0.0f);
+	void SetCameraLetterbox(float TargetAspect = 16.0f / 9.0f);
+	void ClearCameraLetterbox();
 
 	virtual void HandleKeyPressed(int VK);
 	virtual void HandleKeyDown(int VK);

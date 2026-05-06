@@ -159,6 +159,7 @@ public:
 	void Render(const FRenderBus& InRenderBus);
     void RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors);
     void CompositeCurrentSceneToBackBuffer();
+    void RenderScreenOverlays(const FRenderBus& InRenderBus, bool bTargetBackBuffer);
 	void EndFrame();
 	void UseBackBufferRenderTargets();
 	

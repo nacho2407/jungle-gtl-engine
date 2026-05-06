@@ -40,10 +40,45 @@ function Script:BeginPlay()
         coroutine.yield(WaitForSeconds(3))
 
         local pc = Engine.API.GetPlayerController()
-        
-        local targetActor = Engine.API.World.FindActorByTag("Camera")
+        if pc == nil then
+            LogWarning("[CameraTest] PlayerController is nil")
+            return
+        end
 
-        pc:SetViewTargetWithBlend(targetActor, 0.5, CameraBlendType.SmoothStep)
+        local targetActor = Engine.API.World.FindActorByTag("Camera")
+        if targetActor == nil then
+            LogWarning("[CameraTest] Camera target actor not found")
+            return
+        end
+
+        Log("[CameraTest] ViewTarget blend")
+        pc:SetViewTargetWithBlend(targetActor, 2.0, CameraBlendType.SmoothStep)
+
+        coroutine.yield(WaitForSeconds(3))
+
+        Log("[CameraTest] Vignette on")
+        pc:SetCameraVignette(0.85, 0.38, 0.42)
+
+        coroutine.yield(WaitForSeconds(3))
+
+        Log("[CameraTest] Vignette off / Fade out")
+        pc:ClearCameraVignette()
+        pc:StartCameraFade(0.0, 1.0, 1.5)
+
+        coroutine.yield(WaitForSeconds(3))
+
+        Log("[CameraTest] Fade in")
+        pc:StartCameraFade(1.0, 0.0, 1.5)
+
+        coroutine.yield(WaitForSeconds(3))
+
+        Log("[CameraTest] Letterbox on")
+        pc:StartCameraLetterbox(2.35, 1.5)
+
+        coroutine.yield(WaitForSeconds(3))
+
+        Log("[CameraTest] Letterbox off")
+        pc:StopCameraLetterbox(1.0)
 
     end)
 end

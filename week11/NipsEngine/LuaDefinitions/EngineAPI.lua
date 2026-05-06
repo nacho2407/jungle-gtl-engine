@@ -294,6 +294,11 @@ function CameraComponent:move_up(amount) end
 function CameraComponent:add_yaw_input(amount) end
 ---@param amount number
 function CameraComponent:add_pitch_input(amount) end
+---@param intensity number
+---@param radius? number
+---@param smoothness? number
+function CameraComponent:SetVignette(intensity, radius, smoothness) end
+function CameraComponent:ClearVignette() end
 
 ---@class PlayerController: Actor
 ---@field PossessedActor Actor|nil
@@ -310,6 +315,27 @@ function PlayerController:SetViewTargetWithBlend(actor, blend_time, blend_type) 
 ---@param blend_time number
 ---@param blend_type? CameraBlendType
 function PlayerController:SetDefaultViewTargetBlend(blend_time, blend_type) end
+---@param from_alpha number
+---@param to_alpha number
+---@param duration number
+---@param r? number
+---@param g? number
+---@param b? number
+function PlayerController:StartCameraFade(from_alpha, to_alpha, duration, r, g, b) end
+function PlayerController:StopCameraFade() end
+---@param intensity number
+---@param radius? number
+---@param smoothness? number
+function PlayerController:SetCameraVignette(intensity, radius, smoothness) end
+function PlayerController:ClearCameraVignette() end
+---@param target_aspect? number
+---@param duration? number
+function PlayerController:StartCameraLetterbox(target_aspect, duration) end
+---@param duration? number
+function PlayerController:StopCameraLetterbox(duration) end
+---@param target_aspect? number
+function PlayerController:SetCameraLetterbox(target_aspect) end
+function PlayerController:ClearCameraLetterbox() end
 ---@param visible boolean
 function PlayerController:SetCursorVisible(visible) end
 ---@return boolean

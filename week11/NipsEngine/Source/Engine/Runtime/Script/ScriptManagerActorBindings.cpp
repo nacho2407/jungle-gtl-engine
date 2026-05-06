@@ -369,6 +369,20 @@ void FScriptManager::BindActorTypes()
             { Self.SetViewTargetWithBlend(InActor, BlendTime, BlendType.value_or(ECameraBlendType::SmoothStep)); });
     LUA_SET(SetDefaultViewTargetBlend, [](APlayerController& Self, float BlendTime, sol::optional<ECameraBlendType> BlendType)
             { Self.SetDefaultViewTargetBlend(BlendTime, BlendType.value_or(ECameraBlendType::SmoothStep)); });
+    LUA_SET(StartCameraFade, [](APlayerController& Self, float FromAlpha, float ToAlpha, float Duration,
+                                sol::optional<float> R, sol::optional<float> G, sol::optional<float> B)
+            { Self.StartCameraFade(FromAlpha, ToAlpha, Duration, FColor(R.value_or(0.0f), G.value_or(0.0f), B.value_or(0.0f), 1.0f)); });
+    LUA_METHOD(StopCameraFade, StopCameraFade);
+    LUA_SET(SetCameraVignette, [](APlayerController& Self, float Intensity, sol::optional<float> Radius, sol::optional<float> Smoothness)
+            { Self.SetCameraVignette(Intensity, Radius.value_or(0.75f), Smoothness.value_or(0.35f)); });
+    LUA_METHOD(ClearCameraVignette, ClearCameraVignette);
+    LUA_SET(StartCameraLetterbox, [](APlayerController& Self, sol::optional<float> TargetAspect, sol::optional<float> Duration)
+            { Self.StartCameraLetterbox(TargetAspect.value_or(16.0f / 9.0f), Duration.value_or(0.0f)); });
+    LUA_SET(StopCameraLetterbox, [](APlayerController& Self, sol::optional<float> Duration)
+            { Self.StopCameraLetterbox(Duration.value_or(0.0f)); });
+    LUA_SET(SetCameraLetterbox, [](APlayerController& Self, sol::optional<float> TargetAspect)
+            { Self.SetCameraLetterbox(TargetAspect.value_or(16.0f / 9.0f)); });
+    LUA_METHOD(ClearCameraLetterbox, ClearCameraLetterbox);
     LUA_METHOD(GetPossessedActor, GetPossessedActor);
     LUA_METHOD(GetViewTargetActor, GetViewTargetActor);
     LUA_METHOD(GetViewTargetCamera, GetViewTargetCamera);

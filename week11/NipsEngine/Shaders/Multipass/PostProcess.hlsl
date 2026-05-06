@@ -4,6 +4,10 @@ SamplerState Sampler : register(s0);
 cbuffer PostProcessCB : register(b11)
 {
     float2 InvResolution;
+    float VignetteIntensity;
+    float VignetteRadius;
+    float VignetteSmoothness;
+    uint GammaCorrectionEnabled;
     float2 Padding;
 }
 
@@ -33,8 +37,21 @@ float4 mainPS(VSOutput input) : SV_TARGET
 
     float3 color = SceneTex.Sample(Sampler, uv).rgb;
 
-    // gamma correction
-    color = pow(color, 1.0 / 2.2);
+    if (VignetteIntensity > 0.001)
+    {
+        float aspect = InvResolution.y / InvResolution.x;
+        float2 centered = uv - 0.5;
+        centered.x *= aspect;
+        float distanceFromCenter = length(centered);
+        float outer = VignetteRadius + max(VignetteSmoothness, 0.001);
+        float vignette = smoothstep(VignetteRadius, outer, distanceFromCenter);
+        color *= lerp(1.0, 1.0 - saturate(VignetteIntensity), vignette);
+    }
+
+    if (GammaCorrectionEnabled != 0)
+    {
+        color = pow(color, 1.0 / 2.2);
+    }
     
     return float4(color, 1.0);
 }

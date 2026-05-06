@@ -311,6 +311,7 @@
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
     <None Include="Shaders\Multipass\PostProcess.hlsl" />
+    <None Include="Shaders\ScreenOverlay.hlsl" />
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp" />

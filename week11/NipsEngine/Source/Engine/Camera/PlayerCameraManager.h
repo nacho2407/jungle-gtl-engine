@@ -35,6 +35,10 @@ public:
     // ===== Fade =====
     void StartFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color);
     void StopFade();
+    void StartLetterbox(float TargetAspect = 16.0f / 9.0f, float Duration = 0.0f);
+    void StopLetterbox(float Duration = 0.0f);
+    void SetLetterbox(float TargetAspect = 16.0f / 9.0f);
+    void ClearLetterbox();
 
     // ===== Modifier =====
     void AddModifier(UCameraModifier* Modifier);
@@ -44,6 +48,10 @@ public:
 
 	const FColor& GetFadeColor() const { return Fade.Color; }
     float GetFadeAlpha() const { return Fade.CurrentAlpha; }
+    bool HasVisibleFade() const { return Fade.CurrentAlpha > 0.001f; }
+    bool HasLetterbox() const { return Letterbox.CurrentAmount > 0.001f; }
+    float GetLetterboxTargetAspect() const { return Letterbox.TargetAspect; }
+    float GetLetterboxAmount() const { return Letterbox.CurrentAmount; }
 
 	void InitializeFor(APlayerController* PC);
     virtual APlayerController* GetOwningPlayerController() const { return PCOwner; }
@@ -92,7 +100,20 @@ private:
         bool bActive = false;
     };
 
+    struct FCameraLetterbox
+    {
+        bool bEnabled = false;
+        float TargetAspect = 16.0f / 9.0f;
+        float FromAmount = 0.f;
+        float ToAmount = 0.f;
+        float Duration = 0.f;
+        float Elapsed = 0.f;
+        float CurrentAmount = 0.f;
+        bool bActive = false;
+    };
+
     FCameraFade Fade;
+    FCameraLetterbox Letterbox;
 
     TArray<UCameraModifier*> ModifierList;
 
@@ -105,6 +126,7 @@ private:
 
     void UpdateTransition(float DeltaTime, FMinimalViewInfo& InOutView);
     void UpdateFade(float DeltaTime);
+    void UpdateLetterbox(float DeltaTime);
 
 private:
 	APlayerController* PCOwner = nullptr;

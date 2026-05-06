@@ -22,6 +22,7 @@ struct FRenderResources
     FConstantBuffer SelectionMaskConstantBuffer;     // b12
     FConstantBuffer SandevistanCB;
     FConstantBuffer PostProcessCB;
+    FConstantBuffer ScreenOverlayCB;
 	
 	FStructuredBuffer LightShadowIndexBuffer;      // t14 (uint, indexed by light index)
     FStructuredBuffer AtlasShadowBuffer;           // t15 (FShadowAtlasConstants)
