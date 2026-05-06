@@ -297,6 +297,10 @@ void UEditorEngine::Tick(float DeltaTime)
     if (IsPlayingInEditor() && LuaActionLibrary::ProcessPendingSceneLoad())
     {
         SelectionManager.SetWorld(GetWorld());
+        if (PlayInEditorSessionInfo.has_value() && PlayInEditorSessionInfo->DestinationViewportClient)
+        {
+            PlayInEditorSessionInfo->DestinationViewportClient->RequestCameraAspectRefresh();
+        }
         OnRenderSceneCleared();
     }
 
@@ -710,10 +714,14 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTi
     const FShowFlags& ShowFlags = EffectiveShowFlags;
     EViewMode ViewMode = Opts.ViewMode;
 
-    if (VP->ApplyPendingResize())
+    const bool bViewportResized = VP->ApplyPendingResize();
+    const bool bCameraChanged = !VC->HasRenderedWithCamera(Camera);
+    const bool bCameraAspectRefreshRequested = VC->ConsumeCameraAspectRefresh();
+    if (bViewportResized || bCameraChanged || bCameraAspectRefreshRequested)
     {
         Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
     }
+    VC->SetLastRenderedCamera(Camera);
 
     VP->SetViewportAsRenderState(Ctx);
 

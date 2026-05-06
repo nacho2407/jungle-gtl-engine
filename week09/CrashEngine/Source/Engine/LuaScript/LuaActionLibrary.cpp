@@ -8,6 +8,8 @@
 #include "LuaScript/LuaGameObjectProxy.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Viewport/GameViewportClient.h"
+#include "Viewport/Viewport.h"
 
 #include <filesystem>
 
@@ -93,6 +95,23 @@ namespace LuaActionLibrary
             return Camera;
         }
 
+        void ApplyCurrentViewportAspect(UCameraComponent* Camera)
+        {
+            if (!Camera || !GEngine)
+            {
+                return;
+            }
+
+            UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient();
+            FViewport* Viewport = GameViewportClient ? GameViewportClient->GetViewport() : nullptr;
+            if (!Viewport || Viewport->GetWidth() == 0 || Viewport->GetHeight() == 0)
+            {
+                return;
+            }
+
+            Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
+        }
+
         void EnsureActiveCamera(UWorld* World, const FPerspectiveCameraData* CameraData)
         {
             if (!World)
@@ -109,6 +128,7 @@ namespace LuaActionLibrary
             if (Camera)
             {
                 World->SetActiveCamera(Camera);
+                ApplyCurrentViewportAspect(Camera);
             }
         }
 

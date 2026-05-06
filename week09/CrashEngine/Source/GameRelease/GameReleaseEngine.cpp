@@ -186,6 +186,10 @@ void UGameReleaseEngine::EnsureActiveCamera(UWorld* World, const FPerspectiveCam
     if (Camera)
     {
         World->SetActiveCamera(Camera);
+        if (GameViewport.GetWidth() > 0 && GameViewport.GetHeight() > 0)
+        {
+            Camera->OnResize(static_cast<int32>(GameViewport.GetWidth()), static_cast<int32>(GameViewport.GetHeight()));
+        }
     }
 }
 
