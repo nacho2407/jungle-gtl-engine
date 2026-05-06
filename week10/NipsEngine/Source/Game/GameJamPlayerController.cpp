@@ -32,6 +32,7 @@ void AGameJamPlayerController::HandleKeyReleased(int VK)
 
 void AGameJamPlayerController::HandleMouseMove(float DeltaX, float DeltaY)
 {
+    UCameraComponent* ViewTargetCamera = GetViewTargetCamera();
 	if (!PossessedActor || !ViewTargetCamera)
 	{
 		APlayerController::HandleMouseMove(DeltaX, DeltaY);

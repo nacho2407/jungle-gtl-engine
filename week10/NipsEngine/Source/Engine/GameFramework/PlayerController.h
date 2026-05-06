@@ -5,6 +5,7 @@
 
 class UCameraComponent;
 class ADefaultPlayerActor;
+class APlayerCameraManager;
 
 class APlayerController : public AActor
 {
@@ -20,8 +21,6 @@ public:
 	void Possess(AActor* InActor);
 	void UnPossess();
 
-	void SetViewTarget(AActor* InActor);
-	void SetViewTargetCamera(UCameraComponent* InCamera);
 	void NotifyObservedActorDestroyed(AActor* DestroyedActor);
 	void SetCursorVisible(bool bVisible);
 	bool IsCursorVisible() const;
@@ -54,8 +53,10 @@ public:
 	FViewportCamera* GetRuntimeCamera() { return &RuntimeCamera; }
 	const FViewportCamera* GetRuntimeCamera() const { return &RuntimeCamera; }
 	AActor* GetPossessedActor() const { return PossessedActor; }
-	AActor* GetViewTargetActor() const { return ViewTargetActor; }
-	UCameraComponent* GetViewTargetCamera() const { return ViewTargetCamera; }
+    AActor* GetViewTargetActor() const;
+    UCameraComponent* GetViewTargetCamera() const;
+
+	void SpawnPlayerCameraManager();
 
 protected:
 	UCameraComponent* FindCameraComponent(AActor* Actor) const;
@@ -79,8 +80,7 @@ protected:
 
 protected:
 	AActor* PossessedActor = nullptr;
-	AActor* ViewTargetActor = nullptr;
-	UCameraComponent* ViewTargetCamera = nullptr;
+    APlayerCameraManager* PlayerCameraManager = nullptr;
 
 	FViewportCamera RuntimeCamera;
 
