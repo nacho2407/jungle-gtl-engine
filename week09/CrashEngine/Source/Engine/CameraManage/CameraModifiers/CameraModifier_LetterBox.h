@@ -22,4 +22,5 @@ private:
     float AppearTime = 0.0f;
     float HoldTime = 0.0f;
     float DisappearTime = 0.0f;
+    FCameraFloatCurve AmountCurve;
 };

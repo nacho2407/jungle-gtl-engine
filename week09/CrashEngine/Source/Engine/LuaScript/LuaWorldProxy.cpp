@@ -16,6 +16,9 @@
 
 #include <cmath>
 
+#include "CameraManage/APlayerCameraManager.h"
+#include "GameFramework/PlayerController.h"
+
 namespace
 {
 constexpr float kLuaBlockedMoveStepLength = 0.05f;
@@ -55,6 +58,17 @@ bool IsLuaSpawnableActorClassName(const FString& ClassName)
 		|| ClassName == "ALuaScriptActor" 
 		|| ClassName == "ADecalActor"
         || ClassName == "ASubUVActor";
+}
+
+APlayerCameraManager* GetPlayerCameraManager(UWorld* World)
+{
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    if (!PlayerController || !PlayerController->GetPossessedActor())
+    {
+        return nullptr;
+    }
+
+    return PlayerController->GetCameraManager();
 }
 
 } // namespace
@@ -270,6 +284,55 @@ FVector FLuaWorldProxy::GetMouseWorldPointOnPlane(float PlaneZ) const
     }
 
     return MouseRay.Origin + MouseRay.Direction * T;
+}
+
+void FLuaWorldProxy::PlayCameraShake(float Duration, float LocationAmplitude, float RotationAmplitude, float Frequency)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        CameraManager->PlayCameraShake(Duration, LocationAmplitude, RotationAmplitude, Frequency);
+    }
+}
+
+void FLuaWorldProxy::PlayCameraFade(float FromAmount, float ToAmount, float Duration, float R, float G, float B, float A)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        CameraManager->PlayCameraFade(FromAmount, ToAmount, Duration, FVector4(R, G, B, A));
+    }
+}
+
+void FLuaWorldProxy::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        CameraManager->PlayCameraLetterBox(FromAmount, ToAmount, Duration, AppearRatio, DisappearRatio);
+    }
+}
+
+void FLuaWorldProxy::PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        CameraManager->PlayCameraGammaCorrection(FromGamma, ToGamma, Duration);
+    }
+}
+
+void FLuaWorldProxy::PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        CameraManager->PlayCameraVignette(FromIntensity, ToIntensity, Duration, Radius, Softness);
+    }
+}
+
+bool FLuaWorldProxy::PlayCameraEffectAsset(const FString& AssetPath)
+{
+    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
+    {
+        return CameraManager->PlayCameraEffectAsset(AssetPath);
+    }
+    return false;
 }
 
 bool FLuaWorldProxy::RequestHitStop(float Duration) const

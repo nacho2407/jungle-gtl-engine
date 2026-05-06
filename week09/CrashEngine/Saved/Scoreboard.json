@@ -1,6 +1,20 @@
 {
   "scores" : [{
       "documentCount" : 2,
+      "hp" : 18.000000,
+      "name" : "PLAYER",
+      "score" : 11980.000000,
+      "timer" : 82.212170,
+      "timestamp" : "2026-05-06 17:56:38"
+    }, {
+      "documentCount" : 2,
+      "hp" : 13.000000,
+      "name" : "PLAYER",
+      "score" : 10712.000000,
+      "timer" : 107.073995,
+      "timestamp" : "2026-05-06 15:10:26"
+    }, {
+      "documentCount" : 2,
       "hp" : 15.000000,
       "name" : "PLAYER",
       "score" : 6926.000000,
@@ -517,5 +531,26 @@
       "score" : 0.000000,
       "timer" : 70.000545,
       "timestamp" : "2026-05-05 05:43:44"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERW",
+      "score" : 0.000000,
+      "timer" : 64.296405,
+      "timestamp" : "2026-05-06 15:49:22"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 35.019899,
+      "timestamp" : "2026-05-06 20:09:43"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 48.404379,
+      "timestamp" : "2026-05-06 20:45:58"
     }]
 }

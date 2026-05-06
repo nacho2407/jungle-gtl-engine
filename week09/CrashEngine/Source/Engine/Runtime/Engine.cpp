@@ -53,13 +53,6 @@ ELevelTick ToLevelTickType(EWorldType WorldType)
 UEngine::UEngine() = default;
 UEngine::~UEngine() = default;
 
-APlayerCameraManager* UEngine::GetPlayerCameraManager() const
-{
-    UWorld* World = GetWorld();
-    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
-    return PlayerController ? PlayerController->GetCameraManager() : nullptr;
-}
-
 void UEngine::Init(FWindowsWindow* InWindow)
 {
     UE_LOG(Engine, Info, "Initializing runtime engine.");

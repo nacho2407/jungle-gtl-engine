@@ -18,6 +18,11 @@ void UCameraModifier_Fade::Start(const FCameraFadeParams& Params)
     FromAmount = Clamp(Params.FromAmount, 0.0f, 1.0f);
     ToAmount = Clamp(Params.ToAmount, 0.0f, 1.0f);
     bFinished = false;
+    AmountCurve = Params.AmountCurve;
+    if (AmountCurve.Keys.empty())
+    {
+        AmountCurve.Keys = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    }
 }
 
 bool UCameraModifier_Fade::ModifyCamera(float DeltaTime, FCameraViewInfo& InOutView)
@@ -32,7 +37,7 @@ bool UCameraModifier_Fade::ModifyCamera(float DeltaTime, FCameraViewInfo& InOutV
 
     InOutView.ScreenEffects.bEnableFade = true;
     InOutView.ScreenEffects.FadeColor = FadeColor;
-    InOutView.ScreenEffects.FadeAmount = Lerp(FromAmount, ToAmount, Alpha);
+    InOutView.ScreenEffects.FadeAmount = Lerp(FromAmount, ToAmount, AmountCurve.Evaluate(Alpha));
 
     if (Alpha >= 1.0f)
     {

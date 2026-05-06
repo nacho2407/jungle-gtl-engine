@@ -1310,6 +1310,14 @@
     <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\ReplacedFormattingContext.cpp" />
     <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\TableFormattingContext.cpp" />
     <ClCompile Include="ThirdParty\RmlUi\Source\Core\Layout\TableFormattingDetails.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Fade.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_GammaCorrection.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\APlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2230,6 +2238,19 @@
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
     <ClInclude Include="Source\Engine\UI\RmlUiManager.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Fade.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_GammaCorrection.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\CameraManage\APlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h" />
+    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraTransitionUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CrashEngine.rc" />
