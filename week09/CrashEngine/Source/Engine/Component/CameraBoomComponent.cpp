@@ -148,7 +148,7 @@ void UCameraBoomComponent::PostEditProperty(const char* PropertyName)
         std::strcmp(PropertyName, "Target Offset") == 0 ||
         std::strcmp(PropertyName, "Socket Offset") == 0 ||
         std::strcmp(PropertyName, "Enable Camera Lag") == 0 ||
-        std::strcmp(PropertyName, "Camera Lag Speed") == 0 ||
+        std::strcmp(PropertyName, "Camera Lag Speed") == 0)
         // std::strcmp(PropertyName, "Do Collision Test") == 0 ||
         // std::strcmp(PropertyName, "Probe Size") == 0)
     {

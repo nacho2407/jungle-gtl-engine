@@ -1,6 +1,8 @@
 ﻿// 컴포넌트 영역의 세부 동작을 구현합니다.
 #include "Component/CameraComponent.h"
+#include "GameFramework/World.h"
 #include "Object/ObjectFactory.h"
+#include "Render/Scene/Debug/DebugRenderAPI.h"
 #include "Serialization/Archive.h"
 #include <cmath>
 
@@ -16,6 +18,12 @@ void UCameraComponent::Serialize(FArchive& Ar)
     Ar << CameraState.OrthoWidth;
     Ar << CameraState.bIsOrthogonal;
     Ar << bMainCamera;
+}
+
+void UCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+    USceneComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    DrawDebugViewDirection();
 }
 
 FMatrix UCameraComponent::GetViewMatrix() const
@@ -92,6 +100,19 @@ void UCameraComponent::SetCameraState(const FCameraState& NewState)
     CameraState = NewState;
 }
 
+void UCameraComponent::DrawDebugViewDirection() const
+{
+    if (!bShowDebugViewDirection)
+    {
+        return;
+    }
+
+    constexpr float DebugViewDirectionLength = 5.0f;
+    const FVector Start = GetWorldLocation();
+    const FVector Direction = GetForwardVector().Normalized();
+    RenderDebugArrow(GetWorld(), Start, Direction, DebugViewDirectionLength, FColor::Red());
+}
+
 FRay UCameraComponent::DeprojectScreenToWorld(float MouseX, float MouseY, float ScreenWidth, float ScreenHeight)
 {
     float NdcX = (2.0f * MouseX) / ScreenWidth - 1.0f;
@@ -126,4 +147,5 @@ void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
     OutProps.push_back({ "Orthographic", EPropertyType::Bool, &CameraState.bIsOrthogonal });
     OutProps.push_back({ "Ortho Width", EPropertyType::Float, &CameraState.OrthoWidth, 0.1f, 1000.0f, 0.5f });
     OutProps.push_back({ "Main Camera", EPropertyType::Bool, &bMainCamera });
+    OutProps.push_back({ "Show Debug View Direction", EPropertyType::Bool, &bShowDebugViewDirection });
 }
