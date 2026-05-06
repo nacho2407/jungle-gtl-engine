@@ -4,6 +4,7 @@
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
 #include "Runtime/Script/ScriptManager.h"
@@ -689,6 +690,26 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 			DrawList->AddText(ImVec2(Center.x - TextSize.x * 0.5f, IconMax.y - 22.0f),
 				ImGui::GetColorU32(ImVec4(0.96f, 0.97f, 0.99f, 1.0f)), Kind);
 		}
+		else if (IsCurveAsset(Item.Path))
+		{
+			const float Width = IconMax.x - IconMin.x;
+			const float Height = IconMax.y - IconMin.y;
+			const ImU32 LineColor = ImGui::GetColorU32(ImVec4(0.98f, 0.93f, 0.48f, 1.0f));
+			ImVec2 Prev(IconMin.x + Width * 0.15f, IconMax.y - Height * 0.20f);
+			for (int32 Step = 1; Step <= 5; ++Step)
+			{
+				const float Alpha = static_cast<float>(Step) / 5.0f;
+				const float X = IconMin.x + Width * (0.15f + Alpha * 0.70f);
+				const float Y = IconMax.y - Height * (0.20f + Alpha * Alpha * 0.62f);
+				const ImVec2 Next(X, Y);
+				DrawList->AddLine(Prev, Next, LineColor, 3.0f);
+				Prev = Next;
+			}
+			const char* Kind = "CURVE";
+			const ImVec2 TextSize = ImGui::CalcTextSize(Kind);
+			DrawList->AddText(ImVec2((IconMin.x + IconMax.x - TextSize.x) * 0.5f, IconMax.y - 22.0f),
+				ImGui::GetColorU32(ImVec4(0.96f, 0.97f, 0.99f, 1.0f)), Kind);
+		}
 	}
 
 	FString Label = Item.Name;
@@ -716,6 +737,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 	{
 		ExtLine = Item.Extension;
 	}
+	if (IsCurveAsset(Item.Path))
+	{
+		ExtLine = ".curve";
+	}
 	DrawList->AddText(ImVec2(Min.x + 6.0f, Max.y - 35.0f), ImGui::GetColorU32(ImGuiCol_Text), Label.c_str());
 	DrawList->AddText(ImVec2(Min.x + 6.0f, Max.y - 18.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), ExtLine.c_str());
 
@@ -731,6 +756,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 			{
 				EditorEngine->GetMainPanel().OpenMaterialAsset(Material);
 			}
+		}
+		else if (IsCurveAsset(Item.Path))
+		{
+			EditorEngine->GetMainPanel().OpenCurveAsset(MakeRelativeProjectPath(Item.Path));
 		}
 		else if (Item.Extension == ".scene")
 		{
@@ -784,6 +813,11 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 		if (ImGui::MenuItem("Material"))
 		{
 			CreateMaterialAsset();
+			ImGui::CloseCurrentPopup();
+		}
+		if (ImGui::MenuItem("Curve"))
+		{
+			CreateCurveAsset();
 			ImGui::CloseCurrentPopup();
 		}
 		if (ImGui::MenuItem("Scene"))
@@ -912,6 +946,45 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 	}
 
 	if (!FResourceManager::Get().SerializeMaterial(RelativePath, Material))
+	{
+		return false;
+	}
+
+	SelectedPath = NewPath;
+	RefreshContent();
+	return true;
+}
+
+bool FEditorContentBrowserWidget::CreateCurveAsset()
+{
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Curve.curve.json");
+	const FString RelativePath = MakeRelativeProjectPath(NewPath);
+
+	UCurveFloatAsset* Curve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
+	if (!Curve)
+	{
+		return false;
+	}
+
+	Curve->SetAssetPath(RelativePath);
+
+	FCurveKey StartKey;
+	StartKey.Time = 0.0f;
+	StartKey.Value = 0.0f;
+	StartKey.InterpMode = ECurveInterpMode::Linear;
+
+	FCurveKey EndKey;
+	EndKey.Time = 1.0f;
+	EndKey.Value = 1.0f;
+	EndKey.InterpMode = ECurveInterpMode::Linear;
+
+	FFloatCurve& FloatCurve = Curve->GetMutableCurve();
+	FloatCurve.Keys.clear();
+	FloatCurve.Keys.push_back(StartKey);
+	FloatCurve.Keys.push_back(EndKey);
+	FloatCurve.SortKeys();
+
+	if (!FResourceManager::Get().SaveCurve(RelativePath, Curve))
 	{
 		return false;
 	}
@@ -1233,6 +1306,25 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 		return;
 	}
 
+	if (IsCurveAsset(SelectedPath))
+	{
+		UCurveFloatAsset* Curve = FResourceManager::Get().LoadCurve(RelativePath);
+		ImGui::Spacing();
+		ImGui::TextDisabled("Float Curve");
+		if (!Curve)
+		{
+			ImGui::TextWrapped("Not loaded in ResourceManager.");
+			return;
+		}
+
+		const FFloatCurve& FloatCurve = Curve->GetCurve();
+		ImGui::Text("Keys: %d", static_cast<int32>(FloatCurve.Keys.size()));
+		ImGui::Text("Range: %.3f - %.3f", FloatCurve.GetStartTime(), FloatCurve.GetEndTime());
+		ImGui::Text("Value at 0.0: %.3f", Curve->Evaluate(0.0f));
+		ImGui::Text("Value at 1.0: %.3f", Curve->Evaluate(1.0f));
+		return;
+	}
+
 	if (IsPrefabAsset(Extension))
 	{
 		ImGui::Spacing();
@@ -1472,6 +1564,10 @@ FString FEditorContentBrowserWidget::GetPayloadType(const FContentItem& Item) co
 	{
 		return "MaterialContentItem";
 	}
+	if (IsCurveAsset(Item.Path))
+	{
+		return "CurveContentItem";
+	}
 	if (Item.Extension == ".prefab")
 	{
 		return "PrefabContentItem";
@@ -1512,6 +1608,10 @@ ImU32 FEditorContentBrowserWidget::GetItemColor(const FContentItem& Item) const
 	if (Item.Extension == ".mat" || Item.Extension == ".matinst")
 	{
 		return ImGui::GetColorU32(ImVec4(0.65f, 0.44f, 0.72f, 1.0f));
+	}
+	if (IsCurveAsset(Item.Path))
+	{
+		return ImGui::GetColorU32(ImVec4(0.42f, 0.50f, 0.78f, 1.0f));
 	}
 	if (Item.Extension == ".prefab")
 	{
@@ -1563,6 +1663,23 @@ bool FEditorContentBrowserWidget::IsPreviewableImage(const FString& Extension) c
 bool FEditorContentBrowserWidget::IsMaterialAsset(const FString& Extension) const
 {
 	return Extension == ".mat" || Extension == ".matinst";
+}
+
+bool FEditorContentBrowserWidget::IsCurveAsset(const std::filesystem::path& Path) const
+{
+	const FString Filename = ToLower(FPaths::ToUtf8(Path.filename().wstring()));
+	const FString Extension = ToLower(FPaths::ToUtf8(Path.extension().wstring()));
+	if (Extension == ".curve")
+	{
+		return true;
+	}
+
+	const FString CurveJsonSuffix = ".curve.json";
+	if (Filename.size() < CurveJsonSuffix.size())
+	{
+		return false;
+	}
+	return Filename.compare(Filename.size() - CurveJsonSuffix.size(), CurveJsonSuffix.size(), CurveJsonSuffix) == 0;
 }
 
 bool FEditorContentBrowserWidget::IsPrefabAsset(const FString& Extension) const

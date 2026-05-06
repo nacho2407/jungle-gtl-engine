@@ -4,6 +4,7 @@
 #include <fstream>
 #include <chrono>
 #include <algorithm>
+#include <unordered_set>
 
 #include "SimpleJSON/json.hpp"
 #include "GameFramework/World.h"
@@ -166,6 +167,41 @@ namespace
 		}
 
 		return Actors;
+	}
+
+	void EnsureUniqueComponentPersistentGuids(UWorld* World)
+	{
+		if (!World)
+		{
+			return;
+		}
+
+		std::unordered_set<FString> UsedGuids;
+		for (AActor* Actor : World->GetActors())
+		{
+			if (!Actor)
+			{
+				continue;
+			}
+
+			for (UActorComponent* Component : Actor->GetComponents())
+			{
+				if (!Component)
+				{
+					continue;
+				}
+
+				Component->EnsurePersistentGuid();
+				FString GuidText = Component->GetPersistentGuid().ToString();
+				while (GuidText.empty() || UsedGuids.find(GuidText) != UsedGuids.end())
+				{
+					Component->RegeneratePersistentGuid();
+					GuidText = Component->GetPersistentGuid().ToString();
+				}
+
+				UsedGuids.insert(GuidText);
+			}
+		}
 	}
 }
 
@@ -384,7 +420,10 @@ void FSceneSaveManager::Load(const FString& FilePath, FWorldContext& OutWorldCon
 	}
 
 	if (World)
+	{
+		EnsureUniqueComponentPersistentGuids(World);
 		World->SyncSpatialIndex();
+	}
 
 	OutWorldContext.WorldType = WorldType;
 	OutWorldContext.World = World;

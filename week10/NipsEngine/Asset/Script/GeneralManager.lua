@@ -182,6 +182,33 @@ function Script:ActivateTimeSlow(duration, scale, source)
     return false
 end
 
+function Script:ActivateHitStop(duration, scale)
+    local game = self.context.managers.Game
+    if game and game.ActivateHitStop then
+        return game:ActivateHitStop(duration, scale)
+    end
+
+    return false
+end
+
+function Script:GetSlowMotionScale()
+    local game = self.context.managers.Game
+    if game and game.GetSlowMotionScale then
+        return game:GetSlowMotionScale()
+    end
+
+    return 1
+end
+
+function Script:GetHitStopScale()
+    local game = self.context.managers.Game
+    if game and game.GetHitStopScale then
+        return game:GetHitStopScale()
+    end
+
+    return 1
+end
+
 function Script:InstallGameJamBridge()
     _G.GameJam = _G.GameJam or {}
     _G.GameJam.Manager = self
@@ -207,6 +234,15 @@ function Script:InstallGameJamBridge()
     end
     _G.GameJam.ActivateTimeSlow = function(duration, scale, source)
         return self:ActivateTimeSlow(duration, scale, source)
+    end
+    _G.GameJam.ActivateHitStop = function(duration, scale)
+        return self:ActivateHitStop(duration, scale)
+    end
+    _G.GameJam.GetSlowMotionScale = function()
+        return self:GetSlowMotionScale()
+    end
+    _G.GameJam.GetHitStopScale = function()
+        return self:GetHitStopScale()
     end
     _G.GameJam.NotifyPlayerAttackStarted = function(attackId)
         self.context.eventBus:Emit("Player.AttackStarted", { attackId = tostring(attackId or "") })

@@ -13,8 +13,10 @@ void UPointLightComponent::PostDuplicate(UObject* Original)
 void UPointLightComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
     ULightComponent::GetEditableProperties(OutProps);
-    OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius });
-    OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent });
+	constexpr EPropertyUsageFlags EditAndAnimate =
+		EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable;
+    OutProps.push_back({ "Attenuation Radius", EPropertyType::Float, &AttenuationRadius, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
+    OutProps.push_back({ "Light Falloff", EPropertyType::Float, &LightFalloffExponent, 0.0f, 0.0f, 0.1f, nullptr, 0, nullptr, EditAndAnimate });
 }
 
 void UPointLightComponent::Serialize(FArchive& Ar)

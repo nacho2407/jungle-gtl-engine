@@ -104,6 +104,10 @@ void FEditorMainPanel::RenderEditorPanelWindows(float DeltaTime, bool bDrawEdito
     {
         Widgets.RuntimeUIPreviewWidget.Render(DeltaTime);
     }
+    if (bDrawEditorPanels && Widgets.CurveEditorWidget.IsVisible())
+    {
+        Widgets.CurveEditorWidget.Render(DeltaTime);
+    }
     if (bDrawEditorPanels && PanelVisibility.bShowConsole && Widgets.ConsoleWidget.IsFloatingWindowMode())
     {
         Widgets.ConsoleWidget.Render(DeltaTime);

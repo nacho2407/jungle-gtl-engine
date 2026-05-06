@@ -3,6 +3,7 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/UI/EditorContentBrowserWidget.h"
 #include "Editor/UI/EditorControlWidget.h"
+#include "Editor/UI/EditorCurveEditorWidget.h"
 #include "Editor/UI/EditorMaterialWidget.h"
 #include "Editor/UI/EditorPlayStreamWidget.h"
 #include "Editor/UI/EditorPropertyWidget.h"
@@ -17,6 +18,7 @@ struct FEditorMainPanelWidgetSet
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorContentBrowserWidget ContentBrowserWidget;
 	FEditorControlWidget ControlWidget;
+	FEditorCurveEditorWidget CurveEditorWidget;
 	FEditorPropertyWidget PropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorMaterialWidget MaterialWidget;
