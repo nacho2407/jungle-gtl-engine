@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -235,6 +235,7 @@ void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
         ImGui::Checkbox("Decals", &Settings.ShowFlags.bDecals);
         ImGui::Checkbox("Fog", &Settings.ShowFlags.bFog);
         ImGui::Checkbox("Shadow", &Settings.ShowFlags.bShadow);
+        ImGui::Checkbox("Gamma Correction", &Settings.ShowFlags.bGammaCorrection);
         ImGui::Checkbox("FXAA", &Settings.bEnableFXAA);
     }
 

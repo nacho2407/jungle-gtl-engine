@@ -62,6 +62,16 @@ FRenderTarget FRenderTargetFactory::CreateSceneSandervistan(ID3D11Device* Device
         .Build(Device);
 }
 
+FRenderTarget FRenderTargetFactory::CreateScenePostProcess(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
+{
+    return FRenderTargetBuilder()
+        .SetSize(InWidth, InHeight)
+        .SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT)
+        .WithRTV()
+        .WithSRV()
+        .Build(Device);
+}
+
 FRenderTarget FRenderTargetFactory::CreateSceneWorldPos(ID3D11Device* Device, uint32 InWidth, uint32 InHeight)
 {
     return FRenderTargetBuilder()

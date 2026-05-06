@@ -313,6 +313,7 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::Checkbox("Decals", &Settings.ShowFlags.bDecals);
     ImGui::Checkbox("Fog", &Settings.ShowFlags.bFog);
     ImGui::Checkbox("Shadow", &Settings.ShowFlags.bShadow);
+    ImGui::Checkbox("Gamma Correction", &Settings.ShowFlags.bGammaCorrection);
 
     ImGui::Separator();
 
