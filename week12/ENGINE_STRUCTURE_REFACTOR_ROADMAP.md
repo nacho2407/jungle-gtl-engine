@@ -1,6 +1,6 @@
 # Engine Structure Refactor Roadmap
 
-Updated: 2026-05-06
+Updated: 2026-05-07
 
 This document is the working roadmap for the NipsEngine structure refactor.
 
@@ -360,12 +360,11 @@ Examples:
 
 ## Current Progress
 
-Overall progress: 100% for the current EditorMainPanel and EditorEngine API cleanup batch scope.
+Overall progress: about 72% for the active Engine dependency and ResourceManager facade split scope.
 
 Deferred after this batch scope:
 
-- Renderer and Engine dependency cleanup remains intentionally deferred.
-- The remaining 8 Engine -> Editor include violations are known transition items and should be handled in a later renderer/engine-facing refactor batch.
+- Render collector/proxy architecture cleanup remains intentionally deferred.
 
 Completed:
 
@@ -407,6 +406,19 @@ Completed:
 - Batch 36: EditorMainPanel Viewport Context Menu Split
 - Batch 37: EditorMainPanel Packaging Helper Extraction
 - Batch 38: EditorMainPanel Viewport Button Drawing Split
+- Batch 39: Engine-facing Editor dependency cleanup, first pass
+- Batch 40: Launch Mode Factory Split
+- Batch 41: GameClient Editor Source Exclusion Guard
+- Batch 42: Texture Resource Cache Extraction
+- Batch 43: Shader Resource Cache Extraction
+- Batch 44: Material Resource Cache Storage Extraction
+- Batch 45: Render State Resource Cache Extraction
+- Batch 46: Asset Path Policy Extraction
+- Batch 47: Static Mesh Resource Cache Storage Extraction
+- Batch 48: Atlas Resource Cache Extraction
+- Batch 49: Imported Material Policy Extraction
+- Batch 50: Curve Resource Cache Extraction
+- Batch 51: Asset Path Classification Policy Extraction
 
 Verified:
 
@@ -459,12 +471,25 @@ Verified:
 - Batch 37 `GameClientDebug|x64` build
 - Batch 38 `Debug|x64` Editor build
 - Batch 38 `GameClientDebug|x64` build
+- Batch 39 `Scripts/CheckArchitecture.ps1`
+- Batch 40 `Scripts/CheckArchitecture.ps1`
+- Batch 41 `Scripts/CheckArchitecture.ps1`
+- Batch 42 `Scripts/CheckArchitecture.ps1`
+- Batch 43 `Scripts/CheckArchitecture.ps1`
+- Batch 44 `Scripts/CheckArchitecture.ps1`
+- Batch 45 `Scripts/CheckArchitecture.ps1`
+- Batch 46 `Scripts/CheckArchitecture.ps1`
+- Batch 47 `Scripts/CheckArchitecture.ps1`
+- Batch 48 `Scripts/CheckArchitecture.ps1`
+- Batch 49 `Scripts/CheckArchitecture.ps1`
+- Batch 50 `Scripts/CheckArchitecture.ps1`
+- Batch 51 `Scripts/CheckArchitecture.ps1`
 - Final `Release|x64` Editor build
 - Final `GameClientRelease|x64` build
 
 Current architecture check baseline:
 
-- Engine -> Editor include violations: 8 known transition violations
+- Engine -> Editor include violations: 0
 - Legacy `UEditorEngine` undo wrappers: 0
 
 Notes:
@@ -570,6 +595,30 @@ Notes:
 - Batch 38 did not change behavior.
 - Batch 38 moved shared viewport text/icon button drawing into `EditorMainPanelViewportButtons.cpp`, reducing `EditorMainPanelViewportToolbar.cpp` from 749 lines to 643 lines.
 - Batch 38 keeps the existing `FEditorMainPanel` button API intact so viewport menu, toolbar, and layout controls continue to share the same drawing behavior.
+- Batch 39 did not intentionally change behavior.
+- Batch 39 reduced Engine -> Editor include violations from 8 to 1 by removing EditorEngine fallback from `PursuitMovementComponent`, moving editor input controllers to `Editor/Input`, moving `FSceneViewport` ownership out of `SViewport`, and passing shadow filter mode through `FRenderBus` instead of reading `FEditorSettings` inside render passes.
+- Batch 39 intentionally left `Engine/Runtime/EngineLoop.cpp` launch glue as the only remaining Engine -> Editor include violation for a later launch-mode factory pass.
+- Batch 40 did not intentionally change behavior.
+- Batch 40 moved launch-mode engine selection into `Launch/LaunchModeFactory`, added `UEngine::CanCloseApplication()` as the runtime-facing close hook, and let `UEditorEngine` own the editor close prompt. `EngineLoop` no longer includes or casts to `UEditorEngine`.
+- Batch 41 did not change runtime/editor behavior.
+- Batch 41 extended `Scripts/CheckArchitecture.ps1` to verify every `Source/Editor/*` compile item in the Visual Studio project is excluded from both `GameClientDebug|x64` and `GameClientRelease|x64`.
+- Batch 42 did not intentionally change texture behavior.
+- Batch 42 extracted `FTextureResourceCache` from `FResourceManager`, keeping the public `GetTexture`/`LoadTexture` facade intact while moving texture object storage, write-time tracking, reload-on-change, default-white SRV lookup, and texture release into the focused cache.
+- Batch 43 did not intentionally change shader behavior.
+- Batch 43 extracted `FShaderResourceCache` from `FResourceManager`, keeping the public shader and compute-shader facade intact while moving shader object storage, permutation compile/load, reload, compute-shader storage, and shader release into the focused cache.
+- Batch 44 did not intentionally change material behavior.
+- Batch 44 extracted `FMaterialResourceCache` storage ownership from `FResourceManager`, keeping material parsing and serialization in the facade for now while moving material/material-instance maps, material name listing, slot aliases, material memory accounting, and material release into the focused cache.
+- Batch 45 did not intentionally change render state behavior.
+- Batch 45 extracted `FRenderStateResourceCache` from `FResourceManager`, keeping the public sampler/depth-stencil/blend/rasterizer facade intact while moving D3D state object creation, lookup, and release into the focused cache.
+- Batch 46 did not intentionally change asset path behavior.
+- Batch 46 extracted `FAssetPathPolicy` from `FResourceManager`, moving runtime asset existence checks and static-mesh binary path policy for cooked, sibling, cache, and writable cache paths into a focused policy class.
+- Batch 47 did not intentionally change static mesh load behavior.
+- Batch 47 extracted `FStaticMeshResourceCache` storage ownership from `FResourceManager`, keeping OBJ/BIN loading flow in the facade for now while moving static-mesh registry, loaded-mesh lookup/register, load-option lookup, and static-mesh release into the focused cache.
+- Batch 48 extracted `FAtlasResourceCache` from `FResourceManager`, keeping the public font/particle facade intact while moving font/particle atlas loaders, resource maps, lookup fallback, GPU loading, and release into the focused cache.
+- Batch 49 did not intentionally change imported material behavior.
+- Batch 49 extracted `FImportedMaterialPolicy` from `FResourceManager`, moving imported material asset naming, OBJ `mtllib` resolution, OBJ material slot collection, and material slot alias key policy into a focused policy class.
+- Batch 50 extracted `FCurveResourceCache` from `FResourceManager`, keeping the public curve facade intact while moving curve loader ownership, loaded-curve lookup, save registration, and curve release into the focused cache.
+- Batch 51 extracted curve/material asset path classification into `FAssetPathPolicy`, removing the remaining extension-classification helper functions from `FResourceManager`.
 
 ### Batch 1: Guard Rails and API Baseline
 
@@ -719,20 +768,13 @@ After relevant batches, check:
 
 ## Current Known Dependency Violations
 
-These are not all fixed in Batch 1. They are visible so later batches can remove them deliberately.
-
-- `Engine/Runtime/EngineLoop.cpp` includes `Editor/EditorEngine.h`
-- `Engine/Slate/SViewport.h` includes `Editor/Viewport/FSceneViewport.h`
-- `Engine/Render/Renderer/Renderer.cpp` includes `Editor/Viewport/FSceneViewport.h`
-- `Engine/Input/Controller/EditorController/*` includes Editor selection/settings
-- some Engine render passes include `Editor/Settings/EditorSettings.h`
-- `Engine/Component/Movement/PursuitMovementComponent.cpp` includes `Editor/EditorEngine.h`
+None in the current `Scripts/CheckArchitecture.ps1` baseline.
 
 ## Completion Definition
 
 This refactor is considered structurally complete when:
 
-- `Engine -> Editor include` count is zero except explicitly approved launch glue.
+- `Engine -> Editor include` count is zero.
 - `GameClient` builds without compiling Editor source.
 - `EditorMainPanel.cpp` is below 1000 lines.
 - `EditorViewportClient` no longer owns all interaction details directly.
