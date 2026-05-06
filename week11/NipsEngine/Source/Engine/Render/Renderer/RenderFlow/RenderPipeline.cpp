@@ -17,6 +17,7 @@
 #include "PostProcessOutlineRenderPass.h"
 #include "VSMConversionRenderPass.h"
 #include "SandervistanRenderPass.h"
+#include "PostProcessRenderPass.h"
 #include "Core/Logging/GPUProfiler.h"
 
 #include <cstddef>
@@ -103,6 +104,9 @@ bool FRenderPipeline::Initialize()
 	SandevistanRenderPass = std::make_shared<FSandevistanRenderPass>();
     SandevistanRenderPass->Initialize();
 
+	PostProcessRenderPass = std::make_shared<FPostProcessRenderPass>();
+    PostProcessRenderPass->Initialize();
+
 	LightRenderPass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
@@ -131,6 +135,7 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(EditorRenderPass);
     RenderPasses.push_back(DepthLessRenderPass);
     RenderPasses.push_back(PostProcessOutlineRenderPass);
+    // RenderPasses.push_back(PostProcessRenderPass);
 
     return true;
 }
@@ -251,5 +256,11 @@ void FRenderPipeline::Release()
 	{
         VSMConversionRenderPass->Release();
         VSMConversionRenderPass.reset();
+	}
+
+	if (PostProcessRenderPass)
+	{
+        PostProcessRenderPass->Release();
+        PostProcessRenderPass.reset();
 	}
 }
