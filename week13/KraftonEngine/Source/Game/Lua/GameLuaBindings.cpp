@@ -11,6 +11,7 @@
 #include "Object/Object.h"  // Cast
 #include "Core/Log.h"
 
+#include "Component/StaticMeshComponent.h"
 #include "Game/Component/Movement/CarMovementComponent.h"
 #include "Game/Component/CarGasComponent.h"
 #include "Game/Component/DirtComponent.h"
@@ -112,7 +113,13 @@ void RegisterGameLuaBindings(sol::state& Lua)
 		"TakeMeteorDamage",     &ACarPawn::TakeMeteorDamage,
 		"GetMeteorHealth",      &ACarPawn::GetMeteorHealth,
 		"GetMaxMeteorHealth",   &ACarPawn::GetMaxMeteorHealth,
-		"IsFirstPersonView",    &ACarPawn::IsFirstPersonView);
+		"IsFirstPersonView",    &ACarPawn::IsFirstPersonView,
+		// 시각 메시 명시적 getter — lua 가 좌표 휴리스틱(X 부호 등) 으로 분류하지 않도록.
+		"GetHandleMesh",         &ACarPawn::GetHandleMesh,
+		"GetFrontLeftTireMesh",  &ACarPawn::GetFrontLeftTireMesh,
+		"GetFrontRightTireMesh", &ACarPawn::GetFrontRightTireMesh,
+		"GetRearLeftTireMesh",   &ACarPawn::GetRearLeftTireMesh,
+		"GetRearRightTireMesh",  &ACarPawn::GetRearRightTireMesh);
 
 	Lua.new_usertype<APoliceCar>("PoliceCar",
 		sol::base_classes, sol::bases<ACarPawn, APawn, AActor>(),

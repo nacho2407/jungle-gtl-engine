@@ -82,6 +82,15 @@ public:
 	UCameraComponent* GetThirdPersonCamera() const { return ThirdPersonCamera; }
 	UCarGasComponent* GetGas() const { return Gas; }
 
+	// 명시적 시각 메시 getter — InitPlayerControlled 가 캐시. 직렬화 경로에선
+	// ResolveCachedComponents 가 GetComponents() 순회 + 메시 path 매칭 + Box-local 좌표
+	// 부호로 4 코너 분류. 인덱스 의존이나 lua 측 좌표 휴리스틱을 피하는 안정적 진입점.
+	UStaticMeshComponent* GetHandleMesh()        const { return HandleMesh;        }
+	UStaticMeshComponent* GetFrontLeftTireMesh() const { return FrontLeftTireMesh; }
+	UStaticMeshComponent* GetFrontRightTireMesh()const { return FrontRightTireMesh;}
+	UStaticMeshComponent* GetRearLeftTireMesh()  const { return RearLeftTireMesh;  }
+	UStaticMeshComponent* GetRearRightTireMesh() const { return RearRightTireMesh; }
+
 	// --- Meteor Health / Damage ---
 	// MeteorPhase 전용 차량 HP. GameState 의 페이즈-실패 카운트와 별개로,
 	// 운석 충돌 누적 데미지를 받아 0 이 되면 페이즈 실패. UI 의 메테오 HP 바가 이 값을 폴링.
@@ -103,6 +112,13 @@ private:
 	UCameraComponent* ThirdPersonCamera = nullptr;
 	UCarMovementComponent* Movement = nullptr;
 	UCarGasComponent* Gas = nullptr;
+
+	// 시각 메시 캐시 — 인덱스 / 좌표 휴리스틱 의존을 피하기 위해 명시적 멤버로.
+	UStaticMeshComponent* HandleMesh        = nullptr;
+	UStaticMeshComponent* FrontLeftTireMesh = nullptr;
+	UStaticMeshComponent* FrontRightTireMesh= nullptr;
+	UStaticMeshComponent* RearLeftTireMesh  = nullptr;
+	UStaticMeshComponent* RearRightTireMesh = nullptr;
 
 	static constexpr float MaxMeteorHealth = 50.0f;
 	float MeteorHealth = MaxMeteorHealth;   // MeteorPhase 동안만 의미. 운석 충돌마다 차감.
