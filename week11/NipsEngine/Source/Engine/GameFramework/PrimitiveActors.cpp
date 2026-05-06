@@ -963,6 +963,8 @@ void UMainSceneDestructibleComponent::BeginPlay()
 
     bSlicePending = bAutoStart;
     bSliced = false;
+    bPresentationTriggerConsumed = false;
+    PresentationTrigger = 0.0f;
     Elapsed = 0.0f;
     PatrolElapsed = 0.0f;
     Fragments.clear();
@@ -1065,6 +1067,7 @@ void UMainSceneDestructibleComponent::Serialize(FArchive& Ar)
     Ar << "Patrol Amplitude" << PatrolAmplitude;
     Ar << "Patrol Speed" << PatrolSpeed;
     Ar << "Slice Count" << SliceCount;
+    Ar << "Presentation Trigger" << PresentationTrigger;
 
     if (Ar.IsLoading()
         && !bAutoStart
@@ -1096,6 +1099,17 @@ void UMainSceneDestructibleComponent::GetEditableProperties(TArray<FPropertyDesc
     OutProps.push_back({ "Patrol Amplitude", EPropertyType::Float, &PatrolAmplitude, 0.0f, 10.0f, 0.01f });
     OutProps.push_back({ "Patrol Speed", EPropertyType::Float, &PatrolSpeed, 0.0f, 20.0f, 0.05f });
     OutProps.push_back({ "Slice Count", EPropertyType::Int, &SliceCount, 1.0f, 12.0f, 1.0f });
+    OutProps.push_back({
+        "Presentation Trigger",
+        EPropertyType::Float,
+        &PresentationTrigger,
+        0.0f,
+        1.0f,
+        0.01f,
+        nullptr,
+        0,
+        nullptr,
+        EPropertyUsageFlags::Editable | EPropertyUsageFlags::Animatable });
 }
 
 float UMainSceneDestructibleComponent::GetRealDeltaTime(float DeltaTime) const
@@ -1105,6 +1119,12 @@ float UMainSceneDestructibleComponent::GetRealDeltaTime(float DeltaTime) const
 
 void UMainSceneDestructibleComponent::TickComponent(float DeltaTime)
 {
+    if (!bPresentationTriggerConsumed && PresentationTrigger >= 0.5f)
+    {
+        bPresentationTriggerConsumed = true;
+        bSlicePending = true;
+    }
+
     if (bSlicePending)
     {
         bSlicePending = false;

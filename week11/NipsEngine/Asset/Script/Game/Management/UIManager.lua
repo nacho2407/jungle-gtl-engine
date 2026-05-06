@@ -11,6 +11,7 @@ function UIManager.new(context)
         pausePanel = "Menu",
         uiCache = {},
         titleLogoAnimation = nil,
+        titleControlsFade = nil,
         loadingTipIndex = 0,
         resultNameFocusFrames = 0,
         resultNameBuffer = "",
@@ -149,6 +150,7 @@ end
 
 function UIManager:Tick(dt)
     self:TickTitleLogoAnimation(dt)
+    self:TickTitleControlsFade(dt)
     self:TickHealthLerp(dt)
     self:TickScoreBonus(dt)
     self:TickCrosshairPulse(dt)
@@ -220,6 +222,16 @@ local function RgbString(r, g, b)
     return string.format("rgb(%d, %d, %d)", math.floor(r + 0.5), math.floor(g + 0.5), math.floor(b + 0.5))
 end
 
+local function Clamp01(value)
+    value = tonumber(value) or 0.0
+    if value < 0.0 then
+        return 0.0
+    elseif value > 1.0 then
+        return 1.0
+    end
+    return value
+end
+
 function UIManager:ApplyTitleLogoAnimation(t)
     local eased = EaseOutCubic(t)
 
@@ -242,6 +254,68 @@ function UIManager:StartTitleLogoAnimation()
     }
 
     self:ApplyTitleLogoAnimation(0.0)
+end
+
+function UIManager:SetTitleControlsVisible(isVisible)
+    local visible = isVisible == true
+    self:SetCachedVisible("Title.MenuPanel", visible)
+    self:SetCachedVisible("Title.QuickMenu", visible)
+    self:SetCachedVisible("Title.Version", visible)
+
+    if not visible then
+        self:SetCachedVisible("Title.ScoreBoardPanel", false)
+        self:SetCachedVisible("Title.SettingsPanel", false)
+        self:SetCachedVisible("Title.CreditsPanel", false)
+        self:SetCachedVisible("Title.ModalOverlay", false)
+        self:SetCachedVisible("Title.ModalClose", false)
+    else
+        self:SetTitlePanel(self.titlePanel or "Menu")
+    end
+end
+
+function UIManager:SetTitleControlsAlpha(alpha)
+    local value = Clamp01(alpha)
+    self:SetCachedAlpha("Title.MenuPanel", value)
+    self:SetCachedAlpha("Title.QuickMenu", value)
+    self:SetCachedAlpha("Title.Version", value)
+end
+
+function UIManager:StartTitleControlsFadeIn(duration)
+    self:SetTitleControlsVisible(true)
+    self:SetTitleControlsAlpha(0.0)
+    self.titleControlsFade = {
+        elapsed = 0.0,
+        duration = tonumber(duration) or 1.0
+    }
+end
+
+function UIManager:TickTitleControlsFade(dt)
+    local fade = self.titleControlsFade
+    if fade == nil then
+        return
+    end
+
+    local realDt = Engine.API.World.GetUnscaledDeltaTime()
+    if realDt == nil or realDt <= 0.0 then
+        realDt = dt or 0.0
+    end
+
+    fade.elapsed = fade.elapsed + realDt
+    local duration = fade.duration > 0.0 and fade.duration or 0.001
+    local t = Clamp01(fade.elapsed / duration)
+    self:SetTitleControlsAlpha(t)
+
+    if t >= 1.0 then
+        self.titleControlsFade = nil
+    end
+end
+
+function UIManager:PrepareTitlePresentation()
+    self.titleLogoAnimation = nil
+    self.titleControlsFade = nil
+    self:ApplyTitleLogoAnimation(0.0)
+    self:SetTitleControlsVisible(false)
+    self:SetTitleControlsAlpha(0.0)
 end
 
 function UIManager:TickTitleLogoAnimation(dt)
@@ -416,16 +490,6 @@ function UIManager:SetPausePanel(panelName)
     if panelName == "Settings" then
         self:RefreshSettings()
     end
-end
-
-local function Clamp01(value)
-    value = tonumber(value) or 0.0
-    if value < 0.0 then
-        return 0.0
-    elseif value > 1.0 then
-        return 1.0
-    end
-    return value
 end
 
 local function FormatPercent(value)

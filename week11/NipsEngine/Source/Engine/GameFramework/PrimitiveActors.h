@@ -329,6 +329,8 @@ private:
     float PatrolAmplitude = 0.18f;
     float PatrolSpeed = 1.15f;
     int32 SliceCount = 5;
+    float PresentationTrigger = 0.0f;
+    bool bPresentationTriggerConsumed = false;
 
     bool bSlicePending = false;
     bool bSliced = false;

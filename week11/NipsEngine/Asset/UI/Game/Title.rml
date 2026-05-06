@@ -30,7 +30,7 @@
                 <button id="Title.Quit" class="title-button danger" data-action="QuitGame">Quit</button>
             </div>
 
-            <div class="quick-menu">
+            <div id="Title.QuickMenu" class="quick-menu">
                 <button id="Title.Intro" class="quick-button" data-action="ShowIntro">
                     <img class="quick-icon" src="Asset/UIImage/58_Talk_3.PNG"/>
                 </button>

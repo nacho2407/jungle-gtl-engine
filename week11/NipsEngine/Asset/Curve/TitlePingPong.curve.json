@@ -1,0 +1,11 @@
+{
+        "ArriveTangents" : [0.000000, 0.000000, 0.000000],
+        "AssetPath" : "Asset/Curve/TitlePingPong.curve.json",
+        "InterpModes" : [2, 2, 2],
+        "LeaveTangents" : [0.000000, 0.000000, 0.000000],
+        "ObjectName" : "UCurveFloatAsset_0",
+        "TangentModes" : [0, 0, 0],
+        "Times" : [0.000000, 0.500000, 1.000000],
+        "Type" : "UCurveFloatAsset",
+        "Values" : [-1.000000, 1.000000, -1.000000]
+      }
