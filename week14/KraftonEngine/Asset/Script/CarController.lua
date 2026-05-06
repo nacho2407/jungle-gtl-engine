@@ -31,6 +31,8 @@ local HANDLE_ROTATION_SPEED = 14.0
 local WHEEL_MAX_ROTATION_Z = 28.0
 local WHEEL_ROTATION_SPEED = 14.0
 
+local prevSpeed = 0.0
+
 function BeginPlay()
     car = obj:AsCarPawn()
     if car == nil then
@@ -177,7 +179,7 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
         return
     end
 
-    local speed = math.abs(movement:GetForwardSpeed())
+    local speed = math.abs(prevSpeed)
     if speed < CRASH_MIN_SPEED then
         return
     end
@@ -233,4 +235,6 @@ function Tick(dt)
     local speedRatio = math.min(math.abs(movement:GetForwardSpeed()) / ENGINE_MAX_PITCH_SPEED, 1.0)
     local pitch = ENGINE_IDLE_PITCH + (ENGINE_MAX_PITCH - ENGINE_IDLE_PITCH) * speedRatio
     AudioManager.SetLoopPitch(ENGINE_LOOP_NAME, pitch)
+
+    prevSpeed = movement:GetForwardSpeed()
 end
