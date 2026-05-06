@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Types/FrameContext.h"
@@ -85,6 +85,7 @@ private:
 	FConstantBuffer OutlineCB;
 	FConstantBuffer SceneDepthCB;
 	FConstantBuffer FXAACB;
+	FConstantBuffer GammaCorrectionCB;
 	FConstantBuffer CameraFadeCB;
 	FConstantBuffer CameraVignetteCB;
 	FConstantBuffer CameraLetterboxCB;
