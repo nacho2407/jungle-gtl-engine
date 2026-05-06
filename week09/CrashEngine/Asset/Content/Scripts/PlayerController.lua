@@ -37,12 +37,17 @@ local CurrentLightB = 1.0
 local DocumentCount = 0
 local GameManagerLuaComponent = nil
 local SoundManager = nil
+local bPlayerDeadSoundPlayed = false
+local bDestinationSoundPlayed = false
 
 local function loadPlayerSounds()
     SoundManager = GetSoundManager()
-    SoundManager:LoadSound("Shoot", "Asset/Content/Sounds/Shoot.mp3", false)
-    SoundManager:LoadSound("Charge", "Asset/Content/Sounds/Charge.mp3", false)
-    SoundManager:LoadSound("Document", "Asset/Content/Sounds/Document.mp3", false)
+    SoundManager:LoadSound("PlayerShootSFX", "Asset/Content/Sounds/SoundCollection/PlayerShootSFX.mp3", false)
+    SoundManager:LoadSound("GetDocumentSFX", "Asset/Content/Sounds/SoundCollection/GetDocumentSFX.mp3", false)
+    SoundManager:LoadSound("HealSFX", "Asset/Content/Sounds/SoundCollection/HealSFX.mp3", false)
+    SoundManager:LoadSound("HitPlayerSFX", "Asset/Content/Sounds/SoundCollection/HitPlayerSFX.mp3", false)
+    SoundManager:LoadSound("GetDestination", "Asset/Content/Sounds/SoundCollection/GetDestination.mp3", false)
+    SoundManager:LoadSound("PlayerDead", "Asset/Content/Sounds/SoundCollection/PlayerDead.mp3", false)
 end
 
 local function playPlayerSound(sound_id)
@@ -253,7 +258,9 @@ local function firePlayerBullet()
     local spawnLocation = getBulletSpawnLocation(aimDirection)
 
     local bullet = BulletSystem.SpawnBullet(spawnLocation, aimDirection, "PlayerBullet", obj)
-    playPlayerSound("Shoot")
+    if bullet ~= nil and bullet:IsValid() then
+        playPlayerSound("PlayerShootSFX")
+    end
     -- World.RequestSlomo(0.1, 2)
     PlayerShotTimer = PlayerShotCooldown
 end
@@ -364,7 +371,7 @@ function OnOverlapBegin(other)
         other:AddTag("Collected")
         DocumentCount = DocumentCount + 1;
         syncPlayerState()
-        playPlayerSound("Document")
+        playPlayerSound("GetDocumentSFX")
         spawnEffect(other.Location, DocumentEffectMaterial, DocumentEffectLifeTime, DocumentEffectRow, DocumentEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("Battery") then
@@ -379,18 +386,23 @@ function OnOverlapBegin(other)
         end
         BatteryLightFlashTime = BatteryLightFlashDuration
         syncPlayerState()
-        playPlayerSound("Charge")
+        playPlayerSound("HealSFX")
         spawnEffect(other.Location, HealingEffectMaterial, HealingEffectLifeTime, HealingEffectRow, HealingEffectColumn)
         World.DestroyActor(other)
     elseif other:HasTag("EnemyBullet") then
         if not other:HasTag("DamageApplied") then
             other:AddTag("DamageApplied")
+            playPlayerSound("HitPlayerSFX")
             obj:ApplyDamage(10, other)
         end
 
         World.DestroyActor(other)
     elseif other:HasTag("Destination") then
         if DocumentCount>0 then
+            if not bDestinationSoundPlayed then
+                bDestinationSoundPlayed = true
+                playPlayerSound("GetDestination")
+            end
             callGameOver()
         end
     end
@@ -400,6 +412,8 @@ function BeginPlay()
     -- BeginPlay는 Actor가 월드에서 플레이를 시작할 때 한 번 호출된다.
     pressedKeys = {}
     bGameOverRequested = false
+    bPlayerDeadSoundPlayed = false
+    bDestinationSoundPlayed = false
     bGamepadRightTriggerHeld = false
     obj.Velocity = Vector.new(0.0, 0.0, 0.0)
     movementState = PlayerMovement.CreateState({
@@ -451,6 +465,10 @@ function Tick(dt)
     end
 
     if HP <= 0.0 then
+        if not bPlayerDeadSoundPlayed then
+            bPlayerDeadSoundPlayed = true
+            playPlayerSound("PlayerDead")
+        end
         spawnDestroyEffectOnce()
         HP = 0.0
         syncPlayerState()
