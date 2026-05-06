@@ -252,6 +252,41 @@ namespace
 
         return true;
     }
+
+    bool SetLuaTableProperty(sol::table& Table, const FLuaScriptProperty& Prop)
+    {
+        if (!Table.valid() || Prop.Name.empty())
+        {
+            return false;
+        }
+
+        const std::string Name = Prop.Name.c_str();
+        switch (Prop.Type)
+        {
+        case EPropertyType::Int:
+            Table[Name] = Prop.IntValue;
+            return true;
+
+        case EPropertyType::Float:
+            Table[Name] = Prop.FloatValue;
+            return true;
+
+        case EPropertyType::Bool:
+            Table[Name] = Prop.BoolValue;
+            return true;
+
+        case EPropertyType::String:
+            Table[Name] = std::string(Prop.StringValue.c_str());
+            return true;
+
+        case EPropertyType::Vec3:
+            Table[Name] = Prop.Vec3Value;
+            return true;
+
+        default:
+            return false;
+        }
+    }
     }
 
 void FLuaTimeline::Play()
@@ -456,6 +491,10 @@ void UScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
     OutProps.push_back({ "ScriptName", EPropertyType::String, &ScriptName });
 
 	// ScriptName이 바뀐 뒤 아직 Property를 안 읽었다면 여기서 갱신
+    if (!ScriptName.empty() && !bLuaPropertiesScanned)
+    {
+        ReloadLuaProperties();
+    }
 
 	for (FLuaScriptProperty& LuaProp : LuaProperties)
     {
@@ -500,8 +539,14 @@ void UScriptComponent::PostEditProperty(const char* PropertyName)
 {
     UActorComponent::PostEditProperty(PropertyName);
 
-    if (!PropertyName || FString(PropertyName) != "ScriptName")
+    if (!PropertyName)
     {
+        return;
+    }
+
+    if (FString(PropertyName) != "ScriptName")
+    {
+        ApplyLuaPropertyToInstance(PropertyName);
         return;
     }
 
@@ -528,6 +573,24 @@ void UScriptComponent::PostEditProperty(const char* PropertyName)
     {
         ReloadLuaProperties();
     }
+}
+
+bool UScriptComponent::ApplyLuaPropertyToInstance(const char* PropertyName)
+{
+    if (!PropertyName || !ScriptInstance.valid())
+    {
+        return false;
+    }
+
+    for (const FLuaScriptProperty& Prop : LuaProperties)
+    {
+        if (Prop.Name == PropertyName)
+        {
+            return SetLuaTableProperty(ScriptInstance, Prop);
+        }
+    }
+
+    return false;
 }
 
 bool UScriptComponent::RegisterScript()
@@ -936,33 +999,7 @@ sol::table UScriptComponent::MakeRuntimePropertyTable(sol::state& Lua)
 
     for (const FLuaScriptProperty& Prop : LuaProperties)
     {
-        const std::string Name = Prop.Name.c_str();
-
-        switch (Prop.Type)
-        {
-        case EPropertyType::Int:
-            Table[Name] = Prop.IntValue;
-            break;
-
-        case EPropertyType::Float:
-            Table[Name] = Prop.FloatValue;
-            break;
-
-        case EPropertyType::Bool:
-            Table[Name] = Prop.BoolValue;
-            break;
-
-        case EPropertyType::String:
-            Table[Name] = std::string(Prop.StringValue.c_str());
-            break;
-
-        case EPropertyType::Vec3:
-            Table[Name] = Prop.Vec3Value;
-            break;
-
-        default:
-            break;
-        }
+        SetLuaTableProperty(Table, Prop);
     }
 
     return Table;

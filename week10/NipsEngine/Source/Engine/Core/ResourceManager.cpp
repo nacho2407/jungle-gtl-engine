@@ -848,6 +848,7 @@ void FResourceManager::ReleaseGPUResources()
 		DestroyUniqueObject(Texture);
 	}
 	Textures.clear();
+	TextureWriteTimeTicks.clear();
 
 	for (auto& [Key, Material] : Materials)
 	{
@@ -1949,9 +1950,24 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
         return nullptr;
     }
 
+	const uint64 CurrentWriteTimeTicks = GetFileWriteTimeTicks(NormalizedPath);
     if (UTexture* Cached = GetTexture(NormalizedPath))
     {
-        return Cached;
+		const auto WriteTimeIt = TextureWriteTimeTicks.find(NormalizedPath);
+		const uint64 CachedWriteTimeTicks =
+			(WriteTimeIt != TextureWriteTimeTicks.end()) ? WriteTimeIt->second : 0;
+		if (CurrentWriteTimeTicks == 0 || CachedWriteTimeTicks == CurrentWriteTimeTicks)
+		{
+			return Cached;
+		}
+
+		if (!Cached->LoadFromFile(NormalizedPath, Device))
+		{
+			return Cached;
+		}
+
+		TextureWriteTimeTicks[NormalizedPath] = CurrentWriteTimeTicks;
+		return Cached;
     }
 
     UTexture* Texture = UObjectManager::Get().CreateObject<UTexture>();
@@ -1962,6 +1978,7 @@ UTexture* FResourceManager::LoadTexture(const FString& Path, ID3D11Device* Devic
     }
 
     Textures[NormalizedPath] = Texture;
+	TextureWriteTimeTicks[NormalizedPath] = CurrentWriteTimeTicks;
     return Texture;
 }
 

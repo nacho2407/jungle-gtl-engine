@@ -2,6 +2,29 @@
 #include "Camera/CameraModifier.h"
 #include "GameFramework/PlayerController.h"
 
+namespace
+{
+    float ApplyCameraBlendType(float Alpha, ECameraBlendType BlendType)
+    {
+        switch (BlendType)
+        {
+        case ECameraBlendType::Linear:
+            return Alpha;
+        case ECameraBlendType::EaseIn:
+            return Alpha * Alpha;
+        case ECameraBlendType::EaseOut:
+            return 1.f - (1.f - Alpha) * (1.f - Alpha);
+        case ECameraBlendType::EaseInOut:
+            return (Alpha < 0.5f)
+                ? 2.f * Alpha * Alpha
+                : 1.f - 2.f * (1.f - Alpha) * (1.f - Alpha);
+        case ECameraBlendType::SmoothStep:
+        default:
+            return Alpha * Alpha * (3.f - 2.f * Alpha);
+        }
+    }
+}
+
 APlayerCameraManager::~APlayerCameraManager()
 {
     if (CacheCameraShakeMod)
@@ -25,11 +48,25 @@ void APlayerCameraManager::Tick(float DeltaTime)
 
 void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
 {
+    SetViewTargetWithBlend(NewTarget, DefaultBlendTime, DefaultBlendType);
+}
+
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewTarget, float BlendTime)
+{
+    SetViewTargetWithBlend(NewTarget, BlendTime, DefaultBlendType);
+}
+
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewTarget, float BlendTime, ECameraBlendType BlendType)
+{
 	// 언리얼 설계 상 ViewTarget 은 절대 nullptr 로 두지 않는다
     if (NewTarget == nullptr)
 	{
         NewTarget = PCOwner;
 	}
+    if (NewTarget == nullptr)
+    {
+        return;
+    }
 
     // 현재 카메라 상태 저장
     UpdateCamera(0);
@@ -39,20 +76,33 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
     ViewTarget.Target = NewTarget;
     ViewTarget.CameraComp = NewTarget->FindComponent<UCameraComponent>();
 
-    FMinimalViewInfo NewView{};
+    FMinimalViewInfo NewView = CachedView;
     if (ViewTarget.CameraComp)
     {
         ViewTarget.CameraComp->GetCameraView(0.f, NewView);
     }
+    else
+    {
+        NewView.Location = ViewTarget.Target->GetActorLocation();
+        NewView.Rotation = FQuat::MakeFromEuler(ViewTarget.Target->GetActorRotation()).GetNormalized();
+    }
+    ViewTarget.POV = NewView;
 
     Transition.To = NewView;
-    Transition.TotalTime = 0.3f;
-    Transition.RemainingTime = 0.3f;
-    Transition.bActive = true;
+    Transition.TotalTime = std::max(0.f, BlendTime);
+    Transition.RemainingTime = Transition.TotalTime;
+    Transition.BlendType = BlendType;
+    Transition.bActive = Transition.TotalTime > 0.f;
 	
 	UE_LOG("[PlayerCameraManager] SetViewTarget. Target=%s Camera=%s",
            ViewTarget.Target ? ViewTarget.Target->GetFName().ToString().c_str() : "None",
            ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");
+}
+
+void APlayerCameraManager::SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType)
+{
+    DefaultBlendTime = std::max(0.f, BlendTime);
+    DefaultBlendType = BlendType;
 }
 
 const FMinimalViewInfo& APlayerCameraManager::GetCameraView()
@@ -196,7 +246,7 @@ void APlayerCameraManager::UpdateTransition(float DeltaTime, FMinimalViewInfo& I
     float Alpha = 1.f - (Transition.RemainingTime / Transition.TotalTime);
     Alpha = std::clamp(Alpha, 0.f, 1.f);
     // 추가 (smoothstep)
-    Alpha = Alpha * Alpha * (3.f - 2.f * Alpha);
+    Alpha = ApplyCameraBlendType(Alpha, Transition.BlendType);
 
     InOutView.Location = FVector::Lerp(Transition.From.Location, Transition.To.Location, Alpha);
     InOutView.Rotation = FQuat::Slerp(Transition.From.Rotation, Transition.To.Rotation, Alpha);

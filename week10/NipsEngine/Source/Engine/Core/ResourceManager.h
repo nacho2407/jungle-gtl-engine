@@ -190,6 +190,7 @@ private:
 	TMap<FString, UShader*> Shaders;
 	TMap<FString, FComputeShader*> ComputeShaders;
 	TMap<FString, UTexture*> Textures;
+	TMap<FString, uint64> TextureWriteTimeTicks;
 	TMap<FString, UMaterial*> Materials;
 	TMap<FString, UMaterialInstance*> MaterialInstances;
 	TMap<FString, FString> MaterialSlotAliases;
