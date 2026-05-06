@@ -147,9 +147,20 @@ Final target:
 
 ### ResourceManager
 
-Current problem:
+Current state:
 
-- One manager owns texture, shader, material, static mesh, OBJ/MTL import, BIN cache, CSO policy, default resources, and editor-related load options.
+- `FResourceManager` is now a transition facade over focused caches/policies.
+- Extracted ownership now includes:
+  - `TextureResourceCache`
+  - `ShaderResourceCache`
+  - `MaterialResourceCache`
+  - `RenderStateResourceCache`
+  - `StaticMeshResourceCache`
+  - `AtlasResourceCache`
+  - `CurveResourceCache`
+  - `AssetPathPolicy`
+  - `ImportedMaterialPolicy`
+- `FResourceManager` still coordinates material parsing/serialization, OBJ/MTL import flow, static mesh OBJ/BIN load flow, default resource setup, and memory accounting glue.
 
 Final target:
 
@@ -161,14 +172,19 @@ Final target:
   - `MaterialResourceCache`
   - `StaticMeshResourceCache`
   - `ImportedMaterialService`
+  - `StaticMeshLoadService`
+  - `ResourceMemoryReporter`
   - `CookedAssetCopyPolicy`
 
 ### Render Pipeline
 
-Current problem:
+Current state:
 
-- `RenderCollector` does world traversal, culling, light collection, primitive command creation, selection mask, and editor-only collection.
-- Runtime renderer still knows too much about editor-only concepts.
+- Engine-facing editor include violations in renderer paths are currently cleared by the architecture check.
+- Shadow filter/editor setting reads were moved behind runtime-facing render state flow.
+- `RenderCollector` still owns too much: world traversal, culling, light collection, primitive command creation, and editor-related collection.
+- `Renderer` and render passes still need a later proxy/frame/draw-command architecture pass.
+- Main-merged PostProcess pass code compiled in the current Editor and GameClient debug verification. The only merge issue found there was the shader project item being classified as C++ compile input, which has been corrected.
 
 Final target:
 
@@ -205,7 +221,6 @@ NipsEngine/Source
       Engine.h
       GameEngine.h
       EngineLoop.h
-      LaunchModeFactory.h
     GameFramework/
       World.h
       Level.h
@@ -246,6 +261,10 @@ NipsEngine/Source
 
   Game/
     Project-specific C++ gameplay when needed
+
+  Launch/
+    LaunchModeFactory.h
+    LaunchModeFactory.cpp
 
   Misc/
     ObjViewer/
@@ -360,7 +379,17 @@ Examples:
 
 ## Current Progress
 
-Overall progress: about 72% for the active Engine dependency and ResourceManager facade split scope.
+Overall progress: about 78% for the active Engine structure refactor scope.
+
+Current synced state:
+
+- Engine -> Editor include boundary: current guard baseline is clean.
+- GameClient Editor source exclusion guard: current guard baseline is clean.
+- `EditorMainPanel` monolith removal/split: structurally complete for this scope; remaining work is stabilization or moving extracted files into standalone panel classes.
+- `LaunchModeFactory` split: complete for the current EngineLoop boundary scope.
+- `ResourceManager` facade split: storage/cache/policy extraction is mostly complete, but import/load orchestration and memory reporting are still in the facade.
+- Render proxy/collector architecture cleanup: intentionally deferred and still a major remaining structural item.
+- `EditorViewportClient` interaction split: still a major remaining structural item.
 
 Deferred after this batch scope:
 
@@ -419,6 +448,7 @@ Completed:
 - Batch 49: Imported Material Policy Extraction
 - Batch 50: Curve Resource Cache Extraction
 - Batch 51: Asset Path Classification Policy Extraction
+- Batch 52: Main Merge Build Sync and PostProcess Shader Project Item Fix
 
 Verified:
 
@@ -484,6 +514,9 @@ Verified:
 - Batch 49 `Scripts/CheckArchitecture.ps1`
 - Batch 50 `Scripts/CheckArchitecture.ps1`
 - Batch 51 `Scripts/CheckArchitecture.ps1`
+- Batch 52 `Scripts/CheckArchitecture.ps1`
+- Main merge sync `Debug|x64` Editor build
+- Main merge sync `GameClientDebug|x64` build
 - Final `Release|x64` Editor build
 - Final `GameClientRelease|x64` build
 
@@ -619,6 +652,9 @@ Notes:
 - Batch 49 extracted `FImportedMaterialPolicy` from `FResourceManager`, moving imported material asset naming, OBJ `mtllib` resolution, OBJ material slot collection, and material slot alias key policy into a focused policy class.
 - Batch 50 extracted `FCurveResourceCache` from `FResourceManager`, keeping the public curve facade intact while moving curve loader ownership, loaded-curve lookup, save registration, and curve release into the focused cache.
 - Batch 51 extracted curve/material asset path classification into `FAssetPathPolicy`, removing the remaining extension-classification helper functions from `FResourceManager`.
+- Batch 52 synced the roadmap against the current main-merged project state.
+- Batch 52 verified the current architecture guard baseline, `Debug|x64` Editor build, and `GameClientDebug|x64` build after main merge.
+- Batch 52 fixed the main-merged `Shaders\Multipass\PostProcess.hlsl` project item classification so GameClient no longer attempts to compile the HLSL file as C++.
 
 ### Batch 1: Guard Rails and API Baseline
 
@@ -776,7 +812,7 @@ This refactor is considered structurally complete when:
 
 - `Engine -> Editor include` count is zero.
 - `GameClient` builds without compiling Editor source.
-- `EditorMainPanel.cpp` is below 1000 lines.
+- The old monolithic `EditorMainPanel.cpp` is removed or remains only as a tiny shell entry point.
 - `EditorViewportClient` no longer owns all interaction details directly.
 - `ResourceManager` is a facade over focused caches/services.
 - render collection and draw command building are separate responsibilities.
