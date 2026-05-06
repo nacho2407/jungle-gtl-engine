@@ -1,4 +1,4 @@
-#include "GameFramework/PlayerController.h"
+﻿#include "GameFramework/PlayerController.h"
 
 #include "CameraManage/APlayerCameraManager.h"
 #include "GameFramework/World.h"
@@ -20,6 +20,9 @@ void APlayerController::BeginPlay()
     }
 
     TryAutoPossessPlayer();
+
+    UWorld* World = GetWorld();
+    CameraManager->SetViewTarget(PossessedActor && World ? World->GetActiveCamera() : nullptr);
 }
 
 void APlayerController::Tick(float DeltaTime)
@@ -41,8 +44,6 @@ void APlayerController::Tick(float DeltaTime)
         return;
     }
 
-    UWorld* World = GetWorld();
-    CameraManager->SetViewTarget(PossessedActor && World ? World->GetActiveCamera() : nullptr);
     CameraManager->UpdateCamera(DeltaTime);
 }
 
