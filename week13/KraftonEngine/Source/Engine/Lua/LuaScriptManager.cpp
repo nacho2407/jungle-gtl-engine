@@ -18,6 +18,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/WaveOscillatorCameraShake.h"
+#include "GameFramework/SequenceCameraShake.h"
 #include "GameFramework/GameplayStatics.h"
 #include "GameFramework/World.h"
 #include "Object/UClass.h"
@@ -624,6 +625,16 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		if (Manager)
 		{
 			Manager->StartCameraShake<UWaveOscillatorCameraShake>(Scale.value_or(1.0f));
+		}
+	});
+	CameraManager.set_function("StartSequenceShake", [](sol::optional<float> Scale)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			Manager->StartCameraShake<USequenceCameraShake>(Scale.value_or(1.0f));
 		}
 	});
 

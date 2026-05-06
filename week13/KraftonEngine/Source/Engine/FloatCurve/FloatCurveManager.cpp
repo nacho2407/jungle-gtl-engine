@@ -1,5 +1,6 @@
 ﻿#include "FloatCurveManager.h"
 #include "FloatCurveAsset.h"
+#include "Platform/Paths.h"
 
 UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 {
@@ -10,7 +11,8 @@ UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 	}
 
 	UFloatCurveAsset* NewAsset = UObjectManager::Get().CreateObject<UFloatCurveAsset>();
-	if (NewAsset->LoadFromFile(Path))
+	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), FPaths::ToWide(Path)));
+	if (NewAsset->LoadFromFile(FullPath))
 	{
 		NewAsset->SetSourcePath(Path);
 		LoadedCurves.emplace(Path, NewAsset);
@@ -36,9 +38,11 @@ void FFloatCurveManager::Save(UFloatCurveAsset* Asset)
 		return;
 	}
 	const FString& Path = Asset->GetSourcePath();
+	const FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), FPaths::ToWide(Path)));
+
 	if (Path.empty())
 	{
 		return;
 	}
-	Asset->SaveToFile(Path);
+	Asset->SaveToFile(FullPath);
 }
