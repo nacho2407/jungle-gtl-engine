@@ -59,3 +59,16 @@ body {
 	line-height: 34dp;
 	text-align: center;
 }
+
+/* Mission feedback color modifiers — set via inline <span class='...'> in lua. */
+.mission {
+	color: #3aa6ff;
+}
+
+.success {
+	color: #46c860;
+}
+
+.failure {
+	color: #e65353;
+}

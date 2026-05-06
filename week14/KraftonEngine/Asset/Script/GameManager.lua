@@ -91,6 +91,35 @@ local function CameraFadeTransition(duration, middle)
     end)
 end
 
+local function ShowMissionFeedback(phase)
+    -- 게임플레이 페이즈 진입 시 mission card.
+    if phase == ECarGamePhase.CarWash
+        or phase == ECarGamePhase.CarGas
+        or phase == ECarGamePhase.EscapePolice
+        or phase == ECarGamePhase.DodgeMeteor
+        or phase == ECarGamePhase.Goal then
+        UIManager.ShowMissionStart(phase)
+        return
+    end
+
+    -- Result 진입 시 직전 페이즈 결과 + 카메라 피드백.
+    if phase == ECarGamePhase.Result and gameState ~= nil then
+        local lastEnded = gameState:GetLastEndedPhase()
+        local lastResult = gameState:GetLastPhaseResult()
+
+        UIManager.ShowMissionResult(lastEnded, lastResult)
+
+        if lastResult == EPhaseResult.Success then
+        elseif lastResult == EPhaseResult.Failed then
+            CameraManager.SetVignette(0.7, 0.6, 0.4)
+            StartCoroutine(function()
+                Wait(1.0)
+                CameraManager.ClearVignette()
+            end)
+        end
+    end
+end
+
 local function OnPhaseChanged(phase)
     print("Phase changed: " .. tostring(phase))
 
@@ -104,6 +133,9 @@ local function OnPhaseChanged(phase)
         SwitchPlayerCamera(false)
     end
     prevPhase = phase
+
+    -- Mission card / Result 피드백 — 페이즈별 차별 표시.
+    ShowMissionFeedback(phase)
 
     if phase == ECarGamePhase.None then
         return
