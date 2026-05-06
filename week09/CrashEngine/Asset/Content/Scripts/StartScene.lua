@@ -345,11 +345,13 @@ end
 
 local function setMainMenuVisible(visible)
     if visible then
+        ui_document:SetProperty("title", "display", "block")
         ui_document:SetProperty("menu", "display", "block")
         ui_document:SetProperty("credit_view", "display", "none")
         ui_document:SetProperty("scoreboard_view", "display", "none")
         current_screen = "menu"
     else
+        ui_document:SetProperty("title", "display", "none")
         ui_document:SetProperty("menu", "display", "none")
         ui_document:SetProperty("credit_view", "display", "block")
         ui_document:SetProperty("scoreboard_view", "display", "none")
@@ -358,6 +360,7 @@ local function setMainMenuVisible(visible)
 end
 
 local function setScoreboardVisible()
+    ui_document:SetProperty("title", "display", "none")
     ui_document:SetProperty("menu", "display", "none")
     ui_document:SetProperty("credit_view", "display", "none")
     ui_document:SetProperty("scoreboard_view", "display", "block")
@@ -438,6 +441,7 @@ local function beginGameStartSequence()
     game_start_fade_played = false
     game_start_scene_requested = false
 
+    ui_document:SetProperty("title", "display", "none")
     ui_document:SetProperty("menu", "display", "none")
     World.PlayCameraEffectAsset("Asset/Content/CameraEffects/StartSceneLBStart.ceffect")
 end
