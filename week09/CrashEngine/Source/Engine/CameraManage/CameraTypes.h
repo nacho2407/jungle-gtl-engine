@@ -144,8 +144,6 @@ struct FCameraLetterBoxParams
     float FromAmount = 0.0f;
     float ToAmount = 0.12f;
     float Duration = 0.25f;
-    float AppearRatio = 0.5f;
-    float DisappearRatio = 0.5f;
     
     FCameraFloatCurve AmountCurve;
 };

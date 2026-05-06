@@ -38,7 +38,7 @@ public:
     void PlayCameraFade(float FromAmount, float ToAmount, float Duration, const FVector4& Color = FVector4(0.0f, 0.0f, 0.0f, 1.0f));
     void PlayCameraFade(const FCameraFadeParams& Params);
 
-    void PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio = 0.5f, float DisappearRatio = 0.5f);
+    void PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration);
     void PlayCameraLetterBox(const FCameraLetterBoxParams& Params);
 
     void PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration);

@@ -431,7 +431,7 @@ function BeginPlay()
     if ui_document == nil or not ui_document:IsValid() then
         return
     end
-
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/StartSceneLBStart.ceffect")
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
     ui_document:SetProperty("background", "display", "none")

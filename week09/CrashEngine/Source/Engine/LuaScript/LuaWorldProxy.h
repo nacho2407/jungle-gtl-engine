@@ -34,7 +34,7 @@ public:
     FVector GetMouseWorldPointOnPlane(float PlaneZ) const;
     void PlayCameraShake(float Duration, float LocationAmplitude, float RotationAmplitude, float Frequency);
     void PlayCameraFade(float FromAmount, float ToAmount, float Duration, float R, float G, float B, float A);
-    void PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio);
+    void PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration);
     void PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration);
     void PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness);
     bool PlayCameraEffectAsset(const FString& AssetPath);

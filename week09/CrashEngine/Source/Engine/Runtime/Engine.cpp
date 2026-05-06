@@ -166,6 +166,7 @@ void UEngine::Render(float DeltaTime)
             CameraViewInfo.Location = Camera->GetWorldLocation();
             CameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
             CameraViewInfo.CameraState = Camera->GetCameraState();
+            CameraViewInfo.ScreenEffects = CameraManager ? CameraManager->GetCameraViewInfoCache().ScreenEffects : FCameraScreenEffectInfo{};
             SceneView.SetCameraInfo(CameraViewInfo);
         }
         SceneView.SetRenderSettings(ViewMode, ShowFlags);

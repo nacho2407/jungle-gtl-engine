@@ -1,0 +1,15 @@
+{
+  "Type" : "Vignette",
+  "Version" : 1,
+  "Vignette" : {
+    "Duration" : 0.100000,
+    "FromIntensity" : 0.000000,
+    "ToIntensity" : 3.000000,
+    "Radius" : 0.600000,
+    "Softness" : 0.350000,
+    "IntensityCurve" : [
+      { "Time" : 0.000000, "Value" : 0.000000 },
+      { "Time" : 1.000000, "Value" : 1.000000 }
+    ]
+  }
+}

@@ -64,7 +64,7 @@ bool IsLuaSpawnableActorClassName(const FString& ClassName)
 APlayerCameraManager* GetPlayerCameraManager(UWorld* World)
 {
     APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
-    if (!PlayerController || !PlayerController->GetPossessedActor())
+    if (!PlayerController)
     {
         return nullptr;
     }
@@ -74,7 +74,9 @@ APlayerCameraManager* GetPlayerCameraManager(UWorld* World)
 
 bool GetLuaCameraViewInfo(UWorld* World, FCameraViewInfo& OutCameraViewInfo)
 {
-    if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(World))
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+    if (PlayerController && PlayerController->GetPossessedActor() && CameraManager)
     {
         OutCameraViewInfo = CameraManager->GetCameraViewInfoCache();
         return true;
@@ -89,7 +91,7 @@ bool GetLuaCameraViewInfo(UWorld* World, FCameraViewInfo& OutCameraViewInfo)
     OutCameraViewInfo.Location = Camera->GetWorldLocation();
     OutCameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
     OutCameraViewInfo.CameraState = Camera->GetCameraState();
-    OutCameraViewInfo.ScreenEffects = FCameraScreenEffectInfo{};
+    OutCameraViewInfo.ScreenEffects = CameraManager ? CameraManager->GetCameraViewInfoCache().ScreenEffects : FCameraScreenEffectInfo{};
     return true;
 }
 
@@ -409,11 +411,11 @@ void FLuaWorldProxy::PlayCameraFade(float FromAmount, float ToAmount, float Dura
     }
 }
 
-void FLuaWorldProxy::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+void FLuaWorldProxy::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration)
 {
     if (APlayerCameraManager* CameraManager = GetPlayerCameraManager(ResolveWorld()))
     {
-        CameraManager->PlayCameraLetterBox(FromAmount, ToAmount, Duration, AppearRatio, DisappearRatio);
+        CameraManager->PlayCameraLetterBox(FromAmount, ToAmount, Duration);
     }
 }
 

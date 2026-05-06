@@ -122,11 +122,6 @@ void APlayerCameraManager::SetViewTarget(AActor* NewActor)
 
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
-    if (!ViewTarget.TargetActor)
-    {
-        return;
-    }
-
     CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
     if (ViewTarget.POVCamera)
     {
@@ -134,13 +129,13 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
         CameraViewInfoCache.Rotation = ViewTarget.POVCamera->GetWorldMatrix().ToRotator();
         CameraViewInfoCache.CameraState = ViewTarget.POVCamera->GetCameraState();
     }
-    else
+    else if (ViewTarget.TargetActor)
     {
         CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
         CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
         CameraViewInfoCache.CameraState = FCameraState{};
     }
-    if (bHasCameraViewOverride && !TransitionState.bActive)
+    if (ViewTarget.TargetActor && bHasCameraViewOverride && !TransitionState.bActive)
     {
         CameraViewInfoCache = CameraViewOverride;
         CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
@@ -154,7 +149,10 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
             return true;
         return Lhs->GetPriority() < Rhs->GetPriority(); });
 
-    UpdateTransition(DeltaTime);
+    if (ViewTarget.TargetActor)
+    {
+        UpdateTransition(DeltaTime);
+    }
 
     for (UCameraModifier* Modifier : ModifierList)
     {
@@ -246,14 +244,12 @@ void APlayerCameraManager::PlayCameraFade(const FCameraFadeParams& Params)
     AddCameraModifier(Modifier);
 }
 
-void APlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+void APlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration)
 {
     FCameraLetterBoxParams Params;
     Params.FromAmount = FromAmount;
     Params.ToAmount = ToAmount;
     Params.Duration = Duration;
-    Params.AppearRatio = AppearRatio;
-    Params.DisappearRatio = DisappearRatio;
     PlayCameraLetterBox(Params);
 }
 
@@ -361,8 +357,8 @@ void APlayerCameraManager::CommitFade(const FCameraFadeParams& Params)
 
 void APlayerCameraManager::CommitLetterBox(const FCameraLetterBoxParams& Params)
 {
-    BaseScreenEffects.bEnableLetterBox = Params.FromAmount > 0.0f;
-    BaseScreenEffects.LetterBoxAmount = Clamp(Params.FromAmount, 0.0f, 0.5f);
+    BaseScreenEffects.bEnableLetterBox = Params.ToAmount > 0.0f;
+    BaseScreenEffects.LetterBoxAmount = Clamp(Params.ToAmount, 0.0f, 0.5f);
 }
 
 void APlayerCameraManager::CommitGammaCorrection(const FCameraGammaCorrectionParams& Params)

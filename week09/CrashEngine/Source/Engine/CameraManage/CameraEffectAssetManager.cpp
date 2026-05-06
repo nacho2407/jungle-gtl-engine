@@ -166,8 +166,6 @@ bool FCameraEffectAssetManager::Load(const FString& AssetPath, FCameraEffectAsse
         ReadFloat(LetterBox, "Duration", OutAsset.LetterBox.Duration);
         ReadFloat(LetterBox, "FromAmount", OutAsset.LetterBox.FromAmount);
         ReadFloat(LetterBox, "ToAmount", OutAsset.LetterBox.ToAmount);
-        ReadFloat(LetterBox, "AppearRatio", OutAsset.LetterBox.AppearRatio);
-        ReadFloat(LetterBox, "DisappearRatio", OutAsset.LetterBox.DisappearRatio);
         OutAsset.LetterBox.AmountCurve = ReadCurve(LetterBox, "AmountCurve");
     }
     else if (OutAsset.Type == ECameraEffectType::GammaCorrection && Root.hasKey("GammaCorrection"))
