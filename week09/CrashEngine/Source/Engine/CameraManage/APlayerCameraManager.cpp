@@ -12,8 +12,50 @@
 #include "Object/Object.h"
 
 #include <algorithm>
+#include <cctype>
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
+
+namespace
+{
+FString NormalizeBlendTypeName(const FString& BlendType)
+{
+    FString Result;
+    Result.reserve(BlendType.size());
+
+    for (char Ch : BlendType)
+    {
+        if (Ch == '_' || Ch == '-' || Ch == ' ')
+        {
+            continue;
+        }
+
+        Result.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(Ch))));
+    }
+
+    return Result;
+}
+
+ECameraTransitionBlendType ParseCameraTransitionBlendType(const FString& BlendType)
+{
+    const FString NormalizedBlendType = NormalizeBlendTypeName(BlendType);
+
+    if (NormalizedBlendType == "linear")
+    {
+        return ECameraTransitionBlendType::Linear;
+    }
+    if (NormalizedBlendType == "easein")
+    {
+        return ECameraTransitionBlendType::EaseIn;
+    }
+    if (NormalizedBlendType == "easeout")
+    {
+        return ECameraTransitionBlendType::EaseOut;
+    }
+
+    return ECameraTransitionBlendType::Cubic;
+}
+} // namespace
 
 APlayerCameraManager::APlayerCameraManager()
 {
@@ -331,6 +373,15 @@ void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewActor, const FCamer
     TransitionState.Duration = Params.Duration;
     TransitionState.ElapsedTime = 0;
     TransitionState.BlendType = Params.BlendType;
+}
+
+void APlayerCameraManager::SetCameraTransitionToTarget(AActor* NewActor, float Duration, const FString& BlendType)
+{
+    FCameraTransitionParams Params;
+    Params.Duration = Duration;
+    Params.BlendType = ParseCameraTransitionBlendType(BlendType);
+
+    SetViewTargetWithBlend(NewActor, Params);
 }
 
 void APlayerCameraManager::UpdateTransition(float DeltaTime)

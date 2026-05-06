@@ -1,5 +1,6 @@
 ﻿#include "LuaWorldProxy.h"
 
+#include "CameraManage/APlayerCameraManager.h"
 #include "Component/CameraComponent.h"
 #include "Core/Logging/LogMacros.h"
 #include "Engine/Core/RayTypes.h"
@@ -216,6 +217,21 @@ bool FLuaWorldProxy::SetCameraView(const FVector& Location,const FVector& Target
     Camera->SetWorldLocation(Location);
     Camera->LookAt(Target);
     Camera->SetFOV(FovDegrees * DEG_TO_RAD);
+    return true;
+}
+
+bool FLuaWorldProxy::SetCameraTransitionToTarget(const FLuaGameObjectProxy& ActorProxy, float Duration, const FString& BlendType)
+{
+    UWorld* World = ResolveWorld();
+    AActor* Actor = ActorProxy.GetActor();
+    APlayerCameraManager* CameraManager = World->GetFirstPlayerController()->GetCameraManager();
+
+    if (!World || !Actor || Actor->GetWorld() != World || !CameraManager)
+    {
+        return false;
+    }
+
+    CameraManager->SetCameraTransitionToTarget(Actor, Duration, BlendType);
     return true;
 }
 

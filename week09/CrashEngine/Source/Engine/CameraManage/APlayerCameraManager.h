@@ -51,6 +51,7 @@ public:
 
 	//transition
     void SetViewTargetWithBlend(AActor* NewActor, const FCameraTransitionParams& Params);
+    void SetCameraTransitionToTarget(AActor* NewActor, float Duration, const FString& BlendType);
 
 private:
     void CommitFade(const FCameraFadeParams& Params);
