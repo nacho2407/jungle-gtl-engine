@@ -7,6 +7,9 @@ local hasPlayedHitAction = false
 local SPEED = 2.5
 local TURN_INTERVAL = 30.0
 
+local MIN_ACTION_CAR_SPEED = 70.0
+local MIN_ACTION_IMPULSE = 0.15
+
 local HIT_STOP_DURATION = 0.08
 local HIT_STOP_TIME_DILATION = 0.0
 
@@ -56,6 +59,36 @@ end
 -- 기존(stale) 회전 coroutine 이 Wait(30) 도중에 reset 을 만나면, reset 후 0~30초 사이에
 -- 깨어나서 복원된 rotation 에 또 +180° 를 얹어버린다. generation 카운터로 stale coroutine
 -- 이 자기 차례에서 자체 종료되도록 만든다.
+local function GetCarCollisionSpeed(CarActor, CarComp)
+    if CarActor ~= nil then
+        local movement = CarActor:GetCarMovement()
+        if movement ~= nil then
+            return math.abs(movement:GetForwardSpeed())
+        end
+    end
+
+    if CarComp ~= nil then
+        return CarComp:GetLinearVelocity():Length()
+    end
+
+    return 0.0
+end
+
+local function GetHitImpulseMagnitude(NormalImpulse)
+    if NormalImpulse ~= nil then
+        return NormalImpulse:Length()
+    end
+
+    return 0.0
+end
+
+local function ShouldPlayHitAction(CarActor, CarComp, NormalImpulse)
+    local carSpeed = GetCarCollisionSpeed(CarActor, CarComp)
+    local impulse = GetHitImpulseMagnitude(NormalImpulse)
+
+    return carSpeed >= MIN_ACTION_CAR_SPEED or impulse >= MIN_ACTION_IMPULSE
+end
+
 local turnGen = 0
 -- 가장 최근에 시작된 회전 coroutine 핸들 — EndPlay 에서 명시 stop 해야 옛 핸들이
 -- 새 월드 lua tick 에 끼어들지 않는다.
@@ -127,9 +160,9 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, Hit)
     isMoving = false
 
     local action = obj:GetActionComponent()
-    if action ~= nil then
+    if action ~= nil and ShouldPlayHitAction(OtherActor, OtherComp, NormalImpulse) then
         action:HitStop(HIT_STOP_DURATION, HIT_STOP_TIME_DILATION)
-        action:HitSquash(HIT_SQUASH_SCALE, HIT_SQUASH_IN_DURATION, HIT_SQUASH_RECOVER_DURATION)
+        --action:HitSquash(HIT_SQUASH_SCALE, HIT_SQUASH_IN_DURATION, HIT_SQUASH_RECOVER_DURATION)
         --action:Knockback(GetKnockbackDirection(OtherActor, Hit), KNOCKBACK_DISTANCE, KNOCKBACK_DURATION)
         action:Slomo(SLOMO_DURATION, SLOMO_TIME_DILATION)
     end
