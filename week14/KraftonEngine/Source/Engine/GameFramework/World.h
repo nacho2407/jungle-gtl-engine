@@ -68,6 +68,13 @@ public:
 	void Tick(float DeltaTime, ELevelTick TickType);  // Drives the game loop every frame
 	void EndPlay();        // Cleanup before world is destroyed
 
+private:
+	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
+	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.
+	void TickPlayerCamera() const;
+
+public:
+
 	bool HasBegunPlay() const { return bHasBegunPlay; }
 
 	// 씬 단위 게임 설정 (GameMode 등). 에디터 UI 와 SceneSaveManager 가 사용.
