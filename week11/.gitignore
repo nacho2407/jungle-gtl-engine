@@ -464,3 +464,8 @@ Builds/
 
 NipsEngine/Asset/Mesh/Bin/**
 NipsEngine/Asset/Scene/**
+
+# Week9 Game Scene
+!NipsEngine/Asset/Scene/MapScene.Scene
+!NipsEngine/Asset/Scene/Intro.Scene
+!NipsEngine/Asset/Scene/Main.Scene
