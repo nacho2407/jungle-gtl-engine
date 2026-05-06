@@ -47,8 +47,7 @@ local function PlayerWaitForSeconds(seconds)
         scale = 0.0001
     end
 
-    -- Apply HitStop Scale / Don't Apply SlowMotion Scale
-    scale = scale / _G.GameJam.GetSlowMotionScale()
+    scale = scale / _G.GameJam.GetHitStopScale()
 
     return WaitForSeconds((tonumber(seconds) or 0.0) * scale)
 end

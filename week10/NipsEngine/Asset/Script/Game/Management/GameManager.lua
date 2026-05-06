@@ -361,6 +361,7 @@ function GameManager:StopTimeSlow(emitEvent)
     if self.timeSlowActive then
         self.timeSlowActive = false
         self.timeSlowRemaining = 0.0
+        self.timeSlowScale = 1.0
         Engine.API.World.DeactivateSandervistan()
         Engine.API.World.SetTimeScale(
             self.hitStopActive and self.hitStopScale or 1.0
