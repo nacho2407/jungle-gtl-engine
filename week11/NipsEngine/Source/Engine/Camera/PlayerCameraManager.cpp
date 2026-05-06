@@ -1,18 +1,25 @@
 ﻿#include "PlayerCameraManager.h"
 #include "Camera/CameraModifier.h"
+#include "GameFramework/PlayerController.h"
+
+void APlayerCameraManager::BeginPlay()
+{
+    AActor::BeginPlay();
+}
 
 void APlayerCameraManager::Tick(float DeltaTime)
 {
     FMinimalViewInfo View;
     GetCameraView(DeltaTime, View);
-
-    // 여기서 Renderer로 넘기거나 View 적용
 }
 
 void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
 {
-    if (!NewTarget)
-        return;
+	// 언리얼 설계 상 ViewTarget 은 절대 nullptr 로 두지 않는다
+    if (NewTarget == nullptr)
+	{
+        NewTarget = PCOwner;
+	}
 
     // 현재 카메라 상태 저장
     FMinimalViewInfo CurrentView;
@@ -34,6 +41,11 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
     Transition.TotalTime = 0.3f;
     Transition.RemainingTime = 0.3f;
     Transition.bActive = true;
+
+	
+	UE_LOG("[PlayerCameraManager] SetViewTarget. Target=%s Camera=%s",
+           ViewTarget.Target ? ViewTarget.Target->GetFName().ToString().c_str() : "None",
+           ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");
 }
 
 void APlayerCameraManager::GetCameraView(float DeltaTime, FMinimalViewInfo& OutView)
@@ -84,6 +96,11 @@ void APlayerCameraManager::RemoveModifier(UCameraModifier* Modifier)
         ModifierList.end());
 }
 
+void APlayerCameraManager::InitializeFor(APlayerController* PC)
+{
+    PCOwner = PC;
+}
+
 void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
 {
     if (ViewTarget.CameraComp)
@@ -95,8 +112,8 @@ void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
         ViewTarget.Rotation = CamView.Rotation;
         ViewTarget.FOV = CamView.FOV;
     }
-    else
-    {        
+    else if (ViewTarget.Target)
+    {
         ViewTarget.Location = ViewTarget.Target->GetActorLocation();
         ViewTarget.Rotation = FRotator::MakeFromEuler(ViewTarget.Target->GetActorRotation());		
     }

@@ -5,6 +5,7 @@
 
 class UCameraComponent;
 class ADefaultPlayerActor;
+class APlayerCameraManager;
 
 class APlayerController : public AActor
 {
@@ -57,6 +58,8 @@ public:
 	AActor* GetViewTargetActor() const { return ViewTargetActor; }
 	UCameraComponent* GetViewTargetCamera() const { return ViewTargetCamera; }
 
+	void SpawnPlayerCameraManager();
+
 protected:
 	UCameraComponent* FindCameraComponent(AActor* Actor) const;
 	virtual AActor* FindPlayerStart() const;
@@ -81,6 +84,7 @@ protected:
 	AActor* PossessedActor = nullptr;
 	AActor* ViewTargetActor = nullptr;
 	UCameraComponent* ViewTargetCamera = nullptr;
+    APlayerCameraManager* PlayerCameraManager = nullptr;
 
 	FViewportCamera RuntimeCamera;
 

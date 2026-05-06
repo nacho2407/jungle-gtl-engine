@@ -8,6 +8,7 @@
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
+#include "Camera/PlayerCameraManager.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,6 +34,8 @@ namespace
 void APlayerController::BeginPlay()
 {
 	AActor::BeginPlay();
+
+	SpawnPlayerCameraManager();
 
 	if (!PossessedActor)
 	{
@@ -414,6 +417,11 @@ void APlayerController::HandleMouseWheel(float Notch)
 	(void)Notch;
 }
 
+void APlayerController::SpawnPlayerCameraManager()
+{
+	PlayerCameraManager = GetFocusedWorld()->SpawnActor<APlayerCameraManager>();
+}
+
 UCameraComponent* APlayerController::FindCameraComponent(AActor* Actor) const
 {
 	if (!Actor)
@@ -633,10 +641,10 @@ void APlayerController::UpdateRuntimeCameraFromViewTarget(float DeltaTime)
 
 void APlayerController::OnPossess(AActor* InActor)
 {
-	(void)InActor;
+	PlayerCameraManager->SetViewTarget(InActor);
 }
 
 void APlayerController::OnUnPossess(AActor* OldActor)
 {
-	(void)OldActor;
+    PlayerCameraManager->SetViewTarget(this);
 }
