@@ -10,6 +10,10 @@
 
 void FLuaScriptManager::Init()
 {
+#if defined(GAME_RELEASE)
+    return;
+#endif
+
     if (bWatcherRegistered)
     {
         return;
@@ -66,6 +70,10 @@ FString FLuaScriptManager::CreateScript(class AActor* TargetActor)
 
 void FLuaScriptManager::OnLuaFileChanged(const FString& FileName)
 {
+#if defined(GAME_RELEASE)
+    return;
+#endif
+
     if (FileName.find(".lua") == std::string::npos) return;
 
     if (FileName.find("Template.lua") != std::string::npos ||
