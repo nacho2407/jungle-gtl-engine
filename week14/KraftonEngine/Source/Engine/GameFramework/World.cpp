@@ -331,25 +331,29 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 
-	// CameraManager 갱신 — Shake / Fade / ViewTarget blend.
-	// bPaused 가드 위에 둬서 메뉴/모달 중에도 fade 트랜지션이 진행되도록 함
-	// (UE 의 PlayerCameraManager 도 일시정지와 무관하게 tick).
-	// TODO: GlobalTimeDilation 도입 시 raw(unpaused) dt 를 별도로 받아 셰이크가
-	//       Slomo 영향을 받지 않게 할 것.
-	// E.2/3: PC 의 PlayerCameraManager 를 Tick.
-	if (APlayerController* PC = GetFirstPlayerController())
+	auto UpdatePlayerCamera = [this, DeltaTime]()
 	{
-		if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+		// CameraManager 갱신 — Shake / Fade / ViewTarget blend.
+		// 물리/액터 Tick 이후 호출하면 차량 1인칭처럼 physics body에 붙은 카메라가
+		// 같은 프레임의 최신 transform으로 POV cache를 채운다.
+		// TODO: GlobalTimeDilation 도입 시 raw(unpaused) dt 를 별도로 받아 셰이크가
+		//       Slomo 영향을 받지 않게 할 것.
+		// E.2/3: PC 의 PlayerCameraManager 를 Tick.
+		if (APlayerController* PC = GetFirstPlayerController())
 		{
-			CM->UpdateCamera(DeltaTime);
+			if (APlayerCameraManager* CM = PC->GetPlayerCameraManager())
+			{
+				CM->UpdateCamera(DeltaTime);
+			}
 		}
-	}
+	};
 
 	// bPaused 동안 PhysicsScene + TickManager skip — GameMode 타이머, Lua Tick, 차량
 	// 이동, PhysX 시뮬레이션 모두 정지. Render / UI / Input poll 은 호출자 (UEngine::Tick)
 	// 가 따로 돌리므로 영향 없음 → 메뉴/인트로 위에서 화면 보이고 클릭 가능.
 	if (bPaused)
 	{
+		UpdatePlayerCamera();
 		return;
 	}
 
@@ -360,6 +364,7 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 	}
 
 	TickManager.Tick(this, DeltaTime, TickType);
+	UpdatePlayerCamera();
 }
 
 void UWorld::EndPlay()
