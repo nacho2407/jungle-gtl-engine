@@ -60,6 +60,7 @@ void FShaderProgramRegistry::Initialize()
     Add(EShaderType::Decal, MakeGraphicsProgramDesc("Decal", "Shaders/Passes/Scene/Deferred/DeferredDecalPS.hlsl"));
     Add(EShaderType::OutlinePostProcess, MakeGraphicsProgramDesc("OutlinePostProcess", "Shaders/Passes/PostProcess/OutlinePostProcessPass.hlsl"));
     Add(EShaderType::FXAA, MakeGraphicsProgramDesc("FXAA", "Shaders/Passes/PostProcess/FXAAPass.hlsl"));
+    Add(EShaderType::CinematicPostProcess, MakeGraphicsProgramDesc("CinematicPostProcess", "Shaders/Passes/PostProcess/CinematicPostProcessPass.hlsl"));
     Add(EShaderType::Font, MakeGraphicsProgramDesc("Font", "Shaders/Render/Editor/ShaderFont.hlsl"));
     Add(EShaderType::OverlayFont, MakeGraphicsProgramDesc("OverlayFont", "Shaders/Render/Editor/ShaderOverlayFont.hlsl"));
     Add(EShaderType::SubUV, MakeGraphicsProgramDesc("SubUV", "Shaders/Render/Editor/subUV_sample.hlsl"));

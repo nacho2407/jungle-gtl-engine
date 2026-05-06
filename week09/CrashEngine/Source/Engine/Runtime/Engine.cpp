@@ -12,8 +12,10 @@
 #include "Mesh/ObjManager.h"
 #include "Texture/Texture2D.h"
 #include "UI/RmlUiManager.h"
+#include "CameraManage/APlayerCameraManager.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/PlayerController.h"
 #include "Core/TickFunction.h"
 #include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
 #include "Core/Sound/SoundManager.h"
@@ -50,6 +52,13 @@ ELevelTick ToLevelTickType(EWorldType WorldType)
 
 UEngine::UEngine() = default;
 UEngine::~UEngine() = default;
+
+APlayerCameraManager* UEngine::GetPlayerCameraManager() const
+{
+    UWorld* World = GetWorld();
+    APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+    return PlayerController ? PlayerController->GetCameraManager() : nullptr;
+}
 
 void UEngine::Init(FWindowsWindow* InWindow)
 {
@@ -145,7 +154,6 @@ void UEngine::Render(float DeltaTime)
     ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
 
     UWorld* World = GetWorld();
-    //This should be changed to Camera Following the character
     UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
     FScene* Scene = nullptr;
     if (Camera)
@@ -153,7 +161,20 @@ void UEngine::Render(float DeltaTime)
         FShowFlags ShowFlags;
         EViewMode ViewMode = EViewMode::Lit_Phong;
 
-        SceneView.SetCameraInfo(Camera);
+        APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+        APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+        if (PlayerController && PlayerController->GetPossessedActor() && CameraManager)
+        {
+            SceneView.SetCameraInfo(CameraManager->GetCameraViewInfoCache());
+        }
+        else
+        {
+            FCameraViewInfo CameraViewInfo;
+            CameraViewInfo.Location = Camera->GetWorldLocation();
+            CameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
+            CameraViewInfo.CameraState = Camera->GetCameraState();
+            SceneView.SetCameraInfo(CameraViewInfo);
+        }
         SceneView.SetRenderSettings(ViewMode, ShowFlags);
         if (Viewport && DeviceContext)
         {

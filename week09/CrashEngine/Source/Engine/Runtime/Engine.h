@@ -17,6 +17,7 @@ class FViewport;
 class UCameraComponent;
 class UGameViewportClient;
 class FRmlUiManager;
+class APlayerCameraManager;
 
 // UEngine는 런타임 영역의 핵심 동작을 담당합니다.
 class UEngine : public UObject
@@ -61,6 +62,7 @@ public:
     FRenderer& GetRenderer() { return Renderer; }
     const FRenderer& GetRenderer() const { return Renderer; }
     FRmlUiManager* GetRmlUiManager() const { return RmlUiManager.get(); }
+    APlayerCameraManager* GetPlayerCameraManager() const;
 
     void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
     UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }

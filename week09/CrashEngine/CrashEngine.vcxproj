@@ -399,8 +399,16 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Settings\ReleaseSettings.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Fade.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_GammaCorrection.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\APlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
     <ClCompile Include="Source\Engine\Core\GameTimeManager.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaComponentProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaInputProxy.cpp" />
@@ -540,6 +548,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\CinematicPostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.cpp" />
@@ -633,9 +642,18 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\Settings\ReleaseSettings.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Fade.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_GammaCorrection.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\CameraManage\APlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
     <ClInclude Include="Source\Engine\Core\GameTimeManager.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaComponentProxy.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaInputProxy.h" />
@@ -809,6 +827,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DeferredOpaquePass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\DepthPrePass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\CinematicPostProcessPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\ForwardOpaquePass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\HeightFogPass.h" />
     <ClInclude Include="Source\Engine\Render\Execute\Passes\Scene\LightCullingPass.h" />
@@ -975,6 +994,13 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Passes\PostProcess\FXAAPass.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Passes\PostProcess\CinematicPostProcessPass.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameRelease|x64'">true</ExcludedFromBuild>

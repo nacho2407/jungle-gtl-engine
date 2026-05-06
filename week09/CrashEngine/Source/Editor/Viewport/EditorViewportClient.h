@@ -80,6 +80,15 @@ public:
 
     void SetPlayState(EEditorViewportPlayState InPlayState);
     EEditorViewportPlayState GetPlayState() const { return PlayState; }
+    void RequestCameraAspectRefresh() { bCameraAspectRefreshPending = true; }
+    bool ConsumeCameraAspectRefresh()
+    {
+        const bool bPending = bCameraAspectRefreshPending;
+        bCameraAspectRefreshPending = false;
+        return bPending;
+    }
+    bool HasRenderedWithCamera(const UCameraComponent* InCamera) const { return LastRenderedCamera == InCamera; }
+    void SetLastRenderedCamera(const UCameraComponent* InCamera) { LastRenderedCamera = InCamera; }
     void SetPaneToolbarHeight(float InHeight) { PaneToolbarHeight = InHeight; }
     float GetPaneToolbarHeight() const { return PaneToolbarHeight; }
 
@@ -140,6 +149,8 @@ private:
     FRotator SavedViewRotation;
     ELevelViewportType SavedViewportType = ELevelViewportType::Perspective;
     EEditorViewportPlayState PlayState = EEditorViewportPlayState::Stopped;
+    const UCameraComponent* LastRenderedCamera = nullptr;
+    bool bCameraAspectRefreshPending = false;
     float PaneToolbarHeight = 0.0f;
     FRect ViewportScreenRect;
     FRect ViewportFrameRect;

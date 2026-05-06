@@ -7,7 +7,9 @@
 #include "Component/ActorComponent.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "CameraManage/APlayerCameraManager.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
 #include "Input/InputSystem.h"
@@ -133,6 +135,20 @@ void WarmUpMinimalViewModesForRenderPath(UEditorEngine& Editor, ERenderShadingPa
     {
         Renderer.WarmUpViewModeShaders(ViewMode, RenderPath);
     }
+}
+
+FCameraViewInfo BuildCameraViewFromComponent(UCameraComponent* Camera)
+{
+    FCameraViewInfo CameraViewInfo;
+    if (!Camera)
+    {
+        return CameraViewInfo;
+    }
+
+    CameraViewInfo.Location = Camera->GetWorldLocation();
+    CameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
+    CameraViewInfo.CameraState = Camera->GetCameraState();
+    return CameraViewInfo;
 }
 } // namespace
 
@@ -281,6 +297,10 @@ void UEditorEngine::Tick(float DeltaTime)
     if (IsPlayingInEditor() && LuaActionLibrary::ProcessPendingSceneLoad())
     {
         SelectionManager.SetWorld(GetWorld());
+        if (PlayInEditorSessionInfo.has_value() && PlayInEditorSessionInfo->DestinationViewportClient)
+        {
+            PlayInEditorSessionInfo->DestinationViewportClient->RequestCameraAspectRefresh();
+        }
         OnRenderSceneCleared();
     }
 
@@ -623,7 +643,7 @@ void UEditorEngine::Render(float DeltaTime)
     for (FLevelEditorViewportClient* ViewportClient : GetLevelViewportClients())
     {
         SCOPE_STAT_CAT("RenderViewport", "2_Render");
-        RenderViewport(ViewportClient);
+        RenderViewport(ViewportClient, DeltaTime);
     }
 
     Renderer.BeginFrame(SceneView);
@@ -647,7 +667,7 @@ void UEditorEngine::Render(float DeltaTime)
     }
 }
 
-void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
+void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTime)
 {
     UCameraComponent* Camera = VC->GetCamera();
     if (!Camera)
@@ -694,10 +714,14 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     const FShowFlags& ShowFlags = EffectiveShowFlags;
     EViewMode ViewMode = Opts.ViewMode;
 
-    if (VP->ApplyPendingResize())
+    const bool bViewportResized = VP->ApplyPendingResize();
+    const bool bCameraChanged = !VC->HasRenderedWithCamera(Camera);
+    const bool bCameraAspectRefreshRequested = VC->ConsumeCameraAspectRefresh();
+    if (bViewportResized || bCameraChanged || bCameraAspectRefreshRequested)
     {
         Camera->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
     }
+    VC->SetLastRenderedCamera(Camera);
 
     VP->SetViewportAsRenderState(Ctx);
 
@@ -706,7 +730,23 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC)
     FScene& Scene = World->GetScene();
     Scene.ClearFrameData();
 
-    SceneView.SetCameraInfo(Camera);
+    if (VC->GetPlayState() != EEditorViewportPlayState::Stopped)
+    {
+        APlayerController* PlayerController = World->GetFirstPlayerController();
+        APlayerCameraManager* PlayerCameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+        if (PlayerController && PlayerController->GetPossessedActor() && PlayerCameraManager)
+        {
+            SceneView.SetCameraInfo(PlayerCameraManager->GetCameraViewInfoCache());
+        }
+        else
+        {
+            SceneView.SetCameraInfo(BuildCameraViewFromComponent(Camera));
+        }
+    }
+    else
+    {
+        SceneView.SetCameraInfo(BuildCameraViewFromComponent(Camera));
+    }
     SceneView.SetRenderSettings(ViewMode, EffectiveShowFlags);
     SceneView.SetRenderOptions(Opts);
     SceneView.RenderPath = FEditorSettings::Get().RenderShadingPath;

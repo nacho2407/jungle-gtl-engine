@@ -19,6 +19,7 @@
 class UCameraComponent;
 class UPrimitiveComponent;
 class FCollisionManager;
+class APlayerController;
 
 struct FWorldTimeContext
 {
@@ -58,6 +59,8 @@ public:
     bool RaycastEditorPicking(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
     const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
+    APlayerController* GetFirstPlayerController() const { return PlayerController; }
+    APlayerController* EnsurePlayerController();
 
     // LOD 컨텍스트를 FSceneView에 전달 (Collect 단계에서 LOD 인라인 갱신용)
     FLODUpdateContext PrepareLODContext();
@@ -126,6 +129,7 @@ private:
     FGameTimeManager GameTimeManager;
     FWorldTimeContext WorldTimeContext;
 
+    APlayerController* PlayerController = nullptr;
     TArray<FPendingDamage> PendingDamages;
     TArray<uint32> PendingDestroyActorUUIDs;
 

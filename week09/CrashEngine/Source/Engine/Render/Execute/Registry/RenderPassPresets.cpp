@@ -23,6 +23,7 @@ void InitializeDefaultRenderPassPresets(FRenderPassPreset (&OutPresets)[(uint32)
     P[(uint32)E::EditorLines].Draw      = { EDepthStencilState::DepthReadOnly, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_LINELIST };
     P[(uint32)E::PostProcess].Draw      = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     P[(uint32)E::FXAA].Draw             = { EDepthStencilState::NoDepth, EBlendState::Opaque, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
+    P[(uint32)E::CinematicPostProcess].Draw = { EDepthStencilState::NoDepth, EBlendState::Opaque, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     P[(uint32)E::GizmoOuter].Draw       = { EDepthStencilState::GizmoOutside, EBlendState::Opaque, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     P[(uint32)E::GizmoInner].Draw       = { EDepthStencilState::GizmoInside, EBlendState::AlphaBlend, ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     P[(uint32)E::OverlayBillboard].Draw = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend, ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
