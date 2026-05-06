@@ -15,4 +15,6 @@ class FRenderTargetFactory
     static FRenderTarget CreateSceneSandervistan(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneWorldPos(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
     static FRenderTarget CreateSceneFXAA(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateEditorIdPick(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
+    static FRenderTarget CreateEditorIdPickDebug(ID3D11Device* Device, uint32 InWidth, uint32 InHeight);
 };

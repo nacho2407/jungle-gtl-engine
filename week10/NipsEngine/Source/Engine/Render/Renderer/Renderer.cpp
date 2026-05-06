@@ -10,13 +10,115 @@
 #include "Render/Mesh/MeshManager.h"
 #include "Core/Logging/Stats.h"
 #include "Core/Logging/GPUProfiler.h"
+#include "Component/BillboardComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "Component/SubUVComponent.h"
 #include "Editor/Viewport/FSceneViewport.h"
+#include "GameFramework/AActor.h"
 #include "Render/Renderer/RenderTarget/RenderTargetFactory.h"
 #include "Render/Renderer/RenderTarget/DepthStencilFactory.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include "Core/Logging/Log.h"
+
+#include <unordered_map>
+
+static uint32 GetOrAssignEditorPickId(
+    AActor* Actor,
+    std::unordered_map<AActor*, uint32>& ActorToId,
+    TArray<AActor*>& OutActors)
+{
+    if (Actor == nullptr)
+    {
+        return 0;
+    }
+
+    auto It = ActorToId.find(Actor);
+    if (It != ActorToId.end())
+    {
+        return It->second;
+    }
+
+    const uint32 NewId = static_cast<uint32>(OutActors.size()) + 1u;
+    ActorToId[Actor] = NewId;
+    OutActors.push_back(Actor);
+    return NewId;
+}
+
+static ID3D11ShaderResourceView* GetTextureSRVFromParam(const FMaterialParamValue& Param)
+{
+    if (Param.Type != EMaterialParamType::Texture || !std::holds_alternative<UTexture*>(Param.Value))
+    {
+        return nullptr;
+    }
+
+    UTexture* Texture = std::get<UTexture*>(Param.Value);
+    return Texture ? Texture->GetSRV() : nullptr;
+}
+
+static ID3D11ShaderResourceView* GetDiffuseSRV(UMaterialInterface* Material)
+{
+    if (!Material || !Material->HasDiffuseMap())
+    {
+        return nullptr;
+    }
+
+    FMaterialParamValue Param;
+    if (!Material->GetParam("DiffuseMap", Param))
+    {
+        return nullptr;
+    }
+    return GetTextureSRVFromParam(Param);
+}
+
+static FMatrix MakeEditorIdPickBillboardMatrix(const UBillboardComponent* Billboard, const FRenderBus& RenderBus)
+{
+    const FVector WorldScale = Billboard->GetBillboardWorldScale();
+    return UBillboardComponent::MakeBillboardWorldMatrix(
+        Billboard->GetWorldLocation(),
+        FVector(
+            WorldScale.X > 0.01f ? WorldScale.X : 0.01f,
+            Billboard->GetWidth() * WorldScale.Y * 0.5f,
+            Billboard->GetHeight() * WorldScale.Z * 0.5f),
+        RenderBus.GetCameraForward(),
+        RenderBus.GetCameraRight(),
+        RenderBus.GetCameraUp());
+}
+
+static void DrawIdPickCommand(ID3D11DeviceContext* Context, const FRenderCommand& Command)
+{
+    if (!Context || !Command.MeshBuffer || !Command.MeshBuffer->IsValid())
+    {
+        return;
+    }
+
+    ID3D11Buffer* VertexBuffer = Command.MeshBuffer->GetVertexBuffer().GetBuffer();
+    if (!VertexBuffer)
+    {
+        return;
+    }
+
+    uint32 Stride = Command.MeshBuffer->GetVertexBuffer().GetStride();
+    uint32 Offset = 0;
+    if (Stride == 0)
+    {
+        return;
+    }
+
+    Context->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+
+    ID3D11Buffer* IndexBuffer = Command.MeshBuffer->GetIndexBuffer().GetBuffer();
+    if (IndexBuffer)
+    {
+        Context->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        Context->DrawIndexed(Command.SectionIndexCount, Command.SectionIndexStart, 0);
+    }
+    else
+    {
+        Context->Draw(Command.MeshBuffer->GetVertexBuffer().GetVertexCount(), 0);
+    }
+}
 
 void FRenderer::Create(HWND hWindow)
 {
@@ -31,7 +133,9 @@ void FRenderer::Create(HWND hWindow)
     FResourceManager::Get().LoadShader("Shaders/ShaderSubUV.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Gizmo.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Editor.hlsl", "VS", "PS");
-    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VS", "PS");
+    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSPrimitive", "PSPrimitive", nullptr, 0);
+    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSStaticMesh", "PSTextured", nullptr, 1);
+    FResourceManager::Get().LoadShader("Shaders/SelectionMask.hlsl", "VSBillboard", "PSTextured", nullptr, 2);
     FResourceManager::Get().LoadShader("Shaders/OutlinePostProcess.hlsl", "VS", "PS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/LightPass.hlsl", "mainVS", "mainPS");
     FResourceManager::Get().LoadShader("Shaders/Multipass/FogPass.hlsl", "mainVS", "mainPS");
@@ -44,6 +148,10 @@ void FRenderer::Create(HWND hWindow)
 	FResourceManager::Get().LoadShader("Shaders/Shadow.hlsl", "ShadowVS", "ShadowPS");
     FResourceManager::Get().LoadShader("Shaders/VSMShadow.hlsl", "VSMShadowVS", "VSMShadowPS");
 	FResourceManager::Get().LoadShader("Shaders/UberLit.hlsl", "mainVS", "mainPS");
+    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSPrimitive", "PSOpaque", nullptr, 0);
+    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSStaticMesh", "PSTextured", nullptr, 1);
+    FResourceManager::Get().LoadShader("Shaders/IDPick.hlsl", "VSBillboard", "PSTextured", nullptr, 2);
+    FResourceManager::Get().LoadShader("Shaders/IDPickDebug.hlsl", "VS", "PS");
 
 	FResourceManager::Get().LoadComputeShader("Shaders/LightCullingCS.hlsl", "main",
 		FShaderHelper::BuildLightCullingCSMacros(ELightCullMode::Clustered).data(), "LightCullingCS_Clustered");
@@ -87,6 +195,8 @@ void FRenderer::CreateResources()
 
 	Resources.FogPassConstantBuffer.Create(Device.GetDevice(), sizeof(FFogPassConstants));
 	Resources.FXAAConstantBuffer.Create(Device.GetDevice(), sizeof(FFXAAConstants));
+    Resources.EditorPickingConstantBuffer.Create(Device.GetDevice(), sizeof(FEditorPickingConstants));
+    Resources.SelectionMaskConstantBuffer.Create(Device.GetDevice(), sizeof(FSelectionMaskConstants));
     Resources.SandevistanCB.Create(Device.GetDevice(), sizeof(FSandevistanConstants));
 	Resources.LightPassConstantBuffer.Create(Device.GetDevice(), sizeof(FLightPassConstants));
 	Resources.MPLightStructuredBuffer.Create(Device.GetDevice(), sizeof(FLightData), 256);
@@ -146,6 +256,8 @@ void FRenderer::Release()
     Resources.FogPassConstantBuffer.Release();
     Resources.SandevistanCB.Release();
     Resources.FXAAConstantBuffer.Release();
+    Resources.EditorPickingConstantBuffer.Release();
+    Resources.SelectionMaskConstantBuffer.Release();
     Resources.LightPassConstantBuffer.Release();
     Resources.VSMConstantBuffer.Release();
 	FGPUProfiler::Get().Shutdown();
@@ -328,6 +440,162 @@ void FRenderer::Render(const FRenderBus& InRenderBus)
 	SceneFinalSRV = RenderPipeline.GetOutSRV();
 }
 
+void FRenderer::RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors)
+{
+    OutActors.clear();
+
+    ID3D11DeviceContext* Context = Device.GetDeviceContext();
+    if (!Context || !Resource.EditorIdPickRTV || !Resource.EditorIdPickSRV || !Resource.EditorIdPickDebugRTV)
+    {
+        return;
+    }
+
+    UShader* PickShader = FResourceManager::Get().GetShader("Shaders/IDPick.hlsl");
+    UShader* DebugShader = FResourceManager::Get().GetShader("Shaders/IDPickDebug.hlsl");
+    if (!PickShader || !DebugShader)
+    {
+        return;
+    }
+
+    UpdateFrameBuffer(Context, InRenderBus);
+
+    const float ClearId[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    Context->ClearRenderTargetView(Resource.EditorIdPickRTV.Get(), ClearId);
+    Context->ClearDepthStencilView(Resource.DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+    ID3D11RenderTargetView* IdRTV = Resource.EditorIdPickRTV.Get();
+    Context->OMSetRenderTargets(1, &IdRTV, Resource.DepthStencilView.Get());
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+    ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
+    ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+    Context->OMSetDepthStencilState(DepthState, 0);
+    Context->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+    Context->RSSetState(RasterizerState);
+    Context->PSSetSamplers(0, 1, &Sampler);
+
+    ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+    std::unordered_map<AActor*, uint32> ActorToId;
+    ActorToId.reserve(128);
+
+    static constexpr ERenderPass PickPasses[] =
+    {
+        ERenderPass::Opaque,
+        ERenderPass::Translucent,
+        ERenderPass::SubUV
+    };
+
+    for (ERenderPass Pass : PickPasses)
+    {
+        const TArray<FRenderCommand>& Commands = InRenderBus.GetCommands(Pass);
+        for (const FRenderCommand& Command : Commands)
+        {
+            UPrimitiveComponent* Primitive = Command.SourcePrimitive;
+            AActor* Actor = Primitive ? Primitive->GetOwner() : nullptr;
+            if (!Primitive || !Primitive->IsVisible() || !Actor || !Actor->IsVisible() || !Actor->GetRootComponent())
+            {
+                continue;
+            }
+
+            const uint32 PickingId = GetOrAssignEditorPickId(Actor, ActorToId, OutActors);
+            if (PickingId == 0 || !Command.MeshBuffer || Command.SectionIndexCount == 0)
+            {
+                continue;
+            }
+
+            FEditorPickingConstants PickingConstants = {};
+            PickingConstants.PickingId = PickingId;
+            PickingConstants.AlphaCutoff = 0.01f;
+            PickingConstants.UVScale = FVector2(1.0f, 1.0f);
+
+            ID3D11ShaderResourceView* TextureSRV = DefaultSRV;
+            uint32 ShaderKey = 0;
+            if (Command.Type == ERenderCommandType::StaticMesh)
+            {
+                ShaderKey = 1;
+                ID3D11ShaderResourceView* DiffuseSRV = GetDiffuseSRV(Command.Material);
+                TextureSRV = DiffuseSRV ? DiffuseSRV : DefaultSRV;
+                PickingConstants.bUseAlphaTest = DiffuseSRV ? 1u : 0u;
+            }
+            else if (Command.Type == ERenderCommandType::Billboard)
+            {
+                ShaderKey = 2;
+                UTexture* Texture = Command.Constants.Billboard.Texture;
+                TextureSRV = Texture && Texture->GetSRV() ? Texture->GetSRV() : DefaultSRV;
+                PickingConstants.bUseAlphaTest = TextureSRV ? 1u : 0u;
+            }
+            else if (Command.Type == ERenderCommandType::SubUV)
+            {
+                ShaderKey = 2;
+                const FParticleResource* Particle = Command.Constants.SubUV.Particle;
+                TextureSRV = Particle && Particle->Texture && Particle->Texture->GetSRV()
+                    ? Particle->Texture->GetSRV()
+                    : DefaultSRV;
+                PickingConstants.bUseAlphaTest = TextureSRV ? 1u : 0u;
+                if (Particle && Particle->Columns > 0 && Particle->Rows > 0)
+                {
+                    const uint32 Columns = Particle->Columns;
+                    const uint32 Rows = Particle->Rows;
+                    const uint32 FrameIndex = Command.Constants.SubUV.FrameIndex;
+                    const uint32 Col = FrameIndex % Columns;
+                    const uint32 Row = FrameIndex / Columns;
+                    PickingConstants.UVOffset = FVector2(
+                        static_cast<float>(Col) / static_cast<float>(Columns),
+                        static_cast<float>(Row) / static_cast<float>(Rows));
+                    PickingConstants.UVScale = FVector2(
+                        1.0f / static_cast<float>(Columns),
+                        1.0f / static_cast<float>(Rows));
+                }
+            }
+
+            FPerObjectConstants PerObjectConstants = Command.PerObjectConstants;
+            if (Command.Type == ERenderCommandType::Billboard || Command.Type == ERenderCommandType::SubUV)
+            {
+                if (UBillboardComponent* Billboard = Cast<UBillboardComponent>(Primitive))
+                {
+                    PerObjectConstants = FPerObjectConstants(
+                        MakeEditorIdPickBillboardMatrix(Billboard, InRenderBus),
+                        Command.PerObjectConstants.Color);
+                }
+            }
+
+            Resources.PerObjectConstantBuffer.Update(Context, &PerObjectConstants, sizeof(FPerObjectConstants));
+            ID3D11Buffer* PerObjectBuffer = Resources.PerObjectConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(1, 1, &PerObjectBuffer);
+            Context->PSSetConstantBuffers(1, 1, &PerObjectBuffer);
+
+            Resources.EditorPickingConstantBuffer.Update(Context, &PickingConstants, sizeof(FEditorPickingConstants));
+            ID3D11Buffer* PickingBuffer = Resources.EditorPickingConstantBuffer.GetBuffer();
+            Context->VSSetConstantBuffers(12, 1, &PickingBuffer);
+            Context->PSSetConstantBuffers(12, 1, &PickingBuffer);
+
+            Context->PSSetShaderResources(0, 1, &TextureSRV);
+            PickShader->Bind(Context, ShaderKey);
+            DrawIdPickCommand(Context, Command);
+        }
+    }
+
+    if (Resource.EditorIdPickDebugRTV && Resource.EditorIdPickSRV)
+    {
+        ID3D11RenderTargetView* DebugRTV = Resource.EditorIdPickDebugRTV.Get();
+        Context->OMSetRenderTargets(1, &DebugRTV, nullptr);
+        Context->IASetInputLayout(nullptr);
+        Context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+        Context->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+        Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        ID3D11ShaderResourceView* IdSRV = Resource.EditorIdPickSRV.Get();
+        Context->PSSetShaderResources(0, 1, &IdSRV);
+        DebugShader->Bind(Context);
+        Context->Draw(3, 0);
+    }
+
+    ID3D11ShaderResourceView* NullSRV = nullptr;
+    Context->PSSetShaderResources(0, 1, &NullSRV);
+}
+
 void FRenderer::CompositeCurrentSceneToBackBuffer()
 {
     ID3D11ShaderResourceView* SourceSRV = SceneFinalSRV.Get();
@@ -429,6 +697,7 @@ void FRenderer::InitializeViewportResource(FSceneViewport* VP, uint32 Width, uin
 {
     FViewportRenderResource& Res = ViewportResources[Index];
 	InitializeRenderResource(Res, Width, Height);
+    InitializeEditorIdPickResource(Res, Width, Height);
 }
 
 void FRenderer::ReleaseViewportResource(FSceneViewport* VP, int32 Index)
@@ -528,8 +797,34 @@ void FRenderer::InitializeRenderResource(FViewportRenderResource& Res, uint32 Wi
     Res.DepthStencilSRV = DSR.SRV;
 }
 
+void FRenderer::InitializeEditorIdPickResource(FViewportRenderResource& Res, uint32 Width, uint32 Height)
+{
+    FRenderTarget RT = FRenderTargetFactory::CreateEditorIdPick(Device.GetDevice(), Width, Height);
+    Res.EditorIdPickTex = RT.Texture;
+    Res.EditorIdPickRTV = RT.RTV;
+    Res.EditorIdPickSRV = RT.SRV;
+
+    RT = FRenderTargetFactory::CreateEditorIdPickDebug(Device.GetDevice(), Width, Height);
+    Res.EditorIdPickDebugTex = RT.Texture;
+    Res.EditorIdPickDebugRTV = RT.RTV;
+    Res.EditorIdPickDebugSRV = RT.SRV;
+
+    D3D11_TEXTURE2D_DESC ReadbackDesc = {};
+    ReadbackDesc.Width = 1;
+    ReadbackDesc.Height = 1;
+    ReadbackDesc.MipLevels = 1;
+    ReadbackDesc.ArraySize = 1;
+    ReadbackDesc.Format = DXGI_FORMAT_R32_UINT;
+    ReadbackDesc.SampleDesc.Count = 1;
+    ReadbackDesc.Usage = D3D11_USAGE_STAGING;
+    ReadbackDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    Device.GetDevice()->CreateTexture2D(&ReadbackDesc, nullptr, Res.EditorIdPickReadbackTex.ReleaseAndGetAddressOf());
+}
+
 void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
 {
+    ReleaseEditorIdPickResource(Res);
+
     Res.SelectionMaskSRV.Reset();
     Res.SelectionMaskRTV.Reset();
     Res.SelectionMaskTex.Reset();
@@ -569,6 +864,17 @@ void FRenderer::ReleaseRenderResource(FViewportRenderResource& Res)
     Res.RenderTargetSet = FRenderTargetSet();
     Res.Width = 0;
     Res.Height = 0;
+}
+
+void FRenderer::ReleaseEditorIdPickResource(FViewportRenderResource& Res)
+{
+    Res.EditorIdPickDebugSRV.Reset();
+    Res.EditorIdPickDebugRTV.Reset();
+    Res.EditorIdPickDebugTex.Reset();
+    Res.EditorIdPickReadbackTex.Reset();
+    Res.EditorIdPickSRV.Reset();
+    Res.EditorIdPickRTV.Reset();
+    Res.EditorIdPickTex.Reset();
 }
 
 // ============================================================

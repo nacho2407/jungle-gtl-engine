@@ -35,6 +35,7 @@ namespace EditorKey
 	// View
 	constexpr const char* View = "View";
 	constexpr const char* ViewMode = "ViewMode";
+	constexpr const char* PickingMode = "PickingMode";
 	constexpr const char* bPrimitives = "bPrimitives";
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bAxis = "bAxis";
@@ -101,6 +102,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	// View
 	JSON ViewObj = Object();
 	ViewObj[EditorKey::ViewMode] = static_cast<int32>(ViewMode);
+	ViewObj[EditorKey::PickingMode] = static_cast<int32>(PickingMode);
 	ViewObj[EditorKey::bPrimitives] = ShowFlags.bPrimitives;
 	ViewObj[EditorKey::bGrid] = ShowFlags.bGrid;
 	ViewObj[EditorKey::bAxis] = ShowFlags.bAxis;
@@ -244,6 +246,12 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			int32 Mode = ViewObj[EditorKey::ViewMode].ToInt();
 			if (Mode >= 0 && Mode < static_cast<int32>(EViewMode::Count))
 				ViewMode = static_cast<EViewMode>(Mode);
+		}
+		if (ViewObj.hasKey(EditorKey::PickingMode))
+		{
+			int32 Mode = ViewObj[EditorKey::PickingMode].ToInt();
+			if (Mode >= 0 && Mode < static_cast<int32>(EEditorPickingMode::Count))
+				PickingMode = static_cast<EEditorPickingMode>(Mode);
 		}
 		if (ViewObj.hasKey(EditorKey::bPrimitives))
 			ShowFlags.bPrimitives = ViewObj[EditorKey::bPrimitives].ToBool();

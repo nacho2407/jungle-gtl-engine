@@ -19,6 +19,7 @@
 
 
 struct ID3D11ShaderResourceView;
+class UPrimitiveComponent;
 
 enum class ERenderCommandType
 {
@@ -353,9 +354,28 @@ struct FLightPassConstants
 	float	Padding[2];		// 8 bytes
 };
 
+struct FEditorPickingConstants
+{
+	uint32 PickingId = 0;
+	uint32 bUseAlphaTest = 0;
+	float AlphaCutoff = 0.01f;
+	float Padding0 = 0.0f;
+	FVector2 UVOffset = FVector2(0.0f, 0.0f);
+	FVector2 UVScale = FVector2(1.0f, 1.0f);
+};
+
+struct FSelectionMaskConstants
+{
+	uint32 bUseAlphaTest = 0;
+	float AlphaCutoff = 0.01f;
+	FVector2 UVOffset = FVector2(0.0f, 0.0f);
+	FVector2 UVScale = FVector2(1.0f, 1.0f);
+};
+
 struct FRenderCommand
 {
 	FPerObjectConstants PerObjectConstants = {};
+	UPrimitiveComponent* SourcePrimitive = nullptr;
 
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;

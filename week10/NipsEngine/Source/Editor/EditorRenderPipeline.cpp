@@ -276,6 +276,10 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
     Renderer.PrepareBatchers(Bus);
     Renderer.Render(Bus);
 
+    TArray<AActor*> IdPickActors;
+    Renderer.RenderEditorIdPickBuffer(Bus, ViewportResource, IdPickActors);
+    SceneViewport.SetEditorIdPickActors(std::move(IdPickActors));
+
 #if STATS
     const double RenderSec = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - ViewportRenderStart).count();

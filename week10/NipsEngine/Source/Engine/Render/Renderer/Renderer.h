@@ -21,6 +21,7 @@
 #include "Render/Renderer/RenderFlow/RenderPipeline.h"
 
 class FSceneViewport;
+class AActor;
 
 /**
  * Renderer 가 Viewport 별로 소유하는 데이터를 나타내는 구조체
@@ -58,6 +59,14 @@ struct FViewportRenderResource
     TComPtr<ID3D11Texture2D> SelectionMaskTex;
     TComPtr<ID3D11RenderTargetView> SelectionMaskRTV;
     TComPtr<ID3D11ShaderResourceView> SelectionMaskSRV;
+
+    TComPtr<ID3D11Texture2D> EditorIdPickTex;
+    TComPtr<ID3D11RenderTargetView> EditorIdPickRTV;
+    TComPtr<ID3D11ShaderResourceView> EditorIdPickSRV;
+    TComPtr<ID3D11Texture2D> EditorIdPickReadbackTex;
+    TComPtr<ID3D11Texture2D> EditorIdPickDebugTex;
+    TComPtr<ID3D11RenderTargetView> EditorIdPickDebugRTV;
+    TComPtr<ID3D11ShaderResourceView> EditorIdPickDebugSRV;
 
     TComPtr<ID3D11Texture2D> DepthTex;
     TComPtr<ID3D11DepthStencilView> DepthStencilView;
@@ -98,6 +107,12 @@ struct FViewportRenderResource
         RenderTargetSet.SceneDepthSRV = DepthStencilSRV.Get();
         RenderTargetSet.SelectionMaskRTV = SelectionMaskRTV.Get();
         RenderTargetSet.SelectionMaskSRV = SelectionMaskSRV.Get();
+        RenderTargetSet.EditorIdPickTexture = EditorIdPickTex.Get();
+        RenderTargetSet.EditorIdPickRTV = EditorIdPickRTV.Get();
+        RenderTargetSet.EditorIdPickSRV = EditorIdPickSRV.Get();
+        RenderTargetSet.EditorIdPickReadbackTexture = EditorIdPickReadbackTex.Get();
+        RenderTargetSet.EditorIdPickDebugRTV = EditorIdPickDebugRTV.Get();
+        RenderTargetSet.EditorIdPickDebugSRV = EditorIdPickDebugSRV.Get();
         RenderTargetSet.DepthStencilView = DepthStencilView.Get();
         RenderTargetSet.Width = static_cast<float>(Width);
         RenderTargetSet.Height = static_cast<float>(Height);
@@ -136,6 +151,7 @@ public:
     void BeginViewportFrame(FRenderTargetSet InRenderTargetSet);
     FRenderTargetSet BeginGameFrame(uint32 Width, uint32 Height);
 	void Render(const FRenderBus& InRenderBus);
+    void RenderEditorIdPickBuffer(const FRenderBus& InRenderBus, FViewportRenderResource& Resource, TArray<AActor*>& OutActors);
     void CompositeCurrentSceneToBackBuffer();
 	void EndFrame();
 	void UseBackBufferRenderTargets();
@@ -159,7 +175,9 @@ public:
 
 private:
 	void InitializeRenderResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
+    void InitializeEditorIdPickResource(FViewportRenderResource& Res, uint32 Width, uint32 Height);
 	void ReleaseRenderResource(FViewportRenderResource& Res);
+    void ReleaseEditorIdPickResource(FViewportRenderResource& Res);
 
 	void InitializePassRenderStates();
 	void InitializePassBatchers();

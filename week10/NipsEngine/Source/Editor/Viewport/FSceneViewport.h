@@ -3,9 +3,12 @@
 #include "Slate/ISlateViewport.h"
 #include "Editor/EditorUtils.h"
 #include "Editor/Viewport/EditorViewportClient.h"
+#include "Render/Common/ViewTypes.h"
 #include "Render/Device/D3DDevice.h"  // FRenderTargetSet 때문에 포함했는데 따로 분리 필요할듯
+#include <utility>
 
 class FViewportClient;
+class AActor;
 struct FViewportMouseEvent;
     /*
 * 실제 viewport 입력/출력 창구
@@ -59,11 +62,16 @@ public:
 	{ 
 		if (!RenderTargetSet)
             return nullptr;
+        if (State.ViewMode == EViewMode::IdBuffer && RenderTargetSet->EditorIdPickDebugSRV)
+            return RenderTargetSet->EditorIdPickDebugSRV;
 		return RenderTargetSet->SceneColorSRV;
 	}
 
 	void SetRenderTargetSet(FRenderTargetSet* InRenderTargetSet) { RenderTargetSet = InRenderTargetSet; }
     FRenderTargetSet* GetRenderTargetSet() const { return RenderTargetSet; }
+    void SetEditorIdPickActors(TArray<AActor*>&& InActors) { EditorIdPickActors = std::move(InActors); }
+    AActor* GetEditorIdPickActor(uint32 PickId) const;
+    bool ReadEditorIdPickAt(uint32 X, uint32 Y, ID3D11DeviceContext* Context, uint32& OutId) const;
 
 private:
 	// FViewport 내에서 FViewportClient 로 추상화하는 것이 맞지만, 현재로썬 다형성을 제대로 활용하지 않는 상태라 임시로 다음과 같이 구성
@@ -72,6 +80,7 @@ private:
 
 	// Renderer 의 자원을 참조
 	FRenderTargetSet* RenderTargetSet = nullptr;
+    TArray<AActor*> EditorIdPickActors;
 
 	uint32 ViewportRenderTargetWidth = 0;
     uint32 ViewportRenderTargetHeight = 0;

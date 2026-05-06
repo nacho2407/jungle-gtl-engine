@@ -1,10 +1,12 @@
 ﻿#pragma once
 #include "BaseEditorController.h"
 #include "Camera/ViewportCamera.h"
+#include <functional>
 
 class FSelectionManager;
 class UGizmoComponent;
 class UWorld;
+class AActor;
 
 // Note: Editor Viewport uses FViewportCamera
 class FEditorWorldController : public IBaseEditorController
@@ -67,6 +69,10 @@ class FEditorWorldController : public IBaseEditorController
             World = InWorld;
     }
     void NullifyWorld() { World = nullptr; }
+    void SetSelectionPickResolver(std::function<bool(float, float, AActor*&)> Resolver)
+    {
+        SelectionPickResolver = std::move(Resolver);
+    }
 
   private:
     void UpdateCameraRotation();
@@ -79,6 +85,7 @@ class FEditorWorldController : public IBaseEditorController
     FViewportCamera*   Camera = nullptr;
     UGizmoComponent*   Gizmo = nullptr;
     UWorld*            World = nullptr;
+    std::function<bool(float, float, AActor*&)> SelectionPickResolver;
 
     float   Yaw   = 0.f;
     float   Pitch = 0.f;

@@ -12,6 +12,7 @@ enum class EViewMode : int32
     Wireframe,
     Depth,
 	Normal,
+    IdBuffer,
     Count
 };
 

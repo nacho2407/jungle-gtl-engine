@@ -221,6 +221,11 @@ void FEditorViewportClient::Initialize(FWindowsWindow* InWindow, UEditorEngine* 
 	FViewportClient::Initialize(InWindow);
 	Editor = InEditor;
 	InputRouter.SetActiveController(EActiveEditorController::EditorWorldController);
+	InputRouter.GetEditorWorldController().SetSelectionPickResolver(
+		[this](float LocalX, float LocalY, AActor*& OutActor)
+		{
+			return ResolveActorForSelection(LocalX, LocalY, OutActor);
+		});
 	InitializeInputTools();
 }
 
@@ -421,8 +426,103 @@ void FEditorViewportClient::RequestSelectAtViewportLocalPoint(float LocalX, floa
 		return;
 	}
 
-	const FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 	AActor* BestActor = nullptr;
+	ResolveActorForSelection(LocalX, LocalY, BestActor);
+
+	if (!BestActor)
+	{
+		if (!bToggle && !bAdditive)
+		{
+			SelectionManager->ClearSelection();
+		}
+		return;
+	}
+
+	if (bToggle)
+	{
+		SelectionManager->ToggleSelect(BestActor);
+	}
+	else if (bAdditive)
+	{
+		SelectionManager->AddSelect(BestActor);
+	}
+	else
+	{
+		SelectionManager->Select(BestActor);
+	}
+}
+
+bool FEditorViewportClient::ResolveActorForSelection(float LocalX, float LocalY, AActor*& OutActor)
+{
+	OutActor = nullptr;
+	const FEditorSettings& EditorSettings = FEditorSettings::Get();
+	if (EditorSettings.PickingMode == EEditorPickingMode::IdBuffer && PickActorByIdAtViewportLocalPoint(LocalX, LocalY, OutActor))
+	{
+		return OutActor != nullptr;
+	}
+
+	return PickActorByRayAtViewportLocalPoint(LocalX, LocalY, OutActor);
+}
+
+bool FEditorViewportClient::PickActorByIdAtViewportLocalPoint(float LocalX, float LocalY, AActor*& OutActor)
+{
+	OutActor = nullptr;
+	if (!Viewport || !Editor)
+	{
+		return false;
+	}
+
+	ID3D11DeviceContext* Context = Editor->GetRenderer().GetFD3DDevice().GetDeviceContext();
+	if (!Context)
+	{
+		return false;
+	}
+
+	const int32 BaseX = static_cast<int32>(std::round(LocalX));
+	const int32 BaseY = static_cast<int32>(std::round(LocalY));
+	static constexpr POINT SampleOffsets[] =
+	{
+		{ 0, 0 },
+		{ 1, 0 },
+		{ -1, 0 },
+		{ 0, 1 },
+		{ 0, -1 }
+	};
+
+	for (const POINT& Offset : SampleOffsets)
+	{
+		uint32 PickId = 0;
+		const int32 SampleX = BaseX + static_cast<int32>(Offset.x);
+		const int32 SampleY = BaseY + static_cast<int32>(Offset.y);
+		const uint32 X = static_cast<uint32>(std::max<int32>(0, SampleX));
+		const uint32 Y = static_cast<uint32>(std::max<int32>(0, SampleY));
+		if (!Viewport->ReadEditorIdPickAt(X, Y, Context, PickId) || PickId == 0)
+		{
+			continue;
+		}
+
+		OutActor = Viewport->GetEditorIdPickActor(PickId);
+		return OutActor != nullptr;
+	}
+
+	return true;
+}
+
+bool FEditorViewportClient::PickActorByRayAtViewportLocalPoint(float LocalX, float LocalY, AActor*& OutActor)
+{
+	OutActor = nullptr;
+	if (!World || !bHasCamera || !Viewport)
+	{
+		return false;
+	}
+
+	const FViewportRect& Rect = Viewport->GetRect();
+	if (Rect.Width <= 0 || Rect.Height <= 0)
+	{
+		return false;
+	}
+
+	const FRay Ray = Camera.DeprojectScreenToWorld(LocalX, LocalY, static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 	float ClosestDist = FLT_MAX;
 
 	FWorldSpatialIndex::FPrimitiveRayQueryScratch RayQueryScratch;
@@ -448,31 +548,11 @@ void FEditorViewportClient::RequestSelectAtViewportLocalPoint(float LocalX, floa
 		if (PrimitiveComp->Raycast(Ray, HitResult) && HitResult.Distance < ClosestDist)
 		{
 			ClosestDist = HitResult.Distance;
-			BestActor = Actor;
+			OutActor = Actor;
 		}
 	}
 
-	if (!BestActor)
-	{
-		if (!bToggle && !bAdditive)
-		{
-			SelectionManager->ClearSelection();
-		}
-		return;
-	}
-
-	if (bToggle)
-	{
-		SelectionManager->ToggleSelect(BestActor);
-	}
-	else if (bAdditive)
-	{
-		SelectionManager->AddSelect(BestActor);
-	}
-	else
-	{
-		SelectionManager->Select(BestActor);
-	}
+	return true;
 }
 
 bool FEditorViewportClient::ProcessInput(FViewportInputContext& Context)

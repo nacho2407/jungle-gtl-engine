@@ -7,6 +7,13 @@
 #include "Render/Common/ViewTypes.h"
 #include "Render/Resource/ShaderHelper.h"
  
+enum class EEditorPickingMode : int32
+{
+	IdBuffer,
+	RayTriangle,
+	Count
+};
+
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
 	friend class TSingleton<FEditorSettings>;
@@ -37,6 +44,7 @@ public:
 	EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 	FShowFlags ShowFlags;
 	bool bEnableFXAA = true;
+	EEditorPickingMode PickingMode = EEditorPickingMode::IdBuffer;
 
 	// Grid
 	float GridSpacing = 1.0f;
