@@ -9,8 +9,8 @@ void APlayerCameraManager::BeginPlay()
 
 void APlayerCameraManager::Tick(float DeltaTime)
 {
-    FMinimalViewInfo View;
-    GetCameraView(DeltaTime, View);
+    AActor::Tick(DeltaTime);
+    UpdateCamera(DeltaTime);
 }
 
 void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
@@ -22,10 +22,8 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
 	}
 
     // 현재 카메라 상태 저장
-    FMinimalViewInfo CurrentView;
-    GetCameraView(0.f, CurrentView);
-
-    Transition.From = CurrentView;
+    UpdateCamera(0);
+    Transition.From = CachedView;
 
     // 새 타겟 설정
     ViewTarget.Target = NewTarget;
@@ -41,21 +39,26 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget)
     Transition.TotalTime = 0.3f;
     Transition.RemainingTime = 0.3f;
     Transition.bActive = true;
-
 	
 	UE_LOG("[PlayerCameraManager] SetViewTarget. Target=%s Camera=%s",
            ViewTarget.Target ? ViewTarget.Target->GetFName().ToString().c_str() : "None",
            ViewTarget.CameraComp ? ViewTarget.CameraComp->GetName().c_str() : "None");
 }
 
-void APlayerCameraManager::GetCameraView(float DeltaTime, FMinimalViewInfo& OutView)
+const FMinimalViewInfo& APlayerCameraManager::GetCameraView() const
 {
-    UpdateViewTarget(DeltaTime);
-    ComputeCamera(DeltaTime, OutView);
+    return CachedView;
+}
 
-    UpdateTransition(DeltaTime, OutView);
-    ApplyModifiers(DeltaTime, OutView);
+void APlayerCameraManager::UpdateCamera(float DeltaTime)
+{
+    FMinimalViewInfo OutResult;
+    UpdateViewTarget(DeltaTime);
+    ComputeCamera(DeltaTime, OutResult);
+    UpdateTransition(DeltaTime, OutResult);
+    ApplyModifiers(DeltaTime, OutResult);
     UpdateFade(DeltaTime);
+	CachedView = OutResult;
 }
 
 void APlayerCameraManager::StartFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color)
@@ -105,25 +108,19 @@ void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
 {
     if (ViewTarget.CameraComp)
     {
-        FMinimalViewInfo CamView{};
-        ViewTarget.CameraComp->GetCameraView(DeltaTime, CamView);
-
-        ViewTarget.Location = CamView.Location;
-        ViewTarget.Rotation = CamView.Rotation;
-        ViewTarget.FOV = CamView.FOV;
+        ViewTarget.CameraComp->GetCameraView(DeltaTime, ViewTarget.POV);
     }
     else if (ViewTarget.Target)
     {
-        ViewTarget.Location = ViewTarget.Target->GetActorLocation();
-        ViewTarget.Rotation = FRotator::MakeFromEuler(ViewTarget.Target->GetActorRotation());		
+        ViewTarget.POV.Location = ViewTarget.Target->GetActorLocation();
+        ViewTarget.POV.Rotation = FQuat::MakeFromEuler(ViewTarget.Target->GetActorRotation()).GetNormalized();
+		// FOV 등 나머진 Default 값
     }
 }
 
 void APlayerCameraManager::ComputeCamera(float DeltaTime, FMinimalViewInfo& OutView)
 {
-    OutView.Location = ViewTarget.Location;
-    OutView.Rotation = ViewTarget.Rotation;
-    OutView.FOV = ViewTarget.FOV;
+    OutView = ViewTarget.POV;
 }
 
 void APlayerCameraManager::ApplyModifiers(float DeltaTime, FMinimalViewInfo& InOutView)
@@ -164,7 +161,7 @@ void APlayerCameraManager::UpdateTransition(float DeltaTime, FMinimalViewInfo& I
     Alpha = Alpha * Alpha * (3.f - 2.f * Alpha);
 
     InOutView.Location = FVector::Lerp(Transition.From.Location, Transition.To.Location, Alpha);
-    InOutView.Rotation = FRotator::Lerp(Transition.From.Rotation, Transition.To.Rotation, Alpha);
+    InOutView.Rotation = FQuat::Slerp(Transition.From.Rotation, Transition.To.Rotation, Alpha);
     InOutView.FOV = std::lerp(Transition.From.FOV, Transition.To.FOV, Alpha);
 
     if (Transition.RemainingTime <= 0.f)
@@ -189,6 +186,4 @@ void APlayerCameraManager::UpdateFade(float DeltaTime)
     {
         Fade.bActive = false;
     }
-
-    // 실제 렌더러에서 Fade.Color + Fade.CurrentAlpha 사용
 }

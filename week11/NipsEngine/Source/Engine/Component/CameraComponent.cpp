@@ -215,8 +215,13 @@ void UCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& OutView)
     const FTransform& T = GetWorldTransform();
 
     OutView.Location = T.GetLocation();
-    OutView.Rotation = T.GetRotation().Rotator();
-    OutView.FOV = GetFOV();
+    OutView.Rotation = T.GetRotation().GetNormalized();
+    OutView.FOV = CameraState.FOV;
+    OutView.bIsOrthogonal = CameraState.bIsOrthogonal;
+    OutView.AspectRatio = CameraState.AspectRatio;
+    OutView.FarZ = CameraState.FarZ;
+    OutView.NearZ = CameraState.NearZ;
+    OutView.OrthoWidth = CameraState.OrthoWidth;
 }
 
 void UCameraComponent::MoveForward(float Distance)

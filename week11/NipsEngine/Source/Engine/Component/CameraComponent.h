@@ -6,6 +6,7 @@
 #include "Math/Utils.h"
 #include "Math/Vector.h"
 
+// 렌더 전용 구조체
 struct FCameraState
 {
 	float FOV = 3.14159265358979f / 3.0f;
@@ -14,13 +15,22 @@ struct FCameraState
 	float FarZ = 1000.0f;
 	float OrthoWidth = 10.0f;
 	bool bIsOrthogonal = false;
+
 };
 
+// PlayerCameraManager 의 연산 결과를 담는 구조체
+// 지금은 CameraState 와 대부분 겹치긴 하지만, 다른 레이어라고 생각하여 분리
 struct FMinimalViewInfo
 {
-    FVector Location;
-    FRotator Rotation;
-    float FOV = 90.f;
+    float FOV = 3.14159265358979f / 3.0f;
+    float AspectRatio = 16.0f / 9.0f;
+    float NearZ = 0.1f;
+    float FarZ = 1000.0f;
+    float OrthoWidth = 10.0f;
+    bool bIsOrthogonal = false;
+
+    FVector Location = FVector::ZeroVector;
+    FQuat Rotation = FQuat::Identity;
 };
 
 class UCameraComponent : public USceneComponent

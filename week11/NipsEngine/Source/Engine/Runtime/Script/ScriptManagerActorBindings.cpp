@@ -338,8 +338,6 @@ void FScriptManager::BindActorTypes()
     LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, APlayerController, "PlayerController", AActor, UObject)
     LUA_METHOD(Possess, Possess);
     LUA_METHOD(UnPossess, UnPossess);
-    LUA_METHOD(SetViewTarget, SetViewTarget);
-    LUA_METHOD(SetViewTargetCamera, SetViewTargetCamera);
     LUA_METHOD(SetCursorVisible, SetCursorVisible);
     LUA_METHOD(IsCursorVisible, IsCursorVisible);
     LUA_METHOD(SetCursorLocked, SetCursorLocked);
