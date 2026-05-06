@@ -1,7 +1,9 @@
 ﻿#include "Runtime/Script/ScriptManager.h"
 
+#include "Asset/CurveFloatAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Component/ActorComponent.h"
+#include "Component/ActorSequenceComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/BoxComponent.h"
 #include "Component/CameraComponent.h"
@@ -33,6 +35,9 @@
 #include "Runtime/Script/ScriptComponent.h"
 #include "Runtime/Script/ScriptUtils.h"
 
+#include <algorithm>
+#include <cctype>
+
 namespace
 {
     AActor* LuaGetComponentActor(UActorComponent& Component)
@@ -52,6 +57,109 @@ namespace
         }
         return Tags;
     }
+
+    FString LuaGetStringField(
+        const sol::table& Table,
+        const char* LowerName,
+        const char* UpperName,
+        const char* FallbackName = nullptr)
+    {
+        FString Value = Table[LowerName].get_or<FString>("");
+        if (!Value.empty())
+        {
+            return Value;
+        }
+
+        Value = Table[UpperName].get_or<FString>("");
+        if (!Value.empty() || !FallbackName)
+        {
+            return Value;
+        }
+
+        return Table[FallbackName].get_or<FString>("");
+    }
+
+    FString LuaToLower(FString Value)
+    {
+        std::transform(
+            Value.begin(),
+            Value.end(),
+            Value.begin(),
+            [](unsigned char Ch)
+            {
+                return static_cast<char>(std::tolower(Ch));
+            });
+        return Value;
+    }
+
+    ECurveApplyMode LuaParseCurveApplyMode(const FString& Text)
+    {
+        const FString Lower = LuaToLower(Text);
+        if (Lower == "add")
+        {
+            return ECurveApplyMode::Add;
+        }
+        if (Lower == "multiply")
+        {
+            return ECurveApplyMode::Multiply;
+        }
+        return ECurveApplyMode::Direct;
+    }
+
+    ECurveTimeMappingMode LuaParseCurveTimeMappingMode(const FString& Text)
+    {
+        const FString Lower = LuaToLower(Text);
+        if (Lower == "curvetime" || Lower == "curve_time" || Lower == "curve time")
+        {
+            return ECurveTimeMappingMode::CurveTime;
+        }
+        return ECurveTimeMappingMode::NormalizedTime;
+    }
+
+    bool LuaAddActorSequenceFloatTrack(UActorSequenceComponent& Component, const sol::table& Desc)
+    {
+        FActorSequenceFloatTrackDesc TrackDesc;
+        TrackDesc.TargetObjectName = LuaGetStringField(
+            Desc,
+            "targetObjectName",
+            "TargetObjectName",
+            "targetComponent");
+        if (TrackDesc.TargetObjectName.empty())
+        {
+            TrackDesc.TargetObjectName = Desc["TargetComponent"].get_or<FString>("");
+        }
+
+        TrackDesc.TargetPropertyPath = LuaGetStringField(
+            Desc,
+            "targetPropertyPath",
+            "TargetPropertyPath",
+            "targetProperty");
+        if (TrackDesc.TargetPropertyPath.empty())
+        {
+            TrackDesc.TargetPropertyPath = Desc["TargetProperty"].get_or<FString>("");
+        }
+
+        TrackDesc.CurveAssetPath = LuaGetStringField(
+            Desc,
+            "curveAssetPath",
+            "CurveAssetPath",
+            "curve");
+        if (TrackDesc.CurveAssetPath.empty())
+        {
+            TrackDesc.CurveAssetPath = Desc["Curve"].get_or<FString>("");
+        }
+
+        TrackDesc.StartTime = Desc["startTime"].get_or(Desc["StartTime"].get_or(0.0f));
+        TrackDesc.Duration = Desc["duration"].get_or(Desc["Duration"].get_or(1.0f));
+        TrackDesc.PlayRate = Desc["playRate"].get_or(Desc["PlayRate"].get_or(1.0f));
+        TrackDesc.bLoop = Desc["loop"].get_or(Desc["Loop"].get_or(false));
+        TrackDesc.ApplyMode = LuaParseCurveApplyMode(
+            Desc["applyMode"].get_or(Desc["ApplyMode"].get_or(FString("Direct"))));
+        TrackDesc.TimeMappingMode = LuaParseCurveTimeMappingMode(
+            Desc["timeMappingMode"].get_or(Desc["TimeMappingMode"].get_or(FString("NormalizedTime"))));
+
+        return Component.AddFloatTrack(TrackDesc);
+    }
 }
 
 void FScriptManager::BindComponentTypes()
@@ -65,6 +173,8 @@ void FScriptManager::BindComponentTypes()
 				 { return Cast<USceneComponent>(&Self); });
     LUA_SET(AsBoxComponent, [](UActorComponent& Self) -> UBoxComponent*
             { return Cast<UBoxComponent>(&Self); });
+    LUA_SET(AsActorSequenceComponent, [](UActorComponent& Self) -> UActorSequenceComponent*
+            { return Cast<UActorSequenceComponent>(&Self); });
     LUA_METHOD(IsActive, IsActive);
     LUA_METHOD(SetActive, SetActive);
     LUA_METHOD(IsAutoActivate, IsAutoActivate);
@@ -207,6 +317,15 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(HotReloadScript, HotReloadScript);
     LUA_METHOD(ClearScript, ClearScript);
     LUA_RW_PROPERTY(ScriptName, GetScriptName, SetScriptName);
+    LUA_END_TYPE();
+
+    LUA_BEGIN_TYPE_NO_CTOR_BASE(GLuaState, UActorSequenceComponent, "ActorSequenceComponent", UActorComponent, UObject)
+    LUA_METHOD(Play, Play);
+    LUA_METHOD(Pause, Pause);
+    LUA_METHOD(Stop, Stop);
+    LUA_METHOD(GetSequence, GetSequence);
+    LUA_METHOD(GetSequencePlayer, GetSequencePlayer);
+    LUA_SET(AddFloatTrack, &LuaAddActorSequenceFloatTrack);
     LUA_END_TYPE();
 }
 

@@ -46,7 +46,7 @@ UObject* UObject::Duplicate()
 // GetEditableProperties 에 노출된 프로퍼티를 이름 기반으로 매칭하여 복사합니다.
 // ・ Bool / Int / Float / Vec3 / Vec4  → memcpy
 // ・ String                            → FString 대입
-// ・ Name                              → FName 대입 후 PostEditProperty 호출
+// ・ Name                              → FName 대입 후 PostEditChangeProperty 호출
 // ・ SceneComponentRef                 → 포인터 복원은 호출 측(Duplicate) 에서 담당
 void UObject::CopyPropertiesFrom(UObject* Src)
 {
@@ -85,19 +85,19 @@ void UObject::CopyPropertiesFrom(UObject* Src)
             if (Size > 0)
 			{
                 memcpy(DstProp->ValuePtr, SrcProp.ValuePtr, Size);
-				this->PostEditProperty(SrcProp.Name);
+				this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
 			}
             break;
         }
         case EPropertyType::String:
             *static_cast<FString*>(DstProp->ValuePtr) = *static_cast<const FString*>(SrcProp.ValuePtr);
-			this->PostEditProperty(SrcProp.Name);
+			this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
             break;
 
         case EPropertyType::Name:
             *static_cast<FName*>(DstProp->ValuePtr) = *static_cast<const FName*>(SrcProp.ValuePtr);
-            // FName 은 리소스 키이므로 캐시 갱신을 위해 PostEditProperty 를 호출합니다.
-            this->PostEditProperty(SrcProp.Name);
+            // FName 은 리소스 키이므로 캐시 갱신을 위해 PostEditChangeProperty 를 호출합니다.
+            this->PostEditChangeProperty({ SrcProp.Name, EPropertyChangeType::ValueSet });
             break;
 
         case EPropertyType::SceneComponentRef:

@@ -52,6 +52,9 @@
     <Filter Include="Source\Engine\Asset">
       <UniqueIdentifier>{4defec5c-eaae-b334-ca2c-12fdd0abe386}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Animation">
+      <UniqueIdentifier>{ec03551c-6f89-4b63-b715-98e8c0a38102}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Collision">
       <UniqueIdentifier>{b6e31b62-ff44-29dc-3a64-69f9805cba88}</UniqueIdentifier>
     </Filter>
@@ -231,6 +234,9 @@
     <ClCompile Include="Source\Editor\UI\EditorControlWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorCurveEditorWidget.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorMainPanelDebug.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -303,6 +309,9 @@
     <ClCompile Include="Source\Editor\UI\EditorPlayStreamWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\EditorActorSequenceDetails.cpp">
+      <Filter>Source\Editor\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI</Filter>
     </ClCompile>
@@ -339,6 +348,12 @@
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -360,10 +375,22 @@
     <ClCompile Include="Source\Engine\Asset\StaticMeshSimplifier.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\CurvePlayback.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\ActorSequence.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Animation\TimelinePlayer.cpp">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\RayCollision\RayCollision.cpp">
       <Filter>Source\Engine\Collision\RayCollision</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
+      <Filter>Source\Engine\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\ActorSequenceComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\BillboardComponent.cpp">
@@ -448,6 +475,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\Guid.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Paths.cpp">
@@ -816,6 +846,7 @@
     <ClCompile Include="Source\Engine\Runtime\Script\CoroutineScheduler.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerAnimationBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerComponentBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerEngineBindings.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerMathBindings.cpp" />
@@ -900,6 +931,9 @@
     <ClInclude Include="Source\Editor\UI\EditorControlWidget.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorCurveEditorWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorFooterLogSystem.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
@@ -925,6 +959,9 @@
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h">
+      <Filter>Source\Editor\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h">
       <Filter>Source\Editor\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\EditorPropertyWidget.h">
@@ -972,6 +1009,12 @@
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FileUtils.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
@@ -999,10 +1042,22 @@
     <ClInclude Include="Source\Engine\Asset\StaticMeshTypes.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\CurvePlayback.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\ActorSequence.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\TimelinePlayer.h">
+      <Filter>Source\Engine\Animation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\RayCollision\RayCollision.h">
       <Filter>Source\Engine\Collision\RayCollision</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
+      <Filter>Source\Engine\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\ActorSequenceComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\BillboardComponent.h">
@@ -1105,6 +1160,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\EngineTypes.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Guid.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Paths.h">
