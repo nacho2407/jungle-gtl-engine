@@ -40,14 +40,12 @@ end
 function OnOverlap(OtherActor)
     if ObjRegistry.car ~= nil and OtherActor.UUID == ObjRegistry.car.UUID then
         bIsOverlapping = true
-        UIManager.SetGasFeedbackActive(true)
     end
 end
 
 function OnEndOverlap(OtherActor)
     if ObjRegistry.car ~= nil and OtherActor.UUID == ObjRegistry.car.UUID then
         bIsOverlapping = false
-        UIManager.SetGasFeedbackActive(false)
     end
 end
 
@@ -64,7 +62,6 @@ function Tick(dt)
 
         if not bIsCarGasPhase then
             bIsOverlapping = false
-            UIManager.SetGasFeedbackActive(false)
             SetFuelingLoopPlaying(false)
         end
     end
@@ -77,7 +74,6 @@ function Tick(dt)
             obj.Rotation = manCamera.Rotation
         end
 
-        UIManager.SetGasFeedbackActive(bIsOverlapping)
         SetFuelingLoopPlaying(bIsOverlapping)
 
         if bIsOverlapping and ObjRegistry.car ~= nil then
@@ -90,7 +86,6 @@ function Tick(dt)
             end
         end
     else
-        UIManager.SetGasFeedbackActive(false)
         SetFuelingLoopPlaying(false)
     end
 end
