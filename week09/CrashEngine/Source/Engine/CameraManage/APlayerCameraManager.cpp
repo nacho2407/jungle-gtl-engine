@@ -1,4 +1,4 @@
-#include "CameraManage/APlayerCameraManager.h"
+﻿#include "CameraManage/APlayerCameraManager.h"
 
 #include "CameraManage/CameraModifiers/CameraModifier.h"
 #include "CameraManage/CameraModifiers/CameraModifier_Fade.h"
@@ -26,27 +26,55 @@ void APlayerCameraManager::SetViewTarget(UCameraComponent* NewCamera)
     ViewTarget.TargetActor = NewCamera ? NewCamera->GetOwner() : nullptr;
 }
 
+void APlayerCameraManager::SetViewTarget(AActor* NewActor)
+{
+    if (!NewActor)
+    {
+        ViewTarget = FViewTarget{};
+        return;
+    }
+
+    ViewTarget.TargetActor = NewActor;
+
+    for (UActorComponent* Comp : NewActor->GetComponents())
+    {
+        if (UCameraComponent* Camera = Cast<UCameraComponent>(Comp))
+        {
+            ViewTarget.POVCamera = Camera;
+            break;
+        }
+    }
+}
+
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
-    UCameraComponent* Camera = ViewTarget.POVCamera;
-    if (!Camera)
+    if (!ViewTarget.TargetActor)
     {
         return;
     }
 
-    CameraViewInfoCache.Location = Camera->GetWorldLocation();
-    CameraViewInfoCache.Rotation = Camera->GetWorldMatrix().ToRotator();
-    CameraViewInfoCache.CameraState = Camera->GetCameraState();
+    CameraViewInfoCache.Location = ViewTarget.TargetActor->GetActorLocation();
+    CameraViewInfoCache.Rotation = ViewTarget.TargetActor->GetActorRotation();
+    //CameraViewInfoCache.CameraState = Camera->GetCameraState();
     CameraViewInfoCache.ScreenEffects = BaseScreenEffects;
+    if (ViewTarget.POVCamera)
+    {
+        CameraViewInfoCache.CameraState = ViewTarget.POVCamera->GetCameraState();
+    }
+    else
+    {
+        CameraViewInfoCache.CameraState = FCameraState{};
+    }
 
     std::sort(ModifierList.begin(), ModifierList.end(), [](const UCameraModifier* Lhs, const UCameraModifier* Rhs)
-    {
+              {
         if (!Lhs)
             return false;
         if (!Rhs)
             return true;
-        return Lhs->GetPriority() < Rhs->GetPriority();
-    });
+        return Lhs->GetPriority() < Rhs->GetPriority(); });
+
+    UpdateTransition(DeltaTime);
 
     for (UCameraModifier* Modifier : ModifierList)
     {
@@ -75,7 +103,7 @@ void APlayerCameraManager::RemoveFinishedModifiers()
 {
     ModifierList.erase(
         std::remove_if(ModifierList.begin(), ModifierList.end(), [](UCameraModifier* Modifier)
-        {
+                       {
             if (!Modifier || Modifier->IsFinished())
             {
                 if (Modifier)
@@ -84,8 +112,7 @@ void APlayerCameraManager::RemoveFinishedModifiers()
                 }
                 return true;
             }
-            return false;
-        }),
+            return false; }),
         ModifierList.end());
 }
 
@@ -270,4 +297,107 @@ void APlayerCameraManager::CommitVignette(const FCameraVignetteParams& Params)
     BaseScreenEffects.VignetteIntensity = Clamp(Params.ToIntensity, 0.0f, 1.0f);
     BaseScreenEffects.VignetteRadius = Clamp(Params.Radius, 0.0f, 2.0f);
     BaseScreenEffects.VignetteSoftness = Clamp(Params.Softness, 0.001f, 2.0f);
+}
+
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewActor, const FCameraTransitionParams& Params)
+{
+    if (!NewActor)
+    {
+        return;
+    }
+
+    FCameraViewInfo NewCameraViewInfo = {};
+    NewCameraViewInfo.Location = NewActor->GetActorLocation();
+    NewCameraViewInfo.Rotation = NewActor->GetActorRotation();
+
+    OldCameraViewInfoCache = CameraViewInfoCache;
+    SetViewTarget(NewActor);
+    if (ViewTarget.POVCamera != nullptr) // fallback용
+    {
+        NewCameraViewInfo.CameraState = ViewTarget.POVCamera->GetCameraState();
+    }
+    for (auto comp : NewActor->GetComponents())
+    {
+        if (comp->IsA<UCameraComponent>())
+        {
+            if (UCameraComponent* Camera = Cast<UCameraComponent>(comp))
+            {
+                NewCameraViewInfo.CameraState = Camera->GetCameraState();
+                break;
+            }
+        }
+    }
+    NewCameraViewInfo.ScreenEffects = BaseScreenEffects;
+
+    TransitionState.bActive = true;
+    TransitionState.FromView = CameraViewInfoCache;
+    TransitionState.ToView = NewCameraViewInfo;
+    TransitionState.Duration = Params.Duration;
+    TransitionState.ElapsedTime = 0;
+    TransitionState.BlendType = Params.BlendType;
+}
+
+void APlayerCameraManager::UpdateTransition(float DeltaTime)
+{
+    if (!TransitionState.bActive)
+    {
+        return;
+    }
+
+    TransitionState.ElapsedTime += DeltaTime;
+
+    const float NormalizedTime = TransitionState.Duration > 0.0f
+                                     ? Clamp(TransitionState.ElapsedTime / TransitionState.Duration, 0.0f, 1.0f)
+                                     : 1.0f;
+
+    const float T = CameraTransition::EvaluateBlendAlpha(NormalizedTime, TransitionState.BlendType);
+
+    auto LerpFloat = [](float From, float To, float Alpha)
+    {
+        return From + (To - From) * Alpha;
+    };
+
+    auto LerpAngleDegrees = [&](float From, float To, float Alpha)
+    {
+        float Delta = To - From;
+
+        while (Delta > 180.0f)
+        {
+            Delta -= 360.0f;
+        }
+
+        while (Delta < -180.0f)
+        {
+            Delta += 360.0f;
+        }
+
+        return From + Delta * Alpha;
+    };
+
+    const FCameraViewInfo& FromView = OldCameraViewInfoCache;
+    const FCameraViewInfo& ToView = TransitionState.ToView;
+
+    CameraViewInfoCache.Location = FromView.Location + (ToView.Location - FromView.Location) * T;
+
+    CameraViewInfoCache.Rotation.Pitch = LerpAngleDegrees(FromView.Rotation.Pitch, ToView.Rotation.Pitch, T);
+    CameraViewInfoCache.Rotation.Yaw = LerpAngleDegrees(FromView.Rotation.Yaw, ToView.Rotation.Yaw, T);
+    CameraViewInfoCache.Rotation.Roll = LerpAngleDegrees(FromView.Rotation.Roll, ToView.Rotation.Roll, T);
+
+    CameraViewInfoCache.CameraState.FOV = LerpFloat(FromView.CameraState.FOV, ToView.CameraState.FOV, T);
+    CameraViewInfoCache.CameraState.AspectRatio = LerpFloat(FromView.CameraState.AspectRatio, ToView.CameraState.AspectRatio, T);
+    CameraViewInfoCache.CameraState.NearZ = LerpFloat(FromView.CameraState.NearZ, ToView.CameraState.NearZ, T);
+    CameraViewInfoCache.CameraState.FarZ = LerpFloat(FromView.CameraState.FarZ, ToView.CameraState.FarZ, T);
+    CameraViewInfoCache.CameraState.OrthoWidth = LerpFloat(FromView.CameraState.OrthoWidth, ToView.CameraState.OrthoWidth, T);
+
+    CameraViewInfoCache.CameraState.bIsOrthogonal = T < 1.0f
+                                                        ? FromView.CameraState.bIsOrthogonal
+                                                        : ToView.CameraState.bIsOrthogonal;
+    if (NormalizedTime >= 1.0f)
+    {
+        CameraViewInfoCache.Location = ToView.Location;
+        CameraViewInfoCache.Rotation = ToView.Rotation;
+        CameraViewInfoCache.CameraState = ToView.CameraState;
+
+        TransitionState.bActive = false;
+    }
 }

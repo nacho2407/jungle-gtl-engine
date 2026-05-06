@@ -18,6 +18,10 @@ void URotatingMovementComponent::BeginPlay()
         CameraManager->PlayCameraLetterBox(0.0f, 0.2f, 2.f);
         CameraManager->PlayCameraFade(0.0f, 0.5f, 5.f);
     }
+    FCameraTransitionParams param = {};
+    param.Duration = 1;
+    param.BlendType = ECameraTransitionBlendType::Cubic;
+    GEngine->GetPlayerCameraManager()->SetViewTargetWithBlend(GetOwner(), param);
 }
 
 void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

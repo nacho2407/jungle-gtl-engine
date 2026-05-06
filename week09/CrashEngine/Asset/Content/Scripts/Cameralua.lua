@@ -187,8 +187,8 @@ local function updateGamepadZoomInput()
 end
 
 local function updateAimInput(dt)
-    AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity
-    AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity
+    AimYaw = AimYaw + Input:GetAxis("MouseX") * MouseSensitivity * World.GetTimeScale()
+    AimPitch = AimPitch - Input:GetAxis("MouseY") * MouseSensitivity * World.GetTimeScale()
 
     if isGamepadConnected() then
         AimYaw = AimYaw + Input:GetAxis("GamepadRightX", GamepadControllerId) * GamepadAimYawSpeed * dt

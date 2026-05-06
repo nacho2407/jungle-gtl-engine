@@ -408,6 +408,7 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClCompile Include="Source\Engine\CameraManage\CameraEffectAssetManager.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\APlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\Core\GameTimeManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaComponentProxy.cpp" />
@@ -648,11 +649,13 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.h" />
+    <ClInclude Include="Source\Engine\CameraManage\CameraTransitionUtils.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraEffectAssetManager.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraTypes.h" />
     <ClInclude Include="Source\Engine\CameraManage\APlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\Core\GameTimeManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaComponentProxy.h" />

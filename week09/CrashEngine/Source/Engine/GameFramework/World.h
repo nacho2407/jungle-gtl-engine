@@ -14,10 +14,18 @@
 #include <Collision/Octree.h>
 #include <Collision/SpatialPartition.h>
 
+#include "Core/GameTimeManager.h"
+
 class UCameraComponent;
 class UPrimitiveComponent;
 class FCollisionManager;
 class APlayerController;
+
+struct FWorldTimeContext
+{
+    float Deltatime = 0.0f;
+    float UnScaledDeltatime = 0.0f;
+};
 
     // UWorld는 월드 실행 상태와 레벨 구성을 관리합니다.
 class UWorld : public UObject
@@ -84,6 +92,10 @@ public:
 	FCollisionManager* GetCollisionManager() { return CollisionManager.get(); }
     void UpdateCollisionInBVH(UPrimitiveComponent* Comp);
 
+    void RequestHitStop(float Duration) { GameTimeManager.RequestHitStop(Duration); }
+    void RequestSlomo(float InTimeScale, float Duration) { GameTimeManager.RequestSlomo(InTimeScale, Duration); }
+    float GetUnScaledDeltatime() { return GameTimeManager.GetUnScaledDeltatime(); }
+    float GetTimeScale() { return GameTimeManager.GetTimeScale(); }
 
 private:
     struct FPendingDamage
@@ -113,6 +125,10 @@ private:
     FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
     FScene Scene;
     FTickManager TickManager;
+    
+    FGameTimeManager GameTimeManager;
+    FWorldTimeContext WorldTimeContext;
+
     APlayerController* PlayerController = nullptr;
     TArray<FPendingDamage> PendingDamages;
     TArray<uint32> PendingDestroyActorUUIDs;

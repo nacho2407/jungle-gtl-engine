@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "LuaScript/LuaGameObjectProxy.h"
@@ -35,6 +35,10 @@ public:
     void PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration);
     void PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness);
     bool PlayCameraEffectAsset(const FString& AssetPath);
+    bool RequestHitStop(float Duration) const;
+    bool RequestSlomo(float InTimeScale, float Duration) const;
+    float GetUnscaledDeltatime() const;
+    float GetTimeScale() const;
 
 private:
     uint32 WorldUUID = 0;
