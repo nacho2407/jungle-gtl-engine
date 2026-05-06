@@ -1,6 +1,6 @@
 #pragma once
-#include "Engine/Input/Controller/EditorController/EditorWorldController.h"
-#include "Engine/Input/Controller/EditorController/GameInputBridge.h"
+#include "Editor/Input/EditorWorldController.h"
+#include "Editor/Input/GameInputBridge.h"
 
 enum class EActiveEditorController
 {

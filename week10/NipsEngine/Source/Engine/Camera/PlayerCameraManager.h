@@ -8,6 +8,15 @@ class UCameraComponent;
 class UCameraModifier;
 class APlayerController;
 
+enum class ECameraBlendType
+{
+    Linear,
+    EaseIn,
+    EaseOut,
+    EaseInOut,
+    SmoothStep
+};
+
 class APlayerCameraManager : public AActor
 {
 public:
@@ -18,6 +27,9 @@ public:
 
     // ===== Core API =====
     void SetViewTarget(AActor* NewTarget);
+    void SetViewTargetWithBlend(AActor* NewTarget, float BlendTime);
+    void SetViewTargetWithBlend(AActor* NewTarget, float BlendTime, ECameraBlendType BlendType);
+    void SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType);
     const FMinimalViewInfo& GetCameraView();
 
     // ===== Fade =====
@@ -58,6 +70,7 @@ private:
 
         float TotalTime = 0.f;
         float RemainingTime = 0.f;
+        ECameraBlendType BlendType = ECameraBlendType::SmoothStep;
 
         bool bActive = false;
     };
@@ -97,6 +110,8 @@ private:
 	APlayerController* PCOwner = nullptr;
     FMinimalViewInfo CachedView;
     UCameraModifier_CameraShake* CacheCameraShakeMod = nullptr;
+    float DefaultBlendTime = 0.3f;
+    ECameraBlendType DefaultBlendType = ECameraBlendType::SmoothStep;
 
 public:
     template <typename PatternType>

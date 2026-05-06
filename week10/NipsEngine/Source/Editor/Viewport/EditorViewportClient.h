@@ -4,7 +4,7 @@
 #include "Engine/Geometry/Ray.h"
 #include "Core/CollisionTypes.h"
 #include "Runtime/ViewportClient.h"
-#include "Engine/Input/Controller/EditorController/EditorInputRouter.h"
+#include "Editor/Input/EditorInputRouter.h"
 #include "Spatial/WorldSpatialIndex.h"
 #include "Editor/EditorUtils.h"
 #include "Editor/PIE/PIESession.h"

@@ -221,6 +221,11 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
     ViewportLayout.OnWindowResized(Width, Height);
 }
 
+bool UEditorEngine::CanCloseApplication()
+{
+	return MainPanel.CanCloseEditor();
+}
+
 
 void UEditorEngine::Tick(float DeltaTime)
 {
