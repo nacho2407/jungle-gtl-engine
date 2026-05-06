@@ -92,6 +92,14 @@ void RegisterGameLuaBindings(sol::state& Lua)
 	{
 		return Actor.IsVisible();
 	};
+	ActorType["SetCollisionEnabled"] = [](AActor& Actor, bool bEnabled)
+	{
+		UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>(Actor.GetRootComponent());
+		if (Prim)
+		{
+			Prim->SetCollisionEnabled(bEnabled ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+		}
+	};
 	ActorType["SetLaunchVelocity"] = [](AActor& Actor, const FVector& Vel)
 	{
 		// Meteor 전용 — World.SpawnActor 가 AActor* 로 반환하기 때문에 cast 없이 부를 수
