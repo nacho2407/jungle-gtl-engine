@@ -1,12 +1,14 @@
-﻿#include "Core/ResourceManager.h"
+#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
 #include "Core/ImportedMaterialPolicy.h"
-#include "SimpleJSON/json.hpp"
+#include "Core/MaterialLoadService.h"
+#include "Core/MaterialSerializationService.h"
+#include "Core/ResourceMemoryReporter.h"
+#include "Core/StaticMeshLoadService.h"
 
 #include <algorithm>
-#include <fstream>
 #include <filesystem>
 #include <chrono>
 #include <cwctype>
@@ -22,7 +24,6 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
 #include "Render/Scene/RenderCommand.h"
-#include "Render/Resource/ObjMtlLoader.h"
 
 namespace
 {
@@ -35,19 +36,6 @@ namespace
 #endif
 	}
 
-}
-
-static UStaticMesh* LoadStaticMeshBinaryFallback(FResourceManager* ResourceManager, const FString& RequestedPath, const FString& BinaryPath)
-{
-	if (!ResourceManager || BinaryPath.empty() || !FAssetPathPolicy::FileExists(BinaryPath))
-	{
-		return nullptr;
-	}
-
-	UE_LOG("[StaticMeshLoad] Redirect missing OBJ to binary mesh | Source=%s | Binary=%s",
-		RequestedPath.c_str(),
-		BinaryPath.c_str());
-	return ResourceManager->LoadStaticMesh(BinaryPath);
 }
 
 #pragma region __BINARY__
@@ -104,27 +92,40 @@ void FResourceManager::PreloadStaticMeshes()
 	}
 }
 
+UStaticMesh* FResourceManager::CreateStaticMeshFromLoadedData(FStaticMesh* LoadedMeshData, const FString& LogPath, bool bLogLodTiming, bool bLogLodSkipped) const
+{
+	UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+	LoadedMesh->SetMeshData(LoadedMeshData);
+
+	if (ShouldBuildStaticMeshLODs())
+	{
+		if (bLogLodTiming)
+		{
+			const auto LodStart = std::chrono::steady_clock::now();
+			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
+			const auto LodEnd = std::chrono::steady_clock::now();
+			double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
+			UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec",
+			       LoadedMesh->GetValidLODCount(), LogPath.c_str(), LodSec);
+		}
+		else
+		{
+			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
+		}
+	}
+	else if (bLogLodSkipped)
+	{
+		UE_LOG_WARNING("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", LogPath.c_str());
+	}
+
+	return LoadedMesh;
+}
+
 #pragma endregion
 
 
-namespace ResourceKey
+void FResourceManager::ClearDiscoveredResourceLists(bool bClearAtlasCache)
 {
-	constexpr const char* Font = "Font";
-	constexpr const char* Particle = "Particle";
-	constexpr const char* Material = "Material";
-	constexpr const char* StaticMesh = "StaticMesh";
-	constexpr const char* Path = "Path";
-	constexpr const char* Columns = "Columns";
-	constexpr const char* Rows = "Rows";
-	constexpr const char* Preload = "Preload";
-	constexpr const char* NormalizeToUnitCube = "NormalizeToUnitCube";
-	constexpr const char* Type = "Type";
-}
-
-//	RootPath 하위에 있는 모든 사용 가능 Asset에 대하여 초기화 및 재추적하는 함수
-void FResourceManager::LoadFromAssetDirectory(const FString& Path)
-{
-	//	초기화
 	ObjFilePaths.clear();
 	FontFilePaths.clear();
 	TextureFilePaths.clear();
@@ -132,6 +133,150 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 	ParticleFilePaths.clear();
 	CurveFilePaths.clear();
 	StaticMeshCache.ClearRegistry();
+
+	if (bClearAtlasCache)
+	{
+		AtlasCache.Clear();
+	}
+}
+
+void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& FilePath, const std::filesystem::path& ProjectRootPath)
+{
+	std::wstring Extension = FilePath.extension().wstring();
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
+
+	if (Extension == L".meta" || Extension == L".bin")
+	{
+		return;
+	}
+
+	const FString RelativePath = FPaths::Normalize(FPaths::ToString(std::filesystem::relative(FilePath, ProjectRootPath)));
+
+	if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
+	{
+		CurveFilePaths.push_back(RelativePath);
+	}
+	else if (Extension == L".obj")
+	{
+		ObjFilePaths.push_back(RelativePath);
+
+		FStaticMeshResource Resource;
+		Resource.Name = RelativePath;
+		Resource.Path = RelativePath;
+		Resource.bPreload = false;
+		Resource.bNormalizeToUnitCube = false;
+		StaticMeshCache.RegisterResource(Resource);
+	}
+	else if (Extension == L".mtl" || Extension == L".mat" || Extension == L".matinst")
+	{
+		MaterialFilePaths.push_back(RelativePath);
+	}
+	else if (Extension == L".png" || Extension == L".dds" || Extension == L".jpg" || Extension == L".jpeg")
+	{
+		const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
+
+		if (Meta.Type == EAssetMetaType::Font)
+		{
+			FontFilePaths.push_back(RelativePath);
+			RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+		}
+		else if (Meta.Type == EAssetMetaType::Particle)
+		{
+			ParticleFilePaths.push_back(RelativePath);
+			RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
+		}
+		else if (Meta.Type == EAssetMetaType::Texture)
+		{
+			TextureFilePaths.push_back(RelativePath);
+		}
+	}
+}
+
+void FResourceManager::InitializeDefaultWhiteTexture(ID3D11Device* Device)
+{
+	D3D11_TEXTURE2D_DESC Desc = {};
+	Desc.Width = 1;
+	Desc.Height = 1;
+	Desc.MipLevels = 1;
+	Desc.ArraySize = 1;
+	Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	Desc.SampleDesc.Count = 1;
+	Desc.Usage = D3D11_USAGE_IMMUTABLE;
+	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
+	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
+
+	if (!TextureCache.Contains("DefaultWhite"))  {
+		Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
+		if (DefaultWhiteTexture)
+		{
+			UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
+			Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
+			TextureCache.Register("DefaultWhite", DefaultTexture);
+		}
+	}
+}
+
+void FResourceManager::InitializeDefaultMaterial(ID3D11Device* Device)
+{
+	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/UberLit.hlsl");
+	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
+	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
+	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
+	DefaultMat->MaterialParams["EmissiveColor"] = FMaterialParamValue(DefaultMat->MaterialData.EmissiveColor);
+	DefaultMat->MaterialParams["Shininess"] = FMaterialParamValue(DefaultMat->MaterialData.Shininess);
+	DefaultMat->MaterialParams["Opacity"] = FMaterialParamValue(DefaultMat->MaterialData.Opacity);
+
+	UTexture* DefaultWhite = GetTexture("DefaultWhite");
+
+	if (DefaultMat->MaterialData.bHasDiffuseTexture)
+		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(LoadTexture(DefaultMat->MaterialData.DiffuseTexPath, Device));
+	else
+		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasAmbientTexture)
+		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(LoadTexture(DefaultMat->MaterialData.AmbientTexPath, Device));
+	else
+		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasSpecularTexture)
+		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(LoadTexture(DefaultMat->MaterialData.SpecularTexPath, Device));
+	else
+		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasEmissiveTexture)
+		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(LoadTexture(DefaultMat->MaterialData.EmissiveTexPath, Device));
+	else
+		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
+
+	if (DefaultMat->MaterialData.bHasBumpTexture)
+		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(LoadTexture(DefaultMat->MaterialData.BumpTexPath, Device));
+	else
+		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
+
+	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
+	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
+	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
+	DefaultMat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasEmissiveTexture);
+	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
+	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
+}
+
+void FResourceManager::InitializeOutlineMaterial()
+{
+	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
+	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
+	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
+	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
+    OutlineMat->SetParam("OutlineViewportOrigin", FMaterialParamValue(FVector2(0.0f, 0.0f)));
+}
+
+//	RootPath ??륁맄????덈뮉 筌뤴뫀諭?????揶쎛??Asset??????뤿연 ?λ뜃由??獄?????怨밸릭????λ땾
+void FResourceManager::LoadFromAssetDirectory(const FString& Path)
+{
+	//	?λ뜃由??
+	ClearDiscoveredResourceLists(false);
 
 	InitializeDefaultResources(CachedDevice.Get());
 
@@ -154,67 +299,7 @@ void FResourceManager::LoadFromAssetDirectory(const FString& Path)
 			continue;
 		}
 
-		const fs::path& FilePath = Entry.path();
-		std::wstring Extension = FilePath.extension().wstring();
-		std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
-
-		if (Extension == L".meta")
-		{
-			continue;
-		}
-		
-		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
-
-		if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
-		{
-			CurveFilePaths.push_back(RelativePath);
-		}
-		else if (Extension == L".obj")
-		{
-			ObjFilePaths.push_back(RelativePath);
-
-			FStaticMeshResource Resource;
-			Resource.Name = RelativePath;
-			Resource.Path = RelativePath;
-			Resource.bPreload = false;
-			Resource.bNormalizeToUnitCube = false;
-			StaticMeshCache.RegisterResource(Resource);
-		}
-		else if (Extension == L".mtl")
-		{
-			MaterialFilePaths.push_back(RelativePath);
-		}
-		else if (Extension == L".mat")
-		{
-			MaterialFilePaths.push_back(RelativePath);
-		}
-		else if (Extension == L".matinst")
-		{
-			MaterialFilePaths.push_back(RelativePath);
-		}
-		else if (	Extension == L".png" ||	Extension == L".dds" ||	Extension == L".jpg" ||	Extension == L".jpeg")
-		{
-			const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
-
-			if (Meta.Type == EAssetMetaType::Font)
-			{
-				FontFilePaths.push_back(RelativePath);
-				RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
-			}
-			else if (Meta.Type == EAssetMetaType::Particle)
-			{
-				ParticleFilePaths.push_back(RelativePath);
-				RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
-			}
-			else if (Meta.Type == EAssetMetaType::Texture)
-			{
-				TextureFilePaths.push_back(RelativePath);
-			}
-			//else
-			//{
-			//	TextureFilePaths.push_back(RelativePath);
-			//}
-		}
+		RegisterDiscoveredAssetFile(Entry.path(), ProjectRootPath);
 	}
 
 	PreloadStaticMeshes();
@@ -233,14 +318,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 {
 	namespace fs = std::filesystem;
 
-	ObjFilePaths.clear();
-	FontFilePaths.clear();
-	TextureFilePaths.clear();
-	MaterialFilePaths.clear();
-	ParticleFilePaths.clear();
-	CurveFilePaths.clear();
-	StaticMeshCache.ClearRegistry();
-	AtlasCache.Clear();
+	ClearDiscoveredResourceLists(true);
 
 	const fs::path RootPath = fs::path(FPaths::RootDir()) / FPaths::ToWide(Path);
 	const fs::path ProjectRootPath = fs::path(FPaths::RootDir());
@@ -260,71 +338,7 @@ void FResourceManager::RefreshFromAssetDirectory(const FString& Path)
 				continue;
 			}
 
-			const fs::path& FilePath = Entry.path();
-			std::wstring Extension = FilePath.extension().wstring();
-			std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::towlower);
-
-			if (Extension == L".meta" || Extension == L".bin")
-			{
-				continue;
-			}
-
-		const FString RelativePath = FPaths::Normalize(FPaths::ToString(fs::relative(FilePath, ProjectRootPath)));
-
-			if (FAssetPathPolicy::IsCurveAssetPath(FPaths::ToUtf8(FilePath.generic_wstring())))
-			{
-				CurveFilePaths.push_back(RelativePath);
-			}
-			else if (Extension == L".obj")
-			{
-				ObjFilePaths.push_back(RelativePath);
-
-				FStaticMeshResource Resource;
-				Resource.Name = RelativePath;
-				Resource.Path = RelativePath;
-				Resource.bPreload = false;
-				Resource.bNormalizeToUnitCube = false;
-				StaticMeshCache.RegisterResource(Resource);
-			}
-			else if (Extension == L".mtl")
-			{
-				MaterialFilePaths.push_back(RelativePath);
-			}
-			else if (Extension == L".mat")
-			{
-				MaterialFilePaths.push_back(RelativePath);
-			}
-			else if (Extension == L".matinst")
-			{
-				MaterialFilePaths.push_back(RelativePath);
-			}
-			else if (
-				Extension == L".png" ||
-				Extension == L".dds" ||
-				Extension == L".jpg" ||
-				Extension == L".jpeg")
-			{
-				const FTextureAssetMeta Meta = LoadOrCreateTextureMeta(FilePath);
-
-				if (Meta.Type == EAssetMetaType::Font)
-				{
-					FontFilePaths.push_back(RelativePath);
-					RegisterFont(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
-				}
-				else if (Meta.Type == EAssetMetaType::Particle)
-				{
-					ParticleFilePaths.push_back(RelativePath);
-					RegisterParticle(FName(RelativePath.c_str()), RelativePath, Meta.Columns, Meta.Rows);
-				}
-				else if (Meta.Type == EAssetMetaType::Texture)
-				{
-					TextureFilePaths.push_back(RelativePath);
-				}
-				//else
-				//{
-				//	TextureFilePaths.push_back(RelativePath);
-				//}
-			}
+			RegisterDiscoveredAssetFile(Entry.path(), ProjectRootPath);
 		}
 	}
 	catch (const std::exception& Ex)
@@ -366,7 +380,7 @@ void FResourceManager::DeleteAllCacheFiles()
 		}
 	}
 
-	// 빈 디렉토리 정리
+	// ???遺얠젂?醫듼봺 ?類ｂ봺
 	for (auto It = fs::recursive_directory_iterator(BinRootPath);
 		 It != fs::recursive_directory_iterator();
 		 ++It)
@@ -383,120 +397,7 @@ void FResourceManager::DeleteAllCacheFiles()
 
 FTextureAssetMeta FResourceManager::LoadOrCreateTextureMeta(const std::filesystem::path& FilePath) const
 {
-	namespace fs = std::filesystem;
-	using namespace json;
-
-	FTextureAssetMeta Meta;
-
-	fs::path MetaPath = FilePath;
-	MetaPath.replace_extension(L".meta");
-
-	// 1. meta 파일 존재 → 로드
-	if (fs::exists(MetaPath))
-	{
-		std::ifstream MetaFile(MetaPath);
-		if (MetaFile.is_open())
-		{
-			FString Content((std::istreambuf_iterator<char>(MetaFile)),
-			                std::istreambuf_iterator<char>());
-
-			JSON Root = JSON::Load(Content);
-			if (Root.JSONType() == JSON::Class::Object)
-			{
-				if (Root.hasKey(ResourceKey::Type))
-				{
-					const FString TypeStr = Root[ResourceKey::Type].ToString();
-					if (TypeStr == "Font")
-					{
-						Meta.Type = EAssetMetaType::Font;
-					}
-					else if (TypeStr == "Particle")
-					{
-						Meta.Type = EAssetMetaType::Particle;
-					}
-					else if (TypeStr == "Texture")
-					{
-						Meta.Type = EAssetMetaType::Texture;
-					}
-				}
-
-				if (Root.hasKey(ResourceKey::Columns))
-				{
-					Meta.Columns = std::max(1, static_cast<int32>(Root[ResourceKey::Columns].ToInt()));
-				}
-
-				if (Root.hasKey(ResourceKey::Rows))
-				{
-					Meta.Rows = std::max(1, static_cast<int32>(Root[ResourceKey::Rows].ToInt()));
-				}
-			}
-		}
-
-		if (Meta.Type == EAssetMetaType::None)
-		{
-			const std::wstring ParentDir = FilePath.parent_path().filename().wstring();
-			if (ParentDir == L"Texture")
-			{
-				Meta.Type = EAssetMetaType::Texture;
-			}
-		}
-
-		return Meta;
-	}
-
-	// 2. 없으면 기본 생성
-	const std::wstring ParentDir = FilePath.parent_path().filename().wstring();
-
-	if (ParentDir == L"Font")
-	{
-		Meta.Type = EAssetMetaType::Font;
-	}
-	else if (ParentDir == L"Particle")
-	{
-		Meta.Type = EAssetMetaType::Particle;
-	}
-	else if (ParentDir == L"Texture")
-	{
-		Meta.Type = EAssetMetaType::Texture;
-	}
-	else
-	{
-		Meta.Type = EAssetMetaType::None;
-	}
-
-	Meta.Columns = 1;
-	Meta.Rows = 1;
-
-	// 3. meta 파일 생성
-	JSON Root = JSON::Make(JSON::Class::Object);
-	
-	if (Meta.Type == EAssetMetaType::Font)
-	{
-		Root[ResourceKey::Type] = "Font";
-	}
-	else if (Meta.Type == EAssetMetaType::Particle)
-	{
-		Root[ResourceKey::Type] = "Particle";
-	}
-	else if (Meta.Type == EAssetMetaType::Texture)
-	{
-		Root[ResourceKey::Type] = "Texture";
-	}
-	else
-	{
-		Root[ResourceKey::Type] = "None";
-	}
-	
-	Root[ResourceKey::Columns] = Meta.Columns;
-	Root[ResourceKey::Rows] = Meta.Rows;
-
-	std::ofstream OutFile(MetaPath);
-	if (OutFile.is_open())
-	{
-		OutFile << Root.dump();
-	}
-
-	return Meta;
+	return FTextureAssetMetaService::LoadOrCreate(FilePath);
 }
 
 bool FResourceManager::LoadGPUResources(ID3D11Device* Device)
@@ -508,77 +409,9 @@ void FResourceManager::InitializeDefaultResources(ID3D11Device* Device)
 {
 	if (!Device) return;
 
-	D3D11_TEXTURE2D_DESC Desc = {};
-	Desc.Width = 1;
-	Desc.Height = 1;
-	Desc.MipLevels = 1;
-	Desc.ArraySize = 1;
-	Desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	Desc.SampleDesc.Count = 1;
-	Desc.Usage = D3D11_USAGE_IMMUTABLE;
-	Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-	constexpr uint32_t WhitePixel = 0xFFFFFFFF;
-	D3D11_SUBRESOURCE_DATA InitData = {&WhitePixel, 4, 0};
-
-	if (!TextureCache.Contains("DefaultWhite"))  {
-		Device->CreateTexture2D(&Desc, &InitData, DefaultWhiteTexture.ReleaseAndGetAddressOf());
-		if (DefaultWhiteTexture)
-		{
-			UTexture* DefaultTexture = UObjectManager::Get().CreateObject<UTexture>();
-			Device->CreateShaderResourceView(DefaultWhiteTexture.Get(), nullptr, DefaultTexture->GetAddressOfSRV());
-			TextureCache.Register("DefaultWhite", DefaultTexture);
-		}
-	}
-
-	UMaterial* DefaultMat = GetOrCreateMaterial("DefaultWhite", "Shaders/UberLit.hlsl");
-	DefaultMat->MaterialParams["AmbientColor"] = FMaterialParamValue(DefaultMat->MaterialData.AmbientColor);
-	DefaultMat->MaterialParams["DiffuseColor"] = FMaterialParamValue(DefaultMat->MaterialData.DiffuseColor);
-	DefaultMat->MaterialParams["SpecularColor"] = FMaterialParamValue(DefaultMat->MaterialData.SpecularColor);
-	DefaultMat->MaterialParams["EmissiveColor"] = FMaterialParamValue(DefaultMat->MaterialData.EmissiveColor);
-	DefaultMat->MaterialParams["Shininess"] = FMaterialParamValue(DefaultMat->MaterialData.Shininess);
-	DefaultMat->MaterialParams["Opacity"] = FMaterialParamValue(DefaultMat->MaterialData.Opacity);
-
-	UTexture* DefaultWhite = FResourceManager::Get().GetTexture("DefaultWhite");
-
-	if (DefaultMat->MaterialData.bHasDiffuseTexture)
-		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.DiffuseTexPath, Device));
-	else
-		DefaultMat->MaterialParams["DiffuseMap"] = FMaterialParamValue(DefaultWhite);
-
-	if (DefaultMat->MaterialData.bHasAmbientTexture)
-		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.AmbientTexPath, Device));
-	else
-		DefaultMat->MaterialParams["AmbientMap"] = FMaterialParamValue(DefaultWhite);
-
-	if (DefaultMat->MaterialData.bHasSpecularTexture)
-		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.SpecularTexPath, Device));
-	else
-		DefaultMat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
-
-	if (DefaultMat->MaterialData.bHasEmissiveTexture)
-		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.EmissiveTexPath, Device));
-	else
-		DefaultMat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
-
-	if (DefaultMat->MaterialData.bHasBumpTexture)
-		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(DefaultMat->MaterialData.BumpTexPath, Device));
-	else
-		DefaultMat->MaterialParams["BumpMap"] = FMaterialParamValue(DefaultWhite);
-
-	DefaultMat->MaterialParams["bHasDiffuseMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasDiffuseTexture);
-	DefaultMat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasSpecularTexture);
-	DefaultMat->MaterialParams["bHasAmbientMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasAmbientTexture);
-	DefaultMat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasEmissiveTexture);
-	DefaultMat->MaterialParams["bHasBumpMap"] = FMaterialParamValue(DefaultMat->MaterialData.bHasBumpTexture);
-	DefaultMat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
-	
-	// Outline Material
-	UMaterial* OutlineMat = GetOrCreateMaterial("OutlineMaterial", "Shaders/OutlinePostProcess.hlsl");
-	OutlineMat->SetParam("OutlineColor", FMaterialParamValue(FVector4(1.0f, 0.5f, 0.0f, 1.0f)));
-	OutlineMat->SetParam("OutlineThicknessPixels", FMaterialParamValue(5.0f));
-	OutlineMat->SetParam("OutlineViewportSize", FMaterialParamValue(FVector2(800.0f, 600.0f)));
-    OutlineMat->SetParam("OutlineViewportOrigin", FMaterialParamValue(FVector2(0.0f, 0.0f)));
+	InitializeDefaultWhiteTexture(Device);
+	InitializeDefaultMaterial(Device);
+	InitializeOutlineMaterial();
 }
 
 void FResourceManager::ReleaseGPUResources()
@@ -648,7 +481,7 @@ UMaterial* FResourceManager::GetMaterial(const FString& MaterialName) const
 	return MaterialCache.GetMaterial(MaterialName);
 }
 
-// 매개변수 없이 가장 간단한 Material을 생성
+// 筌띲끆而삭퉪?????곸뵠 揶쎛??揶쏄쑬???Material????밴쉐
 UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Path, const FString& ShaderName)
 {
 	UMaterial* Material = GetMaterial(Path);
@@ -691,162 +524,7 @@ UMaterial* FResourceManager::GetOrCreateMaterial(const FString& Name, const FStr
 
 bool FResourceManager::LoadMaterial(const FString& MtlFilePath, const FString& ShaderName, ID3D11Device* Device)
 {
-    const FString NormalizedMtlFilePath = FPaths::Normalize(MtlFilePath);
-    if (NormalizedMtlFilePath.empty())
-    {
-        return false;
-    }
-
-	std::filesystem::path RequestedPath(FPaths::ToWide(NormalizedMtlFilePath));
-	std::wstring RequestedExtension = RequestedPath.extension().wstring();
-	std::transform(RequestedExtension.begin(), RequestedExtension.end(), RequestedExtension.begin(), ::towlower);
-	if (RequestedExtension == L".obj")
-	{
-		const FString ResolvedMtlPath = FImportedMaterialPolicy::ResolveObjMaterialLibraryPath(NormalizedMtlFilePath);
-		if (ResolvedMtlPath.empty())
-		{
-			return false;
-		}
-
-		const bool bLoadedMaterial = LoadMaterial(ResolvedMtlPath, ShaderName, Device);
-		if (bLoadedMaterial)
-		{
-			RegisterObjMaterialSlotAliases(NormalizedMtlFilePath, ResolvedMtlPath);
-		}
-
-		return bLoadedMaterial;
-	}
-
-    UShader* Shader = FResourceManager::Get().GetShader(ShaderName);
-    if (!Shader)
-    {
-        UE_LOG_WARNING("Shader not found for material: %s", ShaderName.c_str());
-        return false;
-    }
-
-    TMap<FString, UMaterial*> Parsed;
-	TArray<FString> MaterialOrder;
-    if (!FObjMtlLoader::Load(NormalizedMtlFilePath, Parsed, CachedDevice.Get(), &MaterialOrder))
-    {
-        UE_LOG_WARNING("Failed to load MTL: %s", NormalizedMtlFilePath.c_str());
-        return false;
-    }
-
-    if (Parsed.empty())
-    {
-        UMaterial* DefaultMat = GetMaterial("DefaultWhite");
-        if (!DefaultMat)
-        {
-            UE_LOG_WARNING("DefaultWhite material not found.");
-            return false;
-        }
-
-        Parsed["DefaultWhite"] = DefaultMat;
-		MaterialOrder.push_back("DefaultWhite");
-    }
-
-    const fs::path SourceMtlPath(FPaths::ToWide(NormalizedMtlFilePath));
-    const bool bCanPromoteMtlToMaterialAssets = SourceMtlPath.extension() == L".mtl";
-    const fs::path AutoMaterialDir = fs::path(L"Asset") / L"Material" / L"Auto";
-
-	for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialOrder.size()); ++MaterialIndex)
-    {
-		const FString& Name = MaterialOrder[MaterialIndex];
-		auto ParsedIt = Parsed.find(Name);
-		if (ParsedIt == Parsed.end())
-		{
-			continue;
-		}
-
-		UMaterial* Mat = ParsedIt->second;
-        if (!Mat)
-        {
-            continue;
-        }
-
-        FString MaterialAssetPath = NormalizedMtlFilePath;
-		FString MaterialKey = Name;
-
-        if (bCanPromoteMtlToMaterialAssets)
-        {
-			const FString MaterialName = FImportedMaterialPolicy::MakeImportedMaterialAssetName(NormalizedMtlFilePath, MaterialIndex);
-            const fs::path RelativeMatPath =
-                AutoMaterialDir / FPaths::ToWide(MaterialName + ".mat");
-
-            MaterialAssetPath = FPaths::Normalize(FPaths::ToUtf8(RelativeMatPath.generic_wstring()));
-            Mat->Name = MaterialName;
-			MaterialKey = MaterialAssetPath;
-        }
-
-		if (Mat->ImportedName.empty())
-		{
-			Mat->ImportedName = Name;
-		}
-        Mat->FilePath = MaterialAssetPath;
-        Mat->SetShader(Shader);
-
-		UMaterial* ExistingMaterial = MaterialCache.FindMaterialByKey(MaterialKey);
-		if (ExistingMaterial)
-		{
-			if (ExistingMaterial != Mat)
-			{
-				UObjectManager::Get().DestroyObject(Mat);
-				Mat = ExistingMaterial;
-			}
-		}
-		else
-		{
-			MaterialCache.RegisterMaterial(MaterialKey, Mat);
-		}
-
-		if (!MaterialCache.ContainsMaterialKey(Mat->Name))
-		{
-			MaterialCache.RegisterMaterial(Mat->Name, Mat);
-		}
-
-		if (!MaterialCache.ContainsMaterialKey(Name))
-		{
-			MaterialCache.RegisterMaterial(Name, Mat);
-		}
-
-		MaterialCache.SetMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(NormalizedMtlFilePath, Name), MaterialKey);
-
-        FMaterial& MaterialData = Mat->MaterialData;
-
-        if (MaterialData.bHasDiffuseTexture && !MaterialData.DiffuseTexPath.empty())
-        {
-            LoadTexture(MaterialData.DiffuseTexPath, CachedDevice.Get());
-        }
-
-        if (MaterialData.bHasAmbientTexture && !MaterialData.AmbientTexPath.empty())
-        {
-            LoadTexture(MaterialData.AmbientTexPath, CachedDevice.Get());
-        }
-
-        if (MaterialData.bHasSpecularTexture && !MaterialData.SpecularTexPath.empty())
-        {
-            LoadTexture(MaterialData.SpecularTexPath, CachedDevice.Get());
-        }
-
-        if (MaterialData.bHasBumpTexture && !MaterialData.BumpTexPath.empty())
-        {
-            LoadTexture(MaterialData.BumpTexPath, CachedDevice.Get());
-        }
-
-        if (bCanPromoteMtlToMaterialAssets && !MaterialAssetPath.empty())
-        {
-            const fs::path AbsoluteMatPath =
-                fs::path(FPaths::RootDir()) / FPaths::ToWide(MaterialAssetPath);
-
-            std::error_code Ec;
-            fs::create_directories(AbsoluteMatPath.parent_path(), Ec);
-
-            SerializeMaterial(MaterialAssetPath, Mat);
-        }
-    }
-
-    UE_LOG("Loaded MTL: %s", NormalizedMtlFilePath.c_str());
-    return true;
+	return FMaterialLoadService(*this).Load(MtlFilePath, ShaderName, Device);
 }
 
 void FResourceManager::RegisterObjMaterialSlotAliases(const FString& ObjPath, const FString& MtlPath)
@@ -959,468 +637,17 @@ UMaterialInterface* FResourceManager::GetMaterialInterface(const FString& Name)
 
 bool FResourceManager::SerializeMaterial(const FString& MatFilePath, const UMaterial* Material)
 {
-	using json::JSON;
-	const FString NormalizedMatFilePath = FPaths::Normalize(MatFilePath);
-	JSON Root = JSON::Make(JSON::Class::Object);
-	Root["Name"] = Material->Name;
-	if (!Material->ImportedName.empty())
-	{
-		Root["ImportedName"] = Material->ImportedName;
-	}
-	Root["Shader"] = Material->Shader ? Material->Shader->FilePath : "";
-
-	JSON Params = JSON::Make(JSON::Class::Array);
-	for (const auto& [ParamName, ParamValue] : Material->MaterialParams)
-	{
-		JSON Param = JSON::Make(JSON::Class::Object);
-		Param["Name"] = ParamName;
-		if (std::holds_alternative<bool>(ParamValue.Value))
-		{
-			Param["Type"] = "Bool";
-			Param["Value"] = std::get<bool>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<int>(ParamValue.Value))
-		{
-			Param["Type"] = "Int";
-			Param["Value"] = std::get<int>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<uint32>(ParamValue.Value))
-		{
-			Param["Type"] = "UInt";
-			Param["Value"] = std::get<uint32>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<float>(ParamValue.Value))
-		{
-			Param["Type"] = "Float";
-			Param["Value"] = std::get<float>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<FVector2>(ParamValue.Value))
-		{
-			const FVector2& Vec = std::get<FVector2>(ParamValue.Value);
-			Param["Type"] = "Vector2";
-			JSON Value = JSON::Make(JSON::Class::Array);
-			Value.append(Vec.X);
-			Value.append(Vec.Y);
-			Param["Value"] = Value;
-		}
-		else if (std::holds_alternative<FVector>(ParamValue.Value))
-		{
-			const FVector& Vec = std::get<FVector>(ParamValue.Value);
-			Param["Type"] = "Vector3";
-			JSON Value = JSON::Make(JSON::Class::Array);
-			Value.append(Vec.X);
-			Value.append(Vec.Y);
-			Value.append(Vec.Z);
-			Param["Value"] = Value;
-		}
-		else if (std::holds_alternative<FVector4>(ParamValue.Value))
-		{
-			const FVector4& Vec = std::get<FVector4>(ParamValue.Value);
-			Param["Type"] = "Vector4";
-			JSON Value = JSON::Make(JSON::Class::Array);
-			Value.append(Vec.X);
-			Value.append(Vec.Y);
-			Value.append(Vec.Z);
-			Value.append(Vec.W);
-			Param["Value"] = Value;
-		}
-		else if (std::holds_alternative<FMatrix>(ParamValue.Value))
-		{
-			const FMatrix& Mat = std::get<FMatrix>(ParamValue.Value);
-			Param["Type"] = "Matrix4";
-			JSON MatArray = JSON::Make(JSON::Class::Array);
-			for (int Row = 0; Row < 4; ++Row)
-			{
-				JSON RowArray = JSON::Make(JSON::Class::Array);
-				for (int Col = 0; Col < 4; ++Col)
-				{
-					RowArray.append(Mat.M[Row][Col]);
-				}
-				MatArray.append(RowArray);
-			}
-			Param["Value"] = MatArray;
-		}
-		else if (std::holds_alternative<UTexture*>(ParamValue.Value))
-		{
-			UTexture* Texture = std::get<UTexture*>(ParamValue.Value);
-			Param["Type"] = "Texture";
-			Param["Value"] = Texture ? Texture->GetFilePath() : "";
-		}
-		Params.append(Param);
-	}
-	Root["Params"] = Params;
-	std::ofstream OutFile(FPaths::ToWide(NormalizedMatFilePath));
-	if (!OutFile.is_open())
-	{
-		UE_LOG_ERROR("Failed to open material file for writing: %s", NormalizedMatFilePath.c_str());
-		return false;
-	}
-	OutFile << Root.dump(4);
-	return true;
+	return FMaterialSerializationService(*this).SerializeMaterial(MatFilePath, Material);
 }
 
 bool FResourceManager::SerializeMaterialInstance(const FString& MatInstFilePath, const UMaterialInstance* MaterialInstance)
 {
-	using json::JSON;
-	const FString NormalizedMatInstFilePath = FPaths::Normalize(MatInstFilePath);
-	JSON Root = JSON::Make(JSON::Class::Object);
-
-	// 이름에는 이제 파일 경로를 넣는 것으로 통일. 파일 경로가 없으면 기존 방식대로 이름을 넣음
-	Root["Name"] = MaterialInstance->GetFilePath().empty() ? NormalizedMatInstFilePath : FPaths::Normalize(MaterialInstance->GetFilePath());
-	Root["Parent"] = (MaterialInstance->Parent && !MaterialInstance->Parent->GetFilePath().empty())
-		? FPaths::Normalize(MaterialInstance->Parent->GetFilePath())
-		: (MaterialInstance->Parent ? MaterialInstance->Parent->Name : "");
-	JSON Params = JSON::Make(JSON::Class::Array);
-	for (const auto& [ParamName, ParamValue] : MaterialInstance->OverridedParams)
-	{
-		JSON Param = JSON::Make(JSON::Class::Object);
-		Param["Name"] = ParamName;
-		if (std::holds_alternative<bool>(ParamValue.Value))
-		{
-			Param["Type"] = "Bool";
-			Param["Value"] = std::get<bool>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<int>(ParamValue.Value))
-		{
-			Param["Type"] = "Int";
-			Param["Value"] = std::get<int>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<uint32>(ParamValue.Value))
-		{
-			Param["Type"] = "UInt";
-			Param["Value"] = std::get<uint32>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<float>(ParamValue.Value))
-		{
-			Param["Type"] = "Float";
-			Param["Value"] = std::get<float>(ParamValue.Value);
-		}
-		else if (std::holds_alternative<FVector2>(ParamValue.Value))
-		{
-			const FVector2& Vec = std::get<FVector2>(ParamValue.Value);
-			Param["Type"] = "Vector2";
-			Param["Value"] = JSON::Make(JSON::Class::Array);
-			Param["Value"].append(Vec.X);
-			Param["Value"].append(Vec.Y);
-		}
-		else if (std::holds_alternative<FVector>(ParamValue.Value))
-		{
-			const FVector& Vec = std::get<FVector>(ParamValue.Value);
-			Param["Type"] = "Vector3";
-			Param["Value"] = JSON::Make(JSON::Class::Array);
-			Param["Value"].append(Vec.X);
-			Param["Value"].append(Vec.Y);
-			Param["Value"].append(Vec.Z);
-		}
-		else if (std::holds_alternative<FVector4>(ParamValue.Value))
-		{
-			const FVector4& Vec = std::get<FVector4>(ParamValue.Value);
-			Param["Type"] = "Vector4";
-			Param["Value"] = JSON::Make(JSON::Class::Array);
-			Param["Value"].append(Vec.X);
-			Param["Value"].append(Vec.Y);
-			Param["Value"].append(Vec.Z);
-			Param["Value"].append(Vec.W);
-		}
-		else if (std::holds_alternative<FMatrix>(ParamValue.Value))
-		{
-			const FMatrix& Mat = std::get<FMatrix>(ParamValue.Value);
-			Param["Type"] = "Matrix4";
-			JSON MatArray = JSON::Make(JSON::Class::Array);
-			for (int Row = 0; Row < 4; ++Row)
-			{
-				JSON RowArray = JSON::Make(JSON::Class::Array);
-				for (int Col = 0; Col < 4; ++Col)
-				{
-					RowArray.append(Mat.M[Row][Col]);
-				}
-				MatArray.append(RowArray);
-			}
-			Param["Value"] = MatArray;
-		}
-		else if (std::holds_alternative<UTexture*>(ParamValue.Value))
-		{
-			UTexture* Texture = std::get<UTexture*>(ParamValue.Value);
-			Param["Type"] = "Texture";
-			Param["Value"] = Texture ? Texture->GetFilePath() : "";
-		}
-		Params.append(Param);
-	}
-	Root["OverridedParams"] = Params;
-	std::error_code Ec;
-	fs::create_directories(fs::path(FPaths::ToWide(NormalizedMatInstFilePath)).parent_path(), Ec);
-	std::ofstream OutFile(FPaths::ToWide(NormalizedMatInstFilePath));
-	if (!OutFile.is_open())
-	{
-		UE_LOG_ERROR("Failed to open material instance file for writing: %s", NormalizedMatInstFilePath.c_str());
-		return false;
-	}
-	OutFile << Root.dump(4);
-	return true;
+	return FMaterialSerializationService(*this).SerializeMaterialInstance(MatInstFilePath, MaterialInstance);
 }
 
 bool FResourceManager::DeserializeMaterial(const FString& MatFilePath)
 {
-	using json::JSON;
-	const FString NormalizedMatFilePath = FPaths::Normalize(MatFilePath);
-
-	std::ifstream MatFile(FPaths::ToWide(NormalizedMatFilePath));
-	if (!MatFile.is_open())
-	{
-		UE_LOG_ERROR("Failed to open material file: %s", NormalizedMatFilePath.c_str());
-		return false;
-	}
-
-	FString FileContent((std::istreambuf_iterator<char>(MatFile)), std::istreambuf_iterator<char>());
-	JSON Root = JSON::Load(FileContent);
-
-	if (Root.hasKey("Parent"))
-	{
-		const FString InstancePath = NormalizedMatFilePath;
-		const FString ParentIdentifier = Root["Parent"].ToString();
-		UMaterial* ParentMat = GetMaterial(ParentIdentifier);
-
-		if (!ParentMat)
-		{
-			ParentMat = GetMaterial(FPaths::Normalize(ParentIdentifier));
-		}
-
-		const FString NormalizedParentIdentifier = FPaths::Normalize(ParentIdentifier);
-		if (!ParentMat && FAssetPathPolicy::IsSerializedMaterialAssetPath(NormalizedParentIdentifier) && FAssetPathPolicy::FileExists(NormalizedParentIdentifier))
-		{
-			DeserializeMaterial(NormalizedParentIdentifier);
-			ParentMat = GetMaterial(NormalizedParentIdentifier);
-			if (!ParentMat)
-			{
-				ParentMat = GetMaterial(ParentIdentifier);
-			}
-		}
-
-		if (!ParentMat)
-		{
-			UE_LOG_WARNING("Parent material not found: %s", ParentIdentifier.c_str());
-			return false;
-		}
-
-		UMaterialInstance* MatInstance = CreateMaterialInstance(InstancePath, ParentMat);
-
-		for (auto& Param : Root["OverridedParams"].ArrayRange())
-		{
-			FString ParamName = Param["Name"].ToString();
-			FString Type = Param["Type"].ToString();
-			if (Type == "Bool")
-			{
-				bool Value = Param["Value"].ToBool();
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Int")
-			{
-				int Value = Param["Value"].ToInt();
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "UInt")
-			{
-				uint32 Value = static_cast<uint32>(Param["Value"].ToInt());
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Float")
-			{
-				float Value = static_cast<float>(Param["Value"].ToFloat());
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Vector2" || Type == "FVector2")
-			{
-				FVector2 Value(
-					static_cast<float>(Param["Value"][0].ToFloat()),
-					static_cast<float>(Param["Value"][1].ToFloat()));
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Vector3" || Type == "FVector3")
-			{
-				FVector Value(
-					static_cast<float>(Param["Value"][0].ToFloat()),
-					static_cast<float>(Param["Value"][1].ToFloat()),
-					static_cast<float>(Param["Value"][2].ToFloat()));
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Vector4" || Type == "FVector4")
-			{
-				FVector4 Value(
-					static_cast<float>(Param["Value"][0].ToFloat()),
-					static_cast<float>(Param["Value"][1].ToFloat()),
-					static_cast<float>(Param["Value"][2].ToFloat()),
-					static_cast<float>(Param["Value"][3].ToFloat()));
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Matrix4")
-			{
-				FMatrix Value;
-				for (int Row = 0; Row < 4; ++Row)
-				{
-					for (int Col = 0; Col < 4; ++Col)
-					{
-						Value.M[Row][Col] = static_cast<float>(Param["Value"][Row][Col].ToFloat());
-					}
-				}
-				MatInstance->SetParam(ParamName, FMaterialParamValue(Value));
-			}
-			else if (Type == "Texture")
-			{
-				FString TexPath = Param["Value"].ToString();
-				UTexture* Texture = LoadTexture(TexPath, CachedDevice.Get());
-				if (Texture)
-				{
-					MatInstance->SetParam(ParamName, FMaterialParamValue(Texture));
-				}
-			}
-		}
-
-		MaterialCache.RegisterMaterialInstance(InstancePath, MatInstance);
-		return true;
-	}
-
-	FString MatName = Root["Name"].ToString();
-	FString ShaderPath = Root["Shader"].ToString();
-	UMaterial* Material = GetOrCreateMaterial(MatName, NormalizedMatFilePath, ShaderPath);
-	if (Root.hasKey("ImportedName"))
-	{
-		Material->ImportedName = Root["ImportedName"].ToString();
-		if (!Material->ImportedName.empty() && !MaterialCache.ContainsMaterialKey(Material->ImportedName))
-		{
-			MaterialCache.RegisterMaterial(Material->ImportedName, Material);
-		}
-	}
-	MaterialCache.RegisterMaterial(NormalizedMatFilePath, Material);
-	MaterialCache.RegisterMaterial(MatName, Material);
-	Material->SetParam("AmbientColor", FMaterialParamValue(Material->MaterialData.AmbientColor));
-	Material->SetParam("DiffuseColor", FMaterialParamValue(Material->MaterialData.DiffuseColor));
-	Material->SetParam("SpecularColor", FMaterialParamValue(Material->MaterialData.SpecularColor));
-	Material->SetParam("EmissiveColor", FMaterialParamValue(Material->MaterialData.EmissiveColor));
-	Material->SetParam("Shininess", FMaterialParamValue(Material->MaterialData.Shininess));
-	Material->SetParam("Opacity", FMaterialParamValue(Material->MaterialData.Opacity));
-	Material->SetParam("ScrollUV", FMaterialParamValue(FVector2(0.0f, 0.0f)));
-
-	for (auto& Param : Root["Params"].ArrayRange())
-	{
-		FString ParamName = Param["Name"].ToString();
-		FString Type = Param["Type"].ToString();
-
-		if (Type == "Bool")
-		{
-			bool Value = Param["Value"].ToBool();
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Int")
-		{
-			int Value = Param["Value"].ToInt();
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "UInt")
-		{
-			uint32 Value = static_cast<uint32>(Param["Value"].ToInt());
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Float")
-		{
-			float Value = static_cast<float>(Param["Value"].ToFloat());
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Vector2" || Type == "FVector2")
-		{
-			FVector2 Value(
-				static_cast<float>(Param["Value"][0].ToFloat()),
-				static_cast<float>(Param["Value"][1].ToFloat()));
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Vector3" || Type == "FVector3")
-		{
-			FVector Value(
-				static_cast<float>(Param["Value"][0].ToFloat()),
-				static_cast<float>(Param["Value"][1].ToFloat()),
-				static_cast<float>(Param["Value"][2].ToFloat()));
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-			if (ParamName == "AmbientColor")
-			{
-				Material->MaterialData.AmbientColor = Value;
-			}
-			else if (ParamName == "DiffuseColor")
-			{
-				Material->MaterialData.DiffuseColor = Value;
-			}
-			else if (ParamName == "SpecularColor")
-			{
-				Material->MaterialData.SpecularColor = Value;
-			}
-			else if (ParamName == "EmissiveColor")
-			{
-				Material->MaterialData.EmissiveColor = Value;
-			}
-		}
-		else if (Type == "Vector4" || Type == "FVector4")
-		{
-			FVector4 Value(
-				static_cast<float>(Param["Value"][0].ToFloat()),
-				static_cast<float>(Param["Value"][1].ToFloat()),
-				static_cast<float>(Param["Value"][2].ToFloat()),
-				static_cast<float>(Param["Value"][3].ToFloat()));
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Matrix4")
-		{
-			FMatrix Value;
-			for (int Row = 0; Row < 4; ++Row)
-			{
-				for (int Col = 0; Col < 4; ++Col)
-				{
-					Value.M[Row][Col] = static_cast<float>(Param["Value"][Row][Col].ToFloat());
-				}
-			}
-			Material->SetParam(ParamName, FMaterialParamValue(Value));
-		}
-		else if (Type == "Texture")
-		{
-			FString TexPath = Param["Value"].ToString();
-			UTexture* Texture = LoadTexture(TexPath, CachedDevice.Get());
-			if (Texture)
-			{
-				Material->SetParam(ParamName, FMaterialParamValue(Texture));
-				if (ParamName == "DiffuseMap")
-				{
-					Material->MaterialData.DiffuseTexPath = FPaths::Normalize(TexPath);
-					Material->MaterialData.bHasDiffuseTexture = true;
-					Material->SetParam("bHasDiffuseMap", FMaterialParamValue(true));
-				}
-				else if (ParamName == "SpecularMap")
-				{
-					Material->MaterialData.SpecularTexPath = FPaths::Normalize(TexPath);
-					Material->MaterialData.bHasSpecularTexture = true;
-					Material->SetParam("bHasSpecularMap", FMaterialParamValue(true));
-				}
-				else if (ParamName == "EmissiveMap")
-				{
-					Material->MaterialData.EmissiveTexPath = FPaths::Normalize(TexPath);
-					Material->MaterialData.bHasEmissiveTexture = true;
-					Material->SetParam("bHasEmissiveMap", FMaterialParamValue(true));
-				}
-				else if (ParamName == "AmbientMap")
-				{
-					Material->MaterialData.AmbientTexPath = FPaths::Normalize(TexPath);
-					Material->MaterialData.bHasAmbientTexture = true;
-					Material->SetParam("bHasAmbientMap", FMaterialParamValue(true));
-				}
-				else if (ParamName == "BumpMap")
-				{
-					Material->MaterialData.BumpTexPath = FPaths::Normalize(TexPath);
-					Material->MaterialData.bHasBumpTexture = true;
-					Material->SetParam("bHasBumpMap", FMaterialParamValue(true));
-				}
-			}
-		}
-	}
-
-	MaterialCache.RegisterMaterial(MatName, Material);
-
-	return true;
+	return FMaterialSerializationService(*this).DeserializeMaterial(MatFilePath);
 }
 
 UTexture* FResourceManager::GetTexture(const FString& Path) const
@@ -1482,182 +709,7 @@ TArray<FString> FResourceManager::GetParticleNames() const
 
 UStaticMesh* FResourceManager::LoadStaticMesh(const FString& Path)
 {
-	const FString NormalizedPath = FPaths::Normalize(Path);
-	// 메모리 캐시 확인
-	if (UStaticMesh* FoundMesh = FindStaticMesh(NormalizedPath))
-	{
-		return FoundMesh;
-	}
-
-	fs::path RequestedFsPath(FPaths::ToWide(NormalizedPath));
-	std::wstring RequestedExt = RequestedFsPath.extension().wstring();
-	std::transform(RequestedExt.begin(), RequestedExt.end(), RequestedExt.begin(), ::towlower);
-	if (RequestedExt == L".obj" && !FAssetPathPolicy::FileExists(NormalizedPath))
-	{
-		const FString CookedPath = FAssetPathPolicy::MakeCookedStaticMeshBinaryPath(NormalizedPath);
-		if (UStaticMesh* CookedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CookedPath))
-		{
-			StaticMeshCache.RegisterLoaded(NormalizedPath, CookedMesh);
-			return CookedMesh;
-		}
-
-		const FString SiblingBinaryPath = FAssetPathPolicy::MakeSiblingStaticMeshBinaryPath(NormalizedPath);
-		if (UStaticMesh* SiblingMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, SiblingBinaryPath))
-		{
-			StaticMeshCache.RegisterLoaded(NormalizedPath, SiblingMesh);
-			return SiblingMesh;
-		}
-
-		const FString CacheBinaryPath = FAssetPathPolicy::MakeStaticMeshCacheBinaryPath(NormalizedPath);
-		if (UStaticMesh* CachedMesh = LoadStaticMeshBinaryFallback(this, NormalizedPath, CacheBinaryPath))
-		{
-			StaticMeshCache.RegisterLoaded(NormalizedPath, CachedMesh);
-			return CachedMesh;
-		}
-	}
-	if (RequestedExt == L".bin")
-	{
-		const auto BinaryStart = std::chrono::steady_clock::now();
-		FStaticMesh* LoadedMeshData = new FStaticMesh();
-		if (!BinarySerializer.LoadStaticMesh(NormalizedPath, *LoadedMeshData))
-		{
-			delete LoadedMeshData;
-			UE_LOG_WARNING("[StaticMeshLoad] Failed binary cache drop | Path=%s", NormalizedPath.c_str());
-			return nullptr;
-		}
-
-		const FString SourcePath = FPaths::Normalize(LoadedMeshData->PathFileName);
-		if (!SourcePath.empty())
-		{
-			if (UStaticMesh* FoundSourceMesh = FindStaticMesh(SourcePath))
-			{
-				delete LoadedMeshData;
-				StaticMeshCache.RegisterLoaded(NormalizedPath, FoundSourceMesh);
-				return FoundSourceMesh;
-			}
-			if (FAssetPathPolicy::FileExists(SourcePath))
-			{
-				LoadMaterial(SourcePath, "Shaders/UberLit.hlsl");
-			}
-		}
-
-		ResolveStaticMeshMaterialSlots(SourcePath.empty() ? NormalizedPath : SourcePath, LoadedMeshData);
-
-		UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-		LoadedMesh->SetMeshData(LoadedMeshData);
-		if (ShouldBuildStaticMeshLODs())
-		{
-			FStaticMeshSimplifier::BuildLODs(LoadedMesh);
-		}
-
-		StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
-		if (!SourcePath.empty())
-		{
-			StaticMeshCache.RegisterLoaded(SourcePath, LoadedMesh);
-		}
-
-		const auto BinaryEnd = std::chrono::steady_clock::now();
-		const double BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
-		UE_LOG("[StaticMeshLoad] Source=BinaryDrop | Path=%s | BinarySec=%.6f | Source=%s",
-		       NormalizedPath.c_str(),
-		       BinaryLoadSec,
-		       SourcePath.c_str());
-		return LoadedMesh;
-	}
-
- 	LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
-
-	FStaticMeshLoadOptions LoadOptions = StaticMeshCache.GetLoadOptions(NormalizedPath);
-
-	const FString BinaryPath = FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(NormalizedPath);
-
-	FStaticMesh* LoadedMeshData = nullptr;
-	double BinaryLoadSec = 0.0;
-	double ObjLoadSec = 0.0;
-
-	//	2. Binary Load 시도
-	if (IsStaticMeshBinaryValid(NormalizedPath, BinaryPath))
-	{
-		const auto BinaryStart = std::chrono::steady_clock::now();
-
-		LoadedMeshData = new FStaticMesh();
-		if (!BinarySerializer.LoadStaticMesh(BinaryPath, *LoadedMeshData))
-		{
-			delete LoadedMeshData;
-			LoadedMeshData = nullptr;
-		}
-
-		const auto BinaryEnd = std::chrono::steady_clock::now();
-		BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
-	}
-
-	//	3. Binary 실패 시 OBJ Load
-	if (LoadedMeshData == nullptr)
-	{
-		const auto ObjStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ObjLoader.Load(NormalizedPath, LoadOptions);
-		const auto ObjEnd = std::chrono::steady_clock::now();
-		ObjLoadSec = std::chrono::duration<double>(ObjEnd - ObjStart).count();
-
-		if (LoadedMeshData == nullptr)
-		{
-			UE_LOG_ERROR("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
-			       ObjLoadSec);
-			return nullptr;
-		}
-
-		ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
-
-		//	4. OBJ 로드 성공 시 Binary 저장
-		const bool bSaveBinaryOk = BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
-		if (bSaveBinaryOk)
-		{
-			UE_LOG(
-				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=OK | BinaryPath=%s",
-				NormalizedPath.c_str(),
-				ObjLoadSec,
-				BinaryPath.c_str());
-		}
-		else
-		{
-			UE_LOG_WARNING(
-				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=FAIL | BinaryPath=%s",
-				NormalizedPath.c_str(),
-				ObjLoadSec,
-				BinaryPath.c_str());
-		}
-	}
-	else
-	{
-		UE_LOG(
-			"[StaticMeshLoad] Source=Binary | Path=%s | BinarySec=%.6f | BinaryPath=%s",
-			NormalizedPath.c_str(),
-			BinaryLoadSec,
-			BinaryPath.c_str());
-	}
-
-	ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
-
-    UStaticMesh* LoadedMesh = UObjectManager::Get().CreateObject<UStaticMesh>();
-    LoadedMesh->SetMeshData(LoadedMeshData);
-
-    if (ShouldBuildStaticMeshLODs())
-    {
-        const auto LodStart = std::chrono::steady_clock::now();
-        FStaticMeshSimplifier::BuildLODs(LoadedMesh);
-        const auto LodEnd = std::chrono::steady_clock::now();
-        double LodSec = std::chrono::duration<double>(LodEnd - LodStart).count();
-        UE_LOG("[StaticMeshLoad] Generated %d LODs for %s in %.3f sec",
-               LoadedMesh->GetValidLODCount(), NormalizedPath.c_str(), LodSec);
-    }
-    else
-    {
-        UE_LOG_WARNING("[StaticMeshLoad] LOD generation skipped for %s (Enable LOD is off)", NormalizedPath.c_str());
-    }
-
-	StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
-    
-    return LoadedMesh;
+	return FStaticMeshLoadService(*this).Load(Path);
 }
 
 UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
@@ -1756,8 +808,7 @@ ID3D11RasterizerState* FResourceManager::GetOrCreateRasterizerState(ERasterizerT
 	return RenderStateCache.GetOrCreateRasterizerState(Type, Device);
 }
 
-// TODO: 변경된 구조에 맞춰서 수정하기
 size_t FResourceManager::GetMaterialMemorySize() const
 {
-	return MaterialCache.GetMaterialMemorySize();
+	return FResourceMemoryReporter::GetMaterialMemorySize(MaterialCache);
 }

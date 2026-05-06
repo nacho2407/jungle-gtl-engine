@@ -5,41 +5,14 @@
 #include "Object/ActorIterator.h"
 #include "Component/BillboardComponent.h"
 #include "Component/PrimitiveComponent.h"
-#include "Component/StaticMeshComponent.h"
-#include "Component/GizmoComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
-#include "Component/DecalComponent.h"
-#include "Component/HeightFogComponent.h"
-#include "Component/FireballComponent.h"
 #include "Component/PostProcess/Light/LightComponentBase.h"
-#include "Component/PostProcess/Light/AmbientLightComponent.h"
-#include "Component/PostProcess/Light/DirectionalLightComponent.h"
-#include "Component/PostProcess/Light/PointLightComponent.h"
-#include "Component/PostProcess/Light/SpotlightComponent.h"
-#include "Component/ProceduralMeshComponent.h"
-#include "Core/ResourceManager.h"
 #include "Engine/Geometry/Frustum.h"
-#include "Engine/Asset/StaticMesh.h"
 #include "Engine/GameFramework/PrimitiveActors.h"
-#include "Render/Resource/Material.h"
-#include "Object/ObjectIterator.h"
-#include "Runtime/Stats/ScopeCycleCounter.h"
-#include <unordered_set>
 
 namespace
 {
-	FColor MakeBVHInternalNodeColor(int32 PathIndexFromLeaf, int32 PathLength)
-	{
-		if (PathLength <= 1)
-		{
-			return FColor::Yellow();
-		}
-
-		const float T = static_cast<float>(PathIndexFromLeaf) / static_cast<float>(PathLength - 1);
-		return FColor::Lerp(FColor::Cyan(), FColor::Yellow(), T);
-	}
-
 	bool UsesCameraDependentRenderBounds(const UPrimitiveComponent* PrimitiveComponent)
 	{
 		if (PrimitiveComponent == nullptr)
@@ -84,19 +57,6 @@ namespace
 			RenderBus.GetCameraUp());
 	}
 
-	FMatrix MakeViewBillboardMaskMatrix(const UBillboardComponent* Billboard, const FRenderBus& RenderBus)
-	{
-		const FVector WorldScale = Billboard->GetBillboardWorldScale();
-		return UBillboardComponent::MakeBillboardWorldMatrix(
-			Billboard->GetWorldLocation(),
-			FVector(
-				WorldScale.X > 0.01f ? WorldScale.X : 0.01f,
-				Billboard->GetWidth() * WorldScale.Y * 0.5f,
-				Billboard->GetHeight() * WorldScale.Z * 0.5f),
-			RenderBus.GetCameraForward(),
-			RenderBus.GetCameraRight(),
-			RenderBus.GetCameraUp());
-	}
 	/*
 	* BillBoardComponent를 상속받은 text, SubUV가 사용하는 AABB 계산함수(의존성 분리)
 	*/
@@ -142,39 +102,6 @@ namespace
 			return PrimitiveComponent->GetWorldAABB();
 		}
 	}
-
-	int32 SelectLODLevel(const FVector& CameraPos, const FAABB& Bounds, const FMatrix& ProjMatrix, int32 ValidLODCount)
-	{
-		bool IsOrthoGraphic = (std::abs(ProjMatrix.M[3][3] - 1.0f) < 1e-4f);
-		if (ValidLODCount <= 1 || IsOrthoGraphic) return 0;
-
-		// 1. 바운딩 박스를 통해 바운딩 스피어 반지름 및 카메라와의 거리 계산
-		const FVector Center = (Bounds.Min + Bounds.Max) * 0.5f;
-		const FVector Extent = (Bounds.Max - Bounds.Min) * 0.5f;
-		const float SphereRadius = std::sqrt(Extent.X * Extent.X + Extent.Y * Extent.Y + Extent.Z * Extent.Z);
-
-		const FVector Diff = Center - CameraPos;
-		const float Dist = std::sqrt(Diff.X * Diff.X + Diff.Y * Diff.Y + Diff.Z * Diff.Z);
-
-		if (Dist <= 1e-4f) return 0;
-
-		const float ProjectedRadius = (SphereRadius / Dist) * ProjMatrix.M[2][1];
-		const float ScreenCoverage = ProjectedRadius; 
-
-		static constexpr float Thresholds[] = { 0.15f, 0.08f, 0.05f, 0.02f };
-		static constexpr int32 ThresholdCount = static_cast<int32>(sizeof(Thresholds) / sizeof(Thresholds[0]));
-
-		const int32 MaxLOD = ValidLODCount - 1;
-		for (int32 LOD = 0; LOD < MaxLOD; ++LOD)
-		{
-			float Threshold = (LOD < ThresholdCount) ? Thresholds[LOD] : 0.0f;
-			if (ScreenCoverage >= Threshold)
-				return LOD;
-		}
-
-		// 화면에 차지하는 비율이 가장 낮을 경우 최하위 LOD 반환
-		return MaxLOD;
-	}
 }
 
 void FRenderCollector::CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
@@ -218,12 +145,12 @@ void FRenderCollector::ResetCullingStats()
 
 void FRenderCollector::ResetDecalStats()
 {
-	LastDecalStats = {};
+	DecalCommandBuilder.Reset();
 }
 
 void FRenderCollector::ResetLightStats()
 {
-	LastLightStats = {};
+	LightRenderCollector.Reset();
 }
 
 void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags,
@@ -299,88 +226,23 @@ void FRenderCollector::CollectWorldWithFrustum(UWorld* World, const FFrustum& Vi
 void FRenderCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags,
                                         EViewMode ViewMode, FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives)
 {
-	bool bHasSelectionMask = false;
-	for (AActor* Actor : SelectedActors)
-	{
-		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus, bIncludeEditorOnlyPrimitives);
-	}
-
-	if (bHasSelectionMask)
-	{
-		FRenderCommand PostProcessCmd = {};
-		PostProcessCmd.Type = ERenderCommandType::PostProcessOutline;
-		PostProcessCmd.Material = FResourceManager::Get().GetMaterial("OutlineMaterial");
-
-		UMaterial* Material = Cast<UMaterial>(PostProcessCmd.Material);
-		Material->SetVector2("OutlineViewportSize", RenderBus.GetViewportSize());
-        Material->SetVector2("OutlineViewportOrigin", RenderBus.GetViewportOrigin());
-		Material->DepthStencilType = EDepthStencilType::DepthReadOnly;
-		Material->RasterizerType = ERasterizerType::SolidBackCull;
-		Material->BlendType = EBlendType::AlphaBlend;
-
-		RenderBus.AddCommand(ERenderPass::PostProcessOutline, PostProcessCmd);
-	}
+	EditorOverlayCollector.CollectSelection(
+		SelectedActors,
+		ShowFlags,
+		ViewMode,
+		RenderBus,
+		MeshBufferManager,
+		bIncludeEditorOnlyPrimitives);
 }
 
 void FRenderCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic)
 {
-	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::Grid;
-	Cmd.Constants.Grid.GridSpacing = GridSpacing;
-	Cmd.Constants.Grid.GridHalfLineCount = GridHalfLineCount;
-	Cmd.Constants.Grid.bOrthographic = bOrthographic;
-	RenderBus.AddCommand(ERenderPass::Grid, Cmd);
+	EditorOverlayCollector.CollectGrid(GridSpacing, GridHalfLineCount, RenderBus, bOrthographic);
 }
 
 void FRenderCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation)
 {
-	if (ShowFlags.bGizmo == false) return;
-	if (!Gizmo || !Gizmo->IsVisible()) return;
-
-	FMeshBuffer* GizmoMesh = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
-	FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
-	bool bHolding = Gizmo->IsHolding();
-	int32 SelectedAxis = Gizmo->GetSelectedAxis();
-
-	auto CreateGizmoCmd = [&](bool bInner) {
-		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Gizmo;
-		Cmd.MeshBuffer = GizmoMesh;
-
-		Cmd.SectionIndexStart = 0;
-		Cmd.SectionIndexCount = GizmoMesh->GetIndexBuffer().GetIndexCount();
-
-		Cmd.PerObjectConstants = FPerObjectConstants{ WorldMatrix };
-
-		UMaterial* Material = Cast<UMaterial>(Gizmo->GetMaterial());
-		Cmd.Material = Material;
-
-		if (bInner)
-		{
-			Material->DepthStencilType = EDepthStencilType::GizmoInside;
-			Material->BlendType = EBlendType::AlphaBlend;
-		}
-		else
-		{
-			Material->DepthStencilType = EDepthStencilType::GizmoOutside;
-			Material->BlendType = EBlendType::Opaque;
-		}
-
-		Material->SetVector4("GizmoColorTint", FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-		Material->SetBool("bIsInnerGizmo", bInner);
-		Material->SetBool("bClicking", bHolding);
-		Material->SetUInt("SelectedAxis", (SelectedAxis >= 0 && bIsActiveOperation) ? (uint32)SelectedAxis : 0xffffffffu);
-		Material->SetFloat("HoveredAxisOpacity", 0.3f);
-
-		return Cmd;
-		};
-
-	RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(false));
-
-	if (!bHolding)
-	{
-		RenderBus.AddCommand(ERenderPass::DepthLess, CreateGizmoCmd(true));
-	}
+	EditorOverlayCollector.CollectGizmo(Gizmo, ShowFlags, RenderBus, MeshBufferManager, bIsActiveOperation);
 }
 
 void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
@@ -400,168 +262,6 @@ void FRenderCollector::CollectFromActor(AActor* Actor, const FShowFlags& ShowFla
 	}
 }
 
-bool FRenderCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode,
-                                                FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives)
-{
-	if (!Actor->IsVisible()) return false;
-
-	bool bHasSelectionMask = false;
-	std::unordered_set<int32> SeenBVHNodeIndices;
-
-	for (UActorComponent* Comp : Actor->GetComponents())
-	{
-		if (UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Comp))
-		{
-			CollectDirectionalLightCommand(DirLight, ShowFlags, RenderBus);
-		}
-		else if (USpotlightComponent* Spotlight = Cast<USpotlightComponent>(Comp))
-		{
-			CollectSpotLightCommand(Spotlight, ShowFlags, RenderBus);
-		}
-		else if (UPointLightComponent* PointLight = Cast<UPointLightComponent>(Comp))
-		{
-			CollectPointLightCommand(PointLight, ShowFlags, RenderBus);
-		}
-	}
-
-	for (UPrimitiveComponent* primitiveComponent : Actor->GetPrimitiveComponents())
-	{
-		if (!primitiveComponent->IsVisible()) continue;
-		if (!bIncludeEditorOnlyPrimitives && primitiveComponent->IsEditorOnly())
-		{
-			UWorld* World = Actor->GetFocusedWorld();
-			if (World && World->GetWorldType() != EWorldType::Editor)
-				continue;
-		}
-
-		FMeshBuffer* MeshBuffer = nullptr;
-		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
-		{
-			auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
-			MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
-		}
-		else
-		{
-			MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
-		}
-
-		if (!MeshBuffer)
-		{
-			continue;
-		}
-
-		FRenderCommand BaseCmd{};
-		BaseCmd.MeshBuffer = MeshBuffer;
-		BaseCmd.SourcePrimitive = primitiveComponent;
-		BaseCmd.PerObjectConstants = FPerObjectConstants(primitiveComponent->GetWorldMatrix());
-		BaseCmd.SectionIndexStart = 0;
-		BaseCmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
-
-		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Text)
-		{
-			UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(primitiveComponent);
-			const FFontResource* Font = TextComp->GetFont();
-			if (!Font || !Font->IsLoaded()) continue;
-			const FString& Text = TextComp->GetText();
-			if (Text.empty()) continue;
-
-			FMatrix WorldMatrix = TextComp->GetTextMatrix();
-
-			FRenderCommand TextCmd = BaseCmd;
-			BaseCmd.PerObjectConstants = FPerObjectConstants(WorldMatrix);
-			TextCmd.PerObjectConstants = FPerObjectConstants(TextComp->GetWorldMatrix(), TextComp->GetColor());
-			TextCmd.Type = ERenderCommandType::Font;
-			TextCmd.Constants.Font.Text = &Text;
-			TextCmd.Constants.Font.Font = Font;
-			TextCmd.Constants.Font.Scale = TextComp->GetFontSize();
-			RenderBus.AddCommand(ERenderPass::Font, TextCmd);
-		}
-		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SubUV)
-		{
-			USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(primitiveComponent);
-			const FParticleResource* Particle = SubUVComp->GetParticle();
-			if (!Particle || !Particle->IsLoaded()) continue;
-
-			BaseCmd.PerObjectConstants.Model = MakeViewSubUVSelectionMatrix(
-				SubUVComp,
-				RenderBus);
-			BaseCmd.Constants.SubUV.Particle = Particle;
-			BaseCmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
-			BaseCmd.Constants.SubUV.Width = SubUVComp->GetWidth();
-			BaseCmd.Constants.SubUV.Height = SubUVComp->GetHeight();
-		}
-
-		else if(primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_Billboard)
-		{
-			UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(primitiveComponent);
-			BaseCmd.PerObjectConstants.Model = MakeViewBillboardMaskMatrix(BillboardComp, RenderBus);
-			BaseCmd.Constants.Billboard.Texture = BillboardComp->GetTexture();
-			BaseCmd.Constants.Billboard.Width = BillboardComp->GetWidth();
-			BaseCmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-			BaseCmd.Constants.Billboard.Color = BillboardComp->GetColor();
-		}
-
-		if (!primitiveComponent->SupportsOutline()) continue;
-
-		// Selection Mask
-		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
-		{
-			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
-			const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
-			const FStaticMesh* MeshData = StaticMesh ? StaticMesh->GetMeshData() : nullptr;
-			const TArray<FStaticMeshSection>& Sections = MeshData ? MeshData->Sections : TArray<FStaticMeshSection>();
-
-			if (!Sections.empty())
-			{
-				for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-				{
-					const FStaticMeshSection& Section = Sections[SectionIdx];
-					if (Section.IndexCount == 0)
-					{
-						continue;
-					}
-
-					FRenderCommand MaskCmd = BaseCmd;
-					MaskCmd.Type = ERenderCommandType::SelectionMask;
-					MaskCmd.SectionIndexStart = Section.StartIndex;
-					MaskCmd.SectionIndexCount = Section.IndexCount;
-					MaskCmd.Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
-					RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-				}
-			}
-			else
-			{
-				FRenderCommand MaskCmd = BaseCmd;
-				MaskCmd.Type = ERenderCommandType::SelectionMask;
-				MaskCmd.Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(0));
-				RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-			}
-		}
-		else
-		{
-			FRenderCommand MaskCmd = BaseCmd;
-			MaskCmd.Type = ERenderCommandType::SelectionMask;
-			RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
-		}
-		bHasSelectionMask = true;
-
-		// TODO: 리팩토링 필요 (현재는 DecalComponent만 OBB를 그리도록 설정)
-		UDecalComponent* DecalComp = Cast<UDecalComponent>(primitiveComponent);
-		if (DecalComp)
-		{
-			CollectOBBCommand(primitiveComponent, ShowFlags, RenderBus);
-		}
-		else
-		{
-			CollectAABBCommand(primitiveComponent, ShowFlags, RenderBus);
-		}
-
-		CollectBVHInternalNodeAABBs(primitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
-	}
-
-	return bHasSelectionMask;
-}
-
 void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
                                             FRenderBus& RenderBus, EWorldType WorldType, bool bIncludeEditorOnlyPrimitives)
 {
@@ -570,556 +270,25 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
 
-	ID3D11ShaderResourceView* DefaultSRV = FResourceManager::Get().GetDefaultWhiteSRV();
-	auto ResolveSRV = [&](const FString& Path) -> ID3D11ShaderResourceView*
-		{
-			UTexture* Texture = FResourceManager::Get().GetTexture(Path);
-			return Texture ? Texture->GetSRV() : DefaultSRV;
-		};
-	static const FMaterial EngineDefaultMaterial{};
+	if (PrimType != EPrimitiveType::EPT_Decal)
+	{
+		PrimitiveDrawCommandBuilder.CollectPrimitive(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager);
+		return;
+	}
 
 	switch (PrimType)
 	{
-	case EPrimitiveType::EPT_StaticMesh:
-	{
-		if (!ShowFlags.bPrimitives) return;
-
-		UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Primitive);
-		const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
-
-		if (!StaticMesh || !StaticMesh->HasValidMeshData()) return;
-
-		// 1. 카메라 정보 및 AABB 가져오기
-        FVector CameraPos = RenderBus.GetCameraPosition();
-        FMatrix ProjMatrix = RenderBus.GetProj();
-        FAABB Bounds = StaticMeshComp->GetWorldAABB();
-        const int32 ValidLODCount = StaticMesh->GetValidLODCount();
-
-        // 2. LOD 레벨 계산
-		int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
-        if (ShowFlags.bEnableLOD)
-        {
-            SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
-        }
-
-		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
-        if (!MeshBuffer) return;
-
-        const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
-        const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
-
-		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-		{
-			const FStaticMeshSection& Section = Sections[SectionIdx];
-			UMaterialInterface* Material = Cast<UMaterialInterface>(StaticMeshComp->GetMaterial(SectionIdx));
-
-			FRenderCommand Cmd = {};
-			Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-			Cmd.SourcePrimitive = Primitive;
-			Cmd.Type = ERenderCommandType::StaticMesh;
-			Cmd.MeshBuffer = MeshBuffer;
-
-			Cmd.SectionIndexStart = Section.StartIndex;
-			Cmd.SectionIndexCount = Section.IndexCount;
-			Cmd.Material = Material;
-
-			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
-
-			//if (Material)
-			//{
-			//	Material->SetVector2("ScrollUV", FVector2(StaticMeshComp->GetScroll().first, StaticMeshComp->GetScroll().second));
-			//}
-
-			RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-		}
-
-		break;
-	}
-
-	case EPrimitiveType::EPT_Text:
-	{
-		if (!ShowFlags.bBillboardText) return;
-
-		UTextRenderComponent* TextComp = static_cast<UTextRenderComponent*>(Primitive);
-		const FFontResource* Font = TextComp->GetFont();
-		if (!Font || !Font->IsLoaded()) return;
-
-		const FString& Text = TextComp->GetText();
-		if (Text.empty()) return;
-
-		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Font;
-		Cmd.SourcePrimitive = Primitive;
-		Cmd.PerObjectConstants = FPerObjectConstants{TextComp->GetWorldMatrix(), TextComp->GetColor()};
-		Cmd.Constants.Font.Text = &Text;
-		Cmd.Constants.Font.Font = Font;
-		Cmd.Constants.Font.Scale = TextComp->GetFontSize();
-		
-		RenderBus.AddCommand(ERenderPass::Font, Cmd);
-		break;
-	}
-
-	case EPrimitiveType::EPT_SubUV:
-	{
-		USubUVComponent* SubUVComp = static_cast<USubUVComponent*>(Primitive);
-		const FParticleResource* Particle = SubUVComp->GetParticle();
-		if (!Particle || !Particle->IsLoaded()) return;
-
-		FRenderCommand Cmd = {};
-		Cmd.PerObjectConstants = FPerObjectConstants{
-			MakeViewBillboardMatrix(Primitive, RenderBus),
-			FColor::White().ToVector4() };
-		Cmd.SourcePrimitive = Primitive;
-		Cmd.Type = ERenderCommandType::SubUV;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
-		Cmd.SectionIndexStart = 0;
-		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
-		Cmd.Constants.SubUV.Particle = Particle;
-		Cmd.Constants.SubUV.FrameIndex = SubUVComp->GetFrameIndex();
-		Cmd.Constants.SubUV.Width = SubUVComp->GetWidth();
-		Cmd.Constants.SubUV.Height = SubUVComp->GetHeight();
-
-		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);
-		break;
-	}
-
-	case EPrimitiveType::EPT_Billboard:
-	{
-		UBillboardComponent* BillboardComp = static_cast<UBillboardComponent*>(Primitive);
-		UTexture* Texture = BillboardComp->GetTexture();
-
-		FRenderCommand Cmd = {};
-		Cmd.Type = ERenderCommandType::Billboard;
-		Cmd.SourcePrimitive = Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
-		Cmd.SectionIndexStart = 0;
-		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
-		Cmd.PerObjectConstants = FPerObjectConstants{
-			MakeViewBillboardMatrix(Primitive, RenderBus),
-			FColor::White().ToVector4() };
-		Cmd.Constants.Billboard.Texture = Texture;
-		Cmd.Constants.Billboard.Width = BillboardComp->GetWidth();
-		Cmd.Constants.Billboard.Height = BillboardComp->GetHeight();
-		Cmd.Constants.Billboard.Color = BillboardComp->GetColor();
-
-		RenderBus.AddCommand(ERenderPass::SubUV, Cmd);  // SubUV 패스 재사용
-		break;
-	}
-	
 	case EPrimitiveType::EPT_Decal:
 	{
-		if (!ShowFlags.bDecals) return;
-
-		FScopeCycleCounter RenderDecalScope({});
-
-		UDecalComponent* DecalComp = static_cast<UDecalComponent*>(Primitive);
-		UMaterialInterface* Material = Cast<UMaterialInterface>(DecalComp->GetMaterial());
-
-		UWorld* World = DecalComp->GetOwner() ? DecalComp->GetOwner()->GetFocusedWorld() : nullptr;
-
-		FOBB DecalOBB = FOBB::FromAABB(DecalComp->GetWorldAABB(), DecalComp->GetWorldMatrix());
-
-		TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
-		World->GetSpatialIndex().OBBQueryPrimitives(DecalOBB, VisiblePrimitiveScratch, OBBQueryScratch);
-
-		for (UPrimitiveComponent* Prim : VisiblePrimitiveScratch)
-		{
-			if (Prim->GetPrimitiveType() != EPrimitiveType::EPT_StaticMesh) continue;
-
-			UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Prim);
-			const UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
-
-			if (!StaticMesh || !StaticMesh->HasValidMeshData()) continue;
-
-			// 1. 카메라 정보 및 AABB 가져오기
-			FVector CameraPos = RenderBus.GetCameraPosition();
-			FMatrix ProjMatrix = RenderBus.GetProj();
-			FAABB Bounds = StaticMeshComp->GetWorldAABB();
-			const int32 ValidLODCount = StaticMesh->GetValidLODCount();
-
-			int32 SelectedLOD = 0; // 기본값은 항상 원본(최고 화질)
-			if (ShowFlags.bEnableLOD)
-			{
-				SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
-			}
-
-			FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
-			if (!MeshBuffer) continue;
-
-			const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
-			const TArray<FStaticMeshSection>& Sections = MeshData->Sections;
-
-			for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-			{
-				const FStaticMeshSection& Section = Sections[SectionIdx];
-
-				FRenderCommand Cmd = {};
-				Cmd.Type = ERenderCommandType::Decal;
-				Cmd.PerObjectConstants = FPerObjectConstants{ Prim->GetWorldMatrix(), FColor::White().ToVector4() };
-				Cmd.MeshBuffer = MeshBuffer;
-
-				Cmd.SectionIndexStart = Section.StartIndex;
-				Cmd.SectionIndexCount = Section.IndexCount;
-
-				Cmd.Material = Material;
-				//Material->SetMatrix4("InvDecalWorld", DecalComp->GetDecalMatrix().GetInverse());
-				//Material->SetVector4("DecalColorTint", DecalComp->GetDecalColor().ToVector4());
-
-				Cmd.Constants.Decal.InvDecalWorld = DecalComp->GetDecalMatrix().GetInverse();
-                Cmd.Constants.Decal.ColorTint = DecalComp->GetDecalColor().ToVector4();
-
-				RenderBus.AddCommand(ERenderPass::Decal, Cmd);
-			}
-		}
-
-		LastDecalStats.TotalDecalCount += 1;
-		LastDecalStats.CollectTimeMS += static_cast<int32>(RenderDecalScope.Finish());
+		DecalCommandBuilder.CollectDecal(Primitive, ShowFlags, RenderBus, MeshBufferManager, OBBQueryScratch);
 		break;
-	}
-	
-    case EPrimitiveType::EPT_FOG:
-    {
-        if (!ShowFlags.bFog)
-            return;
-        UHeightFogComponent* HeightFogComp = static_cast<UHeightFogComponent*>(Primitive);
-
-        FRenderCommand Cmd = {};
-        Cmd.Type = ERenderCommandType::Primitive;
-        Cmd.Constants.Fog.FogDensity = HeightFogComp->GetFogDensity();
-        Cmd.Constants.Fog.FogColor = HeightFogComp->GetFogInscatteringColor();
-        Cmd.Constants.Fog.HeightFalloff = HeightFogComp->GetHeightFalloff();
-        Cmd.Constants.Fog.FogHeight = HeightFogComp->GetFogHeight();
-        Cmd.Constants.Fog.FogStartDistance = HeightFogComp->GetFogStartDistance();
-        Cmd.Constants.Fog.FogMaxOpacity = HeightFogComp->GetFogMaxOpacity();
-        Cmd.Constants.Fog.FogCutoffDistance = HeightFogComp->GetFogCutoffDistance();
-        //Cmd.BlendState = EBlendState::AlphaBlend;
-        //Cmd.DepthStencilState = EDepthStencilState::Default;
-
-        RenderBus.AddCommand(ERenderPass::Fog, Cmd);
-        break;
-    }
-    case EPrimitiveType::EPT_Fireball:
-    {
-		UFireballComponent* FireballComp = static_cast<UFireballComponent*>(Primitive);
-
-		FLightData LightData = {};
-		LightData.Intensity = FireballComp->GetIntensity();
-		LightData.Radius	= FireballComp->GetRadius();
-		LightData.RadiusFalloff = FireballComp->GetRadiusFallOff();
-		LightData.WorldPos  = FireballComp->GetWorldLocation();
-
-		FColor Color = FireballComp->GetLinearColor();
-		LightData.Color.X = Color.R;
-		LightData.Color.Y = Color.G;
-		LightData.Color.Z = Color.B;
-		//RenderBus.AddLight(LightData);
-		break;
-	}
-    case EPrimitiveType::EPT_ProceduralMesh:
-    {
-        if (!ShowFlags.bPrimitives)
-            return;
-
-        UProceduralMeshComponent* ProcMeshComp = static_cast<UProceduralMeshComponent*>(Primitive);
-        const TArray<UProceduralMeshComponent::FMeshSection>& Sections = ProcMeshComp->GetSections();
-		
-        if (!ProcMeshComp || Sections.empty())
-            return;
-
-        for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
-        {
-            const UProceduralMeshComponent::FMeshSection& Section = Sections[SectionIdx];
-            FMeshBuffer* MeshBuffer = nullptr;
-            MeshBuffer = MeshBufferManager.GetProcMeshBuffer(ProcMeshComp->GetUUID(), Section.Vertices, Section.Indices);
-            
-			if (!MeshBuffer)
-                break;
-
-            UMaterialInterface* Material = Cast<UMaterialInterface>(ProcMeshComp->GetMaterial(SectionIdx));
-
-            FRenderCommand Cmd = {};
-            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
-            Cmd.SourcePrimitive = Primitive;
-            Cmd.Type = ERenderCommandType::StaticMesh;
-            Cmd.MeshBuffer = MeshBuffer;
-
-            Cmd.SectionIndexStart = 0;
-            Cmd.SectionIndexCount = static_cast<uint32>(Section.Indices.size());
-            Cmd.Material = Material;
-
-            Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
-
-            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
-        }
-        break;
 	}
 	default:
-		if (PrimType == EPrimitiveType::EPT_TransGizmo || PrimType == EPrimitiveType::EPT_RotGizmo || PrimType == EPrimitiveType::EPT_ScaleGizmo)
-		{
-			return;
-		}
 		return;
 	}
-}
-
-void FRenderCollector::CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags,
-                                                   FRenderBus& RenderBus, std::unordered_set<int32>& SeenNodeIndices)
-{
-	if (!ShowFlags.bBoundingVolume || !ShowFlags.bBVHBoundingVolume || PrimitiveComponent == nullptr)
-	{
-		return;
-	}
-
-	AActor* Owner = PrimitiveComponent->GetOwner();
-	UWorld* World = Owner ? Owner->GetFocusedWorld() : nullptr;
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	const FWorldSpatialIndex& SpatialIndex = World->GetSpatialIndex();
-	const int32 ObjectIndex = SpatialIndex.FindObjectIndex(PrimitiveComponent);
-	if (ObjectIndex == FBVH::INDEX_NONE)
-	{
-		return;
-	}
-
-	const FBVH& BVH = SpatialIndex.GetBVH();
-	const TArray<int32>& ObjectToLeafNode = BVH.GetObjectToLeafNode();
-	if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(ObjectToLeafNode.size()))
-	{
-		return;
-	}
-
-	const int32 LeafNodeIndex = ObjectToLeafNode[ObjectIndex];
-	if (LeafNodeIndex == FBVH::INDEX_NONE)
-	{
-		return;
-	}
-
-	const TArray<FBVH::FNode>& Nodes = BVH.GetNodes();
-	if (LeafNodeIndex < 0 || LeafNodeIndex >= static_cast<int32>(Nodes.size()))
-	{
-		return;
-	}
-
-	TArray<int32> PathToRoot;
-	PathToRoot.reserve(16);
-
-	int32 CurrentNodeIndex = Nodes[LeafNodeIndex].Parent;
-	while (CurrentNodeIndex != FBVH::INDEX_NONE)
-	{
-		if (CurrentNodeIndex < 0 || CurrentNodeIndex >= static_cast<int32>(Nodes.size()))
-		{
-			break;
-		}
-
-		PathToRoot.push_back(CurrentNodeIndex);
-		CurrentNodeIndex = Nodes[CurrentNodeIndex].Parent;
-	}
-
-	for (int32 PathIndex = 0; PathIndex < static_cast<int32>(PathToRoot.size()); ++PathIndex)
-	{
-		const int32 NodeIndex = PathToRoot[PathIndex];
-		if (!SeenNodeIndices.insert(NodeIndex).second)
-		{
-			continue;
-		}
-
-		const FBVH::FNode& Node = Nodes[NodeIndex];
-		if (Node.IsLeaf())
-		{
-			continue;
-		}
-
-		const FColor Color = MakeBVHInternalNodeColor(PathIndex, static_cast<int32>(PathToRoot.size()));
-		CollectAABBCommand(Node.Bounds, Color, RenderBus);
-	}
-}
-
-void FRenderCollector::CollectAABBCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus)
-{
-	FRenderCommand AABBCmd = {};
-	AABBCmd.Type = ERenderCommandType::DebugBox;
-	AABBCmd.Constants.AABB.Min = Box.Min;
-	AABBCmd.Constants.AABB.Max = Box.Max;
-	AABBCmd.Constants.AABB.Color = Color;
-	RenderBus.AddCommand(ERenderPass::Editor, AABBCmd);
-}
-
-void FRenderCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
-{
-	if (!ShowFlags.bBoundingVolume) return;
-
-	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
-	CollectAABBCommand(Box, FColor::White(), RenderBus);
-}
-
-void FRenderCollector::CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus)
-{
-	FRenderCommand OBBCmd = {};
-	OBBCmd.Type = ERenderCommandType::DebugOBB;
-	OBBCmd.Constants.OBB.Center = Box.Center;
-	OBBCmd.Constants.OBB.Extents = Box.Extents;
-	OBBCmd.Constants.OBB.Rotation = Box.Rotation.ToMatrix();
-	OBBCmd.Constants.OBB.Color = Color;
-	RenderBus.AddCommand(ERenderPass::Editor, OBBCmd);
-}
-
-void FRenderCollector::CollectOBBCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
-{
-	if (!ShowFlags.bBoundingVolume) return;
-
-	const FAABB AABB = PrimitiveComponent->GetWorldAABB();
-	const FOBB Box = FOBB::FromAABB(AABB, PrimitiveComponent->GetWorldMatrix());
-	CollectOBBCommand(Box, FColor::Green(), RenderBus);
-}
-
-void FRenderCollector::CollectDirectionalLightCommand(const UDirectionalLightComponent* DirLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
-{
-	if (!ShowFlags.bBoundingVolume) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::DebugDirectionalLight;
-	Cmd.Constants.DirectionalLight.Position = DirLight->GetWorldLocation();
-	Cmd.Constants.DirectionalLight.Direction = DirLight->GetForwardVector();
-	Cmd.Constants.DirectionalLight.Color = FColor::Yellow();
-	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
-}
-
-void FRenderCollector::CollectPointLightCommand(const UPointLightComponent* PointLight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
-{
-	if (!ShowFlags.bBoundingVolume) return;
-	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::DebugPointLight;
-	Cmd.Constants.PointLight.Position = PointLight->GetWorldLocation();
-	Cmd.Constants.PointLight.Range = PointLight->AttenuationRadius;
-	Cmd.Constants.PointLight.Color = FColor::Yellow();
-	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
-}
-
-void FRenderCollector::CollectSpotLightCommand(const USpotlightComponent* Spotlight, const FShowFlags& ShowFlags, FRenderBus& RenderBus)
-{
-	if (!ShowFlags.bBoundingVolume) return;
-
-	FRenderCommand Cmd = {};
-	Cmd.Type = ERenderCommandType::DebugSpotlight;
-	Cmd.Constants.SpotLight.Position = Spotlight->GetWorldLocation();
-	Cmd.Constants.SpotLight.Direction = Spotlight->GetForwardVector();
-	Cmd.Constants.SpotLight.InnerAngle = Spotlight->InnerConeAngle;
-	Cmd.Constants.SpotLight.OuterAngle = Spotlight->OuterConeAngle;
-	Cmd.Constants.SpotLight.Range = Spotlight->AttenuationRadius;
-	Cmd.Constants.SpotLight.Color = FColor::Yellow();
-	RenderBus.AddCommand(ERenderPass::Editor, Cmd);
 }
 
 void FRenderCollector::CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus)
 {
-	if (!Light) return;
-	const auto& LightColor = Light->LightColor;
-	FVector Color = FVector(LightColor.R, LightColor.G, LightColor.B);
-
-	LastLightStats.TotalLightCount += 1;
-
-	if (const UAmbientLightComponent* AmbientLight = Cast<UAmbientLightComponent>(Light))
-	{
-		// Collect Ambient Light Data
-		FAmbientLightInfo AmbientLightData	= {};
-		AmbientLightData.Color				= Color;
-		AmbientLightData.Intensity			= AmbientLight->Intensity;
-		RenderBus.AmbientLightInfo			= AmbientLightData;
-	}
-	else if (const UDirectionalLightComponent* DirLight = Cast<UDirectionalLightComponent>(Light))
-	{
-		FDirectionalLightInfo DirLightData	= {};
-		DirLightData.Color					= Color;
-		DirLightData.Intensity				= DirLight->Intensity;
-		DirLightData.Direction				= DirLight->GetForwardVector();
-		RenderBus.DirectionalLightInfo = DirLightData;
-		//RenderBus.DirLightComp = DirLight;
-
-        if (RenderBus.GetShowFlags().bShadow && DirLight->bCastShadows)
-        {
-            FShadowLightRequest DirLightDataShadow = {};
-		    DirLightDataShadow.LightIndex		= InvalidShadowIndex;
-            DirLightDataShadow.LightComponent	= const_cast<UDirectionalLightComponent*>(DirLight);
-            DirLightDataShadow.Type				= EShadowLightType::SLT_Directional;
-            DirLightDataShadow.bCastShadows		= true;
-            DirLightDataShadow.WorldLocation	= DirLight->GetWorldLocation();
-            DirLightDataShadow.ConstantBias		= DirLight->ConstantBias;
-            DirLightDataShadow.SlopeScaledBias	= DirLight->SlopeScaledBias;
-            DirLightDataShadow.ShadowSharpen	= DirLight->ShadowSharpen;
-            DirLightDataShadow.ShadowResolution = DirLight->ShadowResolutionScale;
-		    RenderBus.ShadowLightRequests.push_back(DirLightDataShadow);
-        }
-
-        LastLightStats.DirectionalLightCount += 1;
-        if (DirLight->bCastShadows)
-            LastLightStats.ShadowCastingLightCount += 1;
-	}
-
-	if (const USpotlightComponent* SpotLight = Cast<USpotlightComponent>(Light))
-	{
-		const uint32 LightIndex = static_cast<uint32>(RenderBus.LightInfos.size());
-        FLightInfo LightData		= {};
-		LightData.Color				= Color;
-		LightData.Intensity			= SpotLight->Intensity;
-        LightData.Position			= SpotLight->GetWorldLocation();
-		LightData.Direction			= SpotLight->GetForwardVector();
-        LightData.Radius			= SpotLight->AttenuationRadius;
-        LightData.Falloff			= SpotLight->LightFalloffExponent;
-		LightData.InnerAngle		= MathUtil::DegreesToRadians(SpotLight->InnerConeAngle);
-		LightData.OuterAngle		= MathUtil::DegreesToRadians(SpotLight->OuterConeAngle);
-        LightData.Type				= 0;
-		RenderBus.LightInfos.push_back(LightData);
-
-        if (RenderBus.GetShowFlags().bShadow && SpotLight->bCastShadows)
-        {
-		    FShadowLightRequest ShadowRequest = {};
-		    ShadowRequest.LightIndex		= LightIndex;
-		    ShadowRequest.LightComponent	= const_cast<USpotlightComponent*>(SpotLight);
-		    ShadowRequest.Type			= EShadowLightType::SLT_Spot;
-		    ShadowRequest.bCastShadows	= true;
-            ShadowRequest.ShadowResolution = SpotLight->ShadowResolutionScale;
-		    ShadowRequest.WorldLocation	= SpotLight->GetWorldLocation();
-		    ShadowRequest.ConstantBias	= SpotLight->ConstantBias;
-		    ShadowRequest.SlopeScaledBias = SpotLight->SlopeScaledBias;
-		    ShadowRequest.ShadowSharpen	= SpotLight->ShadowSharpen;
-            RenderBus.ShadowLightRequests.push_back(ShadowRequest);
-        }
-
-        LastLightStats.SpotlightCount += 1;
-        if (SpotLight->bCastShadows)
-            LastLightStats.ShadowCastingLightCount += 1;
-	}
-	else if (const UPointLightComponent* PointLight = Cast<UPointLightComponent>(Light)) {
-        FLightInfo LightData = {};
-		LightData.Color				= Color;
-		LightData.Intensity			= PointLight->Intensity;
-		LightData.Position			= PointLight->GetWorldLocation();
-		LightData.Radius			= PointLight->AttenuationRadius;
-		LightData.Falloff			= PointLight->LightFalloffExponent;
-        LightData.Type				= 1;
-        LightData.ShadowTextureIndex = InvalidShadowIndex;
-		RenderBus.LightInfos.push_back(LightData);
-
-        if (RenderBus.GetShowFlags().bShadow && PointLight->bCastShadows)
-        {
-		    FShadowLightRequest PointLightDataShadow = {};
-		    PointLightDataShadow.LightIndex = static_cast<uint32>(RenderBus.LightInfos.size() - 1); // TODO: Cubemap Index를 가리키도록 수정
-		    PointLightDataShadow.LightComponent = const_cast<UPointLightComponent*>(PointLight);
-		    PointLightDataShadow.Type = EShadowLightType::SLT_Point;
-            PointLightDataShadow.bCastShadows = true;
-            PointLightDataShadow.ShadowResolution = PointLight->ShadowResolutionScale;
-		    PointLightDataShadow.WorldLocation = PointLight->GetWorldLocation();
-		    PointLightDataShadow.ConstantBias = PointLight->ConstantBias;
-		    PointLightDataShadow.SlopeScaledBias = PointLight->SlopeScaledBias;
-		    PointLightDataShadow.ShadowSharpen = PointLight->ShadowSharpen;
-		    RenderBus.ShadowLightRequests.push_back(PointLightDataShadow);
-        }
-
-        LastLightStats.PointLightCount += 1;
-        if (PointLight->bCastShadows)
-            LastLightStats.ShadowCastingLightCount += 1;
-	}
+	LightRenderCollector.CollectLight(Light, RenderBus);
 }
