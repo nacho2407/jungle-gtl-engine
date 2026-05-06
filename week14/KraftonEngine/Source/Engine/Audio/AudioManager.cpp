@@ -242,4 +242,6 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("Siren", "siren.mp3", true);
 	LoadAudio("Fueling", "fueling.mp3", true);
 	LoadAudio("ScoreUp", "score_up.mp3");
+	LoadAudio("MeteorBoom", "meteor_boom.mp3");
+	LoadAudio("MeteorFall", "meteor_fall.mp3");
 }

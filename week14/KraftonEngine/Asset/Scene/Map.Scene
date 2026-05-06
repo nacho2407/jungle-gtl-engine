@@ -127,7 +127,7 @@
       "Name" : "MapCollider",
       "NonSceneComponents" : [],
       "Properties" : {
-        "Location" : [27.957397, 14.251518, -3.400000],
+        "Location" : [27.957397, 14.252000, -3.400000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
         "Scale" : [227.897263, 298.354919, 5.000000],
         "Tags" : "",
@@ -150,9 +150,9 @@
           },
           "Draw Only If Selected" : false,
           "Generate Overlap Events" : false,
-          "Location" : [27.957397, 14.251518, -3.400000],
+          "Location" : [27.957397, 14.252000, -3.400000],
           "Mass (kg)" : 1.000000,
-          "Object Type" : 1,
+          "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
           "Scale" : [227.897263, 298.354919, 5.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
@@ -2134,7 +2134,7 @@
           "Location" : [15.730211, -28.665539, 16.296112],
           "Mass (kg)" : 1.000000,
           "Object Type" : 1,
-          "Rotation" : [0.000000, 173.335449, 0.000000],
+          "Rotation" : [0.000000, 173.335419, 0.000000],
           "Scale" : [15.808549, 8.294950, 20.000000],
           "Shape Color" : [0.000000, 1.000000, 0.000000, 1.000000],
           "Simulate Physics" : false,
@@ -2150,7 +2150,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [1.069643, -165.651703, 16.396112],
-        "Rotation" : [-0.000000, 169.389771, 0.000000],
+        "Rotation" : [-0.000000, 169.389755, 0.000000],
         "Scale" : [15.594642, 8.493910, 20.000000],
         "Tags" : "",
         "Visible" : true
@@ -5633,9 +5633,11 @@
               "Camera Lag Max Distance" : 4.000000,
               "Camera Lag Speed" : 5.000000,
               "Camera Rotation Lag Speed" : 7.000000,
+              "Do Collision Test" : false,
               "Enable Camera Lag" : true,
               "Enable Rotation Lag" : true,
               "Location" : [0.000000, 0.000000, 0.000000],
+              "Probe Size" : 0.120000,
               "Rotation" : [0.000000, 0.000000, 0.000000],
               "Scale" : [1.000000, 1.000000, 1.000000],
               "Socket Offset" : [0.000000, 0.000000, 2.500000],
@@ -5681,9 +5683,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [166.223953, 73.362305, 90.401299],
+    "Location" : [183.250519, 81.680687, 97.964752],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 33.915062, -100.491013]
+    "Rotation" : [0.000000, 32.865063, -149.691071]
   },
   "Version" : 2,
   "WorldSettings" : {
