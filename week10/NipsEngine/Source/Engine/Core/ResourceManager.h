@@ -16,10 +16,8 @@
 #include "Render/Resource/RenderResources.h"
 #include <d3d11.h>
 
-// 리소스를 관리하는 싱글턴.
-// Resource.ini에서 리소스 경로/그리드 정보를 읽고, GPU 리소스를 로드/캐싱합니다.
-// 컴포넌트는 소유하지 않고 포인터로 공유 데이터를 참조합니다.
 
+// Asset에 붙는 Meta 정보
 #pragma region __ASSET_META__
 
 constexpr const char* TextureMetaKey_Type = "Type";
@@ -71,6 +69,8 @@ inline EAssetMetaType ToAssetMetaType(const FString& Value)
 
 #pragma endregion
 
+
+// 리소스를 관리하는 싱글턴.
 class FResourceManager : public TSingleton<FResourceManager>
 {
 	friend class TSingleton<FResourceManager>;

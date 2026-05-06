@@ -20,7 +20,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
 
     const char* CurrentPlayPauseLabel = bIsPlaying ? PauseLabel : (bIsPaused ? ResumeLabel : PlayLabel);
 
-    // 💡 [수정됨] 2. 버튼 크기 고정 및 위아래(Height) 키우기
+    // [수정됨] 2. 버튼 크기 고정 및 위아래(Height) 키우기
     // Play, Resume, Pause 중 가장 긴 텍스트의 길이를 기준으로 고정 너비를 계산합니다.
     float MaxLabelWidth = std::max({
         ImGui::CalcTextSize(PlayLabel).x,
@@ -45,7 +45,7 @@ void FEditorPlayStreamWidget::Render(float DeltaTime)
     // --- 1번 버튼 (Play / Pause / Resume) ---
     if (bIsPlaying || bIsPaused)
     {
-        // 💡 [수정됨] 실행 중(Pause)이거나 일시정지(Resume)일 때는 푸른색 계열 적용
+        //  [수정됨] 실행 중(Pause)이거나 일시정지(Resume)일 때는 푸른색 계열 적용
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));        // 기본 파란색
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.9f, 1.0f)); // 마우스 올렸을 때 (조금 더 밝게)
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));  // 클릭할 때 (가장 밝게)
