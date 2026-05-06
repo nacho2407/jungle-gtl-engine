@@ -118,7 +118,7 @@ void UCameraBoomComponent::GetEditableProperties(TArray<FPropertyDescriptor>& Ou
 
     // OutProps.push_back({ "Do Collision Test", EPropertyType::Bool, &bDoCollisionTest });
 
-    OutProps.push_back({ "Probe Size", EPropertyType::Float, &ProbeSize, 0.0f, 100.0f, 0.1f });
+    // OutProps.push_back({ "Probe Size", EPropertyType::Float, &ProbeSize, 0.0f, 100.0f, 0.1f });
 
     OutProps.push_back({ "Enable Mouse Orbit", EPropertyType::Bool, &bEnableMouseOrbit });
     OutProps.push_back({ "Require Right Mouse", EPropertyType::Bool, &bRequireRightMouseForOrbit });
@@ -150,7 +150,7 @@ void UCameraBoomComponent::PostEditProperty(const char* PropertyName)
         std::strcmp(PropertyName, "Enable Camera Lag") == 0 ||
         std::strcmp(PropertyName, "Camera Lag Speed") == 0 ||
         // std::strcmp(PropertyName, "Do Collision Test") == 0 ||
-        std::strcmp(PropertyName, "Probe Size") == 0)
+        // std::strcmp(PropertyName, "Probe Size") == 0)
     {
         bHasLastAppliedCameraLocation = false;
     }
