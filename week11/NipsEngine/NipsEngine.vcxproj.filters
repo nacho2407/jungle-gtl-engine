@@ -189,157 +189,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\Common.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\DepthPrepass.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Editor.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Gizmo.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\HeightFogPixelShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\HiZDownsample.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\LightCullingCS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Lighting.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\OcclusionCull.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\OutlinePostProcess.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Primitive.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SelectionMask.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderDecal.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderFont.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderLine.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Shadow.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShadowFunction.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UberLit.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\VSMBlurComputeShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\VSMShadow.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Multipass\FXAAPass.hlsl">
-      <Filter>Shaders\Multipass</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Multipass\FogPass.hlsl">
-      <Filter>Shaders\Multipass</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Multipass\LightPass.hlsl">
-      <Filter>Shaders\Multipass</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Source\Engine\Audio\AudioSystem.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\Random\EngineRandom.cpp">
       <Filter>Source\Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_audiosource.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_bus.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_3d.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_basicops.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_faderops.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_filterops.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_getters.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_setters.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voicegroup.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_core_voiceops.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fader.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_fft_lut.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_file.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_filter.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_misc.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_queue.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\core\soloud_thread.cpp">
-      <Filter>ThirdParty\SoLoud\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\dr_impl.cpp">
-      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\stb_vorbis.c">
-      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wav.cpp">
-      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\audiosource\wav\soloud_wavstream.cpp">
-      <Filter>ThirdParty\SoLoud\AudioSource</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\SoLoud\src\backend\miniaudio\soloud_miniaudio.cpp">
-      <Filter>ThirdParty\SoLoud\Backend</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
@@ -922,6 +776,14 @@
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameController.cpp" />
+    <ClCompile Include="Source\Engine\Camera\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\Camera\PlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
+    <ClCompile Include="Source\Engine\Camera\CameraModifier_CameraShake.cpp" />
+    <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1670,7 +1532,6 @@
     <ClInclude Include="Source\Engine\Render\Common\ShadowTypes.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.h" />
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
-    <ClInclude Include="ThirdParty\Lua\include\lua.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\Coroutine.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\CoroutineScheduler.h" />
@@ -1685,6 +1546,15 @@
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
     <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
+    <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
+    <ClInclude Include="ThirdParty\luajit\src\lua.h" />
+    <ClInclude Include="Source\Engine\Camera\CameraModifier_CameraShake.h" />
+    <ClInclude Include="Source\Engine\Camera\CameraShakeBase.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />

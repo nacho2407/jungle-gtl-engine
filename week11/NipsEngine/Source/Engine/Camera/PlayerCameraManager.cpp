@@ -2,6 +2,16 @@
 #include "Camera/CameraModifier.h"
 #include "GameFramework/PlayerController.h"
 
+APlayerCameraManager::~APlayerCameraManager()
+{
+    if (CacheCameraShakeMod)
+    {
+        RemoveModifier(CacheCameraShakeMod);
+        UObjectManager::Get().DestroyObject(CacheCameraShakeMod);
+        CacheCameraShakeMod = nullptr;
+    }
+}
+
 void APlayerCameraManager::BeginPlay()
 {
     AActor::BeginPlay();
@@ -99,6 +109,14 @@ void APlayerCameraManager::RemoveModifier(UCameraModifier* Modifier)
         ModifierList.end());
 }
 
+void APlayerCameraManager::StopAllCameraShakes(bool bImmediately)
+{
+    if (CacheCameraShakeMod)
+    {
+        CacheCameraShakeMod->StopAllCameraShakes(bImmediately);
+    }
+}
+
 void APlayerCameraManager::InitializeFor(APlayerController* PC)
 {
     PCOwner = PC;
@@ -146,6 +164,23 @@ void APlayerCameraManager::ApplyModifiers(float DeltaTime, FMinimalViewInfo& InO
             ++i;
         }
     }
+}
+
+UCameraModifier_CameraShake* APlayerCameraManager::GetOrCreateCameraShakeModifier()
+{
+    if (CacheCameraShakeMod)
+    {
+        return CacheCameraShakeMod;
+    }
+
+    CacheCameraShakeMod =
+        UObjectManager::Get().CreateObject<UCameraModifier_CameraShake>();
+
+    if (!CacheCameraShakeMod)
+        return nullptr;
+
+    AddModifier(CacheCameraShakeMod);
+    return CacheCameraShakeMod;
 }
 
 void APlayerCameraManager::UpdateTransition(float DeltaTime, FMinimalViewInfo& InOutView)
