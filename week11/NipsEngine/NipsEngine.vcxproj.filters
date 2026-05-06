@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Shaders">
@@ -30,6 +30,12 @@
     </Filter>
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{1a34369a-b65d-0692-a150-9209617bbd99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\PIE">
+      <UniqueIdentifier>{8df50f91-3f3b-4f59-9e85-f458918cc0d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Undo">
+      <UniqueIdentifier>{8d5ce3f6-5e3d-43c4-aac1-e091f780fb9e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Packaging">
       <UniqueIdentifier>{c3f50f29-df59-453e-a95a-5489aef4eb23}</UniqueIdentifier>
@@ -129,6 +135,9 @@
     </Filter>
     <Filter Include="Source\Engine\UI">
       <UniqueIdentifier>{93bfe338-2d3f-4f30-93b8-b17b8b563810}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\UI\RmlUi">
+      <UniqueIdentifier>{55a3ff59-9b5a-481e-a41f-2cbceaf34ad8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\UI\Backends">
       <UniqueIdentifier>{277d3098-fef3-4ec0-a97a-9ce7d69b43ea}</UniqueIdentifier>
@@ -335,6 +344,9 @@
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\PIE\PIESession.cpp">
+      <Filter>Source\Editor\PIE</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
@@ -346,6 +358,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Undo\EditorUndoSystem.cpp">
+      <Filter>Source\Editor\Undo</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp">
       <Filter>Source\Editor\Settings</Filter>
@@ -540,6 +555,9 @@
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp">
@@ -896,9 +914,6 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSaveAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
-    <ClCompile Include="Source\Game\GameJamPlayerController.cpp">
-      <Filter>Source\Game</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\GameSplashScreen.cpp" />
     <ClCompile Include="Source\Engine\Collision\Collision.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -906,7 +921,7 @@
     <ClCompile Include="Source\Engine\Component\CapsuleComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameController.cpp" />
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -917,6 +932,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\PIE\PIESession.h">
+      <Filter>Source\Editor\PIE</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\EditorUtils.h">
       <Filter>Source\Editor</Filter>
@@ -938,6 +956,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h">
       <Filter>Source\Editor\Selection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Undo\EditorUndoSystem.h">
+      <Filter>Source\Editor\Undo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h">
       <Filter>Source\Editor\Settings</Filter>
@@ -1207,6 +1228,9 @@
       <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
+      <Filter>Source\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h">
       <Filter>Source\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Level.h">
@@ -1521,6 +1545,9 @@
     <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h">
       <Filter>Source\Engine\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiSystem.h">
+      <Filter>Source\Engine\UI\RmlUi</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ActorSerialization.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
@@ -1541,9 +1568,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
       <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\GameJamPlayerController.h">
-      <Filter>Source\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h">
       <Filter>Source\Engine\Slate</Filter>
@@ -1660,9 +1684,14 @@
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
     <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp">
+      <Filter>Source\Engine\UI\RmlUi</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

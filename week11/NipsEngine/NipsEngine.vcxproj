@@ -326,7 +326,6 @@
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaSaveAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaUIAPI.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\API\LuaWorldAPI.cpp" />
-    <ClCompile Include="Source\Game\GameJamPlayerController.cpp" />
     <ClCompile Include="Source\Engine\Component\ProceduralMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManagerActorBindings.cpp" />
@@ -336,9 +335,14 @@
     <ClCompile Include="Source\Engine\Runtime\Script\ScriptManager.cpp">
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
-    <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
-    <ClCompile Include="Source\Editor\EditorEngine.cpp">
+      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.cpp" />
+      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.cpp" />
+      <ClCompile Include="Source\Engine\UI\RmlUi\RmlUiSystem.cpp" />
+      <ClCompile Include="Source\Editor\EditorEngine.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\PIE\PIESession.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -355,6 +359,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Undo\EditorUndoSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -483,6 +491,7 @@
     <ClCompile Include="Source\Engine\Core\Logging\Stats.cpp" />
     <ClCompile Include="Source\Engine\Core\Logging\Timer.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PrimitiveActors.cpp" />
@@ -506,7 +515,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameController.cpp">
+    <ClCompile Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -643,18 +652,21 @@
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\API\LuaEngineAPIBindings.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptManager.h" />
-    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
-    <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
-    <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h" />
+      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRenderInterfaceD3D11.h" />
+      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiRuntimeModule.h" />
+      <ClInclude Include="Source\Engine\UI\RmlUi\RmlUiSystem.h" />
+      <ClInclude Include="Source\Engine\UI\RuntimeUITypes.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
     <ClInclude Include="Source\Editor\EditorUtils.h" />
+    <ClInclude Include="Source\Editor\PIE\PIESession.h" />
     <ClInclude Include="Source\Editor\Packaging\GameBuildSettings.h" />
     <ClInclude Include="Source\Editor\Packaging\GamePackager.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportInputContexts.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportInputMapping.h" />
     <ClInclude Include="Source\Editor\Input\EditorViewportTools.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
+    <ClInclude Include="Source\Editor\Undo\EditorUndoSystem.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ProjectSettings.h" />
     <ClInclude Include="Source\Editor\UI\EditorConsoleWidget.h" />
@@ -751,6 +763,7 @@
     <ClInclude Include="Source\Engine\Core\Logging\Stats.h" />
     <ClInclude Include="Source\Engine\Core\Logging\Timer.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\Level.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\PrimitiveActors.h" />
@@ -772,7 +785,7 @@
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\BaseEditorController.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorInputRouter.h" />
     <ClInclude Include="Source\Engine\Input\Controller\EditorController\EditorWorldController.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
+    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.h" />
     <ClInclude Include="Source\Engine\Math\Color.h" />
     <ClInclude Include="Source\Engine\Math\Edge.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
@@ -864,7 +877,6 @@
     <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
-    <ClInclude Include="Source\Game\GameJamPlayerController.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitterCross.h" />

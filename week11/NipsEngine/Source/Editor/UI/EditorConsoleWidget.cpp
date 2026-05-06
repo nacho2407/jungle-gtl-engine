@@ -822,7 +822,7 @@ void FEditorConsoleWidget::PrintHistoryStats()
 		return;
 	}
 
-	const FUndoHistoryStats Stats = EditorEngine->GetUndoHistoryStats();
+	const FUndoHistoryStats Stats = EditorEngine->GetUndoSystem().GetStats();
 	AddLog("--- Undo History Stats ---\n");
 	AddLog("  Entries      : %d / %d (Undo %d, Redo %d)\n",
 		Stats.UndoCount + Stats.RedoCount,

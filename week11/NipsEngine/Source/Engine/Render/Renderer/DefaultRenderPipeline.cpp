@@ -98,6 +98,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	UIContext.ViewportSize = FRuntimeUIVector2(static_cast<float>(FrameWidth), static_cast<float>(FrameHeight));
 	UIContext.LayoutSize = FRuntimeUIVector2(1920.0f, 1080.0f);
 	UIContext.DeltaTime = DeltaTime;
-	Engine->RenderRuntimeUI(UIContext);
+	Engine->GetRmlUiSystem().Render(UIContext, Renderer);
 	Renderer.EndFrame();
 }

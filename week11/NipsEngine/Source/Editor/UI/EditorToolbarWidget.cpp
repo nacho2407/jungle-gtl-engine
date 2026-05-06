@@ -1,4 +1,4 @@
-﻿#include "Editor/UI/EditorToolbarWidget.h"
+#include "Editor/UI/EditorToolbarWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorSceneWidget.h"
@@ -301,15 +301,15 @@ void FEditorToolbarWidget::RenderEditMenu()
 		return;
 	}
 
-	const bool bCanUndo = EditorEngine && !EditorEngine->GetUndoHistory().empty();
-	const bool bCanRedo = EditorEngine && !EditorEngine->GetRedoHistory().empty();
+	const bool bCanUndo = EditorEngine && !EditorEngine->GetUndoSystem().GetUndoHistory().empty();
+	const bool bCanRedo = EditorEngine && !EditorEngine->GetUndoSystem().GetRedoHistory().empty();
 	if (ImGui::MenuItem("Undo", "Ctrl+Z", false, bCanUndo) && EditorEngine)
 	{
-		EditorEngine->Undo();
+		EditorEngine->GetUndoSystem().Undo();
 	}
 	if (ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, bCanRedo) && EditorEngine)
 	{
-		EditorEngine->Redo();
+		EditorEngine->GetUndoSystem().Redo();
 	}
 
 	ImGui::Separator();

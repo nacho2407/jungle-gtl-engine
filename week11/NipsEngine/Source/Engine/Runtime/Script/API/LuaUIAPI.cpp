@@ -1,4 +1,4 @@
-#include "Runtime/Script/API/LuaEngineAPIBindings.h"
+﻿#include "Runtime/Script/API/LuaEngineAPIBindings.h"
 
 #include "Engine/Runtime/Engine.h"
 
@@ -27,12 +27,12 @@ namespace
 
     bool SetStyle(const FString& ElementId, const FString& Name, const FString& Value)
     {
-        return GEngine ? GEngine->SetRmlUIElementStyle(ElementId, Name, Value) : false;
+        return GEngine ? GEngine->GetRmlUiSystem().SetElementStyle(ElementId, Name, Value) : false;
     }
 
     bool SetAttribute(const FString& ElementId, const FString& Name, const FString& Value)
     {
-        return GEngine ? GEngine->SetRmlUIElementAttribute(ElementId, Name, Value) : false;
+        return GEngine ? GEngine->GetRmlUiSystem().SetElementAttribute(ElementId, Name, Value) : false;
     }
 
     bool SetTransformStyles(const FString& ElementId, float X, float Y, float W, float H)
@@ -42,11 +42,11 @@ namespace
             return false;
         }
 
-        bool bResult = GEngine->SetRmlUIElementStyle(ElementId, "position", "absolute");
-        bResult = GEngine->SetRmlUIElementStyle(ElementId, "left", ToPx(X)) || bResult;
-        bResult = GEngine->SetRmlUIElementStyle(ElementId, "top", ToPx(Y)) || bResult;
-        bResult = GEngine->SetRmlUIElementStyle(ElementId, "width", ToPx(W)) || bResult;
-        bResult = GEngine->SetRmlUIElementStyle(ElementId, "height", ToPx(H)) || bResult;
+        bool bResult = GEngine->GetRmlUiSystem().SetElementStyle(ElementId, "position", "absolute");
+        bResult = GEngine->GetRmlUiSystem().SetElementStyle(ElementId, "left", ToPx(X)) || bResult;
+        bResult = GEngine->GetRmlUiSystem().SetElementStyle(ElementId, "top", ToPx(Y)) || bResult;
+        bResult = GEngine->GetRmlUiSystem().SetElementStyle(ElementId, "width", ToPx(W)) || bResult;
+        bResult = GEngine->GetRmlUiSystem().SetElementStyle(ElementId, "height", ToPx(H)) || bResult;
         return bResult;
     }
 }
@@ -59,92 +59,92 @@ namespace FLuaEngineAPI
 
         UI["LoadDocument"] = [](const FString& ScreenId, const FString& Path) -> bool
         {
-            return GEngine ? GEngine->LoadRmlUIDocument(ScreenId, Path) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().LoadDocument(ScreenId, Path) : false;
         };
 
         UI["UnloadDocument"] = [](const FString& ScreenId) -> bool
         {
-            return GEngine ? GEngine->UnloadRmlUIDocument(ScreenId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().UnloadDocument(ScreenId) : false;
         };
 
         UI["ReloadDocument"] = [](const FString& ScreenId) -> bool
         {
-            return GEngine ? GEngine->ReloadRmlUIDocument(ScreenId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().ReloadDocument(ScreenId) : false;
         };
 
         UI["ShowDocument"] = [](const FString& ScreenId) -> bool
         {
-            return GEngine ? GEngine->ShowRmlUIScreen(ScreenId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().ShowScreen(ScreenId) : false;
         };
 
         UI["HideDocument"] = [](const FString& ScreenId) -> bool
         {
-            return GEngine ? GEngine->HideRmlUIScreen(ScreenId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().HideScreen(ScreenId) : false;
         };
 
         UI["SetElementText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementText(ElementId, Text) : false;
         };
 
         UI["GetElementText"] = [](const FString& ElementId) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementText(ElementId) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementText(ElementId) : "";
         };
 
         UI["GetElementValue"] = [](const FString& ElementId) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementValue(ElementId) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementValue(ElementId) : "";
         };
 
         UI["SetElementValue"] = [](const FString& ElementId, const FString& Value) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementValue(ElementId, Value) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementValue(ElementId, Value) : false;
         };
 
         UI["HasElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? GEngine->HasRmlUIElement(ElementId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().HasElement(ElementId) : false;
         };
 
         UI["SetElementVisible"] = [](const FString& ElementId, bool bVisible) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementVisible(ElementId, bVisible) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementVisible(ElementId, bVisible) : false;
         };
 
         UI["SetElementEnabled"] = [](const FString& ElementId, bool bEnabled) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementEnabled(ElementId, bEnabled) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementEnabled(ElementId, bEnabled) : false;
         };
 
         UI["SetElementClass"] = [](const FString& ElementId, const FString& ClassName, bool bEnabled) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementClass(ElementId, ClassName, bEnabled) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementClass(ElementId, ClassName, bEnabled) : false;
         };
 
         UI["HasElementClass"] = [](const FString& ElementId, const FString& ClassName) -> bool
         {
-            return GEngine ? GEngine->HasRmlUIElementClass(ElementId, ClassName) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().HasElementClass(ElementId, ClassName) : false;
         };
 
         UI["GetElementClassNames"] = [](const FString& ElementId) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementClassNames(ElementId) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementClassNames(ElementId) : "";
         };
 
         UI["SetElementClassNames"] = [](const FString& ElementId, const FString& ClassNames) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementClassNames(ElementId, ClassNames) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementClassNames(ElementId, ClassNames) : false;
         };
 
         UI["HasElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
         {
-            return GEngine ? GEngine->HasRmlUIElementAttribute(ElementId, Name) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().HasElementAttribute(ElementId, Name) : false;
         };
 
         UI["GetElementAttribute"] = [](const FString& ElementId, const FString& Name) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementAttribute(ElementId, Name) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementAttribute(ElementId, Name) : "";
         };
 
         UI["SetElementAttribute"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
@@ -154,12 +154,12 @@ namespace FLuaEngineAPI
 
         UI["RemoveElementAttribute"] = [](const FString& ElementId, const FString& Name) -> bool
         {
-            return GEngine ? GEngine->RemoveRmlUIElementAttribute(ElementId, Name) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().RemoveElementAttribute(ElementId, Name) : false;
         };
 
         UI["GetElementStyle"] = [](const FString& ElementId, const FString& Name) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementStyle(ElementId, Name) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementStyle(ElementId, Name) : "";
         };
 
         UI["SetElementStyle"] = [](const FString& ElementId, const FString& Name, const FString& Value) -> bool
@@ -169,47 +169,47 @@ namespace FLuaEngineAPI
 
         UI["RemoveElementStyle"] = [](const FString& ElementId, const FString& Name) -> bool
         {
-            return GEngine ? GEngine->RemoveRmlUIElementStyle(ElementId, Name) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().RemoveElementStyle(ElementId, Name) : false;
         };
 
         UI["FocusElement"] = sol::overload(
             [](const FString& ElementId) -> bool
             {
-                return GEngine ? GEngine->FocusRmlUIElement(ElementId, false) : false;
+                return GEngine ? GEngine->GetRmlUiSystem().FocusElement(ElementId, false) : false;
             },
             [](const FString& ElementId, bool bFocusVisible) -> bool
             {
-                return GEngine ? GEngine->FocusRmlUIElement(ElementId, bFocusVisible) : false;
+                return GEngine ? GEngine->GetRmlUiSystem().FocusElement(ElementId, bFocusVisible) : false;
             });
 
         UI["IsElementFocused"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? GEngine->IsRmlUIElementFocused(ElementId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().IsElementFocused(ElementId) : false;
         };
 
         UI["BlurElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? GEngine->BlurRmlUIElement(ElementId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().BlurElement(ElementId) : false;
         };
 
         UI["ClickElement"] = [](const FString& ElementId) -> bool
         {
-            return GEngine ? GEngine->ClickRmlUIElement(ElementId) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().ClickElement(ElementId) : false;
         };
 
         UI["SetText"] = [](const FString& ElementId, const FString& Text) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementText(ElementId, Text) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementText(ElementId, Text) : false;
         };
 
         UI["GetValue"] = [](const FString& ElementId) -> FString
         {
-            return GEngine ? GEngine->GetRmlUIElementValue(ElementId) : "";
+            return GEngine ? GEngine->GetRmlUiSystem().GetElementValue(ElementId) : "";
         };
 
         UI["SetValue"] = [](const FString& ElementId, const FString& Value) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementValue(ElementId, Value) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementValue(ElementId, Value) : false;
         };
 
         UI["SetImage"] = [](const FString& ElementId, const FString& ImagePath) -> bool
@@ -224,12 +224,12 @@ namespace FLuaEngineAPI
 
         UI["SetVisible"] = [](const FString& ElementId, bool bVisible) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementVisible(ElementId, bVisible) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementVisible(ElementId, bVisible) : false;
         };
 
         UI["SetEnabled"] = [](const FString& ElementId, bool bEnabled) -> bool
         {
-            return GEngine ? GEngine->SetRmlUIElementEnabled(ElementId, bEnabled) : false;
+            return GEngine ? GEngine->GetRmlUiSystem().SetElementEnabled(ElementId, bEnabled) : false;
         };
 
         UI["SetActionEvent"] = [](const FString& ElementId, const FString& EventName) -> bool
@@ -239,7 +239,7 @@ namespace FLuaEngineAPI
 
         UI["RemoveElement"] = [](const FString& ElementId) -> bool
         {
-            bool bResult = GEngine ? GEngine->SetRmlUIElementVisible(ElementId, false) : false;
+            bool bResult = GEngine ? GEngine->GetRmlUiSystem().SetElementVisible(ElementId, false) : false;
             bResult = SetAttribute(ElementId, "disabled", "true") || bResult;
             return bResult;
         };
@@ -293,7 +293,7 @@ namespace FLuaEngineAPI
                 return Events;
             }
 
-            const TArray<FString> PendingEvents = GEngine->PollRmlUIActionEvents();
+            const TArray<FString> PendingEvents = GEngine->GetRmlUiSystem().PollActionEvents();
             int32 Index = 1;
             for (const FString& EventName : PendingEvents)
             {
