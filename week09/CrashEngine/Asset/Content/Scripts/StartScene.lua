@@ -7,6 +7,12 @@ local gamepad_stick_threshold = 0.55
 local gamepad_stick_repeat_delay = 0.22
 local gamepad_stick_repeat_timer = 0.0
 local gamepad_stick_direction = 0
+local is_starting_game = false
+local game_start_elapsed = 0.0
+local game_start_lights = {}
+local game_start_next_light_index = 1
+local game_start_fade_played = false
+local game_start_scene_requested = false
 
 local menu_items = {
     {
@@ -27,7 +33,8 @@ local credit_items = {
     {
         line_id = "credit_line_1",
         label_id = "credit_text_1",
-        text = "Team 8"
+        text = "Team 8",
+        is_team_name = true
     },
     {
         line_id = "credit_line_2",
@@ -63,10 +70,28 @@ local menu_text_style = {
     center_width = 300
 }
 
+local menu_layout = {
+    right = 60,
+    bottom = 70,
+    button_spacing = 58
+}
+
+local start_light_tag = "StartSceneLight"
+local start_light_delay = 1.0
+local start_light_shutdown_duration = 1.0
+local start_fade_delay_after_lights = 1.0
+local start_scene_load_delay_after_fade = 1.0
+local light_component_types = {
+    "PointLightComponent"
+}
+
 local credit_text_style = {
-    red = 255,
-    green = 220,
-    blue = 64,
+    team_red = 255,
+    team_green = 220,
+    team_blue = 64,
+    member_red = 255,
+    member_green = 255,
+    member_blue = 255,
     font_size = 32,
     bold = true,
     center_width = 300
@@ -175,7 +200,7 @@ local scoreboard_items = {
 
 local function playBackgroundBGM()
     local sound_mgr = GetSoundManager()
-    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/backgroundbgm.mp3", true)
+    sound_mgr:LoadSound("backgroundbgm", "Asset/Content/Sounds/SoundCollection/BackgroundSFX2.mp3", true)
     sound_mgr:PlayBGM("backgroundbgm")
 end
 
@@ -214,12 +239,22 @@ local function setMenuText(item, highlighted)
 end
 
 local function setCreditText(item)
+    local red = credit_text_style.member_red
+    local green = credit_text_style.member_green
+    local blue = credit_text_style.member_blue
+
+    if item.is_team_name then
+        red = credit_text_style.team_red
+        green = credit_text_style.team_green
+        blue = credit_text_style.team_blue
+    end
+
     ui_document:SetTextStyle(
         item.label_id,
         item.text,
-        credit_text_style.red,
-        credit_text_style.green,
-        credit_text_style.blue,
+        red,
+        green,
+        blue,
         credit_text_style.font_size,
         credit_text_style.bold,
         credit_text_style.center_width
@@ -310,11 +345,13 @@ end
 
 local function setMainMenuVisible(visible)
     if visible then
+        ui_document:SetProperty("title", "display", "block")
         ui_document:SetProperty("menu", "display", "block")
         ui_document:SetProperty("credit_view", "display", "none")
         ui_document:SetProperty("scoreboard_view", "display", "none")
         current_screen = "menu"
     else
+        ui_document:SetProperty("title", "display", "none")
         ui_document:SetProperty("menu", "display", "none")
         ui_document:SetProperty("credit_view", "display", "block")
         ui_document:SetProperty("scoreboard_view", "display", "none")
@@ -323,6 +360,7 @@ local function setMainMenuVisible(visible)
 end
 
 local function setScoreboardVisible()
+    ui_document:SetProperty("title", "display", "none")
     ui_document:SetProperty("menu", "display", "none")
     ui_document:SetProperty("credit_view", "display", "none")
     ui_document:SetProperty("scoreboard_view", "display", "block")
@@ -341,13 +379,25 @@ local function refreshMenuHighlight()
     end
 end
 
+local function applyMainMenuLayout()
+    ui_document:SetProperty("menu", "left", "auto")
+    ui_document:SetProperty("menu", "right", tostring(menu_layout.right) .. "px")
+    ui_document:SetProperty("menu", "bottom", tostring(menu_layout.bottom) .. "px")
+    ui_document:SetProperty("menu", "margin-left", "0px")
+    ui_document:SetProperty("menu", "margin-top", "0px")
+
+    ui_document:SetProperty("game_start_button", "top", "0px")
+    ui_document:SetProperty("credit_button", "top", tostring(menu_layout.button_spacing) .. "px")
+    ui_document:SetProperty("scoreboard_button", "top", tostring(menu_layout.button_spacing * 2) .. "px")
+end
+
 local function returnToMainMenu()
     setMainMenuVisible(true)
     refreshMenuHighlight()
 end
 
 local function moveSelection(delta)
-    if current_screen ~= "menu" then
+    if current_screen ~= "menu" or is_starting_game then
         return
     end
 
@@ -361,20 +411,102 @@ local function moveSelection(delta)
     refreshMenuHighlight()
 end
 
+local function collectStartSceneLights()
+    local lights = {}
+
+    if World.FindActorsByTag == nil then
+        return lights
+    end
+
+    local light_actors = World.FindActorsByTag(start_light_tag)
+    for _, actor in ipairs(light_actors) do
+        if actor ~= nil and actor:IsValid() then
+            for _, component_type in ipairs(light_component_types) do
+                local light = actor:GetComponent(component_type, 0)
+                if light ~= nil and light:IsValid() then
+                    lights[#lights + 1] = light
+                end
+            end
+        end
+    end
+
+    return lights
+end
+
+local function beginGameStartSequence()
+    is_starting_game = true
+    game_start_elapsed = 0.0
+    game_start_lights = collectStartSceneLights()
+    game_start_next_light_index = 1
+    game_start_fade_played = false
+    game_start_scene_requested = false
+
+    ui_document:SetProperty("title", "display", "none")
+    ui_document:SetProperty("menu", "display", "none")
+    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/StartSceneLBStart.ceffect")
+end
+
+local function updateGameStartSequence(dt)
+    if not is_starting_game or game_start_scene_requested then
+        return
+    end
+
+    game_start_elapsed = game_start_elapsed + dt
+
+    local light_count = #game_start_lights
+    while game_start_next_light_index <= light_count do
+        local turn_off_time = start_light_delay
+        if light_count > 1 then
+            turn_off_time = turn_off_time + start_light_shutdown_duration * (game_start_next_light_index - 1) / (light_count - 1)
+        end
+
+        if game_start_elapsed < turn_off_time then
+            break
+        end
+
+        local light = game_start_lights[game_start_next_light_index]
+        if light ~= nil and light:IsValid() then
+            light:SetAffectsWorld(false)
+        end
+
+        game_start_next_light_index = game_start_next_light_index + 1
+    end
+
+    local lights_done_time = start_light_delay + start_light_shutdown_duration
+    local fade_time = lights_done_time + start_fade_delay_after_lights
+    local load_scene_time = fade_time + start_scene_load_delay_after_fade
+
+    if not game_start_fade_played and game_start_elapsed >= fade_time then
+        game_start_fade_played = true
+        World.PlayCameraEffectAsset("Asset/Content/CameraEffects/FadeOut.ceffect")
+    end
+
+    if game_start_elapsed >= load_scene_time then
+        game_start_scene_requested = true
+        LoadScene("DroneLevel.Scene")
+    end
+end
+
 local function activateSelected()
+    if is_starting_game then
+        return
+    end
+
     if current_screen == "credit" or current_screen == "scoreboard" then
         returnToMainMenu()
         return
     end
 
     if selected_index == 1 then
-        LoadScene("DroneLevel.Scene")
+        beginGameStartSequence()
+
     elseif selected_index == 2 then
         setMainMenuVisible(false)
     elseif selected_index == 3 then
         setScoreboardVisible()
     end
 end
+
 
 local function handleBack()
     if current_screen == "credit" or current_screen == "scoreboard" then
@@ -431,10 +563,10 @@ function BeginPlay()
     if ui_document == nil or not ui_document:IsValid() then
         return
     end
-    World.PlayCameraEffectAsset("Asset/Content/CameraEffects/StartSceneLBStart.ceffect")
     ui_document:SetPosition(0, 0)
     ui_document:SetZOrder(0)
     ui_document:SetProperty("background", "display", "none")
+    ui_document:SetTexture("title", "Textures/Title.png")
     playBackgroundBGM()
 
     ui_document:SetProperty("game_start_button", "background-color", "rgb(0, 0, 0)")
@@ -448,6 +580,8 @@ function BeginPlay()
     ui_document:SetProperty("scoreboard_button", "border-width", "2px")
     ui_document:SetProperty("scoreboard_button", "border-color", "rgb(0, 220, 220)")
 
+    ui_document:SetProperty("credit_view", "margin-left", "100px")
+
     for index, item in ipairs(credit_items) do
         ui_document:SetProperty(item.line_id, "background-color", "transparent")
         ui_document:SetProperty(item.line_id, "border-width", "0px")
@@ -457,9 +591,7 @@ function BeginPlay()
 
     refreshScoreboard()
 
-    ui_document:SetProperty("game_start_button", "top", "230px")
-    ui_document:SetProperty("credit_button", "top", "288px")
-    ui_document:SetProperty("scoreboard_button", "top", "346px")
+    applyMainMenuLayout()
 
     selected_index = 1
     gamepad_stick_repeat_timer = 0.0
@@ -483,6 +615,7 @@ function Tick(dt)
         return
     end
 
+    updateGameStartSequence(dt)
     updateGamepadStickMenu(dt)
 end
 
