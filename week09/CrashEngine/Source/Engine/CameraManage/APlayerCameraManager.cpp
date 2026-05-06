@@ -1,4 +1,4 @@
-#include "CameraManage/PlayerCameraManager.h"
+#include "CameraManage/APlayerCameraManager.h"
 
 #include "CameraManage/CameraModifiers/CameraModifier.h"
 #include "CameraManage/CameraModifiers/CameraModifier_Fade.h"
@@ -12,13 +12,20 @@
 
 #include <algorithm>
 
-void PlayerCameraManager::SetViewTarget(UCameraComponent* NewCamera)
+IMPLEMENT_CLASS(APlayerCameraManager, AActor)
+
+APlayerCameraManager::APlayerCameraManager()
+{
+    SetActorTickEnabled(false);
+}
+
+void APlayerCameraManager::SetViewTarget(UCameraComponent* NewCamera)
 {
     ViewTarget.POVCamera = NewCamera;
     ViewTarget.TargetActor = NewCamera ? NewCamera->GetOwner() : nullptr;
 }
 
-void PlayerCameraManager::UpdateCamera(float DeltaTime)
+void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
     UCameraComponent* Camera = ViewTarget.POVCamera;
     if (!Camera)
@@ -53,7 +60,7 @@ void PlayerCameraManager::UpdateCamera(float DeltaTime)
     RemoveFinishedModifiers();
 }
 
-void PlayerCameraManager::AddCameraModifier(UCameraModifier* Modifier)
+void APlayerCameraManager::AddCameraModifier(UCameraModifier* Modifier)
 {
     if (!Modifier)
     {
@@ -63,7 +70,7 @@ void PlayerCameraManager::AddCameraModifier(UCameraModifier* Modifier)
     ModifierList.push_back(Modifier);
 }
 
-void PlayerCameraManager::RemoveFinishedModifiers()
+void APlayerCameraManager::RemoveFinishedModifiers()
 {
     ModifierList.erase(
         std::remove_if(ModifierList.begin(), ModifierList.end(), [](UCameraModifier* Modifier)
@@ -81,12 +88,12 @@ void PlayerCameraManager::RemoveFinishedModifiers()
         ModifierList.end());
 }
 
-void PlayerCameraManager::ResetScreenEffects()
+void APlayerCameraManager::ResetScreenEffects()
 {
     BaseScreenEffects = FCameraScreenEffectInfo{};
 }
 
-void PlayerCameraManager::PlayCameraShake(float Duration, float LocationAmplitude, float RotationAmplitude, float Frequency)
+void APlayerCameraManager::PlayCameraShake(float Duration, float LocationAmplitude, float RotationAmplitude, float Frequency)
 {
     FCameraShakeParams Params;
     Params.Duration = Duration;
@@ -96,7 +103,7 @@ void PlayerCameraManager::PlayCameraShake(float Duration, float LocationAmplitud
     PlayCameraShake(Params);
 }
 
-void PlayerCameraManager::PlayCameraShake(const FCameraShakeParams& Params)
+void APlayerCameraManager::PlayCameraShake(const FCameraShakeParams& Params)
 {
     UCamModifyer_CameraShake* Shake = UObjectManager::Get().CreateObject<UCamModifyer_CameraShake>();
     if (!Shake)
@@ -108,7 +115,7 @@ void PlayerCameraManager::PlayCameraShake(const FCameraShakeParams& Params)
     AddCameraModifier(Shake);
 }
 
-void PlayerCameraManager::PlayCameraFade(float FromAmount, float ToAmount, float Duration, const FVector4& Color)
+void APlayerCameraManager::PlayCameraFade(float FromAmount, float ToAmount, float Duration, const FVector4& Color)
 {
     FCameraFadeParams Params;
     Params.Color = Color;
@@ -118,7 +125,7 @@ void PlayerCameraManager::PlayCameraFade(float FromAmount, float ToAmount, float
     PlayCameraFade(Params);
 }
 
-void PlayerCameraManager::PlayCameraFade(const FCameraFadeParams& Params)
+void APlayerCameraManager::PlayCameraFade(const FCameraFadeParams& Params)
 {
     UCameraModifier_Fade* Modifier = UObjectManager::Get().CreateObject<UCameraModifier_Fade>();
     if (!Modifier)
@@ -131,7 +138,7 @@ void PlayerCameraManager::PlayCameraFade(const FCameraFadeParams& Params)
     AddCameraModifier(Modifier);
 }
 
-void PlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
+void APlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, float Duration, float AppearRatio, float DisappearRatio)
 {
     FCameraLetterBoxParams Params;
     Params.FromAmount = FromAmount;
@@ -142,7 +149,7 @@ void PlayerCameraManager::PlayCameraLetterBox(float FromAmount, float ToAmount, 
     PlayCameraLetterBox(Params);
 }
 
-void PlayerCameraManager::PlayCameraLetterBox(const FCameraLetterBoxParams& Params)
+void APlayerCameraManager::PlayCameraLetterBox(const FCameraLetterBoxParams& Params)
 {
     UCameraModifier_LetterBox* Modifier = UObjectManager::Get().CreateObject<UCameraModifier_LetterBox>();
     if (!Modifier)
@@ -155,7 +162,7 @@ void PlayerCameraManager::PlayCameraLetterBox(const FCameraLetterBoxParams& Para
     AddCameraModifier(Modifier);
 }
 
-void PlayerCameraManager::PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration)
+void APlayerCameraManager::PlayCameraGammaCorrection(float FromGamma, float ToGamma, float Duration)
 {
     FCameraGammaCorrectionParams Params;
     Params.FromGamma = FromGamma;
@@ -164,7 +171,7 @@ void PlayerCameraManager::PlayCameraGammaCorrection(float FromGamma, float ToGam
     PlayCameraGammaCorrection(Params);
 }
 
-void PlayerCameraManager::PlayCameraGammaCorrection(const FCameraGammaCorrectionParams& Params)
+void APlayerCameraManager::PlayCameraGammaCorrection(const FCameraGammaCorrectionParams& Params)
 {
     UCameraModifier_GammaCorrection* Modifier = UObjectManager::Get().CreateObject<UCameraModifier_GammaCorrection>();
     if (!Modifier)
@@ -177,7 +184,7 @@ void PlayerCameraManager::PlayCameraGammaCorrection(const FCameraGammaCorrection
     AddCameraModifier(Modifier);
 }
 
-void PlayerCameraManager::PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)
+void APlayerCameraManager::PlayCameraVignette(float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)
 {
     FCameraVignetteParams Params;
     Params.FromIntensity = FromIntensity;
@@ -188,7 +195,7 @@ void PlayerCameraManager::PlayCameraVignette(float FromIntensity, float ToIntens
     PlayCameraVignette(Params);
 }
 
-void PlayerCameraManager::PlayCameraVignette(const FCameraVignetteParams& Params)
+void APlayerCameraManager::PlayCameraVignette(const FCameraVignetteParams& Params)
 {
     UCameraModifier_Vignette* Modifier = UObjectManager::Get().CreateObject<UCameraModifier_Vignette>();
     if (!Modifier)
@@ -201,26 +208,26 @@ void PlayerCameraManager::PlayCameraVignette(const FCameraVignetteParams& Params
     AddCameraModifier(Modifier);
 }
 
-void PlayerCameraManager::CommitFade(const FCameraFadeParams& Params)
+void APlayerCameraManager::CommitFade(const FCameraFadeParams& Params)
 {
     BaseScreenEffects.bEnableFade = Params.ToAmount > 0.0f;
     BaseScreenEffects.FadeColor = Params.Color;
     BaseScreenEffects.FadeAmount = Clamp(Params.ToAmount, 0.0f, 1.0f);
 }
 
-void PlayerCameraManager::CommitLetterBox(const FCameraLetterBoxParams& Params)
+void APlayerCameraManager::CommitLetterBox(const FCameraLetterBoxParams& Params)
 {
     BaseScreenEffects.bEnableLetterBox = Params.FromAmount > 0.0f;
     BaseScreenEffects.LetterBoxAmount = Clamp(Params.FromAmount, 0.0f, 0.5f);
 }
 
-void PlayerCameraManager::CommitGammaCorrection(const FCameraGammaCorrectionParams& Params)
+void APlayerCameraManager::CommitGammaCorrection(const FCameraGammaCorrectionParams& Params)
 {
     BaseScreenEffects.bEnableGammaCorrection = Params.ToGamma != 1.0f;
     BaseScreenEffects.Gamma = Clamp(Params.ToGamma, 0.01f, 8.0f);
 }
 
-void PlayerCameraManager::CommitVignette(const FCameraVignetteParams& Params)
+void APlayerCameraManager::CommitVignette(const FCameraVignetteParams& Params)
 {
     BaseScreenEffects.bEnableVignette = Params.ToIntensity > 0.0f;
     BaseScreenEffects.VignetteIntensity = Clamp(Params.ToIntensity, 0.0f, 1.0f);

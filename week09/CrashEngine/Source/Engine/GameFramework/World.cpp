@@ -7,6 +7,7 @@
 #include "Component/Shape/ShapeComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Engine/Component/CameraComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Render/Visibility/LOD/LODContext.h"
 #include <algorithm>
 #include "Profiling/Stats.h"
@@ -98,6 +99,12 @@ void UWorld::DestroyActor(AActor* Actor)
     }
 
     Actor->EndPlay();
+
+    if (Actor == PlayerController)
+    {
+        PlayerController = nullptr;
+    }
+
     // Remove from actor list
     PersistentLevel->RemoveActor(Actor);
 
@@ -164,6 +171,22 @@ void UWorld::AddActor(AActor* Actor)
     {
         Actor->BeginPlay();
     }
+}
+
+APlayerController* UWorld::EnsurePlayerController()
+{
+    if (WorldType != EWorldType::PIE && WorldType != EWorldType::Game)
+    {
+        return nullptr;
+    }
+
+    if (PlayerController && PlayerController->GetWorld() == this)
+    {
+        return PlayerController;
+    }
+
+    PlayerController = SpawnActor<APlayerController>();
+    return PlayerController;
 }
 
 void UWorld::QueueDamage(AActor* Target, float Damage, AActor* Instigator)
@@ -383,6 +406,8 @@ void UWorld::BeginPlay()
 {
     bHasBegunPlay = true;
 
+    EnsurePlayerController();
+
     if (PersistentLevel)
     {
         PersistentLevel->BeginPlay();
@@ -426,6 +451,7 @@ void UWorld::EndPlay()
 {
     bHasBegunPlay = false;
     TickManager.Reset();
+    PlayerController = nullptr;
     PendingDamages.clear();
     PendingDestroyActorUUIDs.clear();
 

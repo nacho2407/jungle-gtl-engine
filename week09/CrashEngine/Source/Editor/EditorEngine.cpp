@@ -7,7 +7,9 @@
 #include "Component/ActorComponent.h"
 #include "Component/CameraComponent.h"
 #include "GameFramework/World.h"
+#include "GameFramework/PlayerController.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "CameraManage/APlayerCameraManager.h"
 #include "Object/ObjectFactory.h"
 #include "Mesh/ObjManager.h"
 #include "Input/InputSystem.h"
@@ -133,6 +135,20 @@ void WarmUpMinimalViewModesForRenderPath(UEditorEngine& Editor, ERenderShadingPa
     {
         Renderer.WarmUpViewModeShaders(ViewMode, RenderPath);
     }
+}
+
+FCameraViewInfo BuildCameraViewFromComponent(UCameraComponent* Camera)
+{
+    FCameraViewInfo CameraViewInfo;
+    if (!Camera)
+    {
+        return CameraViewInfo;
+    }
+
+    CameraViewInfo.Location = Camera->GetWorldLocation();
+    CameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
+    CameraViewInfo.CameraState = Camera->GetCameraState();
+    return CameraViewInfo;
 }
 } // namespace
 
@@ -706,10 +722,23 @@ void UEditorEngine::RenderViewport(FLevelEditorViewportClient* VC, float DeltaTi
     FScene& Scene = World->GetScene();
     Scene.ClearFrameData();
 
-    CameraManager.SetViewTarget(Camera);
-    CameraManager.UpdateCamera(DeltaTime);
-
-    SceneView.SetCameraInfo(CameraManager.GetCameraViewInfoCache());
+    if (VC->GetPlayState() != EEditorViewportPlayState::Stopped)
+    {
+        APlayerController* PlayerController = World->GetFirstPlayerController();
+        APlayerCameraManager* PlayerCameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+        if (PlayerCameraManager)
+        {
+            SceneView.SetCameraInfo(PlayerCameraManager->GetCameraViewInfoCache());
+        }
+        else
+        {
+            SceneView.SetCameraInfo(BuildCameraViewFromComponent(Camera));
+        }
+    }
+    else
+    {
+        SceneView.SetCameraInfo(BuildCameraViewFromComponent(Camera));
+    }
     SceneView.SetRenderSettings(ViewMode, EffectiveShowFlags);
     SceneView.SetRenderOptions(Opts);
     SceneView.RenderPath = FEditorSettings::Get().RenderShadingPath;

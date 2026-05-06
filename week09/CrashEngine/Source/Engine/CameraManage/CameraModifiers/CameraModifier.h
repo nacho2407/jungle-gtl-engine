@@ -3,7 +3,7 @@
 #include "CameraManage/CameraTypes.h"
 #include "Object/Object.h"
 
-class PlayerCameraManager;
+class APlayerCameraManager;
 
 class UCameraModifier : public UObject
 {

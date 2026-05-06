@@ -17,6 +17,7 @@
 class UCameraComponent;
 class UPrimitiveComponent;
 class FCollisionManager;
+class APlayerController;
 
     // UWorld는 월드 실행 상태와 레벨 구성을 관리합니다.
 class UWorld : public UObject
@@ -50,6 +51,8 @@ public:
     bool RaycastEditorPicking(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
     const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
+    APlayerController* GetFirstPlayerController() const { return PlayerController; }
+    APlayerController* EnsurePlayerController();
 
     // LOD 컨텍스트를 FSceneView에 전달 (Collect 단계에서 LOD 인라인 갱신용)
     FLODUpdateContext PrepareLODContext();
@@ -110,6 +113,7 @@ private:
     FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
     FScene Scene;
     FTickManager TickManager;
+    APlayerController* PlayerController = nullptr;
     TArray<FPendingDamage> PendingDamages;
     TArray<uint32> PendingDestroyActorUUIDs;
 

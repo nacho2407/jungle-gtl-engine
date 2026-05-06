@@ -399,90 +399,15 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\Settings\ReleaseSettings.cpp" />
-    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.cpp">
-      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <Optimization>Disabled</Optimization>
-      <SupportJustMyCode>true</SupportJustMyCode>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <AssemblerListingLocation>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</AssemblerListingLocation>
-      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
-      <BrowseInformation>false</BrowseInformation>
-      <BrowseInformationFile>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</BrowseInformationFile>
-      <CompileAs>Default</CompileAs>
-      <ConformanceMode>true</ConformanceMode>
-      <DiagnosticsFormat>Column</DiagnosticsFormat>
-      <DisableLanguageExtensions>false</DisableLanguageExtensions>
-      <ErrorReporting>Prompt</ErrorReporting>
-      <ExpandAttributedSource>false</ExpandAttributedSource>
-      <ExceptionHandling>Async</ExceptionHandling>
-      <EnableASAN>false</EnableASAN>
-      <EnableFuzzer>false</EnableFuzzer>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
-      <GenerateModuleDependencies>false</GenerateModuleDependencies>
-      <GenerateSourceDependencies>false</GenerateSourceDependencies>
-      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>Default</LanguageStandard_C>
-      <MinimalRebuild>false</MinimalRebuild>
-      <ModuleDependenciesFile>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</ModuleDependenciesFile>
-      <ModuleOutputFile>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</ModuleOutputFile>
-      <OmitDefaultLibName>false</OmitDefaultLibName>
-      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ObjectFileName>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</ObjectFileName>
-      <CallingConvention>Cdecl</CallingConvention>
-      <ProgramDataBaseFileName>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\vc143.pdb</ProgramDataBaseFileName>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\CrashEngine.pch</PrecompiledHeaderOutputFile>
-      <PreprocessToFile>false</PreprocessToFile>
-      <PreprocessKeepComments>false</PreprocessKeepComments>
-      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
-      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
-      <ShowIncludes>false</ShowIncludes>
-      <SourceDependenciesFile>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</SourceDependenciesFile>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <SmallerTypeCheck>false</SmallerTypeCheck>
-      <SpectreMitigation>false</SpectreMitigation>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <TrackerLogDirectory>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\CrashEngine.tlog\</TrackerLogDirectory>
-      <TranslateIncludes>false</TranslateIncludes>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <UseFullPaths>true</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
-      <XMLDocumentationFileName>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\Build\Debug\</XMLDocumentationFileName>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <IntelJCCErratum>false</IntelJCCErratum>
-      <BuildStlModules>false</BuildStlModules>
-      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
-      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
-      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
-      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
-      <PreprocessorDefinitions>HAS_DIRECTXTK;_WIN32_WINNT=0x0A00;RMLUI_STATIC_LIB;_DEBUG;_CONSOLE;WITH_EDITOR=1;_UNICODE;UNICODE;</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalOptions>/utf-8 /bigobj </AdditionalOptions>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\packages\directxtk_desktop_win10.2025.10.28.2\build\native\..\..\include;C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\CrashEngine\ThirdParty\FMOD\inc;C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\vcpkg_installed\x64-windows\include\luajit;;C:\Users\Jungle\Desktop\Projects\Week9\Jungle_Week9_Team8\vcpkg_installed\x64-windows\include</AdditionalIncludeDirectories>
-      <LinkCompiled>true</LinkCompiled>
-    </ClCompile>
+    <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Fade.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_GammaCorrection.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_LetterBox.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.cpp" />
     <ClCompile Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.cpp" />
-    <ClCompile Include="Source\Engine\CameraManage\PlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Engine\CameraManage\APlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\Collision\CollisionSystem.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaActionLibrary.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaComponentProxy.cpp" />
     <ClCompile Include="Source\Engine\LuaScript\LuaInputProxy.cpp" />
@@ -723,9 +648,10 @@ copy /Y "$(SolutionDir)vcpkg_installed\x64-windows\bin\lua51.dll" "$(OutDir)"</C
     <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\CameraModifier_Vignette.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraModifiers\UCamModifyer_CameraShake.h" />
     <ClInclude Include="Source\Engine\CameraManage\CameraTypes.h" />
-    <ClInclude Include="Source\Engine\CameraManage\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\CameraManage\APlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Collision\CollisionSystem.h" />
     <ClInclude Include="Source\Engine\Core\CoroutineScheduler\LuaCoroutineScheduler.h" />
+    <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaActionLibrary.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaComponentProxy.h" />
     <ClInclude Include="Source\Engine\LuaScript\LuaInputProxy.h" />

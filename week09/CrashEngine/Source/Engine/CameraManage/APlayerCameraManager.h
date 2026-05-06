@@ -2,6 +2,7 @@
 
 #include "CameraManage/CameraTypes.h"
 #include "Component/CameraComponent.h"
+#include "GameFramework/AActor.h"
 
 class AActor;
 class UCameraModifier;
@@ -13,9 +14,13 @@ struct FViewTarget
     UCameraComponent* POVCamera = nullptr;
 };
 
-class PlayerCameraManager
+class APlayerCameraManager : public AActor
 {
 public:
+    DECLARE_CLASS(APlayerCameraManager, AActor)
+
+    APlayerCameraManager();
+
     void SetViewTarget(UCameraComponent* NewCamera);
     void UpdateCamera(float DeltaTime);
 
