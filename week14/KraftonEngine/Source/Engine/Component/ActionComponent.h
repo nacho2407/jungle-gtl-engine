@@ -31,9 +31,10 @@ public:
 private:
 	float GetRawDeltaTime(float FallbackDeltaTime) const;
 	USceneComponent* GetTargetSceneComponent() const;
-	void CaptureBaseTimeDilation();
-	void ApplyTimeDilation();
-	void ClearTimeDilationIfIdle();
+	void UpdateTimeDilationRegistration();
+	void RegisterTimeDilationComponent();
+	void UnregisterTimeDilationComponent();
+	static void RefreshGlobalTimeDilation();
 
 	struct FTimedDilationAction
 	{
@@ -62,12 +63,14 @@ private:
 	};
 
 	bool HasActiveTimeDilationAction(const FTimedDilationAction& Action) const;
+	bool HasActiveTimeDilation() const;
 
 	FTimedDilationAction HitStopAction;
 	FTimedDilationAction SlomoAction;
 	FHitSquashAction HitSquashAction;
 	FKnockbackAction KnockbackAction;
 
-	bool bHasCapturedBaseTimeDilation = false;
-	float BaseTimeDilation = 1.0f;
+	static TArray<UActionComponent*> TimeDilationComponents;
+	static bool bHasCapturedGlobalBaseTimeDilation;
+	static float GlobalBaseTimeDilation;
 };
