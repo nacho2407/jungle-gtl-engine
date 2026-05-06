@@ -53,9 +53,21 @@ private:
 	void HandleHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	// 첫 ground/차량 충돌 시점에 1회 호출 — 플레이어와의 거리 기반으로 카메라 셰이크
+	// scale + 임팩트 사운드 볼륨을 산출. PhysX 가 같은 충돌에 콜백을 여러 번 발행할
+	// 수 있어 bAlreadyExploded 가드와 함께 동작.
+	void PlayLandingFeedback();
+
 	void ResolveCachedComponents();
 
 	USphereComponent* CollisionSphere = nullptr;
 	UStaticMeshComponent* Mesh = nullptr;
 	float ElapsedTime = 0.0f;
+	bool bAlreadyExploded = false;
+
+	// 임팩트 피드백 튜닝 — 거리 0 일 때 Max, MaxAudibleDistance 이상에선 무음/무흔들림.
+	static constexpr float MaxAudibleDistance = 80.0f;
+	static constexpr float MinShakeScale      = 0.3f;
+	static constexpr float MaxShakeScale      = 2.5f;
+	static constexpr float MaxImpactVolume    = 1.0f;
 };
