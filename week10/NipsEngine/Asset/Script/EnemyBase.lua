@@ -147,7 +147,7 @@ function Script:OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, Other
         self.lastAttackId = ExtractAttackId(OtherActor)
         
         if _G.GameJam and _G.GameJam.ActivateHitStop then
-            _G.GameJam.ActivateHitStop(0.5, 0.1)
+            _G.GameJam.ActivateHitStop(0.1, 0.2)
         end
         return
     end
