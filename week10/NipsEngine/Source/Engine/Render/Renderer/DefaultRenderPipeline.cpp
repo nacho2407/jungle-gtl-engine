@@ -65,7 +65,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		FMatrix ViewMat = Camera->GetViewMatrix();
 		FMatrix ProjMat = Camera->GetProjectionMatrix();
 
-		FShowFlags ShowFlags;
+		FShowFlags ShowFlags = Engine ? Engine->GetRuntimeShowFlags() : FShowFlags{};
 		EViewMode ViewMode = EViewMode::Lit_BlinnPhong;
 
 		Bus.SetViewProjection(Camera->GetViewMatrix(), Camera->GetProjectionMatrix(), Camera->GetNearPlane(), Camera->GetFarPlane());

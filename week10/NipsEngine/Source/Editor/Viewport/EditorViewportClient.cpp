@@ -37,6 +37,33 @@ bool IsRuntimeGameInputCaptured()
 		&& GEngine->GetRuntimeInputMode() == ERuntimeInputMode::GameOnly
 		&& GEngine->IsRuntimeCursorLocked();
 }
+
+bool IsPassiveEditorViewportHover(const FViewportInputContext& Context)
+{
+	if (!Context.bHovered || Context.bCaptured || Context.bRelativeMouseMode)
+	{
+		return false;
+	}
+
+	if (Context.Frame.WheelNotches != 0.0f ||
+		Context.Frame.bLeftDragging ||
+		Context.Frame.bMiddleDragging ||
+		Context.Frame.bRightDragging)
+	{
+		return false;
+	}
+
+	for (int32 Key = 0; Key < 256; ++Key)
+	{
+		if (Context.Frame.IsDown(Key))
+		{
+			return false;
+		}
+	}
+
+	return !Context.HasEvent(EInputEventType::PointerDragStarted) &&
+		!Context.HasEvent(EInputEventType::PointerDragEnded);
+}
 }
 
 static FString TrimEditorActorName(const FString& Name)
@@ -620,6 +647,12 @@ void FEditorViewportClient::TickInput(const FViewportInputContext& Context)
 	const float VY = State ? static_cast<float>(Viewport->GetRect().Y) : 0.f;
 
 	InputRouter.SetViewportDim(VX, VY, WindowWidth, WindowHeight);
+	if (InputRouter.GetActiveController() == EActiveEditorController::EditorWorldController &&
+		IsPassiveEditorViewportHover(Context))
+	{
+		InputRouter.GetEditorWorldController().ResetTargetFromCamera();
+		return;
+	}
 	InputRouter.Tick(Context.DeltaSeconds);
 	if (TryReacquirePIEMouseFocusOnViewportClick(Context))
 	{

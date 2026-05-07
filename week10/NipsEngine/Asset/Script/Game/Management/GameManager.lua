@@ -282,11 +282,6 @@ function GameManager:DamagePlayer(amount, source)
             LogWarning("[GameManager] Player death sequence component not found")
         end
 
-        local pc = Engine.API.GetPlayerController()
-        if pc ~= nil then
-            pc:StartCameraFade(0, 0.5, 2, 0 ,0,0)
-        end
-
         self:FinishRun("Dead")
     end
 

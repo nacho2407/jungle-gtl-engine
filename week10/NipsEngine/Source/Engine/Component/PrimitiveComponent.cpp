@@ -19,12 +19,32 @@ UPrimitiveComponent::~UPrimitiveComponent()
     PrevOverlaps.clear();
 }
 
+void UPrimitiveComponent::PostDuplicate(UObject* Original)
+{
+    USceneComponent::PostDuplicate(Original);
+
+    UPrimitiveComponent* SourceComponent = Cast<UPrimitiveComponent>(Original);
+    if (!SourceComponent)
+    {
+        return;
+    }
+
+    bIsVisible = SourceComponent->bIsVisible;
+    bEnableCull = SourceComponent->bEnableCull;
+    bCastDecal = SourceComponent->bCastDecal;
+    bGenerateOverlapEvents = SourceComponent->bGenerateOverlapEvents;
+    bBlockComponent = SourceComponent->bBlockComponent;
+    CurOverlaps.clear();
+    PrevOverlaps.clear();
+}
+
 void UPrimitiveComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
 {
 	USceneComponent::GetEditableProperties(OutProps);
 	
 	OutProps.push_back({"Visible", EPropertyType::Bool, &bIsVisible});
 	OutProps.push_back({"Enable Cull", EPropertyType::Bool, &bEnableCull});
+    OutProps.push_back({ "Cast Decal", EPropertyType::Bool, &bCastDecal });
     OutProps.push_back({ "GenerateOverlapEvents", EPropertyType::Bool, &bGenerateOverlapEvents });
 }
 
@@ -39,6 +59,10 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 	USceneComponent::Serialize(Ar);
 	Ar << "Visible" << bIsVisible;
 	Ar << "Enable Cull" << bEnableCull;
+    if (Ar.IsSaving() || Ar.HasKey("Cast Decal"))
+    {
+        Ar << "Cast Decal" << bCastDecal;
+    }
     Ar << "GenerateOverlapEvents" << bGenerateOverlapEvents;
 }
 

@@ -75,6 +75,7 @@ void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FS
 
     for (UPrimitiveComponent* Prim : VisiblePrimitiveScratch)
     {
+        if (!Prim || !Prim->IsCastDecal()) continue;
         if (Prim->GetPrimitiveType() != EPrimitiveType::EPT_StaticMesh) continue;
 
         UStaticMeshComponent* StaticMeshComp = static_cast<UStaticMeshComponent*>(Prim);

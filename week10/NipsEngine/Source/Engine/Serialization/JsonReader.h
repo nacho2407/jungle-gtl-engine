@@ -19,6 +19,10 @@ struct FJsonReader : public FArchive
 	}
 
 	virtual bool IsLoading() const override { return true; }
+	virtual bool HasKey(const FString& Key) override
+	{
+		return !ScopeStack.empty() && ScopeStack.back() && ScopeStack.back()->hasKey(Key.c_str());
+	}
 
 	virtual const FString& GetCurrentKey() override { return CurrentKey; }
 	virtual void SetCurrentKey(const FString& Key) override { CurrentKey = Key; }

@@ -24,6 +24,7 @@ struct FArchive
 
 	virtual bool IsLoading() const { return false; }
 	virtual bool IsSaving() const { return false; }
+	virtual bool HasKey(const FString& Key) { (void)Key; return false; }
 
 	virtual FArchive& operator<<(bool& Value) = 0;
 	virtual FArchive& operator<<(int32& Value) = 0;

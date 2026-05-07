@@ -368,6 +368,7 @@ void FScriptManager::BindComponentTypes()
     LUA_METHOD(Stop, Stop);
     LUA_METHOD(GetSequence, GetSequence);
     LUA_METHOD(GetSequencePlayer, GetSequencePlayer);
+    LUA_METHOD(SetRestoreOnStop, SetRestoreOnStop);
     LUA_SET(AddFloatTrack, &LuaAddActorSequenceFloatTrack);
     LUA_END_TYPE();
 }

@@ -389,6 +389,8 @@ void UActorSequencePlayer::Tick(float DeltaTime)
         }
         else
         {
+            CurrentTime = Sequence->Duration;
+            Evaluate(CurrentTime);
             Stop();
             return;
         }
