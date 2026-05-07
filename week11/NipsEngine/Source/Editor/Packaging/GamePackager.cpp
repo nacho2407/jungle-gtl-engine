@@ -5,6 +5,7 @@
 #include "Asset/StaticMeshTypes.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <Windows.h>
@@ -12,6 +13,7 @@
 #include <cctype>
 #include <chrono>
 #include <cstddef>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -195,6 +197,14 @@ namespace
         return ToLowerAscii(FPaths::ToUtf8(std::filesystem::path(FPaths::ToWide(Path)).extension().generic_wstring()));
     }
 
+    bool IsCurveJsonAssetPath(const FString& Path)
+    {
+        const FString LowerPath = ToLowerAscii(FPaths::Normalize(Path));
+        constexpr const char* CurveJsonSuffix = ".curve.json";
+        return LowerPath.size() >= std::strlen(CurveJsonSuffix)
+            && LowerPath.compare(LowerPath.size() - std::strlen(CurveJsonSuffix), std::strlen(CurveJsonSuffix), CurveJsonSuffix) == 0;
+    }
+
     bool ValidateOptionalBrandingFile(const FString& Path, std::initializer_list<const char*> Extensions, const char* Label, FString& OutMessage)
     {
         if (Path.empty())
@@ -275,7 +285,11 @@ namespace
             || Extension == ".rcss"
             || Extension == ".meta"
             || Extension == ".ttf"
-            || Extension == ".otf";
+            || Extension == ".otf"
+            || Extension == ".hlsl"
+            || Extension == ".hlsli"
+            || Extension == ".cso"
+            || Extension == ".fx";
     }
 
     FString MakeCookedMeshRelativePath(const FString& SourceRelativePath)
@@ -389,7 +403,7 @@ namespace
             return false;
         }
 
-        const std::filesystem::path MaterialRoot = std::filesystem::path(FPaths::RootDir()) / L"Asset" / L"Material";
+        const std::filesystem::path MaterialRoot = std::filesystem::path(FPaths::RootDir()) / L"Asset";
         if (!std::filesystem::exists(MaterialRoot))
         {
             return false;
@@ -422,6 +436,48 @@ namespace
 
     bool AddFileDependency(FPackageCookContext& Context, const FString& Path, FString& OutMessage);
     std::filesystem::path ResolveStartupSceneForValidation(const FString& StartupScene);
+
+    bool ShouldIncludeRuntimeFileByExtension(const std::set<FString>& Extensions, const std::filesystem::path& Path)
+    {
+        const FString Extension = ToLowerAscii(FPaths::ToUtf8(Path.extension().generic_wstring()));
+        return Extensions.find(Extension) != Extensions.end();
+    }
+
+    bool AddRuntimeFilesByExtension(
+        FPackageCookContext& Context,
+        const FString& RelativeDirectory,
+        const std::set<FString>& Extensions,
+        FString& OutMessage)
+    {
+        const std::filesystem::path Root = ResolveProjectFilePath(RelativeDirectory);
+        std::error_code Ec;
+        if (!std::filesystem::exists(Root, Ec))
+        {
+            return true;
+        }
+
+        for (const std::filesystem::directory_entry& Entry : std::filesystem::recursive_directory_iterator(Root, Ec))
+        {
+            if (Ec)
+            {
+                OutMessage = "Failed to scan package directory: " + RelativeDirectory;
+                return false;
+            }
+
+            if (!Entry.is_regular_file() || !ShouldIncludeRuntimeFileByExtension(Extensions, Entry.path()))
+            {
+                continue;
+            }
+
+            const FString RelativeFile = FPaths::ToRelativeString(Entry.path().wstring());
+            if (!AddFileDependency(Context, RelativeFile, OutMessage))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     void CollectAssetStringsFromTextFile(FPackageCookContext& Context, const std::filesystem::path& SourceFile)
     {
@@ -622,6 +678,7 @@ namespace
 
         const FString NormalizedPath = NormalizeAssetPathForPackage(Path);
         const FString Extension = GetLowerExtension(NormalizedPath);
+        const bool bIsCurveJson = IsCurveJsonAssetPath(NormalizedPath);
 
         if (Extension == ".obj" || Extension == ".bin")
         {
@@ -629,12 +686,7 @@ namespace
             return CookStaticMeshDependency(Context, NormalizedPath, IgnoredCookedPath, OutMessage);
         }
 
-        if (Extension.empty() || Extension == ".scene" || !IsRuntimeCopyExtension(Extension))
-        {
-            return true;
-        }
-
-        if (NormalizedPath.rfind("Shaders/", 0) == 0)
+        if (Extension.empty() || Extension == ".scene" || (!bIsCurveJson && !IsRuntimeCopyExtension(Extension)))
         {
             return true;
         }
@@ -824,6 +876,18 @@ namespace
             }
         }
         if (!AddKnownRuntimeDependencies(Context, OutMessage))
+        {
+            return false;
+        }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Material", { ".mat", ".matinst" }, OutMessage))
+        {
+            return false;
+        }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Mesh", { ".matinst" }, OutMessage))
+        {
+            return false;
+        }
+        if (!AddRuntimeFilesByExtension(Context, "Asset/Curve", { ".curve", ".json" }, OutMessage))
         {
             return false;
         }
@@ -1424,6 +1488,8 @@ bool FGamePackager::CopyPackageFiles(const FGameBuildSettings& Settings, FString
     GameIni << "Icon=" << PackagedIconPath << "\n";
     GameIni << "Splash=" << PackagedSplashPath << "\n";
     GameIni << "SplashMinSeconds=" << std::max(3.0f, Settings.SplashMinSeconds) << "\n";
+    GameIni << "\n[Render]\n";
+    GameIni << "bShadow=" << (FEditorSettings::Get().ShowFlags.bShadow ? "true" : "false") << "\n";
     GameIni.close();
     EmitBuildLog("Wrote Settings/Game.ini");
 

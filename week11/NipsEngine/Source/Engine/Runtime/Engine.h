@@ -4,6 +4,7 @@
 #include "Audio/AudioSystem.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
+#include "Render/Common/ViewTypes.h"
 #include "Render/Renderer/Renderer.h"
 #include "Render/Renderer/IRenderPipeline.h"
 #include "UI/RmlUi/RmlUiSystem.h"
@@ -78,6 +79,8 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
+	const FShowFlags& GetRuntimeShowFlags() const { return RuntimeShowFlags; }
+	FShowFlags& GetMutableRuntimeShowFlags() { return RuntimeShowFlags; }
 	virtual APlayerController* GetPrimaryPlayerController() const;
 	FRmlUiSystem& GetRmlUiSystem() { return RmlUiSystem; }
 	const FRmlUiSystem& GetRmlUiSystem() const { return RmlUiSystem; }
@@ -112,6 +115,7 @@ protected:
 	FTimer* Timer = nullptr;
 
 	FRenderer Renderer;
+	FShowFlags RuntimeShowFlags;
 	FAudioSystem AudioSystem;
 	FRmlUiSystem RmlUiSystem;
 	ERuntimeInputMode RuntimeInputMode = ERuntimeInputMode::GameOnly;

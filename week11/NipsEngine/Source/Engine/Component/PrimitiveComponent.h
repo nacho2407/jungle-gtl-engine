@@ -36,6 +36,7 @@ public:
     FOnComponentHit OnComponentHit;
 
     /* For Property window */
+    void PostDuplicate(UObject* Original) override;
     void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
 
@@ -47,6 +48,9 @@ public:
 
     void SetEnableCull(const bool bInEnableCull) { bEnableCull = bInEnableCull; }
     bool IsEnableCull() const { return bEnableCull; }
+
+    void SetCastDecal(bool bInCastDecal) { bCastDecal = bInCastDecal; }
+    bool IsCastDecal() const { return bCastDecal; }
 
     /* Getter */
     virtual const FAABB& GetWorldAABB() const
@@ -93,6 +97,7 @@ protected:
 	mutable FAABB WorldAABB;
 	bool bIsVisible = true;
 	bool bEnableCull = true; // frustum, occlusion culling으로 컬링될지 여부 판정
+    bool bCastDecal = true;
 
     bool bGenerateOverlapEvents = false;
     bool bBlockComponent = false; // ComponentHit

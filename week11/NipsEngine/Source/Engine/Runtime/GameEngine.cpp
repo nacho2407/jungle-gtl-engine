@@ -40,6 +40,28 @@ namespace
     constexpr int RuntimeUILayoutWidth = 1920;
     constexpr int RuntimeUILayoutHeight = 1080;
 
+    bool ParseBoolValue(const FString& Value, bool DefaultValue)
+    {
+        FString Lower = Value;
+        std::transform(
+            Lower.begin(),
+            Lower.end(),
+            Lower.begin(),
+            [](unsigned char Ch)
+            {
+                return static_cast<char>(std::tolower(Ch));
+            });
+        if (Lower == "true" || Lower == "1" || Lower == "yes" || Lower == "on")
+        {
+            return true;
+        }
+        if (Lower == "false" || Lower == "0" || Lower == "no" || Lower == "off")
+        {
+            return false;
+        }
+        return DefaultValue;
+    }
+
     bool IsMouseButtonVK(int VK)
     {
         return VK == VK_LBUTTON
@@ -179,6 +201,10 @@ void UGameEngine::LoadGameSettings()
         else if (Key == "PlayerControllerClass")
         {
             StartupSettings.PlayerControllerClass = Value;
+        }
+        else if (Key == "bShadow" || Key == "Shadow")
+        {
+            GetMutableRuntimeShowFlags().bShadow = ParseBoolValue(Value, GetRuntimeShowFlags().bShadow);
         }
     }
 }

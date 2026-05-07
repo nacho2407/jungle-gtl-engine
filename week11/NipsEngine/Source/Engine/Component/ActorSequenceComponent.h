@@ -25,6 +25,7 @@ public:
     UActorSequencePlayer* GetSequencePlayer();
     UActorSequencePlayer* GetPreviewSequencePlayer();
     bool ShouldRestoreOnStop() const { return bRestoreOnStop; }
+    void SetRestoreOnStop(bool bInRestoreOnStop) { bRestoreOnStop = bInRestoreOnStop; }
 
     void MarkSequenceDirty();
 
