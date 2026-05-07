@@ -53,6 +53,11 @@ bool IsPassiveEditorViewportHover(const FViewportInputContext& Context)
 		return false;
 	}
 
+	if (!Context.Events.empty())
+	{
+		return false;
+	}
+
 	for (int32 Key = 0; Key < 256; ++Key)
 	{
 		if (Context.Frame.IsDown(Key))
