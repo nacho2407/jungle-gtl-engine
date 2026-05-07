@@ -476,7 +476,10 @@ function CameraComponent:add_pitch_input(pitch) end
 ---@param intensity number
 ---@param radius? number
 ---@param smoothness? number
-function CameraComponent:SetVignette(intensity, radius, smoothness) end
+---@param r? number
+---@param g? number
+---@param b? number
+function CameraComponent:SetVignette(intensity, radius, smoothness, r, g, b) end
 
 function CameraComponent:ClearVignette() end
 
@@ -722,7 +725,10 @@ function PlayerController:StopCameraFade() end
 ---@param intensity number
 ---@param radius? number
 ---@param smoothness? number
-function PlayerController:SetCameraVignette(intensity, radius, smoothness) end
+---@param r? number
+---@param g? number
+---@param b? number
+function PlayerController:SetCameraVignette(intensity, radius, smoothness, r, g, b) end
 function PlayerController:ClearCameraVignette() end
 ---@param target_aspect? number
 ---@param duration? number

@@ -9,6 +9,7 @@ cbuffer PostProcessCB : register(b11)
     float VignetteSmoothness;
     uint GammaCorrectionEnabled;
     float2 Padding;
+    float4 VignetteColor;
 }
 
 struct VSOutput
@@ -45,7 +46,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
         float distanceFromCenter = length(centered);
         float outer = VignetteRadius + max(VignetteSmoothness, 0.001);
         float vignette = smoothstep(VignetteRadius, outer, distanceFromCenter);
-        color *= lerp(1.0, 1.0 - saturate(VignetteIntensity), vignette);
+        color = lerp(color, VignetteColor.rgb, vignette * saturate(VignetteIntensity));
     }
 
     if (GammaCorrectionEnabled != 0)

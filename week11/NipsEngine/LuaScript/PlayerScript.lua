@@ -223,6 +223,30 @@ function Script:StopDash()
     self.dashDir = Vector(0, 0, 0)
 end
 
+function Script:ResetWalkFootstep()
+    self.walkFootstepTimer = 0.0
+end
+
+function Script:TickWalkFootstep(dt, bWalking)
+    if not bWalking then
+        self:ResetWalkFootstep()
+        return
+    end
+
+    self.walkFootstepTimer = (self.walkFootstepTimer or 0.0) - dt
+    if self.walkFootstepTimer > 0.0 then
+        return
+    end
+
+    self.walkFootstepTimer = self.walkFootstepInterval or 0.42
+    if _G.GameJam and _G.GameJam.NotifyPlayerFootstep then
+        _G.GameJam.NotifyPlayerFootstep({
+            source = self.owner,
+            position = self.owner.Location
+        })
+    end
+end
+
 function Script:HasActorTag(actor, tag)
     return actor ~= nil and actor.HasTag ~= nil and actor:HasTag(tag)
 end
@@ -542,6 +566,8 @@ function Script.new(component, properties)
     self.dashDir = Vector(0, 0, 0)
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
+    self.walkFootstepTimer = 0.0
+    self.walkFootstepInterval = 0.42
     self.attackSequence = 0
     self.BodySection = self.owner:GetComponentByName("BodySection"):AsSceneComponent()
     self.slamPitchOffset    = 0      -- 현재 적용 중인 슬램 pitch 오프셋
@@ -608,6 +634,7 @@ function Script:Tick(dt)
     end
 
     if self.bHitReact then
+        self:ResetWalkFootstep()
         return
     end
 
@@ -648,11 +675,13 @@ function Script:Tick(dt)
     -- Q 슬램 중이면 다른 입력 전부 차단
     -- -------------------------------------------------------
     if self.bDoingSlam then
+        self:ResetWalkFootstep()
         return
     end
 
     -- Dash 스텝 처리
     if self.bDoingDash then
+        self:ResetWalkFootstep()
         if self.bBlockedByWall then
             self:StopDash()
             self.owner.Location = self.LastSafeLocation
@@ -744,6 +773,15 @@ function Script:Tick(dt)
         local dir = move:Size() > 0.001 and move:Normalized() or self.owner:GetActorForwardVector()
         self:Dash(dir)
     end
+
+    local bNormalWalking = move:Size() > 0.001
+        and delta:Size() > 0.001
+        and not self.bDoingDash
+        and not self.bDoingAttack
+        and not self.bDoingSlam
+        and not self.bHitReact
+        and not self.bBlockedByWall
+    self:TickWalkFootstep(dt, bNormalWalking)
 
     local clampedPitch = 0
     if self.BodySection and not self.bDoingAttack then

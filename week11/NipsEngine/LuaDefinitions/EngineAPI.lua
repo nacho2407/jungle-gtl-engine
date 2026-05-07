@@ -119,6 +119,17 @@ function SceneComponent:GetRelativeLocation() end
 ---@param location Vector
 function SceneComponent:SetRelativeLocation(location) end
 
+---@class PrimitiveComponent: SceneComponent
+---@field Visible boolean
+---@field EnableCull boolean
+---@field GenerateOverlapEvents boolean
+---@field NumMaterials integer
+---@field SupportsOutline boolean
+local PrimitiveComponent = {}
+---@return boolean
+function PrimitiveComponent:is_overlapping_actor(actor) end
+function PrimitiveComponent:clear_overlaps() end
+
 ---@class MovementComponent: ActorComponent
 ---@field Velocity Vector
 ---@field PendingInputVector Vector
@@ -333,7 +344,10 @@ function CameraComponent:add_pitch_input(amount) end
 ---@param intensity number
 ---@param radius? number
 ---@param smoothness? number
-function CameraComponent:SetVignette(intensity, radius, smoothness) end
+---@param r? number
+---@param g? number
+---@param b? number
+function CameraComponent:SetVignette(intensity, radius, smoothness, r, g, b) end
 function CameraComponent:ClearVignette() end
 
 ---@class PlayerController: Actor
@@ -362,7 +376,10 @@ function PlayerController:StopCameraFade() end
 ---@param intensity number
 ---@param radius? number
 ---@param smoothness? number
-function PlayerController:SetCameraVignette(intensity, radius, smoothness) end
+---@param r? number
+---@param g? number
+---@param b? number
+function PlayerController:SetCameraVignette(intensity, radius, smoothness, r, g, b) end
 function PlayerController:ClearCameraVignette() end
 ---@param target_aspect? number
 ---@param duration? number
@@ -1086,6 +1103,9 @@ function GameJam.NotifyPlayerAttackGround(payload) end
 
 ---@param payload? table
 function GameJam.NotifyPlayerDashed(payload) end
+
+---@param payload? table
+function GameJam.NotifyPlayerFootstep(payload) end
 
 function GameJam.NotifyTimeSlowStarted() end
 function GameJam.NotifyTimeSlowEnded() end

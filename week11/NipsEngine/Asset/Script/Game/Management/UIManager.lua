@@ -843,6 +843,16 @@ function UIManager:SetCombo(snapshot)
     self:SetCachedAlpha("HUD.ComboWrap", snapshot.alpha or 1.0)
     self:SetCachedStyle("HUD.ComboWrap", "right", tostring(44 + (snapshot.shakeOffset or 0.0)) .. "px")
     self:SetCachedStyle("HUD.ComboWrap", "top", tostring(179 + (snapshot.offsetY or 0.0)) .. "px")
+
+    if snapshot.isWarning == true then
+        local pulse = Clamp01(snapshot.warningPulse or 0.0)
+        local r = 255
+        local g = 42 + 88 * pulse
+        local b = 42 + 28 * pulse
+        self:SetCachedStyle("HUD.ComboCount", "color", RgbString(r, g, b))
+    else
+        self:SetCachedStyle("HUD.ComboCount", "color", "rgb(255, 255, 255)")
+    end
 end
 
 function UIManager:SetResult(snapshot)

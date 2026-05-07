@@ -5,6 +5,7 @@
 #include "Math/Matrix.h"
 #include "Math/Utils.h"
 #include "Math/Vector.h"
+#include "Math/Color.h"
 
 // 렌더 전용 구조체
 struct FCameraState
@@ -23,6 +24,7 @@ struct FCameraPostProcessSettings
 	float VignetteIntensity = 0.0f;
 	float VignetteRadius = 0.75f;
 	float VignetteSmoothness = 0.35f;
+	FColor VignetteColor = FColor::Black();
 };
 
 // PlayerCameraManager 의 연산 결과를 담는 구조체
@@ -59,7 +61,7 @@ public:
 	void SetFOV(float InFOV) { CameraState.FOV = InFOV; }
 	void SetOrthoWidth(float InWidth) { CameraState.OrthoWidth = InWidth; }
 	void SetOrthographic(bool bOrtho) { CameraState.bIsOrthogonal = bOrtho; }
-	void SetVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f);
+	void SetVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f, const FColor& Color = FColor::Black());
 	void ClearVignette();
 	const FCameraPostProcessSettings& GetPostProcessSettings() const { return PostProcessSettings; }
 

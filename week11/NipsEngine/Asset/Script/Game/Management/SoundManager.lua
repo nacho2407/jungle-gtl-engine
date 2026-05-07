@@ -29,12 +29,14 @@ function SoundManager.new(context)
             PlayerDash = "Asset/Audio/SFX/GamePlayerDash.mp3",
             PlayerHit = "Asset/Audio/SFX/GamePlayerHit.mp3",
             PlayerRecover = "Asset/Audio/SFX/GamePlayerRecovery.mp3",
+            PlayerWalk = "Asset/Audio/SFX/GamePlayerWalk.wav",
             TimeSlowStart = "Asset/Audio/SFX/GameTimeSlowStart.mp3",
             TimeSlowEnd = "Asset/Audio/SFX/GameTimeSlowEnd.mp3",
         },
 
         bgmVolume = Engine.API.Audio.GetBGMVolume(),
         sfxVolume = Engine.API.Audio.GetSFXVolume(),
+        activeBGMPath = nil,
         activeAttacks = {}
     }, SoundManager)
 end
@@ -60,6 +62,10 @@ function SoundManager:BeginPlay()
 
     self.context.eventBus:Subscribe("Player.Dashed", self, function()
         self:PlayPlayerDash()
+    end)
+
+    self.context.eventBus:Subscribe("Player.Footstep", self, function()
+        self:PlayPlayerWalk()
     end)
 
     self.context.eventBus:Subscribe("Player.Damaged", self, function()
@@ -92,11 +98,16 @@ function SoundManager:BeginPlay()
 end
 
 function SoundManager:PlayBGM(path, fadeIn)
-    Engine.API.Debug.Log("BGM ON")
     if path == nil or path == "" then
         return
     end
+
+    if self.activeBGMPath == path then
+        return
+    end
     
+    self.activeBGMPath = path
+    Engine.API.Debug.Log("BGM ON")
     Engine.API.Audio.PlayBGM(path, fadeIn or 0.5)
 end
 
@@ -119,6 +130,7 @@ function SoundManager:AdjustSFXVolume(delta)
 end
 
 function SoundManager:StopBGM(fadeOut)
+    self.activeBGMPath = nil
     Engine.API.Audio.StopBGM(fadeOut or 0.5)
 end
 
@@ -150,6 +162,10 @@ end
 
 function SoundManager:PlayPlayerDash()
     self:PlaySFX(self.SFX.PlayerDash)
+end
+
+function SoundManager:PlayPlayerWalk()
+    self:PlaySFX(self.SFX.PlayerWalk, 0.55)
 end
 
 function SoundManager:PlayPlayerHit()
@@ -249,6 +265,7 @@ end
 function SoundManager:EndPlay()
     self.context.eventBus:ClearOwner(self)
     self.activeAttacks = {}
+    self.activeBGMPath = nil
     Engine.API.Audio.StopAll()
 end
 

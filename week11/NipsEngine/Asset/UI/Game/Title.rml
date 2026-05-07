@@ -42,7 +42,7 @@
                 </button>
             </div>
 
-            <div id="Title.Version" class="version-label">Latest Update v1.0.0 by Team03</div>
+            <div id="Title.Version" class="version-label">Latest Update v1.1.0 by Team03</div>
 
             <div id="Title.ModalOverlay" class="modal-overlay"></div>
 

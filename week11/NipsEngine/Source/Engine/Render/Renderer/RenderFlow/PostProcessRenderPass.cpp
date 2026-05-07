@@ -40,6 +40,11 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
     cb.VignetteRadius = Context->RenderBus->GetVignetteRadius();
     cb.VignetteSmoothness = Context->RenderBus->GetVignetteSmoothness();
     cb.GammaCorrectionEnabled = bGammaCorrection ? 1u : 0u;
+    const FColor& VignetteColor = Context->RenderBus->GetVignetteColor();
+    cb.VignetteColor[0] = VignetteColor.R;
+    cb.VignetteColor[1] = VignetteColor.G;
+    cb.VignetteColor[2] = VignetteColor.B;
+    cb.VignetteColor[3] = VignetteColor.A;
 
 	Context->RenderResources->PostProcessCB.Update(
 							Context->DeviceContext,

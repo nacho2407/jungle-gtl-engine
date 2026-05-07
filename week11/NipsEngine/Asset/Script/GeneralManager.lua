@@ -15,6 +15,7 @@ local StateModules = {
     Loading = "Game.States.LoadingState",
     Playing = "Game.States.PlayingState",
     Pause = "Game.States.PauseState",
+    Ending = "Game.States.EndingState",
     Result = "Game.States.ResultState"
 }
 
@@ -28,6 +29,7 @@ local TitleState = require(StateModules.Title)
 local LoadingState = require(StateModules.Loading)
 local PlayingState = require(StateModules.Playing)
 local PauseState = require(StateModules.Pause)
+local EndingState = require(StateModules.Ending)
 local ResultState = require(StateModules.Result)
 
 local Script = {}
@@ -128,6 +130,7 @@ function Script.new(component, properties)
     self.context.stateMachine:Register("Loading", LoadingState.new())
     self.context.stateMachine:Register("Playing", PlayingState.new())
     self.context.stateMachine:Register("Pause", PauseState.new())
+    self.context.stateMachine:Register("Ending", EndingState.new())
     self.context.stateMachine:Register("Result", ResultState.new())
 
     return self
@@ -259,6 +262,9 @@ function Script:InstallGameJamBridge()
     _G.GameJam.NotifyPlayerDashed = function(payload)
         self.context.eventBus:Emit("Player.Dashed", payload or {})
     end
+    _G.GameJam.NotifyPlayerFootstep = function(payload)
+        self.context.eventBus:Emit("Player.Footstep", payload or {})
+    end
 end
 
 function Script:BeginPlay()
@@ -324,6 +330,7 @@ function Script:EndPlay()
         _G.GameJam.NotifyPlayerAttackFinished = nil
         _G.GameJam.NotifyPlayerAttackGround = nil
         _G.GameJam.NotifyPlayerDashed = nil
+        _G.GameJam.NotifyPlayerFootstep = nil
     end
 end
 

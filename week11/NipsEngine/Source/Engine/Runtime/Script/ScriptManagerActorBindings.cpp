@@ -380,8 +380,13 @@ void FScriptManager::BindActorTypes()
                                 sol::optional<float> R, sol::optional<float> G, sol::optional<float> B)
             { Self.StartCameraFade(FromAlpha, ToAlpha, Duration, FColor(R.value_or(0.0f), G.value_or(0.0f), B.value_or(0.0f), 1.0f)); });
     LUA_METHOD(StopCameraFade, StopCameraFade);
-    LUA_SET(SetCameraVignette, [](APlayerController& Self, float Intensity, sol::optional<float> Radius, sol::optional<float> Smoothness)
-            { Self.SetCameraVignette(Intensity, Radius.value_or(0.75f), Smoothness.value_or(0.35f)); });
+    LUA_SET(SetCameraVignette, [](APlayerController& Self, float Intensity, sol::optional<float> Radius, sol::optional<float> Smoothness,
+                                  sol::optional<float> R, sol::optional<float> G, sol::optional<float> B)
+            { Self.SetCameraVignette(
+                Intensity,
+                Radius.value_or(0.75f),
+                Smoothness.value_or(0.35f),
+                FColor(R.value_or(0.0f), G.value_or(0.0f), B.value_or(0.0f), 1.0f)); });
     LUA_METHOD(ClearCameraVignette, ClearCameraVignette);
     LUA_SET(StartCameraLetterbox, [](APlayerController& Self, sol::optional<float> TargetAspect, sol::optional<float> Duration)
             { Self.StartCameraLetterbox(TargetAspect.value_or(16.0f / 9.0f), Duration.value_or(0.0f)); });

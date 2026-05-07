@@ -1136,13 +1136,13 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "Main",
-  "NextUUID" : 35743,
+  "NextUUID" : 35825,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-19.685358, -42.179756, 11.564819],
+    "Location" : [-15.760862, -15.831648, 12.015622],
     "NearClip" : 0.100000,
-    "Rotation" : [-7.748138, 7.243412, 47.179333]
+    "Rotation" : [-10.568451, 13.637378, 38.355389]
   },
   "Version" : 5,
   "WorldType" : "Editor"

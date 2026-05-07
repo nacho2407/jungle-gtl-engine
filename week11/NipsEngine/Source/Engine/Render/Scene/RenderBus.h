@@ -10,6 +10,7 @@
 #include "Core/CoreMinimal.h"
 #include "Render/Scene/RenderCommand.h"
 
+#include "Math/Color.h"
 #include "Render/Common/ViewTypes.h"
 #include "Render/Resource/ShaderHelper.h"
 
@@ -52,15 +53,17 @@ public:
 	const FVector2& GetViewportOrigin() const { return ViewportOrigin; }
     float GetNearPlane() const { return NearPlane; }
     float GetFarPlane() const { return FarPlane; }
-    void SetVignette(float Intensity, float Radius, float Smoothness)
+    void SetVignette(float Intensity, float Radius, float Smoothness, const FColor& Color = FColor::Black())
     {
         VignetteIntensity = Intensity;
         VignetteRadius = Radius;
         VignetteSmoothness = Smoothness;
+        VignetteColor = Color;
     }
     float GetVignetteIntensity() const { return VignetteIntensity; }
     float GetVignetteRadius() const { return VignetteRadius; }
     float GetVignetteSmoothness() const { return VignetteSmoothness; }
+    const FColor& GetVignetteColor() const { return VignetteColor; }
     void SetCameraFade(const FVector4& InColor, float InAlpha)
     {
         CameraFadeColor = InColor;
@@ -106,6 +109,7 @@ private:
     float VignetteIntensity = 0.0f;
     float VignetteRadius = 0.75f;
     float VignetteSmoothness = 0.35f;
+    FColor VignetteColor = FColor::Black();
     FVector4 CameraFadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
     float CameraFadeAlpha = 0.0f;
     float LetterboxTargetAspect = 0.0f;

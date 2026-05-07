@@ -28,7 +28,7 @@ public:
 	// --- Particle Resource ---
 	// FName 키로 ResourceManager에서 FParticleResource*를 찾아 캐싱
 	void SetParticle(const FName& InParticleName);
-	const FParticleResource* GetParticle() const { return CachedParticle; }
+	const FParticleResource* GetParticle() const;
 	const FName& GetParticleName() const { return ParticleName; }
 
 	// --- SubUV Frame ---

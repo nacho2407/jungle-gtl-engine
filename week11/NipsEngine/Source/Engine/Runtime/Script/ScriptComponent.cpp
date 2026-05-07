@@ -26,6 +26,25 @@ REGISTER_FACTORY(UScriptComponent)
 
 namespace
 {
+    UScriptComponent* ResolveLiveScriptComponent(uint32 ScriptComponentUUID)
+    {
+        UObject* Object = UObjectManager::Get().FindByUUID(ScriptComponentUUID);
+        UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Object);
+        if (!ScriptComponent)
+        {
+            return nullptr;
+        }
+
+        AActor* OwnerActor = ScriptComponent->GetOwner();
+        if (OwnerActor
+            && (!UObjectManager::Get().ContainsObject(OwnerActor) || OwnerActor->IsPendingKill()))
+        {
+            return nullptr;
+        }
+
+        return ScriptComponent;
+    }
+
     sol::object GetLuaField(const sol::table& Table, const char* UpperName, const char* LowerName)
     {
         sol::object Value = Table[UpperName];
@@ -77,16 +96,30 @@ namespace
             return;
         }
 
-        Env["StartCoroutine"] = [ScriptComponent](sol::function Function)
+        const uint32 ScriptComponentUUID = ScriptComponent->GetUUID();
+
+        Env["StartCoroutine"] = [ScriptComponentUUID](sol::function Function)
         {
-            ScriptComponent->StartCoroutine(Function);
+            UScriptComponent* LiveScriptComponent = ResolveLiveScriptComponent(ScriptComponentUUID);
+            if (!LiveScriptComponent)
+            {
+                return;
+            }
+
+            LiveScriptComponent->StartCoroutine(Function);
         };
 
         sol::state_view Lua(Env.lua_state());
         sol::table Timeline = Lua.create_table();
-        Timeline["New"] = [ScriptComponent]() -> FLuaTimeline*
+        Timeline["New"] = [ScriptComponentUUID]() -> FLuaTimeline*
         {
-            return ScriptComponent->CreateTimeline();
+            UScriptComponent* LiveScriptComponent = ResolveLiveScriptComponent(ScriptComponentUUID);
+            if (!LiveScriptComponent)
+            {
+                return nullptr;
+            }
+
+            return LiveScriptComponent->CreateTimeline();
         };
         Env["Timeline"] = Timeline;
 
@@ -553,9 +586,9 @@ void UScriptComponent::Serialize(FArchive& Ar)
         Ar << (Prefix + "Max").c_str() << Prop.Max;
     }
 
-    if (Ar.IsLoading() && !ScriptName.empty())
+    if (Ar.IsLoading())
     {
-        ReloadLuaProperties();
+        bLuaPropertiesScanned = false;
     }
 }
 void UScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -799,6 +832,12 @@ bool UScriptComponent::HotReloadScript()
 
 void UScriptComponent::StartCoroutine(sol::function Function)
 {
+    if (!bScriptLoaded || !ScriptEnv.valid() || !ScriptInstance.valid())
+    {
+        UE_LOG_WARNING("[ScriptComponent] Ignored coroutine request from unloaded script '%s'", ScriptName.c_str());
+        return;
+    }
+
     if (!Function.valid())
     {
         UE_LOG_ERROR("[ScriptComponent] Invalid coroutine function in script '%s'", ScriptName.c_str());
@@ -906,6 +945,7 @@ void UScriptComponent::OnUnregister()
 
     // 스크립트가 등록되어있다면 매니저에 언레지스터 요청
     UnregisterScript();
+    ClearLoadedState();
 }
 
 // Lifecycle 훅에서 Lua 함수 호출. Lua 환경이 유효한 경우에만 시도합니다.
@@ -1016,17 +1056,16 @@ sol::optional<sol::table> UScriptComponent::CreateScriptInstance(const FLuaScrip
 // Lua 스크립트에서 정의된 Properties 테이블을 읽어서 LuaProperties 배열을 갱신
 void UScriptComponent::ReloadLuaProperties()
 {
-    // 1. 기존 값 백업
     TArray<FLuaScriptProperty> OldProperties = LuaProperties;
-
-    // 2. 중복 방지를 위해 clear
-    LuaProperties.clear();
     bLuaPropertiesScanned = false;
 
     if (ScriptName.empty())
     {
+        LuaProperties.clear();
         return;
     }
+
+    FScriptManager::Get().RefreshLuaScriptFiles();
 
     if (!FScriptManager::Get().HasScript(ScriptName))
     {
@@ -1054,6 +1093,7 @@ void UScriptComponent::ReloadLuaProperties()
     }
 
     sol::table PropsTable = PropsObj.as<sol::table>();
+    TArray<FLuaScriptProperty> NewProperties;
 
     for (const auto& Pair : PropsTable)
     {
@@ -1130,12 +1170,12 @@ void UScriptComponent::ReloadLuaProperties()
             NewProp.Max = PropTable["Max"].get<float>();
         }
 
-        LuaProperties.push_back(NewProp);
+        NewProperties.push_back(NewProp);
 	}
 
 	std::sort(
-        LuaProperties.begin(),
-        LuaProperties.end(),
+        NewProperties.begin(),
+        NewProperties.end(),
         [](const FLuaScriptProperty& A, const FLuaScriptProperty& B)
         {
             if (A.Category != B.Category)
@@ -1148,6 +1188,8 @@ void UScriptComponent::ReloadLuaProperties()
             }
             return A.Name < B.Name;
         });
+
+    LuaProperties = std::move(NewProperties);
 }
 
 sol::table UScriptComponent::MakeRuntimePropertyTable(sol::state& Lua)

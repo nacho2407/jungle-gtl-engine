@@ -77,11 +77,12 @@ void UCameraComponent::SetCameraState(const FCameraState& NewState)
 	CameraState = NewState;
 }
 
-void UCameraComponent::SetVignette(float Intensity, float Radius, float Smoothness)
+void UCameraComponent::SetVignette(float Intensity, float Radius, float Smoothness, const FColor& Color)
 {
 	PostProcessSettings.VignetteIntensity = MathUtil::Clamp(Intensity, 0.0f, 1.0f);
 	PostProcessSettings.VignetteRadius = MathUtil::Clamp(Radius, 0.0f, 2.0f);
 	PostProcessSettings.VignetteSmoothness = std::max(Smoothness, 0.001f);
+	PostProcessSettings.VignetteColor = Color;
 	PostProcessSettings.bVignetteEnabled = PostProcessSettings.VignetteIntensity > 0.001f;
 }
 
@@ -128,6 +129,7 @@ void UCameraComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutPro
 	OutProps.push_back({ "Vignette Intensity", EPropertyType::Float, &PostProcessSettings.VignetteIntensity, 0.0f, 1.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
 	OutProps.push_back({ "Vignette Radius", EPropertyType::Float, &PostProcessSettings.VignetteRadius, 0.0f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
 	OutProps.push_back({ "Vignette Smoothness", EPropertyType::Float, &PostProcessSettings.VignetteSmoothness, 0.001f, 2.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
+	OutProps.push_back({ "Vignette Color", EPropertyType::Color, &PostProcessSettings.VignetteColor, 0.0f, 0.0f, 0.01f, nullptr, 0, nullptr, EditAndAnimate });
 }
 
 void UCameraComponent::Serialize(FArchive& Ar)
@@ -140,6 +142,7 @@ void UCameraComponent::Serialize(FArchive& Ar)
 	Ar << "VignetteIntensity" << PostProcessSettings.VignetteIntensity;
 	Ar << "VignetteRadius" << PostProcessSettings.VignetteRadius;
 	Ar << "VignetteSmoothness" << PostProcessSettings.VignetteSmoothness;
+	Ar << "VignetteColor" << PostProcessSettings.VignetteColor;
 }
 
 void UCameraComponent::SetViewRotationDegrees(float PitchDegrees, float YawDegrees)
