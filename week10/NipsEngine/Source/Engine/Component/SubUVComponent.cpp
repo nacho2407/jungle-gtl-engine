@@ -33,7 +33,7 @@ void USubUVComponent::PostDuplicate(UObject* Original)
 void USubUVComponent::Serialize(FArchive& Ar)
 {
 	UBillboardComponent::Serialize(Ar);
-	Ar << "Particle" << CachedParticle->Texture->GetFilePathRef();
+	Ar << "Particle" << ParticleName;
 	Ar << "Width" << Width;
 	Ar << "Height" << Height;
 	Ar << "PlayRate" << PlayRate;
@@ -44,6 +44,11 @@ void USubUVComponent::SetParticle(const FName& InParticleName)
 {
 	ParticleName = InParticleName;
 	CachedParticle = FResourceManager::Get().FindParticle(InParticleName);
+}
+
+const FParticleResource* USubUVComponent::GetParticle() const
+{
+	return FResourceManager::Get().FindParticle(ParticleName);
 }
 
 void USubUVComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
@@ -172,10 +177,11 @@ void USubUVComponent::TickComponent(float DeltaTime)
 {
 	UBillboardComponent::TickComponent(DeltaTime);
 
-	if (!CachedParticle) return;
+	const FParticleResource* Particle = GetParticle();
+	if (!Particle) return;
 	if (!bLoop && bIsExecute) return; // 단발 재생 완료 후 정지
 
-	const uint32 TotalFrames = CachedParticle->Columns * CachedParticle->Rows;
+	const uint32 TotalFrames = Particle->Columns * Particle->Rows;
 	if (TotalFrames == 0) return;
 
 	TimeAccumulator += DeltaTime;

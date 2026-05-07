@@ -40,7 +40,8 @@ namespace
             Bus.SetVignette(
                 PostProcess.VignetteIntensity,
                 PostProcess.VignetteRadius,
-                PostProcess.VignetteSmoothness);
+                PostProcess.VignetteSmoothness,
+                PostProcess.VignetteColor);
         }
         if (CameraManager->HasLetterbox())
         {

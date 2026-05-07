@@ -58,7 +58,7 @@ public:
 	// --- Font ---
 	// FName 키로 ResourceManager에서 FFontResource*를 찾아 캐싱
 	void SetFont(const FName& InFontName);
-	const FFontResource* GetFont() const { return CachedFont; }
+	const FFontResource* GetFont() const;
 	const FName& GetFontName() const { return FontName; }
 
 	// --- Appearance ---

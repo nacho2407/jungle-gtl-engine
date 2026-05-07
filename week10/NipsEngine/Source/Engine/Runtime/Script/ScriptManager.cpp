@@ -667,6 +667,11 @@ std::optional<FLuaScriptLoadResult> FScriptManager::LoadScriptClass(
 std::optional<sol::table> FScriptManager::LoadScriptClassForProperties(
     const FString& ScriptName)
 {
+    if (!GLuaState)
+    {
+        return std::nullopt;
+    }
+
     FString ScriptPath;
     if (!ResolveScriptPath(ScriptName, ScriptPath))
     {

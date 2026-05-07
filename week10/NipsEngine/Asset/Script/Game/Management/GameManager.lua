@@ -20,6 +20,8 @@ function GameManager.new(context)
         hitStopActive = false,
         hitStopRemaining = 0.0,
         hitStopScale = 1.0,
+        damageVignetteRemaining = 0.0,
+        damageVignetteDuration = 0.35,
         finishReason = "None",
         isClear = false
     }, GameManager)
@@ -87,6 +89,7 @@ end
 
 function GameManager:StartRun()
     self:StopTimeSlow(false)
+    self:ClearDamageVignette()
     Engine.API.World.SetTimeScale(1.0)
 
     self.isRunning = true
@@ -103,6 +106,7 @@ function GameManager:StartRun()
     self.timeSlowActive = false
     self.timeSlowRemaining = 0.0
     self.timeSlowScale = 1.0
+    self.damageVignetteRemaining = 0.0
     self.finishReason = "None"
     self.isClear = false
 
@@ -142,6 +146,7 @@ function GameManager:FinishRun(reason)
     self.finishReason = reason or "Finished"
     self.isClear = IsClearReason(self.finishReason)
     self:StopTimeSlow(true)
+    self:ClearDamageVignette()
     Engine.API.World.SetTimeScale(1.0)
 
     local data = self.context.managers.Data
@@ -158,6 +163,7 @@ function GameManager:CancelRun(reason)
     self.finishReason = reason or "Canceled"
     self.isClear = false
     self:StopTimeSlow(false)
+    self:ClearDamageVignette()
     Engine.API.World.SetTimeScale(1.0)
     self.context.eventBus:Emit("Game.Canceled", self:GetSnapshot())
 end
@@ -260,6 +266,7 @@ function GameManager:DamagePlayer(amount, source)
         invulnerableSeconds = self.invulnerableRemaining,
         snapshot = self:GetSnapshot()
     })
+    self:StartDamageVignette()
     if self.playerHealth <= 0.0 then
         --DeathAnimation
             local player = Engine.API.World.FindActorByTag("Player")
@@ -317,6 +324,37 @@ function GameManager:RecoverPlayer(amount, source)
         snapshot = self:GetSnapshot()
     })
     return true
+end
+
+function GameManager:StartDamageVignette()
+    self.damageVignetteDuration = 0.35
+    self.damageVignetteRemaining = self.damageVignetteDuration
+    self:ApplyDamageVignette(1.0)
+end
+
+function GameManager:ApplyDamageVignette(alpha)
+    local pc = Engine.API.GetPlayerController()
+    if pc == nil then
+        return
+    end
+
+    local a = math.max(0.0, math.min(1.0, tonumber(alpha) or 0.0))
+    local intensity = 0.42 * a * a
+    if intensity <= 0.001 then
+        pc:ClearCameraVignette()
+        return
+    end
+
+    pc:SetCameraVignette(intensity, 0.46, 0.20, 1.0, 0.02, 0.0)
+end
+
+function GameManager:ClearDamageVignette()
+    self.damageVignetteRemaining = 0.0
+
+    local pc = Engine.API.GetPlayerController()
+    if pc ~= nil then
+        pc:ClearCameraVignette()
+    end
 end
 
 function GameManager:ActivateTimeSlow(duration, scale, source)
@@ -402,6 +440,13 @@ function GameManager:Tick(dt)
                 self.timeSlowActive and self.timeSlowScale or 1.0
             )
         end
+    end
+
+    if self.damageVignetteRemaining > 0.0 then
+        self.damageVignetteRemaining = math.max(0.0, self.damageVignetteRemaining - realDt)
+        local duration = self.damageVignetteDuration or 0.35
+        local alpha = duration > 0.0 and (self.damageVignetteRemaining / duration) or 0.0
+        self:ApplyDamageVignette(alpha)
     end
 
     if not self.isRunning or self.isPaused then

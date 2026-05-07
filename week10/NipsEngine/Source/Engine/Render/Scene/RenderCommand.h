@@ -343,6 +343,7 @@ struct FPostProcessConstants
     float VignetteSmoothness;
     uint32 GammaCorrectionEnabled;
     float Pad[2];
+    float VignetteColor[4];
 };
 
 struct FScreenOverlayConstants

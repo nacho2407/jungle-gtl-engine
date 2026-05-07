@@ -419,8 +419,13 @@ void FScriptManager::BindCameraTypes()
     LUA_METHOD(move_up, MoveUp);
     LUA_METHOD(add_yaw_input, AddYawInput);
     LUA_METHOD(add_pitch_input, AddPitchInput);
-    LUA_SET(SetVignette, [](UCameraComponent& Self, float Intensity, sol::optional<float> Radius, sol::optional<float> Smoothness)
-            { Self.SetVignette(Intensity, Radius.value_or(0.75f), Smoothness.value_or(0.35f)); });
+    LUA_SET(SetVignette, [](UCameraComponent& Self, float Intensity, sol::optional<float> Radius, sol::optional<float> Smoothness,
+                            sol::optional<float> R, sol::optional<float> G, sol::optional<float> B)
+            { Self.SetVignette(
+                Intensity,
+                Radius.value_or(0.75f),
+                Smoothness.value_or(0.35f),
+                FColor(R.value_or(0.0f), G.value_or(0.0f), B.value_or(0.0f), 1.0f)); });
     LUA_METHOD(ClearVignette, ClearVignette);
     LUA_RO_PROPERTY(Forward, GetForwardVector);
     LUA_RO_PROPERTY(Right, GetRightVector);

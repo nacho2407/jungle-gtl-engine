@@ -14,6 +14,7 @@ void FRenderBus::Clear()
     VignetteIntensity = 0.0f;
     VignetteRadius = 0.75f;
     VignetteSmoothness = 0.35f;
+    VignetteColor = FColor::Black();
     CameraFadeColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
     CameraFadeAlpha = 0.0f;
     LetterboxTargetAspect = 0.0f;

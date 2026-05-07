@@ -42,7 +42,7 @@ public:
 	void SetDefaultViewTargetBlend(float BlendTime, ECameraBlendType BlendType);
 	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, const FColor& Color = FColor::Black());
 	void StopCameraFade();
-	void SetCameraVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f);
+	void SetCameraVignette(float Intensity, float Radius = 0.75f, float Smoothness = 0.35f, const FColor& Color = FColor::Black());
 	void ClearCameraVignette();
 	void StartCameraLetterbox(float TargetAspect = 16.0f / 9.0f, float Duration = 0.0f);
 	void StopCameraLetterbox(float Duration = 0.0f);
@@ -93,6 +93,17 @@ protected:
 protected:
 	AActor* PossessedActor = nullptr;
     APlayerCameraManager* PlayerCameraManager = nullptr;
+
+    struct FPendingCameraFade
+    {
+        float FromAlpha = 0.0f;
+        float ToAlpha = 0.0f;
+        float Duration = 0.0f;
+        FColor Color = FColor::Black();
+        bool bPending = false;
+    };
+
+    FPendingCameraFade PendingCameraFade;
 
 	FViewportCamera RuntimeCamera;
 

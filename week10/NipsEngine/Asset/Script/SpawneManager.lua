@@ -65,6 +65,13 @@ local function Lerp(a, b, t)
     return a + (b - a) * t
 end
 
+local function IsGameRunning()
+    local manager = _G.GameJam and _G.GameJam.Manager
+    local context = manager and manager.context
+    local game = context and context.managers and context.managers.Game
+    return game ~= nil and game.isRunning == true and game.isPaused ~= true
+end
+
 -- instance를 반환하는 함수 SpawnManager 객체화하는 함수
 function SpawnManager.new(component, properties)
     local self = setmetatable({}, SpawnManager)
@@ -191,6 +198,10 @@ end
 ---@param spawnLocation Vector
 ---@return AActor|nil enemy
 function SpawnManager:SpawnEnemy(prefabIndex, spawnLocation)
+    if not IsGameRunning() then
+        return nil
+    end
+
     prefabIndex = prefabIndex or 1
     spawnLocation = spawnLocation or self.spawnLocation
 
@@ -222,6 +233,10 @@ function SpawnManager:SpawnEnemy(prefabIndex, spawnLocation)
 end
 
 function SpawnManager:SpawnOnce()
+    if not IsGameRunning() then
+        return
+    end
+
     local prefabIndex = self:GetRandomPrefabIndex()
 
     if prefabIndex == nil then
@@ -284,6 +299,10 @@ function SpawnManager:Tick(dt)
     end
 
     if not self.bRunning then
+        return
+    end
+
+    if not IsGameRunning() then
         return
     end
 

@@ -15,7 +15,7 @@ local ItemSpawnInfos = {
 function ItemManager.new(context)
     return setmetatable({
         context = context,
-        spawnInterval = 30.0,
+        spawnInterval = 10.0,
         elapsed = 0.0,
         itemPoints = {},
         activeItems = {}

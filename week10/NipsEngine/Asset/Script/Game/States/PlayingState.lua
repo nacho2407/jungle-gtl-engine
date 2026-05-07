@@ -56,7 +56,11 @@ function PlayingState:Tick(context, dt)
             local snapshot = self.pendingResult
             self.pendingResult = nil
             self.resultDelayRemaining = 0.0
-            context.stateMachine:Change("Result", snapshot)
+            if snapshot ~= nil and snapshot.isClear == true then
+                context.stateMachine:Change("Ending", snapshot)
+            else
+                context.stateMachine:Change("Result", snapshot)
+            end
         end
         return
     end

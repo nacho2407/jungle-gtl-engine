@@ -42,6 +42,11 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 	CachedFont = FResourceManager::Get().FindFont(FontName);
 }
 
+const FFontResource* UTextRenderComponent::GetFont() const
+{
+	return FResourceManager::Get().FindFont(FontName);
+}
+
 void UTextRenderComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();

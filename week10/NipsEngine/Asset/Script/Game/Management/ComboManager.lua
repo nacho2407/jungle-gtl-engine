@@ -28,6 +28,7 @@ function ComboManager.new(context)
         timeoutSeconds = 5.0,
         appearSeconds = 0.28,
         fadeSeconds = 0.30,
+        warningSeconds = 1.20,
         shakeSeconds = 0.18,
         shakeMagnitude = 10.0,
         appearOffsetY = 34.0,
@@ -169,6 +170,11 @@ function ComboManager:Tick(dt)
         end
     elseif self.comboCount > 0 then
         self.remaining = self.remaining - realDt
+        if self.remaining <= self.warningSeconds then
+            self.alpha = self:GetWarningAlpha()
+        else
+            self.alpha = 1.0
+        end
         if self.remaining <= 0.0 then
             self:CloseCombo("Timeout")
         end
@@ -205,7 +211,37 @@ function ComboManager:GetAppearOffsetY()
     return self.appearOffsetY * (1.0 - EaseOutCubic(t))
 end
 
+function ComboManager:GetWarningProgress()
+    if self.comboCount <= 0 or self.warningSeconds <= 0.0 then
+        return 0.0
+    end
+
+    return Clamp01((self.warningSeconds - self.remaining) / self.warningSeconds)
+end
+
+function ComboManager:GetWarningPulse()
+    local progress = self:GetWarningProgress()
+    if progress <= 0.0 then
+        return 0.0
+    end
+
+    local phase = (self.warningSeconds - self.remaining) * 20.0
+    return 0.5 + 0.5 * math.sin(phase)
+end
+
+function ComboManager:GetWarningAlpha()
+    local progress = self:GetWarningProgress()
+    if progress <= 0.0 then
+        return self.alpha
+    end
+
+    local fadeAlpha = 1.0 - progress * 0.35
+    local blinkAlpha = 0.50 + self:GetWarningPulse() * 0.50
+    return Clamp01(fadeAlpha * blinkAlpha)
+end
+
 function ComboManager:GetSnapshot()
+    local warningProgress = self:GetWarningProgress()
     return {
         isVisible = self.isVisible,
         isAppearing = self.isAppearing,
@@ -214,6 +250,9 @@ function ComboManager:GetSnapshot()
         bonus = self.lastBonus,
         alpha = Clamp01(self.alpha),
         remaining = self.remaining,
+        isWarning = warningProgress > 0.0,
+        warningProgress = warningProgress,
+        warningPulse = self:GetWarningPulse(),
         shakeOffset = self:GetShakeOffset(),
         offsetY = self:GetAppearOffsetY()
     }

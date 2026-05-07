@@ -320,6 +320,10 @@ void APlayerController::StopCameraEffects()
 	CameraShake.bActive = false;
 	CameraFOV.bActive = false;
 	CameraFOV.bOverrideActive = false;
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->StopAllCameraShakes(true);
+	}
 }
 
 void APlayerController::HandleKeyPressed(int VK)
@@ -405,7 +409,27 @@ UCameraComponent* APlayerController::GetViewTargetCamera() const
 
 void APlayerController::SpawnPlayerCameraManager()
 {
+	if (PlayerCameraManager)
+	{
+		return;
+	}
+
 	PlayerCameraManager = GetFocusedWorld()->SpawnActor<APlayerCameraManager>();
+	if (!PlayerCameraManager)
+	{
+		return;
+	}
+
+	PlayerCameraManager->InitializeFor(this);
+	if (PendingCameraFade.bPending)
+	{
+		PlayerCameraManager->StartFade(
+			PendingCameraFade.FromAlpha,
+			PendingCameraFade.ToAlpha,
+			PendingCameraFade.Duration,
+			PendingCameraFade.Color);
+		PendingCameraFade.bPending = false;
+	}
 }
 
 UCameraComponent* APlayerController::FindCameraComponent(AActor* Actor) const
@@ -618,22 +642,30 @@ void APlayerController::StartCameraFade(float FromAlpha, float ToAlpha, float Du
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->StartFade(FromAlpha, ToAlpha, Duration, Color);
+		return;
 	}
+
+	PendingCameraFade.FromAlpha = FromAlpha;
+	PendingCameraFade.ToAlpha = ToAlpha;
+	PendingCameraFade.Duration = Duration;
+	PendingCameraFade.Color = Color;
+	PendingCameraFade.bPending = true;
 }
 
 void APlayerController::StopCameraFade()
 {
+	PendingCameraFade.bPending = false;
 	if (PlayerCameraManager)
 	{
 		PlayerCameraManager->StopFade();
 	}
 }
 
-void APlayerController::SetCameraVignette(float Intensity, float Radius, float Smoothness)
+void APlayerController::SetCameraVignette(float Intensity, float Radius, float Smoothness, const FColor& Color)
 {
 	if (UCameraComponent* Camera = GetViewTargetCamera())
 	{
-		Camera->SetVignette(Intensity, Radius, Smoothness);
+		Camera->SetVignette(Intensity, Radius, Smoothness, Color);
 	}
 }
 

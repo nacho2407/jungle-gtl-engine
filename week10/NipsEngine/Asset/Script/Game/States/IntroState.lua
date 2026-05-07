@@ -1,6 +1,8 @@
 local IntroState = {}
 IntroState.__index = IntroState
 
+local FIRST_PAGE_DELAY = 1.0
+
 local function Utf8NextIndex(text, byteIndex)
     local byte = string.byte(text, byteIndex)
     if byte == nil then
@@ -52,6 +54,7 @@ function IntroState.new()
         pageCharCount = 0,
         pageFinished = false,
         finished = false,
+        firstPageDelayRemaining = 0.0,
         charsPerSecond = 34.0,
         pages = {
             "나는 단지 세상을 보고 싶었을 뿐이다.",
@@ -75,6 +78,7 @@ function IntroState:Enter(context, payload)
     self.pageSoundPlayed = false
     self.pageFinished = false
     self.finished = false
+    self.firstPageDelayRemaining = FIRST_PAGE_DELAY
 
     context.managers.UI:Show("Intro")
     context.managers.Sound:StopBGM(0.5)
@@ -97,6 +101,15 @@ end
 
 function IntroState:Tick(context, dt)
     if self.finished then
+        return
+    end
+
+    if self.firstPageDelayRemaining > 0.0 then
+        local realDt = Engine.API.World.GetUnscaledDeltaTime()
+        if realDt <= 0.0 then
+            realDt = dt or 0.0
+        end
+        self.firstPageDelayRemaining = math.max(0.0, self.firstPageDelayRemaining - realDt)
         return
     end
 
