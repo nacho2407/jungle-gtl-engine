@@ -18,6 +18,27 @@ Script.Properties = {
         Type = "Float",
         Default = 100.0,
         Category = "Stats"
+    },
+
+    DashFOV = {
+        Type = "Float",
+        Default = 75.0,
+        Category = "Camera"
+    },
+    DashFOVDuration = {
+        Type = "Float",
+        Default = 0.2,
+        Category = "Camera"
+    },
+    DashFOVReturnDuration = {
+        Type = "Float",
+        Default = 0.5,
+        Category = "Camera"
+    },
+    DashVignetteIntensity = {
+        Type = "Float",
+        Default = 0.5,
+        Category = "Camera"
     }
 }
 
@@ -209,6 +230,15 @@ function Script:Dash(dir)
     self.dashDir = dir
     self.dashStepsLeft = 5
     self.dashCooldown = 0.0
+
+    self.targetVignette = self.DashVignetteIntensity
+
+    local pc = Engine.API.GetPlayerController()
+    if pc then
+        pc:LerpCameraFOVDegrees(self.DashFOV, self.DashFOVDuration)
+        pc:PlayCameraShakeDetailed(0.05, 0.1, 30.0, 0.3)
+    end
+
     if _G.GameJam and _G.GameJam.NotifyPlayerDashed then
         _G.GameJam.NotifyPlayerDashed({
             direction = dir
@@ -221,6 +251,13 @@ function Script:StopDash()
     self.dashStepsLeft = 0
     self.dashCooldown = 0.0
     self.dashDir = Vector(0, 0, 0)
+
+    self.targetVignette = 0
+
+    local pc = Engine.API.GetPlayerController()
+    if pc then
+        pc:ResetCameraFOV(self.DashFOVReturnDuration)
+    end
 end
 
 function Script:ResetWalkFootstep()
@@ -583,6 +620,8 @@ function Script.new(component, properties)
     self.BlockGraceTime = 0.0
     self.ActiveBlockers = {}
     self.BlockingOverlapComponent = nil
+    self.currentVignette = 0
+    self.targetVignette = 0
 
     properties = properties or {}
     for key, desc in pairs(Script.Properties) do
@@ -624,6 +663,26 @@ function Script:Tick(dt)
     local HitStopScale = _G.GameJam.GetHitStopScale()
     if WorldTimeScale ~= 0 then
         dt = (dt / WorldTimeScale) * HitStopScale
+    end
+
+    -- 비네팅 부드러운 보간 (Lerp)
+    local pc = Engine.API.GetPlayerController()
+    if pc then
+        local lerpSpeed = self.targetVignette > self.currentVignette 
+                          and (1.0 / math.max(0.01, self.DashFOVDuration)) 
+                          or (1.0 / math.max(0.01, self.DashFOVReturnDuration))
+        
+        local diff = self.targetVignette - self.currentVignette
+        if math.abs(diff) > 0.001 then
+            self.currentVignette = self.currentVignette + diff * math.min(1.0, dt * lerpSpeed * 2.0)
+            pc:SetCameraVignette(self.currentVignette, 0.7, 0.7, 1, 1, 1)
+        elseif self.targetVignette == 0 and self.currentVignette ~= 0 then
+            self.currentVignette = 0
+            pc:ClearCameraVignette()
+        elseif self.targetVignette > 0 then
+             self.currentVignette = self.targetVignette
+             pc:SetCameraVignette(self.currentVignette, 0.7, 0.7, 1, 1, 1)
+        end
     end
     
     self:UpdateBlockingState()

@@ -14,6 +14,7 @@
           "Type" : "USceneComponent",
           "UUID" : 722
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -57,6 +58,7 @@
           "Type" : "USceneComponent",
           "UUID" : 801
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -100,6 +102,7 @@
           "Type" : "USceneComponent",
           "UUID" : 804
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -143,6 +146,7 @@
           "Type" : "USceneComponent",
           "UUID" : 807
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -186,6 +190,7 @@
           "Type" : "USceneComponent",
           "UUID" : 810
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -229,6 +234,7 @@
           "Type" : "USceneComponent",
           "UUID" : 813
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -272,6 +278,7 @@
           "Type" : "USceneComponent",
           "UUID" : 816
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -315,6 +322,7 @@
           "Type" : "USceneComponent",
           "UUID" : 855
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -381,6 +389,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -429,6 +438,7 @@
           "Type" : "UDirectionalLightComponent",
           "UUID" : 4319
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -460,6 +470,7 @@
     }, {
       "ClassName" : "AFogActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UHeightFogComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -482,6 +493,7 @@
           "UUID" : 4322,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -533,6 +545,7 @@
           "Type" : "UAmbientLightComponent",
           "UUID" : 4325
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -586,6 +599,7 @@
           "Type" : "UPointLightComponent",
           "UUID" : 4328
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -639,6 +653,7 @@
           "Type" : "UPointLightComponent",
           "UUID" : 4331
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -670,6 +685,7 @@
     }, {
       "ClassName" : "ADecalActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UDecalComponent",
           "Color" : [1.000000, 0.793249, 0.793249, 1.000000],
           "Destroy Owner After Fade" : false,
@@ -693,6 +709,7 @@
           "UUID" : 4900,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -736,6 +753,7 @@
           "Type" : "USceneComponent",
           "UUID" : 5212
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -842,6 +860,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -860,6 +879,7 @@
           "UUID" : 5670,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -910,6 +930,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -928,6 +949,7 @@
           "UUID" : 5673,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -959,6 +981,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -977,6 +1000,7 @@
           "UUID" : 5676,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1008,6 +1032,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1026,6 +1051,7 @@
           "UUID" : 5679,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1057,6 +1083,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1075,6 +1102,7 @@
           "UUID" : 5780,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1106,6 +1134,7 @@
     }, {
       "ClassName" : "ABoundsBoxActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1124,6 +1153,7 @@
           "UUID" : 5783,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1155,6 +1185,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1195,6 +1226,7 @@
           "Type" : "USceneComponent",
           "UUID" : 2140
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1238,6 +1270,7 @@
           "Type" : "USceneComponent",
           "UUID" : 2143
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1281,6 +1314,7 @@
           "Type" : "USceneComponent",
           "UUID" : 6270
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1303,6 +1337,7 @@
           "bInheritOwnerScale" : false,
           "bLoop" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1343,6 +1378,7 @@
           "Type" : "USceneComponent",
           "UUID" : 6274
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1365,6 +1401,7 @@
           "bInheritOwnerScale" : false,
           "bLoop" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1405,6 +1442,7 @@
           "Type" : "USceneComponent",
           "UUID" : 6278
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1427,6 +1465,7 @@
           "bInheritOwnerScale" : false,
           "bLoop" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1467,6 +1506,7 @@
           "Type" : "USceneComponent",
           "UUID" : 6282
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1489,6 +1529,7 @@
           "bInheritOwnerScale" : false,
           "bLoop" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1529,6 +1570,7 @@
           "Type" : "USceneComponent",
           "UUID" : 6286
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1551,6 +1593,7 @@
           "bInheritOwnerScale" : false,
           "bLoop" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1591,6 +1634,7 @@
           "Type" : "USceneComponent",
           "UUID" : 7482
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -1626,6 +1670,7 @@
           "Type" : "USceneComponent",
           "UUID" : 7484
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : false,
@@ -1646,6 +1691,7 @@
           "UUID" : 7485,
           "Visible" : true
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : false,
@@ -1686,7 +1732,7 @@
           "ClassName" : "UCameraComponent",
           "Editor Only" : false,
           "Enable Tick" : true,
-          "FOV" : 1.047198,
+          "FOV" : 1.047000,
           "FarClip" : 1000.000000,
           "Location" : [0.000000, 0.000000, 0.000000],
           "NearClip" : 0.100000,
@@ -1739,6 +1785,7 @@
           "Type" : "UScriptComponent",
           "UUID" : 7489
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBoxComponent",
           "DrawOnlyIfSelected" : false,
           "Editor Only" : false,
@@ -1799,6 +1846,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1827,6 +1875,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1855,6 +1904,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1883,6 +1933,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1911,6 +1962,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1939,6 +1991,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1967,6 +2020,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -1995,6 +2049,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2023,6 +2078,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2051,6 +2107,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2079,6 +2136,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2107,6 +2165,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2135,6 +2194,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2163,6 +2223,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2191,6 +2252,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2219,6 +2281,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2247,6 +2310,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2275,6 +2339,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2303,6 +2368,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2331,6 +2397,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2359,6 +2426,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2387,6 +2455,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2415,6 +2484,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2443,6 +2513,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2471,6 +2542,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2499,6 +2571,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2527,6 +2600,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2555,6 +2629,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2583,6 +2658,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2611,6 +2687,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2639,6 +2716,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2667,6 +2745,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2707,6 +2786,7 @@
           "Type" : "USceneComponent",
           "UUID" : 20946
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -2771,6 +2851,7 @@
           "Type" : "USceneComponent",
           "UUID" : 20950
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -2835,6 +2916,7 @@
           "Type" : "USceneComponent",
           "UUID" : 20954
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -2899,6 +2981,7 @@
           "Type" : "USceneComponent",
           "UUID" : 20958
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -2951,6 +3034,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -2979,6 +3063,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3007,6 +3092,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3035,6 +3121,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3063,6 +3150,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3091,6 +3179,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3119,6 +3208,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3147,6 +3237,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3175,6 +3266,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3203,6 +3295,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3231,6 +3324,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3259,6 +3353,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3287,6 +3382,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3315,6 +3411,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3343,6 +3440,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3371,6 +3469,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3399,6 +3498,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3427,6 +3527,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3455,6 +3556,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3483,6 +3585,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3511,6 +3614,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3539,6 +3643,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3567,6 +3672,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3595,6 +3701,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3623,6 +3730,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3651,6 +3759,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3679,6 +3788,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3707,6 +3817,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3735,6 +3846,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3763,6 +3875,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3791,6 +3904,7 @@
     }, {
       "ClassName" : "AStaticMeshActor",
       "Components" : [{
+          "Cast Decal" : true,
           "ClassName" : "UStaticMeshComponent",
           "Editor Only" : false,
           "Enable Cull" : true,
@@ -3831,6 +3945,7 @@
           "Type" : "USceneComponent",
           "UUID" : 36785
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -3895,6 +4010,7 @@
           "Type" : "USceneComponent",
           "UUID" : 36789
         }, {
+          "Cast Decal" : true,
           "ClassName" : "UBillboardComponent",
           "Editor Only" : true,
           "Enable Cull" : true,
@@ -3947,13 +4063,13 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "MapScene",
-  "NextUUID" : 36228,
+  "NextUUID" : 69174,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [5.050735, 25.050667, 11.460043],
+    "Location" : [-21.060316, 12.770902, 9.854241],
     "NearClip" : 0.100000,
-    "Rotation" : [8.947953, -6.168610, -124.311768]
+    "Rotation" : [14.966374, 3.467719, -77.250427]
   },
   "Version" : 5,
   "WorldType" : "Editor"
