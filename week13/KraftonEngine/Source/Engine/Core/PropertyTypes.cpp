@@ -1,4 +1,4 @@
-#include "Core/PropertyTypes.h"
+﻿#include "Core/PropertyTypes.h"
 
 #include <cstring>
 #include "SimpleJSON/json.hpp"
@@ -47,7 +47,8 @@ json::JSON FPropertyDescriptor::Serialize() const
 	case EPropertyType::SceneComponentRef:
 	case EPropertyType::StaticMeshRef:
 		return JSON(*static_cast<FString*>(ValuePtr));
-
+	case EPropertyType::SkeletalMeshRef:
+		return JSON(*static_cast<FString*>(ValuePtr));
 	case EPropertyType::MaterialSlot:
 	{
 		const FMaterialSlot* Slot = static_cast<const FMaterialSlot*>(ValuePtr);
@@ -150,6 +151,9 @@ void FPropertyDescriptor::Deserialize(json::JSON& Value)
 	case EPropertyType::Script:
 	case EPropertyType::SceneComponentRef:
 	case EPropertyType::StaticMeshRef:
+		*static_cast<FString*>(ValuePtr) = Value.ToString();
+		break;
+	case EPropertyType::SkeletalMeshRef:
 		*static_cast<FString*>(ValuePtr) = Value.ToString();
 		break;
 

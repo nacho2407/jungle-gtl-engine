@@ -220,7 +220,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -248,7 +248,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=1;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -429,6 +429,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\SkeletalMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SphereComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SpringArmComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\StaticMeshComponent.cpp" />
@@ -473,6 +475,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\GameFramework\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SequenceCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\SkeletalMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\TriggerVolumeBase.cpp" />
@@ -530,6 +533,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
@@ -682,6 +686,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\SkeletalMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Component\SpringArmComponent.h" />
     <ClInclude Include="Source\Engine\Component\StaticMeshComponent.h" />
@@ -735,6 +741,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\GameFramework\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\PlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\SequenceCameraShake.h" />
+    <ClInclude Include="Source\Engine\GameFramework\SkeletalMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\TriggerVolumeBase.h" />
@@ -806,6 +813,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />

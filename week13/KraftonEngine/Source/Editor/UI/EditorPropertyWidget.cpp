@@ -24,7 +24,9 @@
 #include "Object/ObjectIterator.h"
 #include "Materials/Material.h"
 #include "Mesh/ObjManager.h"
+#include "Mesh/FbxManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Mesh/SkeletalMesh.h"
 #include "Platform/Paths.h"
 
 #include <Windows.h>
@@ -136,6 +138,32 @@ FString FEditorPropertyWidget::OpenObjFileDialog()
 		return FPaths::ToUtf8(RelPath.generic_wstring());
 	}
 
+	return FString();
+}
+
+FString FEditorPropertyWidget::OpenFbxFileDialog()
+{
+	wchar_t FilePath[MAX_PATH] = {};
+	OPENFILENAMEW Ofn = {};
+	Ofn.lStructSize = sizeof(Ofn);
+	Ofn.hwndOwner = nullptr;
+	Ofn.lpstrFilter = L"FBX Files (*.fbx)\0*.fbx\0All Files (*.*)\0*.*\0";
+	Ofn.lpstrFile = FilePath;
+	Ofn.nMaxFile = MAX_PATH;
+	Ofn.lpstrTitle = L"Import FBX Mesh";
+	Ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+	if (GetOpenFileNameW(&Ofn))
+	{
+		std::filesystem::path AbsPath = std::filesystem::path(FilePath).lexically_normal();
+		std::filesystem::path RootPath = std::filesystem::path(FPaths::RootDir());
+		std::filesystem::path RelPath = AbsPath.lexically_relative(RootPath);
+		// 상대 경로 변환 실패 시 (드라이브가 다른 경우 등) 절대 경로를 그대로 반환
+		if (RelPath.empty() || RelPath.wstring().starts_with(L".."))
+		{
+			return FPaths::ToUtf8(AbsPath.generic_wstring());
+		}
+		return FPaths::ToUtf8(RelPath.generic_wstring());
+	}
 	return FString();
 }
 
@@ -1114,6 +1142,64 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 				if (Loaded)
 				{
 					*Val = FObjManager::GetBinaryFilePath(ObjPath);
+					bChanged = true;
+				}
+			}
+		}
+		break;
+	}
+	// TODO: implement
+	case EPropertyType::SkeletalMeshRef:
+	{
+		FString* Val = static_cast<FString*>(Prop.ValuePtr);
+
+		FString Preview = Val->empty() ? "None" : GetStemFromPath(*Val);
+		if (*Val == "None") Preview = "None";
+
+		ImGui::Text("%s", Prop.Name.c_str());
+		ImGui::SameLine(120);
+
+		float ButtonWidth = ImGui::CalcTextSize("Import OBJ").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float Spacing = ImGui::GetStyle().ItemSpacing.x;
+		if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
+		{
+			bool bSelectedNone = (*Val == "None");
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				*Val = "None";
+				bChanged = true;
+			}
+			if (bSelectedNone)
+				ImGui::SetItemDefaultFocus();
+			const TArray<FFbxListItem>& FbxFiles = FFbxManager::GetAvailableFbxFiles();
+			for (const FFbxListItem& Item : FbxFiles)
+			{
+				bool bSelected = (*Val == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					*Val = Item.FullPath;
+					bChanged = true;
+				}
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		// .fbx 임포트 버튼
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(ImGui::GetWindowContentRegionMax().x - ButtonWidth);
+		if (ImGui::Button("Import FBX"))
+		{
+			FString FbxPath = OpenFbxFileDialog();
+			if (!FbxPath.empty())
+			{
+				ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+				USkeletalMesh* Loaded = FFbxManager::LoadFbxSkeletalMesh(FbxPath, Device);
+				if (Loaded)
+				{
+					*Val = Loaded->GetAssetPathFileName();
 					bChanged = true;
 				}
 			}

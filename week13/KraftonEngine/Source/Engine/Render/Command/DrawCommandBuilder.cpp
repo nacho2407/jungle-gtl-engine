@@ -1,4 +1,4 @@
-#include "DrawCommandBuilder.h"
+﻿#include "DrawCommandBuilder.h"
 
 #include "Resource/ResourceManager.h"
 #include "Render/Types/RenderTypes.h"
@@ -153,7 +153,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 	ProxyBuffer.IB = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	// 섹션당 1개 커맨드 (per-section 셰이더)
-	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
+ 	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())
 	{
 		if (Section.IndexCount == 0) continue;
 		if (!ProxyBuffer.IB) continue;
