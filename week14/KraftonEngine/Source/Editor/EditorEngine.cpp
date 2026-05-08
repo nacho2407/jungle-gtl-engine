@@ -64,6 +64,11 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	}
 
 	{
+		SCOPE_STARTUP_STAT("FbxManager::ScanFbxSourceFiles");
+		FFbxManager::ScanFbxSourceFiles();
+	}
+
+	{
 		SCOPE_STARTUP_STAT("MaterialManager::ScanAssets");
 		FMaterialManager::Get().ScanMaterialAssets();
 	}
@@ -101,9 +106,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 		SCOPE_STARTUP_STAT("EditorRenderPipeline::Create");
 		SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 	}
-
-	USkeletalMesh* Mesh = FFbxManager::LoadFbxSkeletalMesh("Samba Dancing (10).fbx", Renderer.GetFD3DDevice().GetDevice());
-	UE_LOG("Loaded FBX SkeletalMesh: %s", Mesh->GetName().c_str());
 }
 
 void UEditorEngine::Shutdown()

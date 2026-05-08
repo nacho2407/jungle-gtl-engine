@@ -16,7 +16,12 @@ public:
 	const FString& GetAssetPathFileName() const;
 	void SetSkeletalMeshAsset(FSkeletalMesh* InMesh);
 	FSkeletalMesh* GetSkeletalMeshAsset() const;
+	void SetSkeletalMaterials(TArray<FSkeletalMaterial>&& InMaterials);
+	const TArray<FSkeletalMaterial>& GetSkeletalMaterials() const;
+
+	void InitResources(ID3D11Device* InDevice);
 
 private:
 	FSkeletalMesh* SkeletalMeshAsset = nullptr;
+	TArray<FSkeletalMaterial> SkeletalMaterials;
 };

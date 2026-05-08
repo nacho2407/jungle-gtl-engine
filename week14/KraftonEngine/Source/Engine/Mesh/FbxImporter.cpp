@@ -2,9 +2,16 @@
 #include "Platform/Paths.h"
 #include "Core/Log.h"
 
+#include <filesystem>
+#include <fstream>
+
 TArray<FBone> FFbxImporter::Bones;
 TArray<FVertexPNCTBW> FFbxImporter::Vertices;
 TArray<uint32> FFbxImporter::Indices;
+TArray<FSkeletalMeshSection> FFbxImporter::Sections;
+TArray<FFbxImporter::FMaterialInfo> FFbxImporter::MtlInfos;
+TArray<FSkeletalMaterial> FFbxImporter::SkeletalMaterials;
+TMap<FbxSurfaceMaterial*, int32> FFbxImporter::MaterialToSlotIndex;
 
 bool FFbxImporter::Import(const FString& FilePath)
 {
@@ -17,7 +24,7 @@ bool FFbxImporter::Import(const FString& FilePath)
 
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
 
-	FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), FPaths::ToWide(FilePath)));
+	FString FullPath = FPaths::ToUtf8(FPaths::Combine(FPaths::RootDir(), FPaths::ToWide(FilePath)));
 
 	if (!Importer->Initialize(FullPath.c_str(), -1, SdkManager->GetIOSettings()))
 	{
@@ -27,7 +34,17 @@ bool FFbxImporter::Import(const FString& FilePath)
 	Importer->Import(Scene);
 	Importer->Destroy();
 
-	if (!Parse(Scene->GetRootNode()))
+	FbxAxisSystem TargetAxisSystem(FbxAxisSystem::eMayaZUp);
+	TargetAxisSystem.ConvertScene(Scene);
+
+	TriangulateScene(Scene);
+
+	if (!Parse(Scene))
+	{
+		return false;
+	}
+
+	if (!Convert())
 	{
 		return false;
 	}
@@ -35,8 +52,10 @@ bool FFbxImporter::Import(const FString& FilePath)
 	return true;
 }
 
-bool FFbxImporter::Parse(FbxNode* RootNode)
+bool FFbxImporter::Parse(FbxScene* Scene)
 {
+	FbxNode* RootNode = Scene->GetRootNode();
+
 	if (!RootNode)
 	{
 		return false;
@@ -46,9 +65,29 @@ bool FFbxImporter::Parse(FbxNode* RootNode)
 	TMap<FbxNode*, int32> NodeToIndex;
 
 	CollectNodes(RootNode, 0, Nodes);
+	CollectMaterials(Scene);
+
 	ParseBone(Nodes, NodeToIndex);
 	ParseSkin(Nodes, NodeToIndex);
 	
+	return true;
+}
+
+bool FFbxImporter::Convert()
+{
+	SkeletalMaterials.clear();
+
+	for (const FMaterialInfo& MatInfo : MtlInfos)
+	{
+		FString MaterialPath = ConvertToMat(&MatInfo);
+		UMaterial* MaterialObject = FMaterialManager::Get().GetOrCreateMaterial(MaterialPath);
+
+		FSkeletalMaterial NewMaterial;
+		NewMaterial.MaterialInterface = MaterialObject;
+		NewMaterial.MaterialSlotName = MatInfo.Name;
+		SkeletalMaterials.push_back(NewMaterial);
+	}
+
 	return true;
 }
 
@@ -59,6 +98,45 @@ void FFbxImporter::CollectNodes(FbxNode* Node, int32 depth, TArray<FbxNode*>& Ou
 	for (int i = 0; i < Node->GetChildCount(); ++i)
 	{
 		CollectNodes(Node->GetChild(i), depth + 1, OutNodes);
+	}
+}
+
+void FFbxImporter::CollectMaterials(FbxScene* Scene)
+{
+	MtlInfos.clear();
+	MaterialToSlotIndex.clear();
+
+	int32 MaterialCount = Scene->GetMaterialCount();
+
+	for (int32 i = 0; i < MaterialCount; ++i)
+	{
+		FbxSurfaceMaterial* Material = Scene->GetMaterial(i);
+		if (!Material) continue;
+
+		FMaterialInfo MatInfo;
+		MatInfo.Name = Material->GetName();
+		MatInfo.DiffuseColor = { 1.0f, 1.0f, 1.0f };
+
+		FbxProperty DiffuseProp = Material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+		if (DiffuseProp.IsValid())
+		{
+			FbxDouble3 Color = DiffuseProp.Get<FbxDouble3>();
+			MatInfo.DiffuseColor = { (float)Color[0], (float)Color[1], (float)Color[2] };
+
+			int32 TextureCount = DiffuseProp.GetSrcObjectCount<FbxTexture>();
+			if (TextureCount > 0)
+			{
+				FbxFileTexture* Texture = DiffuseProp.GetSrcObject<FbxFileTexture>(0);
+				if (Texture)
+				{
+					MatInfo.TexturePath = Texture->GetFileName();
+				}
+			}
+		}
+
+		int32 GlobalIndex = (int32)MtlInfos.size();
+		MtlInfos.push_back(MatInfo);
+		MaterialToSlotIndex[Material] = GlobalIndex;
 	}
 }
 
@@ -132,6 +210,7 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 {
 	Vertices.clear();
 	Indices.clear();
+	Sections.clear();
 
 	for (FbxNode* Node : Nodes)
 	{
@@ -170,9 +249,30 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 		Mesh->GetUVSetNames(UVSetNames);
 		const char* UVName = (UVSetNames.GetCount() > 0) ? UVSetNames.GetStringAt(0) : nullptr;
 
+		TArray<int32> LocalToGlobalMaterialIndex;
+		LocalToGlobalMaterialIndex.resize(Node->GetMaterialCount());
+
+		for (int32 LocalIndex = 0; LocalIndex < Node->GetMaterialCount(); ++LocalIndex)
+		{
+			FbxSurfaceMaterial* Material = Node->GetMaterial(LocalIndex);
+
+			auto It = MaterialToSlotIndex.find(Material);
+			LocalToGlobalMaterialIndex[LocalIndex] = (It != MaterialToSlotIndex.end()) ? It->second : -1;
+		}
+
+		TMap<int32, TArray<uint32>> SectionIndicesMap;
+
 		for (int32 i = 0; i < Mesh->GetPolygonCount(); ++i)
 		{
-			// Triangulation을 가정
+			int32 LocalMaterialIndex = GetMaterialIndex(Mesh, i);
+			int32 GlobalMaterialIndex = -1;
+
+			FbxSurfaceMaterial* Material = nullptr;
+			if (LocalMaterialIndex >= 0 && LocalMaterialIndex < (int32)LocalToGlobalMaterialIndex.size())
+			{
+				GlobalMaterialIndex = LocalToGlobalMaterialIndex[LocalMaterialIndex];
+			}
+
 			for (int32 j = 0; j < 3; ++j)
 			{
 				FVertexPNCTBW Vertex;
@@ -190,16 +290,112 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 				FbxVector4 Normal;
 				Mesh->GetPolygonVertexNormal(i, j, Normal);
-				Vertex.Normal = { (float)Normal[0], (float)Normal[1], (float)Normal[2] };
+
+				FVector N = FVector((float)Normal[0], (float)Normal[1], (float)Normal[2]);
+				N.Normalize();
+
+				Vertex.Normal = N;
+
+				Vertex.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 				FbxVector2 UV;
 				bool bMapped;
 				Mesh->GetPolygonVertexUV(i, j, UVName, UV, bMapped);
-				Vertex.UV = { (float)UV[0], (float)UV[1] };
+				Vertex.UV = { (float)UV[0], 1.0f - (float)UV[1] };
 
 				Vertices.push_back(Vertex);
-				Indices.push_back((uint32)Vertices.size() - 1);
+
+				SectionIndicesMap[GlobalMaterialIndex].push_back((uint32)Vertices.size() - 1);
 			}
 		}
+
+		uint32 CurrentBaseIndex = (uint32)Indices.size();
+
+		for (auto& Pair : SectionIndicesMap)
+		{
+			FSkeletalMeshSection Section;
+
+			int32 MatIndex = Pair.first;
+			if (MtlInfos.size() > MatIndex)
+			{
+				Section.MaterialSlotName = MtlInfos[MatIndex].Name;
+			}
+			else
+			{
+				UE_LOG("Warning: Material index %d out of range. Assigning to Default slot.", Pair.first);
+				Section.MaterialSlotName = "None";
+			}
+			Section.MaterialIndex = Pair.first;
+			Section.FirstIndex = CurrentBaseIndex;
+			Section.IndexCount = (uint32)Pair.second.size();
+
+			CurrentBaseIndex += Section.IndexCount;
+			
+			Indices.insert(Indices.end(), Pair.second.begin(), Pair.second.end());
+			Sections.push_back(Section);
+		}
 	}
+}
+
+int32 FFbxImporter::GetMaterialIndex(FbxMesh* Mesh, int32 PolygonIndex)
+{
+	FbxLayerElementMaterial* LayerElementMaterial = Mesh->GetElementMaterial();
+	if (!LayerElementMaterial) return -1;
+
+	FbxLayerElementArrayTemplate<int32>& MaterialIndices = LayerElementMaterial->GetIndexArray();
+
+	switch (LayerElementMaterial->GetMappingMode())
+	{
+	case FbxLayerElement::eAllSame: return MaterialIndices[0];
+	case FbxLayerElement::eByPolygon: return MaterialIndices[PolygonIndex];
+	}
+
+	return 0;
+}
+
+void FFbxImporter::TriangulateScene(FbxScene* Scene)
+{
+	FbxGeometryConverter Converter(Scene->GetFbxManager());
+
+	Converter.Triangulate(Scene, true);
+}
+
+FString FFbxImporter::ConvertToMat(const FMaterialInfo* MaterialInfo)
+{
+	FString MatPath = "Asset/Materials/Auto/" + MaterialInfo->Name + ".mat";
+
+	if (std::filesystem::exists(FPaths::ToWide(MatPath)))
+	{
+		return MatPath;
+	}
+
+	std::filesystem::create_directories(FPaths::ToWide("Asset/Materials/Auto"));
+
+	json::JSON JsonData;
+	JsonData["PathFileName"] = MatPath;
+	JsonData["Origin"] = "FbxImport";
+	JsonData["ShaderPath"] = "Shaders/Geometry/UberLit.hlsl";
+	JsonData["RenderPass"] = "Opaque";
+
+	if (!MaterialInfo->TexturePath.empty())
+	{
+		JsonData["Textures"]["DiffuseTexture"] = MaterialInfo->TexturePath;
+
+		JsonData["Parameters"]["SectionColor"][0] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][1] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][2] = 1.0f;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+	else
+	{
+		JsonData["Parameters"]["SectionColor"][0] = MaterialInfo->DiffuseColor.X;
+		JsonData["Parameters"]["SectionColor"][1] = MaterialInfo->DiffuseColor.Y;
+		JsonData["Parameters"]["SectionColor"][2] = MaterialInfo->DiffuseColor.Z;
+		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+
+	std::ofstream File(FPaths::ToWide(MatPath));
+	File << JsonData.dump();
+
+	return MatPath;
 }

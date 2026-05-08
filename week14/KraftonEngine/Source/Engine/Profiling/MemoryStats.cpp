@@ -299,6 +299,7 @@ uint64 MemoryStats::TextureMemory = 0;
 uint64 MemoryStats::VertexBufferMemory = 0;
 uint64 MemoryStats::IndexBufferMemory = 0;
 uint64 MemoryStats::StaticMeshCPUMemory = 0;
+uint64 MemoryStats::SkeletalMeshCPUMemory = 0;
 
 uint64 MemoryStats::CalculateTextureMemory(ID3D11Resource* Resource)
 {

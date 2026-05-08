@@ -14,6 +14,7 @@
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/Light/PointLightActor.h"
 #include "GameFramework/Light/SpotLightActor.h"
+#include "GameFramework/SkeletalMeshActor.h"
 #include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
@@ -1845,6 +1846,7 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
 		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
+		PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
 
 		// Game 모듈이 등록한 액터들 (예: ACarPawn). 등록 순서대로 표시.
 		const auto& RegistryEntries = FActorPlacementRegistry::Get().GetEntries();
@@ -2094,6 +2096,16 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		if (Actor)
 		{
 			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::SkeletalMesh:
+	{
+		ASkeletalMeshActor* Actor = World->SpawnActor<ASkeletalMeshActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents("Data/Samba Dancing (10).fbx");
 			SpawnedActor = Actor;
 		}
 		break;

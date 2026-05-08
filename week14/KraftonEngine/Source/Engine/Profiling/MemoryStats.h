@@ -39,6 +39,10 @@ public:
 	static void AddStaticMeshCPUMemory(uint64 Size) { StaticMeshCPUMemory += Size; }
 	static void SubStaticMeshCPUMemory(uint64 Size) { StaticMeshCPUMemory -= Size; }
 
+	// SkeletalMesh CPU
+	static void AddSkeletalMeshCPUMemory(uint64 Size) { SkeletalMeshCPUMemory += Size; }
+	static void SubSkeletalMeshCPUMemory(uint64 Size) { SkeletalMeshCPUMemory -= Size; }
+
 	static uint64 GetTotalAllocationBytes() { return TotalAllocationBytes; }
 	static uint32 GetTotalAllocationCount() { return TotalAllocationCount; }
 	static uint64 GetPixelShaderMemory() { return PixelShaderMemory; }
@@ -47,6 +51,7 @@ public:
 	static uint64 GetVertexBufferMemory() { return VertexBufferMemory; }
 	static uint64 GetIndexBufferMemory() { return IndexBufferMemory; }
 	static uint64 GetStaticMeshCPUMemory() { return StaticMeshCPUMemory; }
+	static uint64 GetSkeletalMeshCPUMemory() { return SkeletalMeshCPUMemory; }
 
 	static uint64 CalculateTextureMemory(ID3D11Resource* Resource);
 
@@ -59,4 +64,5 @@ private:
 	static uint64 VertexBufferMemory;
 	static uint64 IndexBufferMemory;
 	static uint64 StaticMeshCPUMemory;
+	static uint64 SkeletalMeshCPUMemory;
 };
