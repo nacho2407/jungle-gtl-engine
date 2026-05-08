@@ -37,4 +37,5 @@ struct FShowFlags
     bool bFog = true;
     bool bShadow = true;
     bool bGammaCorrection = false;
+    float GammaValue = 2.2f;
 };

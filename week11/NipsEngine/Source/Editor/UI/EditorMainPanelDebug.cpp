@@ -236,6 +236,12 @@ void FEditorMainPanel::RenderEditorDebugPanel(float DeltaTime)
         ImGui::Checkbox("Fog", &Settings.ShowFlags.bFog);
         ImGui::Checkbox("Shadow", &Settings.ShowFlags.bShadow);
         ImGui::Checkbox("Gamma Correction", &Settings.ShowFlags.bGammaCorrection);
+        if (Settings.ShowFlags.bGammaCorrection)
+        {
+            ImGui::Indent();
+            ImGui::SliderFloat("Gamma", &Settings.ShowFlags.GammaValue, 1.0f, 3.0f, "%.2f");
+            ImGui::Unindent();
+        }
         ImGui::Checkbox("FXAA", &Settings.bEnableFXAA);
     }
 

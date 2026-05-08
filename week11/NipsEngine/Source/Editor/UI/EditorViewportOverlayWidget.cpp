@@ -314,6 +314,13 @@ void FEditorViewportOverlayWidget::RenderViewportSettings(float DeltaTime)
     ImGui::Checkbox("Fog", &Settings.ShowFlags.bFog);
     ImGui::Checkbox("Shadow", &Settings.ShowFlags.bShadow);
     ImGui::Checkbox("Gamma Correction", &Settings.ShowFlags.bGammaCorrection);
+    if (Settings.ShowFlags.bGammaCorrection)
+    {
+        ImGui::Indent();
+        ImGui::SetNextItemWidth(ItemWidth);
+        ImGui::SliderFloat("Gamma", &Settings.ShowFlags.GammaValue, 1.0f, 3.0f, "%.2f");
+        ImGui::Unindent();
+    }
 
     ImGui::Separator();
 
