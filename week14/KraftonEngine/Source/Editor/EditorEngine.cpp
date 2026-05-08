@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Notification.h"
@@ -26,6 +26,9 @@
 #include "Engine/Platform/Paths.h"
 #include "Lua/LuaScriptManager.h"
 #include <filesystem>
+
+#include "Mesh/FbxManager.h"
+#include "Mesh/SkeletalMesh.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
 
@@ -98,6 +101,9 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 		SCOPE_STARTUP_STAT("EditorRenderPipeline::Create");
 		SetRenderPipeline(std::make_unique<FEditorRenderPipeline>(this, Renderer));
 	}
+
+	USkeletalMesh* Mesh = FFbxManager::LoadFbxSkeletalMesh("Samba Dancing (10).fbx", Renderer.GetFD3DDevice().GetDevice());
+	UE_LOG("Loaded FBX SkeletalMesh: %s", Mesh->GetName().c_str());
 }
 
 void UEditorEngine::Shutdown()

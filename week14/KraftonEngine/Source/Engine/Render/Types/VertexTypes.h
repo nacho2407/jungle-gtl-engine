@@ -42,6 +42,18 @@ struct FVertexPNCTT
 	FVector4 Tangent;
 };
 
+// Position + Normal + Color + UV + BondIndex + BoneWeight (SkeletalMesh GPU용 정점 형식)
+struct FVertexPNCTBW
+{
+	FVector Position;
+	FVector Normal;
+	FVector4 Color;
+	FVector2 UV;
+
+	int32 BoneIndices[4] = { 0, 0, 0, 0 };
+	float BoneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+};
+
 template<typename VertexType>
 struct TMeshData
 {
