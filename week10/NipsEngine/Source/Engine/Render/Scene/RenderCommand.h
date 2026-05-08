@@ -342,7 +342,8 @@ struct FPostProcessConstants
     float VignetteRadius;
     float VignetteSmoothness;
     uint32 GammaCorrectionEnabled;
-    float Pad[2];
+    float GammaValue;
+    float Pad;
     float VignetteColor[4];
 };
 

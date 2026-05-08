@@ -8,7 +8,8 @@ cbuffer PostProcessCB : register(b11)
     float VignetteRadius;
     float VignetteSmoothness;
     uint GammaCorrectionEnabled;
-    float2 Padding;
+    float Gamma;
+    float Padding;
     float4 VignetteColor;
 }
 
@@ -51,7 +52,7 @@ float4 mainPS(VSOutput input) : SV_TARGET
 
     if (GammaCorrectionEnabled != 0)
     {
-        color = pow(color, 1.0 / 2.2);
+        color = pow(color, 1.0 / Gamma);
     }
     
     return float4(color, 1.0);

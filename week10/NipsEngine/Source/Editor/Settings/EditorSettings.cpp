@@ -48,6 +48,7 @@ namespace EditorKey
 	constexpr const char* FXAAEnabled = "FXAAEnabled";
 	constexpr const char* FXAAThreshold = "FXAAThreshold"; // Backward compatibility
     constexpr const char* bGammaCorrection = "bGammaCorrection";
+    constexpr const char* GammaValue = "GammaValue";
 
 	// Grid
 	constexpr const char* Grid = "Grid";
@@ -115,6 +116,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
     ViewObj[EditorKey::bShadow] = ShowFlags.bShadow;
 	ViewObj[EditorKey::FXAAEnabled] = bEnableFXAA;
     ViewObj[EditorKey::bGammaCorrection] = ShowFlags.bGammaCorrection;
+    ViewObj[EditorKey::GammaValue] = ShowFlags.GammaValue;
 
 	Root[EditorKey::View] = ViewObj;
 
@@ -275,6 +277,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
             ShowFlags.bShadow = ViewObj[EditorKey::bShadow].ToBool(); 
 		if (ViewObj.hasKey(EditorKey::bGammaCorrection))
             ShowFlags.bGammaCorrection = ViewObj[EditorKey::bGammaCorrection].ToBool();
+		if (ViewObj.hasKey(EditorKey::GammaValue))
+            ShowFlags.GammaValue = static_cast<float>(ViewObj[EditorKey::GammaValue].ToFloat());
 		if (ViewObj.hasKey(EditorKey::FXAAEnabled))
 			bEnableFXAA = ViewObj[EditorKey::FXAAEnabled].ToBool();
 		else if (ViewObj.hasKey(EditorKey::FXAAThreshold))
