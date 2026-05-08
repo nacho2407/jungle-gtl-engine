@@ -20,7 +20,7 @@
           }, {
             "Name" : "DiffuseMap",
             "Type" : "Texture",
-            "Value" : "Asset/Mesh/cyberpunk_arm/Prosthetic_Mat.png"
+            "Value" : "../../W9_Team3_Engine/NipsEngine/Asset/Mesh/cyberpunk_arm/Prosthetic_Mat.png"
           }, {
             "Name" : "EmissiveColor",
             "Type" : "Vector3",
