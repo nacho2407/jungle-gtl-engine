@@ -50,6 +50,7 @@ void FAudioManager::Shutdown()
 	
 	if (System)
 	{
+		System->update();
 		System->close();
 		System->release();
 		System = nullptr;
