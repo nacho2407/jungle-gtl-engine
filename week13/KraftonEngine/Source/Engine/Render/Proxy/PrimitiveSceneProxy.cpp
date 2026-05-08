@@ -1,7 +1,8 @@
-#include "Render/Proxy/PrimitiveSceneProxy.h"
+﻿#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Shader/ShaderManager.h"
+#include "Render/Command/DrawCommand.h"
 #include "Materials/Material.h"
 #include "Object/ObjectFactory.h"
 
@@ -15,7 +16,7 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
-FPrimitiveSceneProxy::~FPrimitiveSceneProxy()
+FPrimitiveSceneProxy::~FPrimitiveSceneProxy() noexcept
 {
 	if (DefaultMaterial)
 	{
@@ -85,3 +86,14 @@ void FPrimitiveSceneProxy::UpdateMesh()
 	}
 }
 
+bool FPrimitiveSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const
+{
+	FMeshBuffer* Mesh = GetMeshBuffer();
+	if (!Mesh || !Mesh->IsValid()) return false;
+
+	OutBuffer = {};
+	OutBuffer.VB = Mesh->GetVertexBuffer().GetBuffer();
+	OutBuffer.VBStride = Mesh->GetVertexBuffer().GetStride();
+	OutBuffer.IB = Mesh->GetIndexBuffer().GetBuffer();
+	return OutBuffer.VB != nullptr;
+}

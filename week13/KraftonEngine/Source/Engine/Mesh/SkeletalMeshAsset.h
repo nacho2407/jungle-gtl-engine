@@ -16,6 +16,8 @@ struct FBone
 	int32 ParentIndex;
 
 	FMatrix LocalMatrix;
+	FMatrix GlobalMatrix;
+	FMatrix InverseBindPoseMatrix;
 };
 
 struct FSkeletalMeshSection
