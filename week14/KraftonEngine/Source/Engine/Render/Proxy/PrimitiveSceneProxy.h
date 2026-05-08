@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
@@ -10,6 +10,7 @@ class FShader;
 class FMeshBuffer;
 class FScene;
 class UMaterial;
+struct FDrawCommandBuffer;
 struct FFrameContext;
 
 // ============================================================
@@ -90,6 +91,9 @@ public:
 	virtual void UpdateMesh();
 	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
 	virtual void UpdatePerViewport(const FFrameContext& /*Frame*/) {}
+
+	virtual bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
+		FDrawCommandBuffer& OutBuffer) const;
 
 protected:
 	// ================================================================

@@ -72,13 +72,13 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
 	FVector WorldCenter = CachedWorldMatrix.TransformPositionWithW(CachedLocalCenter);
 
 	float Ex = std::abs(CachedWorldMatrix.M[0][0]) * CachedLocalExtent.X
-			 + std::abs(CachedWorldMatrix.M[0][1]) * CachedLocalExtent.Y
-		+ std::abs(CachedWorldMatrix.M[0][2]) * CachedLocalExtent.Z;
-	float Ey = std::abs(CachedWorldMatrix.M[1][0]) * CachedLocalExtent.X
-			 + std::abs(CachedWorldMatrix.M[1][1]) * CachedLocalExtent.Y
-		+ std::abs(CachedWorldMatrix.M[1][2]) * CachedLocalExtent.Z;
-	float Ez = std::abs(CachedWorldMatrix.M[2][0]) * CachedLocalExtent.X
-			 + std::abs(CachedWorldMatrix.M[2][1]) * CachedLocalExtent.Y
+		+ std::abs(CachedWorldMatrix.M[1][0]) * CachedLocalExtent.Y
+		+ std::abs(CachedWorldMatrix.M[2][0]) * CachedLocalExtent.Z;
+	float Ey = std::abs(CachedWorldMatrix.M[0][1]) * CachedLocalExtent.X
+		+ std::abs(CachedWorldMatrix.M[1][1]) * CachedLocalExtent.Y
+		+ std::abs(CachedWorldMatrix.M[2][1]) * CachedLocalExtent.Z;
+	float Ez = std::abs(CachedWorldMatrix.M[0][2]) * CachedLocalExtent.X
+		+ std::abs(CachedWorldMatrix.M[1][2]) * CachedLocalExtent.Y
 		+ std::abs(CachedWorldMatrix.M[2][2]) * CachedLocalExtent.Z;
 
 	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);

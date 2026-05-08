@@ -129,6 +129,9 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 
 	ID3D11DeviceContext* Ctx = CachedContext;
 
+	FDrawCommandBuffer ProxyBuffer;
+	if (!Proxy.PrepareDrawBuffer(CachedDevice, Ctx, ProxyBuffer)) return;
+
 	// PassState → RenderState 변환 (Wireframe 오버라이드 포함)
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -145,12 +148,6 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 		bHasSelectionMaskCommands = true;
 
 	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-
-	// MeshBuffer → FDrawCommandBuffer 변환
-	FDrawCommandBuffer ProxyBuffer;
-	ProxyBuffer.VB = Proxy.GetMeshBuffer()->GetVertexBuffer().GetBuffer();
-	ProxyBuffer.VBStride = Proxy.GetMeshBuffer()->GetVertexBuffer().GetStride();
-	ProxyBuffer.IB = Proxy.GetMeshBuffer()->GetIndexBuffer().GetBuffer();
 
 	// 섹션당 1개 커맨드 (per-section 셰이더)
  	for (const FMeshSectionDraw& Section : Proxy.GetSectionDraws())

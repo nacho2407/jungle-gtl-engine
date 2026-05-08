@@ -180,7 +180,11 @@ void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Out
 			}
 
 			FbxMatrix LocalMatrix = Node->EvaluateLocalTransform();
+			FbxMatrix GlobalMatrix = Node->EvaluateGlobalTransform();
+			FbxMatrix InverseBindPoseMatrix = GlobalMatrix.Inverse();
 			Bone.LocalMatrix = ConvertFbxMatrix(LocalMatrix);
+			Bone.GlobalMatrix = ConvertFbxMatrix(GlobalMatrix);
+			Bone.InverseBindPoseMatrix = ConvertFbxMatrix(InverseBindPoseMatrix);
 
 			int32 NewBoneIndex = (int32)Bones.size();
 			Bones.push_back(Bone);
@@ -262,6 +266,8 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 		TMap<int32, TArray<uint32>> SectionIndicesMap;
 
+		FbxAMatrix NodeGlobalTransform = Node->EvaluateGlobalTransform();
+
 		for (int32 i = 0; i < Mesh->GetPolygonCount(); ++i)
 		{
 			int32 LocalMaterialIndex = GetMaterialIndex(Mesh, i);
@@ -279,7 +285,9 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 				int32 CPIndex = Mesh->GetPolygonVertex(i, j);
 
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
-				Vertex.Position = FVector((float)CP[0], (float)CP[1], (float)CP[2]);
+				FbxVector4 WorldCP = NodeGlobalTransform.MultT(CP);
+
+				Vertex.Position = FVector((float)WorldCP[0], (float)WorldCP[1], (float)WorldCP[2]);
 
 				for (int32 k = 0; k < (int32)TempWeights[CPIndex].size() && k < 4; ++k)
 				{
@@ -291,7 +299,9 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 				FbxVector4 Normal;
 				Mesh->GetPolygonVertexNormal(i, j, Normal);
 
-				FVector N = FVector((float)Normal[0], (float)Normal[1], (float)Normal[2]);
+				FbxVector4 WorldNormal = NodeGlobalTransform.MultR(Normal);
+
+				FVector N = FVector((float)WorldNormal[0], (float)WorldNormal[1], (float)WorldNormal[2]);
 				N.Normalize();
 
 				Vertex.Normal = N;
