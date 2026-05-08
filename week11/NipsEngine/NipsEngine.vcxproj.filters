@@ -953,6 +953,7 @@
     <ClCompile Include="Source\Engine\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.cpp" />
     <ClCompile Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Engine\Audio\AudioSystem.h">
@@ -1828,8 +1829,6 @@
     <ClInclude Include="Source\Engine\Component\SphereComponent.h" />
     <ClInclude Include="Source\Engine\Runtime\Script\ScriptUtils.h" />
     <ClInclude Include="Source\Engine\Component\ProceduralMeshComponent.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameInputBridge.h" />
-    <ClInclude Include="Source\Engine\Input\Controller\EditorController\GameController.h" />
     <ClInclude Include="Source\Engine\Camera\CameraModifier.h" />
     <ClInclude Include="Source\Engine\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\SandervistanRenderPass.h" />
@@ -1840,6 +1839,8 @@
     <ClInclude Include="Source\Engine\Camera\CameraShakeBase.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SinusoidalCameraShakePattern.h" />
     <ClInclude Include="Source\Engine\Camera\ShakePattern\SequenceCameraShakePattern.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
+    <ClInclude Include="Source\Editor\Input\GameInputBridge.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Source\Engine\Runtime\GameBranding.rc" />
