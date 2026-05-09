@@ -405,6 +405,20 @@ FVector USceneComponent::GetWorldLocation() const
 	return FVector(WorldMatrix.M[3][0], WorldMatrix.M[3][1], WorldMatrix.M[3][2]);
 }
 
+FRotator USceneComponent::GetWorldRotation() const
+{
+	FQuat WorldQuat = RelativeTransform.Rotation.GetNormalized();
+
+	const USceneComponent* CurrentParent = ParentComponent;
+	while (CurrentParent)
+	{
+		WorldQuat = (WorldQuat * CurrentParent->RelativeTransform.Rotation).GetNormalized();
+		CurrentParent = CurrentParent->ParentComponent;
+	}
+
+	return WorldQuat.ToRotator();
+}
+
 FVector USceneComponent::GetWorldScale() const
 {
 	const FMatrix& WorldMatrix = GetWorldMatrix();

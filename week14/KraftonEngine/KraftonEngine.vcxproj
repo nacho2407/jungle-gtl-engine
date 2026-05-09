@@ -488,6 +488,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\PointLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp" />
+    <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
+    <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
@@ -684,6 +686,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Component\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
+    <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />

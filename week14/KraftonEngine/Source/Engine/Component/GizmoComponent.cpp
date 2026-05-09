@@ -65,9 +65,9 @@ void UGizmoComponent::SetHolding(bool bHold)
 	}
 
 	UWorld* World = nullptr;
-	if (TargetComponent)
+	if (Target)
 	{
-		World = TargetComponent->GetWorld();
+		World = Target->GetWorld();
 	}
 	if (!World && Owner)
 	{
@@ -254,160 +254,34 @@ void UGizmoComponent::ResetSnapAccumulation()
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
-	if (!TargetComponent) return;
+	if (!Target) return;
 
-	FVector ConstrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
-
-	AddWorldOffset(ConstrainedDelta);
-
-	AActor* Owner = TargetComponent->GetOwner();
-	bool bIsRoot = (Owner && Owner->GetRootComponent() == TargetComponent);
-
-	// 루트 컴포넌트를 조작 중일 때만 선택된 모든 액터를 그룹 이동시킨다.
-	if (bIsRoot && AllSelectedActors && !AllSelectedActors->empty())
-	{
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			if (Actor) Actor->AddActorWorldOffset(ConstrainedDelta);
-		}
-	}
-	else
-	{
-		// 자식 컴포넌트인 경우, 부모는 두고 자신과 자신의 자식들만 이동시킨다.
-		TargetComponent->AddWorldOffset(ConstrainedDelta);
-	}
+	FVector Delta = GetVectorForAxis(SelectedAxis) * DragAmount;
+	AddWorldOffset(Delta);
+	Target->AddWorldOffset(Delta);
 }
 
 void UGizmoComponent::RotateTarget(float DragAmount)
 {
-	if (!TargetComponent) return;
+	if (!Target || !Target->IsValid()) return;
 
-	FVector RotationAxis = GetVectorForAxis(SelectedAxis);
-	if (!bIsWorldSpace)
-	{
-		// Local rotation must use the actor's canonical local axes; world-aligned gizmo axes cause jumps.
-		switch (SelectedAxis)
-		{
-		case 0: RotationAxis = FVector(1.0f, 0.0f, 0.0f); break;
-		case 1: RotationAxis = FVector(0.0f, 1.0f, 0.0f); break;
-		case 2: RotationAxis = FVector(0.0f, 0.0f, 1.0f); break;
-		default: break;
-		}
-	}
-	FQuat DeltaQuat = FQuat::FromAxisAngle(RotationAxis, DragAmount);
-
-	const float DeltaDeg = DragAmount * RAD_TO_DEG;
-
-	auto ApplyRotation = [&](USceneComponent* Component)
-		{
-			if (!Component) return;
-			const FQuat& CurQuat = Component->GetRelativeQuat();
-			FQuat NewQuat = (bIsWorldSpace ? (DeltaQuat * CurQuat) : (CurQuat * DeltaQuat)).GetNormalized();
-
-			if (bIsWorldSpace)
-			{
-				// World rotation is driven purely by quaternion composition.
-				Component->SetRelativeRotation(NewQuat);
-				return;
-			}
-
-			// Local rotation preserves the edited axis through the cached Euler hint.
-			FRotator EulerHint = Component->GetCachedEditRotator();
-			switch (SelectedAxis)
-			{
-			case 0: EulerHint.Roll += DeltaDeg; break;
-			case 1: EulerHint.Pitch += DeltaDeg; break;
-			case 2: EulerHint.Yaw += DeltaDeg; break;
-			default: break;
-			}
-			Component->SetRelativeRotationWithEulerHint(NewQuat, EulerHint);
-		};
-
-	AActor* Owner = TargetComponent->GetOwner();
-	bool bIsRoot = (Owner && Owner->GetRootComponent() == TargetComponent);
-
-	if (bIsRoot && AllSelectedActors && !AllSelectedActors->empty())
-	{
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			if (Actor && Actor->GetRootComponent())
-			{
-				ApplyRotation(Actor->GetRootComponent());
-			}
-		}
-	}
-	else
-	{
-		// 자식 컴포넌트인 경우 자신만 회전시킨다 (자식들은 계층구조상 따라옴).
-		ApplyRotation(TargetComponent);
-	}
+	FVector Axis = GetVectorForAxis(SelectedAxis);
+	FQuat DeltaQuat = FQuat::FromAxisAngle(Axis, DragAmount);
+	Target->AddWorldRotation(DeltaQuat, bIsWorldSpace);
 }
 
 void UGizmoComponent::ScaleTarget(float DragAmount)
 {
-	if (!TargetComponent) return;
+	if (!Target || !Target->IsValid()) return;
 
-	float ScaleDelta = DragAmount * ScaleSensitivity;
+	FVector Delta = FVector::ZeroVector;
+	const float ScaleDelta = DragAmount * ScaleSensitivity;
 
-	auto ApplyScale = [&](USceneComponent* Component)
-		{
-			if (!Component) return;
-			FVector NewScale = Component->GetRelativeScale();
-			switch (SelectedAxis)
-			{
-			case 0: NewScale.X += ScaleDelta; break;
-			case 1: NewScale.Y += ScaleDelta; break;
-			case 2: NewScale.Z += ScaleDelta; break;
-			}
-			Component->SetRelativeScale(NewScale);
-		};
+	if (SelectedAxis == 0) Delta.X = ScaleDelta;
+	if (SelectedAxis == 1) Delta.Y = ScaleDelta;
+	if (SelectedAxis == 2) Delta.Z = ScaleDelta;
 
-	AActor* Owner = TargetComponent->GetOwner();
-	bool bIsRoot = (Owner && Owner->GetRootComponent() == TargetComponent);
-
-	if (bIsRoot && AllSelectedActors && !AllSelectedActors->empty())
-	{
-		for (AActor* Actor : *AllSelectedActors)
-		{
-			if (Actor && Actor->GetRootComponent())
-			{
-				ApplyScale(Actor->GetRootComponent());
-			}
-		}
-	}
-	else
-	{
-		// 자식 컴포넌트인 경우 자신만 스케일을 조절한다.
-		ApplyScale(TargetComponent);
-	}
-}
-
-void UGizmoComponent::SetTargetLocation(FVector NewLocation)
-{
-	if (!TargetComponent) return;
-
-	TargetComponent->SetWorldLocation(NewLocation);
-	UpdateGizmoTransform();
-}
-
-void UGizmoComponent::SetTargetRotation(FRotator NewRotation)
-{
-	if (!TargetComponent) return;
-
-	TargetComponent->SetRelativeRotation(NewRotation);
-	UpdateGizmoTransform();
-}
-
-void UGizmoComponent::SetTargetScale(FVector NewScale)
-{
-	if (!TargetComponent) return;
-
-	FVector SafeScale = NewScale;
-	if (SafeScale.X < 0.001f) SafeScale.X = 0.001f;
-	if (SafeScale.Y < 0.001f) SafeScale.Y = 0.001f;
-	if (SafeScale.Z < 0.001f) SafeScale.Z = 0.001f;
-
-	TargetComponent->SetRelativeScale(SafeScale);
+	Target->AddScaleDelta(Delta);
 }
 
 bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
@@ -485,31 +359,36 @@ FVector UGizmoComponent::GetVectorForAxis(int32 Axis) const
 	}
 }
 
-void UGizmoComponent::SetTarget(USceneComponent* NewTarget)
+void UGizmoComponent::SetTarget(IGizmoTransformTarget* NewTarget)
 {
-	if (!NewTarget)
+	Target = NewTarget;
+
+	if (!Target || !Target->IsValid())
 	{
+		Deactivate();
 		return;
 	}
 
-	TargetComponent = NewTarget;
-
-	SetWorldLocation(TargetComponent->GetWorldLocation());
+	SetWorldLocation(Target->GetWorldLocation());
 	UpdateGizmoTransform();
 	SetVisibility(true);
 }
 
-void UGizmoComponent::SetTarget(AActor* NewTargetActor)
+void UGizmoComponent::SetTarget(USceneComponent* NewTarget)
 {
-	if (NewTargetActor)
+	if (!NewTarget)
 	{
-		SetTarget(NewTargetActor->GetRootComponent());
+		Deactivate();
+		return;
 	}
-	else
-	{
-		TargetComponent = nullptr;
-		SetVisibility(false);
-	}
+
+	ComponentTarget.SetComponent(NewTarget);
+	SetTarget(&ComponentTarget);
+}
+
+void UGizmoComponent::SetTarget(AActor* NewTarget)
+{
+	SetTarget(NewTarget ? NewTarget->GetRootComponent() : nullptr);
 }
 
 void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
@@ -603,26 +482,10 @@ void UGizmoComponent::UpdateHoveredAxis(int Index)
 
 void UGizmoComponent::UpdateDrag(const FRay& Ray)
 {
-	if (IsHolding() == false || IsActive() == false)
-	{
-		return;
-	}
+	if (!IsHolding() || !IsActive()) return;
+	if (SelectedAxis == -1 || !Target || !Target->IsValid()) return;
 
-	if (SelectedAxis == -1 || TargetComponent == nullptr)
-	{
-		return;
-	}
-
-	if (CurMode == EGizmoMode::Rotate)
-	{
-		UpdateAngularDrag(Ray);
-	}
-
-	else
-	{
-		UpdateLinearDrag(Ray);
-
-	}
+	CurMode == EGizmoMode::Rotate ? UpdateAngularDrag(Ray) : UpdateLinearDrag(Ray);
 }
 
 void UGizmoComponent::DragEnd()
@@ -648,14 +511,13 @@ void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 
 void UGizmoComponent::UpdateGizmoTransform()
 {
-	if (!TargetComponent) return;
+	if (!Target) return;
 
-	const FVector DesiredLocation = TargetComponent->GetWorldLocation();
-	
-	FRotator DesiredRotation = FRotator();
+	SetWorldLocation(Target->GetWorldLocation());
+
 	if (CurMode == EGizmoMode::Scale || !bIsWorldSpace)
 	{
-		DesiredRotation = TargetComponent->GetWorldMatrix().ToRotator();
+		SetRelativeRotation(Target->GetWorldRotation());
 	}
 
 	const FMeshData* DesiredMeshData = nullptr;
@@ -678,14 +540,9 @@ void UGizmoComponent::UpdateGizmoTransform()
 		break;
 	}
 
-	if (FVector::DistSquared(GetWorldLocation(), DesiredLocation) > FMath::Epsilon * FMath::Epsilon)
+	if (FVector::DistSquared(GetWorldLocation(), Target->GetWorldLocation()) > FMath::Epsilon * FMath::Epsilon)
 	{
-		SetWorldLocation(DesiredLocation);
-	}
-
-	if (GetRelativeRotation() != DesiredRotation)
-	{
-		SetRelativeRotation(DesiredRotation);
+		SetWorldLocation(Target->GetWorldLocation());
 	}
 
 	if (MeshData != DesiredMeshData && DesiredMeshData)
@@ -769,7 +626,8 @@ void UGizmoComponent::Deactivate()
 		SetHolding(false);
 	}
 
-	TargetComponent = nullptr;
+	Target = nullptr;
+	ComponentTarget.SetComponent(nullptr);
 	AllSelectedActors = nullptr;
 	SetVisibility(false);
 	SelectedAxis = -1;
