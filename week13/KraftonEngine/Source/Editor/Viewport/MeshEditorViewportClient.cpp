@@ -7,6 +7,9 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Component/GizmoComponent.h"
+#include "Collision/RayUtils.h"
 
 #include <imgui.h>
 
@@ -31,9 +34,20 @@ void FMeshEditorViewportClient::Release()
 	PreviewWorld = nullptr;
 	PreviewActor = nullptr;
 
+	UObjectManager::Get().DestroyObject(Gizmo);
+	Gizmo = nullptr;
+
 	bIsRenderable = false;
 
 	SetSelectedBone(nullptr, -1);
+}
+
+void FMeshEditorViewportClient::CreatePreviewGizmo()
+{
+	Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
+	Gizmo->SetScene(&PreviewWorld->GetScene());
+	Gizmo->CreateRenderState();
+	Gizmo->Deactivate();
 }
 
 bool FMeshEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
@@ -80,12 +94,23 @@ void FMeshEditorViewportClient::Tick(float DeltaTime)
 
 	TickShortcuts();
 	TickInput(DeltaTime);
+	TickInteraction(DeltaTime);
 }
 
 void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex)
 {
 	SelectedMesh = Mesh;
 	SelectedBoneIndex = BoneIndex;
+
+	if (Gizmo && PreviewMeshComponent && BoneIndex >= 0)
+	{
+		BoneTarget.SetBone(PreviewMeshComponent, BoneIndex);
+		Gizmo->SetTarget(&BoneTarget);
+	}
+	else if (Gizmo)
+	{
+		Gizmo->Deactivate();
+	}
 }
 
 const FBone* FMeshEditorViewportClient::GetSelectedBone() const
@@ -180,6 +205,77 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 	ViewTransform.Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
 }
 
+void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
+{
+	if (!Gizmo || !PreviewWorld) return;
+
+	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation, ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
+
+	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
+
+	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding()) return;
+
+	const float ZoomSpeed = 300.0f;
+
+	float ScrollNotches = InputSystem::Get().GetScrollNotches();
+	if (ScrollNotches != 0.0f)
+	{
+		if (ViewTransform.bIsOrtho)
+		{
+			float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
+			ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+		}
+		else
+		{
+			TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+		}
+	}
+
+	ImVec2 MousePos = ImGui::GetIO().MousePos;
+	float LocalMouseX = MousePos.x - ViewportScreenRect.X;
+	float LocalMouseY = MousePos.y - ViewportScreenRect.Y;
+
+	float VPWidth = Viewport ? static_cast<float>(Viewport->GetWidth()) : 1.0f;
+	float VPHeight = Viewport ? static_cast<float>(Viewport->GetHeight()) : 1.0f;
+
+	FMinimalViewInfo POV;
+	GetCameraView(POV);
+	FRay Ray = POV.DeprojectScreenToWorld(LocalMouseX, LocalMouseY, VPWidth, VPHeight);
+	FHitResult HitResult;
+
+	FRayUtils::RaycastComponent(Gizmo, Ray, HitResult);
+
+	InputSystem& Input = InputSystem::Get();
+
+	if (Input.GetKeyDown(VK_LBUTTON))
+	{
+		HandleDragStart(Ray);
+	}
+	else if (Input.GetLeftDragging())
+	{
+		if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
+		{
+			Gizmo->SetHolding(true);
+		}
+
+		if (Gizmo->IsHolding())
+		{
+			Gizmo->UpdateDrag(Ray);
+		}
+	}
+	else if (Input.GetLeftDragEnd())
+	{
+		if (Gizmo->IsHolding())
+		{
+			Gizmo->DragEnd();
+		}
+	}
+	else if (Input.GetKeyUp(VK_LBUTTON))
+	{
+		Gizmo->SetPressedOnHandle(false);
+	}
+}
+
 void FMeshEditorViewportClient::SyncCameraSmoothingTarget()
 {
 	const FVector CurrentLocation = ViewTransform.ViewLocation;
@@ -205,4 +301,26 @@ void FMeshEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
 
 	LastAppliedCameraLocation = NewLocation;
 	bLastAppliedCameraLocationInitialized = true;
+}
+
+void FMeshEditorViewportClient::SyncGizmo()
+{
+	if (!Gizmo || !PreviewActor) return;
+
+	if (const FBone* SelectedBone = GetSelectedBone())
+	{
+	}
+	else
+	{
+		Gizmo->Deactivate();
+	}
+}
+
+void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
+{
+	FHitResult Hit;
+	if (FRayUtils::RaycastComponent(Gizmo, Ray, Hit))
+	{
+		Gizmo->SetPressedOnHandle(true);
+	}
 }

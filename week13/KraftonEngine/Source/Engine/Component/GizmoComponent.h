@@ -4,6 +4,8 @@
 #include "Core/CoreTypes.h"
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
+#include "Gizmo/GizmoTransformTarget.h"
+#include "Gizmo/ComponentGizmoTarget.h"
 
 class AActor;
 class FPrimitiveSceneProxy;
@@ -31,8 +33,11 @@ public:
 	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
-	inline bool HasTarget() const { return TargetComponent != nullptr; }
-	inline USceneComponent* GetTarget() const { return TargetComponent; }
+
+	inline bool HasTarget() const { return Target != nullptr; }
+	inline IGizmoTransformTarget* GetTarget() const { return Target; }
+	inline USceneComponent* GetTargetComponent() const { return ComponentTarget.IsValid() ? ComponentTarget.GetComponent() : nullptr; }
+
 	inline int32 GetSelectedAxis() const { return SelectedAxis; }
 
 	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
@@ -47,11 +52,6 @@ public:
 	void UpdateHoveredAxis(int Index);
 	void UpdateDrag(const FRay& Ray);
 	void DragEnd();
-
-	void SetTargetLocation(FVector NewLocation);
-	void SetTargetRotation(FRotator NewRotation);
-	void SetTargetScale(FVector NewScale);
-
 
 	void SetNextMode();
 	void UpdateGizmoMode(EGizmoMode NewMode);
@@ -81,8 +81,9 @@ public:
 	void SetScene(FScene* InScene) { RegisteredScene = InScene; }
 
 	// Target 지원
+	void SetTarget(IGizmoTransformTarget* NewTarget);
 	void SetTarget(USceneComponent* NewTarget);
-	void SetTarget(AActor* NewTargetActor);
+	void SetTarget(AActor* NewTarget);
 
 private:
 	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float AxisScale, float& OutRayT);
@@ -100,7 +101,9 @@ private:
 	void UpdateAngularDrag(const FRay& Ray);
 
 private:
-	USceneComponent* TargetComponent = nullptr;
+	IGizmoTransformTarget* Target = nullptr;
+	FComponentGizmoTarget ComponentTarget;
+
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;

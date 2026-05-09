@@ -35,6 +35,9 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), ViewportSize.x, ViewportSize.y);
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
+	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<USkeletalMeshComponent>());
+
+	ViewportClient.CreatePreviewGizmo();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 

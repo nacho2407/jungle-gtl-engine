@@ -223,7 +223,7 @@ void FSelectionManager::Tick()
 		return;
 	}
 
-	if (Gizmo->GetTarget() != Primary)
+	if (Gizmo->GetTargetComponent() != Primary)
 	{
 		SyncGizmo();
 		return;

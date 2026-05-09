@@ -2,9 +2,12 @@
 
 #include "Viewport/ViewportClient.h"
 #include "Render/Types/POVProvider.h"
+#include "Render/Types/ViewTypes.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Mesh/SkeletalMeshAsset.h"
 #include "UI/SWindow.h"
+#include "Core/RayTypes.h"
+#include "Gizmo/BoneTransformGizmoTarget.h"
 
 #include <d3d11.h>
 
@@ -20,8 +23,11 @@ public:
 	void Initialize(ID3D11Device* Device, uint32 Width, uint32 Height);
 	void Release();
 
+	void CreatePreviewGizmo();
+
 	void SetPreviewWorld(UWorld* InWorld) { PreviewWorld = InWorld; }
 	void SetPreviewActor(AActor* InActor) { PreviewActor = InActor; }
+	void SetPreviewMeshComponent(USkeletalMeshComponent* InComp) { PreviewMeshComponent = InComp; }
 	void SetViewportRect(float X, float Y, float Width, float Height) { ViewportScreenRect = { X, Y, Width, Height }; }
 
 	bool IsRenderable() const { return bIsRenderable; }
@@ -39,8 +45,13 @@ public:
 private:
 	void TickShortcuts();
 	void TickInput(float DeltaTime);
+	void TickInteraction(float DeltaTime);
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
+
+	void SyncGizmo();
+
+	void HandleDragStart(const FRay& Ray);
 
 private:
 	USkeletalMesh* SelectedMesh = nullptr;
@@ -48,7 +59,11 @@ private:
 
 	FViewport* Viewport = nullptr;
 	FWindowsWindow* Window = nullptr;
+	FViewportRenderOptions RenderOptions;
+
+	FBoneTransformGizmoTarget BoneTarget;
 	UGizmoComponent* Gizmo = nullptr;
+	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;

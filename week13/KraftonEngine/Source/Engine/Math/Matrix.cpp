@@ -520,6 +520,13 @@ void FMatrix::SetAxes(const FVector& Right, const FVector& Up, const FVector& Fo
 	M[3][0] = 0.0f;      M[3][1] = 0.0f;      M[3][2] = 0.0f;      M[3][3] = 1.0f;
 }
 
+void FMatrix::SetLocation(const FVector& Location)
+{
+	M[3][0] = Location.X;
+	M[3][1] = Location.Y;
+	M[3][2] = Location.Z;
+}
+
 FMatrix FMatrix::MakeRotationAxis(const FVector& Axis, float Angle)
 {
 	FMatrix ret = FMatrix::Identity;
