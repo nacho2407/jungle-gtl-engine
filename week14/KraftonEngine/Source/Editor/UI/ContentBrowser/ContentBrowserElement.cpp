@@ -7,6 +7,8 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Mesh/SkeletalMesh.h"
+#include "Mesh/FbxManager.h"
 
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
@@ -127,6 +129,19 @@ void CameraShakeElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UCameraShakeAsset* ShakeAsset = FCameraShakeManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(ShakeAsset);
+	}
+}
+
+void MeshElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (USkeletalMesh* MeshAsset = FFbxManager::LoadFbxSkeletalMesh(FilePath, Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(MeshAsset);
 	}
 }
 

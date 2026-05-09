@@ -64,6 +64,12 @@ public:
 	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 
+class MeshElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+};
+
 class PNGElement final : public ContentBrowserElement
 {
 public:

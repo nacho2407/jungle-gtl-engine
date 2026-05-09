@@ -9,6 +9,7 @@ class UEditorEngine;
 class FViewport;
 class UCameraComponent;
 class FLevelEditorViewportClient;
+class FMeshEditorViewportClient;
 struct FMinimalViewInfo;
 
 class FEditorRenderPipeline : public IRenderPipeline
@@ -29,6 +30,8 @@ private:
 	void PrepareViewport(FLevelEditorViewportClient* VC, FViewport* VP, ID3D11DeviceContext* Ctx);
 	void BuildFrame(FLevelEditorViewportClient* VC, const FMinimalViewInfo& POV, FViewport* VP, UWorld* World);
 	void CollectCommands(FLevelEditorViewportClient* VC, UWorld* World, FRenderer& Renderer, FCollectOutput& Output);
+
+	void RenderMeshViewport(FMeshEditorViewportClient* MeshVC, FRenderer& Renderer);
 
 	// 뷰포트별 GPUOcclusion 인스턴스 (lazy init)
 	FGPUOcclusionCulling& GetOcclusionForViewport(FLevelEditorViewportClient* VC);

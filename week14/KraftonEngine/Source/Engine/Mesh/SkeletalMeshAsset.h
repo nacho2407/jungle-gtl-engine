@@ -8,6 +8,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 
+#include <algorithm>
 #include <memory>
 
 struct FBone
@@ -96,12 +97,12 @@ struct FSkeletalMesh
 		FVector LocalMax = Vertices[0].Position;
 		for (const FVertexPNCTBW& Vertex : Vertices)
 		{
-			LocalMin.X = std::min(LocalMin.X, Vertex.Position.X);
-			LocalMin.Y = std::min(LocalMin.Y, Vertex.Position.Y);
-			LocalMin.Z = std::min(LocalMin.Z, Vertex.Position.Z);
-			LocalMax.X = std::max(LocalMax.X, Vertex.Position.X);
-			LocalMax.Y = std::max(LocalMax.Y, Vertex.Position.Y);
-			LocalMax.Z = std::max(LocalMax.Z, Vertex.Position.Z);
+			LocalMin.X = std::min<float>(LocalMin.X, Vertex.Position.X);
+			LocalMin.Y = std::min<float>(LocalMin.Y, Vertex.Position.Y);
+			LocalMin.Z = std::min<float>(LocalMin.Z, Vertex.Position.Z);
+			LocalMax.X = std::max<float>(LocalMax.X, Vertex.Position.X);
+			LocalMax.Y = std::max<float>(LocalMax.Y, Vertex.Position.Y);
+			LocalMax.Z = std::max<float>(LocalMax.Z, Vertex.Position.Z);
 		}
 
 		BoundsCenter = (LocalMin + LocalMax) * 0.5f;

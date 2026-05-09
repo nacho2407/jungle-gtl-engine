@@ -158,6 +158,11 @@ void UEditorEngine::Tick(float DeltaTime)
 		VC->Tick(DeltaTime);
 	}
 
+	if (FMeshEditorViewportClient* MeshVC = MainPanel.GetMeshEditorViewportClient())
+	{
+		MeshVC->Tick(DeltaTime);
+	}
+
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 	SelectionManager.Tick();
@@ -571,13 +576,25 @@ void UEditorEngine::ClearScene()
 	if (IRenderPipeline* Pipeline = GetRenderPipeline())
 		Pipeline->OnSceneCleared();
 
-	for (FWorldContext& Ctx : WorldList)
+	for (auto It = WorldList.begin(); It != WorldList.end();)
 	{
-		Ctx.World->EndPlay();
-		UObjectManager::Get().DestroyObject(Ctx.World);
+		FWorldContext& Ctx = *It;
+
+		if (Ctx.WorldType == EWorldType::EditorPreview)
+		{
+			++It;
+			continue;
+		}
+
+		if (Ctx.World)
+		{
+			Ctx.World->EndPlay();
+			UObjectManager::Get().DestroyObject(Ctx.World);
+		}
+
+		It = WorldList.erase(It);
 	}
 
-	WorldList.clear();
 	ActiveWorldHandle = FName::None;
 	CurrentLevelFilePath.clear();
 

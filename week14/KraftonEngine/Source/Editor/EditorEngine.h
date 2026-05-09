@@ -81,6 +81,8 @@ public:
 	void SetActiveViewport(FLevelEditorViewportClient* InClient) { ViewportLayout.SetActiveViewport(InClient); }
 	FLevelEditorViewportClient* GetActiveViewport() const { return ViewportLayout.GetActiveViewport(); }
 
+	FMeshEditorViewportClient* GetMeshEditorViewportClient() { return MainPanel.GetMeshEditorViewportClient(); }
+
 	void ToggleViewportSplit() { ViewportLayout.ToggleViewportSplit(); }
 	bool IsSplitViewport() const { return ViewportLayout.IsSplitViewport(); }
 

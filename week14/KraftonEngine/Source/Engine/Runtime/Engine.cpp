@@ -31,6 +31,7 @@ namespace
 		switch (WorldType)
 		{
 		case EWorldType::Editor:
+		case EWorldType::EditorPreview:
 			return ELevelTick::LEVELTICK_ViewportsOnly;
 		case EWorldType::PIE:
 		case EWorldType::Game:
