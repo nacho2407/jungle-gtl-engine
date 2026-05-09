@@ -4,6 +4,9 @@
 #include "Viewport/Viewport.h"
 #include "Math/MathUtils.h"
 #include "Input/InputSystem.h"
+#include "Mesh/SkeletalMesh.h"
+#include "Mesh/SkeletalMeshAsset.h"
+#include "GameFramework/AActor.h"
 
 #include <imgui.h>
 
@@ -29,6 +32,8 @@ void FMeshEditorViewportClient::Release()
 	PreviewActor = nullptr;
 
 	bIsRenderable = false;
+
+	SetSelectedBone(nullptr, -1);
 }
 
 bool FMeshEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
@@ -42,9 +47,94 @@ bool FMeshEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 void FMeshEditorViewportClient::Tick(float DeltaTime)
 {
 	SyncCameraSmoothingTarget();
-	ApplySmoothedCameraLocation(DeltaTime);
 
+	if (bIsFocusAnimating)
+	{
+		FocusAnimTimer += DeltaTime;
+		float Alpha = Clamp(FocusAnimTimer / FocusAnimDuration, 0.0f, 1.0f);
+		if (Alpha >= 1.0f)
+		{
+			Alpha = 1.0f;
+			bIsFocusAnimating = false;
+		}
+
+		float SmoothAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
+
+		FVector NewLoc = FocusStartLoc * (1.0f - SmoothAlpha) + FocusEndLoc * SmoothAlpha;
+
+		FQuat StartQuat = FocusStartRot.ToQuaternion();
+		FQuat EndQuat = FocusEndRot.ToQuaternion();
+		FQuat BlendedQuat = FQuat::Slerp(StartQuat, EndQuat, SmoothAlpha);
+
+		ViewTransform.ViewLocation = NewLoc;
+		ViewTransform.ViewRotation = FRotator::FromQuaternion(BlendedQuat);
+
+		TargetLocation = NewLoc;
+		LastAppliedCameraLocation = NewLoc;
+		bLastAppliedCameraLocationInitialized = true;
+	}
+	else
+	{
+		ApplySmoothedCameraLocation(DeltaTime);
+	}
+
+	TickShortcuts();
 	TickInput(DeltaTime);
+}
+
+void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex)
+{
+	SelectedMesh = Mesh;
+	SelectedBoneIndex = BoneIndex;
+}
+
+const FBone* FMeshEditorViewportClient::GetSelectedBone() const
+{
+	if (!SelectedMesh) return nullptr;
+
+	FSkeletalMesh* Asset = SelectedMesh->GetSkeletalMeshAsset();
+	if (!Asset) return nullptr;
+
+	if (SelectedBoneIndex < 0 || SelectedBoneIndex >= static_cast<int32>(Asset->Bones.size())) return nullptr;
+
+	return &Asset->Bones[SelectedBoneIndex];
+}
+
+void FMeshEditorViewportClient::TickShortcuts()
+{
+	if (InputSystem::Get().GetKeyDown('F'))
+	{
+		if (const FBone* SelectedBone = GetSelectedBone())
+		{
+			FVector TargetLoc = SelectedBone->GlobalMatrix.GetLocation();
+
+			if (PreviewActor && PreviewActor->GetRootComponent())
+			{
+				TargetLoc = PreviewActor->GetRootComponent()->GetWorldMatrix().TransformVector(TargetLoc);
+			}
+
+			FVector OriginalLoc = ViewTransform.ViewLocation;
+			FRotator OriginalRot = ViewTransform.ViewRotation;
+
+			float FocusDistance = 5.0f;
+			FVector CameraForward = ViewTransform.ViewRotation.GetForwardVector();
+			FVector NewCameraLoc = TargetLoc - CameraForward * FocusDistance;
+
+			ViewTransform.ViewLocation = NewCameraLoc;
+			ViewTransform.LookAt(TargetLoc);
+			FRotator TargetRot = ViewTransform.ViewRotation;
+
+			ViewTransform.ViewLocation = OriginalLoc;
+			ViewTransform.ViewRotation = OriginalRot;
+
+			bIsFocusAnimating = true;
+			FocusAnimTimer = 0.0f;
+			FocusStartLoc = OriginalLoc;
+			FocusStartRot = OriginalRot;
+			FocusEndLoc = NewCameraLoc;
+			FocusEndRot = TargetRot;
+		}
+	}
 }
 
 void FMeshEditorViewportClient::TickInput(float DeltaTime)

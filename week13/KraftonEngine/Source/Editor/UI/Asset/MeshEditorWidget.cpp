@@ -37,6 +37,8 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.SetPreviewActor(Actor);
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+
+	ViewportClient.SetSelectedBone(Cast<USkeletalMesh>(EditedObject), -1);
 }
 
 void FMeshEditorWidget::Close()
@@ -156,6 +158,11 @@ void FMeshEditorWidget::RenderBoneTree(const FSkeletalMesh* Asset, int32 Index)
 
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
+	if (Index == SelectedBoneIndex)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
 	bool bHasChildren = false;
 	for (int32 i = Index + 1; i < static_cast<int32>(Asset->Bones.size()); ++i)
 	{
@@ -175,7 +182,8 @@ void FMeshEditorWidget::RenderBoneTree(const FSkeletalMesh* Asset, int32 Index)
 
 	if (ImGui::IsItemClicked())
 	{
-
+		SelectedBoneIndex = Index;
+		ViewportClient.SetSelectedBone(Cast<USkeletalMesh>(EditedObject), Index);
 	}
 
 	if (bOpen && bHasChildren)

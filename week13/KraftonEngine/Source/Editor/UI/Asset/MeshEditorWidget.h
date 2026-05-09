@@ -23,4 +23,6 @@ private:
 
 private:
 	FMeshEditorViewportClient ViewportClient;
+
+	int32 SelectedBoneIndex = -1;
 };
