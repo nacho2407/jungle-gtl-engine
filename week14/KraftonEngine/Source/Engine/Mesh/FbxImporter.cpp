@@ -37,8 +37,8 @@ bool FFbxImporter::Import(const FString& FilePath)
 	// 임의로 m 변환. UE는 cm 단위
 	FbxSystemUnit::m.ConvertScene(Scene);
 
-	FbxAxisSystem TargetAxisSystem(FbxAxisSystem::eMayaZUp);
-	TargetAxisSystem.ConvertScene(Scene);
+	FbxAxisSystem UnrealAxisSystem(FbxAxisSystem::eZAxis, (FbxAxisSystem::EFrontVector) FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
+	UnrealAxisSystem.DeepConvertScene(Scene);
 
 	TriangulateScene(Scene);
 
