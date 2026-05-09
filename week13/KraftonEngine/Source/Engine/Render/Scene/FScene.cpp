@@ -76,11 +76,13 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 	{
 		uint32 Slot = FreeSlots.back();
 		FreeSlots.pop_back();
+		Proxy->Scene = this;
 		Proxy->ProxyId = Slot;
 		Proxies[Slot] = Proxy;
 	}
 	else
 	{
+		Proxy->Scene = this;
 		Proxy->ProxyId = static_cast<uint32>(Proxies.size());
 		Proxies.push_back(Proxy);
 	}
@@ -113,6 +115,7 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 {
 	if (!Proxy || Proxy->ProxyId == UINT32_MAX) return;
 
+	Proxy->Scene = nullptr;
 	uint32 Slot = Proxy->ProxyId;
 
 	// 각 목록에서 제거

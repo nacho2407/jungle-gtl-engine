@@ -68,7 +68,7 @@ void FObjViewerRenderPipeline::RenderPreviewViewport(FRenderer& Renderer)
 
 	// BeginCollect → 데이터 수집 → 커맨드 생성 → Render
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
-	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+	Builder.BeginCollect(Frame);
 	FCollectOutput Output;
 	Collector.Collect(World, Frame, Output);
 	Builder.BuildCommands(Frame, &Scene, Output);

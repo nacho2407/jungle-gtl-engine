@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Types/FrameContext.h"
@@ -22,11 +22,11 @@ public:
 	void Release();
 
 	// Collect 시작 — 커맨드 리스트 + 동적 지오메트리 초기화
-	void BeginCollect(const FFrameContext& Frame, uint32 MaxProxyCount = 0);
+	void BeginCollect(const FFrameContext& Frame);
 
 	// Proxy → FDrawCommand 변환
-	void BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
-	void BuildDecalCommandForReceiver(const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
+	void BuildCommandForProxy(FScene& Scene, const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
+	void BuildDecalCommandForReceiver(FScene& Scene, const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
 
 	// Font proxy → FontGeometry 배칭
 	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
@@ -41,8 +41,8 @@ public:
 private:
 	// BuildCommands 서브 메서드
 	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
-	void BuildDecalCommands(FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
-	void BuildMeshCommands(const FPrimitiveSceneProxy* Proxy);
+	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
+	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
 	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
 
 	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
@@ -61,8 +61,8 @@ private:
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterial* Mat, const FDrawCommandRenderState& BaseState);
 	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode);
 
-	FConstantBuffer* GetPerObjectCBForProxy(const FPrimitiveSceneProxy& Proxy);
-	void EnsurePerObjectCBPoolCapacity(uint32 RequiredCount);
+	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
+	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);
 
 	// 커맨드 버퍼
 	FDrawCommandList DrawCommandList;
@@ -78,7 +78,7 @@ private:
 	FFontGeometry  FontGeometry;
 
 	// PerObject CB 풀
-	TArray<FConstantBuffer> PerObjectCBPool;
+	TMap<FScene*, TArray<FConstantBuffer>> PerSceneObjectCBPool;
 
 	// PostProcess CBs (Fog, Outline, SceneDepth, FXAA)
 	FConstantBuffer FogCB;

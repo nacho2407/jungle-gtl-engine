@@ -78,7 +78,7 @@ FVector USkeletalMeshComponent::GetBoneLocationByIndex(int32 BoneIndex) const
 	TArray<FMatrix> GlobalMatrices;
 	BuildBoneEditGlobalMatrices(GlobalMatrices);
 
-	const FVector ComponentLocalLocation = GlobalMatrices[BoneIndex].GetLocation();
+	const FVector ComponentLocalLocation = Asset->Bones[BoneIndex].GlobalMatrix.GetLocation();
 	return GetWorldMatrix().TransformPositionWithW(ComponentLocalLocation);
 }
 
