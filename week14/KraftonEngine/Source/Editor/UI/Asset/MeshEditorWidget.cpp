@@ -66,6 +66,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	static float HierarchyWidth = 250.0f;
+	static float DetailsWidth = 300.0f;
 
 	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
 
@@ -136,7 +137,9 @@ void FMeshEditorWidget::Render(float DeltaTime)
 
 	ImGui::BeginGroup();
 	{
-		ImVec2 Size = ImGui::GetContentRegionAvail();
+		float AvailableWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
+		ImVec2 Size = ImVec2(AvailableWidth, ImGui::GetContentRegionAvail().y);
+
 		ViewportClient.SetViewportRect(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y, Size.x, Size.y);
 
 		FViewport* VP = ViewportClient.GetViewport();
@@ -151,6 +154,34 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		}
 	}
 	ImGui::EndGroup();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("Details", ImVec2(DetailsWidth, 0), true);
+	ImGui::Text("Bone Details");
+	ImGui::Separator();
+
+	if (SkeletalMesh && SelectedBoneIndex != -1)
+	{
+		FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
+		FBone& Bone = Asset->Bones[SelectedBoneIndex];
+
+		ImGui::Text("Name: %s", Bone.Name.c_str());
+		ImGui::Text("Index: %d", SelectedBoneIndex);
+		ImGui::Dummy(ImVec2(0, 10));
+
+		FVector Location = Bone.LocalMatrix.GetLocation();
+		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
+		{
+			Bone.LocalMatrix.SetLocation(Location);
+		}
+	}
+	else
+	{
+		ImGui::TextDisabled("Select a bone to edit.");
+	}
+
+	ImGui::EndChild();
 
 	ImGui::End();
 
