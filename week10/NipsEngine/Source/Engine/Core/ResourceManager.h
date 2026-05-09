@@ -2,6 +2,7 @@
 
 #include "Asset/BinarySerializer.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Asset/FbxImporter.h"
 #include "Asset/ObjLoader.h"
 #include "Asset/StaticMesh.h"
 #include "Core/AtlasResourceCache.h"
@@ -131,6 +132,7 @@ private:
 	TComPtr<ID3D11Device> CachedDevice;
 
 	FObjLoader ObjLoader;
+	FFbxImporter FbxImporter;
 	FBinarySerializer BinarySerializer;
 
 	TComPtr<ID3D11Texture2D>          DefaultWhiteTexture;

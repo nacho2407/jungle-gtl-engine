@@ -200,6 +200,9 @@
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Asset\FbxImporter.cpp">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp">
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
@@ -516,6 +519,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h">
+      <Filter>Source\Engine\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Asset\FbxImporter.h">
       <Filter>Source\Engine\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h">

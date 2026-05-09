@@ -293,13 +293,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RmlUiCore.lib;SoLoud.lib;libfbxsdk-md.lib;libxml2-md.lib;zlib-md.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RmlUiCore.lib;SoLoud.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
     <ThirdPartyBinaryConfiguration>Release</ThirdPartyBinaryConfiguration>
     <ThirdPartyBinaryConfiguration Condition="'$(Configuration)'=='Debug'">Debug</ThirdPartyBinaryConfiguration>
+    <FbxSdkConfiguration>release</FbxSdkConfiguration>
+    <FbxSdkConfiguration Condition="'$(Configuration)'=='Debug'">debug</FbxSdkConfiguration>
   </PropertyGroup>
   <Target Name="BuildRmlUiStaticLibrary" BeforeTargets="ClCompile">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildRmlUiLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
@@ -566,6 +571,7 @@
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\FileUtils.cpp" />
+    <ClCompile Include="Source\Engine\Asset\FbxImporter.cpp" />
     <ClCompile Include="Source\Engine\Asset\FontAtlasLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\ObjLoader.cpp" />
     <ClCompile Include="Source\Engine\Asset\ParticleAtlasLoader.cpp" />
@@ -864,6 +870,7 @@
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h" />
     <ClInclude Include="Source\Engine\Asset\FileUtils.h" />
+    <ClInclude Include="Source\Engine\Asset\FbxImporter.h" />
     <ClInclude Include="Source\Engine\Asset\FontAtlasLoader.h" />
     <ClInclude Include="Source\Engine\Asset\IAssetLoader.h" />
     <ClInclude Include="Source\Engine\Asset\ObjLoader.h" />
