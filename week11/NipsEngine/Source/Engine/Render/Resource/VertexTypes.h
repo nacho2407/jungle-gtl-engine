@@ -26,10 +26,10 @@ struct FNormalVertex
 struct FSkeletalMeshVertex
 {
     FVector Position;
+    FColor Color;
     FVector Normal;
     FVector2 UVs;
     FVector4 Tangent;
-    FColor Color;
 
     // Bone influence (핵심)
     uint8 BoneIndices[4];
