@@ -68,7 +68,7 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [0.000000, 0.000000, 6.645711],
-        "Rotation" : [41.613937, -3.893958, -18.952353],
+        "Rotation" : [41.613937, -3.893959, -18.952351],
         "Scale" : [1.000000, 1.000000, 1.000000],
         "Tags" : "",
         "Visible" : true
@@ -132,7 +132,7 @@
       "Properties" : {
         "Location" : [-1.776060, 8.760371, 0.000000],
         "Rotation" : [-0.000000, 0.000000, 0.000000],
-        "Scale" : [7.474787, 30.000000, 1.000000],
+        "Scale" : [30.000000, 30.000000, 1.000000],
         "Tags" : "",
         "Visible" : true
       },
@@ -158,7 +158,7 @@
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
           "Rotation" : [0.000000, 0.000000, 0.000000],
-          "Scale" : [7.474787, 30.000000, 1.000000],
+          "Scale" : [30.000000, 30.000000, 1.000000],
           "Simulate Physics" : false,
           "Static Mesh" : "Data/BasicShape/Cube.OBJ",
           "Two Sided Shadow" : false,
@@ -173,8 +173,8 @@
       "NonSceneComponents" : [],
       "Properties" : {
         "Location" : [-1.806969, 3.341575, 1.006616],
-        "Rotation" : [-0.000000, 0.000008, 90.000023],
-        "Scale" : [30.000000, 30.000000, 30.000000],
+        "Rotation" : [0.000000, -89.167046, 0.000000],
+        "Scale" : [0.010000, 0.010000, 0.010000],
         "Tags" : "",
         "Visible" : true
       },
@@ -196,10 +196,49 @@
           "Location" : [-1.806969, 3.341575, 1.006616],
           "Mass (kg)" : 1.000000,
           "Object Type" : 0,
-          "Rotation" : [0.000000, 0.000015, 90.000031],
-          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Rotation" : [0.000000, -89.167015, 0.000000],
+          "Scale" : [0.010000, 0.010000, 0.010000],
           "Simulate Physics" : false,
           "Skeletal Mesh" : "Data/Samba Dancing (10).fbx",
+          "Two Sided Shadow" : false,
+          "Visible" : true,
+          "bEditorOnly" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "ASkeletalMeshActor",
+      "Name" : "ASkeletalMeshActor_1",
+      "NonSceneComponents" : [],
+      "Properties" : {
+        "Location" : [-4.392445, 6.880418, 1.000000],
+        "Rotation" : [0.000000, -75.740913, 0.000000],
+        "Scale" : [0.010000, 0.010000, 0.010000],
+        "Tags" : "",
+        "Visible" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "USkeletalMeshComponent",
+        "Properties" : {
+          "Cast Shadow" : true,
+          "Center Of Mass Offset" : [0.000000, 0.000000, 0.000000],
+          "Collision Enabled" : 0,
+          "Collision Responses" : {
+            "Pawn" : 2,
+            "Projectile" : 2,
+            "Trigger" : 2,
+            "WorldDynamic" : 2,
+            "WorldStatic" : 2
+          },
+          "Generate Overlap Events" : false,
+          "Location" : [-4.392445, 6.880418, 1.000000],
+          "Mass (kg)" : 1.000000,
+          "Object Type" : 0,
+          "Rotation" : [0.000000, -75.740852, 0.000000],
+          "Scale" : [0.010000, 0.010000, 0.010000],
+          "Simulate Physics" : false,
+          "Skeletal Mesh" : "Data/final low poly character  rigged.fbx",
           "Two Sided Shadow" : false,
           "Visible" : true,
           "bEditorOnly" : false,
@@ -214,9 +253,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [2.224930, -5.778944, 7.478479],
+    "Location" : [-4.984531, -2.621845, 5.115238],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 26.564680, 121.650055]
+    "Rotation" : [0.000000, 11.414713, 69.449844]
   },
   "Version" : 2,
   "WorldSettings" : {

@@ -5,6 +5,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Command/DrawCommand.h"
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
@@ -598,6 +599,9 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 	FShader* ShadowShader = FShaderManager::Get().GetOrCreate(EShaderPath::ShadowDepth);
 	if (!ShadowShader || !ShadowShader->IsValid()) return;
 
+	ID3D11Device* Device = nullptr;
+	DC->GetDevice(&Device);
+
 	ShadowShader->Bind(DC);
 
 	if (CurrentFilterMode != EShadowFilterMode::VSM)
@@ -627,8 +631,9 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 
 		if (!Partition && !LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
 
-		FMeshBuffer* Mesh = Proxy->GetMeshBuffer();
-		if (!Mesh || !Mesh->IsValid()) continue;
+		FDrawCommandBuffer ProxyBuffer;
+		if (!Proxy->PrepareDrawBuffer(Device, DC, ProxyBuffer)) continue;
+		if (!ProxyBuffer.VB || !ProxyBuffer.IB) continue;
 
 		// Two-sided shadow: front-cull ↔ no-cull 전환
 		bool bTwoSided = Proxy->CastsShadowAsTwoSided();
@@ -644,14 +649,12 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 		ID3D11Buffer* b1 = ShadowPerObjectCB.GetBuffer();
 		DC->VSSetConstantBuffers(ECBSlot::PerObject, 1, &b1);
 
-		ID3D11Buffer* VB = Mesh->GetVertexBuffer().GetBuffer();
-		uint32 VBStride = Mesh->GetVertexBuffer().GetStride();
+		ID3D11Buffer* VB = ProxyBuffer.VB;
+		uint32 VBStride = ProxyBuffer.VBStride;
 		uint32 Offset = 0;
 		DC->IASetVertexBuffers(0, 1, &VB, &VBStride, &Offset);
 
-		ID3D11Buffer* IB = Mesh->GetIndexBuffer().GetBuffer();
-		if (IB)
-			DC->IASetIndexBuffer(IB, DXGI_FORMAT_R32_UINT, 0);
+		DC->IASetIndexBuffer(ProxyBuffer.IB, DXGI_FORMAT_R32_UINT, 0);
 
 		for (const FMeshSectionDraw& Section : Proxy->GetSectionDraws())
 		{
@@ -663,6 +666,11 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 	// Front-cull로 복원
 	if (bCurrentTwoSided)
 		Resources.RasterizerStateManager.Set(DC, ERasterizerState::SolidFrontCull);
+
+	if (Device)
+	{
+		Device->Release();
+	}
 }
 
 void FShadowMapPass::DrawShadowCasters(const FPassContext& Ctx, const FConvexVolume& LightFrustum)
