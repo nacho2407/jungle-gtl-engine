@@ -23,6 +23,19 @@ struct FNormalVertex
     FVector4	Tangent;
 };
 
+struct FSkeletalMeshVertex
+{
+    FVector Position;
+    FVector Normal;
+    FVector2 UVs;
+    FVector4 Tangent;
+    FColor Color;
+
+    // Bone influence (핵심)
+    uint8 BoneIndices[4];
+    float BoneWeights[4];
+};
+
 struct FOverlayVertex
 {
 	float X, Y;
