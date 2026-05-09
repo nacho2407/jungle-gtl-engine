@@ -34,6 +34,9 @@ bool FFbxImporter::Import(const FString& FilePath)
 	Importer->Import(Scene);
 	Importer->Destroy();
 
+	// 임의로 m 변환. UE는 cm 단위
+	FbxSystemUnit::m.ConvertScene(Scene);
+
 	FbxAxisSystem TargetAxisSystem(FbxAxisSystem::eMayaZUp);
 	TargetAxisSystem.ConvertScene(Scene);
 
