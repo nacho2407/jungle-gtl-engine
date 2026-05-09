@@ -3,7 +3,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 class USkeletalMeshComponent;
-class FDrawCommandBuffer;
+struct FDrawCommandBuffer;
 
 class FSkeletalMeshSceneProxy : public FPrimitiveSceneProxy
 {
