@@ -125,9 +125,15 @@ UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& Normal
 	FStaticMeshLoadOptions LoadOptions = ResourceManager.StaticMeshCache.GetLoadOptions(NormalizedPath);
 	const FString BinaryPath = FAssetPathPolicy::MakeWritableStaticMeshCacheBinaryPath(NormalizedPath);
 
+	fs::path SourceFsPath(FPaths::ToWide(NormalizedPath));
+	std::wstring SourceExt = SourceFsPath.extension().wstring();
+	std::transform(SourceExt.begin(), SourceExt.end(), SourceExt.begin(), ::towlower);
+	const bool bIsFbx = (SourceExt == L".fbx");
+	const char* const SourceTag = bIsFbx ? "FBX" : "OBJ";
+
 	FStaticMesh* LoadedMeshData = nullptr;
 	double BinaryLoadSec = 0.0;
-	double ObjLoadSec = 0.0;
+	double SourceLoadSec = 0.0;
 
 	if (ResourceManager.IsStaticMeshBinaryValid(NormalizedPath, BinaryPath))
 	{
@@ -146,15 +152,22 @@ UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& Normal
 
 	if (LoadedMeshData == nullptr)
 	{
-		const auto ObjStart = std::chrono::steady_clock::now();
-		LoadedMeshData = ResourceManager.ObjLoader.Load(NormalizedPath, LoadOptions);
-		const auto ObjEnd = std::chrono::steady_clock::now();
-		ObjLoadSec = std::chrono::duration<double>(ObjEnd - ObjStart).count();
+		const auto SourceStart = std::chrono::steady_clock::now();
+		if (bIsFbx)
+		{
+			LoadedMeshData = ResourceManager.FbxImporter.Load(NormalizedPath, LoadOptions);
+		}
+		else
+		{
+			LoadedMeshData = ResourceManager.ObjLoader.Load(NormalizedPath, LoadOptions);
+		}
+		const auto SourceEnd = std::chrono::steady_clock::now();
+		SourceLoadSec = std::chrono::duration<double>(SourceEnd - SourceStart).count();
 
 		if (LoadedMeshData == nullptr)
 		{
-			UE_LOG_ERROR("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | ObjSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
-			       ObjLoadSec);
+			UE_LOG_ERROR("[StaticMeshLoad] Failed | Path=%s | BinarySec=%.6f | %sSec=%.6f", NormalizedPath.c_str(), BinaryLoadSec,
+			       SourceTag, SourceLoadSec);
 			return nullptr;
 		}
 
@@ -164,17 +177,21 @@ UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& Normal
 		if (bSaveBinaryOk)
 		{
 			UE_LOG(
-				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=OK | BinaryPath=%s",
+				"[StaticMeshLoad] Source=%s | Path=%s | %sSec=%.6f | BinarySave=OK | BinaryPath=%s",
+				SourceTag,
 				NormalizedPath.c_str(),
-				ObjLoadSec,
+				SourceTag,
+				SourceLoadSec,
 				BinaryPath.c_str());
 		}
 		else
 		{
 			UE_LOG_WARNING(
-				"[StaticMeshLoad] Source=OBJ | Path=%s | ObjSec=%.6f | BinarySave=FAIL | BinaryPath=%s",
+				"[StaticMeshLoad] Source=%s | Path=%s | %sSec=%.6f | BinarySave=FAIL | BinaryPath=%s",
+				SourceTag,
 				NormalizedPath.c_str(),
-				ObjLoadSec,
+				SourceTag,
+				SourceLoadSec,
 				BinaryPath.c_str());
 		}
 	}
