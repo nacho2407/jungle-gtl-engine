@@ -1,4 +1,4 @@
-#include "FbxImporter.h"
+﻿#include "FbxImporter.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Core/Logging/Log.h"
 #include "Core/PlatformTime.h"
@@ -143,6 +143,20 @@ bool FFbxImporter::ImportScene(const FString& Path, FbxManager* Manager, FbxScen
 	}
 
 	Importer->Destroy();
+
+	if (bResult)
+	{
+		// Engine import policy: left-handed, Z-up, X-forward, meter.
+		// FBX SDK가 mesh/transform/anim까지 일관되게 변환해주므로 정점 단계에서 축 swap 금지.
+		const FbxAxisSystem TargetAxis(
+			FbxAxisSystem::eZAxis,
+			FbxAxisSystem::eParityOdd,
+			FbxAxisSystem::eLeftHanded);
+		TargetAxis.DeepConvertScene(Scene);
+
+		FbxSystemUnit::m.ConvertScene(Scene);
+	}
+
 	return bResult;
 }
 
@@ -173,14 +187,24 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 	FbxNode* OwnerNode = Mesh->GetNode();
 
-	// Geometric transform (FBX 표준 - GeometricTranslation/Rotation/Scaling)
-	FbxAMatrix GeomTransform;
+	// FbxAxisSystem/FbxSystemUnit::ConvertScene은 노드 transform에 변환을 baked함.
+	// → control point에 GlobalTransform * GeometricTransform을 적용해야 단위/축이 반영됨.
+	FbxAMatrix VertexTransform;
+	FbxAMatrix NormalTransform;
 	if (OwnerNode)
 	{
 		const FbxVector4 T = OwnerNode->GetGeometricTranslation(FbxNode::eSourcePivot);
 		const FbxVector4 R = OwnerNode->GetGeometricRotation(FbxNode::eSourcePivot);
 		const FbxVector4 S = OwnerNode->GetGeometricScaling(FbxNode::eSourcePivot);
+		FbxAMatrix GeomTransform;
 		GeomTransform.SetTRS(T, R, S);
+
+		const FbxAMatrix GlobalTransform = OwnerNode->EvaluateGlobalTransform();
+		VertexTransform = GlobalTransform * GeomTransform;
+
+		// Normal은 회전·스케일만 — translation 제거
+		NormalTransform = VertexTransform;
+		NormalTransform.SetT(FbxVector4(0, 0, 0, 0));
 	}
 
 	const FbxVector4* ControlPoints = Mesh->GetControlPoints();
@@ -244,14 +268,18 @@ void FFbxImporter::ProcessMesh(FbxMesh* Mesh, FStaticMesh* InStaticMesh)
 
 			// Position
 			FbxVector4 Pos = ControlPoints[CtrlPointIdx];
-			Pos = GeomTransform.MultT(Pos);
+			Pos = VertexTransform.MultT(Pos);
 			Vertex.Position = ToFVector(Pos);
 
 			// Normal
 			FbxVector4 Normal(0, 0, 1, 0);
 			if (Mesh->GetPolygonVertexNormal(PolyIdx, Corner, Normal))
 			{
+				Normal[3] = 0.0;  // direction vector — translation은 무시
+				Normal = NormalTransform.MultT(Normal);
 				Vertex.Normal = ToFVector(Normal);
+				const float Len = Vertex.Normal.Size();
+				if (Len > 1e-6f) Vertex.Normal = Vertex.Normal / Len;
 			}
 			else
 			{
