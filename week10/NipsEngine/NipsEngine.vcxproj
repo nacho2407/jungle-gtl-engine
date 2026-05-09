@@ -223,7 +223,7 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
