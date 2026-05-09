@@ -12,6 +12,7 @@
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/FloatCurveEditorWidget.h"
 #include "Editor/UI/Asset/CameraShakeEditorWidget.h"
+#include "Editor/UI/Asset/MeshEditorWidget.h"
 #include "Math/Vector.h"
 
 class AActor;
@@ -39,6 +40,8 @@ public:
 
 	void OpenAssetEditorForObject(UObject* Object);
 
+	FMeshEditorViewportClient* GetMeshEditorViewportClient() { return MeshEditorWidget.GetViewportClient(); }
+
 private:
 	void RenderMainMenuBar();
 	void RenderShortcutOverlay();
@@ -62,6 +65,8 @@ private:
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FFloatCurveEditorWidget FloatCurveEditorWidget;
 	FCameraShakeEditorWidget CameraShakeEditorWidget;
+	FMeshEditorWidget MeshEditorWidget;
+
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;

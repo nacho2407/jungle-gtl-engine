@@ -1,6 +1,7 @@
 ﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Viewport/MeshEditorViewportClient.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Scene/FScene.h"
 #include "Viewport/Viewport.h"
@@ -96,6 +97,15 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 		SCOPE_STAT_CAT("RenderViewport", "2_Render");
 		RenderViewport(ViewportClient, Renderer);
+	}
+
+	if (FMeshEditorViewportClient* MeshVC = Editor->GetMeshEditorViewportClient())
+	{
+		if (MeshVC->IsRenderable())
+		{
+			SCOPE_STAT_CAT("RenderMeshViewport", "2_Render");
+			RenderMeshViewport(MeshVC, Renderer);
+		}
 	}
 
 	// 스왑체인 백버퍼 복귀 → ImGui 합성 → Present
@@ -335,3 +345,47 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	}
 }
 
+void FEditorRenderPipeline::RenderMeshViewport(FMeshEditorViewportClient* VC, FRenderer& Renderer)
+{
+	FViewport* VP = VC->GetViewport();
+	UWorld* World = VC->GetPreviewWorld();
+	if (!VP || !World) return;
+
+	ID3D11DeviceContext* Ctx = Renderer.GetFD3DDevice().GetDeviceContext();
+	if (!Ctx) return;
+
+	if (VP->ApplyPendingResize())
+	{
+		//VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+	}
+
+	const float ClearColor[4] = { 0.12f, 0.12f, 0.13f, 1.0f };
+	VP->BeginRender(Ctx, ClearColor);
+
+	FMinimalViewInfo POV;
+	VC->GetCameraView(POV);
+
+	Frame.ClearViewportResources();
+	Frame.SetViewportInfo(VP);
+	Frame.SetCameraInfo(POV);
+	Frame.WorldType = World->GetWorldType();
+
+	FViewportRenderOptions Opts;
+	Opts.ViewMode = EViewMode::Lit_Phong;
+	Opts.ShowFlags.bGrid = false;
+	Opts.ShowFlags.bBillboardText = false;
+	Opts.ShowFlags.bBoundingVolume = false;
+	Frame.SetRenderOptions(Opts);
+
+	FScene& Scene = World->GetScene();
+	Scene.ClearFrameData();
+
+	FCollectOutput Output;
+	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
+	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+
+	Collector.Collect(World, Frame, Output);
+	Builder.BuildCommands(Frame, &Scene, Output);
+
+	Renderer.Render(Frame, Scene);
+}
