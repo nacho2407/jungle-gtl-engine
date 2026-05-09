@@ -22,9 +22,11 @@ public:
 
     const TArray<FBoneInfo>& GetBones() const;
 
-    const TArray<FMatrix>& GetInverseBindPoses() const;
-    const TArray<FMatrix>& GetReferenceLocalPose() const;
-    const TArray<FMatrix>& GetReferenceGlobalPose() const;
+	const FBoneInfo* GetBoneInfo(int32 BoneIndex) const;
+
+    const FMatrix& GetLocalBindTransform(int32 BoneIndex) const;
+    const FMatrix& GetGlobalBindTransform(int32 BoneIndex) const;
+    const FMatrix& GetInverseBindPose(int32 BoneIndex) const;
 
     const TArray<FStaticMeshSection>& GetSections() const;
     const TArray<FStaticMeshMaterialSlot>& GetMaterialSlots() const;
