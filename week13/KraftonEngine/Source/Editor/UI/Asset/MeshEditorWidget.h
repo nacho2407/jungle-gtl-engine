@@ -2,6 +2,8 @@
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
 
+struct FSkeletalMesh;
+
 class FMeshEditorWidget : public FAssetEditorWidget
 {
 public:
@@ -15,6 +17,9 @@ public:
 	void Render(float DeltaTime) override;
 
 	FMeshEditorViewportClient* GetViewportClient() { return &ViewportClient; }
+
+private:
+	void RenderBoneTree(const FSkeletalMesh* Asset, int32 Index);
 
 private:
 	FMeshEditorViewportClient ViewportClient;
