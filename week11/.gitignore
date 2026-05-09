@@ -465,6 +465,9 @@ Builds/
 NipsEngine/Asset/Mesh/Bin/**
 NipsEngine/Asset/Scene/**
 
+# FBX SDK runtime libs - re-include (gitignore의 [Dd]ebug/, [Rr]elease/ 패턴으로 인해 무시되는 것을 복구)
+!NipsEngine/ThirdParty/FBX/lib/**
+
 # Week9 Game Scene
 !NipsEngine/Asset/Scene/MapScene.Scene
 !NipsEngine/Asset/Scene/Intro.Scene

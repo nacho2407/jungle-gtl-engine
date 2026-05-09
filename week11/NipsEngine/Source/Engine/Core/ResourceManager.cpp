@@ -156,7 +156,7 @@ void FResourceManager::RegisterDiscoveredAssetFile(const std::filesystem::path& 
 	{
 		CurveFilePaths.push_back(RelativePath);
 	}
-	else if (Extension == L".obj")
+	else if (Extension == L".obj" || Extension == L".fbx")
 	{
 		ObjFilePaths.push_back(RelativePath);
 
