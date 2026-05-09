@@ -314,7 +314,7 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	Scene.ClearFrameData();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
-	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+	Builder.BeginCollect(Frame);
 
 	const FShowFlags& Flags = Frame.RenderOptions.ShowFlags;
 
@@ -382,7 +382,7 @@ void FEditorRenderPipeline::RenderMeshViewport(FMeshEditorViewportClient* VC, FR
 
 	FCollectOutput Output;
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
-	Builder.BeginCollect(Frame, Scene.GetProxyCount());
+	Builder.BeginCollect(Frame);
 
 	Collector.Collect(World, Frame, Output);
 	Builder.BuildCommands(Frame, &Scene, Output);

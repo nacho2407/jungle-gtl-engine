@@ -1,4 +1,4 @@
-#include "Game/GameRenderPipeline.h"
+﻿#include "Game/GameRenderPipeline.h"
 
 #include "Game/GameEngine.h"
 #include "GameFramework/PlayerController.h"
@@ -158,7 +158,7 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 void FGameRenderPipeline::CollectCommands(FScene* Scene, FRenderer& Renderer, FCollectOutput& Output)
 {
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
-	Builder.BeginCollect(Frame, Scene->GetProxyCount());
+	Builder.BeginCollect(Frame);
 
 	Collector.Collect(Game->GetWorld(), Frame, Output);
 	Builder.BuildCommands(Frame, Scene, Output);

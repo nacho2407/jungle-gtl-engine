@@ -136,6 +136,7 @@ private:
 
 	UPrimitiveComponent* Owner = nullptr;
 
+	FScene*		Scene			  = nullptr;
 	uint32      ProxyId           = UINT32_MAX;
 	uint32      SelectedListIndex = UINT32_MAX;
 	EDirtyFlag  DirtyFlags        = EDirtyFlag::All;

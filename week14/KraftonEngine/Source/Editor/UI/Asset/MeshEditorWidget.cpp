@@ -6,6 +6,7 @@
 #include "Runtime/Engine.h"
 #include "Component/SkeletalMeshComponent.h"
 #include "Viewport/Viewport.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
 
 #include <imgui.h>
 
@@ -29,6 +30,10 @@ void FMeshEditorWidget::Open(UObject* Object)
 		Comp->SetSkeletalMesh(Mesh);
 		Actor->SetRootComponent(Comp);
 	}
+
+	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
+	LightActor->InitDefaultComponents();
+	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
 
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
