@@ -1,8 +1,13 @@
 ﻿#pragma once
-#include "SkinnedMeshComponent.h"
-#include "Render/Resource/VertexTypes.h"
-#include "Asset/SkeletalMesh.h"
 
+#include "Component/SkinnedMeshComponent.h"
+
+/**
+ * @brief Unreal Engine 스타일에서는 skinned mesh가 skeleton을 이용하는 mesh를 표현하고,
+ *        skeletal mesh는 실제로 actor에 붙어서 애니메이션을 붙일 수 있는 component로 사용되고 있으므로
+ *        USkeletalMeshComponent 또한 해당 방식대로 우선은 얇게 유지.
+ *        핵심 로직들은 대부분 USkinnedMeshComponent로 옮겼습니다.
+ */
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
@@ -11,41 +16,12 @@ public:
     USkeletalMeshComponent() = default;
     ~USkeletalMeshComponent() override = default;
 
-    /* Tick */
-    void TickComponent(float DeltaTime);
+    void TickComponent(float DeltaTime) override;
 
-    /* Update Pipeline */
-	// 미구현 상태
-    void UpdateBoneTransforms() {}; // Local → Global
-    void UpdateSkinningMatrices() {}; // Global → Skinning
-    void SkinVerticesCPU() {};        // Optional
+    EPrimitiveType GetPrimitiveType() const override { return EPrimitiveType::EPT_SkeletalMesh; }
 
-    /* Pose */
-    const TArray<FMatrix>& GetLocalPose() const { return CurrentLocalPose; }
-    const TArray<FMatrix>& GetGlobalPose() const { return CurrentGlobalPose; }
+    void ResetToBindPose();
 
-    /* Skinning */
-    const TArray<FMatrix>& GetSkinningMatrices() const { return SkinningMatrices; }
-
-    /* CPU Skinning Result (optional) */
-    const TArray<FSkeletalMeshVertex>& GetSkinnedVertices() const { return SkinnedVertices; }
-
-    bool IsCPUSkinningEnabled() const { return bEnableCPUSkinning; }
-    void SetCPUSkinning(bool bEnable) { bEnableCPUSkinning = bEnable; }
-
-private:
-    USkeletalMesh* SkeletalMesh = nullptr;
-
-    /* Pose */
-    TArray<FMatrix> CurrentLocalPose;
-    TArray<FMatrix> CurrentGlobalPose;
-
-    /* Skinning */
-    TArray<FMatrix> SkinningMatrices;
-
-    /* CPU Skinning buffer (optional) */
-    TArray<FSkeletalMeshVertex> SkinnedVertices;
-
-	// 발제 내용 상 true 로 고정
-    bool bEnableCPUSkinning = true;
+    void SetBoneLocalTransform(int32 BoneIndex, const FMatrix& NewLocalTransform);
+    const FMatrix& GetBoneLocalTransform(int32 BoneIndex) const;
 };

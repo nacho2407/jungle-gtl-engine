@@ -4,6 +4,7 @@
 #include "Asset/CurveFloatAsset.h"
 #include "Asset/FbxImporter.h"
 #include "Asset/ObjLoader.h"
+#include "Asset/SkeletalMesh.h"
 #include "Asset/StaticMesh.h"
 #include "Core/AtlasResourceCache.h"
 #include "Core/CurveResourceCache.h"
@@ -95,6 +96,9 @@ public:
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 
+	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
+    USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
+
 	UCurveFloatAsset* LoadCurve(const FString& Path);
 	UCurveFloatAsset* FindCurve(const FString& Path) const;
 	bool SaveCurve(const FString& Path, const UCurveFloatAsset* Curve);
@@ -126,6 +130,8 @@ private:
 	UMaterial* GetMaterialForStaticMeshSlot(const FString& SourcePath, const FString& SlotName) const;
 	void ResolveStaticMeshMaterialSlots(const FString& SourcePath, FStaticMesh* StaticMesh) const;
 
+	void ResolveSkeletalMeshMaterialSlots(const FString& SourcePath, FSkeletalMesh* SkeletalMesh) const;
+
 	FResourceManager() = default;
 	~FResourceManager() { ReleaseGPUResources(); }
 
@@ -144,6 +150,8 @@ private:
 	FRenderStateResourceCache RenderStateCache;
 	FStaticMeshResourceCache StaticMeshCache;
 	FAtlasResourceCache AtlasCache;
+
+	TMap<FString, USkeletalMesh*> SkeletalMeshMap;
 
 	/* Paths */
 	TArray<FString> ObjFilePaths;

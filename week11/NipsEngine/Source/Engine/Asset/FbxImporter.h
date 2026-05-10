@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
-#include "Asset/StaticMeshTypes.h"
 #include "Asset/IAssetLoader.h"
-#include <Core/ResourceTypes.h>
+#include "Asset/SkeletalMeshTypes.h"
+#include "Asset/StaticMeshTypes.h"
+#include "Core/ResourceTypes.h"
 
 namespace fbxsdk
 {
