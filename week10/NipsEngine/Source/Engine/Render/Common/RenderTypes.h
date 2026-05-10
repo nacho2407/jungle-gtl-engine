@@ -28,6 +28,7 @@ enum class EPrimitiveType
 	EPT_Axis,
 	EPT_Grid,
 	EPT_StaticMesh,
+	EPT_SkeletalMesh,
 	EPT_Billboard,
 	EPT_Text, // TextRenderComponent — MeshBuffer 없음, FontBatcher가 처리
 	EPT_SubUV, // SubUVComponent     — MeshBuffer 없음, SubUVBatcher가 처리

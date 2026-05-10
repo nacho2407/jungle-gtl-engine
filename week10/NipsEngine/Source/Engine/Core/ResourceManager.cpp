@@ -1,4 +1,4 @@
-#include "Core/ResourceManager.h"
+﻿#include "Core/ResourceManager.h"
 
 #include "Core/Paths.h"
 #include "Core/AssetPathPolicy.h"
@@ -17,9 +17,11 @@
 #include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "Core/Logging/Log.h"
+
 #if WITH_EDITOR
 #include "Settings/EditorSettings.h"
 #endif
+
 #include "Asset/BinarySerializer.h"
 #include "Asset/StaticMeshTypes.h"
 #include "Asset/StaticMeshSimplifier.h"
@@ -586,6 +588,32 @@ void FResourceManager::ResolveStaticMeshMaterialSlots(const FString& SourcePath,
 	}
 }
 
+void FResourceManager::ResolveSkeletalMeshMaterialSlots(const FString& SourcePath, FSkeletalMesh* SkeletalMesh) const
+{
+    if (!SkeletalMesh)
+    {
+        return;
+    }
+
+    for (FStaticMeshMaterialSlot& Slot : SkeletalMesh->MaterialSlots)
+    {
+        if (!SourcePath.empty())
+        {
+            const FString* Alias = MaterialCache.FindMaterialSlotAlias(FImportedMaterialPolicy::MakeMaterialSlotAliasKey(SourcePath, Slot.SlotName));
+            if (Alias)
+            {
+                Slot.SlotName = *Alias;
+            }
+        }
+
+        Slot.Material = GetMaterialForStaticMeshSlot(SourcePath, Slot.SlotName);
+        if (Slot.Material == nullptr)
+        {
+            Slot.Material = GetMaterial("DefaultWhite");
+        }
+    }
+}
+
 UMaterialInstance* FResourceManager::CreateMaterialInstance(const FString& Path, UMaterial* Parent)
 {
 	return MaterialCache.CreateMaterialInstance(Path, Parent);
@@ -721,6 +749,55 @@ UStaticMesh* FResourceManager::FindStaticMesh(const FString& Path) const
 TArray<FString> FResourceManager::GetStaticMeshPaths() const
 {
 	return ObjFilePaths;
+}
+
+USkeletalMesh* FResourceManager::LoadSkeletalMesh(const FString& Path)
+{
+    const FString NormalizedPath = FPaths::Normalize(Path);
+
+    if (USkeletalMesh* FoundMesh = FindSkeletalMesh(NormalizedPath))
+    {
+        return FoundMesh;
+    }
+
+    LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
+
+    FStaticMeshLoadOptions LoadOptions;
+    FSkeletalMesh* LoadedMeshData = FbxImporter.LoadSkeletalMesh(NormalizedPath, LoadOptions);
+    if (!LoadedMeshData)
+    {
+        UE_LOG_ERROR("[SkeletalMeshLoad] Failed | Path=%s", NormalizedPath.c_str());
+        return nullptr;
+    }
+
+    ResolveSkeletalMeshMaterialSlots(NormalizedPath, LoadedMeshData);
+
+    USkeletalMesh* LoadedMesh = UObjectManager::Get().CreateObject<USkeletalMesh>();
+    LoadedMesh->SetMeshData(LoadedMeshData);
+
+    SkeletalMeshMap[NormalizedPath] = LoadedMesh;
+
+    UE_LOG("[SkeletalMeshLoad] Loaded | Path=%s | Vertices=%zu | Indices=%zu | Bones=%zu | Sections=%zu",
+           NormalizedPath.c_str(),
+           LoadedMesh->GetVertices().size(),
+           LoadedMesh->GetIndices().size(),
+           LoadedMesh->GetBones().size(),
+           LoadedMesh->GetSections().size());
+
+    return LoadedMesh;
+}
+
+USkeletalMesh* FResourceManager::FindSkeletalMesh(const FString& Path) const
+{
+    const FString NormalizedPath = FPaths::Normalize(Path);
+
+    auto It = SkeletalMeshMap.find(NormalizedPath);
+    if (It != SkeletalMeshMap.end())
+    {
+        return It->second;
+    }
+
+    return nullptr;
 }
 
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
