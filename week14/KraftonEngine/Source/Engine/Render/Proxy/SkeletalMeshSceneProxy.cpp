@@ -43,94 +43,13 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 
 	SkinnedVertices.resize(Asset->Vertices.size());
 
-	TArray<FMatrix> SkinMatrices;
-	SkinMatrices.resize(Asset->Bones.size(), FMatrix::Identity);
-
-	const float Time = (GEngine && GEngine->GetTimer())
-		? static_cast<float>(GEngine->GetTimer()->GetTotalTime())
-		: 0.0f;
-
-	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Asset->Bones.size()); ++BoneIndex)
-	{
-		const FBone& Bone = Asset->Bones[BoneIndex];
-		const bool bIsTailRoot = Bone.Name == "Tail1" || Bone.Name == "tail1";
-		const bool bIsChestRoot = Bone.Name == "Chest" || Bone.Name == "chest";
-		const bool bIsLeftArmRoot = Bone.Name == "Larm1" || Bone.Name == "larm1" || Bone.Name == "LArm1" || Bone.Name == "lArm1";
-		if (!bIsTailRoot && !bIsChestRoot && !bIsLeftArmRoot) continue;
-
-		const int32 RootBoneIndex = BoneIndex;
-		float Angle = sinf(Time * 3.0f) * 0.9f;
-		if (bIsChestRoot)
-		{
-			Angle = sinf(Time * 2.0f) * 0.35f;
-		}
-		else if (bIsLeftArmRoot)
-		{
-			Angle = sinf(Time * 4.0f) * 0.65f;
-		}
-		const FVector Pivot = Bone.GlobalMatrix.GetLocation();
-
-		const FMatrix TranslateToPivot = FMatrix::MakeTranslationMatrix(Pivot * -1.0f);
-		const FMatrix Rotate = FMatrix::MakeRotationZ(Angle);
-		const FMatrix TranslateBack = FMatrix::MakeTranslationMatrix(Pivot);
-		const FMatrix TestDelta = TranslateToPivot * Rotate * TranslateBack;
-
-		for (int32 AffectedBoneIndex = 0; AffectedBoneIndex < static_cast<int32>(Asset->Bones.size()); ++AffectedBoneIndex)
-		{
-			int32 CurrentBoneIndex = AffectedBoneIndex;
-			while (CurrentBoneIndex >= 0 && CurrentBoneIndex < static_cast<int32>(Asset->Bones.size()))
-			{
-				if (CurrentBoneIndex == RootBoneIndex)
-				{
-					SkinMatrices[AffectedBoneIndex] = SkinMatrices[AffectedBoneIndex] * TestDelta;
-					break;
-				}
-
-				CurrentBoneIndex = Asset->Bones[CurrentBoneIndex].ParentIndex;
-			}
-		}
-	}
-
 	for (int32 i = 0; i < (int32)Asset->Vertices.size(); ++i)
 	{
 		const FVertexPNCTBW& Src = Asset->Vertices[i];
 		FVertexPNCTT& Dst = SkinnedVertices[i];
 
-		FVector SkinnedPos(0, 0, 0);
-		FVector SkinnedNormal(0, 0, 0);
-		float AccumWeight = 0.0f;
-
-		for (int k = 0; k < 4; ++k)
-		{
-			const int BoneIndex = Src.BoneIndices[k];
-			const float Weight = Src.BoneWeights[k];
-
-			if (Weight <= 0.0f) continue;
-			if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(SkinMatrices.size())) continue;
-
-			const FMatrix& M = SkinMatrices[BoneIndex];
-
-			SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
-			SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
-			AccumWeight += Weight;
-		}
-
-		if (AccumWeight <= 0.0f)
-		{
-			SkinnedPos = Src.Position;
-			SkinnedNormal = Src.Normal;
-		}
-		else if (SkinnedNormal.IsNearlyZero())
-		{
-			SkinnedNormal = Src.Normal;
-		}
-		else
-		{
-			SkinnedNormal.Normalize();
-		}
-
-		Dst.Position = SkinnedPos;
-		Dst.Normal = SkinnedNormal;
+		Dst.Position = Src.Position;
+		Dst.Normal = Src.Normal;
 		Dst.Color = Src.Color;
 		Dst.UV = Src.UV;
 		Dst.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
