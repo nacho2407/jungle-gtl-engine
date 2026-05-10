@@ -96,6 +96,9 @@ public:
 	UStaticMesh* FindStaticMesh(const FString& Path) const;
 	TArray<FString> GetStaticMeshPaths() const;
 
+	/*
+	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
+	 */
 	USkeletalMesh* LoadSkeletalMesh(const FString& Path);
     USkeletalMesh* FindSkeletalMesh(const FString& Path) const;
 

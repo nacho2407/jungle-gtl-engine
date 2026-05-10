@@ -37,6 +37,91 @@ namespace
 		OutT = (E1 * dUV2.Y - E2 * dUV1.Y) * r;
 		OutB = (E2 * dUV1.X - E1 * dUV2.X) * r;
 	}
+
+	static FMatrix ToFMatrix(const FbxAMatrix& M)
+    {
+        return FMatrix(
+            static_cast<float>(M.Get(0, 0)), static_cast<float>(M.Get(0, 1)), static_cast<float>(M.Get(0, 2)), static_cast<float>(M.Get(0, 3)),
+            static_cast<float>(M.Get(1, 0)), static_cast<float>(M.Get(1, 1)), static_cast<float>(M.Get(1, 2)), static_cast<float>(M.Get(1, 3)),
+            static_cast<float>(M.Get(2, 0)), static_cast<float>(M.Get(2, 1)), static_cast<float>(M.Get(2, 2)), static_cast<float>(M.Get(2, 3)),
+            static_cast<float>(M.Get(3, 0)), static_cast<float>(M.Get(3, 1)), static_cast<float>(M.Get(3, 2)), static_cast<float>(M.Get(3, 3)));
+    }
+
+	struct FTempInfluence
+    {
+        int32 BoneIndex = -1;
+        float Weight = 0.0f;
+    };
+
+	/**
+	 * @brief 영향력 상위 4개의 bone을 FSkeletalMeshVertex에 할당
+	 */
+    static void AssignTop4Influences(
+        const TArray<FTempInfluence>& SourceInfluences,
+        FSkeletalMeshVertex& OutVertex)
+    {
+        for (int32 i = 0; i < 4; ++i)
+        {
+			/*
+			 * TODO: 이 함수 자체가 임시로 붙인 함수지만, 만약 이 함수를 그대로 사용하고
+			 *       BoneIndices를 int32로 바꾼다면 이 부분도 -1로 변경해주세요!
+			 */
+            OutVertex.BoneIndices[i] = 0;
+            OutVertex.BoneWeights[i] = 0.0f;
+        }
+
+        if (SourceInfluences.empty())
+        {
+            return;
+        }
+
+		// 정렬은 그냥 standard sort 활용
+        TArray<FTempInfluence> Sorted = SourceInfluences;
+        std::sort(Sorted.begin(), Sorted.end(), [](const FTempInfluence& A, const FTempInfluence& B)
+                  { return A.Weight > B.Weight; });
+
+        int32 WrittenCount = 0;
+        float Sum = 0.0f;
+
+        for (const FTempInfluence& Influence : Sorted)
+        {
+            if (WrittenCount >= 4)
+            {
+                break;
+            }
+
+			/*
+			 * TODO: 우선 현재는 BoneIndices가 uint8임을 가정.
+			 *       bone 개수가 256개 이상이면 잘림
+			 */
+            if (Influence.BoneIndex < 0 || Influence.BoneIndex > 255 || Influence.Weight <= 0.0f)
+            {
+                continue;
+            }
+
+            OutVertex.BoneIndices[WrittenCount] = static_cast<uint8>(Influence.BoneIndex);
+            OutVertex.BoneWeights[WrittenCount] = Influence.Weight;
+            Sum += Influence.Weight;
+
+            ++WrittenCount;
+        }
+
+        if (Sum <= 1e-6f)
+        {
+            for (int32 i = 0; i < 4; ++i)
+            {
+                OutVertex.BoneIndices[i] = 0;
+                OutVertex.BoneWeights[i] = 0.0f;
+            }
+
+            return;
+        }
+
+        for (int32 i = 0; i < WrittenCount; ++i)
+        {
+            OutVertex.BoneWeights[i] /= Sum;
+        }
+    }
 }
 
 FStaticMesh* FFbxImporter::Load(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
@@ -50,7 +135,7 @@ FStaticMesh* FFbxImporter::Load(const FString& Path, const FStaticMeshLoadOption
 		UE_LOG_ERROR("[FbxImporter] Failed to create FbxManager");
 		return nullptr;
 	}
-
+	
 	FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
 	Manager->SetIOSettings(IOSettings);
 
@@ -124,6 +209,81 @@ bool FFbxImporter::SupportsExtension(const FString& Extension) const
 FString FFbxImporter::GetLoaderName() const
 {
 	return FString{ "FFbxImporter" };
+}
+
+FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions)
+{
+    const double StartTime = FPlatformTime::Seconds();
+    UE_LOG("[FbxImporter] Start loading Skeletal FBX: %s", Path.c_str());
+
+    FbxManager* Manager = FbxManager::Create();
+    if (!Manager)
+    {
+        UE_LOG_ERROR("[FbxImporter] Failed to create FbxManager");
+        return nullptr;
+    }
+
+    FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
+    Manager->SetIOSettings(IOSettings);
+
+    FbxScene* Scene = FbxScene::Create(Manager, "ImportSkeletalScene");
+    if (!Scene)
+    {
+        UE_LOG_ERROR("[FbxImporter] Failed to create FbxScene");
+        Manager->Destroy();
+        return nullptr;
+    }
+
+    if (!ImportScene(Path, Manager, Scene))
+    {
+        Manager->Destroy();
+        return nullptr;
+    }
+
+    FbxGeometryConverter Converter(Manager);
+    Converter.Triangulate(Scene, true);
+
+    FSkeletalMesh* SkeletalMesh = new FSkeletalMesh();
+    SkeletalMesh->PathFileName = Path;
+
+    if (FbxNode* RootNode = Scene->GetRootNode())
+    {
+        for (int32 i = 0; i < RootNode->GetChildCount(); ++i)
+        {
+			// 실제 작업은 여기서 진행
+            CollectSkeletalMeshes(RootNode->GetChild(i), SkeletalMesh);
+        }
+    }
+
+    Manager->Destroy();
+
+    if (SkeletalMesh->Vertices.empty() || SkeletalMesh->Indices.empty() || SkeletalMesh->Bones.empty())
+    {
+        UE_LOG_ERROR("[FbxImporter] No skeletal geometry or bones found: %s", Path.c_str());
+        delete SkeletalMesh;
+        return nullptr;
+    }
+
+	// 단위를 일정 범위로 맞추기
+    if (LoadOptions.bNormalizeToUnitCube)
+    {
+        NormalizePositionsToUnitCube(SkeletalMesh);
+    }
+
+    SkeletalMesh->LocalBounds = BuildLocalBounds(SkeletalMesh);
+    ComputeTangents(SkeletalMesh);
+
+    const double EndTime = FPlatformTime::Seconds();
+    UE_LOG("[FbxImporter] Skeletal FBX Loaded: %s (Vertices=%zu, Indices=%zu, Bones=%zu, Sections=%zu, Slots=%zu, %.3f sec)",
+           Path.c_str(),
+           SkeletalMesh->Vertices.size(),
+           SkeletalMesh->Indices.size(),
+           SkeletalMesh->Bones.size(),
+           SkeletalMesh->Sections.size(),
+           SkeletalMesh->MaterialSlots.size(),
+           EndTime - StartTime);
+
+    return SkeletalMesh;
 }
 
 bool FFbxImporter::ImportScene(const FString& Path, FbxManager* Manager, FbxScene* Scene)
@@ -428,4 +588,176 @@ void FFbxImporter::ComputeTangents(FStaticMesh* InStaticMesh)
 
 		InStaticMesh->Vertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
 	}
+}
+
+void FFbxImporter::CollectSkeletalMeshes(FbxNode* Node, FSkeletalMesh* InSkeletalMesh)
+{
+    if (!Node)
+    {
+        return;
+    }
+
+    if (FbxNodeAttribute* Attr = Node->GetNodeAttribute())
+    {
+		// FBX node의 polygon mesh geometry만 처리
+        if (Attr->GetAttributeType() == FbxNodeAttribute::eMesh)
+        {
+			// 사실 찐 작업은 여기서 수행...
+            ProcessSkeletalMesh(static_cast<FbxMesh*>(Attr), InSkeletalMesh);
+        }
+    }
+
+    for (int32 i = 0; i < Node->GetChildCount(); ++i)
+    {
+        CollectSkeletalMeshes(Node->GetChild(i), InSkeletalMesh);
+    }
+}
+
+// TODO: 이 함수 아직 작성중...
+void FFbxImporter::ProcessSkeletalMesh(fbxsdk::FbxMesh* Mesh, FSkeletalMesh* InSkeletalMesh)
+{
+    const int32 ControlPointCount = Mesh->GetControlPointsCount();
+    TArray<TArray<FTempInfluence>> InfluencesByControlPoint; // 각 control point의 influence
+    InfluencesByControlPoint.resize(ControlPointCount);
+
+	TMap<FbxNode*, int32> BoneNodeToIndex;
+
+	const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+    for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
+    {
+        FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
+        if (!Skin)
+        {
+            continue;
+        }
+
+        const int32 ClusterCount = Skin->GetClusterCount();
+        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+        {
+            FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+            if (!Cluster || !Cluster->GetLink())
+            {
+                continue;
+            }
+
+            FbxNode* BoneNode = Cluster->GetLink();
+            if (BoneNodeToIndex.find(BoneNode) == BoneNodeToIndex.end())
+            {
+                const int32 NewBoneIndex = static_cast<int32>(InSkeletalMesh->Bones.size());
+                BoneNodeToIndex[BoneNode] = NewBoneIndex;
+
+                FBoneInfo Bone = {};
+                Bone.Name = FString(BoneNode->GetName());
+                Bone.ParentIndex = -1;
+
+                FbxAMatrix LinkBindMatrix;
+                Cluster->GetTransformLinkMatrix(LinkBindMatrix);
+
+                Bone.GlobalBindTransform = ToFMatrix(LinkBindMatrix);
+                Bone.InverseBindPose = Bone.GlobalBindTransform.GetInverse();
+                Bone.LocalBindTransform = Bone.GlobalBindTransform;
+
+                InSkeletalMesh->Bones.push_back(Bone);
+            }
+        }
+    }
+
+	for (auto& Pair : BoneNodeToIndex)
+    {
+        FbxNode* BoneNode = Pair.first;
+        const int32 BoneIndex = Pair.second;
+
+        int32 ParentIndex = -1;
+        FbxNode* ParentNode = BoneNode ? BoneNode->GetParent() : nullptr;
+
+        while (ParentNode)
+        {
+            auto ParentIt = BoneNodeToIndex.find(ParentNode);
+            if (ParentIt != BoneNodeToIndex.end())
+            {
+                ParentIndex = ParentIt->second;
+                break;
+            }
+
+            ParentNode = ParentNode->GetParent();
+        }
+
+        FBoneInfo& Bone = InSkeletalMesh->Bones[BoneIndex];
+        Bone.ParentIndex = ParentIndex;
+
+        if (ParentIndex >= 0)
+        {
+            const FMatrix ParentGlobalInv = InSkeletalMesh->Bones[ParentIndex].GlobalBindTransform.GetInverse();
+            Bone.LocalBindTransform = Bone.GlobalBindTransform * ParentGlobalInv;
+        }
+        else
+        {
+            Bone.LocalBindTransform = Bone.GlobalBindTransform;
+        }
+    }
+
+	for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
+    {
+        FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
+        if (!Skin)
+        {
+            continue;
+        }
+
+        const int32 ClusterCount = Skin->GetClusterCount();
+        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+        {
+            FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+            if (!Cluster || !Cluster->GetLink())
+            {
+                continue;
+            }
+
+            auto BoneIt = BoneNodeToIndex.find(Cluster->GetLink());
+            if (BoneIt == BoneNodeToIndex.end())
+            {
+                continue;
+            }
+
+            const int32 BoneIndex = BoneIt->second;
+            const int32 IndexCount = Cluster->GetControlPointIndicesCount();
+            int* ControlPointIndices = Cluster->GetControlPointIndices();
+            double* ControlPointWeights = Cluster->GetControlPointWeights();
+
+            for (int32 i = 0; i < IndexCount; ++i)
+            {
+                const int32 CtrlPointIndex = ControlPointIndices[i];
+                const float Weight = static_cast<float>(ControlPointWeights[i]);
+
+                if (CtrlPointIndex < 0 || CtrlPointIndex >= ControlPointCount || Weight <= 0.0f)
+                {
+                    continue;
+                }
+
+                InfluencesByControlPoint[CtrlPointIndex].push_back({ BoneIndex, Weight });
+            }
+        }
+    }
+
+	FSkeletalMeshVertex Vertex = {};
+
+    // Position / Normal / UV / Color 채우기
+
+    AssignTop4Influences(InfluencesByControlPoint[CtrlPointIdx], Vertex);
+
+    const uint32 NewIndex = static_cast<uint32>(InSkeletalMesh->Vertices.size());
+    InSkeletalMesh->Vertices.push_back(Vertex);
+    SlotIndices[SlotIdx].push_back(NewIndex);
+
+	FStaticMeshSection NewSection;
+    NewSection.StartIndex = static_cast<uint32>(InSkeletalMesh->Indices.size());
+    NewSection.IndexCount = static_cast<uint32>(IndicesPerSlot.size());
+    NewSection.MaterialSlotIndex = SlotIdx;
+
+    InSkeletalMesh->Indices.insert(
+        InSkeletalMesh->Indices.end(),
+        IndicesPerSlot.begin(),
+        IndicesPerSlot.end());
+
+    InSkeletalMesh->Sections.push_back(NewSection);
 }
