@@ -29,9 +29,11 @@ private:
 	static void ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& OutNodeToIndex);
 	static void ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& NodeToIndex);
 
+	// Helper
 	static int32 GetMaterialIndex(FbxMesh* Mesh, int32 PolygonIndex);
-	static void TriangulateScene(FbxScene* Scene);
+	static int32 FindNearestParentBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& NodeToIndex);
 
+	static void TriangulateScene(FbxScene* Scene);
 	static FString ConvertToMat(const FMaterialInfo* MaterialInfo);
 
 public:
