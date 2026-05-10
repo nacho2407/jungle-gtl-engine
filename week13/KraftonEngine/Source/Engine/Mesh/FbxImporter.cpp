@@ -172,22 +172,12 @@ void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Out
 			Bone.Name = Node->GetName();
 
 			FbxNode* ParentNode = Node->GetParent();
-			auto it = OutNodeToIndex.find(ParentNode);
-			if (it != OutNodeToIndex.end())
-			{
-				Bone.ParentIndex = it->second;
-			}
-			else
-			{
-				Bone.ParentIndex = -1;
-			}
+			Bone.ParentIndex = FindNearestParentBoneIndex(Node, OutNodeToIndex);
 
 			FbxMatrix LocalMatrix = Node->EvaluateLocalTransform();
 			FbxMatrix GlobalMatrix = Node->EvaluateGlobalTransform();
-			FbxMatrix InverseBindPoseMatrix = GlobalMatrix.Inverse();
 			Bone.LocalMatrix = ConvertFbxMatrix(LocalMatrix);
 			Bone.GlobalMatrix = ConvertFbxMatrix(GlobalMatrix);
-			Bone.InverseBindPoseMatrix = ConvertFbxMatrix(InverseBindPoseMatrix);
 
 			int32 NewBoneIndex = (int32)Bones.size();
 			Bones.push_back(Bone);
@@ -238,7 +228,14 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			FbxCluster* Cluster = Skin->GetCluster(i);
 			FbxNode* LinkNode = Cluster->GetLink();
 
-			int32 BoneIndex = NodeToIndex[LinkNode];
+			auto It = NodeToIndex.find(LinkNode);
+			if (It == NodeToIndex.end()) continue;
+
+			FbxAMatrix LinkBindMatrix;
+			Cluster->GetTransformLinkMatrix(LinkBindMatrix);
+
+			int32 BoneIndex = It->second;
+			Bones[BoneIndex].InverseBindPoseMatrix = ConvertFbxMatrix(LinkBindMatrix).GetInverse();
 
 			int32* ControlPointIndices = Cluster->GetControlPointIndices();
 			double* ControlPointWeights = Cluster->GetControlPointWeights();
@@ -292,11 +289,18 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 				Vertex.Position = FVector((float)WorldCP[0], (float)WorldCP[1], (float)WorldCP[2]);
 
+				auto& Weights = TempWeights[CPIndex];
+				std::sort(Weights.begin(), Weights.end(), [](const WeightData& A, const WeightData& B)
+				{
+					return A.Weight > B.Weight;
+				});
+
 				for (int32 k = 0; k < (int32)TempWeights[CPIndex].size() && k < 4; ++k)
 				{
-					Vertex.BoneIndices[k] = TempWeights[CPIndex][k].BoneIndex;
-					Vertex.BoneWeights[k] = TempWeights[CPIndex][k].Weight;
+					Vertex.BoneIndices[k] = Weights[k].BoneIndex;
+					Vertex.BoneWeights[k] = Weights[k].Weight;
 				}
+
 				NormalizeWeights(Vertex.BoneWeights, 4);
 
 				FbxVector4 Normal;
@@ -364,6 +368,24 @@ int32 FFbxImporter::GetMaterialIndex(FbxMesh* Mesh, int32 PolygonIndex)
 	}
 
 	return 0;
+}
+
+int32 FFbxImporter::FindNearestParentBoneIndex(FbxNode* Node, const TMap<FbxNode*, int32>& NodeToIndex)
+{
+	FbxNode* Parent = Node ? Node->GetParent() : nullptr;
+
+	while (Parent)
+	{
+		auto It = NodeToIndex.find(Parent);
+		if (It != NodeToIndex.end())
+		{
+			return It->second;
+		}
+
+		Parent = Parent->GetParent();
+	}
+
+	return -1;
 }
 
 void FFbxImporter::TriangulateScene(FbxScene* Scene)

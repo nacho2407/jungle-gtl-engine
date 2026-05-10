@@ -80,8 +80,6 @@ struct FSkeletalMesh
 
 	TArray<FBone> Bones;
 
-	TMap<FString, int32> BoneNameToIndex;
-
 	std::unique_ptr<FMeshBuffer> RenderBuffer;
 
 	FVector BoundsCenter = FVector(0, 0, 0);
