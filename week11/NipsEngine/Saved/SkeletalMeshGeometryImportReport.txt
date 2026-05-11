@@ -1,0 +1,6 @@
+[RigidMesh] SKIP no parent bone | Node=Plane
+[RigidMesh] IMPORT | Node=Sphere | AttachBoneIndex=4 | AddedVertices=936
+[RigidMesh] IMPORT | Node=Sphere.001 | AttachBoneIndex=4 | AddedVertices=936
+[RigidMesh] SKIP no parent bone | Node=Plane
+[RigidMesh] IMPORT | Node=Sphere | AttachBoneIndex=4 | AddedVertices=936
+[RigidMesh] IMPORT | Node=Sphere.001 | AttachBoneIndex=4 | AddedVertices=936

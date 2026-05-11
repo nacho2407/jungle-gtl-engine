@@ -20,6 +20,12 @@ enum class ESkeletalMeshImportPass
     RigidAttachedMeshes
 };
 
+struct FFbxMeshContentInfo
+{
+    bool bHasStaticMesh = false;
+    bool bHasSkeletalMesh = false;
+};
+
 class FFbxImporter : public IAssetLoader
 {
 public:
@@ -32,9 +38,11 @@ public:
 	FString GetLoaderName() const override;
 
 	/*
-     * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
+	 * note: 병합하면서 충돌이 발생하거나 동일한 로직의 함수가 있다면 날려버리셔도 됩니다
      */
 	FSkeletalMesh* LoadSkeletalMesh(const FString& Path, const FStaticMeshLoadOptions& LoadOptions);
+
+	FFbxMeshContentInfo InspectMeshContent(const FString& Path);
 
 private:
 	bool ImportScene(const FString& Path, fbxsdk::FbxManager* Manager, fbxsdk::FbxScene* Scene);

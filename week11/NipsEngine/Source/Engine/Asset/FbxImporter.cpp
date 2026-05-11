@@ -242,6 +242,99 @@ static bool ShouldSkipRigidMeshByName(FbxNode* OwnerNode)
                                     "dummy" });
 }
 
+static bool HasValidSkinInfluence(FbxMesh* Mesh)
+{
+    if (!Mesh)
+    {
+        return false;
+    }
+
+    const int32 SkinCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+    for (int32 SkinIndex = 0; SkinIndex < SkinCount; ++SkinIndex)
+    {
+        FbxSkin* Skin = static_cast<FbxSkin*>(Mesh->GetDeformer(SkinIndex, FbxDeformer::eSkin));
+        if (!Skin)
+        {
+            continue;
+        }
+
+        const int32 ClusterCount = Skin->GetClusterCount();
+        for (int32 ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+        {
+            FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+            if (!Cluster || !Cluster->GetLink())
+            {
+                continue;
+            }
+
+            const int32 IndexCount = Cluster->GetControlPointIndicesCount();
+            double* Weights = Cluster->GetControlPointWeights();
+            if (IndexCount <= 0 || !Weights)
+            {
+                continue;
+            }
+
+            for (int32 Index = 0; Index < IndexCount; ++Index)
+            {
+                if (Weights[Index] > 0.0)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+static void InspectMeshContentRecursive(FbxNode* Node, FFbxMeshContentInfo& OutInfo)
+{
+    if (!Node)
+    {
+        return;
+    }
+
+    if (OutInfo.bHasStaticMesh && OutInfo.bHasSkeletalMesh)
+    {
+        return;
+    }
+
+    if (FbxMesh* Mesh = Node->GetMesh())
+    {
+        const bool bHasGeometry =
+            Mesh->GetControlPointsCount() > 0 &&
+            Mesh->GetPolygonCount() > 0;
+
+        if (bHasGeometry)
+        {
+            if (HasValidSkinInfluence(Mesh))
+            {
+                OutInfo.bHasSkeletalMesh = true;
+            }
+            else
+            {
+                OutInfo.bHasStaticMesh = true;
+            }
+        }
+    }
+
+    if (OutInfo.bHasStaticMesh && OutInfo.bHasSkeletalMesh)
+    {
+        return;
+    }
+
+    for (int32 ChildIndex = 0; ChildIndex < Node->GetChildCount(); ++ChildIndex)
+    {
+        InspectMeshContentRecursive(Node->GetChild(ChildIndex), OutInfo);
+
+        if (OutInfo.bHasStaticMesh && OutInfo.bHasSkeletalMesh)
+        {
+			// 둘 다 true임을 찾았으면 early exit
+            return;
+        }
+    }
+}
+
 static void ResetVertexInfluences(FSkeletalMeshVertex& Vertex)
 {
     for (int32 i = 0; i < 4; ++i)
@@ -462,6 +555,40 @@ FSkeletalMesh* FFbxImporter::LoadSkeletalMesh(const FString& Path, const FStatic
            EndTime - StartTime);
 
     return SkeletalMesh;
+}
+
+FFbxMeshContentInfo FFbxImporter::InspectMeshContent(const FString& Path)
+{
+    FFbxMeshContentInfo Result;
+
+    FbxManager* Manager = FbxManager::Create();
+    if (!Manager)
+    {
+        UE_LOG_ERROR("[FbxImporter] Failed to create FbxManager for inspection");
+        return Result;
+    }
+
+    FbxIOSettings* IOSettings = FbxIOSettings::Create(Manager, IOSROOT);
+    Manager->SetIOSettings(IOSettings);
+
+    FbxScene* Scene = FbxScene::Create(Manager, "InspectFbxScene");
+    if (!Scene)
+    {
+        UE_LOG_ERROR("[FbxImporter] Failed to create FbxScene for inspection");
+        Manager->Destroy();
+        return Result;
+    }
+
+    if (ImportScene(Path, Manager, Scene))
+    {
+        if (FbxNode* RootNode = Scene->GetRootNode())
+        {
+            InspectMeshContentRecursive(RootNode, Result);
+        }
+    }
+
+    Manager->Destroy();
+    return Result;
 }
 
 bool FFbxImporter::ImportScene(const FString& Path, FbxManager* Manager, FbxScene* Scene)

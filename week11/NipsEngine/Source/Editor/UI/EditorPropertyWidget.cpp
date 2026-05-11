@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -6,6 +6,7 @@
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/BillboardComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/SubUVComponent.h"
@@ -266,6 +267,12 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 		"StaticMesh Component",
 		[](AActor* Actor) -> UActorComponent* {
 			return Actor->AddComponent<UStaticMeshComponent>();
+		}
+	},
+	{
+		"SkeletalMesh Component",
+		[](AActor* Actor) -> UActorComponent* {
+			return Actor->AddComponent<USkeletalMeshComponent>();
 		}
 	},
 	{
@@ -1646,6 +1653,41 @@ void FEditorPropertyWidget::RenderPropertyWidget(FPropertyDescriptor& Prop)
 						}
 					}
 					ImGui::EndCombo();
+				}
+			}
+		}
+		else if (strcmp(Prop.Name, "SkeletalMesh") == 0)
+		{
+			TArray<FString> MeshPaths = FResourceManager::Get().GetSkeletalMeshPaths();
+			if (!MeshPaths.empty())
+			{
+				const FString Current = *Val;
+				if (ImGui::BeginCombo(Prop.Name, Current.empty() ? "<None>" : Current.c_str()))
+				{
+					for (const FString& Path : MeshPaths)
+					{
+						const bool bSelected = (Current == Path);
+						if (ImGui::Selectable(Path.c_str(), bSelected))
+						{
+							*Val = Path;
+							bChanged = true;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+			else
+			{
+				char Buf[256];
+				strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+				if (ImGui::InputText(Prop.Name, Buf, sizeof(Buf)))
+				{
+					*Val = Buf;
+					bChanged = true;
 				}
 			}
 		}
