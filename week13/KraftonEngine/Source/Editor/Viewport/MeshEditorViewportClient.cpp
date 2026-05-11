@@ -226,6 +226,11 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 
 	Rotation *= DeltaTime;
 	ViewTransform.Rotate(Rotation.Y + MouseRotation.Y, Rotation.Z + MouseRotation.Z);
+
+	if (Input.GetKeyUp(VK_SPACE))
+	{
+		Gizmo->SetNextMode();
+	}
 }
 
 void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
