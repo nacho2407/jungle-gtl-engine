@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "AssetEditorWidget.h"
 #include "Editor/Viewport/MeshEditorViewportClient.h"
+#include "Slate/SWindow.h"
 
 struct FSkeletalMesh;
 
@@ -24,6 +25,7 @@ private:
 	void RenderBoneTree(const FSkeletalMesh* Asset, int32 Index);
 
 private:
+	SWindow MeshViewportWindow;
 	FMeshEditorViewportClient ViewportClient;
 
 	int32 SelectedBoneIndex = -1;

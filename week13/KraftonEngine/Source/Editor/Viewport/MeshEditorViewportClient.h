@@ -5,7 +5,7 @@
 #include "Render/Types/ViewTypes.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Mesh/SkeletalMeshAsset.h"
-#include "UI/SWindow.h"
+#include "Editor/Slate/SWindow.h"
 #include "Core/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
 

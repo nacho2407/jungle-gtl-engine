@@ -12,6 +12,7 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Collision/RayUtils.h"
 #include "Settings/EditorSettings.h"
+#include "Slate/SlateApplication.h"
 
 #include <imgui.h>
 
@@ -185,6 +186,8 @@ const FBone* FMeshEditorViewportClient::GetSelectedBone() const
 
 void FMeshEditorViewportClient::TickShortcuts()
 {
+	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this)) return;
+
 	if (InputSystem::Get().GetKeyDown('F'))
 	{
 		if (const FBone* SelectedBone = GetSelectedBone())
@@ -226,6 +229,8 @@ void FMeshEditorViewportClient::TickShortcuts()
 
 void FMeshEditorViewportClient::TickInput(float DeltaTime)
 {
+	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
+
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard) return;
 
 	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;
@@ -276,6 +281,8 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 
 void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 {
+	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this)) return;
+
 	if (!Gizmo || !PreviewWorld) return;
 
 	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;

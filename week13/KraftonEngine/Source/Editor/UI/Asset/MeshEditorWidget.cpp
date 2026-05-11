@@ -10,6 +10,7 @@
 #include "GameFramework/StaticMeshActor.h"
 #include "Settings/EditorSettings.h"
 #include "UI/Toolbar/ViewportToolbar.h"
+#include "Slate/SlateApplication.h"
 
 #include <imgui.h>
 
@@ -55,6 +56,8 @@ void FMeshEditorWidget::Open(UObject* Object)
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 
 	ViewportClient.SetSelectedBone(Cast<USkeletalMesh>(EditedObject), -1);
+
+	FSlateApplication::Get().RegisterViewport(&MeshViewportWindow, &ViewportClient);
 }
 
 void FMeshEditorWidget::Close()
@@ -62,6 +65,8 @@ void FMeshEditorWidget::Close()
 	FAssetEditorWidget::Close();
 
 	GEngine->DestroyWorldContext(FName("MeshEditorPreview"));
+
+	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
 
 	ViewportClient.Release();
 }
@@ -161,6 +166,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		if (VP && Size.x > 0 && Size.y > 0)
 		{
 			VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
+			MeshViewportWindow.SetRect(FRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y));
 
 			if (VP->GetSRV())
 			{

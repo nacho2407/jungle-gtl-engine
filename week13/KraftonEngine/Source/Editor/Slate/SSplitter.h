@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "UI/SWindow.h"
+#include "SWindow.h"
 
 // 분할 방향
 enum class ESplitOrientation : uint8

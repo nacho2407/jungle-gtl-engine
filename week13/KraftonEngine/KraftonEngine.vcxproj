@@ -295,7 +295,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -374,6 +374,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\MeshEditorWidget.cpp" />
@@ -590,8 +591,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClCompile Include="Source\Engine\Runtime\WindowsWindow.cpp" />
     <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
     <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
-    <ClCompile Include="Source\Engine\UI\SSplitter.cpp" />
-    <ClCompile Include="Source\Engine\UI\SWindow.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
     <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
     <ClCompile Include="Source\Engine\UI\UserWidget.cpp" />
     <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
@@ -637,6 +638,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Editor\Settings\EditorViewportSettings.h" />
     <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
     <ClInclude Include="Source\Editor\Settings\ViewportCameraControlSettings.h" />
+    <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
     <ClInclude Include="Source\Editor\UI\Asset\MeshEditorWidget.h" />
@@ -897,9 +899,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"</Command>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
     <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
-    <ClInclude Include="Source\Engine\UI\SSplitter.h" />
-    <ClInclude Include="Source\Engine\UI\SWidget.h" />
-    <ClInclude Include="Source\Engine\UI\SWindow.h" />
+    <ClInclude Include="Source\Editor\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Editor\Slate\SWidget.h" />
+    <ClInclude Include="Source\Editor\Slate\SWindow.h" />
     <ClInclude Include="Source\Engine\UI\UIManager.h" />
     <ClInclude Include="Source\Engine\UI\UserWidget.h" />
     <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h" />

@@ -6,7 +6,7 @@
 #include "Render/Types/POVProvider.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 
-#include "UI/SWindow.h"
+#include "Slate/SWindow.h"
 #include <string>
 #include "Core/RayTypes.h"
 #include "Core/CollisionTypes.h"
