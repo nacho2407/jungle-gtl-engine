@@ -46,6 +46,7 @@ bool FFbxManager::LoadSkeletalMeshAsset(const FString& FilePath, ID3D11Device* I
 	OutMesh->Vertices = std::move(FFbxImporter::Vertices);
 	OutMesh->Indices = std::move(FFbxImporter::Indices);
 	OutMesh->Sections = std::move(FFbxImporter::Sections);
+	OutMesh->MeshRanges = std::move(FFbxImporter::MeshRanges);
 	OutMesh->Bones = std::move(FFbxImporter::Bones);
 
 	return true;

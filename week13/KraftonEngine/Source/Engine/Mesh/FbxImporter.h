@@ -42,6 +42,7 @@ public:
 	static TArray<uint32> Indices;
 	static TArray<FBone> Bones;
 	static TArray<FSkeletalMeshSection> Sections;
+	static TArray<FSkeletalMeshRange> MeshRanges;
 	static TArray<FMaterialInfo> MtlInfos;
 	static TMap<FbxSurfaceMaterial*, int32> MaterialToSlotIndex;
 	static TArray<FSkeletalMaterial> SkeletalMaterials;

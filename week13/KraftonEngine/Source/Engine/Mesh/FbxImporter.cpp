@@ -9,9 +9,53 @@ TArray<FBone> FFbxImporter::Bones;
 TArray<FVertexPNCTBW> FFbxImporter::Vertices;
 TArray<uint32> FFbxImporter::Indices;
 TArray<FSkeletalMeshSection> FFbxImporter::Sections;
+TArray<FSkeletalMeshRange> FFbxImporter::MeshRanges;
 TArray<FFbxImporter::FMaterialInfo> FFbxImporter::MtlInfos;
 TArray<FSkeletalMaterial> FFbxImporter::SkeletalMaterials;
 TMap<FbxSurfaceMaterial*, int32> FFbxImporter::MaterialToSlotIndex;
+
+struct FFbxSkeletalVertexKey
+{
+	int32 ControlPointIndex = -1;
+	float NormalX = 0.0f;
+	float NormalY = 0.0f;
+	float NormalZ = 0.0f;
+	float UVX = 0.0f;
+	float UVY = 0.0f;
+
+	bool operator==(const FFbxSkeletalVertexKey& Other) const
+	{
+		return ControlPointIndex == Other.ControlPointIndex
+			&& NormalX == Other.NormalX
+			&& NormalY == Other.NormalY
+			&& NormalZ == Other.NormalZ
+			&& UVX == Other.UVX
+			&& UVY == Other.UVY;
+	}
+};
+
+namespace std
+{
+template<>
+struct hash<FFbxSkeletalVertexKey>
+{
+	size_t operator()(const FFbxSkeletalVertexKey& Key) const noexcept
+	{
+		size_t Result = std::hash<int32>()(Key.ControlPointIndex);
+		auto Combine = [&Result](size_t Value)
+			{
+				Result ^= Value + 0x9e3779b9 + (Result << 6) + (Result >> 2);
+			};
+
+		Combine(std::hash<float>()(Key.NormalX));
+		Combine(std::hash<float>()(Key.NormalY));
+		Combine(std::hash<float>()(Key.NormalZ));
+		Combine(std::hash<float>()(Key.UVX));
+		Combine(std::hash<float>()(Key.UVY));
+		return Result;
+	}
+};
+}
 
 bool FFbxImporter::Import(const FString& FilePath)
 {
@@ -208,6 +252,7 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 	Vertices.clear();
 	Indices.clear();
 	Sections.clear();
+	MeshRanges.clear();
 
 	for (FbxNode* Node : Nodes)
 	{
@@ -222,6 +267,8 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 		struct WeightData { int32 BoneIndex; float Weight; };
 		TArray<TArray<WeightData>> TempWeights(Mesh->GetControlPointsCount());
+		FMatrix MeshBindGlobal = FMatrix::Identity;
+		bool bHasMeshBindGlobal = false;
 
 		for (int32 i = 0; i < ClusterCount; ++i)
 		{
@@ -236,6 +283,14 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 			int32 BoneIndex = It->second;
 			Bones[BoneIndex].InverseBindPoseMatrix = ConvertFbxMatrix(LinkBindMatrix).GetInverse();
+
+			if (!bHasMeshBindGlobal)
+			{
+				FbxAMatrix MeshBindMatrix;
+				Cluster->GetTransformMatrix(MeshBindMatrix);
+				MeshBindGlobal = ConvertFbxMatrix(MeshBindMatrix);
+				bHasMeshBindGlobal = true;
+			}
 
 			int32* ControlPointIndices = Cluster->GetControlPointIndices();
 			double* ControlPointWeights = Cluster->GetControlPointWeights();
@@ -265,8 +320,9 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 		}
 
 		TMap<int32, TArray<uint32>> SectionIndicesMap;
-
-		FbxAMatrix NodeGlobalTransform = Node->EvaluateGlobalTransform();
+		TMap<FFbxSkeletalVertexKey, uint32> VertexMap;
+		const uint32 VertexStart = (uint32)Vertices.size();
+		const uint32 FirstIndex = (uint32)Indices.size();
 
 		for (int32 i = 0; i < Mesh->GetPolygonCount(); ++i)
 		{
@@ -285,9 +341,7 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 				int32 CPIndex = Mesh->GetPolygonVertex(i, j);
 
 				FbxVector4 CP = Mesh->GetControlPointAt(CPIndex);
-				FbxVector4 WorldCP = NodeGlobalTransform.MultT(CP);
-
-				Vertex.Position = FVector((float)WorldCP[0], (float)WorldCP[1], (float)WorldCP[2]);
+				Vertex.Position = FVector((float)CP[0], (float)CP[1], (float)CP[2]);
 
 				auto& Weights = TempWeights[CPIndex];
 				std::sort(Weights.begin(), Weights.end(), [](const WeightData& A, const WeightData& B)
@@ -305,24 +359,45 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 
 				FbxVector4 Normal;
 				Mesh->GetPolygonVertexNormal(i, j, Normal);
-
-				FbxVector4 WorldNormal = NodeGlobalTransform.MultR(Normal);
-
-				FVector N = FVector((float)WorldNormal[0], (float)WorldNormal[1], (float)WorldNormal[2]);
+				Normal.Normalize();
+				FVector N = FVector((float)Normal[0], (float)Normal[1], (float)Normal[2]);
 				N.Normalize();
 
 				Vertex.Normal = N;
 
 				Vertex.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+				Vertex.UV = FVector2(0.0f, 0.0f);
 
-				FbxVector2 UV;
-				bool bMapped;
-				Mesh->GetPolygonVertexUV(i, j, UVName, UV, bMapped);
-				Vertex.UV = { (float)UV[0], 1.0f - (float)UV[1] };
+				if (UVName)
+				{
+					FbxVector2 UV;
+					bool bUnmappedUV = false;
+					const bool bSuccess = Mesh->GetPolygonVertexUV(i, j, UVName, UV, bUnmappedUV);
+					if (bSuccess && !bUnmappedUV)
+					{
+						Vertex.UV = FVector2((float)UV[0], 1.0f - (float)UV[1]);
+					}
+				}
 
+				FFbxSkeletalVertexKey Key;
+				Key.ControlPointIndex = CPIndex;
+				Key.NormalX = Vertex.Normal.X;
+				Key.NormalY = Vertex.Normal.Y;
+				Key.NormalZ = Vertex.Normal.Z;
+				Key.UVX = Vertex.UV.X;
+				Key.UVY = Vertex.UV.Y;
+
+				auto It = VertexMap.find(Key);
+				if (It != VertexMap.end())
+				{
+					SectionIndicesMap[GlobalMaterialIndex].push_back(It->second);
+					continue;
+				}
+
+				const uint32 NewIndex = (uint32)Vertices.size();
 				Vertices.push_back(Vertex);
-
-				SectionIndicesMap[GlobalMaterialIndex].push_back((uint32)Vertices.size() - 1);
+				VertexMap[Key] = NewIndex;
+				SectionIndicesMap[GlobalMaterialIndex].push_back(NewIndex);
 			}
 		}
 
@@ -350,6 +425,17 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			
 			Indices.insert(Indices.end(), Pair.second.begin(), Pair.second.end());
 			Sections.push_back(Section);
+		}
+
+		FSkeletalMeshRange MeshRange;
+		MeshRange.VertexStart = VertexStart;
+		MeshRange.VertexEnd = (uint32)Vertices.size();
+		MeshRange.FirstIndex = FirstIndex;
+		MeshRange.IndexCount = (uint32)Indices.size() - FirstIndex;
+		MeshRange.MeshBindGlobal = MeshBindGlobal;
+		if (MeshRange.VertexStart < MeshRange.VertexEnd && MeshRange.IndexCount > 0)
+		{
+			MeshRanges.push_back(MeshRange);
 		}
 	}
 }
