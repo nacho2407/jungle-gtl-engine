@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorPropertyWidget.h"
+﻿#include "Editor/UI/EditorPropertyWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
@@ -420,7 +420,6 @@ static const TArray<FComponentMenuEntry> ComponentMenuRegistry = {
 void FEditorPropertyWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
-	SelectionManager = &EditorEngine->GetSelectionManager();
 	ActorSequenceDetails.Initialize(EditorEngine, &bPropertyEditUndoCaptured);
 }
 
@@ -440,10 +439,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 	ImGui::Begin("Details");
 
-	AActor* CurrentSelection = SelectionManager->GetPrimarySelection();
+	const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
+
+	AActor* CurrentSelection = Ctx->SelectionManager->GetPrimarySelection();
 	if (!IsLiveActor(CurrentSelection))
 	{
-		SelectionManager->ClearSelection();
+		Ctx->SelectionManager->ClearSelection();
 		CurrentSelection = nullptr;
 	}
 
@@ -481,7 +482,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	UpdateSelectionState(PrimaryActor);
 
-	const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
+	const TArray<AActor*>& SelectedActors = Ctx->SelectionManager->GetSelectedActors();
 	TArray<AActor*> LockedActorList;
 	const TArray<AActor*>* DisplayActors = &SelectedActors;
 	if (bDetailsLocked)
@@ -530,7 +531,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	// 상단 액터 정보 및 컨트롤 영역
 	RenderActorHeaderRegion(PrimaryActor, *DisplayActors);
 
-	if (!bDetailsLocked && SelectionManager->GetPrimarySelection() == nullptr)
+	if (!bDetailsLocked && Ctx->SelectionManager->GetPrimarySelection() == nullptr)
 	{
 		ImGui::End();
 		return;
@@ -631,6 +632,9 @@ void FEditorPropertyWidget::RenderDetailsLockBar(AActor* CurrentSelection, AActo
 
 void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 {
+    UWorld* World = PrimaryActor->GetFocusedWorld();
+    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+
 	if (PrimaryActor != LastSelectedActor)
 	{
 		SelectedComponent = nullptr;
@@ -638,10 +642,10 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 		bActorSelected = true;
 	}
 
-	if (!bDetailsLocked && SelectionManager)
+	if (!bDetailsLocked && Ctx->SelectionManager)
 	{
-		SelectionManager->ValidateSelection();
-		UActorComponent* ManagerComponent = SelectionManager->GetSelectedComponent();
+		Ctx->SelectionManager->ValidateSelection();
+		UActorComponent* ManagerComponent = Ctx->SelectionManager->GetSelectedComponent();
 		if (IsLiveComponent(ManagerComponent) && ManagerComponent->GetOwner() == PrimaryActor)
 		{
 			SelectedComponent = ManagerComponent;
@@ -657,21 +661,23 @@ void FEditorPropertyWidget::UpdateSelectionState(AActor* PrimaryActor)
 
 void FEditorPropertyWidget::SelectActorForDetails()
 {
+    const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
 	bActorSelected = true;
 	SelectedComponent = nullptr;
-	if (SelectionManager)
+	if (Ctx->SelectionManager)
 	{
-		SelectionManager->ClearComponentSelection();
+		Ctx->SelectionManager->ClearComponentSelection();
 	}
 }
 
 void FEditorPropertyWidget::SelectComponentForDetails(UActorComponent* Component)
 {
+    const FWorldContext* Ctx = EditorEngine->GetFocusedWorldContext();
 	SelectedComponent = Component;
 	bActorSelected = false;
-	if (SelectionManager)
+	if (Ctx->SelectionManager)
 	{
-		SelectionManager->SelectComponent(Component);
+		Ctx->SelectionManager->SelectComponent(Component);
 	}
 }
 
@@ -1033,6 +1039,9 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 		return;
 	}
 
+	UWorld* World = Owner->GetFocusedWorld();
+    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+
 	UActorComponent* ComponentToDelete = SelectedComponent;
 	if (EditorEngine)
 	{
@@ -1040,9 +1049,9 @@ void FEditorPropertyWidget::DeleteSelectedComponent(AActor* Owner)
 	}
 	SelectedComponent = nullptr;
 	bActorSelected = true;
-	if (SelectionManager)
+	if (Ctx->SelectionManager)
 	{
-		SelectionManager->OnComponentDestroyed(ComponentToDelete);
+		Ctx->SelectionManager->OnComponentDestroyed(ComponentToDelete);
 	}
 	Owner->RemoveComponent(ComponentToDelete);
 	if (EditorEngine)
@@ -1095,7 +1104,10 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				{
 					if (Actor) ApplyFunc(Actor, Delta);
 				}
-				EditorEngine->GetGizmo()->UpdateGizmoTransform();
+
+				UWorld* World = PrimaryActor->GetFocusedWorld();
+                const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+				Ctx->SelectionManager->GetGizmo()->UpdateGizmoTransform();
 			}
 		};
 
@@ -1517,8 +1529,10 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	// 프로퍼티 직접 편집 후 월드 행렬 갱신
 	if (SelectedComponent->IsA<USceneComponent>())
 	{
+        UWorld* World = Owner->GetFocusedWorld();
+        const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
-		SelectionManager->GetGizmo()->UpdateGizmoTransform();
+		Ctx->SelectionManager->GetGizmo()->UpdateGizmoTransform();
 	}
 }
 

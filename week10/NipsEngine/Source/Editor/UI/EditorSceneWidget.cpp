@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorSceneWidget.h"
+﻿#include "Editor/UI/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/ProjectSettings.h"
@@ -474,7 +474,8 @@ void FEditorSceneWidget::Render(float DeltaTime)
     ImGui::InputTextWithHint("##OutlinerSearch", "Search actors...", OutlinerSearchText, IM_ARRAYSIZE(OutlinerSearchText));
     ImGui::Separator();
 
-    FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+    FSelectionManager& Selection = *Ctx->SelectionManager;
 
     auto IsActorNameTaken = [&](AActor* TargetActor, const FString& CandidateName)
     {

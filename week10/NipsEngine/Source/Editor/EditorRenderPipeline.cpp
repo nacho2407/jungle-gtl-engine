@@ -301,8 +301,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	if (bDrawEditorViewportHelpers)
     {
         Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus, SceneView.bOrthographic);
-
-        if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
         {
             if (SceneView.bOrthographic)
                 Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
@@ -310,8 +310,8 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
                 Gizmo->ApplyScreenSpaceScaling(SceneView.CameraPosition);
         }
 
-        Collector.CollectGizmo(Editor->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
-        Collector.CollectSelection(Editor->GetSelectionManager().GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
+        Collector.CollectGizmo(Ctx->SelectionManager->GetGizmo(), ShowFlags, Bus, VC->GetViewportState()->bHovered);
+        Collector.CollectSelection(Ctx->SelectionManager->GetSelectedActors(), ShowFlags, ViewMode, Bus, bDrawEditorViewportHelpers);
     }
 
     // 4. CPU 배처 데이터 준비 → GPU 드로우 (SetSubViewport 영역에만 출력됨)
@@ -440,8 +440,8 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
             Settings.GridHalfLineCount,
             Bus,
             SceneView.bOrthographic);
-
-        if (UGizmoComponent* Gizmo = Editor->GetGizmo())
+        const FWorldContext* Ctx = Editor->GetWorldContextFromWorld(World);
+        if (UGizmoComponent* Gizmo = Ctx->SelectionManager->GetGizmo())
         {
             if (SceneView.bOrthographic)
                 Gizmo->ApplyScreenSpaceScalingOrtho(SceneView.CameraOrthoHeight);
@@ -450,13 +450,13 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
         }
 
         Collector.CollectGizmo(
-            Editor->GetGizmo(),
+            Ctx->SelectionManager->GetGizmo(),
             ShowFlags,
             Bus,
             VC->GetViewportState()->bHovered);
 
         Collector.CollectSelection(
-            Editor->GetSelectionManager().GetSelectedActors(),
+            Ctx->SelectionManager->GetSelectedActors(),
             ShowFlags,
             ViewMode,
             Bus,

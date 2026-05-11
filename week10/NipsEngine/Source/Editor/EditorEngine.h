@@ -35,13 +35,12 @@ public:
 	bool CanCloseApplication() override;
 	void WorldTick(float DeltaTime) override;
 
-	UGizmoComponent* GetGizmo() const;
-
 	// 퍼스펙티브 카메라(인덱스 0)를 반환합니다.
 	FViewportCamera* GetCamera();
 	const FViewportCamera* GetCamera() const;
 
 	UWorld* GetFocusedWorld() const;
+    FWorldContext* GetFocusedWorldContext();
 	EViewportPlayState GetEditorState() const;
 	void SetEditorState(EViewportPlayState InState);
 
@@ -61,9 +60,6 @@ public:
 
 	FEditorSettings& GetSettings() { return FEditorSettings::Get(); }
 	const FEditorSettings& GetSettings() const { return FEditorSettings::Get(); }
-
-	FSelectionManager& GetSelectionManager() { return SelectionManager; }
-	const FSelectionManager& GetSelectionManager() const { return SelectionManager; }
 
 	FEditorViewportLayout& GetViewportLayout() { return ViewportLayout; }
 	const FEditorViewportLayout& GetViewportLayout() const { return ViewportLayout; }
@@ -109,8 +105,6 @@ private:
 	bool RestoreSceneSnapshot(const FString& Snapshot);
 	void OnSceneWorldWillUnload(UWorld* OldWorld) override;
 	void OnSceneWorldLoaded(UWorld* NewWorld) override;
-
-	FSelectionManager SelectionManager;
 
 	FEditorMainPanel MainPanel;
 	FEditorViewportLayout ViewportLayout;
