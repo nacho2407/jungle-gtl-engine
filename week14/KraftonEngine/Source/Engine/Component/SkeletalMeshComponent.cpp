@@ -319,6 +319,7 @@ void USkeletalMeshComponent::UpdateCPUSkinning()
 
 				FVector SkinnedPos = FVector::ZeroVector;
 				FVector SkinnedNormal = FVector::ZeroVector;
+				FVector SkinnedTangent = FVector::ZeroVector;
 				float AccumWeight = 0.0f;
 
 				for (int32 k = 0; k < 4; ++k)
@@ -333,6 +334,7 @@ void USkeletalMeshComponent::UpdateCPUSkinning()
 
 					SkinnedPos += M.TransformPositionWithW(Src.Position) * Weight;
 					SkinnedNormal += M.TransformVector(Src.Normal) * Weight;
+					SkinnedTangent += M.TransformVector(FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z)) * Weight;
 					AccumWeight += Weight;
 				}
 
@@ -340,6 +342,7 @@ void USkeletalMeshComponent::UpdateCPUSkinning()
 				{
 					SkinnedPos = MeshBindGlobal.TransformPositionWithW(Src.Position);
 					SkinnedNormal = MeshBindGlobal.TransformVector(Src.Normal);
+					SkinnedTangent = MeshBindGlobal.TransformVector(FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z));
 					if (!SkinnedNormal.IsNearlyZero())
 					{
 						SkinnedNormal.Normalize();
@@ -350,11 +353,20 @@ void USkeletalMeshComponent::UpdateCPUSkinning()
 					SkinnedNormal.Normalize();
 				}
 
+				if (!SkinnedTangent.IsNearlyZero())
+				{
+					SkinnedTangent.Normalize();
+				}
+				else
+				{
+					SkinnedTangent = FVector(1.0f, 0.0f, 0.0f);
+				}
+
 				Dst.Position = SkinnedPos;
 				Dst.Normal = SkinnedNormal;
 				Dst.Color = Src.Color;
 				Dst.UV = Src.UV;
-				Dst.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
+				Dst.Tangent = FVector4(SkinnedTangent, Src.Tangent.W);
 			}
 		};
 

@@ -100,7 +100,7 @@ void FSkeletalMeshSceneProxy::RebuildSectionDraws()
 	for (const FSkeletalMeshSection& Section : Mesh->GetSkeletalMeshAsset()->Sections)
 	{
 		FMeshSectionDraw Draw;
-		Draw.Material = FMaterialManager::Get().GetOrCreateMaterial(Section.MaterialSlotName);
+		Draw.Material = nullptr;
 		Draw.FirstIndex = Section.FirstIndex;
 		Draw.IndexCount = Section.IndexCount;
 
@@ -112,6 +112,11 @@ void FSkeletalMeshSceneProxy::RebuildSectionDraws()
 				Draw.Material = Overrides[i];
 			else if (Slots[i].MaterialInterface)
 				Draw.Material = Slots[i].MaterialInterface;
+		}
+
+		if (!Draw.Material)
+		{
+			Draw.Material = FMaterialManager::Get().GetOrCreateMaterial("None");
 		}
 
 		SectionDraws.push_back(Draw);
