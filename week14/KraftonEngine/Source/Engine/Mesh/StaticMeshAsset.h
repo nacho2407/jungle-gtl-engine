@@ -38,28 +38,28 @@ struct FStaticMeshSection
 struct FStaticMaterial
 {
 	// std::shared_ptr<class UMaterialInterface> MaterialInterface;
-	UMaterial* MaterialInterface;
-	FString MaterialSlotName = "None"; // "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
+	UMaterial* MaterialInterface = nullptr;
+	FString MaterialSlotName = "None";	// "None"은 특별한 슬롯 이름으로, OBJ 파일에서 머티리얼이 지정되지 않은 섹션에 할당됩니다.
+	FString MaterialPath;				// .mat 경로
 
 	friend FArchive& operator<<(FArchive& Ar, FStaticMaterial& Mat)
 	{
 		// 1. 슬롯 이름 직렬화 (메시 섹션과 매핑용)
 		Ar << Mat.MaterialSlotName;
 
-		// 2. Material path serialization (Source of Truth = Asset/Materials/*.mat)
-		FString JsonPath;
+		// 2. Material은 .bin에 직접 저장하지 않고 Asset/Materials/Auto/*.mat 경로만 저장
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			JsonPath = Mat.MaterialInterface->GetAssetPathFileName();
+			Mat.MaterialPath = Mat.MaterialInterface->GetAssetPathFileName();
 		}
-		Ar << JsonPath;
+		Ar << Mat.MaterialPath;
 
 		// 3. 로딩 시 FMaterialManager를 통해 머티리얼 복원
 		if (Ar.IsLoading())
 		{
-			if (!JsonPath.empty())
+			if (!Mat.MaterialPath.empty())
 			{
-				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(Mat.MaterialPath);
 			}
 			else
 			{

@@ -1569,6 +1569,9 @@
     <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h">
       <Filter>Source\Engine\Mesh</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Mesh\MeshBinaryHeader.h">
+      <Filter>Source\Engine\Mesh</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Mesh\ObjImporter.h">
       <Filter>Source\Engine\Mesh</Filter>
     </ClInclude>

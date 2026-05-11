@@ -53,7 +53,6 @@ struct FSkeletalMeshSection
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMeshSection& Section)
 	{
-		Ar << Section.MaterialIndex;
 		Ar << Section.MaterialSlotName;
 		Ar << Section.FirstIndex;
 		Ar << Section.IndexCount;
@@ -65,23 +64,24 @@ struct FSkeletalMaterial
 {
 	UMaterial* MaterialInterface = nullptr;
 	FString MaterialSlotName = "None";
+	FString MaterialPath;
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMaterial& Mat)
 	{
 		Ar << Mat.MaterialSlotName;
 
-		FString JsonPath;
+		// Material은 .bin에 직접 저장하지 않고 Asset/Materials/Auto/*.mat 경로만 저장한다.
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			JsonPath = Mat.MaterialInterface->GetAssetPathFileName();
+			Mat.MaterialPath = Mat.MaterialInterface->GetAssetPathFileName();
 		}
-		Ar << JsonPath;
+		Ar << Mat.MaterialPath;
 
 		if (Ar.IsLoading())
 		{
-			if (!JsonPath.empty())
+			if (!Mat.MaterialPath.empty())
 			{
-				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(JsonPath);
+				Mat.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial(Mat.MaterialPath);
 			}
 			else
 			{
