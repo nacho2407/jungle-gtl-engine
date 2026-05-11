@@ -1,9 +1,10 @@
-#include "PrimitiveDrawCommandBuilder.h"
+﻿#include "PrimitiveDrawCommandBuilder.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/FireballComponent.h"
 #include "Component/HeightFogComponent.h"
 #include "Component/ProceduralMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/StaticMeshComponent.h"
 #include "Component/SubUVComponent.h"
 #include "Component/TextRenderComponent.h"
@@ -111,6 +112,74 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
             Cmd.Material = Material;
 
             Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
+
+            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+        }
+
+        return true;
+    }
+
+    case EPrimitiveType::EPT_SkeletalMesh:
+    {
+        if (!ShowFlags.bPrimitives) return true;
+
+        USkeletalMeshComponent* SkeletalMeshComp = static_cast<USkeletalMeshComponent*>(Primitive);
+        USkeletalMesh* SkeletalMesh = SkeletalMeshComp->GetSkeletalMesh();
+
+        if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData()) return true;
+
+        SkeletalMeshComp->EnsureSkinningUpdated();
+        const bool bNeedsUpload = SkeletalMeshComp->ConsumeRenderStateDirty();
+
+        const TArray<FNormalVertex>& SkinnedVertices = SkeletalMeshComp->GetSkinnedVertices();
+        const TArray<uint32>& Indices = SkeletalMesh->GetIndices(); // 이건 immutable이라 걍 asset에서 들고와도 댐
+
+        FMeshBuffer* MeshBuffer = MeshBufferManager.GetSkeletalMeshBuffer(
+            SkeletalMeshComp->GetUUID(),
+            SkeletalMesh,
+            SkinnedVertices,
+            Indices,
+            bNeedsUpload);
+        if (!MeshBuffer) return true;
+
+        const TArray<FStaticMeshSection>& Sections = SkeletalMesh->GetSections();
+        if (Sections.empty()) // fallback
+        {
+            FRenderCommand Cmd = {};
+            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+            Cmd.SourcePrimitive = Primitive;
+            Cmd.Type = ERenderCommandType::StaticMesh;
+            Cmd.MeshBuffer = MeshBuffer;
+            Cmd.SectionIndexStart = 0;
+            Cmd.SectionIndexCount = MeshBuffer->GetIndexBuffer().GetIndexCount();
+            Cmd.Material = SkeletalMeshComp->GetMaterial(0);
+            Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
+
+            RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
+            return true;
+        }
+
+        for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+        {
+            const FStaticMeshSection& Section = Sections[SectionIdx];
+            if (Section.IndexCount == 0)
+            {
+                continue;
+            }
+
+            UMaterialInterface* Material = Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(SectionIdx));
+
+            FRenderCommand Cmd = {};
+            Cmd.PerObjectConstants = FPerObjectConstants{ Primitive->GetWorldMatrix(), FColor::White().ToVector4() };
+            Cmd.SourcePrimitive = Primitive;
+            Cmd.Type = ERenderCommandType::StaticMesh; // 그리는 것 자체는 CPU Skinning에서는 StaticMesh 그대로 태워도 됨
+            Cmd.MeshBuffer = MeshBuffer;
+
+            Cmd.SectionIndexStart = Section.StartIndex;
+            Cmd.SectionIndexCount = Section.IndexCount;
+            Cmd.Material = Material;
+
+            Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
             RenderBus.AddCommand(ERenderPass::Opaque, Cmd);
         }
