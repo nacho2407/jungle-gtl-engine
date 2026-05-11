@@ -38,6 +38,8 @@ public:
 	UWorld* GetPreviewWorld() const { return PreviewWorld; }
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
+	FViewportRenderOptions& GetRenderOptions() { return RenderOptions; }
+	const FViewportRenderOptions& GetRenderOptions() const { return RenderOptions; }
 
 	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
 

@@ -134,8 +134,8 @@ private:
 	bool UpdateLayoutTransition(float DeltaTime);
 	bool ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate);
 	bool SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const;
-	void RenderSharedGizmoToolbar(float ToolbarLeft, float ToolbarTop);
-	void RenderPaneToolbar(int32 SlotIndex);
+	void RenderSharedViewportToolbar(float ToolbarLeft, float ToolbarTop, float ToolbarWidth);
+	void RenderViewportSlotToolbar(int32 SlotIndex);
 	void HandleViewportContextMenuInput(const FPoint& MousePos);
 	void RenderViewportPlaceActorPopup();
 	bool TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const;

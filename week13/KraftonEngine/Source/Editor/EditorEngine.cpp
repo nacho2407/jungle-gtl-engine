@@ -188,7 +188,7 @@ void UEditorEngine::RenderUI(float DeltaTime)
 
 void UEditorEngine::ToggleCoordSystem()
 {
-	FGizmoToolSettings& Settings = FEditorSettings::Get().LevelViewportGizmoSettings;
+	FGizmoToolSettings& Settings = FEditorSettings::Get().LevelViewportSettings[0].Gizmo;
 	Settings.CoordSystem = (Settings.CoordSystem == EEditorCoordSystem::World)
 		? EEditorCoordSystem::Local
 		: EEditorCoordSystem::World;
@@ -203,7 +203,7 @@ void UEditorEngine::ApplyTransformSettingsToGizmo()
 		return;
 	}
 
-	const FGizmoToolSettings& Settings = FEditorSettings::Get().LevelViewportGizmoSettings;
+	const FGizmoToolSettings& Settings = FEditorSettings::Get().LevelViewportSettings[0].Gizmo;
 	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
 	Gizmo->SetWorldSpace(bForceLocalForScale ? false : (Settings.CoordSystem == EEditorCoordSystem::World));
 	// 에디터 설정의 좌표계/스냅 값을 매 프레임 Gizmo 상태와 동기화한다.

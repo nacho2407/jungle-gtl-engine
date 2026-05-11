@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "EditorViewportSettings.h"
 #include "GizmoToolSettings.h"
 #include "Core/CoreTypes.h"
 #include "Platform/Paths.h"
@@ -14,15 +15,11 @@ class FEditorSettings : public TSingleton<FEditorSettings>
 
 public:
 	// Viewport
-	float CameraSpeed = 10.f;
-	float CameraRotationSpeed = 60.f;
-	float CameraZoomSpeed = 300.f;
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
 
 	// Viewport Layout
 	int32 LayoutType = 0; // EViewportLayout
-	FViewportRenderOptions SlotOptions[4];
 	float SplitterRatios[3] = { 0.5f, 0.5f, 0.5f };
 	int32 SplitterCount = 0;
 
@@ -33,8 +30,8 @@ public:
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
 
-	FGizmoToolSettings LevelViewportGizmoSettings;
-	FGizmoToolSettings MeshEditorViewportGizmoSettings;
+	FEditorViewportSettings LevelViewportSettings[4];
+	FEditorViewportSettings MeshEditorViewportSettings;
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드

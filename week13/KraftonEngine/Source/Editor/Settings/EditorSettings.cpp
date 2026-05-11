@@ -9,6 +9,7 @@ namespace Key
 {
 	// Section
 	constexpr const char* Viewport = "Viewport";
+	constexpr const char* MeshEditorViewport = "MeshEditorViewport";
 	constexpr const char* Paths = "Paths";
 
 	// Viewport
@@ -31,12 +32,20 @@ namespace Key
 	constexpr const char* bFog = "bFog";
 	constexpr const char* bFXAA = "bFXAA";
 	constexpr const char* bGammaCorrection = "bGammaCorrection";
+	constexpr const char* bViewLightCulling = "bViewLightCulling";
+	constexpr const char* bVisualize25DCulling = "bVisualize25DCulling";
 	constexpr const char* bShowShadowFrustum = "bShowShadowFrustum";
 	constexpr const char* bCollision = "bCollision";
+	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
 	constexpr const char* CameraRotateSensitivity = "CameraRotateSensitivity";
+	constexpr const char* SceneDepthVisMode = "SceneDepthVisMode";
+	constexpr const char* Exponent = "Exponent";
+	constexpr const char* Range = "Range";
+	constexpr const char* EdgeThreshold = "EdgeThreshold";
+	constexpr const char* EdgeThresholdMin = "EdgeThresholdMin";
 	constexpr const char* Gamma = "Gamma";
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
@@ -86,6 +95,168 @@ namespace Key
 	constexpr const char* ScaleSnapSize = "ScaleSnapSize";
 }
 
+namespace
+{
+json::JSON SaveCameraControls(const FViewportCameraControlSettings& Camera)
+{
+	using namespace json;
+
+	JSON Obj = Object();
+	Obj[Key::CameraSpeed] = Camera.MoveSpeed;
+	Obj[Key::CameraRotationSpeed] = Camera.RotationSpeed;
+	Obj[Key::CameraZoomSpeed] = Camera.ZoomSpeed;
+	return Obj;
+}
+
+void LoadCameraControls(json::JSON Obj, FViewportCameraControlSettings& Camera)
+{
+	if (Obj.hasKey(Key::CameraSpeed))
+		Camera.MoveSpeed = static_cast<float>(Obj[Key::CameraSpeed].ToFloat());
+	if (Obj.hasKey(Key::CameraRotationSpeed))
+		Camera.RotationSpeed = static_cast<float>(Obj[Key::CameraRotationSpeed].ToFloat());
+	if (Obj.hasKey(Key::CameraZoomSpeed))
+		Camera.ZoomSpeed = static_cast<float>(Obj[Key::CameraZoomSpeed].ToFloat());
+}
+
+json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
+{
+	using namespace json;
+
+	JSON Obj = Object();
+	Obj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
+	Obj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
+	Obj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
+	Obj[Key::bGrid] = Opts.ShowFlags.bGrid;
+	Obj[Key::bWorldAxis] = Opts.ShowFlags.bWorldAxis;
+	Obj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
+	Obj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
+	Obj[Key::bBoundingVolume] = Opts.ShowFlags.bBoundingVolume;
+	Obj[Key::bDebugDraw] = Opts.ShowFlags.bDebugDraw;
+	Obj[Key::bOctree] = Opts.ShowFlags.bOctree;
+	Obj[Key::bFog] = Opts.ShowFlags.bFog;
+	Obj[Key::bFXAA] = Opts.ShowFlags.bFXAA;
+	Obj[Key::bGammaCorrection] = Opts.ShowFlags.bGammaCorrection;
+	Obj[Key::bViewLightCulling] = Opts.ShowFlags.bViewLightCulling;
+	Obj[Key::bVisualize25DCulling] = Opts.ShowFlags.bVisualize25DCulling;
+	Obj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
+	Obj[Key::bCollision] = Opts.ShowFlags.bCollision;
+	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
+	Obj[Key::GridSpacing] = Opts.GridSpacing;
+	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
+	Obj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
+	Obj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
+	Obj[Key::SceneDepthVisMode] = Opts.SceneDepthVisMode;
+	Obj[Key::Exponent] = Opts.Exponent;
+	Obj[Key::Range] = Opts.Range;
+	Obj[Key::EdgeThreshold] = Opts.EdgeThreshold;
+	Obj[Key::EdgeThresholdMin] = Opts.EdgeThresholdMin;
+	Obj[Key::Gamma] = Opts.Gamma;
+	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
+	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
+	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
+	return Obj;
+}
+
+void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
+{
+	if (Obj.hasKey(Key::ViewMode))
+		Opts.ViewMode = static_cast<EViewMode>(Obj[Key::ViewMode].ToInt());
+	if (Obj.hasKey(Key::ViewportType))
+		Opts.ViewportType = static_cast<ELevelViewportType>(Obj[Key::ViewportType].ToInt());
+	if (Obj.hasKey(Key::bPrimitives))
+		Opts.ShowFlags.bPrimitives = Obj[Key::bPrimitives].ToBool();
+	if (Obj.hasKey(Key::bGrid))
+		Opts.ShowFlags.bGrid = Obj[Key::bGrid].ToBool();
+	if (Obj.hasKey(Key::bWorldAxis))
+		Opts.ShowFlags.bWorldAxis = Obj[Key::bWorldAxis].ToBool();
+	if (Obj.hasKey(Key::bGizmo))
+		Opts.ShowFlags.bGizmo = Obj[Key::bGizmo].ToBool();
+	if (Obj.hasKey(Key::bBillboardText))
+		Opts.ShowFlags.bBillboardText = Obj[Key::bBillboardText].ToBool();
+	if (Obj.hasKey(Key::bBoundingVolume))
+		Opts.ShowFlags.bBoundingVolume = Obj[Key::bBoundingVolume].ToBool();
+	if (Obj.hasKey(Key::bDebugDraw))
+		Opts.ShowFlags.bDebugDraw = Obj[Key::bDebugDraw].ToBool();
+	if (Obj.hasKey(Key::bOctree))
+		Opts.ShowFlags.bOctree = Obj[Key::bOctree].ToBool();
+	if (Obj.hasKey(Key::bFog))
+		Opts.ShowFlags.bFog = Obj[Key::bFog].ToBool();
+	if (Obj.hasKey(Key::bFXAA))
+		Opts.ShowFlags.bFXAA = Obj[Key::bFXAA].ToBool();
+	if (Obj.hasKey(Key::bGammaCorrection))
+		Opts.ShowFlags.bGammaCorrection = Obj[Key::bGammaCorrection].ToBool();
+	if (Obj.hasKey(Key::bViewLightCulling))
+		Opts.ShowFlags.bViewLightCulling = Obj[Key::bViewLightCulling].ToBool();
+	if (Obj.hasKey(Key::bVisualize25DCulling))
+		Opts.ShowFlags.bVisualize25DCulling = Obj[Key::bVisualize25DCulling].ToBool();
+	if (Obj.hasKey(Key::bShowShadowFrustum))
+		Opts.ShowFlags.bShowShadowFrustum = Obj[Key::bShowShadowFrustum].ToBool();
+	if (Obj.hasKey(Key::bCollision))
+		Opts.ShowFlags.bCollision = Obj[Key::bCollision].ToBool();
+	if (Obj.hasKey(Key::bShowCollisionShape))
+		Opts.ShowFlags.bShowCollisionShape = Obj[Key::bShowCollisionShape].ToBool();
+	if (Obj.hasKey(Key::GridSpacing))
+		Opts.GridSpacing = static_cast<float>(Obj[Key::GridSpacing].ToFloat());
+	if (Obj.hasKey(Key::GridHalfLineCount))
+		Opts.GridHalfLineCount = Obj[Key::GridHalfLineCount].ToInt();
+	if (Obj.hasKey(Key::CameraMoveSensitivity))
+		Opts.CameraMoveSensitivity = static_cast<float>(Obj[Key::CameraMoveSensitivity].ToFloat());
+	if (Obj.hasKey(Key::CameraRotateSensitivity))
+		Opts.CameraRotateSensitivity = static_cast<float>(Obj[Key::CameraRotateSensitivity].ToFloat());
+	if (Obj.hasKey(Key::SceneDepthVisMode))
+		Opts.SceneDepthVisMode = Obj[Key::SceneDepthVisMode].ToInt();
+	if (Obj.hasKey(Key::Exponent))
+		Opts.Exponent = static_cast<float>(Obj[Key::Exponent].ToFloat());
+	if (Obj.hasKey(Key::Range))
+		Opts.Range = static_cast<float>(Obj[Key::Range].ToFloat());
+	if (Obj.hasKey(Key::EdgeThreshold))
+		Opts.EdgeThreshold = static_cast<float>(Obj[Key::EdgeThreshold].ToFloat());
+	if (Obj.hasKey(Key::EdgeThresholdMin))
+		Opts.EdgeThresholdMin = static_cast<float>(Obj[Key::EdgeThresholdMin].ToFloat());
+	if (Obj.hasKey(Key::Gamma))
+		Opts.Gamma = static_cast<float>(Obj[Key::Gamma].ToFloat());
+	if (Obj.hasKey(Key::LightCullingMode))
+		Opts.LightCullingMode = static_cast<ELightCullingMode>(Obj[Key::LightCullingMode].ToInt());
+	if (Obj.hasKey(Key::HeatMapMax))
+		Opts.HeatMapMax = static_cast<float>(Obj[Key::HeatMapMax].ToFloat());
+	if (Obj.hasKey(Key::Enable25DCulling))
+		Opts.Enable25DCulling = Obj[Key::Enable25DCulling].ToBool();
+}
+
+json::JSON SaveGizmoSettings(const FGizmoToolSettings& Gizmo)
+{
+	using namespace json;
+
+	JSON Obj = Object();
+	Obj[Key::CoordSystem] = static_cast<int32>(Gizmo.CoordSystem);
+	Obj[Key::bEnableTranslationSnap] = Gizmo.bEnableTranslationSnap;
+	Obj[Key::TranslationSnapSize] = Gizmo.TranslationSnapSize;
+	Obj[Key::bEnableRotationSnap] = Gizmo.bEnableRotationSnap;
+	Obj[Key::RotationSnapSize] = Gizmo.RotationSnapSize;
+	Obj[Key::bEnableScaleSnap] = Gizmo.bEnableScaleSnap;
+	Obj[Key::ScaleSnapSize] = Gizmo.ScaleSnapSize;
+	return Obj;
+}
+
+void LoadGizmoSettings(json::JSON Obj, FGizmoToolSettings& Gizmo)
+{
+	if (Obj.hasKey(Key::CoordSystem))
+		Gizmo.CoordSystem = static_cast<EEditorCoordSystem>(Obj[Key::CoordSystem].ToInt());
+	if (Obj.hasKey(Key::bEnableTranslationSnap))
+		Gizmo.bEnableTranslationSnap = Obj[Key::bEnableTranslationSnap].ToBool();
+	if (Obj.hasKey(Key::TranslationSnapSize))
+		Gizmo.TranslationSnapSize = static_cast<float>(Obj[Key::TranslationSnapSize].ToFloat());
+	if (Obj.hasKey(Key::bEnableRotationSnap))
+		Gizmo.bEnableRotationSnap = Obj[Key::bEnableRotationSnap].ToBool();
+	if (Obj.hasKey(Key::RotationSnapSize))
+		Gizmo.RotationSnapSize = static_cast<float>(Obj[Key::RotationSnapSize].ToFloat());
+	if (Obj.hasKey(Key::bEnableScaleSnap))
+		Gizmo.bEnableScaleSnap = Obj[Key::bEnableScaleSnap].ToBool();
+	if (Obj.hasKey(Key::ScaleSnapSize))
+		Gizmo.ScaleSnapSize = static_cast<float>(Obj[Key::ScaleSnapSize].ToFloat());
+}
+}
+
 void FEditorSettings::SaveToFile(const FString& Path) const
 {
 	using namespace json;
@@ -93,10 +264,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON Root = Object();
 
 	// Viewport
-	JSON Viewport = Object();
-	Viewport[Key::CameraSpeed] = CameraSpeed;
-	Viewport[Key::CameraRotationSpeed] = CameraRotationSpeed;
-	Viewport[Key::CameraZoomSpeed] = CameraZoomSpeed;
+	JSON Viewport = SaveCameraControls(LevelViewportSettings[0].CameraControls);
 
 	JSON InitPos = Array(InitViewPos.X, InitViewPos.Y, InitViewPos.Z);
 	Viewport[Key::InitViewPos] = InitPos;
@@ -121,30 +289,8 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	for (int32 i = 0; i < SlotCount; ++i)
 	{
 		JSON SlotObj = Object();
-		const FViewportRenderOptions& Opts = SlotOptions[i];
-		SlotObj[Key::ViewMode] = static_cast<int32>(Opts.ViewMode);
-		SlotObj[Key::ViewportType] = static_cast<int32>(Opts.ViewportType);
-		SlotObj[Key::bPrimitives] = Opts.ShowFlags.bPrimitives;
-		SlotObj[Key::bGrid] = Opts.ShowFlags.bGrid;
-		SlotObj[Key::bWorldAxis] = Opts.ShowFlags.bWorldAxis;
-		SlotObj[Key::bGizmo] = Opts.ShowFlags.bGizmo;
-		SlotObj[Key::bBillboardText] = Opts.ShowFlags.bBillboardText;
-		SlotObj[Key::bBoundingVolume] = Opts.ShowFlags.bBoundingVolume;
-		SlotObj[Key::bDebugDraw] = Opts.ShowFlags.bDebugDraw;
-		SlotObj[Key::bOctree] = Opts.ShowFlags.bOctree;
-		SlotObj[Key::bFog] = Opts.ShowFlags.bFog;
-		SlotObj[Key::bFXAA] = Opts.ShowFlags.bFXAA;
-		SlotObj[Key::bGammaCorrection] = Opts.ShowFlags.bGammaCorrection;
-		SlotObj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
-		SlotObj[Key::bCollision] = Opts.ShowFlags.bCollision;
-		SlotObj[Key::GridSpacing] = Opts.GridSpacing;
-		SlotObj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
-		SlotObj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
-		SlotObj[Key::CameraRotateSensitivity] = Opts.CameraRotateSensitivity;
-		SlotObj[Key::Gamma] = Opts.Gamma;
-		SlotObj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
-		SlotObj[Key::HeatMapMax] = Opts.HeatMapMax;
-		SlotObj[Key::Enable25DCulling] = Opts.Enable25DCulling;
+		const FViewportRenderOptions& Opts = LevelViewportSettings[i].RenderOptions;
+		SlotObj = SaveRenderOptions(Opts);
 		SlotsArr.append(SlotObj);
 	}
 	LayoutObj[Key::Slots] = SlotsArr;
@@ -179,25 +325,15 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	CamObj[Key::FarClip] = PerspCamFarClip;
 	Root[Key::PerspectiveCamera] = CamObj;
 
-	JSON TransformObj = Object();
-	TransformObj[Key::CoordSystem] = static_cast<int32>(LevelViewportGizmoSettings.CoordSystem);
-	TransformObj[Key::bEnableTranslationSnap] = LevelViewportGizmoSettings.bEnableTranslationSnap;
-	TransformObj[Key::TranslationSnapSize] = LevelViewportGizmoSettings.TranslationSnapSize;
-	TransformObj[Key::bEnableRotationSnap] = LevelViewportGizmoSettings.bEnableRotationSnap;
-	TransformObj[Key::RotationSnapSize] = LevelViewportGizmoSettings.RotationSnapSize;
-	TransformObj[Key::bEnableScaleSnap] = LevelViewportGizmoSettings.bEnableScaleSnap;
-	TransformObj[Key::ScaleSnapSize] = LevelViewportGizmoSettings.ScaleSnapSize;
-	Root[Key::TransformTools] = TransformObj;
+	Root[Key::TransformTools] = SaveGizmoSettings(LevelViewportSettings[0].Gizmo);
 
-	JSON MeshEditorTransformObj = Object();
-	MeshEditorTransformObj[Key::CoordSystem] = static_cast<int32>(MeshEditorViewportGizmoSettings.CoordSystem);
-	MeshEditorTransformObj[Key::bEnableTranslationSnap] = MeshEditorViewportGizmoSettings.bEnableTranslationSnap;
-	MeshEditorTransformObj[Key::TranslationSnapSize] = MeshEditorViewportGizmoSettings.TranslationSnapSize;
-	MeshEditorTransformObj[Key::bEnableRotationSnap] = MeshEditorViewportGizmoSettings.bEnableRotationSnap;
-	MeshEditorTransformObj[Key::RotationSnapSize] = MeshEditorViewportGizmoSettings.RotationSnapSize;
-	MeshEditorTransformObj[Key::bEnableScaleSnap] = MeshEditorViewportGizmoSettings.bEnableScaleSnap;
-	MeshEditorTransformObj[Key::ScaleSnapSize] = MeshEditorViewportGizmoSettings.ScaleSnapSize;
-	Root[Key::MeshEditorTransformTools] = MeshEditorTransformObj;
+	JSON MeshEditorViewportObj = SaveRenderOptions(MeshEditorViewportSettings.RenderOptions);
+	JSON MeshEditorCameraObj = SaveCameraControls(MeshEditorViewportSettings.CameraControls);
+	MeshEditorViewportObj[Key::CameraSpeed] = MeshEditorCameraObj[Key::CameraSpeed];
+	MeshEditorViewportObj[Key::CameraRotationSpeed] = MeshEditorCameraObj[Key::CameraRotationSpeed];
+	MeshEditorViewportObj[Key::CameraZoomSpeed] = MeshEditorCameraObj[Key::CameraZoomSpeed];
+	Root[Key::MeshEditorViewport] = MeshEditorViewportObj;
+	Root[Key::MeshEditorTransformTools] = SaveGizmoSettings(MeshEditorViewportSettings.Gizmo);
 
 	// Ensure directory exists
 	std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -233,12 +369,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	{
 		JSON Viewport = Root[Key::Viewport];
 
-		if (Viewport.hasKey(Key::CameraSpeed))
-			CameraSpeed = static_cast<float>(Viewport[Key::CameraSpeed].ToFloat());
-		if (Viewport.hasKey(Key::CameraRotationSpeed))
-			CameraRotationSpeed = static_cast<float>(Viewport[Key::CameraRotationSpeed].ToFloat());
-		if (Viewport.hasKey(Key::CameraZoomSpeed))
-			CameraZoomSpeed = static_cast<float>(Viewport[Key::CameraZoomSpeed].ToFloat());
+		LoadCameraControls(Viewport, LevelViewportSettings[0].CameraControls);
 
 		if (Viewport.hasKey(Key::InitViewPos))
 		{
@@ -284,53 +415,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			for (int32 i = 0; i < static_cast<int32>(SlotsArr.length()) && i < 4; ++i)
 			{
 				JSON S = SlotsArr[i];
-				FViewportRenderOptions& Opts = SlotOptions[i];
-				if (S.hasKey(Key::ViewMode))
-					Opts.ViewMode = static_cast<EViewMode>(S[Key::ViewMode].ToInt());
-				if (S.hasKey(Key::ViewportType))
-					Opts.ViewportType = static_cast<ELevelViewportType>(S[Key::ViewportType].ToInt());
-				if (S.hasKey(Key::bPrimitives))
-					Opts.ShowFlags.bPrimitives = S[Key::bPrimitives].ToBool();
-				if (S.hasKey(Key::bGrid))
-					Opts.ShowFlags.bGrid = S[Key::bGrid].ToBool();
-				if (S.hasKey(Key::bWorldAxis))
-					Opts.ShowFlags.bWorldAxis = S[Key::bWorldAxis].ToBool();
-				if (S.hasKey(Key::bGizmo))
-					Opts.ShowFlags.bGizmo = S[Key::bGizmo].ToBool();
-				if (S.hasKey(Key::bBillboardText))
-					Opts.ShowFlags.bBillboardText = S[Key::bBillboardText].ToBool();
-				if (S.hasKey(Key::bBoundingVolume))
-					Opts.ShowFlags.bBoundingVolume = S[Key::bBoundingVolume].ToBool();
-				if (S.hasKey(Key::bDebugDraw))
-					Opts.ShowFlags.bDebugDraw = S[Key::bDebugDraw].ToBool();
-				if (S.hasKey(Key::bOctree))
-					Opts.ShowFlags.bOctree = S[Key::bOctree].ToBool();
-				if (S.hasKey(Key::bFog))
-					Opts.ShowFlags.bFog = S[Key::bFog].ToBool();
-				if (S.hasKey(Key::bFXAA))
-					Opts.ShowFlags.bFXAA = S[Key::bFXAA].ToBool();
-				if (S.hasKey(Key::bGammaCorrection))
-					Opts.ShowFlags.bGammaCorrection = S[Key::bGammaCorrection].ToBool();
-				if (S.hasKey(Key::bShowShadowFrustum))
-					Opts.ShowFlags.bShowShadowFrustum = S[Key::bShowShadowFrustum].ToBool();
-				if (S.hasKey(Key::bCollision))
-					Opts.ShowFlags.bCollision = S[Key::bCollision].ToBool();
-				if (S.hasKey(Key::GridSpacing))
-					Opts.GridSpacing = static_cast<float>(S[Key::GridSpacing].ToFloat());
-				if (S.hasKey(Key::GridHalfLineCount))
-					Opts.GridHalfLineCount = S[Key::GridHalfLineCount].ToInt();
-				if (S.hasKey(Key::CameraMoveSensitivity))
-					Opts.CameraMoveSensitivity = static_cast<float>(S[Key::CameraMoveSensitivity].ToFloat());
-				if (S.hasKey(Key::CameraRotateSensitivity))
-					Opts.CameraRotateSensitivity = static_cast<float>(S[Key::CameraRotateSensitivity].ToFloat());
-				if (S.hasKey(Key::Gamma))
-					Opts.Gamma = static_cast<float>(S[Key::Gamma].ToFloat());
-				if (S.hasKey(Key::LightCullingMode))
-					Opts.LightCullingMode = static_cast<ELightCullingMode>(S[Key::LightCullingMode].ToInt());
-				if (S.hasKey(Key::HeatMapMax))
-					Opts.HeatMapMax = static_cast<float>(S[Key::HeatMapMax].ToFloat());
-				if (S.hasKey(Key::Enable25DCulling))
-					Opts.Enable25DCulling = S[Key::Enable25DCulling].ToBool();
+				FViewportRenderOptions& Opts = LevelViewportSettings[i].RenderOptions;
+				LoadRenderOptions(S, Opts);
 			}
 		}
 
@@ -393,38 +479,19 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	if (Root.hasKey(Key::TransformTools))
 	{
 		JSON TransformObj = Root[Key::TransformTools];
-		if (TransformObj.hasKey(Key::CoordSystem))
-			LevelViewportGizmoSettings.CoordSystem = static_cast<EEditorCoordSystem>(TransformObj[Key::CoordSystem].ToInt());
-		if (TransformObj.hasKey(Key::bEnableTranslationSnap))
-			LevelViewportGizmoSettings.bEnableTranslationSnap = TransformObj[Key::bEnableTranslationSnap].ToBool();
-		if (TransformObj.hasKey(Key::TranslationSnapSize))
-			LevelViewportGizmoSettings.TranslationSnapSize = static_cast<float>(TransformObj[Key::TranslationSnapSize].ToFloat());
-		if (TransformObj.hasKey(Key::bEnableRotationSnap))
-			LevelViewportGizmoSettings.bEnableRotationSnap = TransformObj[Key::bEnableRotationSnap].ToBool();
-		if (TransformObj.hasKey(Key::RotationSnapSize))
-			LevelViewportGizmoSettings.RotationSnapSize = static_cast<float>(TransformObj[Key::RotationSnapSize].ToFloat());
-		if (TransformObj.hasKey(Key::bEnableScaleSnap))
-			LevelViewportGizmoSettings.bEnableScaleSnap = TransformObj[Key::bEnableScaleSnap].ToBool();
-		if (TransformObj.hasKey(Key::ScaleSnapSize))
-			LevelViewportGizmoSettings.ScaleSnapSize = static_cast<float>(TransformObj[Key::ScaleSnapSize].ToFloat());
+		LoadGizmoSettings(TransformObj, LevelViewportSettings[0].Gizmo);
+	}
+
+	if (Root.hasKey(Key::MeshEditorViewport))
+	{
+		JSON MeshEditorViewportObj = Root[Key::MeshEditorViewport];
+		LoadRenderOptions(MeshEditorViewportObj, MeshEditorViewportSettings.RenderOptions);
+		LoadCameraControls(MeshEditorViewportObj, MeshEditorViewportSettings.CameraControls);
 	}
 
 	if (Root.hasKey(Key::MeshEditorTransformTools))
 	{
 		JSON MeshEditorTransformObj = Root[Key::MeshEditorTransformTools];
-		if (MeshEditorTransformObj.hasKey(Key::CoordSystem))
-			MeshEditorViewportGizmoSettings.CoordSystem = static_cast<EEditorCoordSystem>(MeshEditorTransformObj[Key::CoordSystem].ToInt());
-		if (MeshEditorTransformObj.hasKey(Key::bEnableTranslationSnap))
-			MeshEditorViewportGizmoSettings.bEnableTranslationSnap = MeshEditorTransformObj[Key::bEnableTranslationSnap].ToBool();
-		if (MeshEditorTransformObj.hasKey(Key::TranslationSnapSize))
-			MeshEditorViewportGizmoSettings.TranslationSnapSize = static_cast<float>(MeshEditorTransformObj[Key::TranslationSnapSize].ToFloat());
-		if (MeshEditorTransformObj.hasKey(Key::bEnableRotationSnap))
-			MeshEditorViewportGizmoSettings.bEnableRotationSnap = MeshEditorTransformObj[Key::bEnableRotationSnap].ToBool();
-		if (MeshEditorTransformObj.hasKey(Key::RotationSnapSize))
-			MeshEditorViewportGizmoSettings.RotationSnapSize = static_cast<float>(MeshEditorTransformObj[Key::RotationSnapSize].ToFloat());
-		if (MeshEditorTransformObj.hasKey(Key::bEnableScaleSnap))
-			MeshEditorViewportGizmoSettings.bEnableScaleSnap = MeshEditorTransformObj[Key::bEnableScaleSnap].ToBool();
-		if (MeshEditorTransformObj.hasKey(Key::ScaleSnapSize))
-			MeshEditorViewportGizmoSettings.ScaleSnapSize = static_cast<float>(MeshEditorTransformObj[Key::ScaleSnapSize].ToFloat());
+		LoadGizmoSettings(MeshEditorTransformObj, MeshEditorViewportSettings.Gizmo);
 	}
 }

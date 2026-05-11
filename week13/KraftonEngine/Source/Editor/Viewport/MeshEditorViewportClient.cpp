@@ -190,11 +190,13 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard) return;
 
+	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;
+
 	InputSystem& Input = InputSystem::Get();
 	
 	FVector LocalMove = FVector::ZeroVector;
 	float WorldVerticalMove = 0.0f;
-	float CameraSpeed = 5.0f;
+	float CameraSpeed = ControlSettings.MoveSpeed;
 
 	if (Input.GetKey('W')) LocalMove.X += CameraSpeed;
 	if (Input.GetKey('S')) LocalMove.X -= CameraSpeed;
@@ -214,7 +216,7 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 	FVector Rotation = FVector::ZeroVector;
 
 	FVector MouseRotation = FVector::ZeroVector;
-	float MouseRotationSpeed = 0.15f * 1.0f;
+	float MouseRotationSpeed = 0.15f * ControlSettings.RotationSpeed;
 
 	if (Input.GetKey(VK_RBUTTON))
 	{
@@ -238,12 +240,14 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 {
 	if (!Gizmo || !PreviewWorld) return;
 
+	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;
+
 	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation, ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
 	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
 
 	if (InputSystem::Get().GetGuiInputState().bUsingMouse && !Gizmo->IsHolding()) return;
 
-	const float ZoomSpeed = 300.0f;
+	const float ZoomSpeed = ControlSettings.ZoomSpeed;
 
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
@@ -348,7 +352,7 @@ void FMeshEditorViewportClient::ApplyTransformSettingsToGizmo()
 {
 	if (!Gizmo) return;
 
-	const FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+	const FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
 	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
 
 	Gizmo->SetWorldSpace(bForceLocalForScale ? false : Settings.CoordSystem == EEditorCoordSystem::World);
