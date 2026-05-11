@@ -1,5 +1,6 @@
 ﻿#include "SkeletalMeshComponent.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Mesh/SkeletalMesh.h"
 
 IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
@@ -18,8 +19,14 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 	}
 
 	CacheLocalBounds();
-	MarkRenderStateDirty();
+	// MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
+	/*MarkProxyDirty(EDirtyFlag::Mesh);
+	MarkProxyDirty(EDirtyFlag::Material);*/
+	// 강제로 Update
+	// TODO: 원인 파악 반드시 해야함
+	SceneProxy->UpdateMesh();
+	SceneProxy->UpdateMaterial();
 }
 
 FMeshBuffer* USkeletalMeshComponent::GetMeshBuffer() const
