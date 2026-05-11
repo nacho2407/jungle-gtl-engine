@@ -151,7 +151,7 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
 
     WorldAABB.Reset();
 
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         bBoundsDirty = false;
         return;
@@ -188,10 +188,105 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
 
 bool USkinnedMeshComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
 {
-	// TODO: Skeletal Mesh의 Raycast 구현 필요...
-    (void)Ray;
-    (void)OutHitResult;
-    return false;
+    if (!HasValidMesh())
+    {
+        return false;
+    }
+
+    // 현재 pose 기준 SkinnedVertices가 필요
+    EnsureSkinningUpdated();
+
+    EnsureBoundsUpdated();
+
+    float BoxT = 0.0f;
+    if (!WorldAABB.IntersectRay(Ray, BoxT))
+    {
+        return false;
+    }
+
+    const TArray<FNormalVertex>& Vertices = SkinnedVertices;
+    const TArray<uint32>& Indices = SkeletalMesh->GetIndices();
+
+    if (Vertices.empty() || Indices.empty())
+    {
+        return false;
+    }
+
+    const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+
+    FRay LocalRay = Ray;
+    LocalRay.Origin = InvWorld.TransformPosition(LocalRay.Origin);
+    LocalRay.Direction = InvWorld.TransformVector(LocalRay.Direction);
+    LocalRay.Direction.NormalizeSafe();
+
+    bool bHit = false;
+    float ClosestT = FLT_MAX;
+    int32 BestFaceIndex = -1;
+    FVector BestLocalNormal = FVector::ZeroVector;
+
+    for (uint32 i = 0; i + 2 < static_cast<uint32>(Indices.size()); i += 3)
+    {
+        const uint32 I0 = Indices[i];
+        const uint32 I1 = Indices[i + 1];
+        const uint32 I2 = Indices[i + 2];
+
+        if (I0 >= Vertices.size() || I1 >= Vertices.size() || I2 >= Vertices.size())
+        {
+            continue;
+        }
+
+        const FVector& V0 = Vertices[I0].Position;
+        const FVector& V1 = Vertices[I1].Position;
+        const FVector& V2 = Vertices[I2].Position;
+
+        float HitT = 0.0f;
+        if (IntersectTriangle(LocalRay.Origin, LocalRay.Direction, V0, V1, V2, HitT))
+        {
+            if (HitT < ClosestT)
+            {
+                ClosestT = HitT;
+                bHit = true;
+                BestFaceIndex = static_cast<int32>(i / 3);
+
+                const FVector Edge1 = V1 - V0;
+                const FVector Edge2 = V2 - V0;
+                BestLocalNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
+            }
+        }
+    }
+
+    if (!bHit)
+    {
+        return false;
+    }
+
+    const FVector LocalHitLocation = LocalRay.Origin + LocalRay.Direction * ClosestT;
+    const FVector WorldHitLocation = GetWorldMatrix().TransformPosition(LocalHitLocation);
+
+    FVector WorldNormal = GetWorldMatrix().TransformVector(BestLocalNormal);
+    WorldNormal.NormalizeSafe();
+
+    OutHitResult.bHit = true;
+    OutHitResult.HitComponent = this;
+    OutHitResult.Distance = (WorldHitLocation - Ray.Origin).Size();
+    OutHitResult.Location = WorldHitLocation;
+    OutHitResult.Normal = WorldNormal;
+    OutHitResult.FaceIndex = BestFaceIndex;
+
+    return true;
+}
+
+const FAABB& USkinnedMeshComponent::GetWorldAABB() const
+{
+    UpdateWorldAABB();
+    return WorldAABB;
+}
+
+bool USkinnedMeshComponent::ConsumeRenderStateDirty()
+{
+    const bool bWasDirty = bRenderStateDirty;
+    bRenderStateDirty = false;
+    return bWasDirty;
 }
 
 void USkinnedMeshComponent::EnsureSkinningUpdated()
@@ -206,7 +301,7 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
         return;
     }
 
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         return;
     }
@@ -226,7 +321,7 @@ void USkinnedMeshComponent::InitializePoseFromBindPose()
     CurrentGlobalPose.clear();
     SkinningMatrices.clear();
 
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         return;
     }
@@ -248,7 +343,7 @@ void USkinnedMeshComponent::InitializePoseFromBindPose()
 
 void USkinnedMeshComponent::UpdateCurrentGlobalPose()
 {
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         return;
     }
@@ -278,7 +373,7 @@ void USkinnedMeshComponent::UpdateSkinningMatrices()
 	 * note: CurrentGlobalPose가 이 함수 호출 전에 제대로 구성되어 있어야함에 유의!
 	 */
 
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         return;
     }
@@ -298,7 +393,7 @@ void USkinnedMeshComponent::UpdateSkinningMatrices()
 
 void USkinnedMeshComponent::SkinVerticesCPU()
 {
-    if (!SkeletalMesh || !SkeletalMesh->HasValidMeshData())
+    if (!HasValidMesh())
     {
         SkinnedVertices.clear();
         return;
@@ -375,6 +470,16 @@ void USkinnedMeshComponent::SkinVerticesCPU()
         SkinnedVertices[VertexIndex].UVs = Src.UVs;
         SkinnedVertices[VertexIndex].Tangent = FVector4(SkinnedTangent.X, SkinnedTangent.Y, SkinnedTangent.Z, Src.Tangent.W);
     }
+}
+
+void USkinnedMeshComponent::EnsureBoundsUpdated() const
+{
+    if (!bBoundsDirty && !bTransformDirty)
+    {
+        return;
+    }
+
+    const_cast<USkinnedMeshComponent*>(this)->UpdateWorldAABB();
 }
 
 FNormalVertex USkinnedMeshComponent::ConvertToNormalVertexWithoutSkinning(const FSkeletalMeshVertex& Source) const
