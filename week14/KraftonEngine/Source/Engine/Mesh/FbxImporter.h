@@ -14,6 +14,7 @@ class FFbxImporter
 		FString Name;
 		FVector DiffuseColor;
 		FString TexturePath;
+		FString NormalTexturePath;
 	};
 
 public:

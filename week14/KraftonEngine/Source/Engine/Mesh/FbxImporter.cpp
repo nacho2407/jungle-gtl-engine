@@ -215,6 +215,32 @@ void FFbxImporter::CollectMaterials(FbxScene* Scene)
 			}
 		}
 
+		auto ReadTexturePath = [](const FbxProperty& Property) -> FString
+			{
+				if (!Property.IsValid()) return "";
+
+				int32 TextureCount = Property.GetSrcObjectCount<FbxTexture>();
+				for (int32 TextureIndex = 0; TextureIndex < TextureCount; ++TextureIndex)
+				{
+					FbxFileTexture* Texture = Property.GetSrcObject<FbxFileTexture>(TextureIndex);
+					if (Texture)
+					{
+						return FPaths::MakeProjectRelative(Texture->GetFileName());
+					}
+				}
+
+				return "";
+			};
+
+		FbxProperty NormalProp = Material->FindProperty(FbxSurfaceMaterial::sNormalMap);
+		MatInfo.NormalTexturePath = ReadTexturePath(NormalProp);
+
+		if (MatInfo.NormalTexturePath.empty())
+		{
+			FbxProperty BumpProp = Material->FindProperty(FbxSurfaceMaterial::sBump);
+			MatInfo.NormalTexturePath = ReadTexturePath(BumpProp);
+		}
+
 		int32 GlobalIndex = (int32)MtlInfos.size();
 		MtlInfos.push_back(MatInfo);
 		MaterialToSlotIndex[Material] = GlobalIndex;
@@ -638,6 +664,16 @@ FString FFbxImporter::ConvertToMat(const FMaterialInfo* MaterialInfo)
 		JsonData["Parameters"]["SectionColor"][1] = MaterialInfo->DiffuseColor.Y;
 		JsonData["Parameters"]["SectionColor"][2] = MaterialInfo->DiffuseColor.Z;
 		JsonData["Parameters"]["SectionColor"][3] = 1.0f;
+	}
+
+	if (!MaterialInfo->NormalTexturePath.empty())
+	{
+		JsonData["Textures"]["NormalTexture"] = FPaths::MakeProjectRelative(MaterialInfo->NormalTexturePath);
+		JsonData["Parameters"]["HasNormalMap"] = 1.0f;
+	}
+	else
+	{
+		JsonData["Parameters"]["HasNormalMap"] = 0.0f;
 	}
 
 	std::ofstream File(FPaths::ToWide(MatPath));
