@@ -161,7 +161,25 @@ void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRota
 	const FQuat ComponentWorldQuat = GetWorldMatrix().ToQuat().GetNormalized();
 	const FQuat ComponentWorldQuatInv = ComponentWorldQuat.Inverse();
 
+	const FQuat DesiredComponentLocalQuat = ComponentWorldQuat * NewRotation.ToQuaternion();
 
+	FTransform DesiredGlobal = GlobalTransforms[BoneIndex];
+	DesiredGlobal.Rotation = DesiredComponentLocalQuat.GetNormalized();
+
+	const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+	if (ParentIndex >= 0)
+	{
+		const FMatrix ParentGlobalInv = GlobalTransforms[ParentIndex].ToMatrix().GetInverse();
+		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal.ToMatrix() * ParentGlobalInv);
+	}
+	else
+	{
+		BoneEditLocalTransforms[BoneIndex] = DesiredGlobal;
+	}
+
+	bUseBoneEditPose = true;
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
 }
 
 void USkeletalMeshComponent::SetBoneScaleByIndex(int32 BoneIndex, const FVector& NewScale)
