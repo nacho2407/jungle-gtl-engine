@@ -18,7 +18,7 @@ public:
 
     void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
     USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
-    bool HasValidMesh() const;
+    bool HasValidMesh() const { return SkeletalMesh != nullptr && SkeletalMesh->HasValidMeshData(); }
 
     const TArray<FMatrix>& GetCurrentLocalPose() const { return CurrentLocalPose; }
     const TArray<FMatrix>& GetCurrentGlobalPose() const { return CurrentGlobalPose; }
@@ -29,6 +29,8 @@ public:
 
     void UpdateWorldAABB() const override;
     bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+
+	virtual const FAABB& GetWorldAABB() const;
 
     bool ConsumeRenderStateDirty();
 
@@ -48,8 +50,8 @@ protected:
 	 */
     void SkinVerticesCPU();
 
-    void MarkBoundsDirty();
-    void MarkRenderStateDirty();
+    void MarkBoundsDirty() { bBoundsDirty = true; }
+    void MarkRenderStateDirty() { bRenderStateDirty = true; }
     void EnsureBoundsUpdated() const;
 
 	/**
