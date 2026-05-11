@@ -1,6 +1,8 @@
 ﻿#include "MeshManager.h"
 #include "Mesh/StaticMesh.h"
+#include "Mesh/SkeletalMesh.h"
 #include "Mesh/ObjImporter.h"
+#include "Mesh/FbxImporter.h"
 #include "Materials/Material.h"
 #include "Core/Log.h"
 #include "Serialization/WindowsArchive.h"
@@ -10,8 +12,10 @@
 #include <algorithm>
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
+TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
 TArray<FMeshAssetListItem> FMeshManager::AvailableMeshFiles;
 TArray<FMeshAssetListItem> FMeshManager::AvailableObjFiles;
+TArray<FMeshAssetListItem> FMeshManager::AvailableFbxFiles;
 
 static void EnsureMeshCacheDirExists()
 {
@@ -194,6 +198,36 @@ void FMeshManager::ScanMeshAssets()
 	}
 }
 
+void FMeshManager::ScanFbxSourceFiles()
+{
+	AvailableFbxFiles.clear();
+
+	const std::filesystem::path DataRoot = FPaths::RootDir() + L"Data\\";
+
+	if (!std::filesystem::exists(DataRoot))
+	{
+		return;
+	}
+
+	const std::filesystem::path ProjectRoot(FPaths::RootDir());
+
+	for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataRoot))
+	{
+		if (!Entry.is_regular_file()) continue;
+
+		const std::filesystem::path& Path = Entry.path();
+		std::wstring Ext = Path.extension().wstring();
+
+		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
+		if (Ext != L".fbx") continue;
+
+		FMeshAssetListItem Item;
+		Item.DisplayName = FPaths::ToUtf8(Path.filename().wstring());
+		Item.FullPath = FPaths::ToUtf8(Path.lexically_relative(ProjectRoot).generic_wstring());
+		AvailableFbxFiles.push_back(std::move(Item));
+	}
+}
+
 void FMeshManager::ReleaseAllGPU()
 {
 	for (auto& [Key, Mesh] : StaticMeshCache)
@@ -218,4 +252,47 @@ void FMeshManager::ReleaseAllGPU()
 		}
 	}
 	StaticMeshCache.clear();
+}
+
+
+USkeletalMesh* FMeshManager::LoadSkeletalMesh(const FString& PathFileName, ID3D11Device* InDevice)
+{
+	if (SkeletalMeshCache.find(PathFileName) != SkeletalMeshCache.end())
+	{
+		return SkeletalMeshCache[PathFileName];
+	}
+
+	FSkeletalMesh* SkeletalMeshAsset = nullptr;
+	if (!LoadSkeletalMeshAsset(PathFileName, InDevice, SkeletalMeshAsset))
+	{
+		return nullptr;
+	}
+	USkeletalMesh* SkeletalMesh = new USkeletalMesh();
+	SkeletalMesh->SetSkeletalMaterials(std::move(FFbxImporter::SkeletalMaterials));
+	SkeletalMesh->SetSkeletalMeshAsset(SkeletalMeshAsset);
+
+	SkeletalMesh->InitResources(InDevice);
+
+	SkeletalMeshCache[PathFileName] = SkeletalMesh;
+
+	return SkeletalMesh;
+}
+
+bool FMeshManager::LoadSkeletalMeshAsset(const FString& PathFileName, ID3D11Device* InDevice, FSkeletalMesh*& OutMesh)
+{
+	if (!FFbxImporter::Import(PathFileName))
+	{
+		//UE_LOG("Failed to import FBX file: %s", FilePath.c_str());
+		return false;
+	}
+
+	OutMesh = new FSkeletalMesh();
+	OutMesh->PathFileName = PathFileName;
+	OutMesh->Vertices = std::move(FFbxImporter::Vertices);
+	OutMesh->Indices = std::move(FFbxImporter::Indices);
+	OutMesh->Sections = std::move(FFbxImporter::Sections);
+	OutMesh->MeshRanges = std::move(FFbxImporter::MeshRanges);
+	OutMesh->Bones = std::move(FFbxImporter::Bones);
+
+	return true;
 }

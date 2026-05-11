@@ -28,7 +28,6 @@
 #include "Lua/LuaScriptManager.h"
 #include <filesystem>
 
-#include "Mesh/FbxManager.h"
 #include "Mesh/SkeletalMesh.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UEngine)
@@ -65,8 +64,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	}
 
 	{
-		SCOPE_STARTUP_STAT("FbxManager::ScanFbxSourceFiles");
-		FFbxManager::ScanFbxSourceFiles();
+		SCOPE_STARTUP_STAT("MeshManager::ScanFbxSourceFiles");
+		FMeshManager::ScanFbxSourceFiles();
 	}
 
 	{

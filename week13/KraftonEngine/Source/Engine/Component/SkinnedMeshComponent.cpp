@@ -2,7 +2,7 @@
 #include "Mesh/SkeletalMesh.h"
 #include "Serialization/Archive.h"
 #include "Runtime/Engine.h"
-#include "Mesh/FbxManager.h"
+#include "Mesh/MeshManager.h"
 #include <Core/Log.h>
 
 IMPLEMENT_CLASS(USkinnedMeshComponent, UMeshComponent)
@@ -138,7 +138,7 @@ void USkinnedMeshComponent::PostDuplicate()
 	if (!SkeletalMeshPath.empty() && SkeletalMeshPath != "None")
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		USkeletalMesh* Loaded = FFbxManager::LoadFbxSkeletalMesh(SkeletalMeshPath, Device);
+		USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(SkeletalMeshPath, Device);
 		if (Loaded)
 		{
 			TArray<FMaterialSlot> SavedSlots = MaterialSlots;
@@ -196,7 +196,7 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 		if (!SkeletalMeshPath.empty() && SkeletalMeshPath != "None")
 		{
 			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-			USkeletalMesh* Loaded = FFbxManager::LoadFbxSkeletalMesh(SkeletalMeshPath, Device);
+			USkeletalMesh* Loaded = FMeshManager::LoadSkeletalMesh(SkeletalMeshPath, Device);
 
 			SetSkeletalMesh(Loaded);
 		}
