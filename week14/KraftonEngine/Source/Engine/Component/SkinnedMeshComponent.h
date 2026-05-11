@@ -12,7 +12,7 @@ public:
 	USkinnedMeshComponent() = default;
 	~USkinnedMeshComponent() override = default;
 
-	void SetSkeletalMesh(USkeletalMesh* InMesh);
+	virtual void SetSkeletalMesh(USkeletalMesh* InMesh);
 	USkeletalMesh* GetSkeletalMesh() const;
 	void UpdateWorldAABB() const override;
 
