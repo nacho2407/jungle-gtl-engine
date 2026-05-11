@@ -28,6 +28,7 @@
 class FMaterialLoadService;
 class FMaterialSerializationService;
 class FStaticMeshLoadService;
+class FFbxMaterialLoadService;
 
 // 리소스를 관리하는 싱글턴.
 class FResourceManager : public TSingleton<FResourceManager>
@@ -36,6 +37,7 @@ class FResourceManager : public TSingleton<FResourceManager>
 	friend class FMaterialLoadService;
 	friend class FMaterialSerializationService;
 	friend class FStaticMeshLoadService;
+	friend class FFbxMaterialLoadService;
 
 public:
 	void SetCachedDevice(ID3D11Device* Device) { CachedDevice = Device; }

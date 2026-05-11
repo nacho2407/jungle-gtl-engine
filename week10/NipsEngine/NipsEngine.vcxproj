@@ -625,6 +625,7 @@
     <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Guid.cpp" />
+    <ClCompile Include="Source\Engine\Core\FbxMaterialLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\MaterialLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\MaterialResourceCache.cpp" />
@@ -718,6 +719,7 @@
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ComputeShader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\FbxMaterialLoader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\ObjMtlLoader.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Shader.cpp" />
@@ -932,6 +934,7 @@
     <ClInclude Include="Source\Engine\Core\Delegates\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
     <ClInclude Include="Source\Engine\Core\Guid.h" />
+    <ClInclude Include="Source\Engine\Core\FbxMaterialLoadService.h" />
     <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h" />
     <ClInclude Include="Source\Engine\Core\MaterialLoadService.h" />
     <ClInclude Include="Source\Engine\Core\MaterialResourceCache.h" />
@@ -1044,6 +1047,7 @@
     <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ComputeShader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\Material.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\FbxMaterialLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
     <ClInclude Include="Source\Engine\Render\Resource\ObjMtlLoader.h" />
     <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />

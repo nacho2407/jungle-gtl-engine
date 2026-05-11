@@ -1,5 +1,6 @@
 #include "Core/MaterialLoadService.h"
 
+#include "Core/FbxMaterialLoadService.h"
 #include "Core/ImportedMaterialPolicy.h"
 #include "Core/Logging/Log.h"
 #include "Core/Paths.h"
@@ -45,6 +46,13 @@ bool FMaterialLoadService::Load(const FString& MtlFilePath, const FString& Shade
 		}
 
 		return bLoadedMaterial;
+	}
+
+	if (RequestedExtension == L".fbx")
+	{
+		// FBX는 내장 surface material을 가지므로 별도 서비스로 위임.
+		// (OBJ→MTL 같은 사이드카 파일 분리 단계 불필요)
+		return FFbxMaterialLoadService(ResourceManager).Load(NormalizedMtlFilePath, ShaderName, Device);
 	}
 
 	UShader* Shader = ResourceManager.GetShader(ShaderName);
