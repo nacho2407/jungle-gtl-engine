@@ -1,0 +1,17 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Asset/Materials/Auto/KON001_Hirasawa_Yui_face.003.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "C:\\Users\\jungle\\Downloads\\hirasawa-yui---fbx\\source\\hirasawa_yui___fbx_3d_model_by_azureberylblue_dewaxk9\\KON001_Hirasawa_Yui_UGC\\KON001_Hirasawa_Yui.png"
+  }
+}
