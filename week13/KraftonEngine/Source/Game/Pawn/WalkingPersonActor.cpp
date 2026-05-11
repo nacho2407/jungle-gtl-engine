@@ -7,7 +7,7 @@
 #include "GameFramework/TriggerVolumeBase.h"
 #include "GameFramework/World.h"
 #include "Game/GameState/GameStateCarGame.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Core/CollisionTypes.h"
@@ -41,7 +41,7 @@ void AWalkingPersonActor::InitDefaultComponents(const FString& StaticMeshFileNam
 	if (GEngine)
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		if (UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device))
+		if (UStaticMesh* Asset = FMeshManager::LoadStaticMesh(StaticMeshFileName, Device))
 			Mesh->SetStaticMesh(Asset);
 	}
 

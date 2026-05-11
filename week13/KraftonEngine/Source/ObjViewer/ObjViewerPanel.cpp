@@ -5,7 +5,7 @@
 #include "Engine/Runtime/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
 #include "Render/Pipeline/Renderer.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Viewport/Viewport.h"
 
 #include "ImGui/imgui.h"
@@ -77,7 +77,7 @@ void FObjViewerPanel::RenderMeshList()
 	// OBJ Files 섹션
 	if (ImGui::CollapsingHeader("OBJ Files", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+		const TArray<FMeshAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
 
 		for (int32 i = 0; i < static_cast<int32>(ObjFiles.size()); ++i)
 		{
@@ -105,7 +105,7 @@ void FObjViewerPanel::RenderMeshList()
 	// Cached Meshes (.bin) 섹션
 	if (ImGui::CollapsingHeader("Cached Meshes (.bin)", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		const TArray<FMeshAssetListItem>& MeshFiles = FObjManager::GetAvailableMeshFiles();
+		const TArray<FMeshAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
 
 		for (int32 i = 0; i < static_cast<int32>(MeshFiles.size()); ++i)
 		{
@@ -172,7 +172,7 @@ void FObjViewerPanel::RenderImportPopup()
 		// Import / Cancel 버튼
 		if (ImGui::Button("Import", ImVec2(120, 0)))
 		{
-			const TArray<FMeshAssetListItem>& ObjFiles = FObjManager::GetAvailableObjFiles();
+			const TArray<FMeshAssetListItem>& ObjFiles = FMeshManager::GetAvailableObjFiles();
 			if (Engine && SelectedObjIndex >= 0 && SelectedObjIndex < static_cast<int32>(ObjFiles.size()))
 			{
 				Engine->ImportObjWithOptions(ObjFiles[SelectedObjIndex].FullPath, PendingImportOptions);

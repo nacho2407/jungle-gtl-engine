@@ -19,7 +19,7 @@
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
 #include "Object/ObjectFactory.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Core/ProjectSettings.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
@@ -60,8 +60,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	FEngineInitHooks::RunAll();
 
 	{
-		SCOPE_STARTUP_STAT("ObjManager::ScanMeshAssets");
-		FObjManager::ScanMeshAssets();
+		SCOPE_STARTUP_STAT("MeshManager::ScanMeshAssets");
+		FMeshManager::ScanMeshAssets();
 	}
 
 	{

@@ -7,7 +7,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/PlayerCameraManager.h"
 #include "GameFramework/PlayerController.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "GameFramework/World.h"
 #include "Math/Rotator.h"
 #include "Core/CollisionTypes.h"
@@ -42,7 +42,7 @@ void AMeteor::InitDefaultComponents(const FString& StaticMeshFileName)
 	if (GEngine)
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		if (UStaticMesh* Asset = FObjManager::LoadObjStaticMesh(StaticMeshFileName, Device))
+		if (UStaticMesh* Asset = FMeshManager::LoadStaticMesh(StaticMeshFileName, Device))
 			Mesh->SetStaticMesh(Asset);
 		Mesh->SetRelativeScale(FVector(5.0f, 5.0f, 5.0f));
 	}

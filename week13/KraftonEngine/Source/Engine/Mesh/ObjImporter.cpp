@@ -3,7 +3,7 @@
 #include "Materials/Material.h"
 #include "Core/Log.h"
 #include "Engine/Platform/Paths.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "SimpleJSON/json.hpp"
 #include "Materials/MaterialManager.h"
 #include <algorithm>

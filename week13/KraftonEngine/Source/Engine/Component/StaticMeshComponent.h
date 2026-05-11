@@ -2,7 +2,7 @@
 
 #include "Component/MeshComponent.h"
 #include "Core/PropertyTypes.h"
-#include "Mesh/ObjManager.h"
+#include "Mesh/MeshManager.h"
 #include "Mesh/StaticMesh.h"
 
 class UMaterial;

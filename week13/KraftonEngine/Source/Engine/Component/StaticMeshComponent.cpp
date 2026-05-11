@@ -231,7 +231,7 @@ void UStaticMeshComponent::PostDuplicate()
 	if (!StaticMeshPath.empty() && StaticMeshPath != "None")
 	{
 		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+		UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(StaticMeshPath, Device);
 		if (Loaded)
 		{
 			// SetStaticMesh는 MaterialSlots를 덮어쓰므로, 직렬화된 슬롯 정보를 백업·복원한다.
@@ -290,7 +290,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		else
 		{
 			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-			UStaticMesh* Loaded = FObjManager::LoadObjStaticMesh(StaticMeshPath, Device);
+			UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(StaticMeshPath, Device);
 			SetStaticMesh(Loaded);
 		}
 		CacheLocalBounds();
