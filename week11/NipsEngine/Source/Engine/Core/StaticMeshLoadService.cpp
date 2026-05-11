@@ -57,7 +57,13 @@ UStaticMesh* FStaticMeshLoadService::Load(const FString& Path)
 		return LoadBinaryDrop(NormalizedPath);
 	}
 
-	return LoadObjOrCachedBinary(NormalizedPath);
+	if (RequestedExt == L".obj" || RequestedExt == L".fbx")
+	{
+		return LoadSourceOrCachedBinary(NormalizedPath);
+	}
+
+	UE_LOG_WARNING("[StaticMeshLoad] Unsupported mesh extension | Path=%s", NormalizedPath.c_str());
+	return nullptr;
 }
 
 UStaticMesh* FStaticMeshLoadService::LoadMissingObjBinaryFallback(const FString& RequestedPath, const FString& BinaryPath)
@@ -71,6 +77,26 @@ UStaticMesh* FStaticMeshLoadService::LoadMissingObjBinaryFallback(const FString&
 		RequestedPath.c_str(),
 		BinaryPath.c_str());
 	return ResourceManager.LoadStaticMesh(BinaryPath);
+}
+
+UStaticMesh* FStaticMeshLoadService::FinalizeLoadedMesh(
+	FStaticMesh* MeshData,
+	const FString& ResolvePath,
+	const FString& PrimaryCacheKey,
+	const FString& SecondaryCacheKey,
+	bool bLogLodTiming,
+	bool bLogLodSkipped)
+{
+	ResourceManager.ResolveStaticMeshMaterialSlots(ResolvePath, MeshData);
+	UStaticMesh* LoadedMesh = ResourceManager.CreateStaticMeshFromLoadedData(
+		MeshData, PrimaryCacheKey, bLogLodTiming, bLogLodSkipped);
+
+	ResourceManager.StaticMeshCache.RegisterLoaded(PrimaryCacheKey, LoadedMesh);
+	if (!SecondaryCacheKey.empty() && SecondaryCacheKey != PrimaryCacheKey)
+	{
+		ResourceManager.StaticMeshCache.RegisterLoaded(SecondaryCacheKey, LoadedMesh);
+	}
+	return LoadedMesh;
 }
 
 UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPath)
@@ -99,15 +125,13 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 		}
 	}
 
-	ResourceManager.ResolveStaticMeshMaterialSlots(SourcePath.empty() ? NormalizedPath : SourcePath, LoadedMeshData);
-
-	UStaticMesh* LoadedMesh = ResourceManager.CreateStaticMeshFromLoadedData(LoadedMeshData, NormalizedPath, false, false);
-
-	ResourceManager.StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
-	if (!SourcePath.empty())
-	{
-		ResourceManager.StaticMeshCache.RegisterLoaded(SourcePath, LoadedMesh);
-	}
+	UStaticMesh* LoadedMesh = FinalizeLoadedMesh(
+		LoadedMeshData,
+		SourcePath.empty() ? NormalizedPath : SourcePath,  // ResolvePath
+		NormalizedPath,                                    // PrimaryCacheKey (= .bin path)
+		SourcePath,                                        // SecondaryCacheKey (empty면 skip)
+		/*bLogLodTiming=*/ false,
+		/*bLogLodSkipped=*/ false);
 
 	const auto BinaryEnd = std::chrono::steady_clock::now();
 	const double BinaryLoadSec = std::chrono::duration<double>(BinaryEnd - BinaryStart).count();
@@ -118,7 +142,7 @@ UStaticMesh* FStaticMeshLoadService::LoadBinaryDrop(const FString& NormalizedPat
 	return LoadedMesh;
 }
 
-UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& NormalizedPath)
+UStaticMesh* FStaticMeshLoadService::LoadSourceOrCachedBinary(const FString& NormalizedPath)
 {
 	ResourceManager.LoadMaterial(NormalizedPath, "Shaders/UberLit.hlsl");
 
@@ -171,8 +195,8 @@ UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& Normal
 			return nullptr;
 		}
 
-		ResourceManager.ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
-
+		// Binary serialize는 SlotName만 쓰고 Material* 포인터는 안 쓰므로,
+		// resolve는 최종 단계(FinalizeLoadedMesh)에서 한 번만 하면 됨.
 		const bool bSaveBinaryOk = ResourceManager.BinarySerializer.SaveStaticMesh(BinaryPath, NormalizedPath, *LoadedMeshData);
 		if (bSaveBinaryOk)
 		{
@@ -204,11 +228,13 @@ UStaticMesh* FStaticMeshLoadService::LoadObjOrCachedBinary(const FString& Normal
 			BinaryPath.c_str());
 	}
 
-	ResourceManager.ResolveStaticMeshMaterialSlots(NormalizedPath, LoadedMeshData);
-
-	UStaticMesh* LoadedMesh = ResourceManager.CreateStaticMeshFromLoadedData(LoadedMeshData, NormalizedPath, true, true);
-
-	ResourceManager.StaticMeshCache.RegisterLoaded(NormalizedPath, LoadedMesh);
+	UStaticMesh* LoadedMesh = FinalizeLoadedMesh(
+		LoadedMeshData,
+		NormalizedPath,
+		NormalizedPath,
+		/*SecondaryCacheKey=*/ FString{},
+		/*bLogLodTiming=*/ true,
+		/*bLogLodSkipped=*/ true);
 
 	return LoadedMesh;
 }
