@@ -9,7 +9,7 @@
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/StaticMeshActor.h"
 #include "Settings/EditorSettings.h"
-#include "UI/Toolbar/GizmoToolbar.h"
+#include "UI/Toolbar/ViewportToolbar.h"
 
 #include <imgui.h>
 
@@ -166,17 +166,19 @@ void FMeshEditorWidget::Render(float DeltaTime)
 				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
 			}
 
-			FGizmoToolbarContext Context;
+			FViewportToolbarContext Context;
 			Context.Renderer = &GEngine->GetRenderer();
 			Context.Gizmo = ViewportClient.GetGizmo();
-			Context.Settings = &FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+			Context.Settings = &FEditorSettings::Get().MeshEditorViewportSettings;
+			Context.RenderOptions = &ViewportClient.GetRenderOptions();
 			Context.ToolbarLeft = ViewportPos.x;
 			Context.ToolbarTop = ViewportPos.y;
+			Context.ToolbarWidth = Size.x;
 			Context.bReservePlayStopSpace = false;
 			Context.bShowAddActor = false;
 			Context.OnCoordSystemToggled = [&]()
 			{
-				FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportGizmoSettings;
+				FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
 				Settings.CoordSystem = (Settings.CoordSystem == EEditorCoordSystem::World) ? EEditorCoordSystem::Local : EEditorCoordSystem::World;
 
 				ViewportClient.ApplyTransformSettingsToGizmo();
@@ -186,7 +188,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 				ViewportClient.ApplyTransformSettingsToGizmo();
 			};
 
-			FGizmoToolbar::Render(Context);
+			FViewportToolbar::Render(Context);
 		}
 	}
 	ImGui::EndGroup();

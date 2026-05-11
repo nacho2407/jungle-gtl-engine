@@ -370,12 +370,7 @@ void FEditorRenderPipeline::RenderMeshViewport(FMeshEditorViewportClient* VC, FR
 	Frame.SetCameraInfo(POV);
 	Frame.WorldType = World->GetWorldType();
 
-	FViewportRenderOptions Opts;
-	Opts.ViewMode = EViewMode::Lit_Phong;
-	Opts.ShowFlags.bGrid = false;
-	Opts.ShowFlags.bBillboardText = false;
-	Opts.ShowFlags.bBoundingVolume = false;
-	Frame.SetRenderOptions(Opts);
+	Frame.SetRenderOptions(VC->GetRenderOptions());
 
 	FScene& Scene = World->GetScene();
 	Scene.ClearFrameData();

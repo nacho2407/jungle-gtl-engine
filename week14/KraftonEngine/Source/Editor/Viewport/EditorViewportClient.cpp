@@ -384,7 +384,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const bool bIsOrtho = ViewTransform.bIsOrtho;
 
 	const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
-	const float CameraSpeed = (Settings ? Settings->CameraSpeed : 10.f) * MoveSensitivity;
+	const float CameraSpeed = (Settings ? Settings->LevelViewportSettings[0].CameraControls.MoveSpeed : 10.f) * MoveSensitivity;
 	const float PanMouseScale = CameraSpeed * 0.01f;
 
 	if (!bIsOrtho)
@@ -431,7 +431,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		FVector Rotation = FVector(0, 0, 0);
 
 		const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
-		const float AngleVelocity = (Settings ? Settings->CameraRotationSpeed : 60.f) * RotateSensitivity;
+		const float AngleVelocity = (Settings ? Settings->LevelViewportSettings[0].CameraControls.RotationSpeed : 60.f) * RotateSensitivity;
 		if (Input.GetKey(VK_UP))
 			Rotation.Z -= AngleVelocity;
 		if (Input.GetKey(VK_LEFT))
@@ -514,7 +514,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	const float ZoomSpeed = Settings ? Settings->CameraZoomSpeed : 300.f;
+	const float ZoomSpeed = Settings ? Settings->LevelViewportSettings[0].CameraControls.ZoomSpeed : 300.f;
 
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
