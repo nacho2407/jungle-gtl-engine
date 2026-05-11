@@ -14,6 +14,7 @@
 #include "GameFramework/World.h"
 #include "Runtime/Script/ScriptManager.h"
 #include "Serialization/SceneSaveManager.h"
+#include "Editor/Selection/SelectionManager.h"
 
 #include <chrono>
 #include <filesystem>
@@ -310,6 +311,8 @@ FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle,
 	Context.ContextHandle = Handle;
 	Context.ContextName = Name.empty() ? Handle.ToString() : Name;
 	Context.World = UObjectManager::Get().CreateObject<UWorld>();
+    Context.SelectionManager = new FSelectionManager;
+    Context.SelectionManager->Init();
 	if (Context.World)
 	{
 		Context.World->SetWorldType(Type);
@@ -323,7 +326,8 @@ void UEngine::DestroyWorldContext(const FName& Handle)
 	for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
 	{
 		if (it->ContextHandle == Handle)
-		{
+        {
+            it->SelectionManager->Shutdown();
 			it->World->EndPlay(EEndPlayReason::Type::Destroyed);
 			UObjectManager::Get().DestroyObject(it->World);
 			WorldList.erase(it);

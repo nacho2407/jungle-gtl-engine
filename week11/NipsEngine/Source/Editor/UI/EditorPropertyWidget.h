@@ -63,7 +63,6 @@ private:
 	void RenderEditableName(const char* Label, T* TargetObject, bool* bFocusNextFrame = nullptr);
 
 	// 멤버 변수
-	FSelectionManager* SelectionManager  = nullptr;
 	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;
 	AActor* LockedDetailsActor = nullptr;

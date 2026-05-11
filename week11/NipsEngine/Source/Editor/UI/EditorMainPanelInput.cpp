@@ -70,7 +70,7 @@ void FEditorMainPanel::Update()
                 (std::strcmp(HoveredName, "Viewport") == 0)
                 || (std::strncmp(HoveredName, "Viewport###", 11) == 0)
                 || (std::strcmp(HoveredName, "Viewer") == 0)
-                || (std::strncmp(HoveredName, "Viewer###", 9) == 0);
+                || (std::strncmp(HoveredName, "Viewer/ViewportPanel###", 9) == 0);
             bHoveredNonViewportWindow = !bHoveredViewportContentWindow;
         }
     }

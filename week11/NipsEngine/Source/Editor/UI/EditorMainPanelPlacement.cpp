@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 #include "Editor/UI/EditorMainPanelPlacementHelpers.h"
 
 #include "Editor/EditorEngine.h"
@@ -120,8 +120,9 @@ bool FEditorMainPanel::SpawnStaticMeshFromContentPath(
         StaticMeshComp->SetStaticMesh(Mesh);
     }
 
+	const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
     Layout.SetLastFocusedViewportIndex(ViewportIndex);
-    EditorEngine->GetSelectionManager().Select(Actor);
+    Ctx->SelectionManager->Select(Actor);
     Widgets.SceneWidget.MarkSceneDirty();
     PushFooterLog("StaticMesh actor placed from Content Browser");
     return true;
@@ -172,7 +173,8 @@ bool FEditorMainPanel::SpawnPrefabFromContentPath(
     Actor->SetActorLocation(FEditorMainPanelPlacementHelpers::ComputePlacementLocation(Client, LocalX, LocalY));
     World->SyncSpatialIndex();
     Layout.SetLastFocusedViewportIndex(ViewportIndex);
-    EditorEngine->GetSelectionManager().Select(Actor);
+    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(Client->GetFocusedWorld());
+    Ctx->SelectionManager->Select(Actor);
     Widgets.SceneWidget.MarkSceneDirty();
     PushFooterLog("Prefab actor placed from Content Browser");
     return true;
@@ -210,7 +212,8 @@ bool FEditorMainPanel::SpawnPrefabAtOrigin(const FString& PayloadPath)
 
     Actor->SetActorLocation(FVector::ZeroVector);
     World->SyncSpatialIndex();
-    EditorEngine->GetSelectionManager().Select(Actor);
+    const FWorldContext* Ctx = EditorEngine->GetWorldContextFromWorld(World);
+    Ctx->SelectionManager->Select(Actor);
     Widgets.SceneWidget.MarkSceneDirty();
     PushFooterLog("Prefab actor placed at origin");
     return true;

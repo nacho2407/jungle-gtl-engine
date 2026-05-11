@@ -175,8 +175,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
     }
 
     // Selection & Gizmo
-    SelectionManager.Init();
-    ViewportLayout.Init(InWindow, GetWorld(), &SelectionManager, this);
+    const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+    ViewportLayout.Init(InWindow, Context->World, Context->SelectionManager, this);
     GetFocusedWorld()->SetActiveCamera(GetCamera());
 
     // Slate 초기화 및 Viewport Layout 추가
@@ -191,6 +191,7 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	FScriptManager::Get().initializeLuaState();
 
     // Viewer용 별도 월드 생성
+    /*
     FWorldContext& ViewerCtx = CreateWorldContext(EWorldType::ViewerPreview, FName("ViewerPreview"), "Viewer Preview");
     ApplySpatialIndexMaintenanceSettings(ViewerCtx.World);
     SpawnDefaultSceneActors(ViewerCtx.World);
@@ -203,7 +204,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
         TestActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
     }
 
-	Viewer.Init(Window, this, ViewerCtx.World, &SelectionManager);
+	Viewer.Init(Window, this, ViewerCtx.World, ViewerCtx.SelectionManager);
+	*/
 }
 
 void UEditorEngine::Shutdown()
@@ -219,7 +221,6 @@ void UEditorEngine::Shutdown()
     FEditorSettings::Get().SaveToFile(FEditorSettings::GetDefaultSettingsPath());
 
     CloseScene();
-    SelectionManager.Shutdown();
     MainPanel.Release();
     
     // CloseScene 이후에 ViewportLayout을 내리면 Client 포인터 단절로 인한 역참조를 피할 수 있습니다.
@@ -564,46 +565,64 @@ void UEditorEngine::WorldTick(float DeltaTime)
 
 int32 UEditorEngine::DeleteActors(const TArray<AActor*>& Actors)
 {
-    std::unordered_set<AActor*> SeenActors;
-    TArray<std::pair<UWorld*, AActor*>> ActorsToDelete;
+    if (Actors.empty())
+        return 0;
+
+    // 1. World별로 그룹핑
+    std::unordered_map<UWorld*, TArray<AActor*>> ActorsByWorld;
+    std::unordered_set<AActor*> Seen;
 
     for (AActor* Actor : Actors)
     {
-        if (!Actor || SeenActors.find(Actor) != SeenActors.end())
-        {
+        if (!Actor || Seen.contains(Actor))
             continue;
-        }
 
-        UWorld* ActorWorld = Actor->GetFocusedWorld();
-        if (!ActorWorld)
-        {
+        UWorld* World = Actor->GetFocusedWorld();
+        if (!World)
             continue;
-        }
 
-        SeenActors.insert(Actor);
-        ActorsToDelete.push_back(std::make_pair(ActorWorld, Actor));
+        Seen.insert(Actor);
+        ActorsByWorld[World].push_back(Actor);
     }
 
-    if (ActorsToDelete.empty())
-    {
+    if (ActorsByWorld.empty())
         return 0;
-    }
 
+    // 2. Undo는 전체 snapshot
     UndoSystem.CaptureSnapshot("Delete Actors");
 
     int32 DeletedCount = 0;
-    SelectionManager.BeginBatchUpdate();
-    for (const std::pair<UWorld*, AActor*>& Entry : ActorsToDelete)
-    {
-        Entry.first->DestroyActor(Entry.second);
-        ++DeletedCount;
-    }
-    SelectionManager.EndBatchUpdate();
 
+    // 3. WorldContext 단위 처리
+    for (auto& [World, ActorList] : ActorsByWorld)
+    {
+        FWorldContext* Context = GetWorldContextFromWorld(World);
+        if (!Context)
+            continue;
+
+        Context->SelectionManager->BeginBatchUpdate();
+
+        for (AActor* Actor : ActorList)
+        {
+            if (!Actor)
+                continue;
+
+            // Selection 정리 (중요)
+            Context->SelectionManager->Deselect(Actor);
+            World->DestroyActor(Actor);
+            ++DeletedCount;
+        }
+
+        Context->SelectionManager->EndBatchUpdate();
+    }
+
+    // 4. UI 업데이트
     if (DeletedCount > 0)
     {
         MainPanel.GetSceneWidget().MarkSceneDirty();
-        MainPanel.PushFooterLog(DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
+
+        MainPanel.PushFooterLog(
+            DeletedCount > 1 ? "Actors deleted" : "Actor deleted");
     }
 
     return DeletedCount;
@@ -840,7 +859,11 @@ void UEditorEngine::StartPlaySessionNow()
     EditorInputRouter.SetForceViewportMouseBlock(false, true);
     EditorInputRouter.ForceViewportFocus(FocusedClient->GetViewport());
     RequestPIEViewportInputFocus(3);
-    SelectionManager.ClearSelection();
+
+	for (auto& Ctx : WorldList)
+	{
+        Ctx.SelectionManager->ClearSelection();
+	}
 
     SpawnPIEPlayerController(PIEWorld, FocusedClient);
     PIEWorld->BeginPlay();
@@ -955,7 +978,11 @@ void UEditorEngine::StopPlaySessionNow()
         InputSystem::Get().SetCursorVisibility(true);
     }
 
-    SelectionManager.ClearSelection();
+	for (auto& Ctx : WorldList)
+	{
+        Ctx.SelectionManager->ClearSelection();
+	}
+
     const auto ViewportRestoreEnd = std::chrono::steady_clock::now();
 
     const auto RmlUnloadStart = std::chrono::steady_clock::now();
@@ -1040,12 +1067,12 @@ void UEditorEngine::SetActiveWorld(const FName& Handle)
 
 void UEditorEngine::CloseScene()
 {
-    SelectionManager.ClearSelection();
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
     for (FWorldContext& Ctx : WorldList)
     {
         Ctx.World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
+        Ctx.SelectionManager->ClearSelection();
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
     WorldList.clear();
@@ -1135,16 +1162,21 @@ const FViewportCamera* UEditorEngine::GetCamera() const
     return ViewportLayout.GetIndexedViewportClientCamera(0);
 }
 
-UGizmoComponent* UEditorEngine::GetGizmo() const
-{
-    return SelectionManager.GetGizmo();
-}
-
 UWorld* UEditorEngine::GetFocusedWorld() const
 {
     const FEditorViewportClient* FocusedClient =
         ViewportLayout.GetViewportClient(ViewportLayout.GetLastFocusedViewportIndex());
     return FocusedClient ? FocusedClient->GetFocusedWorld() : nullptr;
+}
+
+FWorldContext* UEditorEngine::GetFocusedWorldContext()
+{
+	if (UWorld* World = GetFocusedWorld())
+	{
+        return GetWorldContextFromWorld(World);
+	}
+
+    return nullptr;
 }
 
 EViewportPlayState UEditorEngine::GetEditorState() const
@@ -1177,12 +1209,12 @@ FEditorRenderPipeline* UEditorEngine::GetEditorRenderPipeline() const
 
 void UEditorEngine::ClearScene()
 {
-    SelectionManager.ClearSelection();
     UnbindActorDestroyedListener(ActorDestroyedListenerWorld);
 
     for (FWorldContext& Ctx : WorldList)
     {
         Ctx.World->EndPlay(EEndPlayReason::Type::LevelTransition);
+        Ctx.SelectionManager->ClearSelection();
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
 
@@ -1236,6 +1268,11 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
                 it->World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
                 UObjectManager::Get().DestroyObject(it->World);
             }
+
+			if (it->SelectionManager)
+			{
+                it->SelectionManager->Shutdown();
+			}
             WorldList.erase(it);
             return; // 찾아서 지웠으므로 즉시 종료
         }
@@ -1257,7 +1294,10 @@ FName UEditorEngine::GetEditorWorldHandle() const
 
 void UEditorEngine::HandleActorDestroyed(AActor* Actor)
 {
-    SelectionManager.OnActorDestroyed(Actor);
+	UWorld* World = Actor->GetFocusedWorld();
+    const FWorldContext* Ctx = GetWorldContextFromWorld(World);
+    Ctx->SelectionManager->OnActorDestroyed(Actor);
+
     MainPanel.GetPropertyWidget().OnActorDestroyed(Actor);
     MainPanel.GetMaterialWidget().OnActorDestroyed(Actor);
 }
