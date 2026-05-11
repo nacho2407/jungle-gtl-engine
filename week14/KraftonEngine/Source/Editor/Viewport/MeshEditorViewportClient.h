@@ -31,9 +31,12 @@ public:
 	void SetViewportRect(float X, float Y, float Width, float Height) { ViewportScreenRect = { X, Y, Width, Height }; }
 
 	bool IsRenderable() const { return bIsRenderable; }
+	bool IsMouseOverViewport() const;
+	bool IsGizmoHolding() const;
 
 	FViewport* GetViewport() const { return Viewport; }
 	UWorld* GetPreviewWorld() const { return PreviewWorld; }
+	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 
 	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
 

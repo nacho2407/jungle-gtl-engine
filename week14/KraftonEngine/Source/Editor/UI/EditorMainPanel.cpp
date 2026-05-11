@@ -656,7 +656,7 @@ void FEditorMainPanel::Update()
 	// 뷰포트 슬롯 위에서는 bUsingMouse를 해제해야 TickInteraction이 동작
 	bool bWantMouse = IO.WantCaptureMouse;
 	bool bWantKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
-	if (EditorEngine && EditorEngine->IsMouseOverViewport())
+	if (EditorEngine && (EditorEngine->IsMouseOverViewport() || MeshEditorWidget.IsMouseOverViewport()))
 	{
 		bWantMouse = false;
 		if (!IO.WantTextInput && !bShowShortcutOverlay)

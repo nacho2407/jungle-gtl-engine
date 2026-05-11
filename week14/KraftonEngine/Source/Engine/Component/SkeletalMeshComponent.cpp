@@ -37,19 +37,19 @@ void USkeletalMeshComponent::EnsureBoneEditPose()
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
 	{
-		BoneEditLocalMatrices.clear();
+		BoneEditLocalTransforms.clear();
 		bUseBoneEditPose = false;
 		return;
 	}
 
-	if (BoneEditLocalMatrices.size() == Asset->Bones.size()) return;
+	if (BoneEditLocalTransforms.size() == Asset->Bones.size()) return;
 
-	BoneEditLocalMatrices.clear();
-	BoneEditLocalMatrices.reserve(Asset->Bones.size());
+	BoneEditLocalTransforms.clear();
+	BoneEditLocalTransforms.reserve(Asset->Bones.size());
 
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
+		BoneEditLocalTransforms.push_back(Bone.LocalTransform);
 	}
 
 	bUseBoneEditPose = true;
@@ -57,16 +57,16 @@ void USkeletalMeshComponent::EnsureBoneEditPose()
 
 void USkeletalMeshComponent::ResetBoneEditPose()
 {
-	BoneEditLocalMatrices.clear();
+	BoneEditLocalTransforms.clear();
 	bUseBoneEditPose = false;
 
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset) return;
 
-	BoneEditLocalMatrices.reserve(Asset->Bones.size());
+	BoneEditLocalTransforms.reserve(Asset->Bones.size());
 	for (const FBone& Bone : Asset->Bones)
 	{
-		BoneEditLocalMatrices.push_back(Bone.LocalMatrix);
+		BoneEditLocalTransforms.push_back(Bone.LocalTransform);
 	}
 }
 
@@ -75,10 +75,10 @@ FVector USkeletalMeshComponent::GetBoneLocationByIndex(int32 BoneIndex) const
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FVector::ZeroVector;
 
-	TArray<FMatrix> GlobalMatrices;
-	BuildBoneEditGlobalMatrices(GlobalMatrices);
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
 
-	const FVector ComponentLocalLocation = Asset->Bones[BoneIndex].GlobalMatrix.GetLocation();
+	const FVector ComponentLocalLocation = GlobalTransforms[BoneIndex].Location;
 	return GetWorldMatrix().TransformPositionWithW(ComponentLocalLocation);
 }
 
@@ -87,10 +87,10 @@ FRotator USkeletalMeshComponent::GetBoneRotationByIndex(int32 BoneIndex) const
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FRotator::ZeroRotator;
 
-	TArray<FMatrix> GlobalMatrices;
-	BuildBoneEditGlobalMatrices(GlobalMatrices);
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
 
-	const FMatrix BoneWorldMatrix = GlobalMatrices[BoneIndex] * GetWorldMatrix();
+	const FMatrix BoneWorldMatrix = GlobalTransforms[BoneIndex].ToMatrix() * GetWorldMatrix();
 	return BoneWorldMatrix.ToQuat().GetNormalized().ToRotator();
 }
 
@@ -99,11 +99,21 @@ FVector USkeletalMeshComponent::GetBoneScaleByIndex(int32 BoneIndex) const
 	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FVector::ZeroVector;
 
-	TArray<FMatrix> GlobalMatrices;
-	BuildBoneEditGlobalMatrices(GlobalMatrices);
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
 
-	const FMatrix BoneWorldMatrix = GlobalMatrices[BoneIndex] * GetWorldMatrix();
+	const FMatrix BoneWorldMatrix = GlobalTransforms[BoneIndex].ToMatrix() * GetWorldMatrix();
 	return BoneWorldMatrix.GetScale();
+}
+
+FTransform USkeletalMeshComponent::GetBoneLocalTransformByIndex(int32 BoneIndex) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return FMatrix::Identity;
+
+	if (bUseBoneEditPose && BoneEditLocalTransforms.size() == Asset->Bones.size()) return BoneEditLocalTransforms[BoneIndex];
+
+	return Asset->Bones[BoneIndex].LocalTransform.ToMatrix();
 }
 
 void USkeletalMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVector& NewLocation)
@@ -113,24 +123,24 @@ void USkeletalMeshComponent::SetBoneLocationByIndex(int32 BoneIndex, const FVect
 
 	EnsureBoneEditPose();
 
-	TArray<FMatrix> GlobalMatrices;
-	BuildBoneEditGlobalMatrices(GlobalMatrices);
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
 
 	const FMatrix ComponentWorldInv = GetWorldMatrix().GetInverse();
 	const FVector DesiredComponentLocalLocation = ComponentWorldInv.TransformPositionWithW(NewLocation);
 
-	FMatrix DesiredGlobal = GlobalMatrices[BoneIndex];
+	FMatrix DesiredGlobal = GlobalTransforms[BoneIndex].ToMatrix();
 	DesiredGlobal.SetLocation(DesiredComponentLocalLocation);
 
 	const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
 	if (ParentIndex >= 0)
 	{
-		const FMatrix ParentGlobalInv = GlobalMatrices[ParentIndex].GetInverse();
-		BoneEditLocalMatrices[BoneIndex] = DesiredGlobal * ParentGlobalInv;
+		const FMatrix ParentGlobalInv = GlobalTransforms[ParentIndex].ToMatrix().GetInverse();
+		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal * ParentGlobalInv);
 	}
 	else
 	{
-		BoneEditLocalMatrices[BoneIndex] = DesiredGlobal;
+		BoneEditLocalTransforms[BoneIndex] = FTransform(DesiredGlobal);
 	}
 
 	bUseBoneEditPose = true;
@@ -145,8 +155,8 @@ void USkeletalMeshComponent::SetBoneRotationByIndex(int32 BoneIndex, const FRota
 
 	EnsureBoneEditPose();
 
-	TArray<FMatrix> GlobalMatrices;
-	BuildBoneEditGlobalMatrices(GlobalMatrices);
+	TArray<FTransform> GlobalTransforms;
+	BuildBoneEditGlobalTransforms(GlobalTransforms);
 
 	const FQuat ComponentWorldQuat = GetWorldMatrix().ToQuat().GetNormalized();
 	const FQuat ComponentWorldQuatInv = ComponentWorldQuat.Inverse();
@@ -158,7 +168,25 @@ void USkeletalMeshComponent::SetBoneScaleByIndex(int32 BoneIndex, const FVector&
 {
 }
 
-void USkeletalMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const
+void USkeletalMeshComponent::SetBoneLocalTransformByIndex(int32 BoneIndex, const FTransform& NewLocalTransform)
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return;
+
+	EnsureBoneEditPose();
+	BoneEditLocalTransforms[BoneIndex] = NewLocalTransform;
+
+	bUseBoneEditPose = true;
+	MarkRenderStateDirty();
+	MarkWorldBoundsDirty();
+}
+
+void USkeletalMeshComponent::GetCurrentBoneGlobalTransforms(TArray<FTransform>& OutGlobals) const
+{
+	BuildBoneEditGlobalTransforms(OutGlobals);
+}
+
+void USkeletalMeshComponent::BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const
 {
 	OutGlobals.clear(); 
 
@@ -170,10 +198,11 @@ void USkeletalMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlo
 
 	for (int32 i = 0; i < BoneCount; ++i)
 	{
-		const FMatrix Local = (bUseBoneEditPose && BoneEditLocalMatrices.size() == BoneCount) 
-			? BoneEditLocalMatrices[i] : Asset->Bones[i].LocalMatrix;
+		const FTransform Local = (bUseBoneEditPose && BoneEditLocalTransforms.size() == BoneCount) 
+			? BoneEditLocalTransforms[i] : Asset->Bones[i].LocalTransform;
 
 		const int32 ParentIndex = Asset->Bones[i].ParentIndex;
-		OutGlobals[i] = (ParentIndex >= 0) ? Local * OutGlobals[ParentIndex] : Local;
+		FMatrix GlobalMatrix = (ParentIndex >= 0) ? Local.ToMatrix() * OutGlobals[ParentIndex].ToMatrix() : Local.ToMatrix();
+		OutGlobals[i] = FTransform(GlobalMatrix);
 	}
 }

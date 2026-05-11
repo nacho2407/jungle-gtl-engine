@@ -16,6 +16,8 @@ public:
 
 	void Render(float DeltaTime) override;
 
+	bool IsMouseOverViewport() const { return IsOpen() && ViewportClient.IsMouseOverViewport(); }
+
 	FMeshEditorViewportClient* GetViewportClient() { return &ViewportClient; }
 
 private:

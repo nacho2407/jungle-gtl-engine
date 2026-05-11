@@ -4,6 +4,7 @@
 #include "Render/Types/VertexTypes.h"
 #include "Render/Resource/Buffer.h"
 #include "Math/Matrix.h"
+#include "Math/Transform.h"
 #include "Serialization/Archive.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
@@ -16,8 +17,8 @@ struct FBone
 	FString Name;
 	int32 ParentIndex;
 
-	FMatrix LocalMatrix;
-	FMatrix GlobalMatrix;
+	FTransform LocalTransform;
+	FTransform GlobalTransform;
 	FMatrix InverseBindPoseMatrix;
 };
 

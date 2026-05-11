@@ -176,8 +176,8 @@ void FFbxImporter::ParseBone(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Out
 
 			FbxMatrix LocalMatrix = Node->EvaluateLocalTransform();
 			FbxMatrix GlobalMatrix = Node->EvaluateGlobalTransform();
-			Bone.LocalMatrix = ConvertFbxMatrix(LocalMatrix);
-			Bone.GlobalMatrix = ConvertFbxMatrix(GlobalMatrix);
+			Bone.LocalTransform = FTransform(ConvertFbxMatrix(LocalMatrix));
+			Bone.GlobalTransform = FTransform(ConvertFbxMatrix(GlobalMatrix));
 
 			int32 NewBoneIndex = (int32)Bones.size();
 			Bones.push_back(Bone);
