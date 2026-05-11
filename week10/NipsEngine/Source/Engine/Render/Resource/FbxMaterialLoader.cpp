@@ -155,6 +155,31 @@ namespace
         if (Count <= 0) return nullptr;
         return Prop.GetSrcObject<FbxFileTexture>(0);
     }
+
+    // 한 property에 대해 텍스처 추출 + 경로 변환 + FMaterial 필드 채움.
+    // 추출 실패 시 OutHasFlag/OutPath은 변경하지 않음 (caller가 default false/empty 유지).
+    void TryExtractTexture(FbxSurfaceMaterial* SurfMat, const char* PropName,
+                           const fs::path& FbxDir,
+                           FString& OutPath, bool& OutHasFlag,
+                           const char* LogLabel)
+    {
+        FbxFileTexture* Tex = GetFirstFileTexture(SurfMat, PropName);
+        if (!Tex) return;
+
+        const FString TexPath = ResolveFbxTexturePath(FbxDir, Tex);
+        if (!TexPath.empty())
+        {
+            OutPath = TexPath;
+            OutHasFlag = true;
+        }
+        else
+        {
+            UE_LOG_WARNING("[FbxMaterialLoader] %s texture not found on disk: %s / %s",
+                LogLabel,
+                Tex->GetRelativeFileName(),
+                Tex->GetFileName());
+        }
+    }
 }
 
 bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
@@ -191,21 +216,24 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         UMaterial* Mat = UObjectManager::Get().CreateObject<UMaterial>();
         Mat->ImportedName = MatName;
         ExtractMaterialProperties(SurfMat, Mat->MaterialData);
+        FMaterial& MD = Mat->MaterialData;
 
-        // Diffuse texture 추출
-        if (FbxFileTexture* DiffuseTex = GetFirstFileTexture(SurfMat, FbxSurfaceMaterial::sDiffuse))
+        // 표준 5개 텍스처 슬롯 추출
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sDiffuse,  FbxDir,
+            MD.DiffuseTexPath,  MD.bHasDiffuseTexture,  "Diffuse");
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sAmbient,  FbxDir,
+            MD.AmbientTexPath,  MD.bHasAmbientTexture,  "Ambient");
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sSpecular, FbxDir,
+            MD.SpecularTexPath, MD.bHasSpecularTexture, "Specular");
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sEmissive, FbxDir,
+            MD.EmissiveTexPath, MD.bHasEmissiveTexture, "Emissive");
+        // Normal map 우선, 없으면 Bump (FMaterial은 BumpTexPath 한 슬롯에 통합)
+        TryExtractTexture(SurfMat, FbxSurfaceMaterial::sNormalMap, FbxDir,
+            MD.BumpTexPath, MD.bHasBumpTexture, "Normal");
+        if (!MD.bHasBumpTexture)
         {
-            const FString TexPath = ResolveFbxTexturePath(FbxDir, DiffuseTex);
-            if (!TexPath.empty())
-            {
-                Mat->MaterialData.DiffuseTexPath = TexPath;
-                Mat->MaterialData.bHasDiffuseTexture = true;
-            }
-            else
-            {
-                UE_LOG_WARNING("[FbxMaterialLoader] Diffuse texture not found on disk: %s / %s",
-                    DiffuseTex->GetRelativeFileName(), DiffuseTex->GetFileName());
-            }
+            TryExtractTexture(SurfMat, FbxSurfaceMaterial::sBump, FbxDir,
+                MD.BumpTexPath, MD.bHasBumpTexture, "Bump");
         }
 
         OutMaterialAssets[MatName] = Mat;
@@ -214,17 +242,33 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
             OutMaterialOrder->push_back(MatName);
         }
 
-        const FMaterial& M = Mat->MaterialData;
-        UE_LOG("[FbxMaterialLoader]   [%d] %s (type=%s) | Diffuse=(%.2f,%.2f,%.2f) Shininess=%.2f Opacity=%.2f DiffTex=%s",
+        auto TexOrNone = [](bool Has, const FString& Path) -> const char*
+        {
+            return Has ? Path.c_str() : "(none)";
+        };
+
+        UE_LOG("[FbxMaterialLoader]   [%d] %s (type=%s) | Diffuse=(%.2f,%.2f,%.2f) Shininess=%.2f Opacity=%.2f",
             i, MatName.c_str(), SurfMat->GetClassId().GetName(),
-            M.DiffuseColor.X, M.DiffuseColor.Y, M.DiffuseColor.Z,
-            M.Shininess, M.Opacity,
-            M.bHasDiffuseTexture ? M.DiffuseTexPath.c_str() : "(none)");
+            MD.DiffuseColor.X, MD.DiffuseColor.Y, MD.DiffuseColor.Z,
+            MD.Shininess, MD.Opacity);
+        UE_LOG("[FbxMaterialLoader]       Tex: Diff=%s Amb=%s Spec=%s Emi=%s Bump=%s",
+            TexOrNone(MD.bHasDiffuseTexture,  MD.DiffuseTexPath),
+            TexOrNone(MD.bHasAmbientTexture,  MD.AmbientTexPath),
+            TexOrNone(MD.bHasSpecularTexture, MD.SpecularTexPath),
+            TexOrNone(MD.bHasEmissiveTexture, MD.EmissiveTexPath),
+            TexOrNone(MD.bHasBumpTexture,     MD.BumpTexPath));
     }
 
     // ObjMtlLoader와 동일하게 MaterialParams에 셰이더 바인딩 정보 채움.
     // 이걸 안 하면 UMaterial이 cache에 등록돼도 셰이더는 default 값을 사용해 까맣게 나옴.
     UTexture* DefaultWhite = FResourceManager::Get().GetTexture("DefaultWhite");
+
+    auto MapOrDefault = [&](bool HasTex, const FString& Path) -> FMaterialParamValue
+    {
+        return HasTex
+            ? FMaterialParamValue(FResourceManager::Get().LoadTexture(Path, Device))
+            : FMaterialParamValue(DefaultWhite);
+    };
 
     for (auto& [Name, Mat] : OutMaterialAssets)
     {
@@ -238,21 +282,17 @@ bool FFbxMaterialLoader::Load(const FString& FbxFilePath,
         Mat->MaterialParams["Shininess"]     = FMaterialParamValue(MD.Shininess);
         Mat->MaterialParams["Opacity"]       = FMaterialParamValue(MD.Opacity);
 
-        if (MD.bHasDiffuseTexture)
-            Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(FResourceManager::Get().LoadTexture(MD.DiffuseTexPath, Device));
-        else
-            Mat->MaterialParams["DiffuseMap"] = FMaterialParamValue(DefaultWhite);
-
-        Mat->MaterialParams["AmbientMap"]  = FMaterialParamValue(DefaultWhite);
-        Mat->MaterialParams["SpecularMap"] = FMaterialParamValue(DefaultWhite);
-        Mat->MaterialParams["EmissiveMap"] = FMaterialParamValue(DefaultWhite);
-        Mat->MaterialParams["BumpMap"]     = FMaterialParamValue(DefaultWhite);
+        Mat->MaterialParams["DiffuseMap"]  = MapOrDefault(MD.bHasDiffuseTexture,  MD.DiffuseTexPath);
+        Mat->MaterialParams["AmbientMap"]  = MapOrDefault(MD.bHasAmbientTexture,  MD.AmbientTexPath);
+        Mat->MaterialParams["SpecularMap"] = MapOrDefault(MD.bHasSpecularTexture, MD.SpecularTexPath);
+        Mat->MaterialParams["EmissiveMap"] = MapOrDefault(MD.bHasEmissiveTexture, MD.EmissiveTexPath);
+        Mat->MaterialParams["BumpMap"]     = MapOrDefault(MD.bHasBumpTexture,     MD.BumpTexPath);
 
         Mat->MaterialParams["bHasDiffuseMap"]  = FMaterialParamValue(MD.bHasDiffuseTexture);
-        Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(false);
-        Mat->MaterialParams["bHasAmbientMap"]  = FMaterialParamValue(false);
-        Mat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(false);
-        Mat->MaterialParams["bHasBumpMap"]     = FMaterialParamValue(false);
+        Mat->MaterialParams["bHasAmbientMap"]  = FMaterialParamValue(MD.bHasAmbientTexture);
+        Mat->MaterialParams["bHasSpecularMap"] = FMaterialParamValue(MD.bHasSpecularTexture);
+        Mat->MaterialParams["bHasEmissiveMap"] = FMaterialParamValue(MD.bHasEmissiveTexture);
+        Mat->MaterialParams["bHasBumpMap"]     = FMaterialParamValue(MD.bHasBumpTexture);
 
         Mat->MaterialParams["ScrollUV"] = FMaterialParamValue(FVector2(0.0f, 0.0f));
     }
