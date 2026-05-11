@@ -10,6 +10,7 @@
 class UProceduralMeshComponent;
 
 class UStaticMesh;
+class USkeletalMesh;
 
 /*
 	Mesh Manager에서 넘겨 받은 MeshData를 바탕으로 MeshBuffer를 생성하고 소유합니다.
@@ -26,6 +27,8 @@ private:
 	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
 	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
     TMap<uint32, FMeshBuffer> ProcMeshBufferMap;
+	TMap<uint32, FMeshBuffer> SkeletalMeshBufferMap;
+	TMap<uint32, const USkeletalMesh*> SkeletalMeshSourceMap;
 
 public:
 
@@ -39,4 +42,5 @@ public:
     FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
     // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
     FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
+	FMeshBuffer* GetSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
 };

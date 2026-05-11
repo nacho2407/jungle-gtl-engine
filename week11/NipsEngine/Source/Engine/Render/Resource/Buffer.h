@@ -22,10 +22,12 @@ class FVertexBuffer
 {
 public:
 	void Create(ID3D11Device* InDevice, const TArray<FVertex>&, uint32 InByteWidth, uint32 InStride);
+	void CreateDynamic(ID3D11Device* InDevice, uint32 InByteWidth, uint32 InStride);
 	void SetRaw(ID3D11Buffer* InBuffer, uint32 InVertexCount, uint32 InStride);
 	void Release();
 
 	void Update(ID3D11DeviceContext* InDeviceContext, const TArray<uint32>& InData, uint32 InByteWidth);
+	void UpdateDynamic(ID3D11DeviceContext* InDeviceContext, const void* InData, uint32 InByteWidth);
 
 	uint32 GetVertexCount() const { return VertexCount; }
 	uint32 GetStride() const { return Stride; }
@@ -76,6 +78,8 @@ class FMeshBuffer
 public:
 	void Create(ID3D11Device* InDevice, const FMeshData& InMeshData);
 	void CreateForStaticMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices);
+	void CreateForSkeletalMesh(ID3D11Device* InDevice, const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices);
+	void UpdateSkeletalVertices(ID3D11DeviceContext* InDeviceContext, const TArray<FNormalVertex>& InVertices);
 	void Release();
 
 	FVertexBuffer& GetVertexBuffer() { return VertexBuffer; }
