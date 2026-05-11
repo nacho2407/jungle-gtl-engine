@@ -147,8 +147,6 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
-	// TODO: 일단 현재는 reference pose 기준으로 bound 계산중... 이 부분은 나중에 팀 정책이 확정되면 변경
-
     WorldAABB.Reset();
 
     if (!HasValidMesh())
@@ -157,30 +155,42 @@ void USkinnedMeshComponent::UpdateWorldAABB() const
         return;
     }
 
-    const FAABB& LocalBounds = SkeletalMesh->GetLocalBounds();
-    if (!LocalBounds.IsValid())
+    if (bEnableCPUSkinning)
     {
+        const_cast<USkinnedMeshComponent*>(this)->EnsureSkinningUpdated();
+    }
+
+    const FMatrix& WorldMatrix = GetWorldMatrix();
+
+    if (bEnableCPUSkinning && !SkinnedVertices.empty())
+    {
+        for (const FNormalVertex& Vertex : SkinnedVertices)
+        {
+            WorldAABB.Expand(WorldMatrix.TransformPosition(Vertex.Position));
+        }
+
         bBoundsDirty = false;
         return;
     }
 
-    const FVector LocalCorners[8] = {
-        FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
-        FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
-        FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
-        FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
-        FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
-        FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
-        FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z),
-        FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z)
-    };
-
-    const FMatrix& WorldMatrix = GetWorldMatrix();
-
-    for (const FVector& Corner : LocalCorners)
+    const FAABB& LocalBounds = SkeletalMesh->GetLocalBounds();
+    if (LocalBounds.IsValid())
     {
-        const FVector WorldPos = WorldMatrix.TransformPosition(Corner);
-        WorldAABB.Expand(WorldPos);
+        const FVector LocalCorners[8] = {
+            FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+            FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Min.Z),
+            FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+            FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Min.Z),
+            FVector(LocalBounds.Min.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+            FVector(LocalBounds.Max.X, LocalBounds.Min.Y, LocalBounds.Max.Z),
+            FVector(LocalBounds.Min.X, LocalBounds.Max.Y, LocalBounds.Max.Z),
+            FVector(LocalBounds.Max.X, LocalBounds.Max.Y, LocalBounds.Max.Z)
+        };
+
+        for (const FVector& Corner : LocalCorners)
+        {
+            WorldAABB.Expand(WorldMatrix.TransformPosition(Corner));
+        }
     }
 
     bBoundsDirty = false;
