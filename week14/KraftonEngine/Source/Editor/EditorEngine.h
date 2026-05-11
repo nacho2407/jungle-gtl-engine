@@ -61,7 +61,7 @@ public:
 	void ShowEditorWindows() { MainPanel.ShowEditorWindows(); }
 	void SetShowEditorOnlyComponents(bool bEnable) { MainPanel.SetShowEditorOnlyComponents(bEnable); }
 	bool IsShowingEditorOnlyComponents() const { return MainPanel.IsShowingEditorOnlyComponents(); }
-	bool IsWorldCoordSystem() const { return FEditorSettings::Get().CoordSystem == EEditorCoordSystem::World; }
+	bool IsWorldCoordSystem() const { return FEditorSettings::Get().LevelViewportGizmoSettings.CoordSystem == EEditorCoordSystem::World; }
 	void ToggleCoordSystem();
 	void ApplyTransformSettingsToGizmo();
 

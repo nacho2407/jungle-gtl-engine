@@ -36,6 +36,7 @@ public:
 
 	FViewport* GetViewport() const { return Viewport; }
 	UWorld* GetPreviewWorld() const { return PreviewWorld; }
+	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 
 	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
@@ -46,6 +47,8 @@ public:
 
 	void SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex);
 	const FBone* GetSelectedBone() const;
+
+	void ApplyTransformSettingsToGizmo();
 
 private:
 	void TickShortcuts();

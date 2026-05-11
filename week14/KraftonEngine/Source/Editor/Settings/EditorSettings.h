@@ -1,17 +1,12 @@
 ﻿#pragma once
 
+#include "GizmoToolSettings.h"
 #include "Core/CoreTypes.h"
 #include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
 #include "Math/Rotator.h"
 #include "Render/Types/ViewTypes.h"
-
-enum class EEditorCoordSystem : uint8
-{
-	World = 0,
-	Local = 1
-};
 
 class FEditorSettings : public TSingleton<FEditorSettings>
 {
@@ -38,14 +33,8 @@ public:
 	float PerspCamNearClip = 0.1f;
 	float PerspCamFarClip = 1000.0f;
 
-	// Transform tools
-	EEditorCoordSystem CoordSystem = EEditorCoordSystem::World;
-	bool bEnableTranslationSnap = false;
-	float TranslationSnapSize = 0.1f;
-	bool bEnableRotationSnap = false;
-	float RotationSnapSize = 15.0f;
-	bool bEnableScaleSnap = false;
-	float ScaleSnapSize = 0.1f;
+	FGizmoToolSettings LevelViewportGizmoSettings;
+	FGizmoToolSettings MeshEditorViewportGizmoSettings;
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드
