@@ -13,8 +13,19 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 		SkeletalMeshAsset = new FSkeletalMesh();
 	}
 
+	Ar << SkeletalMeshAsset->PathFileName;
 	Ar << SkeletalMeshAsset->Vertices;
 	Ar << SkeletalMeshAsset->Indices;
+	Ar << SkeletalMeshAsset->Sections;
+	Ar << SkeletalMeshAsset->MeshRanges;
+	Ar << SkeletalMeshAsset->Bones;
+	Ar << SkeletalMaterials;
+
+	if (Ar.IsLoading())
+	{
+		CacheSectionMaterialIndices();
+		SkeletalMeshAsset->bBoundsValid = false;
+	}
 }
 
 const FString& USkeletalMesh::GetAssetPathFileName() const
@@ -29,6 +40,7 @@ const FString& USkeletalMesh::GetAssetPathFileName() const
 void USkeletalMesh::SetSkeletalMeshAsset(FSkeletalMesh* InMesh)
 {
 	SkeletalMeshAsset = InMesh;
+	CacheSectionMaterialIndices();
 }
 
 FSkeletalMesh* USkeletalMesh::GetSkeletalMeshAsset() const
@@ -39,6 +51,7 @@ FSkeletalMesh* USkeletalMesh::GetSkeletalMeshAsset() const
 void USkeletalMesh::SetSkeletalMaterials(TArray<FSkeletalMaterial>&& InMaterials)
 {
 	SkeletalMaterials = InMaterials;
+	CacheSectionMaterialIndices();
 }
 
 const TArray<FSkeletalMaterial>& USkeletalMesh::GetSkeletalMaterials() const
@@ -65,6 +78,7 @@ void USkeletalMesh::InitResources(ID3D11Device* InDevice)
 		RenderVert.Normal = RawVert.Normal;
 		RenderVert.Color = RawVert.Color;
 		RenderVert.UV = RawVert.UV;
+		RenderVert.Tangent = RawVert.Tangent;
 		std::copy(std::begin(RawVert.BoneIndices), std::end(RawVert.BoneIndices), std::begin(RenderVert.BoneIndices));
 		std::copy(std::begin(RawVert.BoneWeights), std::end(RawVert.BoneWeights), std::begin(RenderVert.BoneWeights));
 		RenderMeshData.Vertices.push_back(RenderVert);
@@ -73,4 +87,25 @@ void USkeletalMesh::InitResources(ID3D11Device* InDevice)
 
 	SkeletalMeshAsset->RenderBuffer = std::make_unique<FMeshBuffer>();
 	SkeletalMeshAsset->RenderBuffer->Create(InDevice, RenderMeshData);
+}
+
+void USkeletalMesh::CacheSectionMaterialIndices()
+{
+	if (!SkeletalMeshAsset)
+	{
+		return;
+	}
+
+	for (FSkeletalMeshSection& Section : SkeletalMeshAsset->Sections)
+	{
+		Section.MaterialIndex = -1;
+		for (int32 i = 0; i < static_cast<int32>(SkeletalMaterials.size()); ++i)
+		{
+			if (SkeletalMaterials[i].MaterialSlotName == Section.MaterialSlotName)
+			{
+				Section.MaterialIndex = i;
+				break;
+			}
+		}
+	}
 }

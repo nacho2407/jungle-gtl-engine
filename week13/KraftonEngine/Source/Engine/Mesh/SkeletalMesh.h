@@ -22,6 +22,9 @@ public:
 	void InitResources(ID3D11Device* InDevice);
 
 private:
+	void CacheSectionMaterialIndices();
+
+private:
 	FSkeletalMesh* SkeletalMeshAsset = nullptr;
 	TArray<FSkeletalMaterial> SkeletalMaterials;
 };

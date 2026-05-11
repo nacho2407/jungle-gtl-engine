@@ -12,6 +12,18 @@
 #include <algorithm>
 #include <memory>
 
+inline void SerializeSkeletalMatrix(FArchive& Ar, FMatrix& Matrix)
+{
+	Ar.Serialize(Matrix.Data, sizeof(float) * 16);
+}
+
+inline void SerializeSkeletalTransform(FArchive& Ar, FTransform& Transform)
+{
+	Ar.Serialize(&Transform.Location, sizeof(FVector));
+	Ar.Serialize(&Transform.Rotation, sizeof(FQuat));
+	Ar.Serialize(&Transform.Scale, sizeof(FVector));
+}
+
 struct FBone
 {
 	FString Name;
@@ -20,6 +32,16 @@ struct FBone
 	FTransform LocalTransform;
 	FTransform GlobalTransform;
 	FMatrix InverseBindPoseMatrix;
+
+	friend FArchive& operator<<(FArchive& Ar, FBone& Bone)
+	{
+		Ar << Bone.Name;
+		Ar << Bone.ParentIndex;
+		SerializeSkeletalTransform(Ar, Bone.LocalTransform);
+		SerializeSkeletalTransform(Ar, Bone.GlobalTransform);
+		SerializeSkeletalMatrix(Ar, Bone.InverseBindPoseMatrix);
+		return Ar;
+	}
 };
 
 struct FSkeletalMeshSection
@@ -31,6 +53,7 @@ struct FSkeletalMeshSection
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMeshSection& Section)
 	{
+		Ar << Section.MaterialIndex;
 		Ar << Section.MaterialSlotName;
 		Ar << Section.FirstIndex;
 		Ar << Section.IndexCount;
@@ -40,7 +63,7 @@ struct FSkeletalMeshSection
 
 struct FSkeletalMaterial
 {
-	UMaterial* MaterialInterface;
+	UMaterial* MaterialInterface = nullptr;
 	FString MaterialSlotName = "None";
 
 	friend FArchive& operator<<(FArchive& Ar, FSkeletalMaterial& Mat)
@@ -77,6 +100,16 @@ struct FSkeletalMeshRange
 	uint32 FirstIndex = 0;
 	uint32 IndexCount = 0;
 	FMatrix MeshBindGlobal = FMatrix::Identity;
+
+	friend FArchive& operator<<(FArchive& Ar, FSkeletalMeshRange& Range)
+	{
+		Ar << Range.VertexStart;
+		Ar << Range.VertexEnd;
+		Ar << Range.FirstIndex;
+		Ar << Range.IndexCount;
+		SerializeSkeletalMatrix(Ar, Range.MeshBindGlobal);
+		return Ar;
+	}
 };
 
 struct FSkeletalMesh
