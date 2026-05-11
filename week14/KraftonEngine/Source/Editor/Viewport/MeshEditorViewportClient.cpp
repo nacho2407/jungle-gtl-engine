@@ -9,6 +9,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/GizmoComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Collision/RayUtils.h"
 #include "Settings/EditorSettings.h"
 
@@ -49,6 +50,39 @@ void FMeshEditorViewportClient::CreatePreviewGizmo()
 	Gizmo->SetScene(&PreviewWorld->GetScene());
 	Gizmo->CreateRenderState();
 	Gizmo->Deactivate();
+}
+
+void FMeshEditorViewportClient::ResetCameraToPreviousBounds()
+{
+	if (!PreviewActor)
+	{
+		ViewTransform.ViewLocation = FVector(-5.0f, -5.0f, 3.0f);
+		ViewTransform.LookAt(FVector::ZeroVector);
+		TargetLocation = ViewTransform.ViewLocation;
+		return;
+	}
+
+	FBoundingBox Bounds = PreviewMeshComponent->GetWorldBoundingBox();
+	FVector Center = Bounds.GetCenter();
+	float Radius = Bounds.GetExtent().Length();
+
+	if (Radius < 0.1f)
+	{
+		Radius = 1.0f;
+	}
+
+	const float FovRadians = ViewTransform.FOV;
+	const float Distance = Radius / std::tan(FovRadians * 0.5f) * 1.25f;
+
+	const FVector ViewDir = FVector(-1.0f, -1.0f, 0.6f).Normalized();
+	
+	ViewTransform.ViewLocation = Center - ViewDir * Distance;
+	ViewTransform.LookAt(Center);
+
+	TargetLocation = ViewTransform.ViewLocation;
+	LastAppliedCameraLocation = ViewTransform.ViewLocation;
+	bTargetLocationInitialized = true;
+	bLastAppliedCameraLocationInitialized = true;
 }
 
 bool FMeshEditorViewportClient::IsMouseOverViewport() const
@@ -155,17 +189,21 @@ void FMeshEditorViewportClient::TickShortcuts()
 	{
 		if (const FBone* SelectedBone = GetSelectedBone())
 		{
-			FVector TargetLoc = SelectedBone->GlobalTransform.Location;
-
-			if (PreviewActor && PreviewActor->GetRootComponent())
-			{
-				TargetLoc = PreviewActor->GetRootComponent()->GetWorldMatrix().TransformVector(TargetLoc);
-			}
+			FVector TargetLoc = PreviewMeshComponent->GetBoneLocationByIndex(SelectedBoneIndex);
 
 			FVector OriginalLoc = ViewTransform.ViewLocation;
 			FRotator OriginalRot = ViewTransform.ViewRotation;
 
-			float FocusDistance = 5.0f;
+			FBoundingBox Bounds = PreviewMeshComponent->GetWorldBoundingBox();
+			FVector Center = Bounds.GetCenter();
+			float Radius = Bounds.GetExtent().Length();
+
+			if (Radius < 0.1f)
+			{
+				Radius = 1.0f;
+			}
+
+			float FocusDistance = Radius;
 			FVector CameraForward = ViewTransform.ViewRotation.GetForwardVector();
 			FVector NewCameraLoc = TargetLoc - CameraForward * FocusDistance;
 

@@ -24,6 +24,7 @@ public:
 	void Release();
 
 	void CreatePreviewGizmo();
+	void ResetCameraToPreviousBounds();
 
 	void SetPreviewWorld(UWorld* InWorld) { PreviewWorld = InWorld; }
 	void SetPreviewActor(AActor* InActor) { PreviewActor = InActor; }
