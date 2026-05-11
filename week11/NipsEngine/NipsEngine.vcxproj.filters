@@ -507,6 +507,9 @@
     <ClCompile Include="Source\Engine\Core\Guid.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Core\FbxMaterialLoadService.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Core\ImportedMaterialPolicy.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -745,6 +748,9 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\Material.cpp">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Resource\FbxMaterialLoader.cpp">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp">
@@ -1271,6 +1277,9 @@
     <ClInclude Include="Source\Engine\Core\Guid.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\FbxMaterialLoadService.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\ImportedMaterialPolicy.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -1599,6 +1608,9 @@
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\Material.h">
+      <Filter>Source\Engine\Render\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resource\FbxMaterialLoader.h">
       <Filter>Source\Engine\Render\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h">
