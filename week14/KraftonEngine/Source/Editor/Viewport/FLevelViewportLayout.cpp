@@ -1187,6 +1187,7 @@ void FLevelViewportLayout::RenderSharedViewportToolbar(float ToolbarLeft, float 
 	Context.Renderer = RendererPtr;
 	Context.Gizmo = Editor->GetGizmo();
 	Context.Settings = &Editor->GetSettings().LevelViewportSettings[0];
+	Context.CameraSettings = &Editor->GetSettings().LevelViewportCameraControls;
 	Context.RenderOptions = TargetViewportClient ? &TargetViewportClient->GetRenderOptions() : nullptr;
 	Context.SlotIndex = ActiveSlotIndex;
 	Context.LayoutIcons = LayoutIcons;
@@ -1278,6 +1279,7 @@ void FLevelViewportLayout::RenderViewportSlotToolbar(int32 SlotIndex)
 	Context.Renderer = RendererPtr;
 	Context.Gizmo = Editor->GetGizmo();
 	Context.Settings = &Editor->GetSettings().LevelViewportSettings[SlotIndex];
+	Context.CameraSettings = &Editor->GetSettings().LevelViewportCameraControls;
 	Context.RenderOptions = &LevelViewportClients[SlotIndex]->GetRenderOptions();
 	Context.SlotIndex = SlotIndex;
 	Context.LayoutIcons = LayoutIcons;

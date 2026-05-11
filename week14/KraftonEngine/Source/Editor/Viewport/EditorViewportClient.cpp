@@ -389,7 +389,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	const bool bIsOrtho = ViewTransform.bIsOrtho;
 
 	const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
-	const float CameraSpeed = (Settings ? Settings->LevelViewportSettings[0].CameraControls.MoveSpeed : 10.f) * MoveSensitivity;
+	const float CameraSpeed = (Settings ? Settings->LevelViewportCameraControls.MoveSpeed : 10.f) * MoveSensitivity;
 	const float PanMouseScale = CameraSpeed * 0.01f;
 
 	if (!bIsOrtho)
@@ -436,7 +436,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 		FVector Rotation = FVector(0, 0, 0);
 
 		const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
-		const float AngleVelocity = (Settings ? Settings->LevelViewportSettings[0].CameraControls.RotationSpeed : 60.f) * RotateSensitivity;
+		const float AngleVelocity = (Settings ? Settings->LevelViewportCameraControls.RotationSpeed : 60.f) * RotateSensitivity;
 		if (Input.GetKey(VK_UP))
 			Rotation.Z -= AngleVelocity;
 		if (Input.GetKey(VK_LEFT))
@@ -519,22 +519,48 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		return;
 	}
 
-	const float ZoomSpeed = Settings ? Settings->LevelViewportSettings[0].CameraControls.ZoomSpeed : 300.f;
-
 	float ScrollNotches = InputSystem::Get().GetScrollNotches();
 	if (ScrollNotches != 0.0f)
 	{
-		if (ViewTransform.bIsOrtho)
+		if (bool bIsRightButtonDown = InputSystem::Get().GetKey(VK_RBUTTON))
 		{
-			// D.2: ViewTransform 직접 갱신.
-			float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
-			ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+			float& MoveSpeed = FEditorSettings::Get().LevelViewportCameraControls.MoveSpeed;
+			if (ScrollNotches < 0.0f)
+			{
+				MoveSpeed = MoveSpeed * 0.9f;
+			}
+			else
+			{
+				MoveSpeed = MoveSpeed * 1.1f;
+			}
+
+			if (MoveSpeed > 1000.0f)
+			{
+				MoveSpeed = 1000.0f;
+			}
+			if (MoveSpeed < 0.001f)
+			{
+				MoveSpeed = 0.001f;
+			}
+			UE_LOG("MoveSpeed: %f", MoveSpeed);
 		}
 		else
 		{
-			//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
-			// Instead of moving directly, update TargetLocation for smooth zoom
-			TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+			const float ZoomSpeed = Settings ? Settings->LevelViewportCameraControls.ZoomSpeed : 300.f;
+
+			if (ViewTransform.bIsOrtho)
+			{
+				// D.2: ViewTransform 직접 갱신.
+				float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ZoomSpeed * DeltaTime;
+				ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+			}
+			else
+			{
+				//foot zoom 발줌은 절대 delta time를 곱하지 않음. 노치당 이동 거리가 일정해야 하기 때문.
+				// Instead of moving directly, update TargetLocation for smooth zoom
+				TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ZoomSpeed * 0.015f);
+				// UnrealEngine의 Mouse Scroll Camera Speed는 노치당 5
+			}
 		}
 	}
 

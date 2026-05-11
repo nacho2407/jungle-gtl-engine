@@ -32,6 +32,7 @@ struct FViewportToolbarContext
 	FRenderer* Renderer = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	FEditorViewportSettings* Settings = nullptr;
+	FViewportCameraControlSettings* CameraSettings = nullptr;
 	FViewportRenderOptions* RenderOptions = nullptr;
 
 	float ToolbarLeft = 0.0f;
@@ -81,7 +82,7 @@ struct FToolbarRenderState
 
 	FViewportRenderOptions& RenderOptions() const { return Context.RenderOptions ? *Context.RenderOptions : Context.Settings->RenderOptions; }
 	FGizmoToolSettings& GizmoSettings() const { return Context.Settings->Gizmo; }
-	FViewportCameraControlSettings& CameraSettings() const { return Context.Settings->CameraControls; }
+	FViewportCameraControlSettings& CameraSettings() const { return Context.CameraSettings ? *Context.CameraSettings : Context.Settings->CameraControls; }
 };
 
 class FViewportToolbar
