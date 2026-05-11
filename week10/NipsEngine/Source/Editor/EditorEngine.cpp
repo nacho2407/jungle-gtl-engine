@@ -1073,6 +1073,8 @@ void UEditorEngine::CloseScene()
     {
         Ctx.World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
         Ctx.SelectionManager->ClearSelection();
+        Ctx.SelectionManager->Shutdown();
+        delete Ctx.SelectionManager;
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
     WorldList.clear();
@@ -1215,6 +1217,8 @@ void UEditorEngine::ClearScene()
     {
         Ctx.World->EndPlay(EEndPlayReason::Type::LevelTransition);
         Ctx.SelectionManager->ClearSelection();
+        Ctx.SelectionManager->Shutdown();
+        delete Ctx.SelectionManager;
         UObjectManager::Get().DestroyObject(Ctx.World);
     }
 
@@ -1265,13 +1269,14 @@ void UEditorEngine::UnregisterWorld(const FName& Handle)
                 {
                     UnbindActorDestroyedListener(it->World);
                 }
-                it->World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);
+                it->World->EndPlay(EEndPlayReason::Type::EndPlayInEditor);				
                 UObjectManager::Get().DestroyObject(it->World);
             }
 
 			if (it->SelectionManager)
 			{
                 it->SelectionManager->Shutdown();
+                delete it->SelectionManager;
 			}
             WorldList.erase(it);
             return; // 찾아서 지웠으므로 즉시 종료
