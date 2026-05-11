@@ -36,6 +36,9 @@ private:
 	static void TriangulateScene(FbxScene* Scene);
 	static FString ConvertToMat(const FMaterialInfo* MaterialInfo);
 
+	static void GenerateTangents(uint32 TriIndices[]);
+	static void BuildTangentsForVertexRange(const uint32 VertexStart);
+
 public:
 	// Temporary data structures for parsing
 	static TArray<FVertexPNCTBW> Vertices;
@@ -46,5 +49,7 @@ public:
 	static TArray<FMaterialInfo> MtlInfos;
 	static TMap<FbxSurfaceMaterial*, int32> MaterialToSlotIndex;
 	static TArray<FSkeletalMaterial> SkeletalMaterials;
+	static TArray<FVector> TangentSums;
+	static TArray<FVector> BitangentSums;
 
 };

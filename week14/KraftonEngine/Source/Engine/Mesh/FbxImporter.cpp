@@ -12,7 +12,10 @@ TArray<FSkeletalMeshSection> FFbxImporter::Sections;
 TArray<FSkeletalMeshRange> FFbxImporter::MeshRanges;
 TArray<FFbxImporter::FMaterialInfo> FFbxImporter::MtlInfos;
 TArray<FSkeletalMaterial> FFbxImporter::SkeletalMaterials;
+TArray<FVector> FFbxImporter::TangentSums;
+TArray<FVector> FFbxImporter::BitangentSums;
 TMap<FbxSurfaceMaterial*, int32> FFbxImporter::MaterialToSlotIndex;
+
 
 struct FFbxSkeletalVertexKey
 {
@@ -267,6 +270,7 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 	Indices.clear();
 	Sections.clear();
 	MeshRanges.clear();
+	TangentSums.clear();
 
 	for (FbxNode* Node : Nodes)
 	{
@@ -349,7 +353,7 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			{
 				GlobalMaterialIndex = LocalToGlobalMaterialIndex[LocalMaterialIndex];
 			}
-
+			uint32 TriIndices[3] = {};
 			for (int32 j = 0; j < 3; ++j)
 			{
 				FVertexPNCTBW Vertex;
@@ -407,19 +411,29 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 				Key.UVX = Vertex.UV.X;
 				Key.UVY = Vertex.UV.Y;
 
+				uint32 VertexIndex = 0;
 				auto It = VertexMap.find(Key);
 				if (It != VertexMap.end())
 				{
-					SectionIndicesMap[GlobalMaterialIndex].push_back(It->second);
-					continue;
+					VertexIndex = It->second;
 				}
-
-				const uint32 NewIndex = (uint32)Vertices.size();
-				Vertices.push_back(Vertex);
-				VertexMap[Key] = NewIndex;
-				SectionIndicesMap[GlobalMaterialIndex].push_back(NewIndex);
+				else
+				{
+					VertexIndex = (uint32)Vertices.size();
+					Vertices.push_back(Vertex);
+					TangentSums.push_back(FVector::ZeroVector);
+					BitangentSums.push_back(FVector::ZeroVector);
+					VertexMap[Key] = VertexIndex;
+				}
+				TriIndices[j] = VertexIndex;
+				SectionIndicesMap[GlobalMaterialIndex].push_back(VertexIndex);
 			}
+
+			//Tangent 연산
+			GenerateTangents(TriIndices);
 		}
+
+		BuildTangentsForVertexRange(VertexStart);
 
 		uint32 CurrentBaseIndex = (uint32)Indices.size();
 
@@ -457,6 +471,62 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 		{
 			MeshRanges.push_back(MeshRange);
 		}
+	}
+}
+
+void FFbxImporter::GenerateTangents(uint32 TriIndices[])
+{
+	const FVertexPNCTBW& V0 = Vertices[TriIndices[0]];
+	const FVertexPNCTBW& V1 = Vertices[TriIndices[1]];
+	const FVertexPNCTBW& V2 = Vertices[TriIndices[2]];
+
+	FVector Edge1 = V1.Position - V0.Position;
+	FVector Edge2 = V2.Position - V0.Position;
+
+	FVector2 DeltaUV1 = V1.UV - V0.UV;
+	FVector2 DeltaUV2 = V2.UV - V0.UV;
+
+	float Det = DeltaUV1.X * DeltaUV2.Y - DeltaUV1.Y * DeltaUV2.X;
+	if (std::abs(Det) >= 1e-8f)
+	{
+		float InvDet = 1.0f / Det;
+
+		FVector Tangent = (Edge1 * DeltaUV2.Y - Edge2 * DeltaUV1.Y) * InvDet;
+		FVector Bitangent = (Edge2 * DeltaUV1.X - Edge1 * DeltaUV2.X) * InvDet;
+
+		TangentSums[TriIndices[0]] += Tangent;
+		TangentSums[TriIndices[1]] += Tangent;
+		TangentSums[TriIndices[2]] += Tangent;
+
+		BitangentSums[TriIndices[0]] += Bitangent;
+		BitangentSums[TriIndices[1]] += Bitangent;
+		BitangentSums[TriIndices[2]] += Bitangent;
+	}
+}
+
+void FFbxImporter::BuildTangentsForVertexRange(const uint32 VertexStart)
+{
+	for (uint32 i = VertexStart; i < (uint32)Vertices.size(); ++i)
+	{
+		FVector N = Vertices[i].Normal;
+		FVector T = TangentSums[i];
+
+		T = T - N * N.Dot(T);
+		if (T.Length() < FMath::Epsilon)
+		{
+			FVector Axis = std::abs(N.Z) < 0.999f ? FVector(0.0f, 0.0f, 1.0f) : FVector(0.0f, 1.0f, 0.0f);
+			T = Axis.Cross(N).Normalized();
+		}
+		else
+		{
+			T.Normalize();
+		}
+
+
+		FVector B = BitangentSums[i];
+		float Handedness = N.Cross(T).Dot(B) < 0.0f ? -1.0f : 1.0f;
+
+		Vertices[i].Tangent = FVector4(T, Handedness);
 	}
 }
 
@@ -540,3 +610,5 @@ FString FFbxImporter::ConvertToMat(const FMaterialInfo* MaterialInfo)
 
 	return MatPath;
 }
+
+
