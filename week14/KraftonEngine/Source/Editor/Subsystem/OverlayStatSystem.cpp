@@ -5,7 +5,7 @@
 #include "Engine/Profiling/MemoryStats.h"
 #include "Engine/Profiling/ShadowStats.h"
 #include "Engine/Profiling/GPUProfiler.h"
-#include "UI/SWindow.h"
+#include "Slate/SWindow.h"
 #include "ImGui/imgui.h"
 #include <algorithm>
 #include <cstdio>

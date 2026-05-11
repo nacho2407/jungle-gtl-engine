@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "UI/SWidget.h"
+#include "SWidget.h"
 
 struct FPoint
 {

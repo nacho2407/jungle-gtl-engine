@@ -14,6 +14,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
 #include "UI/UIManager.h"
+#include "Editor/Slate/SlateApplication.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/EditorFileUtils.h"
 #include "Editor/Viewport/LevelEditorViewportClient.h"
@@ -152,6 +153,8 @@ void UEditorEngine::Tick(float DeltaTime)
 	InputSystem::Get().Tick();
 	MainPanel.Update();
 	InputSystem::Get().RefreshSnapshot();
+
+	FSlateApplication::Get().UpdateInputOwner();
 
 	for (FEditorViewportClient* VC : ViewportLayout.GetAllViewportClients())
 	{

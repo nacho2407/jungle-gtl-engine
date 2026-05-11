@@ -18,7 +18,8 @@
 #include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
-#include "UI/SSplitter.h"
+#include "Slate/SSplitter.h"
+#include "Slate/SlateApplication.h"
 #include "Math/MathUtils.h"
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
@@ -272,6 +273,8 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 	LevelVC->SetLayoutWindow(ViewportWindows[0]);
 	ActiveSlotCount = 1;
 	CurrentLayout = EViewportLayout::OnePane;
+
+	FSlateApplication::Get().RegisterViewport(ViewportWindows[0], LevelVC);
 }
 
 void FLevelViewportLayout::Release()
@@ -279,6 +282,11 @@ void FLevelViewportLayout::Release()
 	SSplitter::DestroyTree(RootSplitter);
 	RootSplitter = nullptr;
 	DraggingSplitter = nullptr;
+
+	for (FEditorViewportClient* VC : AllViewportClients)
+	{
+		FSlateApplication::Get().UnregisterViewport(VC);
+	}
 
 	for (int32 i = 0; i < MaxViewportSlots; ++i)
 	{
@@ -436,6 +444,8 @@ void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
 
 		ViewportWindows[Idx] = new SWindow();
 		LevelVC->SetLayoutWindow(ViewportWindows[Idx]);
+
+		FSlateApplication::Get().RegisterViewport(ViewportWindows[Idx], LevelVC);
 	}
 }
 
@@ -454,6 +464,8 @@ void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
 
 		if (ActiveViewportClient == VC)
 			SetActiveViewport(LevelViewportClients[0]);
+
+		FSlateApplication::Get().UnregisterViewport(VC);
 
 		if (FViewport* VP = VC->GetViewport())
 		{

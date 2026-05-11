@@ -1,4 +1,4 @@
-﻿#include "UI/SSplitter.h"
+﻿#include "SSplitter.h"
 
 #include <algorithm>
 #include <cmath>

@@ -2,7 +2,7 @@
 
 #include "Core/CoreTypes.h"
 #include "Editor/UI/EditorPlayToolbarWidget.h"
-#include "Engine/UI/SWindow.h"
+#include "Slate/SWindow.h"
 #include <d3d11.h>
 
 class SSplitter;

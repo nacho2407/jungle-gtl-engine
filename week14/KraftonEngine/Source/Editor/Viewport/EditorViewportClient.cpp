@@ -3,6 +3,7 @@
 #include "Editor/UI/EditorConsoleWidget.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Slate/SlateApplication.h"
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Profiling/PlatformTime.h"
 #include "Engine/Runtime/WindowsWindow.h"
@@ -254,6 +255,8 @@ void FEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
 
 void FEditorViewportClient::TickEditorShortcuts()
 {
+	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this)) return;
+
 	UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
 	if (!EditorEngine)
 	{
@@ -372,6 +375,8 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 {
 	if (IsViewingFromLight()) return;
 
+	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
+
 	if (InputSystem::Get().GetGuiInputState().bUsingKeyboard == true)
 	{
 		return;
@@ -486,7 +491,7 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 
 void FEditorViewportClient::TickInteraction(float DeltaTime)
 {
-	(void)DeltaTime;
+	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
 
 	if (!Gizmo || !GetWorld())
 	{
