@@ -71,7 +71,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	{
 		SCOPE_STARTUP_STAT("ResourceManager::LoadFromDir");
-		FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::RootDir()), Device);
+		FResourceManager::Get().LoadFromDirectory(FPaths::ToUtf8(FPaths::EditorAssetDir()), Device);
 	}
 
 	{

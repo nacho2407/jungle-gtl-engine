@@ -17,6 +17,7 @@ public:
 	static std::wstring AudioDir();       // Asset/Audio/
 	static std::wstring SceneDir();       // Asset/Scene/
 	static std::wstring ScriptDir();	  // Asset/Script/
+	static std::wstring EditorAssetDir(); // Asset/Editor/
 	static std::wstring DataDir();        // Data/
 	static std::wstring SaveDir();        // Saves/
 	static std::wstring DumpDir();        // Saves/Dump/
