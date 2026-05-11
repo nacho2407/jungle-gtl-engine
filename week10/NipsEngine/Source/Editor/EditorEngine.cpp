@@ -976,10 +976,17 @@ void UEditorEngine::ResetViewport()
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
-        if (!ViewportClient)
+        if (ViewportClient)
         {
-            continue;
+            ViewportClient->CreateCamera();
+            ViewportClient->SetWorld(GetWorld());
+            ViewportClient->ApplyCameraMode();
         }
+    }
+
+    FEditorViewportClient* ViewportClient = Viewer.GetViewport().GetClient();
+    if (ViewportClient)
+    {
         ViewportClient->CreateCamera();
         ViewportClient->SetWorld(GetWorld());
         ViewportClient->ApplyCameraMode();
@@ -1024,10 +1031,16 @@ void UEditorEngine::CloseScene()
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
-        if (!ViewportClient)
+        if (ViewportClient)
         {
-            continue;
+            ViewportClient->DestroyCamera();
+            ViewportClient->SetWorld(nullptr);
         }
+    }
+
+	FEditorViewportClient* ViewportClient = Viewer.GetViewport().GetClient();
+    if (ViewportClient)
+    {
         ViewportClient->DestroyCamera();
         ViewportClient->SetWorld(nullptr);
     }
@@ -1156,10 +1169,16 @@ void UEditorEngine::ClearScene()
     for (int32 i = 0; i < FEditorViewportLayout::MaxViewports; ++i)
     {
         FEditorViewportClient* ViewportClient = ViewportLayout.GetViewportClient(i);
-        if (!ViewportClient)
+        if (ViewportClient)
         {
-            continue;
+            ViewportClient->DestroyCamera();
+            ViewportClient->SetWorld(nullptr);
         }
+    }
+	
+    FEditorViewportClient* ViewportClient = Viewer.GetViewport().GetClient();
+    if (ViewportClient)
+    {
         ViewportClient->DestroyCamera();
         ViewportClient->SetWorld(nullptr);
     }
