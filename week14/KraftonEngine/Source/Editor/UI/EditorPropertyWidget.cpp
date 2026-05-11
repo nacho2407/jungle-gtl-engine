@@ -10,6 +10,7 @@
 #include "Component/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/StaticMeshComponent.h"
+#include "Component/SkeletalMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/Light/LightComponentBase.h"
@@ -840,7 +841,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				bAnyChanged = true;
 				PropagatePropertyChange(Props[i].Name, SelectedActors);
 
-				if (Props[i].Type == EPropertyType::StaticMeshRef)
+				if (Props[i].Type == EPropertyType::StaticMeshRef || Props[i].Type == EPropertyType::SkeletalMeshRef)
 				{
 					bPropsInvalidated = true;
 					break;
@@ -1215,11 +1216,25 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyDescriptor>& Pr
 		int32          ElemIdx = (strncmp(Prop.Name.c_str(), "Element ", 8) == 0) ? atoi(&Prop.Name[8]) : -1;
 
 		FString SlotName = "None";
-		if (ElemIdx != -1 && SelectedComponent && SelectedComponent->IsA<UStaticMeshComponent>())
+		// Selected Component 의 Slot 띄워주기 (Static, Skeletal 둘다)
+		if (ElemIdx != -1 && SelectedComponent)
 		{
-			UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
-			if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
-				SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
+			if (SelectedComponent->IsA<UStaticMeshComponent>())
+			{
+				UStaticMeshComponent* SMC = static_cast<UStaticMeshComponent*>(SelectedComponent);
+				if (SMC->GetStaticMesh() && ElemIdx < (int32)SMC->GetStaticMesh()->GetStaticMaterials().size())
+				{
+					SlotName = SMC->GetStaticMesh()->GetStaticMaterials()[ElemIdx].MaterialSlotName;
+				}
+			}
+			else if(SelectedComponent->IsA<USkeletalMeshComponent>())
+			{
+				USkeletalMeshComponent* SMC = static_cast<USkeletalMeshComponent*>(SelectedComponent);
+				if (SMC->GetSkeletalMesh() && ElemIdx < (int32)SMC->GetSkeletalMesh()->GetSkeletalMaterials().size())
+				{
+					SlotName = SMC->GetSkeletalMesh()->GetSkeletalMaterials()[ElemIdx].MaterialSlotName;
+				}
+			}
 		}
 
 		// 좌측: Element 인덱스 + 슬롯 이름
