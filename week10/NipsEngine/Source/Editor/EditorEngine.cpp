@@ -276,6 +276,15 @@ void UEditorEngine::Tick(float DeltaTime)
     EditorInputRouter.Tick(DeltaTime, RoutedInputContext, RoutedInputBinding);
     const auto InputRouteEnd = std::chrono::steady_clock::now();
 
+    // Viewer 호버링 상태 동기화 (기존 Layout 외부에 있으므로 수동 동기화 필요)
+    if (FEditorViewportClient* ViewerClient = static_cast<FEditorViewportClient*>(Viewer.GetViewport().GetClient()))
+    {
+        if (FEditorViewportState* State = ViewerClient->GetViewportState())
+        {
+            State->bHovered = (EditorInputRouter.GetFocusedClient() == ViewerClient);
+        }
+    }
+
     const auto PanelStart = std::chrono::steady_clock::now();
     ViewportLayout.Tick(DeltaTime);
     Viewer.Tick(DeltaTime);
@@ -473,6 +482,37 @@ void UEditorEngine::RegisterViewportInputTargets()
             [this, Index]()
             {
                 FEditorViewportClient* Client = ViewportLayout.GetViewportClient(Index);
+                return Client ? Client->GetFocusedWorld() : nullptr;
+            });
+    }
+
+    // Viewer 등록
+    FSceneViewport& ViewerViewport = Viewer.GetViewport();
+    FEditorViewportClient* ViewerClient = static_cast<FEditorViewportClient*>(ViewerViewport.GetClient());
+    if (ViewerClient)
+    {
+        EditorInputRouter.RegisterTarget(
+            &ViewerViewport,
+            ViewerClient,
+            EInteractionDomain::Editor,
+            [this](FRect& OutRect)
+            {
+                const FViewportRect& ViewportRect = Viewer.GetViewport().GetRect();
+                if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
+                {
+                    return false;
+                }
+
+                OutRect = FRect(
+                    static_cast<float>(ViewportRect.X),
+                    static_cast<float>(ViewportRect.Y),
+                    static_cast<float>(ViewportRect.Width),
+                    static_cast<float>(ViewportRect.Height));
+                return true;
+            },
+            [this]()
+            {
+                FEditorViewportClient* Client = static_cast<FEditorViewportClient*>(Viewer.GetViewport().GetClient());
                 return Client ? Client->GetFocusedWorld() : nullptr;
             });
     }

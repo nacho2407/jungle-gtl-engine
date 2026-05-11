@@ -24,6 +24,11 @@ public:
     void Tick(float DeltaTime);
 
 	void Resize(int32 Width, int32 Height);
+    void SetRect(const FViewportRect& InRect) 
+    { 
+        Viewport.SetRect(InRect); 
+        Client.SetViewportSize((float)InRect.Width, (float)InRect.Height);
+    }
 
 	ID3D11ShaderResourceView* GetSRV() const
     {
