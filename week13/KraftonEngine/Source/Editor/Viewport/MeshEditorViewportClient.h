@@ -35,6 +35,8 @@ public:
 	FViewport* GetViewport() const { return Viewport; }
 	UWorld* GetPreviewWorld() const { return PreviewWorld; }
 
+	void NotifyViewportResized(int32 NewWidth, int32 NewHeight);
+
 	bool GetCameraView(FMinimalViewInfo& OutPOV) const override;
 
 	void Tick(float DeltaTime);
