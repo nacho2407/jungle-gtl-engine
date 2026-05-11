@@ -977,6 +977,9 @@
     <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp">
       <Filter>Source\Engine\Render\Shader</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderCache.cpp">
+      <Filter>Source\Engine\Render\Shader</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp">
       <Filter>Source\Engine\Render\Shader</Filter>
     </ClCompile>
@@ -1792,6 +1795,9 @@
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Shader\Shader.h">
+      <Filter>Source\Engine\Render\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderCache.h">
       <Filter>Source\Engine\Render\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h">

@@ -1,4 +1,5 @@
 ﻿#include "Shader.h"
+#include "ShaderCache.h"
 #include "ShaderInclude.h"
 #include "Profiling/MemoryStats.h"
 #include "Materials/Material.h"
@@ -100,43 +101,56 @@ void FShader::Create(ID3D11Device* InDevice, const wchar_t* InFilePath, const ch
 	FShaderInclude IncludeHandler;
 	IncludeHandler.OutIncludes = OutIncludes;
 
-	// Vertex Shader 컴파일
-	HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
-	if (FAILED(hr))
+	const std::string VSCacheKey = ShaderCache::BuildShaderCacheKey(InFilePath, InVSEntryPoint, "vs_5_0", InDefines);
+	if (!ShaderCache::LoadShaderBlob(VSCacheKey, &vertexShaderCSO))
 	{
-		if (errorBlob)
+		// Vertex Shader 컴파일
+		HRESULT hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InVSEntryPoint, "vs_5_0", 0, 0, &vertexShaderCSO, &errorBlob);
+		if (FAILED(hr))
 		{
-			const char* Msg = (const char*)errorBlob->GetBufferPointer();
-			UE_LOG("[Shader] VS Compile Error: %s", Msg);
-			if (ErrorMode == EShaderErrorMode::MessageBox)
-				MessageBoxA(nullptr, Msg, "VS Compile Error", MB_OK | MB_ICONERROR);
-			else
-				FNotificationManager::Get().AddNotification("VS Compile Error (see log)", ENotificationType::Error, 5.0f);
-			errorBlob->Release();
+			if (errorBlob)
+			{
+				const char* Msg = (const char*)errorBlob->GetBufferPointer();
+				UE_LOG("[Shader] VS Compile Error: %s", Msg);
+				if (ErrorMode == EShaderErrorMode::MessageBox)
+					MessageBoxA(nullptr, Msg, "VS Compile Error", MB_OK | MB_ICONERROR);
+				else
+					FNotificationManager::Get().AddNotification("VS Compile Error (see log)", ENotificationType::Error, 5.0f);
+				errorBlob->Release();
+				errorBlob = nullptr;
+			}
+			return;
 		}
-		return;
+		ShaderCache::SaveShaderBlob(VSCacheKey, vertexShaderCSO);
 	}
 
-	// Pixel Shader 컴파일
-	hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
-	if (FAILED(hr))
+	const std::string PSCacheKey = ShaderCache::BuildShaderCacheKey(InFilePath, InPSEntryPoint, "ps_5_0", InDefines);
+	if (!ShaderCache::LoadShaderBlob(PSCacheKey, &pixelShaderCSO))
 	{
-		if (errorBlob)
+		// Pixel Shader 컴파일
+		HRESULT hr = S_OK;
+		hr = D3DCompileFromFile(InFilePath, InDefines, &IncludeHandler, InPSEntryPoint, "ps_5_0", 0, 0, &pixelShaderCSO, &errorBlob);
+		if (FAILED(hr))
 		{
-			const char* Msg = (const char*)errorBlob->GetBufferPointer();
-			UE_LOG("[Shader] PS Compile Error: %s", Msg);
-			if (ErrorMode == EShaderErrorMode::MessageBox)
-				MessageBoxA(nullptr, Msg, "PS Compile Error", MB_OK | MB_ICONERROR);
-			else
-				FNotificationManager::Get().AddNotification("PS Compile Error (see log)", ENotificationType::Error, 5.0f);
-			errorBlob->Release();
+			if (errorBlob)
+			{
+				const char* Msg = (const char*)errorBlob->GetBufferPointer();
+				UE_LOG("[Shader] PS Compile Error: %s", Msg);
+				if (ErrorMode == EShaderErrorMode::MessageBox)
+					MessageBoxA(nullptr, Msg, "PS Compile Error", MB_OK | MB_ICONERROR);
+				else
+					FNotificationManager::Get().AddNotification("PS Compile Error (see log)", ENotificationType::Error, 5.0f);
+				errorBlob->Release();
+				errorBlob = nullptr;
+			}
+			vertexShaderCSO->Release();
+			return;
 		}
-		vertexShaderCSO->Release();
-		return;
+		ShaderCache::SaveShaderBlob(PSCacheKey, pixelShaderCSO);
 	}
 
 	// Vertex Shader 생성
-	hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
+	HRESULT hr = InDevice->CreateVertexShader(vertexShaderCSO->GetBufferPointer(), vertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
 	if (FAILED(hr))
 	{
 		std::cerr << "Failed to create Vertex Shader (HRESULT: " << hr << ")" << std::endl;
@@ -345,4 +359,3 @@ void FShader::ExtractCBufferInfo(ID3DBlob* ShaderBlob, TMap<FString, FMaterialPa
 	}
 	Reflector->Release();
 }
-
