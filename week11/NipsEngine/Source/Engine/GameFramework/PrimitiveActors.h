@@ -15,6 +15,7 @@ class USpringArmComponent;
 class UProjectileMovementComponent;
 class UProceduralMeshComponent;
 class UStaticMesh;
+class USkeletalMeshComponent;
 
 class ACubeActor : public AActor
 {
@@ -117,6 +118,15 @@ class AStaticMeshActor : public AActor
 public:
 	DECLARE_CLASS(AStaticMeshActor, AActor)
 	AStaticMeshActor() = default;
+
+	void InitDefaultComponents();
+};
+
+class ASkeletalMeshActor : public AActor
+{
+public:
+	DECLARE_CLASS(ASkeletalMeshActor, AActor)
+	ASkeletalMeshActor() = default;
 
 	void InitDefaultComponents();
 };
