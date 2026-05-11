@@ -138,6 +138,25 @@ bool FFbxImporter::Convert()
 		SkeletalMaterials.push_back(NewMaterial);
 	}
 
+	// Default Material 경우 추가
+	bool bNeddsNoneSlot = SkeletalMaterials.empty();
+	if (bNeddsNoneSlot)
+	{
+		FSkeletalMaterial DefaultMaterial;
+		DefaultMaterial.MaterialInterface = FMaterialManager::Get().GetOrCreateMaterial("None");
+		DefaultMaterial.MaterialSlotName = "None";
+		SkeletalMaterials.push_back(DefaultMaterial);
+
+		const int32 NoneMaterialIndex = static_cast<int32>(SkeletalMaterials.size()) - 1;
+		for (FSkeletalMeshSection& Section : Sections)
+		{
+			if (Section.MaterialSlotName == "None")
+			{
+				Section.MaterialIndex = NoneMaterialIndex;
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -444,16 +463,18 @@ void FFbxImporter::ParseSkin(TArray<FbxNode*>& Nodes, TMap<FbxNode*, int32>& Nod
 			FSkeletalMeshSection Section;
 
 			int32 MatIndex = Pair.first;
-			if (MtlInfos.size() > MatIndex)
+			// 정확하게 MatIdx가 0 ~ MtlInfos.size() - 1사이에 있는지 검사
+			if (MatIndex >= 0 && MatIndex < static_cast<int32>(MtlInfos.size()))
 			{
 				Section.MaterialSlotName = MtlInfos[MatIndex].Name;
+				Section.MaterialIndex = Pair.first;
 			}
 			else
 			{
 				UE_LOG("Warning: Material index %d out of range. Assigning to Default slot.", Pair.first);
 				Section.MaterialSlotName = "None";
+				Section.MaterialIndex = -1; // Material Index 추가 무효화
 			}
-			Section.MaterialIndex = Pair.first;
 			Section.FirstIndex = CurrentBaseIndex;
 			Section.IndexCount = (uint32)Pair.second.size();
 
